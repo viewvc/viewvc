@@ -25,7 +25,12 @@ CONF_PATHNAME = None
 
 #########################################################################
 
-import os, sys, string, re, time, config
+import os
+import sys
+import string
+import re
+import time
+import config
 
 ## load configuration file, the data is used globally here
 cfg = config.Config()

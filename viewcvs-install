@@ -54,18 +54,15 @@ ROOT_DIR = "/usr/local/viewcvs-dev"
 
 FILE_INFO_LIST = [
     ("cgi/viewcvs.cgi", "cgi/viewcvs.cgi", 0755, 1, 0, 0),
-    ("cgi/queryform.cgi", "cgi/queryform.cgi", 0755, 1, 0, 0),
     ("cgi/query.cgi", "cgi/query.cgi", 0755, 1, 0, 0),
 
     ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 0, 1, 0),
 
     ("lib/PyFontify.py", "lib/PyFontify.py", 0644, 0, 0, 1),
     ("lib/blame.py", "lib/blame.py", 0644, 0, 0, 1),
-    ("lib/commit.py", "lib/commit.py", 0644, 0, 0, 1),
     ("lib/compat.py", "lib/compat.py", 0644, 0, 0, 1),
     ("lib/config.py", "lib/config.py", 0644, 0, 0, 1),
-    ("lib/cvsdbapi.py", "lib/cvsdbapi.py", 0644, 1, 0, 1),
-    ("lib/database.py", "lib/database.py", 0644, 0, 0, 1),
+    ("lib/cvsdb.py", "lib/cvsdb.py", 0644, 1, 0, 1),
     ("lib/dbi.py", "lib/dbi.py", 0644, 0, 0, 1),
     ("lib/popen.py", "lib/popen.py", 0644, 0, 0, 1),
     ("lib/py2html.py", "lib/py2html.py", 0644, 0, 0, 1),
@@ -77,11 +74,6 @@ FILE_INFO_LIST = [
     ("tools/loginfo-handler", "loginfo-handler", 0755, 1, 0, 0),
     ("tools/cvsdbadmin", "cvsdbadmin", 0755, 1, 0, 0),
     ("tools/make-database", "make-database", 0755, 1, 0, 0),
-
-    ("html-templates/queryformtemplate.html",
-     "html-templates/queryformtemplate.html", 0644, 0, 1, 0),
-    ("html-templates/querytemplate.html",
-     "html-templates/querytemplate.html", 0644, 0, 1, 0),
     ]
 
 
@@ -119,7 +111,6 @@ def SetPythonPaths(contents):
         contents = re.sub('^#![^\n]*', shbang, contents)
     contents = SetOnePath(contents, 'LIBRARY_DIR', 'lib')
     contents = SetOnePath(contents, 'CONF_PATHNAME', 'viewcvs.conf')
-    contents = SetOnePath(contents, 'HTML_TEMPLATE_DIR', 'html-templates')
     return contents
 
 

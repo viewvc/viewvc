@@ -1,15 +1,15 @@
 #!/usr/bin/python
 # -*- Mode: python -*-
 #
-# Copyright (C) 2000-2001 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 2000 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewCVS
-# distribution or at http://viewcvs.sourceforge.net/license-1.html.
+# distribution or at http://www.lyra.org/viewcvs/license-1.html.
 #
 # Contact information:
 #   Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://viewcvs.sourceforge.net/
+#   gstein@lyra.org, http://www.lyra.org/viewcvs/
 #
 # -----------------------------------------------------------------------
 #
@@ -39,13 +39,18 @@ else:
 
 #########################################################################
 
-import os, string, getopt, re, cvsdbapi
+import os
+import string
+import getopt
+import re
+import cvsdb
+import rlog
+
 
 DEBUG_FLAG = 0
 
 ## pre-compiled regular expressions
 _re_fileversion = re.compile("([^,]+)\,([^,]+)\,([^,]+)")
-
 
 ## output functions
 def debug(text):
@@ -59,13 +64,7 @@ def error(text):
     print 'ERROR(loginfo): %s' % (text)
     sys.exit(1)
 
-
 class FileData:
-
-    CHANGED = 1
-    ADDED   = 2
-    REMOVED = 3
-    
     def __init__(self, file, directory, old_version, new_version):
         self.file = file
         self.directory = directory
@@ -75,12 +74,11 @@ class FileData:
         ## set the state of this file from the
         ## old_version and new_version information
         if self.old_version == 'NONE':
-            self.type = self.ADDED
+            self.ctype = "added"
         elif self.new_version == 'NONE':
-            self.type = self.REMOVED
+            self.ctype = "removed"
         else:
-            self.type = self.CHANGED
-
+            self.ctype = "changed"
 
 def CommitFromFileData(repository, file_data):
     ## consturct the full path for the RCS file
@@ -88,25 +86,23 @@ def CommitFromFileData(repository, file_data):
 
     ## get the 'rlog' output for just this revision, and then convert
     ## to a commit object
-    rlog_data = cvsdbapi.GetRLogData(filename, file_data.new_version)
-    commit_list = cvsdbapi.RLogDataToCommitList(repository, rlog_data)
+    rlog_data = rlog.GetRLogData(filename, file_data.new_version)
+    commit_list = cvsdb.RLogDataToCommitList(repository, rlog_data)
     commit = commit_list[0]
 
     ## set the type of commit from the file_data setting
-    if file_data.type == file_data.CHANGED:
+    if file_data.ctype == "changed":
         commit.SetTypeChange()
-    elif file_data.type == file_data.ADDED:
+    elif file_data.ctype == "added":
         commit.SetTypeAdd()
-    elif file_data.type == file_data.REMOVED:
+    elif file_data.ctype == "removed":
         commit.SetTypeRemove()
         
     return commit
 
-
 def GetUnrecordedCommitList(repository, file_data):
     filename = os.path.join(repository, file_data.directory, file_data.file)
-    return cvsdbapi.GetUnrecordedCommitList(repository, filename)
-
+    return cvsdb.GetUnrecordedCommitList(repository, filename)
 
 def ProcessLoginfo(repository, stdin_list):
     ## the first line in stdin is a space-separated list; the first
@@ -155,14 +151,14 @@ def ProcessLoginfo(repository, stdin_list):
         ##      given enough information to find it in the rlog output!
         ##      So instead, we rlog everything in the removed file, and
         ##      add any commits not already in the database
-        if file_data.type == file_data.REMOVED:
+        if file_data.ctype == "removed":
             temp = GetUnrecordedCommitList(repository, file_data)
             commit_list = commit_list + temp
         else:
             commit_list.append(CommitFromFileData(repository, file_data))
 
     ## add to the database
-    db = cvsdbapi.ConnectDatabase()
+    db = cvsdb.ConnectDatabase()
     db.AddCommitList(commit_list)
 
 
