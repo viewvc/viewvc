@@ -978,7 +978,7 @@ def view_markup(request):
 
   if cfg.options.show_log_in_markup:
     if request.roottype == 'cvs':
-      revs, taginfo = read_log(full_name, revision, None)
+      revs, taginfo = read_log(request.repos, request.path_parts, revision, None)
 
       entry = revs[-1]
       branch = entry.branch_number
@@ -1394,70 +1394,8 @@ def logsort_rev_cmp(rev1, rev2):
   # sort highest revision first
   return -cmp(rev1.number, rev2.number)
 
-def read_log(full_name, filter, logsort):
-  # Retrieve log info
-  cur_branch, taginfo, revs = bincvs.fetch_log(cfg.general, full_name)
-
-  # Add artificial ViewCVS tag MAIN. If the file has a default branch, then
-  # MAIN acts like a branch tag pointing to that branch. Otherwise MAIN acts
-  # like a branch tag that points to the trunk. (Note: A default branch is
-  # just a branch number specified in an RCS file that tells CVS and RCS
-  # what branch to use for checkout and update operations by default, when
-  # there's no revision argument or sticky branch to override it. Default
-  # branches get set by "cvs import" to point to newly created vendor
-  # branches. Sometimes they are also set manually with "cvs admin -b")
-  taginfo['MAIN'] = cur_branch
-
-  # Create tag objects
-  for name, num in taginfo.items():
-    taginfo[name] = bincvs.Tag(name, num)
-  tags = taginfo.values()
-
-  # Set view_tag to a Tag object in order to filter results. We can filter by
-  # revision number or branch number
-  if filter:
-    try:
-      view_tag = bincvs.Tag(None, filter)
-    except ValueError:
-      view_tag = None
-    else:
-      tags.append(view_tag)  
-
-  # Match up tags and revisions
-  bincvs.match_revs_tags(revs, tags)
-
-  # Add artificial ViewCVS tag HEAD, which acts like a non-branch tag pointing
-  # at the latest revision on the MAIN branch. The HEAD revision doesn't have
-  # anything to do with the "head" revision number specified in the RCS file
-  # and in rlog output. HEAD refers to the revision that the CVS and RCS co
-  # commands will check out by default, whereas the "head" field just refers
-  # to the highest revision on the trunk.  
-  taginfo['HEAD'] = bincvs.add_tag('HEAD', taginfo['MAIN'].co_rev)
-
-  # Determine what revisions to return
-  if filter:
-    # If view_tag isn't set, it means filter is not a valid revision or
-    # branch number. Check taginfo to see if filter is set to a valid tag
-    # name. If so, filter by that tag, otherwise raise an error.
-    if not view_tag:
-      try:
-        view_tag = taginfo[filter]
-      except KeyError:
-        raise debug.ViewcvsException('Invalid tag or revision number "%s"'
-                                     % filter)
-    show_revs = [ ]
-    if view_tag.is_branch:
-      for rev in revs:
-        if rev.branch_number == view_tag.number or rev is view_tag.branch_rev:
-          show_revs.append(rev)
-    elif view_tag.co_rev:
-      show_revs.append(view_tag.co_rev)
-
-    # get rid of the view_tag if it was only created for filtering
-    if view_tag.name is None:
-      bincvs.remove_tag(view_tag)
-  else:
-    show_revs = revs
+def read_log(repos, path_parts, filter, logsort):
+  show_revs, taginfo = bincvs.file_log(repos, path_parts, filter)
 
   if logsort == 'date':
     show_revs.sort(logsort_date_cmp)
@@ -1476,7 +1414,8 @@ def view_log(request):
   hide_attic = int(request.query_dict.get('hideattic',cfg.options.hide_attic))
 
   if request.roottype == 'cvs':
-    show_revs, taginfo = read_log(request.full_name, view_tag, logsort)
+    show_revs, taginfo = read_log(request.repos, request.path_parts, view_tag,
+                                  logsort)
     up_where = get_up_path(request, request.where, hide_attic)
     filename = os.path.basename(request.where)
 
