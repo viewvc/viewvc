@@ -489,7 +489,8 @@ def markup_stream_enscript(lang, fp):
   # Unfortunately this option doesn'nt work with HTML output in enscript
   # version 1.6.2.
   enscript = popen.pipe_cmds([(os.path.normpath(os.path.join(cfg.options.enscript_path,'enscript')),
-                               '--color', '-W', 'html', '-E' + lang, '-o',
+                               '--color', '--language=html', 
+                               '--pretty-print=' + lang, '-o',
                                '-', '-'),
                               ('sed', '-n', '/^<PRE>$/,/<\\/PRE>$/p')])
 
@@ -507,7 +508,7 @@ def markup_stream_enscript(lang, fp):
     print "The command line was:"
     print "<pre>"
     print os.path.normpath(os.path.join(cfg.options.enscript_path,'enscript')
-                          ) + " --color -W html -E"+lang+" -o - -"
+                          ) + " --color --language=html --pretty-print="+lang+" -o - -"
     print "</pre>"
     print "Please look at the error log of your webserver for more info."
     raise
