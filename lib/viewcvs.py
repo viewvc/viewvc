@@ -118,14 +118,6 @@ else:
 
 class Request:
   def __init__(self):
-    # Many parts of ViewCVS need you to call cgi-bin/viewcvs.cgi/ 
-    # with a trailing '/'.  Test for 'PATH_INFO' which only exists if
-    # URL has _at least_ a trailing '/'.  Redirect if PATH_INFO is 
-    # None.  Requires the 'SERVER_URL' in order to keep the '/' intact.
-    if not os.environ.get('PATH_INFO', None):
-      redirect(os.environ.get('SERVER_URL') + 
-               os.environ.get('SCRIPT_NAME') + '/')
-
     where = os.environ.get('PATH_INFO', '')
 
     # clean it up. this removes duplicate '/' characters and any that may
