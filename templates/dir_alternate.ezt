@@ -8,7 +8,7 @@
     [is sortby "rev"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
         width="13" height="13" border="0"
-        src="[docroot]/images/[is sortdir "up"]ascending[else]descending[end].png" />
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
     </a>
   </th>
@@ -17,7 +17,7 @@
     [is sortby "file"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
         width="13" height="13" border="0"
-        src="[docroot]/images/[is sortdir "up"]ascending[else]descending[end].png" />
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
     </a>
   </th>
@@ -26,7 +26,7 @@
     [is sortby "date"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
         width="13" height="13" border="0"
-        src="[docroot]/images/[is sortdir "up"]ascending[else]descending[end].png" />
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
     </a>
   </th>
@@ -35,7 +35,7 @@
     [is sortby "author"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
         width="13" height="13" border="0"
-        src="[docroot]/images/[is sortdir "up"]ascending[else]descending[end].png" />
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
     </a>
   </th>
@@ -45,7 +45,7 @@
     [is sortby "log"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
         width="13" height="13" border="0"
-        src="[docroot]/images/[is sortdir "up"]ascending[else]descending[end].png" />
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
     </a>
   </th>
