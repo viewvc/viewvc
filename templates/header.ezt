@@ -3,7 +3,7 @@
      by Greg Stein -- mailto:gstein@lyra.org
   -->
   [### NOTE: the "diff" is the TITLE param to navigate_header() ]
-  <title>[path]/[filename] - [title] - [rev]</title>
+  <title>[path]/[filename] - [arg0] - [rev]</title>
 </head>
 <body bgcolor="#eeeeee">
   <table width="100%" border=0 cellspacing=0 cellpadding=1 bgcolor="#9999ee">

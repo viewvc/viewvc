@@ -1,4 +1,4 @@
-[include "header.ezt"]
+[include "header.ezt" "graph"]
 
 <center>
 <h1>Revision graph of [request.where]</h1>

@@ -426,9 +426,8 @@ def html_time(request, secs, extended=0):
       s = s + ', ' + ext
   return s
 
-def nav_header_data(request, path, filename, rev, title):
+def nav_header_data(request, path, filename, rev):
   return {
-    'title' : title,
     'nav_path' : clickable_path(request, path, 1, 0, 0),
     'path' : path,
     'filename' : filename,
@@ -586,7 +585,7 @@ def markup_stream(request, fp, revision, mime_type):
     pathname = pathname[:-6]
   file_url = urllib.quote(filename)
 
-  data = nav_header_data(request, pathname, filename, revision, 'view')
+  data = nav_header_data(request, pathname, filename, revision)
   data.update({
     'request' : request,
     'cfg' : cfg,
@@ -1924,7 +1923,7 @@ def view_annotate(request):
   if pathname[-6:] == '/Attic':
     pathname = pathname[:-6]
 
-  data = nav_header_data(request, pathname, filename, rev, 'annotate')
+  data = nav_header_data(request, pathname, filename, rev)
   data.update({
     'cfg' : cfg,
     'vsn' : __version__,
@@ -1963,7 +1962,7 @@ def view_cvsgraph(cfg, request):
   if pathname[-6:] == '/Attic':
     pathname = pathname[:-6]
 
-  data = nav_header_data(request, pathname, filename, rev, 'graph')
+  data = nav_header_data(request, pathname, filename, rev)
 
   # Required only if cvsgraph needs to find it's supporting libraries.
   # Uncomment and set accordingly if required.
@@ -2089,7 +2088,7 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
   where_nd = request.where[:-5] # remove the ".diff"
   pathname, filename = os.path.split(where_nd)
 
-  data = nav_header_data(request, pathname, filename, rev2, 'diff')
+  data = nav_header_data(request, pathname, filename, rev2)
 
   log_rev1 = log_rev2 = None
   date1 = date2 = ''

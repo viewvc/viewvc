@@ -1,4 +1,4 @@
-[include "header.ezt"]
+[include "header.ezt" "view"]
 
 <hr noshade>
 <table width="100%"><tr><td bgcolor="#ffffff">
