@@ -87,14 +87,13 @@ __version__ = '0.4-dev'
 
 class Config:
   def __init__(self):
-    class _blank:
-      pass
-    self.general = _blank()
-    self.images = _blank()
-    self.options = _blank()
-    self.colors = _blank()
-    self.text = _blank()
+    self.general = _sub_config()
+    self.images = _sub_config()
+    self.options = _sub_config()
+    self.colors = _sub_config()
+    self.text = _sub_config()
 
+class _sub_config:
   def get_image(self, which):
     text = '[%s]' % string.upper(which)
     path, width, height = getattr(self, which)
