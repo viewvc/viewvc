@@ -9,11 +9,11 @@
   <table width="100%" border=0 cellspacing=0 cellpadding=1 bgcolor="#9999ee">
   <tr valign=bottom>
     <td>
-      <a href="[file_url][qquery]#rev[rev]">
+      <a href="[file_url]#rev[rev]">
         <img src="/icons/small/back.gif" alt="(file)" border=0 width=16 height=16>
       </a>
       <b>Return to
-        <a href="[file_url][qquery]#rev[rev]">[filename]</a>
+        <a href="[file_url]#rev[rev]">[filename]</a>
         CVS log</b>
       <img src="/icons/small/text.gif" alt="(file)" border=0 width=16 height=16>
     </td>

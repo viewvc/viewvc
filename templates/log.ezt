@@ -19,7 +19,7 @@
   </tr>
 </table>
 
-<a href="[back_url]"><img src="/icons/small/back.gif" alt="(back)" border=0
+<a href="[back_url]#[filename]"><img src="/icons/small/back.gif" alt="(back)" border=0
 			width=16 height=16></a>
 <b>Up to [nav_path]</b><p>
 <a href="#diff">Request diff between arbitrary revisions</a>
@@ -61,7 +61,7 @@
       <a href="[entries.view_href]">(markup)</a> 
 
       [# if you don't want to allow annotation, then remove this line]
-      [is roottype "svn"][else]<a href="[href]?annotate=[entries.rev][query]">(annotate)</a>[end]
+      [is roottype "svn"][else]<a href="[entries.annotate_href]">(annotate)</a>[end]
     [else]
       [if-any viewable]
         , <a href="[entries.view_href]">(view)</a>
@@ -77,7 +77,7 @@
     [is entries.rev rev_selected]
       - <b>[[]selected]</b>
     [else]
-      - <a href="[href]?r1=[entries.rev][query]">[[]select for diffs]</a>
+      - <a href="[diff_url]?r1=[entries.rev][diff_params]">[[]select for diffs]</a>
     [end]
 
   [end]
@@ -127,35 +127,35 @@
     <br><b><i>FILE REMOVED</i></b>
   [else]
     [if-any entries.prev]
-      <br>Diff to <a href="[href]?r1=[entries.prev]&amp;r2=[entries.rev][query]">previous [entries.prev]</a>
+      <br>Diff to <a href="[diff_url]?r1=[entries.prev]&amp;r2=[entries.rev][diff_params]">previous [entries.prev]</a>
       [if-any human_readable]
       [else]
-        (<a href="[href]?r1=[entries.prev]&amp;r2=[entries.rev]&amp;diff_format=h[query]">colored</a>)
+        (<a href="[diff_url]?r1=[entries.prev]&amp;r2=[entries.rev]&amp;diff_format=h[diff_params]">colored</a>)
       [end]
     [end]
 
     [if-any entries.branch_point]
-      , to <a href="[href]?r1=[entries.branch_point]&amp;r2=[entries.rev][query]">branch point [entries.branch_point]</a>
+      , to <a href="[diff_url]?r1=[entries.branch_point]&amp;r2=[entries.rev][diff_params]">branch point [entries.branch_point]</a>
       [if-any human_readable]
       [else]
-        , (<a href="[href]?r1=[entries.branch_point]&amp;r2=[entries.rev]&amp;diff_format=h[query]">colored</a>)
+        , (<a href="[diff_url]?r1=[entries.branch_point]&amp;r2=[entries.rev]&amp;diff_format=h[diff_params]">colored</a>)
       [end]
     [end]
 
     [if-any entries.next_main]
-      , to <a href="[href]?r1=[entries.next_main]&amp;r2=[entries.rev][query]">next main [entries.next_main]</a>
+      , to <a href="[diff_url]?r1=[entries.next_main]&amp;r2=[entries.rev][diff_params]">next main [entries.next_main]</a>
       [if-any human_readable]
       [else]
-        , (<a href="[href]?r1=[entries.next_main]&amp;r2=[entries.rev]&amp;diff_format=h[query]">colored</a>)
+        , (<a href="[diff_url]?r1=[entries.next_main]&amp;r2=[entries.rev]&amp;diff_format=h[diff_params]">colored</a>)
       [end]
     [end]
 
     [if-any entries.to_selected]
       [if-any entries.prev], [else]<br>Diff[end]
-        to <a href="[href]?r1=[rev_selected]&amp;r2=[entries.rev][query]">selected [rev_selected]</a>
+        to <a href="[diff_url]?r1=[rev_selected]&amp;r2=[entries.rev][diff_params]">selected [rev_selected]</a>
       [if-any human_readable]
       [else]
-        (<a href="[href]?r1=[rev_selected]&amp;r2=[entries.rev]&amp;diff_format=h[query]">colored</a>)
+        (<a href="[diff_url]?r1=[rev_selected]&amp;r2=[entries.rev]&amp;diff_format=h[diff_params]">colored</a>)
       [end]
     [end]
   [end]
