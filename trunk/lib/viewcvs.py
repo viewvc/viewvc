@@ -1153,8 +1153,11 @@ def view_directory(request):
     num_cols = 3
     print_header('Rev.', 'rev')
     print_header('Age', 'date')
+    if cfg.options.use_cvsgraph:
+      num_cols = num_cols + 1
+      print_header('Graph', 'graph')
     if cfg.options.show_author:
-      num_cols = 4
+      num_cols = num_cols + 1   
       print_header('Author', 'author')
     if cfg.options.show_logs:
       num_cols = num_cols + 1
@@ -1344,6 +1347,9 @@ def view_directory(request):
         download_link(request, file_url, info[0], info[0])
       print '</td><td>&nbsp;'
       print html_time(info[1])
+      if cfg.options.use_cvsgraph:
+        print '</td><td>&nbsp;'
+        print '<a href="/cgi-bin/cvsgraphwrapper.cgi?&f=%s,v">(graph)</a>' % (request.cvsroot + "/" + request.module + "/" + file)
       if cfg.options.show_author:
         print '</td><td>&nbsp;'
         print info[3]
