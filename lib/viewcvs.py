@@ -1173,12 +1173,26 @@ def view_directory(request):
     'sortby_log_href' :    request.get_url(params={'sortby': 'log'}),
     'sortdir_down_href' :  request.get_url(params={'sortdir': 'down'}),
     'sortdir_up_href' :    request.get_url(params={'sortdir': 'up'}),
+
+    ### in the future, it might be nice to break this path up into
+    ### a list of elements, allowing the template to display it in
+    ### a variety of schemes.
+    'nav_path' : clickable_path(request, 0, 0),
   })
 
   if not request.where:
     url, params = request.get_link(params={'root': None})
     data['change_root_action'] = urllib.quote(url, _URL_SAFE_CHARS)
     data['change_root_hidden_values'] = prepare_hidden_values(params)
+
+    # add in the roots for the selection
+    allroots = list_roots(cfg)
+    if len(allroots) < 2:
+      roots = [ ]
+    else:
+      roots = allroots.keys()
+      roots.sort(lambda n1, n2: cmp(string.lower(n1), string.lower(n2)))
+    data['roots'] = roots
 
   if cfg.options.use_pagesize:
     url, params = request.get_link(params={'dir_pagestart': None})
@@ -1193,6 +1207,13 @@ def view_directory(request):
     view_directory_svn(request, data, sortby, sortdir)
   else:
     view_directory_cvs(request, data, sortby, sortdir)
+
+  if cfg.options.use_pagesize:
+    data['dir_pagestart'] = int(query_dict.get('dir_pagestart',0))
+    data['rows'] = paging(data, 'rows', data['dir_pagestart'], 'name')
+
+  request.server.header()
+  generate_page(request, cfg.templates.directory, data)
 
 def view_directory_cvs(request, data, sortby, sortdir):
   full_name = request.full_name
@@ -1255,19 +1276,7 @@ def view_directory_cvs(request, data, sortby, sortdir):
                                    or cfg.options.use_re_search),
   })
 
-  # add in the roots for the selection
-  allroots = list_roots(cfg)
-  if len(allroots) < 2:
-    roots = [ ]
-  else:
-    roots = allroots.keys()
-    roots.sort(lambda n1, n2: cmp(string.lower(n1), string.lower(n2)))
-  data['roots'] = roots
 
-  ### in the future, it might be nice to break this path up into
-  ### a list of elements, allowing the template to display it in
-  ### a variety of schemes.
-  data['nav_path'] = clickable_path(request, 0, 0)
 
   # fileinfo will be len==0 if we only have dirs and !show_subdir_lastmod.
   # in that case, we don't need the extra columns
@@ -1290,7 +1299,6 @@ def view_directory_cvs(request, data, sortby, sortdir):
   rows = data['rows'] = [ ]
 
   for file in file_data:
-
     row = _item(href=None, graph_href=None,
                 author=None, log=None, log_file=None, log_rev=None,
                 show_log=None, state=None)
@@ -1438,13 +1446,6 @@ def view_directory_cvs(request, data, sortby, sortdir):
     data['branch_tags'] = branchtags
     data['plain_tags'] = nonbranchtags
 
-  if cfg.options.use_pagesize:
-    data['dir_pagestart'] = int(query_dict.get('dir_pagestart',0))
-    data['rows'] = paging(data, 'rows', data['dir_pagestart'], 'name')
-
-  request.server.header()
-  generate_page(request, cfg.templates.directory, data)
-
 def view_directory_svn(request, data, sortby, sortdir):
   query_dict = request.query_dict
   where = request.where
@@ -1468,20 +1469,6 @@ def view_directory_svn(request, data, sortby, sortdir):
   url, params = request.get_link(params={'rev': None})
   data['jump_rev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
   data['jump_rev_hidden_values'] = prepare_hidden_values(params)
-
-  # add in the roots for the selection
-  allroots = list_roots(cfg)
-  if len(allroots) < 2:
-    roots = [ ]
-  else:
-    roots = allroots.keys()
-    roots.sort(lambda n1, n2: cmp(string.lower(n1), string.lower(n2)))
-  data['roots'] = roots
-
-  ### in the future, it might be nice to break this path up into
-  ### a list of elements, allowing the template to display it in
-  ### a variety of schemes.
-  data['nav_path'] = clickable_path(request, 0, 0)
 
   # sort with directories first, and using the "sortby" criteria
   sort_file_data(file_data, sortdir, sortby, fileinfo, request.roottype)
@@ -1548,13 +1535,6 @@ def view_directory_svn(request, data, sortby, sortdir):
 
   # the number actually displayed
   data['files_shown'] = num_displayed
-
-  if cfg.options.use_pagesize:
-    data['dir_pagestart'] = int(query_dict.get('dir_pagestart',0))
-    data['rows'] = paging(data, 'rows', data['dir_pagestart'], 'name')
-
-  request.server.header()
-  generate_page(request, cfg.templates.directory, data)
 
 def paging(data, key, pagestart, local_name):
   # Implement paging
