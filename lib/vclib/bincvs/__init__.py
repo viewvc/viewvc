@@ -154,6 +154,10 @@ def parse_log_entry(fp):
   line = fp.readline()
   if not line:
     return None, _EOF_LOG
+  if line == LOG_END_MARKER:
+    # Needed because some versions of RCS precede LOG_END_MARKER 
+    # with ENTRY_END_MARKER
+    return None, _EOF_FILE    
   if line[:8] == 'revision':
     match = _re_rev.match(line)
     if not match:
