@@ -335,9 +335,17 @@ class CheckinDatabase:
 
             commit = CreateCommit()
 
-            ## EEK! bug in dateclass/gmticks(), ticks() actually returns
-            ##      GMT seconds-since-epoc
-            commit.SetTime(dbCI_When.ticks())
+            ## TIME, TIME, TIME is all fucked up; dateobject.gmticks()
+            ## is broken, dateobject.ticks() returns somthing like
+            ## GMT ticks, except it forgets about daylight savings
+            ## time -- we handle it ourself in the following painful way
+            gmt_time = time.mktime(
+                (dbCI_When.year, dbCI_When.month, dbCI_When.day,
+                 dbCI_When.hour, dbCI_When.minute, dbCI_When.second,
+                 0, 0, 0)) + time.timezone
+    
+            commit.SetTime(gmt_time)
+            
             commit.SetFile(self.GetFile(dbFileID))
             commit.SetDirectory(self.GetDirectory(dbDirID))
             commit.SetRevision(dbRevision)
