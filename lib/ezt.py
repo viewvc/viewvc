@@ -38,7 +38,7 @@ from types import StringType, IntType, FloatType
 #
 # This regular expression matches three alternatives:
 #   expr: DIRECTIVE | BRACKET | COMMENT
-#   DIRECTIVE: '[' ('-' | '.' | ' ' | alphanum)+ ']
+#   DIRECTIVE: '[' ('-' | '.' | ' ' | '"' | alphanum)+ ']
 #   BRACKET: '[[]'
 #   COMMENT: '[#' not-rbracket* ']'
 #
@@ -47,7 +47,7 @@ from types import StringType, IntType, FloatType
 # the COMMENT matches are not placed into a group, they are considered a
 # "splitting" value and simply dropped.
 #
-_re_parse = re.compile('(\[[-\w. ]+\])|(\[\[\])|\[#[^\]]*\]')
+_re_parse = re.compile('(\[[-\w." ]+\])|(\[\[\])|\[#[^\]]*\]')
 
 # block commands and their argument counts
 _block_cmd_specs = { 'if-any':1, 'if-index':2, 'for':1, 'is':2 }
