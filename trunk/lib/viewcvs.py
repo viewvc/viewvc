@@ -90,8 +90,6 @@ _sticky_vars = (
   'diff_format',
   'only_with_tag',
   'search',
-  'dir_pagestart',
-  'log_pagestart',
   )
 
 # for reading/writing between a couple descriptors
