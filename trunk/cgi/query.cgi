@@ -51,4 +51,4 @@ import sapi
 import query
 
 sapi.CgiServer()
-query.main()
+query.main('viewcvs.cgi')
