@@ -134,16 +134,34 @@ def log_helper(svnrepos, rev, path, show_changed_paths):
   rev_root = fs.revision_root(svnrepos.fs_ptr, rev, svnrepos.pool)
   other_paths = []
   changed_paths = fs.paths_changed(rev_root, svnrepos.pool)
-  if not changed_paths.has_key(path):
+
+  # Skip revisions in which this path didn't change.
+  change = changed_paths.get(path)
+  if not change:
     return None
+
+  # Figure out the type of change that happened on the path.
+  if change.change_kind == fs.path_change_add:
+    action = "added"
+  elif change.change_kind == fs.path_change_delete:
+    action = "deleted"
+  elif change.change_kind == fs.path_change_replace:
+    action = "replaced"
+  else:
+    action = "modified"
+
+  # Now, make ChangedPathEntry objects for all the other paths (if
+  # show_changed_paths is set).
   del changed_paths[path]
   if show_changed_paths:
     for other_path in changed_paths.keys():
       other_paths.append(ChangedPathEntry(other_path))
+
+  # Finally, assemble our LogEntry.
   datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, svnrepos.pool)
   date = _datestr_to_date(datestr, svnrepos.pool)
   entry = LogEntry(rev, date, author, msg, path,
-                   other_paths, None, None, None)
+                   other_paths, action, None, None)
   if fs.is_file(rev_root, path, svnrepos.pool):
     entry.size = fs.file_length(rev_root, path, svnrepos.pool)
   return entry
