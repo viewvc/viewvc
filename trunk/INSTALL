@@ -74,6 +74,8 @@ Various queries can be preformed on the database.  After installing ViewCVS,
 there are some additional steps required to get the database working.
 
 1) You need MySQL >= 3.22, and the Python module MySQLdb >= 1.12 installed.
+   Python 1.5.2 is REQUIRED by MySQLdb, therefore to use this part of
+   ViewCVS you must be useing Python 1.5.2.
 
 2) You need to create a MySQL user who has permission to create databases.
    Optionally, you can create a second user with read-only access to the
