@@ -11,8 +11,8 @@ def lines_changed(delta):
   added = deleted = 0
   while idx < len(delta):
     op = delta[idx]
-    i = string.index(delta, ' ', idx + 1)
-    j = string.index(delta, '\n', i + 1)
+    i = string.find(delta, ' ', idx + 1)
+    j = string.find(delta, '\n', i + 1)
     line = int(delta[idx+1:i])
     count = int(delta[i+1:j])
     idx = j + 1
@@ -114,7 +114,7 @@ def time_fetch(full_name, which_rev=None):
 def profile_fetch(full_name, which_rev=None):
   p = profile.Profile()
   def many_calls(*args):
-    for i in xrange(5):
+    for i in xrange(10):
       apply(fetch_log2, args)
   p.runcall(many_calls, full_name, which_rev)
   p.print_stats()
