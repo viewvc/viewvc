@@ -99,7 +99,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
         <input type=submit value="Go to:">
         <select name=dir_pagestart  onchange="submit()">
           [for picklist]
-            <option [is picklist.count dir_pagestart]selected[end] value="[picklist.count]">[picklist.start] to [picklist.end]</option>
+            <option [is picklist.count dir_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] to [picklist.end]</option>
           [end]
         </select>
       </form>
