@@ -47,7 +47,7 @@
 # -----------------------------------------------------------------------
 #
 
-__version__ = '0.3'
+__version__ = '0.4-dev'
 
 #########################################################################
 #
@@ -112,7 +112,7 @@ logo = '<img src="/icons/apache_pb.gif">'
 # Modules in the repository that should not be displayed, either by default
 # nor by explicit path specification.
 #
-forbidden_modules = ( 'willy', )
+forbidden_modules = ( )
 # forbidden_modules = ( 'example', )	# note the trailing comma!
 # forbidden_modules = ( 'example1', 'example2' )
 
@@ -537,7 +537,35 @@ class Request:
       self.mime_type = 'text/plain'
     self.default_text_plain = self.mime_type == 'text/plain'
     self.default_viewable = allow_markup and is_viewable(self.mime_type)
-    
+
+
+#
+# Compatibility stuff for pre-1.5.2 versions of Python
+#
+# Two items: urllib.urlencode and time.strptime
+#
+try:
+  my_urlencode = urllib.urlencode
+except AttributeError:
+  def my_urlencode(dict):
+    if not dict:
+      return ''
+    quote = urllib.quote_plus
+    keyvalue = [ ]
+    for key, value in dict.items():
+      keyvalue.append(quote(key) + '=' + quote(str(value)))
+    return '?' + string.join(keyvalue, '&')
+
+if hasattr(time, 'strptime'):
+  def my_strptime(timestr):
+    return time.strptime(timestr, '%Y/%m/%d %H:%M:%S')
+else:
+  _re_rev_date = re.compile('([0-9]{4})/([0-9][0-9])/([0-9][0-9]) '
+                            '([0-9][0-9]):([0-9][0-9]):([0-9][0-9])')
+  def my_strptime(timestr):
+    matches = _re_rev_date.match(timestr).groups()
+    return tuple(map(int, matches)) + (0, 1, -1)
+
 
 def redirect(location):
   print 'Status: 301 Moved'
@@ -589,7 +617,7 @@ def sticky_query(dict):
     value = dict.get(varname)
     if value is not None and value != default_settings.get(varname, ''):
       sticky_dict[varname] = value
-  return urllib.urlencode(sticky_dict)
+  return my_urlencode(sticky_dict)
 
 def toggle_query(query_dict, which, value=None):
   dict = query_dict.copy()
@@ -1035,8 +1063,7 @@ def parse_log_entry(fp):
     # there was a parsing error
     return None, None, None, None, None, None, eof
 
-  date = int(time.mktime(time.strptime(match.group(1), '%Y/%m/%d %H:%M:%S'))) \
-         - time.timezone
+  date = int(time.mktime(my_strptime(match.group(1)))) - time.timezone
 
   # revision, date, author, state, lines changed, log, eof
   return rev, date, match.group(2), match.group(3), match.group(5), log, eof
