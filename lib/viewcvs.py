@@ -840,7 +840,22 @@ def parse_log_entry(fp):
     # there was a parsing error
     return None, eof
 
-  date = int(time.mktime(compat.cvs_strptime(match.group(1)))) - time.timezone
+  # parse out a time tuple for the local time
+  tm = compat.cvs_strptime(match.group(1))
+  try:
+   date = int(time.mktime(tm)) - time.timezone
+  except OverflowError:
+    # it is possible that CVS recorded an "illegal" time, such as those
+    # which occur during a Daylight Savings Time switchover (there is a
+    # gap in the time continuum). Let's advance one hour and try again.
+    # While the time isn't necessarily "correct", recall that the gap means
+    # that times *should* be an hour forward. This is certainly close enough
+    # for our needs.
+    #
+    # Note: a true overflow will simply raise an error again, which we won't
+    # try to catch a second time.
+    tm = tm[:3] + (tm[3] + 1,) + tm[4:]
+    date = int(time.mktime(tm)) - time.timezone
 
   return LogEntry(rev, date,
                   # author, state, lines changed
