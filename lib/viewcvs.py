@@ -94,8 +94,6 @@ _sticky_vars = (
   'log_pagestart',
   )
 
-_UNREADABLE_MARKER = '//UNREADABLE-MARKER//'
-
 # for reading/writing between a couple descriptors
 CHUNK_SIZE = 8192
 
@@ -1053,41 +1051,35 @@ def view_markup(request):
     raise 'pipe error status: %d' % status
   html_footer(request)
 
-def get_file_data_svn(request):
-  """Return a sequence of tuples containing various data about the files.
+class DirEntry:
+  def __init__(self, name, kind, verboten=0):
+    self.name = name
+    self.kind = kind
+    self.verboten = verboten
 
-  data[0] = (relative) filename
-  data[1] = not used
-  data[2] = is_directory (0/1)
-  """
-  item = request.repos.getitem(request.path_parts)
+def get_file_data_svn(repos, path_parts):
+  """Return list of files in a directory"""
+
+  item = repos.getitem(path_parts)
   if not isinstance(item, vclib.Versdir):
-    raise debug.ViewcvsException("Path '%s' is not a directory."
-                                 % request.full_name)
-  files = item.getfiles()
-  subdirs = item.getsubdirs()
-  data = [ ]
-  for file in files.keys():
-    data.append((file, None, 0))
-  for subdir in subdirs.keys():
-    data.append((subdir, None, 1))
-  return data
+    raise debug.ViewcvsException("Path '%s' is not a directory." 
+                                 % repos._getpath(path_parts))
 
-def get_file_data(full_name):
-  """Return a sequence of tuples containing various data about the files.
+  file_data = []
+  sapi.server.header()
+  for name, obj in item.getfiles().items() + item.getsubdirs().items():
+    file_data.append(DirEntry(name, obj.type))
 
-  data[0] = (relative) filename
-  data[1] = physical pathname
-  data[2] = is_directory (0/1)
+  return file_data
+
+def get_file_data(repos, path_parts):
+  """Return list of files in a directory
 
   Only RCS files (*,v) and subdirs are returned.
   """
   
+  full_name = repos._getpath(path_parts)
   files = os.listdir(full_name)
- 
-  return get_file_tests(full_name,files)
- 
-def get_file_tests(full_name,files):
   data = [ ]
 
   if sys.platform == "win32":
@@ -1098,11 +1090,11 @@ def get_file_tests(full_name,files):
     gid = os.getgid()
 
   for file in files:
-    pathname = full_name + '/' + file
+    pathname = os.path.join(full_name, file)
     try:
       info = os.stat(pathname)
     except os.error:
-      data.append((file, _UNREADABLE_MARKER, None))
+      data.append(DirEntry(file, None, 1))
       continue
     mode = info[stat.ST_MODE]
     isdir = stat.S_ISDIR(mode)
@@ -1142,42 +1134,46 @@ def get_file_tests(full_name,files):
       elif ((mode & mask) != mask) and (os.access(pathname,os.R_OK) == -1):
         valid = 0
       
-      if valid:
-        data.append((file, pathname, isdir))
+      if isdir:
+        name = file
+        kind = vclib.DIR      
       else:
-        data.append((file, _UNREADABLE_MARKER, isdir))
+        name = file[:-2]
+        kind = vclib.FILE
+
+      data.append(DirEntry(name, kind, not valid))
 
   return data
 
-def get_last_modified(file_data):
-  """Return mapping of subdir to info about the most recently modified subfile.
+def get_last_modified(repos, path_parts, file_data):
+  """Add info about the most recently modified subfile to subdirectory entry
 
-  key     = subdir
-  data[0] = "subdir/subfile" of the most recently modified subfile
-  data[1] = the mod time of that file (time_t)
+  Adds two new members to directory entries: "newest_file" and "newest_time"
   """
 
   lastmod = { }
-  for file, pathname, isdir in file_data:
-    if not isdir or pathname == _UNREADABLE_MARKER:
-      continue
-    if file == 'Attic':
+  for file in file_data:
+    if not file.kind == vclib.DIR or file.verboten:
       continue
 
+    file.newest_file = None
+    file.newest_time = 0
+      
+    if file.name == 'Attic':
+      continue      
+
+    pathname = repos._getpath(path_parts + [file.name])
     subfiles = os.listdir(pathname)
-    latest = ('', 0)
     for subfile in subfiles:
       ### filter CVS locks? stale NFS handles?
       if subfile[-2:] != ',v':
         continue
-      subpath = pathname + '/' + subfile
-      info = os.stat(subpath)
+      info = os.stat(os.path.join(pathname, subfile))
       if not stat.S_ISREG(info[stat.ST_MODE]):
         continue
-      if info[stat.ST_MTIME] > latest[1]:
-        latest = (file + '/' + subfile, info[stat.ST_MTIME])
-    if latest[0]:
-      lastmod[file] = latest
+      if info[stat.ST_MTIME] > file.newest_time:
+        file.newest_file = subfile
+        file.newest_time = info[stat.ST_MTIME]
   return lastmod
 
 def revcmp(rev1, rev2):
@@ -1195,25 +1191,21 @@ def prepare_hidden_values(params):
   return string.join(hidden_values, '')
 
 def sort_file_data(file_data, sortdir, sortby, fileinfo, roottype):
-  def file_sort_cmp_cvs(data1, data2, sortby=sortby, fileinfo=fileinfo):
-    if data1[2]:        # is_directory
-      if data2[2]:
+  def file_sort_cmp(file1, file2, sortby=sortby, fileinfo=fileinfo):
+    if file1.kind == vclib.DIR:        # is_directory
+      if file2.kind == vclib.DIR:
         # both are directories. sort on name.
-        return cmp(data1[0], data2[0])
-      # data1 is a directory, it sorts first.
+        return cmp(file1.name, file2.name)
+      # file1 is a directory, it sorts first.
       return -1
-    if data2[2]:
-      # data2 is a directory, it sorts first.
+    if file2.kind == vclib.DIR:
+      # file2 is a directory, it sorts first.
       return 1
-
-    # the two files should be RCS files. drop the ",v" from the end.
-    file1 = data1[0][:-2]
-    file2 = data2[0][:-2]
 
     # we should have data on these. if not, then it is because we requested
     # a specific tag and that tag is not present on the file.
-    info1 = fileinfo.get(file1, bincvs._FILE_HAD_ERROR)
-    info2 = fileinfo.get(file2, bincvs._FILE_HAD_ERROR)
+    info1 = fileinfo.get(file1.name, bincvs._FILE_HAD_ERROR)
+    info2 = fileinfo.get(file1.name, bincvs._FILE_HAD_ERROR)
     if info1 != bincvs._FILE_HAD_ERROR and info2 != bincvs._FILE_HAD_ERROR:
       # both are files, sort according to sortby
       if sortby == 'rev':
@@ -1226,11 +1218,7 @@ def sort_file_data(file_data, sortdir, sortby, fileinfo, roottype):
         return cmp(info1.author, info2.author)
       else:
         # sort by file name
-        if file1[:6] == 'Attic/':
-          file1 = file1[6:]
-        if file2[:6] == 'Attic/':
-          file2 = file2[6:]
-        return cmp(file1, file2)
+        return cmp(file1.name, file2.name)
 
     # at this point only one of file1 or file2 are _FILE_HAD_ERROR.
     if info1 != bincvs._FILE_HAD_ERROR:
@@ -1238,42 +1226,8 @@ def sort_file_data(file_data, sortdir, sortby, fileinfo, roottype):
 
     return 1
 
-  def file_sort_cmp_svn(data1, data2, sortby=sortby, fileinfo=fileinfo):
-    if data1[2]:        # is_directory
-      if data2[2]:
-        # both are directories. sort on name.
-        return cmp(data1[0], data2[0])
-      # data1 is a directory, it sorts first.
-      return -1
-    if data2[2]:
-      # data2 is a directory, it sorts first.
-      return 1
+  file_data.sort(file_sort_cmp)
 
-    # the two files should be RCS files. drop the ",v" from the end.
-    file1 = data1[0]
-    file2 = data2[0]
-
-    # we should have data on these. if not, then it is because we requested
-    # a specific tag and that tag is not present on the file.
-    info1 = fileinfo[file1]
-    info2 = fileinfo[file2]
-    if sortby == 'rev':
-      return cmp(info1.rev, info2.rev)
-    elif sortby == 'date':
-      return cmp(info2.date, info1.date)        # latest date is first
-    elif sortby == 'log':
-      return cmp(info1.log, info2.log)
-    elif sortby == 'author':
-      return cmp(info1.author, info2.author)
-    else:
-      # sort by file name
-      return cmp(file1, file2)
-    return 1
-
-  if roottype == 'cvs':
-    file_data.sort(file_sort_cmp_cvs)
-  else:
-    file_data.sort(file_sort_cmp_svn)
   if sortdir == "down":
     file_data.reverse()
 
@@ -1339,46 +1293,44 @@ def view_directory_cvs(request, data, sortby, sortdir):
   search_re = query_dict.get('search', '')
 
   # Search current directory
-  if search_re and cfg.options.use_re_search:
-    file_data = search_files(request,search_re)
-  else:
-    file_data = get_file_data(full_name)
+  file_data = get_file_data(request.repos, request.path_parts)
 
-  if cfg.options.show_subdir_lastmod:
-    lastmod = get_last_modified(file_data)
-  else:
-    lastmod = { }
-  if cfg.options.show_logs:
-    subfiles = map(lambda (subfile, mtime): subfile, lastmod.values())
-  else:
-    subfiles = [ ]
+  if cfg.options.use_re_search and search_re:
+    file_data = search_files(request.repos, request.path_parts,
+                             file_data, search_re)
 
-  attic_files = [ ]
+  for file in file_data:
+    file.in_attic = 0
+
   if not hideattic or view_tag:
     # if we are not hiding the contents of the Attic dir, or we have a
     # specific tag, then the Attic may contain files/revs to display.
     # grab the info for those files, too.
     try:
-      attic_files = os.listdir(full_name + '/Attic')
+      attic_files = get_file_data(request.repos, request.path_parts + ['Attic'])
     except os.error:
-      pass
+      attic_files = []
     else:
-      ### filter for just RCS files?
-      attic_files = map(lambda file: 'Attic/' + file, attic_files)
+      for file in attic_files:
+        if file.kind != vclib.DIR: # Attic shouldn't have subdirectories...
+          file.in_attic = 1
+          file_data.append(file)
+
+  if cfg.options.show_subdir_lastmod:
+    get_last_modified(request.repos, request.path_parts, file_data)
 
   # get all the required info
-  rcs_files = subfiles + attic_files
-  for file, pathname, isdir in file_data:
-    if not isdir and pathname != _UNREADABLE_MARKER:
-      rcs_files.append(file)
+  rcs_files = []
+  for file in file_data:
+    if not file.verboten:
+      if file.kind == vclib.FILE:
+        rcs_files.append(file.in_attic and 'Attic/' + file.name or file.name)
+      elif cfg.options.show_subdir_lastmod and cfg.options.show_logs \
+           and file.kind == vclib.DIR and file.newest_file:
+        rcs_files.append(file.name + '/' + file.newest_file)
+
   fileinfo, alltags = bincvs.get_logs(cfg.general, full_name,
                                       rcs_files, view_tag)
-
-  # append the Attic files into the file_data now
-  # NOTE: we only insert the filename and isdir==0
-  for file in attic_files:
-    file_data.append((file, None, 0))
-
   # prepare the data that will be passed to the template
   data.update({
     'view_tag' : view_tag,
@@ -1425,24 +1377,23 @@ def view_directory_cvs(request, data, sortby, sortdir):
   where_prefix = where and where + '/'
   rows = data['rows'] = [ ]
 
-  for file, pathname, isdir in file_data:
+  for file in file_data:
 
     row = _item(href=None, graph_href=None,
                 author=None, log=None, log_file=None, log_rev=None,
                 show_log=None, state=None)
 
-    if pathname == _UNREADABLE_MARKER:
-      if isdir is None:
+    if file.verboten:
+      if file.kind is None:
         # We couldn't even stat() the file to figure out what it is.
         slash = ''
-      elif isdir:
+      elif file.kind == vclib.DIR:
         slash = '/'
       else:
         slash = ''
-        file = file[:-2]        # strip the ,v
         num_displayed = num_displayed + 1
-      row.anchor = file
-      row.name = file + slash
+      row.anchor = file.name
+      row.name = file.name + slash
       row.type = 'unreadable'
 
       rows.append(row)
@@ -1450,24 +1401,24 @@ def view_directory_cvs(request, data, sortby, sortdir):
       unreadable = 1
       continue
 
-    if isdir:
-      if not hideattic and file == 'Attic':
+    if file.kind == vclib.DIR:
+      if not hideattic and file.name == 'Attic':
         continue
-      if where == '' and ((file == 'CVSROOT' and cfg.options.hide_cvsroot)
-                          or cfg.is_forbidden(file)):
+      if where == '' and ((file.name == 'CVSROOT' and cfg.options.hide_cvsroot)
+                          or cfg.is_forbidden(file.name)):
         continue
-      if file == 'CVS': # CVS directory in a repository is used for fileattr.
+      if file.name == 'CVS': # CVS directory in repository is for fileattr.
         continue
 
-      row.anchor = file
+      row.anchor = file.name
       row.href = request.get_url(view_func=view_directory, 
-                                 where=where_prefix+file,
+                                 where=where_prefix+file.name,
                                  pathtype=vclib.DIR,
                                  params={})
-      row.name = file + '/'
+      row.name = file.name + '/'
       row.type = 'dir'
 
-      info = fileinfo.get(file)
+      info = fileinfo.get(file.name)
       if info == bincvs._FILE_HAD_ERROR:
         row.cvs = 'error'
 
@@ -1493,20 +1444,14 @@ def view_directory_cvs(request, data, sortby, sortdir):
       rows.append(row)
 
     else:
-      # remove the ",v"
-      file = file[:-2]
-
       row.type = 'file'
-      row.anchor = file
+      row.anchor = file.name
 
-      file_where = where_prefix + file
-
-      if file[:6] == 'Attic/':
-        file = file[6:]
-      row.name = file	# ensure this occurs after we strip Attic/
+      file_where = where_prefix + (file.in_attic and 'Attic/' or '') + file.name
+      row.name = file.name
 
       num_files = num_files + 1
-      info = fileinfo.get(file)
+      info = fileinfo.get(file.name)
       if info == bincvs._FILE_HAD_ERROR:
         row.cvs = 'error'
         rows.append(row)
@@ -1592,10 +1537,8 @@ def view_directory_svn(request, data, sortby, sortdir):
   query_dict = request.query_dict
   where = request.where
 
-  file_data = get_file_data_svn(request)
-  files = [ ]
-  for i in range(len(file_data)):
-    files.append(file_data[i][0])
+  file_data = get_file_data_svn(request.repos, request.path_parts)
+  files = map(lambda x: x.name, file_data)
   fileinfo, alltags = vclib.svn.get_logs(request.repos, where, files)
 
   data.update({
@@ -1639,41 +1582,41 @@ def view_directory_svn(request, data, sortby, sortdir):
   where_prefix = where and where + '/'
   dir_params = {'rev': query_dict.get('rev')}
 
-  for file, pathname, isdir in file_data:
+  for file in file_data:
     row = _item(href=None, graph_href=None,
                 author=None, log=None, log_file=None, log_rev=None,
                 show_log=None, state=None)
 
-    info = fileinfo.get(file)
+    info = fileinfo.get(file.name)
     if info is None:
-      raise debug.ViewcvsException("Error getting info for '%s'" % file)
+      raise debug.ViewcvsException("Error getting info for '%s'" % file.name)
 
     row.rev = info.rev
     row.author = info.author or "&nbsp;"
     row.state = info.state
     row.time = html_time(request, info.date)
-    row.anchor = file
+    row.anchor = file.name
 
-    if isdir:
+    if file.kind == vclib.DIR:
       row.type = 'dir'
-      row.name = file + '/'
+      row.name = file.name + '/'
       row.cvs = 'none' # What the heck is this?
       row.href = request.get_url(view_func=view_directory,
-                                 where=where_prefix + file,
+                                 where=where_prefix + file.name,
                                  pathtype=vclib.DIR,
                                  params=dir_params)
     else:
       row.type = 'file'
-      row.name = file
+      row.name = file.name
       row.cvs = 'data' # What the heck is this?
 
       row.href = request.get_url(view_func=view_log,
-                                 where=where_prefix + file,
+                                 where=where_prefix + file.name,
                                  pathtype=vclib.FILE,
                                  params={})
 
       row.rev_href = request.get_url(view_func=view_auto,
-                                     where=where_prefix + file,
+                                     where=where_prefix + file.name,
                                      pathtype=vclib.FILE,
                                      params={'rev': str(row.rev)})
 
@@ -2261,14 +2204,14 @@ def view_cvsgraph(request):
   request.server.header()
   generate_page(request, cfg.templates.graph, data)
 
-def search_files(request, search_re):
+def search_files(repos, path_parts, files, search_re):
   """ Search files in a directory for a regular expression.
 
   Does a check-out of each file in the directory.  Only checks for
   the first match.  
   """
 
-  # Pass in Request object and the search regular expression. We check out
+  # Pass in search regular expression. We check out
   # each file and look for the regular expression. We then return the data
   # for all files that match the regex.
 
@@ -2279,31 +2222,18 @@ def search_files(request, search_re):
   # new_file_list also includes directories.
   new_file_list = [ ]
 
-  # Get list of files AND directories ### todo: someday, just ask vclib
-  files = os.listdir(request.full_name)
-
-  where_prefix = request.where and request.where + '/'
-
   # Loop on every file (and directory)
   for file in files:
-    full_name = os.path.join(request.full_name, file)
-
     # Is this a directory?  If so, append name to new_file_list
     # and move to next file.
-    if os.path.isdir(full_name):
+    if file.kind != vclib.FILE:
       new_file_list.append(file)
       continue
 
     # Only files at this point
     
-    # Skip non-versioned ones
-    if file[-2:] != ',v':
-      continue
-      
-    where = where_prefix + file[:-2]
-    
     # figure out where we are and its mime type
-    mime_type, encoding = mimetypes.guess_type(where)
+    mime_type, encoding = mimetypes.guess_type(file.name)
     if not mime_type:
       mime_type = 'text/plain'
 
@@ -2316,7 +2246,7 @@ def search_files(request, search_re):
 
     # process_checkout will checkout the head version out of the repository
     # Assign contents of checked out file to fp.
-    fp = request.repos.openfile(request.path_parts + [file[:-2]])[0]
+    fp = repos.openfile(path_parts + [file.name])[0]
 
     # Read in each line, use re.search to search line.
     # If successful, add file to new_file_list and break.
@@ -2330,7 +2260,7 @@ def search_files(request, search_re):
         fp.close()
         break
 
-  return get_file_tests(request.full_name, new_file_list)
+  return new_file_list
 
 
 def view_doc(request):
@@ -2798,22 +2728,23 @@ def generate_tarball_cvs(out, request, tar_top, rep_top, reldir, tag, stack=[]):
        or cfg.is_forbidden(reldir[0]))):
     return
 
-  rep_dir = string.join([request.repos.rootpath, rep_top] + reldir, '/')
-  tar_dir = string.join([tar_top] + reldir, '/') + '/'
+  rep_path = rep_top + reldir
+  rep_dir = string.join([request.repos.rootpath] + rep_top + reldir, '/')
+  tar_dir = string.join(tar_top + reldir, '/') + '/'
 
   subdirs = [ ]
   rcs_files = [ ]
-  for file, pathname, isdir in get_file_data(rep_dir):
-    if pathname == _UNREADABLE_MARKER:
+  for file in get_file_data(request.repos, rep_path):
+    if file.verboten:
       continue
-    if isdir:
-      subdirs.append(file)
+    if file.kind == vclib.DIR:
+      subdirs.append(file.name)
     else:
-      rcs_files.append(file)
+      rcs_files.append(file.name)
   if tag and 'Attic' in subdirs:
-    for file, pathname, isdir in get_file_data(rep_dir + '/Attic'):
-      if not isdir and pathname != _UNREADABLE_MARKER:
-        rcs_files.append('Attic/' + file)
+    for file in get_file_data(request.repos, rep_path + ['Attic']):
+      if file.kind == vclib.FILE and not file.verboten:
+        rcs_files.append('Attic/' + file.name)
 
   stack.append(tar_dir)
 
@@ -2859,8 +2790,8 @@ def generate_tarball_cvs(out, request, tar_top, rep_top, reldir, tag, stack=[]):
     del stack[-1:]
 
 def generate_tarball_svn(out, request, tar_top, rep_top, reldir, tag, stack=[]):
-  rep_dir = string.join([rep_top] + reldir, '/')
-  tar_dir = string.join([tar_top] + reldir, '/') + '/'
+  rep_dir = string.join(rep_top + reldir, '/')
+  tar_dir = string.join(tar_top + reldir, '/') + '/'
 
   curdir = rep_dir
 
@@ -2886,8 +2817,7 @@ def generate_tarball_svn(out, request, tar_top, rep_top, reldir, tag, stack=[]):
 
     mode = 0644
 
-    full_name = curdir + '/' + file
-    fp = vclib.svn.get_file_contents(request.repos, full_name)
+    fp = request.repos.openfile(rep_top + reldir + [file])[0]
 
     contents = ""
     while 1:
@@ -2915,7 +2845,7 @@ def download_tarball(request):
     raise "tarball no allows"
 
   query_dict = request.query_dict
-  rep_top = tar_top = request.where
+  rep_top = tar_top = request.path_parts
   tag = query_dict.get('only_with_tag')
 
   ### look for GZIP binary
