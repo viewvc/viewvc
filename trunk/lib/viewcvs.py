@@ -590,7 +590,7 @@ def _repos_pathtype(repos, path_parts):
 
 def check_freshness(request, mtime=None, etag=None, weak=0):
   # See if we are supposed to disable etags (for debugging, usually)
-  if debug.DISABLE_ETAGS:
+  if not cfg.options.generate_etags:
     return 0
   
   request_etag = request_mtime = None
@@ -618,12 +618,12 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
     isfresh = 0
 
   ## require revalidation after 15 minutes ...
-  if cfg and cfg.general.http_expiration_time >= 0:
+  if cfg and cfg.options.http_expiration_time >= 0:
     expiration = rfc822.formatdate(time.time() +
-                                   cfg.general.http_expiration_time)
+                                   cfg.options.http_expiration_time)
     request.server.addheader('Expires', expiration)
     request.server.addheader('Cache-Control',
-                             'max-age=%d' % cfg.general.http_expiration_time)
+                             'max-age=%d' % cfg.options.http_expiration_time)
 
   if isfresh:
     request.server.header(status='304 Not Modified')
