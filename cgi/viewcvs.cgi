@@ -54,6 +54,34 @@ __version__ = '0.3-dev'
 # CONFIGURATION
 #
 
+#
+# For correct operation, you will probably need to change the following
+# configuration variables:
+#
+#    cvs_roots
+#    default_root
+#    rcs_path
+#    mime_types_file
+#
+# It is usually desirable to change the following variables:
+#
+#    address
+#    defaulttitle
+#    logo
+#    forbidden_modules
+#
+#    long_intro
+#    repository_info
+#
+# For Python source colorization:
+#
+#    py2html_path
+#
+# If your icons are in a special location:
+#
+#    icons
+#
+
 cvs_roots = {
   # user-visible-name : path
   "Development" : "/home/cvsroot",
@@ -65,17 +93,11 @@ default_root = "Development"
 rcs_path = ''
 # rcs_path = '/usr/bin/'	# the trailing slash is required!
 
-#
-# Modules in the repository that should not be displayed, either by default
-# nor by explicit path specification.
-#
-forbidden_modules = ( )
-# forbidden_modules = ( 'example', )	# note the trailing comma!
-# forbidden_modules = ( 'example1', 'example2' )
-
 # mapping to mimetypes to help viewcvs to guess the correct mime-type on
 # checkout; you can use the mime.types from apache here:
 mime_types_file = '/usr/local/apache/conf/mime.types'
+
+#########################################################################
 
 # This address is shown in the footer
 address = '<a href="mailto:gstein@lyra.org">gstein@lyra.org</a>'
@@ -86,7 +108,27 @@ defaulttitle = "CVS Repository"
 # Wanna have a logo on the page ?
 logo = '<img src="/icons/apache_pb.gif">'
 
-#####################
+#
+# Modules in the repository that should not be displayed, either by default
+# nor by explicit path specification.
+#
+forbidden_modules = ( )
+# forbidden_modules = ( 'example', )	# note the trailing comma!
+# forbidden_modules = ( 'example1', 'example2' )
+
+#########################################################################
+
+#
+# If you want to Marc-Andrew Lemburg's py2html (and Just van Rossum's
+# PyFontify) to colorize Python files, then you may need to change this
+# variable to point to their directory location.
+#
+# This directory AND the standard Python path will be searched.
+#
+py2html_path = '.'
+#py2html_path = '/usr/local/lib/python1.5/site-python'
+
+#########################################################################
 
 default_settings = {
   # sortby: File sort order
@@ -126,21 +168,7 @@ default_settings = {
   "hidenonreadable" : 1,
   }
 
-#####################
-
-#
-# If you want to Marc-Andrew Lemburg's py2html (and Just van Rossum's
-# PyFontify) to colorize Python files, then you may need to change this
-# variable to point to their directory location.
-#
-# This directory AND the standard Python path will be searched.
-#
-py2html_path = '.'
-#py2html_path = '/usr/local/lib/python1.5/site-python'
-
-##############
-# some layout stuff
-##############
+#########################################################################
 
 # color settings in the body-tag
 body_tag = '<body text="#000000" bgcolor="#ffffff">'
@@ -200,6 +228,8 @@ doc_information = """
 </blockquote>
 """
 
+# Fill in stuff on (say) anonymous pserver access here. For example, what
+# access mechanism, login, path, etc should be used.
 repository_info = """
 <!-- insert repository access instructions here -->
 """
@@ -309,10 +339,6 @@ diff_font_size         = "-1"
 # the width of the textinput of the
 # request-diff-form
 input_text_size = 12
-
-##############
-# Mime Types
-##############
 
 ##############
 # Misc
