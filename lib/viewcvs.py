@@ -79,6 +79,7 @@ oldstyle_checkout_magic_path = '~checkout~'
 docroot_magic_path = '*docroot*'
 viewcvs_mime_type = 'text/vnd.viewcvs-markup'
 alt_mime_type = 'text/x-cvsweb-markup'
+view_roots_magic = '*viewroots*'
 
 # put here the variables we need in order to hold our state - they will be
 # added (with their current value) to any link/query string you construct
@@ -201,7 +202,11 @@ class Request:
 
     # Figure out root name
     self.rootname = self.query_dict.get('root')
-    if self.rootname is None:
+    if self.rootname == view_roots_magic:
+      del self.query_dict['root']
+      self.rootname = ""
+      needs_redirect = 1
+    elif self.rootname is None:
       if cfg.options.root_as_url_component:
         if path_parts:
           self.rootname = path_parts.pop(0)
@@ -901,6 +906,7 @@ def common_template_data(request):
     'up_href'  : None,
     'log_href' : None,
     'graph_href': None,
+    'view'     : _view_codes[request.view_func],
   }
   url, params = request.get_link(view_func=view_directory,
                                  where='',
