@@ -21,15 +21,17 @@
 # -----------------------------------------------------------------------
 
 import string
-import time
-from common import *
+
+import common
+
 
 class _TokenStream:
   token_term = string.whitespace + ';'
 
   # the algorithm is about the same speed for any CHUNK_SIZE chosen.
   # grab a good-sized chunk, but not too large to overwhelm memory.
-  CHUNK_SIZE  = 98304
+  # note: we use a multiple of a standard block size
+  CHUNK_SIZE  = 192 * 512  # about 100k
 
 #  CHUNK_SIZE  = 5	# for debugging, make the function grind...
 
@@ -169,8 +171,8 @@ class _TokenStream:
     return result
 
 
-
-class Parser:
+class Parser(common._Parser):
+  stream_class = _TokenStream
 
   def parse_rcs_admin(self):
     while 1:
@@ -186,12 +188,12 @@ class Parser:
         semi, rev = self.ts.mget(2)
         self.sink.set_head_revision(rev)
         if semi != ';':
-          raise RCSExpected(semi, ';')
+          raise common.RCSExpected(semi, ';')
       elif token == "branch":
         semi, branch = self.ts.mget(2)
         self.sink.set_principal_branch(branch)
         if semi != ';':
-          raise RCSExpected(semi, ';')
+          raise common.RCSExpected(semi, ';')
       elif token == "symbols":
         while 1:
           tag = self.ts.get()
@@ -203,7 +205,7 @@ class Parser:
         semi, comment = self.ts.mget(2)
         self.sink.set_comment(comment)
         if semi != ';':
-          raise RCSExpected(semi, ';')
+          raise common.RCSExpected(semi, ';')
 
       # Ignore all these other fields - We don't care about them. Also chews
       # up "newphrase".
@@ -217,120 +219,3 @@ class Parser:
         # warn("Unexpected RCS token: $token\n")
 
     raise RuntimeError, "Unexpected EOF";
-
-  def parse_rcs_tree(self):
-    while 1:
-      revision = self.ts.get()
-
-      # End of RCS tree description ?
-      if revision == 'desc':
-        self.ts.unget(revision)
-        return
-
-      # Parse date
-      semi, date, sym = self.ts.mget(3)
-      if sym != 'date':
-        raise RCSExpected(sym, 'date')
-      if semi != ';':
-        raise RCSExpected(semi, ';')
-
-      # Convert date into timestamp
-      date_fields = string.split(date, '.') + ['0', '0', '0']
-      date_fields = map(string.atoi, date_fields)
-      if date_fields[0] < 100:
-        date_fields[0] = date_fields[0] + 1900
-      timestamp = time.mktime(tuple(date_fields))
-
-      # Parse author
-      semi, author, sym = self.ts.mget(3)
-      if sym != 'author':
-        raise RCSExpected(sym, 'author')
-      if semi != ';':
-        raise RCSExpected(semi, ';')
-
-      # Parse state
-      self.ts.match('state')
-      state = ''
-      while 1:
-        token = self.ts.get()
-        if token == ';':
-          break
-        state = state + token + ' '
-      state = state[:-1]	# toss the trailing space
-
-      # Parse branches
-      self.ts.match('branches')
-      branches = [ ]
-      while 1:
-        token = self.ts.get()
-        if token == ';':
-          break
-        branches.append(token)
-
-      # Parse revision of next delta in chain
-      next, sym = self.ts.mget(2)
-      if sym != 'next':
-        raise RCSExpected(sym, 'next')
-      if next == ';':
-        next = None
-      else:
-        self.ts.match(';')
-
-      # there are some files with extra tags in them. for example:
-      #    owner	640;
-      #    group	15;
-      #    permissions	644;
-      #    hardlinks	@configure.in@;
-      # this is "newphrase" in RCSFILE(5). we just want to skip over these.
-      while 1:
-        token = self.ts.get()
-        if token == 'desc' or token[0] in string.digits:
-          self.ts.unget(token)
-          break
-        # consume everything up to the semicolon
-        while self.ts.get() != ';':
-          pass
-
-      self.sink.define_revision(revision, timestamp, author, state, branches,
-                                next)
-
-  def parse_rcs_description(self):
-    self.ts.match('desc')
-    self.sink.set_description(self.ts.get())
-
-  def parse_rcs_deltatext(self):
-    while 1:
-      revision = self.ts.get()
-      if revision is None:
-        # EOF
-        break
-      text, sym2, log, sym1 = self.ts.mget(4)
-      if sym1 != 'log':
-        print `text[:100], sym2[:100], log[:100], sym1[:100]`
-        raise RCSExpected(sym1, 'log')
-      if sym2 != 'text':
-        raise RCSExpected(sym2, 'text')
-      ### need to add code to chew up "newphrase"
-      self.sink.set_revision_info(revision, log, text)
-
-  def parse(self, file, sink):
-    self.ts = _TokenStream(file)
-    self.sink = sink
-
-    self.parse_rcs_admin()
-    self.parse_rcs_tree()
-
-    # many sinks want to know when the tree has been completed so they can
-    # do some work to prep for the arrival of the deltatext
-    self.sink.tree_completed()
-
-    self.parse_rcs_description()
-    self.parse_rcs_deltatext()
-
-    # easiest for us to tell the sink it is done, rather than worry about
-    # higher level software doing it.
-    self.sink.parse_completed()
-
-    self.ts = self.sink = None
-
-
