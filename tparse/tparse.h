@@ -188,7 +188,9 @@ class tparseParser
     {
       sink = mysink;
       tokenstream = new TokenParser(myinput);
-
+    }
+    void parse()
+    {
       if (parse_rcs_admin())
         return;
       if (parse_rcs_tree())
