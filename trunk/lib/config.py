@@ -183,6 +183,8 @@ class Config:
     self.options.disable_enscript_lang = ()
     self.options.allow_tar = 0
     self.options.use_cvsgraph = 0
+    self.options.cvsgraph_path = "/usr/local/bin/cvsgraph"
+    self.options.cvsgraph_conf = "cvsgraph.conf"
 
   def is_forbidden(self, module):
     if not module:
