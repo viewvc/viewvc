@@ -2990,6 +2990,28 @@ def handle_config():
   debug.t_end('load-config')
 
 
+def view_error(server):
+  exc_dict = debug.GetExceptionData()
+  status = exc_dict['status']
+  handled = 0
+  
+  # use the configured error template if possible
+  try:
+    if cfg:
+      server.header(status=status)
+      generate_page(None, cfg.templates.error, exc_dict)
+      handled = 1
+  except:
+    # get new exception data, more important than the first
+    exc_dict = debug.GetExceptionData()
+
+  # but fallback to the old exception printer if no configuration is
+  # available, or if something went wrong
+  if not handled:
+    debug.PrintException(server, exc_dict)
+    html_footer(None)
+    
+  
 def run_viewcvs(server):
   # handle the configuration stuff
   handle_config()
@@ -3112,8 +3134,8 @@ def main(server):
     except SystemExit, e:
       return
     except:
-      debug.PrintException(server)
-      html_footer(None)
+      view_error(server)
+
   finally:
     debug.t_end('main')
     debug.dump()
