@@ -8,9 +8,10 @@
 
 <hr noshade>
 
-[include "include/branch.ezt"]
-
-[include "include/view_tag.ezt"]
+[is roottype "cvs"]
+  [include "include/branch.ezt"]
+  [include "include/view_tag.ezt"]
+[end]
 
 [include "include/paging.ezt"]
 
