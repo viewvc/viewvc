@@ -118,6 +118,10 @@ else:
 
 class Request:
   def __init__(self):
+    # global needed because "import vclib.svn" causes the
+    # interpreter to make vclib a local variable
+    global vclib
+    
     where = server.getenv('PATH_INFO', '')
 
     # clean it up. this removes duplicate '/' characters and any that may
@@ -1674,12 +1678,12 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
 
 _re_is_vendor_branch = re.compile(r'^1\.1\.1\.\d+$')
 
-g_name_printed = { }    ### gawd, what a hack...
 def augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
                   rev_order, extended):
   "Augment the entry with additional, computed data from the log output."
 
   query_dict = request.query_dict
+  g_name_printed = server.pageGlobals['g_name_printed']
 
   rev = entry.rev
   idx = string.rfind(rev, '.')
@@ -1974,6 +1978,7 @@ def view_log_cvs(request):
     else:
       data['head_href'] = download_url(request, file_url, 'HEAD', None)
 
+  server.pageGlobals['g_name_printed'] = { } ### gawd, what a hack...
   for entry in show_revs:
     # augment the entry with (extended=1) info.
     augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
