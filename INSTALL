@@ -139,7 +139,7 @@ INSTALLING VIEWCVS
 APACHE CONFIGURATION
 --------------------
 
-1) Find out, where the web server configuration file is kept.  On
+1) Find out where the web server configuration file is kept.  On
    SuSE Linux it is /etc/httpd/httpd.conf, On RedHat Linux 7.3 it
    is /etc/httpd/conf/httpd.conf.  On other unices you may look
    at /usr/local/etc or /etc/local.  Use the vendor documentation
@@ -147,15 +147,14 @@ APACHE CONFIGURATION
 
 Either METHOD A: 
 2) The ScriptAlias directive is very useful for pointing 
-   directly to the viwecvs.cgi script.  Simply insert a line containing
+   directly to the viewcvs.cgi script.  Simply insert a line containing
      ScriptAlias /viewcvs <VIEWCVS_INSTALLATION_DIRECTORY>/cgi/viewcvs.cgi
-   into your httpd.conf file.  Choose the location in httpd.conf, where 
+   into your httpd.conf file.  Choose the location in httpd.conf where 
    also the other ScriptAlias lines reside.  Some examples:
 
-     ScriptAlias /viewcvs /usr/local/viewcvs-0.9.2/cgi/viewcvs.cgi
-     ScriptAlias /cvsquery /usr/local/viewcvs-0.9.2/cgi/query.cgi
+     ScriptAlias /viewcvs /usr/local/viewcvs-1.0/www/cgi/viewcvs.cgi
+     ScriptAlias /query /usr/local/viewcvs-1.0/www/cgi/query.cgi
 
-     ScriptAlias /viewcvs-dev /usr/local/viewcvs-1.0-dev/www/cgi/viewcvs.cgi
    continue with step 3).
 
 or alternatively METHOD B: 
@@ -167,7 +166,7 @@ or alternatively METHOD B:
    
 and then there's METHOD C:
 2) Copy the CGI scripts from 
-   <VIEWCVS_INSTALLATION_DIRECTORY>/cgi/*.cgi
+   <VIEWCVS_INSTALLATION_DIRECTORY>/www/cgi/*.cgi
    to the directory of your choosing in the Document Root adding the following
    apache directives for the directory in httpd.conf or an .htaccess file:
 
@@ -182,7 +181,7 @@ and then there's METHOD C:
 
 or if you've got Mod_Python installed you can use METHOD D:
 2) Copy the Python scripts and .htaccess file from 
-   <VIEWCVS_INSTALLATION_DIRECTORY>/mod_python/
+   <VIEWCVS_INSTALLATION_DIRECTORY>/www/mod_python/
    to a directory being served by apache.
    
    In httpd.conf, make sure that "AllowOverride All" or at least 
@@ -430,13 +429,7 @@ from within your Python interpreter:
 
 Configuration of the Subversion repositories happens in much the same
 way as with CVS repositories, only with the 'svn_roots' configuration
-variable instead of the 'cvs_roots' one.  One difference is that if
-you have multiple Subversion repositories that live in a common
-directory, you can use the 'svn_parent_path' configuration directive
-to specify that directory.  This allows you to create new Subversion
-repositories at a later time, and ViewCVS will automagically be able
-to view them without your having to remember to update the ViewCVS
-configuration.
+variable instead of the 'cvs_roots' one.
 
 
 IF YOU HAVE PROBLEMS ...
@@ -454,14 +447,6 @@ If you've trouble to make viewcvs.cgi work:
 
  o view the entries in the webserver's error.log
  
- o make sure there is a trailing slash on the URL. for example:
- 
-     http://www.example.com/cgi-bin/viewcvs.cgi/
-     
-   (ViewCVS should perform a redirection to ensure this, but a report
-    has indicated that it doesn't always do this... please send more
-    of these bug reports if you run into this)
-
 === If viewcvs seems to work but doesn't show the expected result
     (Typical error: you can't see any files)
 
