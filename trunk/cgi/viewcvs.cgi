@@ -275,8 +275,9 @@ tableBorderColor = None			# no borders around each row
 # some parameters to screw:
 ##
 
-# make lines breakable so that the columns do not
-# exceed the width of the browser
+# set to 1 to make lines break at spaces,
+# set to 0 to make no-break lines,
+# set to a positive integer to make the lines cut at that length
 hr_breakable = 1
 
 # give out function names in human readable diffs
@@ -2193,8 +2194,13 @@ def spaced_html_text(text):
   text = string.expandtabs(string.rstrip(text))
 
   # in the code below, "\x01" will be our stand-in for "&". We don't want
-  # to insert "&" because it would get escaped by htmlify()
+  # to insert "&" because it would get escaped by htmlify().  Similarly,
+  # we use "\x02" as a stand-in for "<br>"
 
+  if hr_breakable > 1 and len(text) > hr_breakable:
+    text = re.sub('(' + ('.' * hr_breakable) + ')',
+                  '\\1\x02',
+                  text)
   if hr_breakable:
     # make every other space "breakable"
     text = string.replace(text, '  ', ' \x01nbsp;')
@@ -2202,6 +2208,7 @@ def spaced_html_text(text):
     text = string.replace(text, ' ', '\x01nbsp;')
   text = htmlify(text)
   text = string.replace(text, '\x01', '&')
+  text = string.replace(text, '\x02', '<font color=red>\</font><br>')
   return text
 
 def view_diff(request, cvs_filename):
