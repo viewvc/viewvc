@@ -1671,8 +1671,8 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
 
   prev_rev = string.split(rev, '.')
   while 1:
-    if prev_rev[-1] == '1':
-      prev_rev = prev_rev[:-2]	# X.Y.Z.1 becomes X.Y
+    if prev_rev[-1] == '0':	# .0 can be caused by 'commit -r X.Y.Z.0'
+      prev_rev = prev_rev[:-2]	# X.Y.Z.0 becomes X.Y.Z
     else:
       prev_rev[-1] = str(int(prev_rev[-1]) - 1)
     prev = string.join(prev_rev, '.')
