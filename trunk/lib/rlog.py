@@ -329,7 +329,10 @@ class RLogOutputParser:
         gmt_time = \
             time.mktime((year, month, day, hour, minute, second, 0, 0, -1))
 
-        if time.daylight:
+        if time.localtime(gmt_time)[8] == 0:
+            # dst time active?  
+            # XXX: This is still wrong in those both nights, 
+            #      where the switch between DST and normal time occurs.
             gmt_time = gmt_time - time.altzone
         else:
             gmt_time = gmt_time - time.timezone
