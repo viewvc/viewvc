@@ -99,7 +99,7 @@ _sticky_vars = (
 CHUNK_SIZE = 8192
 
 # for rcsdiff processing of header
-_RCSDIFF_IS_BINARY = 'binary'
+_RCSDIFF_IS_BINARY = 'binary-diff'
 _RCSDIFF_ERROR = 'error'
 
 # global configuration:
@@ -305,7 +305,7 @@ class Request:
       if result:
         self.where, self.path_parts, self.pathtype, self.view_func = result
       else:
-        raise debug.ViewcvsException('%s: unknown location'
+        raise debug.ViewCVSException('%s: unknown location'
                                      % self.where, '404 Not Found')
 
     # Try to figure out what to do based on view parameter
@@ -500,7 +500,7 @@ def _validate_param(name, value):
   try:
     validator = _legal_params[name]
   except KeyError:
-    raise debug.ViewcvsException(
+    raise debug.ViewCVSException(
       'An illegal parameter name ("%s") was passed.' % cgi.escape(name),
       '400 Bad Request')
 
@@ -510,7 +510,7 @@ def _validate_param(name, value):
   # is the validator a regex?
   if hasattr(validator, 'match'):
     if not validator.match(value):
-      raise debug.ViewcvsException(
+      raise debug.ViewCVSException(
         'An illegal value ("%s") was passed as a parameter.' %
         cgi.escape(value), '400 Bad Request')
     return
@@ -957,7 +957,7 @@ class MarkupEnscript:
       copy_stream(fp, popen.pipe_cmds([enscript_cmd]))
       fp.close()
     except IOError:
-      raise debug.ViewcvsException('Error running external program. ' +
+      raise debug.ViewCVSException('Error running external program. ' +
                                    'Command line was: %s'
                                    % string.join(enscript_cmd, ' '))
 
@@ -1627,7 +1627,7 @@ def view_log(request):
   if pathtype is vclib.FILE:
     mime_type = request.mime_type
   elif request.roottype == 'cvs':
-    raise debug.ViewcvsException('Unsupported feature: log view on CVS '
+    raise debug.ViewCVSException('Unsupported feature: log view on CVS '
                                  'directory', '400 Bad Request')
 
   options = {}
@@ -1943,7 +1943,8 @@ def view_checkout(request):
 
 def view_annotate(request):
   if not cfg.options.allow_annotate:
-    raise "annotate no allows"
+    raise debug.ViewCVSException('Annotation view is disabled',
+                                 '403 Forbidden')
 
   rev = request.query_dict.get('annotate')
   data = nav_header_data(request, rev)
@@ -1963,7 +1964,7 @@ def view_cvsgraph_image(request):
   # this function is derived from cgi/cvsgraphmkimg.cgi
 
   if not cfg.options.use_cvsgraph:
-    raise "cvsgraph no allows"
+    raise debug.ViewCVSException('Graph view is disabled', '403 Forbidden')
   
   request.server.header('image/png')
   rcsfile = request.repos.rcsfile(request.path_parts)
@@ -1980,7 +1981,7 @@ def view_cvsgraph(request):
   # this function is derived from cgi/cvsgraphwrapper.cgi
 
   if not cfg.options.use_cvsgraph:
-    raise "cvsgraph no allows"
+    raise debug.ViewCVSException('Graph view is disabled', '403 Forbidden')
 
   data = nav_header_data(request, None)
 
@@ -2087,7 +2088,7 @@ def view_doc(request):
   try:
     info = os.stat(filename)
   except OSError, v:
-    raise debug.ViewcvsException('Help file "%s" not available\n(%s)'
+    raise debug.ViewCVSException('Help file "%s" not available\n(%s)'
                                  % (help_page, str(v)), '404 Not Found')
   content_length = str(info[stat.ST_SIZE])
   last_modified = info[stat.ST_MTIME]
@@ -2100,7 +2101,7 @@ def view_doc(request):
   try:
     fp = open(filename, "rb")
   except IOError, v:
-    raise debug.ViewcvsException('Help file "%s" not available\n(%s)'
+    raise debug.ViewCVSException('Help file "%s" not available\n(%s)'
                                  % (help_page, str(v)), '404 Not Found')
   if help_page[-3:] == 'png':
     request.server.header('image/png')
@@ -2127,7 +2128,7 @@ _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
 def human_readable_diff(fp, rev1, rev2):
   log_rev1 = log_rev2 = None
   date1 = date2 = ''
-  rcsdiff_eflag = 0
+  rcsdiff_eflag = None
   while 1:
     line = fp.readline()
     if not line:
@@ -2163,21 +2164,20 @@ def human_readable_diff(fp, rev1, rev2):
       rcsdiff_eflag = _RCSDIFF_ERROR
       break
 
-  if (log_rev1 and log_rev1 != rev1) or (log_rev2 and log_rev2 != rev2):
-    ### it would be nice to have an error.ezt for things like this
-    print '<strong>ERROR:</strong> rcsdiff did not return the correct'
-    print 'version number in its output.'
-    print '(got "%s" / "%s", expected "%s" / "%s")' % \
-          (log_rev1, log_rev2, rev1, rev2)
-    print '<p>Aborting operation.'
-    sys.exit(0)
+  if (log_rev1 and log_rev1 != rev1):
+    raise debug.ViewCVSException('rcsdiff found revision %s, but expected '
+                                 'revision %s' % (log_rev1, rev1),
+                                 '500 Internal Server Error')
+  if (log_rev2 and log_rev2 != rev2):
+    raise debug.ViewCVSException('rcsdiff found revision %s, but expected '
+                                 'revision %s' % (log_rev2, rev2),
+                                 '500 Internal Server Error')
+
 
   # Process any special lines in the header, or continue to
   # get the differences from DiffSource.
-  if rcsdiff_eflag == _RCSDIFF_IS_BINARY:
-    changes = [ (_item(type='binary-diff')) ]
-  elif rcsdiff_eflag == _RCSDIFF_ERROR:
-    changes = [ (_item(type='error')) ]
+  if rcsdiff_eflag is not None:
+    changes = [ (_item(type=rcsdiff_eflag)) ]
   else:
     changes = DiffSource(fp)
 
@@ -2382,7 +2382,7 @@ def view_diff(request):
   if r1 == 'text':
     rev1 = query_dict.get('tr1', None)
     if not rev1:
-      raise debug.ViewcvsException('Missing revision from the diff '
+      raise debug.ViewCVSException('Missing revision from the diff '
                                    'form text field', '400 Bad Request')
   else:
     idx = string.find(r1, ':')
@@ -2395,7 +2395,7 @@ def view_diff(request):
   if r2 == 'text':
     rev2 = query_dict.get('tr2', None)
     if not rev2:
-      raise debug.ViewcvsException('Missing revision from the diff '
+      raise debug.ViewCVSException('Missing revision from the diff '
                                    'form text field', '400 Bad Request')
     sym2 = ''
   else:
@@ -2412,7 +2412,7 @@ def view_diff(request):
       sym1, sym2 = sym2, sym1
       p1, p2 = p2, p1
   except ValueError:
-    raise debug.ViewcvsException('Invalid revision(s) passed to diff',
+    raise debug.ViewCVSException('Invalid revision(s) passed to diff',
                                  '400 Bad Request')
 
   # since templates are in use and subversion allows changes to the dates,
@@ -2458,7 +2458,7 @@ def view_diff(request):
     unified = 1
     parseheaders = 1
   else:
-    raise debug.ViewcvsException('Diff format %s not understood'
+    raise debug.ViewCVSException('Diff format %s not understood'
                                  % format, '400 Bad Request')
 
   if human_readable:
@@ -2482,7 +2482,7 @@ def view_diff(request):
       date1 = vclib.svn.date_from_rev(request.repos, int(rev1))
       date2 = vclib.svn.date_from_rev(request.repos, int(rev2))
     except vclib.InvalidRevision:
-      raise debug.ViewcvsException('Invalid revision(s) passed to diff',
+      raise debug.ViewCVSException('Invalid revision(s) passed to diff',
                                    '400 Bad Request')
 
     if date1 is not None:
@@ -2508,7 +2508,7 @@ def view_diff(request):
       fp = diffobj.get_pipe()
     except vclib.svn.core.SubversionException, e:
       if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
-        raise debug.ViewcvsException('Invalid path(s) or revision(s) passed '
+        raise debug.ViewCVSException('Invalid path(s) or revision(s) passed '
                                      'to diff', '400 Bad Request')
       raise e
 
@@ -2680,7 +2680,8 @@ def generate_tarball(out, request, tar_top, rep_top,
 
 def download_tarball(request):
   if not cfg.options.allow_tar:
-    raise "tarball no allows"
+    raise debug.ViewCVSException('Tarball generation is disabled',
+                                 '403 Forbidden')
 
   # If there is a repository directory name we can use for the
   # top-most directory, use it.  Otherwise, use the configured root
@@ -2711,7 +2712,7 @@ def view_revision(request):
   data = common_template_data(request)
 
   if request.roottype == "cvs":
-    raise ViewcvsException("Revision view not supported for CVS repositories "
+    raise ViewCVSException("Revision view not supported for CVS repositories "
                            "at this time.", "400 Bad Request")
   else:
     view_revision_svn(request, data)
@@ -3189,7 +3190,7 @@ def handle_config():
     for pp in cfg.general.root_parents:
       pos = string.rfind(pp, ':')
       if pos < 0:
-        raise debug.ViewcvsException(
+        raise debug.ViewCVSException(
           "The path '%s' in 'root_parents' does not include a "
           "repository type." % pp)
 
@@ -3199,7 +3200,7 @@ def handle_config():
       try:
         subpaths = os.listdir(pp)
       except OSError:
-        raise debug.ViewcvsException(
+        raise debug.ViewCVSException(
           "The path '%s' in 'root_parents' does not refer to "
           "a valid directory." % pp)
 
