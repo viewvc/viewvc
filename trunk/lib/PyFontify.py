@@ -27,10 +27,9 @@ sublist is not used, hence always None.
 
 __version__ = "0.3.1"
 
-import string, regex
+import string, re
 
 # First a little helper, since I don't like to repeat things. (Tismer speaking)
-import string
 def replace(where, what, with):
 	return string.join(string.split(where, what), with)
 
@@ -86,10 +85,10 @@ for keyword in keywordsList:
 keyPat = keyPat[:-2] + "\)" + nonKeyPat
 
 matchPat = keyPat + "\|" + commentPat + "\|" + tripleQuotePat + "\|" + quotePat
-matchRE = regex.compile(matchPat)
+matchRE = re.compile(matchPat)
 
 idKeyPat = "[ \t]*[A-Za-z_][A-Za-z_0-9.]*"	# Ident w. leading whitespace.
-idRE = regex.compile(idKeyPat)
+idRE = re.compile(idKeyPat)
 
 
 def fontify(pytext, searchfrom = 0, searchto = None):

@@ -483,7 +483,6 @@ def make_html(root, rcs_path, opt_rev = None, sticky = None):
     thisline = text[line]
     line = line + 1
     usedlog[revision] = 1
-    line_in_table = lines_in_table + 1
 
     # Escape HTML meta-characters
     thisline = cgi.escape(thisline)
