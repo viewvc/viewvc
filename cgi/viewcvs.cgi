@@ -1379,7 +1379,7 @@ def view_directory(request):
       info = fileinfo.get(file)
       if info == _FILE_HAD_ERROR:
         if dirtable:
-          print '</td><td colspan=%d><i>CVS informatino is unreadable</i>' % \
+          print '</td><td colspan=%d><i>CVS information is unreadable</i>' % \
                 (num_cols - 1)
           cur_row = cur_row + 1
           unreadable = 1
