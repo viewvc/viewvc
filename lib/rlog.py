@@ -17,6 +17,7 @@ import os
 import string
 import re
 import time
+import calendar
 
 
 ## RLogOutputParser uses the output of rlog to build a list of Commit
@@ -299,24 +300,17 @@ class RLogOutputParser:
             desc_line_list.append(string.rstrip(line))
 
         ## compute time using time routines in seconds from epoc GMT
-        ## NOTE: mktime's arguments are in local time, and we have
-        ##       them in GMT from RCS; therefore, we have to manually
-        ##       subtract out the timezone correction
-        ##
-        ## XXX: Linux glib2.0.7 bug: it looks like mktime doesn't honor
-        ##      the '0' flag to force no timezone correction, so we look
-        ##      at the correction ourself and do the right thing after
-        ##      mktime mangles the date
+        # timegm needs a four digit date. Be paranoid about it.
+        EPOCH = 1970
+        if year < EPOCH:
+            if year < 70:
+                year = year + 2000
+            else:
+                year = year + 1900
+            if year < EPOCH:
+                raise ValueError, 'invalid year'
         gmt_time = \
-            time.mktime((year, month, day, hour, minute, second, 0, 0, -1))
-
-        if time.localtime(gmt_time)[8] == 1:
-            # dst time active?  
-            # XXX: This is still wrong in those both nights, 
-            #      where the switch between DST and normal time occurs.
-            gmt_time = gmt_time - time.altzone
-        else:
-            gmt_time = gmt_time - time.timezone
+            calendar.timegm((year, month, day, hour, minute, second, 0, 0, 0))
 
         ## now create and return the RLogEntry
         rlog_entry = RLogEntry()
