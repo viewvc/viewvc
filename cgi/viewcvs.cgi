@@ -882,6 +882,7 @@ _re_log_info = re.compile(r'^date:\s+([^;]+);'
                           r'\s+author:\s+([^;]+);'
                           r'\s+state:\s+([^;]+);'
                           r'(\s+lines:\s+([0-9\s+-]+))?\n$')
+_re_rev = re.compile(r'^revision\s+([0-9.]+).*')
 def parse_log_entry(fp):
   """Parse a single log entry.
 
@@ -898,7 +899,10 @@ def parse_log_entry(fp):
   if not line:
     return None, None, None, None, None, None, _EOF_LOG
   if line[:8] == 'revision':
-    rev = line[9:-1]
+    match = _re_rev.match(line)
+    if not match:
+      return None, None, None, None, None, None, _EOF_LOG
+    rev = match.group(1)
 
     line = fp.readline()
     if not line:
