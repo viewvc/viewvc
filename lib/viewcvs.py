@@ -1837,9 +1837,11 @@ def view_log_svn(request):
     entry.vendor_branch = None
     entry.ago = html_time(request, entry.date, 1)
     entry.date_str = make_time_string(entry.date)
-    entry.html_log = htmlify(entry.log)
     entry.tag_names = [ ]
     entry.branch_names = [ ]
+    if not entry.log:
+      entry.log = ""
+    entry.html_log = htmlify(entry.log)
 
     # the template could do all these comparisons itself, but let's help
     # it out.
