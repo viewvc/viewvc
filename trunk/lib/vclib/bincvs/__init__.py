@@ -417,7 +417,7 @@ def fetch_log(rcs_path, full_name, which_rev=None):
   return head, branch, taginfo, revs
 
 
-class BinCVSRepository:
+class BinCVSRepository(vclib.Repository):
   def __init__(self, name, rootpath):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
