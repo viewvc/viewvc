@@ -1112,6 +1112,17 @@ def revcmp(rev1, rev2):
   rev2 = map(int, string.split(rev2, '.'))
   return cmp(rev1, rev2)
 
+def prepare_hidden_values(request, var_list, out_list):
+  hidden_values = ''
+  for varname in var_list:
+    if varname not in out_list:
+      value = request.query_dict.get(varname, '')
+      if value != '' and value != default_settings.get(varname):
+        hidden_values = hidden_values + \
+                        '<input type=hidden name="%s" value="%s">' % \
+                        (varname, cgi.escape(value))
+  return hidden_values
+
 def view_directory(request):
   full_name = request.full_name
   where = request.where
@@ -1411,13 +1422,13 @@ def view_directory(request):
     data['unreadable'] = 'yes'
 
   # always create a set of form parameters, since we may have a search form
-  data['params'] = params = [ ]
-  for varname in _sticky_vars:
-    value = query_dict.get(varname, '')
-    if value != '' and value != default_settings.get(varname, '') \
-       and varname != 'only_with_tag' \
-       and varname != 'search':
-      params.append(_item(name=varname, value=query_dict[varname]))
+  data['search_tag_hidden_values'] = prepare_hidden_values(request, 
+                                         _sticky_vars, 
+                                         ['only_with_tag', 'search'])
+
+  data['dir_paging_hidden_values'] = prepare_hidden_values(request, 
+                                         _sticky_vars, 
+                                         ['dir_pagestart'])
 
   if alltags or view_tag:
     alltagnames = alltags.keys()
@@ -1864,15 +1875,9 @@ def view_log(request):
   data['tr2'] = diff_rev
 
   ### would be nice to find a way to use [query] or somesuch instead
-  hidden_values = ''
-  for varname in _sticky_vars:
-    if varname != 'only_with_tag' and varname != 'logsort':
-      value = query_dict.get(varname, '')
-      if value != '' and value != default_settings.get(varname):
-        hidden_values = hidden_values + \
-                        '<input type=hidden name="%s" value="%s">' % \
-                        (varname, value)
-  data['hidden_values'] = hidden_values
+  data['hidden_values'] = prepare_hidden_values(request, 
+                                                _sticky_vars, 
+                                                ['only_with_tag', 'logsort'])
 
   branch_names.sort()
   branch_names.reverse()
@@ -2207,13 +2212,9 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
     sys.exit(0)
 
   # format selector
-  hidden_values = ''
-  for varname, value in query_dict.items():
-    if varname != 'diff_format' and value != default_settings.get(varname):
-      hidden_values = hidden_values + \
-                      '<input type=hidden name="%s" value="%s">' % \
-                      (varname, cgi.escape(value))
-
+  hidden_values = prepare_hidden_values(request, 
+                                        query_dict.keys(),
+                                        ['diff_format'])
   # Process any special lines in the header, or continue to
   # get the differences from DiffSource.
   if rcsdiff_eflag == _RCSDIFF_IS_BINARY:
