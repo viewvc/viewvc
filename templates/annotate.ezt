@@ -26,16 +26,8 @@
 
   <tr class="[rowclass]">
     <td class="vc_blame_line">[lines.line_number] :</td>
-    <td class="vc_blame_author">
-      [is lines.rev last_rev]&nbsp;[else][lines.author][end]
-    </td>
-    <td class="vc_blame_rev">
-      [is lines.rev last_rev]
-        &nbsp;
-      [else]
-        [if-any lines.diff_url]<a href="[lines.diff_url]">[end][lines.rev][if-any lines.diff_url]</a>[end]
-      [end]
-    </td>
+    <td class="vc_blame_author">[is lines.rev last_rev]&nbsp;[else][lines.author][end]</td>
+    <td class="vc_blame_rev">[is lines.rev last_rev]&nbsp;[else][if-any lines.diff_url]<a href="[lines.diff_url]">[end][lines.rev][if-any lines.diff_url]</a>[end][end]</td>
     <td class="vc_blame_text">[lines.text]</td>
   </tr>
   [define last_rev][lines.rev][end]
