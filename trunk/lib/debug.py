@@ -63,9 +63,11 @@ class ViewcvsException:
     return "ViewCVS Unrecoverable Error"
 
 def PrintStackTrace(text = ""):
+  import sys
   import traceback
   import string
   import sapi
+
   print "<hr><p><font color=red>", text, "</font></p>\n<p><pre>"
   print sapi.server.escape(string.join(traceback.format_stack(), ''))
   print "</pre></p>"
@@ -98,19 +100,28 @@ if SHOW_CHILD_PROCESSES:
       self.debugIn = inStream
       self.debugOut = outStream
       self.debugErr = errStream
-  
+
+      import sapi
+      if not sapi.server.pageGlobals.has_key('processes'):
+        sapi.server.pageGlobals['processes'] = [self]
+      else:
+        sapi.server.pageGlobals['processes'].append(self)
+
     def printInfo(self):
       print "Command Line", command
 
   def DumpChildren():
     import sapi, sys
     server = sapi.server.self()
+
+    if not server.pageGlobals.has_key('processes'):
+      return
     
+    server.header()    
     lastOut = None
-    
-    server.header()
     i = 0
-    for k in server.processes:
+
+    for k in server.pageGlobals['processes']:
       i += 1
       print "<div align=center>Child Process", i, "</div>"
       print "<table border=1>"
