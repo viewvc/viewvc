@@ -81,7 +81,7 @@
     [is entries.rev rev_selected]
       - <b>[[]selected]</b>
     [else]
-      - <a href="[diff_url]?r1=[entries.rev][diff_params]">[[]select for diffs]</a>
+      - <a href="[diff_url]?r1=[entries.rev][is roottype "svn"]&amp;p1=[entries.filename][end][diff_params]">[[]select for diffs]</a>
     [end]
 
   [end]
@@ -150,39 +150,37 @@
     <br><b><i>FILE REMOVED</i></b>
   [else]
     [if-any entries.prev]
-      [is roottype "svn"]
-        <br>Diff to <a href="[diff_url]?r1=[entries.prev][if-any entries.prev_path]&amp;p1=[entries.prev_path][end]&amp;r2=[entries.rev]&amp;p2=[entries.filename][diff_params]">previous [entries.prev]</a>
-      [else]
-        <br>Diff to <a href="[diff_url]?r1=[entries.prev]&amp;r2=[entries.rev][diff_params]">previous [entries.prev]</a>
-      [end]
+      <br>Diff to <a href="[diff_url]?r1=[entries.prev]&amp;r2=[entries.rev][is roottype "svn"][if-any entries.prev_path]&amp;p1=[entries.prev_path][end]&amp;p2=[entries.filename][end][diff_params]">previous [entries.prev]</a>
       [if-any human_readable]
       [else]
-        (<a href="[diff_url]?r1=[entries.prev]&amp;r2=[entries.rev]&amp;diff_format=h[diff_params]">colored</a>)
+        (<a href="[diff_url]?r1=[entries.prev]&amp;r2=[entries.rev][is roottype "svn"][if-any entries.prev_path]&amp;p1=[entries.prev_path][end]&amp;p2=[entries.filename][end]&amp;diff_format=h[diff_params]">colored</a>)
       [end]
     [end]
 
-    [if-any entries.branch_point]
-      , to <a href="[diff_url]?r1=[entries.branch_point]&amp;r2=[entries.rev][diff_params]">branch point [entries.branch_point]</a>
-      [if-any human_readable]
-      [else]
-        , (<a href="[diff_url]?r1=[entries.branch_point]&amp;r2=[entries.rev]&amp;diff_format=h[diff_params]">colored</a>)
+    [is roottype "cvs"]
+      [if-any entries.branch_point]
+        , to <a href="[diff_url]?r1=[entries.branch_point]&amp;r2=[entries.rev][diff_params]">branch point [entries.branch_point]</a>
+        [if-any human_readable]
+        [else]
+          , (<a href="[diff_url]?r1=[entries.branch_point]&amp;r2=[entries.rev]&amp;diff_format=h[diff_params]">colored</a>)
+        [end]
       [end]
-    [end]
-
-    [if-any entries.next_main]
-      , to <a href="[diff_url]?r1=[entries.next_main]&amp;r2=[entries.rev][diff_params]">next main [entries.next_main]</a>
-      [if-any human_readable]
-      [else]
-        , (<a href="[diff_url]?r1=[entries.next_main]&amp;r2=[entries.rev]&amp;diff_format=h[diff_params]">colored</a>)
+  
+      [if-any entries.next_main]
+        , to <a href="[diff_url]?r1=[entries.next_main]&amp;r2=[entries.rev][diff_params]">next main [entries.next_main]</a>
+        [if-any human_readable]
+        [else]
+          , (<a href="[diff_url]?r1=[entries.next_main]&amp;r2=[entries.rev]&amp;diff_format=h[diff_params]">colored</a>)
+        [end]
       [end]
     [end]
 
     [if-any entries.to_selected]
       [if-any entries.prev], [else]<br>Diff[end]
-        to <a href="[diff_url]?r1=[rev_selected]&amp;r2=[entries.rev][diff_params]">selected [rev_selected]</a>
+        to <a href="[diff_url]?r1=[rev_selected]&amp;r2=[entries.rev][is roottype "svn"][if-any entries.prev_path]&amp;p1=[path_selected][end]&amp;p2=[entries.filename][end][diff_params]">selected [rev_selected]</a>
       [if-any human_readable]
       [else]
-        (<a href="[diff_url]?r1=[rev_selected]&amp;r2=[entries.rev]&amp;diff_format=h[diff_params]">colored</a>)
+        (<a href="[diff_url]?r1=[rev_selected]&amp;r2=[entries.rev][is roottype "svn"][if-any entries.prev_path]&amp;p1=[path_selected][end]&amp;p2=[entries.filename][end]&amp;diff_format=h[diff_params]">colored</a>)
       [end]
     [end]
   [end]
