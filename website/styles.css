@@ -1,0 +1,92 @@
+/*******************************/
+/***  ViewCVS CSS Stylesheet ***/
+/*******************************/
+
+/*** Standard Tags ***/
+HTML, BODY {
+  color: #000000;
+  background-color: #ffffff;
+}
+
+A:link    { color: #0000ff; }
+A:visited { color: #880088; }
+A:active  { color: #0000ff; }
+
+
+/** Navigation Headers ***/
+.vc_navheader {
+  background-color: #8888ff;
+}
+
+
+/*** Table Headers ***/
+.vc_header {
+  text-align: left;
+  background-color: #cccccc;
+}
+.vc_header_sort {
+  text-align: left;
+  background-color: #88ff88;
+}
+
+
+/*** Table Rows ***/
+.vc_row_even {
+  background-color: #ffffff;
+}
+.vc_row_odd {
+  background-color: #ccccee;
+}
+
+
+/*** Markup Summary Header ***/
+.vc_summary {
+  background-color: #eeeeee;
+}
+
+
+/*** Colour Diff Styles ***/
+.vc_diff_header {
+  background-color: #ffffff;
+}
+.vc_diff_chunk_header {
+  background-color: #99cccc;
+}
+.vc_diff_chunk_extra {
+  font-size: smaller;
+}
+.vc_diff_empty {
+  background-color: #cccccc;
+  font-family: sans-serif;
+  font-size: smaller;
+}
+.vc_diff_add {
+  background-color: #aaffaa;
+  font-family: sans-serif;
+  font-size: smaller;
+}
+.vc_diff_remove {
+  background-color: #ffaaaa;
+  font-family: sans-serif;
+  font-size: smaller;
+}
+.vc_diff_change {
+  background-color: #ffff77;
+  font-family: sans-serif;
+  font-size: smaller;
+}
+.vc_diff_change_empty {
+  background-color: #eeee77;
+  font-family: sans-serif;
+  font-size: smaller;
+}
+.vc_diff_nochange {
+  font-family: sans-serif;
+  font-size: smaller;
+}
+
+
+/*** Query Form ***/
+.vc_query_form {
+  background-color: #e6e6e6;
+}
