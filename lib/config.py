@@ -173,6 +173,8 @@ class Config:
     self.options.diff_font_face = 'Helvetica,Arial'
     self.options.diff_font_size = -1
     self.options.input_text_size = 12
+    self.options.allow_elisp_coloring = 0
+    self.options.enscript_path = ''
 
     self.text.long_intro = """\
     <p>

@@ -378,4 +378,14 @@ diff_font_size = -1
 # the width of the textinput in the request-diff-form
 input_text_size = 12
 
+# should elisp colorization be allowed? (is "enscript" present and working?)
+allow_elisp_coloring = 0
+
+#
+# if the enscript program is not on the path, set this value
+# Note: there should be a trailing slash
+#
+enscript_path =
+# enscript_path = /usr/bin/
+
 #---------------------------------------------------------------------------
