@@ -2020,7 +2020,10 @@ def process_checkout(full_name, where, query_dict, default_mime_type):
 def view_checkout(request):
   if request.roottype == 'svn':
     contents = vclib.svn.get_file_contents(request.repos, request.where)
-    http_header(request.mime_type)
+    mime_type = request.query_dict.get('content-type')
+    if mime_type is None:
+      mime_type = request.mime_type
+    http_header(mime_type)
     print contents
     return
   
@@ -2466,54 +2469,50 @@ class DiffSource:
 class DiffSequencingError(Exception):
   pass
 
-def view_diff_svn(request, svn_filename):
+
+def view_diff(request):
   query_dict = request.query_dict
 
-  r1 = query_dict['r1']
-  r2 = query_dict['r2']
-  error("This is not yet implemented\n" +
-        "If it were, we'd be looking at the diffs between versions " +
-        r1 + " and " + r2 + " of the file '%s'\n" % svn_filename)
+  rev1 = r1 = query_dict['r1']
+  rev2 = r2 = query_dict['r2']
+  sym1 = sym2 = None
 
+  if request.roottype == 'cvs':
+    if r1 == 'text':
+      rev1 = query_dict['tr1']
+    else:
+      idx = string.find(r1, ':')
+      if idx == -1:
+        rev1 = r1
+      else:
+        rev1 = r1[:idx]
+        sym1 = r1[idx+1:]
+ 
+    if r2 == 'text':
+      rev2 = query_dict['tr2']
+      sym2 = ''
+    else:
+      idx = string.find(r2, ':')
+      if idx == -1:
+        rev2 = r2
+      else:
+        rev2 = r2[:idx]
+        sym2 = r2[idx+1:]
   
-def view_diff(request, cvs_filename):
-  query_dict = request.query_dict
-
-  r1 = query_dict['r1']
-  r2 = query_dict['r2']
-
-  sym1 = sym2 = ''
-
-  if r1 == 'text':
-    rev1 = query_dict['tr1']
-  else:
-    idx = string.find(r1, ':')
-    if idx == -1:
-      rev1 = r1
-    else:
-      rev1 = r1[:idx]
-      sym1 = r1[idx+1:]
-
-  if r2 == 'text':
-    rev2 = query_dict['tr2']
-    sym2 = ''
-  else:
-    idx = string.find(r2, ':')
-    if idx == -1:
-      rev2 = r2
-    else:
-      rev2 = r2[:idx]
-      sym2 = r2[idx+1:]
-
-  if revcmp(rev1, rev2) > 0:
-    rev1, rev2 = rev2, rev1
-    sym1, sym2 = sym2, sym1
+    if revcmp(rev1, rev2) > 0:
+      rev1, rev2 = rev2, rev1
+      sym1, sym2 = sym2, sym1
 
   human_readable = 0
   unified = 0
-
   args = [ ]
 
+  ### Note: these options only really work out where rcsdiff (used by
+  ### CVS) and regular diff (used by SVN) overlap.  If for some reason
+  ### our use of the options for these starts to deviate too much,
+  ### this code may a re-org to just do different things for different
+  ### VC types.
+  
   format = query_dict['diff_format']
   if format == 'c':
     args.append('-c')
@@ -2539,12 +2538,28 @@ def view_diff(request, cvs_filename):
       args.append('-p')
     if cfg.options.hr_ignore_white:
       args.append('-w')
-    if cfg.options.hr_ignore_keyword_subst:
+    if cfg.options.hr_ignore_keyword_subst and request.roottype == 'cvs':
+      # -k isn't a regular diff option
       args.append('-kk')
 
-  args[len(args):] = ['-r' + rev1, '-r' + rev2, cvs_filename]
-  fp = popen.popen(os.path.normpath(os.path.join(cfg.general.rcs_path,'rcsdiff')), args, 'r')
+  file1 = None
+  file2 = None
+  if request.roottype == 'cvs':
+    args[len(args):] = ['-r' + rev1, '-r' + rev2, request.full_name]
+    diff_cmd = os.path.normpath(os.path.join(cfg.general.rcs_path,'rcsdiff'))
+    fp = popen.popen(diff_cmd, args, 'r')
+  else:
+    args.append("'-L " + request.where + " (old)'")
+    args.append("'-L " + request.where + " (new)'")
 
+    # Need to keep a reference to the FileDiff object around long
+    # enough to use.  It destroys its underlying temporary files when
+    # the class is destroyed.
+    diffobj = vclib.svn.do_diff(request.repos, request.where,
+                                int(rev1), int(rev2),
+                                string.join(args, " "))
+    fp = diffobj.get_pipe()
+    
   if human_readable:
     human_readable_diff(request, fp, rev1, rev2, sym1, sym2)
     return
@@ -2574,6 +2589,7 @@ def view_diff(request, cvs_filename):
         line = line[:-1] + ' %s\n' % sym2
 
     print line[:-1]
+
 
 def generate_tarball_header(out, name, size=0, mode=None, mtime=0, uid=0, gid=0, typefrag=None, linkname='', uname='viewcvs', gname='viewcvs', devmajor=1, devminor=0, prefix=None, magic='ustar', version='', chksum=None):
   if not mode:
@@ -2813,7 +2829,7 @@ def main():
     if query_dict.has_key('rev') or request.has_checkout_magic:
       view_checkout(request)
     elif query_dict.has_key('r1') and query_dict.has_key('r2'):
-      view_diff_svn(request, full_name)
+      view_diff(request)
     else:
       view_log_svn(request)
     return
@@ -2823,7 +2839,7 @@ def main():
     elif query_dict.has_key('annotate') and cfg.options.allow_annotate:
       view_annotate(request)
     elif query_dict.has_key('r1') and query_dict.has_key('r2'):
-      view_diff(request, full_name)
+      view_diff(request)
     elif query_dict.has_key('graph') and cfg.options.use_cvsgraph:
       if not query_dict.has_key('makeimage'):
         view_cvsgraph(cfg, request)
