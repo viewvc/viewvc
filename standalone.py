@@ -265,14 +265,50 @@ def gui(port):
             self.cvsgraph_toggle = Tkinter.Checkbutton(self.options_frm,
                 text="enable cvsgraph (needs binary)", var=self.cvsgraph_ivar,
                 command=self.toggle_use_cvsgraph)
-            self.cvsgraph_toggle.pack(side='top', fill='x', expand=1)
+            self.cvsgraph_toggle.pack(side='top', anchor='w')
 
             self.enscript_ivar = Tkinter.IntVar()
             self.enscript_ivar.set(viewcvs.cfg.options.use_enscript)
             self.enscript_toggle = Tkinter.Checkbutton(self.options_frm,
                 text="enable enscript (needs binary)", var=self.enscript_ivar,
                 command=self.toggle_use_enscript)
-            self.enscript_toggle.pack(side='top', fill='x', expand=1)
+            self.enscript_toggle.pack(side='top', anchor='w')
+
+            self.dirtemplate_lbl = Tkinter.Label(self.options_frm,
+                text='Chooose HTML Template for the Directory pages:')
+            self.dirtemplate_lbl.pack(side='top', anchor='w')
+            self.dirtemplate_svar = Tkinter.StringVar()
+            self.dirtemplate_svar.set(viewcvs.cfg.templates.directory)
+            self.dirtemplate_entry = Tkinter.Entry(self.options_frm,
+                width = 40, textvariable=self.dirtemplate_svar)
+            self.dirtemplate_entry.bind('<Return>', self.set_templates_directory)
+            self.dirtemplate_entry.pack(side='top', anchor='w')
+            self.templates_dir = Tkinter.Radiobutton(self.options_frm,
+                text="directory.ezt", value="templates/directory.ezt", 
+                var=self.dirtemplate_svar, command=self.set_templates_directory)
+            self.templates_dir.pack(side='top', anchor='w')
+            self.templates_dir_table = Tkinter.Radiobutton(self.options_frm,
+                text="direasy.ezt", value="templates/direasy.ezt", 
+                var=self.dirtemplate_svar, command=self.set_templates_directory)
+            self.templates_dir_table.pack(side='top', anchor='w')
+
+            self.logtemplate_lbl = Tkinter.Label(self.options_frm,
+                text='Chooose HTML Template for the Log pages:')
+            self.logtemplate_lbl.pack(side='top', anchor='w')
+            self.logtemplate_svar = Tkinter.StringVar()
+            self.logtemplate_svar.set(viewcvs.cfg.templates.log)
+            self.logtemplate_entry = Tkinter.Entry(self.options_frm,
+                width = 40, textvariable=self.logtemplate_svar)
+            self.logtemplate_entry.bind('<Return>', self.set_templates_log)
+            self.logtemplate_entry.pack(side='top', anchor='w')
+            self.templates_log = Tkinter.Radiobutton(self.options_frm,
+                text="log.ezt", value="templates/log.ezt", 
+                var=self.logtemplate_svar, command=self.set_templates_log)
+            self.templates_log.pack(side='top', anchor='w')
+            self.templates_log_table = Tkinter.Radiobutton(self.options_frm,
+                text="log_table.ezt", value="templates/log_table.ezt", 
+                var=self.logtemplate_svar, command=self.set_templates_log)
+            self.templates_log_table.pack(side='top', anchor='w')
 
             self.server_frm.pack(side='top', fill='x')
             self.options_frm.pack(side='top', fill='x')
@@ -292,6 +328,12 @@ def gui(port):
 
         def toggle_use_enscript(self, event=None):
             viewcvs.cfg.options.use_enscript = self.enscript_ivar.get()
+
+        def set_templates_log(self, event=None):
+            viewcvs.cfg.templates.log = self.logtemplate_svar.get()
+
+        def set_templates_directory(self, event=None):
+            viewcvs.cfg.templates.directory = self.dirtemplate_svar.get()
 
         def ready(self, server):
             """used as callback parameter to the serve() function"""
