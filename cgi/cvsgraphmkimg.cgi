@@ -58,5 +58,8 @@ sys.stdout.flush()
 # Uncomment and set accordingly if required.
 #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib'
 
-os.system('%s -c %s -r %s -m %s %s' % (path_to_cvsgraph, path_to_cvsgraph_conf, r,m,f))
-
+command = "%s -c %s -r %s -m '%s' %s" % (path_to_cvsgraph, 
+                 path_to_cvsgraph_conf, r,m,f)
+if os.system(command) != 0:
+    # error while calling cvsgraph:
+    sys.stderr.write("\nThe command '"+command+"' failed.\n")
