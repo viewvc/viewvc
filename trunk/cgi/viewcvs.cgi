@@ -1340,7 +1340,7 @@ def view_directory(request):
       html_option(tag, view_tag)
     print '</select><input type=submit value="Go"></form>'
 
-  if cfg.options.tarball:
+  if cfg.options.allow_tar:
     url = os.path.basename(where) + '.tar.gz?tarball=1'
     query = sticky_query(query_dict)
     if query:
@@ -2426,7 +2426,7 @@ def main():
   elif full_name[-5:] == '.diff' and os.path.isfile(full_name[:-5] + ',v') \
        and query_dict.has_key('r1') and query_dict.has_key('r2'):
     view_diff(request, full_name[:-5])
-  elif cfg.options.tarball \
+  elif cfg.options.allow_tar \
        and full_name[-7:] == '.tar.gz' and query_dict.has_key('tarball'):
     download_tarball(request)
   else:
