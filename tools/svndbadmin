@@ -1,0 +1,251 @@
+#!/usr/bin/env python
+# -*- Mode: python -*-
+#
+# Copyright (C) 2004 James Henstridge
+#
+# By using this file, you agree to the terms and conditions set forth in
+# the LICENSE.html file which can be found at the top level of the ViewCVS
+# distribution or at http://www.lyra.org/viewcvs/license-1.html.
+#
+# -----------------------------------------------------------------------
+#
+# administrative program for loading Subversion revision information
+# into the checkin database.  It can be used to add a single revision
+# to the database, or rebuild/update all revisions.
+#
+# To add all the checkins from a Subversion repository to the checkin
+# database, run the following:
+#    /path/to/svndbadmin rebuild /path/to/repo
+#
+# This script can also be called from the Subversion post-commit hook,
+# something like this:
+#    REPOS="$1"
+#    REV="$2"
+#    /path/to/svndbadmin update "$REPOS" "$REV"
+#
+# If you allow changes to revision properties in your repository, you
+# might also want to set up something similar in the
+# post-revprop-change hook using "rebuild" instead of "update" to keep
+# the checkin database consistent with the repository.
+#
+# -----------------------------------------------------------------------
+#
+
+#########################################################################
+#
+# INSTALL-TIME CONFIGURATION
+#
+# These values will be set during the installation process. During
+# development, they will remain None.
+#
+
+LIBRARY_DIR = None
+CONF_PATHNAME = None
+
+# Adjust sys.path to include our library directory
+import sys
+
+if LIBRARY_DIR:
+  sys.path.insert(0, LIBRARY_DIR)
+else:
+  sys.path[:0] = ['../lib']     # any other places to look?
+
+#########################################################################
+
+import os
+import string
+import re
+
+import svn.core
+import svn.repos
+import svn.fs
+import svn.delta
+
+import cvsdb
+
+class SvnRepo:
+    """Class used to manage a connection to a SVN repository."""
+    pool = None
+    def __init__(self, path, pool):
+        self.pool = pool
+        self.scratch_pool = svn.core.svn_pool_create(self.pool)
+        self.path = path
+        self.repo = svn.repos.svn_repos_open(path, self.pool)
+        self.fs = svn.repos.svn_repos_fs(self.repo)
+        # youngest revision of base of file system is highest revision number
+        self.rev_max = svn.fs.youngest_rev(self.fs, self.pool)
+    def __del__(self):
+        if self.pool:
+            svn.core.svn_pool_destroy(self.pool)
+    def __getitem__(self, rev):
+        if rev is None:
+            rev = self.rev_max
+        elif rev < 0:
+            rev = rev + self.rev_max + 1
+        assert 0 <= rev <= self.rev_max
+
+        rev = SvnRev(self, rev, self.scratch_pool)
+        svn.core.svn_pool_clear(self.scratch_pool)
+        return rev
+
+_re_diff_change_command = re.compile('(\d+)(?:,(\d+))?([acd])(\d+)(?:,(\d+))?')
+
+def _get_diff_counts(last_fsroot, fsroot, path1, path2, pool):
+    """Calculate the plus/minus counts by parsing the output of a
+    normal diff.  The reasons for choosing Normal diff format are:
+      - the output is short, so should be quicker to parse.
+      - only the change commands need be parsed to calculate the counts.
+      - All file data is prefixed, so won't be mistaken for a change
+        command.
+    This code is based on the description of the format found in the
+    GNU diff manual."""
+    diffobj = svn.fs.FileDiff(last_fsroot, path1,
+                              fsroot, path2, pool, [])
+    fp = diffobj.get_pipe()
+
+    plus, minus = 0, 0
+    line = fp.readline()
+    while line:
+        match = re.match(_re_diff_change_command, line)
+        if match:
+            # size of first range
+            if match.group(2):
+                count1 = int(match.group(2)) - int(match.group(1)) + 1
+            else:
+                count1 = 1
+            cmd = match.group(3)
+            # size of second range
+            if match.group(5):
+                count2 = int(match.group(5)) - int(match.group(4)) + 1
+            else:
+                count2 = 1
+
+            if cmd == 'a':
+                # LaR - insert after line L of file1 range R of file2
+                plus = plus + count2
+            elif cmd == 'c':
+                # FcT - replace range F of file1 with range T of file2
+                minus = minus + count1
+                plus = plus + count2
+            elif cmd == 'd':
+                # RdL - remove range R of file1, which would have been
+                #       at line L of file2
+                minus = minus + count1
+        line = fp.readline()
+    return plus, minus
+
+class SvnRev:
+    """Class used to hold information about a particular revision of
+    the repository."""
+    def __init__(self, repo, rev, pool):
+        self.repo = repo
+        self.rev = rev
+
+        # revision properties ...
+        properties = svn.fs.revision_proplist(repo.fs, rev, pool)
+        self.author = str(properties.get(svn.core.SVN_PROP_REVISION_AUTHOR,''))
+        self.date = str(properties.get(svn.core.SVN_PROP_REVISION_DATE, ''))
+        self.log = str(properties.get(svn.core.SVN_PROP_REVISION_LOG, ''))
+
+        # convert the date string to seconds since epoch ...
+        self.date = svn.core.secs_from_timestr(self.date, pool)
+
+        fsroot = svn.fs.revision_root(repo.fs, rev, pool)
+        if rev > 0:
+            last_fsroot = svn.fs.revision_root(repo.fs, rev-1, pool)
+        else:
+            last_fsroot = None
+        
+        # find changes in the revision
+        editor = svn.repos.RevisionChangeCollector(repo.fs, rev, pool)
+        e_ptr, e_baton = svn.delta.make_editor(editor, pool)
+        svn.repos.svn_repos_replay(fsroot, e_ptr, e_baton, pool)
+
+        self.changes = []
+        for path, change in editor.changes.items():
+            if change.item_kind != svn.core.svn_node_file: continue
+
+            # we handle 
+            if not change.path:
+                oldpath, newpath, action = path, None, 'remove'
+            elif change.added:
+                oldpath, newpath, action = None, path, 'add'
+            else:
+                oldpath, newpath, action = path, path, 'change'
+            plus, minus = _get_diff_counts(last_fsroot, fsroot,
+                                           oldpath, newpath, pool)
+            self.changes.append((path, action, plus, minus))
+
+
+def handle_revision(db, command, repo, rev):
+    """Adds a particular revision of the repository to the checkin database."""
+    revision = repo[rev]
+    for (path, action, plus, minus) in revision.changes:
+        directory, file = os.path.split(path)
+        commit = cvsdb.CreateCommit()
+        commit.SetRepository(repo.path)
+        commit.SetDirectory(directory)
+        commit.SetFile(file)
+        commit.SetRevision(str(rev))
+        commit.SetAuthor(revision.author)
+        commit.SetDescription(revision.log)
+        commit.SetTime(revision.date)
+        commit.SetPlusCount(plus)
+        commit.SetMinusCount(minus)
+        commit.SetBranch(None)
+
+        if action == 'add':
+            commit.SetTypeAdd()
+        elif action == 'remove':
+            commit.SetTypeRemove()
+        elif action == 'change':
+            commit.SetTypeChange()
+
+        if command == 'update':
+            result = db.CheckCommit(commit)
+            if result: continue # already recorded
+
+        # commit to database
+        db.AddCommit(commit)
+    pass
+
+def main(pool, command, repository, rev=None):
+    db = cvsdb.ConnectDatabase()
+
+    repo = SvnRepo(repository, pool)
+    if rev:
+        handle_revision(db, command, repo, rev)
+    else:
+        for rev in range(repo.rev_max+1):
+            handle_revision(db, command, repo, rev)
+
+def usage():
+    sys.stderr.write('Usage: %s {rebuild | update} <repository> [<revision>]\n'
+                     % os.basename(sys.argv[0]))
+    sys.exit(1)
+
+if __name__ == '__main__':
+    if len(sys.argv) < 3:
+        usage()
+
+    command = string.lower(sys.argv[1])
+    if command not in ('rebuild', 'update'):
+        sys.stderr.write('ERROR: unknown command %s\n' % command)
+        usage()
+
+    repository = sys.argv[2]
+    if not os.path.exists(repository):
+        sys.stderr.write('ERROR: could not find repository %s\n' % repository)
+        usage()
+
+    if len(sys.argv) > 3:
+        rev = sys.argv[3]
+        try:
+            rev = int(rev)
+        except ValueError:
+            sys.stderr.write('ERROR: revision "%s" is not numeric\n' % rev)
+            usage()
+    else:
+        rev = None
+
+    svn.core.run_app(main, command, repository, rev)
