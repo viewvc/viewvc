@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 # -*- Mode: python -*-
 #
-# Copyright (C) 2000-2001 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 2000 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewCVS
-# distribution or at http://viewcvs.sourceforge.net/license-1.html.
+# distribution or at http://www.lyra.org/viewcvs/license-1.html.
 #
 # Contact information:
 #   Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://viewcvs.sourceforge.net/
+#   gstein@lyra.org, http://www.lyra.org/viewcvs/
 #
 # -----------------------------------------------------------------------
 #
@@ -40,13 +40,15 @@ else:
 
 #########################################################################
   
-import os, string, cvsdbapi
+import os
+import string
+import cvsdb
 
 
 def UpdateFile(db, repository, path):
     try:
-        commit_list = cvsdbapi.GetUnrecordedCommitList(repository, path)
-    except cvsdbapi.error, e:
+        commit_list = cvsdb.GetUnrecordedCommitList(repository, path)
+    except cvsdb.error, e:
         print '[ERROR] %s' % (e)
         return
 
@@ -78,15 +80,15 @@ def RecurseUpdate(db, repository, directory):
 
 def CommandUpdate():
     ## connect to the database we are updating
-    db = cvsdbapi.ConnectDatabase()
+    db = cvsdb.ConnectDatabase()
     repository = sys.argv[2]
     RecurseUpdate(db, repository, repository)
 
 
 def RebuildFile(db, repository, path):
     try:
-        commit_list = cvsdbapi.GetCommitListFromRCSFile(repository, path)
-    except cvsdbapi.error, e:
+        commit_list = cvsdb.GetCommitListFromRCSFile(repository, path)
+    except cvsdb.error, e:
         print '[ERROR] %s' % (e)
         return
 
@@ -118,7 +120,7 @@ def RecurseRebuild(db, repository, directory):
 
 def CommandRebuild():
     ## connect to the database we are updating
-    db = cvsdbapi.ConnectDatabase()
+    db = cvsdb.ConnectDatabase()
     repository = sys.argv[2]
     RecurseRebuild(db, repository, repository)
 
