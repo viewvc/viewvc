@@ -108,7 +108,7 @@ def PrintCommitRow(commit, color):
     if not cTime:
         cTime = "&nbsp";
     else:
-        cTime = time.strftime("%y/%m/%d %I:%M %p", time.localtime(cTime))
+        cTime = time.strftime("%y/%m/%d %H:%M", time.localtime(cTime))
     
     cAuthor = commit.GetAuthor()
     if not cAuthor:

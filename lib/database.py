@@ -334,7 +334,10 @@ class CheckinDatabase:
              dbRemovedLines, dbDescID) = row
 
             commit = CreateCommit()
-            commit.SetTime(dbCI_When.gmticks())
+
+            ## EEK! bug in dateclass/gmticks(), ticks() actually returns
+            ##      GMT seconds-since-epoc
+            commit.SetTime(dbCI_When.ticks())
             commit.SetFile(self.GetFile(dbFileID))
             commit.SetDirectory(self.GetDirectory(dbDirID))
             commit.SetRevision(dbRevision)

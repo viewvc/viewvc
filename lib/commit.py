@@ -55,7 +55,7 @@ class Commit:
         self.__pluscount = ''
         self.__minuscount = ''
         self.__description = ''
-        self.__time = None
+        self.__gmt_time = 0.0
         self.__type = Commit.CHANGE
 
     def SetRepository(self, repository):
@@ -101,11 +101,11 @@ class Commit:
     def GetRevision(self):
         return self.__revision
 
-    def SetTime(self, time):
-        self.__time = time
+    def SetTime(self, gmt_time):
+        self.__gmt_time = float(gmt_time)
 
     def GetTime(self):
-        return self.__time
+        return self.__gmt_time
 
     def SetAuthor(self, author):
         self.__author = author
