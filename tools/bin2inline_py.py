@@ -82,11 +82,13 @@ class Encode:
 # software.  You may want to edit it, if you want to other icons.
 #
 class WebserverIconEncode(Encode):
-    minimal_list = [ # List of icons actually used by ViewCVS as of 2001-11-17
+    minimal_list = [ # List of icons actually used by ViewCVS as of 2003-10-25
         "/icons/apache_pb.gif",
         "/icons/small/back.gif",
         "/icons/small/dir.gif",
         "/icons/small/text.gif",
+        "/icons/back.gif",
+        "/icons/forward.gif",
     ]
     def match(self, candidate):
         return self.compute_key(candidate) in self.minimal_list
