@@ -114,7 +114,7 @@
     [end]
 
     [if-any entries.copy_path]
-    <br>Copied from: <a href="[entries.copy_href]#rev[entries.copy_rev]">[entries.copy_path]</a> revision [entries.copy_rev]
+    <br>Copied from: <a href="[entries.copy_href]">[entries.copy_path]</a> revision [entries.copy_rev]
     [end]
   [end]
 
