@@ -128,6 +128,8 @@ class Config:
 
   def _find_canon_vhost(self, parser, vhost):
     vhost = string.lower(vhost)
+    # Strip (ignore) port number:
+    vhost = string.split(vhost, ':')[0]
 
     for canon_vhost in parser.options('vhosts'):
       value = parser.get('vhosts', canon_vhost)
