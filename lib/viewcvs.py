@@ -201,7 +201,7 @@ class Request:
     query = sticky_query(query_dict)
     if query:
       self.qmark_query = '?' + query
-      self.amp_query = '&' + query
+      self.amp_query = '&amp;' + query
     else:
       self.qmark_query = ''
       self.amp_query = ''
@@ -466,7 +466,7 @@ def download_url(request, file_url, revision, mime_type):
 
   file_url = file_url + '?rev=' + revision + request.amp_query
   if mime_type:
-    return file_url + '&content-type=' + mime_type
+    return file_url + '&amp;content-type=' + mime_type
   return file_url
 
 _time_desc = {
@@ -1417,7 +1417,7 @@ def view_directory_svn(request):
       row.cvs = 'none' # What the heck is this?
       url = urllib.quote(file) + '/' + request.qmark_query
       if query_dict.has_key('rev'):
-        row.href = url + '&rev=' + query_dict['rev']
+        row.href = url + '&amp;rev=' + query_dict['rev']
       else:
         row.href = url
     else:
