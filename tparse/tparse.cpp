@@ -34,9 +34,10 @@
 #define __USE_XOPEN
 #include <time.h>
 
-#define Whitespace(c) (c == ' ' || c == '\t' || c == '\014' || c == '\n' || c == '\r')
+#define Whitespace(c) (c == ' ' || c == '\t' || c == '\014' || c == '\n' || \
+                       c == '\r')
 #define Token_term(c) (c == ' ' || c == '\t' || c == '\014' || c == '\n' || \
-    c == '\r' || c == ';')
+                       c == '\r' || c == ';')
 #define isdigit(c) ((c-'0')<10)
 
 /*--------- Tokenparser class -----------*/
@@ -140,7 +141,8 @@ void TokenParser::unget(char *token)
 {
   if (backget)
   {
-    throw RCSParseError("Ungetting a token while already having an ungetted token.");
+    throw RCSParseError("Ungetting a token while already having "
+                        "an ungetted token.");
   }
   backget = token;
 }
@@ -300,14 +302,14 @@ int tparseParser::parse_rcs_tree()
       next = NULL;
     else
       tokenstream->matchsemicol();
-    /**
-         * 	there are some files with extra tags in them. for example:
-         *	owner	640;
-      	 *	group	15;
-      	 *	permissions	644;
-      	 *	hardlinks	@configure.in@;
-      	 *	this is "newphrase" in RCSFILE(5). we just want to skip over these.
-    **/
+    /*
+     * 	there are some files with extra tags in them. for example:
+     *	owner	640;
+     *	group	15;
+     *	permissions	644;
+     *	hardlinks	@configure.in@;
+     *	this is "newphrase" in RCSFILE(5). we just want to skip over these.
+     */
 
     while (1)
     {
