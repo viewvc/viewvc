@@ -1776,9 +1776,7 @@ def view_checkout(request):
     ### validate it?
     pass
   else:
-    mime_type, encoding = mimetypes.guess_type(where)
-    if not mime_type:
-      mime_type = 'text/plain'
+    mime_type = request.mime_type
 
   if rev:
     rev_flag = '-p' + rev
@@ -1814,14 +1812,8 @@ def view_checkout(request):
           (header, filename, where))
 
   if mime_type == viewcvs_mime_type:
-    # get the "real" MIME type
-    ### can we pass this thru on the URL, or use something other than
-    ### the content-type to control the markup output? IOW, the overloading
-    ### of content-type introduces some (unneeded) complexity
-    mime_type, encoding = mimetypes.guess_type(where)
-    if not mime_type:
-      mime_type = 'text/plain'
-    markup_stream(request, fp, revision, mime_type)
+    # use the "real" MIME type
+    markup_stream(request, fp, revision, request.mime_type)
   else:
     http_header(mime_type)
     while 1:
@@ -1833,8 +1825,18 @@ def view_checkout(request):
 def view_annotate(request):
   rev = request.query_dict['annotate']
 
+  pathname, filename = os.path.split(request.where)
+  if pathname[-6:] == '/Attic':
+    pathname = pathname[:-6]
+
+  http_header()
+  navigate_header(request, request.url, pathname, filename, rev, 'view')
+  print '<hr noshade>'
+
   import blame
   blame.make_html(request.cvsroot, request.where + ',v', rev)
+
+  html_footer()
 
 
 _re_extract_rev = re.compile(r'^[-+]+ [^\t]+\t([^\t]+)\t((\d+\.)+\d+)$')
