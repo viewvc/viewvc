@@ -132,14 +132,21 @@ if __name__ == "__main__":
     if not dbase:
         dbase = "ViewCVS"
 
-    cmd = "{ mysql --user=%s --password=%s ; } 2>&1" % (user, passwd)
     dscript = string.replace(DATABASE_SCRIPT, "<dbname>", dbase)
 
-    pipes = popen2.Popen3(cmd)
-    pipes.tochild.write(dscript)
-    pipes.tochild.close()
-    print pipes.fromchild.read()
-    status = pipes.wait()
+    if sys.platform == "win32":
+      # popen2.Popen3 is not provided on windows
+      cmd = "mysql --user=%s --password=%s" % (user, passwd)
+      mysql = os.popen(cmd, "w")
+      mysql.write(dscript)
+      status = mysql.close()
+    else:
+      cmd = "{ mysql --user=%s --password=%s ; } 2>&1" % (user, passwd)
+      pipes = popen2.Popen3(cmd)
+      pipes.tochild.write(dscript)
+      pipes.tochild.close()
+      print pipes.fromchild.read()
+      status = pipes.wait()
 
     if status:
         print "[ERROR] the database did not create sucessfully."
