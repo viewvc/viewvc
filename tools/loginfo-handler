@@ -56,13 +56,13 @@ _re_fileversion = re.compile("([^,]+)\,([^,]+)\,([^,]+)")
 ## output functions
 def debug(text):
     if DEBUG_FLAG:
-        print 'DEBUG(loginfo): %s' % (text)
+        print >> sys.stderr, 'DEBUG(viewcvs-loginfo): %s' % (text)
 
 def warning(text):
-    print 'WARNING(loginfo): %s' % (text)
+    print >> sys.stderr, 'WARNING(viewcvs-loginfo): %s' % (text)
 
 def error(text):
-    print 'ERROR(loginfo): %s' % (text)
+    print >> sys.stderr, 'ERROR(viewcvs-loginfo): %s' % (text)
     sys.exit(1)
 
 class FileData:
@@ -121,6 +121,10 @@ def ProcessLoginfo(repository, stdin_list):
     ## to begin with a path seperator, and we don't want it to end
     ## with a path seperator
     directory = list[0]
+    
+    if sys.platform == "win32":
+      directory = string.replace(directory, '/', os.sep)
+    
     while directory[0] == os.sep:
         directory = directory[1:]
     while directory[-1] == os.sep:
@@ -147,6 +151,10 @@ def ProcessLoginfo(repository, stdin_list):
         filename = temp.group(1)
         old_version = temp.group(2)
         new_version = temp.group(3)
+        
+        if sys.platform == "win32":
+          filename = string.replace(filename, '/', os.sep)
+        
         file_data =  FileData(filename, directory, old_version, new_version)
         file_data_list.append(file_data)
 
@@ -176,6 +184,9 @@ if __name__ == '__main__':
         repository = os.environ['CVSROOT']
     except KeyError:
         error('CVSROOT not in environment')
+
+    if sys.platform == "win32":
+        repository = string.replace(repository, '/', os.sep)
 
     ## clean up the repository string: remove any trailing path seperater
     while repository[-1] == os.sep:
