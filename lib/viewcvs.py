@@ -23,6 +23,7 @@
 #   http://stud.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi/
 #
 # -----------------------------------------------------------------------
+# $Id$
 #
 
 __version__ = '1.0-dev'
@@ -145,6 +146,9 @@ class Request:
 
     # remember the parts of the path
     self.path_parts = parts
+    # if present drop the ".diff" from the last part of path_parts:
+    if self.path_parts[-1][-5:] == ".diff":
+        self.path_parts[-1] = parts[-1][:-5]
 
     # put it back together
     where = string.join(parts, '/')
