@@ -271,7 +271,7 @@ class CVSParser(rcsparse.Sink):
 
     # CheckHidden(rcs_pathname);
     try:
-      rcsfile = open(rcs_pathname, 'r')
+      rcsfile = open(rcs_pathname, 'rb')
     except:
       raise RuntimeError, ('error: %s appeared to be under CVS control, ' +
               'but the RCS file is inaccessible.') % rcs_pathname
