@@ -30,10 +30,13 @@ File: [nav_file]
   [if-any branch_points]
     <br>Branch point for: <b>[branch_points]</b>
   [end]
-  [if-any prev]
+  [is roottype "cvs"]
     [if-any changed]
       <br>Changes since <b>[prev]: [changed] lines</b>
     [end]
+  [end]
+  [is roottype "svn"]
+    <br>File size: [size] byte(s)
   [end]
   [is state "dead"]
     <br><b><i>FILE REMOVED</i></b>
