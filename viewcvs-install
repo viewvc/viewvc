@@ -56,6 +56,7 @@ FILE_INFO_LIST = [
     ("cgi/viewcvs.cgi", "cgi/viewcvs.cgi", 0755, 1, 0, 0),
     ("cgi/query.cgi", "cgi/query.cgi", 0755, 1, 0, 0),
     ("cgi/cvsgraphwrapper.cgi", "cgi/cvsgraphwrapper.cgi", 0755, 1, 0, 0),
+    ("cgi/cvsgraphmkimg.cgi", "cgi/cvsgraphmkimg.cgi", 0755, 1, 0, 0),
 
     ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 0, 1, 0),
     ("cgi/cvsgraph.conf.dist", "cvsgraph.conf", 0644, 0, 1, 0),
@@ -72,7 +73,10 @@ FILE_INFO_LIST = [
     ("lib/rcsparse.py", "lib/rcsparse.py", 0644, 1, 0, 1),
     ("lib/rlog.py", "lib/rlog.py", 0644, 1, 0, 1),
     ("lib/viewcvs.py", "lib/viewcvs.py", 0644, 1, 0, 1),
+    ("lib/ezt.py", "lib/ezt.py", 0644, 1, 0, 1),
     
+    ("templates/directory.ezt", "templates/directory.ezt", 0644, 0, 1, 0),
+
     ("tools/loginfo-handler", "loginfo-handler", 0755, 1, 0, 0),
     ("tools/cvsdbadmin", "cvsdbadmin", 0755, 1, 0, 0),
     ("tools/make-database", "make-database", 0755, 1, 0, 0),
