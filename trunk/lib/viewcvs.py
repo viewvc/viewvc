@@ -2448,7 +2448,7 @@ def view_revision_svn(request, data):
         change.diff_href = request.get_url(view_func=view_diff,
                                            where=change.filename, 
                                            pathtype=change.pathtype,
-                                           params={})
+                                           params={'rev' : str(rev)})
     elif change.pathtype is vclib.DIR:
       change.type = 'dir'
       change.view_href = request.get_url(view_func=view_directory,
