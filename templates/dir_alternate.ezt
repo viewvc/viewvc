@@ -55,6 +55,20 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
 <tr><td>Files shown:</td><td><b>[files_shown]</b></td></tr>
 [end]
 </table>
+  [is cfg.options.use_pagesize "0"]
+  [else]
+    [is picklist_len "1"]
+    [else]
+      <form method=GET action="./">
+        <input type=submit value="Go to:">
+        <select name=dir_pagestart  onchange="submit()">
+          [for picklist]
+            <option [is picklist.count dir_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] to [picklist.end]</option>
+          [end]
+        </select>
+      </form>
+    [end]
+  [end]
 [end]
 
 <hr noshade>
@@ -170,8 +184,8 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
         </td>
         <td colspan=3><i>CVS information is unreadable</i></td>
       [else]
-        <td>&nbsp;<a href="[rows.href]"><b>[rows.rev]</b></a></td>
-        <td width="1%"><a name="[rows.anchor]" href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
+        <td width="1%">&nbsp;<a href="[rows.href]"><b>[rows.rev]</b></a></td>
+        <td><a name="[rows.anchor]" href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
 [# to display the revision in a separate window, you could use:
 
    <a name="{rows.anchor}" href="{rows.rev_href}" target="cvs_checkout"
