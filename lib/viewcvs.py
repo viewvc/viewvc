@@ -60,6 +60,7 @@ import ezt
 #########################################################################
 
 checkout_magic_path = '~checkout~'
+helppage_magic_path = '~helppage~'
 viewcvs_mime_type = 'text/vnd.viewcvs-markup'
 
 # put here the variables we need in order to hold our state - they will be
@@ -113,12 +114,16 @@ class Request:
     # exist at the front or end of the path.
     parts = filter(None, string.split(where, '/'))
 
-    # does it have the magic checkout prefix?
-    if parts and parts[0] == checkout_magic_path:
-      self.has_checkout_magic = 1
-      del parts[0]
-    else:
-      self.has_checkout_magic = 0
+    self.has_checkout_magic = 0
+    self.has_helppage_magic = 0
+    # does it have a magic prefix?
+    if parts:
+      if parts[0] == checkout_magic_path:
+        self.has_checkout_magic = 1
+        del parts[0]
+      elif parts[0] == helppage_magic_path:
+        self.has_helppage_magic = 1
+        del parts[0]
 
     # put it back together
     where = string.join(parts, '/')
@@ -2000,6 +2005,32 @@ def view_cvsgraph(cfg, request):
   html_footer()
 
 
+def view_helppage(request):
+  """serve ViewCVS help pages locally.  Using this avoids the need for 
+  modifying the setup of the web server."""
+  help_page = request.where
+  # FIXME: The following is an ugly hack.  It depends on knowledge about what
+  # happens in ../cgi/viewcvs.cgi with LIBRARYDIR.  But I dunno how to do this
+  # clean here:
+  viewcvs_install_directory = os.path.dirname(sys.path[0])
+  doc_directory = os.path.join(viewcvs_install_directory, "doc")
+  try:
+    fp = open(os.path.join(doc_directory, help_page), "rt")
+    if help_page[-3:] == 'png':
+      http_header('image/png')
+    elif help_page[-3:] == 'jpg':
+      http_header('image/jpeg')
+    elif help_page[-3:] == 'gif':
+      http_header('image/gif')
+    else: # assume HTML:
+      http_header()
+    copy_stream(fp)
+    fp.close()
+  except IOError, v:
+    error('help file "%s" not available\n(%s)' % (help_page, str(v)), 
+          '404 Not Found')
+
+   
 _re_extract_rev = re.compile(r'^[-+]+ [^\t]+\t([^\t]+)\t((\d+\.)+\d+)$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
 _re_extract_diff = re.compile(r'^([-+ ])(.*)')
@@ -2490,6 +2521,8 @@ def main():
   elif cfg.options.allow_tar \
        and full_name[-7:] == '.tar.gz' and query_dict.has_key('tarball'):
     download_tarball(request)
+  elif request.has_helppage_magic:
+    view_helppage(request)
   else:
     # if the file is in the Attic, then redirect
     idx = string.rfind(full_name, '/')
