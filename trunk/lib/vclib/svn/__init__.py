@@ -74,10 +74,10 @@ class Revision(vclib.Revision):
 
 
 class NodeHistory:
-  def __init__(self, fs_ptr, filter_path=0):
+  def __init__(self, fs_ptr, show_all_logs):
     self.histories = {}
     self.fs_ptr = fs_ptr
-    self.filter_path = filter_path
+    self.show_all_logs = show_all_logs
     
   def add_history(self, path, revision, pool):
     # If filtering, only add the path and revision to the histories
@@ -85,7 +85,7 @@ class NodeHistory:
     # change means the path itself was changed, or one of its parents
     # was copied).  This is useful for omitting bubble-up directory
     # changes.
-    if self.filter_path:
+    if not self.show_all_logs:
       rev_root = fs.revision_root(self.fs_ptr, revision, pool)
       changed_paths = fs.paths_changed(rev_root, pool)
       paths = changed_paths.keys()
@@ -113,15 +113,15 @@ class NodeHistory:
     
   
 def _get_history(svnrepos, full_name, options):
-  filter_path = 0
-  if options.get('svn_show_all_dir_logs', 0):
+  show_all_logs = options.get('svn_show_all_dir_logs', 0)
+  if not show_all_logs:
     # See if the path is a file or directory.
     kind = fs.check_path(svnrepos.fsroot, full_name, svnrepos.pool)
-    if kind is core.svn_node_dir:
-      filter_path = 1
+    if kind is core.svn_node_file:
+      show_all_logs = 1
       
   # Instantiate a NodeHistory collector object.
-  history = NodeHistory(svnrepos.fs_ptr, filter_path)
+  history = NodeHistory(svnrepos.fs_ptr, show_all_logs)
 
   # Do we want to cross copy history?
   cross_copies = options.get('svn_cross_copies', 0)
