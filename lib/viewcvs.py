@@ -1113,6 +1113,11 @@ def view_directory(request):
     'tarball_href' : None,
     'address' : cfg.general.address,
     'vsn' : __version__,
+    # The following is a quick attempt to fix SF bug #473129:
+    'q' : '"',
+    'logo_file' : cfg.images.logo[0],
+    'logo_width' : cfg.images.logo[1],
+    'logo_height' : cfg.images.logo[2],
     }
 
   # add in the CVS roots for the selection
