@@ -33,7 +33,7 @@ def fs_path_join(base, relative):
 
   
 def _datestr_to_date(datestr, pool):
-  return util.svn_time_from_nts(datestr, pool) / 1000000
+  return util.svn_time_from_cstring(datestr, pool) / 1000000
 
   
 def _fs_rev_props(fsptr, rev, pool):
