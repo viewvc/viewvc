@@ -275,7 +275,7 @@ class Request:
                _strip_suffix('.tar.gz', self.where, self.path_parts,      \
                              vclib.DIR, self.repos, download_tarball) or  \
                _strip_suffix('root.tar.gz', self.where, self.path_parts,  \
-                             vclib.DIR, self.repos, download_tarball)                             
+                             vclib.DIR, self.repos, download_tarball)
       if result:
         self.where, self.path_parts, self.pathtype, self.view_func = result
       else:
@@ -945,46 +945,75 @@ def view_markup(request):
     'log' : None,
     })
 
-  if cfg.options.show_log_in_markup and request.roottype == 'cvs':
-    show_revs, rev_map, rev_order, taginfo, rev2tag, \
-               cur_branch, branch_points, branch_names = read_log(full_name)
-    entry = rev_map[revision]
+  if cfg.options.show_log_in_markup:
+    if request.roottype == 'cvs':
+      show_revs, rev_map, rev_order, taginfo, rev2tag, \
+                 cur_branch, branch_points, branch_names = read_log(full_name)
+      entry = rev_map[revision]
+  
+      idx = string.rfind(revision, '.')
+      branch = revision[:idx]
+  
+      entry.date_str = make_time_string(entry.date)
+  
+      data.update({
+        'roottype' : 'cvs',
+        'date_str' : entry.date_str,
+        'ago' : html_time(request, entry.date, 1),
+        'author' : entry.author,
+        'branches' : None,
+        'tags' : None,
+        'branch_points' : None,
+        'changed' : entry.changed,
+        'log' : htmlify(entry.log),
+        'size' : None,
+        'state' : entry.state,
+        'vendor_branch' : ezt.boolean(_re_is_vendor_branch.match(revision)),
+        })
+  
+      if rev2tag.has_key(branch):
+        data['branches'] = string.join(rev2tag[branch], ', ')
+      if rev2tag.has_key(revision):
+        data['tags'] = string.join(rev2tag[revision], ', ')
+      if branch_points.has_key(revision):
+        data['branch_points'] = string.join(branch_points[revision], ', ')
+  
+      prev_rev = string.split(revision, '.')
+      while 1:
+        if prev_rev[-1] == '0':     # .0 can be caused by 'commit -r X.Y.Z.0'
+          prev_rev = prev_rev[:-2]  # X.Y.Z.0 becomes X.Y.Z
+        else:
+          prev_rev[-1] = str(int(prev_rev[-1]) - 1)
+        prev = string.join(prev_rev, '.')
+        if rev_map.has_key(prev) or prev == '':
+          break
+      data['prev'] = prev
+    elif request.roottype == 'svn':
+      alltags, logs = vclib.svn.fetch_log(request.repos, where)
+      this_rev = int(revision)
+      entry = logs[this_rev]
 
-    idx = string.rfind(revision, '.')
-    branch = revision[:idx]
+      data.update({
+        'roottype' : 'svn',
+        'date_str' : make_time_string(entry.date),
+        'ago' : html_time(request, entry.date, 1),
+        'author' : entry.author,
+        'branches' : None,
+        'tags' : None,
+        'branch_points' : None,
+        'changed' : entry.changed,
+        'log' : htmlify(entry.log),
+        'state' : entry.state,
+        'size' : entry.size,
+        'vendor_branch' : ezt.boolean(0),
+        })
 
-    entry.date_str = make_time_string(entry.date)
-
-    data.update({
-      'date_str' : entry.date_str,
-      'ago' : html_time(request, entry.date, 1),
-      'author' : entry.author,
-      'branches' : None,
-      'tags' : None,
-      'branch_points' : None,
-      'changed' : entry.changed,
-      'log' : htmlify(entry.log),
-      'state' : entry.state,
-      'vendor_branch' : ezt.boolean(_re_is_vendor_branch.match(revision)),
-      })
-
-    if rev2tag.has_key(branch):
-      data['branches'] = string.join(rev2tag[branch], ', ')
-    if rev2tag.has_key(revision):
-      data['tags'] = string.join(rev2tag[revision], ', ')
-    if branch_points.has_key(revision):
-      data['branch_points'] = string.join(branch_points[revision], ', ')
-
-    prev_rev = string.split(revision, '.')
-    while 1:
-      if prev_rev[-1] == '0':     # .0 can be caused by 'commit -r X.Y.Z.0'
-        prev_rev = prev_rev[:-2]  # X.Y.Z.0 becomes X.Y.Z
-      else:
-        prev_rev[-1] = str(int(prev_rev[-1]) - 1)
-      prev = string.join(prev_rev, '.')
-      if rev_map.has_key(prev) or prev == '':
-        break
-    data['prev'] = prev
+      revs = logs.keys()
+      revs.sort()
+      rev_idx = revs.index(this_rev)
+      if rev_idx > 0:
+        data['prev'] = str(revs[rev_idx - 1])
+    
   else:
     data['tag'] = query_dict.get('only_with_tag')
 
