@@ -1567,13 +1567,7 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
               add_links):
   query_dict = request.query_dict
   where = request.where
-
-  ### torch this. some old grandfathering stuff...
-  # revinfo = (rev, date, author, state, lines changed, log)
-  revinfo = entry.rev, entry.date, entry.author, entry.state, \
-            entry.changed, entry.log
-
-  rev = revinfo[0]
+  rev = entry.rev
 
   idx = string.rfind(rev, '.')
   branch = rev[:idx]
@@ -1583,7 +1577,7 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
   else:
     branch_point = branch[:idx]
 
-  is_dead = revinfo[3] == 'dead'
+  is_dead = entry.state == 'dead'
 
   if add_links and not is_dead:
     filename = os.path.basename(where)
@@ -1627,9 +1621,9 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
     print '<i>(vendor branch)</i>'
 
   print ', <i>%s UTC</i> (%s ago) by <i>%s</i>' % \
-        (time.asctime(time.gmtime(revinfo[1])),
-         html_time(revinfo[1], 1),
-         revinfo[2])
+        (time.asctime(time.gmtime(entry.date)),
+         html_time(entry.date, 1),
+         entry.author)
 
   if rev2tag.has_key(branch):
     print '<br>Branch: <b>%s</b>' % \
@@ -1732,7 +1726,7 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
         print '(<a href="%s.diff?r1=%s&r2=%s%s&diff_format=h">colored</a>)' \
               % (request.url, r1, rev, request.amp_query)
 
-  print '<pre>' + htmlify(revinfo[5]) + '</pre>'
+  print '<pre>' + htmlify(entry.log) + '</pre>'
 
 def view_log(request):
   full_name = request.full_name
