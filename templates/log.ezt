@@ -93,13 +93,7 @@
   <br>
 
   [is roottype "svn"]
-    [is entries.action "modified"]Modified[else]
-      [is entries.action "added"]Added[else]
-        [is entries.action "deleted"]Deleted[else]
-          [is entries.action "replaced"]Replaced[end]
-        [end]
-      [end]
-    [end]
+    [if-index entries last]Added[else]Modified[end]
   [end]
 
   <i>[entries.date_str]</i> ([entries.ago] ago) by <i>[entries.author]</i>
