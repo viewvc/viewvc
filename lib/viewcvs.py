@@ -47,7 +47,7 @@ debug.t_start('imports')
 # standard modules that we know are in the path or builtin
 import sys
 import os
-import cgi
+import sapi
 import string
 import urllib
 import mimetypes
@@ -118,7 +118,7 @@ else:
 
 class Request:
   def __init__(self):
-    where = os.environ.get('PATH_INFO', '')
+    where = server.getenv('PATH_INFO', '')
 
     # clean it up. this removes duplicate '/' characters and any that may
     # exist at the front or end of the path.
@@ -156,7 +156,7 @@ class Request:
     # actual path in the chosen root.
     where = string.join(parts, '/')
 
-    url = script_name = os.environ['SCRIPT_NAME']     ### clean this up?
+    url = script_name = server.getenv('SCRIPT_NAME','')     ### clean this up?
     if root_name:
       url = url + '/' + urllib.quote(root_name)
     if where:
@@ -170,7 +170,7 @@ class Request:
     else:
       self.module = None
 
-    self.browser = os.environ.get('HTTP_USER_AGENT', 'unknown')
+    self.browser = server.getenv('HTTP_USER_AGENT', 'unknown')
 
     # in lynx, it it very annoying to have two links per file, so
     # disable the link at the icon in this case:
@@ -182,7 +182,7 @@ class Request:
     # that they accept gzip .. but don't in fact and display garbage
     # then :-/
     self.may_compress = (
-      ( string.find(os.environ.get('HTTP_ACCEPT_ENCODING', ''), 'gzip') != -1
+      ( string.find(server.getenv('HTTP_ACCEPT_ENCODING', ''), 'gzip') != -1
         or string.find(self.browser, 'Mozilla/3') != -1)
       and string.find(self.browser, 'MSIE') == -1
       )
@@ -190,7 +190,7 @@ class Request:
     # parse the query params into a dictionary (and use defaults)
     query_dict = default_settings.copy()
 
-    for name, values in cgi.parse().items():
+    for name, values in server.params().items():
       # patch up old queries that use 'cvsroot' to look like they used 'root'
       if name == 'cvsroot':
         name = 'root'
@@ -221,7 +221,7 @@ class Request:
       del(query_dict['root'])
       query = compat.urlencode(query_dict)
       url = script_name + '/' + urllib.quote(name) + '/' + urllib.quote(where)
-      redirect(url + '?' + query)
+      server.redirect(url + '?' + query)
     elif not root_name:
       if name:
         root_name = name
@@ -235,10 +235,10 @@ class Request:
         self.repos = bincvs.BinCVSRepository(root_name, rootpath)
         self.roottype = 'cvs'
       except vclib.ReposNotFound:
-        error('%s not found!\nThe wrong path for this repository was '
+        raise debug.ViewcvsException('%s not found!\nThe wrong path for this repository was '
               'configured, or the server on which the CVS tree lives may be '
               'down. Please try again in a few minutes.'
-              % cgi.escape(root_name))
+              % server.escape(root_name))
       # required so that spawned rcs programs correctly expand $CVSHeader$
       os.environ['CVSROOT'] = rootpath
     elif cfg.general.svn_roots.has_key(root_name):
@@ -251,24 +251,24 @@ class Request:
         self.repos = vclib.svn.SubversionRepository(root_name, rootpath, rev)
         self.roottype = 'svn'
       except vclib.ReposNotFound:
-        error('%s not found!\nThe wrong path for this repository was '
+        raise debug.ViewcvsException('%s not found!\nThe wrong path for this repository was '
               'configured, or the server on which the CVS tree lives may be '
               'down. Please try again in a few minutes.'
-              % cgi.escape(root_name))
+              % server.escape(root_name))
     else:
       # if the query had 'root' in it, we would have caught this error
       # during validation.  so, we know this failed on the default root.
       assert not query_dict.has_key('root')
-      error("The settings of 'cvs_roots' and 'default_root' are misconfigured "
+      raise debug.ViewcvsException("The settings of 'cvs_roots' and 'default_root' are misconfigured "
             "in the viewcvs.conf file. "
             "The default root, '%s', is not present in cvs_roots."
-            % cgi.escape(root_name))
+            % server.escape(root_name))
 
     self.root_name = root_name
     self.full_name = rootpath + '/' + where
 
     # process the Accept-Language: header
-    hal = os.environ.get('HTTP_ACCEPT_LANGUAGE')
+    hal = server.getenv('HTTP_ACCEPT_LANGUAGE','')
     self.lang_selector = accept.language(hal)
     self.language = self.lang_selector.select_from(cfg.general.languages)
 
@@ -295,13 +295,13 @@ def _validate_param(name, value):
   try:
     validator = _legal_params[name]
   except KeyError:
-    error('An illegal parameter name ("%s") was passed.' % cgi.escape(name))
+    raise debug.ViewcvsException('An illegal parameter name ("%s") was passed.' % server.escape(name))
 
   # is the validator a regex?
   if hasattr(validator, 'match'):
     if not validator.match(value):
-      error('An illegal value ("%s") was passed as a parameter.' %
-            cgi.escape(value))
+      raise debug.ViewcvsException('An illegal value ("%s") was passed as a parameter.' %
+            server.escape(value))
     return
 
   # the validator must be a function
@@ -310,9 +310,9 @@ def _validate_param(name, value):
 def _validate_root(value):
   if not cfg.general.cvs_roots.has_key(value) \
      and not cfg.general.svn_roots.has_key(value):
-    error('The root "%s" is unknown. If you believe the value is '
+    raise debug.ViewcvsException('The root "%s" is unknown. If you believe the value is '
           'correct, then please double-check your configuration.'
-          % cgi.escape(value),
+          % server.escape(value),
           "404 Repository not found")
 
 def _validate_regex(value):
@@ -360,20 +360,6 @@ _legal_params = {
   'content-type'  : _re_validate_mimetype,
   }
 
-def error(msg, status='500 Internal Server Error'):
-  """a simple error reporting utility function"""
-  print 'Status:', status
-  print
-  print msg
-  sys.exit(0)
-
-def redirect(location):
-  print 'Status: 301 Moved'
-  print 'Location:', location
-  print
-  print 'This document is located <a href="%s">here</a>.' % location
-  sys.exit(0)
-
 def generate_page(request, tname, data):
   # allow per-language template selection
   if request:
@@ -386,15 +372,6 @@ def generate_page(request, tname, data):
   debug.t_end('ezt-parse')
 
   template.generate(sys.stdout, data)
-
-_header_sent = 0
-def http_header(content_type='text/html'):
-  global _header_sent
-  if _header_sent:
-    return
-  print 'Content-Type:', content_type
-  print
-  _header_sent = 1
 
 def html_footer(request):
   ### would be nice to have a "standard" set of data available to all
@@ -473,7 +450,7 @@ def is_text(mime_type):
 _re_rewrite_url = re.compile('((http|ftp)(://[-a-zA-Z0-9%.~:_/]+)([?&]([-a-zA-Z0-9%.~:_]+)=([-a-zA-Z0-9%.~:_])+)*(#([-a-zA-Z0-9%.~:_]+)?)?)')
 _re_rewrite_email = re.compile('([-a-zA-Z0-9_.]+@([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
 def htmlify(html):
-  html = cgi.escape(html)
+  html = server.escape(html)
   html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
   html = re.sub(_re_rewrite_email, r'<a href="mailto:\1">\1</a>', html)
   return html
@@ -599,12 +576,37 @@ def markup_stream_python(fp):
   else:
     ### it doesn't escape stuff quite right, nor does it munge URLs and
     ### mailtos as well as we do.
-    html = cgi.escape(fp.read())
+    html = server.escape(fp.read())
     pp = py2html.PrettyPrint(PyFontify.fontify, "rawhtml", "color")
     html = pp.fontify(html)
     html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
     html = re.sub(_re_rewrite_email, r'<a href="mailto:\1">\1</a>', html)
     sys.stdout.write(html)
+
+def markup_stream_php(fp):
+  sys.stdout.flush()
+
+  os.putenv("SERVER_SOFTWARE", "")
+  os.putenv("SERVER_NAME", "")
+  os.putenv("GATEWAY_INTERFACE", "")
+  os.putenv("REQUEST_METHOD", "")
+  php = popen.pipe_cmds([["php","-q"]])
+
+  php.write("<?\n$file = '';\n")
+
+  while 1:
+    chunk = fp.read(CHUNK_SIZE)
+    if not chunk:
+      if fp.eof() is None:
+        time.sleep(1)
+        continue
+      break
+    php.write("$file .= '")
+    php.write(string.replace(string.replace(chunk, "\\", "\\\\"),"'","\\'"))
+    php.write("';\n")
+
+  php.write("\n\nhighlight_string($file);\n?>")
+  php.close()
 
 def markup_stream_enscript(lang, fp):
   sys.stdout.flush()
@@ -637,10 +639,13 @@ def markup_stream_enscript(lang, fp):
     raise
 
   enscript.close()
-  os.wait()
+  if sys.platform != "win32":
+    os.wait()
 
 markup_streamers = {
 #  '.py' : markup_stream_python,
+#  '.php' : markup_stream_php,
+#  '.inc' : markup_stream_php,
   }
 
 ### this sucks... we have to duplicate the extensions defined by enscript
@@ -810,7 +815,7 @@ def markup_stream(request, fp, revision, mime_type):
   else:
     data['tag'] = query_dict.get('only_with_tag')
 
-  http_header()
+  server.header()
   generate_page(request, cfg.templates.markup, data)
 
   if mime_type[:6] == 'image/':
@@ -848,7 +853,7 @@ def get_file_data_svn(request):
   full_name = request.full_name
   item = request.repos.getitem(request.path_parts)
   if not isinstance(item, vclib.Versdir):
-    error("Path '%s' is not a directory." % full_name)
+    raise debug.ViewcvsException("Path '%s' is not a directory." % full_name)
   files = item.getfiles()
   subdirs = item.getsubdirs()
   data = [ ]
@@ -875,8 +880,12 @@ def get_file_data(full_name):
 def get_file_tests(full_name,files):
   data = [ ]
 
-  uid = os.getuid()
-  gid = os.getgid()
+  if sys.platform == "win32":
+    uid = 1
+    gid = 1
+  else:
+    uid = os.getuid()
+    gid = os.getgid()
 
   for file in files:
     pathname = full_name + '/' + file
@@ -981,7 +990,7 @@ def prepare_hidden_values(request, var_list, vars_to_omit_list):
       value = query_dict.get(varname, '')
       if value != '' and value != default_settings.get(varname):
         hidden_values.append('<input type="hidden" name="%s" value="%s" />' %
-                             (varname, cgi.escape(value)))
+                             (varname, server.escape(value)))
   return string.join(hidden_values, '')
 
 def sort_file_data(file_data, sortdir, sortby, fileinfo, roottype):
@@ -1359,7 +1368,7 @@ def view_directory_cvs(request):
     data['dir_pagestart'] = int(query_dict.get('dir_pagestart',0))
     data['rows'] = paging(data, 'rows', data['dir_pagestart'], 'name')
 
-  http_header()
+  server.header()
   generate_page(request, cfg.templates.directory, data)
 
 def view_directory_svn(request):
@@ -1444,7 +1453,7 @@ def view_directory_svn(request):
 
     info = fileinfo.get(file)
     if info is None:
-      error("Error getting info for '%s'" % file)
+      raise debug.ViewcvsException("Error getting info for '%s'" % file)
 
     row.rev = info.rev
     row.author = info.author
@@ -1486,7 +1495,7 @@ def view_directory_svn(request):
   # the number actually displayed
   data['files_shown'] = num_displayed
 
-  http_header()
+  server.header()
   generate_page(request, cfg.templates.directory, data)
 
 def paging(data, key, pagestart, local_name):
@@ -1620,7 +1629,7 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
   if view_tag:
     view_rev = taginfo.get(view_tag)
     if not view_rev:
-      error('Tag %s not defined.' % view_tag, '404 Tag not found')
+      raise debug.ViewcvsException('Tag %s not defined.' % view_tag, '404 Tag not found')
 
     if view_rev[:2] == '0.':
       view_rev = view_rev[2:]
@@ -1872,7 +1881,7 @@ def view_log_svn(request):
     data['log_pagestart'] = int(query_dict.get('log_pagestart',0))
     data['entries'] = paging(data, 'entries', data['log_pagestart'], 'rev')
 
-  http_header()
+  server.header()
   generate_page(request, cfg.templates.log, data)
   
 def view_log_cvs(request):
@@ -2002,7 +2011,7 @@ def view_log_cvs(request):
     data['log_pagestart'] = int(query_dict.get('log_pagestart',0))
     data['entries'] = paging(data, 'entries', data['log_pagestart'], 'rev')
 
-  http_header()
+  server.header()
   generate_page(request, cfg.templates.log, data)
 
 ### suck up other warnings in _re_co_warning?
@@ -2027,7 +2036,7 @@ def process_checkout(full_name, where, query_dict, default_mime_type):
     mime_type = default_mime_type
 
   fp = popen.popen(os.path.join(cfg.general.rcs_path, 'co'),
-                   (rev_flag, full_name), 'r')
+                   (rev_flag, full_name), 'rb')
 
   # header from co:
   #
@@ -2042,36 +2051,36 @@ def process_checkout(full_name, where, query_dict, default_mime_type):
 
   line = fp.readline()
   if not line:
-    error('Missing output from co.<br>'
+    raise debug.ViewcvsException('Missing output from co.<br>'
           'fname="%s". url="%s"' % (filename, where))
 
   match = _re_co_filename.match(line)
   if not match:
-    error('First line of co output is not the filename.<br>'
+    raise debug.ViewcvsException('First line of co output is not the filename.<br>'
           'Line was: %s<br>'
           'fname="%s". url="%s"' % (line, filename, where))
   filename = match.group(1)
 
   line = fp.readline()
   if not line:
-    error('Missing second line of output from co.<br>'
+    raise debug.ViewcvsException('Missing second line of output from co.<br>'
           'fname="%s". url="%s"' % (filename, where))
   match = _re_co_revision.match(line)
   if not match:
     match = _re_co_warning.match(line)
     if not match:
-      error('Second line of co output is not the revision.<br>'
+      raise debug.ViewcvsException('Second line of co output is not the revision.<br>'
             'Line was: %s<br>'
             'fname="%s". url="%s"' % (line, filename, where))
 
     # second line was a warning. ignore it and move along.
     line = fp.readline()
     if not line:
-      error('Missing third line of output from co (after a warning).<br>'
+      raise debug.ViewcvsException('Missing third line of output from co (after a warning).<br>'
             'fname="%s". url="%s"' % (filename, where))
     match = _re_co_revision.match(line)
     if not match:
-      error('Third line of co output is not the revision.<br>'
+      raise debug.ViewcvsException('Third line of co output is not the revision.<br>'
             'Line was: %s<br>'
             'fname="%s". url="%s"' % (line, filename, where))
 
@@ -2079,7 +2088,7 @@ def process_checkout(full_name, where, query_dict, default_mime_type):
   revision = match.group(1)
 
   if filename != full_name:
-    error('The filename from co did not match. Found "%s". Wanted "%s"<br>'
+    raise debug.ViewcvsException('The filename from co did not match. Found "%s". Wanted "%s"<br>'
           'url="%s"' % (filename, full_name, where))
 
   return fp, revision, mime_type
@@ -2102,7 +2111,7 @@ def view_checkout(request):
     # use the "real" MIME type
     markup_stream(request, fp, revision, request.mime_type)
   else:
-    http_header(mime_type)
+    server.header(mime_type)
     copy_stream(fp)
 
 def view_annotate(request):
@@ -2119,7 +2128,7 @@ def view_annotate(request):
     'kv' : request.kv,
     })
 
-  http_header()
+  server.header()
   generate_page(request, cfg.templates.annotate, data)
 
   ### be nice to hook this into the template...
@@ -2133,11 +2142,11 @@ def view_annotate(request):
 def cvsgraph_image(cfg, request):
   "output the image rendered by cvsgraph"
   # this function is derived from cgi/cvsgraphmkimg.cgi
-  http_header('image/png')
+  server.header('image/png')
   fp = popen.popen(os.path.normpath(os.path.join(cfg.options.cvsgraph_path,'cvsgraph')),
                                ("-c", cfg.options.cvsgraph_conf,
                                 "-r", request.repos.rootpath,
-                                request.where + ',v'), 'r')
+                                request.where + ',v'), 'rb')
   copy_stream(fp)
   fp.close()
 
@@ -2164,7 +2173,7 @@ def view_cvsgraph(cfg, request):
                     "-r", request.repos.rootpath,
                     "-6", request.amp_query, 
                     "-7", request.qmark_query,
-                    request.where + ',v'), 'r')
+                    request.where + ',v'), 'rb')
 
   data.update({
     'request' : request,
@@ -2174,7 +2183,7 @@ def view_cvsgraph(cfg, request):
     'kv' : request.kv,
     })
 
-  http_header()
+  server.header()
   generate_page(request, cfg.templates.graph, data)
 
 def search_files(request, search_re):
@@ -2264,18 +2273,18 @@ def view_doc(request):
     # aid testing from CVS working copy:
     doc_directory = os.path.join(g_install_dir, "website")
   try:
-    fp = open(os.path.join(doc_directory, help_page), "rt")
+    fp = open(os.path.join(doc_directory, help_page), "rb")
   except IOError, v:
-    error('help file "%s" not available\n(%s)' % (help_page, str(v)), 
+    raise debug.ViewcvsException('help file "%s" not available\n(%s)' % (help_page, str(v)), 
           '404 Not Found')
   if help_page[-3:] == 'png':
-    http_header('image/png')
+    server.header('image/png')
   elif help_page[-3:] == 'jpg':
-    http_header('image/jpeg')
+    server.header('image/jpeg')
   elif help_page[-3:] == 'gif':
-    http_header('image/gif')
+    server.header('image/gif')
   else: # assume HTML:
-    http_header()
+    server.header()
   copy_stream(fp)
   fp.close()
 
@@ -2284,7 +2293,7 @@ _re_extract_rev = re.compile(r'^[-+]+ [^\t]+\t([^\t]+)\t((\d+\.)*\d+)$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
 def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
   # do this now, in case we need to print an error
-  http_header()
+  server.header()
 
   query_dict = request.query_dict
 
@@ -2356,8 +2365,8 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
   # Convert to local time if option is set, otherwise remains UTC
   if (cfg.options.use_localtime):
     def time_format(date):
-      date = time.strptime(date[-19:], "%Y/%m/%d %H:%M:%S")
-      date = time.mktime(date) - time.timezone
+      date = compat.cvs_strptime(date[-19:])
+      date = compat.timegm(date)
       localtime = time.localtime(date)
       date = time.strftime('%Y/%m/%d %H:%M:%S', localtime)
       return ', ' + date + ' ' + time.tzname[localtime[8]]
@@ -2591,7 +2600,7 @@ def view_diff(request):
     args.append('-u')
     unified = 1
   else:
-    error('Diff format %s not understood' % format, '400 Bad arguments')
+    raise debug.ViewcvsException('Diff format %s not understood' % format, '400 Bad arguments')
 
   if human_readable:
     if cfg.options.hr_funout:
@@ -2608,7 +2617,7 @@ def view_diff(request):
   if request.roottype == 'cvs':
     args[len(args):] = ['-r' + rev1, '-r' + rev2, request.full_name]
     diff_cmd = os.path.normpath(os.path.join(cfg.general.rcs_path,'rcsdiff'))
-    fp = popen.popen(diff_cmd, args, 'r')
+    fp = popen.popen(diff_cmd, args, 'rt')
   else:
     date1 = time.strftime('%Y/%m/%d %H:%M:%S',
                           time.gmtime(vclib.svn.date_from_rev(request.repos,
@@ -2632,7 +2641,7 @@ def view_diff(request):
     human_readable_diff(request, fp, rev1, rev2, sym1, sym2)
     return
 
-  http_header('text/plain')
+  server.header('text/plain')
 
   rootpath = request.repos.rootpath
   if unified:
@@ -2756,7 +2765,7 @@ def generate_tarball(out, request, tar_top, rep_top, reldir, tag, stack=[]):
     rev_flag = '-p' + rev
     full_name = rep_dir + '/' + file + ',v'
     fp = popen.popen(os.path.normpath(os.path.join(cfg.general.rcs_path,'co')),
-                     (rev_flag, full_name), 'r', 0)
+                     (rev_flag, full_name), 'rb', 0)
     contents = fp.read()
     status = fp.close()
 
@@ -2782,7 +2791,8 @@ def download_tarball(request):
 
   ### look for GZIP binary
 
-  http_header('application/octet-stream')
+  server.header('application/octet-stream')
+  sys.stdout.flush()
   fp = popen.pipe_cmds([('gzip', '-c', '-n')])
   generate_tarball(fp, request, tar_top, rep_top, [], tag)
   fp.write('\0' * 1024)
@@ -2803,7 +2813,10 @@ def handle_config():
 
     # load in configuration information from the config file
     pathname = CONF_PATHNAME or 'viewcvs.conf'
-    cfg.load_config(pathname, os.environ.get('HTTP_HOST'))
+    if sapi.server:
+      cfg.load_config(pathname, sapi.server.getenv('HTTP_HOST'))
+    else:
+      cfg.load_config(pathname, None)
 
     # special handling for svn_parent_path.  any subdirectories
     # present in the directory specified as the svn_parent_path that
@@ -2813,7 +2826,7 @@ def handle_config():
       try:
         subpaths = os.listdir(pp)
       except OSError:
-        error("The setting for 'svn_parent_path' does not refer to "
+        raise debug.ViewcvsException("The setting for 'svn_parent_path' does not refer to "
               "a valid directory.")
 
       for subpath in subpaths:
@@ -2836,135 +2849,127 @@ def handle_config():
 
 
 def main():
-  # handle the configuration stuff
-  handle_config()
-
-  # build a Request object, which contains info about the HTTP request
-  request = Request()
-
-  # most of the startup is done now.
-  debug.t_end('startup')
-
-  # if this is just a simple hunk of doc, then serve it up
-  if request.has_docroot_magic:
-    view_doc(request)
-    return
-
-  # check the forbidden list
-  if cfg.is_forbidden(request.module):
-    error('Access to "%s" is forbidden.' % request.module, '403 Forbidden')
-
-  # we must be referring to something in the repository. what is it?
-  isdir = 0
-  type = None
+  global server
   try:
-    type = request.repos.itemtype(request.path_parts)
-    isdir = (type == vclib.DIR)
-  except vclib.ItemNotFound: # Let ItemNotFound errors fall through for now
-    pass
-  
-  url = request.url
-
-  # if we have a directory and the request didn't end in "/", then redirect
-  # so that it does. (so that relative URLs in our output work right)
-  if isdir and os.environ.get('PATH_INFO', '')[-1:] != '/':
-    redirect(url + '/' + request.qmark_query)
-
-  if isdir:
-    if request.roottype == 'cvs':
-      view_directory_cvs(request)
-    else:
-      view_directory_svn(request)
-    return
-
-  full_name = request.full_name
-
-  # since we aren't talking about a directory, set up the mime type info
-  # for the potential file.
-  request.setup_mime_type_info()
-
-  query_dict = request.query_dict
-
-  # Not a dir, and not a file ... is this some kind of URL hackery
-  # (blessed or otherwise) ?
-  if type != vclib.FILE:
-    if full_name[-5:] == '.diff' \
-       and query_dict.has_key('r1') and query_dict.has_key('r2'):
-      path_parts = request.path_parts[:]
-      path_parts[-1] = path_parts[-1][:-5]
-      if request.repos.itemtype(path_parts) == vclib.FILE:
-        # this is a versioned file with the old .diff tack-on present.
-        # redirect.
-        redirect(url[:-5] + '?' + compat.urlencode(query_dict))
-    elif cfg.options.allow_tar \
-         and full_name[-7:] == '.tar.gz' and query_dict.has_key('tarball'):
-      # getting your tarball on?  so be it.
-      download_tarball(request)
-    elif request.roottype == 'cvs':
-      # if the file is in a cvs Attic, then redirect.
-      idx = string.rfind(full_name, '/')
-      attic_name = full_name[:idx] + '/Attic' + full_name[idx:]
-      if os.path.isfile(attic_name + ',v') or \
-         full_name[-5:] == '.diff' and os.path.isfile(attic_name[:-5] + ',v'):
-        idx = string.rfind(url, '/')
-        redirect(url[:idx] + '/Attic' + url[idx:] + \
-                 '?' + compat.urlencode(query_dict))
-
-    # when all else fails: complain about it.
-    error('%s: unknown location' % request.url, '404 Not Found')
-
-  ### at this point, we know we're talking about a file.
+    try:
+      server = sapi.server
+      debug.t_start('main')
+      
+      # handle the configuration stuff
+      handle_config()
     
-  # do Subversion-y things here until more concepts mesh with CVS's
-  if request.roottype == 'svn':
-    if query_dict.has_key('rev') or request.has_checkout_magic:
-      view_checkout(request)
-    elif query_dict.has_key('r1') and query_dict.has_key('r2'):
-      view_diff(request)
-    else:
-      view_log_svn(request)
-    return
-  else:
-    if query_dict.has_key('rev') or request.has_checkout_magic:
-      view_checkout(request)
-    elif query_dict.has_key('annotate') and cfg.options.allow_annotate:
-      view_annotate(request)
-    elif query_dict.has_key('r1') and query_dict.has_key('r2'):
-      view_diff(request)
-    elif query_dict.has_key('graph') and cfg.options.use_cvsgraph:
-      if not query_dict.has_key('makeimage'):
-        view_cvsgraph(cfg, request)
-      else: 
-        cvsgraph_image(cfg, request)
-    else:
-      view_log_cvs(request)
-    return
-  
-  error('%s: unable to determine desired operation' % request.url,
-        '404 Not Found')
-
-
-def run_cgi():
-  try:
-    debug.t_start('main')
-    main()
+      # build a Request object, which contains info about the HTTP request
+      request = Request()
+    
+      # most of the startup is done now.
+      debug.t_end('startup')
+    
+      # if this is just a simple hunk of doc, then serve it up
+      if request.has_docroot_magic:
+        view_doc(request)
+        return
+    
+      # check the forbidden list
+      if cfg.is_forbidden(request.module):
+        raise debug.ViewcvsException('Access to "%s" is forbidden.' % request.module, '403 Forbidden')
+    
+      # we must be referring to something in the repository. what is it?
+      isdir = 0
+      type = None
+      try:
+        type = request.repos.itemtype(request.path_parts)
+        isdir = (type == vclib.DIR)
+      except vclib.ItemNotFound: # Let ItemNotFound errors fall through for now
+        pass
+      
+      url = request.url
+    
+      # if we have a directory and the request didn't end in "/", then redirect
+      # so that it does. (so that relative URLs in our output work right)
+      if isdir and server.getenv('PATH_INFO', '')[-1:] != '/':
+        server.redirect(url + '/' + request.qmark_query)
+    
+      if isdir:
+        if request.roottype == 'cvs':
+          view_directory_cvs(request)
+        else:
+          view_directory_svn(request)
+        return
+    
+      full_name = request.full_name
+    
+      # since we aren't talking about a directory, set up the mime type info
+      # for the potential file.
+      request.setup_mime_type_info()
+    
+      query_dict = request.query_dict
+    
+      # Not a dir, and not a file ... is this some kind of URL hackery
+      # (blessed or otherwise) ?
+      if type != vclib.FILE:
+        if full_name[-5:] == '.diff' \
+           and query_dict.has_key('r1') and query_dict.has_key('r2'):
+          path_parts = request.path_parts[:]
+          path_parts[-1] = path_parts[-1][:-5]
+          if request.repos.itemtype(path_parts) == vclib.FILE:
+            # this is a versioned file with the old .diff tack-on present.
+            # redirect.
+            server.redirect(url[:-5] + '?' + compat.urlencode(query_dict))
+        elif cfg.options.allow_tar \
+             and full_name[-7:] == '.tar.gz' and query_dict.has_key('tarball'):
+          # getting your tarball on?  so be it.
+          download_tarball(request)
+        elif request.roottype == 'cvs':
+          # if the file is in a cvs Attic, then redirect.
+          idx = string.rfind(full_name, '/')
+          attic_name = full_name[:idx] + '/Attic' + full_name[idx:]
+          if os.path.isfile(attic_name + ',v') or \
+             full_name[-5:] == '.diff' and os.path.isfile(attic_name[:-5] + ',v'):
+            idx = string.rfind(url, '/')
+            server.redirect(url[:idx] + '/Attic' + url[idx:] + \
+                     '?' + compat.urlencode(query_dict))
+    
+        # when all else fails: complain about it.
+        raise debug.ViewcvsException('%s: unknown location' % request.url, '404 Not Found')
+    
+      ### at this point, we know we're talking about a file.
+        
+      # do Subversion-y things here until more concepts mesh with CVS's
+      if request.roottype == 'svn':
+        if query_dict.has_key('rev') or request.has_checkout_magic:
+          view_checkout(request)
+        elif query_dict.has_key('r1') and query_dict.has_key('r2'):
+          view_diff(request)
+        else:
+          view_log_svn(request)
+        return
+      else:
+        if query_dict.has_key('rev') or request.has_checkout_magic:
+          view_checkout(request)
+        elif query_dict.has_key('annotate') and cfg.options.allow_annotate:
+          view_annotate(request)
+        elif query_dict.has_key('r1') and query_dict.has_key('r2'):
+          view_diff(request)
+        elif query_dict.has_key('graph') and cfg.options.use_cvsgraph:
+          if not query_dict.has_key('makeimage'):
+            view_cvsgraph(cfg, request)
+          else: 
+            cvsgraph_image(cfg, request)
+        else:
+          view_log_cvs(request)
+        return
+      
+      raise debug.ViewcvsException('%s: unable to determine desired operation' % request.url,
+            '404 Not Found')
+    except SystemExit, e:
+      return
+    except:
+      debug.PrintException()
+      html_footer(None)
+  finally:
     debug.t_end('main')
     debug.dump()
-  except SystemExit, e:
-    # don't catch SystemExit (caused by sys.exit()). propagate the exit code
-    sys.exit(e[0])
-  except:
-    info = sys.exc_info()
-    http_header()
-    print '<html><head><title>Python Exception Occurred</title></head>'
-    print '<body bgcolor=white><h1>Python Exception Occurred</h1>'
-    import traceback
-    lines = apply(traceback.format_exception, info)
-    print '<pre>'
-    print cgi.escape(string.join(lines, ''))
-    print '</pre>'
-    html_footer(None)
-
+    debug.DumpChildren()
 
 class _item:
   def __init__(self, **kw):
