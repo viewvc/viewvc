@@ -50,7 +50,7 @@ On Apache, you can use CGI mode or Mod_Python mode or both modes at once. CGI mo
 
 CGI Mode On IIS
 
-  1) Copy viewcvs.cgi and query.cgi from <VIEWCVS_INSTALL_DIR>\cgi to a folder that is accessible through your web server.
+  1) Copy viewcvs.cgi and query.cgi from <VIEWCVS_INSTALL_DIR>\www\cgi to a folder that is accessible through your web server.
 
   2) Start up the IIS "Internet Services Manager" and right click a virtual server or virtual directory that contains the files you just copied. Choose "Properties" from the context menu that appears.
 
@@ -73,7 +73,7 @@ ASP Mode On IIS
 
   1) Run <PYTHON_DIR>\Lib\site-packages\win32comext\axscript\client\pyscript.py to register Python as an ASP scripting language. (More documentation on this is at http://www.python.org/windows/win32com/ActiveXScripting.html )
 
-  2) Copy the viewcvs.asp and query.asp files from <VIEWCVS_INSTALL_DIR>\windows to a folder that is accessible through your web server.
+  2) Copy the viewcvs.asp and query.asp files from <VIEWCVS_INSTALL_DIR>\www\asp to a folder that is accessible through your web server.
 
   3) Start up the IIS "Internet Services Manager" and right click on the virtual server that contains the files you just copied. Choose "Properties" from the context menu that appears.
 
@@ -98,9 +98,7 @@ Mod_Python Mode on Apache
 
     LoadModule python_module modules/mod_python.so
 
-  3) Copy viewcvs.py and query.py from <VIEWCVS_INSTALL_DIR>\windows to a folder being served by apache.
-
-  4) Create a new .htaccess file in the folder where you put viewcvs.py and query.py (or edit an existing .htaccess file there) and paste in the contents of <VIEWCVS_INSTALL_DIR>\windows\htaccess-mod_python. Make sure overrides are allowed in this folder. The relevant virtual directory in httpd.conf should have "AllowOverride All" set, or at least "AllowOverride FileInfo Options".
+  3) Copy viewcvs.py, query.py, and .htaccess from <VIEWCVS_INSTALL_DIR>\www\mod_python to a folder being served by apache. Make sure overrides are allowed in this folder. The relevant virtual directory in httpd.conf should have "AllowOverride All" set, or at least "AllowOverride FileInfo Options".
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ENSCRIPT HIGHLIGHTING
