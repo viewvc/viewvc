@@ -31,11 +31,9 @@
 <h4>On this page:</h4>
 
 <ul id="bookmarks">
-  <li><a href="#sec-what-is-it">What Is It?</a></li>
-  <li><a href="#sec-vs-cvsweb">vs. cvsweb</a></li>
+  <li><a href="#sec-what-is-viewcvs">What Is ViewCVS?</a></li>
+  <li><a href="#sec-requirements">Requirements</a></li>
   <li><a href="#sec-future">Future Plans</a></li>
-  <li><a href="#sec-colorization">Colorization</a></li>
-  <li><a href="#sec-related">Related Software</a></li>
 </ul>
 
 <hr/>
@@ -50,110 +48,131 @@
 
 <div class="section">
 
-<h2 id="sec-what-is-it">What Is It?</h2>
+<h2 id="sec-what-is-viewcvs">What Is ViewCVS?</h2>
 
-<p>ViewCVS is a browser interface for CVS and Subversion repositories.
-   It can browse directories, change logs, and specific revisions of
-   files. It can display diffs between versions and show selections of
-   files based on tags or branches. In addition, ViewCVS has
-   "annotation" or "blame" support, Bonsai-like query facilities,
-   template-based page generation, and support for individually
-   configuring virtual hosts.  It also includes support for <a
-   href="http://www.akhphd.au.dk/~bertho/cvsgraph/">CvsGraph</a> -- a
-   program to display the tree of revisions and branches
-   graphically.</p>
+<p>ViewCVS is a browser interface for CVS and Subversion version
+   control repositories.  It generates templatized HTML to present
+   navigable directory, revision, and change log listings.  It can
+   display specific versions of files as well as diffs between those
+   versions.  Basically, ViewCVS provides the bulk of the report-like
+   functionality you expect out of your version control tool, but much
+   more prettily than the average textual command-line program
+   output.</p>
 
-<p>Currently, the functionality of ViewCVS surpasses that of cvsweb.
-   See <a href="#Cvsweb">below</a> for a list of additional
-   features.</p>
-
-</div>
-<div class="section">
-
-<h2 id="Requirements">Requirements</h2>
-
-<p>ViewCVS requires <strong>Python 1.5.2</strong> or later (Python
-   1.5.2 has been out for several years and is readily available for your
-   favorite operating system).</p>
-
-</div>
-<div class="section">
-
-<h2 id="Cvsweb">Additional features over cvsweb</h2>
+<p>Here are some of the additional features of ViewCVS:</p>
 
 <ul>
-  <li>Template support: you can now customize the look and feel of
-      ViewCVS by editing the provided EZT templates, which are used to
-      generate the pages.</li>
-  <li>Internationalization support: ViewCVS will parse and handle the
-      Accept-Language request header, and can select different inputs
-      for localized page generation.</li>
-  <li><a href="#Colorize">Colorization</a> for many file types via
-      <code>enscript</code>.</li>
-  <li>Bonsai-like query features. (Requires MySQL and some other
-      prerequisites)</li>
-  <li>Annotation/blame viewing support against a
-      <strong>read-only</strong> repository.</li>
-  <li>Configuration on a per-virtual-host basis. This allows you to
-      share the configuration file and ViewCVS installation across
-      virtual hosts, yet still be able to fine-tune the options when
-      necessary.</li>
-  <li>Automatic generation of tarballs for the HEAD or a specified
-      tag.</li>
 
-      <li>
-	Runs either as CGI script, called from an installed web server
-	(such as <a href="http://httpd.apache.org/"><i>Apache</i></a>),
-	or as a standalone server.
-      </li>
-      <li>
-        Searching files for matches for a regular expression.
-      </li>
-      <li>Better reporting for unreadable files.</li>
-      <li>
-	More robust when given varying <code>rcsdiff</code> or
-	<code>rlog</code> outputs.
-      </li>
-      <li>Hard breaks in human-readable diffs.</li>
-      <li>
-	The configuration file is optional (you can change the values
-	right in the CGI script and avoid the config file, if you so
-	choose). The config file syntax is also cleaner, since it is
-	human-manageable rather than source code.
-      </li>
-      <li>
-	Directories with a large number of files can be viewed.
-      </li>
-      <li>
-        Support for browsing <a href="http://subversion.tigris.org/">Subversion</a> 
-        repositories. <small>(requires Subversion's Python bindings)</small>
-      </li>
-      <li>
-	<strong>Security</strong>: ViewCVS only requires read access
-	to the CVS repository (not read/write). With the correct
-	security partitioning, this means that even if ViewCVS were to 
-	be subverted, your source code is safe. Further, ViewCVS does
-	not use any <code>system()</code> or <code>popen()</code>
-	calls, which are very susceptible to abuse.
-	<br>
-	<small>(cvsweb had a hole due to a popen() call)</small>
-      </li>
-      <li>
-        Last but not least: it doesn't suffer from the "unmaintainable
-	code effect" that hits most Perl projects sooner or later:  
-	<blockquote><i>[Perl] combines all the worst aspects of C and Lisp: 
-	  a billion different sublanguages in one monolithic executable.  
-	  It combines the power of C with the readability of PostScript.</i>
-					       --&nbsp;Jamie&nbsp;Zawinski
-         </blockquote>
-       </li>
-    </ul>
-    
-    <p>
-      The changes present in each release are available in
-      <a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/viewcvs/viewcvs/CHANGES?rev=HEAD">ViewCVS's
-      CHANGES file</a>.
-    </p>
+  <li>Support for filesystem-accessible CVS and Subversion repositories.</li>
+
+  <li>Individually configurable virtual host support.</li>
+
+  <li>Line-based annotation/blame display (<em>CVS only</em>).</li>
+
+  <li>Revision graph capabilities (via integration with <a
+      href="http://www.akhphd.au.dk/~bertho/cvsgraph/">CvsGraph</a>)
+      (<em>CVS only</em>).</li>
+
+  <li>Syntax highlighting support (via integration with <a
+      href="http://www.gnu.org/software/enscript/enscript.html">GNU
+      enscript</a>).</li>
+
+  <li><a href="http://www.mozilla.org/projects/bonsai/">Bonsai</a>-like
+      repository query facilities.</li>
+
+  <li>Template-driven output generation.</li>
+
+  <li>Colorized, side-by-side differences.</li>
+
+  <li>Tarball generation (by tag/branch for CVS, by revision for
+      Subversion).</li>
+
+  <li>I18N support based on the Accept-Language request header.</li>
+
+  <li>Ability to run either as CGI script or as a standalone
+      server.</li>
+  
+  <li>Regexp-based file searching.</li>
+
+  <li>INI-like configuration file (as opposed to requiring actual code
+      tweaks).</li>
+
+</ul>
+
+<p>And the best feature of them all &mdash; ViewCVS is written in
+   Python, so it doesn't suffer from the "unmaintainable code effect"
+   that hits most Perl projects (like its predecessor, CvsWeb) sooner
+   or later:</p>
+
+<blockquote><em>&quot;[Perl] combines all the worst aspects of C and Lisp: a
+   billion different sublanguages in one monolithic executable.  It
+   combines the power of C with the readability of PostScript.&quot;</em>
+   &mdash;&nbsp;Jamie&nbsp;Zawinski
+</blockquote>
+
+<p>For a complete list of changes present in each release, see
+   ViewCVS's <a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/viewcvs/viewcvs/CHANGES?rev=HEAD">CHANGES</a>
+   file.</p>
+
+</div>
+<div class="section">
+
+<h2 id="sec-requirements">Requirements</h2>
+
+<p>The only hard software requirement for running ViewCVS is <a
+   href="http://www.python.org/">Python 1.5.2</a> or later.  All other
+   requirements depend on what you want to do with the tool.</p>
+
+<p>If you plan to use ViewCVS with CVS repositories, you need the
+   following things:</p>
+
+<ul>
+
+  <li><a href="http://www.cs.purdue.edu/homes/trinkle/RCS/">RCS</a>
+      (Revision Control System)</li>
+
+  <li><a href="http://www.gnu.org/software/diffutils/diffutils.html">GNU 
+      diff</a></li>
+ 
+  <li>Read-only, physical access to a CVS repository.</li>
+
+</ul>
+
+<p>For use with Subversion repositories, you need these things:</p>
+
+<ul>
+
+  <li><a href="http://subversion.tigris.org/">Subversion</a> 1.0 or
+      later and its SWIG Python bindings.</li>
+
+  <li><a href="http://www.gnu.org/software/diffutils/diffutils.html">GNU 
+      diff</a></li>
+
+  <li>Physical access to a Subversion repository (though there is
+      limited, use-at-your-risk support for remote access, too).</li>
+
+</ul>
+
+<p>ViewCVS integrates with additional pieces of software to provide
+   certain bits of optional functionality:</p>
+
+<ul>
+
+  <li><a href="http://www.mysql.com/">MySQL</a> &mdash; Needed to use
+      the commit database query functionality.</li>
+
+  <li><a href="http://www.gnu.org/software/enscript/enscript.html">GNU
+      enscript</a> &mdash; Needed for syntax highlighting in versioned
+      file contents displays</li>
+
+  <li><a href="http://www.akhphd.au.dk/~bertho/cvsgraph/">CvsGraph</a>
+      &mdash; Needed for version graph displays.</li>
+
+  <li><a href="http://httpd.apache.org/">Apache HTTP Server</a>, or
+      another server capable of running CGI programs &mdash; unless
+      you just want ViewCVS to run in standalone server mode.</li>
+
+</ul>
 
 </div>
 <div class="section">
@@ -161,105 +180,20 @@
 <h2 id="sec-future">Future Plans</h2>
 
 <p>ViewCVS is a Open Source project.  So any future development
-   depends on the contributions that will be made by its user
-   community.  Certainly working patches have a greater chance to
-   become realized quickly than feature requests, but <em>don't
-   hesitate to submit your suggestions to our <a
+   depends on the <a href="./contributing.html">contributions</a> that
+   will be made by its user community.  Certainly working patches have
+   a greater chance to become realized quickly than feature requests,
+   but please don't hesitate to submit your suggestions to our <a
    href="http://sourceforge.net/tracker/?func=add&group_id=18760&atid=368760">issue
-   tracker</a></em>.</p>
+   tracker</a>.</p>
 
 <p>Some things we're thinking about include:</p>
 
 <ul>
-  <li>UI streamlining/simplification</li>
-  <li>Integration with CVS checkin auto-mail scripts</li>
-  <li>Integration with an indexer such as LXR</li>
+  <li>UI streamlining/simplification.</li>
+  <li>Integration with CVS and Subversion commit mail scripts.</li>
+  <li>Integration with an indexer such as LXR.</li>
 </ul>
-
-</div>
-<div class="section">
-
-<h2 id="sec-colorization">Colorization of files</h2>
-
-<p>ViewCVS can make use of the <code>enscript</code> program to
-   colorize files in the CVS repository. If <code>enscript</code> is
-   present on your system, then set the <code>use_enscript</code>
-   option in the <code>viewcvs.conf</code> configuration file to
-   <code>1</code>.  If necessary, update the
-   <code>enscript_path</code> option to point to your installation
-   directory.  That's it! Now, as you view files through ViewCVS, they
-   will be colored.</p>
-
-<h3>Colorization of Python files</h3>
-
-<p>ViewCVS currently also comes with a builtin colorizer for Python
-   source files. This may go away in a future version, given the new
-   <code>enscript</code> support.</p>
-
-<p>Christophe Pelte suggested that we colorize Python source files
-   using <a
-   href="http://starship.python.net/crew/lemburg/SoftwareDescriptions.html#py2html.py">py2html</a>
-   (by Marc-Andrew Lemburg, based on <a
-   href="http://starship.python.net/crew/just/code/PyFontify.py">PyFontify</a>
-   by Just van Rossum).  This feature was added to ViewCVS 0.3, along
-   with a generalized plugin mechanism for custom coloring other types
-   of files.  Tweak the <code>py2html_path</code> configuration
-   variable if you want to use this feature.</p>
-
-</div>
-<div class="section">
-
-<h2 id="sec-related">Related Software</h2>
-
-    <p>
-    Finally we compiled a list of links to related
-    software projects that might be also of interest to you:
-    <ul>
-      <li>
-      <a href="http://www.python.org/"><i>Python</i></a> : The programming
-      language ViewCVS is written in.
-      </li>
-      <li>
-      <a href="http://www.cvshome.org/"><i>CVS</i></a> : CVS is the 
-      Concurrent Versions System, the dominant open-source 
-      network-transparent version control system.
-      </li>
-      <li>
-      <a href="http://www.cs.purdue.edu/homes/trinkle/RCS/"><i>RCS</i></a> : 
-      Revision Control System; the backend to CVS.
-      </li>
-      <li>
-      <a href="http://subversion.tigris.org/"><i>Subversion</i></a> : 
-      a CVS-like open source version control system.
-      </li>
-      <li>
-      <a href="http://www.apache.org/"><i>Apache</i></a> : A (The?) web server.
-      </li>
-      <li>
-      <a href="http://people.ssh.com/mtr/genscript/"><i>enscript</i></a> :
-      used to colorize code displayed from the CVS repository 
-      (<a href="#Colorize">see above</a>).
-      </li>
-      <li>
-      <a href="http://www.akhphd.au.dk/~bertho/cvsgraph/"><i>CvsGraph</i></a> :
-      server side software used to display revisions graphically.  Called from
-      ViewCVS.
-      </li>
-      <li>
-      <a href="http://www.mysql.com/"><i>MySQL</i></a> : to create 
-      and query a commit database.  To make use of it you also need:
-      </li>
-      <li>
-      <a href="http://sourceforge.net/projects/mysql-python"><i>mysql-python</i></a> : 
-      the Python language binding to access MySQL databases.
-      </li>
-      <li>
-      <a href="http://cvsgrab.sourceforge.net/"><i>CVSGrab</i></a> :
-      client software used to grab from a public repository using ViewCVS 
-      and HTTP (useful if you are behind a firewall).
-      </li>
-    </ul>
-    </p>
 
 </div>
 
