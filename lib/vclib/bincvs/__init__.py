@@ -190,20 +190,7 @@ def parse_log_entry(fp):
 
   # parse out a time tuple for the local time
   tm = compat.cvs_strptime(match.group(1))
-  try:
-    date = int(time.mktime(tm)) - time.timezone
-  except OverflowError:
-    # it is possible that CVS recorded an "illegal" time, such as those
-    # which occur during a Daylight Savings Time switchover (there is a
-    # gap in the time continuum). Let's advance one hour and try again.
-    # While the time isn't necessarily "correct", recall that the gap means
-    # that times *should* be an hour forward. This is certainly close enough
-    # for our needs.
-    #
-    # Note: a true overflow will simply raise an error again, which we won't
-    # try to catch a second time.
-    tm = tm[:3] + (tm[3] + 1,) + tm[4:]
-    date = int(time.mktime(tm)) - time.timezone
+  date = compat.timegm(tm)
 
   return LogEntry(rev, date,
                   # author, state, lines changed
@@ -370,7 +357,7 @@ def get_logs(rcs_path, full_name, files, view_tag):
       # fetch the latest revision on the default branch
       chunk = ('-r',) + tuple(chunk)
 
-    rlog = popen.popen(os.path.join(rcs_path, 'rlog'), chunk, 'r')
+    rlog = popen.popen(os.path.join(rcs_path, 'rlog'), chunk, 'rt')
 
     process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags)
 
@@ -394,7 +381,7 @@ def fetch_log(rcs_path, full_name, which_rev=None):
     args = ('-r' + which_rev, full_name)
   else:
     args = (full_name,)
-  rlog = popen.popen(os.path.join(rcs_path, 'rlog'), args, 'r')
+  rlog = popen.popen(os.path.join(rcs_path, 'rlog'), args, 'rt')
 
   header, eof = parse_log_header(rlog)
   head = header.head
@@ -484,7 +471,7 @@ class BinCVSRepository(vclib.Repository):
     """
     if not os.path.isfile(basepath):
       raise "Unknown file: %s " % basepath
-    rlog = popen.popen('rlog', basepath, 'r')
+    rlog = popen.popen('rlog', basepath, 'rt')
     header, eof = parse_log_header(rlog)
     target.head = header.head
     target.branch = header.branch
@@ -524,7 +511,7 @@ class BinCVSRepository(vclib.Repository):
 
     Developers: method to be overloaded.
     """
-    fp = popen.popen('co', ('-p' + rev, basepath, 'r'))
+    fp = popen.popen('co', ('-p' + rev, basepath, 'rb'))
     fp.readline()
     fp.readline()
     return fp
