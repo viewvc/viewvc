@@ -33,7 +33,7 @@ from svn import core, delta, client, wc
 
 def _rev2optrev(rev):
   rt = core.svn_opt_revision_t()
-  if rev:
+  if rev is not None:
     if str(rev) == 'HEAD':
       rt.kind = core.svn_opt_revision_head
     else:
@@ -52,34 +52,70 @@ def created_rev(svnrepos, full_name):
   ### this is, obviously, wrong
   return 0
 
+class ChangedPath:
+  def __init__(self, filename, pathtype, prop_mods, text_mods,
+               base_path, base_rev, action):
+    self.filename = filename
+    self.pathtype = pathtype
+    self.prop_mods = prop_mods
+    self.text_mods = text_mods
+    self.base_path = base_path
+    self.base_rev = base_rev
+    self.action = action
+
 class LastHistoryCollector:
   def __init__(self):
     self.has_history = 0
-    pass
 
-  def add_history(self, revision, author, date, message):
-    self.revision = revision
-    self.author = author
-    self.date = date
-    self.message = message
-    self.has_history = 1
+  def add_history(self, paths, revision, author, date, message, pool):
+    if not self.has_history:
+      self.has_history = 1
+      self.revision = revision
+      self.author = author
+      self.date = date
+      self.message = message
+      self.changes = []
+
+      if not paths:
+        return
+      changed_paths = paths.keys()
+      changed_paths.sort(lambda a, b: _compare_paths(a, b))
+      for changed_path in changed_paths:
+        change = paths[changed_path]
+        if change.action == 'D':
+          action = 'deleted'
+        elif change.action == 'A' or change.action == 'R':
+          if change.copyfrom_path and change.copyfrom_rev:
+            action = 'copied'
+          else:
+            action = 'added'
+        else:
+          action = 'modified'
+        ### Wrong, diddily wrong wrong wrong.  Can you say,
+        ### "Manufacturing data left and right because it hurts to
+        ### figure out the right stuff?"
+        self.changes.append(ChangedPath(changed_path, None, 0, 0,
+                                        changed_path, 0, action))
 
   def get_history(self):
     if not self.has_history:
-      return None, None, None, None
-    return self.revision, self.author, self.date, self.message
+      return None, None, None, None, None
+    return self.revision, self.author, self.date, self.message, self.changes
 
 
-def _get_revision_info(svnrepos, rev, pool):
+def _get_rev_details(svnrepos, rev, pool):
   lhc = LastHistoryCollector()
-  def _log_cb(paths, revision, author, date, message, pool, lhc=lhc):
-    if not lhc.has_history:
-      lhc.add_history(revision, author, date, message)
   client.svn_client_log([svnrepos.rootpath],
                         _rev2optrev(rev), _rev2optrev(rev),
-                        0, 0, _log_cb, svnrepos.ctx, pool)
+                        1, 0, lhc.add_history, svnrepos.ctx, pool)
   return lhc.get_history()
+
   
+def get_revision_info(svnrepos):
+  rev, author, date, log, changes = \
+       _get_rev_details(svnrepos, svnrepos.rev, svnrepos.pool)
+  return _datestr_to_date(date, svnrepos.pool), author, log, changes
+
 
 def _datestr_to_date(datestr, pool):
   if datestr is None:
@@ -122,6 +158,7 @@ def _compare_paths(path1, path2):
   # Common prefix was skipped above, next character is compared to
   # determine order
   return cmp(char1, char2)
+
 
 class LogCollector:
   def __init__(self, path, show_all_logs):
@@ -173,8 +210,8 @@ def get_logs(svnrepos, full_name, files):
       rev, author, date, log = rev_info_cache[entry.created_rev]
     else:
       ### i think this needs some get_last_history action to be accurate
-      rev, author, date, log = _get_revision_info(svnrepos,
-                                                  entry.created_rev, subpool)
+      rev, author, date, log, changes = \
+           _get_rev_details(svnrepos, entry.created_rev, subpool)
       rev_info_cache[entry.created_rev] = rev, author, date, log
     file.log_error = 0
     file.rev = rev
@@ -345,14 +382,14 @@ class SubversionRepository(vclib.Repository):
     for name in dirents.keys():
       entry = dirents[name]
       self.youngest = max(entry.created_rev, self.youngest)
-    if rev:
+    if rev is not None:
       self.rev = rev
       if self.rev > self.youngest:
         raise vclib.InvalidRevision(self.rev)
     else:
       self.rev = self.youngest
     self._dirent_cache = { }
-    self._dirent_cache[str(self.rev)] = dirents
+    self._dirent_cache[str(self.youngest)] = dirents
 
   def __del__(self):
     core.svn_pool_destroy(self.pool)
