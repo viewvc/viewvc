@@ -53,7 +53,7 @@ else:
   def cvs_strptime(timestr):
     'Parse a CVS-style date/time value.'
     matches = _re_rev_date.match(timestr).groups()
-    return tuple(map(int, matches)) + (0, 1, -1)
+    return tuple(map(int, matches)) + (0, 1, 0)
 
 #
 # os.makedirs() is new to Python 1.5.2
