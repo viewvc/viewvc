@@ -17,7 +17,7 @@
 #    svn_roots (for Subversion)
 #    svn_parent_path (for Subversion)
 #    default_root
-#    rcs_path
+#    rcs_path or cvsnt_exe_path
 #    mime_types_file 
 #
 # It is usually desirable to change the following variables:
@@ -113,6 +113,7 @@ default_root = cvs
 # default "cvsnt_exe_path" is set to "cvs" on Windows
 # and is not set on other platforms.
 #
+#cvsnt_exe_path =
 #cvsnt_exe_path = cvs
 #cvsnt_exe_path = K:\Program Files\cvsnt\cvs.exe
 #cvsnt_exe_path = /usr/bin/cvs
