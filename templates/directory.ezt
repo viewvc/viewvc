@@ -253,7 +253,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
         [end]
 
         <td>&nbsp;
-          <a href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
+          <a href="[rows.rev_href]&amp;content-type=text/vnd.viewcvs-markup">
             <b>[rows.rev]</b>
           </a>
 [# to display the revision in a separate window, you could use:
