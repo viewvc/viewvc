@@ -234,6 +234,75 @@ def _dict_list_add(dict, idx, elem):
   return list
 
 
+### suck up other warnings in _re_co_warning?
+_re_co_filename = re.compile(r'^(.*),v\s+-->\s+standard output\s*\n$')
+_re_co_warning = re.compile(r'^.*co: .*,v: warning: Unknown phrases like .*\n$')
+_re_co_revision = re.compile(r'^revision\s+([\d\.]+)\s*\n$')
+
+def parse_co_header(fp):
+  """Parse RCS co header.
+
+  fp is a file (pipe) opened for reading the co standard error stream.
+
+  Returns: (filename, revision) or (None, None) if output is empty
+  """
+
+  # header from co:
+  #
+  #/home/cvsroot/mod_dav/dav_shared_stub.c,v  -->  standard output
+  #revision 1.1
+  #
+  # Sometimes, the following line might occur at line 2:
+  #co: INSTALL,v: warning: Unknown phrases like `permissions ...;' are present.
+
+  # parse the output header
+  filename = revision = None
+
+  line = fp.readline()
+  if not line:
+    return None, None
+
+  match = _re_co_filename.match(line)
+  if not match:
+    raise vclib.Error(
+      'First line of co output is not the filename.<br>'
+      'Line was: %s<br>'
+      'fname="%s"' % (line, full_name))
+  filename = match.group(1)
+
+  line = fp.readline()
+  if not line:
+    raise vclib.Error(
+      'Missing second line of output from co.<br>'
+      'fname="%s". url="%s"' % (filename, where))
+  match = _re_co_revision.match(line)
+  if not match:
+    match = _re_co_warning.match(line)
+    if not match:
+      raise vclib.Error(
+        'Second line of co output is not the revision.<br>'
+        'Line was: %s<br>'
+        'fname="%s". url="%s"' % (line, filename, where))
+
+    # second line was a warning. ignore it and move along.
+    line = fp.readline()
+    if not line:
+      raise vclib.Error(
+        'Missing third line of output from co (after a warning).<br>'
+        'fname="%s". url="%s"' % (filename, where))
+    match = _re_co_revision.match(line)
+    if not match:
+      raise vclib.Error(
+        'Third line of co output is not the revision.<br>'
+        'Line was: %s<br>'
+        'fname="%s". url="%s"' % (line, filename, where))
+
+  # one of the above cases matches the revision. grab it.
+  revision = match.group(1)
+
+  return filename, revision
+
+
 # if your rlog doesn't use 77 '=' characters, then this must change
 LOG_END_MARKER = '=' * 77 + '\n'
 ENTRY_END_MARKER = '-' * 28 + '\n'
@@ -756,13 +825,6 @@ else:
 
     return None, 1
 
-
-### suck up other warnings in _re_co_warning?
-_re_co_filename = re.compile(r'^(.*),v\s+-->\s+standard output\s*\n$')
-_re_co_warning = re.compile(r'^.*co: .*,v: warning: Unknown phrases like .*\n$')
-_re_co_revision = re.compile(r'^revision\s+([\d\.]+)\s*\n$')
-
-
 class BinCVSRepository(vclib.Repository):
   def __init__(self, name, rootpath, rcs_paths):
     if not os.path.isdir(rootpath):
@@ -776,7 +838,7 @@ class BinCVSRepository(vclib.Repository):
     basepath = self._getpath(path_parts)
     if os.path.isdir(basepath):
       return vclib.DIR
-    if os.path.isfile(self._getrcsname(basepath)):
+    if os.path.isfile(basepath + ',v'):
       return vclib.FILE
     raise vclib.ItemNotFound(path_parts)
 
@@ -790,72 +852,25 @@ class BinCVSRepository(vclib.Repository):
 
     fp = rcs_popen(self.rcs_paths, 'co', (rev_flag, full_name), 'rb')
 
-    # header from co:
-    #
-    #/home/cvsroot/mod_dav/dav_shared_stub.c,v  -->  standard output
-    #revision 1.1
-    #
-    # Sometimes, the following line might occur at line 2:
-    #co: INSTALL,v: warning: Unknown phrases like `permissions ...;' are present.
-
-    # parse the output header
-    filename = revision = None
-
-    line = fp.readline()
-
-    if not line:
+    filename, revision = parse_co_header(fp)
+    if filename is None:
       # CVSNT's co exits without any output if a dead revision is requested.
       # Bug at http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=190
       # As a workaround, we invoke rlog to find the first non-dead revision
       # that precedes it and check out that revision instead
       revs = file_log(self, path_parts, rev)[0]
-      
+
       # if we find a good revision, invoke co again, otherwise error out
       if len(revs) and revs[-1].undead:
         rev_flag = '-p' + revs[-1].undead.string
         fp = rcs_popen(self.rcs_paths, 'co', (rev_flag, full_name), 'rb')
-        line = fp.readline()
+        filename, revision = parse_co_header(fp)
       else:
         raise vclib.Error("CVSNT co workaround could not find non-dead "
                           "revision preceding \"%s\"" % rev)
 
-    match = _re_co_filename.match(line)
-    if not match:
-      raise vclib.Error(
-        'First line of co output is not the filename.<br>'
-        'Line was: %s<br>'
-        'fname="%s"' % (line, full_name))
-    filename = match.group(1)
-
-    line = fp.readline()
-    if not line:
-      raise vclib.Error(
-        'Missing second line of output from co.<br>'
-        'fname="%s". url="%s"' % (filename, where))
-    match = _re_co_revision.match(line)
-    if not match:
-      match = _re_co_warning.match(line)
-      if not match:
-        raise vclib.Error(
-          'Second line of co output is not the revision.<br>'
-          'Line was: %s<br>'
-          'fname="%s". url="%s"' % (line, filename, where))
-
-      # second line was a warning. ignore it and move along.
-      line = fp.readline()
-      if not line:
-        raise vclib.Error(
-          'Missing third line of output from co (after a warning).<br>'
-          'fname="%s". url="%s"' % (filename, where))
-      match = _re_co_revision.match(line)
-      if not match:
-        raise vclib.Error(
-          'Third line of co output is not the revision.<br>'
-          'Line was: %s<br>'
-          'fname="%s". url="%s"' % (line, filename, where))
-
-    # one of the above cases matches the revision. grab it.
-    revision = match.group(1)
+    if filename is None:
+      raise vclib.Error('Missing output from co.<br>fname="%s".' % full_name)
 
     if filename != full_name:
       raise vclib.Error(
@@ -890,12 +905,6 @@ class BinCVSRepository(vclib.Repository):
 
   def _getpath(self, path_parts):
     return apply(os.path.join, (self.rootpath,) + tuple(path_parts))
-
-  def _getrcsname(self, filename):
-    if filename[-2:] == ',v':
-      return filename
-    else:
-      return filename + ',v'
 
   def _newest_file(self, path_parts):
     newest_file = None
