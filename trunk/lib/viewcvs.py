@@ -588,6 +588,10 @@ def _repos_pathtype(repos, path_parts):
   return type
 
 def check_freshness(request, mtime=None, etag=None, weak=0):
+  # See if we are supposed to disable etags (for debugging, usually)
+  if debug.DISABLE_ETAGS:
+    return 0
+  
   request_etag = request_mtime = None
   if etag is not None:
     if weak:
