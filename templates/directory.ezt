@@ -199,8 +199,10 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
         <img src="/icons/small/dir.gif" alt="(dir)" border=0 width=16 height=16>
         [rows.name]
         </a>
-        [is rows.name "Attic/"]
-          &nbsp; <a href="./[show_attic_href]#dirlist">[[]show contents]</a>
+        [is roottype "cvs"]
+          [is rows.name "Attic/"]
+            &nbsp; <a href="./[show_attic_href]#dirlist">[[]show contents]</a>
+          [end]
         [end]
       </td>
       [is rows.cvs "error"]
@@ -242,7 +244,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
             </a>
             [is rows.state "dead"]
               [# don't let this phrase/link be wrapped ]
-              [if-any view_tag](not&nbsp;exist)[else](in&nbsp;the&nbsp;Attic)[end]&nbsp;<a href="./[hide_attic_href]#dirlist">[[]hide]</a>
+              [if-any view_tag](not&nbsp;exist)[else](in&nbsp;the&nbsp;Attic)[end][if-any attic_showing]&nbsp;<a href="./[hide_attic_href]#dirlist">[[]hide][end]</a>
             [end]
         </td>
         [if-any rows.graph_href]

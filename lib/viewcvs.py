@@ -1086,7 +1086,7 @@ def view_directory_cvs(request):
     'search_re' : None,
     'dir_pagestart' : None,
     'have_logs' : None,
-    
+
     'sortby_file_href' :   toggle_query(query_dict, 'sortby', 'file'),
     'sortby_rev_href' :    toggle_query(query_dict, 'sortby', 'rev'),
     'sortby_date_href' :   toggle_query(query_dict, 'sortby', 'date'),
@@ -1105,6 +1105,11 @@ def view_directory_cvs(request):
     'selection_form' : ezt.boolean(alltags or view_tag
                                    or cfg.options.use_re_search),
   }
+
+  if not hideattic:
+    data['attic_showing'] = "yes"
+  else:
+    data['attic_showing'] = None
 
   # add in the roots for the selection
   allroots = { }
@@ -1348,9 +1353,6 @@ def view_directory_svn(request):
 
     'sortdir_down_href' :  toggle_query(query_dict, 'sortdir', 'down'),
     'sortdir_up_href' :    toggle_query(query_dict, 'sortdir', 'up'),
-
-    'show_attic_href' : toggle_query(query_dict, 'hideattic', 0),
-    'hide_attic_href' : toggle_query(query_dict, 'hideattic', 1),
 
     'has_tags' : ezt.boolean(0),
 
