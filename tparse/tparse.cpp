@@ -139,10 +139,14 @@ int tparseParser::parse_rcs_admin() {
 		if (strcmp(token,"head")==0) {
 			if (sink->set_head_revision(tokenstream->get())) { delstr(token);return 1;}
 			tokenstream->matchsemicol();
+			delstr(token);
+		    	continue;
 		}
 		if (strcmp(token,"branch")==0) {
 			if (sink->set_principal_branch(tokenstream->get())) { delstr(token);return 1;}
 			tokenstream->matchsemicol();
+			delstr(token);
+		    	continue;
 		}
 		if (strcmp(token,"symbols")==0) {
 			while (1) {
@@ -154,10 +158,14 @@ int tparseParser::parse_rcs_admin() {
 				second++;
 				if (sink->define_tag(tag,second)) { delstr(token);return 1;}
 			}
+			delstr(token);
+		    	continue;
 		}
 		if (strcmp(token,"comment")==0) {
 			if (sink->set_comment(tokenstream->get())) { delstr(token);return 1;}
 			tokenstream->matchsemicol();
+			delstr(token);
+		    	continue;
 		}
 		if ((strcmp(token,"locks")==0) ||
 		    (strcmp(token,"strict")==0) ||
@@ -168,8 +176,11 @@ int tparseParser::parse_rcs_admin() {
 		    		if (tag==tokenstream->semicol) break;
 		    		delstr(tag);
 		    	}
+		    	delstr(token);
+		    	continue;
 		}
 		delstr(token);
+		
 	}	
 };
 
@@ -196,7 +207,7 @@ int tparseParser::parse_rcs_tree() {
 		tokenstream->matchsemicol();
    		memset ((void *) &tm, 0, sizeof(struct tm));
 		if (strptime(date, "%y.%m.%d.%H.%M.%S", &tm) == NULL)
-			res = strptime(date, "%Y.%m.%d.%H.%M.%S", &tm);
+			strptime(date, "%Y.%m.%d.%H.%M.%S", &tm);
    		timestamp=mktime(&tm);delstr(date);
    		tokenstream->match("author");
    		author= tokenstream->get();
@@ -248,7 +259,7 @@ int tparseParser::parse_rcs_tree() {
    				break;
    			};
    			delstr(token);
-   			while ( tokenstream->get() !=tokenstream->semicol);	
+   			while ( (token=tokenstream->get()) !=tokenstream->semicol) delstr(token);	
    		}
    		if (sink->define_revision(revision,timestamp,author, hstate, branches,next)) return 1;
    				
@@ -258,8 +269,7 @@ int tparseParser::parse_rcs_tree() {
 }
 int tparseParser::parse_rcs_description() {
 	tokenstream->match("desc");
-	if (this->sink->set_description(tokenstream->get())) return 1;
-	return 0;
+	return (this->sink->set_description(tokenstream->get()));
 }
 int tparseParser::parse_rcs_deltatext() {
 	char *revision;
@@ -273,7 +283,7 @@ int tparseParser::parse_rcs_deltatext() {
 		log = tokenstream->get();
 		tokenstream->match("text");
 		text = tokenstream->get();
-		if (sink->set_revision_info(revision,log,text)) return 1;
+		if (sink->set_revision_info(revision,log,text)) return 0;
 	}
 	return 0;
 }

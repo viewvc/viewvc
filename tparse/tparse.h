@@ -192,7 +192,7 @@ class tparseParser {
     		if (parse_rcs_tree()) return;
 
     		// many sinks want to know when the tree has been completed so they can
-    		// do some work to prep for the arrival of the deltatext
+    		// do some work to prepare for the arrival of the deltatext
     		if (sink->tree_completed()) return;
 
     		if (parse_rcs_description()) return;

@@ -1,3 +1,11 @@
+Modif ( 30-Jan-2002)
+	* Fixed compilation problem of revision 1.2 of tparser.cpp
+	* Streamlined some part of the code. ( Added returns here and there...)
+	
+Modif ( 29-Jan-2002)
+	* Greg Fixed a problem with revisions' date.
+	* Greg Fixed a problem with the state ostrstream. ( added a space in the end)
+	
 Modif ( 27-Jan-2002)
 	* Added Install file
 	* Added the list of the platforms on which tparse has been compiled ( compile farm of sourceforge.)
