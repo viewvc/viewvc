@@ -21,6 +21,7 @@ import vclib
 import os
 import os.path
 import string
+import cStringIO
 
 # Subversion swig libs
 from svn import fs, repos, core, delta
@@ -240,10 +241,23 @@ class StreamPipe:
     self._stream = stream
     self._eof = 0
     
-  def read(self, len):
+  def read(self, len=None):
     chunk = None
     if not self._eof:
-      chunk = core.svn_stream_read(self._stream, len)
+      if len is None:
+        buffer = cStringIO.StringIO()
+        try:
+          while 1:
+            hunk = core.svn_stream_read(self._stream, 8192)
+            if not hunk:
+              break
+            buffer.write(hunk)
+          chunk = buffer.getvalue()
+        finally:
+          buffer.close()
+
+      else:
+        chunk = core.svn_stream_read(self._stream, len)   
     if not chunk:
       self._eof = 1
     return chunk
