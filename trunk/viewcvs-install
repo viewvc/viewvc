@@ -39,13 +39,13 @@ version = viewcvs.__version__
 ## installer text
 INFO_TEXT = """\
 
-This is the ViewCVS Version %s installer.  
+This is the ViewCVS %s installer.
 
-It will allow you to choose the install path for ViewCVS.  
-You will now be asked some installation questions.
+It will allow you to choose the install path for ViewCVS.  You will
+now be asked some installation questions.
 
-Defaults are given in square brackets.  
-Just hit [Enter] if a default is okay.
+Defaults are given in square brackets.  Just hit [Enter] if a default
+is okay.
 """ % version
 
 ## installer defaults

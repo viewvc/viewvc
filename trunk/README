@@ -1,6 +1,3 @@
 ViewCVS -- Viewing the content of CVS repositories with a Webbrowser.
 
-Type "./standalone.py -g -r /WHERE_YOUR_CVS_REPOSITORY_ROOT_IS" to try it out.
-(Note: replace WHERE_YOUR_CVS_REPOSITORY_ROOT_IS above with the real pathname)
-
 Please read the file INSTALL for more information.
