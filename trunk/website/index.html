@@ -9,7 +9,7 @@
 
     <p>
       The ViewCVS software was inspired by
-      <a href="http://linux.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi"><i>cvsweb</i></a>
+      <a href="http://stud.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi/"><i>cvsweb</i></a>
       (by <a href="mailto:zeller@think.de">Henner Zeller</a>).
       I wanted to make some changes and updates, but cvsweb was
       implemented in Perl (and rather poorly, IMO). So I undertook the 
@@ -24,18 +24,18 @@
       of Bonsai-like query facilities.
     </p>
     <p>
-      ViewCVS is currently at version 0.5. It was a port of the cvsweb
+      ViewCVS is currently at version 0.6. It was a port of the cvsweb
       script, but has had numerous cleanups and other modifications,
       based on some of Python's strengths. There is still some minor
-      "badness" in there, but I've been working on flushing that out,
-      while adding new features. Currently, the functionality of ViewCVS
-      surpasses that of cvsweb.
+      "badness" remaining from the Perl code, but I've been working on
+      flushing that out, while adding new features. Currently, the
+      functionality of ViewCVS surpasses that of cvsweb.
     </p>
     <p>
       The software is available for download:
     </p>
     <blockquote>
-      <a href="viewcvs-0.5.tar.gz">Version 0.5 of ViewCVS</a>
+      <a href="viewcvs-0.6.tar.gz">Version 0.6 of ViewCVS</a>
     </blockquote>
     <p>
       Of course, it is also available through ViewCVS itself:
@@ -47,12 +47,16 @@
     <p>
       ViewCVS requires <strong>Python 1.5</strong> (which has been out 
       for a couple years and is readily available for your favorite
-      operating system).
+      operating system). If you choose to use the SQL Checkin Database 
+      feature, then you must use <strong>Python 1.5.2</strong> and the 
+      <a href="http://dustman.net/andy/python/MySQLdb"><i>MySQLdb
+	  module</i></a> installed.
     </p>
 
     <p>
-      [ <a href="/greg/">Greg's page</a> ]
-      [ <a href="/greg/python/">other Python software</a> ]
+      ViewCVS has been developed by the <a href="who.html">ViewCVS
+	Group</a> and is made available under a
+      <a href="license-1.html">BSD-type license</a>.
     </p>
 
     <hr width="75&#37;">
@@ -72,8 +76,32 @@
     <hr width="75&#37;">
     <h2>Additional features over cvsweb</h2>
 
+    <p>
+      <strong>New to version 0.5:</strong>
+    </p>
     <ul>
-      <li>Colorization for many file types via <code>enscript</code>.</li>
+      <li>
+	Colorization for many file types via <code>enscript</code>.
+      </li>
+      <li>
+	Bonsai-like query features.
+      </li>
+      <li>
+	Annotation/blame support against a <strong>read-only</strong>
+	repository.
+      </li>
+      <li>
+	Configuration on a per-virtual-host basis. This allows you
+	to share the configuration file and ViewCVS installation
+	across virtual hosts, yet still be able to fine-tune the
+	options when necessary.
+      </li>
+    </ul>
+    
+    <p>
+      Other improvements over cvsweb:
+    </p>
+    <ul>
       <li>Better reporting for unreadable files.</li>
       <li>
 	More robust when given varying <code>rcsdiff</code> or
@@ -88,17 +116,6 @@
       </li>
       <li>
 	Directories with a large number of files can be viewed.
-      </li>
-      <li>Bonsai-like query features.</li>
-      <li>
-	Annotation/blame support against a <strong>read-only</strong>
-	repository.
-      </li>
-      <li>
-	Configuration on a per-virtual-host basis. This allows you
-	to share the configuration file and ViewCVS installation
-	across virtual hosts, yet still be able to fine-tune the
-	options when necessary.
       </li>
     </ul>
 
@@ -157,11 +174,19 @@
       you want to use this feature.
     </p>
 
+    <hr width="75&#37;">
+    <h3>Other links</h3>
+
+    <p>
+      [ <a href="/greg/">Greg's page</a> ]
+      [ <a href="/greg/python/">other Python software</a> ]
+    </p>
+
     <hr>
     <address><a href="mailto:gstein@lyra.org">Greg Stein</a></address>
 <!-- Created: Fri Dec  3 02:51:37 PST 1999 -->
 <!-- hhmts start -->
-Last modified: Fri May 12 03:53:51 PDT 2000
+Last modified: Tue Jul 25 05:14:15 PDT 2000
 <!-- hhmts end -->
   </body>
 </html>
