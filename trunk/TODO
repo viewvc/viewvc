@@ -27,6 +27,10 @@ TODO ITEMS
 
 *) add a page that describes how to reach anonymous CVS for ViewCVS
 
+*) have a "check" mode that verifies binaries are available on rcs_path
+
+   -> alternately (probably?): use rcsparse rather than external tools
+
 
 KNOWN BUGS
 ----------
