@@ -1123,133 +1123,47 @@ def view_directory(request):
   # so that it does.
   if request.server.getenv('PATH_INFO', '')[-1:] != '/':
     request.server.redirect(request.get_url())
-  
-  sortby = request.query_dict.get('sortby', cfg.options.sort_by) or 'file'
-  sortdir = request.query_dict.get('sortdir', 'up')
 
-  # prepare the data that will be passed to the template
-  data = common_template_data(request)
-  data.update({
-    'roottype' : request.roottype,
-    'where' : request.where,
-    'current_root' : request.repos.name,
-    'sortby' : sortby,
-    'sortdir' : sortdir,
-    'no_match' : None,
-    'unreadable' : None,
-    'tarball_href' : None,
-    'search_re' : None,
-    'dir_pagestart' : None,
-    'have_logs' : 'yes',
-    'sortby_file_href' :   request.get_url(params={'sortby': 'file'}),
-    'sortby_rev_href' :    request.get_url(params={'sortby': 'rev'}),
-    'sortby_date_href' :   request.get_url(params={'sortby': 'date'}),
-    'sortby_author_href' : request.get_url(params={'sortby': 'author'}),
-    'sortby_log_href' :    request.get_url(params={'sortby': 'log'}),
-    'sortdir_down_href' :  request.get_url(params={'sortdir': 'down'}),
-    'sortdir_up_href' :    request.get_url(params={'sortdir': 'up'}),
-
-    ### in the future, it might be nice to break this path up into
-    ### a list of elements, allowing the template to display it in
-    ### a variety of schemes.
-    'nav_path' : clickable_path(request, 0, 0),
-  })
-
-  if not request.where:
-    url, params = request.get_link(params={'root': None})
-    data['change_root_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-    data['change_root_hidden_values'] = prepare_hidden_values(params)
-
-    # add in the roots for the selection
-    allroots = list_roots(cfg)
-    if len(allroots) < 2:
-      roots = [ ]
-    else:
-      roots = allroots.keys()
-      roots.sort(lambda n1, n2: cmp(string.lower(n1), string.lower(n2)))
-    data['roots'] = roots
-
-  if cfg.options.use_pagesize:
-    url, params = request.get_link(params={'dir_pagestart': None})
-    data['dir_paging_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-    data['dir_paging_hidden_values'] = prepare_hidden_values(params)
-
-  if cfg.options.allow_tar:
-    data['tarball_href'] = request.get_url(view_func=download_tarball, 
-                                           params={})
-
-  if request.roottype == 'svn':
-    if request.query_dict.has_key('rev'):
-      data['jump_rev'] = request.query_dict['rev']
-    else:
-      data['jump_rev'] = str(request.repos.rev)
-
-    url, params = request.get_link(params={'rev': None})
-    data['jump_rev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-    data['jump_rev_hidden_values'] = prepare_hidden_values(params)
-
-    dir_params = {'rev': request.query_dict.get('rev')}
-  else:
-    dir_params = {}
-
-  where = request.where
-  query_dict = request.query_dict
-
-  view_tag = query_dict.get('only_with_tag')
-  hideattic = int(query_dict.get('hideattic', cfg.options.hide_attic))
-
-  search_re = query_dict.get('search', '')
-
-  # Search current directory
+  # List current directory
   if request.roottype == 'cvs':
+    view_tag = request.query_dict.get('only_with_tag')
+    hideattic = int(request.query_dict.get('hideattic', 
+                                           cfg.options.hide_attic))
     file_data = request.repos.listdir(request.path_parts,
                                       not hideattic or view_tag)
+    dir_params = {}
   else:
     file_data = request.repos.listdir(request.path_parts)
+    dir_params = {'rev': request.query_dict.get('rev')}    
 
+  # Filter file list if a regex is specified
+  search_re = request.query_dict.get('search', '')
   if cfg.options.use_re_search and search_re:
     file_data = search_files(request.repos, request.path_parts,
                              file_data, search_re)
 
-  get_dirs = cfg.options.show_subdir_lastmod and cfg.options.show_logs
-
+  # Retrieve log messages, authors, revision numbers, timestamps                     
   if request.roottype == 'cvs':
+    get_dirs = cfg.options.show_subdir_lastmod and cfg.options.show_logs
     bincvs.get_logs(request.repos, request.path_parts,
                     file_data, view_tag, get_dirs)
-    has_tags = (view_tag or request.repos.branch_tags 
-                or request.repos.plain_tags)
-    data.update({
-      'view_tag' : view_tag,    
-      'attic_showing' : ezt.boolean(not hideattic),
-      'show_attic_href' : request.get_url(params={'hideattic': 0}),
-      'hide_attic_href' : request.get_url(params={'hideattic': 1}),
-      'has_tags' : ezt.boolean(has_tags),
-      ### one day, if EZT has "or" capability, we can lose this
-      'selection_form' : ezt.boolean(has_tags or cfg.options.use_re_search),
-      'branch_tags': request.repos.branch_tags,
-      'plain_tags': request.repos.plain_tags,
-    })
   else:
-    vclib.svn.get_logs(request.repos, where, file_data)
-    data.update({
-      'view_tag' : None,
-      'tree_rev' : str(request.repos.rev),
-      'has_tags' : ezt.boolean(0),
-      'selection_form' : ezt.boolean(0)
-    })
-
-  if search_re:
-    data['search_re'] = htmlify(search_re)
+    vclib.svn.get_logs(request.repos, request.where, file_data)
 
   # sort with directories first, and using the "sortby" criteria
+  sortby = request.query_dict.get('sortby', cfg.options.sort_by) or 'file'
+  sortdir = request.query_dict.get('sortdir', 'up')
   sort_file_data(file_data, sortdir, sortby)
 
+  # loop through entries creating rows and changing these values
+  rows = [ ]
   num_files = 0
   num_displayed = 0
   unreadable = 0
   have_logs = 0
-  rows = data['rows'] = [ ]
 
+  # current directory name and name plus trailing slash
+  where = request.where
   where_prefix = where and where + '/'
 
   ### display a row for ".." ?
@@ -1344,8 +1258,26 @@ def view_directory(request):
                                           params={})
 
     rows.append(row)
-  
+
+  # prepare the data that will be passed to the template
+  data = common_template_data(request)
   data.update({
+    'roottype' : request.roottype,
+    'where' : request.where,
+    'current_root' : request.repos.name,
+    'rows' : rows,
+    'sortby' : sortby,
+    'sortdir' : sortdir,
+    'tarball_href' : None,
+    'search_re' : search_re and htmlify(search_re) or None,
+    'dir_pagestart' : None,
+    'sortby_file_href' :   request.get_url(params={'sortby': 'file'}),
+    'sortby_rev_href' :    request.get_url(params={'sortby': 'rev'}),
+    'sortby_date_href' :   request.get_url(params={'sortby': 'date'}),
+    'sortby_author_href' : request.get_url(params={'sortby': 'author'}),
+    'sortby_log_href' :    request.get_url(params={'sortby': 'log'}),
+    'sortdir_down_href' :  request.get_url(params={'sortdir': 'down'}),
+    'sortdir_up_href' :    request.get_url(params={'sortdir': 'up'}),
     'num_files' :  num_files,
     'files_shown' : num_displayed,
     'no_match' : num_files and not num_displayed and 'yes' or '',
@@ -1354,7 +1286,67 @@ def view_directory(request):
     # have_logs will be 0 if we only have dirs and !show_subdir_lastmod.
     # in that case, we don't need the extra columns
     'have_logs' : have_logs and 'yes' or '',
+
+    ### in the future, it might be nice to break this path up into
+    ### a list of elements, allowing the template to display it in
+    ### a variety of schemes.
+    'nav_path' : clickable_path(request, 0, 0),
   })
+
+  # set cvs-specific fields
+  if request.roottype == 'cvs':
+    has_tags = (view_tag or request.repos.branch_tags 
+                or request.repos.plain_tags)
+    data.update({
+      'view_tag' : view_tag,    
+      'attic_showing' : ezt.boolean(not hideattic),
+      'show_attic_href' : request.get_url(params={'hideattic': 0}),
+      'hide_attic_href' : request.get_url(params={'hideattic': 1}),
+      'has_tags' : ezt.boolean(has_tags),
+      ### one day, if EZT has "or" capability, we can lose this
+      'selection_form' : ezt.boolean(has_tags or cfg.options.use_re_search),
+      'branch_tags': request.repos.branch_tags,
+      'plain_tags': request.repos.plain_tags,
+    })
+  else:
+    data.update({
+      'view_tag' : None,
+      'has_tags' : None,
+      'selection_form' : None,
+    })
+
+  if not request.where:
+    url, params = request.get_link(params={'root': None})
+    data['change_root_action'] = urllib.quote(url, _URL_SAFE_CHARS)
+    data['change_root_hidden_values'] = prepare_hidden_values(params)
+
+    # add in the roots for the selection
+    allroots = list_roots(cfg)
+    if len(allroots) < 2:
+      roots = [ ]
+    else:
+      roots = allroots.keys()
+      roots.sort(lambda n1, n2: cmp(string.lower(n1), string.lower(n2)))
+    data['roots'] = roots
+
+  if cfg.options.use_pagesize:
+    url, params = request.get_link(params={'dir_pagestart': None})
+    data['dir_paging_action'] = urllib.quote(url, _URL_SAFE_CHARS)
+    data['dir_paging_hidden_values'] = prepare_hidden_values(params)
+
+  if cfg.options.allow_tar:
+    data['tarball_href'] = request.get_url(view_func=download_tarball, 
+                                           params={})
+  if request.roottype == 'svn':
+    data['tree_rev'] = str(request.repos.rev)
+    if request.query_dict.has_key('rev'):
+      data['jump_rev'] = request.query_dict['rev']
+    else:
+      data['jump_rev'] = str(request.repos.rev)
+
+    url, params = request.get_link(params={'rev': None})
+    data['jump_rev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
+    data['jump_rev_hidden_values'] = prepare_hidden_values(params)
 
   if data['selection_form']:
     url, params = request.get_link(params={'only_with_tag': None, 
