@@ -13,16 +13,18 @@ INSTALLING VIEWCVS
    access to the repository (or a copy of it).  Therefore, rsh/ssh or
    pserver access doesn't work yet.
 
-2) Copy viewcvs.cgi to the cgi-script location of your web server.
+   For the checkin database to work, you will need MySQL >= 3.22, 
+   and the Python DBI 2.0 module, MySQLdb.  This was tested with
+   MySQLdb 1.12.
 
-   If Python is not located in /usr/local/bin, then you'll need to
-   edit the first line of viewcvs.cgi.
+2) Installation is handled by the ./viewcvs-install script.  Run this
+   script and you will be prompted for a installation root path.
+   The default is /usr/local/viewcvs.  The installer sets the install 
+   path in some of the files, and ViewCVS cannot be moved to a 
+   different path after the install.
 
-3) Copy viewcvs.conf.dist to the same directory and RENAME it to
-   viewcvs.conf
-
-4) Edit viewcvs.conf for your specific configuration. In particular,
-   examine the following configuration options:
+3) Edit <install-root>viewcvs.conf for your specific configuration. 
+   In particular, examine the following configuration options:
 
       cvs_roots
       default_root
@@ -32,11 +34,89 @@ INSTALLING VIEWCVS
    There are some other options that are usually nice to change. See
    viewcvs.conf for more information.
 
-5) That's it. Try it out.
+4) The CGI programs are in <install-root>/cgi.  You can symlink to this
+   directory from somewhere in your published HTTP server path if your 
+   webserver is configured to follow symbolic links.  You can also copy
+   the installed <install-root>/cgi/*.cgi scripts after the install.
+
+5) That's it for repository browsing.  Instructions for getting the
+   SQL checkin database working are below.
 
    Warning: ViewCVS has not been tested on web servers operating on the
             Win32 platform.
 
+
+SQL Checkin Database
+--------------------
+
+This feature is a clone of the Mozilla Project's Bonsai database.  It
+catalogs every commit in the CVS repository into a SQL database.  In fact,
+the databases are 100% compatible.
+
+Various queries can be preformed on the database.  After installing ViewCVS,
+there are some additional steps required to get the database working.
+
+1) You need MySQL >= 3.22, and the Python module MySQLdb >= 1.12 installed.
+
+2) You need to create a MySQL user who has permission to create databases.
+   Optionally, you can create a second user with read-only access to the
+   database.
+
+3) Run the <install-root>/make-database script.  It will prompt you for
+   your MySQL user, password, and the name of database you want to 
+   create.  The database name defaults to "ViewCVS".  This script creates
+   the database and sets up the empty tables.  If you run this on a 
+   existing ViewCVS database, you will loose all your data!
+
+4) Edit your <install-root>/viewcvs.conf file.  There is a [cvsdb]
+   section.  You will need to set:
+     
+      
+      host =             # MySQL database server host
+      database_name =    # the name of the database you created with
+                         # make-database
+      user =             # the read/write database user
+      passwd =           # password for read/write database user
+      readonly_user =    # the readonly database user -- it's pretty 
+                         # use safe to use the read/write user here
+      readonly_passwd =  # password for the readonly user
+
+5) Two programs are provided for updating the checkin database, 
+   cvsdbadmin and loginfo-handler.  They serve two different purposes.
+   The cvsdbadmin program walks through your CVS repository and adds
+   every commit in every file.  This is commonly used for initalizing
+   the database from a repository which has been in use.  The 
+   loginfo-handler script is executed by the CVS server's CVSROOT/loginfo 
+   system upon each commit.  It makes real-time updates to the checkin
+   database as commits are made to the repository.
+
+   To build a database of all the commits in the CVS repository /home/cvs,
+   invoke: "./cvsdbadmin rebuild /home/cvs".  If you want to update
+   the checkin database, invoke: "./cvsdbadmin update /home/cvs".  The
+   update mode checks to see if a commit is already in the database,
+   and only adds it if it is abscent.
+
+   To get real-time updates, you'll want to checkout the CVSROOT module
+   from your CVS repository and edit CVSROOT/loginfo.  Add the line:
+
+       ALL (echo %{sVv}; cat) | <install-root>/loginfo-handler
+
+   If you have other scripts invoked by CVSROOT/loginfo, you will want
+   to make sure to change any running under the "DEFAULT" keyword to
+   "ALL" like the loginfo handler, and probably carefully read the
+   execution rules for CVSROOT/loginfo from the CVS manual.
+
+6) You may want to modify the HTML template files:
+
+      <install-root>/html-templates/queryformtemplate.html
+      <install-root>/html-templates/querytemplate.html
+
+   They're used by the queryform.cgi and query.cgi scripts generate
+   HTML output.  At some point, viewcvs.cgi, query.cgi, and queryform.cgi
+   will use the same mechanism for HTML generation, but not yet.
+
+7) You should be ready to go.  Load up the query.cgi script and give it a
+   try.
 
 
 IF YOU HAVE PROBLEMS ...
