@@ -416,7 +416,7 @@ def main(server, viewcvs_link):
   except SystemExit, e:
     pass
   except:
-    debug.PrintException()
+    debug.PrintException(server, debug.GetExceptionData())
 
 class _item:
   def __init__(self, **kw):

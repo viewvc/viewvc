@@ -1,0 +1,25 @@
+<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
+ "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html><head>
+<!-- ViewCVS       -- http://viewcvs.sourceforge.net/
+     by Greg Stein -- mailto:gstein@lyra.org
+  -->
+<title>ViewCVS Exception</title>
+</head>
+<body text="#000000" bgcolor="#ffffff">
+<h3>An Exception Has Occurred</h3>
+
+[if-any msg]
+  <p><pre>[msg]</pre></p>
+[end]
+[if-any status]
+  <h4>HTTP Response Status</h4>
+  <p><pre>[status]</pre></p>
+  <hr>
+[end]
+<h4>Python Traceback</h4>
+<p><pre>
+[stacktrace]
+</pre></p>
+</body>
+</html>

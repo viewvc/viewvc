@@ -164,6 +164,7 @@ class Config:
     self.templates.graph = 'templates/graph.ezt'
     self.templates.annotate = 'templates/annotate.ezt'
     self.templates.markup = 'templates/markup.ezt'
+    self.templates.error = 'templates/error.ezt'
 
     self.cvsdb.enabled = 0
     self.cvsdb.host = ''
