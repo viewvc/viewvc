@@ -1647,6 +1647,10 @@ def view_log(request):
     # no sorting
     pass
 
+  # selected revision
+  selected_rev = request.query_dict.get('r1')
+  selected_path = request.query_dict.get('p1') or request.where
+
   entries = [ ]
   name_printed = { }
   cvs = request.roottype == 'cvs'
@@ -1668,6 +1672,11 @@ def view_log(request):
     entry.view_href = None
     entry.download_href = None
     entry.download_text_href = None
+    entry.sel_for_diff_href = None
+    entry.diff_to_sel_href = None
+    entry.diff_to_prev_href = None
+    entry.diff_to_branch_href = None
+    entry.diff_to_main_href = None
     if pathtype is vclib.FILE:
       entry.view_href = request.get_url(view_func=view_markup,
                                         params={'rev': rev.string})
@@ -1689,6 +1698,9 @@ def view_log(request):
 
       prev = rev.prev or rev.parent
       entry.prev = prev and prev.string
+      # no moves in CVS ...
+      entry.filename = request.where
+      entry.prev_path = rev.prev and request.where
 
       branch = rev.branch_number
       entry.vendor_branch = ezt.boolean(branch and branch[2] % 2 == 1)
@@ -1735,14 +1747,58 @@ def view_log(request):
       entry.copy_rev = rev.copy_rev
       entry.filename = rev.filename
 
-    # the template could do all these comparisons itself, but let's help
-    # it out.
-    r1 = request.query_dict.get('r1')
-    if r1 and r1 != entry.rev and r1 != entry.prev \
-           and r1 != entry.branch_point and r1 != entry.next_main:
-      entry.to_selected = 'yes'
-    else:
-      entry.to_selected = None
+    # calculate diff links
+    if selected_rev != entry.rev:
+      if entry.filename != request.where:
+        entry_path = entry.filename
+      else:
+        entry_path = None
+      entry.sel_for_diff_href =\
+          request.get_url(view_func=view_log,
+                          params={'rev': request.query_dict.get('rev'),
+                                  'r1': entry.rev,
+                                  'p1': entry_path})
+    if entry.prev is not None:
+      if entry.filename != entry.prev_path:
+        other_path = entry.prev_path
+      else:
+        other_path = None
+      entry.diff_to_prev_href = \
+          request.get_url(view_func=view_diff,
+                          where=entry.filename, pathtype=vclib.FILE,
+                          params={'r1': entry.prev,
+                                  'p1': other_path,
+                                  'r2': entry.rev,
+                                  'diff_format': None})
+    if selected_rev and \
+           selected_rev != str(entry.rev) and \
+           selected_rev != str(entry.prev) and \
+           selected_rev != str(entry.branch_point) and \
+           selected_rev != str(entry.next_main):
+      if entry.filename != selected_path:
+        other_path = selected_path
+      else:
+        other_path = None
+      entry.diff_to_sel_href = \
+          request.get_url(view_func=view_diff,
+                          where=entry.filename, pathtype=vclib.FILE,
+                          params={'r1': selected_rev,
+                                  'p1': other_path,
+                                  'r2': entry.rev,
+                                  'diff_format': None})
+    # moves aren't handled here but they are only supported by CVS right now.
+    if entry.next_main:
+      entry.diff_to_main_href = \
+          request.get_url(view_func=view_diff,
+                          params={'r1': entry.next_main,
+                                  'r2': entry.rev,
+                                  'diff_format': None})
+    if entry.branch_point:
+      entry.diff_to_branch_href = \
+          request.get_url(view_func=view_diff,
+                          params={'r1': entry.branch_point,
+                                  'r2': entry.rev,
+                                  'diff_format': None})
 
     entries.append(entry)
 
@@ -1764,13 +1820,6 @@ def view_log(request):
   if pathtype is vclib.FILE:
     data['viewable'] = ezt.boolean(request.default_viewable)
     data['is_text'] = ezt.boolean(is_text(mime_type))
-
-  url, params = request.get_link(view_func=view_diff, 
-                                 params={'r1': None, 'r2': None, 
-                                         'diff_format': None})
-  params = compat.urlencode(params)
-  data['diff_url'] = urllib.quote(url, _URL_SAFE_CHARS)
-  data['diff_params'] = params and '&' + params
 
   if cfg.options.use_pagesize:
     url, params = request.get_link(params={'log_pagestart': None})
