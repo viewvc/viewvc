@@ -397,6 +397,7 @@ class Request:
     if view_func is download_tarball:
       if not where: url = url + '/root'
       url = url + '.tar.gz'
+      params['only_with_tag'] = self.query_dict.get('only_with_tag')
 
     # add trailing slash for a directory      
     elif pathtype == vclib.DIR:
