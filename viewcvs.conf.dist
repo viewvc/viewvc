@@ -33,9 +33,10 @@
 #
 #    py2html_path
 #
-# If your icons are in a special location:
+# If your icons or ViewCVS static files are in special locations:
 #
 #    icons
+#    docroot
 #
 # Also, review the .ezt templates in the templates/ directory to adjust them
 # for your particular site.
@@ -375,6 +376,15 @@ allow_compress = 1
 # (such as HTML) then this allows you to browse the checked
 # out files as if outside the repository.
 checkout_magic = 1
+
+# Web path to a directory containing apache icon files
+icons = /icons
+
+# Web path to a directory that contains ViewCVS static files. 
+# (The ones installed in <VIEWCVS_INSTALL_DIRECTORY>/doc). If set, static
+# files will get served from this location, otherwise static files will
+# be served by the ViewCVS script which is less efficient
+#docroot = /doc
 
 # Show last changelog message for sub directories
 # The current implementation makes many assumptions and may show the

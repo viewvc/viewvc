@@ -195,6 +195,8 @@ class Config:
     self.options.allow_markup = 1
     self.options.allow_compress = 1
     self.options.checkout_magic = 1
+    self.options.icons = "/icons"
+    self.options.docroot = None
     self.options.show_subdir_lastmod = 0
     self.options.show_logs = 1
     self.options.show_log_in_markup = 1
