@@ -139,6 +139,9 @@
         [else]
           <td>&nbsp;</td>
           <td>&nbsp;[rows.time]</td>
+          [if-any rows.graph_href]
+            <td>&nbsp;[rows.graph_href]</td>
+          [end]
           [if-any rows.author]
             <td>&nbsp;[rows.author]</td>
           [end]
