@@ -434,6 +434,12 @@ enscript_path =
 disable_enscript_lang =
 # disable_enscript_lang = perl, cpp
 
+#
+# ViewCVS can generate tarball from a repository on the fly.
+#
+tarball = 0
+# tarball = 1
+
 #---------------------------------------------------------------------------
 [vhosts]
 ### DOC

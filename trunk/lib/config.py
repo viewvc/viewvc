@@ -189,6 +189,7 @@ class Config:
     self.options.use_enscript = 0
     self.options.enscript_path = ''
     self.options.disable_enscript_lang = ()
+    self.options.tarball = 0
 
     self.text.long_intro = """\
     <p>
