@@ -613,7 +613,12 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
     isfresh = 0
 
   ## require revalidation after 15 minutes ...
-  #request.server.addheader('Expires', rfc822.formatdate(time.time() + 900))
+  if cfg and cfg.general.http_expiration_time >= 0:
+    expiration = rfc822.formatdate(time.time() +
+                                   cfg.general.http_expiration_time)
+    request.server.addheader('Expires', expiration)
+    request.server.addheader('Cache-Control',
+                             'max-age=%d' % cfg.general.http_expiration_time)
 
   if isfresh:
     request.server.header(status='304 Not Modified')

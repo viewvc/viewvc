@@ -94,10 +94,10 @@ class StandaloneServer(sapi.CgiServer):
             else:              
               p = string.find(status, ' ')
               if p < 0:
-                statusCode = status
+                statusCode = int(status)
                 statusText = ''
               else:
-                statusCode = status[:p]
+                statusCode = int(status[:p])
                 statusText = status[p+1:]
             self.handler.send_response(statusCode, statusText)
             self.handler.send_header("Content-type", content_type)

@@ -162,6 +162,7 @@ class Config:
     self.general.forbidden = ()
     self.general.kv_files = [ ]
     self.general.languages = ['en-us']
+    self.general.http_expiration_time = 600
 
     self.templates.directory = 'templates/directory.ezt'
     self.templates.log = 'templates/log.ezt'
