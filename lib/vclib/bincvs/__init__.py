@@ -352,6 +352,7 @@ def get_logs(rcs_paths, full_name, files, view_tag):
   if len(files) == 0:
     return { }, { }
 
+  files = files[:]
   fileinfo = { }
   alltags = {           # all the tags seen in the files of this dir
     'MAIN' : '1',
