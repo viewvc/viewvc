@@ -492,7 +492,7 @@ def markup_stream_python(fp):
 
 def markup_stream_enscript(lang, fp):
   sys.stdout.flush()
-  enscript = popen.pipe_cmds([(cfg.options.enscript_path + 'enscript',
+  enscript = popen.pipe_cmds([(os.path.normpath(os.path.join(cfg.options.enscript_path,'enscript')),
                                '--color', '-W', 'html', '-E' + lang, '-o',
                                '-', '-'),
                               ('sed', '-n', '/^<PRE>$/,/<\\/PRE>$/p')])
@@ -509,7 +509,7 @@ def markup_stream_enscript(lang, fp):
   except IOError, v:
     print "<h3>Failure during use of an external program:</h3>"
     print "<pre>"
-    print cfg.options.enscript_path+"enscript --color -W html -E"+lang+" -o - -"
+    print os.path.normpath(os.path.join(cfg.options.enscript_path,'enscript')) + " --color -W html -E"+lang+" -o - -"
     print "</pre>"
     raise
 
@@ -525,6 +525,7 @@ enscript_extensions = {
   '.EPS' : 'postscript',
   '.DEF' : 'modula_2',  # requires a patch for enscript 1.6.2, see INSTALL
   '.F' : 'fortran',
+  '.for': 'fortran',
   '.H' : 'cpp',
   '.MOD' : 'modula_2',  # requires a patch for enscript 1.6.2, see INSTALL
   '.PS' : 'postscript',
@@ -1043,14 +1044,13 @@ def get_logs(full_name, files, view_tag):
     for i in range(len(chunk)):
       chunk[i] = full_name + '/' + chunk[i]
 
-    if view_tag:
+    if not view_tag:
       # NOTE: can't pass tag on command line since a tag may contain "-"
       #       we'll search the output for the appropriate revision
-      rlog = popen.popen(cfg.general.rcs_path + 'rlog', chunk, 'r')
-    else:
       # fetch the latest revision on the default branch
       chunk = ('-r',) + tuple(chunk)
-      rlog = popen.popen(cfg.general.rcs_path + 'rlog', chunk, 'r')
+
+    rlog = popen.popen(os.path.normpath(os.path.join(cfg.general.rcs_path,'rlog')), chunk, 'r')
 
     process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags)
 
@@ -1435,7 +1435,7 @@ def fetch_log(full_name, which_rev=None):
     args = ('-r' + which_rev, full_name)
   else:
     args = (full_name,)
-  rlog = popen.popen(cfg.general.rcs_path + 'rlog', args, 'r')
+  rlog = popen.popen(os.path.normpath(os.path.join(cfg.general.rcs_path,'rlog')), args, 'r')
 
   header, eof = parse_log_header(rlog)
   filename = header.filename
@@ -1912,7 +1912,7 @@ def view_checkout(request):
   else:
     mime_type = request.mime_type
 
-  fp = popen.popen(cfg.general.rcs_path + 'co', (rev_flag, full_name), 'r')
+  fp = popen.popen(os.path.normpath(os.path.join(cfg.general.rcs_path,'co')), (rev_flag, full_name), 'r')
 
   # header from co:
   #
@@ -2000,7 +2000,7 @@ def cvsgraph_image(cfg, request):
   "output the image rendered by cvsgraph"
   # this function is derived from cgi/cvsgraphmkimg.cgi
   http_header('image/png')
-  fp = popen.popen(cfg.options.cvsgraph_path + 'cvsgraph',
+  fp = popen.popen(os.path.normpath(os.path.join(cfg.options.cvsgraph_path,'cvsgraph')),
                                ("-c", cfg.options.cvsgraph_conf,
                                 "-r", request.cvsroot,
                                 request.where + ',v'), 'r')
@@ -2035,7 +2035,7 @@ def view_cvsgraph(cfg, request):
   #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib'
 
   # Create an image map
-  fp = popen.popen(cfg.options.cvsgraph_path + 'cvsgraph',
+  fp = popen.popen(os.path.normpath(os.path.join(cfg.options.cvsgraph_path,'cvsgraph')),
                    ("-i",
                     "-c", cfg.options.cvsgraph_conf,
                     "-r", request.cvsroot,
@@ -2343,7 +2343,7 @@ def view_diff(request, cvs_filename):
       args.append('-kk')
 
   args[len(args):] = ['-r' + rev1, '-r' + rev2, cvs_filename]
-  fp = popen.popen(cfg.general.rcs_path + 'rcsdiff', args, 'r')
+  fp = popen.popen(os.path.normpath(os.path.join(cfg.general.rcs_path,'rcsdiff')), args, 'r')
 
   if human_readable:
     http_header()
@@ -2462,7 +2462,7 @@ def generate_tarball(out, relative, directory, tag, stack=[]):
 
     rev_flag = '-p' + rev
     full_name = directory + '/' + file + ',v'
-    fp = popen.popen(cfg.general.rcs_path + 'co', (rev_flag, full_name), 'r', 0)
+    fp = popen.popen(os.path.normpath(os.path.join(cfg.general.rcs_path,'co')), (rev_flag, full_name), 'r', 0)
     contents = fp.read()
     status = fp.close()
 
