@@ -20,14 +20,13 @@
 This is a Version Control library driver for locally accessible cvs-repositories.
 """
 
-from vclib import Repository, Versfile, Versdir, Revision, ReposNotFound, ItemNotFound, DIR , FILE
 import os
-import os.path
 import string
 import re
-import exceptions
-import rcsparse
 import cStringIO
+
+import vclib
+import rcsparse
 
 
 class InfoSink(rcsparse.Sink):
@@ -50,14 +49,15 @@ class InfoSink(rcsparse.Sink):
       self.target.author = author
       self.updr = 1
       if self.upri:
-        raise RCSStopParser()
+        raise rcsparse.RCSStopParser()
         
   def set_revision_info(self, revision, log, text):
     if self.target.head == revision:
       self.target.log = log
       self.upri = 1
       if self.updr:
-        raise RCSStopParser()
+        raise rcsparse.RCSStopParser()
+
         
 class TreeSink(rcsparse.Sink):
   d_command = re.compile('^d(\d+)\\s(\\d+)')
@@ -82,7 +82,7 @@ class TreeSink(rcsparse.Sink):
         self.tags[revision].append(name)
       else:
         self.tags[revision] = [name]
-#      self.tree[revision] = Revision(self.target, revision)
+#      self.tree[revision] = vclib.Revision(self.target, revision)
 #      self.tree[revision].tags = [name]
     
   def define_revision(self, revision, timestamp, author, state,
@@ -93,7 +93,7 @@ class TreeSink(rcsparse.Sink):
     if self.tree.has_key(revision):
       rev = self.tree[revision]
     else:
-      rev = Revision(self.target, revision)
+      rev = vclib.Revision(self.target, revision)
       self.tree[revision] = rev
     rev.date = timestamp
     rev.author = author
@@ -110,7 +110,7 @@ class TreeSink(rcsparse.Sink):
     if self.tree.has_key(revision):
       rev = self.tree[revision]
     else:
-      rev = Revision(self.target, revision)
+      rev = vclib.Revision(self.target, revision)
       self.tree[revision] = rev
     rev.log = log
     if self.target.head == revision:
@@ -290,7 +290,7 @@ class COSink(rcsparse.Sink):
       raise "Error buffer not emptied"
 
 
-class CVSRepository(Repository):
+class CVSRepository(vclib.Repository):
   def __init__(self, name, basepath, show_CVSROOT=0):
     self.name = name
     self.basepath = basepath
@@ -300,15 +300,15 @@ class CVSRepository(Repository):
     # Some checking:
     # Is the basepath a real directory ?
     if not os.path.isdir(self.basepath):
-      raise ReposNotFound(name)
+      raise vclib.ReposNotFound(name)
     # do we have a CVSROOT as an immediat subdirectory ?
     if not os.path.isdir(self.basepath + "CVSROOT/"):
-      raise ReposNotFound(name)
+      raise vclib.ReposNotFound(name)
       
   def _getpath(self, path_parts):
     if path_parts != []:
       if (path_parts[0] == "CVSROOT") and (self.show_CVSROOT == 0):
-        raise ItemNotFound(path_parts)
+        raise vclib.ItemNotFound(path_parts)
     return self.basepath + string.join(path_parts, os.sep)
 
   def _getrcsname(self, filename):
@@ -322,18 +322,18 @@ class CVSRepository(Repository):
   def getitem(self, path_parts):
     path = self._getpath(path_parts)
     if os.path.isdir(path):
-      return Versdir(self, path_parts)
+      return vclib.Versdir(self, path_parts)
     if os.path.isfile(self._getrcsname(path)):
-      return Versfile(self, path_parts)
-    raise ItemNotFound(path_parts)
+      return vclib.Versfile(self, path_parts)
+    raise vclib.ItemNotFound(path_parts)
     
   def getitemtype(self, path_parts):
     path = self._getpath(path_parts)
     if os.path.isdir(path):
-      return DIR
+      return vclib.DIR
     if os.path.isfile(path):
-      return FILE
-    raise ItemNotFound(path_parts)
+      return vclib.FILE
+    raise vclib.ItemNotFound(path_parts)
   
   # Private methods ( accessed by Versfile and Revision )
 
@@ -343,7 +343,7 @@ class CVSRepository(Repository):
     g = { }
     for i in h:
       if os.path.isfile(self._getrcsname(self._getpath(path_parts + [i]))):
-      	g[i] = Versfile(self, path_parts + [i])
+      	g[i] = vclib.Versfile(self, path_parts + [i])
     return g
 
   def _getvf_subdirs(self, path_parts):
@@ -356,7 +356,7 @@ class CVSRepository(Repository):
     for i in h:
       p = self._getpath(path_parts + [i])
       if os.path.isdir(p):
-    	  g[i] = Versdir(self, path_parts + [i]) 
+    	  g[i] = vclib.Versdir(self, path_parts + [i]) 
     return g
   
   # Private methods
@@ -366,7 +366,7 @@ class CVSRepository(Repository):
       raise "Unknown file: %s " % path
     try:
       rcsparse.Parser().parse(open(path), InfoSink(target))
-    except RCSStopParser:
+    except rcsparse.RCSStopParser:
       pass
 
   def _getvf_tree(self,versfile):
