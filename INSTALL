@@ -13,38 +13,41 @@ TO THE IMPATIENT
 ----------------
 Congratulations on getting this far. :-)
 
-Prerequisites: Python 1.5 or later, 
-               (Python 1.5.2 or later to support the commit database, see below)
-                 (http://www.python.org)
+Prerequisites: Python 1.5 or later
+                 (http://www.python.org/)
                RCS, Revision Control System
-                 (http://www.cs.purdue.edu/homes/trinkle/RCS)
+                 (http://www.cs.purdue.edu/homes/trinkle/RCS/)
                read-only, physical access to a CVS repository
-                 (See http://www.cvshome.org for more information)
+                 (See http://www.cvshome.org/ for more information)
 
-Optional:      a web-server capable of running CGI programs
-                 (for example, Apache at http://www.apache.org)
+Optional:      a web server capable of running CGI programs
+                 (for example, Apache at http://httpd.apache.org/)
                GNU-diff to replace broken diff implementations
                  (http://www.gnu.org/software/diffutils/diffutils.html)
                MySQL to create and query a commit database
-                 (http://www.mysql.com)
+                 (http://www.mysql.com/)
                  (http://sourceforge.net/projects/mysql-python)
+		 (and Python 1.5.2 or later)
                Enscript to colorize code displayed from the CVS repository
                  (http://people.ssh.com/mtr/genscript/)
                CvsGraph for a graphical representation of the CVS revisions
-                 (http://www.akhphd.au.dk/~bertho/cvsgraph)
+                 (http://www.akhphd.au.dk/~bertho/cvsgraph/)
 
-If you just want to see, how your CVS repository looks like with
-ViewCVS, type "./standalone.py -g -r /WHERE_YOUR_CVS_REPOSITORY_ROOT_IS".
-This will start a tiny webserver serving at http://localhost:7467.
+  GUI Operation:
 
-To start installing right away (on UNIX): type "./viewcvs-install" in
-the current directory and answer the prompts.  When it finishes, edit
-the file viewcvs.conf in the <VIEWCVS_INSTALLATION_DIRECTORY> to tell
-viewcvs the paths to your CVS-Repositories. Next configure your web
-server to run <VIEWCVS_INSTALLATION_DIRECTORY>/cgi/viewcvs.cgi by
-whatever is appropriate for your web-server, usually by placing in a
-special cgi-bin directory.  The section `INSTALLING VIEWCVS' below is
-still recommended reading.
+    If you just want to see what your CVS repository looks like with
+    ViewCVS, type "./standalone.py -g -r /PATH/TO/CVS/ROOT".  This
+    will start a tiny webserver serving at http://localhost:7467/.
+
+  Standard operation:
+
+    To start installing right away (on UNIX): type "./viewcvs-install"
+    in the current directory and answer the prompts.  When it
+    finishes, edit the file viewcvs.conf in the installation directory
+    to tell viewcvs the paths to your CVS repositories. Next,
+    configure your web server to run <INSTALL>/cgi/viewcvs.cgi, as
+    appropriate for your web server.  The section `INSTALLING VIEWCVS'
+    below is still recommended reading.
 
 
 INSTALLING VIEWCVS
@@ -52,7 +55,7 @@ INSTALLING VIEWCVS
 
 1) To get viewcvs.cgi to work, make sure that you have Python 1.5 or
    greater installed and a webserver which is capable of executing
-   cgi-scripts (either based on the .cgi extension, or by placing the
+   CGI scripts (either based on the .cgi extension, or by placing the
    script within a specific directory).
 
    You need to have RCS installed. Specifically, "rlog", "rcsdiff",
@@ -60,7 +63,7 @@ INSTALLING VIEWCVS
 
    Note, that the viewcvs.cgi script needs to have READ-ONLY, physical
    access to the CVS repository (or a copy of it).  Therefore, rsh/ssh or
-   pserver access doesn't work yet.
+   pserver access to the repository will not work.
 
    For the more human readable diff formats you need a modern diff utility.
    If you are using Linux, this is no problem.  But on commercial unices
@@ -72,7 +75,7 @@ INSTALLING VIEWCVS
 
    For the checkin database to work, you will need MySQL >= 3.22, 
    and the Python DBAPI 2.0 module, MySQLdb.  This was tested with
-   MySQLdb 1.12.
+   MySQLdb 0.9.1.
 
 2) Installation is handled by the ./viewcvs-install script.  Run this
    script and you will be prompted for a installation root path.
@@ -100,11 +103,10 @@ INSTALLING VIEWCVS
       mime_types_file
 
    There are some other options that are usually nice to change. See
-   viewcvs.conf for more information.  If you want to customize
-   the look of ViewCVS then edit the files in 
-   <VIEWCVS_INSTALLATION_DIRECTORY>/templates.
-   But only if you want, the distributed files will work and provides 
-   a default look.  You need knowledge about HTML to edit the templates.
+   viewcvs.conf for more information.  ViewCVS provides a working,
+   default look. However, if you want to customize the look of ViewCVS
+   then edit the files in <VIEWCVS_INSTALLATION_DIRECTORY>/templates.
+   You need knowledge about HTML to edit the templates.
 
 4) The CGI programs are in <VIEWCVS_INSTALLATION_DIRECTORY>/cgi/.  You can 
    symlink to this directory from somewhere in your published HTTP server 
@@ -112,6 +114,9 @@ INSTALLING VIEWCVS
    also copy the installed <VIEWCVS_INSTALLATION_DIRECTORY>/cgi/*.cgi scripts 
    after the install (unlike the other files in ViewCVS, the CGI scripts can 
    be moved).
+
+   If you are using Apache, then the ScriptAlias directive is very
+   useful for pointing directly to the viwecvs.cgi script.
 
    NOTE: for security reasons, it is not advisable to install ViewCVS
    directly into your published HTTP directory tree (due to the MySQL
@@ -130,6 +135,7 @@ UPGRADING VIEWCVS
 
 Please read the file upgrading.html in the website subdirectory or
 at <http://viewcvs.sourceforge.net/upgrading.html>.
+
 
 SQL CHECKIN DATABASE
 --------------------
@@ -228,6 +234,7 @@ configured enscript 1.6.2 package.
    I've done this for Modula-2 and submitted the file to the 
    enscript maintainer long ago.  If interested in this patch for
    enscript mailto:pefu@sourceforge.net
+
 
 CVSGRAPH CONFIGURATION
 ----------------------
