@@ -142,9 +142,9 @@ class CgiServer(Server):
                        % (status, content_type, extraheaders))
 
   def redirect(self, url):
-    print 'Status: 301 Moved'
     if self.iis: url = fix_iis_url(self, url)
-    sys.stdout.write('Location: ' +  url + '\r\n\r\n')
+    self.addheader('Location', url)
+    self.header(status='301 Moved')
     print 'This document is located <a href="%s">here</a>.' % url
     sys.exit(0)
 
