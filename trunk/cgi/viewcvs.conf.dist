@@ -25,6 +25,7 @@
 #    forbidden
 #
 #    use_enscript
+#    use_cvsgraph
 #
 # For Python source colorization:
 #
@@ -369,15 +370,17 @@ use_cvsgraph = 0
 # use_cvsgraph = 1
 
 #
-# Location of your cvsgraph program:
+# if the cvsgraph program is not on the path, set this value
+# Note: there should be a trailing slash
 #
-cvsgraph_path = "/usr/local/bin/cvsgraph" 
+cvsgraph_path =
+# cvsgraph_path = /usr/local/bin/
 
 #
-# Location of the customized cvsgraph configuration file.  Probably you
-# will need an absolute pathname here:
+# Location of the customized cvsgraph configuration file.  
+# You will need an absolute pathname here:
 #
-cvsgraph_conf = "cvsgraph.conf" 
+cvsgraph_conf = <VIEWCVS_INSTALL_DIRECTORY>/cvsgraph.conf
 
 #---------------------------------------------------------------------------
 [vhosts]
