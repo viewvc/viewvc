@@ -265,7 +265,7 @@ languages = en-us
 #
 
 query = templates/query.ezt
-footer = templates/footer.ezt
+footer = templates/include/footer.ezt
 diff = templates/diff.ezt
 graph = templates/graph.ezt
 annotate = templates/annotate.ezt
