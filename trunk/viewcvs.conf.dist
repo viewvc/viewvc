@@ -67,19 +67,17 @@
 #
 # This setting specifies each of the CVS roots on your system and assigns
 # names to them. Each root should be given by a "name: path" value. Multiple
-# roots should be separated by commas.
+# roots should be separated by commas and can be placed on separate lines.
 #
-cvs_roots =
-	cvs : /home/cvsroot
+cvs_roots = cvs: /home/cvsroot
 
 #
 # This setting specifies each of the Subversion roots (repositories)
 # on your system and assigns names to them. Each root should be given
 # by a "name: path" value. Multiple roots should be separated by
-# commas.
+# commas and can be placed on separate lines.
 #
-#svn_roots =
-#	svn : /home/svnrepos
+#svn_roots = svn: /home/svnrepos
 
 #
 # The 'svn_parent_path' is a directory in which any number of
