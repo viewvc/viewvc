@@ -938,6 +938,48 @@ def nav_header_data(request, rev):
   data.update({
     'rev' : rev
   })
+
+  data['view_href'] = request.get_url(view_func=view_markup,
+                                      params={'rev': rev},
+                                      escape=1)
+
+  data['download_href'] = request.get_url(view_func=view_checkout,
+                                          params={'rev': rev},
+                                          escape=1)
+
+  if not is_plain_text(request.mime_type):
+    data['download_text_href'] = \
+      request.get_url(view_func=view_checkout,
+                      params={'content-type': 'text/plain', 'rev': rev},
+                      escape=1)
+  else:
+    data['download_text_href'] = None
+
+  if request.roottype == 'cvs':
+    data['annotate_href'] = request.get_url(view_func=view_annotate,
+                                            params={'annotate': rev},
+                                            escape=1)
+  else:
+    data['annotate_href'] = None
+
+  data['download_href'] = request.get_url(view_func=view_checkout,
+                                          params={'rev': rev},
+                                          escape=1)
+  if not is_plain_text(request.mime_type):
+    data['download_text_href'] = \
+      request.get_url(view_func=view_checkout,
+                      params={'content-type': 'text/plain', 'rev': rev},
+                      escape=1)
+  else:
+    data['download_text_href'] = None
+
+  if request.roottype == 'cvs':
+    data['annotate_href'] = request.get_url(view_func=view_annotate,
+                                            params={'annotate': rev},
+                                            escape=1)
+  else:
+    data['annotate_href'] = None
+
   return data
 
 def retry_read(src, reqlen=CHUNK_SIZE):
@@ -1269,24 +1311,6 @@ def view_markup(request):
     'mime_type' : request.mime_type,
     'log' : None,
     })
-
-  data['download_href'] = request.get_url(view_func=view_checkout,
-                                          params={'rev': rev},
-                                          escape=1)
-  if not is_plain_text(request.mime_type):
-    data['download_text_href'] = \
-      request.get_url(view_func=view_checkout,
-                      params={'content-type': 'text/plain', 'rev': rev},
-                      escape=1)
-  else:
-    data['download_text_href'] = None
-
-  if request.roottype == 'cvs':
-    data['annotate_href'] = request.get_url(view_func=view_annotate,
-                                            params={'annotate': rev},
-                                            escape=1)
-  else:
-    data['annotate_href'] = None
 
   if cfg.options.show_log_in_markup:
     options = {}
