@@ -6,6 +6,7 @@ CONTENTS
   SQL CHECKIN DATABASE
   ENSCRIPT CONFIGURATION
   CVSGRAPH CONFIGURATION
+  APACHE CONFIGURATION
   IF YOU HAVE PROBLEMS...
 
 
@@ -17,13 +18,13 @@ Prerequisites: Python 1.5 or later
                  (http://www.python.org/)
                RCS, Revision Control System
                  (http://www.cs.purdue.edu/homes/trinkle/RCS/)
+               GNU-diff to replace diff implementations without the -u option
+                 (http://www.gnu.org/software/diffutils/diffutils.html)
                read-only, physical access to a CVS repository
                  (See http://www.cvshome.org/ for more information)
 
 Optional:      a web server capable of running CGI programs
                  (for example, Apache at http://httpd.apache.org/)
-               GNU-diff to replace broken diff implementations
-                 (http://www.gnu.org/software/diffutils/diffutils.html)
                MySQL to create and query a commit database
                  (http://www.mysql.com/)
                  (http://sourceforge.net/projects/mysql-python)
@@ -60,6 +61,9 @@ INSTALLING VIEWCVS
 
    You need to have RCS installed. Specifically, "rlog", "rcsdiff",
    and "co". This script was tested against RedHat's rcs-5.7-10.rpm
+   Someone running HP-UX reported problems, that rcs doesn'nt honour
+   the setting of $PATH to find the diff utility.  Please test, if
+   "rcsdiff -u" works.  If not you might have to recompile RCS.
 
    Note, that the viewcvs.cgi script needs to have READ-ONLY, physical
    access to the CVS repository (or a copy of it).  Therefore, rsh/ssh or
@@ -115,8 +119,8 @@ INSTALLING VIEWCVS
    after the install (unlike the other files in ViewCVS, the CGI scripts can 
    be moved).
 
-   If you are using Apache, then the ScriptAlias directive is very
-   useful for pointing directly to the viwecvs.cgi script.
+   If you are using Apache, then see below at the section 
+   titled APACHE CONFIGURATION.
 
    NOTE: for security reasons, it is not advisable to install ViewCVS
    directly into your published HTTP directory tree (due to the MySQL
@@ -128,6 +132,55 @@ INSTALLING VIEWCVS
 
 WARNING: ViewCVS has not been tested on web servers operating on the
          Win32 platform.
+
+
+APACHE CONFIGURATION
+--------------------
+
+1) Find out, where the web server configuration file is kept.  On
+   SuSE Linux it is /etc/httpd/httpd.conf, On RedHat Linux 7.3 it
+   is /etc/httpd/conf/httpd.conf.  On other unices you may look
+   at /usr/local/etc or /etc/local.  Use the vendor documentation
+   or the find utility, if in doubt.
+
+Either METHOD A: 
+2) The ScriptAlias directive is very useful for pointing 
+   directly to the viwecvs.cgi script.  Simply insert a line containing
+     ScriptAlias /viewcvs <VIEWCVS_INSTALLATION_DIRECTORY>/cgi/viewcvs.cgi
+   into your httpd.conf file.  Choose the location in httpd.conf, where 
+   also the other ScriptAlias lines reside.  Some examples:
+
+     ScriptAlias /viewcvs /usr/local/viewcvs-0.9.2/cgi/viewcvs.cgi
+     ScriptAlias /cvsquery /usr/local/viewcvs-0.9.2/cgi/query.cgi
+
+     ScriptAlias /viewcvs-dev /usr/local/viewcvs-1.0-dev/cgi/viewcvs.cgi
+   continue with step 3).
+
+or alternatively METHOD B: 
+2) Copy the CGI scripts from 
+   <VIEWCVS_INSTALLATION_DIRECTORY>/cgi/*.cgi
+   to the /cgi-bin/ directory configured in your http.conf file.
+
+   continue with step 3).
+
+3) Restart apache.  On SuSE Linux this is done using the command
+   rcapache restart and on RedHat Linux this is done using the command
+   /sbin/service httpd restart
+
+4) Optional: adding access control:
+
+   In your httpd.conf you can control access to certain modules by adding 
+   directives like this:
+
+   <Location "<url to viewcvs.cgi>/<modname_you_wish_to_access_ctl>">
+     AllowOverride None
+     AuthUserFile /path/to/passwd/file
+     AuthName "Client Access"
+     AuthType Basic
+     require valid-user
+   </Location>
+
+   This idea is courtesy to Nick Bauman from http://www.cortexity.com/
 
 
 UPGRADING VIEWCVS
