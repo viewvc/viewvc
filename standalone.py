@@ -98,7 +98,7 @@ def serve(port, callback=None):
 
         def redirect(self):
             """redirect the browser to the viewcvs URL"""
-            self.send_response(200, "redirection follows")
+            self.send_response(301, "moved (redirection follows)")
             self.send_header("Content-type", "text/html")
             self.end_headers()
             self.wfile.write("""<html>
@@ -459,5 +459,4 @@ if __name__ == '__main__':
     import viewcvs
     import apache_icons
     options = Options()
-    options.use_cvsgraph = 0
     cli(sys.argv)
