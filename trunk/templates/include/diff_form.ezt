@@ -4,8 +4,8 @@
   a file. You may select a symbolic revision name using the selection
   box or you may type in a numeric name using the type-in text box.
   <p>
-  <form method="GET" action="[request.script_name]/[if-any request.embedded_root][request.embedded_root]/[end][if-any where][where]/[end]" name="diff_select">
-  [hidden_values]
+  <form method=get action="[diff_select_action]" name=diff_select>
+  [diff_select_hidden_values]
   Diffs between
   <select name="r1">
     <option value="text" selected>Use Text Field</option>
