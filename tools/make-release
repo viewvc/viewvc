@@ -29,14 +29,14 @@ fi
 
 # grab a copy of the CVS repository
 echo 'Checking out into:' $2
-cvs -d :pserver:anonymous@cvs.viewcvs.sourceforge.net:/cvsroot/viewcvs export -r $1 -d $2 viewcvs
+cvs -d :pserver:anonymous@cvs.sourceforge.net:/cvsroot/viewcvs export -r $1 -d $2 viewcvs
 
 # various shifting, cleanup.
 # documentation is now also distributed together with the release, 
 # but we still copy the license file to its traditional place (it is small 
 # and many files still contain comments refering to this location):
 cp $2/website/license-1.html $2/LICENSE.html
-# rm -r $2/website
+rm -r $2/website
 # remove some tools only useful for ViewCVS developers:
 rm $2/tools/make-release
 rm -f $2/tools/bin2inline_py.py
