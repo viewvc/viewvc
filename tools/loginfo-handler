@@ -44,7 +44,6 @@ import string
 import getopt
 import re
 import cvsdb
-import rlog
 import config
 import vclib.bincvs
 
@@ -61,46 +60,6 @@ def warning(text):
 def error(text):
     print 'ERROR(viewcvs-loginfo):', text
     sys.exit(1)
-
-class FileData:
-    def __init__(self, file, directory, old_version, new_version):
-        self.file = file
-        self.directory = directory
-        self.old_version = old_version
-        self.new_version = new_version
-
-        ## set the state of this file from the
-        ## old_version and new_version information
-        if self.old_version == 'NONE':
-            self.ctype = "added"
-        elif self.new_version == 'NONE':
-            self.ctype = "removed"
-        else:
-            self.ctype = "changed"
-
-def CommitFromFileData(repos, file_data):
-    ## construct the full path for the RCS file
-    filename = os.path.join(repos.rootpath, file_data.directory, file_data.file)
-
-    ## get the 'rlog' output for just this revision, and then convert
-    ## to a commit object
-    rlog_data = rlog.GetRLogData(repos, filename, file_data.new_version)
-    commit_list = cvsdb.RLogDataToCommitList(repos.rootpath, rlog_data)
-    commit = commit_list[0]
-
-    ## set the type of commit from the file_data setting
-    if file_data.ctype == "changed":
-        commit.SetTypeChange()
-    elif file_data.ctype == "added":
-        commit.SetTypeAdd()
-    elif file_data.ctype == "removed":
-        commit.SetTypeRemove()
-        
-    return commit
-
-def GetUnrecordedCommitList(repos, file_data):
-    filename = os.path.join(repos.rootpath, file_data.directory, file_data.file)
-    return cvsdb.GetUnrecordedCommitList(repos, filename)
 
 _re_revisions = re.compile(                            
   r",(?P<old>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and first revision number
@@ -151,18 +110,17 @@ def HeuristicArgParse(s, repository):
       
     old_version, new_version = m.group('old', 'new')
 
-    file_data = FileData(filename, directory, old_version, new_version)
-    file_data_list.append(file_data)
-    
+    file_data_list.append((filename, old_version, new_version))
+
     debug('File "%s", old revision %s, new revision %s' 
       % (filename, old_version, new_version))
 
     start = m.end()
     
     if start == len(s): break
-    
-  return file_data_list
-    
+
+  return directory, file_data_list
+
 def HeuristicArgParseDirectory(s, repository):
   """Splits the first part of the argument string into a directory name
   and a file name, either of which may contain spaces. Returns the longest
@@ -210,16 +168,14 @@ def CvsNtArgParse(s, repository):
     if m is None:
       warning('Can\'t parse file information in "%s"' % fileinfo)
       continue
-    
-    filename, old_revision, new_revision = m.group('filename', 'old', 'new')
 
-    debug('File "%s", old revision %s, new revision %s' 
-      % (filename, old_revision, new_revision))
+    file_data = m.group('filename', 'old', 'new')
 
-    file_data = FileData(filename, directory, old_revision, new_revision)
+    debug('File "%s", old revision %s, new revision %s' % file_data)
+
     file_data_list.append(file_data)
 
-  return file_data_list
+  return directory, file_data_list
 
 def NextFile(s, pos = 0):
   escaped = 0
@@ -243,26 +199,33 @@ def NextFile(s, pos = 0):
   else:
     return None, i + 1
 
-def ProcessLoginfo(rootpath, file_data_list):
+def ProcessLoginfo(rootpath, directory, files):
     ## XXX This is a somewhat dirty hack:
     ## cvsdb already loads the configuration file and provides a cfg
     ## instance.  Pick it from there in order to be able to pass it down
     ## to rlog (see below).
     repository = vclib.bincvs.BinCVSRepository(None, rootpath, cvsdb.cfg.general)
 
+    # split up the directory components
+    dirpath = filter(None, string.split(os.path.normpath(directory), os.sep))
+
     ## convert FileData objects into Commit objects so we can insert them
     ## into the database
     commit_list = []
-    for file_data in file_data_list:
+    for filename, old_version, new_version in files:
+        filepath = dirpath + [filename]
+
         ## XXX: this is nasty: in the case of a removed file, we are not
         ##      given enough information to find it in the rlog output!
         ##      So instead, we rlog everything in the removed file, and
         ##      add any commits not already in the database
-        if file_data.ctype == "removed":
-            temp = GetUnrecordedCommitList(repository, file_data)
-            commit_list = commit_list + temp
+        if new_version == 'NONE':
+            commits = cvsdb.GetUnrecordedCommitList(repository, filepath)
         else:
-            commit_list.append(CommitFromFileData(repository, file_data))
+            commits = cvsdb.GetCommitListFromRCSFile(repository, filepath,
+                                                     new_version)
+
+        commit_list.extend(commits)
 
     ## add to the database
     db = cvsdb.ConnectDatabase()
@@ -310,11 +273,11 @@ if __name__ == '__main__':
         error('Bad arguments')
 
     repository = cvsdb.CleanRepository(repository)
-    file_list = fun(arg, repository)
+    directory, files = fun(arg, repository)
 
-    if file_list is None:
+    if files is None:
       debug('Directory was added, nothing to do')
     else:
-      ProcessLoginfo(repository, file_list)
+      ProcessLoginfo(repository, directory, files)
 
     sys.exit(0)

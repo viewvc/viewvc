@@ -188,6 +188,13 @@ class BinCVSRepository(CVSRepository):
 
     rev parameter can be a revision number, branch number or tag name
 
+    Option values recognized by this implementation:
+
+      cvs_pass_rev
+        boolean, default false. set to true to pass rev parameter as -r
+        argument to rlog, this is more efficient but causes less
+        information to be returned
+
     Option values returned by this implementation:
 
       cvs_tags
@@ -195,7 +202,12 @@ class BinCVSRepository(CVSRepository):
     """
 
     # Invoke rlog
-    args = self.rcsfile(path_parts, 1),
+    rcsfile = self.rcsfile(path_parts, 1)
+    if rev and options.get('cvs_pass_rev', 0):
+      args = '-r' + rev, rcsfile
+    else:
+      args = rcsfile,
+
     fp = self.rcs_popen('rlog', args, 'rt', 0)
     filename, default_branch, tags, msg, eof = _parse_log_header(fp)
 
@@ -290,10 +302,6 @@ def _match_revs_tags(revlist, taglist):
 
     "aliases"
       list of tags that have the same number
-
-  This function assumes it will be passed a complete, feasible sequence of
-  revisions. If an invalid sequence is passed it will return garbage or throw
-  exceptions.
   """
 
   # map of branch numbers to lists of corresponding branch Tags
@@ -330,16 +338,16 @@ def _match_revs_tags(revlist, taglist):
     rev.prev = rev.next = None
     if depth < len(history):
       prev = history[depth]
-      if depth == 0 or rev.number[:-1] == prev.number[:-1]:
+      if depth == 0 or (prev and rev.number[:-1] == prev.number[:-1]):
         rev.prev = prev
         prev.next = rev
 
     # set "parent"
-    if depth > 0:
-      assert history[depth-1].number == rev.number[:-2]
-      rev.parent = history[depth-1]
-    else:
-      rev.parent = None
+    rev.parent = None
+    if depth and depth <= len(history):
+      parent = history[depth-1]
+      if parent and parent.number == rev.number[:-2]:
+        rev.parent = history[depth-1]
 
     # set "undead"
     if rev.dead:
@@ -357,7 +365,7 @@ def _match_revs_tags(revlist, taglist):
       rev.branches = rev.prev.branches
       rev.branch_number = rev.prev.branch_number
     else:
-      rev.branch_number = rev.parent and rev.number[:-1] or ()
+      rev.branch_number = depth and rev.number[:-1] or ()
       try:
         rev.branches = branch_dict[rev.branch_number]
       except KeyError:
@@ -378,20 +386,23 @@ def _match_revs_tags(revlist, taglist):
       branch.co_rev = rev
 
     # end of outer loop, store most recent revision in "history" array
-    if depth < len(history):
-      history[depth] = rev
-    else:
-      assert depth == len(history)
-      history.append(rev)
+    while len(history) <= depth:
+      history.append(None)
+    history[depth] = rev
 
 def _add_tag(tag_name, revision):
   """Create a new tag object and associate it with a revision"""
-  tag = Tag(tag_name, revision.string)
-  revision.tags.append(tag)
+  if revision:
+    tag = Tag(tag_name, revision and revision.string)
+    tag.aliases = revision.tags
+    revision.tags.append(tag)
+  else:
+    tag = Tag(tag_name, None)
+    tag.aliases = []
   tag.co_rev = revision
-  tag.aliases = revision.tags
+  tag.is_branch = 0
   return tag
-  
+
 def _remove_tag(tag):
   """Remove a tag's associations"""
   tag.aliases.remove(tag)
@@ -925,30 +936,6 @@ def _log_path(entry, dirpath, getdirs):
   if name:
     return os.path.join(dirpath, path, name + ',v'), errors
   return None, errors
-
-def fetch_log(repos, full_name, which_rev=None):
-  if which_rev:
-    args = ('-r' + which_rev, full_name)
-  else:
-    args = (full_name,)
-  rlog = repos.rcs_popen('rlog', args, 'rt', 0)
-
-  filename, branch, taginfo, msg, eof = _parse_log_header(rlog)
-
-  if eof:
-    # no log entries or a parsing failure
-    return branch, taginfo, [ ]
-
-  revs = [ ]
-  while 1:
-    entry, eof = _parse_log_entry(rlog)
-    if entry:
-      # valid revision info
-      revs.append(entry)
-    if eof:
-      break
-
-  return branch, taginfo, revs
 
 
 # ======================================================================
