@@ -98,10 +98,10 @@ class DumpSink(common.Sink):
 
 
 def dump_file(fname):
-  parse(open(fname), DumpSink())
+  parse(open(fname, 'rb'), DumpSink())
 
 def time_file(fname):
-  f = open(fname)
+  f = open(fname, 'rb')
   s = common.Sink()
   t = time.time()
   parse(f, s)
