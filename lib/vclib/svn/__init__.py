@@ -93,19 +93,6 @@ def _get_history(svnrepos, full_name):
   return history.histories
 
 
-def _unparse_action(change_kind):
-  if change_kind == fs.path_change_add:
-    return "added"
-  elif change_kind == fs.path_change_delete:
-    return "deleted"
-  elif change_kind == fs.path_change_replace:
-    return "replaced"
-  elif change_kind == fs.path_change_modify:
-    return "modified"
-  else:
-    return None
-  
-
 class ChangedPath:
   def __init__(self, filename, pathtype, prop_mods, text_mods,
                base_path, base_rev, action):
