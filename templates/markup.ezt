@@ -2,7 +2,7 @@
 
 <hr noshade>
 <table width="100%"><tr><td bgcolor="#ffffff">
-File: [nav_path]
+File: [nav_file]
 
 (<a href="[href]" target="cvs_checkout"
   onClick="window.open('about:blank','cvs_checkout',
