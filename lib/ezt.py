@@ -1,5 +1,56 @@
-#
-# ezt.py -- easy templating
+#!/usr/bin/env python
+"""ezt.py -- easy templating
+
+ezt templates are very similar to standard HTML files.  But additionaly
+they contain directives sprinkled in between.  With these directives
+it possible to generate the dynamic content from the ezt templates.
+
+These directives are enclosed in square brackets.  If you are a 
+C-programmer, you might be familar with the #ifdef directives of the
+C preprocessor 'cpp'.  provides a similar concept for HTML.  Additionally 
+EZT provides a 'for' directive, which allows to iterate (repeat) certain 
+subsections of the template according to sequence of data items
+provided by the application.
+
+The HTML rendering is performed by the method generate() of the Template
+class.  Building template instances can either be done using external
+files (per convention called .ezt files):
+
+    >>> template = Template("../templates/log.ezt")
+
+or by calling the parse() method of a template instance directly with 
+a EZT template string:
+
+    >>> template = Template()
+    >>> template.parse('''<html><head>
+    ... <title>[title_string]</title></head>
+    ... <body><h1>[title_string]</h1>
+    ...    [for a_sequence] <p>[a_sequence]</p>
+    ...    [end] <hr>
+    ...    [footer]
+    ... </body>
+    ... </html>
+    ... ''')
+
+The application should build a dictionary 'data' and pass it together
+with the output fileobject to the templates generate method:
+
+    >>> data = {'title_string' : "A Dummy page",
+    ...         'a_sequence' : ['list item 1', 'list item 2', 'another element'],
+    ...         'footer': "Sorry: The doctor is out." }
+    >>> import sys
+    >>> template.generate(sys.stdout, data)
+    <html><head>
+    <title>A Dummy page</title></head>
+    <body><h1>A Dummy page</h1>
+        <p>list item 1</p>
+        <p>list item 2</p>
+        <p>another element</p>
+        <hr>
+       Sorry: The doctor is out.
+    </body>
+    </html>
+"""
 #
 # Copyright (C) 2001 Greg Stein. All Rights Reserved.
 #
@@ -28,6 +79,8 @@
 #
 #
 # This software is maintained by Greg and is available at:
+#    http://viewcvs.sourceforge.net/
+# it is also used by the following projects:
 #    http://edna.sourceforge.net/
 #
 
@@ -240,7 +293,7 @@ def _get_value((refname, start, rest), ctx):
   return ob
 
 class _context:
-  pass
+  """A container for the execution context"""
 
 class ArgCountSyntaxError(Exception):
   pass
@@ -250,3 +303,14 @@ class UnknownReference(Exception):
 
 class NeedSequenceError(Exception):
   pass
+
+# --- standard test environment ---
+def _test(argv):
+  import doctest, ezt           
+  verbose = "-v" in argv
+  return doctest.testmod(ezt, verbose=verbose)
+
+if __name__ == "__main__":
+  # invoke unit test for this module:
+  import sys
+  sys.exit(_test(sys.argv)[0])
