@@ -1,3 +1,42 @@
 [include "include/header.ezt" "annotate"]
 
 <hr noshade>
+
+[define color1]#eeeeee[end]
+[define color2]#ccccff[end]
+[define last_rev]0[end]
+[define bgcolor][color1][end]
+
+<table border=0 cellspacing=0 cellpadding=2>
+[for lines]
+  [is lines.rev last_rev]
+  [else]
+    [is bgcolor color1]
+      [define bgcolor][color2][end]
+    [else]
+      [define bgcolor][color1][end]
+    [end]
+  [end]
+
+  <tr bgcolor=[bgcolor]>
+    <td align="right">&nbsp;
+      <tt>[lines.line_number] : </tt>
+    </td>
+    <td align="right">&nbsp;
+      [is lines.rev last_rev][else]<tt>[lines.author]</tt>[end]
+    </td>
+    <td align="right">&nbsp;
+      [is lines.rev last_rev]
+      [else]
+        [if-any lines.diff_url]<a href="[lines.diff_url]">[end]<tt>[lines.rev]</tt>[if-any lines.diff_url]</a>[end]
+      [end]
+    </td>
+    <td align="left">&nbsp;
+      <tt>[lines.text]</tt>
+    </td>
+  </tr>
+  [define last_rev][lines.rev][end]
+[end]
+</table>
+
+[include "include/footer.ezt"]

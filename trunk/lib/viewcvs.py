@@ -1716,17 +1716,14 @@ def view_annotate(request):
   rev = request.query_dict.get('annotate')
   data = nav_header_data(request, rev)
 
-  request.server.header()
-  generate_page(request, cfg.templates.annotate, data)
-
   ### be nice to hook this into the template...
   import blame
-  blame.make_html(request.repos.rootpath, request.where + ',v', rev,
-                  compat.urlencode(request.get_options()))
+  data['lines'] = blame.BlameSource(request.repos.rootpath,
+                                    request.where + ',v', rev,
+                                    compat.urlencode(request.get_options()))
 
-  # generate the footer
-  generate_page(request, cfg.templates.footer, data)
-
+  request.server.header()
+  generate_page(request, cfg.templates.annotate, data)
 
 def view_cvsgraph_image(request):
   "output the image rendered by cvsgraph"
