@@ -59,6 +59,17 @@ class Options:
 
 # --- web browser interface: ----------------------------------------------
 
+class HTTP_Header:
+    "small helper class used to patch (modify) viewcvs.http_header function"
+    def __init__(self, handler):
+        self.handler = handler
+        self.sent = 0
+    def __call__(self, content_type="text/html"):
+        if not self.sent:
+            self.handler.send_header("Content-type", content_type)
+            self.handler.end_headers()
+            self.sent = 1
+
 def serve(host, port, callback=None):
     """start a HTTP server on the given port.  call 'callback' when the
     server is ready to serve"""
@@ -176,11 +187,8 @@ If this doesn't work, please click on the link above.
             decoded_query = string.replace(query, '+', ' ')
 
             self.send_response(200)
-            # FIXME: I'm not sure about this:  Sometimes it hurts, sometimes 
-            #        it is required.  Please enlight me
-            if 1:
-                self.send_header("Content-type", "text/html")
-                self.end_headers()
+            # Patch (replace) the viewcvs.http_header function:
+            viewcvs.http_header = HTTP_Header(handler=self)
 
             # Preserve state, because we execute script in current process:
             save_argv = sys.argv
