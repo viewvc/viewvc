@@ -147,6 +147,7 @@ Directives
 import string
 import re
 from types import StringType, IntType, FloatType
+import os
 
 #
 # This regular expression matches three alternatives:
@@ -205,9 +206,10 @@ class Template:
     self._execute(self.program, fp, ctx)
 
   def _parse_file(self, fname, for_names=None):
-    return self._parse(open(fname, "rt").read(), for_names)
+    return self._parse(open(fname, "rt").read(), for_names,
+                       os.path.dirname(fname))
 
-  def _parse(self, text, for_names=None):
+  def _parse(self, text, for_names=None, base=None):
     """text -> string object containing the HTML template.
 
     This is a private helper function doing the real work for method parse.
@@ -277,15 +279,22 @@ class Template:
             raise ArgCountSyntaxError()
           if args[1][0] == '"':
             include_filename = args[1][1:-1]
+            if base:
+              include_filename = os.path.join(base, include_filename)
             program.extend(self._parse_file(include_filename, for_names))
           else:
-            program.append((self._cmd_include, _prepare_ref(args[1], for_names)))
+            program.append((self._cmd_include,
+                            (_prepare_ref(args[1], for_names),
+                             base)))
         else:
           # implied PRINT command
           if len(args) > 1:
             raise ArgCountSyntaxError()
           program.append((self._cmd_print, _prepare_ref(args[0], for_names)))
 
+    if stack:
+      ### would be nice to say which blocks...
+      raise UnclosedBlocksError()
     return program
 
   def _execute(self, program, fp, ctx):
@@ -300,11 +309,23 @@ class Template:
         step[0](step[1], fp, ctx)
 
   def _cmd_print(self, valref, fp, ctx):
-    ### type check the value
-    fp.write(_get_value(valref, ctx))
+    value = _get_value(valref, ctx)
 
-  def _cmd_include(self, valref, fp, ctx):
-    self._execute(self._parse_file(_get_value(valref, ctx)), fp, ctx)
+    # if the value has a 'read' attribute, then it is a stream: copy it
+    if hasattr(value, 'read'):
+      while 1:
+        chunk = value.read(16384)
+        if not chunk:
+          break
+        fp.write(chunk)
+    else:
+      fp.write(value)
+
+  def _cmd_include(self, (valref, base), fp, ctx):
+    fname = _get_value(valref, ctx)
+    if base:
+      fname = os.path.join(base, fname)
+    self._execute(self._parse_file(fname), fp, ctx)
 
   def _cmd_if_any(self, args, fp, ctx):
     "If the value is a non-empty string or non-empty list, then T else F."
@@ -350,10 +371,10 @@ class Template:
     if isinstance(list, StringType):
       raise NeedSequenceError()
     refname = valref[0]
-    ctx.for_index[refname] = [ list, 0 ]
-    for i in range(len(list)):
-      ctx.for_index[refname][1] = i
+    ctx.for_index[refname] = idx = [ list, 0 ]
+    for item in list:
       self._execute(section, fp, ctx)
+      idx[1] = idx[1] + 1
     del ctx.for_index[refname]
 
 
@@ -425,6 +446,9 @@ class UnknownReference(Exception):
   pass
 
 class NeedSequenceError(Exception):
+  pass
+
+class UnclosedBlocksError(Exception):
   pass
 
 # --- standard test environment ---
