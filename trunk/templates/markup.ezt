@@ -1,13 +1,12 @@
 [# setup page definitions]
   [define location][rootname][if-any where]: [where][end][end]
   [define page_title][cfg.general.main_title] - markup - [location][end]
-  [define help_href][docroot]/help_root.html[end]
+  [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
 [include "include/header.ezt" "markup"]
 
-<hr noshade>
-<table width="100%"><tr><td bgcolor="#ffffff">
+<div class="vc_summary">
 File: [nav_file]
 
 (<a href="[download_href]"><b>download</b></a>)
@@ -46,8 +45,7 @@ File: [nav_file]
     Tag: <b>[tag]</b><br>
   [end]
 [end]
-</td></tr></table>
-<hr noshade>
+</div>
 
 [markup]
 

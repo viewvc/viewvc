@@ -6,13 +6,13 @@
 <html>
 <head>
   <title>[page_title]</title>
+  <link rel="stylesheet" href="[docroot]/styles.css" type="text/css">
 </head>
 
-<body text="#000000" bgcolor="#ffffff" text="#000000" 
-      link="#0000ff" alink="#0000ff" vlink="#880088">
+<body>
 
-<table width="100%" bgcolor="#8888ff"
-       border="0" cellpadding="0" cellspacing="0">
+<div class="vc_navheader">
+<table width="100%" border="0" cellpadding="0" cellspacing="0">
 <tr>
   <td align="left">[nav_path]</h1></td>
   <td align="right">
@@ -37,6 +37,7 @@
   </td>
 </tr>
 </table>
+</div>
 
 <h1>[location]</h1>
 

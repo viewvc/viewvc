@@ -3,44 +3,44 @@
 <table width="100%" border=0 cellspacing=1 cellpadding=2>
 <tr>
   [is sortby "file"]
-    <th align=left bgcolor="#88ff88"
+    <th class="vc_header_sort"
       [is cfg.options.use_cvsgraph "1"]colspan=2[end]
       >File</th>
   [else]
-    <th align=left bgcolor="#cccccc"
+    <th class="vc_header"
       [is cfg.options.use_cvsgraph "1"]colspan=2[end]
       ><a href="[sortby_file_href]#dirlist">File</a></th>
   [end]
   [is sortby "rev"]
-    <th align=left bgcolor="#88ff88">Rev.</th>
+    <th class="vc_header_sort">Rev.</th>
   [else]
-    <th align=left bgcolor="#cccccc"
+    <th class="vc_header"
       ><a href="[sortby_rev_href]"#dirlist>Rev.</a></th>
   [end]
   [is sortby "date"]
-    <th align=left bgcolor="#88ff88">Age</th>
+    <th class="vc_header_sort">Age</th>
   [else]
-    <th align=left bgcolor="#cccccc"
+    <th class="vc_header"
       ><a href="[sortby_date_href]#dirlist">Age</a></th>
   [end]
   [is sortby "author"]
-    <th align=left bgcolor="#88ff88">Author</th>
+    <th class="vc_header_sort">Author</th>
   [else]
-    <th align=left bgcolor="#cccccc"
+    <th class="vc_header"
       ><a href="[sortby_author_href]#dirlist">Author</a></th>
   [end]
 [is cfg.options.show_logs "1"]
   [is sortby "log"]
-    <th align=left bgcolor="#88ff88">Last log entry</th>
+    <th class="vc_header_sort">Last log entry</th>
   [else]
-    <th align=left bgcolor="#cccccc"
+    <th class="vc_header"
       ><a href="[sortby_log_href]#dirlist">Last log entry</a></th>
   [end]
 [end]
 </tr>
 
 [for rows]
-  <tr bgcolor="[if-index rows even]#ffffff[else]#ccccee[end]">
+  <tr class="vc_row_[if-index rows even]even[else]odd[end]">
   [is rows.type "unreadable"]
     <td [is cfg.options.use_cvsgraph "1"]colspan=2[end]>
       <a name="[rows.anchor]">[rows.name]</a>

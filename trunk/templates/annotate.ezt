@@ -1,30 +1,30 @@
 [# setup page definitions]
   [define location][rootname][if-any where]: [where][end][end]
   [define page_title][cfg.general.main_title] - annotate - [location][end]
-  [define help_href][docroot]/help_root.html[end]
+  [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
 [include "include/header.ezt" "annotate"]
 
 <hr noshade>
 
-[define color1]#eeeeee[end]
-[define color2]#ccccff[end]
+[define class1]vc_row_even[end]
+[define class2]vc_row_odd[end]
 [define last_rev]0[end]
-[define bgcolor][color1][end]
+[define rowclass][class1][end]
 
 <table border=0 cellspacing=0 cellpadding=2>
 [for lines]
   [is lines.rev last_rev]
   [else]
-    [is bgcolor color1]
-      [define bgcolor][color2][end]
+    [is rowclass class1]
+      [define rowclass][class2][end]
     [else]
-      [define bgcolor][color1][end]
+      [define rowclass][class1][end]
     [end]
   [end]
 
-  <tr bgcolor=[bgcolor]>
+  <tr class="[rowclass]">
     <td align="right">&nbsp;
       <tt>[lines.line_number] : </tt>
     </td>
