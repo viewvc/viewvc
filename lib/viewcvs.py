@@ -3045,7 +3045,7 @@ def handle_config():
     cfg.set_defaults()
 
     # load in configuration information from the config file
-    pathname = CONF_PATHNAME or 'viewcvs.conf'
+    pathname = CONF_PATHNAME or os.path.join(g_install_dir, 'viewcvs.conf')
     if sapi.server:
       cfg.load_config(pathname, sapi.server.getenv('HTTP_HOST'))
     else:
