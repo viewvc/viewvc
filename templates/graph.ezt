@@ -12,7 +12,7 @@
 [imagemap]
 <img border="0" usemap="#MyMapName"
   src="[imagesrc]" 
-  alt="Revisions of [path]">
+  alt="Revisions of [where]">
 </center>
 
 [include "include/footer.ezt"]
