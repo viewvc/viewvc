@@ -222,9 +222,11 @@ def install_tree(src_path, dst_path, prompt_replace):
     else:
       print " ", src
       compile_it = fname[-3:] == '.py'
-      # install the file. use '1' for set_python_paths -- it doesn't hurt
-      # to do a search/replace on these files [at install time]
-      InstallFile(src, dst, 0644, 1, prompt_replace, compile_it)
+      # set the paths in all Python files -- it doesn't hurt to do a
+      # search/replace on these files even if they don't have the
+      # special symbols.
+      set_paths = compile_it
+      InstallFile(src, dst, 0644, set_paths, prompt_replace, compile_it)
 
 
 ## MAIN
