@@ -23,6 +23,10 @@
  # -----------------------------------------------------------------------
  #
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static char *__doc__= "\
 this python extension module is a binding to the tparse library.\n\
 tparse is a C++ library that offers an API to a performance-oriented RCSFILE parser.\n\
@@ -33,29 +37,35 @@ static char *__version__ = "0.14";
 static char *__date__ = "2002/02/11";
 static char *__author__ ="Lucas Bruand <lucas.bruand@ecl2002.ec-lyon.fr>"; 
 
-static char *pyRCSStopParser__doc__ ="Stop parser exception: to be raised from the sink to abort parsing.";
+//static char *pyRCSStopParser__doc__ ="Stop parser exception: to be raised from the sink to abort parsing.";
 static PyObject *pyRCSStopParser;
 
-static char *pyRCSParseError__doc__ ="Ancestor Exception";
+//static char *pyRCSParseError__doc__ ="Ancestor Exception";
 static PyObject *pyRCSParseError;
 
-static char *pyRCSIllegalCharacter__doc__ ="Parser has encountered an Illegal Character.";
+//static char *pyRCSIllegalCharacter__doc__ ="Parser has encountered an Illegal Character.";
 static PyObject *pyRCSIllegalCharacter;
 
-static char *pyRCSExpected__doc__ ="Parse has found something but the expected.";
+//static char *pyRCSExpected__doc__ ="Parse has found something but the expected.";
 static PyObject *pyRCSExpected;
+static PyObject *PySink; // Sink Class from the common module.
 
 static char *tparse__doc__=" Main function: parse a file and send the result to the sink \n\
 Two ways of invoking this function from python:\n\
     * tparse.parse(filename, sink) \n\
     	where filename is a string and sink is an instance of the class Sink \n\
-    	defined in the sink.py module.\n\
+    	defined in the common.py module.\n\
     * tparse.parse(file, sink)\n\
     	where file is a python file and sink is an instance of the class Sink\n\
-    	defined in the sink.py module.\n";
+    	defined in the common.py module.\n";
 static PyObject * tparse( PyObject *self, PyObject *args);
 
  /* Init function for this module:
     Invoked when the module is imported from Python 
     Load the stopparser expression into the tparser's namespace */
-extern "C" void inittparse();
+void inittparse();
+#ifdef __cplusplus
+}
+#endif
+
+

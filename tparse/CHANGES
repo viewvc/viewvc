@@ -1,3 +1,9 @@
+Modif ( 13-Feb-2002)
+  * Removed debugging statments from the (C++) Sink class.
+  * Changed INSTALL to reflect the move of rcsparse to lib/vclib/ccvs/rcsparse.
+  * Now when tparse cannot import common.py, it fails.
+  * Added check for sink being of common.Sink class.
+  
 Modif ( 11-Feb-2002)
   * Support for parser exceptions  ( RCS* ):
      tparse will try import those exceptions from the "common" module.
