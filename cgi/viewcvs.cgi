@@ -997,10 +997,10 @@ def parse_log_header(fp):
         break
       elif line[:6] == 'rlog: ':
         # rlog: filename/goes/here,v: error message
-        idx = string.find(line[6:], ':')
+        idx = string.find(line, ':', 6)
         if idx != -1:
           # looks like a filename
-          filename = line[6:idx+6]
+          filename = line[6:idx]
           if filename[-2:] == ',v':
             filename = filename[:-2]
           return LogHeader(filename), _EOF_ERROR
