@@ -124,14 +124,14 @@ def _compare_paths(path1, path2):
   return cmp(char1, char2)
 
 class LogCollector:
-  def __init__(self, path, options):
+  def __init__(self, path, show_all_logs):
     # This class uses leading slashes for paths internally
     if not path:
       self.path = '/'
     else:
       self.path = path[0] == '/' and path or '/' + path
     self.logs = []
-    self.filter_path = options.get('svn_show_all_dir_logs', 0)
+    self.show_all_logs = show_all_logs
     
   def add_log(self, paths, revision, author, date, message, pool):
     # Changed paths have leading slashes
@@ -152,13 +152,13 @@ class LogCollector:
           change = paths[changed_path]
           if change.copyfrom_path:
             this_path = change.copyfrom_path + self.path[len(changed_path):]
-    if self.filter_path and not this_path:
-      return
-    date = _datestr_to_date(date, pool)
-    entry = Revision(revision, date, author, message, None,
-                     self.path[1:], None, None)
-    self.path = this_path
-    self.logs.append(entry)
+    if self.show_all_logs or this_path:
+      date = _datestr_to_date(date, pool)
+      entry = Revision(revision, date, author, message, None,
+                       self.path[1:], None, None)
+      self.logs.append(entry)
+    if this_path:
+      self.path = this_path
     
 
 def get_logs(svnrepos, full_name, files):
@@ -410,7 +410,9 @@ class SubversionRepository(vclib.Repository):
       except ValueError:
         vclib.InvalidRevision(rev)
 
-    lc = LogCollector(full_name, options)
+    # It's okay if we're told to not show all logs on a file -- all
+    # the revisions should match correctly anyway.
+    lc = LogCollector(full_name, options.get('svn_show_all_dir_logs', 0))
     dir_url = self.rootpath
     if full_name:
       dir_url = dir_url + '/' + full_name
