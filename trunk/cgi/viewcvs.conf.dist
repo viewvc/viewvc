@@ -13,10 +13,12 @@
 # For correct operation, you will probably need to change the following
 # configuration variables:
 #
-#    cvs_roots
+#    cvs_roots (for CVS)
+#    svn_roots (for Subversion)
+#    svn_parent_path (for Subversion)
 #    default_root
 #    rcs_path
-#    mime_types_file
+#    mime_types_file 
 #
 # It is usually desirable to change the following variables:
 #
@@ -67,10 +69,36 @@
 # roots should be separated by commas.
 #
 cvs_roots =
-	Development : /home/cvsroot
+	cvs : /home/cvsroot
 
-# this is the name of the default CVS root.
-default_root = Development
+#
+# This setting specifies each of the Subversion roots (repositories)
+# on your system and assigns names to them. Each root should be given
+# by a "name: path" value. Multiple roots should be separated by
+# commas.
+#
+#svn_roots =
+#	svn : /home/svnrepos
+
+#
+# The 'svn_parent_path' is a directory in which any number of
+# Subversion repositories may reside.  Rather than force you to add a
+# new entry to 'svn_roots' each time you create a new repository,
+# ViewCVS rewards you for putting all your Subversion repositories in
+# a single parent directory by allowing you to simply specifiy that
+# parent directory.  ViewCVS will then notice each Subversion
+# repository in that directory as a new root whose name is the
+# subdirectory of the parent path in which that repository lives.
+#
+# Caution: these names can, of course, clash with names you have
+# defined in your cvs_roots or svn_roots configuration items.  If this
+# occurs, you can either rename the offending repository on disk, or
+# grant new names to the clashing item in cvs_roots or svn_roots.
+#
+#svn_parent_path = /home/svn-repositories
+
+# this is the name of the default root.
+default_root = cvs
 
 # uncomment if the RCS binaries are not on the standard path
 #rcs_path = /usr/bin/
@@ -86,11 +114,11 @@ default_root = Development
 #mime_types_file = /usr/local/apache/conf/mime.types
 
 # This address is shown in the footer of the generated pages. 
-# It must be replaced with the address of the local CVS maintainer.
-address = <a href="mailto:cvs-admin@insert.your.domain.here">No CVS admin address has been configured</a>
+# It must be replaced with the address of the local repository maintainer.
+address = <a href="mailto:cvs-admin@insert.your.domain.here">No admin address has been configured</a>
 
 # this title is used on the main entry page
-main_title = CVS Repository
+main_title = Repository
 
 #
 # This should contain a list of modules in the repository that should not be
@@ -253,6 +281,18 @@ log = templates/log.ezt
 [options]
 ### DOC
 
+# root_as_url_component: Interpret the first path component in the URL
+# after the script location as the root to use.  This is an
+# alternative to using the 'root=' query key.  If no path components
+# exists in the script url after the script location, or if the first
+# such path component does not identify the name of configured root
+# (see the 'cvs_roots', 'svn_roots', and 'svn_parent_path'
+# configuration items), the path will be expected to exist inside the
+# configured default root (the 'default_root' configuration item).
+#   1      Treat first path component as root name
+#   0      No special treatment of first path component (use root=)
+root_as_url_component = 0
+
 # sort_by: File sort order
 #   file   Sort by filename
 #   rev    Sort by revision number
@@ -266,7 +306,7 @@ sort_by = file
 #   0      Show the files which are inside the Attic subdir
 hide_attic = 1
 
-# log_sort: Sort order for CVS logs
+# log_sort: Sort order for log messages
 #   date   Sort revisions by date
 #   rev    Sort revision by revision number
 #   cvs    Don't sort them. Same order as CVS/RCS shows them.
@@ -319,7 +359,7 @@ allow_compress = 1
 
 # If you have files which automatically refers to other files
 # (such as HTML) then this allows you to browse the checked
-# out files as if outside CVS.
+# out files as if outside the repository.
 checkout_magic = 1
 
 # Show last changelog message for sub directories
@@ -335,7 +375,7 @@ show_subdir_lastmod = 0
 # show a portion of the most recent log entry in directory listings
 show_logs = 1
 
-# Show CVS log when viewing file contents
+# Show log when viewing file contents
 show_log_in_markup = 1
 
 # Display dates as UTC or in local time zone
