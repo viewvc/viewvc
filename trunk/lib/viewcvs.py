@@ -737,7 +737,7 @@ def nav_path(request):
 
   # add root item
   items = []
-  root_item = _item(name=request.repos.name, href=None)
+  root_item = _item(name=request.server.escape(request.repos.name), href=None)
   if request.path_parts or request.view_func is not view_directory:
     root_item.href = request.get_url(view_func=view_directory,
                                      where='', pathtype=vclib.DIR,
