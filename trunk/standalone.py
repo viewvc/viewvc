@@ -336,6 +336,21 @@ def gui(port):
                 var=self.logtemplate_svar, command=self.set_templates_log)
             self.templates_log_table.pack(side='top', anchor='w')
 
+            self.querytemplate_lbl = Tkinter.Label(self.options_frm,
+                text='Chooose HTML Template for the commit database query:')
+            self.querytemplate_lbl.pack(side='top', anchor='w')
+            self.querytemplate_svar = Tkinter.StringVar()
+            self.querytemplate_svar.set(viewcvs.cfg.templates.query)
+            self.querytemplate_entry = Tkinter.Entry(self.options_frm,
+                width = 40, textvariable=self.querytemplate_svar)
+            self.querytemplate_entry.bind('<Return>', self.set_templates_query)
+            self.querytemplate_entry.pack(side='top', anchor='w')
+            self.templates_query = Tkinter.Radiobutton(self.options_frm,
+                text="query.ezt", value="templates/query.ezt", 
+                var=self.querytemplate_svar, command=self.set_templates_query)
+            self.templates_query.pack(side='top', anchor='w')
+
+
             self.server_frm.pack(side='top', fill='x')
             self.options_frm.pack(side='top', fill='x')
 
@@ -360,6 +375,9 @@ def gui(port):
 
         def set_templates_directory(self, event=None):
             viewcvs.cfg.templates.directory = self.dirtemplate_svar.get()
+
+        def set_templates_query(self, event=None):
+            viewcvs.cfg.templates.query = self.querytemplate_svar.get()
 
         def ready(self, server):
             """used as callback parameter to the serve() function"""
