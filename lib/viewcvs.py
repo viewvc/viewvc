@@ -106,6 +106,10 @@ CHUNK_SIZE = 8192
 LOG_END_MARKER = '=' * 77 + '\n'
 ENTRY_END_MARKER = '-' * 28 + '\n'
 
+# for rcsdiff processing of header
+_RCSDIFF_IS_BINARY = 'binary'
+_RCSDIFF_ERROR = 'error'
+
 # global configuration:
 cfg = None # see below
 
@@ -2168,12 +2172,12 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
     # and DiffSource then showed no differences.
     # Need to process the entire header before DiffSource is used.
     if line[:3] == 'Bin':
-      rcsdiff_eflag = 1
+      rcsdiff_eflag = _RCSDIFF_IS_BINARY
       break
 
     if (string.find(line, 'not found') != -1 or 
         string.find(line, 'illegal option') != -1):
-      rcsdiff_eflag = 2
+      rcsdiff_eflag = _RCSDIFF_ERROR
       break
 
   if (log_rev1 and log_rev1 != rev1) or (log_rev2 and log_rev2 != rev2):
@@ -2193,18 +2197,14 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
                       '<input type=hidden name="%s" value="%s">' % \
                       (varname, cgi.escape(value))
 
-  # Process special line in the header.
-  rcs_diff = []
-  if rcsdiff_eflag == 1:
-    rcs_diff.append(_item(type='diff-info', 
-                          text='- Binary revisions differ -'))
+  # Process any special lines in the header, or continue to
+  # get the differences from DiffSource.
+  if rcsdiff_eflag == _RCSDIFF_IS_BINARY:
+    rcs_diff = [ (_item(type='binary-diff')) ]
+  elif rcsdiff_eflag == _RCSDIFF_ERROR:
+    rcs_diff = [ (_item(type='error')) ]
   else:
-    # This test should probably go in ./viewcvs-install
-    if rcsdiff_eflag == 2:
-      rcs_diff.append(_item(type='diff-info', 
-                            text='- For the creation of this page ViewCVS relies on rcsdiff, which relies on GNU diff.  The rcsdiff program is reporting an error that GNU diff cannot be found. -'))
-    else:
-      rcs_diff = DiffSource(fp)
+    rcs_diff = DiffSource(fp)
 
   data.update({
     'cfg' : cfg,
@@ -2294,7 +2294,7 @@ class DiffSource:
     if not line:
       if self.state == 'no-changes':
         self.state = 'done'
-        return _item(type='diff-info', text='- No changes -')
+        return _item(type='no-changes')
 
       # see if there are lines to flush
       if self.left_col or self.right_col:
