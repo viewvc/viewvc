@@ -24,6 +24,7 @@
 import os
 import sys
 import sapi
+import threading
 
 if sys.platform == "win32":
   import win32popen
@@ -253,12 +254,20 @@ def pipe_cmds(cmds):
   os.close(null)
 
   # done with most of the commands. set up the last command to write to stdout
+  if not sapi.server.inheritableOut:
+    r, w = os.pipe()
+    
   pid = os.fork()
   if not pid:
     # in the child (the last command)
 
     # hook up stdin to the "read" channel
     os.dup2(prev_r, 0)
+
+    if not sapi.server.inheritableOut:
+      os.dup2(w, 1)
+      os.close(r)
+      os.close(w)
 
     # close these extra descriptors
     os.close(prev_r)
@@ -274,15 +283,37 @@ def pipe_cmds(cmds):
 
   # not needed any more
   os.close(prev_r)
+  
+  if not sapi.server.inheritableOut:
+    os.close(w)
+    thread = _copy(r, sapi.server.file())
+    thread.start()
+  else:
+    thread = None
 
   # write into the first pipe, wait on the final process
-  return _pipe(os.fdopen(parent_w, 'w'), pid)
+  return _pipe(os.fdopen(parent_w, 'w'), pid, thread=thread)
 
+class _copy(threading.Thread):
+  def __init__(self, srcfd, destfile):
+    self.srcfd = srcfd
+    self.destfile = destfile
+    threading.Thread.__init__(self)
+
+  def run(self):
+    try:
+      while 1:
+        s = os.read(self.srcfd, 1024)
+        if not s:
+          break
+        self.destfile.write(s)
+    finally:
+      os.close(self.srcfd)
 
 class _pipe:
   "Wrapper for a file which can wait() on a child process at close time."
 
-  def __init__(self, file, child_pid, done_event = None):
+  def __init__(self, file, child_pid, done_event = None, thread = None):
     self.file = file
     self.child_pid = child_pid
     if sys.platform == "win32":
@@ -290,7 +321,9 @@ class _pipe:
         self.wait_for = (child_pid, done_event)
       else:
         self.wait_for = (child_pid,)
-
+    else:
+      self.thread = thread
+      
   def eof(self):
     if sys.platform == "win32":
       r = win32event.WaitForMultipleObjects(self.wait_for, 1, 0)
@@ -298,6 +331,9 @@ class _pipe:
         self.file.close()
         self.file = None
         return win32process.GetExitCodeProcess(self.child_pid)
+      return None
+
+    if self.thread and self.thread.isAlive():
       return None
 
     pid, status = os.waitpid(self.child_pid, os.WNOHANG)
@@ -315,6 +351,8 @@ class _pipe:
         win32event.WaitForMultipleObjects(self.wait_for, 1, win32event.INFINITE)
         return win32process.GetExitCodeProcess(self.child_pid)
       else:
+        if self.thread:
+          self.thread.join()
         return os.waitpid(self.child_pid, 0)[1]
     return None
 
