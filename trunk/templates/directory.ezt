@@ -9,11 +9,13 @@
 <body text="#000000" bgcolor="#ffffff">
 <table width="100%" border=0 cellspacing=0 cellpadding=0>
   <tr>
-    <td><h1>[if-any where][where][else][cfg.general.main_title][end]</h1></td>
+    <td rowspan=2><h1>[if-any where][where][else][cfg.general.main_title][end]</h1></td>
     <td align=right><img src="/icons/apache_pb.gif" alt="(logo)" border=0
 			width=259 height=32></td>
-    <td width="1%"><h3><b><a target="_blank"
-href="[request.script_name]/~helppage~/help_[if-any where]dir[else]root[end]view.html">Help</a></b></h3></td>
+  </tr>
+  <tr>
+    <td align=right><h3><b><a target="_blank"
+href="[request.script_name]/~docroot~/help_[if-any where]dir[else]root[end]view.html">Help</a></b></h3></td>
   </tr>
 </table>
 
@@ -119,7 +121,7 @@ href="[request.script_name]/~helppage~/help_[if-any where]dir[else]root[end]view
         </td>
         [if-any rows.graph_href]
           <td width="1%"><a href="[rows.graph_href]"><img
-            src="[request.script_name]/~helppage~/images/cvsgraph_16x16.png"
+            src="[request.script_name]/~docroot~/images/cvsgraph_16x16.png"
             alt="(graph)" width=16 height=16 border=0>
           </a></td>
         [end]
