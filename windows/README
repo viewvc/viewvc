@@ -1,0 +1,145 @@
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+DESCRIPTION
+
+Unlike the previous port of ViewCVS to Windows, this version is full featured.
+
+It supports
+
+  - Code markup (colorizing) with enscript
+  - The Bonsai-like checkin database
+  - CVS Graph
+  - Running as a CGI script or as a standalone web server.
+  - Tarball download
+  - Regular expression filtering
+
+Another new feature is the ability to run ViewCVS as an ASP page instead of a CGI script. ASP tends to be much faster than CGI because there is less overhead at each page load.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+BASIC INSTALLATION
+
+ViewCVS requires a Python interpreter. The best one to use for windows is ActiveState's ActivePython ( http://aspn.activestate.com/ASPN/Python ) 
+
+Once python is installed you can run the install script with this command
+
+  python viewcvs-install
+
+The script will copy the source files into an installation directory that you specify, store some path information, and compile the viewcvs libraries into Python bytecode.
+
+ViewCVS also requires that the RCS tools be installed on your computer. There are numerous ports of RCS to windows. Precompiled binaries are available from 
+
+  http://ftp.cvshome.org/rcs/
+
+and there is more information about RCS at
+
+  http://www.cvshome.org/cyclic/cyclic-pages/rcs.html
+
+The only thing that will work after you've downloaded the RCS tools and run the install script is the python standalone server (standalone.py). Other features must be enabled manually. See the INSTALL file and the section below for information on how to do this.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+FEATURES INSTALLATION
+
+This section contains information on how to set up the optional viewcvs features. These features can be set up independently of each other and in any order.
+
+I use "c:\path\to\install" here to denote the ViewCVS installation path (the path where the install script copies files to) and "c:\path\to\python" as the path to the python interpreter.
+
+
+CGI on IIS
+
+  1) Copy viewcvs.cgi and query.cgi from c:\path\to\install to a folder that is accessible through your web server.
+  
+  2) Start up the IIS "Internet Services Manager" and right click a virtual server or virtual directory that contains the files you just copied. Choose "Properties" from the context menu that appears.
+  
+  3) On the properties dialog that appears, navigate to [Home | Virtual] Directory -> Application Settings -> Configuration. This will bring up another dialog box called "Application Configuration".
+  
+  4) On the "App Mappings" tab choose "Add". Fill in the following information
+  
+                 Executable:  C:\path\to\python\python.exe "%s"
+                  Extension:  cgi
+              Script Engine:  checked
+     Check that file exists:  unchecked
+       
+  That is all. Assuming you've set up viewcvs.conf to point to your repositories, the CGI pages should run. See the Troubleshooting section below if there are any problems.
+  
+ASP on IIS
+
+  In order to run viewcvs with ASP, you will need to enable Python ActiveX scripting and to install the included Aspfool ISAPI filter on whatever virtual server is being used to serve the viewcvs.asp page. Step by step instructions are given below. Information and source code for Aspfool can be found in the aspfool/ folder included in this distribution and there is a precompiled version of aspfool.dll in the binaries/ folder.
+
+  1) Run c:\path\to\python\win32comext\axscript\client\pyscript.py to register Python as an ASP scripting language. (More documentation on this is at http://www.python.org/windows/win32com/ActiveXScripting.html )
+
+  2) Copy the viewcvs.asp and query.asp from c:\path\to\install to a folder that is accessible through your web server.
+  
+  3) Start up the IIS "Internet Services Manager" and right click on the virtual server that contains the files you just copied. Choose "Properties" from the context menu that appears.
+  
+  3) On the properties dialog that appears, click the "ISAPI Filters" tab. Click the "add" button and enter the following information:
+  
+     Filter Name:  aspfool
+      Executable:  aspfool.dll
+
+After you've saved these changes, the viewcvs ASP pages should begin to work.
+
+CGI on Apache
+
+  Follow the instructions in the INSTALL file.
+      
+Enscript Highlighting
+
+  To use enscript, just follow the instructions in the INSTALL file. You'll need to have enscript.exe and sed.exe installed on your system. Both of these utilities are available from the GNU-Win32 Project at
+  
+    http://gnuwin32.sourceforge.net/
+  
+  The packages to download are enscript, gettext, libiconv, and sed.
+
+Bonsai-like Checkin Database
+
+  Follow the instructions in the INSTALL file. You'll need to set up a mysql database server and the Mysql Python Interface.
+ 
+  Mysql is available from http://www.mysql.com/
+  The Mysql-Python interface package for windows is available at http://www.cs.fhm.edu/~ifw00065/
+  Both packages have nice GUI installers.
+  
+CVS Graph
+  
+  To use CVS Graph, you can either use the precompiled binary that I provided (cvsgraph.exe) or build the source which is available from http://www.akhphd.au.dk/~bertho/cvsgraph/
+  
+  To build the source, you will need to have a C compiler like Mingw or Visual C++ installed on your system and these libraries:
+  
+    gd 1.x - http://www.boutell.com/gd
+    libpng - http://www.libpng.org/pub/png/
+    zlib   - http://www.gzip.org/zlib/
+    
+  The latter two libraries are also available from the Mingw package repository (http://mingwrep.sourceforge.net/) 
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+TROUBLESHOOTING
+
+A common cause of server errors for ASP and CGI pages is permissions problems. You need to make sure that the virtual directory containing the CGI or ASP files has script execution enabled. You also need to make sure the that the web server user account (usually called IUSR_machine_name where machine_name is your computer name) has read and execute access to the asp and cgi stub scripts, the ViewCVS lib/ folder, and paths where external tools like rcs, enscript, sed, and cvsgraph live. NTFS auditing makes it very easy to track down permissions problems. Also look for IIS messages in the event log.
+
+In viewcvs, if you can browse directories but see messages like "NOTE: There are 11 files, but none match the current tag" with empty file listings, your RCS utilities might not be set up correctly. One particular problem is that they sometimes do not recognize the extensions on RCS files, treating all files specified on the command line like working copies even if they end in ",v". As a result, when the ViewCVS gives commands like 
+                                                                        
+  rlog C:/CVSROOT/myproject/main.cpp,v                                  
+                                                                        
+rlog replies:                                                          
+                                                                        
+  rlog: C:/CVSROOT/myproject/RCS/main.cpp,v: No such file or directory 
+                                                                        
+And the files do not show up in the directory listing because the script does not have any information about them. You can test for this by entering commands like the one above on the command line. You can fix this by  including this string in your RCSINIT environment variable:
+
+  -x,v
+
+A good way to diagnose this and other problems with the utilities used by the ViewCVS is to open lib/win32popen.py and to set the DEBUG variable to 1. That way you can see the command lines of any utilities opened during the script execution and you can test them yourself in a shell. 
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+KNOWN ISSUES
+
+- The standalone server will not run under cygwin python because it does not support threads. ASP pages can't be run with cygwin python because it does not support ActiveX. To use either of these features you should install ActiveState Python. Activestate and Cygwin coexist nicely, so they can be installed side by side.
+
+- enscript 1.6.2 does not seem to work with the standalone server. When a enscript page is loaded, the enscript process never returns and consumes all CPU cycles until it is killed manually. Enscript does work well under CGI and ASP. And the standalone server does work with other markup utilities like the  the PHP highlighter.
+
+- With ASP, changes made to the python scripts in the lib/ folder will not go into effect unless a python reload() directive is given, or the asp application itself is reloaded. To do this, go to the IIS properties dialog for the application directory containing the viewcvs .asp files (in Internet Services Manager). Go to the [Home] | [Virtual] Directory tab and click the "Unload" button under "Application Settings". The application will be reloaded with the new source code changes at the next page load.
+
+To reload an individual file like win32popen.py, put the following lines in your asp page:
+
+  import win32popen
+  reload (win32popen)
+
+- By default, ASP will set session cookies at each page load. ViewCVS does not use these cookies and they can be safely disabled. You can do this by opening the IIS properties dialog for the application directory containing the viewcvs .asp files. Go to the [Home] | [Virtual] Directory tab and click the "Configuration" button under "Application Settings". On the dialog that comes up, uncheck "Enable Session State" under "App Options" -> "Application Configuration".
