@@ -174,12 +174,10 @@ class Config:
     self.options.show_subdir_lastmod = 0
     self.options.show_logs = 1
     self.options.show_log_in_markup = 1
-    self.options.allow_version_select = 1
     self.options.py2html_path = '.'
     self.options.short_log_len = 80
     self.options.diff_font_face = 'Helvetica,Arial'
     self.options.diff_font_size = -1
-    self.options.input_text_size = 12
     self.options.use_enscript = 0
     self.options.enscript_path = ''
     self.options.disable_enscript_lang = ()

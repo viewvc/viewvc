@@ -318,7 +318,6 @@ show_log_in_markup = 1
 # == Configuration defaults ==
 # Defaults for configuration variables that shouldn't need
 # to be configured..
-allow_version_select = 1
 
 #
 # If you want to use Marc-Andrew Lemburg's py2html (and Just van Rossum's
@@ -336,9 +335,6 @@ short_log_len = 80
 
 diff_font_face = Helvetica,Arial
 diff_font_size = -1
-
-# the width of the textinput in the request-diff-form
-input_text_size = 12
 
 # should we use 'enscript' for syntax coloring?
 use_enscript = 0
