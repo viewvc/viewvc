@@ -984,7 +984,9 @@ def retry_read(src, reqlen=CHUNK_SIZE):
         continue
     return chunk
   
-def copy_stream(src, dst=sys.stdout):
+def copy_stream(src, dst=None):
+  if dst is None:
+    dst = sys.stdout
   while 1:
     chunk = retry_read(src)
     if not chunk:
