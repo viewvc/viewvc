@@ -157,9 +157,9 @@ def parse_log_entry(fp):
   if not line:
     return None, _EOF_LOG
   if line == LOG_END_MARKER:
-    # Needed because some versions of RCS precede LOG_END_MARKER 
+    # Needed because some versions of RCS precede LOG_END_MARKER
     # with ENTRY_END_MARKER
-    return None, _EOF_FILE    
+    return None, _EOF_FILE
   if line[:8] == 'revision':
     match = _re_rev.match(line)
     if not match:
@@ -212,131 +212,6 @@ def skip_file(fp):
     if line == LOG_END_MARKER:
       break
 
-def process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags):
-  "Fill in fileinfo and alltags with info from the rlog output."
-
-  # consume each file found in the resulting log
-  while 1:
-
-    revwanted = None
-    branch = None
-    branchpoint = None
-
-    header, eof = parse_log_header(rlog)
-    filename = header.filename
-    head = header.head
-    branch = header.branch
-    symrev = header.taginfo
-
-    # the rlog output is done
-    if eof == _EOF_LOG:
-      break
-
-    if filename:
-      # convert from absolute to relative
-      if filename[:len(full_name)] == full_name:
-        filename = filename[len(full_name)+1:]
-
-      # for a subdir (not Attic files!), use the subdir for a key
-      idx = string.find(filename, '/')
-      if idx != -1 and filename[:6] != 'Attic/':
-        info_key = filename[:idx]
-      else:
-        info_key = filename
-
-    # an error was found regarding this file
-    if eof == _EOF_ERROR:
-      fileinfo[info_key] = _FILE_HAD_ERROR
-      continue
-
-    # if we hit the end of the log information (already!), then there is
-    # nothing we can do with this file
-    if eof:
-      continue
-
-    if not filename or not head:
-      # parsing error. skip the rest of this file.
-      skip_file(rlog)
-      continue
-
-    if not branch:
-      idx = string.rfind(head, '.')
-      branch = head[:idx]
-    idx = string.rfind(branch, '.')
-    if idx == -1:
-      branch = '0.' + branch
-    else:
-      branch = branch[:idx] + '.0' + branch[idx:]
-
-    symrev['MAIN'] = symrev['HEAD'] = branch
-
-    if symrev.has_key(view_tag):
-      revwanted = symrev[view_tag]
-      if revwanted[:2] == '0.': ### possible?
-        branch = revwanted[2:]
-      else:
-        idx = string.find(revwanted, '.0.')
-        if idx == -1:
-          branch = revwanted
-        else:
-          branch = revwanted[:idx] + revwanted[idx+2:]
-      if revwanted != branch:
-        revwanted = None
-
-      idx = string.rfind(branch, '.')
-      if idx == -1:
-        branchpoint = ''
-      else:
-        branchpoint = branch[:idx]
-
-    elif view_tag:
-      # the tag wasn't found, so skip this file
-      skip_file(rlog)
-      continue
-
-    # we don't care about the values -- just the keys. this the fastest
-    # way to merge the set of keys
-    alltags.update(symrev)
-
-    # read all of the log entries until we find the revision we want
-    while 1:
-
-      # fetch one of the log entries
-      entry, eof = parse_log_entry(rlog)
-
-      if not entry:
-        # parsing error
-        if not eof:
-          skip_file(rlog)
-        break
-
-      rev = entry.rev
-
-      idx = string.rfind(rev, '.')
-      revbranch = rev[:idx]
-
-      if not view_tag or (not revwanted and branch == revbranch):
-        revwanted = rev
-
-      if rev == revwanted or rev == branchpoint:
-        new_entry = LogEntry(rev, entry.date, entry.author, entry.state,
-                             None, entry.log)
-        new_entry.filename = filename
-        fileinfo[info_key] = new_entry
-#        fileinfo[info_key] = (rev, entry.date, entry.log, entry.author,
-#                              filename, entry.state)
-
-        if rev == revwanted:
-          # done with this file now
-          if not eof:
-            skip_file(rlog)
-          break
-
-      # if we hit the true EOF, or just this file's end-of-info, then we are
-      # done collecting log entries.
-      if eof:
-        break
-
 def rcs_popen(rcs_paths, rcs_cmd, rcs_args, mode, capture_err=1):
   if rcs_paths.cvsnt_exe_path:
     cmd = rcs_paths.cvsnt_exe_path
@@ -376,7 +251,127 @@ def get_logs(rcs_paths, full_name, files, view_tag):
 
     rlog = rcs_popen(rcs_paths, 'rlog', chunk, 'rt', 0)
 
-    process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags)
+    # consume each file found in the resulting log
+    while 1:
+
+      revwanted = None
+      branch = None
+      branchpoint = None
+
+      header, eof = parse_log_header(rlog)
+      filename = header.filename
+      head = header.head
+      branch = header.branch
+      symrev = header.taginfo
+
+      # the rlog output is done
+      if eof == _EOF_LOG:
+        break
+
+      if filename:
+        # convert from absolute to relative
+        if filename[:len(full_name)] == full_name:
+          filename = filename[len(full_name)+1:]
+
+        # for a subdir (not Attic files!), use the subdir for a key
+        idx = string.find(filename, '/')
+        if idx != -1 and filename[:6] != 'Attic/':
+          info_key = filename[:idx]
+        else:
+          info_key = filename
+
+      # an error was found regarding this file
+      if eof == _EOF_ERROR:
+        fileinfo[info_key] = _FILE_HAD_ERROR
+        continue
+
+      # if we hit the end of the log information (already!), then there is
+      # nothing we can do with this file
+      if eof:
+        continue
+
+      if not filename or not head:
+        # parsing error. skip the rest of this file.
+        skip_file(rlog)
+        continue
+
+      if not branch:
+        idx = string.rfind(head, '.')
+        branch = head[:idx]
+      idx = string.rfind(branch, '.')
+      if idx == -1:
+        branch = '0.' + branch
+      else:
+        branch = branch[:idx] + '.0' + branch[idx:]
+
+      symrev['MAIN'] = symrev['HEAD'] = branch
+
+      if symrev.has_key(view_tag):
+        revwanted = symrev[view_tag]
+        if revwanted[:2] == '0.': ### possible?
+          branch = revwanted[2:]
+        else:
+          idx = string.find(revwanted, '.0.')
+          if idx == -1:
+            branch = revwanted
+          else:
+            branch = revwanted[:idx] + revwanted[idx+2:]
+        if revwanted != branch:
+          revwanted = None
+
+        idx = string.rfind(branch, '.')
+        if idx == -1:
+          branchpoint = ''
+        else:
+          branchpoint = branch[:idx]
+
+      elif view_tag:
+        # the tag wasn't found, so skip this file
+        skip_file(rlog)
+        continue
+
+      # we don't care about the values -- just the keys. this the fastest
+      # way to merge the set of keys
+      alltags.update(symrev)
+
+      # read all of the log entries until we find the revision we want
+      while 1:
+
+        # fetch one of the log entries
+        entry, eof = parse_log_entry(rlog)
+
+        if not entry:
+          # parsing error
+          if not eof:
+            skip_file(rlog)
+          break
+
+        rev = entry.rev
+
+        idx = string.rfind(rev, '.')
+        revbranch = rev[:idx]
+
+        if not view_tag or (not revwanted and branch == revbranch):
+          revwanted = rev
+
+        if rev == revwanted or rev == branchpoint:
+          new_entry = LogEntry(rev, entry.date, entry.author, entry.state,
+                               None, entry.log)
+          new_entry.filename = filename
+          fileinfo[info_key] = new_entry
+#         fileinfo[info_key] = (rev, entry.date, entry.log, entry.author,
+#                               filename, entry.state)
+
+          if rev == revwanted:
+            # done with this file now
+            if not eof:
+              skip_file(rlog)
+            break
+
+        # if we hit the true EOF, or just this file's end-of-info, then we are
+        # done collecting log entries.
+        if eof:
+          break
 
     ### it would be nice to verify that we got SOMETHING from rlog about
     ### each file. if we didn't, then it could be that the chunk is still
@@ -449,11 +444,11 @@ class BinCVSRepository(vclib.Repository):
       rev_flag = '-p'
     else:
       rev_flag = '-p' + rev
-  
+
     full_name = self._getpath(path_parts)
-  
+
     fp = rcs_popen(self.rcs_paths, 'co', (rev_flag, full_name), 'rb')
-  
+
     # header from co:
     #
     #/home/cvsroot/mod_dav/dav_shared_stub.c,v  -->  standard output
@@ -461,15 +456,15 @@ class BinCVSRepository(vclib.Repository):
     #
     # Sometimes, the following line might occur at line 2:
     #co: INSTALL,v: warning: Unknown phrases like `permissions ...;' are present.
-  
+
     # parse the output header
     filename = revision = None
-  
+
     line = fp.readline()
     if not line:
       raise vclib.Error('Missing output from co.<br>'
                         'fname="%s". url="%s"' % (filename, where))
-  
+
     match = _re_co_filename.match(line)
     if not match:
       raise debug.ViewcvsException(
@@ -477,7 +472,7 @@ class BinCVSRepository(vclib.Repository):
         'Line was: %s<br>'
         'fname="%s". url="%s"' % (line, filename, where))
     filename = match.group(1)
-  
+
     line = fp.readline()
     if not line:
       raise vclib.Error(
@@ -491,7 +486,7 @@ class BinCVSRepository(vclib.Repository):
           'Second line of co output is not the revision.<br>'
           'Line was: %s<br>'
           'fname="%s". url="%s"' % (line, filename, where))
-  
+
       # second line was a warning. ignore it and move along.
       line = fp.readline()
       if not line:
@@ -504,15 +499,15 @@ class BinCVSRepository(vclib.Repository):
           'Third line of co output is not the revision.<br>'
           'Line was: %s<br>'
           'fname="%s". url="%s"' % (line, filename, where))
-  
+
     # one of the above cases matches the revision. grab it.
     revision = match.group(1)
-  
+
     if filename != full_name:
       raise vclib.Error(
         'The filename from co did not match. Found "%s". Wanted "%s"<br>'
         'url="%s"' % (filename, full_name, where))
-  
+
     return fp, revision
 
   def listdir(self, path_parts):
@@ -591,4 +586,4 @@ class BinCVSRepository(vclib.Repository):
     if filename[-2:] == ',v':
       return filename
     else:
-      return filename + ',v'  
+      return filename + ',v'
