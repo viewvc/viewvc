@@ -155,11 +155,14 @@ class _Parser:
       timestamp = compat.timegm(tuple(date_fields))
 
       # Parse author
-      semi, author, sym = self.ts.mget(3)
-      if sym != 'author':
-        raise RCSExpected(sym, 'author')
-      if semi != ';':
-        raise RCSExpected(semi, ';')
+      self.ts.match('author')
+      author = ''
+      while 1:
+        token = self.ts.get()
+        if token == ';':
+          break
+        author = author + token + ' '
+      author = author[:-1]	# toss the trailing space
 
       # Parse state
       self.ts.match('state')
