@@ -108,7 +108,7 @@ def CommitFromFileData(repository, file_data):
 
 def GetUnrecordedCommitList(repository, file_data):
     filename = os.path.join(repository, file_data.directory, file_data.file)
-    return cvsdbapi.GetUnrecordedCommits(repository, filename)
+    return cvsdbapi.GetUnrecordedCommitList(repository, filename)
 
 
 def ProcessLoginfo(repository, stdin_list):
