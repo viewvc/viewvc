@@ -297,10 +297,7 @@ int tparseParser::parse_rcs_tree()
       {
         break;
       }
-      if (branches == NULL)
-        branches = new Branche(token, NULL);
-      else
-        branches = new Branche(token, branches);
+      branches = new Branche(token, branches);
     }
     tokenstream->match("next");
     next = tokenstream->get();
