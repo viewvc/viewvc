@@ -131,7 +131,7 @@ class BinCVSRepository(CVSRepository):
     if filename != full_name:
       raise vclib.Error(
         'The filename from co did not match. Found "%s". Wanted "%s"<br>'
-        'url="%s"' % (filename, full_name, where))
+        % (filename, full_name))
 
     return fp, revision
 
@@ -449,6 +449,9 @@ def _parse_co_header(fp):
       'Line was: %s' % (line))
   filename = match.group(1)
 
+  # CVSNT versions 2.0.29 and later put forward slashes in filename
+  filename = string.replace(filename, '/', os.sep)
+
   line = fp.readline()
   if not line:
     raise vclib.Error(
@@ -561,7 +564,8 @@ def _parse_log_header(fp):
 
           # looks like a filename
           filename = line[6:idx]
-          return filename, branch, taginfo, _EOF_ERROR
+          eof = _EOF_ERROR
+          break
       elif line[-28:] == ": No such file or directory\n":
         # For some reason the windows version of rlog omits the "rlog: "
         # prefix for first error message when the standard error stream
@@ -570,8 +574,12 @@ def _parse_log_header(fp):
         # This is just a special case to prevent an especially common
         # error message from being lost when this happens
         filename = line[:-28]
-        return filename, branch, taginfo, _EOF_ERROR
+        eof = _EOF_ERROR
+        break
         # dunno what this is
+
+  # CVSNT versions 2.0.29 and later put forward slashes in filename
+  filename = string.replace(filename, '/', os.sep)
 
   return filename, branch, taginfo, eof
 
