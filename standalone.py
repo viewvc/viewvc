@@ -232,8 +232,7 @@ If this doesn't work, please click on the link above.
                 try:
                     sys.stdout = self.wfile
                     if sys.platform != "win32":
-                      os.close(1) 
-                      assert os.dup(self.wfile.fileno()) == 1
+                      os.dup2(self.wfile.fileno(), 1)
                     sys.stdin = self.rfile
                     viewcvs.main(StandaloneServer(self))
                 finally:
@@ -241,8 +240,7 @@ If this doesn't work, please click on the link above.
                     sys.stdin = save_stdin
                     sys.stdout.flush()
                     if sys.platform != "win32":
-                      os.close(1)
-                      assert os.dup(save_realstdout) == 1
+                      os.dup2(save_realstdout, 1)
                       os.close(save_realstdout)
                     sys.stdout = save_stdout
                     sys.stderr = save_stderr
