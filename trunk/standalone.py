@@ -52,10 +52,14 @@ class Options:
     port = 7467 # default TCP/IP port used for the server
     start_gui = 0 # No GUI unless requested.
     repository = None # use default repository specified in config
+    if sys.platform == 'mac':
+        host = '127.0.0.1' 
+    else:
+        host = 'localhost'
 
 # --- web browser interface: ----------------------------------------------
 
-def serve(port, callback=None):
+def serve(host, port, callback=None):
     """start a HTTP server on the given port.  call 'callback' when the
     server is ready to serve"""
 
@@ -207,9 +211,8 @@ If this doesn't work, please click on the link above.
                 self.log_error("ViewCVS exited ok")
 
     class ViewCVS_Server(BaseHTTPServer.HTTPServer):
-        def __init__(self, port, callback):
-            host = (sys.platform == 'mac') and '127.0.0.1' or 'localhost'
-            self.address = ('', port)
+        def __init__(self, host, port, callback):
+            self.address = (host, port)
             self.url = 'http://%s:%d/' % (host, port)
             self.callback = callback
             BaseHTTPServer.HTTPServer.__init__(self, self.address,
@@ -254,17 +257,17 @@ If this doesn't work, please click on the link above.
             sys.stderr.write("   Use --help for more info.\n")
             raise KeyboardInterrupt # Hack!
         os.close(0) # To avoid problems with shell job control
-        ViewCVS_Server(port, callback).serve_until_quit()
+        ViewCVS_Server(host, port, callback).serve_until_quit()
     except (KeyboardInterrupt, select.error):
         pass
     print 'server stopped'
 
 # --- graphical interface: --------------------------------------------------
 
-def gui(port):
+def gui(host, port):
     """Graphical interface (starts web server and pops up a control window)."""
     class GUI:
-        def __init__(self, window, port):
+        def __init__(self, window, host, port):
             self.window = window
             self.server = None
             self.scanner = None
@@ -390,7 +393,8 @@ def gui(port):
             self.window.wm_minsize(self.minwidth, self.minheight)
 
             import threading
-            threading.Thread(target=serve, args=(port, self.ready)).start()
+            threading.Thread(target=serve, 
+                             args=(host, port, self.ready)).start()
 
         def toggle_use_cvsgraph(self, event=None):
             viewcvs.cfg.options.use_cvsgraph = self.cvsgraph_ivar.get()
@@ -446,7 +450,7 @@ def gui(port):
 
     import Tkinter
     try:
-        gui = GUI(Tkinter.Tk(), port)
+        gui = GUI(Tkinter.Tk(), host, port)
         Tkinter.mainloop()
     except KeyboardInterrupt:
         pass
@@ -459,7 +463,7 @@ def cli(argv):
     class BadUsage(Exception): pass
 
     try:
-        opts, args = getopt.getopt(argv[1:], 'gp:r:', 
+        opts, args = getopt.getopt(argv[1:], 'gp:r:h:', 
             ['gui', 'port=', 'repository='])
         for opt, val in opts:
             if opt in ('-g', '--gui'):
@@ -471,25 +475,33 @@ def cli(argv):
                     options.port = int(val)
                 except ValueError:
                     raise BadUsage
+            elif opt in ('-h', '--host'):
+                options.host = val
         if options.start_gui:
-            gui(options.port)
+            gui(options.host, options.port)
             return
         elif options.port:
             def ready(server):
                 print 'server ready at %s' % server.url
-            serve(options.port, ready)
+            serve(options.host, options.port, ready)
             return
         raise BadUsage
     except (getopt.error, BadUsage):
         cmd = sys.argv[0]
         port = options.port
+        host = options.host
         print """ViewCVS standalone - a simple standalone HTTP-Server
 
 Usage: %(cmd)s [ <options> ]
 
 Available Options:
+
+-h host or --host=<host>
+    Start the HTTP server listening on <host>.
+    Defaults to %(host)s.
+
 -p <port> or --port=<port>
-    Start an HTTP server on the given port on the local machine.
+    Start an HTTP server on the given port.
     Default port is %(port)d.
 
 -r <path> or --repository=<path>
