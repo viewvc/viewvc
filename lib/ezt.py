@@ -305,6 +305,8 @@ class Template:
       value = idx % 2 == 0
     elif value == 'odd':
       value = idx % 2 == 1
+    elif value == 'first':
+      value = idx == 0
     elif value == 'last':
       value = idx == len(list)-1
     else:
