@@ -58,7 +58,11 @@ class RLogData:
     "Container object for all data parsed from a 'rlog' output."
   
     def __init__(self, filename):
+        ## remove the RCS ",v" from the filename
+        if filename[-2:] == ",v":
+            filename = filename[:-2]
         self.filename = filename
+        
         self.symbolic_name_hash = {}
         self.rlog_entry_list = []
 
@@ -105,8 +109,18 @@ class RLog:
             arg_list.append('-r%s' % (self.revision))
         if self.date:
             arg_list.append('-d%s' % (self.date))
-            
-        self.cmd = 'rlog %s "%s"' % (string.join(arg_list), filename)
+
+        ## modify path if in Attic
+        if self.filename[-2:] != ",v":
+            self.filename = "%s,v" % (self.filename)
+
+        if not os.path.isfile(self.filename):
+            path, basename = os.path.split(self.filename)
+            self.filename = os.path.join(path, "Attic", basename)
+            if not os.path.isfile(self.filename):
+                raise error, "file not found"
+        
+        self.cmd = 'rlog %s "%s"' % (string.join(arg_list), self.filename)
         self.rlog = os.popen(self.cmd, 'r')
 
     def readline(self):

@@ -32,7 +32,7 @@
 #
 # -----------------------------------------------------------------------
 
-import cfg, database, rlog, commit
+import os, cfg, database, rlog, commit
 
 ## error
 error = 'cvsdbapi error'
