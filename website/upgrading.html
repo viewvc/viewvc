@@ -154,9 +154,10 @@
       <dl>
         <dt>
           <code>log.ezt</code> and <code>log_table.ezt</code>:
-          <var>entries.filename</var>, <var>entries.action</var>,
-          <var>entries.size</var>, <var>entries.copy_path</var>,
-          <var>entries.other_paths</var>
+          <var>entries.filename</var>, <var>entries.size</var>,
+          <var>entries.copy_path</var>, <var>entries.copy_rev</var>,
+          <var>entries.copy_href</var>, <var>entries.prev_path</var>,
+          <var>entries.revision_href</var>
         </dt>
         <dd>New attributes for Subversion revisions.</dd>
       </dl>
@@ -300,6 +301,10 @@
       <li>
         The link to Attic/ is only displayed for CVS roots
       </li>
+      <li>
+        Directory <var>rows.name</var> values no longer have
+        trailing slashes
+      </li>      
     </ul>
 
     <h4>In <code>log.ezt</code> and <code>log_table.ezt</code></h4>
