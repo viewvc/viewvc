@@ -1026,7 +1026,7 @@ def view_markup(request):
   generate_page(request, cfg.templates.markup, data)
 
   if is_viewable_image(request.mime_type):
-    url = request.get_url(view_func=view_checkout, params={})
+    url = request.get_url(view_func=view_checkout, params={'rev': rev})
     print '<img src="%s"><br>' % url
     while fp.read(8192):
       pass
