@@ -283,7 +283,7 @@ int tparseParser::parse_rcs_deltatext() {
 		log = tokenstream->get();
 		tokenstream->match("text");
 		text = tokenstream->get();
-		if (sink->set_revision_info(revision,log,text)) return 0;
+		if (sink->set_revision_info(revision,log,text)) return 1;
 	}
 	return 0;
 }
