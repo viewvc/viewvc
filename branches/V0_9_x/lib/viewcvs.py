@@ -25,7 +25,7 @@
 # -----------------------------------------------------------------------
 #
 
-__version__ = '0.9.1'
+__version__ = '0.9.2'
 
 #########################################################################
 #
@@ -2184,6 +2184,8 @@ class DiffSource:
     self.left = None
     self.right = None
     self.state = 'no-changes'
+    self.left_col = [ ]
+    self.right_col = [ ]
 
   def __getitem__(self, idx):
     if idx == self.idx:
@@ -2213,9 +2215,10 @@ class DiffSource:
       self.save_line = None
     else:
       line = self.fp.readline()
+
     if not line:
       if self.state == 'no-changes':
-        self.state == 'done'
+        self.state = 'done'
         return _item(type='no-changes')
 
       # see if there are lines to flush
@@ -2606,10 +2609,12 @@ def main():
   else:
     # if the file is in the Attic, then redirect
     idx = string.rfind(full_name, '/')
-    attic_name = full_name[:idx] + '/Attic' + full_name[idx:] + ',v'
-    if os.path.isfile(attic_name):
+    attic_name = full_name[:idx] + '/Attic' + full_name[idx:]
+    if os.path.isfile(attic_name + ',v') or \
+       full_name[-5:] == '.diff' and os.path.isfile(attic_name[:-5] + ',v'):
       idx = string.rfind(url, '/')
-      redirect(url[:idx] + '/Attic' + url[idx:])
+      redirect(url[:idx] + '/Attic' + url[idx:] + \
+	       '?' + compat.urlencode(query_dict))
 
     error('%s: unknown location' % request.url, '404 Not Found')
 
