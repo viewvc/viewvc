@@ -11,7 +11,6 @@ extern void yylex_start(int *error_flag);
 extern void yylex_finish(void);
 extern const char *get_identifier(void);
 
-static FILE *inf;
 static const char *fname;
 static int saw_error = 0;
 
@@ -22,6 +21,9 @@ static int fpos = 0;
 static int token_start = 0;
 static int start_lineno;
 static int start_hpos;
+
+static elx_context_t *ectx;
+
 
 //#define DEBUG_SCANNER
 
@@ -34,21 +36,21 @@ int yydebug = 1;
 
 void yyserror(const char *msg)
 {
-    printf("%s:%d:%d: lex error: %s\n",
-           fname, start_lineno, start_hpos, msg);
+    fprintf(stderr, "%s:%d:%d: lex error: %s\n",
+            fname, start_lineno, start_hpos, msg);
     saw_error = 1;
 }
 
 void yyerror(const char *msg)
 {
-    printf("%s:%d:%d: parse error: %s\n",
-           fname, start_lineno, start_hpos, msg);
+    fprintf(stderr, "%s:%d:%d: parse error: %s\n",
+            fname, start_lineno, start_hpos, msg);
     saw_error = 1;
 }
 
 int yyslex(void)
 {
-    int c = fgetc(inf);
+    int c = fgetc(ectx->input_fp);
 
     if (c == EOF)
         return -1;      /* tell lexer we're done */
@@ -69,7 +71,14 @@ int yyslex(void)
 
 void issue_token(char which)
 {
-    printf("%c %d %d\n", which, token_start, fpos - token_start + 1);
+    const char *ident = NULL;
+
+    if (ELX_DEFINES_SYM(which))
+        ident = get_identifier();
+    else
+        ident = NULL;
+
+    elx_issue_token(ectx, which, token_start, fpos - token_start + 1, ident);
 }
 
 void mark_token_start(void)
@@ -113,6 +122,8 @@ int main(int argc, const char **argv)
 {
     int errcode;
 
+    ectx = elx_process_args(argc, argv);
+
     yylex_start(&errcode);
     if (errcode)
     {
@@ -120,8 +131,7 @@ int main(int argc, const char **argv)
         return EXIT_FAILURE;
     }
 
-    fname = argv[1];
-    inf = fopen(fname, "r");
+    elx_open_files(ectx);
 
 #ifdef DEBUG_SCANNER
     gen_scan_tokens();
@@ -130,6 +140,7 @@ int main(int argc, const char **argv)
 #endif
 
     yylex_finish();
+    elx_close_files(ectx);
 
     if (saw_error)
         return EXIT_FAILURE;

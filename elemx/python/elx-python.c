@@ -11,13 +11,14 @@ extern int yylex(void);
 static const char *fname;
 static int saw_error = 0;
 static void *scan_ctx;
+static elx_context_t *ectx;
 
 void yyerror(const char *msg)
 {
     int sl, sc, el, ec;
 
     scanner_token_linecol(scan_ctx, &sl, &sc, &el, &ec);
-    printf("%s:%d:%d: parse error: %s\n", fname, sl, sc, msg);
+    fprintf(stderr, "%s:%d:%d: parse error: %s\n", fname, sl, sc, msg);
     saw_error = 1;
 }
 
@@ -38,9 +39,18 @@ void issue_token(char which)
 {
     int start;
     int end;
+    const char *ident = NULL;
 
     scanner_token_range(scan_ctx, &start, &end);
-    printf("%c %d %d\n", which, start, end - start + 1);
+
+    if (ELX_DEFINES_SYM(which))
+    {
+        int length;
+
+        scanner_identifier(scan_ctx, &ident, &length);
+    }
+
+    elx_issue_token(ectx, which, start, end - start + 1, ident);
 }
 
 int yylex(void)
@@ -65,15 +75,9 @@ int yylex(void)
 
         scanner_identifier(scan_ctx, &ident, &length);
 #if 0
-        if (length > 200)
-            length = 200;
-        {
-            char buf[201];
-            memcpy(buf, ident, length);
-            buf[length] = '\0';
-            printf("id=%s\n", buf);
-        }
+        printf("id=%s\n", ident);
 #endif
+
         kw = KR_find_keyword(ident, length);
         if (kw != KR__not_found)
         {
@@ -126,12 +130,10 @@ static void gen_elx_tokens(void)
 
 int main(int argc, const char **argv)
 {
-    FILE *inf;
+    ectx = elx_process_args(argc, argv);
+    elx_open_files(ectx);
 
-    fname = argv[1];
-    inf = fopen(fname, "r");
-
-    scan_ctx = scanner_begin(reader, inf);
+    scan_ctx = scanner_begin(reader, ectx->input_fp);
 
 #ifdef DEBUG_SCANNER
     gen_scan_tokens();
@@ -140,6 +142,7 @@ int main(int argc, const char **argv)
 #endif
 
     scanner_end(scan_ctx);
+    elx_close_files(ectx);
 
     if (saw_error)
         return EXIT_FAILURE;

@@ -227,7 +227,10 @@ int scanner_get_token(void *opaque_ctx)
         }
 
         while (isalnum(c) || c == '_') {
-            ctx->identifier[ctx->idlen++] = c;
+            /* store the character if there is room for it, and room left
+               for a null-terminator. */
+            if (ctx->idlen < SCANNER_MAXIDLEN-1)
+                ctx->identifier[ctx->idlen++] = c;
             c = next_char(ctx);
         }
         backup_char(ctx, c);
@@ -489,6 +492,7 @@ void scanner_identifier(void *opaque_ctx, const char **ident, int *len)
 {
     scanner_ctx *ctx = opaque_ctx;
 
+    ctx->identifier[ctx->idlen] = '\0';
     *ident = ctx->identifier;
     *len = ctx->idlen;
 }

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #
 # generate HTML given an input file and an element file
 #
@@ -5,6 +6,7 @@
 import re
 import string
 import cgi
+import struct
 
 _re_elem = re.compile('([a-zA-Z]) ([0-9]+) ([0-9]+)\n')
 
@@ -16,27 +18,19 @@ class ElemParser:
 
   def __init__(self, efile):
     self.efile = efile
-    self.leftover = ''
-    self.elems = [ ]
 
   def get(self):
-    if self.elems:
-      t, s, e = self.elems.pop()
-      return t, int(s)-1, int(e)
-    s = self.leftover + self.efile.read(CHUNK_SIZE)
-    idx = string.rfind(s, '\n')
-    if idx == -1:
-      # woah. empty. no more elements then.
-      self.leftover = ''
+    line = self.efile.readline()
+    if not line:
       return None, None, None
-    self.leftover = s[idx+1:]
-    self.elems = _re_elem.findall(s[:idx+1])
-    self.elems.reverse()
-    if self.elems:
-      t, s, e = self.elems.pop()
-      return t, int(s)-1, int(e)
-    # no more elems
-    return None, None, None
+    t, s, e = string.split(line)
+    return t, int(s)-1, int(e)
+
+  def unused_get(self):
+    record = self.efile.read(9)
+    if not record:
+      return None, None, None
+    return struct.unpack('>cii', record)
 
 
 class Writer:
@@ -55,17 +49,17 @@ class Writer:
   def copy(self, pos, amt):
     "Copy 'amt' bytes from position 'pos' of input to output."
     idx = pos - self.offset
-    self.ofile.write(cgi.escape(self.buf[idx:idx+amt]))
+    self.ofile.write(cgi.escape(buffer(self.buf, idx, amt)))
     amt = amt - (len(self.buf) - idx)
     while amt > 0:
       self._more()
-      self.ofile.write(cgi.escape(self.buf[:amt]))
+      self.ofile.write(cgi.escape(buffer(self.buf, 0, amt)))
       amt = amt - len(self.buf)
 
   def flush(self, pos):
     "Flush the rest of the input to the output."
     idx = pos - self.offset
-    self.ofile.write(cgi.escape(self.buf[idx:]))
+    self.ofile.write(cgi.escape(buffer(self.buf, idx)))
     while 1:
       buf = self.ifile.read(CHUNK_SIZE)
       if not buf:
@@ -77,10 +71,25 @@ class Writer:
     self.buf = self.ifile.read(CHUNK_SIZE)
 
 
-def generate(input, elems, output):
+def generate(input, elems, output, genpage=0):
   ep = ElemParser(elems)
   w = Writer(input, output)
   cur = 0
+  if genpage:
+    w.write('''\
+<html><head><title>ELX Output Page</title>
+<style type="text/css">
+  .elx_C { color: firebrick; font-style: italic; }
+  .elx_S { color: #bc8f8f; font-weight: bold; }
+  .elx_K { color: purple; font-weight: bold }
+  .elx_F { color: blue; font-weight: bold; }
+  .elx_L { color: blue; font-weight: bold; }
+  .elx_M { color: blue; font-weight: bold; }
+  .elx_R { color: blue; font-weight: bold; }
+</style>
+</head>
+<body>
+''')
   w.write('<pre>')
   while 1:
     type, start, length = ep.get()
@@ -104,8 +113,9 @@ def generate(input, elems, output):
   # all done.
   w.flush(cur)
   w.write('</pre>')
-
+  if genpage:
+    w.write('</body></html>\n')
 
 if __name__ == '__main__':
   import sys
-  generate(open(sys.argv[1]), open(sys.argv[2]), sys.stdout)
+  generate(open(sys.argv[1]), open(sys.argv[2]), sys.stdout, 1)
