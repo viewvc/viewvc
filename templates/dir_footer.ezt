@@ -1,0 +1,91 @@
+[if-any no_match]
+  <p><b>NOTE:</b> There are [num_files] files, but none match the
+  current selection criteria.
+[end]
+
+[if-any unreadable]
+  <hr size=1 noshade>
+  <b>NOTE:</b> One or more files were unreadable. The files in the CVS
+  repository should be readable by the web server process. Please
+  report this condition to the administrator of this CVS repository.
+[end]
+
+[if-any selection_form]
+  <hr size=1 noshade>
+  <form method=get action="[search_tag_action]">
+    [search_tag_hidden_values]
+    [# this table holds the selectors on the left, and reset on the right ]
+    <table>
+      [if-any has_tags]
+        <tr>
+          <td> Show files using tag: </td>
+          <td>
+            <select name=only_with_tag onchange="submit()">
+            [if-any branch_tags]
+              <option value="">- Branches -</option>
+              [for branch_tags]
+                [is branch_tags view_tag]
+                  <option selected>[branch_tags]</option>
+                [else]
+                  <option>[branch_tags]</option>
+                [end]
+              [end]
+            [end]
+            <option value="">- Non-branch tags -</option>
+            [for plain_tags]
+              [is plain_tags view_tag]
+                <option selected>[plain_tags]</option>
+              [else]
+                <option>[plain_tags]</option>
+              [end]
+            [end]
+            </select>
+          </td>
+          <td> &nbsp; </td>
+        </tr>
+      [end]
+
+      [is num_files "0"]
+      [else]
+        [is cfg.options.use_re_search "1"]
+          <tr>
+            <td>Show files containing the regular expression:</td>
+            <td><input type="text" name="search" value="[search_re]"></td>
+            <td> &nbsp; </td>
+          </tr>
+        [end]
+
+        <tr>
+          <td> &nbsp; </td>
+          <td> <input type="submit" value="Show"> </td>
+      [end]
+  [# I don't like closing the form here, but I thought this is better than 
+     having forms inside forms ]
+  </form>
+      [if-any view_tag]
+        <td valign=bottom>
+          <form method=get action="[search_tag_action]">
+            [search_tag_hidden_values]
+            <input type="submit" value="Show all files">
+          </form>
+        </td>
+      [else]
+        [if-any search_re]
+          <td valign=bottom>
+            <form method=get action="[search_tag_action]">
+              [search_tag_hidden_values]
+              <input type="submit" value="Show all files">
+            </form>
+          </td>
+        [end]
+      [end]
+    </tr>
+  </table>
+[end]
+
+[# if you want to disable tarball generation remove the following: ]
+[if-any tarball_href]
+  <a href="[tarball_href]">Download tarball</a>
+[end]
+
+[include "footer.ezt"]
