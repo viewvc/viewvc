@@ -48,6 +48,8 @@ import socket
 import select
 import BaseHTTPServer
 
+# Note: import of ViewCVS modules is delayed (see bottom of file)
+
 class Options:
     port = 7467 # default TCP/IP port used for the server
     start_gui = 0 # No GUI unless requested.
@@ -81,7 +83,11 @@ def serve(host, port, callback=None):
             if not self.path or self.path == "/":
                 self.redirect()
             elif self.is_viewcvs():
-                self.run_viewcvs()
+                try:
+                    self.run_viewcvs()
+                except IOError:
+                    # ignore IOError: [Errno 32] Broken pipe
+                    pass
             elif self.path[:7] == "/icons/":
                 # XXX icon type should not be hardcoded to GIF:
                 self.send_response(200)
@@ -559,5 +565,6 @@ if __name__ == '__main__':
         os.chdir('lib')
     import viewcvs
     import apache_icons
+    import compat; compat.for_standalone()
     options = Options()
     cli(sys.argv)
