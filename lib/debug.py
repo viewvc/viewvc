@@ -53,14 +53,6 @@ class ViewCVSException:
     self.msg = msg
     self.status = status
 
-    s = '<p><pre>%s</pre></p>' % msg
-
-    if status:
-      s = s + ('<h4>HTTP Response Status</h4>\n<p><pre>\n%s</pre></p><hr>\n'
-               % status)
-    
-    self.description = s
-
   def __str__(self):
     if self.status:
       return '%s: %s' % (self.status, self.msg)
@@ -78,30 +70,46 @@ def PrintStackTrace(server, text=''):
   server.write("</pre></p>")
   server.flush()
 
-def PrintException(server):
+
+def PrintException(server, exc_data):
+  status = exc_data['status']
+  msg = exc_data['msg']
+  tb = exc_data['stacktrace']
+  
+  server.header(status=status)
+  server.write("<h3>An Exception Has Occurred</h3>\n")
+
+  s = ''
+  if msg:
+    s = '<p><pre>%s</pre></p>' % msg
+  if status:
+    s = s + ('<h4>HTTP Response Status</h4>\n<p><pre>\n%s</pre></p><hr>\n'
+             % status)
+  server.write(s)
+
+  server.write("<h4>Python Traceback</h4>\n<p><pre>")
+  server.write(server.escape(tb))
+  server.write("</pre></p>\n")
+
+
+def GetExceptionData():
   # capture the exception before doing anything else
   exc_type, exc, exc_tb = sys.exc_info()
+
+  exc_dict = {
+    'status' : None,
+    'msg' : None,
+    }
+  
   try:
     import traceback, string
 
     if isinstance(exc, ViewCVSException):
-      server.header(status=exc.status)
-      desc = "<h4>ViewCVS Messages</h4>\n%s\n" % exc.description
-    else:
-      server.header()
-      desc = ''
-
-    server.write("<h3>An Exception Has Occurred</h3>\n")
-
-    # put message in a prominent position (rather than at the end of the
-    # stack trace)
-    if desc:
-      server.write(desc)
+      exc_dict['msg'] = exc.msg
+      exc_dict['status'] = exc.status
     
-    stacktrace = string.join(traceback.format_exception(exc_type,
-                                                        exc,
-                                                        exc_tb),
-                             '')
+    tb = string.join(traceback.format_exception(exc_type, exc, exc_tb), '')
+    exc_dict['stacktrace'] = tb
 
   finally:
     # prevent circular reference. sys.exc_info documentation warns
@@ -109,10 +117,8 @@ def PrintException(server):
     # that is handling an exception will cause a circular reference..."
     # This is all based on 'exc_tb', and we're now done with it. Toss it.
     del exc_tb
-  
-  server.write("<h4>Python Traceback</h4>\n<p><pre>")
-  server.write(server.escape(stacktrace))
-  server.write("</pre></p>\n")
+
+  return exc_dict
 
 
 if SHOW_CHILD_PROCESSES:
