@@ -504,9 +504,12 @@ def markup_stream_enscript(lang, fp):
       enscript.write(chunk)
   except IOError:
     print "<h3>Failure during use of an external program:</h3>"
+    print "The command line was:"
     print "<pre>"
-    print os.path.normpath(os.path.join(cfg.options.enscript_path,'enscript')) + " --color -W html -E"+lang+" -o - -"
+    print os.path.normpath(os.path.join(cfg.options.enscript_path,'enscript')
+                          ) + " --color -W html -E"+lang+" -o - -"
     print "</pre>"
+    print "Please look at the error log of your webserver for more info."
     raise
 
   enscript.close()
