@@ -1,12 +1,12 @@
 [include "header.ezt" "graph"]
 
 <center>
-<h1>Revision graph of [request.where]</h1>
+<h1>Revision graph of [path]</h1>
 
 [imagemap]
 <img border="0" usemap="#MyMapName"
   src="[imagesrc]" 
-  alt="Revisions of [request.where]">
+  alt="Revisions of [path]">
 </center>
 
 [include "footer.ezt"]
