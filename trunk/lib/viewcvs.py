@@ -80,6 +80,7 @@ _sticky_vars = (
   'cvsroot',
   'hideattic',
   'sortby',
+  'sortdir',
   'logsort',
   'diff_format',
   'only_with_tag',
@@ -1119,6 +1120,7 @@ def view_directory(request):
   view_tag = query_dict.get('only_with_tag')
   hideattic = int(query_dict.get('hideattic'))  ### watch for errors in int()?
   sortby = query_dict.get('sortby', 'file')
+  sortdir = query_dict.get('sortdir', 'up')
 
   search_re = query_dict.get('search')
  
@@ -1171,6 +1173,7 @@ def view_directory(request):
     'current_root' : request.cvsrep,
     'view_tag' : view_tag,
     'sortby' : sortby,
+    'sortdir' : sortdir,
     'no_match' : None,
     'unreadable' : None,
     'tarball_href' : None,
@@ -1185,6 +1188,9 @@ def view_directory(request):
     'sortby_date_href' :   toggle_query(query_dict, 'sortby', 'date'),
     'sortby_author_href' : toggle_query(query_dict, 'sortby', 'author'),
     'sortby_log_href' :    toggle_query(query_dict, 'sortby', 'log'),
+
+    'sortdir_down_href' :  toggle_query(query_dict, 'sortdir', 'down'),
+    'sortdir_up_href' :    toggle_query(query_dict, 'sortdir', 'up'),
 
     'show_attic_href' : toggle_query(query_dict, 'hideattic', 0),
     'hide_attic_href' : toggle_query(query_dict, 'hideattic', 1),
@@ -1267,6 +1273,8 @@ def view_directory(request):
 
   # sort with directories first, and using the "sortby" criteria
   file_data.sort(file_sort_cmp)
+  if sortdir == "down":
+      file_data.reverse()
 
   num_files = 0
   num_displayed = 0
