@@ -103,6 +103,20 @@ default_root = cvs
 # uncomment if the RCS binaries are not on the standard path
 #rcs_path = /usr/bin/
 
+# ViewCVS can use CVSNT (www.cvsnt.org) instead of the RCS 
+# utilities to retrieve information from CVS repositories.
+# This has several advantages, including better support for
+# UTF-16 text files. To enable use of CVSNT, set the 
+# "cvsnt_exe_path" option to the path of the CVSNT 
+# executable. (If CVSNT is on the standard path, you can
+# also set it to the name of the CVSNT executable). By
+# default "cvsnt_exe_path" is set to "cvs" on Windows
+# and is not set on other platforms.
+#
+#cvsnt_exe_path = cvs
+#cvsnt_exe_path = K:\Program Files\cvsnt\cvs.exe
+#cvsnt_exe_path = /usr/bin/cvs
+
 #
 # This is a pathname to a MIME types file to help viewcvs to guess the
 # correct MIME type on checkout.
