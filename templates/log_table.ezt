@@ -90,17 +90,17 @@ href="[request.script_name]/*docroot*/help_logtable.html">ViewCVS and CVS Help</
       <a href="[href]?r1=[entries.rev][query]"><b>[[]select&nbsp;for&nbsp;diffs]</b></a><br>
       [end]
         [if-any entries.to_selected]
-          <a href="[href].diff?r1=[rev_selected]&r2=[entries.rev][query]"><b>Diff&nbsp;to&nbsp;selected&nbsp;[rev_selected]</b></a><br>
+          <a href="[href]?r1=[rev_selected]&r2=[entries.rev][query]"><b>Diff&nbsp;to&nbsp;selected&nbsp;[rev_selected]</b></a><br>
           [if-any human_readable]
           [else]
-            <a href="[href].diff?r1=[rev_selected]&r2=[entries.rev]&diff_format=h[query]"><b>colored</b></a><br>
+            <a href="[href]?r1=[rev_selected]&r2=[entries.rev]&diff_format=h[query]"><b>colored</b></a><br>
           [end]
         [end]
         [if-any entries.prev]
-          <a href="[href].diff?r1=[entries.prev]&r2=[entries.rev][query]"><b>Diff&nbsp;to&nbsp;previous&nbsp;[entries.prev]</b></a><br>
+          <a href="[href]?r1=[entries.prev]&r2=[entries.rev][query]"><b>Diff&nbsp;to&nbsp;previous&nbsp;[entries.prev]</b></a><br>
           [if-any human_readable]
           [else]
-            <a href="[href].diff?r1=[entries.prev]&r2=[entries.rev]&diff_format=h[query]"><b>colored</b></a><br>
+            <a href="[href]?r1=[entries.prev]&r2=[entries.rev]&diff_format=h[query]"><b>colored</b></a><br>
           [end]
         [end]
       [end]  
@@ -123,17 +123,17 @@ href="[request.script_name]/*docroot*/help_logtable.html">ViewCVS and CVS Help</
         [end]
       [end]
       [if-any entries.next_main]
-        <a href="[href].diff?r1=[entries.next_main]&r2=[entries.rev][query]"><b>Diff&nbsp;to&nbsp;next&nbsp;MAIN&nbsp;[entries.next_main]</b></a><br>
+        <a href="[href]?r1=[entries.next_main]&r2=[entries.rev][query]"><b>Diff&nbsp;to&nbsp;next&nbsp;MAIN&nbsp;[entries.next_main]</b></a><br>
         [if-any human_readable]
         [else]
-          <a href="[href].diff?r1=[entries.next_main]&r2=[entries.rev]&diff_format=h[query]"><b>colored</b></a><br>
+          <a href="[href]?r1=[entries.next_main]&r2=[entries.rev]&diff_format=h[query]"><b>colored</b></a><br>
         [end]
       [end]
       [if-any entries.branch_point]
-        <a href="[href].diff?r1=[entries.branch_point]&r2=[entries.rev][query]"><b>Diff&nbsp;to&nbsp;branch&nbsp;point&nbsp;[entries.branch_point]</b></a><br>
+        <a href="[href]?r1=[entries.branch_point]&r2=[entries.rev][query]"><b>Diff&nbsp;to&nbsp;branch&nbsp;point&nbsp;[entries.branch_point]</b></a><br>
         [if-any human_readable]
         [else]
-          <a href="[href].diff?r1=[entries.branches.name]&r2=[entries.rev]&diff_format=h[query]"><b>colored</b></a><br>
+          <a href="[href]?r1=[entries.branches.name]&r2=[entries.rev]&diff_format=h[query]"><b>colored</b></a><br>
         [end]
       [end]
 

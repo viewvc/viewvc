@@ -146,10 +146,6 @@ class Request:
     # remember the parts of the path
     self.path_parts = parts[:]
 
-    # if present drop the ".diff" from the last part of path_parts:
-    if len(parts) and parts[-1][-5:] == ".diff":
-      self.path_parts[-1] = parts[-1][:-5]
-
     # put it back together
     where = string.join(parts, '/')
 
@@ -2217,8 +2213,8 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
 
   query_dict = request.query_dict
 
-  where_nd = request.where[:-5] # remove the ".diff"
-  pathname, filename = os.path.split(where_nd)
+  where = request.where
+  pathname, filename = os.path.split(where)
 
   data = nav_header_data(request, pathname, filename, rev2)
 
@@ -2301,7 +2297,7 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
     'vsn' : __version__,
     'kv' : request.kv,
     'request' : request,
-    'where' : where_nd,
+    'where' : where,
     'rev1' : rev1,
     'rev2' : rev2,
     'tag1' : sym1,
@@ -2465,6 +2461,16 @@ class DiffSource:
 class DiffSequencingError(Exception):
   pass
 
+def view_diff_svn(request, svn_filename):
+  query_dict = request.query_dict
+
+  r1 = query_dict['r1']
+  r2 = query_dict['r2']
+  error("This is not yet implemented\n" +
+        "If it were, we'd be looking at the diffs between versions " +
+        r1 + " and " + r2 + " of the file '%s'\n" % svn_filename)
+
+  
 def view_diff(request, cvs_filename):
   query_dict = request.query_dict
 
@@ -2711,7 +2717,7 @@ def handle_config():
     "logsort" : cfg.options.log_sort,
     "diff_format" : cfg.options.diff_format,
     "hidecvsroot" : cfg.options.hide_cvsroot,
-    "search": None,
+    "search": '',
     }
 
   debug.t_end('load-config')
@@ -2737,8 +2743,14 @@ def main():
     error('Access to "%s" is forbidden.' % request.module, '403 Forbidden')
 
   # we must be referring to something in the repository. what is it?
-  isdir = request.repos.itemtype(request.path_parts) == vclib.DIR
-
+  isdir = 0
+  type = None
+  try:
+    type = request.repos.itemtype(request.path_parts)
+    isdir = (type == vclib.DIR)
+  except vclib.ItemNotFound: # Let ItemNotFound errors fall through for now
+    pass
+  
   url = request.url
 
   # if we have a directory and the request didn't end in "/", then redirect
@@ -2756,20 +2768,51 @@ def main():
   full_name = request.full_name
 
   # since we aren't talking about a directory, set up the mime type info
-  # for the file.
+  # for the potential file.
   request.setup_mime_type_info()
 
   query_dict = request.query_dict
 
+  # Not a dir, and not a file ... is this some kind of URL hackery
+  # (blessed or otherwise) ?
+  if type != vclib.FILE:
+    if full_name[-5:] == '.diff' \
+       and query_dict.has_key('r1') and query_dict.has_key('r2'):
+      path_parts = request.path_parts[:]
+      path_parts[-1] = path_parts[-1][:-5]
+      if request.repos.itemtype(path_parts) == vclib.FILE:
+        # this is a versioned file with the old .diff tack-on present.
+        # redirect.
+        redirect(url[:-5] + '?' + compat.urlencode(query_dict))
+    elif cfg.options.allow_tar \
+         and full_name[-7:] == '.tar.gz' and query_dict.has_key('tarball'):
+      # getting your tarball on?  so be it.
+      download_tarball(request)
+    elif request.roottype == 'cvs':
+      # if the file is in a cvs Attic, then redirect.
+      idx = string.rfind(full_name, '/')
+      attic_name = full_name[:idx] + '/Attic' + full_name[idx:]
+      if os.path.isfile(attic_name + ',v') or \
+         full_name[-5:] == '.diff' and os.path.isfile(attic_name[:-5] + ',v'):
+        idx = string.rfind(url, '/')
+        redirect(url[:idx] + '/Attic' + url[idx:] + \
+                 '?' + compat.urlencode(query_dict))
+
+    # when all else fails: complain about it.
+    error('%s: unknown location' % request.url, '404 Not Found')
+
+  ### at this point, we know we're talking about a file.
+    
   # do Subversion-y things here until more concepts mesh with CVS's
   if request.roottype == 'svn':
     if query_dict.has_key('rev') or request.has_checkout_magic:
       view_checkout(request)
+    elif query_dict.has_key('r1') and query_dict.has_key('r2'):
+      view_diff_svn(request, full_name)
     else:
       view_log_svn(request)
     return
-  
-  if os.path.isfile(full_name + ',v'):
+  else:
     if query_dict.has_key('rev') or request.has_checkout_magic:
       view_checkout(request)
     elif query_dict.has_key('annotate') and cfg.options.allow_annotate:
@@ -2783,23 +2826,10 @@ def main():
         cvsgraph_image(cfg, request)
     else:
       view_log(request)
-  elif full_name[-5:] == '.diff' and os.path.isfile(full_name[:-5] + ',v') \
-       and query_dict.has_key('r1') and query_dict.has_key('r2'):
-    view_diff(request, full_name[:-5])
-  elif cfg.options.allow_tar \
-       and full_name[-7:] == '.tar.gz' and query_dict.has_key('tarball'):
-    download_tarball(request)
-  else:
-    # if the file is in the Attic, then redirect
-    idx = string.rfind(full_name, '/')
-    attic_name = full_name[:idx] + '/Attic' + full_name[idx:]
-    if os.path.isfile(attic_name + ',v') or \
-       full_name[-5:] == '.diff' and os.path.isfile(attic_name[:-5] + ',v'):
-      idx = string.rfind(url, '/')
-      redirect(url[:idx] + '/Attic' + url[idx:] + \
-	       '?' + compat.urlencode(query_dict))
-
-    error('%s: unknown location' % request.url, '404 Not Found')
+    return
+  
+  error('%s: unable to determine desired operation' % request.url,
+        '404 Not Found')
 
 
 def run_cgi():
