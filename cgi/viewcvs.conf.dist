@@ -147,6 +147,9 @@ forbidden =
 
 directory = templates/directory.ezt
 log = templates/log.ezt
+# There is also a new style table based alternative template available.
+# You might want to try it out:
+# log = templates/log_table.ezt
 query = templates/query.ezt
 
 #---------------------------------------------------------------------------
