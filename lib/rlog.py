@@ -96,7 +96,8 @@ class RLog:
     "Provides a alternative file-like interface for running 'rlog'."
     
     def __init__(self, filename, revision, date):
-        self.filename = filename
+        self.filename = self.fix_filename(filename)
+        self.checkout_filename = self.create_checkout_filename(self.filename)
         self.revision = revision
         self.date = date
 
@@ -106,19 +107,39 @@ class RLog:
         if self.date:
             arg_list.append('-d%s' % (self.date))
 
-        ## modify path if in Attic
-        if self.filename[-2:] != ",v":
-            self.filename = "%s,v" % (self.filename)
-
-        if not os.path.isfile(self.filename):
-            path, basename = os.path.split(self.filename)
-            self.filename = os.path.join(path, "Attic", basename)
-            if not os.path.isfile(self.filename):
-                raise error, "file not found"
-        
         self.cmd = 'rlog %s "%s"' % (string.join(arg_list), self.filename)
         self.rlog = os.popen(self.cmd, 'r')
 
+    def fix_filename(self, filename):
+        ## all RCS files have the ",v" ending
+        if filename[-2:] != ",v":
+            filename = "%s,v" % (filename)
+
+        if os.path.isfile(filename):
+            return filename
+
+        ## check the Attic for the RCS file
+        path, basename = os.path.split(filename)
+        filename = os.path.join(path, "Attic", basename)
+
+        if os.path.isfile(filename):
+            return filename
+        
+        raise error, "file not found"
+
+    def create_checkout_filename(self, filename):
+        ## cut off the ",v"
+        checkout_filename = filename[:-2]
+
+        ## check if the file is in the Attic
+        path, basename = os.path.split(checkout_filename)
+        if path[-6:] != '/Attic':
+            return checkout_filename
+
+        ## remove the "Attic" part of the path
+        checkout_filename = os.path.join(path[:-6], basename)
+        return checkout_filename
+        
     def readline(self):
         if not self.rlog:
             raise error, 'rlog terminated'
@@ -155,14 +176,12 @@ _re_data_line_add = re.compile(
     "state:\s+([^;]+);$")
 
 class RLogOutputParser:
+    
+    def __init__(self, rlog):
+        self.rlog = rlog
+        self.rlog_data = RLogData(rlog.checkout_filename)
 
-    def __init__(self, filename, revision, date):
-        self.rlog_data = RLogData(filename)
-        self.revision = revision
-        self.date = date
-
-    def Run(self):
-        self.rlog = RLog(self.rlog_data.filename, self.revision, self.date)
+        ## run the parser
         self.parse_to_symbolic_names()
         self.parse_symbolic_names()
         self.parse_to_description()
@@ -297,6 +316,6 @@ class RLogOutputParser:
 ## entrypoints
 
 def GetRLogData(path, revision = '', date = ''):
-    rlog_parser = RLogOutputParser(path, revision, date)
-    rlog_parser.Run()
+    rlog = RLog(path, revision, date)
+    rlog_parser = RLogOutputParser(rlog)
     return rlog_parser.rlog_data
