@@ -25,10 +25,11 @@ _no_datetime = """\
 ERROR: Your version of MySQLdb requires the mxDateTime module
        for the Timestamp() and TimestampFromTicks() methods.
        You will need to install mxDateTime to use the ViewCVS
-       database."""
+       database.
+"""
 
-if "Timestamp" not in dir(MySQLdb) or \
-   "TimestampFromTicks" not in dir(MySQLdb):
+if not hasattr(MySQLdb, "Timestamp") or \
+   not hasattr(MySQLdb, "TimestampFromTicks"):
     sys.stderr.write(_no_datetime)
     sys.exit(1)
 
