@@ -67,8 +67,8 @@ INSTALLING VIEWCVS
    a previous installation. It will always overwrite program files,
    however.
 
-3) Edit <install-root>viewcvs.conf for your specific configuration. 
-   In particular, examine the following configuration options:
+3) Edit <VIEWCVS_INSTALLATION_DIRECTORY>viewcvs.conf for your specific 
+   configuration.  In particular, examine the following configuration options:
 
       cvs_roots
       default_root
@@ -77,15 +77,17 @@ INSTALLING VIEWCVS
 
    There are some other options that are usually nice to change. See
    viewcvs.conf for more information.  If you want to customize
-   the look of ViewCVS then edit the files in <install-root>templates
+   the look of ViewCVS then edit the files in 
+   <VIEWCVS_INSTALLATION_DIRECTORY>/templates.
    But only if you want, the distributed files will work and provides 
    a default look.  You need knowledge about HTML to edit the templates.
 
-4) The CGI programs are in <install-root>/cgi/.  You can symlink to this
-   directory from somewhere in your published HTTP server path if your 
-   webserver is configured to follow symbolic links.  You can also copy
-   the installed <install-root>/cgi/*.cgi scripts after the install
-   (unlike the other files in ViewCVS, the CGI scripts can be moved).
+4) The CGI programs are in <VIEWCVS_INSTALLATION_DIRECTORY>/cgi/.  You can 
+   symlink to this directory from somewhere in your published HTTP server 
+   path if your webserver is configured to follow symbolic links.  You can 
+   also copy the installed <VIEWCVS_INSTALLATION_DIRECTORY>/cgi/*.cgi scripts 
+   after the install (unlike the other files in ViewCVS, the CGI scripts can 
+   be moved).
 
    NOTE: for security reasons, it is not advisable to install ViewCVS
    directly into your published HTTP directory tree (due to the MySQL
@@ -123,14 +125,14 @@ there are some additional steps required to get the database working.
    Optionally, you can create a second user with read-only access to the
    database.
 
-3) Run the <install-root>/make-database script.  It will prompt you for
-   your MySQL user, password, and the name of database you want to 
-   create.  The database name defaults to "ViewCVS".  This script creates
-   the database and sets up the empty tables.  If you run this on a 
+3) Run the <VIEWCVS_INSTALLATION_DIRECTORY>/make-database script.  It will 
+   prompt you for your MySQL user, password, and the name of database you 
+   want to create.  The database name defaults to "ViewCVS".  This script 
+   creates the database and sets up the empty tables.  If you run this on a 
    existing ViewCVS database, you will loose all your data!
 
-4) Edit your <install-root>/viewcvs.conf file.  There is a [cvsdb]
-   section.  You will need to set:
+4) Edit your <VIEWCVS_INSTALLATION_DIRECTORY>/viewcvs.conf file.  
+   There is a [cvsdb] section.  You will need to set:
      
       
       host =             # MySQL database server host
@@ -160,7 +162,7 @@ there are some additional steps required to get the database working.
    To get real-time updates, you'll want to checkout the CVSROOT module
    from your CVS repository and edit CVSROOT/loginfo.  Add the line:
 
-       ALL (echo %{sVv}; cat) | <install-root>/loginfo-handler
+     ALL (echo %{sVv}; cat) | <VIEWCVS_INSTALLATION_DIRECTORY>/loginfo-handler
 
    If you have other scripts invoked by CVSROOT/loginfo, you will want
    to make sure to change any running under the "DEFAULT" keyword to
@@ -169,8 +171,8 @@ there are some additional steps required to get the database working.
 
 6) You may want to modify the HTML template files:
 
-      <install-root>/html-templates/queryformtemplate.html
-      <install-root>/html-templates/querytemplate.html
+      <VIEWCVS_INSTALLATION_DIRECTORY>/html-templates/queryformtemplate.html
+      <VIEWCVS_INSTALLATION_DIRECTORY>/html-templates/querytemplate.html
 
    They're used by the queryform.cgi and query.cgi scripts generate
    HTML output.  At some point, viewcvs.cgi, query.cgi, and queryform.cgi
@@ -197,6 +199,12 @@ configured enscript 1.6.2 package.
 3) Set the 'use_enscript' option in viewcvs.conf to 1.
 
 4) That's it!
+
+5) If you want to colorize exotic languages, you might have to 
+   patch 'lib/viewcvs.py' and add a new highlighting file to enscript.
+   I've done this for Modula-2 and submitted the file to the 
+   enscript maintainer long ago.  If interested in this patch for
+   enscript mailto:pefu@sourgeforge.net
 
 CVSGRAPH CONFIGURATION
 ----------------------
@@ -228,7 +236,7 @@ of files in a CVS repository.
 
 6) That's it!
 
-7) There is a file in <install-root> called cvsgraph.conf that
+7) There is a file <VIEWCVS_INSTALLATION_DIRECTORY>/cvsgraph.conf that
    you may want to edit if desired to set color and font characteristics.
    See the cvsgraph.conf documentation.  No edits are required in
    cvsgraph.conf for operation with viewcvs.
