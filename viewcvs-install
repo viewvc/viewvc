@@ -65,15 +65,17 @@ else:
 ##       
 
 FILE_INFO_LIST = [
-    ("cgi/viewcvs.cgi", "cgi/viewcvs.cgi", 0755, 1, 0, 0),
-    ("cgi/query.cgi", "cgi/query.cgi", 0755, 1, 0, 0),
+    ("www/cgi/viewcvs.cgi", "www/cgi/viewcvs.cgi", 0755, 1, 0, 0),
+    ("www/cgi/query.cgi", "www/cgi/query.cgi", 0755, 1, 0, 0),
+    ("www/mod_python/viewcvs.py", "www/mod_python/viewcvs.py", 0755, 1, 0, 0),
+    ("www/mod_python/query.py", "www/mod_python/query.py", 0755, 1, 0, 0),
+    ("www/mod_python/.htaccess", "www/mod_python/.htaccess", 0755, 1, 0, 0),
     ("standalone.py", "standalone.py", 0755, 1, 0, 0),
-
-    ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 1,
+    ("viewcvs.conf.dist", "viewcvs.conf", 0644, 1,
 	     """Note: If you are upgrading from viewcvs-0.7 or earlier: 
 The section [text] has been removed from viewcvs.conf.  The functionality
 went into the new files in subdirectory templates.""", 0),
-    ("cgi/cvsgraph.conf.dist", "cvsgraph.conf", 0644, 0, 1, 0),
+    ("cvsgraph.conf.dist", "cvsgraph.conf", 0644, 0, 1, 0),
 
     ("tools/loginfo-handler", "loginfo-handler", 0755, 1, 0, 0),
     ("tools/cvsdbadmin", "cvsdbadmin", 0755, 1, 0, 0),
@@ -82,11 +84,8 @@ went into the new files in subdirectory templates.""", 0),
 
 if sys.platform == "win32":
   FILE_INFO_LIST.extend([
-    ("windows/viewcvs.asp", "windows/viewcvs.asp", 0755, 1, 0, 0),
-    ("windows/query.asp", "windows/query.asp", 0755, 1, 0, 0),
-    ("windows/viewcvs.py", "windows/viewcvs.py", 0755, 1, 0, 0),
-    ("windows/query.py", "windows/query.py", 0755, 1, 0, 0),
-    ("windows/htaccess.mod_python", "windows/htaccess.mod_python", 0755, 1, 0, 0)
+    ("www/asp/viewcvs.asp", "www/asp/viewcvs.asp", 0755, 1, 0, 0),
+    ("www/asp/query.asp", "www/asp/query.asp", 0755, 1, 0, 0),
   ])
 
 TREE_LIST = [
