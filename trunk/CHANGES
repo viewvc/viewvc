@@ -1,3 +1,10 @@
+Version 0.9.1 (released 26-Dec-2001)
+
+  * fix a problem with some syntax in ndiff.py which isn't compatible
+    with Python 1.5.2 (causing problems at install time)
+  * remove a debug statement left in the code which continues to
+    append lines to /tmp/log
+
 Version 0.9 (released 23-Dec-2001)
 
   * create templates for the rest of the pages: markup pages, graphs,
