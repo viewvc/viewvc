@@ -1319,6 +1319,14 @@ def view_directory(request):
   if request.server.getenv('PATH_INFO', '')[-1:] != '/':
     request.server.redirect(request.get_url())
 
+  # For Subversion repositories, the revision acts as a weak validator for
+  # the directory listing (to take into account template changes or
+  # revision property changes).
+  if request.roottype == 'svn':
+    revision = str(vclib.svn.created_rev(request.repos, request.where))
+    if check_freshness(request, None, revision, weak=1):
+      return
+
   # List current directory
   options = {}
   if request.roottype == 'cvs':
@@ -2697,7 +2705,11 @@ def view_revision_svn(request, data):
   date, author, msg, changes = vclib.svn.get_revision_info(request.repos)
   date_str = make_time_string(date)
   rev = request.repos.rev
-  
+
+  # The revision number acts as a weak validator.
+  if check_freshness(request, None, str(rev), weak=1):
+    return
+
   # add the hrefs, types, and prev info
   for change in changes:
     change.view_href = change.diff_href = change.type = None
