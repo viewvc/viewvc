@@ -21,6 +21,8 @@ import urllib
 import string
 import time
 import re
+import os
+
 
 #
 # urllib.urlencode() is new to Python 1.5.2
@@ -51,3 +53,15 @@ else:
     matches = _re_rev_date.match(timestr).groups()
     return tuple(map(int, matches)) + (0, 1, -1)
 cvs_strptime.__doc__ = 'Parse a CVS-style date/time value.'
+
+#
+# os.makedirs() is new to Python 1.5.2
+#
+try:
+  makedirs = os.makedirs
+except AttributeError:
+  def makedirs(path, mode=0777):
+    head, tail = os.path.split(path)
+    if head and tail and not os.path.exists(head):
+      makedirs(head, mode)
+    os.mkdir(path, mode)
