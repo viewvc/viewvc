@@ -393,7 +393,7 @@ show_logs = 1
 show_log_in_markup = 1
 
 # Show list of changed paths in Subversion logs entries
-show_changed_paths = 1
+show_changed_paths = 0
 
 # Display dates as UTC or in local time zone
 use_localtime = 0
