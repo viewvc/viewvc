@@ -437,8 +437,8 @@ disable_enscript_lang =
 #
 # ViewCVS can generate tarball from a repository on the fly.
 #
-tarball = 0
-# tarball = 1
+allow_tar = 0
+# allow_tar = 1
 
 #---------------------------------------------------------------------------
 [vhosts]
