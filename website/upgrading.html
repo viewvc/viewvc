@@ -280,6 +280,17 @@
         </dd>
       </dl>
       <dl>
+        <dt>All files: <var>nav_path</var></dt>
+        <dd>
+          List representing the current path. Unlike the old
+          <var>nav_path</var> variable which was just a block of html
+          with links to parent directories, this is a list of objects,
+          with parent directory names and links accessible
+          as <var>nav_path.name</var> and <var>nav_path.type</var> 
+          inside a [for] loop.
+        </dd>
+      </dl>
+      <dl>
         <dt>All files: <var>roots</var></dt>
         <dd>
           List of roots. Unlike the old <var>roots</var> variable which
