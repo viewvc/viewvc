@@ -806,35 +806,37 @@ class MarkupPipeWrapper:
   pre- and post- text.  Closes and closes FP."""
   
   def __init__(self, fp, pretext=None, posttext=None):
-    self.pre_fp = pretext and MarkupBuffer(pretext)
-    self.post_fp = posttext and MarkupBuffer(posttext)
-    self.fp = fp
+    # Setup a list of fps to read from (actually, a list of tuples
+    # tracking the fp and whether or not to htmlize() the stuff read
+    # from that fp).  We read from a given fp only after exhausting
+    # all the ones prior to it in the list.
+    self.fps = []
+    if pretext:
+      self.fps.append([MarkupBuffer(pretext), 0])
+    if fp:
+      self.fps.append([fp, 1])
+    if posttext:
+      self.fps.append([MarkupBuffer(posttext), 0])
+    self.which_fp = 0
 
-  def _readfp(self, fp, reqlen):
-    readlen = 0
-    chunk = None
-    if fp is not None:
-      chunk = retry_read(fp, reqlen)
-    if chunk:
-      readlen = len(chunk)
-      if fp == self.fp:
-        chunk = htmlify(chunk)
-    return chunk, readlen
-      
   def read(self, reqlen):
-    if not (self.pre_fp and self.post_fp and self.fp):
+    if not self.which_fp < len(self.fps):
       return None
     if not reqlen > 0:
       return ''
     
     chunk = None
-    for fp in [self.pre_fp, self.fp, self.post_fp]:
-      if fp is None:
-        continue
-      readchunk, readlen = self._readfp(fp, reqlen)
+    while reqlen > 0 and self.which_fp < len(self.fps):
+      fp, htmlize = self.fps[self.which_fp]
+      readchunk = retry_read(fp, reqlen)
       if readchunk:
+        if htmlize:
+          readchunk = htmlify(readchunk)
+        readlen = len(readchunk)
+        reqlen = reqlen - readlen
         chunk = (chunk or '') + readchunk
-      reqlen = reqlen - readlen
+      else:
+        self.which_fp = self.which_fp + 1
     return chunk
 
   def __del__(self):
