@@ -153,8 +153,9 @@ If this doesn't work, please click on the link above.
         def run_viewcvs(self):
             """This is a quick and dirty cut'n'rape from Pythons 
             standard library module CGIHTTPServer."""
-            assert self.path[:8] == "/viewcvs"
-            viewcvs_url, rest = self.server.url[:-1]+"/viewcvs", self.path[8:]
+            scriptname = "/viewcvs"
+            assert self.path[:8] == scriptname
+            viewcvs_url, rest = self.server.url[:-1]+scriptname, self.path[8:]
             i = string.rfind(rest, '?')
             if i >= 0:
                 rest, query = rest[:i], rest[i+1:]
@@ -165,7 +166,6 @@ If this doesn't work, please click on the link above.
                 script, rest = rest[:i], rest[i:]
             else:
                 script, rest = rest, ''
-            scriptname = viewcvs_url + script
             # sys.stderr.write("Debug: '"+scriptname+"' '"+rest+"' '"+query+"'\n")
             env = os.environ
             # Since we're going to modify the env in the parent, provide empty
