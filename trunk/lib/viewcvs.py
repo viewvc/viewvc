@@ -490,14 +490,21 @@ def markup_stream_enscript(lang, fp):
                                '-', '-'),
                               ('sed', '-n', '/^<PRE>$/,/<\\/PRE>$/p')])
 
-  while 1:
-    chunk = fp.read(CHUNK_SIZE)
-    if not chunk:
-      if fp.eof() is None:
-        time.sleep(1)
-        continue
-      break
-    enscript.write(chunk)
+  try:
+    while 1:
+      chunk = fp.read(CHUNK_SIZE)
+      if not chunk:
+        if fp.eof() is None:
+          time.sleep(1)
+          continue
+        break
+      enscript.write(chunk)
+  except IOError, v:
+    print "<h3>Failure during use of an external program:</h3>"
+    print "<pre>"
+    print cfg.options.enscript_path+"enscript --color -W html -E"+lang+" -o - -"
+    print "</pre>"
+    raise
 
   enscript.close()
 
@@ -509,10 +516,10 @@ markup_streamers = {
 enscript_extensions = {
   '.C' : 'cpp',
   '.EPS' : 'postscript',
-  '.DEF' : 'modula2',  # requires a patch for enscript 1.6.2, see INSTALL
+  '.DEF' : 'modula_2',  # requires a patch for enscript 1.6.2, see INSTALL
   '.F' : 'fortran',
   '.H' : 'cpp',
-  '.MOD' : 'modula2',  # requires a patch for enscript 1.6.2, see INSTALL
+  '.MOD' : 'modula_2',  # requires a patch for enscript 1.6.2, see INSTALL
   '.PS' : 'postscript',
   '.S' : 'asm',
   '.ada' : 'ada',
