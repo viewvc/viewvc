@@ -1,0 +1,26 @@
+Version 0.8 (released 10-Dec-2001)
+
+  * add EZT templating mechanism for generating output pages
+  * big update of cvs commit database
+    - updated MySQL support
+    - new CGI
+    - better database caching
+    - switch from old templates to new EZT templates (and integration
+      of look-and-feel)
+  * optional usage of CVSGraph is now builtin
+  * standalone server (for testing) is now provided
+  * shifted some options from viewcvs.conf to the templates
+  * the help at the top of the pages has been shifted to separate help
+    pages, so experienced users don't have to keep seeing it
+  * paths in viewcvs.conf don't require trailing slashes any more
+  * tweak the colorizing for Pascal and Fortran files
+  * fix file readability problem where the user had access via the
+    group, but the process' group did not match that group
+  * some Daylight Savings Time fixes in the CVS commit database
+  * fix tarball generation (the file name) for the root dir
+  * changed default human-readable-diff colors to "stoplight" metaphor
+  * web site and doc revamps
+  * fix the mime types on the download, view, etc links
+  * improved error response when the cvs root is missing
+  * don't try to process vhosts if the config section is not present
+  * various bug fixes and UI tweaks

@@ -1,0 +1,426 @@
+#---------------------------------------------------------------------------
+#
+# Configuration file for ViewCVS
+#
+# Information on ViewCVS is located at the following web site:
+#     http://viewcvs.sourceforge.net/
+#
+#---------------------------------------------------------------------------
+
+#
+# BASIC CONFIGURATION
+#
+# For correct operation, you will probably need to change the following
+# configuration variables:
+#
+#    cvs_roots
+#    default_root
+#    rcs_path
+#    mime_types_file
+#
+# It is usually desirable to change the following variables:
+#
+#    address
+#    main_title
+#    forbidden
+#
+#    use_enscript
+#    use_cvsgraph
+#
+# For Python source colorization:
+#
+#    py2html_path
+#
+# If your icons are in a special location:
+#
+#    icons
+#
+# Also, review the .ezt templates in the templates/ directory to adjust them
+# for your particular site.
+#
+
+#
+# FORMAT INFORMATION
+#
+# This file is delineated by sections, specified in [brackets]. Within each
+# section, are a number of configuration settings. These settings take the
+# form of: name = value. Values may be continued on the following line by
+# indenting the continued line.
+#
+# WARNING: indentation *always* means continuation. name=value lines should
+#          always start in column zero.
+#
+# Comments should always start in column zero, and are identified with "#".
+#
+# Certain configuration settings may have multiple values. These should be
+# separated by a comma. The settings where this is allowed are noted below.
+#
+# Any other setting that requires special syntax is noted at that setting.
+# 
+
+#---------------------------------------------------------------------------
+[general]
+
+#
+# This setting specifies each of the CVS roots on your system and assigns
+# names to them. Each root should be given by a "name: path" value. Multiple
+# roots should be separated by commas.
+#
+cvs_roots =
+	Development : /home/cvsroot
+
+# this is the name of the default CVS root.
+default_root = Development
+
+# uncomment if the RCS binaries are not on the standard path
+#rcs_path = /usr/bin/
+
+#
+# This is a pathname to a MIME types file to help viewcvs to guess the
+# correct MIME type on checkout.
+#
+# If you are having problems with the default guess on the MIME type, then
+# uncomment this option and point it at a MIME type file.
+#
+# For example, you can use the mime.types from apache here:
+#mime_types_file = /usr/local/apache/conf/mime.types
+
+# This address is shown in the footer of the generated pages. 
+# It must be replaced with the address of the local CVS maintainer.
+address = <a href="mailto:cvs-admin@insert.your.domain.here">No CVS admin address has been configured</a>
+
+# this title is used on the main entry page
+main_title = CVS Repository
+
+#
+# This should contain a list of modules in the repository that should not be
+# displayed (by default or by explicit path specification).
+#
+# This configuration can be a simple list of modules, or it can get quite
+# complex:
+#
+#   *) The "!" can be used before a module to explicitly state that it
+#      is NOT forbidden. Whenever this form is seen, then all modules will
+#      be forbidden unless one of the "!" modules match.
+#
+#   *) Shell-style "glob" expressions may be used. "*" will match any
+#      sequence of zero or more characters, "?" will match any single
+#      character, "[seq]" will match any character in seq, and "[!seq]"
+#      will match any character not in seq.
+#
+#   *) Tests are performed in sequence. The first match will terminate the
+#      testing. This allows for more complex allow/deny patterns.
+#
+# Tests are case-sensitive.
+#
+forbidden =
+
+# Some examples:
+#
+# Disallow "example" but allow all others:
+#   forbidden = example
+#
+# Disallow "example1" and "example2" but allow all others:
+#   forbidden = example1, example2
+#
+# Allow *only* "example1" and "example2":
+#   forbidden = !example1, !example2
+#
+# Forbid modules starting with "x":
+#   forbidden = x*
+#
+# Allow modules starting with "x" but no others:
+#   forbidden = !x*
+#
+# Allow "xml", forbid other modules starting with "x", and allow the rest:
+#   forbidden = !xml, x*, !*
+#
+
+#---------------------------------------------------------------------------
+[templates]
+
+#
+# The templates are specified relative to the configuration file. Absolute
+# paths may be used, if you want to keep these elsewhere.
+#
+
+directory = templates/directory.ezt
+log = templates/log.ezt
+# There is also a new style table based alternative template available.
+# You might want to try it out:
+# log = templates/log_table.ezt
+query = templates/query.ezt
+
+#---------------------------------------------------------------------------
+[cvsdb]
+
+#host = localhost
+#database_name = ViewCVS
+#user = 
+#passwd = 
+#readonly_user = 
+#readonly_passwd = 
+#row_limit = 1000
+
+#---------------------------------------------------------------------------
+[images]
+#
+# All images are defined with three values: URL, WIDTH, HEIGHT
+#
+
+#
+# these icons represent a back-pointer, a directory (folder), and a file.
+# they are normally available in a standard Apache distribution, along
+# with larger versions if these are too small for you.
+#
+back_icon = /icons/small/back.gif, 16, 16
+dir_icon  = /icons/small/dir.gif, 16, 16
+file_icon = /icons/small/text.gif, 16, 16
+
+#---------------------------------------------------------------------------
+[colors]
+
+# background color of log entry in markup
+markup_log = #ffffff
+
+# The following six colors are used together:
+# color of change-section headings in a diff (default turquoise)
+diff_heading = #99cccc
+
+# color of "empty" lines (default light gray)
+diff_empty = #cccccc
+
+# removed lines (default light red)
+diff_remove = #ffaaaa
+
+# changed lines (default light yellow)
+diff_change = #ffff77
+
+# added lines (default light green)
+diff_add = #aaffaa
+
+# empty lines in a change block (if one part smaller is than the other;
+# default is a greyish yellow: the color should match the hue of 'diff_change')
+diff_dark_change = #eeee77
+
+# navigation header (in diff screen, file view, annotation, etc)
+nav_header = #9999ee
+
+# color of text on most pages
+text = #000000
+
+# color of standard background
+background = #ffffff
+
+# color of alternate background (diffs, file view, annotations, etc)
+alt_background = #eeeeee
+
+#---------------------------------------------------------------------------
+[options]
+### DOC
+
+# sort_by: File sort order
+#   file   Sort by filename
+#   rev    Sort by revision number
+#   date   Sort by commit date
+#   author Sort by author
+#   log    Sort by log message
+sort_by = file
+
+# hide_attic: Hide or show files in Attic
+#   1      Hide files in Attic
+#   0      Show files in Attic
+hide_attic = 1
+
+# log_sort: Sort order for CVS logs
+#   date   Sort revisions by date
+#   rev    Sort revision by revision number
+#   cvs    Don't sort them. Same order as CVS/RCS shows them.
+log_sort = date
+
+# diff_format: Default diff format
+#   h      Human readable
+#   u      Unified diff
+#   c      Context diff
+#   s      Side by side
+#   l      Long human readable (more context)
+diff_format = h
+
+# hide_cvsroot: Don't show the CVSROOT directory
+#   1      Hide CVSROOT directory
+#   0      Show CVSROOT directory
+hide_cvsroot = 1
+
+# hide_non_readable: Don't show entries which cannot be read
+#   1      Hide non-readable entries
+#   0      Show non-readble entries
+hide_non_readable = 1
+
+# Show author of last change
+show_author = 1
+
+# set to 1 to make lines break at spaces,
+# set to 0 to make no-break lines,
+# set to a positive integer to make the lines cut at that length
+hr_breakable = 1
+
+# give out function names in human readable diffs
+# this just makes sense if we have C-files, otherwise
+# diff's heuristic doesn't work well ..
+# ( '-p' option to diff)
+hr_funout = 0
+
+# ignore whitespaces for human readable diffs
+# (indendation and stuff ..)
+# ( '-w' option to diff)
+hr_ignore_white = 1
+
+# ignore diffs which are caused by
+# keyword-substitution like $Id - Stuff
+# ( '-kk' option to rcsdiff)
+hr_ignore_keyword_subst = 1
+
+# allow annotation of files.
+allow_annotate = 1
+
+# allow pretty-printed version of files
+allow_markup = 1
+
+# allow compression with gzip of output if the Browser accepts it
+# (HTTP_ACCEPT_ENCODING=gzip)
+# [make sure to have gzip in the path]
+allow_compress = 1
+
+# Make use of javascript functions to skip the need for submitting a form.
+# For example, this way you can select one of your CVS roots without
+# pressing 'Go' (... if you have more than one CVSROOT defined)
+use_java_script = 1
+
+# open Download-Links in another window
+open_extern_window = 1
+
+# If you have files which automatically refers to other files
+# (such as HTML) then this allows you to browse the checked
+# out files as if outside CVS.
+checkout_magic = 1
+
+# Show last changelog message for sub directories
+# The current implementation makes many assumptions and may show the
+# incorrect file at some times. The main assumption is that the last
+# modified file has the newest filedate. But some CVS operations
+# touches the file without even when a new version is't checked in,
+# and TAG based browsing essientially puts this out of order, unless
+# the last checkin was on the same tag as you are viewing.
+# Enable this if you like the feature, but don't rely on correct results.
+show_subdir_lastmod = 0
+
+# The next flag defines the meaning of clicking on either a filename or 
+# the revision number of that file in the directory view.  if 0 then
+# the traditional behavior applies: clicking on the name takes you to the
+# CVS log page, where clicking on the revision number displays that revision.
+# If the flag is set to 1 then both columns will be swapped and the meaning
+# of clicking is also exchanged.  This should be more intuitive to new users.
+# The classic setting is default:
+flip_links_in_dirview = 0
+
+# show a portion of the most recent log entry in directory listings
+show_logs = 1
+
+# Show CVS log when viewing file contents
+show_log_in_markup = 1
+
+# == Configuration defaults ==
+# Defaults for configuration variables that shouldn't need
+# to be configured..
+
+#
+# If you want to use Marc-Andrew Lemburg's py2html (and Just van Rossum's
+# PyFontify) to colorize Python files, then you may need to change this
+# variable to point to their directory location.
+#
+# This directory AND the standard Python path will be searched.
+#
+py2html_path = .
+#py2html_path = /usr/local/lib/python1.5/site-python
+
+# the length to which the most recent log entry should be truncated when
+# shown in the directory view
+short_log_len = 80
+
+diff_font_face = Helvetica,Arial
+diff_font_size = -1
+
+# should we use 'enscript' for syntax coloring?
+use_enscript = 0
+
+#
+# if the enscript program is not on the path, set this value
+#
+enscript_path =
+# enscript_path = /usr/bin/
+
+#
+# ViewCVS has its own set of mappings from filename extensions and filenames
+# to languages. If the language is not supported by enscript, then it can
+# be listed here to disable the use of enscript.
+#
+disable_enscript_lang =
+# disable_enscript_lang = perl, cpp
+
+#
+# ViewCVS can generate tarball from a repository on the fly.
+#
+allow_tar = 0
+# allow_tar = 1
+
+#
+# Use CvsGraph. See http://www.akhphd.au.dk/~bertho/cvsgraph/ for
+# documentation and download. 
+#
+use_cvsgraph = 0
+# use_cvsgraph = 1
+
+#
+# if the cvsgraph program is not on the path, set this value
+#
+cvsgraph_path =
+# cvsgraph_path = /usr/local/bin/
+
+#
+# Location of the customized cvsgraph configuration file.  
+# You will need an absolute pathname here:
+#
+cvsgraph_conf = <VIEWCVS_INSTALL_DIRECTORY>/cvsgraph.conf
+
+#---------------------------------------------------------------------------
+[vhosts]
+### DOC
+
+# vhost1 = glob1, glob2
+# vhost2 = glob3, glob4
+
+# [vhost1-section]
+# option = value
+# [vhost1-othersection]
+# option = value
+# [vhost2-section]
+# option = value
+
+#
+# Here is an example:
+#
+# [vhosts]
+# lyra = *lyra.org
+#
+# [lyra-general]
+# forbidden = hideme
+#
+# [lyra-options]
+# show_logs = 0
+#
+# Note that "lyra" is the "canonical" name for all hosts in the lyra.org
+# domain. This canonical name is then used within the additional, vhost-
+# specific sections to override specific values in the common sections.
+#
+
+#---------------------------------------------------------------------------
