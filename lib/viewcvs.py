@@ -254,7 +254,10 @@ def error(msg, status='500 Internal Server Error'):
 
 def generate_page(request, tname, data):
   # allow per-language template selection
-  tname = string.replace(tname, '%lang%', request.language)
+  if request:
+    tname = string.replace(tname, '%lang%', request.language)
+  else:
+    tname = string.replace(tname, '%lang%', 'en')
 
   debug.t_start()
   template = ezt.Template(os.path.join(g_install_dir, tname))
