@@ -236,7 +236,7 @@ class Request:
           '%s not found!\nThe wrong path for this repository was '
           'configured, or the server on which the CVS tree lives may be '
           'down. Please try again in a few minutes.'
-          % server.escape(self.rootname))
+          % self.server.escape(self.rootname))
       # required so that spawned rcs programs correctly expand $CVSHeader$
       os.environ['CVSROOT'] = self.rootpath
     elif cfg.general.svn_roots.has_key(self.rootname):
@@ -255,14 +255,14 @@ class Request:
           '%s not found!\nThe wrong path for this repository was '
           'configured, or the server on which the Subversion tree lives may'
           'be down. Please try again in a few minutes.'
-          % server.escape(rootname))
+          % self.server.escape(rootname))
       except vclib.InvalidRevision, ex:
         raise debug.ViewCVSException(str(ex))
     else:
       raise debug.ViewCVSException(
         'The root "%s" is unknown. If you believe the value is '
         'correct, then please double-check your configuration.'
-        % server.escape(self.rootname), "404 Repository not found")    
+        % self.server.escape(self.rootname), "404 Repository not found")
 
     # Make sure path exists
     self.pathtype = _repos_pathtype(self.repos, self.path_parts)
