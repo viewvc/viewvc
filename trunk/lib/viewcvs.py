@@ -2450,7 +2450,7 @@ def download_tarball(request):
   fp = popen.pipe_cmds([('gzip', '-c', '-n')])
   generate_tarball(fp, os.path.basename(directory), directory, tag)
   fp.write('\0' * 1024)
-  fp.close
+  fp.close()
 
 def handle_config():
   global cfg
