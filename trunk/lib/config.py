@@ -222,8 +222,6 @@ def _parse_roots(config_name, config_value):
     if pos < 0:
       raise MalformedRoot(config_name, root)
     name, path = map(string.strip, (root[:pos], root[pos+1:]))
-    if sys.platform == "win32":
-      path = string.replace(path, "/", os.sep)
     roots[name] = path
   return roots
 
