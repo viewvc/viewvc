@@ -25,6 +25,8 @@ import re
 import tempfile
 import popen2
 
+from vclib.svn import Revision
+
 # Subversion swig libs
 from svn import core, delta, client, wc
 
@@ -46,20 +48,9 @@ def date_from_rev(svnrepos, rev):
   ### this is, obviously, wrong
   return 0
 
-
-class LogEntry:
-  "Hold state for each revision's log entry."
-  def __init__(self, rev, date, author, msg, filename, copy_path, copy_rev):
-    self.rev = rev
-    self.date = date
-    self.author = author
-    self.state = '' # should we populate this?
-    self.changed = 0
-    self.log = msg
-    self.filename = filename
-    self.copy_path = copy_path
-    self.copy_rev = copy_rev
-
+def created_rev(svnrepos, full_name):
+  ### this is, obviously, wrong
+  return 0
 
 class LastHistoryCollector:
   def __init__(self):
@@ -91,28 +82,23 @@ def _get_revision_info(svnrepos, rev, pool):
   
 
 def fetch_log(svnrepos, full_name):
-  alltags = {           # all the tags seen in the files of this dir
-    'MAIN' : '1',
-    'HEAD' : '1',
-    }
-  logs = {}
+  logs = []
 
   dir_url = svnrepos.rootpath
-  if full_name and full_name != '':
+  if full_name:
     dir_url = dir_url + '/' + full_name
 
   def _log_cb(paths, revision, author, date, message, pool,
               logs=logs, path=full_name):
     date = core.svn_time_from_cstring(date, pool)
-    entry = LogEntry(revision, date, author, message, path, None, None)
-    entry.size = 0
-    logs[revision] = entry
+    entry = Revision(revision, date, author, message, None, path, None, None)
+    logs.append(entry)
     
   cross_copies = getattr(svnrepos, 'cross_copies', 1)
   client.svn_client_log([dir_url], _rev2optrev(1), _rev2optrev(svnrepos.rev),
                         0, not cross_copies, _log_cb,
                         svnrepos.ctx, svnrepos.pool)
-  return alltags, logs
+  return logs
 
 
 def get_logs(svnrepos, full_name, files):
@@ -130,6 +116,7 @@ def get_logs(svnrepos, full_name, files):
       rev, author, date, log = _get_revision_info(svnrepos,
                                                   entry.created_rev, subpool)
       rev_info_cache[entry.created_rev] = rev, author, date, log
+    file.log_error = 0
     file.rev = rev
     file.author = author
     file.date = core.svn_time_from_cstring(date, subpool) / 1000000
@@ -339,7 +326,7 @@ class SubversionRepository(vclib.Repository):
     core.svn_stream_close(stream)
     return SelfCleanFP(tmp_file), rev
 
-  def listdir(self, path_parts):
+  def listdir(self, path_parts, options):
     entries = [ ]
     dirents = self.get_dirents(path_parts, self.rev)
     for name in dirents.keys():
@@ -350,6 +337,28 @@ class SubversionRepository(vclib.Repository):
         kind = vclib.FILE
       entries.append(vclib.DirEntry(name, kind))
     return entries
+
+  def dirlogs(self, path_parts, entries, options):
+    get_logs(self, self._getpath(path_parts), entries)
+
+  def filelog(self, path_parts, rev, options):
+    full_name = self._getpath(path_parts)
+
+    if rev is not None:
+      try:
+        rev = int(rev)
+      except ValueError:
+        vclib.InvalidRevision(rev)
+
+    revs = fetch_log(self, full_name)
+
+    revs.sort()
+    prev = None
+    for rev in revs:
+      rev.prev = prev
+      prev = rev
+
+    return revs
 
   def _getpath(self, path_parts):
     return string.join(path_parts, '/')
