@@ -45,6 +45,7 @@ import getopt
 import re
 import cvsdb
 import rlog
+import config
 
 
 DEBUG_FLAG = 0
@@ -80,13 +81,13 @@ class FileData:
         else:
             self.ctype = "changed"
 
-def CommitFromFileData(repository, file_data):
-    ## consturct the full path for the RCS file
+def CommitFromFileData(cfg, repository, file_data):
+    ## construct the full path for the RCS file
     filename = os.path.join(repository, file_data.directory, file_data.file)
 
     ## get the 'rlog' output for just this revision, and then convert
     ## to a commit object
-    rlog_data = rlog.GetRLogData(filename, file_data.new_version)
+    rlog_data = rlog.GetRLogData(cfg, filename, file_data.new_version)
     commit_list = cvsdb.RLogDataToCommitList(repository, rlog_data)
     commit = commit_list[0]
 
@@ -105,6 +106,12 @@ def GetUnrecordedCommitList(repository, file_data):
     return cvsdb.GetUnrecordedCommitList(repository, filename)
 
 def ProcessLoginfo(repository, stdin_list):
+    ## XXX This is a somewhat dirty hack:
+    ## cvsdb already loads the configuration file and provides a cfg
+    ## instance.  Pick it from there in order to be able to pass it down
+    ## to rlog (see below).
+    cfg = cvsdb.cfg
+
     ## the first line in stdin is a space-separated list; the first
     ## item in the list is the directory path being updated this run;
     ## the rest of the items are the files being updated
@@ -155,7 +162,7 @@ def ProcessLoginfo(repository, stdin_list):
             temp = GetUnrecordedCommitList(repository, file_data)
             commit_list = commit_list + temp
         else:
-            commit_list.append(CommitFromFileData(repository, file_data))
+            commit_list.append(CommitFromFileData(cfg, repository, file_data))
 
     ## add to the database
     db = cvsdb.ConnectDatabase()
