@@ -85,13 +85,19 @@ def PrintException():
   server.header()  
   out.write("<h3>Exception</h3>\n")
   info = sys.exc_info()
-  
-  # put message in a prominent position (rather than 
-  # at the end of the stack trace)
-  if isinstance(info[1], ViewCVSException):
-    out.write("<h4>ViewCVS Messages:</h4>\n%s\n" % info[1].description)
-  
-  stacktrace = string.join(apply(traceback.format_exception, info), '')
+  try:
+    # put message in a prominent position (rather than 
+    # at the end of the stack trace)
+    if isinstance(info[1], ViewCVSException):
+      out.write("<h4>ViewCVS Messages:</h4>\n%s\n" % info[1].description)
+    
+    stacktrace = string.join(apply(traceback.format_exception, info), '')
+
+  finally:
+    # prevent circular reference. sys.exc_info documentation warns
+    # "Assigning the traceback return value to a local variable in a function
+    # that is handling an exception will cause a circular reference..."
+    del info
   
   out.write("<h4>Python Messages:</h4>\n<p><pre>")
   out.write(server.escape(stacktrace))
