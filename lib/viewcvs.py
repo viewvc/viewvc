@@ -2125,7 +2125,7 @@ def search_files(request, search_re):
   # new_file_list also includes directories.
   new_file_list = [ ]
 
-  # Get list of files AND directories
+  # Get list of files AND directories ### todo: someday, just ask vclib
   files = os.listdir(request.full_name)
 
   # Loop on every file (and directory)
@@ -2139,6 +2139,11 @@ def search_files(request, search_re):
       continue
 
     # Only files at this point
+    
+    # Skip non-versioned ones
+    if full_name[-2:] != ',v':
+      continue
+    
     # Remove the ,v
     full_name = full_name[:-2]
 
