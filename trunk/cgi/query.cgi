@@ -36,13 +36,30 @@
 #
 # -----------------------------------------------------------------------
 
-## BOOTSTRAP
-import sys, os, string
-_viewcvs_root = string.strip(open("/etc/viewcvs/root", "r").read())
-sys.path.append(os.path.join(_viewcvs_root, "lib"))
-##
+#########################################################################
+#
+# INSTALL-TIME CONFIGURATION
+#
+# These values will be set during the installation process. During
+# development, they will remain None.
+#
 
-import cgi, time, cvsdbapi
+LIBRARY_DIR = None
+CONF_PATHNAME = None
+HTML_TEMPLATE_DIR = None
+
+# Adjust sys.path to include our library directory
+import sys
+
+if LIBRARY_DIR:
+  sys.path.insert(0, LIBRARY_DIR)
+else:
+  sys.path[:0] = ['../lib']	# any other places to look?
+
+#########################################################################
+
+import os, string, cgi, time, cvsdbapi
+
 
 ## tuple of alternating row colors
 Colors = ("#ccccee", "#ffffff")
@@ -182,8 +199,7 @@ class HTMLTemplate:
 def Main():
     HTMLHeader()
 
-    template_path = os.path.join(
-        _viewcvs_root, "html-templates", "querytemplate.html")
+    template_path = os.path.join(HTML_TEMPLATE_DIR, "querytemplate.html")
     template = HTMLTemplate(template_path)
     template.Print1()
     

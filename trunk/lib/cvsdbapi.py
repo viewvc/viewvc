@@ -32,7 +32,19 @@
 #
 # -----------------------------------------------------------------------
 
-import os, cfg, database, rlog, commit
+#########################################################################
+#
+# INSTALL-TIME CONFIGURATION
+#
+# These values will be set during the installation process. During
+# development, they will remain None.
+#
+
+CONF_PATHNAME = None
+
+#########################################################################
+
+import os, database, rlog, commit, config
 
 ## error
 error = 'cvsdbapi error'
@@ -51,6 +63,11 @@ PrintCommit = commit.PrintCommit
 ## cached (active) database connections
 gCheckinDatabase = None
 gCheckinDatabaseReadOnly = None
+
+## load configuration file, the data is used globally here
+cfg = config.Config()
+cfg.set_defaults()
+cfg.load_config(CONF_PATHNAME)
 
 
 def ConnectDatabaseReadOnly():
