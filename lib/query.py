@@ -36,12 +36,13 @@ CONF_PATHNAME = None
 import os
 import sys
 import string
-import cgi
+import sapi
 import time
 
 import cvsdb
 import viewcvs
 import ezt
+import debug
 
 class FormData:
     def __init__(self, form):
@@ -290,7 +291,7 @@ def build_commit(desc, files):
     ob = _item(num_files=len(files), files=[])
     
     if desc:
-        ob.desc = string.replace(cgi.escape(desc), '\n', '<br>')
+        ob.desc = string.replace(server.escape(desc), '\n', '<br>')
     else:
         ob.desc = '&nbsp;'
 
@@ -299,11 +300,16 @@ def build_commit(desc, files):
         if not ctime:
             ctime = "&nbsp";
         else:
-            ctime = time.strftime("%y/%m/%d %H:%M", time.localtime(ctime))
-
+          if (cfg.options.use_localtime):
+            ctime = time.strftime("%y/%m/%d %H:%M %Z", time.localtime(ctime))
+          else:
+            ctime = time.strftime("%y/%m/%d %H:%M", time.gmtime(ctime)) \
+                  + ' UTC'
+        
         ## make the file link
         file = os.path.join(commit.GetDirectory(), commit.GetFile())
         file_full_path = os.path.join(commit.GetRepository(), file)
+        file = string.replace(file, os.sep, '/')
 
         ## if we couldn't find the cvsroot path configured in the 
         ## viewcvs.conf file, then don't make the link
@@ -359,9 +365,12 @@ def handle_config():
     cfg = viewcvs.cfg
 
 def main():
+  global server
+  try:
+    server = sapi.server
     handle_config()
     
-    form = cgi.FieldStorage()
+    form = server.FieldStorage()
     form_data = FormData(form)
 
     if form_data.valid:
@@ -376,11 +385,11 @@ def main():
       'address' : cfg.general.address,
       'vsn' : viewcvs.__version__,
 
-      'repository' : cgi.escape(form_data.repository, 1),
-      'branch' : cgi.escape(form_data.branch, 1),
-      'directory' : cgi.escape(form_data.directory, 1),
-      'file' : cgi.escape(form_data.file, 1),
-      'who' : cgi.escape(form_data.who, 1),
+      'repository' : server.escape(form_data.repository, 1),
+      'branch' : server.escape(form_data.branch, 1),
+      'directory' : server.escape(form_data.directory, 1),
+      'file' : server.escape(form_data.file, 1),
+      'who' : server.escape(form_data.who, 1),
 
       'sortby' : form_data.sortby,
       'date' : form_data.date,
@@ -399,31 +408,16 @@ def main():
     template.parse_file(os.path.join(viewcvs.g_install_dir,
                                      cfg.templates.query))
 
-    viewcvs.http_header()
+    server.header()
 
     # generate the page
     template.generate(sys.stdout, data)
 
-def run_cgi():
-
-  ### be nice to share all this logic with viewcvs.run_cgi
-
-  try:
-    main()
   except SystemExit, e:
-    # don't catch SystemExit (caused by sys.exit()). propagate the exit code
-    sys.exit(e[0])
+    server.exit(e[0])
   except:
-    info = sys.exc_info()
-    viewcvs.http_header()
-    print '<html><head><title>Python Exception Occurred</title></head>'
-    print '<body bgcolor=white><h1>Python Exception Occurred</h1>'
-    import traceback
-    lines = apply(traceback.format_exception, info)
-    print '<pre>'
-    print cgi.escape(string.join(lines, ''))
-    print '</pre>'
-    viewcvs.html_footer()
+    debug.PrintException()
+    server.exit(0)
 
 
 class _item:
