@@ -257,7 +257,7 @@ class Request:
           '%s not found!\nThe wrong path for this repository was '
           'configured, or the server on which the Subversion tree lives may'
           'be down. Please try again in a few minutes.'
-          % self.server.escape(rootname))
+          % self.server.escape(self.rootname))
       except vclib.InvalidRevision, ex:
         raise debug.ViewCVSException(str(ex))
     else:
