@@ -161,6 +161,7 @@ query = templates/query.ezt
 #passwd = 
 #readonly_user = 
 #readonly_passwd = 
+#row_limit = 1000
 
 #---------------------------------------------------------------------------
 [images]
