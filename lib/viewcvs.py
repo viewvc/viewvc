@@ -250,7 +250,6 @@ class Request:
           rev = int(self.query_dict['rev'])
         self.repos = vclib.svn.SubversionRepository(self.rootname,
                                                     self.rootpath, rev)
-        self.repos.get_changed_paths = cfg.options.show_changed_paths
         self.repos.cross_copies = cfg.options.cross_copies
         self.roottype = 'svn'
       except vclib.ReposNotFound:
