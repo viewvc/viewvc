@@ -181,19 +181,11 @@ class CVSDirEntry(vclib.DirEntry):
     vclib.DirEntry.__init__(self, name, kind, verboten)
     self.in_attic = in_attic
 
-class Revision:
-  def __init__(self, revstr, date, author, state, changed, log):
-    self.number = _revision_tuple(revstr)
-    self.string = revstr
-    self.date = date
-    self.author = author
-    self.state = state
-    self.changed = changed
-    self.log = log
-    self.dead = state == "dead"
-
-  def __cmp__(self, other):
-    return cmp(self.number, other.number)
+class Revision(vclib.Revision):
+  def __init__(self, revstr, date, author, dead, changed, log):
+    vclib.Revision.__init__(self, _revision_tuple(revstr), revstr,
+                            date, author, changed, log, None)
+    self.dead = dead
 
 class Tag:
   def __init__(self, name, revstr):
@@ -469,8 +461,6 @@ _EOF_FILE = 'end of file entries'       # no more entries for this RCS file
 _EOF_LOG = 'end of log'                 # hit the true EOF on the pipe
 _EOF_ERROR = 'error message found'      # rlog issued an error
 
-_FILE_HAD_ERROR = 'could not read file'
-
 _re_lineno = re.compile(r'\:\d+$')
 
 def parse_log_header(fp):
@@ -620,7 +610,7 @@ def parse_log_entry(fp):
 
   return Revision(rev, date,
                   # author, state, lines changed
-                  match.group(2), match.group(3), match.group(5),
+                  match.group(2), match.group(3) == "dead", match.group(5),
                   log), eof
 
 def skip_file(fp):
@@ -745,8 +735,9 @@ def get_logs(repos, dirpath, entries, view_tag, get_dirs):
         entry.idx = entries_idx
         chunk.append(entry)
 
-      # set a value even if we don't retrieve logs
-      entry.rev = entry.state = None
+      # set rev and log_error values even if we don't retrieve logs
+      entry.rev = None
+      entry.log_error = 0
 
       entries_idx = entries_idx + 1
 
@@ -795,7 +786,7 @@ def get_logs(repos, dirpath, entries, view_tag, get_dirs):
 
       # an error was found regarding this file
       if eof == _EOF_ERROR:
-        file.rev = _FILE_HAD_ERROR
+        file.log_error = 1
         continue
 
       # if we hit the end of the log information (already!), then there is
@@ -856,7 +847,7 @@ def get_logs(repos, dirpath, entries, view_tag, get_dirs):
         file.rev = wanted_entry.string
         file.date = wanted_entry.date
         file.author = wanted_entry.author
-        file.state = wanted_entry.state
+        file.dead = wanted_entry.dead
         file.log = wanted_entry.log
 
       # done with this file now, skip the rest of this file's revisions
@@ -968,12 +959,15 @@ def _newest_file(dirpath):
     ### filter CVS locks? stale NFS handles?
     if subfile[-2:] != ',v':
       continue
-    info = os.stat(os.path.join(dirpath, subfile))
+    path = os.path.join(dirpath, subfile)
+    info = os.stat(path)
     if not stat.S_ISREG(info[stat.ST_MODE]):
       continue
     if info[stat.ST_MTIME] > newest_time:
-      newest_file = subfile[:-2]
-      newest_time = info[stat.ST_MTIME]
+      kind, verboten = _check_path(path)
+      if kind == vclib.FILE and not verboten:
+        newest_file = subfile[:-2]
+        newest_time = info[stat.ST_MTIME]
 
   return newest_file
 

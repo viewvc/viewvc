@@ -61,15 +61,10 @@ def created_rev(svnrepos, full_name):
   return fs.node_created_rev(svnrepos.fsroot, full_name, svnrepos.pool)
 
 
-class LogEntry:
+class Revision(vclib.Revision):
   "Hold state for each revision's log entry."
-  def __init__(self, rev, date, author, msg, filename, copy_path, copy_rev):
-    self.rev = str(rev)
-    self.date = date
-    self.author = author
-    self.state = '' # should we populate this?
-    self.changed = 0
-    self.log = msg
+  def __init__(self, rev, date, author, msg, size, filename, copy_path, copy_rev):
+    vclib.Revision.__init__(self, rev, str(rev), date, author, None, msg, size)
     self.filename = filename
     self.copy_path = copy_path
     self.copy_rev = copy_rev
@@ -80,7 +75,7 @@ class NodeHistory:
     self.histories = {}
 
   def add_history(self, path, revision, pool):
-    self.histories[revision] = path
+    self.histories[revision] = _trim_path(path)
     
   
 def _get_history(svnrepos, full_name):
@@ -169,27 +164,25 @@ def _log_helper(svnrepos, rev, path, pool):
   # Assemble our LogEntry
   datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, pool)
   date = _datestr_to_date(datestr, pool)
-  entry = LogEntry(rev, date, author, msg, _trim_path(path), 
+  if fs.is_file(rev_root, path, pool):
+    size = fs.file_length(rev_root, path, pool)
+  else:
+    size = None
+  entry = Revision(rev, date, author, msg, size, path,
                    copyfrom_path and _trim_path(copyfrom_path),
                    copyfrom_rev)
-  if fs.is_file(rev_root, path, pool):
-    entry.size = fs.file_length(rev_root, path, pool)
   return entry
   
 
 def fetch_log(svnrepos, full_name, which_rev=None):
-  alltags = {           # all the tags seen in the files of this dir
-    'MAIN' : '1',
-    'HEAD' : '1',
-    }
-  logs = {}
+  revs = []
 
   if which_rev is not None:
     if (which_rev < 0) or (which_rev > svnrepos.youngest):
       raise vclib.InvalidRevision(which_rev)
-    entry = _log_helper(svnrepos, which_rev, full_name, svnrepos.pool)
-    if entry:
-      logs[which_rev] = entry
+    rev = _log_helper(svnrepos, which_rev, full_name, svnrepos.pool)
+    if rev:
+      revs.append(rev)
   else:
     history_set = _get_history(svnrepos, full_name)
     history_revs = history_set.keys()
@@ -198,12 +191,12 @@ def fetch_log(svnrepos, full_name, which_rev=None):
     subpool = core.svn_pool_create(svnrepos.pool)
     for history_rev in history_revs:
       core.svn_pool_clear(subpool)
-      entry = _log_helper(svnrepos, history_rev, history_set[history_rev],
-                          subpool)
-      if entry:
-        logs[history_rev] = entry        
+      rev = _log_helper(svnrepos, history_rev, history_set[history_rev],
+                        subpool)
+      if rev:
+        revs.append(rev)
     core.svn_pool_destroy(subpool)
-  return alltags, logs
+  return revs
 
 
 def _get_last_history_rev(svnrepos, path, pool):
@@ -221,6 +214,7 @@ def get_logs(svnrepos, full_name, files):
     rev = _get_last_history_rev(svnrepos, path, subpool)
     datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, subpool)
     date = _datestr_to_date(datestr, subpool)
+    file.log_error = 0
     file.rev = str(rev)
     file.date = date
     file.author = author
@@ -338,25 +332,17 @@ class SubversionRepository(vclib.Repository):
     full_name = self._getpath(path_parts)
 
     if rev is not None:
-      full_name = '/' + full_name
       try:
         rev = int(rev)
       except ValueError:
         vclib.InvalidRevision(rev)
 
-    logs = fetch_log(self, full_name, rev)[1]
+    revs = fetch_log(self, full_name, rev)
 
-    revs = []
+    revs.sort()
     prev = None
-    numbers = logs.keys()
-    numbers.sort()
-
-    for number in numbers:
-      rev = logs[number]
-      rev.number = number
-      rev.string = str(number)
+    for rev in revs:
       rev.prev = prev
-      revs.append(rev)
       prev = rev
 
     return revs
