@@ -59,7 +59,7 @@ class LogReceiver:
   def __init__(self):
     self.logs = { }
 
-  def receive(self, revision, author, datestr, msg, pool):
+  def receive(self, paths, revision, author, datestr, msg, pool):
     date = _datestr_to_date(datestr, pool)
     self.logs[revision] = LogEntry(revision, date, author, msg)
 
@@ -91,8 +91,8 @@ def fetch_log(repos, full_name, which_rev=None):
     datestr, author, msg = _fs_rev_props(repos.fs_ptr, which_rev, repos.pool)
     receiver.receive(which_rev, author, datestr, msg, repos.pool)
   else:
-    _repos.get_logs(repos.repos, [ full_name ], repos.rev, 0, 0, 1,
-                   receiver.receive, repos.pool)
+    _repos.svn_repos_get_logs(repos.repos, [ full_name ], repos.rev, 0, 0, 1,
+                              receiver.receive, repos.pool)
   return alltags, receiver.logs
 
 
