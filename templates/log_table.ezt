@@ -171,7 +171,7 @@
 
   </tr>
   <tr bgcolor="[if-index entries even]#ffffff[else]#ccccee[end]">
-    <td colspan=5><b>Log: </b><i>[entries.html_log]</i></td>
+    <td colspan=5><b>Log: </b><i><pre>[entries.html_log]</pre></i></td>
   </tr>
 
 [end]
