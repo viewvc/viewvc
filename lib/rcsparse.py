@@ -27,9 +27,10 @@ import time
 class _TokenStream:
   token_term = string.whitespace + ';'
 
-  CHUNK_SIZE  = 16384
-#  CHUNK_SIZE  = 500000
-#  CHUNK_SIZE  = 4096
+  # the algorithm is about the same speed for any CHUNK_SIZE chosen.
+  # grab a good-sized chunk, but not too large to overwhelm memory.
+  CHUNK_SIZE  = 100000
+
 #  CHUNK_SIZE  = 5	# for debugging, make the function grind...
 
   def __init__(self, file):
@@ -103,31 +104,28 @@ class _TokenStream:
         buf = self.rcsfile.read(self.CHUNK_SIZE)
         if buf == '':
           raise RuntimeError, 'EOF'
-      double = string.find(buf, '@@', idx)
-      single = string.find(buf, '@', idx)
-#      print 'I:', idx, double, single
-      if double != -1 and double <= single:
-        chunks.append(buf[idx:double+1])
-        idx = double + 2
-        continue
-      if single == -1:
+      i = string.find(buf, '@', idx)
+      if i == -1:
         chunks.append(buf[idx:])
         idx = len(buf)
         continue
-      if single == len(buf) - 1:
-        chunks.append(buf[idx:single])
+      if i == len(buf) - 1:
+        chunks.append(buf[idx:i])
         idx = 0
         buf = '@' + self.rcsfile.read(self.CHUNK_SIZE)
         if buf == '@':
           raise RuntimeError, 'EOF'
         continue
+      if buf[i + 1] == '@':
+        chunks.append(buf[idx:i+1])
+        idx = i + 2
+        continue
 
-      chunks.append(buf[idx:single])
+      chunks.append(buf[idx:i])
 
       self.buf = buf
-      self.idx = single + 1
+      self.idx = i + 1
 
-#      print 'S:', `buf[self.idx:self.idx+10]`
       return string.join(chunks, '')
 
 #  _get = get
@@ -173,8 +171,6 @@ class Parser:
       if token[0] in string.digits:
         self.ts.unget(token)
         return
-
-      # print "token:", token
 
       if token == "head":
         self.sink.set_head_revision(self.ts.get())
