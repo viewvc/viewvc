@@ -47,9 +47,9 @@ class CgiServer:
     import cgi
     return cgi.parse()
 
-  def escape(self, str, quote = None):
+  def escape(self, s, quote = None):
     import cgi
-    return cgi.escape(str, quote)
+    return cgi.escape(s, quote)
 
   def getenv(self, name,value = None):
     # If the viewcvs cgi's are in the /viewcvs/ folder on the web server and a
@@ -75,26 +75,20 @@ class CgiServer:
     for name, values in cgi.parse().items():
       query_dict[name] = values[0]
 
-  def exit(self, code):
-    sys.exit(code)
-
   def FieldStorage(fp=None, headers=None, outerboundary="",
                  environ=os.environ, keep_blank_values=0, strict_parsing=0):
     import cgi
     return cgi.FieldStorage(fp, headers, outerboundary, environ,
       keep_blank_values, strict_parsing)
 
-  def registerThread(self, server):
-    pass
-
-  def unregisterThread(self):
-    pass
-
   def self(self):
     return self
     
   def getFile(self):
     return sys.stdout
+
+  def close():
+    pass
 
 def IIS_FixURL(url):
   """When a CGI application under IIS outputs a "Location" header with a url
@@ -128,12 +122,10 @@ def IIS_FixURL(url):
 class AspServer:
 
   def __init__(self, Server, Request, Response, Application):
-
     global server
 
     if not isinstance(server, AspProxy):
       server = AspProxy()
-
     if not isinstance(sys.stdout, AspFile):
       sys.stdout = AspFile(server)
 
@@ -176,7 +168,7 @@ class AspServer:
 
   def redirect(self, url):
     self.response.Redirect(url)
-    self.response.End()
+    sys.exit()
 
   def getenv(self, name, value = None):
     if name == 'PATH_INFO':
@@ -189,11 +181,6 @@ class AspServer:
         return str(r)
       else:
         return value
-
-  def exit(self, code = 0):
-    self.response.End()
-    server.unregisterThread()
-    sys.exit()
 
   def FieldStorage(self, fp=None, headers=None, outerboundary="",
                  environ=os.environ, keep_blank_values=0, strict_parsing=0):
@@ -219,6 +206,9 @@ class AspServer:
 
   def getFile(self):
     return AspFile(self)
+
+  def close(self):
+    server.unregisterThread()
 
 class AspFile:
   def __init__(self, server):
@@ -280,4 +270,89 @@ class AspProxy:
 
   def __delattr__(self, key):
     delattr(self.self(), key)
+
+class ModPythonServer:
+
+  def __init__(self, request):
+    global server
+
+    if not isinstance(server, AspProxy):
+      server = AspProxy()
+    if not isinstance(sys.stdout, ModPythonFile):
+      sys.stdout = ModPythonFile(server)
+
+    server.registerThread(self)
+
+    self.inheritableOut = 0
+    self.request = request
+    
+    import StringIO
+    self.buffer = StringIO.StringIO()
+    
+    self.pageGlobals = {}
+    
+  def escape(self, s, quote = None):
+    import cgi
+    return cgi.escape(s, quote)
+
+  def params(self):
+    import mod_python.util
+    if self.request.args is None:
+      return {}
+    else:
+      return mod_python.util.parse_qs(self.request.args)
+
+  def header(self, content_type='text/html'):
+    self.request.content_type = content_type
+    return 1
+
+  def redirect(self, url):
+    import mod_python.apache
+    self.request.headers_out['Location'] = url
+    self.request.status = mod_python.apache.HTTP_MOVED_TEMPORARILY
+    self.request.write("You are being redirected to <a href=\"%s\">%s</a>"
+      % (url, url))
+    sys.exit()
+
+  def getenv(self, name, value = None):
+    try:
+      return self.request.subprocess_env[name]
+    except KeyError:
+      return value
+
+  def FieldStorage(self, fp=None, headers=None, outerboundary="",
+                 environ=os.environ, keep_blank_values=0, strict_parsing=0):
+    import mod_python.util
+    return mod_python.util.FieldStorage(self.request, keep_blank_values, strict_parsing)
+
+  def getFile(self):
+    return ModPythonFile(self)
+
+  def close(self, code = 0):
+    sys.stdout.flush()
+    server.unregisterThread()
+
+class ModPythonFile:
+  def __init__(self, server):
+    import StringIO
+    self.closed = 0
+    self.mode = 'w'
+    self.name = "<ModPythonFile file>"
+    self.softspace = 0
+    self.server = server
+  
+  def flush(self):
+    pass
+
+  def write(self, s):
+    self.server.request.write(s)
+
+  def writelines(self, ls):
+    raise "not implemented"
+
+  def truncate(self, size):
+    pass
+
+  def close(self):
+    pass
 

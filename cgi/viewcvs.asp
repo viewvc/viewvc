@@ -58,7 +58,10 @@ else:
 import sapi
 import viewcvs
 
-sapi.AspServer(Server, Request, Response, Application)
-viewcvs.main()
+s = sapi.AspServer(Server, Request, Response, Application)
+try:
+  viewcvs.main()  
+finally:
+  s.close()
 
 %>
