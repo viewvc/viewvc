@@ -1,0 +1,4 @@
+AddHandler python-program .py
+PythonPath "[r'<VIEWCVS_APACHE_LIBRARY_DIRECTORY>']+sys.path"
+PythonHandler apache
+PythonDebug On
