@@ -218,6 +218,7 @@ class Request:
       rootpath = cfg.general.cvs_roots[name]
       try:
         self.repos = bincvs.BinCVSRepository(name, rootpath)
+        self.roottype = 'cvs'
       except vclib.ReposNotFound:
         error('%s not found!\nThe wrong path for this repository was '
               'configured, or the server on which the CVS tree lives may be '
@@ -229,7 +230,12 @@ class Request:
         from svn import _util
         _util.apr_initialize()
         self.pool = _util.svn_pool_create(None)
-        self.repos = vclib.svn.SubversionRepository(name, rootpath, self.pool)
+        rev = None
+        if query_dict.has_key('rev'):
+          rev = int(query_dict['rev'])
+        self.repos = vclib.svn.SubversionRepository(name, rootpath,
+                                                    self.pool, rev)
+        self.roottype = 'svn'
       except vclib.ReposNotFound:
         error('%s not found!\nThe wrong path for this repository was '
               'configured, or the server on which the CVS tree lives may be '
@@ -787,6 +793,26 @@ def markup_stream(request, fp, revision, mime_type):
     raise 'pipe error status: %d' % status
   html_footer(request)
 
+def get_file_data_svn(request):
+  """Return a sequence of tuples containing various data about the files.
+
+  data[0] = (relative) filename
+  data[1] = full pathname
+  data[2] = is_directory (0/1)
+  """
+  full_name = request.full_name
+  item = request.repos.getitem(request.path_parts)
+  if not isinstance(item, vclib.Versdir):
+    error("Path '%s' is not a directory." % full_name)
+  files = item.getfiles()
+  subdirs = item.getsubdirs()
+  data = [ ]
+  for file in files.keys():
+    data.append((file, full_name + '/' + file, 0))
+  for subdir in subdirs.keys():
+    data.append((subdir, full_name + '/' + subdir, 1))
+  return data
+
 def get_file_data(full_name):
   """Return a sequence of tuples containing various data about the files.
 
@@ -913,7 +939,55 @@ def prepare_hidden_values(request, var_list, vars_to_omit_list):
                              (varname, cgi.escape(value)))
   return string.join(hidden_values, '')
 
-def view_directory(request):
+def sort_file_data(file_data, sortdir, sortby, fileinfo):
+  def file_sort_cmp(data1, data2, sortby=sortby, fileinfo=fileinfo):
+    if data1[2]:        # is_directory
+      if data2[2]:
+        # both are directories. sort on name.
+        return cmp(data1[0], data2[0])
+      # data1 is a directory, it sorts first.
+      return -1
+    if data2[2]:
+      # data2 is a directory, it sorts first.
+      return 1
+
+    # the two files should be RCS files. drop the ",v" from the end.
+    file1 = data1[0][:-2]
+    file2 = data2[0][:-2]
+
+    # we should have data on these. if not, then it is because we requested
+    # a specific tag and that tag is not present on the file.
+    info1 = fileinfo.get(file1, bincvs._FILE_HAD_ERROR)
+    info2 = fileinfo.get(file2, bincvs._FILE_HAD_ERROR)
+    if info1 != bincvs._FILE_HAD_ERROR and info2 != bincvs._FILE_HAD_ERROR:
+      # both are files, sort according to sortby
+      if sortby == 'rev':
+        return revcmp(info1.rev, info2.rev)
+      elif sortby == 'date':
+        return cmp(info2.date, info1.date)        # latest date is first
+      elif sortby == 'log':
+        return cmp(info1.log, info2.log)
+      elif sortby == 'author':
+        return cmp(info1.author, info2.author)
+      else:
+        # sort by file name
+        if file1[:6] == 'Attic/':
+          file1 = file1[6:]
+        if file2[:6] == 'Attic/':
+          file2 = file2[6:]
+        return cmp(file1, file2)
+
+    # at this point only one of file1 or file2 are _FILE_HAD_ERROR.
+    if info1 != bincvs._FILE_HAD_ERROR:
+      return -1
+
+    return 1
+
+  file_data.sort(file_sort_cmp)
+  if sortdir == "down":
+    file_data.reverse()
+
+def view_directory_cvs(request):
   full_name = request.full_name
   where = request.where
   query_dict = request.query_dict
@@ -924,7 +998,7 @@ def view_directory(request):
   sortdir = query_dict.get('sortdir', 'up')
 
   search_re = query_dict.get('search')
- 
+
   # Search current directory
   if search_re and cfg.options.use_re_search:
     file_data = search_files(request,search_re)
@@ -1029,53 +1103,8 @@ def view_directory(request):
   if search_re:
     data['search_re'] = htmlify(search_re)
 
-  def file_sort_cmp(data1, data2, sortby=sortby, fileinfo=fileinfo):
-    if data1[2]:        # is_directory
-      if data2[2]:
-        # both are directories. sort on name.
-        return cmp(data1[0], data2[0])
-      # data1 is a directory, it sorts first.
-      return -1
-    if data2[2]:
-      # data2 is a directory, it sorts first.
-      return 1
-
-    # the two files should be RCS files. drop the ",v" from the end.
-    file1 = data1[0][:-2]
-    file2 = data2[0][:-2]
-
-    # we should have data on these. if not, then it is because we requested
-    # a specific tag and that tag is not present on the file.
-    info1 = fileinfo.get(file1, bincvs._FILE_HAD_ERROR)
-    info2 = fileinfo.get(file2, bincvs._FILE_HAD_ERROR)
-    if info1 != bincvs._FILE_HAD_ERROR and info2 != bincvs._FILE_HAD_ERROR:
-      # both are files, sort according to sortby
-      if sortby == 'rev':
-        return revcmp(info1.rev, info2.rev)
-      elif sortby == 'date':
-        return cmp(info2.date, info1.date)        # latest date is first
-      elif sortby == 'log':
-        return cmp(info1.log, info2.log)
-      elif sortby == 'author':
-        return cmp(info1.author, info2.author)
-      else:
-        # sort by file name
-        if file1[:6] == 'Attic/':
-          file1 = file1[6:]
-        if file2[:6] == 'Attic/':
-          file2 = file2[6:]
-        return cmp(file1, file2)
-
-    # at this point only one of file1 or file2 are _FILE_HAD_ERROR.
-    if info1 != bincvs._FILE_HAD_ERROR:
-      return -1
-
-    return 1
-
   # sort with directories first, and using the "sortby" criteria
-  file_data.sort(file_sort_cmp)
-  if sortdir == "down":
-      file_data.reverse()
+  sort_file_data(file_data, sortdir, sortby, fileinfo)
 
   num_files = 0
   num_displayed = 0
@@ -1246,6 +1275,127 @@ def view_directory(request):
   if cfg.options.use_pagesize:
     data['dir_pagestart'] = int(query_dict.get('dir_pagestart',0))
     data['rows'] = paging(data, 'rows', data['dir_pagestart'], 'name')
+
+  http_header()
+  generate_page(request, cfg.templates.directory, data)
+
+def view_directory_svn(request):
+  query_dict = request.query_dict
+  where = request.where
+  sortby = query_dict.get('sortby', 'file')
+  sortdir = query_dict.get('sortdir', 'up')
+
+  file_data = get_file_data_svn(request)
+  files = [ ]
+  for i in range(len(file_data)):
+    files.append(file_data[i][0])
+  fileinfo, alltags = vclib.svn.get_logs(request.repos, where, files)
+
+  # prepare the data that will be passed to the template
+  data = {
+    'where' : where,
+    'request' : request,
+    'cfg' : cfg,
+    'kv' : request.kv,
+    'current_root' : request.repos.name,
+    'view_tag' : None,
+    'sortby' : sortby,
+    'sortdir' : sortdir,
+    'no_match' : None,
+    'unreadable' : None,
+    'tarball_href' : None,
+    'address' : cfg.general.address,
+    'vsn' : __version__,
+    'search_re' : None,
+    'dir_pagestart' : None,
+    'have_logs' : None,
+    
+    'sortby_file_href' :   toggle_query(query_dict, 'sortby', 'file'),
+    'sortby_rev_href' :    toggle_query(query_dict, 'sortby', 'rev'),
+    'sortby_date_href' :   toggle_query(query_dict, 'sortby', 'date'),
+    'sortby_author_href' : toggle_query(query_dict, 'sortby', 'author'),
+    'sortby_log_href' :    toggle_query(query_dict, 'sortby', 'log'),
+
+    'sortdir_down_href' :  toggle_query(query_dict, 'sortdir', 'down'),
+    'sortdir_up_href' :    toggle_query(query_dict, 'sortdir', 'up'),
+
+    'show_attic_href' : toggle_query(query_dict, 'hideattic', 0),
+    'hide_attic_href' : toggle_query(query_dict, 'hideattic', 1),
+
+    'has_tags' : ezt.boolean(0),
+
+    ### one day, if EZT has "or" capability, we can lose this
+    'selection_form' : ezt.boolean(0),
+  }
+
+  # add in the roots for the selection
+  allroots = { }
+  allroots.update(cfg.general.cvs_roots)
+  allroots.update(cfg.general.svn_roots)
+  if len(allroots) < 2:
+    roots = [ ]
+  else:
+    roots = allroots.keys()
+    roots.sort(lambda n1, n2: cmp(string.lower(n1), string.lower(n2)))
+  data['roots'] = roots
+
+  if where:
+    ### in the future, it might be nice to break this path up into
+    ### a list of elements, allowing the template to display it in
+    ### a variety of schemes.
+    data['nav_path'] = clickable_path(request, where, 0, 0, 0)
+
+  # sort with directories first, and using the "sortby" criteria
+  sort_file_data(file_data, sortdir, sortby, fileinfo)
+
+  num_files = 0
+  num_displayed = 0
+  unreadable = 0
+  rows = data['rows'] = [ ]
+
+  for file, pathname, isdir in file_data:
+    row = _item(href=None, graph_href=None,
+                author=None, log=None, log_file=None, log_rev=None,
+                show_log=None, state=None)
+    if isdir:
+      url = urllib.quote(file) + '/' + request.qmark_query
+      if query_dict.has_key('rev'):
+        row.href = url + '&rev=' + query_dict['rev']
+      else:
+        row.href = url
+      row.anchor = file
+      row.name = file + '/'
+      row.type = 'dir'
+    else:
+      row.type = 'file'
+      row.anchor = file
+      num_files = num_files + 1
+      info = fileinfo.get(file)
+      num_displayed = num_displayed + 1
+      file_url = urllib.quote(file)
+      url = file_url + request.qmark_query
+      row.name = file
+      row.href = url
+      if info is None:
+        error("Error getting info for '%s'" % file)
+      row.rev = info.rev
+      row.author = info.author
+      row.state = info.state
+      row.rev_href = file_url + '?rev=' + str(row.rev) + request.amp_query
+      row.time = html_time(request, info.date)
+      if cfg.options.show_logs:
+        row.show_log = 'yes'
+        row.log = format_log(info.log)
+
+    row.cvs = 'data'
+    rows.append(row)
+
+  ### we need to fix the template w.r.t num_files. it usually is not a
+  ### correct (original) count of the files available for selecting
+  data['num_files'] = num_files
+
+  # the number actually displayed
+  data['files_shown'] = num_displayed
 
   http_header()
   generate_page(request, cfg.templates.directory, data)
@@ -2454,7 +2604,10 @@ def main():
     redirect(url + '/' + request.qmark_query)
 
   if isdir:
-    view_directory(request)
+    if request.roottype == 'cvs':
+      view_directory_cvs(request)
+    else:
+      view_directory_svn(request)
     return
 
   full_name = request.full_name

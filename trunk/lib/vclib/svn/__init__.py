@@ -28,10 +28,39 @@ from svn import fs, _repos, util
 # Subversion filesystem paths are '/'-delimited, regardless of OS.
 def fs_path_join(base, relative):
   joined_path = base + '/' + relative
-  return filter(None, string.split(joined_path, '/'))
+  parts = filter(None, string.split(joined_path, '/'))
+  return string.join(parts, '/')
+  
+class LogEntry:
+  "Hold state for each revision entry in an 'rlog' output."
+  def __init__(self, rev, date, author, log):
+    self.rev = rev
+    self.date = date
+    self.author = author
+    self.state = ''
+    self.changed = 0
+    self.log = log
 
-class SubversionRepository:
-  def __init__(self, name, rootpath, pool):
+def get_logs(repos, full_name, files):
+  fileinfo = { }
+  alltags = {           # all the tags seen in the files of this dir
+    'MAIN' : '1',
+    'HEAD' : '1',
+    }
+  for file in files:
+    path = fs_path_join(full_name, file)
+    rev = fs.node_created_rev(repos.fsroot, path, repos.pool)
+    date = fs.revision_prop(repos.fs_ptr, rev, 'svn:date', repos.pool)
+    author = fs.revision_prop(repos.fs_ptr, rev, 'svn:author', repos.pool)
+    log = fs.revision_prop(repos.fs_ptr, rev, 'svn:log', repos.pool)
+    ### todo: convert DATE to the real number of seconds since epoch
+    new_entry = LogEntry(rev, 1000000000, author, log)
+    new_entry.filename = file
+    fileinfo[file] = new_entry
+  return fileinfo, alltags
+
+class SubversionRepository(vclib.Repository):
+  def __init__(self, name, rootpath, pool, rev=None):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
     repos = _repos.svn_repos_open(rootpath, pool)
@@ -39,10 +68,13 @@ class SubversionRepository:
     self.name = name
     self.rootpath = rootpath
     self.fs_ptr = _repos.svn_repos_fs(repos)
-    self.rev = fs.youngest_rev(self.fs_ptr, pool)
+    self.rev = rev
+    if self.rev is None:
+      self.rev = fs.youngest_rev(self.fs_ptr, pool)
     self.fsroot = fs.revision_root(self.fs_ptr, self.rev, self.pool)
 
   def getitem(self, path_parts):
+    basepath = self._getpath(path_parts)
     item = self.itemtype(path_parts)
     if item is vclib.DIR:
       return vclib.Versdir(self, basepath)
@@ -61,29 +93,29 @@ class SubversionRepository:
     return string.join(path_parts, '/')
 
   def _getvf_subdirs(self, basepath):
-    entries = fs.dir_entries(self.fsroot, basepath, pool)
+    entries = fs.dir_entries(self.fsroot, basepath, self.pool)
     subdirs = { }
     names = entries.keys()
     names.sort()
-    subpool = util.svn_pool_create(pool)
+    subpool = util.svn_pool_create(self.pool)
     for name in names:
       child = fs_path_join(basepath, name)
       if fs.is_dir(self.fsroot, child, subpool):
-        subdirs[i] = vclib.Versdir(self, thispath)
+        subdirs[name] = vclib.Versdir(self, child)
       util.svn_pool_clear(subpool)
     util.svn_pool_destroy(subpool)
     return subdirs
     
   def _getvf_files(self, basepath):
-    entries = fs.dir_entries(self.fsroot, basepath, pool)
+    entries = fs.dir_entries(self.fsroot, basepath, self.pool)
     files = { }
     names = entries.keys()
     names.sort()
-    subpool = util.svn_pool_create(pool)
+    subpool = util.svn_pool_create(self.pool)
     for name in names:
       child = fs_path_join(basepath, name)
       if fs.is_file(self.fsroot, child, subpool):
-        files[i] = vclib.Versfile(self, thispath)
+        files[name] = vclib.Versfile(self, child)
       util.svn_pool_clear(subpool)
     util.svn_pool_destroy(subpool)
     return files
