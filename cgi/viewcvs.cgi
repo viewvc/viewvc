@@ -396,6 +396,78 @@ _sticky_vars = (
 _re_up_path = re.compile('(Attic/)?[^/]+$')
 
 
+class Request:
+  def __init__(self):
+    where = os.environ.get('PATH_INFO', '')
+
+    # clean it up. this removes duplicate '/' characters and any that may
+    # exist at the front or end of the path.
+    where = string.join(filter(None, string.split(where, '/')), '/')
+
+    # does it have the magic checkout prefix?
+    if where[:len(checkout_magic_path)] == checkout_magic_path:
+      self.has_checkout_magic = 1
+      where = where[len(checkout_magic_path):]
+    else:
+      self.has_checkout_magic = 0
+
+    script_name = os.environ['SCRIPT_NAME']	### clean this up?
+    if where:
+      script_where = script_name + '/' + urllib.quote(where)
+    else:
+      script_where = script_name
+
+    self.where = where
+    self.script_name = script_name
+    self.script_where = script_where
+
+    self.browser = os.environ.get('HTTP_USER_AGENT', 'unknown')
+
+    # in lynx, it it very annoying to have two links
+    # per file, so disable the link at the icon
+    # in this case:
+    self.no_file_links = string.find(self.browser, 'Lynx') != -1
+
+    # newer browsers accept gzip content encoding
+    # and state this in a header
+    # (netscape did always but didn't state it)
+    # It has been reported that these
+    #  braindamaged MS-Internet Explorers claim that they
+    # accept gzip .. but don't in fact and
+    # display garbage then :-/
+    self.may_compress = (
+      ( string.find(os.environ.get('HTTP_ACCEPT_ENCODING', ''), 'gzip') != -1
+        or string.find(self.browser, 'Mozilla/3') != -1)
+      and string.find(self.browser, 'MSIE') == -1
+      )
+
+    # parse the query params into a dictionary (and use defaults)
+    query_dict = default_settings.copy()
+    for name, values in cgi.parse().items():
+      query_dict[name] = values[0]
+
+    self.query_string = sticky_query(query_dict)
+    if self.query_string:
+      self.bare_query = self.query_string[1:]
+    else:
+      self.bare_query = ''
+
+    self.query_dict = query_dict
+
+    # set up the CVS repository to use
+    self.cvsrep = query_dict.get('cvsroot', default_root)
+    self.cvsroot = cvs_roots[self.cvsrep]
+
+    self.full_name = self.cvsroot + '/' + where
+
+  def setup_mime_type_info(self):
+    self.mime_type, self.encoding = mimetypes.guess_type(self.where)
+    if not self.mime_type:
+      self.mime_type = 'text/plain'
+    self.default_text_plain = self.mime_type == 'text/plain'
+    self.default_viewable = allow_markup and is_viewable(self.mime_type)
+    
+
 def redirect(location):
   print 'Status: 301 Moved'
   print 'Location:', location
@@ -453,14 +525,14 @@ def toggle_query(query_dict, which, value=None):
     dict[which] = value
   return sticky_query(dict)
 
-def clickable_path(path, leaf_is_link, drop_leaf):
+def clickable_path(request, path, leaf_is_link, drop_leaf):
   if path == '/':
     # this should never happen - chooseCVSRoot() is
     # intended to do this
     return '[%s]' % cvsrep
 
   s = '<a href="%s/%s#dirlist">[%s]</a>' % \
-      (g_script_name, g_query_string, g_cvsrep)
+      (request.script_name, request.query_string, request.cvsrep)
   parts = filter(None, string.split(path, '/'))
   if drop_leaf:
     del parts[-1]
@@ -471,7 +543,7 @@ def clickable_path(path, leaf_is_link, drop_leaf):
     if i < len(parts) - 1 or leaf_is_link:
       ### should we be encoding/quoting the URL stuff? (probably...)
       s = s + ' / <a href="%s%s/%s#dirlist">%s</a>' % \
-          (g_script_name, where, g_query_string, parts[i])
+          (request.script_name, where, request.query_string, parts[i])
     else:
       s = s + ' / ' + parts[i]
 
@@ -511,18 +583,19 @@ def html_log(log):
     print '...'
   print '</font>'
 
-def download_url(url, revision, mime_type):
+def download_url(request, url, revision, mime_type):
   if checkout_magic and mime_type != viewcvs_mime_type:
     url = '%s/%s%s/%s' % \
-          (g_script_name, checkout_magic_path, os.path.dirname(g_where), url)
+          (request.script_name, checkout_magic_path,
+           os.path.dirname(request.where), url)
 
   url = url + '?rev=' + revision
   if mime_type:
     return url + '&content-type=' + mime_type
   return url
 
-def download_link(url, revision, text, mime_type=None):
-  full_url = download_url(url, revision, mime_type)
+def download_link(request, url, revision, text, mime_type=None):
+  full_url = download_url(request, url, revision, mime_type)
   paren = text[0] == '('
 
   lparen = rparen = ''
@@ -531,7 +604,7 @@ def download_link(url, revision, text, mime_type=None):
     rparen = ')'
     text = text[1:-1]
 
-  print '%s<a href="%s%s"' % (lparen, full_url, g_bare_query)
+  print '%s<a href="%s%s"' % (lparen, full_url, request.bare_query)
 
   if open_extern_window and mime_type != viewcvs_mime_type:
     print ' target="cvs_checkout"'
@@ -612,8 +685,8 @@ def print_diff_select(query_dict):
   html_option('s', format, 'Side by Side')
   print '</select>'
 
-def navigate_header(swhere, path, filename, rev, title):
-  if swhere == g_script_name + '/' + g_where:
+def navigate_header(request, swhere, path, filename, rev, title):
+  if swhere == request.script_name + '/' + request.where:
     swhere = ''
   if swhere == '':
     swhere = urllib.quote(filename)
@@ -625,29 +698,34 @@ def navigate_header(swhere, path, filename, rev, title):
   print '<table width="100&#37;" border=0 cellspacing=0 cellpadding=1 bgcolor="%s">' % navigationHeaderColor
   print '<tr valign=bottom><td>'
   print '<a href="%s%s#rev%s">%s</a>' % \
-        (swhere, g_query_string, rev, html_icon('back'))
+        (swhere, request.query_string, rev, html_icon('back'))
   print '<b>Return to %s CVS log</b> %s</td>' % \
-        (html_link(filename, '%s%s#rev%s' % (swhere, g_query_string, rev)),
+        (html_link(filename,
+                   '%s%s#rev%s' % (swhere, request.query_string, rev)),
          html_icon('file'))
   print '<td align=right>%s <b>Up to %s</b></td>' % \
-        (html_icon('dir'), clickable_path(path, 1, 0))
+        (html_icon('dir'), clickable_path(request, path, 1, 0))
   print '</tr></table>'
 
-def markup_stream(fp, full_name, where, query_dict, revision, mime_type):
+def markup_stream(request, fp, revision, mime_type):
+  full_name = request.full_name
+  where = request.where
+  query_dict = request.query_dict
+
   pathname, filename = os.path.split(where)
   if pathname[-6:] == '/Attic':
     pathname = pathname[:-6]
   file_url = urllib.quote(filename)
 
   http_header()
-  navigate_header(g_script_name + '/' + where, pathname, filename, revision,
-                  'view')
+  navigate_header(request, request.script_name + '/' + where, pathname,
+                  filename, revision, 'view')
   print '<hr noshade>'
   print '<table width="100&#37;"><tr><td bgcolor="%s">' % markup_log_color
-  print 'File:', clickable_path(where, 1, 0), '</b>'
-  download_link(file_url, revision, '(download)')
-  if not g_default_text_plain:
-    download_link(file_url, revision, '(as text)', 'text/plain')
+  print 'File:', clickable_path(request, where, 1, 0), '</b>'
+  download_link(request, file_url, revision, '(download)')
+  if not request.default_text_plain:
+    download_link(request, file_url, revision, '(as text)', 'text/plain')
   print '<br>'
   if show_log_in_markup:
     show_revs, revs, rev_order, taginfo, rev2tag, \
@@ -658,8 +736,7 @@ def markup_stream(fp, full_name, where, query_dict, revision, mime_type):
       rev_map[revinfo[0]] = revinfo[1:]
 
     revinfo = (revision,) + rev_map[revision]
-    print_log(query_dict, where, rev_map, rev_order, revinfo, rev2tag,
-              branch_points, 0)
+    print_log(request, rev_map, rev_order, revinfo, rev2tag, branch_points, 0)
   else:
     print 'Version: <b>%s</b><br>' % revision
     tag = query_dict.get('only_with_tag')
@@ -667,10 +744,10 @@ def markup_stream(fp, full_name, where, query_dict, revision, mime_type):
       print 'Tag: <b>%s</b><br>' % tag
   print '</td></tr></table>'
 
-  url = download_url(file_url, revision, mime_type)
+  url = download_url(request, file_url, revision, mime_type)
   print '<hr noshade>'
   if mime_type[:6] == 'image/':
-    print '<img src="%s%s"><br>' % (url, g_bare_query)
+    print '<img src="%s%s"><br>' % (url, request.bare_query)
   else:
     print '<pre>'
     while 1:
@@ -988,7 +1065,11 @@ def revcmp(rev1, rev2):
   rev2 = map(int, string.split(rev2, '.'))
   return cmp(rev1, rev2)
 
-def view_directory(full_name, where, query_dict):
+def view_directory(request):
+  full_name = request.full_name
+  where = request.where
+  query_dict = request.query_dict
+
   view_tag = query_dict.get('only_with_tag')
   hideattic = int(query_dict.get('hideattic'))	### watch for errors in int()?
   sortby = query_dict.get('sortby', 'file')
@@ -1040,7 +1121,7 @@ def view_directory(full_name, where, query_dict):
     #choose_cvsroot()
     pass
   else:
-    print '<p>Current directory: <b>', clickable_path(where, 0, 0), '</b>'
+    print '<p>Current directory: <b>', clickable_path(request, where, 0, 0), '</b>'
     if view_tag:
       print '<p>Current tag: <b>', view_tag, '</b>'
 
@@ -1140,9 +1221,6 @@ def view_directory(full_name, where, query_dict):
 
   ### display a row for ".." ?
 
-  ### fix this
-  no_file_links = 0
-
   for file, pathname, isdir in file_data:
 
     ### hide unreadable files?
@@ -1155,9 +1233,9 @@ def view_directory(full_name, where, query_dict):
 
       if dirtable:
         print '<tr bgcolor="%s"><td>' % table_colors[cur_row % 2]
-      url = urllib.quote(file) + '/' + g_query_string
+      url = urllib.quote(file) + '/' + request.query_string
       print '<a name="%s">' % file
-      if no_file_links:
+      if request.no_file_links:
         print html_icon('dir')
       else:
         print html_link(html_icon('dir'), url)
@@ -1205,7 +1283,7 @@ def view_directory(full_name, where, query_dict):
       num_displayed = num_displayed + 1
 
       file_url = urllib.quote(file)
-      url = file_url + g_query_string
+      url = file_url + request.query_string
 
       if file[:6] == 'Attic/':
         attic = ' (in the Attic)&nbsp;' + attic_toggle_link
@@ -1217,7 +1295,7 @@ def view_directory(full_name, where, query_dict):
         print '<tr bgcolor="%s"><td>' % table_colors[cur_row % 2]
       print '<a name="%s">' % file
 
-      if no_file_links:
+      if request.no_file_links:
         print html_icon('file')
       else:
         print html_link(html_icon('file'), url)
@@ -1226,9 +1304,9 @@ def view_directory(full_name, where, query_dict):
       if dirtable:
         print '</td><td>&nbsp;'
       if allow_markup:
-        download_link(file_url, info[0], info[0], viewcvs_mime_type)
+        download_link(request, file_url, info[0], info[0], viewcvs_mime_type)
       else:
-        download_link(file_url, info[0], info[0])
+        download_link(request, file_url, info[0], info[0])
       if dirtable:
         print '</td><td>&nbsp;'
       print html_time(info[1])
@@ -1452,10 +1530,12 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
 
 _re_is_vendor_branch = re.compile(r'^1\.1\.1\.\d+$')
 g_name_printed = { }	### gawd, what a hack...
-def print_log(query_dict, where, rev_map, rev_order, revinfo, rev2tag,
-              branch_points, add_links=1):
-  # revinfo = (rev, date, author, state, lines changed, log)
+def print_log(request, rev_map, rev_order, revinfo, rev2tag, branch_points,
+              add_links=1):
+  query_dict = request.query_dict
+  where = request.where
 
+  # revinfo = (rev, date, author, state, lines changed, log)
   rev = revinfo[0]
 
   idx = string.rfind(rev, '.')
@@ -1480,25 +1560,25 @@ def print_log(query_dict, where, rev_map, rev_order, revinfo, rev2tag,
         print '<a name="%s"></a>' % tag
       g_name_printed[branch] = 1
     print 'Revision'
-    if g_default_viewable:
-      download_link(file_url, rev, rev, viewcvs_mime_type)
+    if request.default_viewable:
+      download_link(request, file_url, rev, rev, viewcvs_mime_type)
       print '/'
-      download_link(file_url, rev, '(download)', g_mime_type)
+      download_link(request, file_url, rev, '(download)', request.mime_type)
     else:
-      download_link(file_url, rev, rev)
-    if not g_default_text_plain:
+      download_link(request, file_url, rev, rev)
+    if not request.default_text_plain:
       print '/'
-      download_link(file_url, rev, '(as text)', 'text/plain')
-    if not g_default_viewable:
+      download_link(request, file_url, rev, '(as text)', 'text/plain')
+    if not request.default_viewable:
       print '/'
-      download_link(file_url, rev, '(view)', viewcvs_mime_type)
+      download_link(request, file_url, rev, '(view)', viewcvs_mime_type)
     if allow_annotate:
       print '- <a href="%s/%s?annotate=%s%s">annotate</a>' % \
-            (g_script_name, urllib.quote(where), rev, g_bare_query)
+            (request.script_name, urllib.quote(where), rev, request.bare_query)
     if allow_version_select:
       if query_dict.get('r1') != rev:
         print '- <a href="%s/%s?r1=%s%s">[select for diffs]</a>' % \
-              (g_script_name, urllib.quote(where), rev, g_bare_query)
+              (request.script_name, urllib.quote(where), rev, request.bare_query)
       else:
         print '- <b>[selected]</b>'
 
@@ -1549,11 +1629,11 @@ def print_log(query_dict, where, rev_map, rev_order, revinfo, rev2tag,
     if prev:
       diff_rev[prev] = 1
       print 'to previous <a href="%s/%s.diff?r1=%s&r2=%s%s">%s</a>' % \
-            (g_script_name, where, prev, rev, g_bare_query, prev)
+            (request.script_name, where, prev, rev, request.bare_query, prev)
       if not human_readable:
         print '(<a href="%s/%s.diff?r1=%s&r2=%s%s' \
               '&diff_format=h">colored</a>)' % \
-              (g_script_name, where, prev, rev, g_bare_query)
+              (request.script_name, where, prev, rev, request.bare_query)
 
     # diff against branch point (if not a vendor branch)
     if rev2tag.has_key(branch_point) and \
@@ -1561,12 +1641,12 @@ def print_log(query_dict, where, rev_map, rev_order, revinfo, rev2tag,
        not diff_rev.has_key(branch_point):
       diff_rev[branch_point] = 1
       print 'to a branchpoint <a href="%s/%s.diff?r1=%s&r2=%s%s">%s</a>' % \
-            (g_script_name, where, branch_point, rev, g_bare_query,
+            (request.script_name, where, branch_point, rev, request.bare_query,
              branch_point)
       if not human_readable:
         print '(<a href="%s/%s.diff?r1=%s&r2=%s%s' \
               '&diff_format=h">colored</a>)' % \
-              (g_script_name, where, branch_point, rev, g_bare_query)
+              (request.script_name, where, branch_point, rev, request.bare_query)
 
     # if it's on a branch (and not a vendor branch), then diff against the
     # next revision of the higher branch (e.g. change is committed and
@@ -1599,24 +1679,28 @@ def print_log(query_dict, where, rev_map, rev_order, revinfo, rev2tag,
       if not diff_rev.has_key(next_main):
         diff_rev[next_main] = 1
         print 'next main <a href="%s/%s.diff?r1=%s&r2=%s%s">%s</a>' % \
-              (g_script_name, where, next_main, rev, g_bare_query, next_main)
+              (request.script_name, where, next_main, rev, request.bare_query, next_main)
         if not human_readable:
           print '(<a href="%s/%s.diff?r1=%s&r2=%s%s">colord</a>' % \
-                (g_script_name, where, next_main, rev, g_bare_query)
+                (request.script_name, where, next_main, rev, request.bare_query)
 
     # if they have selected r1, then diff against that
     r1 = query_dict.get('r1')
     if r1 and not diff_rev.has_key(r1):
       diff_rev[r1] = 1
       print 'to selected <a href="%s/%s.diff?r1=%s&r2=%s%s">%s</a>' % \
-            (g_script_name, where, r1, rev, g_bare_query, r1)
+            (request.script_name, where, r1, rev, request.bare_query, r1)
       if not human_readable:
         print '(<a href="%s/%s.diff?r1=%s&r2=%s%s">colored</a>' % \
-              (g_script_name, where, r1, rev, g_bare_query)
+              (request.script_name, where, r1, rev, request.bare_query)
 
   print '<pre>' + htmlify(revinfo[5]) + '</pre>'
 
-def view_log(full_name, where, query_dict):
+def view_log(request):
+  full_name = request.full_name
+  where = request.where
+  query_dict = request.query_dict
+
   view_tag = query_dict.get('only_with_tag')
 
   show_revs, revs, rev_order, taginfo, rev2tag, \
@@ -1627,9 +1711,9 @@ def view_log(full_name, where, query_dict):
 
   up_where = re.sub(_re_up_path, '', where)
   filename = os.path.basename(full_name[:-2])	# drop the ",v"
-  back_url = g_script_name + '/' + urllib.quote(up_where) + g_query_string
+  back_url = request.script_name + '/' + urllib.quote(up_where) + request.query_string
   print html_link(html_icon('back'), back_url + '#' + filename)
-  print '<b>Up to %s</b><p>' % clickable_path(up_where, 1, 0)
+  print '<b>Up to %s</b><p>' % clickable_path(request, up_where, 1, 0)
   print '<a href="#diff">Request diff between arbitrary revisions</a>'
   print '<hr noshade>'
 
@@ -1647,8 +1731,7 @@ def view_log(full_name, where, query_dict):
 
   for revinfo in show_revs:
     print '<hr size=1 noshade>'
-    print_log(query_dict, where, rev_map, rev_order, revinfo, rev2tag,
-              branch_points)
+    print_log(request, rev_map, rev_order, revinfo, rev2tag, branch_points)
 
   sel = [ ]
   tagitems = taginfo.items()
@@ -1665,7 +1748,7 @@ def view_log(full_name, where, query_dict):
   print '</a><p>'
 
   print '<form method="GET" action="%s/%s.diff" name="diff_select">' % \
-        (g_script_name, where)
+        (request.script_name, where)
   for varname in _sticky_vars:
     value = query_dict.get(varname, '')
     if value != '' and value != default_settings.get(varname):
@@ -1716,7 +1799,7 @@ def view_log(full_name, where, query_dict):
 
   if branch_names:
     print '<a name=branch><form method="GET" action="%s/%s">' % \
-          (g_script_name, where)
+          (request.script_name, where)
     print hidden_values
 
     print 'View only Branch:'
@@ -1733,7 +1816,7 @@ def view_log(full_name, where, query_dict):
     print '<input type=submit value="  View Branch  "></form></a>'
 
   print '<a name=logsort>'
-  print '<form method="GET" action="%s/%s">' % (g_script_name, where)
+  print '<form method="GET" action="%s/%s">' % (request.script_name, where)
   print hidden_values
   print 'Sort log by:'
   print '<select name="logsort"'
@@ -1750,7 +1833,12 @@ def view_log(full_name, where, query_dict):
 
 _re_co_filename = re.compile(r'^(.*),v\s+-->\s+standard output\s*\n$')
 _re_co_revision = re.compile(r'^revision\s+([\d\.]+)\s*\n$')
-def view_checkout(full_name, where, query_dict, rev=None):
+def view_checkout(request):
+  full_name = request.full_name
+  where = request.where
+  query_dict = request.query_dict
+
+  rev = query_dict.get('rev')
 
   ### validate the revision?
 
@@ -1797,7 +1885,7 @@ def view_checkout(full_name, where, query_dict, rev=None):
           (header, filename, where))
 
   if mime_type == viewcvs_mime_type:
-    markup_stream(fp, full_name, where, query_dict, revision, mime_type)
+    markup_stream(request, fp, revision, mime_type)
   else:
     http_header(mime_type)
     while 1:
@@ -1806,7 +1894,10 @@ def view_checkout(full_name, where, query_dict, rev=None):
         break
       sys.stdout.write(chunk)
 
-def view_annotate(something):
+def view_annotate(request):
+  ### dunno what this is for... check against cvsweb
+  some_value = request.query_dict['annotate']
+
   ### testing
   html_header('annotate')
   print "annotate"
@@ -1815,12 +1906,14 @@ def view_annotate(something):
 _re_valid_rev = re.compile(r'^(\d+\.)+\d+$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
 _re_extract_diff = re.compile(r'^([-+ ])(.*)')
-def human_readable_diff(query_dict, fp, rev, sym1, sym2):
-  where_nd = g_where[:-5]	# remove the ".diff"
+def human_readable_diff(request, fp, rev, sym1, sym2):
+  query_dict = request.query_dict
+
+  where_nd = request.where[:-5]	# remove the ".diff"
   pathname, filename = os.path.split(where_nd)
 
-  navigate_header(g_script_name + '/' + where_nd, pathname, filename, rev,
-                  'diff')
+  navigate_header(request, request.script_name + '/' + where_nd, pathname,
+                  filename, rev, 'diff')
 
   rev1 = rev2 = '(revision number not found in diff output)'
   r1r = r2r = ''
@@ -1926,7 +2019,7 @@ def human_readable_diff(query_dict, fp, rev, sym1, sym2):
 
   # format selector
   print '<td><form method="GET" action="%s/%s">' % \
-        (g_script_name, g_where)
+        (request.script_name, request.where)
   for varname, value in query_dict.items():
     if varname != 'diff_format' and value != default_settings.get(varname):
       print '<input type=hidden name="%s" value="%s">' % \
@@ -1969,7 +2062,10 @@ def spaced_html_text(text):
   text = string.replace(text, '\x01', '&')
   return text
 
-def view_diff(full_name, query_dict, cvsroot):
+def view_diff(request, cvs_filename):
+  query_dict = request.query_dict
+  cvsroot = request.cvsroot
+
   r1 = query_dict['r1']
   r2 = query_dict['r2']
 
@@ -2033,10 +2129,10 @@ def view_diff(full_name, query_dict, cvsroot):
       diff_type = diff_type + ' -kk'
 
   fp = os.popen("%srcsdiff %s '-r%s' '-r%s' '%s' 2>&1" % \
-                (rcs_path, diff_type, rev1, rev2, full_name), 'r')
+                (rcs_path, diff_type, rev1, rev2, cvs_filename), 'r')
   if human_readable:
     http_header()
-    human_readable_diff(query_dict, fp, rev2, sym1, sym2)
+    human_readable_diff(request, fp, rev2, sym1, sym2)
     sys.exit(0)
 
   http_header('text/plain')
@@ -2073,78 +2169,23 @@ def view_module():
 
 
 def main():
-  where = os.environ.get('PATH_INFO', '')
+  # build a Request object, which contains info about the HTTP request
+  request = Request()
 
-  # clean it up
-  where = string.join(filter(None, string.split(where, '/')), '/')
+  ### temp
+  where = request.where
+  script_where = request.script_where
 
-  # does it have the magic checkout prefix?
-  has_checkout_magic = where[:len(checkout_magic_path)] == checkout_magic_path
-  if has_checkout_magic:
-    where = where[len(checkout_magic_path):]
-
-  script_name = os.environ['SCRIPT_NAME']	### clean this up?
-  if where:
-    script_where = script_name + '/' + urllib.quote(where)
-  else:
-    script_where = script_name
-
-  ### ought to try to get rid of these some time...
-  global g_where
-  g_where = where
-  global g_script_name
-  g_script_name = script_name
-
-  browser = os.environ.get('HTTP_USER_AGENT', 'unknown')
-
-  # in lynx, it it very annoying to have two links
-  # per file, so disable the link at the icon
-  # in this case:
-  no_file_links = string.find(browser, 'Lynx') != -1
-
-  # newer browsers accept gzip content encoding
-  # and state this in a header
-  # (netscape did always but didn't state it)
-  # It has been reported that these
-  #  braindamaged MS-Internet Explorers claim that they
-  # accept gzip .. but don't in fact and
-  # display garbage then :-/
-  may_compress = (
-    ( string.find(os.environ.get('HTTP_ACCEPT_ENCODING', ''), 'gzip') != -1
-      or string.find(browser, 'Mozilla/3') != -1)
-    and string.find(browser, 'MSIE') == -1
-    )
-
-  # parse the query params into a dictionary (and use defaults)
-  query_dict = default_settings.copy()
-  for name, values in cgi.parse().items():
-    query_dict[name] = values[0]
-
-  query_string = sticky_query(query_dict)
-
-  ### more globals we should get rid of...
-  global g_query_string
-  g_query_string = query_string
-  global g_bare_query
-  if query_string:
-    g_bare_query = query_string[1:]
-  else:
-    g_bare_query = ''
-
-  # set up the CVS repository to use
-  cvsrep = query_dict.get('cvsroot', default_root)
-  cvsroot = cvs_roots[cvsrep]
-
-  ### even more globals to torch...
-  global g_cvsrep
-  g_cvsrep = cvsrep
+  query_dict = request.query_dict
+  query_string = request.query_string
 
   # is the CVS root really there?
-  if not os.path.isdir(cvsroot):
+  if not os.path.isdir(request.cvsroot):
     error('%s not found!<p>The server on which the CVS tree lives is '
-          'probably down. Please try again in a few minutes.' % cvsroot)
+          'probably down. Please try again in a few minutes.' %
+          request.cvsroot)
 
-  full_name = cvsroot + '/' + where
+  full_name = request.full_name
   isdir = os.path.isdir(full_name)
 
   ### look for GZIP binary
@@ -2160,35 +2201,25 @@ def main():
     error('Access to %s is forbidden.' % where, '403 Forbidden')
 
   if isdir:
-    view_directory(full_name, where, query_dict)
+    view_directory(request)
     return
 
-  mime_type, encoding = mimetypes.guess_type(where)
-  if not mime_type:
-    mime_type = 'text/plain'
-  default_text_plain = mime_type == 'text/plain'
-  default_viewable = allow_markup and is_viewable(mime_type)
-
-  ### crappy globals...
-  global g_default_viewable
-  g_default_viewable = default_viewable
-  global g_default_text_plain
-  g_default_text_plain = default_text_plain
-  global g_mime_type
-  g_mime_type = mime_type
+  # since we aren't talking about a directory, set up the mime type info
+  # for the file.
+  request.setup_mime_type_info()
 
   if os.path.isfile(full_name + ',v'):
-    if query_dict.has_key('rev') or has_checkout_magic:
-      view_checkout(full_name, where, query_dict, query_dict.get('rev'))
+    if query_dict.has_key('rev') or request.has_checkout_magic:
+      view_checkout(request)
     elif query_dict.has_key('annotate') and allow_annotate:
-      view_annotate(query_dict['annotate'])
+      view_annotate(request)
     elif query_dict.has_key('r1') and query_dict.has_key('r2'):
-      view_diff(full_name, query_dict, cvsroot)
+      view_diff(request, full_name)
     else:
-      view_log(full_name, where, query_dict)
+      view_log(request)
   elif full_name[-5:] == '.diff' and os.path.isfile(full_name[:-5] + ',v') \
        and query_dict.has_key('r1') and query_dict.has_key('r2'):
-    view_diff(full_name[:-5], query_dict, cvsroot)
+    view_diff(request, full_name[:-5])
   else:
     # if the file is in the Attic, then redirect
     idx = string.rfind(full_name, '/')
