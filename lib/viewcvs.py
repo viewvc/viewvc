@@ -1231,6 +1231,7 @@ enscript_extensions = {
   '.el' : 'elisp',
   '.eps' : 'postscript',
   '.f' : 'fortran',
+  '.f90' : 'fortran',
   '.for': 'fortran',
   '.gs' : 'haskell',
   '.h' : 'c',
