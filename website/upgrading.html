@@ -1,0 +1,67 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Upgrading a ViewCVS Installation</title>
+  </head>
+
+  <body>
+    <h1>Upgrading a ViewCVS Installation</h1>
+
+    <p>
+      This document describes some of the things that you will need to 
+      consider, change, or handle when upgrading an existing ViewCVS
+      installation to a newer version.
+    </p>
+
+    <ul>
+      <li><a href="#from7">Upgrading from ViewCVS 0.7</a></li>
+    </ul>
+
+    <hr>
+
+    <h2><a name="from7">Upgrading from ViewCVS 0.7</a></h2>
+    <p>
+      This section discusses how to upgrade ViewCVS 0.7 to a later
+      version of the software.
+    </p>
+
+    <h3>Templates</h3>
+    <p>
+      The largest change from 0.7 to 0.8, that you will need to deal
+      with, is the introduction of templates. This shifted many
+      configuration file options into the templates, for more direct
+      editing of the output style, colors, and layout. Below is a list 
+      of options that no longer exist, and where you can find their
+      counterpart in the current version of ViewCVS.
+    </p>
+
+    <blockquote>
+      <dl>
+	<dt>
+	  <strong>short_intro</strong>,
+	  <strong>long_intro</strong>,
+	  <strong>doc_info</strong>,
+	  and
+	  <strong>repository_info</strong>
+	</dt>
+	<dd>
+	  These options have been incorporated into the
+	  <code>directory.ezt</code> template.
+	</dd>
+
+      </dl>
+    </blockquote>
+
+    <h3>CVS Database</h3>
+    <p>
+      <i>need some info from Jay here?</i>
+    </p>
+
+    <hr>
+    <address><a href="mailto:gstein@lyra.org">Greg Stein</a></address>
+<!-- Created: Mon Sep 24 04:23:53 PDT 2001 -->
+<!-- hhmts start -->
+Last modified: Mon Sep 24 04:33:14 PDT 2001
+<!-- hhmts end -->
+  </body>
+</html>
