@@ -39,6 +39,7 @@ class Revision:
     self.state = state
     self.changed = changed
     self.log = log
+    self.dead = state == "dead"
 
   def __cmp__(self, other):
     return cmp(self.number, other.number)
@@ -76,6 +77,11 @@ def match_revs_tags(revlist, taglist):
     "parent"
       reference to revision this one branches off of, possibly None
       example: if revision is 1.2.3.4, parent is 1.2
+
+    "undead"
+      If the revision is dead, then this is a reference to the first 
+      previous revision which isn't dead, otherwise it's a reference
+      to itself. If all the previous revisions are dead it's None. 
 
     "branch_number"
       tuple representing branch number or empty tuple if on trunk
@@ -141,6 +147,13 @@ def match_revs_tags(revlist, taglist):
       rev.parent = history[depth-1]
     else:
       rev.parent = None
+
+    # set "undead"
+    if rev.dead:
+      prev = rev.prev or rev.parent
+      rev.undead = prev and prev.undead
+    else:
+      rev.undead = rev
 
     # set "tags" and "branch_points"
     rev.tags = tag_dict.get(rev.number, [])
@@ -461,8 +474,7 @@ def file_log(repos, path_parts, filter):
       try:
         view_tag = taginfo[filter]
       except KeyError:
-        raise debug.ViewcvsException('Invalid tag or revision number "%s"'
-                                     % filter)
+        raise vclib.Error('Invalid tag or revision number "%s"' % filter)
     filtered_revs = [ ]
     if view_tag.is_branch:
       for rev in revs:
@@ -796,52 +808,16 @@ class BinCVSRepository(vclib.Repository):
       # Bug at http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=190
       # As a workaround, we invoke rlog to find the first non-dead revision
       # that precedes it and check out that revision instead
-      rlog = rcs_popen(self.rcs_paths, 'rlog', (full_name,), 'rt', 0)
-      filename, default_branch, taginfo, eof = parse_log_header(rlog)
+      revs = file_log(self, path_parts, rev)[0]
       
-      # interpret rev parameter using header information
-      taginfo['HEAD'] = taginfo['MAIN'] = default_branch
-      t = Tag(None, taginfo.get(rev, rev))
-      is_branch = t.is_branch
-      revtuple = t.number
-
-      # build up list containing revtuple and all non-dead revisions
-      revs = [revtuple]
-      while not eof:
-        entry, eof = parse_log_entry(rlog)
-        if entry and entry.state == "Exp":
-          # valid revision info
-          revs.append(entry.number)
-
-      # sort the list of revision numbers in descending lexicographic order
-      revs.sort()
-      revs.reverse()
-
-      # loop through list, breaking when we hit the first revision that
-      # precedes rev, or the first revision on a branch specified by rev
-      pastrev = 0
-      for corev in revs:
-        if corev is revtuple:
-          pastrev = 1
-        elif pastrev:
-          if len(corev) == 2 or corev[:-1] == revtuple[:len(corev)-1]:
-            break
-        elif is_branch:
-          if len(corev) == len(revtuple)+1 and revtuple == corev[:-1]:
-            break
-          if len(corev) == len(revtuple)+2 and revtuple == ():
-            break
-      else:
-       corev = None
-
       # if we find a good revision, invoke co again, otherwise error out
-      if corev:
-        rev_flag = '-p' + string.join(map(str, corev), '.') 
+      if len(revs) and revs[-1].undead:
+        rev_flag = '-p' + revs[-1].undead.string
         fp = rcs_popen(self.rcs_paths, 'co', (rev_flag, full_name), 'rb')
         line = fp.readline()
       else:
         raise vclib.Error("CVSNT co workaround could not find non-dead "
-                          "revision preceding \"%s\"" %rev)
+                          "revision preceding \"%s\"" % rev)
 
     match = _re_co_filename.match(line)
     if not match:
