@@ -9,6 +9,7 @@
 <p><b>[english_query]</b></p>
 [# <!-- {sql} --> ]
 <p><a href="[queryform_href]">Modify query</a></p>
+<p><a href="[backout_href]">Show commands which could be used to back out these changes</a></p>
 
 <p><b>+[plus_count]/-[minus_count]</b> lines changed.</p>
 
