@@ -116,10 +116,6 @@ def fetch_log(svnrepos, full_name):
 
 
 def get_logs(svnrepos, full_name, files):
-  alltags = {           # all the tags seen in the files of this dir
-    'MAIN' : '1',
-    'HEAD' : '1',
-    }
   parts = filter(None, string.split(full_name, '/'))
   dirents = svnrepos.get_dirents(parts, svnrepos.rev)
   subpool = core.svn_pool_create(svnrepos.pool)
@@ -140,7 +136,6 @@ def get_logs(svnrepos, full_name, files):
     file.log = log
     file.size = entry.size
   core.svn_pool_destroy(subpool)    
-  return alltags
 
 
 class FileDiff:
