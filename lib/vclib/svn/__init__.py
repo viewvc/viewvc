@@ -23,7 +23,7 @@ import os.path
 import string
 
 # Subversion swig libs
-from svn import fs, _repos, util, _util
+from svn import fs, repos, util
 
 # Subversion filesystem paths are '/'-delimited, regardless of OS.
 def fs_path_join(base, relative):
@@ -43,10 +43,10 @@ def _fs_rev_props(fsptr, rev, pool):
   return date, author, msg
 
 
-def date_from_rev(repos, rev):
-  datestr = fs.revision_prop(repos.fs_ptr, rev,
-                             util.SVN_PROP_REVISION_DATE, repos.pool)
-  return _datestr_to_date(datestr, repos.pool)
+def date_from_rev(svnrepos, rev):
+  datestr = fs.revision_prop(svnrepos.fs_ptr, rev,
+                             util.SVN_PROP_REVISION_DATE, svnrepos.pool)
+  return _datestr_to_date(datestr, svnrepos.pool)
   
 
 class LogEntry:
@@ -70,7 +70,7 @@ class LogReceiver:
     self.logs[revision] = LogEntry(revision, date, author, msg)
 
 
-def get_logs(repos, full_name, files):
+def get_logs(svnrepos, full_name, files):
   fileinfo = { }
   alltags = {           # all the tags seen in the files of this dir
     'MAIN' : '1',
@@ -78,34 +78,36 @@ def get_logs(repos, full_name, files):
     }
   for file in files:
     path = fs_path_join(full_name, file)
-    rev = fs.node_created_rev(repos.fsroot, path, repos.pool)
-    datestr, author, msg = _fs_rev_props(repos.fs_ptr, rev, repos.pool)
-    date = _datestr_to_date(datestr, repos.pool)
+    rev = fs.node_created_rev(svnrepos.fsroot, path, svnrepos.pool)
+    datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, svnrepos.pool)
+    date = _datestr_to_date(datestr, svnrepos.pool)
     new_entry = LogEntry(rev, date, author, msg)
     new_entry.filename = file
     fileinfo[file] = new_entry
   return fileinfo, alltags
 
 
-def fetch_log(repos, full_name, which_rev=None):
+def fetch_log(svnrepos, full_name, which_rev=None):
   receiver = LogReceiver();
   alltags = {           # all the tags seen in the files of this dir
     'MAIN' : '1',
     'HEAD' : '1',
     }
   if which_rev is not None:
-    datestr, author, msg = _fs_rev_props(repos.fs_ptr, which_rev, repos.pool)
-    receiver.receive(which_rev, author, datestr, msg, repos.pool)
+    datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr,
+                                         which_rev, svnrepos.pool)
+    receiver.receive(which_rev, author, datestr, msg, svnrepos.pool)
   else:
-    _repos.svn_repos_get_logs(repos.repos, [ full_name ], repos.rev, 0, 0, 1,
-                              receiver.receive, repos.pool)
+    repos.svn_repos_get_logs(svnrepos.repos, [ full_name ],
+                             svnrepos.rev, 0, 0, 1,
+                             receiver.receive, svnrepos.pool)
   return alltags, receiver.logs
 
 
-def do_diff(repos, path, rev1, rev2, diffoptions):
-  root1 = fs.revision_root(repos.fs_ptr, rev1, repos.pool)
-  root2 = fs.revision_root(repos.fs_ptr, rev2, repos.pool)
-  return fs.FileDiff(root1, path, root2, path, repos.pool, diffoptions)
+def do_diff(svnrepos, path, rev1, rev2, diffoptions):
+  root1 = fs.revision_root(svnrepos.fs_ptr, rev1, svnrepos.pool)
+  root2 = fs.revision_root(svnrepos.fs_ptr, rev2, svnrepos.pool)
+  return fs.FileDiff(root1, path, root2, path, svnrepos.pool, diffoptions)
 
 
 class StreamPipe:
@@ -131,9 +133,9 @@ class StreamPipe:
   def eof(self):
     return self._eof
     
-def get_file_contents(repos, path):
-  # len = fs.file_length(repos.fsroot, path, repos.pool)
-  stream = fs.file_contents(repos.fsroot, path, repos.pool)
+def get_file_contents(svnrepos, path):
+  # len = fs.file_length(svnrepos.fsroot, path, svnrepos.pool)
+  stream = fs.file_contents(svnrepos.fsroot, path, svnrepos.pool)
   return StreamPipe(stream)
 
   
@@ -141,21 +143,20 @@ class SubversionRepository(vclib.Repository):
   def __init__(self, name, rootpath, rev=None):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
-    _util.apr_initialize()
-    self.pool = _util.svn_pool_create(None)
-    self.repos = _repos.svn_repos_open(rootpath, self.pool)
+    util.apr_initialize()
+    self.pool = util.svn_pool_create(None)
+    self.repos = repos.svn_repos_open(rootpath, self.pool)
     self.name = name
     self.rootpath = rootpath
-    self.fs_ptr = _repos.svn_repos_fs(self.repos)
+    self.fs_ptr = repos.svn_repos_fs(self.repos)
     self.rev = rev
     if self.rev is None:
       self.rev = fs.youngest_rev(self.fs_ptr, self.pool)
     self.fsroot = fs.revision_root(self.fs_ptr, self.rev, self.pool)
 
   def __del__(self):
-    _repos.svn_repos_close(self.repos)
     util.svn_pool_destroy(self.pool)
-    _util.apr_terminate()
+    util.apr_terminate()
     
   def getitem(self, path_parts):
     basepath = self._getpath(path_parts)
