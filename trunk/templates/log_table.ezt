@@ -15,22 +15,27 @@
 [include "include/paging.ezt"]
 
 <hr noshade>
-<table width="100%" border=0 cellspacing=1 cellpadding=2>
-  <th align=left class="vc_header[is logsort "rev"]_sort[end]">Revision</th>
+<table width="100%" border="0" cellspacing="1" cellpadding="2">
+<thead>
+<tr>
+  <th align="left" class="vc_header[is logsort "rev"]_sort[end]">Revision</th>
   [is pathtype "file"]
-  <th align=left class="vc_header">Tasks</th>
-  <th align=left class="vc_header">Diffs</th>
+  <th align="left" class="vc_header">Tasks</th>
+  <th align="left" class="vc_header">Diffs</th>
   [end]
   [is roottype "cvs"]
-  <th align=left class="vc_header">Branches/<br>Tags</th>
+  <th align="left" class="vc_header">Branches/<br>Tags</th>
   [end]
-  <th align=left class="vc_header[is logsort "date"]_sort[end]">Age</th>
-  <th align=left class="vc_header">Author</th>
+  <th align="left" class="vc_header[is logsort "date"]_sort[end]">Age</th>
+  <th align="left" class="vc_header">Author</th>
+</tr>
+</thead>
 [for entries]
+  <tbody>
   <tr valign="top" class="vc_row_[if-index entries even]even[else]odd[end]">
 
     [# Revision column]
-    <td rowspan=2>
+    <td rowspan="2">
       [is roottype "svn"]<a href="[entries.revision_href]"><b>[entries.rev]</b></a>[else]<b>[entries.rev]</b>[end]
       <a name="rev[entries.rev]"></a>
     </td>
@@ -157,7 +162,7 @@
       <b>Log: </b><pre class="vc_log">[entries.html_log]</pre>
     </td>
   </tr>
-
+  </tbody>
 [end]
 </table>
 
