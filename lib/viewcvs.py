@@ -54,6 +54,7 @@ import urllib
 import mimetypes
 import time
 import re
+import rfc822
 import stat
 import struct
 import types
@@ -777,7 +778,9 @@ def retry_read(src, reqlen=CHUNK_SIZE):
         continue
     return chunk
   
-def copy_stream(src, dst=sys.stdout):
+def copy_stream(src, dst=None):
+  if dst is None:
+    dst = sys.stdout
   while 1:
     chunk = retry_read(src)
     if not chunk:
@@ -1882,11 +1885,20 @@ def view_doc(request):
   else:
     # aid testing from CVS working copy:
     doc_directory = os.path.join(g_install_dir, "website")
+  filename = os.path.join(doc_directory, help_page)
   try:
-    fp = open(os.path.join(doc_directory, help_page), "rb")
+    fp = open(filename, "rb")
   except IOError, v:
     raise debug.ViewcvsException('Help file "%s" not available\n(%s)'
                                  % (help_page, str(v)), '404 Not Found')
+  try:
+    info = os.stat(filename)
+    content_length = str(info[stat.ST_SIZE])
+    last_modified = rfc822.formatdate(info[stat.ST_MTIME])
+    request.server.addheader('Content-Length', content_length)
+    request.server.addheader('Last-Modified', last_modified)
+  except IOError, v:
+    pass
   if help_page[-3:] == 'png':
     request.server.header('image/png')
   elif help_page[-3:] == 'jpg':
