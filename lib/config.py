@@ -124,6 +124,7 @@ class Config:
 
     self.templates.directory = 'templates/directory.ezt'
     self.templates.log = 'templates/log.ezt'
+    self.templates.query = 'templates/query.ezt'
 
     self.cvsdb.enabled = 0
     self.cvsdb.host = ''

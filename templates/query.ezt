@@ -1,0 +1,164 @@
+<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
+ "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html><head>
+<!-- ViewCVS       -- http://viewcvs.sourceforge.net/
+     by Greg Stein -- mailto:gstein@lyra.org
+  -->
+<title>[cfg.general.main_title]</title>
+</head>
+<body text="#000000" bgcolor="#ffffff">
+<table width="100%" border=0 cellspacing=0 cellpadding=0>
+  <tr>
+    <td><h1>[cfg.general.main_title]</h1></td>
+    <td align=right><img src="/icons/apache_pb.gif" alt="(logo)" border=0
+			width=259 height=32></td>
+  </tr>
+</table>
+
+  <p> 
+    Select your parameters for querying the CVS commit database.  You
+    can search for multiple matches by typing a comma-seperated list
+    into the text fields.  Regular expressions, and wildcards are also
+    supported.  Blank text input fields are treated as wildcards.
+  </p>
+  <p>
+    Any of the text entry fields can take a comma-seperated list of
+    search arguments.  For example, to search for all commits from
+    authors <i>jpaint</i> and <i>gstein</i>, just type: <b>jpaint,
+    gstein</b> in the <i>Author</i> input box.  If you are searching
+    for items containing spaces or quotes, you will need to quote your
+    request.  For example, the same search above with quotes is:
+    <b>"jpaint", "gstein"</b>.
+  </p>
+  <p>                           
+
+    Wildcard and regular expression searches are entered in a similar
+    way to the quoted requests.  You must quote any wildcard or
+    regular expression request, and a command charactor preceeds the
+    first quote.  The command charactor <b>l</b> is for wildcard
+    searches, and the wildcard charactor is a percent (<b>%</b>).  The
+    command charactor for regular expressions is <b>r</b>, and is
+    passed directly to MySQL, so you'll need to refer to the MySQL
+    manual for the exact regex syntax.  It is very similar to Perl.  A
+    wildard search for all files with a <i>.py</i> extention is:
+    <b>l"%.py"</b> in the <i>File</i> input box.  The same search done
+    with a regular expression is: <b>r".*\.py"</b>.
+  </p>
+  <p>                  
+    All search types can be mixed, as long as they are seperated by
+    commas.
+  </p>                                                    
+
+<form method=get action="query.cgi">
+
+<table border=0 cellspacing=0 cellpadding=2 width=100% bgcolor=e6e6e6>
+ <tr>
+  <td>
+   <table>
+    <tr>
+     <td valign=top>
+
+      <table>
+       <tr>
+        <td align=right>CVS Repository:</td>
+        <td>
+         <input type=text name=repository size=40 value="[repository]">
+        </td>
+       </tr>
+       <tr>
+        <td align=right>CVS Branch:</td>
+        <td>
+         <input type=text name=branch size=40 value="[branch]">
+        </td>
+       </tr>
+       <tr>
+        <td align=right>Directory:</td>
+        <td>
+         <input type=text name=directory size=40 value="[directory]">
+        </td>
+       </tr>
+       <tr>
+        <td align=right>File:</td>
+        <td>
+         <input type=text name=file size=40 value="[file]">
+        </td>
+       </tr>
+       <tr>
+        <td align=right>Author:</td>
+        <td>
+         <input type=text name=who size=40 value="[who]">
+        </td>
+       </tr>
+      </table>
+
+     </td>
+     <td valign=top>
+
+      <table>
+       <tr>
+        <td align=left>Sort By:</td>
+        <td>
+         <select name=sortby>
+          <option value=date [is sortby "date"]selected[end]>Date</option>
+          <option value=author [is sortby "author"]selected[end]>Author</option>
+          <option value=file [is sortby "file"]selected[end]>File</option>
+         </select>
+        </td>
+       </tr>
+       <tr>
+        <td colspan=2>
+         <table border=0 cellspacing=0 cellpadding=0>
+          <tr>
+           <td>Date:</td>
+          </tr>
+          <tr>
+           <td><input type=radio name=date value=hours
+		  [is date "hours"]selected[end]></td>
+           <td>In the last
+             <input type=text name=hours value=[hours] size=4>hours
+           </td>
+          </tr>
+          <tr>
+           <td><input type=radio name=date value=day
+		  [is date "day"]selected[end]></td>
+           <td>In the last day</td>
+          </tr>
+          <tr>
+           <td><input type=radio name=date value=week
+		  [is date "week"]selected[end]></td>
+           <td>In the last week</td>
+          </tr>
+          <tr>
+           <td><input type=radio name=date value=month
+		  [is date "month"]selected[end]></td>
+           <td>In the last month</td>
+          </tr>
+          <tr>
+           <td><input type=radio name=date value=all
+		  [is date "date"]selected[end]></td>
+           <td>Since the beginning of time</td>
+          </tr>
+         </table>
+        </td>
+       </tr>
+      </table>
+
+     </td>
+    </tr>
+   </table>
+  </td>
+  <td>
+   <input type=submit value="Search">
+  </td>
+ </tr>
+</table>
+
+</form>
+
+<hr noshade>
+<table width="100%" border=0 cellpadding=0 cellspacing=0><tr>
+<td align=left><address>[address]</address></td>
+<td align=right>
+  Powered by<br><a href="http://viewcvs.sourceforge.net/">ViewCVS [vsn]</a>
+</td></tr></table>
+</body></html>

@@ -42,6 +42,7 @@ import traceback
 
 import cvsdb
 import viewcvs
+import ezt
 
 class FormData:
     def __init__(self, form):
@@ -388,151 +389,6 @@ def run_query(form_data):
     print " </tr>"
     print "</table>"
 
-def html_left_form_table(form_data):
-    rp = string.replace(cgi.escape(form_data.repository), "\"", "&quot")
-    br = string.replace(cgi.escape(form_data.branch), "\"", "&quot")
-    di = string.replace(cgi.escape(form_data.directory), "\"", "&quot")
-    fi = string.replace(cgi.escape(form_data.file), "\"", "&quot")
-    wh = string.replace(cgi.escape(form_data.who), "\"", "&quot")
-
-    print "<table>"
-    print " <tr>"
-    print "  <td align=right>CVS Repository:</td>"
-    print "  <td>"
-    print "   <input type=text name=repository size=40 value=\"%s\">" % (rp)
-    print "  </td>"
-    print " </tr>"
-    print " <tr>"
-    print "  <td align=right>CVS Branch:</td>"
-    print "  <td>"
-    print "   <input type=text name=branch size=40 value=\"%s\">" % (br)
-    print "  </td>"
-    print " </tr>"
-    print " <tr>"
-    print "  <td align=right>Directory:</td>"
-    print "  <td>"
-    print "   <input type=text name=directory size=40 value=\"%s\">" % (di)
-    print "  </td>"
-    print " </tr>"
-    print " <tr>"
-    print "  <td align=right>File:</td>"
-    print "  <td>"
-    print "   <input type=text name=file size=40 value=\"%s\">" % (fi)
-    print "  </td>"
-    print " </tr>"
-    print " <tr>"
-    print "  <td align=right>Author:</td>"
-    print "  <td>"
-    print "   <input type=text name=who size=40 value=\"%s\">" % (wh)
-    print "  </td>"
-    print " </tr>"
-    print "</table>"
-
-def html_right_form_table(form_data):
-    fs = ""
-    as = ""
-    ds = ""
-    if form_data.sortby == "file":
-        fs = "selected"
-    elif form_data.sortby == "author":
-        as = "selected"
-    else:
-        ds = "selected"
-
-    hr = 2
-    if form_data.hours:
-        hr = form_data.hours
-
-    hc = ""
-    dc = ""
-    wc = ""
-    mc = ""
-    ac = ""
-    if form_data.date == "month":
-        mc = "checked"
-    elif form_data.date == "week":
-        wc = "checked"
-    elif form_data.date == "day":
-        dc = "checked"
-    elif form_data.date == "all":
-        ac = "checked"
-    else:
-        hc = "checked"
-    
-    print "<table>"
-    print " <tr>"
-    print "  <td align=left>Sort By:</td>"
-    print "  <td>"
-    print "   <select name=sortby>"
-    print "    <option value=date %s>Date</option>" % (ds)
-    print "    <option value=author %s>Author</option>" % (as)
-    print "    <option value=file %s>File</option>" % (fs)
-    print "   </select>"
-    print "  </td>"
-    print " </tr>"
-    print " <tr>"
-    print "  <td colspan=2>"
-    print "   <table border=0 cellspacing=0 cellpadding=0>"
-    print "    <tr>"
-    print "     <td>Date:</td>"
-    print "    </tr>"
-    print "    <tr>"
-    print "     <td><input type=radio name=date value=hours %s></td>" % (hc)
-    print "     <td>In the last"
-    print "       <input type=text name=hours value=%d size=4>hours" % (hr)
-    print "     </td>"
-    print "    </tr>"
-    print "    <tr>"
-    print "     <td><input type=radio name=date value=day %s></td>" % (dc)
-    print "     <td>In the last day</td>"
-    print "    </tr>"
-    print "    <tr>"
-    print "     <td><input type=radio name=date value=week %s></td>" % (wc)
-    print "     <td>In the last week</td>"
-    print "    </tr>"
-    print "    <tr>"
-    print "     <td><input type=radio name=date value=month %s></td>" % (mc)
-    print "     <td>In the last month</td>"
-    print "    </tr>"
-    print "    <tr>"
-    print "     <td><input type=radio name=date value=all %s></td>" % (ac)
-    print "     <td>Since the beginning of time</td>"
-    print "    </tr>"
-    print "   </table>"
-    print "  </td>"
-    print " </tr>"
-    print "</table>"
-
-def html_form(form_data):
-    print "<form method=get action=\"query.cgi\">"
-
-    print "<table border=0 cellspacing=0 cellpadding=2 "\
-          " width=100%% bgcolor=e6e6e6>"
-    print " <tr>"
-    print "  <td>"
-    print "   <table>"
-    print "    <tr>"
-    print "     <td valign=top>"
-    html_left_form_table(form_data)
-    print "     </td>"
-    print "     <td valign=top>"
-    html_right_form_table(form_data)
-    print "     </td>"
-    print "    </tr>"
-    print "   </table>"
-    print "  </td>"
-    print "  <td>"
-    print "   <input type=submit value=\"Search\">"
-    print "  </td>"
-    print " </tr>"
-    print "</table>"
-
-    print "</form>"
-
-def html_header(title):
-    viewcvs.html_header(title)
-    print cfg.text.cvsdb_intro 
-
 def handle_config():
     viewcvs.handle_config()
     global cfg
@@ -543,16 +399,44 @@ def main():
     
     form = cgi.FieldStorage()
     form_data = FormData(form)
-    
-    html_header(cfg.general.main_title)
-    html_form(form_data)
-    
+
+    data = {
+      'cfg' : cfg,
+      'address' : cfg.general.address,
+      'vsn' : viewcvs.__version__,
+
+      'repository' : cgi.escape(form_data.repository, 1),
+      'branch' : cgi.escape(form_data.branch, 1),
+      'directory' : cgi.escape(form_data.directory, 1),
+      'file' : cgi.escape(form_data.file, 1),
+      'who' : cgi.escape(form_data.who, 1),
+
+      'sortby' : form_data.sortby,
+      'date' : form_data.date,
+      }
+
+    if form_data.hours:
+      data['hours'] = form_data.hours
+    else:
+      data['hours'] = 2
+
+    template = ezt.Template()
+    template.parse_file(os.path.join(viewcvs.g_template_dir,
+                                     cfg.templates.query))
+
+    viewcvs.http_header()
+
+    # generate the page
+    template.generate(sys.stdout, data)
+
+    ### urk. the output comes after the footer. just deal with it for now...
     if form_data.valid:
         run_query(form_data)
 
-    viewcvs.html_footer()
-
 def run_cgi():
+
+  ### be nice to share all this logic with viewcvs.run_cgi
+
   try:
     main()
   except SystemExit, e:
@@ -560,7 +444,9 @@ def run_cgi():
     sys.exit(e[0])
   except:
     info = sys.exc_info()
-    viewcvs.html_header('Python Exception Occurred')
+    viewcvs.http_header()
+    print '<html><head><title>Python Exception Occurred</title></head>'
+    print '<body bgcolor=white><h1>Python Exception Occurred</h1>'
     import traceback
     lines = apply(traceback.format_exception, info)
     print '<pre>'
