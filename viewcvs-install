@@ -92,6 +92,7 @@ went into the new files in subdirectory templates.""", 0),
     ("tools/make-database", "make-database", 0755, 1, 0, 0),
 
     ("website/index.html", "doc/index.html", 0644, 0, 0, 0),
+    ("website/contributing.html", "doc/contributing.html", 0644, 0, 0, 0),
     ("website/license-1.html", "doc/license-1.html", 0644, 0, 0, 0),
     ("website/upgrading.html", "doc/upgrading.html", 0644, 0, 0, 0),
     ("website/who.html", "doc/who.html", 0644, 0, 0, 0),
