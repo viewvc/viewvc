@@ -98,7 +98,7 @@ char *  TokenParser::get() {
 			continue;
 		}
 		if ( i==buflength-1) {
-			ost.write(buf+idx,i-idx+1);
+			ost.write(buf+idx,i-idx);
 			idx=0;
 			buf[0]='@';
 			input->read(buf+1,CHUNK_SIZE-1);
@@ -236,7 +236,7 @@ int tparseParser::parse_rcs_tree() {
    			if (branches == NULL)
    				branches=new Branche(token,NULL);
    			else 
-   				branches=new Branche(token,branches->next);
+   				branches=new Branche(token,branches);
    			
    		}
    		tokenstream->match("next");
