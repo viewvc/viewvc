@@ -73,8 +73,9 @@ class LogEntry:
     self.copy_rev = copy_rev
 
 class ChangedPathEntry:
-  def __init__(self, filename):
+  def __init__(self, filename, action):
     self.filename = filename
+    self.action = action
 
     
 class NodeHistory:
@@ -98,6 +99,19 @@ def get_history(svnrepos, full_name):
   return history.histories
 
 
+def _unparse_action(change_kind):
+  if change_kind == fs.path_change_add:
+    return "added"
+  elif change_kind == fs.path_change_delete:
+    return "deleted"
+  elif change_kind == fs.path_change_replace:
+    return "replaced"
+  elif change_kind == fs.path_change_modify:
+    return "modified"
+  else:
+    return None
+  
+
 def log_helper(svnrepos, rev, path, pool):
   rev_root = fs.revision_root(svnrepos.fs_ptr, rev, pool)
   other_paths = []
@@ -111,14 +125,7 @@ def log_helper(svnrepos, rev, path, pool):
   if change:
     
     # Figure out the type of change that happened on the path.
-    if change.change_kind == fs.path_change_add:
-      action = "added"
-    elif change.change_kind == fs.path_change_delete:
-      action = "deleted"
-    elif change.change_kind == fs.path_change_replace:
-      action = "replaced"
-    else:
-      action = "modified"
+    action = _unparse_action(change.change_kind)
 
     # Was this thing the target of a copy?
     if (change.change_kind == fs.path_change_add) or \
@@ -128,7 +135,9 @@ def log_helper(svnrepos, rev, path, pool):
   # Now, make ChangedPathEntry objects for all the other paths
   for other_path in changed_paths.keys():
     if other_path != path:
-      other_paths.append(ChangedPathEntry(_trim_path(other_path)))
+      change = changed_paths.get(other_path)
+      other_paths.append(ChangedPathEntry(_trim_path(other_path),
+                                          _unparse_action(change.change_kind)))
 
   # Finally, assemble our LogEntry.
   datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, pool)

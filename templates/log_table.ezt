@@ -193,9 +193,10 @@ href="[docroot]/help_logtable.html">ViewCVS and CVS Help</a></b></h3></td>
     
         [if-any entries.other_paths]
           [for entries.other_paths][if-index entries.other_paths first]<b>Other changed files:</b>[else],[end]
-            <a href="[entries.other_paths.href]#rev[entries.rev]">[entries.other_paths.filename]</a>[end]<br>
+            [is entries.other_paths.action "deleted"][entries.other_paths.filename][else]<a href="[entries.other_paths.href]#rev[entries.rev]">[entries.other_paths.filename]</a>[end] ([entries.other_paths.action])[end]
+          <br>
         [end]
-      [end]    
+      [end]
 
       <b>Log: </b><i><pre>[entries.html_log]</pre></i>
     </td>
