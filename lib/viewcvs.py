@@ -1312,7 +1312,6 @@ def view_directory(request):
 
       row.type = 'file'
       row.anchor = file
-      row.name = file
 
       num_files = num_files + 1
       info = fileinfo.get(file)
@@ -1347,6 +1346,7 @@ def view_directory(request):
         file = file[6:]
 
       row.cvs = 'data'
+      row.name = file	# ensure this occurs after we strip Attic/
       row.href = url
       row.rev = info[0]
       row.author = info[3]
