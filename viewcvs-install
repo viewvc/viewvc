@@ -83,6 +83,7 @@ went into the new files in subdirectory templates.""", 0),
     ("lib/rlog.py", "lib/rlog.py", 0644, 0, 0, 1),
     ("lib/viewcvs.py", "lib/viewcvs.py", 0644, 1, 0, 1),
     ("lib/ezt.py", "lib/ezt.py", 0644, 0, 0, 1),
+    ("lib/apache_icons.py", "lib/apache_icons.py", 0644, 0, 0, 1),
     
     ("templates/directory.ezt", "templates/directory.ezt", 0644, 0, 1, 0),
     ("templates/log.ezt", "templates/log.ezt", 0644, 0, 1, 0),
