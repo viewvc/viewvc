@@ -536,6 +536,7 @@ def html_footer():
   print '<td align=left><address>%s</address></td>' % address
   print '<td align=right><a href="http://www.lyra.org/greg/python/viewcvs/">ViewCVS %s</a><br>' % __version__
   print 'by <a href="mailto:gstein@lyra.org">Greg Stein</a>'
+  print '</td></tr></table>'
   print '</body></html>'
 
 def sticky_query(dict):
