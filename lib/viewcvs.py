@@ -1112,16 +1112,23 @@ def revcmp(rev1, rev2):
   rev2 = map(int, string.split(rev2, '.'))
   return cmp(rev1, rev2)
 
-def prepare_hidden_values(request, var_list, out_list):
-  hidden_values = ''
+def prepare_hidden_values(request, var_list, vars_to_omit_list):
+  """returns named variables from var_list encoded as a invisible HTML snippet.
+
+  All variables listed by name in paramter 'var_list' are retrieved from 
+  the request query dictionary and are encoded as an invisible (hidden) 
+  form field suitable for inclusion into a HTML form, if their values 
+  differ from the default values provided in default_settings.
+  """
+  hidden_values = []
+  query_dict = request.query_dict
   for varname in var_list:
-    if varname not in out_list:
-      value = request.query_dict.get(varname, '')
+    if varname not in vars_to_omit_list:
+      value = query_dict.get(varname, '')
       if value != '' and value != default_settings.get(varname):
-        hidden_values = hidden_values + \
-                        '<input type=hidden name="%s" value="%s">' % \
-                        (varname, cgi.escape(value))
-  return hidden_values
+        hidden_values.append('<input type=hidden name="%s" value="%s">' %
+                             (varname, cgi.escape(value)))
+  return string.join(hidden_values, '')
 
 def view_directory(request):
   full_name = request.full_name
