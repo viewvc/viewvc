@@ -54,13 +54,9 @@
     <td>&nbsp;[if-any rows.rev]<a href="[is rows.type "dir"][rows.rev_href][else][rows.href][end]"><b>[rows.rev]</b></a>[end]</td>
     <td[if-any rows.graph_href][else] colspan=2[end]>
       <a name="[rows.anchor]" href="[is rows.type "dir"][rows.href][else][rows.rev_href][end]">
-      <img src="[icons]/small/[is rows.type "dir"]dir[else]text[end].gif" alt="" border=0 width=16 height=16>
+      <img src="[icons]/small/[is rows.type "dir"]dir[else][is rows.state "dead"]broken[else]text[end][end].gif" alt="" border=0 width=16 height=16>
       [rows.name][is rows.type "dir"]/[end]</a>
-      [is roottype "cvs"]
-        [is rows.state "dead"]
-          [# don't let this phrase/link be wrapped ]
-          (dead)&nbsp;<a href="[hide_attic_href]#dirlist">[[]hide]</a>
-        [end]
+      [is rows.state "dead"](dead)[end]
       [end]
     </td>
     [if-any rows.graph_href]

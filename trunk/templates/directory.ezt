@@ -53,14 +53,9 @@
   <tr class="vc_row_[if-index rows even]even[else]odd[end]">
     <td[if-any rows.graph_href][else] colspan=2[end]>
       <a name="[rows.anchor]" href="[rows.href]">
-      <img src="[icons]/small/[is rows.type "dir"]dir[else]text[end].gif" alt="" border=0 width=16 height=16>
+      <img src="[icons]/small/[is rows.type "dir"]dir[else][is rows.state "dead"]broken[else]text[end][end].gif" alt="" border=0 width=16 height=16>
       [rows.name][is rows.type "dir"]/[end]</a>
-      [is roottype "cvs"]
-        [is rows.state "dead"]
-          [# don't let this phrase/link be wrapped ]
-          (dead)&nbsp;<a href="[hide_attic_href]#dirlist">[[]hide]</a>
-        [end]
-      [end]
+      [is rows.state "dead"](dead)[end]
     </td>
     [if-any rows.graph_href]
       <td width="1%"><a href="[rows.graph_href]"><img
