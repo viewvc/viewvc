@@ -41,7 +41,7 @@ import fnmatch
 #########################################################################
 
 class Config:
-  _sections = ('general', 'images', 'options', 'colors', 'cvsdb', 'templates')
+  _sections = ('general', 'options', 'cvsdb', 'templates')
   _force_multi_value = ('cvs_roots', 'forbidden', 'disable_enscript_lang')
 
   def __init__(self):
@@ -66,7 +66,7 @@ class Config:
 
     for opt in parser.options(section):
       value = parser.get(section, opt)
-      if opt in self._force_multi_value or subcfg_name == 'images':
+      if opt in self._force_multi_value:
         value = map(string.strip, filter(None, string.split(value, ',')))
       else:
         try:
@@ -118,12 +118,16 @@ class Config:
     self.general.rcs_path = ''
     self.general.mime_types_file = ''
     self.general.address = '<a href="mailto:user@insert.your.domain.here">No CVS admin address has been configured</a>'
-    self.general.main_title = 'CVS Repository'
     self.general.forbidden = ()
 
     self.templates.directory = 'templates/directory.ezt'
     self.templates.log = 'templates/log.ezt'
     self.templates.query = 'templates/query.ezt'
+    self.templates.footer = 'templates/footer.ezt'
+    self.templates.diff = 'templates/diff.ezt'
+    self.templates.graph = 'templates/graph.ezt'
+    self.templates.annotate = 'templates/annotate.ezt'
+    self.templates.markup = 'templates/markup.ezt'
 
     self.cvsdb.enabled = 0
     self.cvsdb.host = ''
@@ -133,26 +137,6 @@ class Config:
     self.cvsdb.readonly_user = ''
     self.cvsdb.readonly_passwd = '' 
     self.cvsdb.row_limit = 1000
-
-    self.images.back_icon = "/icons/small/back.gif", 16, 16
-    self.images.dir_icon = "/icons/small/dir.gif",  16, 16
-    self.images.file_icon = "/icons/small/text.gif", 16, 16
-
-    self.colors.markup_log = "#ffffff"
-
-    self.colors.diff_heading = "#99cccc"
-    self.colors.diff_empty = "#cccccc"
-    # trafic light methaphor:
-    self.colors.diff_remove = "#ffaaaa" # red
-    self.colors.diff_change = "#ffff77" # yellow/orange
-    self.colors.diff_add = "#aaffaa" # green
-    self.colors.diff_dark_change = "#eeee77" # meets hue of diff_change
-
-    self.colors.nav_header = "#9999ee"
-
-    self.colors.text = "#000000"
-    self.colors.background = "#ffffff"
-    self.colors.alt_background = "#eeeeee"
 
     self.options.sort_by = 'file'
     self.options.hide_attic = 1
@@ -168,8 +152,6 @@ class Config:
     self.options.allow_annotate = 1
     self.options.allow_markup = 1
     self.options.allow_compress = 1
-    self.options.use_java_script = 1
-    self.options.open_extern_window = 1
     self.options.checkout_magic = 1
     self.options.show_subdir_lastmod = 0
     self.options.flip_links_in_dirview = 0
@@ -202,13 +184,7 @@ class Config:
     return default
 
 class _sub_config:
-  def get_image(self, which):
-    text = '[%s]' % string.upper(which)
-    path, width, height = getattr(self, which)
-    if path:
-      return '<img src="%s" alt="%s" border=0 width=%s height=%s>' % \
-             (path, text, width, height)
-    return text
+  pass
 
 if not hasattr(sys, 'hexversion'):
   # Python 1.5 or 1.5.1. fix the syntax for ConfigParser options.

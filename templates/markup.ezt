@@ -1,0 +1,49 @@
+[include "header.ezt"]
+
+<hr noshade>
+<table width="100%"><tr><td bgcolor="#ffffff">
+File: [nav_path]
+
+(<a href="[href]" target="cvs_checkout"
+  onClick="window.open('about:blank','cvs_checkout',
+  'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]');"
+  ><b>download</b></a>)
+[is mime_type "text/plain"]
+[else]
+      /
+      (<a href="[text_href]" target="cvs_checkout"
+	onClick="window.open('about:blank', 'cvs_checkout',
+	'resizeable=1,scrollbars=1')"><b>as text</b></a>)
+[end]
+<br>
+
+[if-any log]
+  Revision: <b>[rev]</b>[if-any vendor_branch] <i>(vendor branch)</i>[end],
+  <i>[utc_date]</i> ([ago] ago) by <i>[author]</i>
+  
+  [if-any branches]
+    <br>Branch: <b>[branches]</b>
+  [end]
+  [if-any tags]
+    <br>CVS Tags: <b>[tags]</b>
+  [end]
+  [if-any branch_points]
+    <br>Branch point for: <b>[branch_points]</b>
+  [end]
+  [if-any prev]
+    [if-any changed]
+      <br>Changes since <b>[prev]: [changed] lines</b>
+    [end]
+  [end]
+  [is state "dead"]
+    <br><b><i>FILE REMOVED</i></b>
+  [end]
+  <pre>[log]</pre>
+[else]
+  Revision: <b>[rev]</b><br>
+  [if-any tag]
+    Tag: <b>[tag]</b><br>
+  [end]
+[end]
+</td></tr></table>
+<hr noshade>

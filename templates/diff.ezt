@@ -1,0 +1,88 @@
+[include "header.ezt"]
+
+<h3 align=center>Diff for /[where] between version [rev1] and [rev2]</h3>
+<table border=0 cellspacing=0 cellpadding=0 width="100%">
+  <tr bgcolor=white>
+    <th width="50%" valign=top>
+      version [rev1][date1]
+      [if-any tag1]<br>Tag: [tag1][end]
+    </th>
+    <th width="50%" valign=top>
+      version [rev2][date2]
+      [if-any tag2]<br>Tag: [tag2][end]
+    </th>
+  </tr>
+
+[for changes]
+  [is changes.type "header"]
+    <tr bgcolor="#99cccc"><td width="50%">
+      <table width="100%" border=1 cellpadding=5><tr>
+        <td><b>Line [changes.line1]</b>&nbsp;<font
+           size="-1">[changes.extra]</font></td>
+      </tr></table></td><td width="50%">
+      <table width="100%" border=1 cellpadding=5><tr>
+        <td><b>Line [changes.line2]</b>&nbsp;<font
+           size="-1">[changes.extra]</font></td>
+      </tr></table>
+    </td></tr>
+  [else]
+  [is changes.type "add"]
+    <tr>
+      <td bgcolor="#cccccc">&nbsp;</td>
+      <td bgcolor="#aaffaa">[changes.right]</td>
+    </tr>
+  [else]
+  [is changes.type "remove"]
+    <tr>
+      <td bgcolor="#ffaaaa">[changes.left]</td>
+      <td bgcolor="#cccccc">&nbsp;</td>
+    </tr>
+  [else]
+  [is changes.type "change"]
+    <tr>
+    [if-any changes.have_left]<td bgcolor="#ffff77">[changes.left]</td>
+    [else]<td bgcolor="#eeee77">&nbsp;</td>[end]
+    [if-any changes.have_right]<td bgcolor="#ffff77">[changes.right]</td>
+    [else]<td bgcolor="#eeee77">&nbsp;</td>[end]
+    </tr>
+  [else]
+  [is changes.type "no-changes"]
+    <tr><td colspan=2>&nbsp;</td></tr>
+    <tr bgcolor="#cccccc"><td colspan=2 align=center>
+      <br><b>- No changes -</b><br>&nbsp;
+    </td></tr>
+  [else][# a line of context]
+    <tr><td>[changes.left]</td><td>[changes.right]</td></tr>
+  [end][end][end][end][end]
+[end]
+
+</table><br><hr noshade width="100%">
+<table border=0 cellpadding=10><tr><td>
+
+  <table border=1><tr><td>Legend:<br>
+  <table border=0 cellspacing=0 cellpadding=1>
+  <tr>
+    <td align=center bgcolor="#ffaaaa">Removed from v.[rev1]</td>
+    <td bgcolor="#cccccc">&nbsp;</td>
+  </tr>
+  <tr bgcolor="#ffff77"><td align=center colspan=2>changed lines</td></tr>
+  <tr>
+    <td bgcolor="#cccccc">&nbsp;</td>
+    <td align=center bgcolor="#aaffaa">Added in v.[rev2]</td>
+  </tr>
+  </table></td></tr></table></td>
+
+  <td><form method="GET" action="[request.url]">
+    [hidden_values]
+    <select name="diff_format" onchange="submit()">
+      <option value="h" [is diff_format "h"]selected[end]>Colored Diff</option>
+      <option value="l" [is diff_format "l"]selected[end]>Long Colored Diff</option>
+      <option value="u" [is diff_format "u"]selected[end]>Unidiff</option>
+      <option value="c" [is diff_format "c"]selected[end]>Context Diff</option>
+      <option value="s" [is diff_format "s"]selected[end]>Side by Side</option>
+    </select>
+    <input type=submit value="Show">
+  </form></td></tr>
+</table>
+
+[include "footer.ezt"]

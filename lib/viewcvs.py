@@ -206,7 +206,6 @@ class Request:
     self.mime_type, self.encoding = mimetypes.guess_type(self.where)
     if not self.mime_type:
       self.mime_type = 'text/plain'
-    self.default_text_plain = self.mime_type == 'text/plain'
     self.default_viewable = cfg.options.allow_markup and \
                             is_viewable(self.mime_type)
 
@@ -244,6 +243,13 @@ def error(msg, status='500 Internal Server Error'):
   print msg
   sys.exit(0)
 
+def generate_page(tname, data):
+  debug.t_start()
+  template = ezt.Template(os.path.join(g_install_dir, tname))
+  debug.t_end('ezt-parse')
+
+  template.generate(sys.stdout, data)
+
 _header_sent = 0
 def http_header(content_type='text/html'):
   global _header_sent
@@ -254,11 +260,15 @@ def http_header(content_type='text/html'):
   _header_sent = 1
 
 def html_footer():
-  print '<hr noshade><table width="100&#37;" border=0 cellpadding=0 cellspacing=0><tr>'
-  print '<td align=left><address>%s</address></td>' % cfg.general.address
-  print '<td align=right>Powered by<br><a href="http://viewcvs.sourceforge.net/">ViewCVS %s</a>' % __version__
-  print '</td></tr></table>'
-  print '</body></html>'
+  ### would be nice to have a "standard" set of data available to all
+  ### templates. should move that to the request ob, probably
+  data = {
+    'cfg' : cfg,
+    'vsn' : __version__,
+    }
+
+  # generate the footer
+  generate_page(cfg.templates.footer, data)
 
 def sticky_query(dict):
   sticky_dict = { }
@@ -342,31 +352,6 @@ def download_url(request, url, revision, mime_type):
     return url + '&content-type=' + mime_type
   return url
 
-def download_link(request, url, revision, text, mime_type=None):
-  full_url = download_url(request, url, revision, mime_type)
-  paren = text[0] == '('
-
-  lparen = rparen = ''
-  if paren:
-    lparen = '('
-    rparen = ')'
-    text = text[1:-1]
-
-  print '%s<a href="%s"' % (lparen, full_url)
-
-  if cfg.options.open_extern_window and mime_type != viewcvs_mime_type:
-    print ' target="cvs_checkout"'
-    if cfg.options.use_java_script:
-      print " onClick=\"window.open('about:blank','cvs_checkout'," \
-            "'resizeable=1,scrollbars=1",
-      if mime_type == 'text/html':
-        print ',status,toolbar',
-      print "');\""
-  print '><b>%s</b></a>%s' % (text, rparen)
-
-def html_icon(which):
-  return cfg.images.get_image(which + '_icon')
-
 def plural(num, text):
   if num == 1:
     return '1 ' + text
@@ -405,51 +390,16 @@ def html_time(secs, extended=0):
       s = s + ', ' + ext
   return s
 
-def html_option(value, cur_value, text=None):
-  if text is None:
-    attr = ''
-    text = value
-  else:
-    attr = 'value="%s"' % value
-
-  if value == cur_value:
-    print '<option %s selected>%s</option>' % (attr, text)
-  else:
-    print '<option %s>%s</option>' % (attr, text)
-
-def print_diff_select(query_dict):
-  print '<select name="diff_format"'
-  if cfg.options.use_java_script:
-    print 'onchange="submit()"'
-  print '>'
-
-  format = query_dict['diff_format']
-  html_option('h', format, 'Colored Diff')
-  html_option('l', format, 'Long Colored Diff')
-  html_option('u', format, 'Unidiff')
-  html_option('c', format, 'Context Diff')
-  html_option('s', format, 'Side by Side')
-  print '</select>'
-
-def navigate_header(request, swhere, path, filename, rev, title):
-  if swhere == request.url:
-    swhere = urllib.quote(filename)
-
-  print '<html><head>'
-  print header_comment
-  print '<title>%s/%s - %s - %s</title></head>' % (path, filename, title, rev)
-  print '<body bgcolor="%s">' % cfg.colors.alt_background
-  print '<table width="100&#37;" border=0 cellspacing=0 cellpadding=1 bgcolor="%s">' % cfg.colors.nav_header
-  print '<tr valign=bottom><td>'
-  print '<a href="%s%s#rev%s">%s</a>' % \
-        (swhere, request.qmark_query, rev, html_icon('back'))
-  print '<b>Return to %s CVS log</b> %s</td>' % \
-        (html_link(filename,
-                   '%s%s#rev%s' % (swhere, request.qmark_query, rev)),
-         html_icon('file'))
-  print '<td align=right>%s <b>Up to %s</b></td>' % \
-        (html_icon('dir'), clickable_path(request, path, 1, 0, 0))
-  print '</tr></table>'
+def nav_header_data(request, path, filename, rev, title):
+  return {
+    'title' : title,
+    'nav_path' : clickable_path(request, path, 1, 0, 0),
+    'path' : path,
+    'filename' : filename,
+    'file_url' : urllib.quote(filename),
+    'rev' : rev,
+    'qquery' : request.qmark_query,
+    }
 
 def copy_stream(fp):
   while 1:
@@ -600,29 +550,65 @@ def markup_stream(request, fp, revision, mime_type):
     pathname = pathname[:-6]
   file_url = urllib.quote(filename)
 
-  http_header()
-  navigate_header(request, request.url, pathname, filename, revision, 'view')
-  print '<hr noshade>'
-  print '<table width="100&#37;"><tr><td bgcolor="%s">' % cfg.colors.markup_log
-  print 'File:', clickable_path(request, where, 1, 1, 0), '</b>'
-  download_link(request, file_url, revision, '(download)')
-  if not request.default_text_plain:
-    download_link(request, file_url, revision, '(as text)', 'text/plain')
-  print '<br>'
+  data = nav_header_data(request, pathname, filename, revision, 'view')
+  data.update({
+    'request' : request,
+    'cfg' : cfg,
+    'vsn' : __version__,
+    'nav_path' : clickable_path(request, where, 1, 1, 0),
+    'href' : download_url(request, file_url, revision, None),
+    'text_href' : download_url(request, file_url, revision, 'text/plain'),
+    'mime_type' : request.mime_type,
+    'log' : None,
+    })
+
   if cfg.options.show_log_in_markup:
     show_revs, rev_map, rev_order, taginfo, rev2tag, \
                cur_branch, branch_points, branch_names = read_log(full_name)
+    entry = rev_map[revision]
 
-    print_log(request, rev_map, rev_order, rev_map[revision], rev2tag,
-              branch_points)
+    idx = string.rfind(revision, '.')
+    branch = revision[:idx]
+
+    if _re_is_vendor_branch.match(revision):
+      data['vendor_branch'] = 'yes'
+    else:
+      data['vendor_branch'] = None
+    data.update({
+      'utc_date' : time.asctime(time.gmtime(entry.date)),
+      'ago' : html_time(entry.date, 1),
+      'author' : entry.author,
+      'branches' : None,
+      'tags' : None,
+      'branch_points' : None,
+      'changed' : entry.changed,
+      'log' : htmlify(entry.log),
+      'state' : entry.state,
+      })
+
+    if rev2tag.has_key(branch):
+      data['branches'] = string.join(rev2tag[branch], ', ')
+    if rev2tag.has_key(revision):
+      data['tags'] = string.join(rev2tag[revision], ', ')
+    if branch_points.has_key(revision):
+      data['branch_points'] = string.join(branch_points[revision], ', ')
+
+    prev_rev = string.split(revision, '.')
+    while 1:
+      if prev_rev[-1] == '0':     # .0 can be caused by 'commit -r X.Y.Z.0'
+        prev_rev = prev_rev[:-2]  # X.Y.Z.0 becomes X.Y.Z
+      else:
+        prev_rev[-1] = str(int(prev_rev[-1]) - 1)
+      prev = string.join(prev_rev, '.')
+      if rev_map.has_key(prev) or prev == '':
+        break
+    data['prev'] = prev
   else:
-    print 'Version: <b>%s</b><br>' % revision
-    tag = query_dict.get('only_with_tag')
-    if tag:
-      print 'Tag: <b>%s</b><br>' % tag
-  print '</td></tr></table>'
+    data['tag'] = query_dict.get('only_with_tag')
 
-  print '<hr noshade>'
+  http_header()
+  generate_page(cfg.templates.markup, data)
+
   if mime_type[:6] == 'image/':
     url = download_url(request, file_url, revision, mime_type)
     print '<img src="%s"><br>' % url
@@ -1126,13 +1112,6 @@ def view_directory(request):
   for file in attic_files:
     file_data.append((file, None, 0))
 
-  http_header()
-
-  debug.t_start()
-  template = ezt.Template()
-  template.parse_file(os.path.join(g_install_dir, cfg.templates.directory))
-  debug.t_end('ezt-parse')
-
   # prepare the data that will be passed to the template
   data = {
     'where' : where,
@@ -1438,8 +1417,8 @@ def view_directory(request):
       url = url + '&' + query
     data['tarball_href'] = url
 
-  # generate the page
-  template.generate(sys.stdout, data)
+  http_header()
+  generate_page(cfg.templates.directory, data)
 
 def fetch_log(full_name, which_rev=None):
   if which_rev:
@@ -1613,6 +1592,8 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
   return show_revs, rev_map, rev_order, taginfo, rev2tag, \
          cur_branch, branch_points, branch_names
 
+_re_is_vendor_branch = re.compile(r'^1\.1\.1\.\d+$')
+
 g_name_printed = { }    ### gawd, what a hack...
 def augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
                   rev_order, extended):
@@ -1715,50 +1696,6 @@ def augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
       entry.to_selected = 'yes'
     else:
       entry.to_selected = None
-
-_re_is_vendor_branch = re.compile(r'^1\.1\.1\.\d+$')
-def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points):
-  query_dict = request.query_dict
-  where = request.where
-  rev = entry.rev
-
-  idx = string.rfind(rev, '.')
-  branch = rev[:idx]
-
-  print 'Revision <b>%s</b>' % rev
-
-  if _re_is_vendor_branch.match(rev):
-    print '<i>(vendor branch)</i>'
-
-  print ', <i>%s UTC</i> (%s ago) by <i>%s</i>' % \
-        (time.asctime(time.gmtime(entry.date)),
-         html_time(entry.date, 1),
-         entry.author)
-
-  if rev2tag.has_key(branch):
-    print '<br>Branch: <b>%s</b>' % string.join(rev2tag[branch], ', ')
-  if rev2tag.has_key(rev):
-    print '<br>CVS Tags: <b>%s</b>' % string.join(rev2tag[rev], ', ')
-  if branch_points.has_key(rev):
-    print '<br>Branch point for: <b>%s</b>' % \
-          string.join(branch_points[rev], ', ')
-
-  prev_rev = string.split(rev, '.')
-  while 1:
-    if prev_rev[-1] == '0':     # .0 can be caused by 'commit -r X.Y.Z.0'
-      prev_rev = prev_rev[:-2]  # X.Y.Z.0 becomes X.Y.Z
-    else:
-      prev_rev[-1] = str(int(prev_rev[-1]) - 1)
-    prev = string.join(prev_rev, '.')
-    if rev_map.has_key(prev) or prev == '':
-      break
-  if prev and entry.changed:
-    print '<br>Changes since <b>%s: %s lines</b>' % (prev, entry.changed)
-
-  if entry.state == 'dead':
-    print '<br><b><i>FILE REMOVED</i></b>'
-
-  print '<pre>' + htmlify(entry.log) + '</pre>'
 
 def view_log(request):
   full_name = request.full_name
@@ -1888,15 +1825,8 @@ def view_log(request):
   branch_names.reverse()
   data['branch_names'] = branch_names
 
-  debug.t_start()
-  template = ezt.Template()
-  template.parse_file(os.path.join(g_install_dir, cfg.templates.log))
-  debug.t_end('ezt-parse')
-
   http_header()
-
-  # generate the page
-  template.generate(sys.stdout, data)
+  generate_page(cfg.templates.log, data)
 
 ### suck up other warnings in _re_co_warning?
 _re_co_filename = re.compile(r'^(.*),v\s+-->\s+standard output\s*\n$')
@@ -1996,10 +1926,16 @@ def view_annotate(request):
   if pathname[-6:] == '/Attic':
     pathname = pathname[:-6]
 
-  http_header()
-  navigate_header(request, request.url, pathname, filename, rev, 'view')
-  print '<hr noshade>'
+  data = nav_header_data(request, pathname, filename, rev, 'annotate')
+  data.update({
+    'cfg' : cfg,
+    'vsn' : __version__,
+    })
 
+  http_header()
+  generate_page(cfg.templates.annotate, data)
+
+  ### be nice to hook this into the template...
   import blame
   blame.make_html(request.cvsroot, request.where + ',v', rev,
                   sticky_query(request.query_dict))
@@ -2028,42 +1964,30 @@ def view_cvsgraph(cfg, request):
   if pathname[-6:] == '/Attic':
     pathname = pathname[:-6]
 
-  http_header()
-  # FIXME: use navigate_header(request, request.url, pathname, filename, rev, 'view')
-  # FIXME: Move this into a template ?
-  print """<html>
-<head>
-  <title>Revision graph of %s</title>
-</head>
-<body bgcolor="#f0f0f0">
-  <center>
-  <h1>Revision graph of %s</h1>""" % (where, where)
-
-  #" fix Emacs font-lock: close a quote above
+  data = nav_header_data(request, pathname, filename, rev, 'graph')
 
   # Required only if cvsgraph needs to find it's supporting libraries.
   # Uncomment and set accordingly if required.
   #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib'
 
   # Create an image map
-  fp = popen.popen(os.path.normpath(os.path.join(cfg.options.cvsgraph_path,'cvsgraph')),
+  fp = popen.popen(os.path.join(cfg.options.cvsgraph_path, 'cvsgraph'),
                    ("-i",
                     "-c", cfg.options.cvsgraph_conf,
                     "-r", request.cvsroot,
                     "-6", request.amp_query, 
                     "-7", request.qmark_query,
                     request.where + ',v'), 'r')
-  copy_stream(fp)
-  fp.close()
-  print """<img border="0" 
-              usemap="#MyMapName" 
-              src="%s?graph=%s&makeimage=1%s" 
-              alt="Revisions of %s">""" % (request.url, 
-                                           rev, request.amp_query, where)
-  #" fix Emacs font-lock: close a quote above
 
-  print '</center>'
-  html_footer()
+  data.update({
+    'request' : request,
+    'imagemap' : fp,
+    'cfg' : cfg,
+    'vsn' : __version__,
+    })
+
+  http_header()
+  generate_page(cfg.templates.graph, data)
 
 def search_files(request, search_re):
   # Pass in Request object and the search regular expression. We check out
@@ -2153,18 +2077,19 @@ def view_doc(request):
   copy_stream(fp)
   fp.close()
 
-   
+
 _re_extract_rev = re.compile(r'^[-+]+ [^\t]+\t([^\t]+)\t((\d+\.)+\d+)$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
-_re_extract_diff = re.compile(r'^([-+ ])(.*)')
 def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
+  # do this now, in case we need to print an error
+  http_header()
+
   query_dict = request.query_dict
 
   where_nd = request.where[:-5] # remove the ".diff"
   pathname, filename = os.path.split(where_nd)
 
-  navigate_header(request, request.script_name + '/' + where_nd, pathname,
-                  filename, rev2, 'diff')
+  data = nav_header_data(request, pathname, filename, rev2, 'diff')
 
   log_rev1 = log_rev2 = None
   date1 = date2 = ''
@@ -2191,6 +2116,7 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
       break
 
   if (log_rev1 and log_rev1 != rev1) or (log_rev2 and log_rev2 != rev2):
+    ### it would be nice to have an error.ezt for things like this
     print '<strong>ERROR:</strong> rcsdiff did not return the correct'
     print 'version number in its output.'
     print '(got "%s" / "%s", expected "%s" / "%s")' % \
@@ -2198,127 +2124,31 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
     print '<p>Aborting operation.'
     sys.exit(0)
 
-  print '<h3 align=center>Diff for /%s between version %s and %s</h3>' % \
-        (where_nd, rev1, rev2)
-  print '<table border=0 cellspacing=0 cellpadding=0 width="100&#37;">'
-  print '<tr bgcolor=white>'
-  print '<th width="50&#37;" valign=top>'
-  print 'version %s%s' % (rev1, date1)
-  if sym1:
-    print '<br>Tag:', sym1
-  print '</th>'
-  print '<th width="50&#37;" valign=top>'
-  print 'version %s%s' % (rev2, date2)
-  if sym2:
-    print '<br>Tag:', sym2
-  print '</th></tr>'
-
-  fs = '<font face="%s" size="%s">' % \
-       (cfg.options.diff_font_face, cfg.options.diff_font_size)
-  left_row = right_row = 0
-
-  # this will be set to true if any changes are found
-  changes_seen = 0
-
-  while 1:
-    line = fp.readline()
-    if not line:
-      break
-
-    # we've seen some kind of change
-    changes_seen = 1
-
-    if line[:2] == '@@':
-      match = _re_extract_info.match(line)
-      print '<tr bgcolor="%s"><td width="50&#37;">' % cfg.colors.diff_heading
-      print '<table width="100&#37;" border=1 cellpadding=5><tr>'
-      print '<td><b>Line %s</b>&nbsp;<font size="-1">%s</font></td>' % \
-            (match.group(1), match.group(3))
-      print '</tr></table></td><td width="50&#37;">'
-      print '<table width="100&#37;" border=1 cellpadding=5><tr>'
-      print '<td><b>Line %s</b>&nbsp;<font size="-1">%s</font></td>' % \
-            (match.group(2), match.group(3))
-      print '</tr></table></td></tr>'
-
-      state = 'dump'
-      left_col = [ ]
-      right_col = [ ]
-    elif line[0] == '\\':
-      # \ No newline at end of file
-      flush_diff_rows(state, left_col, right_col)
-      left_col = [ ]
-      right_col = [ ]
-    else:
-      match = _re_extract_diff.match(line)
-      line = spaced_html_text(match.group(2))
-
-      # add font stuff
-      line = fs + '&nbsp;' + line + '</font>'
-
-      diff_code = match.group(1)
-      if diff_code == '+':
-        if state == 'dump':
-          print '<tr><td bgcolor="%s">&nbsp;</td>' \
-                '<td bgcolor="%s">%s</td></tr>' % \
-                (cfg.colors.diff_empty, cfg.colors.diff_add, line)
-        else:
-          state = 'pre-change-add'
-          right_col.append(line)
-      elif diff_code == '-':
-        state = 'pre-change-remove'
-        left_col.append(line)
-      else:
-        flush_diff_rows(state, left_col, right_col)
-        print '<tr><td>%s</td><td>%s</td></tr>' % (line, line)
-        state = 'dump'
-        left_col = [ ]
-        right_col = [ ]
-
-  if changes_seen:
-    flush_diff_rows(state, left_col, right_col)
-  else:
-    print '<tr><td colspan=2>&nbsp;</td></tr>'
-    print '<tr bgcolor="%s"><td colspan=2 align=center><br><b>- No changes -</b><br>&nbsp;</td></tr>' % (cfg.colors.diff_empty)
-
-  print '</table><br><hr noshade width="100&#37;">'
-  print '<table border=0 cellpadding=10><tr><td>'
-
-  # print the legend
-  print '<table border=1><tr><td>Legend:<br>'
-  print '<table border=0 cellspacing=0 cellpadding=1>'
-  print '<tr><td align=center bgcolor="%s">Removed from v.%s</td><td bgcolor="%s">&nbsp;</td></tr>' % (cfg.colors.diff_remove, rev1, cfg.colors.diff_empty)
-  print '<tr bgcolor="%s"><td align=center colspan=2>changed lines</td></tr>' % cfg.colors.diff_change
-  print '<tr><td bgcolor="%s">&nbsp;</td><td align=center bgcolor="%s">Added in v.%s</td></tr>' % (cfg.colors.diff_empty, cfg.colors.diff_add, rev2)
-  print '</table></td></tr></table></td>'
-
   # format selector
-  print '<td><form method="GET" action="%s">' % request.url
+  hidden_values = ''
   for varname, value in query_dict.items():
     if varname != 'diff_format' and value != default_settings.get(varname):
-      print '<input type=hidden name="%s" value="%s">' % \
-            (varname, cgi.escape(value))
-  print_diff_select(query_dict)
-  print '<input type=submit value="Show"></form></td></tr>'
-  print '</table>'
-  html_footer()
+      hidden_values = hidden_values + \
+                      '<input type=hidden name="%s" value="%s">' % \
+                      (varname, cgi.escape(value))
 
+  data.update({
+    'cfg' : cfg,
+    'vsn' : __version__,
+    'request' : request,
+    'where' : where_nd,
+    'rev1' : rev1,
+    'rev2' : rev2,
+    'tag1' : sym1,
+    'tag2' : sym2,
+    'date1' : date1,
+    'date2' : date2,
+    'changes' : DiffSource(fp),
+    'diff_format' : query_dict['diff_format'],
+    'hidden_values' : hidden_values,
+    })
 
-def flush_diff_rows(state, left_col, right_col):
-  if state == 'pre-change-remove':
-    for row in left_col:
-      print '<tr><td bgcolor="%s">%s</td><td bgcolor="%s">&nbsp;</td></tr>' % \
-            (cfg.colors.diff_remove, row, cfg.colors.diff_empty)
-  elif state == 'pre-change-add':
-    for i in range(max(len(left_col), len(right_col))):
-      if i < len(left_col):
-        left = '<td bgcolor="%s">%s</td>' % (cfg.colors.diff_change, left_col[i])
-      else:
-        left = '<td bgcolor="%s">&nbsp;</td>' % cfg.colors.diff_dark_change
-      if i < len(right_col):
-        right = '<td bgcolor="%s">%s</td>' % (cfg.colors.diff_change, right_col[i])
-      else:
-        right = '<td bgcolor="%s">&nbsp;</td>' % cfg.colors.diff_dark_change
-      print '<tr>%s%s</tr>' % (left, right)
+  generate_page(cfg.templates.diff, data)
 
 def spaced_html_text(text):
   text = string.expandtabs(string.rstrip(text))
@@ -2340,6 +2170,133 @@ def spaced_html_text(text):
   text = string.replace(text, '\x01', '&')
   text = string.replace(text, '\x02', '<font color=red>\</font><br>')
   return text
+
+class DiffSource:
+  def __init__(self, fp):
+    self.fp = fp
+    self.save_line = None
+
+    # keep track of where we are during an iteration
+    self.idx = -1
+    self.last = None
+
+    # these will be set once we start reading
+    self.left = None
+    self.right = None
+    self.state = 'no-changes'
+
+  def __getitem__(self, idx):
+    if idx == self.idx:
+      return self.last
+    if idx != self.idx + 1:
+      raise DiffSequencingError()
+
+    # keep calling _get_row until it gives us something. sometimes, it
+    # doesn't return a row immediately because it is accumulating changes
+    # when it is out of data, _get_row will raise IndexError
+    while 1:
+      item = self._get_row()
+      if item:
+        self.idx = idx
+        self.last = item
+        open('/tmp/log','a').write('idx=%d  item=%s\n' % (idx,vars(item)))
+        return item
+
+  def _get_row(self):
+    if self.state[:5] == 'flush':
+      item = self._flush_row()
+      if item:
+        return item
+      self.state = 'dump'
+
+    if self.save_line:
+      line = self.save_line
+      self.save_line = None
+    else:
+      line = self.fp.readline()
+    if not line:
+      if self.state == 'no-changes':
+        self.state == 'done'
+        return _item(type='no-changes')
+
+      # see if there are lines to flush
+      if self.left_col or self.right_col:
+        # move into the flushing state
+        self.state = 'flush-' + self.state
+        return None
+
+      # nothing more to return
+      raise IndexError
+
+    if line[:2] == '@@':
+      self.state = 'dump'
+      self.left_col = [ ]
+      self.right_col = [ ]
+
+      match = _re_extract_info.match(line)
+      return _item(type='header', line1=match.group(1), line2=match.group(2),
+                   extra=match.group(3))
+
+    if line[0] == '\\':
+      # \ No newline at end of file
+
+      # move into the flushing state. note: it doesn't matter if we really
+      # have data to flush or not; that will be figured out later
+      self.state = 'flush-' + self.state
+      return None
+
+    diff_code = line[0]
+    output = spaced_html_text(line[1:])
+
+    fs = '<font face="%s" size="%s">' % \
+         (cfg.options.diff_font_face, cfg.options.diff_font_size)
+
+    # add font stuff
+    output = fs + '&nbsp;' + output + '</font>'
+
+    if diff_code == '+':
+      if self.state == 'dump':
+        return _item(type='add', right=output)
+
+      self.state = 'pre-change-add'
+      self.right_col.append(output)
+      return None
+
+    if diff_code == '-':
+      self.state = 'pre-change-remove'
+      self.left_col.append(output)
+      return None
+
+    if self.left_col or self.right_col:
+      # save the line for processing again later
+      self.save_line = line
+
+      # move into the flushing state
+      self.state = 'flush-' + self.state
+      return None
+
+    return _item(type='context', left=output, right=output)
+
+  def _flush_row(self):
+    if not self.left_col and not self.right_col:
+      # nothing more to flush
+      return None
+
+    if self.state == 'flush-pre-change-remove':
+      return _item(type='remove', left=self.left_col.pop(0))
+
+    # state == flush-pre-change-add
+    item = _item(type='change', have_left=None, have_right=None)
+    if self.left_col:
+      item.have_left = 'yes'
+      item.left = self.left_col.pop(0)
+    if self.right_col:
+      item.have_right = 'yes'
+      item.right = self.right_col.pop(0)
+    return item
+
+class DiffSequencingError(Exception):
+  pass
 
 def view_diff(request, cvs_filename):
   query_dict = request.query_dict
@@ -2417,7 +2374,6 @@ def view_diff(request, cvs_filename):
   fp = popen.popen(os.path.normpath(os.path.join(cfg.general.rcs_path,'rcsdiff')), args, 'r')
 
   if human_readable:
-    http_header()
     human_readable_diff(request, fp, rev1, rev2, sym1, sym2)
     return
 

@@ -42,7 +42,88 @@
 
     <ul>
       <li><a href="#from7">Upgrading from ViewCVS 0.7 or earlier</a></li>
+      <li><a href="#from8">Upgrading from ViewCVS 0.8</a></li>
     </ul>
+
+    <hr>
+
+    <h2><a name="from8">Upgrading from ViewCVS 0.8</a></h2>
+    <p>
+      This section discusses how to upgrade ViewCVS 0.8 to version
+      0.9 or a later version of the software.
+    </p>
+
+    <h3>Templates</h3>
+    <p>
+      More templates were introduced in version 0.8 of the software,
+      which made many of the configuration options obsolete. This
+      section covers which options were removed. If you made any
+      changes to these options, then you will need to make
+      corresponding changes in the templates.
+    </p>
+    <blockquote>
+      <dl>
+	<dt>
+	  Colors:
+	  <strong>diff_heading</strong>,
+	  <strong>diff_empty</strong>,
+	  <strong>diff_remove</strong>,
+	  <strong>diff_change</strong>,
+	  <strong>diff_add</strong>,
+	  and <strong>diff_dark_change</strong>
+	</dt>
+	<dd>
+	  These options have been incorporated into the
+	  <code>diff.ezt</code> template.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>markup_log</strong></dt>
+	<dd>
+	  This option has been incorporated into the
+	  <code>markup.ezt</code> template.
+
+	  <p></p>
+	</dd>
+
+        <dt>Colors: <strong>nav_header</strong>
+          and <strong>alt_background</strong></dt>
+	<dd>
+	  These options have been incorporated into the
+	  <code>header.ezt</code> template.
+
+	  <p></p>
+	</dd>
+
+        <dt>
+	  Images:
+          <strong>back_icon</strong>,
+          <strong>dir_icon</strong>,
+          and <strong>file_icon</strong>
+        </dt>
+	<dd>
+	  These options have been incorporated into the
+	  <code>directory.ezt</code>, <code>header.ezt</code>,
+	  <code>log.ezt</code>, <code>log_table.ezt</code>, and
+	  <code>query.ezt</code> templates.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>use_java_script</strong>
+          and <strong>open_extern_window</strong></dt>
+	<dd>
+	  The templates now use JavaScript in all applicable places,
+	  and open external windows for most downloading and viewing
+	  of files. If you wish to not use JavaScript and/or external
+	  windows, then remove the feature(s) from the templates.
+
+	  <p></p>
+	</dd>
+
+      </dl>
+    </blockquote>
 
     <hr>
 
@@ -50,6 +131,11 @@
     <p>
       This section discusses how to upgrade ViewCVS 0.7 or earlier to 
       0.8 or a later version of the software.
+    </p>
+    <p>
+      <strong>NOTE:</strong> these changes will bring you up to the
+      requirements of version 0.8. You must also follow the directions
+      for <a href="#from8">upgrading from 0.8</a>.
     </p>
 
     <h3>Templates</h3>
@@ -164,6 +250,24 @@
 
           <p></p>
 	</dd>
+
+        <dt>Colors: <strong>text</strong>
+          and <strong>background</strong></dt>
+	<dd>
+	  These options have been incorporated into the
+	  <code>directory.ezt</code>, <code>log.ezt</code>, and
+	  <code>log_table.ezt</code> templates.
+
+	  <p></p>
+	</dd>
+
+        <dt><strong>main_title</strong></dt>
+	<dd>
+	  This options has been incorporated into the
+	  <code>directory.ezt</code> template.
+
+	  <p></p>
+	</dd>
       </dl>
     </blockquote>
 
@@ -172,7 +276,7 @@
   <address><a href="mailto:viewcvs@lyra.org">ViewCVS Users Group</a></address>
 <!-- Created: Mon Sep 24 04:23:53 PDT 2001 -->
 <!-- hhmts start -->
-Last modified: Mon Dec 10 02:06:31 PST 2001
+Last modified: Mon Dec 17 00:54:43 PST 2001
 <!-- hhmts end -->
 </body>
 </html>
