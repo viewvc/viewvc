@@ -1,6 +1,7 @@
 CONTENTS
 --------
   INSTALLING VIEWCVS
+  UPGRADING VIEWCVS
   SQL CHECKIN DATABASE
   CVSGRAPH CONFIGURATION
   IF YOU HAVE PROBLEMS...
@@ -70,6 +71,21 @@ WARNING: ViewCVS has not been tested on web servers operating on the
          Win32 platform.
 
 
+UPGRADING VIEWCVS
+-----------------
+
+It is recommended to install the new version in a fresh directory
+and to carefully compare the configuration files.  A possible solution
+is to choose /usr/local/viewcvs-0.6, /usr/local/viewcvs-0.7 and
+so on and create a symbolic link viewcvs pointing to the production 
+version.
+
+From release 0.7 to 0.8:
+   Since viewcvs-0.7 some information has been moved out of the
+   viewcvs.conf file into the new file templates/directory.ezt.  
+   There are also some new options like 'allow_tar' and 'use_cvsgraph'
+   (see below).
+   
 
 SQL CHECKIN DATABASE
 --------------------
