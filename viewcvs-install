@@ -79,6 +79,7 @@ went into the new files in subdirectory templates.""", 0),
 
     ("tools/loginfo-handler", "loginfo-handler", 0755, 1, 0, 0),
     ("tools/cvsdbadmin", "cvsdbadmin", 0755, 1, 0, 0),
+    ("tools/svndbadmin", "svndbadmin", 0755, 1, 0, 0),
     ("tools/make-database", "make-database", 0755, 1, 0, 0),
     ]
 
