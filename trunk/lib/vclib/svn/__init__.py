@@ -202,13 +202,13 @@ def _log_helper(svnrepos, rev, path, pool):
   return entry
   
 
-def _fetch_log(svnrepos, full_name, which_rev, options):
+def _fetch_log(svnrepos, full_name, which_rev, options, pool):
   revs = []
 
   if which_rev is not None:
     if (which_rev < 0) or (which_rev > svnrepos.youngest):
       raise vclib.InvalidRevision(which_rev)
-    rev = _log_helper(svnrepos, which_rev, full_name, svnrepos.pool)
+    rev = _log_helper(svnrepos, which_rev, full_name, pool)
     if rev:
       revs.append(rev)
   else:
@@ -216,7 +216,7 @@ def _fetch_log(svnrepos, full_name, which_rev, options):
     history_revs = history_set.keys()
     history_revs.sort()
     history_revs.reverse()
-    subpool = core.svn_pool_create(svnrepos.pool)
+    subpool = core.svn_pool_create(pool)
     for history_rev in history_revs:
       core.svn_pool_clear(subpool)
       rev = _log_helper(svnrepos, history_rev, history_set[history_rev],
@@ -258,10 +258,14 @@ def do_diff(svnrepos, path1, rev1, path2, rev2, diffoptions):
   return fs.FileDiff(root1, path1, root2, path2, svnrepos.pool, diffoptions)
 
 
-class StreamPipe:
-  def __init__(self, stream):
-    self._stream = stream
+class FileContentsPipe:
+  def __init__(self, root, path, pool):
+    self._pool = core.svn_pool_create(pool)
+    self._stream = fs.file_contents(root, path, self._pool)
     self._eof = 0
+
+  def __del__(self):
+    core.svn_pool_destroy(self._pool)
     
   def read(self, len=None):
     chunk = None
@@ -312,7 +316,8 @@ class SubversionRepository(vclib.Repository):
     core.apr_initialize()
     self.apr_init = 1
     self.pool = core.svn_pool_create(None)
-
+    self.scratch_pool = core.svn_pool_create(self.pool)
+    
     # Open the repository and init some other variables.
     self.repos = repos.svn_repos_open(rootpath, self.pool)
     self.name = name
@@ -331,10 +336,14 @@ class SubversionRepository(vclib.Repository):
       core.svn_pool_destroy(self.pool)
     if self.apr_init:
       core.apr_terminate()
+
+  def _scratch_clear(self):
+    core.svn_pool_clear(self.scratch_pool)
     
   def itemtype(self, path_parts):
     basepath = self._getpath(path_parts)
-    kind = fs.check_path(self.fsroot, basepath, self.pool)
+    kind = fs.check_path(self.fsroot, basepath, self.scratch_pool)
+    self._scratch_clear()
     if kind == core.svn_node_dir:
       return vclib.DIR
     if kind == core.svn_node_file:
@@ -344,8 +353,9 @@ class SubversionRepository(vclib.Repository):
   def openfile(self, path_parts, rev=None):
     assert rev is None or int(rev) == self.rev
     path = self._getpath(path_parts)
-    fp = StreamPipe(fs.file_contents(self.fsroot, path, self.pool))
-    revision = str(_get_last_history_rev(self, path, self.pool))
+    revision = str(_get_last_history_rev(self, path, self.scratch_pool))
+    self._scratch_clear()
+    fp = FileContentsPipe(self.fsroot, path, self.pool)
     return fp, revision
 
   def listdir(self, path_parts, options):
@@ -353,15 +363,15 @@ class SubversionRepository(vclib.Repository):
     if self.itemtype(path_parts) != vclib.DIR:
       raise vclib.Error("Path '%s' is not a directory." % basepath)
 
+    dirents = fs.dir_entries(self.fsroot, basepath, self.scratch_pool)
     entries = [ ]
-
-    for entry in fs.dir_entries(self.fsroot, basepath, self.pool).values():
+    for entry in dirents.values():
       if entry.kind == core.svn_node_dir:
         kind = vclib.DIR
       elif entry.kind == core.svn_node_file:
         kind = vclib.FILE              
       entries.append(vclib.DirEntry(entry.name, kind))
-
+    self._scratch_clear()
     return entries
 
   def dirlogs(self, path_parts, entries, options):
@@ -376,8 +386,9 @@ class SubversionRepository(vclib.Repository):
       except ValueError:
         vclib.InvalidRevision(rev)
 
-    revs = _fetch_log(self, full_name, rev, options)
-
+    revs = _fetch_log(self, full_name, rev, options, self.scratch_pool)
+    self._scratch_clear()
+    
     revs.sort()
     prev = None
     for rev in revs:
