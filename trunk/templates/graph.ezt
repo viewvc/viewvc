@@ -1,4 +1,4 @@
-[include "header.ezt" "graph"]
+[include "include/header.ezt" "graph"]
 
 <center>
 <h1>Revision graph of [path]</h1>
@@ -9,4 +9,4 @@
   alt="Revisions of [path]">
 </center>
 
-[include "footer.ezt"]
+[include "include/footer.ezt"]

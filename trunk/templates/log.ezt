@@ -168,4 +168,4 @@
 
 [include "include/sort.ezt"]
 
-[include "footer.ezt"]
+[include "include/footer.ezt"]

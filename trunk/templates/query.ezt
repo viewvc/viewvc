@@ -225,4 +225,4 @@
 [end]
 [end]
 
-[include "footer.ezt"]
+[include "include/footer.ezt"]
