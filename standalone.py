@@ -44,6 +44,9 @@ import sys
 import os
 import string
 import urllib
+import socket
+import select
+import BaseHTTPServer
 
 class Options:
     port = 7467 # default TCP/IP port used for the server
@@ -55,9 +58,8 @@ class Options:
 def serve(port, callback=None):
     """start a HTTP server on the given port.  call 'callback' when the
     server is ready to serve"""
-    import BaseHTTPServer, SimpleHTTPServer, select
 
-    class ViewCVS_Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+    class ViewCVS_Handler(BaseHTTPServer.BaseHTTPRequestHandler):
          
         def do_GET(self):
             """Serve a GET request."""
@@ -67,13 +69,12 @@ def serve(port, callback=None):
                 self.run_viewcvs()
             elif self.path[:7] == "/icons/":
                 # XXX icon type should not be hardcoded to GIF:
+                self.send_response(200)
                 self.send_header("Content-type", "image/gif") 
                 self.end_headers()
                 apache_icons.serve_icon(self.path, self.wfile)
             else:
-                # not needed for ViewCVS, but might be useful, if
-                # people want to serve other things:
-                self.base.do_GET(self)
+                self.send_error(404)
 
         def do_POST(self):
             """Serve a POST request."""
@@ -81,13 +82,6 @@ def serve(port, callback=None):
                 self.run_viewcvs()
             else:
                 self.send_error(501, "Can only POST to viewcvs")
-
-        def send_head(self):
-            """Version of send_head that support viewcvs"""
-            if self.is_viewcvs():
-                return self.run_viewcvs()
-            else:
-                return self.base.send_head(self)
 
         def is_viewcvs(self):
             """Check whether self.path matches the hardcoded ScriptAlias
@@ -100,6 +94,7 @@ def serve(port, callback=None):
             """redirect the browser to the viewcvs URL"""
             self.send_response(301, "moved (redirection follows)")
             self.send_header("Content-type", "text/html")
+            self.send_header("Location", self.server.url + 'viewcvs/')
             self.end_headers()
             self.wfile.write("""<html>
 <head>
@@ -146,7 +141,6 @@ If this doesn't work, please click on the link above.
             env['REQUEST_METHOD'] = self.command
             uqrest = urllib.unquote(rest)
             env['PATH_INFO'] = uqrest
-            env['PATH_TRANSLATED'] = self.translate_path(uqrest)
             env['SCRIPT_NAME'] = scriptname
             if query:
                 env['QUERY_STRING'] = query
@@ -177,9 +171,10 @@ If this doesn't work, please click on the link above.
             # XXX Other HTTP_* headers
             decoded_query = string.replace(query, '+', ' ')
 
-            self.send_response(200, "Script output follows")
+            self.send_response(200)
             self.send_header("Content-type", "text/html")
             self.end_headers()
+
             # Preserve state, because we execute script in current process:
             save_argv = sys.argv
             save_stdin = sys.stdin
@@ -214,22 +209,31 @@ If this doesn't work, please click on the link above.
             self.address = ('', port)
             self.url = 'http://%s:%d/' % (host, port)
             self.callback = callback
-            self.base.__init__(self, self.address, self.handler)
+            BaseHTTPServer.HTTPServer.__init__(self, self.address,
+                                               self.handler)
 
         def serve_until_quit(self):
-            import select
             self.quit = 0
             while not self.quit:
                 rd, wr, ex = select.select([self.socket.fileno()], [], [], 1)
-                if rd: self.handle_request()
+                if rd:
+                    self.handle_request()
 
         def server_activate(self):
-            self.base.server_activate(self)
-            if self.callback: self.callback(self)
+            BaseHTTPServer.HTTPServer.server_activate(self)
+            if self.callback:
+                self.callback(self)
 
-    ViewCVS_Server.base = BaseHTTPServer.HTTPServer
+        def server_bind(self):
+            # set SO_REUSEADDR (if available on this platform)
+            if hasattr(socket, 'SOL_SOCKET') \
+               and hasattr(socket, 'SO_REUSEADDR'):
+                self.socket.setsockopt(socket.SOL_SOCKET,
+                                       socket.SO_REUSEADDR, 1)
+            BaseHTTPServer.HTTPServer.server_bind(self)
+
     ViewCVS_Server.handler = ViewCVS_Handler
-    ViewCVS_Handler.base = SimpleHTTPServer.SimpleHTTPRequestHandler
+
     try:
         # XXX Move this code out of this function.
         # Early loading of configuration here.  Used to
