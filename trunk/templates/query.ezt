@@ -184,7 +184,15 @@
       <td align=left valign=top>
 	[if-any commits.files.branch][commits.files.branch][else]&nbsp;[end]
       </td>
-      <td align=left valign=top>[commits.files.plus]/[commits.files.minus]</td>
+      <td align=left valign=top>
+        [is commits.files.type "Add"]<ins>[end]
+        [is commits.files.type "Change"]<a href="[commits.files.difflink]">[end]
+        [is commits.files.type "Remove"]<del>[end]
+          [commits.files.plus]/[commits.files.minus]
+        [is commits.files.type "Add"]</ins>[end]
+        [is commits.files.type "Change"]</a>[end]
+        [is commits.files.type "Remove"]</del>[end]
+      </td>
       <td align=left valign=top>
 	[if-any commits.files.date][commits.files.date][else]&nbsp;[end]
       </td>

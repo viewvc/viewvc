@@ -278,6 +278,16 @@ def form_to_cvsdb_query(form_data):
             
     return query
 
+def prev_rev(rev):
+    '''Returns a string representing the previous revision of the argument.'''
+    r = string.split(rev, '.')
+    # decrement final revision component
+    r[-1] = str(int(r[-1]) - 1)
+    # prune if we pass the beginning of the branch
+    if len(r) > 2 and r[-1] == '0':
+        r = r[:-2]
+    return string.join(r, '.')
+
 def build_commit(server, desc, files, cvsroots, viewcvs_link):
     ob = _item(num_files=len(files), files=[])
     
@@ -313,8 +323,15 @@ def build_commit(server, desc, files, cvsroots, viewcvs_link):
             flink = '[%s] <a href="%s/%s?root=%s">%s</a>' % (
                     cvsroot_name, viewcvs_link, urllib.quote(file),
                     cvsroot_name, file)
+            if commit.GetType() == commit.CHANGE:
+                dlink = '%s/%s?root=%s&amp;view=diff&amp;r1=%s&amp;r2=%s' % (
+                    viewcvs_link, urllib.quote(file), cvsroot_name,
+                    prev_rev(commit.GetRevision()), commit.GetRevision())
+            else:
+                dlink = None
         else:
             flink = file_full_path
+            dlink = None
 
         ob.files.append(_item(date=ctime,
                               author=commit.GetAuthor(),
@@ -323,6 +340,8 @@ def build_commit(server, desc, files, cvsroots, viewcvs_link):
                               branch=commit.GetBranch(),
                               plus=int(commit.GetPlusCount()),
                               minus=int(commit.GetMinusCount()),
+                              type=commit.GetTypeString(),
+                              difflink=dlink,
                               ))
 
     return ob
