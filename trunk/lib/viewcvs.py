@@ -1445,6 +1445,7 @@ def paging(data, key, pagestart, local_name):
     pick = _item(start=None, end=None, count=None)
     pick.start = getattr(data[key][i], local_name)
     pick.count = i
+    pick.page = (i / cfg.options.use_pagesize) + 1
     try:
       pick.end = getattr(data[key][i+cfg.options.use_pagesize-1], local_name)
     except IndexError:
