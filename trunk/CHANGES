@@ -1,3 +1,8 @@
+Version 0.9.2 (released 15-Jan-2001)
+
+  * fix redirects to Attic for diffs
+  * fix diffs that have no changes (causing an infinite loop)
+
 Version 0.9.1 (released 26-Dec-2001)
 
   * fix a problem with some syntax in ndiff.py which isn't compatible
