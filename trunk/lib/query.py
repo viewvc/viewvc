@@ -278,16 +278,7 @@ def form_to_cvsdb_query(form_data):
             
     return query
 
-def cvsroot_name_from_path(cvsroot):
-    ## we need to resolve the cvsroot path from the database
-    ## to the name given to it in the viewcvs.conf file
-    for key, value in cfg.general.cvs_roots.items():
-        if value == cvsroot:
-            return key
-
-    return None
-
-def build_commit(desc, files):
+def build_commit(desc, files, cvsroots):
     ob = _item(num_files=len(files), files=[])
     
     if desc:
@@ -313,10 +304,15 @@ def build_commit(desc, files):
 
         ## if we couldn't find the cvsroot path configured in the 
         ## viewcvs.conf file, then don't make the link
-        cvsroot_name = cvsroot_name_from_path(commit.GetRepository())
+        try:
+          cvsroot_name = cvsroots[commit.GetRepository()]
+        except KeyError:
+          cvsroot_name = None
+        
         if cvsroot_name:
-            flink = '<a href="viewcvs.cgi/%s?root=%s">%s</a>' \
-                    % (file, cvsroot_name, file_full_path)
+            flink = '<a href="%s/%s?root=%s">%s</a>' % (
+                    server.pageGlobals['viewcvs_link'], file, cvsroot_name, 
+                    file_full_path)
         else:
             flink = file_full_path
 
@@ -342,6 +338,13 @@ def run_query(form_data):
     commits = [ ]
     files = [ ]
 
+    cvsroots = {}
+    for key, value in cfg.general.cvs_roots.items():
+        value = os.path.normcase(value)
+        while value[-1] == os.sep:
+            value = value[:-1]
+        cvsroots[value] = key
+
     current_desc = query.commit_list[0].GetDescription()
     for commit in query.commit_list:
         desc = commit.GetDescription()
@@ -349,13 +352,13 @@ def run_query(form_data):
             files.append(commit)
             continue
 
-        commits.append(build_commit(current_desc, files))
+        commits.append(build_commit(current_desc, files, cvsroots))
 
         files = [ commit ]
         current_desc = desc
 
     ## add the last file group to the commit list
-    commits.append(build_commit(current_desc, files))
+    commits.append(build_commit(current_desc, files, cvsroots))
 
     return commits
 
@@ -364,11 +367,13 @@ def handle_config():
     global cfg
     cfg = viewcvs.cfg
 
-def main():
+def main(viewcvs_link):
   global server
   try:
     server = sapi.server
     handle_config()
+
+    server.pageGlobals['viewcvs_link'] = viewcvs_link
     
     form = server.FieldStorage()
     form_data = FormData(form)
