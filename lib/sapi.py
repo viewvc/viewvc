@@ -118,14 +118,14 @@ class CgiServer(Server):
     global cgi
     import cgi
 
-  def header(self, content_type='text/html', status='200 OK'):
+  def header(self, content_type='text/html', status=None):
     if not self.headerSent:
       self.headerSent = 1
 
-      # The only way ViewCVS pages and error messages will be visible
-      # under IIS is if a 200 error code is returned. Otherwise it
-      # will send the static error page corresponding to the code number
-      if self.iis:
+      # The only way ViewCVS pages and error messages are visible under 
+      # IIS is if a 200 error code is returned. Otherwise IIS instead
+      # sends the static error page corresponding to the code number.
+      if status is None or self.iis:
         status = '200 OK'
 
       sys.stdout.write('Status: %s\r\nContent-Type: %s\r\n\r\n'
@@ -174,7 +174,7 @@ class AspServer(ThreadedServer):
     self.response = Response
     self.application = Application
 
-  def header(self, content_type='text/html', status='200 OK'):
+  def header(self, content_type=None, status=None):
     # Normally, setting self.response.ContentType after headers have already
     # been sent simply results in an AttributeError exception, but sometimes
     # it leads to a fatal ASP error. For this reason I'm keeping the
@@ -183,8 +183,8 @@ class AspServer(ThreadedServer):
     if not self.headerSent:
       try:
         self.headerSent = 1
-        self.response.ContentType = content_type
-        self.response.Status = status
+        if content_type is not None: self.response.ContentType = content_type
+        if status is not None: self.response.Status = status
       except AttributeError:
         pass
 
@@ -258,11 +258,12 @@ class ModPythonServer(ThreadedServer):
     global cgi
     import cgi
 
-  def header(self, content_type='text/html', status='200 OK'):
-    self.request.content_type = content_type
-    m = _re_status.match(status)
-    if not m is None:
-      self.request.status = int(m.group())
+  def header(self, content_type=None, status=None):
+    if content_type is not None: self.request.content_type = content_type
+    if status is not None:
+      m = _re_status.match(status)
+      if not m is None:
+        self.request.status = int(m.group())
 
   def redirect(self, url):
     import mod_python.apache
