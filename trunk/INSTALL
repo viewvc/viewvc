@@ -2,11 +2,11 @@ CONTENTS
 --------
   TO THE IMPATIENT
   INSTALLING VIEWCVS
+  APACHE CONFIGURATION
   UPGRADING VIEWCVS
   SQL CHECKIN DATABASE
   ENSCRIPT CONFIGURATION
   CVSGRAPH CONFIGURATION
-  APACHE CONFIGURATION
   IF YOU HAVE PROBLEMS...
 
 
@@ -39,6 +39,9 @@ Optional:      a web server capable of running CGI programs
     If you just want to see what your CVS repository looks like with
     ViewCVS, type "./standalone.py -g -r /PATH/TO/CVS/ROOT".  This
     will start a tiny webserver serving at http://localhost:7467/.
+    PLEASE NOTE: This requires Python with thread support enabled and
+    the Tkinter GUI.  If you don't have one of these, omit the '-g' option.
+
 
   Standard operation:
 
