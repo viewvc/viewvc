@@ -357,7 +357,7 @@ def get_logs(rcs_path, full_name, files, view_tag):
       # fetch the latest revision on the default branch
       chunk = ('-r',) + tuple(chunk)
 
-    rlog = popen.popen(os.path.join(rcs_path, 'rlog'), chunk, 'rt')
+    rlog = popen.popen(os.path.join(rcs_path, 'rlog'), chunk, 'rt', 0)
 
     process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags)
 
@@ -381,7 +381,7 @@ def fetch_log(rcs_path, full_name, which_rev=None):
     args = ('-r' + which_rev, full_name)
   else:
     args = (full_name,)
-  rlog = popen.popen(os.path.join(rcs_path, 'rlog'), args, 'rt')
+  rlog = popen.popen(os.path.join(rcs_path, 'rlog'), args, 'rt', 0)
 
   header, eof = parse_log_header(rlog)
   head = header.head
