@@ -1544,6 +1544,14 @@ def view_directory(request):
     'nav_path' : clickable_path(request, 0, 0),
   })
 
+  if request.path_parts:
+    dir = string.join(request.path_parts[:-1], '/')
+    data['up_href'] = request.get_url(view_func=view_directory,
+                                      where=dir, pathtype=vclib.DIR,
+                                      params={}, escape=1)
+  else:
+    data['up_href'] = None
+
   # clicking on sort column reverses sort order
   if sortdir == 'down':
     revsortdir = None # 'up'
