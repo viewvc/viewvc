@@ -66,7 +66,7 @@ def serve(port, callback=None):
             elif self.is_viewcvs():
                 self.run_viewcvs()
             elif self.path[:7] == "/icons/":
-                # XXX icon type should not be gardcoded to GIF:
+                # XXX icon type should not be hardcoded to GIF:
                 self.send_header("Content-type", "image/gif") 
                 self.end_headers()
                 apache_icons.serve_icon(self.path, self.wfile)
@@ -185,14 +185,22 @@ If this doesn't work, please click on the link above.
             save_stdin = sys.stdin
             save_stdout = sys.stdout
             save_stderr = sys.stderr
+            # For external tools like enscript we also need to redirect
+            # the real stdout file descriptor:
+            save_realstdout = os.dup(1) 
             try:
                 try:
                     sys.stdout = self.wfile
+                    os.close(1) 
+                    assert os.dup(self.wfile.fileno()) == 1
                     sys.stdin = self.rfile
                     viewcvs.main()
                 finally:
                     sys.argv = save_argv
                     sys.stdin = save_stdin
+                    sys.stdout.flush()
+                    os.close(1)
+                    assert os.dup(save_realstdout) == 1
                     sys.stdout = save_stdout
                     sys.stderr = save_stderr
             except SystemExit, status:
