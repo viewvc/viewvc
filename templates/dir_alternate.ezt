@@ -206,7 +206,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
         <td colspan=3><i>CVS information is unreadable</i></td>
       [else]
         <td width="1%">&nbsp;<a href="[rows.href]"><b>[rows.rev]</b></a></td>
-        <td><a name="[rows.anchor]" href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
+        <td><a name="[rows.anchor]" href="[rows.rev_href]&amp;content-type=text/vnd.viewcvs-markup">
 [# to display the revision in a separate window, you could use:
 
    <a name="{rows.anchor}" href="{rows.rev_href}" target="cvs_checkout"
