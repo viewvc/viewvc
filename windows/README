@@ -8,11 +8,11 @@ REQUIREMENTS
 
 ViewCVS requires a Python interpreter. The best one to use for Windows is ActiveState's ActivePython ( http://aspn.activestate.com/ASPN/Python ).
 
-ViewCVS also requires that the RCS tools be installed on your computer. There are numerous ports of RCS to Windows. Precompiled binaries are available from
+ViewCVS also requires that the RCS tools be installed on your computer. If you are using ViewCVS with CVSNT, you should use the RCS utilities that come with CVSNT (they aren't installed by default). Otherwise you can find RCS binaries at
 
   http://ftp.cvshome.org/rcs/
 
-and there is more information about RCS at
+and more information at
 
   http://www.cvshome.org/cyclic/cyclic-pages/rcs.html
 
@@ -73,7 +73,7 @@ ASP Mode On IIS
 
   1) Run <PYTHON_DIR>\win32comext\axscript\client\pyscript.py to register Python as an ASP scripting language. (More documentation on this is at http://www.python.org/windows/win32com/ActiveXScripting.html )
 
-  2) Copy the viewcvs.asp and query.asp files from <VIEWCVS_DIR>\windows to a folder that is accessible through your web server.
+  2) Copy the viewcvs.asp and query.asp files from <VIEWCVS_INSTALL_DIR>\windows to a folder that is accessible through your web server.
 
   3) Start up the IIS "Internet Services Manager" and right click on the virtual server that contains the files you just copied. Choose "Properties" from the context menu that appears.
 
@@ -105,33 +105,16 @@ Mod_Python Mode on Apache
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ENSCRIPT HIGHLIGHTING
 
-  To use enscript, you'll have to install the enscript, gettext, libiconv, and sed packages from the gnuwin32 project (http://gnuwin32.sourceforge.net/). Detailed instructions are on their site, but here is the basic procedure.
+  To use enscript, you'll have to install the enscript, libintl, libiconv, and sed packages from the gnuwin32 project (http://gnuwin32.sourceforge.net/). Detailed instructions are on their site, but here is the basic procedure.
 
   1) Extract all packages to a folder on your hard drive, for example c:\gnuwin32
 
-  2) Add "c:\gnuwin32\bin" to the system "PATH" environment variable
-
-  3) Create a new system environment variable called "ENSCRIPT_LIBRARY" and set it to "c:\gnuwin32\share\enscript" (The ENSCRIPT_LIBRARY variable will be used by enscript to load two important files: %ENSCRIPT_LIBRARY%\hl\states.st and %ENSCRIPT_LIBRARY%\..\..\etc\enscript.cfg)
-
-  4) Update the system paths in enscript.cfg. The ones that need to be set are:
-
-     AFMPath: c:/gnuwin32/share/enscript/afm
-     StatesBinary: c:/gnuwin32/bin/states
-     StatesConfigFile: c:/gnuwin32/share/enscript/hl/enscript.st
-
-  5) If ViewCVS is running as part of a system service like IIS you will need to reboot the computer so it is able to see the new environment variables.
-
-  NOTE: There is a bug in the enscript 1.6.3-1 (2002-04-05) package. If you are having problems with this package, see the KNOWN ISSUES section below.
-
-  ANOTHER NOTE: Some versions of apache reportedly hide the ENSCRIPT_LIBRARY environment variable from the CGI environment where ViewCVS and enscript run. Two workarounds have been suggested for this. The first one from Rüdiger Koch is to put enscript.cfg in its default location, c:\progra~1\enscript\enscript.cfg, so the environment variable is not needed. The second one from Nick Minutello is to add these lines to the httpd.conf file:
-
-    LoadModule setenvif_module modules/mod_setenvif.so
-    PassEnv ENSCRIPT_LIBRARY
+  2) Add "c:\gnuwin32\bin" to the system "PATH" environment variable. If ViewCVS is running as part of a system service like IIS you will need to reboot the computer so it is able to see the value. See the "Troubleshooting" section below for specific information on when a reboot is neccessary.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 BONSAI-LIKE CHECKIN DATABASE
 
-  To use the checkin database, you'll need to install MySQL and the MySQL-Python interface. MySQL can be downloaded from www.mysql.com. The MySql-Python adapter is available from http://sf.net/projects/mysql-python/ . Make sure to grab the the latest version from the "Files" section. (The "Home Page" link takes you to an outdated page that only links to very old versions.) Both packages come with GUI installers. Once you have MySQL running and set up with a username and password follow these instructions to set up ViewCVS.
+  To use the checkin database, you'll need to install MySQL and the MySQL-Python interface. MySQL can be downloaded from www.mysql.com. The MySql-Python adapter is available from http://sf.net/projects/mysql-python/ . Make sure to grab the the latest version from the "Files" section. (The "Home Page" link takes you to an outdated page that only links to very old versions.) Both packages come with GUI installers. Once you have MySQL running and set up with a username and password, follow these instructions to set up ViewCVS.
 
   1) Open a command prompt and type these commands:
 
@@ -183,13 +166,13 @@ to:
 
   SHOW_CHILD_PROCESSES = 1
 
-Important: You may need to restart your web server before this options takes effect. See "Changes made to..." later in this section.
+Important: You may need to restart your web server before this option takes effect. See "Changes made to..." later in this section.
 
 - A common cause of server errors under IIS are permissions problems. You need to make sure that the virtual directory containing the CGI or ASP files has script execution enabled. You also need to make sure that the web server user accounts (IUSR_machine_name and IWAM_machine_name, where machine_name is your computer name) have read and execute access to the .asp or .cgi stub scripts, the ViewCVS lib/ folder, the paths where external tools like rcs, enscript, sed, and cvsgraph live, and the CVS repositories. NTFS auditing makes it very easy to track down permissions problems. Also look for IIS messages in the event log.
 
 - Certain Apache configurations may hide some environment variables from the ViewCVS CGI scripts and the programs they launch. You can see whether an environment variable is visible from the CGI environment by enabling the SHOW_CHILD_PROCESSES debug mode described above. You can force Apache to let variables through with the PassEnv directive ( http://httpd.apache.org/docs/mod/mod_env.html#passenv ).
 
-- Changes made to environment variables, ViewCVS source files and the ViewCVS configuration file do not always take effect immediately. The table below shows what actions you need to take after changing any of these things before they will take effect.
+- Changes made to environment variables, ViewCVS source files and the ViewCVS configuration file do not always take effect immediately. The table below shows what actions you need to take after changing any of these things before they will have an effect.
 
 +----------------+----------------+----------------+-------------------------+
 |                | Environment    | ViewCVS        | ViewCVS                 |
@@ -247,7 +230,7 @@ Important: You may need to reboot your computer before the environment variable 
 
 - There is a bug in the gnuwin32 enscript 1.6.3-1 (2002-04-05) package which can make enscript.exe cause an access violation whenever it is run. If you are affected by this bug, you can use the patched version of enscript.exe which is included here in the windows\binaries\enscript folder. See the readme.txt there for more information.
 
-- enscript 1.6.2 does not seem to work with the standalone server. When a enscript page is loaded, the enscript process never returns and consumes all CPU cycles until it is killed manually. enscript 1.6.3 does not have this problem and neither does the PHP colorizer.
+- enscript 1.6.2 does not seem to work with the standalone server. When a enscript page is loaded, the enscript process never returns and consumes all available CPU cycles until it is killed manually. enscript 1.6.3 does not have this problem and neither does the PHP colorizer.
 
 - By default, ASP will set session cookies at each page load. ViewCVS does not use these cookies and they can be safely disabled. You can do this by opening the IIS properties dialog for the application directory containing the ViewCVS .asp files. Go to the [Home] | [Virtual] Directory tab and click the "Configuration" button under "Application Settings". On the dialog that comes up, uncheck "Enable Session State" under "App Options" -> "Application Configuration".
 
