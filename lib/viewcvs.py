@@ -541,6 +541,7 @@ _legal_params = {
   'dir_pagestart' : _re_validate_number,
   'log_pagestart' : _re_validate_number,
   'hidecvsroot'   : _re_validate_number,
+  'makepatch'    : _re_validate_number,
   'annotate'      : _re_validate_revnum,
   'graph'         : _re_validate_revnum,
   'makeimage'     : _re_validate_number,
@@ -607,7 +608,7 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
       request_mtime = None
 
   # if we have an etag, use that for freshness checking.
-  # if not available, then we use the last-modifed time.
+  # if not available, then we use the last-modified time.
   # if not available, then the document isn't fresh.
   if etag is not None:
     isfresh = (request_etag == etag)
@@ -861,7 +862,7 @@ class MarkupPipeWrapper:
   """A file-pointer-ish object from another filepointer, plus some optional
   pre- and post- text.  Closes and closes FP."""
   
-  def __init__(self, fp, pretext=None, posttext=None):
+  def __init__(self, fp, pretext=None, posttext=None, htmlize=1):
     # Setup a list of fps to read from (actually, a list of tuples
     # tracking the fp and whether or not to htmlize() the stuff read
     # from that fp).  We read from a given fp only after exhausting
@@ -870,7 +871,7 @@ class MarkupPipeWrapper:
     if pretext:
       self.fps.append([MarkupBuffer(pretext), 0])
     if fp:
-      self.fps.append([fp, 1])
+      self.fps.append([fp, htmlize])
     if posttext:
       self.fps.append([MarkupBuffer(posttext), 0])
     self.which_fp = 0
@@ -1999,16 +2000,7 @@ def rcsdiff_date_reformat(date_str):
 
 _re_extract_rev = re.compile(r'^[-+]+ [^\t]+\t([^\t]+)\t((\d+\.)*\d+)$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
-def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
-  # do this now, in case we need to print an error
-  request.server.header()
-
-  query_dict = request.query_dict
-
-  where = request.where
-
-  data = nav_header_data(request, rev2)
-
+def human_readable_diff(fp, rev1, rev2):
   log_rev1 = log_rev2 = None
   date1 = date2 = ''
   rcsdiff_eflag = 0
@@ -2059,44 +2051,25 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
   # Process any special lines in the header, or continue to
   # get the differences from DiffSource.
   if rcsdiff_eflag == _RCSDIFF_IS_BINARY:
-    rcs_diff = [ (_item(type='binary-diff')) ]
+    changes = [ (_item(type='binary-diff')) ]
   elif rcsdiff_eflag == _RCSDIFF_ERROR:
-    rcs_diff = [ (_item(type='error')) ]
+    changes = [ (_item(type='error')) ]
   else:
-    rcs_diff = DiffSource(fp)
+    changes = DiffSource(fp)
 
-  data.update({
-    'rev1' : rev1,
-    'rev2' : rev2,
-    'tag1' : sym1,
-    'tag2' : sym2,
-    'date1' : ', ' + rcsdiff_date_reformat(date1),
-    'date2' : ', ' + rcsdiff_date_reformat(date2),
-    'changes' : rcs_diff,
-    'diff_format' : query_dict.get('diff_format', cfg.options.diff_format),
-    })
-    
-  params = request.query_dict.copy()
-  params['diff_format'] = None
-    
-  url, params = request.get_link(params=params)
-  data['diff_format_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-  data['diff_format_hidden_values'] = prepare_hidden_values(params)
-
-  generate_page(request, cfg.templates.diff, data)
+  return date1, date2, changes
 
 def spaced_html_text(text):
   text = string.expandtabs(string.rstrip(text))
-
+  hr_breakable = cfg.options.hr_breakable
+  
   # in the code below, "\x01" will be our stand-in for "&". We don't want
   # to insert "&" because it would get escaped by htmlify().  Similarly,
   # we use "\x02" as a stand-in for "<br>"
 
-  if cfg.options.hr_breakable > 1 and len(text) > cfg.options.hr_breakable:
-    text = re.sub('(' + ('.' * cfg.options.hr_breakable) + ')',
-                  '\\1\x02',
-                  text)
-  if cfg.options.hr_breakable:
+  if hr_breakable > 1 and len(text) > hr_breakable:
+    text = re.sub('(' + ('.' * hr_breakable) + ')', '\\1\x02', text)
+  if hr_breakable:
     # make every other space "breakable"
     text = string.replace(text, '  ', ' \x01nbsp;')
   else:
@@ -2229,6 +2202,50 @@ class DiffSource:
 class DiffSequencingError(Exception):
   pass
 
+def raw_diff(rootpath, fp, sym1, sym2, unified, parseheader, htmlize):
+  date1 = date2 = None
+  header_lines = []
+
+  # If we're parsing headers, then parse and tweak the diff headers,
+  # collecting them in an array until we've read and handled them all.
+  # Then, use a MarkupPipeWrapper to wrap the collected headers and
+  # the filepointer.
+  if parseheader:
+    if unified:
+      f1 = '--- ' + rootpath
+      f2 = '+++ ' + rootpath
+    else:
+      f1 = '*** ' + rootpath
+      f2 = '--- ' + rootpath
+
+    parsing = 1
+    while parsing:
+      line = fp.readline()
+      if not line:
+        break
+
+      if line[:len(f1)] == f1:
+        match = _re_extract_rev.match(line)
+        if match:
+          date1 = match.group(1)
+        line = string.replace(line, rootpath + '/', '')
+        if sym1:
+          line = line[:-1] + ' %s\n' % sym1
+      elif line[:len(f2)] == f2:
+        line = string.replace(line, rootpath + '/', '')
+        match = _re_extract_rev.match(line)
+        if match:
+          date2 = match.group(1)
+          log_rev2 = match.group(2)
+        if sym2:
+          line = line[:-1] + ' %s\n' % sym2
+        parsing = 0
+      header_lines.append(line)
+
+  return date1, date2, MarkupPipeWrapper(fp, string.join(header_lines, ''),
+                                         None, htmlize)
+
+
 def view_diff(request):
   query_dict = request.query_dict
 
@@ -2281,6 +2298,7 @@ def view_diff(request):
 
   human_readable = 0
   unified = 0
+  parseheaders = 0
   args = [ ]
 
   ### Note: these options only really work out where rcsdiff (used by
@@ -2290,8 +2308,16 @@ def view_diff(request):
   ### VC types.
   
   format = query_dict.get('diff_format', cfg.options.diff_format)
+  makepatch = int(request.query_dict.get('makepatch', 0))
+
+  # If 'makepatch' was specified with a colored diff, just fall back
+  # to straight unidiff (though, we could throw an error).
+  if makepatch and (format == 'h' or format == 'l'):
+    format = 'u'
+  
   if format == 'c':
     args.append('-c')
+    parseheaders = 1
   elif format == 's':
     args.append('--side-by-side')
     args.append('--width=164')
@@ -2306,6 +2332,7 @@ def view_diff(request):
   elif format == 'u':
     args.append('-u')
     unified = 1
+    parseheaders = 1
   else:
     raise debug.ViewcvsException('Diff format %s not understood'
                                  % format, '400 Bad Request')
@@ -2359,36 +2386,48 @@ def view_diff(request):
         raise debug.ViewcvsException('Invalid path(s) or revision(s) passed '
                                      'to diff', '400 Bad Request')
       raise e
-    
-  if human_readable:
-    human_readable_diff(request, fp, rev1, rev2, sym1, sym2)
+
+  # If we're bypassing the templates, just print the diff and get outta here.
+  if makepatch:
+    request.server.header('text/plain')
+    date1, date2, raw_diff_fp = raw_diff(request.repos.rootpath, fp,
+                                         sym1, sym2, unified, parseheaders, 0)
+    copy_stream(raw_diff_fp)
+    raw_diff_fp.close()
     return
 
-  request.server.header('text/plain')
+  request.server.header()
+  data = nav_header_data(request, rev2)
+  data.update({
+    'rev1' : rev1,
+    'rev2' : rev2,
+    'tag1' : sym1,
+    'tag2' : sym2,
+    'diff_format' : request.query_dict.get('diff_format',
+                                           cfg.options.diff_format),
+    })
 
-  rootpath = request.repos.rootpath
-  if unified:
-    f1 = '--- ' + rootpath
-    f2 = '+++ ' + rootpath
+  params = request.query_dict.copy()
+  params['diff_format'] = None
+    
+  url, params = request.get_link(params=params)
+  data['diff_format_action'] = urllib.quote(url, _URL_SAFE_CHARS)
+  data['diff_format_hidden_values'] = prepare_hidden_values(params)
+
+  date1 = date2 = raw_diff_fp = changes = None
+  if human_readable:
+    date1, date2, changes = human_readable_diff(fp, rev1, rev2)
   else:
-    f1 = '*** ' + rootpath
-    f2 = '--- ' + rootpath
+    date1, date2, raw_diff_fp = raw_diff(request.repos.rootpath, fp,
+                                         sym1, sym2, unified, parseheaders, 1)
+  data.update({
+    'date1' : date1 and rcsdiff_date_reformat(date1),
+    'date2' : date2 and rcsdiff_date_reformat(date2),
+    'raw_diff' : raw_diff_fp,
+    'changes' : changes,
+    })
 
-  while 1:
-    line = fp.readline()
-    if not line:
-      break
-
-    if line[:len(f1)] == f1:
-      line = string.replace(line, rootpath + '/', '')
-      if sym1:
-        line = line[:-1] + ' %s\n' % sym1
-    elif line[:len(f2)] == f2:
-      line = string.replace(line, rootpath + '/', '')
-      if sym2:
-        line = line[:-1] + ' %s\n' % sym2
-
-    print line[:-1]
+  generate_page(request, cfg.templates.diff, data)
 
 
 def generate_tarball_header(out, name, size=0, mode=None, mtime=0,

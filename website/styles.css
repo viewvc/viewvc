@@ -45,7 +45,7 @@ A:active  { color: #0000ff; }
 }
 
 
-/*** Colour Diff Styles ***/
+/*** Diff Styles ***/
 .vc_diff_header {
   background-color: #ffffff;
 }
@@ -84,7 +84,10 @@ A:active  { color: #0000ff; }
   font-family: sans-serif;
   font-size: smaller;
 }
-
+.vc_raw_diff {
+  background-color: #cccccc;
+  font-size: smaller;
+}
 
 /*** Query Form ***/
 .vc_query_form {
