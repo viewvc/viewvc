@@ -50,6 +50,7 @@ import mimetypes
 import time
 import re
 import stat
+import struct
 
 #########################################################################
 #
@@ -1325,6 +1326,12 @@ def view_directory(request):
       html_option(tag, view_tag)
     print '</select><input type=submit value="Go"></form>'
 
+  url = os.path.basename(where) + '.tar.gz?tarball=1'
+  query = sticky_query(query_dict)
+  if query:
+    url = url + '&' + query
+  print html_link("Download tarball", url)
+
   html_footer()
 
 def fetch_log(full_name, which_rev=None):
@@ -2213,6 +2220,125 @@ def view_diff(request, cvs_filename):
 
     print line[:-1]
 
+def generate_tarball_header(out, name, size=0, mode=None, mtime=0, uid=0, gid=0, typefrag=None, linkname='', uname='viewcvs', gname='viewcvs', devmajor=1, devminor=0, prefix=None, magic='ustar', version='', chksum=None):
+  if not mode:
+    if name[-1:] == '/':
+      mode = 0755
+    else:
+      mode = 0644
+
+  if not typefrag:
+    if name[-1:] == '/':
+      typefrag = '5' # directory
+    else:
+      typefrag = '0' # regular file
+
+  if not prefix:
+    prefix = ''
+
+  block1 = struct.pack('100s 8s 8s 8s 12s 12s',
+    name,
+    '%07o' % mode,
+    '%07o' % uid,
+    '%07o' % gid,
+    '%011o' % size,
+    '%011o' % mtime)
+
+  block2 = struct.pack('c 100s 6s 2s 32s 32s 8s 8s 155s',
+    typefrag,
+    linkname,
+    magic,
+    version,
+    uname,
+    gname,
+    '%07o' % devmajor,
+    '%07o' % devminor,
+    prefix)
+
+  if not chksum:
+    dummy_chksum = '        '
+    block = block1 + dummy_chksum + block2
+    chksum = 0
+    for i in range(len(block)):
+      chksum = chksum + ord(block[i])
+
+  block = block1 + struct.pack('8s', '%07o' % chksum) + block2
+  block = block + '\0' * (512 - len(block))
+
+  out.write(block)
+
+def generate_tarball(out, relative, directory, tag, stack=[]):
+  subdirs = [ ]
+  rcs_files = [ ]
+  for file, pathname, isdir in get_file_data(directory):
+    if isdir:
+      subdirs.append(file)
+    else:
+      rcs_files.append(file)
+  if tag:
+    try:
+      for file, pathname, isdir in get_file_data(directory + '/Attic'):
+       if not isdir:
+	 rcs_files.append('Attic/' + file)
+    except os.error:
+      pass
+
+  stack.append(relative + '/')
+
+  fileinfo, alltags = get_logs(directory, rcs_files, tag)
+
+  files = fileinfo.keys()
+  files.sort(lambda a, b: cmp(os.path.basename(a), os.path.basename(b)))
+
+  for file in files:
+    info = fileinfo.get(file)
+    rev = info[0]
+    date = info[1]
+    filename = info[4]
+    state = info[5]
+    if state == 'dead':
+      continue
+
+    for dir in stack:
+      generate_tarball_header(out, dir)
+    del stack[0:]
+
+    info = os.stat(directory + '/' + file + ',v')
+    mode = (info[stat.ST_MODE] & 0555) | 0200
+
+    rev_flag = '-p' + rev
+    full_name = directory + '/' + file + ',v'
+    fp = popen.popen(cfg.general.rcs_path + 'co', (rev_flag, full_name), 'r', 0)
+    contents = fp.read()
+    status = fp.close()
+
+    generate_tarball_header(out, relative + '/' + os.path.basename(filename), len(contents), mode, date)
+    out.write(contents)
+    out.write('\0' * (511 - ((len(contents) + 511) % 512)))
+
+  subdirs.sort()
+  for subdir in subdirs:
+    if subdir != 'Attic':
+      generate_tarball(out, relative + '/' + subdir, directory + '/' + subdir, tag, stack)
+
+  if len(stack):
+    del stack[-1:]
+
+def download_tarball(request):
+  query_dict = request.query_dict
+  full_name = request.full_name
+
+  directory = re.sub(_re_up_path, '', full_name)[0:-1]
+  filename = os.path.basename(full_name)
+
+  tag = query_dict.get('only_with_tag')
+
+  http_header('application/octet-stream')
+  fp = popen.pipe_cmds([('gzip', '-c', '-n')])
+  generate_tarball(fp, os.path.basename(directory), directory, tag)
+  fp.write('\0' * 1024)
+  fp.close
+
 def handle_config():
   global cfg
   cfg = config.Config()
@@ -2285,6 +2411,8 @@ def main():
   elif full_name[-5:] == '.diff' and os.path.isfile(full_name[:-5] + ',v') \
        and query_dict.has_key('r1') and query_dict.has_key('r2'):
     view_diff(request, full_name[:-5])
+  elif full_name[-7:] == '.tar.gz' and query_dict.has_key('tarball'):
+    download_tarball(request)
   else:
     # if the file is in the Attic, then redirect
     idx = string.rfind(full_name, '/')
