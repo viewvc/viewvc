@@ -70,7 +70,7 @@ _re_revisions = re.compile(
 def HeuristicArgParse(s, repository):
   """Current versions of CVS (except for CVSNT) do not escape spaces in file
   and directory names that are passed to the loginfo handler. Since the input
-  to loginfo is a space separated string, this can lead to ambiguties. This
+  to loginfo is a space separated string, this can lead to ambiguities. This
   function attempts to guess intelligently which spaces are separators and
   which are part of file or directory names. It disambiguates spaces in
   filenames from the separator spaces between files by assuming that every
@@ -95,7 +95,7 @@ def HeuristicArgParse(s, repository):
       if m is None: 
         error('Argument "%s" does not contain any revision numbers' % s)
     
-      directory, filename = HeuristicArgParseDirectory(s[:m.start()], repository)
+      directory, filename = FindLongestDirectory(s[:m.start()], repository)
       if directory is None:
         error('Argument "%s" does not start with a valid directory' % s)
 
@@ -121,7 +121,7 @@ def HeuristicArgParse(s, repository):
 
   return directory, file_data_list
 
-def HeuristicArgParseDirectory(s, repository):
+def FindLongestDirectory(s, repository):
   """Splits the first part of the argument string into a directory name
   and a file name, either of which may contain spaces. Returns the longest
   possible directory name that actually exists"""
@@ -193,11 +193,8 @@ def NextFile(s, pos = 0):
     else:
       ret += c
     i += 1
-    
-  if len(ret):
-    return ret, i + 1
-  else:
-    return None, i + 1
+
+  return ret or None, i
 
 def ProcessLoginfo(rootpath, directory, files):
     ## XXX This is a somewhat dirty hack:
@@ -209,8 +206,7 @@ def ProcessLoginfo(rootpath, directory, files):
     # split up the directory components
     dirpath = filter(None, string.split(os.path.normpath(directory), os.sep))
 
-    ## convert FileData objects into Commit objects so we can insert them
-    ## into the database
+    ## build a list of Commit objects
     commit_list = []
     for filename, old_version, new_version in files:
         filepath = dirpath + [filename]
@@ -276,7 +272,7 @@ if __name__ == '__main__':
     directory, files = fun(arg, repository)
 
     if files is None:
-      debug('Directory was added, nothing to do')
+      debug('Not a checkin, nothing to do')
     else:
       ProcessLoginfo(repository, directory, files)
 
