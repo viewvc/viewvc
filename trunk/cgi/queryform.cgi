@@ -35,3 +35,25 @@
 #   $Id$
 #
 # -----------------------------------------------------------------------
+
+## BOOTSTRAP
+import sys, os, string
+_viewcvs_root = string.strip(open("/etc/viewcvs/root", "r").read())
+sys.path.append(os.path.join(_viewcvs_root, "lib"))
+##
+
+
+def HTMLHeader():
+    print "Content-type: text/html"
+    print
+    
+
+def Main():
+    HTMLHeader()
+    template_path = os.path.join(
+        _viewcvs_root, "html-templates", "queryformtemplate.html")
+    print open(template_path, "r").read()
+
+
+if __name__ == '__main__':
+    Main()
