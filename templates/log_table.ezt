@@ -17,8 +17,10 @@
 <hr noshade>
 <table width="100%" border=0 cellspacing=1 cellpadding=2>
   <th align=left bgcolor="#88ff88">Revision</th>
+  [is pathtype "file"]
   <th align=left bgcolor="#88ff88">Tasks</th>
-    <th align=left bgcolor="#88ff88">Diffs</th>
+  <th align=left bgcolor="#88ff88">Diffs</th>
+  [end]
   [is roottype "cvs"]
   <th align=left bgcolor="#88ff88">Branches/<br>Tags</th>
   [end]
@@ -33,7 +35,8 @@
       <a name="rev[entries.rev]"></a>
     </td>
 
-    <td>
+    [is pathtype "file"]
+      <td>
       [# Tasks column]
         <a href="[entries.view_href]"><b>View</b></a><br>
         <a href="[entries.download_href]"><b>Download</b></a><br>
@@ -68,6 +71,7 @@
         [end]
       [end]  
       </td>
+    [end]
     [is roottype "cvs"]
     <td>
       [# Branches column]
@@ -159,7 +163,9 @@
 
 [include "include/paging.ezt"]
 
-[include "include/diff_form.ezt"]
+[is pathtype "file"]
+  [include "include/diff_form.ezt"]
+[end]
 
 [include "include/branch_form.ezt"]
 
