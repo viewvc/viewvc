@@ -1,12 +1,14 @@
 [include "include/dir_header.ezt"]
 
 <table width="100%" border=0 cellspacing=1 cellpadding=2>
+<thead>
 <tr>
   <th class="vc_header[is sortby "file"]_sort[end]"
     [is cfg.options.use_cvsgraph "1"]colspan=2[end]>
     <a href="[sortby_file_href]#dirlist">File</a>
     [is sortby "file"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]down[else]up[end].png" />
     [end]
   </th>
@@ -14,6 +16,7 @@
     <a href="[sortby_rev_href]#dirlist">Rev.</a>
     [is sortby "rev"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]down[else]up[end].png" />
     [end]
   </th>
@@ -21,6 +24,7 @@
     <a href="[sortby_date_href]#dirlist">Age</a>
     [is sortby "date"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]down[else]up[end].png" />
     [end]
   </th>
@@ -28,6 +32,7 @@
     <a href="[sortby_author_href]#dirlist">Author</a>
     [is sortby "author"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]down[else]up[end].png" />
     [end]
   </th>
@@ -36,12 +41,15 @@
     <a href="[sortby_log_href]#dirlist">Last log entry</a>
     [is sortby "log"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]down[else]up[end].png" />
     [end]
   </th>
 [end]
 </tr>
+</thead>
 
+<tbody>
 [for rows]
   <tr class="vc_row_[if-index rows even]even[else]odd[end]">
   [is rows.type "unreadable"]
@@ -131,6 +139,7 @@
   [end]
   </tr>
 [end]
+</tbody>
 
 </table>
 
