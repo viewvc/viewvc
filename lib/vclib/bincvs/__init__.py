@@ -131,6 +131,7 @@ class TagInfo:
   def number(self):
     return self._branch or self._rev
 
+_re_lineno = re.compile(r'\:\d+$')
 
 def parse_log_header(fp):
   """Parse and RCS/CVS log header.
@@ -184,6 +185,7 @@ def parse_log_header(fp):
         break
       elif line[:6] == 'rlog: ':
         # rlog: filename/goes/here,v: error message
+        # rlog: filename/goes/here,v:123: error message
         idx = string.find(line, ': ', 6)
         if idx != -1:
           if line[idx:idx+32] == ': warning: Unknown phrases like ':
@@ -191,9 +193,23 @@ def parse_log_header(fp):
             # files that have unknown fields in them (e.g. "permissions 644;"
             continue
 
+          # look for a line number after the filename
+          match = _re_lineno.search(line, 6, idx)
+          if match:
+            idx = match.start()
+
           # looks like a filename
           filename = line[6:idx]
           return LogHeader(filename), _EOF_ERROR
+      elif line[-28:] == ": No such file or directory\n":
+        # For some reason the windows version of rlog omits the "rlog: "
+        # prefix for first error message when the standard error stream
+        # is redirected to a file or pipe. (the prefix is present
+        # in subsequent errors and when rlog is run from the console
+        # This is just a special case to prevent an especially common
+        # error message from being lost when this happens
+        filename = line[:-28]
+        return LogHeader(filename), _EOF_ERROR
         # dunno what this is
 
   return LogHeader(filename, head, branch, taginfo), eof
@@ -323,7 +339,6 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
 
     while len(chunk) < max_args and entries_idx < entries_len:
       entry = entries[entries_idx]
-      entries_idx = entries_idx + 1
 
       path = None
       if not entry.verboten:
@@ -337,10 +352,13 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
 
       if path:
         entry.path = repos._getpath(path_parts + path) + ',v'
+        entry.idx = entries_idx
         chunk.append(entry)
 
       # set a value even if we don't retrieve logs
       entry.rev = None
+
+      entries_idx = entries_idx + 1
 
     if not chunk:
       repos.branch_tags, repos.plain_tags = _sort_tags(alltags)
@@ -359,8 +377,23 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
     for file in chunk:
       header, eof = parse_log_header(rlog)
 
-      # the rlog output is done
       if eof == _EOF_LOG:
+        # the rlog output ended early. this happens on errors that rlog thinks
+        # are so serious that it stops parsing the current file and refuses
+        # to parse any of the files that come after it. one of the errors that
+        # triggers this obnoxious behavior looks like:
+        #
+        # rlog: c:\cvsroot\dir\file,v:8: unknown expand mode u
+        # rlog aborted
+
+        if file is not chunk[0]:
+          # if this isn't the first file, go back and run rlog again
+          # starting with this file
+          entries_idx = file.idx
+          break
+
+        # if this is the first file and there's no output, then
+        # something really is wrong
         raise vclib.Error('Rlog output ended early. Expected RCS file "%s"'
                           % file.path)
 
@@ -433,9 +466,7 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
         if eof:
           break
 
-    status = rlog.close()
-    if status:
-      raise 'error during rlog: '+hex(status)
+    rlog.close()
 
 def fetch_log(rcs_paths, full_name, which_rev=None):
   if which_rev:
