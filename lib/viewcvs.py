@@ -76,9 +76,9 @@ _sticky_vars = (
 # regex used to move from a file to a directory
 _re_up_path = re.compile('(Attic/)?[^/]+$')
 
-_EOF_FILE = 'end of file entries'	# no more entries for this RCS file
-_EOF_LOG = 'end of log'			# hit the true EOF on the pipe
-_EOF_ERROR = 'error message found'	# rlog issued an error
+_EOF_FILE = 'end of file entries'       # no more entries for this RCS file
+_EOF_LOG = 'end of log'                 # hit the true EOF on the pipe
+_EOF_ERROR = 'error message found'      # rlog issued an error
 
 _FILE_HAD_ERROR = 'could not read file'
 
@@ -116,7 +116,7 @@ class Request:
     # put it back together
     where = string.join(parts, '/')
 
-    script_name = os.environ['SCRIPT_NAME']	### clean this up?
+    script_name = os.environ['SCRIPT_NAME']     ### clean this up?
     if where:
       url = script_name + '/' + urllib.quote(where)
     else:
@@ -729,7 +729,7 @@ def parse_log_header(fp):
   rlog), then fp will consumed the file separator line on exit.
   """
   filename = head = branch = None
-  taginfo = { }		# tag name => revision
+  taginfo = { }         # tag name => revision
 
   parsing_tags = 0
   eof = None
@@ -932,7 +932,7 @@ def process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags):
 
     if symrev.has_key(view_tag):
       revwanted = symrev[view_tag]
-      if revwanted[:2] == '0.':	### possible?
+      if revwanted[:2] == '0.': ### possible?
         branch = revwanted[2:]
       else:
         idx = string.find(revwanted, '.0.')
@@ -999,7 +999,7 @@ def get_logs(full_name, files, view_tag):
     return { }, { }
 
   fileinfo = { }
-  alltags = {		# all the tags seen in the files of this dir
+  alltags = {           # all the tags seen in the files of this dir
     'MAIN' : '1',
     'HEAD' : '1',
     }
@@ -1050,7 +1050,7 @@ def view_directory(request):
   query_dict = request.query_dict
 
   view_tag = query_dict.get('only_with_tag')
-  hideattic = int(query_dict.get('hideattic'))	### watch for errors in int()?
+  hideattic = int(query_dict.get('hideattic'))  ### watch for errors in int()?
   sortby = query_dict.get('sortby', 'file')
 
   file_data = get_file_data(full_name)
@@ -1146,7 +1146,7 @@ def view_directory(request):
 
 
   def file_sort_cmp(data1, data2, sortby=sortby, fileinfo=fileinfo):
-    if data1[2]:	# is_directory
+    if data1[2]:        # is_directory
       if data2[2]:
         # both are directories. sort on name.
         return cmp(data1[0], data2[0])
@@ -1172,7 +1172,7 @@ def view_directory(request):
       if sortby == 'rev':
         result = revcmp(info1[0], info2[0])
       elif sortby == 'date':
-        result = cmp(info2[1], info1[1])	# latest date is first
+        result = cmp(info2[1], info1[1])        # latest date is first
       elif sortby == 'log':
         result = cmp(info1[2], info2[2])
       elif sortby == 'author':
@@ -1220,7 +1220,7 @@ def view_directory(request):
         slash = '/'
       else:
         slash = ''
-        file = file[:-2]	# strip the ,v
+        file = file[:-2]        # strip the ,v
         num_displayed = num_displayed + 1
       row.anchor = file
       row.name = file + slash
@@ -1311,13 +1311,13 @@ def view_directory(request):
         else:
           attic = ''
       else:
-	if file[:6] == 'Attic/':
-	  attic = ' (in the Attic)&nbsp;' + attic_toggle_link
-	else:
-	  attic = ''
+        if file[:6] == 'Attic/':
+          attic = ' (in the Attic)&nbsp;' + attic_toggle_link
+        else:
+          attic = ''
 
       if file[:6] == 'Attic/':
-	file = file[6:]
+        file = file[6:]
 
       row.cvs = 'data'
       row.href = url
@@ -1561,7 +1561,7 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
          cur_branch, branch_points, branch_names
 
 _re_is_vendor_branch = re.compile(r'^1\.1\.1\.\d+$')
-g_name_printed = { }	### gawd, what a hack...
+g_name_printed = { }    ### gawd, what a hack...
 def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
               add_links):
   query_dict = request.query_dict
@@ -1642,8 +1642,8 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
 
   prev_rev = string.split(rev, '.')
   while 1:
-    if prev_rev[-1] == '0':	# .0 can be caused by 'commit -r X.Y.Z.0'
-      prev_rev = prev_rev[:-2]	# X.Y.Z.0 becomes X.Y.Z
+    if prev_rev[-1] == '0':     # .0 can be caused by 'commit -r X.Y.Z.0'
+      prev_rev = prev_rev[:-2]  # X.Y.Z.0 becomes X.Y.Z
     else:
       prev_rev[-1] = str(int(prev_rev[-1]) - 1)
     prev = string.join(prev_rev, '.')
@@ -1750,7 +1750,7 @@ def view_log(request):
 
   ### whoops. this sometimes/always? does not have the ",v"
   assert full_name[-2:] != ',v', 'please report this error to viewcvs@lyra.org'
-  #filename = os.path.basename(full_name[:-2])	# drop the ",v"
+  #filename = os.path.basename(full_name[:-2])  # drop the ",v"
   filename = os.path.basename(full_name)
 
   ### try: "./" + query + "#" + filename
@@ -1986,7 +1986,7 @@ def view_annotate(request):
 
   import blame
   blame.make_html(request.cvsroot, request.where + ',v', rev,
-  		  sticky_query(request.query_dict))
+                  sticky_query(request.query_dict))
 
   html_footer()
 
@@ -1997,7 +1997,7 @@ _re_extract_diff = re.compile(r'^([-+ ])(.*)')
 def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
   query_dict = request.query_dict
 
-  where_nd = request.where[:-5]	# remove the ".diff"
+  where_nd = request.where[:-5] # remove the ".diff"
   pathname, filename = os.path.split(where_nd)
 
   navigate_header(request, request.script_name + '/' + where_nd, pathname,
