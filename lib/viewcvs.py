@@ -1635,7 +1635,7 @@ def augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
     if idx != -1:
       branch_point = branch[:idx]
 
-      if rev2tag.has_key(branch_point) and not entry.vendor_branch \
+      if not entry.vendor_branch \
          and branch_point != rev and branch_point != prev:
         entry.branch_point = branch_point
 
