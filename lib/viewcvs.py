@@ -186,11 +186,6 @@ class Request:
          and list_roots(cfg).has_key(path_parts[0]):
         self.rootname = path_parts.pop(0)
 
-    # if this is a forbidden path, stop now
-    if path_parts and cfg.is_forbidden(path_parts[0]):
-      raise debug.ViewCVSException('Access to "%s" is forbidden.'
-                                   % path_parts[0], '403 Forbidden')
-
     self.where = string.join(path_parts, '/')
     self.path_parts = path_parts
 
@@ -223,6 +218,11 @@ class Request:
     elif self.rootname is None:
       self.rootname = cfg.general.default_root
                                          
+    # If this is a forbidden path, stop now
+    if path_parts and cfg.is_forbidden(path_parts[0]):
+      raise debug.ViewCVSException('Access to "%s" is forbidden.'
+                                   % path_parts[0], '403 Forbidden')
+
     # Create the repository object
     if cfg.general.cvs_roots.has_key(self.rootname):
       self.rootpath = cfg.general.cvs_roots[self.rootname]
@@ -1195,15 +1195,17 @@ def view_directory(request):
       row.type = 'unreadable'
       unreadable = 1
 
+    if (where == '') and (cfg.is_forbidden(file.name)):
+      continue
+                             
     if file.kind == vclib.DIR:
       if (request.roottype == 'cvs' and
           ((file.name == 'CVS') or # CVS directory is for fileattr
            (not hideattic and file.name == 'Attic') or
-           (where == '' and (cfg.is_forbidden(file.name) or
-                             (file.name == 'CVSROOT' and 
-                              cfg.options.hide_cvsroot))))):
+           (where == '' and (file.name == 'CVSROOT' and 
+                             cfg.options.hide_cvsroot)))):
         continue
-
+    
       row.href = request.get_url(view_func=view_directory,
                                  where=where_prefix+file.name,
                                  pathtype=vclib.DIR,
@@ -2238,8 +2240,10 @@ def generate_tarball(out, request, tar_top, rep_top,
                      reldir, options, stack=[]):
   cvs = request.roottype == 'cvs'
   if cvs and (rep_top == '' and 0 < len(reldir) and
-      ((reldir[0] == 'CVSROOT' and cfg.options.hide_cvsroot)
-       or cfg.is_forbidden(reldir[0]))):
+              reldir[0] == 'CVSROOT' and cfg.options.hide_cvsroot):
+    return
+
+  if (rep_top == '' and cfg.is_forbidden(reldir[0])):
     return
 
   rep_path = rep_top + reldir
@@ -2289,7 +2293,7 @@ def generate_tarball(out, request, tar_top, rep_top,
   for subdir in subdirs:
     if not cvs or subdir != 'Attic':
       generate_tarball(out, request, tar_top, rep_top,
-		       reldir + [subdir], tag, stack)
+		       reldir + [subdir], options, stack)
 
   if len(stack):
     del stack[-1:]
