@@ -54,10 +54,6 @@ class RCSParseError
     {
       value = myvalue;
     };
-    char *getvalue()
-    {
-      return value;
-    };
 };
 
 class RCSIllegalCharacter : public RCSParseError
@@ -79,13 +75,6 @@ class RCSExpected : public RCSParseError
       got = mygot;
       wanted = mywanted;
     }
-    char *getvalue()
-    {
-      ostrstream *out = new ostrstream();
-      (*out) << "RCSExcepted: " << wanted << " Got: " << got << endl;
-      out->put('\0');
-      return out->str();
-    };
 };
 
 /* This class is used to store a list of the branches of a revision */

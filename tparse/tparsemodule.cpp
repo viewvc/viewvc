@@ -301,9 +301,10 @@ static PyObject * tparse( PyObject *self, PyObject *args)
   }
   else
     return NULL;
+
   if (!PyObject_IsInstance(hsink, PySink))
   {
-    PyErr_SetString(PyExc_TypeError, 
+    PyErr_SetString(PyExc_TypeError,
                     "Sink has to be an instance of class Sink.");
     return NULL;
   }
@@ -312,7 +313,7 @@ static PyObject * tparse( PyObject *self, PyObject *args)
   Py_XINCREF(file);
   try
   {
-    tparseParser tp(input, new PythonSink(hsink) );
+    tparseParser tp(input, new PythonSink(hsink));
   }
   catch (RCSExpected e)
   {
