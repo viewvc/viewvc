@@ -69,8 +69,10 @@ FILE_INFO_LIST = [
     ("lib/dbi.py", "lib/dbi.py", 0644, 0, 0, 1),
     ("lib/popen.py", "lib/popen.py", 0644, 0, 0, 1),
     ("lib/py2html.py", "lib/py2html.py", 0644, 0, 0, 1),
-    ("lib/rlog.py", "lib/rlog.py", 0644, 1, 0, 1),
     ("lib/query.py", "lib/query.py", 0644, 1, 0, 1),
+    ("lib/rcsparse.py", "lib/rcsparse.py", 0644, 1, 0, 1),
+    ("lib/rlog.py", "lib/rlog.py", 0644, 1, 0, 1),
+    ("lib/viewcvs.py", "lib/viewcvs.py", 0644, 1, 0, 1),
     
     ("tools/loginfo-handler", "loginfo-handler", 0755, 1, 0, 0),
     ("tools/cvsdbadmin", "cvsdbadmin", 0755, 1, 0, 0),
