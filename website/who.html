@@ -1,95 +1,131 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
-  <head>
-    <title>The ViewCVS Group</title>
-  </head>
+<head>
+<title>ViewCVS: About</title>
+<link rel="stylesheet" type="text/css" href="./styles.css"/>
+</head>
 
-<body background="images/chalk.jpg">
-  <table width="100&#37;" cellspacing=5>
-    <tr>
-      <td width="1%"><a href="index.html"><img border=0
-	     src="images/logo.png"></a>
-      </td>
-      <td>
-	<h1>The ViewCVS Group</h1>
-      </td>
-      <td width="1%"><a href="http://sourceforge.net/"><img border=0
-	    src="http://sourceforge.net/sflogo.php?group_id=18760&type=1"></a><br><a href="http://sourceforge.net/projects/viewcvs/">ViewCVS&nbsp;project&nbsp;page</a>
-      </td>
-    </tr>
-    <tr><td width="1%" valign=top>
-       <a href="index.html">Overview</a><br>
-       <a href="upgrading.html">Upgrading</a><br>
-       <a href="contributing.html">Contributing</a><br>
-       <a href="license-1.html">License</a><br>
-       Who<br>
-    </td><td colspan=2>
-  
+<body>
 
-    <p>
-      The ViewCVS Group is an informal group of people working on and
-      developing the ViewCVS package. The current set of members are
-      listed below with some of their notable contributions:
-    </p>
-    <ul>
-      <li><a href="http://www.lyra.org/greg/"><b>Greg Stein</b></a> - 
-        original python port of Henner Zeller's cvsweb,
-        secure popen implementation,
-        configuration file implementation,
-        rcsparse module,
-        and EZT template engine
-      </li>
-      <li><b>Jay Painter</b> - CVSdb query engine</li>
-      <li><b>Tanaka Akira</b> - 
-        enscript colorization and tarball generation
-      </li>
-      <li><b>Tim Cera</b> -
-        CvsGraph support,
-        log_table template,
-        regular expression search,
-        and paging capability
-      </li>
-      <li><b>Peter Funk</b> - 
-        standalone server,
-        blimp logo,
-        and numerous improvements to ViewCVS's interfaces and documentation
-      </li>
-      <li><b>Lucas Bruand</b> -
-        C++ RCS parser (tparse)
-        and vclib module for supporting new version control systems
-      </li>
-      <li><b>C. Michael Pilato</b> -
-        Subversion support
-        and the root_as_url alternative URL scheme
-      </li>
-      <li><b>Russell Yanofsky</b> -
-        Windows support
-        and the sapi module for supporting multiple web server interfaces
-      </li>
-      <li><b>James Henstridge</b> -
-        integrated query interface,
-        support for querying Subversion repositories,
-        caching support,
-        CSS formatting,
-        and the EZT &quot;define&quot; directive
-    </ul>
-    <p>
-    In 2001 the project has been moved to SourceForge and some 
-    <a href="http://sourceforge.net/project/memberlist.php?group_id=18760">more
-    developers</a> were given commit access.  
-    </p>
-    <p>
-      Please note that the <a href="./">ViewCVS</a> package is offered 
-      under a BSD-type license, which is detailed on the
-      <a href="license-1.html">ViewCVS License</a> page.
-    </p>
-  
-  </td></tr></table>
-  <hr>
-  <address><a href="mailto:viewcvs-dev@lyra.org">ViewCVS Group</a></address>
-<!-- Created: Mon May  8 19:08:58 PDT 2000 -->
-<!-- hhmts start -->
-Last modified: Thu Oct 25 01:47:02 PDT 2001
-<!-- hhmts end -->
-  </body>
+<div id="title">
+<a href="http://viewcvs.sourceforge.net/"><img 
+   src="./images/title.jpg" alt="ViewCVS: Repository Browsing"/></a>
+</div>
+
+<div id="menu">
+<p><a href="./index.html">Home</a> |
+   <a href="http://sourceforge.net/projects/viewcvs/">Project Page</a> |
+   <a href="./download.html">Download</a> |
+   <a href="./upgrading.html">Upgrading</a> |
+   <a href="./contributing.html">Contributing</a> |
+   <a href="./license-1.html">License</a> |
+   <a href="./contact.html">Contact</a> |
+   <a href="./who.html">About</a>
+</p>
+</div>
+
+<table id="pagetable">
+<tr>
+<td id="pagecolumn1">
+
+<h4>On this page:</h4>
+
+<ul id="bookmarks">
+  <li><a href="#sec-history">History</a></li>
+  <li><a href="#sec-viewcvs-group">The ViewCVS Group</a></li>
+</ul>
+
+<hr/>
+
+<p align="center"><a href="http://sourceforge.net/"><img
+   src="http://sourceforge.net/sflogo.php?group_id=18760&type=2"></a></p>
+
+<address><a href="mailto:viewcvs@lyra.org">ViewCVS Users Group</a></address>
+
+</td>
+<td id="pagecolumn2">
+
+<div class="section">
+<h2 id="sec-history">History</h2>
+
+<p>The ViewCVS software was inspired by <a
+   href="http://people.freebsd.org/~fenner/cvsweb/">cvsweb</a>
+   (originally written by Bill Fenner and then further developed by <a
+   href="mailto:zeller@think.de">Henner Zeller</a>).  Greg Stein
+   wanted to make some changes and updates, but cvsweb was implemented
+   in Perl.  He wrote:</p>
+
+<blockquote style="font-style: italic;">&quot;While I can manage some
+   Perl, cvsweb was rather unmaintainable for me. So I undertook the
+   task to convert the software to Python. As a result, I've actually
+   been able to go <em>way</em> beyond the simple changes that I had
+   envisioned.&quot;</blockquote>
+
+<p>So ViewCVS started out as just a port of the cvsweb script.  Along
+   the way, it has had numerous cleanups and other modifications, a
+   process simplified by the elegance of the <a
+   href="http://www.python.org/">Python</a> language.</p>
+
+<p>In 2001, the project was moved to SourceForge, a popular software
+   collaboration environment.  Today, ViewCVS is being developed in
+   that environment by a <a
+   href="http://sourceforge.net/project/memberlist.php?group_id=18760">community
+   of folks</a>.</p>
+
+</div>
+
+<div class="section">
+<h2 id="sec-viewcvs-group">The ViewCVS Group</h2>
+
+<p>The ViewCVS Group is an informal group of people working on and
+   developing the ViewCVS package. The current set of members are
+   listed below with some of their notable contributions:</p>
+
+<dl>
+  <dt><a href="http://www.lyra.org/greg/">Greg Stein</a></dt>
+  <dd>original python port of Henner Zeller's cvsweb, secure popen
+      implementation, configuration file implementation, rcsparse
+      module, and EZT template engine</dd>
+
+  <dt>Jay Painter</dt>
+  <dd>CVSdb query engine</dd>
+
+  <dt>Tanaka Akira</dt> 
+  <dd>enscript colorization and tarball generation
+      </dd>
+
+  <dt>Tim Cera</dt>
+  <dd>CvsGraph support, log_table template, regular expression search,
+      and paging capability</dd>
+
+  <dt>Peter Funk</dt> 
+  <dd>standalone server, blimp logo, and numerous improvements to
+      ViewCVS's interfaces and documentation</dd>
+
+  <dt>Lucas Bruand</dt>
+
+  <dd>C++ RCS parser (tparse) and vclib module for supporting new
+      version control systems</dd>
+
+  <dt><a href="http://www.cmichaelpilato.com/">C. Michael Pilato</a></dt>
+  <dd>Subversion support, root_as_url alternative URL scheme,
+      templatization work, website design</dd>
+
+  <dt>Russell Yanofsky</dt>
+  <dd>Windows support and the sapi module for supporting multiple web
+      server interfaces</dd>
+
+  <dt>James Henstridge</dt>
+  <dd>integrated query interface, support for querying Subversion
+      repositories, caching support, CSS formatting, and the EZT
+      &quot;define&quot; directive</dd>
+
+</dl>
+
+</div>
+
+</td>
+</tr>
+</table>
+</body>
 </html>
