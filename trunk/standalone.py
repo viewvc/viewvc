@@ -68,7 +68,11 @@ def serve(port, callback=None):
             else:
                 save_cwd = os.getcwd() # XXX: Ugly hack around SimpleHTTPServer
                 if self.path[:7] == "/icons/":
-                    os.chdir(options.apache_root)
+                    try:
+                        os.chdir(options.apache_root)
+                    except OSError, v:
+                        sys.stderr.write("Can't find your apache icons\n")
+                        sys.stderr.write("read about the -i option\n")
                 self.base.do_GET(self)
                 os.chdir(save_cwd)
 
