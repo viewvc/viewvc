@@ -400,7 +400,7 @@ from within your Python interpreter:
    Python 2.2.2 (#1, Oct 29 2002, 02:47:30) 
    [GCC 2.96 20000731 (Red Hat Linux 7.2 2.96-108.7.2)] on linux2
    Type "help", "copyright", "credits" or "license" for more information.
-   >>> from svn.repos
+   >>> import svn.repos
    >>> 
 
 Configuration of the Subversion repositories happens in much the same
