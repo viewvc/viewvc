@@ -948,30 +948,7 @@ def skip_file(fp):
     if line[:10] == '==========':
       break
 
-def get_logs(full_name, files, view_tag):
-
-  if len(files) == 0:
-    return { }, { }
-
-  arglist = string.join(files, "' '" + full_name + '/')
-  if view_tag:
-    # NOTE: can't pass tag on command line since a tag may contain "-"
-    #       we'll search the output for the appropriate revision
-    rlog = os.popen("%srlog '%s/%s' 2>&1" %
-                    (cfg.general.rcs_path, full_name, arglist),
-                    "r")
-  else:
-    # fetch the latest revision on the default branch
-    rlog = os.popen("%srlog -r '%s/%s' 2>&1" %
-                    (cfg.general.rcs_path, full_name, arglist),
-                    "r")
-
-  fileinfo = { }
-  alltags = {		# all the tags seen in the files of this dir
-    'MAIN' : 1,
-    'HEAD' : 1,
-    }
-
+def process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags):
   # consume each file found in the resulting log
   while 1:
 
@@ -1051,10 +1028,9 @@ def get_logs(full_name, files, view_tag):
       skip_file(rlog)
       continue
 
-    ### maybe use alltags.update(symrev) ... we don't really care about
-    ### the values, so that would be the fastest way to do this
-    for k in symrev.keys():
-      alltags[k] = 1
+    # we don't care about the values -- just the keys. this the fastest
+    # way to merge the set of keys
+    alltags.update(symrev)
 
     # read all of the log entries until we find the revision we want
     while 1:
@@ -1090,7 +1066,47 @@ def get_logs(full_name, files, view_tag):
       if eof:
         break
 
-  return fileinfo, alltags
+def get_logs(full_name, files, view_tag):
+
+  if len(files) == 0:
+    return { }, { }
+
+  fileinfo = { }
+  alltags = {		# all the tags seen in the files of this dir
+    'MAIN' : 1,
+    'HEAD' : 1,
+    }
+
+  chunk_size = 100
+  while files:
+    chunk = files[:chunk_size]
+    del files[:chunk_size]
+
+    arglist = string.join(chunk, "' '" + full_name + '/')
+    if view_tag:
+      # NOTE: can't pass tag on command line since a tag may contain "-"
+      #       we'll search the output for the appropriate revision
+      rlog = os.popen("%srlog '%s/%s' 2>&1" %
+                      (cfg.general.rcs_path, full_name, arglist),
+                      "r")
+    else:
+      # fetch the latest revision on the default branch
+      rlog = os.popen("%srlog -r '%s/%s' 2>&1" %
+                      (cfg.general.rcs_path, full_name, arglist),
+                      "r")
+
+    process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags)
+
+    ### it would be nice to verify that we got SOMETHING from rlog about
+    ### each file. if we didn't, then it could be that the chunk is still
+    ### too large, so we want to cut the chunk_size in half and try again.
+    ###
+    ### BUT: if we didn't get feedback for some *other* reason, then halving
+    ### the chunk size could merely send us into a needless retry loop.
+    ###
+    ### more work for later...
+
+  return fileinfo, alltags.keys()
 
 def revcmp(rev1, rev2):
   rev1 = map(int, string.split(rev1, '.'))
@@ -1406,10 +1422,9 @@ def view_directory(request):
       print ' onchange="submit()"'
     print '>'
     print '<option value="">All tags / default branch</option>'
-    tags = alltags.keys()
-    tags.sort(lambda t1, t2: cmp(string.lower(t1), string.lower(t2)))
-    tags.reverse()
-    for tag in tags:
+    alltags.sort(lambda t1, t2: cmp(string.lower(t1), string.lower(t2)))
+    alltags.reverse()
+    for tag in alltags:
       html_option(tag, view_tag)
     print '</select><input type=submit value="Go"></form>'
 
