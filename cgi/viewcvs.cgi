@@ -66,9 +66,9 @@ __version__ = '0.4-dev'
 # It is usually desirable to change the following variables:
 #
 #    address
-#    defaulttitle
+#    main_title
 #    logo
-#    forbidden_modules
+#    forbidden
 #
 #    long_intro
 #    repository_info
@@ -244,7 +244,7 @@ cfg.text.doc_info = """
   User's Guide</a><br>
   <a href="http://www.arc.unm.edu/~rsahu/cvs.html">CVS Tutorial</a><br>
   <a href="http://cellworks.washington.edu/pub/docs/cvs/tutorial/cvs_tutorial_1.html">Another CVS tutorial</a><br>
-  <a href="http://www.csc.calpoly.edu/~dbutler/tutorials/winter96/cvs/">Yet another CVS tutorial (a little old, but nice)</a>
+  <a href="http://www.csc.calpoly.edu/~dbutler/tutorials/winter96/cvs/">Yet another CVS tutorial (a little old, but nice)</a><br>
   <a href="http://www.cs.utah.edu/dept/old/texinfo/cvs/FAQ.txt">An old but very useful FAQ about CVS</a>
 </p>
 </blockquote>
@@ -377,17 +377,20 @@ class Request:
     self.query_dict = query_dict
 
     # set up the CVS repository to use
-    self.cvsrep = query_dict.get('cvsroot', default_root)
-    self.cvsroot = cvs_roots[self.cvsrep]
+    self.cvsrep = query_dict.get('cvsroot', cfg.general.default_root)
+    self.cvsroot = cfg.general.cvs_roots[self.cvsrep]
 
     self.full_name = self.cvsroot + '/' + where
 
   def setup_mime_type_info(self):
+    if cfg.general.mime_types_file:
+      mimetypes.init([cfg.general.mime_types_file])
     self.mime_type, self.encoding = mimetypes.guess_type(self.where)
     if not self.mime_type:
       self.mime_type = 'text/plain'
     self.default_text_plain = self.mime_type == 'text/plain'
-    self.default_viewable = allow_markup and is_viewable(self.mime_type)
+    self.default_viewable = cfg.options.allow_markup and \
+                            is_viewable(self.mime_type)
 
 
 class LogHeader:
@@ -556,13 +559,13 @@ def htmlify(html):
   return html
 
 def html_log(log):
-  print '&nbsp;<font size="-1">' + htmlify(log[:short_log_len])
-  if len(log) > short_log_len:
+  print '&nbsp;<font size="-1">' + htmlify(log[:cfg.options.short_log_len])
+  if len(log) > cfg.options.short_log_len:
     print '...'
   print '</font>'
 
 def download_url(request, url, revision, mime_type):
-  if checkout_magic and mime_type != viewcvs_mime_type:
+  if cfg.options.checkout_magic and mime_type != viewcvs_mime_type:
     url = '%s/%s%s/%s' % \
           (request.script_name, checkout_magic_path,
            os.path.dirname(request.where), url)
@@ -584,9 +587,9 @@ def download_link(request, url, revision, text, mime_type=None):
 
   print '%s<a href="%s%s"' % (lparen, full_url, request.amp_query)
 
-  if open_extern_window and mime_type != viewcvs_mime_type:
+  if cfg.options.open_extern_window and mime_type != viewcvs_mime_type:
     print ' target="cvs_checkout"'
-    if use_java_script:
+    if cfg.options.use_java_script:
       print " onClick=\"window.open('%s','cvs_checkout'," \
             "'resizeable,scrollbars" % full_url,
       if mime_type == 'text/html':
@@ -647,7 +650,7 @@ def html_option(value, cur_value, text=None):
 
 def print_diff_select(query_dict):
   print '<select name="diff_format"'
-  if use_java_script:
+  if cfg.options.use_java_script:
     print 'onchange="submit()"'
   print '>'
 
@@ -666,8 +669,8 @@ def navigate_header(request, swhere, path, filename, rev, title):
   print '<html><head>'
   print header_comment
   print '<title>%s/%s - %s - %s</title></head>' % (path, filename, title, rev)
-  print '<body bgcolor="%s">' % backcolor
-  print '<table width="100&#37;" border=0 cellspacing=0 cellpadding=1 bgcolor="%s">' % navigationHeaderColor
+  print '<body bgcolor="%s">' % cfg.colors.alt_background
+  print '<table width="100&#37;" border=0 cellspacing=0 cellpadding=1 bgcolor="%s">' % cfg.colors.nav_header
   print '<tr valign=bottom><td>'
   print '<a href="%s%s#rev%s">%s</a>' % \
         (swhere, request.qmark_query, rev, html_icon('back'))
@@ -695,7 +698,7 @@ def markup_stream_python(fp):
     # see if Marc-Andre Lemburg's py2html stuff is around
     # http://starship.python.net/crew/lemburg/SoftwareDescriptions.html#py2html.py
     ### maybe restrict the import to *only* this directory?
-    sys.path.insert(0, py2html_path)
+    sys.path.insert(0, cfg.options.py2html_path)
     import py2html
     import PyFontify
   except ImportError:
@@ -728,13 +731,13 @@ def markup_stream(request, fp, revision, mime_type):
   http_header()
   navigate_header(request, request.url, pathname, filename, revision, 'view')
   print '<hr noshade>'
-  print '<table width="100&#37;"><tr><td bgcolor="%s">' % markup_log_color
+  print '<table width="100&#37;"><tr><td bgcolor="%s">' % cfg.colors.markup_log
   print 'File:', clickable_path(request, where, 1, 0), '</b>'
   download_link(request, file_url, revision, '(download)')
   if not request.default_text_plain:
     download_link(request, file_url, revision, '(as text)', 'text/plain')
   print '<br>'
-  if show_log_in_markup:
+  if cfg.options.show_log_in_markup:
     show_revs, rev_map, rev_order, taginfo, rev2tag, \
                cur_branch, branch_points, branch_names = read_log(full_name)
 
@@ -955,12 +958,12 @@ def get_logs(full_name, files, view_tag):
     # NOTE: can't pass tag on command line since a tag may contain "-"
     #       we'll search the output for the appropriate revision
     rlog = os.popen("%srlog '%s/%s' 2>&1" %
-                    (rcs_path, full_name, arglist),
+                    (cfg.general.rcs_path, full_name, arglist),
                     "r")
   else:
     # fetch the latest revision on the default branch
     rlog = os.popen("%srlog -r '%s/%s' 2>&1" %
-                    (rcs_path, full_name, arglist),
+                    (cfg.general.rcs_path, full_name, arglist),
                     "r")
 
   fileinfo = { }
@@ -1095,12 +1098,12 @@ def revcmp(rev1, rev2):
   return cmp(rev1, rev2)
 
 def print_roots(current_root):
-  if len(cvs_roots) < 2:
+  if len(cfg.general.cvs_roots) < 2:
     return
   print '<h3>Project Root</h3>'
   print '<form method=GET action="./">'
   print '<select name=cvsroot onchange="submit()">'
-  names = cvs_roots.keys()
+  names = cfg.general.cvs_roots.keys()
   names.sort(lambda n1, n2: cmp(string.lower(n1), string.lower(n2)))
   for name in names:
     html_option(name, current_root)
@@ -1117,11 +1120,11 @@ def view_directory(request):
 
   file_data = get_file_data(full_name)
 
-  if show_subdir_lastmod:
+  if cfg.options.show_subdir_lastmod:
     lastmod = get_last_modified(file_data)
   else:
     lastmod = { }
-  if show_logs:
+  if cfg.options.show_logs:
     subfiles = map(lambda (subfile, mtime): subfile, lastmod.values())
   else:
     subfiles = [ ]
@@ -1149,17 +1152,17 @@ def view_directory(request):
     file_data.append((file, None, 0))
 
   if where == '':
-    html_header(defaulttitle)
+    html_header(cfg.general.main_title)
 
     # these may be commented out or altered in the configuration section
-    print long_intro
-    print doc_information
-    print repository_info
+    print cfg.text.long_intro
+    print cfg.text.doc_info
+    print cfg.text.repository_info
 
     print_roots(request.cvsrep)
   else:
     html_header(where)
-    print short_instruction
+    print cfg.text.short_intro
 
   print '<p><a name="dirlist">'
 
@@ -1176,22 +1179,22 @@ def view_directory(request):
 
   num_cols = 0
 
-  if tableBorderColor:
+  if cfg.colors.table_border:
     print '<table border=0 cellpadding=0 width="100&#37;"><tr>' \
-          '<td bgcolor="%s">' % tableBorderColor
+          '<td bgcolor="%s">' % cfg.colors.table_border
   print '<table width="100&#37;" border=0 cellspacing=1 ' \
-        'cellpadding=%s>' % tablepadding
+        'cellpadding=%s>' % cfg.options.table_padding
 
   def print_header(title, which, sortby=sortby, query_dict=query_dict):
     if sortby == which:
       print '<th align=left bgcolor=%s>%s</th>' % \
-            (columnHeaderColorSorted, title)
+            (cfg.colors.column_header_sorted, title)
     else:
       query = toggle_query(query_dict, 'sortby', which)
       print '<th align=left bgcolor=%s>' \
             '<a href="./%s#dirlist">%s</a>' \
             '</th>' % \
-            (columnHeaderColorDefault, query, title)
+            (cfg.colors.column_header_normal, query, title)
 
   print '<tr>'
   num_cols = 1
@@ -1203,10 +1206,10 @@ def view_directory(request):
     num_cols = 3
     print_header('Rev.', 'rev')
     print_header('Age', 'date')
-    if show_author:
+    if cfg.options.show_author:
       num_cols = 4
       print_header('Author', 'author')
-    if show_logs:
+    if cfg.options.show_logs:
       num_cols = num_cols + 1
       print_header('Last log entry', 'log')
   print '</tr>'
@@ -1278,10 +1281,10 @@ def view_directory(request):
     if isdir:
       if not hideattic and file == 'Attic':
         continue
-      if where == '' and (file == 'CVSROOT' or file in forbidden_modules):
+      if where == '' and (file == 'CVSROOT' or file in cfg.general.forbidden):
         continue
 
-      print '<tr bgcolor="%s"><td>' % table_colors[cur_row % 2]
+      print '<tr bgcolor="%s"><td>' % cfg.colors.even_odd[cur_row % 2]
       url = urllib.quote(file) + '/' + request.qmark_query
       print '<a name="%s">' % file
       if request.no_file_links:
@@ -1302,10 +1305,10 @@ def view_directory(request):
       elif info:
         print '</td><td>&nbsp;</td><td>&nbsp;'
         print html_time(info[1])
-        if show_author:
+        if cfg.options.show_author:
           print '</td><td>&nbsp;'
           print info[3]
-        if show_logs:
+        if cfg.options.show_logs:
           print '</td><td>&nbsp;'
           subfile = info[4]
           idx = string.find(subfile, '/')
@@ -1327,7 +1330,7 @@ def view_directory(request):
       info = fileinfo.get(file)
       if info == _FILE_HAD_ERROR:
         print '<tr bgcolor="%s"><td><a name="%s">%s</a></td>' % \
-              (table_colors[cur_row % 2], file, file)
+              (cfg.colors.even_odd[cur_row % 2], file, file)
         print '<td colspan=%d><i>CVS information is unreadable</i></td>' % \
               (num_cols - 1)
         print '</tr>'
@@ -1348,7 +1351,7 @@ def view_directory(request):
       else:
         attic = ''
 
-      print '<tr bgcolor="%s"><td>' % table_colors[cur_row % 2]
+      print '<tr bgcolor="%s"><td>' % cfg.colors.even_odd[cur_row % 2]
       print '<a name="%s">' % file
 
       if request.no_file_links:
@@ -1358,16 +1361,16 @@ def view_directory(request):
       print html_link(file, url), attic
 
       print '</td><td>&nbsp;'
-      if allow_markup:
+      if cfg.options.allow_markup:
         download_link(request, file_url, info[0], info[0], viewcvs_mime_type)
       else:
         download_link(request, file_url, info[0], info[0])
       print '</td><td>&nbsp;'
       print html_time(info[1])
-      if show_author:
+      if cfg.options.show_author:
         print '</td><td>&nbsp;'
         print info[3]
-      if show_logs:
+      if cfg.options.show_logs:
         print '</td><td>'
         html_log(info[2])
 
@@ -1375,7 +1378,7 @@ def view_directory(request):
 
     cur_row = cur_row + 1
 
-  if tableBorderColor:
+  if cfg.colors.table_border:
     print '</td></tr></table>'
   print '</table>'
 
@@ -1399,7 +1402,7 @@ def view_directory(request):
               (varname, query_dict[varname])
     print 'Show only files with tag:'
     print '<select name=only_with_tag'
-    if use_java_script:
+    if cfg.options.use_java_script:
       print ' onchange="submit()"'
     print '>'
     print '<option value="">All tags / default branch</option>'
@@ -1418,7 +1421,7 @@ def fetch_log(full_name, which_rev=None):
   else:
     rev_flag = ''
   rlog = os.popen("%srlog %s '%s' 2>&1" %
-                  (rcs_path, rev_flag, full_name),
+                  (cfg.general.rcs_path, rev_flag, full_name),
                   "r")
 
   header, eof = parse_log_header(rlog)
@@ -1634,10 +1637,10 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
     if not request.default_viewable:
       print '/'
       download_link(request, file_url, rev, '(view)', viewcvs_mime_type)
-    if allow_annotate:
+    if cfg.options.allow_annotate:
       print '- <a href="%s?annotate=%s%s">annotate</a>' % \
             (request.url, rev, request.amp_query)
-    if allow_version_select:
+    if cfg.options.allow_version_select:
       if query_dict.get('r1') != rev:
         print '- <a href="%s?r1=%s%s">[select for diffs]</a>' % \
               (request.url, rev, request.amp_query)
@@ -1827,7 +1830,7 @@ def view_log(request):
     diff_rev = show_revs[-1].rev
   print '<input type="TEXT" size="%d" name="tr1" value="%s" ' \
         ' onChange="document.diff_select.r1.selectedIndex=0">' % \
-        (input_text_size, diff_rev)
+        (cfg.options.input_text_size, diff_rev)
 
   print 'and'
   print '<select name="r2">'
@@ -1841,7 +1844,7 @@ def view_log(request):
     diff_rev = show_revs[0].rev
   print '<input type="TEXT" size="%d" name="tr2" value="%s" ' \
         ' onChange="document.diff_select.r2.selectedIndex=0">' % \
-        (input_text_size, diff_rev)
+        (cfg.options.input_text_size, diff_rev)
 
   print '<br>Type of Diff should be a'
   print_diff_select(query_dict)
@@ -1864,7 +1867,7 @@ def view_log(request):
 
     print 'View only Branch:'
     print '<select name="only_with_tag"'
-    if use_java_script:
+    if cfg.options.use_java_script:
       print 'onchange="submit()"'
     print '>'
     html_option('', query_dict.get('only_with_tag'), 'Show all branches')
@@ -1880,7 +1883,7 @@ def view_log(request):
   print hidden_values
   print 'Sort log by:'
   print '<select name="logsort"'
-  if use_java_script:
+  if cfg.options.use_java_script:
     print 'onchange="submit()"'
   print '>'
   logsort = query_dict['logsort']
@@ -1916,7 +1919,9 @@ def view_checkout(request):
   else:
     rev_flag = '-p'
 
-  fp = os.popen("%sco '%s' '%s' 2>&1" % (rcs_path, rev_flag, full_name), 'r')
+  fp = os.popen("%sco '%s' '%s' 2>&1" %
+                (cfg.general.rcs_path, rev_flag, full_name),
+                'r')
 
   # header from co:
 
@@ -2022,7 +2027,8 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
     print '<br>Tag:', sym2
   print '</th>'
 
-  fs = '<font face="%s" size="%s">' % (diff_font_face, diff_font_size)
+  fs = '<font face="%s" size="%s">' % \
+       (cfg.options.diff_font_face, cfg.options.diff_font_size)
   left_row = right_row = 0
 
   while 1:
@@ -2032,7 +2038,7 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
 
     if line[:2] == '@@':
       match = _re_extract_info.match(line)
-      print '<tr bgcolor="%s"><td width="50&#37;">' % diff_color_heading
+      print '<tr bgcolor="%s"><td width="50&#37;">' % cfg.colors.diff_heading
       print '<table width="100&#37;" border=1 cellpadding=5><tr>'
       print '<td><b>Line %s</b>&nbsp;<font size="-1">%s</font></td>' % \
             (match.group(1), match.group(3))
@@ -2057,7 +2063,7 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
         if state == 'dump':
           print '<tr><td bgcolor="%s">&nbsp;</td>' \
                 '<td bgcolor="%s">%s</td></tr>' % \
-                (diff_color_empty, diff_color_add, line)
+                (cfg.colors.diff_empty, cfg.colors.diff_add, line)
         else:
           state = 'pre-change-add'
           right_col.append(line)
@@ -2074,7 +2080,7 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
   flush_diff_rows(state, left_col, right_col)
   if not state:
     print '<tr><td colspan=2>&nbsp;</td></tr>'
-    print '<tr bgcolor="%s"><td colspan=2 align=center><b>- No viewable change -</b></td></tr>' % (diff_color_empty)
+    print '<tr bgcolor="%s"><td colspan=2 align=center><b>- No viewable change -</b></td></tr>' % (cfg.colors.diff_empty)
 
   print '</table><br><hr noshade width="100&#37;">'
   print '<table border=0 cellpadding=10><tr><td>'
@@ -2082,9 +2088,9 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
   # print the legend
   print '<table border=1><tr><td>Legend:<br>'
   print '<table border=0 cellspacing=0 cellpadding=1>'
-  print '<tr><td align=center bgcolor="%s">Removed from v.%s</td><td bgcolor="%s">&nbsp;</td></tr>' % (diff_color_remove, rev1, diff_color_empty)
-  print '<tr bgcolor="%s"><td align=center colspan=2>changed lines</td></tr>' % diff_color_change
-  print '<tr><td bgcolor="%s">&nbsp;</td><td align=center bgcolor="%s">Added in v.%s</td></tr>' % (diff_color_empty, diff_color_add, rev2)
+  print '<tr><td align=center bgcolor="%s">Removed from v.%s</td><td bgcolor="%s">&nbsp;</td></tr>' % (cfg.colors.diff_remove, rev1, cfg.colors.diff_empty)
+  print '<tr bgcolor="%s"><td align=center colspan=2>changed lines</td></tr>' % cfg.colors.diff_change
+  print '<tr><td bgcolor="%s">&nbsp;</td><td align=center bgcolor="%s">Added in v.%s</td></tr>' % (cfg.colors.diff_empty, cfg.colors.diff_add, rev2)
   print '</table></td></tr></table></td>'
 
   # format selector
@@ -2103,17 +2109,17 @@ def flush_diff_rows(state, left_col, right_col):
   if state == 'pre-change-remove':
     for row in left_col:
       print '<tr><td bgcolor="%s">%s</td><td bgcolor="%s">&nbsp;</td></tr>' % \
-            (diff_color_remove, row, diff_color_empty)
+            (cfg.colors.diff_remove, row, cfg.colors.diff_empty)
   elif state == 'pre-change-add':
     for i in range(max(len(left_col), len(right_col))):
       if i < len(left_col):
-        left = '<td bgcolor="%s">%s</td>' % (diff_color_change, left_col[i])
+        left = '<td bgcolor="%s">%s</td>' % (cfg.colors.diff_change, left_col[i])
       else:
-        left = '<td bgcolor="%s">&nbsp;</td>' % diff_color_dark_change
+        left = '<td bgcolor="%s">&nbsp;</td>' % cfg.colors.diff_dark_change
       if i < len(right_col):
-        right = '<td bgcolor="%s">%s</td>' % (diff_color_change, right_col[i])
+        right = '<td bgcolor="%s">%s</td>' % (cfg.colors.diff_change, right_col[i])
       else:
-        right = '<td bgcolor="%s">&nbsp;</td>' % diff_color_dark_change
+        right = '<td bgcolor="%s">&nbsp;</td>' % cfg.colors.diff_dark_change
       print '<tr>%s%s</tr>' % (left, right)
 
 def spaced_html_text(text):
@@ -2123,11 +2129,11 @@ def spaced_html_text(text):
   # to insert "&" because it would get escaped by htmlify().  Similarly,
   # we use "\x02" as a stand-in for "<br>"
 
-  if hr_breakable > 1 and len(text) > hr_breakable:
-    text = re.sub('(' + ('.' * hr_breakable) + ')',
+  if cfg.options.hr_breakable > 1 and len(text) > cfg.options.hr_breakable:
+    text = re.sub('(' + ('.' * cfg.options.hr_breakable) + ')',
                   '\\1\x02',
                   text)
-  if hr_breakable:
+  if cfg.options.hr_breakable:
     # make every other space "breakable"
     text = string.replace(text, '  ', ' \x01nbsp;')
   else:
@@ -2196,15 +2202,16 @@ def view_diff(request, cvs_filename):
     error('Diff format %s not understood' % format, '400 Bad arguments')
 
   if human_readable:
-    if hr_funout:
+    if cfg.options.hr_funout:
       diff_type = diff_type + ' -p'
-    if hr_ignore_white:
+    if cfg.options.hr_ignore_white:
       diff_type = diff_type + ' -w'
-    if hr_ignore_keyword_subst:
+    if cfg.options.hr_ignore_keyword_subst:
       diff_type = diff_type + ' -kk'
 
-  fp = os.popen("%srcsdiff %s '-r%s' '-r%s' '%s' 2>&1" % \
-                (rcs_path, diff_type, rev1, rev2, cvs_filename), 'r')
+  fp = os.popen("%srcsdiff %s '-r%s' '-r%s' '%s' 2>&1" %
+                (cfg.general.rcs_path, diff_type, rev1, rev2, cvs_filename),
+                'r')
   if human_readable:
     http_header()
     human_readable_diff(request, fp, rev1, rev2, sym1, sym2)
@@ -2235,71 +2242,12 @@ def view_diff(request, cvs_filename):
 
     print line[:-1]
 
-def view_module():
-
-  ### what is this???
-
-  ### testing
-  html_header('module')
-  print "module"
-  html_footer()
-
 def handle_config():
   # load in configuration information from the config file
   ### allow changes and paths here...??
   cfg.load_config('viewcvs.conf')
 
-  ### backwards compat crap
-  cvs_roots = cfg.general.cvs_roots
-  default_root = cfg.general.default_root
-  rcs_path = cfg.general.rcs_path
-  mime_types_file = cfg.general.mime_types_file
-  defaulttitle = cfg.general.main_title
-  forbidden_modules = cfg.general.forbidden
-
-  markup_log_color = cfg.colors.markup_log
-  diff_color_heading = cfg.colors.diff_heading
-  diff_color_empty = cfg.colors.diff_empty
-  diff_color_remove = cfg.colors.diff_remove
-  diff_color_change = cfg.colors.diff_change
-  diff_color_add = cfg.colors.diff_add
-  diff_color_dark_change = cfg.colors.diff_dark_change
-  table_colors = cfg.colors.even_odd
-  navigationHeaderColor = cfg.colors.nav_header
-  backcolor = cfg.colors.alt_background
-  columnHeaderColorDefault = cfg.colors.column_header_normal
-  columnHeaderColorSorted = cfg.colors.column_header_sorted
-  tableBorderColor = cfg.colors.table_border
-
-  show_author = cfg.options.show_author
-  hr_breakable = cfg.options.hr_breakable
-  hr_funout = cfg.options.hr_funout
-  hr_ignore_white = cfg.options.hr_ignore_white
-  hr_ignore_keyword_subst = cfg.options.hr_ignore_keyword_subst
-  allow_annotate = cfg.options.allow_annotate
-  allow_markup = cfg.options.allow_markup
-  allow_compress = cfg.options.allow_compress
-  use_java_script = cfg.options.use_java_script
-  open_extern_window = cfg.options.open_extern_window
-  extern_window_width = cfg.options.extern_window_width
-  extern_window_height = cfg.options.extern_window_height
-  checkout_magic = cfg.options.checkout_magic
-  show_subdir_lastmod = cfg.options.show_subdir_lastmod
-  show_logs = cfg.options.show_logs
-  show_log_in_markup = cfg.options.show_log_in_markup
-  allow_version_select = cfg.options.allow_version_select
-  py2html_path = cfg.options.py2html_path
-  short_log_len = cfg.options.short_log_len
-  tablepadding = cfg.options.table_padding
-  diff_font_face = cfg.options.diff_font_face
-  diff_font_size = cfg.options.diff_font_size
-  input_text_size = cfg.options.input_text_size
-
-  short_instruction = cfg.text.short_intro
-  repository_info = cfg.text.repository_info
-  long_intro = cfg.text.long_intro
-  doc_information = cfg.text.doc_info
-
+  global default_settings
   default_settings = {
     "sortby" : cfg.options.sort_by,
     "hideattic" : cfg.options.hide_attic,
@@ -2308,13 +2256,6 @@ def handle_config():
     "hidecvsroot" : cfg.options.hide_cvsroot,
     "hidenonreadable" : cfg.options.hide_non_readable,
     }
-
-  ### hacky Python stuff... :-)  this copies all locals out to the global
-  ### namespace. I'd rather not type a bazillion "global foo" lines since
-  ### this is just going to go away anyhow...
-  for v in dir():
-    if v != 'v':
-      globals()[v] = vars()[v]
 
 
 def main():
@@ -2344,7 +2285,7 @@ def main():
     redirect(url + '/' + request.qmark_query)
 
   # check the forbidden list
-  if request.module in forbidden_modules:
+  if request.module in cfg.general.forbidden:
     error('Access to "%s" is forbidden.' % request.module, '403 Forbidden')
 
   if isdir:
@@ -2360,7 +2301,7 @@ def main():
   if os.path.isfile(full_name + ',v'):
     if query_dict.has_key('rev') or request.has_checkout_magic:
       view_checkout(request)
-    elif query_dict.has_key('annotate') and allow_annotate:
+    elif query_dict.has_key('annotate') and cfg.options.allow_annotate:
       view_annotate(request)
     elif query_dict.has_key('r1') and query_dict.has_key('r2'):
       view_diff(request, full_name)
@@ -2377,9 +2318,7 @@ def main():
       idx = string.rfind(url, '/')
       redirect(url[:idx] + '/Attic' + url[idx:])
 
-    # it is probably a module
-    ### what is this???
-    view_module()
+    error('%s: unknown location' % request.url, '404 Not Found')
 
 
 try:
