@@ -1,7 +1,7 @@
 [if-any branch_names]
   <hr noshade>
   <a name=branch></a>
-  <form method=GET action="branch_select_action">
+  <form method=GET action="[branch_select_action]">
     [branch_select_hidden_values]
     View only Branch:
     <select name="only_with_tag" onchange="submit()">
