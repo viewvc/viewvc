@@ -513,9 +513,6 @@ class Request:
     self.mime_type, self.encoding = mimetypes.guess_type(self.where)
     if not self.mime_type:
       self.mime_type = 'text/plain'
-    self.default_viewable = cfg.options.allow_markup and \
-                            (is_viewable_image(self.mime_type)
-                             or is_text(self.mime_type))
 
 def _validate_param(name, value):
   """Validate whether the given value is acceptable for the param name.
@@ -1184,7 +1181,9 @@ def make_time_string(date):
     return time.asctime(time.gmtime(date)) + ' UTC'
 
 def view_auto(request):
-  if request.default_viewable:
+  if (cfg.options.allow_markup
+      and (is_viewable_image(request.mime_type)
+           or is_text(request.mime_type))):
     view_markup(request)
   else:
     view_checkout(request)
@@ -1865,10 +1864,6 @@ def view_log(request):
     'graph_href' : None,    
     'entries': entries,
   })
-
-  if pathtype is vclib.FILE:
-    data['viewable'] = ezt.boolean(request.default_viewable)
-    data['is_text'] = ezt.boolean(is_text(mime_type))
 
   if cfg.options.use_pagesize:
     url, params = request.get_link(params={'log_pagestart': None})
