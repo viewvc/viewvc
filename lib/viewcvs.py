@@ -291,14 +291,14 @@ def clickable_path(request, path, leaf_is_link, leaf_is_file, drop_leaf):
 def html_link(contents, link):
   return '<a href="%s">%s</a>' % (link, contents)
 
-def link_tags(query_dict, where, text, add_links):
+def link_tags(query_dict, where, tags, add_links):
   if not add_links:
-    return text
+    return string.join(tags, ', ')
 
   filename = os.path.basename(where)
   file_url = urllib.quote(filename)
   links = [ ]
-  for tag in string.split(text, ', '):
+  for tag in tags:
     links.append('<a href="%s%s">%s</a>' %
                  (file_url,
                   toggle_query(query_dict, 'only_with_tag', tag),
@@ -1494,14 +1494,14 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
         continue
       if rev != head and head != '':
         if branch_points.has_key(head):
-          branch_points[head] = branch_points[head] + ', ' + tag
+          branch_points[head].append(tag)
         else:
-          branch_points[head] = tag
+          branch_points[head] = [ tag ]
 
     if rev2tag.has_key(rev):
-      rev2tag[rev] = rev2tag[rev] + ', ' + tag
+      rev2tag[rev].append(tag)
     else:
-      rev2tag[rev] = tag
+      rev2tag[rev] = [ tag ]
 
   if view_tag:
     view_rev = taginfo.get(view_tag)
@@ -1571,10 +1571,10 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
     file_url = urllib.quote(filename)
     print '<a name="rev%s"></a>' % rev
     if rev2tag.has_key(rev):
-      for tag in string.split(rev2tag[rev], ', '):
+      for tag in rev2tag[rev]:
         print '<a name="%s"></a>' % tag
     if rev2tag.has_key(branch) and not g_name_printed.has_key(branch):
-      for tag in string.split(rev2tag[branch], ', '):
+      for tag in rev2tag[branch]:
         print '<a name="%s"></a>' % tag
       g_name_printed[branch] = 1
     print 'Revision'
@@ -1758,7 +1758,12 @@ def view_log(request):
     data['viewable'] = None
 
   if cur_branch:
-    data['branch'] = rev2tag.get(cur_branch, cur_branch)
+    ### note: we really shouldn't have more than one tag in here. a "default
+    ### branch" implies singular :-)  However, if a vendor branch is created
+    ### and no further changes are made (e.g. the HEAD is 1.1.1.1), then we
+    ### end up seeing the branch point tag and MAIN in this list.
+    ### FUTURE: fix all the branch point logic in ViewCVS and get this right.
+    data['branch'] = string.join(rev2tag.get(cur_branch, [ cur_branch ]), ', ')
 
     file_url = urllib.quote(os.path.basename(where))
 
