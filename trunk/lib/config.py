@@ -229,9 +229,9 @@ class Config:
     <h3>CVS Documentation</h3>
     <blockquote>
     <p>
+      <a href="http://cvsbook.red-bean.com/">Karl Fogel's CVS book</a><br>
       <a href="http://www.loria.fr/~molli/cvs/doc/cvs_toc.html">CVS
       User's Guide</a><br>
-      <a href="http://www.arc.unm.edu/~rsahu/cvs.html">CVS Tutorial</a><br>
       <a href="http://cellworks.washington.edu/pub/docs/cvs/tutorial/cvs_tutorial_1.html">Another CVS tutorial</a><br>
       <a href="http://www.csc.calpoly.edu/~dbutler/tutorials/winter96/cvs/">Yet another CVS tutorial (a little old, but nice)</a><br>
       <a href="http://www.cs.utah.edu/dept/old/texinfo/cvs/FAQ.txt">An old but very useful FAQ about CVS</a>
