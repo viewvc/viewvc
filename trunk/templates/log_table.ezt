@@ -53,57 +53,40 @@
 <table width="100%" border=0 cellspacing=1 cellpadding=2>
   <th bgcolor="#cccccc">Revision</th>
   <th bgcolor="#cccccc">Tasks</th>
+  <th bgcolor="#cccccc">Diffs</th>
   <th bgcolor="#cccccc">Branches</th>
   <th bgcolor="#cccccc">Tags</th>
   <th bgcolor="#cccccc">Age</th>
   <th bgcolor="#cccccc">Author</th>
-  <th bgcolor="#cccccc">Log</th>
 [for entries]
-  <tr bgcolor="[if-index entries even]#ffffff[else]#ccccee[end]">
+  <tr valign="top" bgcolor="[if-index entries even]#ffffff[else]#ccccee[end]">
 
     [# Revision column]
     <td>
-      [is entries.state "dead"]
-        <b>[entries.rev]</b>
-      [else]
-        <a name="rev[entries.rev]"></a>
-        [for entries.tag_names]<a name="[entries.tag_names]"></a>
-        [end]
-        [for entries.branch_names]<a name="[entries.branch_names]"></a>
-        [end]
-      [end]
-      [if-any viewable]
-        <a href="[entries.href]" target="cvs_checkout"
-	  onClick="window.open('about:blank', 'cvs_checkout',
-          'resizeable=1,scrollbars=1[is mime_type "text/html"],status,
-          toolbar[end]')"><b>[entries.rev]</b></a>
-      [else]
-        <a href="[entries.view_href]"><b>[entries.rev]</b></a>
-      [end]
+      <b>[entries.rev]</b>
     </td>
 
     <td>
       [# Tasks column]
-      [if-any viewable]
-      [else]
-        (<a href="[entries.href]" target="cvs_checkout"
+        <a href="[entries.href]" target="cvs_checkout"
         onClick="window.open('about:blank', 'cvs_checkout',
-        'resizeable=1,scrollbars=1[is mime_type "text/html"],status,
-        toolbar[end]')"><b>download</b></a>)<br>
-      [end]
+        'resizeable=1,menubar=1,scrollbars=1[is mime_type "text/html"],status,
+        toolbar[end]')"><b>Download</b></a><br>
       [is mime_type "text/plain"]
       [else]
-        (<a href="[entries.text_href]" target="cvs_checkout"
+         <a href="[entries.text_href]" target="cvs_checkout"
 	  onClick="window.open('about:blank', 'cvs_checkout',
-	  'resizeable=1,scrollbars=1')"><b>as text</b></a>)<br>
+	  'resizeable=1,scrollbars=1')"><b>View as text</b></a><br>
       [end]
       [if-any viewable]
-        <a href="[entries.view_href]"><b>(view)</b></a><br>
+        <a href="[entries.view_href]"><b>View revision</b></a><br>
       [end]
       
       [# if you don't want to allow annotation, then remove this line]
-      <a href="[href]?annotate=[entries.rev][query]">annotate</a><br>
+      <a href="[href]?annotate=[entries.rev][query]"><b>View annotation</b></a><br>
 
+      </td>
+      <td>
       [# if you don't want to allow select for diffs then remove this section]
       [is entries.rev rev_selected]
         <b>[[]selected]</b><br>
@@ -115,20 +98,20 @@
         <b><i>FILE REMOVED</i></b>
       [else]
         [if-any entries.prev]
-          Diff&nbsp;to&nbsp;previous&nbsp;<a href="[href].diff?r1=[entries.prev]&r2=[entries.rev][query]">[entries.prev]</a><br>
+          <a href="[href].diff?r1=[entries.prev]&r2=[entries.rev][query]">Diff&nbsp;to&nbsp;previous&nbsp;[entries.prev]</a><br>
           [if-any human_readable]
           [else]
-            (<a href="[href].diff?r1=[entries.prev]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
+            <a href="[href].diff?r1=[entries.prev]&r2=[entries.rev]&diff_format=h[query]">colored</a><br>
           [end]
         [end]
-      [if-any entries.to_selected]
-        Diff&nbsp;to&nbsp;selected&nbsp;<a href="[href].diff?r1=[rev_selected]&r2=[entries.rev][query]">[rev_selected]</a>
-        [if-any human_readable]
-        [else]
-          (<a href="[href].diff?r1=[rev_selected]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
+        [if-any entries.to_selected]
+          <a href="[href].diff?r1=[rev_selected]&r2=[entries.rev][query]">Diff&nbsp;to&nbsp;selected&nbsp;[rev_selected]</a><br>
+          [if-any human_readable]
+          [else]
+            <a href="[href].diff?r1=[rev_selected]&r2=[entries.rev]&diff_format=h[query]">colored</a><br>
+          [end]
         [end]
-      [end]
-    [end]  
+      [end]  
     </td>
 
     <td>
@@ -138,33 +121,34 @@
       [end]
       [if-any entries.branches]
         [for entries.branches]
-          <a href="[entries.branches.href]"><b>[entries.branches.name]</b></a>[if-index entries.branches last][else]<br>[end]
+          <a href="[entries.branches.href]"><b>[entries.branches.name]</b></a><br>
         [end]
       [end]
       [if-any entries.branch_points]
-        <br>Branch point for:
+        Branch point for:
         [for entries.branch_points]
-          <a href="[entries.branch_points.href]"><b>[entries.branch_points.name]</b></a><br>[if-index entries.branch_points last][else]<br>[end]
+          <a href="[entries.branch_points.href]"><b>[entries.branch_points.name]</b></a><br>
         [end]
       [end]
       [if-any entries.next_main]
-        Diff&nbsp;to&nbsp;next&nbsp;main&nbsp;<a href="[href].diff?r1=[entries.next_main]&r2=[entries.rev][query]">[entries.next_main]</a>
+        <a href="[href].diff?r1=[entries.next_main]&r2=[entries.rev][query]">Diff&nbsp;to&nbsp;next&nbsp;MAIN&nbsp;[entries.next_main]</a><br>
         [if-any human_readable]
         [else]
-          (<a href="[href].diff?r1=[entries.next_main]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
+          <a href="[href].diff?r1=[entries.next_main]&r2=[entries.rev]&diff_format=h[query]">colored</a><br>
         [end]
       [end]
       [if-any entries.branch_point]
-          Diff&nbsp;to&nbsp;branch&nbsp;point&nbsp;<a href="[href].diff?r1=[entries.branch_point]&r2=[entries.rev][query]">[entries.branch_point]</a>
-          [if-any human_readable]
-          [else]
-            (<a href="[href].diff?r1=[entries.branches.name]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
-          [end]
+        <a href="[href].diff?r1=[entries.branch_point]&r2=[entries.rev][query]">Diff&nbsp;to&nbsp;branch&nbsp;point&nbsp;[entries.branch_point]</a><br>
+        [if-any human_readable]
+        [else]
+          <a href="[href].diff?r1=[entries.branches.name]&r2=[entries.rev]&diff_format=h[query]">colored</a><br>
+        [end]
       [end]
+
     </td>
 
-    [# Tags column]
     <td>
+    [# Tags column]
       [if-any entries.tags]
         [for entries.tags]
           <a href="[entries.tags.href]"><b>[entries.tags.name]</b></a>[if-index entries.tags last][else]<br>[end]
@@ -183,12 +167,12 @@
       [entries.author]
     </td>
 
-    [# Log column]
-    <td>
-      [entries.html_log]
-    </td>
-
   </tr>
+  <tr bgcolor="[if-index entries even]#ffffff[else]#ccccee[end]">
+    <td>&nbsp;</td>
+    <td colspan=6><b>Log: </b><i>[entries.html_log]</i></td>
+  </tr>
+
 [end]
 </table>
 
