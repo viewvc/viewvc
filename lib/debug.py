@@ -44,27 +44,33 @@ else:
 
   t_start = t_end = dump = lambda *args: None
 
-class ViewcvsException:
-  def __init__(self, msg, httpCode = None):
+
+class ViewCVSException:
+  def __init__(self, msg, httpCode=None):
     self.msg = msg
     self.httpCode = httpCode
-    s = "<p><pre>"
-    s += self.msg
-    s += "</pre></p>\n"
 
-    if self.httpCode:
-      s += "<h4>HTTP-like status code:</h4>\n<p><pre>\n"
-      s += self.httpCode
-      s += "</pre></p><hr>\n"
+    s = '<p><pre>%s</pre></p>' % msg
+
+    if httpCode:
+      s = s + ('<h4>HTTP-like status code:</h4>\n<p><pre>\n%s</pre></p><hr>\n'
+               % httpCode)
     
     self.description = s
 
   def __str__(self):
-    return "ViewCVS Unrecoverable Error"
+    return "ViewCVS Unrecoverable Error (%s): %s" % (self.httpCode, self.msg)
 
-def PrintStackTrace(text = ""):
+### backwards compat
+ViewcvsException = ViewCVSException
+
+
+def PrintStackTrace(text=''):
   import sys, traceback, string, sapi
-  out, server = sys.stdout, sapi.server.self()
+
+  out = sys.stdout
+  server = sapi.server.self()
+
   out.write("<hr><p><font color=red>%s</font></p>\n<p><pre>" % text)
   out.write(server.escape(string.join(traceback.format_stack(), '')))
   out.write("</pre></p>")
@@ -72,7 +78,9 @@ def PrintStackTrace(text = ""):
 
 def PrintException():
   import sys, traceback, string, sapi
-  out, server = sys.stdout, sapi.server.self()
+
+  out = sys.stdout
+  server = sapi.server.self()
   
   server.header()  
   out.write("<h3>Exception</h3>\n")
@@ -80,7 +88,7 @@ def PrintException():
   
   # put message in a prominent position (rather than 
   # at the end of the stack trace)
-  if isinstance(info[1], ViewcvsException):
+  if isinstance(info[1], ViewCVSException):
     out.write("<h4>ViewCVS Messages:</h4>\n%s\n" % info[1].description)
   
   stacktrace = string.join(apply(traceback.format_exception, info), '')
@@ -88,8 +96,7 @@ def PrintException():
   out.write("<h4>Python Messages:</h4>\n<p><pre>")
   out.write(server.escape(stacktrace))
   out.write("</pre></p>\n")
-  
-  del info
+
 
 if SHOW_CHILD_PROCESSES:
   class Process:
@@ -108,9 +115,11 @@ if SHOW_CHILD_PROCESSES:
 
   def DumpChildren():
     import sapi, sys, os
-    out, server = sys.stdout, sapi.server.self()
 
-    if not 'processes' in server.pageGlobals:
+    out = sys.stdout
+    server = sapi.server.self()
+
+    if not server.pageGlobals.has_key('processes'):
       return
     
     server.header()
@@ -118,7 +127,7 @@ if SHOW_CHILD_PROCESSES:
     i = 0
 
     for k in server.pageGlobals['processes']:
-      i += 1
+      i = i + 1
       out.write("<table border=1>\n")
       out.write("<tr><td colspan=2>Child Process%i</td></tr>" % i)
       out.write("<tr>\n  <td valign=top>Command Line</td>  <td><pre>")
