@@ -190,7 +190,7 @@ class Parser:
       date_fields = map(string.atoi, date_fields)
       if date_fields[0] < 100:
         date_fields[0] = date_fields[0] + 1900
-      timestamp = time.mktime(date_fields)
+      timestamp = time.mktime(tuple(date_fields))
 
       # Parse author
       self.ts.match('author')
