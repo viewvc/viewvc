@@ -230,7 +230,8 @@ class Request:
     if cfg.general.cvs_roots.has_key(self.rootname):
       self.rootpath = cfg.general.cvs_roots[self.rootname]
       try:
-        self.repos = bincvs.BinCVSRepository(self.rootname, self.rootpath)
+        self.repos = bincvs.BinCVSRepository(self.rootname, self.rootpath, 
+                                             cfg.general)
         self.roottype = 'cvs'
       except vclib.ReposNotFound:
         raise debug.ViewCVSException(
@@ -934,11 +935,12 @@ def view_auto(request):
     view_checkout(request)
 
 def view_markup(request):
-  fp, revision = process_checkout(request, request.where)
-
   full_name = request.full_name
   where = request.where
   query_dict = request.query_dict
+  rev = request.query_dict.get('rev')
+
+  fp, revision = request.repos.openfile(request.path_parts, rev)
 
   data = nav_header_data(request, revision)
   data.update({
@@ -2177,92 +2179,9 @@ def view_log_cvs(request, data, logsort):
   request.server.header()
   generate_page(request, cfg.templates.log, data)
 
-### suck up other warnings in _re_co_warning?
-_re_co_filename = re.compile(r'^(.*),v\s+-->\s+standard output\s*\n$')
-_re_co_warning = re.compile(r'^.*co: .*,v: warning: Unknown phrases like .*\n$')
-_re_co_revision = re.compile(r'^revision\s+([\d\.]+)\s*\n$')
-def process_checkout(request, where):
-  if request.roottype == 'svn':
-    fp = vclib.svn.get_file_contents(request.repos, where)
-    revision = str(request.repos.rev)
-    return fp, revision
-
-  rev = request.query_dict.get('rev')
-
-  ### validate the revision?
-
-  if not rev or rev == 'HEAD':
-    rev_flag = '-p'
-  else:
-    rev_flag = '-p' + rev
-
-  full_name = os.path.join(request.rootpath, where)
-
-  fp = bincvs.rcs_popen(cfg.general, 'co', (rev_flag, full_name), 'rb')
-
-  # header from co:
-  #
-  #/home/cvsroot/mod_dav/dav_shared_stub.c,v  -->  standard output
-  #revision 1.1
-  #
-  # Sometimes, the following line might occur at line 2:
-  #co: INSTALL,v: warning: Unknown phrases like `permissions ...;' are present.
-
-  # parse the output header
-  filename = revision = None
-
-  line = fp.readline()
-  if not line:
-    raise debug.ViewcvsException('Missing output from co.<br>'
-                                 'fname="%s". url="%s"' % (filename, where))
-
-  match = _re_co_filename.match(line)
-  if not match:
-    raise debug.ViewcvsException(
-      'First line of co output is not the filename.<br>'
-      'Line was: %s<br>'
-      'fname="%s". url="%s"' % (line, filename, where))
-  filename = match.group(1)
-
-  line = fp.readline()
-  if not line:
-    raise debug.ViewcvsException(
-      'Missing second line of output from co.<br>'
-      'fname="%s". url="%s"' % (filename, where))
-  match = _re_co_revision.match(line)
-  if not match:
-    match = _re_co_warning.match(line)
-    if not match:
-      raise debug.ViewcvsException(
-        'Second line of co output is not the revision.<br>'
-        'Line was: %s<br>'
-        'fname="%s". url="%s"' % (line, filename, where))
-
-    # second line was a warning. ignore it and move along.
-    line = fp.readline()
-    if not line:
-      raise debug.ViewcvsException(
-        'Missing third line of output from co (after a warning).<br>'
-        'fname="%s". url="%s"' % (filename, where))
-    match = _re_co_revision.match(line)
-    if not match:
-      raise debug.ViewcvsException(
-        'Third line of co output is not the revision.<br>'
-        'Line was: %s<br>'
-        'fname="%s". url="%s"' % (line, filename, where))
-
-  # one of the above cases matches the revision. grab it.
-  revision = match.group(1)
-
-  if filename != full_name:
-    raise debug.ViewcvsException(
-      'The filename from co did not match. Found "%s". Wanted "%s"<br>'
-      'url="%s"' % (filename, full_name, where))
-
-  return fp, revision
-
 def view_checkout(request):
-  fp, revision = process_checkout(request, request.where)
+  rev = request.query_dict.get('rev')
+  fp = request.repos.openfile(request.path_parts, rev)[0]
   mime_type = request.query_dict.get('content-type', request.mime_type)
   request.server.header(mime_type)
   copy_stream(fp)
@@ -2397,7 +2316,7 @@ def search_files(request, search_re):
 
     # process_checkout will checkout the head version out of the repository
     # Assign contents of checked out file to fp.
-    fp, revision = process_checkout(request, where)
+    fp = request.repos.openfile(request.path_parts + [file[:-2]])[0]
 
     # Read in each line, use re.search to search line.
     # If successful, add file to new_file_list and break.
