@@ -1,7 +1,7 @@
 INSTALLING VIEWCVS
 ------------------
 
-1) To get viewcvs.cgi to work, make sure that you have Python 1.5
+1) To get viewcvs.cgi to work, make sure that you have Python 1.5.2
    installed and a webserver which is capable to execute cgi-scripts
    (either based on the .cgi extension, or by placing the script
    within a specific directory).
@@ -38,18 +38,26 @@ If you've trouble to make viewcvs.cgi work:
 
 === If nothing seems to work:
 
- o check, if you can execute CGI-scripts (Apache needs to have an
+ o check if you can execute CGI-scripts (Apache needs to have an
    ScriptAlias /cgi-bin or cgi-script Handler defined). Try to 
    execute a simple CGI-script that often comes with the distribution
    of the webserver; locate the logfiles and try to find hints
    which explain the malfunction
 
- o view the entries in the webservers error.log
+ o view the entries in the webserver's error.log
+ 
+ o make sure there is a trailing slash on the URL. for example:
+ 
+     http://www.example.com/cgi-bin/viewcvs.cgi/
+     
+   (ViewCVS should perform a redirection to ensure this, but a report
+    has indicated that it doesn't always do this... please send more
+    of these bug reports if you run into this)
 
 === If viewcvs seems to work but doesn't show the expected result
     (Typical error: you can't see any files)
 
- o check, whether the CGI-script has read-permissions to your
+ o check whether the CGI-script has read-permissions to your
    CVS-Repository. The CGI-script often runs as the user 'nobody' 
    or 'httpd' ..
 
