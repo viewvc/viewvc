@@ -3177,7 +3177,9 @@ def handle_config():
         raise debug.ViewcvsException(
           "The path '%s' in 'root_parents' does not include a "
           "repository type." % pp)
-      pp, repo_type = map(string.strip, (pp[:pos], pp[pos+1:]))
+
+      repo_type = string.strip(pp[pos+1:])
+      pp = os.path.normpath(string.strip(pp[:pos]))
 
       try:
         subpaths = os.listdir(pp)
