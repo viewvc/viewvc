@@ -1,3 +1,7 @@
+Modif ( 27-Jan-2002)
+	* Added Install file
+	* Added the list of the platforms on which tparse has been compiled ( compile farm of sourceforge.)
+	* Added lots of little variable ( __version__, etc...)
 Modif ( 25-Jan-2002)
 	* renamed module as tparse
 	* wrote distutils Setup.py
