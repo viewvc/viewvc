@@ -30,9 +30,6 @@ TODO ITEMS
 
 KNOWN BUGS
 ----------
-*) from Harri Pasanen, Feb 7: when hideattic is set, files added in a
-   branch are not visible.
-
 *) from Dieter Deyke, Jan 12: if the CVS revisions differ by just a
    keyword, then the diff output chokes.
 
