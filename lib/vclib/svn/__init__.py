@@ -176,13 +176,17 @@ class StreamPipe:
     self._eof = 0
     
   def read(self, len):
-    chunk = core.svn_stream_read(self._stream, len)
+    chunk = None
+    if not self._eof:
+      chunk = core.svn_stream_read(self._stream, len)
     if not chunk:
       self._eof = 1
     return chunk
   
   def readline(self):
-    chunk = core.svn_stream_readline(self._stream)
+    chunk = None
+    if not self._eof:
+      chunk = core.svn_stream_readline(self._stream)
     if not chunk:
       self._eof = 1
     return chunk
