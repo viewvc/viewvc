@@ -1241,10 +1241,6 @@ def view_directory(request):
       continue
 
     if isdir:
-      if cfg.options.use_cvsgraph:
-        row.graph_href = '&nbsp;' 
-      if cfg.options.show_subdir_lastmod:
-        row.show_subdir_lastmod = '&nbsp;'
       if not hideattic and file == 'Attic':
         continue
       if where == '' and ((file == 'CVSROOT' and cfg.options.hide_cvsroot)
@@ -1274,6 +1270,8 @@ def view_directory(request):
         row.cvs = 'data'
         row.time = html_time(info[1])
 
+        if cfg.options.use_cvsgraph:
+          row.graph_href = '&nbsp;' 
         if cfg.options.show_author:
           row.author = info[3]
         if cfg.options.show_logs:
