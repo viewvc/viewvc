@@ -349,6 +349,15 @@ def gui(host, port):
                 command=self.toggle_useresearch)
             self.useresearch_toggle.pack(side='top', anchor='w')
 
+            # use_localtime toggle:
+            self.use_localtime_ivar = Tkinter.IntVar()
+            self.use_localtime_ivar.set(viewcvs.cfg.options.use_localtime)
+            self.use_localtime_toggle = Tkinter.Checkbutton(self.options_frm,
+                text="use localtime (instead of UTC)", 
+                var=self.use_localtime_ivar,
+                command=self.toggle_use_localtime)
+            self.use_localtime_toggle.pack(side='top', anchor='w')
+
             # use_pagesize integer var:
             self.usepagesize_lbl = Tkinter.Label(self.options_frm,
                 text='Paging (number of items per page, 0 disables):')
@@ -436,6 +445,9 @@ def gui(host, port):
 
         def toggle_use_enscript(self, event=None):
             viewcvs.cfg.options.use_enscript = self.enscript_ivar.get()
+
+        def toggle_use_localtime(self, event=None):
+            viewcvs.cfg.options.use_localtime = self.use_localtime_ivar.get()
 
         def toggle_subdirmod(self, event=None):
             viewcvs.cfg.options.show_subdir_lastmod = self.subdirmod_ivar.get()
