@@ -79,6 +79,15 @@
     enable a backwards compatibility mode by setting
     <code>utc_time = 0</code> at the top of lib/dbi.py</p>
 
+    <h3>Template Arrangement</h3>
+    
+    <p>The default templates have been rearranged a bit in ViewCVS
+    1.0.  Specifically, "header.ezt" and "footer.ezt" have moved into
+    the "templates/include/" subdirectory.  Also, "directory.ezt" and
+    "dir_alternate.ezt" now reference new template files
+    "dir_header.ezt" and "dir_footer.ezt", also found in the
+    templates/include/" subdirectory.</p>
+
     <h3>Removed Template Variables</h3>
     <blockquote>
       <dl>
