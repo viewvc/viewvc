@@ -23,23 +23,6 @@ import string
 import ConfigParser
 import fnmatch
 
-def error(msg, status='500 Internal Server Error'):
-  """a simple error reporting utility function"""
-  print 'Status:', status
-  print
-  print msg
-  sys.exit(0)
-
-def _parse_roots(config_name, config_value):
-  roots = { }
-  for root in config_value:
-    try:
-      name, path = map(string.strip, string.split(root, ':'))
-      roots[name] = path
-    except ValueError:
-      error("malformed configuration file: wrong '%s' syntax: %s"
-            % (config_name, root))
-  return roots
 
 #########################################################################
 #
@@ -206,8 +189,6 @@ class Config:
     self.options.show_log_in_markup = 1
     self.options.py2html_path = '.'
     self.options.short_log_len = 80
-    self.options.diff_font_face = 'Helvetica,Arial'
-    self.options.diff_font_size = -1
     self.options.use_enscript = 0
     self.options.enscript_path = ''
     self.options.disable_enscript_lang = ()
@@ -231,6 +212,28 @@ class Config:
       elif fnmatch.fnmatchcase(module, pat):
         return 1
     return default
+
+
+def _parse_roots(config_name, config_value):
+  roots = { }
+  for root in config_value:
+    try:
+      name, path = map(string.strip, string.split(root, ':'))
+      roots[name] = path
+    except ValueError:
+      raise MalformedRoot(config_name, root)
+  return roots
+
+
+class MalformedRoot(Exception):
+  def __init__(self, config_name, value_given):
+    Exception.__init__(self, config_name, value_given)
+    self.config_name = config_name
+    self.value_given = value_given
+  def __str__(self):
+    return "malformed configuration: '%s' uses invalid syntax: %s" \
+           % (self.config_name, self.value_given)
+
 
 class _sub_config:
   pass
