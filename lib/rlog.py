@@ -92,9 +92,7 @@ def _get_co_file(v_file):
 
 def GetRLogData(cfg, path, revision=''):
     v_file = _get_v_file(path)
-    head, branch, taginfo, revs = bincvs.fetch_log(cfg.general,
-                                                   v_file,
-                                                   revision)
+    branch, taginfo, revs = bincvs.fetch_log(cfg.general, v_file, revision)
     class _blank:
       pass
 
@@ -136,7 +134,7 @@ def GetRLogData(cfg, path, revision=''):
         else:
           new_entry.description = entry.log
 
-        new_entry.revision = entry.rev
+        new_entry.revision = entry.string
         new_entry.author = entry.author
         new_entry.time = entry.date
 

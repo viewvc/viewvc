@@ -621,7 +621,7 @@ def prep_tags(request, tags):
 
   links = [ ]
   for tag in tags:
-    links.append(_item(name=tag, href=url+tag))
+    links.append(_item(name=tag.name, href=url+tag.name))
   return links
 
 def is_viewable_image(mime_type):
@@ -970,18 +970,14 @@ def view_markup(request):
 
   if cfg.options.show_log_in_markup:
     if request.roottype == 'cvs':
-      show_revs, rev_map, rev_order, taginfo, rev2tag, \
-                 cur_branch, branch_points, branch_names = read_log(full_name)
-      entry = rev_map[revision]
-  
-      idx = string.rfind(revision, '.')
-      branch = revision[:idx]
-  
-      entry.date_str = make_time_string(entry.date)
+      revs, taginfo = read_log(full_name, revision, None)
+
+      entry = revs[-1]
+      branch = entry.branch_number
   
       data.update({
         'roottype' : 'cvs',
-        'date_str' : entry.date_str,
+        'date_str' : make_time_string(entry.date),
         'ago' : html_time(request, entry.date, 1),
         'author' : entry.author,
         'branches' : None,
@@ -991,26 +987,15 @@ def view_markup(request):
         'log' : htmlify(entry.log),
         'size' : None,
         'state' : entry.state,
-        'vendor_branch' : ezt.boolean(_re_is_vendor_branch.match(revision)),
+        'vendor_branch' : ezt.boolean(branch and branch[2] % 2 == 1),
+        'branches' : string.join(map(lambda x: x.name, entry.branches), ', '),
+        'tags' : string.join(map(lambda x: x.name, entry.tags), ', '),
+        'branch_points': string.join(map(lambda x: x.name,
+                                         entry.branch_points), ', ')
         })
   
-      if rev2tag.has_key(branch):
-        data['branches'] = string.join(rev2tag[branch], ', ')
-      if rev2tag.has_key(revision):
-        data['tags'] = string.join(rev2tag[revision], ', ')
-      if branch_points.has_key(revision):
-        data['branch_points'] = string.join(branch_points[revision], ', ')
-  
-      prev_rev = string.split(revision, '.')
-      while 1:
-        if prev_rev[-1] == '0':     # .0 can be caused by 'commit -r X.Y.Z.0'
-          prev_rev = prev_rev[:-2]  # X.Y.Z.0 becomes X.Y.Z
-        else:
-          prev_rev[-1] = str(int(prev_rev[-1]) - 1)
-        prev = string.join(prev_rev, '.')
-        if rev_map.has_key(prev) or prev == '':
-          break
-      data['prev'] = prev
+      prev = entry.prev or entry.parent
+      data['prev'] = prev and prev.string
     elif request.roottype == 'svn':
       alltags, logs = vclib.svn.fetch_log(request.repos, where)
       this_rev = int(revision)
@@ -1395,93 +1380,74 @@ def paging(data, key, pagestart, local_name):
 
 def logsort_date_cmp(rev1, rev2):
   # sort on date; secondary on revision number
-  return -cmp(rev1.date, rev2.date) or -revcmp(rev1.rev, rev2.rev)
+  return -cmp(rev1.date, rev2.date) or -cmp(rev1.number, rev2.number)
 
 def logsort_rev_cmp(rev1, rev2):
   # sort highest revision first
-  return -revcmp(rev1.rev, rev2.rev)
+  return -cmp(rev1.number, rev2.number)
 
-def find_first_rev(taginfo, revs):
-  "Find first revision that matches a normal tag or is on a branch tag"
-  for rev in revs:
-    if taginfo.matches_rev(rev) or taginfo.holds_rev(rev):
-      return rev
-  return None
+def read_log(full_name, filter, logsort):
+  # Retrieve log info
+  cur_branch, taginfo, revs = bincvs.fetch_log(cfg.general, full_name)
 
-def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
-  head, cur_branch, taginfo, revs = bincvs.fetch_log(cfg.general,
-                                                     full_name, which_rev)
+  # Add artificial ViewCVS tag MAIN. If the file has a default branch, then
+  # MAIN acts like a branch tag pointing to that branch. Otherwise MAIN acts
+  # like a branch tag that points to the trunk. (Note: A default branch is
+  # just a branch number specified in an RCS file that tells CVS and RCS
+  # what branch to use for checkout and update operations by default, when
+  # there's no revision argument or sticky branch to override it. Default
+  # branches get set by "cvs import" to point to newly created vendor
+  # branches. Sometimes they are also set manually with "cvs admin -b")
+  taginfo['MAIN'] = cur_branch
 
-  rev_order = map(lambda entry: entry.rev, revs)
-  rev_order.sort(revcmp)
-  rev_order.reverse()
+  # Create tag objects
+  for name, num in taginfo.items():
+    taginfo[name] = bincvs.Tag(name, num)
+  tags = taginfo.values()
 
-  # HEAD is an artificial tag which is simply the highest tag number on the
-  # main branch, unless there is a branch tag in the RCS file in which case
-  # it's the highest revision on that branch.  Find it by looking through
-  # rev_order; it is the first commit listed on the appropriate branch.
-  # This is not neccesary the same revision as marked as head in the RCS file.
-  ### Why are we defining our own HEAD instead of just using the revision
-  ### marked as head? What's wrong with: taginfo['HEAD'] = bincvs.TagInfo(head)
-  taginfo['MAIN'] = bincvs.TagInfo(cur_branch)
-  taginfo['HEAD'] = find_first_rev(taginfo['MAIN'], rev_order)
-
-  # map revision numbers to tag names
-  rev2tag = { }
-
-  # names of symbols at each branch point
-  branch_points = { }
-
-  branch_names = [ ]
-
-  # Now that we know all of the revision numbers, we can associate
-  # absolute revision numbers with all of the symbolic names, and
-  # pass them to the form so that the same association doesn't have
-  # to be built then.
-
-  items = taginfo.items()
-  items.sort()
-  items.reverse()
-  for name, tag in items:
-    if not isinstance(tag, bincvs.TagInfo):
-      taginfo[name] = tag = bincvs.TagInfo(tag)
-
-    number = tag.number()
-
-    if tag.is_branch():    
-      branch_names.append(name)
-
-      if number == cur_branch:
-        default_branch = name
-
-      if not tag.is_trunk():
-        rev = tag.branches_at()
-        if branch_points.has_key(rev):
-          branch_points[rev].append(name)
-        else:
-          branch_points[rev] = [ name ]
-
-      # revision number you'd get if you checked out this branch
-      tag.co_rev = find_first_rev(tag, rev_order)
+  # Set view_tag to a Tag object in order to filter results. We can filter by
+  # revision number or branch number
+  if filter:
+    try:
+      view_tag = bincvs.Tag(None, filter)
+    except ValueError:
+      view_tag = None
     else:
-      tag.co_rev = number
+      tags.append(view_tag)  
 
-    if rev2tag.has_key(number):
-      rev2tag[number].append(name)
-    else:
-      rev2tag[number] = [ name ]
+  # Match up tags and revisions
+  bincvs.match_revs_tags(revs, tags)
 
-  if view_tag:
-    tag = taginfo.get(view_tag)
-    if not tag:
-      raise debug.ViewcvsException('Tag %s not defined.' % view_tag,
-                                   '404 Tag Not Found')
+  # Add artificial ViewCVS tag HEAD, which acts like a non-branch tag pointing
+  # at the latest revision on the MAIN branch. The HEAD revision doesn't have
+  # anything to do with the "head" revision number specified in the RCS file
+  # and in rlog output. HEAD refers to the revision that the CVS and RCS co
+  # commands will check out by default, whereas the "head" field just refers
+  # to the highest revision on the trunk.  
+  taginfo['HEAD'] = bincvs.add_tag('HEAD', taginfo['MAIN'].co_rev)
 
+  # Determine what revisions to return
+  if filter:
+    # If view_tag isn't set, it means filter is not a valid revision or
+    # branch number. Check taginfo to see if filter is set to a valid tag
+    # name. If so, filter by that tag, otherwise raise an error.
+    if not view_tag:
+      try:
+        view_tag = taginfo[filter]
+      except KeyError:
+        raise debug.ViewcvsException('Invalid tag or revision number "%s"'
+                                     % filter)
     show_revs = [ ]
-    for entry in revs:
-      rev = entry.rev
-      if tag.matches_rev(rev) or tag.holds_rev(rev):
-        show_revs.append(entry)
+    if view_tag.is_branch:
+      for rev in revs:
+        if rev.branch_number == view_tag.number or rev is view_tag.branch_rev:
+          show_revs.append(rev)
+    elif view_tag.co_rev:
+      show_revs.append(view_tag.co_rev)
+
+    # get rid of the view_tag if it was only created for filtering
+    if view_tag.name is None:
+      bincvs.remove_tag(view_tag)
   else:
     show_revs = revs
 
@@ -1493,110 +1459,69 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
     # no sorting
     pass
 
-  # build a map of revision number to entry information
-  rev_map = { }
-  for entry in revs:
-    rev_map[entry.rev] = entry
+  return show_revs, taginfo
 
-  ### some of this return stuff doesn't make a lot of sense...
-  return show_revs, rev_map, rev_order, taginfo, rev2tag, \
-         default_branch, branch_points, branch_names
-
-_re_is_vendor_branch = re.compile(r'^1\.1\.1\.\d+$')
-
-def augment_entry(entry, request, rev_map, rev2tag, branch_points,
-                  rev_order, extended, name_printed):
+def augment_entry(entry, rev, request, name_printed, extended):
   "Augment the entry with additional, computed data from the log output."
 
   query_dict = request.query_dict
 
-  rev = entry.rev
-  idx = string.rfind(rev, '.')
-  branch = rev[:idx]
+  branch = rev.branch_number
 
-  entry.vendor_branch = ezt.boolean(_re_is_vendor_branch.match(rev))
+  entry.vendor_branch = ezt.boolean(branch and branch[2] % 2 == 1)
 
-  entry.date_str = make_time_string(entry.date)
+  entry.date_str = make_time_string(rev.date)
 
-  entry.ago = html_time(request, entry.date, 1)
+  entry.ago = html_time(request, rev.date, 1)
 
-  entry.branches = prep_tags(request, rev2tag.get(branch, [ ]))
-  entry.tags = prep_tags(request, rev2tag.get(rev, [ ]))
-  entry.branch_points = prep_tags(request, branch_points.get(rev, [ ]))
+  entry.branches = prep_tags(request, rev.branches)
+  entry.tags = prep_tags(request, rev.tags)
+  entry.branch_points = prep_tags(request, rev.branch_points)
 
-  prev_rev = string.split(rev, '.')
-  while 1:
-    if prev_rev[-1] == '0':     # .0 can be caused by 'commit -r X.Y.Z.0'
-      prev_rev = prev_rev[:-2]  # X.Y.Z.0 becomes X.Y.Z
-    else:
-      prev_rev[-1] = str(int(prev_rev[-1]) - 1)
-    prev = string.join(prev_rev, '.')
-    if rev_map.has_key(prev) or prev == '':
-      break
-  entry.prev = prev
+  prev = rev.prev or rev.parent
+  entry.prev = prev and prev.string
 
-  ### maybe just overwrite entry.log?
-  entry.html_log = htmlify(entry.log)
+  entry.html_log = htmlify(rev.log)
 
   if extended:
-    entry.tag_names = rev2tag.get(rev, [ ])
-    if rev2tag.has_key(branch) and not name_printed.has_key(branch):
-      entry.branch_names = rev2tag.get(branch)
+    entry.tag_names = map(lambda x: x.name, rev.tags)
+    if branch and not name_printed.has_key(branch):
+      entry.branch_names = map(lambda x: x.name, rev.branches)
       name_printed[branch] = 1
     else:
       entry.branch_names = [ ]
 
-    entry.href = request.get_url(view_func=view_checkout, params={'rev': rev})
+    entry.href = request.get_url(view_func=view_checkout, 
+                                 params={'rev': rev.string})
     entry.view_href = request.get_url(view_func=view_markup, 
-                                      params={'rev': rev})
+                                      params={'rev': rev.string})
     entry.text_href = request.get_url(view_func=view_checkout,
                                       params={'content-type': 'text/plain',
-                                              'rev': rev})
+                                              'rev': rev.string})
     
     entry.annotate_href = request.get_url(view_func=view_annotate, 
-                                          params={'annotate': rev})
+                                          params={'annotate': rev.string})
 
     # figure out some target revisions for performing diffs
     entry.branch_point = None
     entry.next_main = None
 
-    idx = string.rfind(branch, '.')
-    if idx != -1:
-      branch_point = branch[:idx]
-
-      if not entry.vendor_branch \
-         and branch_point != rev and branch_point != prev:
-        entry.branch_point = branch_point
+    if rev.parent and rev.parent is not prev and not entry.vendor_branch:
+      entry.branch_point = rev.parent.string
 
     # if it's on a branch (and not a vendor branch), then diff against the
     # next revision of the higher branch (e.g. change is committed and
     # brought over to -stable)
-    if string.count(rev, '.') > 1 and not entry.vendor_branch:
-      # locate this rev in the ordered list of revisions
-      i = rev_order.index(rev)
-
-      # create a rev that can be compared component-wise
-      c_rev = string.split(rev, '.')
-
-      while i:
-        next = rev_order[i - 1]
-        c_work = string.split(next, '.')
-        if len(c_work) < len(c_rev):
-          # found something not on the branch
-          entry.next_main = next
-          break
-
-        # this is a higher version on the same branch; the lower one (rev)
+    if rev.parent and rev.parent.next and not entry.vendor_branch:
+      if not rev.next:
+        # this is the highest version on the branch; a lower one
         # shouldn't have a diff against the "next main branch"
-        if c_work[:-1] == c_rev[:len(c_work) - 1]:
-          break
-
-        i = i - 1
+        entry.next_main = rev.parent.next.string
 
     # the template could do all these comparisons itself, but let's help
     # it out.
     r1 = query_dict.get('r1')
-    if r1 and r1 != rev and r1 != prev and r1 != entry.branch_point \
+    if r1 and r1 != entry.rev and r1 != entry.prev and r1 != entry.branch_point \
        and r1 != entry.next_main:
       entry.to_selected = 'yes'
     else:
@@ -1747,9 +1672,7 @@ def view_log_cvs(request, data, logsort):
 
   view_tag = query_dict.get('only_with_tag')
 
-  show_revs, rev_map, rev_order, taginfo, rev2tag, \
-             cur_branch, branch_points, branch_names = \
-             read_log(full_name, None, view_tag, logsort)
+  show_revs, taginfo = read_log(full_name, view_tag, logsort)
 
   up_where = get_up_path(request, where, int(query_dict.get('hideattic',
                                              cfg.options.hide_attic)))
@@ -1761,15 +1684,23 @@ def view_log_cvs(request, data, logsort):
                                  where=up_where, params={}),
     'filename' : filename,
     'view_tag' : view_tag,
-    'entries' : show_revs,   ### rename the show_rev local to entries?
-    
   })
 
   if cfg.options.use_cvsgraph:
     data['graph_href'] = request.get_url(view_func=view_cvsgraph, params={})
 
-  if cur_branch:
-    data['branch'] = cur_branch
+  main = taginfo.get('MAIN')
+
+  if main:
+    # Default branch may have multiple names so we list them
+    branches = []
+    for branch in main.aliases:
+      # Don't list MAIN unless there are no other names
+      if branch is not main or len(main.aliases) == 1:
+        branches.append(branch.name)
+
+    ### this formatting should be moved into the ezt template
+    data['branch'] = string.join(branches, ', ')
 
     ### I don't like this URL construction stuff. the value
     ### for head_abs_href vs head_href is a bit bogus: why decide to
@@ -1782,11 +1713,17 @@ def view_log_cvs(request, data, logsort):
     else:
       data['head_href'] = request.get_url(view_func=view_checkout, params={})
 
+  data['entries'] = entries = [ ]
   name_printed = { }
-  for entry in show_revs:
+  for rev in show_revs:
+    entry = _item(rev = rev.string,
+                  state = rev.state,
+                  author = rev.author,
+                  changed = rev.changed)
+
     # augment the entry with (extended=1) info.
-    augment_entry(entry, request, rev_map, rev2tag, branch_points,
-                  rev_order, 1, name_printed)
+    augment_entry(entry, rev, request, name_printed, 1)
+    entries.append(entry)
 
   tagitems = taginfo.items()
   tagitems.sort()
@@ -1795,20 +1732,24 @@ def view_log_cvs(request, data, logsort):
   data['tags'] = tags = [ ]
   for tag, rev in tagitems:
     if rev.co_rev:
-      tags.append(_item(rev=rev.co_rev, name=tag))
+      tags.append(_item(rev=rev.co_rev.string, name=tag))
         
   if query_dict.has_key('r1'):
     diff_rev = query_dict['r1']
   else:
-    diff_rev = show_revs[-1].rev
+    diff_rev = show_revs[-1].string
   data['tr1'] = diff_rev
 
   if query_dict.has_key('r2'):
     diff_rev = query_dict['r2']
   else:
-    diff_rev = show_revs[0].rev
+    diff_rev = show_revs[0].string
   data['tr2'] = diff_rev
 
+  branch_names = []
+  for tag in taginfo.values():
+    if tag.is_branch:
+      branch_names.append(tag.name)
   branch_names.sort()
   branch_names.reverse()
   data['branch_names'] = branch_names

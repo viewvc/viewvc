@@ -30,6 +30,197 @@ import time
 import compat
 import popen
 
+class Revision:
+  def __init__(self, revstr, date, author, state, changed, log):
+    self.number = _revision_tuple(revstr)
+    self.string = revstr
+    self.date = date
+    self.author = author
+    self.state = state
+    self.changed = changed
+    self.log = log
+
+  def __cmp__(self, other):
+    return cmp(self.number, other.number)
+
+class Tag:
+  def __init__(self, name, revstr):
+    self.name = name
+    self.number = _tag_tuple(revstr)
+    self.is_branch = len(self.number) % 2 == 1 or not self.number
+
+def match_revs_tags(revlist, taglist):
+  """Match up a list of Revision objects with a list of Tag objects
+
+  Sets the following properties on each Revision in revlist:
+    "tags"
+      list of non-branch tags which refer to this revision
+      example: if revision is 1.2.3.4, tags is a list of all 1.2.3.4 tags
+
+    "branches"
+      list of branch tags which refer to this revision's branch
+      example: if revision is 1.2.3.4, branches is a list of all 1.2.3 tags
+
+    "branch_points"
+      list of branch tags which branch off of this revision
+      example: if revision is 1.2, it's a list of tags like 1.2.3 and 1.2.4
+
+    "prev"
+      reference to the previous revision, possibly None
+      example: if revision is 1.2.3.4, prev is 1.2.3.3
+
+    "next"
+      reference to next revision, possibly None
+      example: if revision is 1.2.3.4, next is 1.2.3.5
+
+    "parent"
+      reference to revision this one branches off of, possibly None
+      example: if revision is 1.2.3.4, parent is 1.2
+
+    "branch_number"
+      tuple representing branch number or empty tuple if on trunk
+      example: if revision is 1.2.3.4, branch_number is (1, 2, 3)
+
+  Each tag in taglist gets these properties set:
+    "co_rev"
+      reference to revision that would be retrieved if tag were checked out
+
+    "branch_rev"
+      reference to revision branched off of, only set for branch tags
+      example: if tag is 1.2.3, branch_rev points to 1.2 revision
+
+    "aliases"
+      list of tags that have the same number
+
+  This function assumes it will be passed a complete, feasible sequence of
+  revisions. If an invalid sequence is passed it will return garbage or throw
+  exceptions.
+  """
+
+  # map of branch numbers to lists of corresponding branch Tags
+  branch_dict = {}
+
+  # map of revision numbers to lists of non-branch Tags
+  tag_dict = {}
+
+  # map of revision numbers to lists of branch Tags
+  branch_point_dict = {}
+
+  # toss tags into "branch_dict", "tag_dict", and "branch_point_dict"
+  # set "aliases" property and default "co_rev" and "branch_rev" values
+  for tag in taglist:
+    tag.co_rev = None
+    if tag.is_branch:
+      tag.branch_rev = None
+      _dict_list_add(branch_point_dict, tag.number[:-1], tag)
+      tag.aliases = _dict_list_add(branch_dict, tag.number, tag)
+    else:
+      tag.aliases = _dict_list_add(tag_dict, tag.number, tag)
+
+  # sort the revisions so the loop below can work properly
+  revlist.sort()
+
+  # array of the most recently encountered revision objects indexed by depth
+  history = []
+
+  # loop through revisions, setting properties and storing state in "history"
+  for rev in revlist:
+    depth = len(rev.number) / 2 - 1
+
+    # set "prev" and "next" properties
+    rev.prev = rev.next = None
+    if depth < len(history):
+      prev = history[depth]
+      if depth == 0 or rev.number[:-1] == prev.number[:-1]:
+        rev.prev = prev
+        prev.next = rev
+
+    # set "parent"
+    if depth > 0:
+      assert history[depth-1].number == rev.number[:-2]
+      rev.parent = history[depth-1]
+    else:
+      rev.parent = None
+
+    # set "tags" and "branch_points"
+    rev.tags = tag_dict.get(rev.number, [])
+    rev.branch_points = branch_point_dict.get(rev.number, [])
+
+    # set "branches" and "branch_number"
+    if rev.prev:
+      rev.branches = rev.prev.branches
+      rev.branch_number = rev.prev.branch_number
+    else:
+      rev.branch_number = rev.parent and rev.number[:-1] or ()
+      try:
+        rev.branches = branch_dict[rev.branch_number]
+      except KeyError:
+        rev.branches = []
+
+    # set "co_rev" and "branch_rev"
+    for tag in rev.tags:
+      tag.co_rev = rev
+
+    for tag in rev.branch_points:
+      tag.co_rev = rev
+      tag.branch_rev = rev
+
+    # This loop only needs to be run for revisions at the heads of branches,
+    # but for the simplicity's sake, it actually runs for every revision on
+    # a branch. The later revisions overwrite values set by the earlier ones.
+    for branch in rev.branches:
+      branch.co_rev = rev
+
+    # end of outer loop, store most recent revision in "history" array
+    if depth < len(history):
+      history[depth] = rev
+    else:
+      assert depth == len(history)
+      history.append(rev)
+
+def add_tag(tag_name, revision):
+  """Create a new tag object and associate it with a revision"""
+  tag = Tag(tag_name, revision.string)
+  revision.tags.append(tag)
+  tag.co_rev = revision
+  tag.aliases = revision.tags
+  return tag
+  
+def remove_tag(tag):
+  """Remove a tag's associations"""
+  tag.aliases.remove(tag)
+  if tag.is_branch and tag.branch_rev:
+    tag.branch_rev.branch_points.remove(tag)
+
+def _revision_tuple(revision_string):
+  """convert a revision number into a tuple of integers"""
+  t = tuple(map(int, string.split(revision_string, '.')))
+  if len(t) % 2 == 0:
+    return t
+  raise ValueError
+
+def _tag_tuple(revision_string):
+  """convert a revision number or branch number into a tuple of integers"""
+  if revision_string:
+    t = map(int, string.split(revision_string, '.'))
+    l = len(t)
+    if l == 1:
+      raise ValueError
+    if l > 2 and t[-2] == 0 and l % 2 == 0:
+      del t[-2]
+    return tuple(t)
+  return ()
+
+def _dict_list_add(dict, idx, elem):
+  try:
+    list = dict[idx]
+  except KeyError:
+    list = dict[idx] = [elem]
+  else:
+    list.append(elem)
+  return list
+
+
 # if your rlog doesn't use 77 '=' characters, then this must change
 LOG_END_MARKER = '=' * 77 + '\n'
 ENTRY_END_MARKER = '-' * 28 + '\n'
@@ -39,94 +230,6 @@ _EOF_LOG = 'end of log'                 # hit the true EOF on the pipe
 _EOF_ERROR = 'error message found'      # rlog issued an error
 
 _FILE_HAD_ERROR = 'could not read file'
-
-
-class LogHeader:
-  "Hold state from the header portion of an 'rlog' output."
-  def __init__(self, filename, head=None, branch=None, taginfo=None):
-    self.filename = filename
-    self.head = head
-    self.branch = branch
-    self.taginfo = taginfo
-
-
-class LogEntry:
-  "Hold state for each revision entry in an 'rlog' output."
-  def __init__(self, rev, date, author, state, changed, log):
-    self.rev = rev
-    self.date = date
-    self.author = author
-    self.state = state
-    self.changed = changed
-    self.log = log
-
-
-class LogError:
-  "Represent an entry that had an (unknown) error."
-  pass
-
-
-# match a revision number
-_re_revision = re.compile(r'^\d+\.\d+(?:\.\d+\.\d+)*$')
-
-
-# match a branch number with optional 0
-_re_branch = re.compile(r'^(?P<base>(?:\d+\.\d+)(?:\.\d+\.\d+)*)'
-                        r'(?:\.0)?\.(?P<branch>\d+)$')
-
-
-class TagInfo:
-  def __init__(self, number):
-    if number == '': # number has special value used to refer to the trunk
-      self._rev = number
-      self._branch = ''
-      return
-
-    match = _re_branch.match(number)
-    if match: # number refers to a branch
-      self._rev = match.group('base')
-      self._branch = self._rev + '.' + match.group('branch')
-      return
-
-    match = _re_revision.match(number)
-    if match: # number refers to a revision
-      self._rev = number
-      self._branch = ''
-      return
-
-    raise vclib.InvalidRevision(number)
-
-  def is_trunk(self):
-    "true if this is a trunk tag (i.e. MAIN when the file has no default branch)"
-    return not self._rev
-
-  def is_branch(self):
-    "true if this is a branch tag"
-    return not self._rev or self._branch
-
-  def branches_at(self):
-    "return revision number that this branch branches off of"
-    return self._branch and self._rev or None
-
-  def matches_rev(self, number):
-    "true if the tag either specifies or branches off the revision"
-    return number == self._rev
-
-  def holds_rev(self, number):
-    "true if specified revision number is on this branch"
-    if self._rev:
-      if self._branch: # tag refers to branch
-        p = string.rfind(number, '.')
-        if p < 0:
-          raise vclib.InvalidRevision(number) 
-        return number[:p] == self._branch
-      else: # tag refers to a revision
-        return 0
-    else: # tag refers to the trunk
-      return string.count(number, '.') == 1
-
-  def number(self):
-    return self._branch or self._rev
 
 _re_lineno = re.compile(r'\:\d+$')
 
@@ -141,6 +244,8 @@ def parse_log_header(fp):
 
   If there is no revision information (e.g. the "-h" switch was passed to
   rlog), then fp will consumed the file separator line on exit.
+
+  Returns: filename, default branch, tag dictionary, and eof flag
   """
   filename = head = branch = ""
   taginfo = { }         # tag name => number
@@ -197,7 +302,7 @@ def parse_log_header(fp):
 
           # looks like a filename
           filename = line[6:idx]
-          return LogHeader(filename), _EOF_ERROR
+          return filename, branch, taginfo, _EOF_ERROR
       elif line[-28:] == ": No such file or directory\n":
         # For some reason the windows version of rlog omits the "rlog: "
         # prefix for first error message when the standard error stream
@@ -206,10 +311,10 @@ def parse_log_header(fp):
         # This is just a special case to prevent an especially common
         # error message from being lost when this happens
         filename = line[:-28]
-        return LogHeader(filename), _EOF_ERROR
+        return filename, branch, taginfo, _EOF_ERROR
         # dunno what this is
 
-  return LogHeader(filename, head, branch, taginfo), eof
+  return filename, branch, taginfo, eof
 
 _re_log_info = re.compile(r'^date:\s+([^;]+);'
                           r'\s+author:\s+([^;]+);'
@@ -225,8 +330,7 @@ def parse_log_entry(fp):
   On exit, fp will have consumed the log separator line (dashes) or the
   end-of-file marker (equals).
 
-  Returns: revision, date (time_t secs), author, state, lines changed,
-  the log text, and eof flag (see _EOF_*)
+  Returns: Revision object and eof flag (see _EOF_*)
   """
   rev = None
   line = fp.readline()
@@ -274,7 +378,7 @@ def parse_log_entry(fp):
   tm = compat.cvs_strptime(match.group(1))
   date = compat.timegm(tm)
 
-  return LogEntry(rev, date,
+  return Revision(rev, date,
                   # author, state, lines changed
                   match.group(2), match.group(3), match.group(5),
                   log), eof
@@ -314,14 +418,13 @@ def _sort_tags(alltags):
   plain_tags = []
   for tag in alltagnames:
     rev = alltags[tag]
-    if TagInfo(rev).is_branch():
+    if Tag(None, rev).is_branch:
       branch_tags.append(tag)
     else:
       plain_tags.append(tag)      
   return branch_tags, plain_tags
 
 def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
-  have_logs = 0
   alltags = {           # all the tags seen in the files of this dir
     'MAIN' : '',
     'HEAD' : '1.1'
@@ -372,7 +475,7 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
 
     # consume each file found in the resulting log
     for file in chunk:
-      header, eof = parse_log_header(rlog)
+      filename, default_branch, taginfo, eof = parse_log_header(rlog)
 
       if eof == _EOF_LOG:
         # the rlog output ended early. this happens on errors that rlog thinks
@@ -394,12 +497,12 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
         raise vclib.Error('Rlog output ended early. Expected RCS file "%s"'
                           % file.path)
 
-      # check path_ends_in instead of file == header.filename because of
+      # check path_ends_in instead of file.path == filename because of
       # cvsnt's rlog, which only outputs the base filename 
       # http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=188
-      if not (header.filename and path_ends_in(file.path, header.filename)):
+      if not (filename and path_ends_in(file.path, filename)):
         raise vclib.Error('Error parsing rlog output. Expected RCS file "%s"'
-                          ', found "%s"' % (file.path, header.filename))
+                          ', found "%s"' % (file.path, filename))
 
       # an error was found regarding this file
       if eof == _EOF_ERROR:
@@ -411,24 +514,22 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
       if eof:
         continue
 
-      if view_tag == 'MAIN':
-        view_tag_info = TagInfo(header.branch)
-      elif view_tag == 'HEAD':
-        view_tag_info = TagInfo(header.head)
-      elif header.taginfo.has_key(view_tag):
-        view_tag_info = TagInfo(header.taginfo[view_tag])
+      if view_tag == 'MAIN' or view_tag == 'HEAD':
+        tag = Tag(None, default_branch)
+      elif taginfo.has_key(view_tag):
+        tag = Tag(None, taginfo[view_tag])
       elif view_tag:
         # the tag wasn't found, so skip this file
         skip_file(rlog)
         continue
       else:
-        view_tag_info = None       
+        tag = None
 
       # we don't care about the specific values -- just the keys and whether
       # the values point to branches or revisions. this the fastest way to 
       # merge the set of keys and keep values that allow us to make the 
       # distinction between branch tags and normal tags
-      alltags.update(header.taginfo)
+      alltags.update(taginfo)
 
       # read all of the log entries until we find the revision we want
       wanted_entry = None
@@ -441,19 +542,18 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
           # parsing error
           break
 
-        rev = entry.rev
-
         # A perfect match is a revision on the branch being viewed or
         # a revision having the tag being viewed or any revision
         # when nothing is being viewed. When there's a perfect match
         # we set the wanted_entry value and break out of the loop.
-        # An imperfect match is a revision at the branch point of the
+        # An imperfect match is a revision at the branch point of a
         # branch being viewed. When there's an imperfect match we
         # also set the wanted_entry value but keep looping in case
         # something better comes along.
-        perfect = not view_tag_info or view_tag_info.holds_rev(rev)
-        if perfect or view_tag_info.matches_rev(rev):
-          perfect = perfect or not view_tag_info.is_branch()
+        perfect = not tag or entry.number == tag.number or       \
+                  (len(entry.number) == 2 and not tag.number) or \
+                  entry.number[:-1] == tag.number
+        if perfect or entry.number[-2:] == tag.number[:-1]:
           wanted_entry = entry
           if perfect:
             break
@@ -464,8 +564,7 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
           break
 
       if wanted_entry:
-        have_logs = 1
-        file.rev = wanted_entry.rev
+        file.rev = wanted_entry.string
         file.date = wanted_entry.date
         file.author = wanted_entry.author
         file.state = wanted_entry.state
@@ -484,14 +583,11 @@ def fetch_log(rcs_paths, full_name, which_rev=None):
     args = (full_name,)
   rlog = rcs_popen(rcs_paths, 'rlog', args, 'rt', 0)
 
-  header, eof = parse_log_header(rlog)
-  head = header.head
-  branch = header.branch
-  taginfo = header.taginfo
+  filename, branch, taginfo, eof = parse_log_header(rlog)
 
   if eof:
     # no log entries or a parsing failure
-    return head, branch, taginfo, [ ]
+    return branch, taginfo, [ ]
 
   revs = [ ]
   while 1:
@@ -502,7 +598,7 @@ def fetch_log(rcs_paths, full_name, which_rev=None):
     if eof:
       break
 
-  return head, branch, taginfo, revs
+  return branch, taginfo, revs
 
 
 if sys.platform == "win32":
@@ -596,7 +692,7 @@ class BinCVSRepository(vclib.Repository):
     raise vclib.ItemNotFound(path_parts)
 
   def openfile(self, path_parts, rev=None):
-    if not rev or rev == 'HEAD':
+    if not rev or rev == 'HEAD' or rev == 'MAIN':
       rev_flag = '-p'
     else:
       rev_flag = '-p' + rev
@@ -624,15 +720,13 @@ class BinCVSRepository(vclib.Repository):
       # As a workaround, we invoke rlog to find the first non-dead revision
       # that precedes it and check out that revision instead
       rlog = rcs_popen(self.rcs_paths, 'rlog', (full_name,), 'rt', 0)
-      header, eof = parse_log_header(rlog)
+      filename, default_branch, taginfo, eof = parse_log_header(rlog)
       
       # interpret rev parameter using header information
-      header.taginfo['HEAD'] = header.head
-      header.taginfo['MAIN'] = header.branch
-      t = TagInfo(header.taginfo.get(rev, rev))
-      is_branch = t.is_branch()
-      t = t.number()
-      revtuple = t and map(int, string.split(t, '.')) or []
+      taginfo['HEAD'] = taginfo['MAIN'] = default_branch
+      t = Tag(None, taginfo.get(rev, rev))
+      is_branch = t.is_branch
+      revtuple = t.number
 
       # build up list containing revtuple and all non-dead revisions
       revs = [revtuple]
@@ -640,7 +734,7 @@ class BinCVSRepository(vclib.Repository):
         entry, eof = parse_log_entry(rlog)
         if entry and entry.state == "Exp":
           # valid revision info
-          revs.append(map(int, string.split(entry.rev, '.')))
+          revs.append(entry.number)
 
       # sort the list of revision numbers in descending lexicographic order
       revs.sort()
@@ -658,7 +752,7 @@ class BinCVSRepository(vclib.Repository):
         elif is_branch:
           if len(corev) == len(revtuple)+1 and revtuple == corev[:-1]:
             break
-          if len(corev) == len(revtuple)+2 and revtuple == []:
+          if len(corev) == len(revtuple)+2 and revtuple == ():
             break
       else:
        corev = None
