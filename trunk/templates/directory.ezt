@@ -280,72 +280,79 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
   <hr size=1 noshade>
 
   [# this table holds the selectors on the left, and reset on the right ]
-  <table><tr><td>
-
-  <form method=GET action="./">
-  [for params]
-    <input type=hidden name="[params.name]" value="[params.value]">
-  [end]
-
   <table>
-  [if-any has_tags]
-  <tr>
-    <td>Show files using tag:</td>
-    <td>
-  <select name=only_with_tag onchange="submit()">
-    [if-any branch_tags]
-      <option value="">- Branches -</option>
-      [for branch_tags]
-        [is branch_tags view_tag]
-          <option selected>[branch_tags]</option>
-        [else]
-          <option>[branch_tags]</option>
-        [end]
+    [if-any has_tags]
+      <form method=GET action="./">
+      [for params]
+        <input type=hidden name="[params.name]" value="[params.value]">
+      [end]
+      <tr>
+        <td> Show files using tag: </td>
+        <td>
+          <select name=only_with_tag onchange="submit()">
+          [if-any branch_tags]
+            <option value="">- Branches -</option>
+            [for branch_tags]
+              [is branch_tags view_tag]
+                <option selected>[branch_tags]</option>
+              [else]
+                <option>[branch_tags]</option>
+              [end]
+            [end]
+          [end]
+          <option value="">- Non-branch tags -</option>
+          [for plain_tags]
+            [is plain_tags view_tag]
+              <option selected>[plain_tags]</option>
+            [else]
+              <option>[plain_tags]</option>
+            [end]
+          [end]
+          </select>
+        </td>
+        <td> &nbsp; </td>
+      </tr>
+    [end]
+
+    [is num_files "0"]
+    [else]
+      <form method=GET action="./">
+      [for params]
+        <input type=hidden name="[params.name]" value="[params.value]">
+      [end]
+      [is cfg.options.use_re_search "1"]
+        <tr>
+          <td>Show files containing the regular expression:</td>
+          <td><input type="text" name="search" value="[search_re]"></td>
+          <td> &nbsp; </td>
+        </tr>
+
+        <tr>
+          <td> &nbsp; </td>
+          <td> <input type="submit" value="Show"> </td>
+          [if-any view_tag]
+            <td valign=bottom><form method=GET action="./">
+              [for params]
+                <input type=hidden name="[params.name]" value="[params.value]">
+              [end]
+              <input type="submit" value="Show all files">
+              </form>
+            </td>
+          [else]
+            [if-any search_re]
+              <td valign=bottom><form method=GET action="./">
+                [for params]
+                  <input type=hidden name="[params.name]" value="[params.value]">
+                [end]
+                <input type="submit" value="Show all files">
+                </form>
+              </td>
+            [end]
+          [end]
+        </tr>
       [end]
     [end]
-    <option value="">- Non-branch tags -</option>
-    [for plain_tags]
-      [is plain_tags view_tag]
-        <option selected>[plain_tags]</option>
-      [else]
-        <option>[plain_tags]</option>
-      [end]
-    [end]
-  </select></td>
-  </tr>
-  [end]
-
-  [is cfg.options.use_re_search "1"]
-  <tr>
-    <td>Show files containing the regular expression:</td>
-    <td><input type="text" name="search" value="[search_re]">
-  </tr>
-  [end]
-
-  <tr><td>&nbsp;</td><td><input type="submit" value="Show"></td></tr>
   </table>
-  </form>
-
-  </td>
-
-  [if-any view_tag]
-    <td valign=bottom><form method=GET action="./">
-      [for params]
-        <input type=hidden name="[params.name]" value="[params.value]">
-      [end]
-      <input type="submit" value="Show all files">
-    </form></td>
-  [else][if-any search_re]
-    <td valign=bottom><form method=GET action="./">
-      [for params]
-        <input type=hidden name="[params.name]" value="[params.value]">
-      [end]
-      <input type="submit" value="Show all files">
-    </form></td>
-  [end][end]
-
-
-  </tr></table>
 [end]
 
 [# if you want to disable tarball generation remove the following: ]
