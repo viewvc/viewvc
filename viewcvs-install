@@ -55,8 +55,10 @@ ROOT_DIR = "/usr/local/viewcvs-dev"
 FILE_INFO_LIST = [
     ("cgi/viewcvs.cgi", "cgi/viewcvs.cgi", 0755, 1, 0, 0),
     ("cgi/query.cgi", "cgi/query.cgi", 0755, 1, 0, 0),
+    ("cgi/cvsgraphwrapper.cgi", "cgi/cvsgraphwrapper.cgi", 0755, 1, 0, 0),
 
     ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 0, 1, 0),
+    ("cgi/cvsgraph.conf.dist", "cvsgraph.conf", 0644, 0, 1, 0),
 
     ("lib/PyFontify.py", "lib/PyFontify.py", 0644, 0, 0, 1),
     ("lib/blame.py", "lib/blame.py", 0644, 0, 0, 1),
