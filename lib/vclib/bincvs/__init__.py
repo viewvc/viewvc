@@ -30,6 +30,101 @@ import time
 import compat
 import popen
 
+class BinCVSRepository(vclib.Repository):
+  def __init__(self, name, rootpath, rcs_paths):
+    if not os.path.isdir(rootpath):
+      raise vclib.ReposNotFound(name)
+
+    self.name = name
+    self.rootpath = rootpath
+    self.rcs_paths = rcs_paths
+
+  def itemtype(self, path_parts):
+    basepath = self._getpath(path_parts)
+    if os.path.isdir(basepath):
+      return vclib.DIR
+    if os.path.isfile(basepath + ',v'):
+      return vclib.FILE
+    raise vclib.ItemNotFound(path_parts)
+
+  def listdir(self, path_parts, list_attic=1):
+    # Only RCS files (*,v) and subdirs are returned.
+    data = [ ]
+
+    full_name = self._getpath(path_parts)
+    for file in os.listdir(full_name):
+      kind, verboten = _check_path(os.path.join(full_name, file))
+      if kind == vclib.FILE:
+        if file[-2:] == ',v':
+          data.append(CVSDirEntry(file[:-2], kind, verboten, 0))
+      else:
+        data.append(CVSDirEntry(file, kind, verboten, 0))
+
+    if list_attic:
+      full_name = os.path.join(full_name, 'Attic')
+      if os.path.isdir(full_name):
+        for file in os.listdir(full_name):
+          kind, verboten = _check_path(os.path.join(full_name, file))
+          if kind == vclib.FILE and file[-2:] == ',v':
+            data.append(CVSDirEntry(file[:-2], kind, verboten, 1))
+
+    return data
+
+  def openfile(self, path_parts, rev=None):
+    if not rev or rev == 'HEAD' or rev == 'MAIN':
+      rev_flag = '-p'
+    else:
+      rev_flag = '-p' + rev
+
+    full_name = self._getpath(path_parts)
+
+    fp = self.rcs_popen('co', (rev_flag, full_name), 'rb')
+
+    filename, revision = parse_co_header(fp)
+    if filename is None:
+      # CVSNT's co exits without any output if a dead revision is requested.
+      # Bug at http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=190
+      # As a workaround, we invoke rlog to find the first non-dead revision
+      # that precedes it and check out that revision instead
+      revs = file_log(self, path_parts, rev)[0]
+
+      # if we find a good revision, invoke co again, otherwise error out
+      if len(revs) and revs[-1].undead:
+        rev_flag = '-p' + revs[-1].undead.string
+        fp = rcs_popen(self.rcs_paths, 'co', (rev_flag, full_name), 'rb')
+        filename, revision = parse_co_header(fp)
+      else:
+        raise vclib.Error("CVSNT co workaround could not find non-dead "
+                          "revision preceding \"%s\"" % rev)
+
+    if filename is None:
+      raise vclib.Error('Missing output from co.<br>fname="%s".' % full_name)
+
+    if filename != full_name:
+      raise vclib.Error(
+        'The filename from co did not match. Found "%s". Wanted "%s"<br>'
+        'url="%s"' % (filename, full_name, where))
+
+    return fp, revision
+
+  def rcs_popen(self, rcs_cmd, rcs_args, mode, capture_err=1):
+    if self.rcs_paths.cvsnt_exe_path:
+      cmd = self.rcs_paths.cvsnt_exe_path
+      args = ['rcsfile', rcs_cmd]
+      args.extend(rcs_args)
+    else:
+      cmd = os.path.join(self.rcs_paths.rcs_path, rcs_cmd)
+      args = rcs_args
+    return popen.popen(cmd, args, mode, capture_err)
+
+  def _getpath(self, path_parts):
+    return apply(os.path.join, (self.rootpath,) + tuple(path_parts))
+
+class CVSDirEntry(vclib.DirEntry):
+  def __init__(self, name, kind, verboten, in_attic):
+    vclib.DirEntry.__init__(self, name, kind, verboten)
+    self.in_attic = in_attic
+
 class Revision:
   def __init__(self, revstr, date, author, state, changed, log):
     self.number = _revision_tuple(revstr)
@@ -49,6 +144,10 @@ class Tag:
     self.name = name
     self.number = _tag_tuple(revstr)
     self.is_branch = len(self.number) % 2 == 1 or not self.number
+
+
+# ======================================================================
+# Functions for dealing with Revision and Tag objects
 
 def match_revs_tags(revlist, taglist):
   """Match up a list of Revision objects with a list of Tag objects
@@ -233,6 +332,9 @@ def _dict_list_add(dict, idx, elem):
     list.append(elem)
   return list
 
+
+# ======================================================================
+# Functions for parsing output from RCS utilities
 
 ### suck up other warnings in _re_co_warning?
 _re_co_filename = re.compile(r'^(.*),v\s+-->\s+standard output\s*\n$')
@@ -474,21 +576,15 @@ def skip_file(fp):
     if line == LOG_END_MARKER:
       break
 
-def rcs_popen(rcs_paths, rcs_cmd, rcs_args, mode, capture_err=1):
-  if rcs_paths.cvsnt_exe_path:
-    cmd = rcs_paths.cvsnt_exe_path
-    args = ['rcsfile', rcs_cmd]
-    args.extend(rcs_args)
-  else:
-    cmd = os.path.join(rcs_paths.rcs_path, rcs_cmd)
-    args = rcs_args
-  return popen.popen(cmd, args, mode, capture_err)
+
+# ======================================================================
+# Functions for interpreting and manipulating log information
 
 def file_log(repos, path_parts, filter):
   """Run rlog on a file, return list of Revisions and a dictionary of Tags"""
   # Invoke rlog
   args = repos._getpath(path_parts) + ',v',
-  fp = rcs_popen(repos.rcs_paths, 'rlog', args, 'rt', 0)
+  fp = repos.rcs_popen('rlog', args, 'rt', 0)
   filename, cur_branch, taginfo, eof = parse_log_header(fp)
 
   # Add artificial ViewCVS tag MAIN. If the file has a default branch, then
@@ -560,14 +656,6 @@ def file_log(repos, path_parts, filter):
   
   return filtered_revs, taginfo
 
-def path_ends_in(path, ending):
-  if path == ending:
-    return 1
-  le = len(ending)
-  if le >= len(path):
-    return 0
-  return path[-le:] == ending and path[-le-1] == os.sep
-
 def _sort_tags(alltags):
   alltagnames = alltags.keys()
   alltagnames.sort(lambda t1, t2: cmp(string.lower(t1), string.lower(t2)))
@@ -588,6 +676,8 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
     'HEAD' : '1.1'
     }
 
+  dirpath = repos._getpath(path_parts)
+
   entries_idx = 0
   entries_len = len(entries)
   max_args = 100
@@ -598,18 +688,20 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
     while len(chunk) < max_args and entries_idx < entries_len:
       entry = entries[entries_idx]
 
-      path = None
+      path = name = None
       if not entry.verboten:
         if entry.kind == vclib.FILE:
-          path = (entry.in_attic and ['Attic'] or []) + [entry.name]
+          path = entry.in_attic and 'Attic' or ''
+          name = entry.name
         elif entry.kind == vclib.DIR and get_dirs and entry.name != 'Attic':
           assert not entry.in_attic
-          entry.newest_file = repos._newest_file(path_parts + [entry.name])
+          entry.newest_file = _newest_file(os.path.join(dirpath, entry.name))
           if entry.newest_file:
-            path = [entry.name, entry.newest_file]
+            path = entry.name
+            name = entry.newest_file
 
-      if path:
-        entry.path = repos._getpath(path_parts + path) + ',v'
+      if name:
+        entry.path = os.path.join(dirpath, path, name + ',v')
         entry.idx = entries_idx
         chunk.append(entry)
 
@@ -629,7 +721,7 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
       # fetch the latest revision on the default branch
       args.append('-r')
     args.extend(map(lambda x: x.path, chunk))
-    rlog = rcs_popen(repos.rcs_paths, 'rlog', args, 'rt')
+    rlog = repos.rcs_popen('rlog', args, 'rt')
 
     # consume each file found in the resulting log
     for file in chunk:
@@ -739,7 +831,7 @@ def fetch_log(rcs_paths, full_name, which_rev=None):
     args = ('-r' + which_rev, full_name)
   else:
     args = (full_name,)
-  rlog = rcs_popen(rcs_paths, 'rlog', args, 'rt', 0)
+  rlog = repos.rcs_popen('rlog', args, 'rt', 0)
 
   filename, branch, taginfo, eof = parse_log_header(rlog)
 
@@ -758,6 +850,9 @@ def fetch_log(rcs_paths, full_name, which_rev=None):
 
   return branch, taginfo, revs
 
+
+# ======================================================================
+# Functions for dealing with the filesystem
 
 if sys.platform == "win32":
   def _check_path(path):
@@ -825,108 +920,28 @@ else:
 
     return None, 1
 
-class BinCVSRepository(vclib.Repository):
-  def __init__(self, name, rootpath, rcs_paths):
-    if not os.path.isdir(rootpath):
-      raise vclib.ReposNotFound(name)
+def _newest_file(dirpath):
+  """Find the last modified RCS file in a directory"""
+  newest_file = None
+  newest_time = 0
 
-    self.name = name
-    self.rootpath = rootpath
-    self.rcs_paths = rcs_paths
+  for subfile in os.listdir(dirpath):
+    ### filter CVS locks? stale NFS handles?
+    if subfile[-2:] != ',v':
+      continue
+    info = os.stat(os.path.join(dirpath, subfile))
+    if not stat.S_ISREG(info[stat.ST_MODE]):
+      continue
+    if info[stat.ST_MTIME] > newest_time:
+      newest_file = subfile[:-2]
+      newest_time = info[stat.ST_MTIME]
 
-  def itemtype(self, path_parts):
-    basepath = self._getpath(path_parts)
-    if os.path.isdir(basepath):
-      return vclib.DIR
-    if os.path.isfile(basepath + ',v'):
-      return vclib.FILE
-    raise vclib.ItemNotFound(path_parts)
+  return newest_file
 
-  def openfile(self, path_parts, rev=None):
-    if not rev or rev == 'HEAD' or rev == 'MAIN':
-      rev_flag = '-p'
-    else:
-      rev_flag = '-p' + rev
-
-    full_name = self._getpath(path_parts)
-
-    fp = rcs_popen(self.rcs_paths, 'co', (rev_flag, full_name), 'rb')
-
-    filename, revision = parse_co_header(fp)
-    if filename is None:
-      # CVSNT's co exits without any output if a dead revision is requested.
-      # Bug at http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=190
-      # As a workaround, we invoke rlog to find the first non-dead revision
-      # that precedes it and check out that revision instead
-      revs = file_log(self, path_parts, rev)[0]
-
-      # if we find a good revision, invoke co again, otherwise error out
-      if len(revs) and revs[-1].undead:
-        rev_flag = '-p' + revs[-1].undead.string
-        fp = rcs_popen(self.rcs_paths, 'co', (rev_flag, full_name), 'rb')
-        filename, revision = parse_co_header(fp)
-      else:
-        raise vclib.Error("CVSNT co workaround could not find non-dead "
-                          "revision preceding \"%s\"" % rev)
-
-    if filename is None:
-      raise vclib.Error('Missing output from co.<br>fname="%s".' % full_name)
-
-    if filename != full_name:
-      raise vclib.Error(
-        'The filename from co did not match. Found "%s". Wanted "%s"<br>'
-        'url="%s"' % (filename, full_name, where))
-
-    return fp, revision
-
-  def listdir(self, path_parts, list_attic=1):
-    # Only RCS files (*,v) and subdirs are returned.
-
-    data = [ ]
-
-    full_name = self._getpath(path_parts)
-    for file in os.listdir(full_name):
-      kind, verboten = _check_path(os.path.join(full_name, file))
-      if kind == vclib.FILE:
-        if file[-2:] == ',v':
-          data.append(CVSDirEntry(file[:-2], kind, verboten, 0))
-      else:
-        data.append(CVSDirEntry(file, kind, verboten, 0))
-
-    if list_attic:
-      full_name = os.path.join(full_name, 'Attic')
-      if os.path.isdir(full_name):
-        for file in os.listdir(full_name):
-          kind, verboten = _check_path(os.path.join(full_name, file))
-          if kind == vclib.FILE and file[-2:] == ',v':
-            data.append(CVSDirEntry(file[:-2], kind, verboten, 1))
-
-    return data
-
-  def _getpath(self, path_parts):
-    return apply(os.path.join, (self.rootpath,) + tuple(path_parts))
-
-  def _newest_file(self, path_parts):
-    newest_file = None
-    newest_time = 0
-
-    dirpath = self._getpath(path_parts)
-
-    for subfile in os.listdir(dirpath):
-      ### filter CVS locks? stale NFS handles?
-      if subfile[-2:] != ',v':
-        continue
-      info = os.stat(os.path.join(dirpath, subfile))
-      if not stat.S_ISREG(info[stat.ST_MODE]):
-        continue
-      if info[stat.ST_MTIME] > newest_time:
-        newest_file = subfile[:-2]
-        newest_time = info[stat.ST_MTIME]
-
-    return newest_file
-
-
-class CVSDirEntry(vclib.DirEntry):
-  def __init__(self, name, kind, verboten, in_attic):
-    vclib.DirEntry.__init__(self, name, kind, verboten)
-    self.in_attic = in_attic
+def path_ends_in(path, ending):
+  if path == ending:
+    return 1
+  le = len(ending)
+  if le >= len(path):
+    return 0
+  return path[-le:] == ending and path[-le-1] == os.sep
