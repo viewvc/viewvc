@@ -1,0 +1,180 @@
+#!/usr/bin/python
+# -*- Mode: python -*-
+#
+# updates SQL database with new commit records
+#
+# -----------------------------------------------------------------------
+# Copyright (C) 2000 Jay Painter. All Rights Reserved.
+#
+# By using this file, you agree to the terms and conditions set forth below:
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------
+
+import os, sys, string, getopt, re, cvsdbapi
+
+
+DEBUG_FLAG = 0
+
+## pre-compiled regular expressions
+_re_fileversion = re.compile("([^,]+)\,([^,]+)\,([^,]+)")
+
+
+## output functions
+def debug(text):
+    if DEBUG_FLAG:
+        print 'DEBUG(loginfo): %s' % (text)
+
+def warning(text):
+    print 'WARNING(loginfo): %s' % (text)
+
+def error(text):
+    print 'ERROR(loginfo): %s' % (text)
+    sys.exit(1)
+
+
+class FileData:
+
+    CHANGED = 1
+    ADDED   = 2
+    REMOVED = 3
+    
+    def __init__(self, file, directory, old_version, new_version):
+        self.file = file
+        self.directory = directory
+        self.old_version = old_version
+        self.new_version = new_version
+
+        ## set the state of this file from the
+        ## old_version and new_version information
+        if self.old_version == 'NONE':
+            self.type = self.ADDED
+        elif self.new_version == 'NONE':
+            self.type = self.REMOVED
+        else:
+            self.type = self.CHANGED
+
+
+def CommitFromFileData(repository, file_data):
+    ## consturct the full path for the RCS file
+    filename = os.path.join(repository, file_data.directory, file_data.file)
+
+    ## get the 'rlog' output for just this revision, and then convert
+    ## to a commit object
+    rlog_data = cvsdbapi.GetRLogData(filename, file_data.new_version)
+    commit_list = cvsdbapi.RLogDataToCommitList(repository, rlog_data)
+    commit = commit_list[0]
+
+    ## set the type of commit from the file_data setting
+    if file_data.type == file_data.CHANGED:
+        commit.SetTypeChange()
+    elif file_data.type == file_data.ADDED:
+        commit.SetTypeAdd()
+    elif file_data.type == file_data.REMOVED:
+        commit.SetTypeRemove()
+        
+    return commit
+
+
+def GetUnrecordedCommitList(repository, file_data):
+    filename = os.path.join(repository, file_data.directory, file_data.file)
+    return cvsdbapi.GetUnrecordedCommits(repository, filename)
+
+
+def ProcessLoginfo(repository, stdin_list):
+    ## the first line in stdin is a space-separated list; the first
+    ## item in the list is the directory path being updated this run;
+    ## the rest of the items are the files being updated
+    list = string.split(stdin_list[0])
+
+    ## clean up the directory the following way: we don't want it
+    ## to begin with a path seperator, and we don't want it to end
+    ## with a path seperator
+    directory = list[0]
+    while directory[0] == os.sep:
+        directory = directory[1:]
+    while directory[-1] == os.sep:
+        directory = directory[:-1]
+
+    ## NOTE: SPECIAL HANDLING FOR NEW DIRECTORIES
+    ##       new directories have the first line form
+    ##       path/of/dir - New directory
+    if len(list) == 4:
+        if list[1] == '-' and list[2] == 'New' and list[3] == 'directory':
+            debug('new directory')
+            exit(0, file_hash, 1)
+
+    ## each file in the file list _should_ be of the form:
+    ## file-name,<old-ver>,<new-ver>
+    ## a new file has the keyword 'NONE' for old-ver
+    file_data_list = []
+    for item in list[1:]:
+        temp = _re_fileversion.match(item)
+        if not temp:
+            debug('failed match %s' % (item))
+            continue
+
+        filename = temp.group(1)
+        old_version = temp.group(2)
+        new_version = temp.group(3)
+        file_data =  FileData(filename, directory, old_version, new_version)
+        file_data_list.append(file_data)
+
+    ## convert FileData objects into Commit objects so we can insert them
+    ## into the database
+    commit_list = []
+    for file_data in file_data_list:
+        ## XXX: this is nasty: in the case of a removed file, we are not
+        ##      given enough information to find it in the rlog output!
+        ##      So instead, we rlog everything in the removed file, and
+        ##      add any commits not already in the database
+        if file_data.type == file_data.REMOVED:
+            temp = GetUnrecordedCommitList(repository, file_data)
+            commit_list = commit_list + temp
+        else:
+            commit_list.append(CommitFromFileData(repository, file_data))
+
+    ## add to the database
+    db = cvsdbapi.ConnectDatabase()
+    db.AddCommitList(commit_list)
+
+
+## MAIN
+if __name__ == '__main__':
+    ## get the repository from the environment
+    try:
+        repository = os.environ['CVSROOT']
+    except KeyError:
+        error('CVSROOT not in environment')
+
+    ## clean up the repository string: remove any trailing path seperater
+    while repository[-1] == os.sep:
+        repository = repository[:-1]
+
+    ## read all the lines from stdin
+    stdin_list = []
+    for line in sys.stdin.readlines():
+        stdin_list.append(string.rstrip(line))
+
+    ProcessLoginfo(repository, stdin_list)
+    sys.exit(0)
