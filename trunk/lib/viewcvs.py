@@ -567,7 +567,10 @@ def _strip_suffix(suffix, where, path_parts, pathtype, repos, view_func):
   l = len(suffix)
   if where[-l:] == suffix:
     path_parts = path_parts[:]
-    path_parts[-1] = path_parts[-1][:-l]
+    if len(path_parts[-1]) == l:
+      del path_parts[-1]
+    else:
+      path_parts[-1] = path_parts[-1][:-l]
     t = _repos_pathtype(repos, path_parts)
     if pathtype == t:
       return where[:-l], path_parts, t, view_func
@@ -2201,7 +2204,11 @@ def view_diff(request):
     print line[:-1]
 
 
-def generate_tarball_header(out, name, size=0, mode=None, mtime=0, uid=0, gid=0, typefrag=None, linkname='', uname='viewcvs', gname='viewcvs', devmajor=1, devminor=0, prefix=None, magic='ustar', version='', chksum=None):
+def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
+                            uid=0, gid=0, typefrag=None, linkname='',
+                            uname='viewcvs', gname='viewcvs',
+                            devmajor=1, devminor=0, prefix=None,
+                            magic='ustar', version='', chksum=None):
   if not mode:
     if name[-1:] == '/':
       mode = 0755
@@ -2274,13 +2281,24 @@ def generate_tarball(out, request, tar_top, rep_top,
 
   entries.sort(lambda a, b: cmp(a.name, b.name))
 
+  # Subdirectory datestamps will be the youngest of the datestamps of
+  # version items (files for CVS, files or dirs for Subversion) in
+  # that subdirectory.
+  latest_date = 0
+  for file in entries:
+    # Skip dead or busted CVS files, and CVS subdirs.
+    if (cvs and (file.kind != vclib.FILE or (file.rev is None or file.dead))):
+      continue
+    if file.date > latest_date:
+      latest_date = file.date
+  
   for file in entries:
     if (file.kind != vclib.FILE or
         (cvs and (file.rev is None or file.dead))):
       continue
 
     for dir in stack:
-      generate_tarball_header(out, dir)
+      generate_tarball_header(out, dir, mtime=latest_date)
     del stack[0:]
 
     if cvs:
@@ -2314,7 +2332,15 @@ def download_tarball(request):
   if not cfg.options.allow_tar:
     raise "tarball no allows"
 
-  rep_top = tar_top = request.path_parts
+  # If there is a repository directory name we can use for the
+  # top-most directory, use it.  Otherwise, use the configured root
+  # name.
+  rep_top = request.path_parts
+  if len(rep_top):
+    tar_top = rep_top[-1]
+  else:
+    tar_top = request.rootname
+
   options = {}
   if request.roottype == 'cvs':
     tag = request.query_dict.get('only_with_tag')
@@ -2327,7 +2353,7 @@ def download_tarball(request):
   sys.stdout.flush()
   fp = popen.pipe_cmds([('gzip', '-c', '-n')])
 
-  generate_tarball(fp, request, tar_top, rep_top, [], options)
+  generate_tarball(fp, request, [tar_top], rep_top, [], options)
 
   fp.write('\0' * 1024)
   fp.close()
