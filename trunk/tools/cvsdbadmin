@@ -1,0 +1,153 @@
+#!/usr/bin/env python
+# -*- Mode: python -*-
+#
+# administrative program for CVSdb; this is primarily
+# used to add/rebuild CVS repositories to the database
+#
+# -----------------------------------------------------------------------
+# Copyright (C) 2000 Jay Painter. All Rights Reserved.
+#
+# By using this file, you agree to the terms and conditions set forth below:
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------
+
+import os, sys, string, cvsdbapi
+
+
+def UpdateFile(db, repository, path):
+    try:
+        commit_list = cvsdbapi.GetUnrecordedCommitList(repository, path)
+    except cvsdbapi.error, e:
+        print '[ERROR] %s' % (e)
+        return
+
+    print '[%s[%d new commits]]' % (path, len(commit_list)),
+
+    ## add the commits into the database
+    for commit in commit_list:
+        db.AddCommit(commit)
+        sys.stdout.write('.')
+        sys.stdout.flush()
+    print
+
+
+def RecurseUpdate(db, repository, directory):
+    for path in os.listdir(directory):
+        path = os.path.join(directory, path)
+
+        if os.path.islink(path):
+            continue
+        
+        if os.path.isdir(path):
+            RecurseUpdate(db, repository, path)
+            continue
+        
+        if os.path.isfile(path):
+            if path[-2:] == ',v':
+                UpdateFile(db, repository, path)
+        
+
+def CommandUpdate():
+    ## connect to the database we are updating
+    db = cvsdbapi.ConnectDatabase()
+    repository = sys.argv[2]
+    RecurseUpdate(db, repository, repository)
+
+
+def RebuildFile(db, repository, path):
+    try:
+        commit_list = cvsdbapi.GetCommitListFromRCSFile(repository, path)
+    except cvsdbapi.error, e:
+        print '[ERROR] %s' % (e)
+        return
+
+    print '[%s[%d commits]]' % (path, len(commit_list)),
+
+    ## add the commits into the database
+    for commit in commit_list:
+        db.AddCommit(commit)
+        sys.stdout.write('.')
+        sys.stdout.flush()
+    print
+
+
+def RecurseRebuild(db, repository, directory):
+    for path in os.listdir(directory):
+        path = os.path.join(directory, path)
+
+        if os.path.islink(path):
+            continue
+        
+        if os.path.isdir(path):
+            RecurseRebuild(db, repository, path)
+            continue
+        
+        if os.path.isfile(path):
+            if path[-2:] == ',v':
+                RebuildFile(db, repository, path)
+        
+
+def CommandRebuild():
+    ## connect to the database we are updating
+    db = cvsdbapi.ConnectDatabase()
+    repository = sys.argv[2]
+    RecurseRebuild(db, repository, repository)
+
+
+def usage():
+    print 'Usage: %s <command> [arguments]' % (sys.argv[0])
+    print 'Preforms administrative functions for the CVSdb database'
+    print 'Commands:'
+    print '  rebuild <repository>            rebuilds the CVSdb database'
+    print '                                  for all files in the repository'
+    print '  update <repository>             updates the CVSdb database for'
+    print '                                  all unrecorded commits'
+    print
+    sys.exit(1)
+
+
+## main
+if __name__ == '__main__':
+    ## check that a command was given
+    if len(sys.argv) < 2:
+        usage()
+
+    ## set the handler function for the command
+    command = sys.argv[1]
+    if string.lower(command) == 'rebuild':
+        commandFunction = CommandRebuild
+    elif string.lower(command) == 'update':
+        commandFunction = CommandUpdate
+    else:
+        print 'ERROR: unknown command %s' % (command)
+        usage()
+
+    ## run command
+    try:
+        commandFunction()
+    except KeyboardInterrupt:
+        print
+        print '** break **'
+        
+    sys.exit(0)
