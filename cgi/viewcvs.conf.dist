@@ -395,6 +395,25 @@ cvsgraph_conf = <VIEWCVS_INSTALL_DIRECTORY>/cvsgraph.conf
 #
 # Set to enable regular expression search of all files in a directory
 #
+# WARNING:
+#
+#   Enabling this option can consume HUGE amounts of server time. A
+#   "checkout" must be performed on *each* file in a directory, and
+#   the result needs to be searched for a match against the regular
+#   expression.
+#
+#
+# SECURITY WARNING:  Denial Of Service
+#
+#   Since a user can enter the regular expression, it is possible for
+#   them to enter an expression with many alternatives and a lot of
+#   backtracking. Executing that search over thousands of lines over
+#   dozens of files can easily tie up a server for a long period of
+#   time.
+#
+# This option should only be used on sites with trusted users. It is
+# highly inadvisable to use this on a public site.
+#
 use_re_search = 0
 # use_re_search = 1
 
