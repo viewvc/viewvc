@@ -2078,11 +2078,7 @@ def view_doc(request):
   Using this avoids the need for modifying the setup of the web server.
   """
   help_page = request.where
-  if CONF_PATHNAME:
-    doc_directory = os.path.join(g_install_dir, "doc")
-  else:
-    # aid testing from CVS working copy:
-    doc_directory = os.path.join(g_install_dir, "website")
+  doc_directory = os.path.join(g_install_dir, "templates", "docroot")
   filename = os.path.join(doc_directory, help_page)
 
   try:

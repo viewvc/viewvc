@@ -194,8 +194,11 @@ def InstallFile(src_path, dest_path, mode, set_python_paths, prompt_replace,
         return
 
       if temp == "v":
-        print total
-        print "\nLEGEND\n A leading '- ' indicates line to remove from installed file\n A leading '+ ' indicates line to add to installed file\n A leading '? ' shows intraline differences."
+        if string.lower(src_path[-4:]) in [ '.gif', '.png', '.jpg' ]:
+          print 'Can not print differences between binary files'
+        else:
+          print total
+          print "\nLEGEND\n A leading '- ' indicates line to remove from installed file\n A leading '+ ' indicates line to add to installed file\n A leading '? ' shows intraline differences."
 
       if temp == "o": 
         ReplaceFile(src_path, dest_path, mode, set_python_paths, prompt_replace, compile_it)

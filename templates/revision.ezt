@@ -17,8 +17,8 @@
       <input type="text" name="rev" value="[jump_rev]">
       <input type=submit value="Go">
       [if-any prev_href]
-        <a href="[prev_href]"><img src="[icons]/back.gif" border="0" alt="Previous"></a>[end]
-      [if-any next_href] <a href="[next_href]"><img src="[icons]/forward.gif" border="0" alt="Next"></a>[end]
+        <a href="[prev_href]"><img src="[docroot]/images/back.png" border="0" alt="Previous"></a>[end]
+      [if-any next_href] <a href="[next_href]"><img src="[docroot]/images/forward.png" border="0" alt="Next"></a>[end]
       </form>
     </td>
   </tr>
@@ -54,9 +54,9 @@
       <tr class="vc_row_[if-index changes even]even[else]odd[end]">
       <td>
         [is changes.pathtype "dir"]
-          <img src="[icons]/small/dir.gif" alt="">
+          <img src="[docroot]/images/dir.png" alt="">
         [else]
-          <img src="[icons]/small/text.gif" alt="">
+          <img src="[docroot]/images/text.png" alt="">
         [end]
         [is changes.action "deleted"]
           [changes.filename]
