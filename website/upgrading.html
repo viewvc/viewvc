@@ -46,9 +46,29 @@
     </p>
 
     <ul>
+      <li><a href="#from9">Upgrading from ViewCVS 0.9</a></li>
       <li><a href="#from8">Upgrading from ViewCVS 0.8</a></li>
       <li><a href="#from7">Upgrading from ViewCVS 0.7 or earlier</a></li>
     </ul>
+
+    <hr>
+
+    <h2><a name="from9">Upgrading from ViewCVS 0.9</a></h2>
+    <p>
+      This section discusses how to upgrade ViewCVS 0.9 to version
+      1.0 or a later version of the software.
+    </p>
+
+    <h3>Checkin Database</h3>
+    
+    <p>ViewCVS 1.0 reads and writes commit times in the MySQL
+    database in UTC time rather than local time. This can cause
+    times displayed on the query page to be a few hours off if
+    an old database is being used with a new version of ViewCVS.
+    The best way to fix this is to rebuild the database with the
+    new version of cvsdbadmin, but it it is also possible to
+    enable a backwards compatibility mode by setting
+    <code>utc_time = 0</code> at the top of lib/dbi.py</p>
 
     <hr>
 
@@ -56,6 +76,12 @@
     <p>
       This section discusses how to upgrade ViewCVS 0.8 to version
       0.9 or a later version of the software.
+    </p>
+    
+    <p>
+      <strong>NOTE:</strong> these changes will bring you up to the
+      requirements of version 0.9. You must also follow the directions
+      for <a href="#from9">upgrading from 0.9</a>.
     </p>
 
     <h3>Configuration Options</h3>
