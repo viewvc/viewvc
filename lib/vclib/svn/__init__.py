@@ -93,17 +93,20 @@ class NodeHistory:
         # Look for a copied parent
         test_path = path
         found = 0
+        subpool = core.svn_pool_create(pool)
         while 1:
+          core.svn_pool_clear(subpool)
           off = string.rfind(test_path, '/')
           if off < 0:
             break
           test_path = test_path[0:off]
           if test_path in paths:
             copyfrom_rev, copyfrom_path = \
-                          fs.copied_from(rev_root, test_path, pool)
+                          fs.copied_from(rev_root, test_path, subpool)
             if copyfrom_rev >= 0 and copyfrom_path:
               found = 1
               break
+        core.svn_pool_destroy(subpool)
         if not found:
           return
     self.histories[revision] = _trim_path(path)
