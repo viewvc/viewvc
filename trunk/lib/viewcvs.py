@@ -328,14 +328,6 @@ class Request:
       elif self.pathtype == vclib.FILE:
         if self.query_dict.has_key('r1') and self.query_dict.has_key('r2'):
           self.view_func = view_diff
-        elif self.query_dict.has_key('r1') and self.query_dict.has_key('rev'):
-          self.view_func = view_log
-        elif self.query_dict.has_key('rev'):
-          if self.query_dict.get('content-type', None) in (viewcvs_mime_type,
-                                                           alt_mime_type):
-            self.view_func = view_markup
-          else:
-            self.view_func = view_checkout
         elif self.query_dict.has_key('annotate'):
           self.view_func = view_annotate
         elif self.query_dict.has_key('graph'):
@@ -343,6 +335,12 @@ class Request:
             self.view_func = view_cvsgraph
           else: 
             self.view_func = view_cvsgraph_image
+        elif self.query_dict.has_key('rev'):
+          if self.query_dict.get('content-type', None) in (viewcvs_mime_type,
+                                                           alt_mime_type):
+            self.view_func = view_markup
+          else:
+            self.view_func = view_checkout
         else:
           self.view_func = view_log
 
@@ -410,8 +408,9 @@ class Request:
       where = self.where
       pathtype = self.pathtype
 
-    # tack on sticky variables by default
-    sticky_vars = 1
+    # no need to add sticky variables for views with no links
+    sticky_vars = not (view_func is view_checkout 
+                       or view_func is download_tarball)
 
     # The logic used to construct the URL is an inverse of the
     # logic used to interpret URLs in Request.run_viewcvs
@@ -455,10 +454,7 @@ class Request:
       if not where: url = url + '/root'
       url = url + '.tar.gz'
 
-      # no need to add sticky variables, download_tarball won't use them ...
-      sticky_vars = 0
-
-      # ... except for "only_with_tag" which we add manually
+      # add "only_with_tag" sticky variable manually
       if not params.has_key('only_with_tag'):
         params['only_with_tag'] = self.query_dict.get('only_with_tag')
 
@@ -498,10 +494,6 @@ class Request:
     if view_func is view_diff and params.has_key('r1') \
       and params.has_key('r2'):
       view_func = None
-
-    # no need to add sticky variables for checkout view
-    if view_func is view_checkout:
-      sticky_vars = 0
 
     # no need to explicitly specify checkout view when
     # there's a rev parameter
