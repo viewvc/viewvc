@@ -49,7 +49,8 @@ ROOT_DIR = "/usr/local/viewcvs-dev"
 
 ## list of files for installation
 ## tuple (source path, destination path, install mode, true/false flag for
-##        search-and-replace, flag for prompt before replace, compile_it)
+##        search-and-replace, flag or text for prompt before replace, 
+##        compile_it)
 ##       
 
 FILE_INFO_LIST = [
@@ -58,7 +59,10 @@ FILE_INFO_LIST = [
     ("cgi/cvsgraphwrapper.cgi", "cgi/cvsgraphwrapper.cgi", 0755, 1, 0, 0),
     ("cgi/cvsgraphmkimg.cgi", "cgi/cvsgraphmkimg.cgi", 0755, 1, 0, 0),
 
-    ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 0, 1, 0),
+    ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 0,
+	     """Note: If you are upgrading from viewcvs-0.7 or earlier: 
+The section [text] has been removed from viewcvs.conf.  The functionality
+went into the new file templates/directory.ezt.""", 0),
     ("cgi/cvsgraph.conf.dist", "cvsgraph.conf", 0644, 0, 1, 0),
 
     ("lib/PyFontify.py", "lib/PyFontify.py", 0644, 0, 0, 1),
@@ -125,6 +129,8 @@ def InstallFile(src_path, dest_path, mode, set_python_paths, prompt_replace,
     dest_path = os.path.join(ROOT_DIR, dest_path)
     
     if prompt_replace and os.path.exists(dest_path):
+        if type(prompt_replace) == type(""):
+	    print prompt_replace
         temp = raw_input("File %s exists, overwrite? [y/N]: " % (dest_path))
         if not temp or string.lower(temp[0]) != "y":
             return
