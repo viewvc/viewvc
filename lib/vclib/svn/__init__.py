@@ -43,6 +43,12 @@ def _fs_rev_props(fsptr, rev, pool):
   return date, author, msg
 
 
+def date_from_rev(repos, rev):
+  datestr = fs.revision_prop(repos.fs_ptr, rev,
+                             util.SVN_PROP_REVISION_DATE, repos.pool)
+  return _datestr_to_date(datestr, repos.pool)
+  
+
 class LogEntry:
   "Hold state for each revision's log entry."
   def __init__(self, rev, date, author, msg):
