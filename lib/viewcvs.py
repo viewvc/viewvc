@@ -2432,6 +2432,11 @@ def view_doc(request):
   copy_stream(fp)
   fp.close()
 
+def rcsdiff_date_reformat(date_str):
+  date = compat.cvs_strptime(date_str)
+  if date:
+    return make_time_string(compat.timegm(date))
+  return date_str
 
 _re_extract_rev = re.compile(r'^[-+]+ [^\t]+\t([^\t]+)\t((\d+\.)*\d+)$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
@@ -2501,28 +2506,14 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
   else:
     rcs_diff = DiffSource(fp)
 
-  # Convert to local time if option is set, otherwise remains UTC
-  if (cfg.options.use_localtime):
-    def time_format(date):
-      date = compat.cvs_strptime(date)
-      date = compat.timegm(date)
-      localtime = time.localtime(date)
-      date = time.strftime('%Y/%m/%d %H:%M:%S', localtime)
-      return date + ' ' + time.tzname[localtime[8]]
-    date1 = time_format(date1)
-    date2 = time_format(date2)
-  else:
-    date1 = date1 + ' UTC'
-    date2 = date2 + ' UTC'
-
   data.update({
     'where' : where,
     'rev1' : rev1,
     'rev2' : rev2,
     'tag1' : sym1,
     'tag2' : sym2,
-    'date1' : ', ' + date1,
-    'date2' : ', ' + date2,
+    'date1' : ', ' + rcsdiff_date_reformat(date1),
+    'date2' : ', ' + rcsdiff_date_reformat(date2),
     'changes' : rcs_diff,
     'diff_format' : query_dict.get('diff_format', cfg.options.diff_format),
     })
