@@ -571,7 +571,7 @@ def download_link(request, url, revision, text, mime_type=None):
     print ' target="cvs_checkout"'
     if cfg.options.use_java_script:
       print " onClick=\"window.open('%s','cvs_checkout'," \
-            "'resizeable,scrollbars" % full_url,
+            "'resizeable=1,scrollbars=1" % full_url,
       if mime_type == 'text/html':
         print ',status,toolbar',
       print "');\""
