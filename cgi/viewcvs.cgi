@@ -452,11 +452,14 @@ class Request:
     for name, values in cgi.parse().items():
       query_dict[name] = values[0]
 
-    self.query_string = sticky_query(query_dict)
-    if self.query_string:
-      self.bare_query = self.query_string[1:]
+    # set up query strings, prefixed by question marks and ampersands
+    query = sticky_query(query_dict)
+    if query:
+      self.qmark_query = '?' + query
+      self.amp_query = '&' + query
     else:
-      self.bare_query = ''
+      self.qmark_query = ''
+      self.amp_query = ''
 
     self.query_dict = query_dict
 
@@ -518,10 +521,7 @@ def sticky_query(dict):
     value = dict.get(varname)
     if value is not None and value != default_settings.get(varname, ''):
       sticky_dict[varname] = value
-  bare_query = urllib.urlencode(sticky_dict)
-  if bare_query:
-    return '?' + bare_query
-  return ''
+  return urllib.urlencode(sticky_dict)
 
 def toggle_query(query_dict, which, value=None):
   dict = query_dict.copy()
@@ -529,7 +529,10 @@ def toggle_query(query_dict, which, value=None):
     dict[which] = not dict[which]
   else:
     dict[which] = value
-  return sticky_query(dict)
+  query = sticky_query(dict)
+  if query:
+    return '?' + query
+  return ''
 
 def clickable_path(request, path, leaf_is_link, drop_leaf):
   if path == '/':
@@ -538,7 +541,7 @@ def clickable_path(request, path, leaf_is_link, drop_leaf):
     return '[%s]' % cvsrep
 
   s = '<a href="%s/%s#dirlist">[%s]</a>' % \
-      (request.script_name, request.query_string, request.cvsrep)
+      (request.script_name, request.qmark_query, request.cvsrep)
   parts = filter(None, string.split(path, '/'))
   if drop_leaf:
     del parts[-1]
@@ -549,7 +552,7 @@ def clickable_path(request, path, leaf_is_link, drop_leaf):
     if i < len(parts) - 1 or leaf_is_link:
       ### should we be encoding/quoting the URL stuff? (probably...)
       s = s + ' / <a href="%s%s/%s#dirlist">%s</a>' % \
-          (request.script_name, where, request.query_string, parts[i])
+          (request.script_name, where, request.qmark_query, parts[i])
     else:
       s = s + ' / ' + parts[i]
 
@@ -610,7 +613,7 @@ def download_link(request, url, revision, text, mime_type=None):
     rparen = ')'
     text = text[1:-1]
 
-  print '%s<a href="%s%s"' % (lparen, full_url, request.bare_query)
+  print '%s<a href="%s%s"' % (lparen, full_url, request.amp_query)
 
   if open_extern_window and mime_type != viewcvs_mime_type:
     print ' target="cvs_checkout"'
@@ -702,10 +705,10 @@ def navigate_header(request, swhere, path, filename, rev, title):
   print '<table width="100&#37;" border=0 cellspacing=0 cellpadding=1 bgcolor="%s">' % navigationHeaderColor
   print '<tr valign=bottom><td>'
   print '<a href="%s%s#rev%s">%s</a>' % \
-        (swhere, request.query_string, rev, html_icon('back'))
+        (swhere, request.qmark_query, rev, html_icon('back'))
   print '<b>Return to %s CVS log</b> %s</td>' % \
         (html_link(filename,
-                   '%s%s#rev%s' % (swhere, request.query_string, rev)),
+                   '%s%s#rev%s' % (swhere, request.qmark_query, rev)),
          html_icon('file'))
   print '<td align=right>%s <b>Up to %s</b></td>' % \
         (html_icon('dir'), clickable_path(request, path, 1, 0))
@@ -750,7 +753,7 @@ def markup_stream(request, fp, revision, mime_type):
   url = download_url(request, file_url, revision, mime_type)
   print '<hr noshade>'
   if mime_type[:6] == 'image/':
-    print '<img src="%s%s"><br>' % (url, request.bare_query)
+    print '<img src="%s%s"><br>' % (url, request.amp_query)
   else:
     print '<pre>'
     while 1:
@@ -1263,7 +1266,7 @@ def view_directory(request):
 
       if dirtable:
         print '<tr bgcolor="%s"><td>' % table_colors[cur_row % 2]
-      url = urllib.quote(file) + '/' + request.query_string
+      url = urllib.quote(file) + '/' + request.qmark_query
       print '<a name="%s">' % file
       if request.no_file_links:
         print html_icon('dir')
@@ -1334,7 +1337,7 @@ def view_directory(request):
       num_displayed = num_displayed + 1
 
       file_url = urllib.quote(file)
-      url = file_url + request.query_string
+      url = file_url + request.qmark_query
 
       if file[:6] == 'Attic/':
         attic = ' (in the Attic)&nbsp;' + attic_toggle_link
@@ -1630,11 +1633,11 @@ def print_log(request, rev_map, rev_order, revinfo, rev2tag, branch_points,
       download_link(request, file_url, rev, '(view)', viewcvs_mime_type)
     if allow_annotate:
       print '- <a href="%s?annotate=%s%s">annotate</a>' % \
-            (request.url, rev, request.bare_query)
+            (request.url, rev, request.amp_query)
     if allow_version_select:
       if query_dict.get('r1') != rev:
         print '- <a href="%s?r1=%s%s">[select for diffs]</a>' % \
-              (request.url, rev, request.bare_query)
+              (request.url, rev, request.amp_query)
       else:
         print '- <b>[selected]</b>'
 
@@ -1685,11 +1688,11 @@ def print_log(request, rev_map, rev_order, revinfo, rev2tag, branch_points,
     if prev:
       diff_rev[prev] = 1
       print 'to previous <a href="%s.diff?r1=%s&r2=%s%s">%s</a>' % \
-            (request.url, prev, rev, request.bare_query, prev)
+            (request.url, prev, rev, request.amp_query, prev)
       if not human_readable:
         print '(<a href="%s.diff?r1=%s&r2=%s%s' \
               '&diff_format=h">colored</a>)' % \
-              (request.url, prev, rev, request.bare_query)
+              (request.url, prev, rev, request.amp_query)
 
     # diff against branch point (if not a vendor branch)
     if rev2tag.has_key(branch_point) and \
@@ -1697,12 +1700,12 @@ def print_log(request, rev_map, rev_order, revinfo, rev2tag, branch_points,
        not diff_rev.has_key(branch_point):
       diff_rev[branch_point] = 1
       print 'to a branchpoint <a href="%s.diff?r1=%s&r2=%s%s">%s</a>' % \
-            (request.url, branch_point, rev, request.bare_query,
+            (request.url, branch_point, rev, request.amp_query,
              branch_point)
       if not human_readable:
         print '(<a href="%s.diff?r1=%s&r2=%s%s' \
               '&diff_format=h">colored</a>)' % \
-              (request.url, branch_point, rev, request.bare_query)
+              (request.url, branch_point, rev, request.amp_query)
 
     # if it's on a branch (and not a vendor branch), then diff against the
     # next revision of the higher branch (e.g. change is committed and
@@ -1735,20 +1738,20 @@ def print_log(request, rev_map, rev_order, revinfo, rev2tag, branch_points,
       if not diff_rev.has_key(next_main):
         diff_rev[next_main] = 1
         print 'next main <a href="%s.diff?r1=%s&r2=%s%s">%s</a>' % \
-              (request.url, next_main, rev, request.bare_query, next_main)
+              (request.url, next_main, rev, request.amp_query, next_main)
         if not human_readable:
           print '(<a href="%s.diff?r1=%s&r2=%s%s">colord</a>' % \
-                (request.url, next_main, rev, request.bare_query)
+                (request.url, next_main, rev, request.amp_query)
 
     # if they have selected r1, then diff against that
     r1 = query_dict.get('r1')
     if r1 and not diff_rev.has_key(r1):
       diff_rev[r1] = 1
       print 'to selected <a href="%s.diff?r1=%s&r2=%s%s">%s</a>' % \
-            (request.url, r1, rev, request.bare_query, r1)
+            (request.url, r1, rev, request.amp_query, r1)
       if not human_readable:
         print '(<a href="%s.diff?r1=%s&r2=%s%s">colored</a>' % \
-              (request.url, r1, rev, request.bare_query)
+              (request.url, r1, rev, request.amp_query)
 
   print '<pre>' + htmlify(revinfo[5]) + '</pre>'
 
@@ -1767,7 +1770,9 @@ def view_log(request):
 
   up_where = re.sub(_re_up_path, '', where)
   filename = os.path.basename(full_name[:-2])	# drop the ",v"
-  back_url = request.script_name + '/' + urllib.quote(up_where) + request.query_string
+  back_url = request.script_name + '/' + urllib.quote(up_where) + \
+             request.qmark_query
+
   print html_link(html_icon('back'), back_url + '#' + filename)
   print '<b>Up to %s</b><p>' % clickable_path(request, up_where, 1, 0)
   print '<a href="#diff">Request diff between arbitrary revisions</a>'
@@ -2216,6 +2221,8 @@ def view_diff(request, cvs_filename):
 
 def view_module():
 
+  ### what is this???
+
   ### testing
   html_header('module')
   print "module"
@@ -2226,13 +2233,6 @@ def main():
   # build a Request object, which contains info about the HTTP request
   request = Request()
 
-  ### temp
-  where = request.where
-  url = request.url
-
-  query_dict = request.query_dict
-  query_string = request.query_string
-
   # is the CVS root really there?
   if not os.path.isdir(request.cvsroot):
     error('%s not found!<p>The server on which the CVS tree lives is '
@@ -2242,12 +2242,15 @@ def main():
   full_name = request.full_name
   isdir = os.path.isdir(full_name)
 
+  url = request.url
+  where = request.where
+
   ### look for GZIP binary
 
   # if we have a directory and the request didn't end in "/", then redirect
   # so that it does. (so that relative URLs in our output work right)
   if isdir and os.environ.get('PATH_INFO', '')[-1:] != '/':
-    redirect(url + '/' + query_string)
+    redirect(url + '/' + request.qmark_query)
 
   # check the forbidden list
   idx = string.find(where, '/')
@@ -2261,6 +2264,8 @@ def main():
   # since we aren't talking about a directory, set up the mime type info
   # for the file.
   request.setup_mime_type_info()
+
+  query_dict = request.query_dict
 
   if os.path.isfile(full_name + ',v'):
     if query_dict.has_key('rev') or request.has_checkout_magic:
@@ -2283,6 +2288,7 @@ def main():
       redirect(url[:idx] + '/Attic' + url[idx:])
 
     # it is probably a module
+    ### what is this???
     view_module()
 
 
