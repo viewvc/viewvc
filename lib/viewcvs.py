@@ -2099,7 +2099,7 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
   print 'version %s%s' % (rev2, date2)
   if sym2:
     print '<br>Tag:', sym2
-  print '</th>'
+  print '</th></tr>'
 
   fs = '<font face="%s" size="%s">' % \
        (cfg.options.diff_font_face, cfg.options.diff_font_size)
@@ -2126,7 +2126,7 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
       print '<table width="100&#37;" border=1 cellpadding=5><tr>'
       print '<td><b>Line %s</b>&nbsp;<font size="-1">%s</font></td>' % \
             (match.group(2), match.group(3))
-      print '</tr></table></td><tr>'
+      print '</tr></table></td></tr>'
 
       state = 'dump'
       left_col = [ ]
