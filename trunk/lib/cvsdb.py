@@ -289,7 +289,7 @@ class CheckinDatabase:
         cursor = self.db.cursor()
         cursor.execute(sql, sql_args)
 
-    def SQLQueryListString(self, sqlString, query_entry_list):
+    def SQLQueryListString(self, field, query_entry_list):
         sqlList = []
 
         for query_entry in query_entry_list:
@@ -309,7 +309,7 @@ class CheckinDatabase:
             elif query_entry.match == "notregex":
                 match = " NOT REGEXP "
 
-            sqlList.append(sqlString % (match, data))
+            sqlList.append("%s%s%s" % (field, match, self.db.escape(data)))
 
         return "(%s)" % (string.join(sqlList, " OR "))
 
@@ -326,37 +326,29 @@ class CheckinDatabase:
         if len(query.repository_list):
             tableList.append(("repositories",
                               "(checkins.repositoryid=repositories.id)"))
-
-            sql = "repositories.repository%s\"%s\""
-            temp = self.SQLQueryListString(sql, query.repository_list)
+            temp = self.SQLQueryListString("repositories.repository",
+                                           query.repository_list)
             condList.append(temp)
 
         if len(query.branch_list):
             tableList.append(("branches", "(checkins.branchid=branches.id)"))
-
-            sql = "branches.branch%s\"%s\""
-            temp = self.SQLQueryListString(sql, query.branch_list)
+            temp = self.SQLQueryListString("branches.branch",
+                                           query.branch_list)
             condList.append(temp)
 
         if len(query.directory_list):
             tableList.append(("dirs", "(checkins.dirid=dirs.id)"))
-
-            sql = "dirs.dir%s\"%s\"" 
-            temp = self.SQLQueryListString(sql, query.directory_list)
+            temp = self.SQLQueryListString("dirs.dir", query.directory_list)
             condList.append(temp)
             
         if len(query.file_list):
             tableList.append(("files", "(checkins.fileid=files.id)"))
-
-            sql = "files.file%s\"%s\""
-            temp = self.SQLQueryListString(sql, query.file_list)
+            temp = self.SQLQueryListString("files.file", query.file_list)
             condList.append(temp)
             
         if len(query.author_list):
             tableList.append(("people", "(checkins.whoid=people.id)"))
-
-            sql = "people.who%s\"%s\""
-            temp = self.SQLQueryListString(sql, query.author_list)
+            temp = self.SQLQueryListString("people.who", query.author_list)
             condList.append(temp)
             
         if query.from_date:
