@@ -168,7 +168,9 @@
   <th align=left valign=top>Revision</th>
   <th align=left valign=top>Branch</th>
   <th align=left valign=top>+/-</th>
-  <th align=left valign=top>Description</th>
+[# uncommment, if you want a separate Description column: (also see below)
+<th align=left valign=top>Description</th>
+]
  </tr>
 [for commits]
   [for commits.files]
@@ -188,12 +190,23 @@
       </td>
       <td align=left valign=top>[commits.files.plus]/[commits.files.minus]</td>
 
-      [if-index commits.files first]
-        <td align=left valign=top rowspan=[commits.num_files]>
-          [commits.desc]
+[# uncommment, if you want a separate Description column:
+      {if-index commits.files first{
+        <td align=left valign=top rowspan={commits.num_files}>
+          {commits.desc}
         </td>
-      [end]
+      {end}
+]
     </tr>
+[# and take the following out in this case:]
+      [if-index commits.files last]
+	<tr bgcolor="[if-index commits even]#ffffff[else]#ccccee[end]">
+	  <td>&nbsp;</td>
+	  <td colspan=5><b>Description</b><br>
+			  <pre>[commits.desc]</pre></td>
+	</tr>
+      [end]
+[# ---]
   [end]
 [end]
 
