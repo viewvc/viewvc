@@ -4,7 +4,7 @@
   a file. You may select a symbolic revision name using the selection
   box or you may type in a numeric name using the type-in text box.
   <p>
-  <form method="GET" action="[href].diff[qquery]" name="diff_select">
+  <form method="GET" action="[href][qquery]" name="diff_select">
 
   Diffs between
   <select name="r1">
