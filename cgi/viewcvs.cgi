@@ -47,6 +47,8 @@
 # -----------------------------------------------------------------------
 #
 
+__version__ = '0.3-dev'
+
 #########################################################################
 #
 # CONFIGURATION
@@ -163,21 +165,32 @@ script by Henner Zeller
 &lt;<a href="mailto:zeller@think.de">zeller@think.de</a>&gt;;
 it is covered by the
 <a href="http://www.opensource.org/licenses/bsd-license.html">BSD-Licence</a>.
-</p>
-<p>
 If you would like to use this CGI script on your own web server and
 CVS tree, see Greg's
 <a href="http://www.lyra.org/greg/python/viewcvs/">ViewCVS distribution
-site</a>. Henner's original script can be found
-<a href="http://linux.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi">here</a>.
-</p>
-<p>
+site</a>.
 Please send any suggestions, comments, etc. to
 <a href="mailto:gstein@lyra.org">Greg Stein</a>.
 </p>
 """
+# ' stupid emacs...
 
-# " stupid emacs...
+doc_information = """
+<h3>CVS Documentation</h3>
+<blockquote>
+<p>
+  <a href="http://www.loria.fr/~molli/cvs/doc/cvs_toc.html">CVS
+  User's Guide</a><br>
+  <a href="http://www.arc.unm.edu/~rsahu/cvs.html">CVS Tutorial</a><br>
+  <a href="http://cellworks.washington.edu/pub/docs/cvs/tutorial/cvs_tutorial_1.html">Another CVS tutorial</a><br>
+  <a href="http://www.csc.calpoly.edu/~dbutler/tutorials/winter96/cvs/">Yet another CVS tutorial (a little old, but nice)</a>
+</p>
+</blockquote>
+"""
+
+repository_info = """
+<!-- insert repository access instructions here -->
+"""
 
 short_instruction = """\
 <p>
@@ -401,6 +414,11 @@ _EOF_ERROR = 'error message found'	# rlog issued an error
 
 _FILE_HAD_ERROR = 'could not read file'
 
+header_comment = '''\
+<!-- ViewCVS       -- http://www.lyra.org/greg/python/viewcvs/
+     by Greg Stein -- mailto:gstein@lyra.org
+  -->
+'''
 
 class Request:
   def __init__(self):
@@ -504,15 +522,20 @@ def html_header(title):
   print '''\
 <!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
  "http://www.w3.org/TR/REC-html40/loose.dtd">
-<html>
+<html><head>
+%s
 <title>%s</title>
 </head>
 %s
-%s <h1 align="center">%s</h1>
-''' % (title, body_tag, logo, title)
+<table width="100&#37;" border=0 cellspacing=0 cellpadding=0>
+  <tr><td><h1>%s</h1></td><td align=right>%s</td></tr><table>
+''' % (header_comment, title, body_tag, title, logo)
 
 def html_footer():
-  print '<hr noshade><address>%s</address>' % address
+  print '<hr noshade><table width="100&#37;" border=0 cellpadding=0 cellspacing=0><tr>'
+  print '<td align=left><address>%s</address></td>' % address
+  print '<td align=right><a href="http://www.lyra.org/greg/python/viewcvs/">ViewCVS %s</a><br>' % __version__
+  print 'by <a href="mailto:gstein@lyra.org">Greg Stein</a>'
   print '</body></html>'
 
 def sticky_query(dict):
@@ -699,8 +722,8 @@ def navigate_header(request, swhere, path, filename, rev, title):
     swhere = urllib.quote(filename)
 
   print '<html><head>'
-  print '<!-- ViewCVS by gstein@lyra.org  http://www.lyra.org/ -->'
-  print '<title>%s%s - %s - %s</title></head>' % (path, filename, title, rev)
+  print header_comment
+  print '<title>%s/%s - %s - %s</title></head>' % (path, filename, title, rev)
   print '<body bgcolor="%s">' % backcolor
   print '<table width="100&#37;" border=0 cellspacing=0 cellpadding=1 bgcolor="%s">' % navigationHeaderColor
   print '<tr valign=bottom><td>'
@@ -1138,6 +1161,8 @@ def view_directory(request):
   if where == '':
     html_header(defaulttitle)
     print long_intro
+    print doc_information
+    print repository_info
   else:
     html_header(where)
     print short_instruction
@@ -1443,7 +1468,8 @@ def fetch_log(full_name, which_rev=None):
   revs = [ ]
   while 1:
     entry = parse_log_entry(rlog)
-    revs.append(entry[:6])
+    if entry[0]:	# valid revision info
+      revs.append(entry[:6])
     if entry[6]:	# eof
       break
 
@@ -1963,38 +1989,48 @@ def view_annotate(request):
   print "annotate"
   html_footer()
 
-_re_valid_rev = re.compile(r'^(\d+\.)+\d+$')
+_re_extract_rev = re.compile(r'^[-+]+ [^\t]+\t([^\t]+)\t((\d+\.)+\d+)$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
 _re_extract_diff = re.compile(r'^([-+ ])(.*)')
-def human_readable_diff(request, fp, rev, sym1, sym2):
+def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
   query_dict = request.query_dict
 
   where_nd = request.where[:-5]	# remove the ".diff"
   pathname, filename = os.path.split(where_nd)
 
   navigate_header(request, request.script_name + '/' + where_nd, pathname,
-                  filename, rev, 'diff')
+                  filename, rev2, 'diff')
 
-  rev1 = rev2 = '(revision number not found in diff output)'
+  log_rev1 = log_rev2 = None
+  date1 = date2 = ''
   r1r = r2r = ''
   while 1:
     line = fp.readline()
     if not line:
       break
 
+    # Use regex matching to extract the data and to ensure that we are
+    # extracting it from a properly formatted line. There are rcsdiff
+    # programs out there that don't supply the correct format; we'll be
+    # flexible in case we run into one of those.
     if line[:4] == '--- ':
-      parts = string.split(line[:-1], '\t')
-      date1 = parts[-2]
-      rev1 = parts[-1]
+      match = _re_extract_rev.match(line)
+      if match:
+        date1 = ', ' + match.group(1)
+        log_rev1 = match.group(2)
     elif line[:4] == '+++ ':
-      parts = string.split(line[:-1], '\t')
-      date2 = parts[-2]
-      rev2 = parts[-1]
+      match = _re_extract_rev.match(line)
+      if match:
+        date2 = ', ' + match.group(1)
+        log_rev2 = match.group(2)
       break
 
-  if not _re_valid_rev.match(rev1) or not _re_valid_rev.match(rev2):
-    print 'Internal error: %s and/or %s are not valid revision numbers.' % \
-          (rev1, rev2)
+  if (log_rev1 and log_rev1 != rev1) or (log_rev2 and log_rev2 != rev2):
+    print '<strong>ERROR:</strong> rcsdiff did not return the correct'
+    print 'version number in its output.'
+    print '(got "%s" / "%s", expected "%s" / "%s")' % \
+          (log_rev1, log_rev2, rev1, rev2)
+    print '<p>Aborting operation.'
     sys.exit(0)
 
   print '<h3 align=center>Diff for /%s between version %s and %s</h3>' % \
@@ -2002,12 +2038,12 @@ def human_readable_diff(request, fp, rev, sym1, sym2):
   print '<table border=0 cellspacing=0 cellpadding=0 width="100&#37;">'
   print '<tr bgcolor=white>'
   print '<th width="50&#37;" valign=top>'
-  print 'version %s, %s' % (rev1, date1)
+  print 'version %s%s' % (rev1, date1)
   if sym1:
     print '<br>Tag:', sym1
   print '</th>'
   print '<th width="50&#37;" valign=top>'
-  print 'version %s, %s' % (rev2, date2)
+  print 'version %s%s' % (rev2, date2)
   if sym2:
     print '<br>Tag:', sym2
   print '</th>'
@@ -2191,7 +2227,7 @@ def view_diff(request, cvs_filename):
                 (rcs_path, diff_type, rev1, rev2, cvs_filename), 'r')
   if human_readable:
     http_header()
-    human_readable_diff(request, fp, rev2, sym1, sym2)
+    human_readable_diff(request, fp, rev1, rev2, sym1, sym2)
     sys.exit(0)
 
   http_header('text/plain')
