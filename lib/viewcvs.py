@@ -440,7 +440,7 @@ class Request:
       view_func = None
 
     # For diffs on Subversion repositories, set rev to the value of r2
-    # otherwise, we get 404's on movied files
+    # otherwise, we get 404's on moved files
     if view_func is view_diff and self.roottype == 'svn' \
        and not params.has_key('rev'):
       params['rev'] = params.get('r2')
