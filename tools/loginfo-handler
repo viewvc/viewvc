@@ -122,12 +122,12 @@ def CleanDirectory(dir):
 
 def HeuristicArgParse(s, repository):
   """Current versions of CVS (except for CVSNT) do not escape spaces in file
-  and directory names that are passed to the loginfo handler. Since to input
-  loginfo is a space separated string, this can lead to ambiguties. This
+  and directory names that are passed to the loginfo handler. Since the input
+  to loginfo is a space separated string, this can lead to ambiguties. This
   function attempts to guess intelligently which spaces are separators and
   which are part of file or directory names. It disambiguates spaces in
   filenames from the separator spaces between files by assuming that every
-  spaces which is preceded by two well-formed revision numbers is in fact a 
+  space which is preceded by two well-formed revision numbers is in fact a 
   separator. It disambiguates the first separator space from spaces in the 
   directory name by choosing the longest possible directory name that actually
   exists in the repository"""
