@@ -1461,36 +1461,48 @@ def read_log(full_name, filter, logsort):
 
   return show_revs, taginfo
 
-def augment_entry(entry, rev, request, name_printed, extended):
-  "Augment the entry with additional, computed data from the log output."
+def view_log(request):
+  diff_format = request.query_dict.get('diff_format', cfg.options.diff_format)
+  logsort = request.query_dict.get('logsort', cfg.options.log_sort)
+  view_tag = request.query_dict.get('only_with_tag')
+  hide_attic = int(request.query_dict.get('hideattic',cfg.options.hide_attic))
 
-  query_dict = request.query_dict
+  if request.roottype == 'cvs':
+    show_revs, taginfo = read_log(request.full_name, view_tag, logsort)
+    up_where = get_up_path(request, request.where, hide_attic)
+    filename = os.path.basename(request.where)
 
-  branch = rev.branch_number
+  elif request.roottype == 'svn':
+    alltags, logs = vclib.svn.fetch_log(request.repos, request.where)
+    up_where, filename = os.path.split(request.where)
 
-  entry.vendor_branch = ezt.boolean(branch and branch[2] % 2 == 1)
+    show_revs = []
+    prev = None
+    numbers = logs.keys()
+    numbers.sort()
+    numbers.reverse()
 
-  entry.date_str = make_time_string(rev.date)
+    for number in numbers:
+      rev = logs[number]
+      rev.string = str(number)
+      rev.prev = prev
+      show_revs.append(rev)
+      prev = rev
 
-  entry.ago = html_time(request, rev.date, 1)
+    view_tag = None
+    taginfo = {}
 
-  entry.branches = prep_tags(request, rev.branches)
-  entry.tags = prep_tags(request, rev.tags)
-  entry.branch_points = prep_tags(request, rev.branch_points)
-
-  prev = rev.prev or rev.parent
-  entry.prev = prev and prev.string
-
-  entry.html_log = htmlify(rev.log)
-
-  if extended:
-    entry.tag_names = map(lambda x: x.name, rev.tags)
-    if branch and not name_printed.has_key(branch):
-      entry.branch_names = map(lambda x: x.name, rev.branches)
-      name_printed[branch] = 1
-    else:
-      entry.branch_names = [ ]
-
+  entries = [ ]
+  name_printed = { }
+  for rev in show_revs:
+    entry = _item()
+    entry.rev = rev.string
+    entry.state = rev.state
+    entry.author = rev.author
+    entry.changed = rev.changed
+    entry.date_str = make_time_string(rev.date)
+    entry.ago = html_time(request, rev.date, 1)
+    entry.html_log = htmlify(rev.log or "")
     entry.href = request.get_url(view_func=view_checkout, 
                                  params={'rev': rev.string})
     entry.view_href = request.get_url(view_func=view_markup, 
@@ -1498,39 +1510,73 @@ def augment_entry(entry, rev, request, name_printed, extended):
     entry.text_href = request.get_url(view_func=view_checkout,
                                       params={'content-type': 'text/plain',
                                               'rev': rev.string})
-    
-    entry.annotate_href = request.get_url(view_func=view_annotate, 
-                                          params={'annotate': rev.string})
 
-    # figure out some target revisions for performing diffs
-    entry.branch_point = None
-    entry.next_main = None
+    if request.roottype == 'cvs':
+      entry.annotate_href = request.get_url(view_func=view_annotate, 
+                                            params={'annotate': rev.string})
 
-    if rev.parent and rev.parent is not prev and not entry.vendor_branch:
-      entry.branch_point = rev.parent.string
+      prev = rev.prev or rev.parent
+      entry.prev = prev and prev.string
 
-    # if it's on a branch (and not a vendor branch), then diff against the
-    # next revision of the higher branch (e.g. change is committed and
-    # brought over to -stable)
-    if rev.parent and rev.parent.next and not entry.vendor_branch:
-      if not rev.next:
-        # this is the highest version on the branch; a lower one
-        # shouldn't have a diff against the "next main branch"
-        entry.next_main = rev.parent.next.string
+      branch = rev.branch_number
+      entry.vendor_branch = ezt.boolean(branch and branch[2] % 2 == 1)
+
+      entry.branches = prep_tags(request, rev.branches)
+      entry.tags = prep_tags(request, rev.tags)
+      entry.branch_points = prep_tags(request, rev.branch_points)
+
+      entry.tag_names = map(lambda x: x.name, rev.tags)
+      if branch and not name_printed.has_key(branch):
+        entry.branch_names = map(lambda x: x.name, rev.branches)
+        name_printed[branch] = 1
+      else:
+        entry.branch_names = [ ]
+
+      # figure out some target revisions for performing diffs
+      entry.branch_point = None
+      entry.next_main = None
+      
+      if rev.parent and rev.parent is not prev and not entry.vendor_branch:
+        entry.branch_point = rev.parent.string
+
+      # if it's on a branch (and not a vendor branch), then diff against the
+      # next revision of the higher branch (e.g. change is committed and
+      # brought over to -stable)
+      if rev.parent and rev.parent.next and not entry.vendor_branch:
+        if not rev.next:
+          # this is the highest version on the branch; a lower one
+          # shouldn't have a diff against the "next main branch"
+          entry.next_main = rev.parent.next.string
+
+    elif request.roottype == 'svn':
+      entry.revision_href = request.get_url(view_func=view_revision,
+                                            params={'rev': rev})
+      if rev.copy_path:
+        entry.copy_href = request.get_url(view_func=view_log,
+                                          where=rev.copy_path,
+                                          pathtype=vclib.FILE, params={})
+
+      entry.prev = rev.prev and rev.prev.string
+      entry.prev_path = rev.prev and rev.prev.filename
+      entry.branches = entry.tags = entry.branch_points = [ ]
+      entry.tag_names = entry.branch_names = [ ]
+      entry.vendor_branch = None
+
+      entry.copy_path = rev.copy_path
+      entry.filename = rev.filename
+      entry.size = rev.size
 
     # the template could do all these comparisons itself, but let's help
     # it out.
-    r1 = query_dict.get('r1')
+    r1 = request.query_dict.get('r1')
     if r1 and r1 != entry.rev and r1 != entry.prev and r1 != entry.branch_point \
        and r1 != entry.next_main:
       entry.to_selected = 'yes'
     else:
       entry.to_selected = None
 
-def view_log(request):
-  diff_format = request.query_dict.get('diff_format', cfg.options.diff_format)
-  logsort = request.query_dict.get('logsort', cfg.options.log_sort)
-  
+    entries.append(entry)
+
   data = common_template_data(request)
   data.update({
     'roottype' : request.roottype,
@@ -1548,6 +1594,7 @@ def view_log(request):
     'human_readable' : ezt.boolean(diff_format in ('h', 'l')),
     'log_pagestart' : None,
     'graph_href' : None,    
+    'entries': entries,
   })
 
   url, params = request.get_link(view_func=view_diff, 
@@ -1571,114 +1618,6 @@ def view_log(request):
   data['logsort_action'] = urllib.quote(url, _URL_SAFE_CHARS)
   data['logsort_hidden_values'] = prepare_hidden_values(params)
 
-  if request.roottype == 'svn':
-    view_log_svn(request, data, logsort)
-  else:
-    view_log_cvs(request, data, logsort)
-
-def view_log_svn(request, data, logsort):
-  query_dict = request.query_dict
-
-  alltags, logs = vclib.svn.fetch_log(request.repos, request.where)
-  up_where, filename = os.path.split(request.where)
-
-  entries = []
-  prev_rev = None
-  prev_path = None
-  show_revs = logs.keys()
-  show_revs.sort()
-  for rev in show_revs:
-    entry = logs[rev]
-    entry.prev = prev_rev
-    entry.prev_path = prev_path
-    entry.href = request.get_url(view_func=view_checkout, where=entry.filename,
-                                 pathtype=vclib.FILE, params={'rev': rev})
-    entry.view_href = request.get_url(view_func=view_markup, 
-                                      where=entry.filename,
-                                      pathtype=vclib.FILE,
-                                      params={'rev': rev})
-    entry.text_href = request.get_url(view_func=view_checkout,
-                                      where=entry.filename,
-                                      pathtype=vclib.FILE,
-                                      params={'content-type': 'text/plain',
-                                              'rev': rev})
-    entry.revision_href = request.get_url(view_func=view_revision,
-                                          where=None,
-                                          pathtype=None,
-                                          params={'rev': rev})
-
-    if entry.copy_path:
-      entry.copy_href = request.get_url(view_func=view_log, 
-                                        where=entry.copy_path,
-                                        pathtype=vclib.FILE, params={})
-
-    entry.tags = [ ]
-    entry.branches = [ ]
-    entry.branch_point = None
-    entry.branch_points = [ ]
-    entry.next_main = None
-    entry.to_selected = None
-    entry.vendor_branch = None
-    entry.ago = html_time(request, entry.date, 1)
-    entry.date_str = make_time_string(entry.date)
-    entry.tag_names = [ ]
-    entry.branch_names = [ ]
-    if not entry.log:
-      entry.log = ""
-    entry.html_log = htmlify(entry.log)
-
-    # the template could do all these comparisons itself, but let's help
-    # it out.
-    r1 = query_dict.get('r1')
-    if r1 and r1 != str(rev) and r1 != str(prev_rev):
-      entry.to_selected = 'yes'
-    else:
-      entry.to_selected = None
-
-    entries.append(entry)
-    prev_rev = rev
-    prev_path = entry.filename
-  show_revs.reverse()
-  entries.reverse()
-  
-  data.update({
-    'back_url' : request.get_url(view_func=view_directory, pathtype=vclib.DIR,
-                                 where=up_where, params={}),
-    'filename' : filename,
-    'view_tag' : None,
-    'entries' : entries,
-    'tags' : [ ],
-    'branch_names' : [ ],
-    })
-
-  if len(show_revs):
-    data['tr1'] = show_revs[-1]
-    data['tr2'] = show_revs[0]
-  else:
-    data['tr1'] = None
-    data['tr2'] = None
-
-  if cfg.options.use_pagesize:
-    data['log_pagestart'] = int(query_dict.get('log_pagestart',0))
-    data['entries'] = paging(data, 'entries', data['log_pagestart'], 'rev')
-
-  request.server.header()
-  generate_page(request, cfg.templates.log, data)
-  
-def view_log_cvs(request, data, logsort):
-  full_name = request.full_name
-  where = request.where
-  query_dict = request.query_dict
-
-  view_tag = query_dict.get('only_with_tag')
-
-  show_revs, taginfo = read_log(full_name, view_tag, logsort)
-
-  up_where = get_up_path(request, where, int(query_dict.get('hideattic',
-                                             cfg.options.hide_attic)))
-
-  filename = os.path.basename(where)
-
   data.update({
     'back_url' : request.get_url(view_func=view_directory, pathtype=vclib.DIR,
                                  where=up_where, params={}),
@@ -1686,7 +1625,7 @@ def view_log_cvs(request, data, logsort):
     'view_tag' : view_tag,
   })
 
-  if cfg.options.use_cvsgraph:
+  if request.roottype == 'cvs' and cfg.options.use_cvsgraph:
     data['graph_href'] = request.get_url(view_func=view_cvsgraph, params={})
 
   main = taginfo.get('MAIN')
@@ -1713,18 +1652,6 @@ def view_log_cvs(request, data, logsort):
     else:
       data['head_href'] = request.get_url(view_func=view_checkout, params={})
 
-  data['entries'] = entries = [ ]
-  name_printed = { }
-  for rev in show_revs:
-    entry = _item(rev = rev.string,
-                  state = rev.state,
-                  author = rev.author,
-                  changed = rev.changed)
-
-    # augment the entry with (extended=1) info.
-    augment_entry(entry, rev, request, name_printed, 1)
-    entries.append(entry)
-
   tagitems = taginfo.items()
   tagitems.sort()
   tagitems.reverse()
@@ -1733,18 +1660,9 @@ def view_log_cvs(request, data, logsort):
   for tag, rev in tagitems:
     if rev.co_rev:
       tags.append(_item(rev=rev.co_rev.string, name=tag))
-        
-  if query_dict.has_key('r1'):
-    diff_rev = query_dict['r1']
-  else:
-    diff_rev = show_revs[-1].string
-  data['tr1'] = diff_rev
 
-  if query_dict.has_key('r2'):
-    diff_rev = query_dict['r2']
-  else:
-    diff_rev = show_revs[0].string
-  data['tr2'] = diff_rev
+  data['tr1'] = request.query_dict.get('r1') or show_revs[-1].string
+  data['tr2'] = request.query_dict.get('r2') or show_revs[0].string
 
   branch_names = []
   for tag in taginfo.values():
