@@ -2671,8 +2671,8 @@ def view_revision_svn(request, data):
   query_dict = request.query_dict
   date, author, msg, changes = vclib.svn.get_revision_info(request.repos)
   date_str = make_time_string(date)
-  rev_str = str(request.repos.rev)
-
+  rev = request.repos.rev
+  
   # add the hrefs, types, and prev info
   for change in changes:
     change.view_href = change.diff_href = change.type = None
@@ -2682,7 +2682,7 @@ def view_revision_svn(request, data):
       change.view_href = request.get_url(view_func=view_markup,
                                          where=change.filename, 
                                          pathtype=change.pathtype,
-                                         params={'rev' : rev_str})
+                                         params={'rev' : str(rev)})
       if change.action == "copied" or change.action == "modified":
         change.prev_path = change.base_path
         change.prev_rev = change.base_rev
@@ -2695,16 +2695,39 @@ def view_revision_svn(request, data):
       change.view_href = request.get_url(view_func=view_directory,
                                          where=change.filename, 
                                          pathtype=change.pathtype,
-                                         params={'rev' : rev_str})
-    
+                                         params={'rev' : str(rev)})
+
+  prev_rev_href = next_rev_href = None
+  if rev > 0:
+    prev_rev_href = request.get_url(view_func=view_revision,
+                                    where=None,
+                                    pathtype=None,
+                                    params={'rev': str(rev - 1)})
+  if rev < request.repos.youngest:
+    next_rev_href = request.get_url(view_func=view_revision,
+                                    where=None,
+                                    pathtype=None,
+                                    params={'rev': str(rev + 1)})
+  if msg:
+    msg = htmlify(msg)
   data.update({
-    'rev' : rev_str,
+    'rev' : str(rev),
     'author' : author,
     'date_str' : date_str,
-    'log' : htmlify(msg),
+    'log' : msg,
     'ago' : html_time(request, date, 1),
     'changes' : changes,
+    'jump_rev' : str(rev),
+    'prev_href' : prev_rev_href,
+    'next_href' : next_rev_href,
   })
+
+  url, params = request.get_link(view_func=view_revision,
+                                 where=None,
+                                 pathtype=None,
+                                 params={'rev': None})
+  data['jump_rev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
+  data['jump_rev_hidden_values'] = prepare_hidden_values(params)
 
   request.server.header()
   generate_page(request, cfg.templates.revision, data)
