@@ -158,12 +158,9 @@ class Config:
   def set_defaults(self):
     "Set some default values in the configuration."
 
-    self.general.cvs_roots = {
-      # user-visible-name : path
-      "Development" : "/home/cvsroot",
-      }
+    self.general.cvs_roots = { }
     self.general.svn_roots = { }
-    self.general.default_root = "Development"
+    self.general.default_root = ''
     self.general.rcs_path = ''
     self.general.mime_types_file = ''
     self.general.address = '<a href="mailto:user@insert.your.domain.here">No CVS admin address has been configured</a>'

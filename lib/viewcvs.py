@@ -227,7 +227,7 @@ class Request:
         _util.apr_initialize()
         self.pool = _util.svn_pool_create(None)
         rev = None
-        if query_dict.has_key('rev'):
+        if query_dict.has_key('rev') and query_dict['rev'] != 'HEAD':
           rev = int(query_dict['rev'])
         self.repos = vclib.svn.SubversionRepository(name, rootpath,
                                                     self.pool, rev)
@@ -1073,6 +1073,7 @@ def view_directory_cvs(request):
 
   # prepare the data that will be passed to the template
   data = {
+    'roottype' : 'cvs',
     'where' : where,
     'request' : request,
     'cfg' : cfg,
@@ -1089,7 +1090,7 @@ def view_directory_cvs(request):
     'search_re' : None,
     'dir_pagestart' : None,
     'have_logs' : None,
-
+    
     'sortby_file_href' :   toggle_query(query_dict, 'sortby', 'file'),
     'sortby_rev_href' :    toggle_query(query_dict, 'sortby', 'rev'),
     'sortby_date_href' :   toggle_query(query_dict, 'sortby', 'date'),
@@ -1324,6 +1325,7 @@ def view_directory_svn(request):
 
   # prepare the data that will be passed to the template
   data = {
+    'roottype' : 'svn',
     'where' : where,
     'request' : request,
     'cfg' : cfg,
@@ -1340,6 +1342,7 @@ def view_directory_svn(request):
     'search_re' : None,
     'dir_pagestart' : None,
     'have_logs' : 'yes',
+    'tree_rev' : str(request.repos.rev),
     
     'sortby_file_href' :   toggle_query(query_dict, 'sortby', 'file'),
     'sortby_rev_href' :    toggle_query(query_dict, 'sortby', 'rev'),
@@ -1359,6 +1362,11 @@ def view_directory_svn(request):
     'selection_form' : ezt.boolean(0),
   }
 
+  if request.query_dict.has_key('rev'):
+    data['jump_rev'] = request.query_dict['rev']
+  else:
+    data['jump_rev'] = str(request.repos.rev)
+    
   # add in the roots for the selection
   allroots = { }
   allroots.update(cfg.general.cvs_roots)
@@ -2029,17 +2037,11 @@ def process_checkout(full_name, where, query_dict, default_mime_type):
 
 def view_checkout(request):
   if request.roottype == 'svn':
-    contents = vclib.svn.get_file_contents(request.repos, request.where)
+    fp = vclib.svn.get_file_contents(request.repos, request.where)
     mime_type = request.query_dict.get('content-type')
     if mime_type is None:
       mime_type = request.mime_type
     revision = str(request.repos.rev)
-    import tempfile
-    tmpf = tempfile.mktemp()
-    fp = open(tmpf, "w+")
-    fp.write(contents)
-    fp.close()
-    fp = open(tmpf, "r")
   else:
     fp, revision, mime_type = process_checkout(request.full_name,
                                                request.where,
