@@ -2013,6 +2013,9 @@ def view_cvsgraph(cfg, request):
 <body bgcolor="#f0f0f0">
   <center>
   <h1>Revision graph of %(where)s</h1>""" % locals()
+
+  #" fix Emacs font-lock: close a quote above
+
   # Required only if cvsgraph needs to find it's supporting libraries.
   # Uncomment and set accordingly if required.
   #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib'
@@ -2032,6 +2035,8 @@ def view_cvsgraph(cfg, request):
               src="%s?graph=%s&makeimage=1%s" 
               alt="Revisions of %s">""" % (request.url, 
                                            rev, request.amp_query, where)
+  #" fix Emacs font-lock: close a quote above
+
   print '</center>'
   html_footer()
 
@@ -2051,19 +2056,19 @@ def view_helppage(request):
     doc_directory = os.path.join(os.pardir, "website")
   try:
     fp = open(os.path.join(doc_directory, help_page), "rt")
-    if help_page[-3:] == 'png':
-      http_header('image/png')
-    elif help_page[-3:] == 'jpg':
-      http_header('image/jpeg')
-    elif help_page[-3:] == 'gif':
-      http_header('image/gif')
-    else: # assume HTML:
-      http_header()
-    copy_stream(fp)
-    fp.close()
   except IOError, v:
     error('help file "%s" not available\n(%s)' % (help_page, str(v)), 
           '404 Not Found')
+  if help_page[-3:] == 'png':
+    http_header('image/png')
+  elif help_page[-3:] == 'jpg':
+    http_header('image/jpeg')
+  elif help_page[-3:] == 'gif':
+    http_header('image/gif')
+  else: # assume HTML:
+    http_header()
+  copy_stream(fp)
+  fp.close()
 
    
 _re_extract_rev = re.compile(r'^[-+]+ [^\t]+\t([^\t]+)\t((\d+\.)+\d+)$')
