@@ -310,9 +310,9 @@ def build_commit(server, desc, files, cvsroots, viewcvs_link):
           cvsroot_name = None
         
         if cvsroot_name:
-            flink = '<a href="%s/%s?root=%s">%s</a>' % (
-                    viewcvs_link, urllib.quote(file),
-                    cvsroot_name, file_full_path)
+            flink = '[%s] <a href="%s/%s?root=%s">%s</a>' % (
+                    cvsroot_name, viewcvs_link, urllib.quote(file),
+                    cvsroot_name, file)
         else:
             flink = file_full_path
 
@@ -339,7 +339,8 @@ def run_query(server, form_data, viewcvs_link):
     files = [ ]
 
     cvsroots = {}
-    for key, value in cfg.general.cvs_roots.items():
+    rootitems = cfg.general.cvs_roots.items() + cfg.general.svn_roots.items()
+    for key, value in rootitems:
         value = os.path.normcase(value)
         while value[-1] == os.sep:
             value = value[:-1]
@@ -395,7 +396,7 @@ def main(server, viewcvs_link):
       'file' : server.escape(form_data.file, 1),
       'who' : server.escape(form_data.who, 1),
       'docroot' : cfg.options.docroot is None \
-                  and script_name + '/' + viewcvs.docroot_magic_path \
+                  and viewcvs_link + '/' + viewcvs.docroot_magic_path \
                   or cfg.options.docroot,
 
       'sortby' : form_data.sortby,
