@@ -1386,7 +1386,10 @@ def view_directory(request):
     data['plain_tags'] = nonbranchtags
 
   if cfg.options.allow_tar:
-    url = os.path.basename(where) + '.tar.gz?tarball=1'
+    tar_basename = os.path.basename(where) 
+    if not tar_basename:
+      tar_basename = "cvs_root"
+    url = tar_basename + '.tar.gz?tarball=1'
     query = sticky_query(query_dict)
     if query:
       url = url + '&' + query
@@ -1741,6 +1744,7 @@ def view_log(request):
 
   data = {
     'where' : where,
+    'request' : request,
     'back_url' : back_url,
     'href' : file_url,
 
