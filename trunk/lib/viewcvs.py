@@ -2699,14 +2699,16 @@ def generate_tarball_svn(out, request, tar_top, rep_top, reldir, tag, stack=[]):
   rep_dir = string.join(rep_top + reldir, '/')
   tar_dir = string.join(tar_top + reldir, '/') + '/'
 
-  curdir = rep_dir
+  files = []
+  subdirs = []
 
-  item = request.repos.getitem([curdir])
+  for entry in request.repos.listdir(rep_top + reldir):
+    if entry.kind == vclib.DIR:
+      subdirs.append(entry.name)
+    elif entry.kind == vclib.FILE:
+      files.append(entry.name)
 
-  files = item.getfiles()
-  subdirs = item.getsubdirs()
-
-  fileinfo, alltags = vclib.svn.get_logs(request.repos, curdir, files)
+  fileinfo, alltags = vclib.svn.get_logs(request.repos, rep_dir, files)
 
   stack.append(tar_dir)
 
