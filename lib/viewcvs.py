@@ -2223,6 +2223,8 @@ class DiffSource:
     self.left = None
     self.right = None
     self.state = 'no-changes'
+    self.left_col = [ ]
+    self.right_col = [ ]
 
   def __getitem__(self, idx):
     if idx == self.idx:
@@ -2252,9 +2254,10 @@ class DiffSource:
       self.save_line = None
     else:
       line = self.fp.readline()
+
     if not line:
       if self.state == 'no-changes':
-        self.state == 'done'
+        self.state = 'done'
         return _item(type='no-changes')
 
       # see if there are lines to flush
