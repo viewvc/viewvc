@@ -256,6 +256,7 @@ If this doesn't work, please click on the link above.
                     if sys.platform != "win32":
                       os.close(1)
                       assert os.dup(save_realstdout) == 1
+                      os.close(save_realstdout)
                     sys.stdout = save_stdout
                     sys.stderr = save_stderr
             except SystemExit, status:
