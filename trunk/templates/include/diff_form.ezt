@@ -1,4 +1,3 @@
-[if-any is_text]
 <a name=diff></a>
   <hr noshade>
   This form allows you to request diffs between any two revisions of
@@ -37,4 +36,3 @@
   </select>
 
   <input type=submit value="  Get Diffs  "></form>
-[end]
