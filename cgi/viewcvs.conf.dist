@@ -28,6 +28,8 @@
 #    long_intro
 #    repository_info
 #
+#    use_enscript
+#
 # For Python source colorization:
 #
 #    py2html_path
@@ -343,7 +345,7 @@ hr_ignore_keyword_subst = 1
 # NOTE: this requires rw-access to the CVSROOT/history file, and rw-access to
 # the subdirectory to place the lock... so you maybe don't want it
 # WARNING: this is not yet implemented!!
-allow_annotate = 0
+allow_annotate = 1
 
 # allow pretty-printed version of files
 allow_markup = 1
@@ -414,13 +416,8 @@ diff_font_size = -1
 # the width of the textinput in the request-diff-form
 input_text_size = 12
 
-#
-# ViewCVS has its own set of mappings from filename extensions and filenames
-# to languages. If the language is not supported by enscript, then it can
-# be listed here to disable the use of enscript.
-#
-disable_enscript_lang =
-# disable_enscript_lang = perl, cpp
+# should we use 'enscript' for syntax coloring?
+use_enscript = 0
 
 #
 # if the enscript program is not on the path, set this value
@@ -428,6 +425,14 @@ disable_enscript_lang =
 #
 enscript_path =
 # enscript_path = /usr/bin/
+
+#
+# ViewCVS has its own set of mappings from filename extensions and filenames
+# to languages. If the language is not supported by enscript, then it can
+# be listed here to disable the use of enscript.
+#
+disable_enscript_lang =
+# disable_enscript_lang = perl, cpp
 
 #---------------------------------------------------------------------------
 [vhosts]

@@ -602,6 +602,8 @@ def markup_stream(request, fp, revision, mime_type):
     streamer = markup_streamers.get(ext)
     if streamer:
       streamer(fp)
+    elif not cfg.options.use_enscript:
+      markup_stream_default(fp)
     else:
       lang = enscript_extensions.get(ext)
       if not lang:
