@@ -105,6 +105,7 @@ class CgiServer(Server):
   def __init__(self, inheritableOut = 1):
     Server.__init__(self)
     self.headerSent = 0
+    self.headers = []
     self.inheritableOut = inheritableOut
     self.iis = os.environ.get('SERVER_SOFTWARE', '')[:13] == 'Microsoft-IIS'
 
@@ -118,18 +119,27 @@ class CgiServer(Server):
     global cgi
     import cgi
 
+  def addheader(self, name, value):
+    self.headers.append((name, value))
+
   def header(self, content_type='text/html', status=None):
     if not self.headerSent:
       self.headerSent = 1
+
+      extraheaders = ''
+      for (name, value) in self.headers:
+        extraheaders = extraheaders + '%s: %s\r\n' % (name, value)
 
       # The only way ViewCVS pages and error messages are visible under 
       # IIS is if a 200 error code is returned. Otherwise IIS instead
       # sends the static error page corresponding to the code number.
       if status is None or self.iis:
-        status = '200 OK'
+        status = ''
+      else:
+        status = 'Status: %s\r\n' % status
 
-      sys.stdout.write('Status: %s\r\nContent-Type: %s\r\n\r\n'
-                       % (status, content_type))
+      sys.stdout.write('%sContent-Type: %s\r\n%s\r\n'
+                       % (status, content_type, extraheaders))
 
   def redirect(self, url):
     print 'Status: 301 Moved'
@@ -173,6 +183,9 @@ class AspServer(ThreadedServer):
     self.request = Request
     self.response = Response
     self.application = Application
+
+  def addheader(self, name, value):
+    self.response.AddHeader(name, value)
 
   def header(self, content_type=None, status=None):
     # Normally, setting self.response.ContentType after headers have already
@@ -257,6 +270,9 @@ class ModPythonServer(ThreadedServer):
 
     global cgi
     import cgi
+
+  def addheader(self, name, value):
+    self.request.headers_out.add(name, value)
 
   def header(self, content_type=None, status=None):
     if content_type is None: 
