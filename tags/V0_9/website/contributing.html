@@ -1,0 +1,173 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Contributing to ViewCVS Development</title>
+  </head>
+
+  <body background="images/chalk.jpg">
+
+    <table width="100&#37;" cellspacing=5>
+     <tr>
+        <td width="1%"><a href="index.html"><img border=0
+	      src="images/logo.png"></a>
+	</td>
+	<td>
+	  <h1>Contributing to ViewCVS Development</h1>
+	</td>
+	<td width="1%"><a href="http://sourceforge.net/"><img border=0
+	      src="http://sourceforge.net/sflogo.php?group_id=18760&type=1"></a><br><a href="http://sourceforge.net/projects/viewcvs/">ViewCVS&nbsp;project&nbsp;page</a>
+	</td>
+     </tr>
+     <tr><td width="1%" valign=top>
+         <a href="index.html">Home</a><br>
+         <a href="upgrading.html">Upgrading</a><br>
+	 Contributing<br>
+         <a href="license-1.html">License</a><br>
+         <a href="who.html">Who</a><br>
+     </td><td colspan=2>
+
+      <p>
+      Contributions to ViewCVS are very welcome.
+      </p>
+
+      <h2>Getting Started</h2>
+      <p>
+      Some basic knowledge about <a href="http://www.python.org"><i>Python</i></a> and
+      development Tools like <code>diff</code> is required.  Best is you start
+      with a fresh snapshot, which you may obtain from the 
+      <a href="http://sourceforge.net/cvs/?group_id=18760">CVS-Repository</a> 
+      at SourceForge.
+      </p>
+
+      <h2>Testing and reporting</h2>
+      <p>
+      Testing usability and the installation process on different platforms is
+      also a valuable contribution.  Please report your results back to 
+      us developers.  But always tell us, which version of ViewCVS
+      you used on which platform.  
+      </p><p>
+      If you are using the latest current development version please note 
+      the date of your latest download or cvs update when reporting.
+      </p>
+      
+      <h2>Does a Certain Coding Style Guide apply?</h2>
+      <p>
+      Maintain whatever style is present in the code being modified.  New
+      code can use anything sane (which generally means 
+      <a href="http://python.sourceforge.net/peps/pep-0008.html"><i>PEP&nbsp;8</i></a>).
+      Greg's only real peeve is if someone writes a function call as:  
+      <code>some_func&nbsp;(args)</code>  -- that space is Huge Badness. 
+      Otherwise... <i>shrug</i>.
+      </p>
+
+      <h2>Submitting patches</h2>
+      <p>
+      Please use the
+      <a href="http://sourceforge.net/tracker/?func=add&group_id=18760&atid=318760">SourceForge&nbsp;project&nbsp;patch&nbsp;manager</a>
+      to submit your patches.  Unified context diffs relative to the latest 
+      development version are preferred.
+      </p><p>
+      If you have commit access, then you should know what
+      you're doing.  Just make changes directly.  Subscribing to
+      the <a href="http://mailman.lyra.org/mailman/listinfo/viewcvs-dev"><i>developer&nbsp;mailing&nbsp;list</i></a> 
+      is recommended in any case.
+      </p>
+
+      <h2>Preserving security</h2>
+      <p>
+      Since ViewCVS is used in the internet, security is a major issue.
+      If you need to pass data from the request into an external program, 
+      please don't use <code>os.system()</code> or <code>os.popen()</code>.
+      Please use the module <code>lib/popen</code> that comes with ViewCVS
+      instead.
+      </p>
+
+      <h2>Adding new features</h2>
+      <p>
+      If a new file or module is added, a new line in the installer program
+      <code>viewcvs-install</code> is required.
+      </p><p>
+      The library subdirectory contains a module <code>debug</code>, which may
+      useful to make performance tests.
+      </p><p>
+      If you need a new configuration option think carefully, into 
+      which section it belongs.  Try to keep the content of 
+      <code>cgi/viewcvs.conf.dist</code> file and the library module
+      <code>lib/config.py</code> in sync.
+      </p>
+
+      <h2>Hacking on templates</h2>
+      <p>
+      The library module <code>ezt</code> contains a module doc string which
+      describes the directives used in the HTML templates, which can be found
+      in the <code>templates</code> sub directory.
+      </p>
+
+      <h2>Cutting a release</h2>
+      <p>
+      Also there actually is a script <code>tools/make-release</code>, 
+      which creates a release directory, all other steps required to get 
+      a ViewCVS release out of the door will be currently executed manually 
+      by Greg Stein.
+      </p><p>
+      Nevertheless in case he ever wants to retire from this job, it is 
+      probably a good idea to write the procedure down here:
+      <ol>
+        <li>Add a new subsection to the file 
+	 <code>website/upgrading.html</code> describing all user visible 
+	 changes for users of previous releases of ViewCVS.
+        <li>Test, Test, Test!  At the time of this writing (0.8-dev) there
+	 is no automatic testsuite available.  So just run with permuting
+	 different <code>viewcvs.conf</code> settings and ... pray.
+	<li>Review any <a 
+	 href="http://sourceforge.net/tracker/?atid=118760&group_id=18760&func=browse">
+	 bug reports, that are still marked open.</a>
+	<li>Edit the file <code>lib/viewcvs.py</code>  and remove the
+	 <tt>"-dev"</tt> suffix from <code>__version__</code>.  The remainder 
+	 should be of the form X.Y, where X is a positive number and 
+	 Y is a single digit.
+	<li>commit this changed version of <code>lib/viewcvs.py</code>
+	 and than <code>cvs tag V</code><i>X</i><code>_</code><i>Y</i>, where
+	 <i>X</i> and <i>Y</i> should be replaced by the release number
+	 from above.  If a developer is willing to volunteer as a
+	 bug fix patch release manager, it is now possible to start here
+	 at this point with a feature freezed branch using the command 
+	 <blockquote>
+         <code>cvs tag -b V</code><i>X</i><code>_</code><i>Y</i><code>_maint</code>
+	 </blockquote>
+	<li>go into an empty directory and run the command:
+	  <blockquote>
+	   <code>tools/make-release V</code><i>X_Y</i> <code>viewcvs-</code><i>X.Y</i>
+	  </blockquote>
+	 This step requires anonymous CVS access to repository at SourceForge.
+	<li>pack the content of this <code>viewcvs-</code><i>X.Y</i> directory
+	 into a tarball.  
+	<li>Upload the created tarball into the download files section of the
+	 ViewCVS project at SourceForge. 
+	 <br><b>Greg:</b><i>Could you please elaborate this step?</i>
+	<li>Edit the file <code>lib/viewcvs.py</code> again and this time 
+	 increment the <code>__version__</code> for the next release cycle,
+	 again append the <code>"-dev"</code> to the version and again
+	 <blockquote>
+	  <code>cvs commit -m "new release cycle begins" lib/viewcvs.py</code>.
+	 </blockquote>
+	<li>Write an announcement explaining all the cool new features
+	  and put it out to:
+	  <ul>
+	   <li><a href="http://www.freshmeat.net"><i>www.freshmeat.net</i></a>
+	   <li><a href="http://www.vex.net/parnassus/apyllo.py?i=91022454"><i>Vaults of Parnassus</i></a>
+	   <li><a href="news:comp.lang.python">comp.lang.python</a>
+	   <li><i>Where else? I dunno. Suggestions welcome.</i>
+	  </ul>
+      </ol>
+     </td></tr>
+    </table>
+
+    <hr>
+    <address><a href="mailto:viewcvs-dev@lyra.org">ViewCVS Group</a></address>
+<!-- Created: Thu Oct 18 09:05:40 CEST 2001 -->
+<!-- hhmts start -->
+Last modified: Mon Nov 19 20:25:38 CEST 2001
+<!-- hhmts end -->
+  </body>
+</html>
