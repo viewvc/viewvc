@@ -402,6 +402,83 @@ def rcs_popen(rcs_paths, rcs_cmd, rcs_args, mode, capture_err=1):
     args = rcs_args
   return popen.popen(cmd, args, mode, capture_err)
 
+def file_log(repos, path_parts, filter):
+  """Run rlog on a file, return list of Revisions and a dictionary of Tags"""
+  # Invoke rlog
+  args = repos._getpath(path_parts) + ',v',
+  fp = rcs_popen(repos.rcs_paths, 'rlog', args, 'rt', 0)
+  filename, cur_branch, taginfo, eof = parse_log_header(fp)
+
+  # Add artificial ViewCVS tag MAIN. If the file has a default branch, then
+  # MAIN acts like a branch tag pointing to that branch. Otherwise MAIN acts
+  # like a branch tag that points to the trunk. (Note: A default branch is
+  # just a branch number specified in an RCS file that tells CVS and RCS
+  # what branch to use for checkout and update operations by default, when
+  # there's no revision argument or sticky branch to override it. Default
+  # branches get set by "cvs import" to point to newly created vendor
+  # branches. Sometimes they are also set manually with "cvs admin -b")
+  taginfo['MAIN'] = cur_branch
+
+  # Create tag objects
+  for name, num in taginfo.items():
+    taginfo[name] = Tag(name, num)
+  tags = taginfo.values()
+
+  # Retrieve revision objects
+  revs = []
+  while not eof:
+    rev, eof = parse_log_entry(fp)
+    if rev:
+      revs.append(rev)
+
+  # Set view_tag to a Tag object in order to filter results. We can filter by
+  # revision number or branch number
+  if filter:
+    try:
+      view_tag = Tag(None, filter)
+    except ValueError:
+      view_tag = None
+    else:
+      tags.append(view_tag)  
+
+  # Match up tags and revisions
+  match_revs_tags(revs, tags)
+
+  # Add artificial ViewCVS tag HEAD, which acts like a non-branch tag pointing
+  # at the latest revision on the MAIN branch. The HEAD revision doesn't have
+  # anything to do with the "head" revision number specified in the RCS file
+  # and in rlog output. HEAD refers to the revision that the CVS and RCS co
+  # commands will check out by default, whereas the "head" field just refers
+  # to the highest revision on the trunk.  
+  taginfo['HEAD'] = add_tag('HEAD', taginfo['MAIN'].co_rev)
+
+  # Determine what revisions to return
+  if filter:
+    # If view_tag isn't set, it means filter is not a valid revision or
+    # branch number. Check taginfo to see if filter is set to a valid tag
+    # name. If so, filter by that tag, otherwise raise an error.
+    if not view_tag:
+      try:
+        view_tag = taginfo[filter]
+      except KeyError:
+        raise debug.ViewcvsException('Invalid tag or revision number "%s"'
+                                     % filter)
+    filtered_revs = [ ]
+    if view_tag.is_branch:
+      for rev in revs:
+        if rev.branch_number == view_tag.number or rev is view_tag.branch_rev:
+          filtered_revs.append(rev)
+    elif view_tag.co_rev:
+      filtered_revs.append(view_tag.co_rev)
+
+    # get rid of the view_tag if it was only created for filtering
+    if view_tag.name is None:
+      remove_tag(view_tag)
+  else:
+    filtered_revs = revs
+  
+  return filtered_revs, taginfo
+
 def path_ends_in(path, ending):
   if path == ending:
     return 1
