@@ -426,6 +426,15 @@ cvsgraph_conf = <VIEWCVS_INSTALL_DIRECTORY>/cvsgraph.conf
 use_re_search = 0
 # use_re_search = 1
 
+#
+# Split directories and logs into pages.
+# Allows ViewCVS to present discrete pages to the users instead of the
+# entire log or directory.
+# Set use_pagesize to the number of entries you want displayed on a page.
+#
+use_pagesize = 0
+# use_pagesize = 20
+
 #---------------------------------------------------------------------------
 [vhosts]
 ### DOC
