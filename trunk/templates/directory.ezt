@@ -256,10 +256,4 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
   <a href="[tarball_href]">Download tarball</a>
 [end]
 
-<hr noshade>
-<table width="100%" border=0 cellpadding=0 cellspacing=0><tr>
-<td align=left><address>[address]</address></td>
-<td align=right>
-  Powered by<br><a href="http://viewcvs.sourceforge.net/">ViewCVS [vsn]</a>
-</td></tr></table>
-</body></html>
+[include "footer.ezt"]
