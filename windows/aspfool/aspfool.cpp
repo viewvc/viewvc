@@ -29,10 +29,10 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc, DWORD notificationType, LP
 {
   switch(notificationType)
   {
-  	case SF_NOTIFY_URL_MAP:
+    case SF_NOTIFY_URL_MAP:
       HTTP_FILTER_URL_MAP & um = *((HTTP_FILTER_URL_MAP *)pn);
 
-			if (!file_exists(um.pszPhysicalPath))
+      if (!file_exists(um.pszPhysicalPath))
       {
         size_t pathlen = _tcslen(um.pszPhysicalPath);
         size_t m = pathlen - _tcslen(um.pszURL);
