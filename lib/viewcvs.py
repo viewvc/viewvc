@@ -221,7 +221,6 @@ class Request:
     self.default_viewable = cfg.options.allow_markup and \
                             is_viewable(self.mime_type)
 
-
 class LogHeader:
   "Hold state from the header portion of an 'rlog' output."
   def __init__(self, filename, head=None, branch=None, taginfo=None):
@@ -493,7 +492,7 @@ def markup_stream_enscript(lang, fp):
           continue
         break
       enscript.write(chunk)
-  except IOError, v:
+  except IOError:
     print "<h3>Failure during use of an external program:</h3>"
     print "<pre>"
     print os.path.normpath(os.path.join(cfg.options.enscript_path,'enscript')) + " --color -W html -E"+lang+" -o - -"
@@ -841,7 +840,6 @@ def parse_log_header(fp):
 
   return LogHeader(filename, head, branch, taginfo), eof
 
-_re_date_author = re.compile(r'^date:\s+([^;]+);\s+author:\s+([^;]+);.*')
 _re_log_info = re.compile(r'^date:\s+([^;]+);'
                           r'\s+author:\s+([^;]+);'
                           r'\s+state:\s+([^;]+);'
@@ -1464,7 +1462,6 @@ def fetch_log(full_name, which_rev=None):
   rlog = popen.popen(os.path.normpath(os.path.join(cfg.general.rcs_path,'rlog')), args, 'r')
 
   header, eof = parse_log_header(rlog)
-  filename = header.filename
   head = header.head
   branch = header.branch
   taginfo = header.taginfo
@@ -2140,7 +2137,6 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
 
   log_rev1 = log_rev2 = None
   date1 = date2 = ''
-  r1r = r2r = ''
   while 1:
     line = fp.readline()
     if not line:
@@ -2555,7 +2551,6 @@ def download_tarball(request):
   full_name = request.full_name
 
   directory = re.sub(_re_up_path, '', full_name)[0:-1]
-  filename = os.path.basename(full_name)
 
   tag = query_dict.get('only_with_tag')
 
@@ -2609,7 +2604,6 @@ def main():
   isdir = os.path.isdir(full_name)
 
   url = request.url
-  where = request.where
 
   ### look for GZIP binary
 
