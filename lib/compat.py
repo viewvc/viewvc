@@ -12,7 +12,7 @@
 #
 # -----------------------------------------------------------------------
 #
-# compat.py: compatibility functions for operation across Python 1.5.x
+# compat.py: compatibility functions for operation across Python 1.5.x to 2.2.x
 #
 # -----------------------------------------------------------------------
 #
@@ -66,3 +66,30 @@ except AttributeError:
     if head and tail and not os.path.exists(head):
       makedirs(head, mode)
     os.mkdir(path, mode)
+
+# 
+# the following stuff is *ONLY* needed for standalone.py.
+# For that reason I've encapsulated it into a function.
+#
+
+def for_standalone():
+  import SocketServer
+  if not hasattr(SocketServer.TCPServer, "close_request"):
+    #
+    # method close_request() was missing until Python 2.1
+    #
+    class TCPServer(SocketServer.TCPServer):
+      def process_request(self, request, client_address):
+        """Call finish_request.
+
+        Overridden by ForkingMixIn and ThreadingMixIn.
+
+        """
+        self.finish_request(request, client_address)
+        self.close_request(request)
+
+      def close_request(self, request):
+        """Called to clean up an individual request."""
+        request.close()
+
+    SocketServer.TCPServer = TCPServer
