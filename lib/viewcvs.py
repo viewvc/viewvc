@@ -1060,7 +1060,8 @@ def get_file_data_svn(request):
   """
   item = request.repos.getitem(request.path_parts)
   if not isinstance(item, vclib.Versdir):
-    raise debug.ViewcvsException("Path '%s' is not a directory." % full_name)
+    raise debug.ViewcvsException("Path '%s' is not a directory."
+                                 % request.full_name)
   files = item.getfiles()
   subdirs = item.getsubdirs()
   data = [ ]
