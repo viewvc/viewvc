@@ -284,6 +284,30 @@ If this doesn't work, please click on the link above.
             sys.stderr.write("   Use --help for more info.\n")
             raise KeyboardInterrupt # Hack!
         os.close(0) # To avoid problems with shell job control
+
+        if (viewcvs.cfg.conf_path is None 
+            and viewcvs.cfg.general.cvsnt_exe_path):
+          import popen
+          cvsnt_works = 0
+          try:
+            fp = popen.popen(viewcvs.cfg.general.cvsnt_exe_path, 
+                             ['--version'], 'rt')
+            try:
+              while 1:
+                line = fp.readline()
+                if not line: break
+                if string.find(line, "Concurrent Versions System (CVSNT)")>=0:
+                  cvsnt_works = 1
+                  while fp.read(4096):
+                    pass
+                  break
+            finally:
+              fp.close()
+          except:
+            pass
+          if not cvsnt_works:
+            viewcvs.cfg.cvsnt_exe_path = None
+
         ViewCVS_Server(host, port, callback).serve_until_quit()
     except (KeyboardInterrupt, select.error):
         pass

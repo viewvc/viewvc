@@ -57,6 +57,8 @@ class Config:
     pathname = os.path.join(this_dir, fname)
     self.base = os.path.dirname(pathname)
 
+    self.conf_path = os.path.isfile(pathname) and pathname or None
+
     parser = ConfigParser.ConfigParser()
     parser.read(pathname)
 
