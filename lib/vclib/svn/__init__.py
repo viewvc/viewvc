@@ -73,47 +73,68 @@ class ChangedPathEntry:
 
 class LogReceiver:
   "Handler for Subversion log message chunks"
-  def __init__(self, filename, fs_ptr):
+  def __init__(self, filename, svnrepos):
     self.logs = { }
     self.filename = filename
-    self.fs_ptr = fs_ptr
+    self.fs_ptr = svnrepos.fs_ptr
+    self.node_id = fs.node_id(svnrepos.fsroot, filename, svnrepos.pool)
 
   def receive(self, paths, revision, author, datestr, msg, pool):
     root = fs.revision_root(self.fs_ptr, revision, pool)
 
     action = copy_path = copy_rev = None
-    filename = self.filename
     other_paths = [ ]
 
     if paths:
-
-      import sapi
-      sapi.server.header()
-
       subpool = core.svn_pool_create(pool)
       for path, change in paths.items():
         core.svn_pool_clear(subpool)
 
-        kind = fs.check_path(root, path, subpool)
-        if kind != core.svn_node_file:
+        if fs.check_path(root, path, subpool) != core.svn_node_file:
           continue
+
+        node_id = fs.node_id(root, path, subpool)
 
         assert path[0] == '/'
         path = path[1:]
 
-        if path == filename:
+        ### There needs to be a subversion API to that tells whether
+        ### two node_ids refer to the same copy. It should take two
+        ### svn_fs_id_t structs as arguments and return
+        ###
+        ###   id1.node_id == id2.node_id and id1.copy_id == id2.copy_id
+        ###
+        ### Since there is no API that can give this information I'm using
+        ### fs.check_related() below, which instead returns
+        ###
+        ###   id2.node_id == id2.node_id
+        ###
+        ### This is correct in most circumstances. When it isn't correct,
+        ### the assertion after the check_related call will be set off.
+        if fs.check_related(node_id, self.node_id):
           assert action is None and copy_path is None and copy_rev is None
           action = change.action
+          filename = path
+
           if change.copyfrom_path:
             assert change.copyfrom_path[0] == '/'
-            copy_path = self.filename = change.copyfrom_path[1:]
+            copy_path = change.copyfrom_path[1:]
             copy_rev = change.copyfrom_rev
+            copy_root = fs.revision_root(self.fs_ptr, copy_rev, subpool)
+            self.node_id = fs.node_id(copy_root, copy_path, subpool)
+
         else:
           other_paths.append(ChangedPathEntry(path))
 
       core.svn_pool_destroy(subpool)
       
       assert action is not None
+
+    else:
+      # get_changed_paths is false, so just assume that the filename hasn't
+      # changed. This assumption is not correct for any revision that
+      # precedes a copy
+      filename = self.filename
 
     date = _datestr_to_date(datestr, pool)
 
@@ -143,7 +164,7 @@ def get_logs(svnrepos, full_name, files):
 
 
 def fetch_log(svnrepos, full_name, which_rev=None):
-  receiver = LogReceiver(full_name, svnrepos.fs_ptr);
+  receiver = LogReceiver(full_name, svnrepos)
   alltags = {           # all the tags seen in the files of this dir
     'MAIN' : '1',
     'HEAD' : '1',
