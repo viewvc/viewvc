@@ -226,7 +226,7 @@ class Request:
 
     try:
       self.repos = bincvs.BinCVSRepository(name, rootpath)
-    except bincvs.ReposNotFound:
+    except vclib.ReposNotFound:
       error('%s not found!\nThe wrong path for this repository was '
             'configured, or the server on which the CVS tree lives may be '
             'down. Please try again in a few minutes.' % cgi.escape(name))
