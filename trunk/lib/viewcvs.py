@@ -320,11 +320,11 @@ def htmlify(html):
   html = re.sub(_re_rewrite_email, r'<a href="mailto:\1">\1</a>', html)
   return html
 
-def html_log(log):
-  print '&nbsp;<font size="-1">' + htmlify(log[:cfg.options.short_log_len])
+def format_log(log):
+  s = htmlify(log[:cfg.options.short_log_len])
   if len(log) > cfg.options.short_log_len:
-    print '...'
-  print '</font>'
+    s = s + '...'
+  return s
 
 def download_url(request, url, revision, mime_type):
   if cfg.options.checkout_magic and mime_type != viewcvs_mime_type:
@@ -1096,6 +1096,12 @@ def view_directory(request):
     'view_tag' : view_tag,
     'sortby' : sortby,
     'headers' : [ ],
+    'no_match' : None,
+    'unreadable' : None,
+    'has_tags' : None,
+    'tarball_href' : None,
+    'address' : cfg.general.address,
+    'vsn' : __version__,
     }
 
   # add in the CVS roots for the selection
@@ -1131,10 +1137,6 @@ def view_directory(request):
       add_header('Last log entry', 'log')
 
   num_cols = len(data['headers'])
-
-  # generate the page
-  ### for now, it is just the top part of the page
-  template.generate(sys.stdout, data)
 
 
   def file_sort_cmp(data1, data2, sortby=sortby, fileinfo=fileinfo):
@@ -1187,7 +1189,6 @@ def view_directory(request):
   # sort with directories first, and using the "sortby" criteria
   file_data.sort(file_sort_cmp)
 
-  cur_row = 0
   num_files = 0
   num_displayed = 0
   unreadable = 0
@@ -1197,7 +1198,13 @@ def view_directory(request):
 
   ### display a row for ".." ?
 
+  rows = data['rows'] = [ ]
+
   for file, pathname, isdir in file_data:
+
+    row = _item(href=None, hide_attic_href=None, graph_href=None,
+                author=None, log=None, log_file=None, log_rev=None,
+                show_log=None)
 
     if pathname == _UNREADABLE_MARKER:
       if isdir is None:
@@ -1209,12 +1216,13 @@ def view_directory(request):
         slash = ''
         file = file[:-2]	# strip the ,v
         num_displayed = num_displayed + 1
-      print '<tr bgcolor="%s"><td><a name="%s">%s%s</a></td>' % \
-            (cfg.colors.even_odd[cur_row % 2], file, file, slash)
-      print '<td colspan=%d><i>unreadable</i></td>' % \
-            (num_cols - 1)
-      print '</tr>'
-      cur_row = cur_row + 1
+      row.anchor = file
+      row.name = file + slash
+      row.span = num_cols - 1
+      row.type = 'unreadable'
+
+      rows.append(row)
+
       unreadable = 1
       continue
 
@@ -1227,57 +1235,58 @@ def view_directory(request):
       if file == 'CVS': # CVS directory in a repository is used for fileattr.
         continue
 
-      print '<tr bgcolor="%s"><td>' % cfg.colors.even_odd[cur_row % 2]
       url = urllib.quote(file) + '/' + request.qmark_query
-      print '<a name="%s">' % file
-      if request.no_file_links:
-        print html_icon('dir')
-      else:
-        print html_link(html_icon('dir'), url)
-      print html_link(file + '/', url)
+
+      row.anchor = file
+      row.href = url
+      row.name = file + '/'
+      row.type = 'dir'
+
       if file == 'Attic':
-        print '&nbsp; <a href="./%s#dirlist">[Don\'t hide]</a>' % \
-              toggle_query(query_dict, 'hideattic', 0)
+        row.hide_attic_href = './' + toggle_query(query_dict, 'hideattic', 0) \
+                              + '#dirlist'
 
       info = fileinfo.get(file)
       if info == _FILE_HAD_ERROR:
-        print '</td><td colspan=%d><i>CVS information is unreadable</i>' % \
-              (num_cols - 1)
-        cur_row = cur_row + 1
+        row.cvs = 'error'
+        row.span = num_cols - 1
+
         unreadable = 1
       elif info:
-        print '</td><td>&nbsp;</td><td>&nbsp;'
-        print html_time(info[1])
+        row.cvs = 'data'
+        row.time = html_time(info[1])
+
         if cfg.options.show_author:
-          print '</td><td>&nbsp;'
-          print info[3]
+          row.author = info[3]
         if cfg.options.show_logs:
-          print '</td><td>&nbsp;'
+          row.show_log = 'yes'
           subfile = info[4]
           idx = string.find(subfile, '/')
-          print '%s/%s' % (subfile[idx+1:], info[0])
-          print '<br>'
+          row.log_file = subfile[idx+1:]
+          row.log_rev = info[0]
           if info[2]:
-            html_log(info[2])
+            row.log = format_log(info[2])
       else:
-        for i in range(1, num_cols):
-          print '</td><td>&nbsp;'
+        row.cvs = 'none'
+        row.cols = [ '' ] * (num_cols - 1)
 
-      print '</td></tr>'
+      rows.append(row)
 
     else:
       # remove the ",v"
       file = file[:-2]
 
+      row.type = 'file'
+      row.anchor = file
+      row.name = file
+
       num_files = num_files + 1
       info = fileinfo.get(file)
       if info == _FILE_HAD_ERROR:
-        print '<tr bgcolor="%s"><td><a name="%s">%s</a></td>' % \
-              (cfg.colors.even_odd[cur_row % 2], file, file)
-        print '<td colspan=%d><i>CVS information is unreadable</i></td>' % \
-              (num_cols - 1)
-        print '</tr>'
-        cur_row = cur_row + 1
+        row.cvs = 'error'
+        row.span = num_cols - 1
+        rows.append(row)
+
         num_displayed = num_displayed + 1
         unreadable = 1
         continue
@@ -1304,58 +1313,49 @@ def view_directory(request):
       if file[:6] == 'Attic/':
 	file = file[6:]
 
-      print '<tr bgcolor="%s"><td>' % cfg.colors.even_odd[cur_row % 2]
-      print '<a name="%s">' % file
+      row.cvs = 'data'
+      row.href = url
+      row.rev = info[0]
 
-      if request.no_file_links:
-        print html_icon('file')
-      else:
-        print html_link(html_icon('file'), url)
-      print html_link(file, url), attic
+      ### it would be good to break this out into bits so the .ezt can
+      ### format this info however it likes
+      row.attic = attic
 
-      print '</td><td>&nbsp;'
-      if cfg.options.allow_markup:
-        download_link(request, file_url, info[0], info[0], viewcvs_mime_type)
-      else:
-        download_link(request, file_url, info[0], info[0])
-      print '</td><td>&nbsp;'
-      print html_time(info[1])
+      row.rev_href = download_url(request, file_url, info[0], None) \
+                     + request.amp_query
+
+      row.time = html_time(info[1])
+
       if cfg.options.use_cvsgraph:
-        print '</td><td>&nbsp;'
-        print '<a href="/cgi-bin/cvsgraphwrapper.cgi?&f=%s,v">(graph)</a>' % (request.cvsroot + "/" + request.module + "/" + file)
+        ### the URL to the wrapper should not be hard-coded
+        row.graph_href = '/cgi-bin/cvsgraphwrapper.cgi?f=%s/%s/%s,v' % \
+                         (request.cvsroot, request.module, file)
+
       if cfg.options.show_author:
-        print '</td><td>&nbsp;'
-        print info[3]
+        row.author = info[3]
+
       if cfg.options.show_logs:
-        print '</td><td>'
-        html_log(info[2])
+        row.show_log = 'yes'
+        row.log = format_log(info[2])
 
-      print '</td></tr>'
+      rows.append(row)
 
-    cur_row = cur_row + 1
-
-  if cfg.colors.table_border:
-    print '</td></tr></table>'
-  print '</table>'
+  data['num_files'] = num_files
 
   if num_files and not num_displayed:
-    print '<p><b>NOTE:</b> There are %d files, but none match the current ' \
-          'tag (%s)' % (num_files, view_tag)
+    data['no_match'] = 'yes'
   if unreadable:
-    print '<hr size=1 noshade><b>NOTE:</b> One or more files were ' \
-          'unreadable. The files in the CVS repository should be readable ' \
-          'by the web server process. Please report this condition to the ' \
-          'administrator of this CVS repository.'
+    data['unreadable'] = 'yes'
 
   if alltags or view_tag:
-    print '<hr size=1 noshade>'
-    print '<form method="GET" action="./">'
+    data['has_tags'] = 'yes'
+    data['params'] = params = [ ]
+
     for varname in _sticky_vars:
       value = query_dict.get(varname, '')
       if value != '' and value != default_settings.get(varname, '') and \
          varname != 'only_with_tag':
-        print '<input type=hidden name="%s" value="%s">' % \
-              (varname, query_dict[varname])
+        params.append(_item(name=varname, value=query_dict[varname]))
 
     alltagnames = alltags.keys()
     alltagnames.sort(lambda t1, t2: cmp(string.lower(t1), string.lower(t2)))
@@ -1369,28 +1369,18 @@ def view_directory(request):
       else:
         branchtags.append(tag)
 
-    print 'Show only files with tag:'
-    print '<select name=only_with_tag'
-    if cfg.options.use_java_script:
-      print ' onchange="submit()"'
-    print '>'
-    if len(branchtags):
-      print '<option value="">- Branches -</option>'
-      for tag in branchtags:
-	html_option(tag, view_tag)
-    print '<option value="">- Non-branch tags -</option>'
-    for tag in nonbranchtags:
-      html_option(tag, view_tag)
-    print '</select><input type=submit value="Go"></form>'
+    data['branch_tags'] = branchtags
+    data['plain_tags'] = nonbranchtags
 
   if cfg.options.allow_tar:
     url = os.path.basename(where) + '.tar.gz?tarball=1'
     query = sticky_query(query_dict)
     if query:
       url = url + '&' + query
-    print html_link("Download tarball", url)
+    data['tarball_href'] = url
 
-  html_footer()
+  # generate the page
+  template.generate(sys.stdout, data)
 
 def fetch_log(full_name, which_rev=None):
   if which_rev:
