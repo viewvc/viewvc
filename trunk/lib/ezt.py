@@ -151,7 +151,10 @@ from types import StringType, IntType, FloatType
 #
 # This regular expression matches three alternatives:
 #   expr: DIRECTIVE | BRACKET | COMMENT
-#   DIRECTIVE: '[' ('-' | '.' | ' ' | '"' | '/' | alphanum)+ ']
+#   DIRECTIVE: '[' ITEM (whitespace ITEM)* ']
+#   ITEM: STRING | NAME
+#   STRING: '"' (not-slash-or-dquote | '\' anychar)* '"'
+#   NAME: (alphanum | '_' | '-' | '.')+
 #   BRACKET: '[[]'
 #   COMMENT: '[#' not-rbracket* ']'
 #
@@ -160,7 +163,8 @@ from types import StringType, IntType, FloatType
 # the COMMENT matches are not placed into a group, they are considered a
 # "splitting" value and simply dropped.
 #
-_re_parse = re.compile('(\[[-\w."/ ]+\])|(\[\[\])|\[#[^\]]*\]')
+_item = r'(?:"(?:[^\\"]|\\.)*"|[-\w.]+)'
+_re_parse = re.compile(r'(\[%s(?: +%s)*\])|(\[\[\])|\[#[^\]]*\]' % (_item, _item))
 
 # block commands and their argument counts
 _block_cmd_specs = { 'if-any':1, 'if-index':2, 'for':1, 'is':2 }
@@ -422,6 +426,19 @@ class NeedSequenceError(Exception):
   pass
 
 # --- standard test environment ---
+def test_parse():
+  assert _re_parse.split('[a]') == ['', '[a]', None, '']
+  assert _re_parse.split('[a] [b]') == \
+         ['', '[a]', None, ' ', '[b]', None, '']
+  assert _re_parse.split('[a c] [b]') == \
+         ['', '[a c]', None, ' ', '[b]', None, '']
+  assert _re_parse.split('x [a] y [b] z') == \
+         ['x ', '[a]', None, ' y ', '[b]', None, ' z']
+  assert _re_parse.split('[a "b" c "d"]') == \
+         ['', '[a "b" c "d"]', None, '']
+  assert _re_parse.split(r'["a \"b[foo]" c.d f]') == \
+         ['', '["a \\"b[foo]" c.d f]', None, '']
+
 def _test(argv):
   import doctest, ezt           
   verbose = "-v" in argv
