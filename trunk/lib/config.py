@@ -30,7 +30,7 @@ import fnmatch
 #
 # There are three forms of configuration:
 #
-#       1) copy viewcvs.conf.dist to viewcvs.conf and edit
+#       1) edit the viewcvs.conf created by the viewcvs-install(er)
 #       2) as (1), but delete all unchanged entries from viewcvs.conf
 #       3) do not use viewcvs.conf and just edit the defaults in this file
 #
@@ -118,7 +118,7 @@ class Config:
     self.general.default_root = "Development"
     self.general.rcs_path = ''
     self.general.mime_types_file = ''
-    self.general.address = '<a href="mailto:gstein@lyra.org">gstein@lyra.org</a>'
+    self.general.address = '<a href="mailto:viewcvs@lyra.org">viewcvs@lyra.org</a>'
     self.general.main_title = 'CVS Repository'
     self.general.forbidden = ()
 
@@ -165,7 +165,7 @@ class Config:
     self.options.hr_funout = 1
     self.options.hr_ignore_white = 1
     self.options.hr_ignore_keyword_subst = 1
-    self.options.allow_annotate = 0	### doesn't work yet!
+    self.options.allow_annotate = 1
     self.options.allow_markup = 1
     self.options.allow_compress = 1
     self.options.use_java_script = 1
