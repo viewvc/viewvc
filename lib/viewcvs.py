@@ -718,7 +718,7 @@ def markup_stream(request, fp, revision, mime_type):
     'log' : None,
     })
 
-  if cfg.options.show_log_in_markup:
+  if cfg.options.show_log_in_markup and request.roottype == 'cvs':
     show_revs, rev_map, rev_order, taginfo, rev2tag, \
                cur_branch, branch_points, branch_names = read_log(full_name)
     entry = rev_map[revision]
@@ -1736,7 +1736,8 @@ def view_log_svn(request):
     entry.prev = prev_rev
     entry.href = download_url(request, file_url, str(rev), None)
     entry.text_href = download_url(request, file_url, str(rev), 'text/plain')
-    entry.view_href = download_url(request, file_url, str(rev), 'text/plain')
+    entry.view_href = download_url(request, file_url, str(rev),
+                                   viewcvs_mime_type)
     entry.tags = [ ]
     entry.branches = [ ]
     entry.branch_point = None
@@ -1752,8 +1753,8 @@ def view_log_svn(request):
 
     # the template could do all these comparisons itself, but let's help
     # it out.
-    r1 = int(query_dict.get('r1'))
-    if r1 and r1 != rev and r1 != prev_rev:
+    r1 = query_dict.get('r1')
+    if r1 and r1 != str(rev) and r1 != str(prev_rev):
       entry.to_selected = 'yes'
     else:
       entry.to_selected = None
@@ -2032,14 +2033,19 @@ def view_checkout(request):
     mime_type = request.query_dict.get('content-type')
     if mime_type is None:
       mime_type = request.mime_type
-    http_header(mime_type)
-    print contents
-    return
-  
-  fp, revision, mime_type = process_checkout(request.full_name,
-                                             request.where,
-                                             request.query_dict,
-                                             request.mime_type)
+    revision = str(request.repos.rev)
+    import tempfile
+    tmpf = tempfile.mktemp()
+    fp = open(tmpf, "w+")
+    fp.write(contents)
+    fp.close()
+    fp = open(tmpf, "r")
+  else:
+    fp, revision, mime_type = process_checkout(request.full_name,
+                                               request.where,
+                                               request.query_dict,
+                                               request.mime_type)
+
   if mime_type == viewcvs_mime_type and is_viewable(mime_type):
     # use the "real" MIME type
     markup_stream(request, fp, revision, request.mime_type)
@@ -2548,7 +2554,8 @@ def view_diff(request):
     if cfg.options.hr_ignore_white:
       args.append('-w')
     if cfg.options.hr_ignore_keyword_subst and request.roottype == 'cvs':
-      # -kk isn't a regular diff option
+      # -kk isn't a regular diff option.  it exists only for rcsdiff
+      # (as in "-ksubst") ,so 'svn' roottypes can't use it.
       args.append('-kk')
 
   file1 = None
