@@ -48,7 +48,7 @@ import vclib.bincvs
 
 def UpdateFile(db, repository, path):
     try:
-        commit_list = cvsdb.GetUnrecordedCommitList(repository, os.path.normcase(path))
+        commit_list = cvsdb.GetUnrecordedCommitList(repository, path)
     except cvsdb.error, e:
         print '[ERROR] %s' % (e)
         return
@@ -79,17 +79,17 @@ def RecurseUpdate(db, repository, directory):
                 UpdateFile(db, repository, path)
         
 
-def CommandUpdate():
+def CommandUpdate(path):
     ## connect to the database we are updating
     db = cvsdb.ConnectDatabase()
     repository = vclib.bincvs.BinCVSRepository \
-      (None, os.path.normcase(sys.argv[2]), cvsdb.cfg.general)
+      (None, path, cvsdb.cfg.general)
     RecurseUpdate(db, repository, repository.rootpath)
 
 
 def RebuildFile(db, repository, path):
     try:
-        commit_list = cvsdb.GetCommitListFromRCSFile(repository, os.path.normcase(path))
+        commit_list = cvsdb.GetCommitListFromRCSFile(repository, path)
     except cvsdb.error, e:
         print '[ERROR] %s' % (e)
         return
@@ -120,11 +120,11 @@ def RecurseRebuild(db, repository, directory):
                 RebuildFile(db, repository, path)
         
 
-def CommandRebuild():
+def CommandRebuild(path):
     ## connect to the database we are updating
     db = cvsdb.ConnectDatabase()
     repository = vclib.bincvs.BinCVSRepository \
-      (None, os.path.normcase(sys.argv[2]), cvsdb.cfg.general)
+      (None, path, cvsdb.cfg.general)
     RecurseRebuild(db, repository, repository.rootpath)
 
 
@@ -156,9 +156,12 @@ if __name__ == '__main__':
         print 'ERROR: unknown command %s' % (command)
         usage()
 
+    # get repository path
+    path = cvsdb.CleanRepository(os.path.abspath(sys.argv[2]))
+
     ## run command
     try:
-        commandFunction()
+        commandFunction(path)
     except KeyboardInterrupt:
         print
         print '** break **'

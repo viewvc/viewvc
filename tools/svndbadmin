@@ -248,4 +248,6 @@ if __name__ == '__main__':
     else:
         rev = None
 
+    repository = cvsdb.CleanRepository(os.path.abspath(repository))
+
     svn.core.run_app(main, command, repository, rev)

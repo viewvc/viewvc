@@ -108,19 +108,6 @@ _re_revisions = re.compile(
   r"(?:$| )"                                # space or end of string
 )    
 
-def CleanDirectory(dir):
-    ## clean up the directory the following way: we don't want it
-    ## to begin with a path seperator, and we don't want it to end
-    ## with a path seperator
-    directory = os.path.normcase(dir)
-    
-    while directory[0] == os.sep:
-        directory = directory[1:]
-    while directory[-1] == os.sep:
-        directory = directory[:-1]
-    
-    return directory
-
 def HeuristicArgParse(s, repository):
   """Current versions of CVS (except for CVSNT) do not escape spaces in file
   and directory names that are passed to the loginfo handler. Since the input
@@ -153,8 +140,6 @@ def HeuristicArgParse(s, repository):
       if directory is None:
         error('Argument "%s" does not start with a valid directory' % s)
 
-      directory = CleanDirectory(directory)
-
       debug('Directory name is "%s"' % directory)
 
     else:
@@ -166,7 +151,7 @@ def HeuristicArgParse(s, repository):
       
     old_version, new_version = m.group('old', 'new')
 
-    file_data = FileData(os.path.normcase(filename), directory, old_version, new_version)
+    file_data = FileData(filename, directory, old_version, new_version)
     file_data_list.append(file_data)
     
     debug('File "%s", old revision %s, new revision %s' 
@@ -182,7 +167,7 @@ def HeuristicArgParseDirectory(s, repository):
   """Splits the first part of the argument string into a directory name
   and a file name, either of which may contain spaces. Returns the longest
   possible directory name that actually exists"""
-  print "repo =", repository
+
   parts = string.split(s, " ")
   
   for i in range(len(parts)-1, 0, -1):
@@ -215,15 +200,12 @@ def CvsNtArgParse(s, repository):
   directory, pos = NextFile(s)
   
   debug('Directory name is "%s"' % directory)
-  
-  directory = CleanDirectory(directory)
-  
+
   while 1:
     fileinfo, pos = NextFile(s, pos)
     if fileinfo is None:
       break
-    
-    print "fileinfo = '%s'" % fileinfo
+
     m = _re_cvsnt_revisions.match(fileinfo)
     if m is None:
       warning('Can\'t parse file information in "%s"' % fileinfo)
@@ -234,7 +216,7 @@ def CvsNtArgParse(s, repository):
     debug('File "%s", old revision %s, new revision %s' 
       % (filename, old_revision, new_revision))
 
-    file_data = FileData(os.path.normcase(filename), directory, old_revision, new_revision)
+    file_data = FileData(filename, directory, old_revision, new_revision)
     file_data_list.append(file_data)
 
   return file_data_list
@@ -291,15 +273,11 @@ def ProcessLoginfo(rootpath, file_data_list):
 if __name__ == '__main__':
     ## get the repository from the environment
     try:
-        repository = os.path.normcase(os.environ['CVSROOT'])
+        repository = os.environ['CVSROOT']
     except KeyError:
         error('CVSROOT not in environment')
 
     debug('Repository name is "%s"' % repository)
-
-    ## clean up the repository string: remove any trailing path seperater
-    while repository[-1] == os.sep:
-        repository = repository[:-1]
 
     ## parse arguments
     if len(sys.argv) > 1:
@@ -331,6 +309,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 3:
         error('Bad arguments')
 
+    repository = cvsdb.CleanRepository(repository)
     file_list = fun(arg, repository)
 
     if file_list is None:
