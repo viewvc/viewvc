@@ -1941,7 +1941,7 @@ def cvsgraph_image(cfg, request):
   "output the image rendered by cvsgraph"
   # this function is derived from cgi/cvsgraphmkimg.cgi
   http_header('image/png')
-  fp = popen.popen(cfg.options.cvsgraph_path, 
+  fp = popen.popen(cfg.options.cvsgraph_path + 'cvsgraph',
                                ("-c", cfg.options.cvsgraph_conf,
                                 "-r", request.cvsroot,
                                 request.where + ',v'), 'r')
@@ -1975,7 +1975,7 @@ def view_cvsgraph(cfg, request):
   #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib'
 
   # Create an image map
-  fp = popen.popen(cfg.options.cvsgraph_path, 
+  fp = popen.popen(cfg.options.cvsgraph_path + 'cvsgraph',
                    ("-i",
                     "-c", cfg.options.cvsgraph_conf,
                     "-r", request.cvsroot,

@@ -4,6 +4,7 @@ CONTENTS
   INSTALLING VIEWCVS
   UPGRADING VIEWCVS
   SQL CHECKIN DATABASE
+  ENSCRIPT CONFIGURATION
   CVSGRAPH CONFIGURATION
   IF YOU HAVE PROBLEMS...
 
@@ -179,10 +180,28 @@ there are some additional steps required to get the database working.
    it a try.
 
 
+ENSCRIPT CONFIGURATION
+----------------------
+
+Enscript is program that can colorize sourcecode of a lot of languages.
+Linux distributions like for example SuSE Linux from at least 7.0
+up to the recently released 7.3 already contain a precomiled and
+configured enscript 1.6.2 package.
+
+1) Download genscript from http://people.ssh.com/mtr/genscript/
+
+2) Configure and compile per instructions with enscript.
+   (I 've not done this, since I'm using the precompiled package
+   delivered with SuSE Linux)
+
+3) Set the 'use_enscript' option in viewcvs.conf to 1.
+
+4) That's it!
+
 CVSGRAPH CONFIGURATION
 ----------------------
 
-CvsGraph is a program that can develop a clickable, graphical tree
+CvsGraph is a program that can display a clickable, graphical tree
 of files in a CVS repository.
 
 1) Install viewcvs according to instructions in 'INSTALLING
@@ -194,21 +213,23 @@ of files in a CVS repository.
 
 3) Configure and compile per instructions with CvsGraph.  I had
    problems with 'configure' finding the gd library.  Had to create
-   a link from libgd.so to libgd.do.4.0.0. 
+   a link from libgd.so to libgd.do.4.0.0.   On Solaris you might
+   want to edit the link command line and add the option -R if 
+   you have you libraries at non-standard location.
 
-4) Place the 'cvsgraph' executable in the viewcvs installation
-   directory.
+4) Place the 'cvsgraph' executable into a directory readable by the
+   userid running the web server. (default is '/usr/local/bin' if
+   you simply type 'make install' in the cvsgraph directory).
 
-5) Copy 'cvsgraphwrapper.cgi' and 'cvsgraphmkimg.cgi' from the
-   <install-root>/cgi/ directory to your web server's cgi-bin.
-   For detailed instructions see the 'INSTALLING VIEWCVS' section.
+5) Check the setting of the 'cvsgraph_path' option in viewcvs.conf:
+   /usr/local/bin/ is most often NOT contained in $PATH of the
+   webserver process (e.g. Apache), so you will have to edit this.  
+   Set the 'use_cvsgraph' option in viewcvs.conf to 1.
 
-6) Set the 'use_cvsgraph' option in viewcvs.conf.
+6) That's it!
 
-7) That's it!
-
-8) There is a file in <install-root> called cvsgraph.conf that
-   you can edit if desired to set color and font characteristics.
+7) There is a file in <install-root> called cvsgraph.conf that
+   you may want to edit if desired to set color and font characteristics.
    See the cvsgraph.conf documentation.  No edits are required in
    cvsgraph.conf for operation with viewcvs.
 

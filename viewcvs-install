@@ -62,7 +62,7 @@ FILE_INFO_LIST = [
     ("cgi/viewcvs.cgi", "cgi/viewcvs.cgi", 0755, 1, 0, 0),
     ("cgi/query.cgi", "cgi/query.cgi", 0755, 1, 0, 0),
 
-    ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 0,
+    ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 1,
 	     """Note: If you are upgrading from viewcvs-0.7 or earlier: 
 The section [text] has been removed from viewcvs.conf.  The functionality
 went into the new files in subdirectory templates.""", 0),
@@ -128,6 +128,7 @@ def SetPythonPaths(contents):
     if contents[:2] == '#!':
         shbang = '#!' + sys.executable
         contents = re.sub('^#![^\n]*', shbang, contents)
+    contents = re.sub("<VIEWCVS_INSTALL_DIRECTORY>", ROOT_DIR, contents)
     contents = SetOnePath(contents, 'LIBRARY_DIR', 'lib')
     contents = SetOnePath(contents, 'CONF_PATHNAME', 'viewcvs.conf')
     return contents
