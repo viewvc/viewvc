@@ -1334,8 +1334,7 @@ def view_directory(request):
       ### format this info however it likes
       row.attic = attic
 
-      row.rev_href = download_url(request, file_url, info[0], None) \
-                     + request.amp_query
+      row.rev_href = file_url + '?rev=' + row.rev + request.amp_query
 
       row.time = html_time(info[1])
 
