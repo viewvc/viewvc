@@ -118,6 +118,8 @@ went into the new files in subdirectory templates.""", 0),
 
     ("website/images/logo.png", "doc/images/logo.png", 0644, 0, 0, 0),
     ("website/images/chalk.jpg", "doc/images/chalk.jpg", 0644, 0, 0, 0),
+    ("website/images/down.png", "doc/images/down.png", 0644, 0, 0, 0),
+    ("website/images/up.png", "doc/images/up.png", 0644, 0, 0, 0),
     ("website/images/cvsgraph_16x16.png", "doc/images/cvsgraph_16x16.png", 0644, 0, 0, 0),
     ("website/images/cvsgraph_32x32.png", "doc/images/cvsgraph_32x32.png", 0644, 0, 0, 0),
     ]
