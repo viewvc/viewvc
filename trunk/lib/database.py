@@ -251,7 +251,14 @@ class CheckinDatabase:
 
     def AddCommit(self, commit):
         dbType = commit.GetTypeString()
-        dbCI_When = DBI.TimestampFromTicks(commit.GetTime())
+
+        ## MORE TIME HELL: the MySQLdb module doesn't construct times
+        ## correctly when created with TimestampFromTicks -- it doesn't
+        ## account for daylight savings time, so we use Python's time
+        ## module to do the conversion
+        temp = time.localtime(commit.GetTime())
+        dbCI_When = DBI.Timestamp(temp)
+
         dbWhoID = self.GetAuthorID(commit.GetAuthor())
         dbRepositoryID = self.GetRepositoryID(commit.GetRepository())
         dbDirectoryID = self.GetDirectoryID(commit.GetDirectory())
