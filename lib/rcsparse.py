@@ -1,6 +1,5 @@
 #
 # Copyright (C) 2000 The ViewCVS Group. All Rights Reserved.
-# Copyright (C) 2000 Curt Hagenlocher <curt@hagenlocher.org>
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewCVS
@@ -16,12 +15,8 @@
 # Information is available at:
 #    http://viewcvs.sourceforge.net/
 #
-# This file was originally based on the cvsblame.pl portion of the Bonsai
-# CVS tool, developed by Steve Lamm for Netscape Communications Corporation.
-# More information about Bonsai can be found at
-#    http://www.mozilla.org/bonsai.html
-#
-# cvsblame.pl, in turn, was based on Scott Furman's cvsblame script
+# This file was originally based on portions of the blame.py script by
+# Curt Hagenlocher.
 #
 # -----------------------------------------------------------------------
 
