@@ -257,6 +257,7 @@ class CheckinDatabase:
         ## account for daylight savings time, so we use Python's time
         ## module to do the conversion
         temp = time.localtime(commit.GetTime())
+
         dbCI_When = DBI.Timestamp(
             temp[0], temp[1], temp[2], temp[3], temp[4], temp[5])
         
