@@ -158,12 +158,10 @@ href="[docroot]/help_logtable.html">ViewCVS and CVS Help</a></b></h3></td>
     [# Time column]
     <td>
       [is roottype "svn"]
-        [if-any entries.action]
-          [is entries.action "M"]Modified[else]
-          [is entries.action "A"]Added[else]
-          [is entries.action "D"]Deleted[else]
-          [is entries.action "R"]Replaced[end][end][end][end]
-        [end]
+        [is entries.action "modified"]Modified[else]
+        [is entries.action "added"]Added[else]
+        [is entries.action "deleted"]Deleted[else]
+        [is entries.action "replaced"]Replaced[end][end][end][end]
       [end]
       [entries.ago] ago<br><i>[entries.date_str]</i>
       [is roottype "cvs"]
