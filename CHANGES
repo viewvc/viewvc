@@ -1,3 +1,27 @@
+Version 0.9 (released 23-Dec-2001)
+
+  * create templates for the rest of the pages: markup pages, graphs,
+    annotation, and diff.
+  * add multiple language support and dynamic selection based on the
+    Accept-Language request header
+  * add support for key/value files to provide a way for user-defined
+    variables within templates
+  * add optional regex searching for file contents
+  * add new templates for the navigation header and the footer
+  * EZT changes:
+    - add formatting into print directives
+    - add parameters to [include] directives
+    - relax what can go in double quotes
+    - [include] directives are now relative to the current template
+    - throw an exception for unclosed blocks
+  * changes to standalone.py: add flag for regex search
+  * add more help pages
+  * change installer to optionally show diffs
+  * fix to log.ezt and log_table.ezt to select "Side by Side" properly
+  * create dir_alternate.ezt for the flipped rev/name links
+  * various UI tweaks for the directory pages
+
+
 Version 0.8 (released 10-Dec-2001)
 
   * add EZT templating mechanism for generating output pages
