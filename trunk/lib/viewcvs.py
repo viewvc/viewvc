@@ -368,13 +368,6 @@ def download_url(request, url, revision, mime_type):
     return url + '&content-type=' + mime_type
   return url
 
-def plural(num, text):
-  if num == 1:
-    return '1 ' + text
-  if num:
-    return '%d %ss' % (num, text)
-  return ''
-
 _time_desc = {
          1 : 'second',
         60 : 'minute',
@@ -384,10 +377,36 @@ _time_desc = {
    2628000 : 'month',
   31536000 : 'year',
   }
-def html_time(secs, extended=0):
+
+def get_time_text(request, interval, num):
+  "Get some time text, possibly internationalized."
+  ### some languages have even harder pluralization rules. we'll have to
+  ### deal with those on demand
+  if num == 0:
+    return ''
+  text = _time_desc[interval]
+  if num == 1:
+    attr = text + '_singular'
+    fmt = '%d ' + text
+  else:
+    attr = text + '_plural'
+    fmt = '%d ' + text + 's'
+  try:
+    fmt = getattr(request.kv.i18n.time, attr)
+  except AttributeError:
+    pass
+  return fmt % num
+
+def little_time(request):
+  try:
+    return request.kv.i18n.time.little_time
+  except AttributeError:
+    return 'very little time'
+
+def html_time(request, secs, extended=0):
   secs = long(time.time()) - secs
   if secs < 2:
-    return 'very little time'
+    return little_time(request)
   breaks = _time_desc.keys()
   breaks.sort()
   i = 0
@@ -396,13 +415,14 @@ def html_time(secs, extended=0):
       break
     i = i + 1
   value = breaks[i - 1]
-  s = plural(secs / value, _time_desc[value])
+  s = get_time_text(request, value, secs / value)
 
   if extended and i > 1:
     secs = secs % value
     value = breaks[i - 2]
-    ext = plural(secs / value, _time_desc[value])
+    ext = get_time_text(request, value, secs / value)
     if ext:
+      ### this is not i18n compatible. pass on it for now
       s = s + ', ' + ext
   return s
 
@@ -589,7 +609,7 @@ def markup_stream(request, fp, revision, mime_type):
 
     data.update({
       'utc_date' : time.asctime(time.gmtime(entry.date)),
-      'ago' : html_time(entry.date, 1),
+      'ago' : html_time(request, entry.date, 1),
       'author' : entry.author,
       'branches' : None,
       'tags' : None,
@@ -1290,7 +1310,7 @@ def view_directory(request):
         unreadable = 1
       elif info:
         row.cvs = 'data'
-        row.time = html_time(info[1])
+        row.time = html_time(request, info[1])
         row.author = info[3]
 
         if cfg.options.use_cvsgraph:
@@ -1345,7 +1365,7 @@ def view_directory(request):
 
       row.rev_href = file_url + '?rev=' + row.rev + request.amp_query
 
-      row.time = html_time(info[1])
+      row.time = html_time(request, info[1])
 
       if cfg.options.use_cvsgraph:
          row.graph_href = file_url + '?graph=' + row.rev + request.amp_query
@@ -1591,7 +1611,7 @@ def augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
   entry.vendor_branch = ezt.boolean(_re_is_vendor_branch.match(rev))
 
   entry.utc_date = time.asctime(time.gmtime(entry.date))
-  entry.ago = html_time(entry.date, 1)
+  entry.ago = html_time(request, entry.date, 1)
 
   entry.branches = prep_tags(query_dict, file_url, rev2tag.get(branch, [ ]))
   entry.tags = prep_tags(query_dict, file_url, rev2tag.get(rev, [ ]))
