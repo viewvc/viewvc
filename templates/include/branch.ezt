@@ -6,13 +6,13 @@
     <a href="[head_href]"><b>HEAD</b></a>
     /
     (<a href="[head_abs_href]" target="cvs_checkout"
-        onClick="window.open('about:blank', 'cvs_checkout',
-        'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]')"
+        onclick="window.open('[head_abs_href]', 'cvs_checkout',
+        'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]');return false"
         ><b>download</b></a>)
   [else]
     <a href="[head_href]" target="cvs_checkout"
-        onClick="window.open('about:blank', 'cvs_checkout',
-        'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]')"
+        onclick="window.open('[head_href]', 'cvs_checkout',
+        'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]');return false"
         ><b>HEAD</b></a>
   [end]
 [else]

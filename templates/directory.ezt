@@ -239,8 +239,8 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
 [# to display the revision in a separate window, you could use:
 
    <a href="{rows.rev_href}" target="cvs_checkout"
-      onClick="window.open('{rows.rev_href}', 'cvs_checkout',
-                           'resizeable=1,scrollbars=1')"><b>{rows.rev}</b></a>
+      onclick="window.open('{rows.rev_href}', 'cvs_checkout',
+                           'resizeable=1,scrollbars=1');return false"><b>{rows.rev}</b></a>
 
    (substitute brackets for the braces)
 ]
