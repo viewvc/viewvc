@@ -12,21 +12,15 @@
 #   gstein@lyra.org, http://viewcvs.sourceforge.net/
 #
 # -----------------------------------------------------------------------
-#
-# Version Control lib is an abstract API to access versionning systems such as CVS.
-#
-# -----------------------------------------------------------------------
-"""
-	Version Control lib is an abstract API to access versionning systems such as CVS.
 
-Developers'note:
-
-The only class you need to derive to write a new driver for Versionlib is the repository class.
-
+"""Version Control lib is an abstract API to access versioning systems
+such as CVS.
 """
 
+# Developers' note:
+# The only class you need to derive to write a new driver for Versionlib
+# is the Repository class.
 
-import exceptions
 
 # ======================================================================
 
@@ -34,21 +28,22 @@ class Repository:
   """
   Abstract class representing a repository.
   
-  
-  Developers: This should be the only class to be derived to obtain an actual implementation
-  of a versionning system. 
+  Developers: This should be the only class to be derived to obtain an
+  actual implementation of a versioning system.
   """
   # Public methods ( accessible from the upper layers )
   def getfile(self,path):
     """
-    return the versionned file at <path> ( instance of Versfile )
+    return the versioned file at <path> ( instance of Versfile )
     Path should be of the form:
     ["Subdir1","Subdir2","filename"]
     """
+
   def getfiles(self,path):
     """
-    return a dictionnary of versionned files. (instance of Versfile )
+    return a dictionary of versioned files. (instance of Versfile )
     """
+
   def getsubdirs(self,path):
     """
     return the list of the subdirectories in <path> as a list of strings
@@ -56,8 +51,6 @@ class Repository:
   
   # Private methods ( accessed by Versfile and Revision )
   
-  def __init__(self):
-    pass  
   def _getvf_info(self,target, path):
     """
     This method will had to <target> (expect to be an instance of Versfile)
@@ -71,51 +64,59 @@ class Repository:
     
     Developers: method to be overloaded.
     """
+
   def _getvf_tree(self,versfile):
     """
-    should return a dictionnary of Revisions
+    should return a dictionary of Revisions
     Developers: method to be overloaded.
     """
+
   def _getvf_properties(self,target,path,revisionnumber):
     """
-    Add/update into target's attributes (expected to be an instance of Revision) a certain number of attributes:
+    Add/update into target's attributes (expected to be an instance of
+    Revision) a certain number of attributes:
     rev
     date
     author
     state
     log
-    previous revisionnumber
-    branches ( a list of revisionnumbers )
+    previous revision number
+    branches ( a list of revision numbers )
     changes ( string of the form: e.g. "+1 -0 lines" )
     tags
     ... ( there can be other stuff here)
     
     Developers: in the cvs implementation, the method will never be called.
-    There is no point in developping this method as  _getvf_tree already gets the properties.
+    There is no point in developping this method as  _getvf_tree already
+    gets the properties.
     """
+
   def _getvf_co(self, target, path):
     """
     should return a file object representing the checked out revision.
-    Notice that _getvf_co can also adds the properties in <target> the way _getvf_properties does.  
-    Developers: method to be overloaded.
-    
-    """
-# ======================================================================
+    Notice that _getvf_co can also adds the properties in <target> the
+    way _getvf_properties does.  
 
+    Developers: method to be overloaded.
+    """
+
+
+# ======================================================================
     
 class Versfile:
   """
-  class representing a versionned file.
+  class representing a versioned file.
   
   Developers: You do not need to derive this class.
   """
   names=("head","age","author","log","branch","tags")
+
   def __init__(self,repository, path, tree=None):
     """
     Called by Repository.getfile
     """
     if not isinstance(repository,Repository):
-      raise exceptions.TypeError(repository)
+      raise TypeError(repository)
     self.repository=repository
     # path is assumed to be of correct type.
     # TODO: do the actual checking.
@@ -132,11 +133,12 @@ class Versfile:
     if name in self.names:
       self.repository._getvf_info(self,self.path)
       return self.__dict__[name]
-    raise exceptions.AttributeError()
+    raise AttributeError()
 
   # private methods ( access from Revision's methods )
   def _getvf_properties(self, target, revisionnumber):
     return self.repository._getvf_properties(target, self.path,revisionnumber)
+
   def _getvf_cofile(self,target):
     return self.repository._getvf_cofile(target, self.path)
   
@@ -144,14 +146,14 @@ class Versfile:
 
 class Revision:
   """
-  This class represents a revision of a versionned file.
+  This class represents a revision of a versioned file.
   
   Developers: You do not need to derive this class.
   """
   names=("date","author","state","log","previous","branches","changes","tags")
   def __init__(self,versfile,number):
     if not isinstance(versfile,Versfile):
-      raise exceptions.TypeError(versfile)	
+      raise TypeError(versfile)	
     self.versfile=versfile
     self.rev=number
     
@@ -161,7 +163,7 @@ class Revision:
     if name in self.names:
       self.versfile._getvf_properties(self,self.rev)
       return self.__dict__[name]
-    raise exceptions.AttributeError()    
+    raise AttributeError()    
   
   def checkout(self):
     return self.versfile._getvf_co(self)
@@ -169,6 +171,7 @@ class Revision:
   # Here are the shortcuts methods.
   def getprevious(self):
     return self.versfile.tree[self.previous]
+
   def getbranches(self):
     res=[]
     for i in self.branches:
