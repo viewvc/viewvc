@@ -771,15 +771,23 @@ def markup_stream_python(fp):
     sys.stdout.write(html)
 
 def markup_stream_php(fp):
+  if not cfg.options.use_php:
+    return markup_stream_default(fp)
+
   sys.stdout.flush()
 
-  os.putenv("SERVER_SOFTWARE", "")
-  os.putenv("SERVER_NAME", "")
-  os.putenv("GATEWAY_INTERFACE", "")
-  os.putenv("REQUEST_METHOD", "")
-  php = popen.pipe_cmds([["php","-q"]])
+  # clearing the following environment variables prevents a 
+  # "No input file specified" error from the php cgi executable
+  # when ViewCVS is running under a cgi environment. when the
+  # php cli executable is used they can be left alone
+  #
+  #os.putenv("GATEWAY_INTERFACE", "")
+  #os.putenv("PATH_TRANSLATED", "")
+  #os.putenv("REQUEST_METHOD", "")
+  #os.putenv("SERVER_NAME", "")
+  #os.putenv("SERVER_SOFTWARE", "")
 
-  php.write("<?\n$file = '';\n")
+  php = popen.pipe_cmds([[cfg.options.php_exe_path, "-q", "-s", "-n"]])
 
   while 1:
     chunk = fp.read(CHUNK_SIZE)
@@ -788,11 +796,8 @@ def markup_stream_php(fp):
         time.sleep(1)
         continue
       break
-    php.write("$file .= '")
-    php.write(string.replace(string.replace(chunk, "\\", "\\\\"),"'","\\'"))
-    php.write("';\n")
+    php.write(chunk)
 
-  php.write("\n\nhighlight_string($file);\n?>")
   php.close()
 
 def markup_stream_enscript(lang, fp):
@@ -831,8 +836,8 @@ def markup_stream_enscript(lang, fp):
 
 markup_streamers = {
 #  '.py' : markup_stream_python,
-#  '.php' : markup_stream_php,
-#  '.inc' : markup_stream_php,
+  '.php' : markup_stream_php,
+  '.inc' : markup_stream_php,
   }
 
 ### this sucks... we have to duplicate the extensions defined by enscript

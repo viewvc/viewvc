@@ -435,6 +435,13 @@ use_enscript = 0
 enscript_path =
 # enscript_path = /usr/bin/
 
+# use php to colorize .php and .inc files?
+use_php = 0
+
+# path to php executable
+php_exe_path = php
+# php_exe_path = /usr/local/bin/php
+
 #
 # ViewCVS has its own set of mappings from filename extensions and filenames
 # to languages. If the language is not supported by enscript, then it can
