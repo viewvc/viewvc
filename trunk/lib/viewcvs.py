@@ -491,11 +491,23 @@ class Request:
     return ret
 
 def _normalize_path(path):
-  if not path or not len(path):
-    return path
-  is_abs = path[0] == '/'
-  parts = filter(None, string.split(os.path.normpath(path), '/'))
-  path = (is_abs and '/' or '') + string.join(parts, '/')
+  """Collapse leading slashes in the script name
+
+  You only get multiple slashes in the script name when users accidentally
+  type urls like http://abc.com//viewcvs.cgi/, but we correct for it
+  because we output the script name in links and web browsers
+  interpret //viewcvs.cgi/ as http://viewcvs.cgi/
+  """
+  
+  i = 0
+  for c in path:
+    if c != '/':
+      break
+    i = i + 1
+
+  if i:
+    return path[i-1:]
+
   return path
 
 def _validate_param(name, value):
