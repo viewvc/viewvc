@@ -57,7 +57,7 @@ else:
     if match:
       return tuple(map(int, match.groups())) + (0, 1, 0)
     else:
-      return None
+      raise ValueError('date is not in cvs format')
 
 #
 # os.makedirs() is new to Python 1.5.2
