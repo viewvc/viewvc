@@ -16,7 +16,7 @@ and the Python for Windows Extensions which are at
   
 ViewCVS also requires that the CVSNT client (cvs.exe) OR the RCS tools (rlog.exe, rcsdiff.exe, and co.exe) be installed on your computer. CVSNT is available from
 
-  http://www.cvsnt.org/
+  http://www.cvsnt.org/wiki
   
 and RCS can be obtained from:
 
@@ -228,6 +228,12 @@ TROUBLESHOOTING
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 KNOWN ISSUES
+
+- If you see ViewCVS errors like 
+
+    Error parsing rlog output. Expected RCS file "c:\cvsroot\dir\file,v", found "file,v"
+
+  it's because you are using an old version of CVSNT. Upgrade to version 2.0.12 or later and this problem will go away.
 
 - If you see ViewCVS errors like
 
