@@ -2098,39 +2098,42 @@ def search_files(repos, path_parts, files, search_re):
 
 
 def view_doc(request):
-  """Serve ViewCVS help pages locally.
+  """Serve ViewCVS static content locally.
 
   Using this avoids the need for modifying the setup of the web server.
   """
-  help_page = request.where
+  document = request.where
   doc_directory = os.path.join(g_install_dir, "templates", "docroot")
-  filename = os.path.join(doc_directory, help_page)
+  filename = os.path.join(doc_directory, document)
 
+  # Stat the file to get content length and last-modified date.
   try:
     info = os.stat(filename)
   except OSError, v:
-    raise debug.ViewCVSException('Help file "%s" not available\n(%s)'
-                                 % (help_page, str(v)), '404 Not Found')
+    raise debug.ViewCVSException('Static file "%s" not available\n(%s)'
+                                 % (document, str(v)), '404 Not Found')
   content_length = str(info[stat.ST_SIZE])
   last_modified = info[stat.ST_MTIME]
-  # content_length + mtime makes a pretty good etag
-  etag = "%s-%s" % (content_length, last_modified)
-  if check_freshness(request, last_modified, etag):
+
+  # content_length + mtime makes a pretty good etag.
+  if check_freshness(request, last_modified,
+                     "%s-%s" % (content_length, last_modified)):
     return
-  request.server.addheader('Content-Length', content_length)
-  
+
   try:
     fp = open(filename, "rb")
   except IOError, v:
-    raise debug.ViewCVSException('Help file "%s" not available\n(%s)'
-                                 % (help_page, str(v)), '404 Not Found')
-  if help_page[-3:] == 'png':
+    raise debug.ViewCVSException('Static file "%s" not available\n(%s)'
+                                 % (document, str(v)), '404 Not Found')
+
+  request.server.addheader('Content-Length', content_length)
+  if document[-3:] == 'png':
     request.server.header('image/png')
-  elif help_page[-3:] == 'jpg':
+  elif document[-3:] == 'jpg':
     request.server.header('image/jpeg')
-  elif help_page[-3:] == 'gif':
+  elif document[-3:] == 'gif':
     request.server.header('image/gif')
-  elif help_page[-3:] == 'css':
+  elif document[-3:] == 'css':
     request.server.header('text/css')
   else: # assume HTML:
     request.server.header()
