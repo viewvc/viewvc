@@ -418,13 +418,20 @@ def fetch_log(rcs_paths, full_name, which_rev=None):
   return head, branch, taginfo, revs
 
 
+### suck up other warnings in _re_co_warning?
+_re_co_filename = re.compile(r'^(.*),v\s+-->\s+standard output\s*\n$')
+_re_co_warning = re.compile(r'^.*co: .*,v: warning: Unknown phrases like .*\n$')
+_re_co_revision = re.compile(r'^revision\s+([\d\.]+)\s*\n$')
+
+
 class BinCVSRepository(vclib.Repository):
-  def __init__(self, name, rootpath):
+  def __init__(self, name, rootpath, rcs_paths):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
 
     self.name = name
     self.rootpath = rootpath
+    self.rcs_paths = rcs_paths
 
   def getitem(self, path_parts):
     basepath = self._getpath(path_parts)
@@ -442,6 +449,77 @@ class BinCVSRepository(vclib.Repository):
     if os.path.isfile(self._getrcsname(basepath)):
       return vclib.FILE
     raise vclib.ItemNotFound(path_parts)
+
+  def openfile(self, path_parts, rev=None):
+    if not rev or rev == 'HEAD':
+      rev_flag = '-p'
+    else:
+      rev_flag = '-p' + rev
+  
+    full_name = self._getpath(path_parts)
+  
+    fp = rcs_popen(self.rcs_paths, 'co', (rev_flag, full_name), 'rb')
+  
+    # header from co:
+    #
+    #/home/cvsroot/mod_dav/dav_shared_stub.c,v  -->  standard output
+    #revision 1.1
+    #
+    # Sometimes, the following line might occur at line 2:
+    #co: INSTALL,v: warning: Unknown phrases like `permissions ...;' are present.
+  
+    # parse the output header
+    filename = revision = None
+  
+    line = fp.readline()
+    if not line:
+      raise vclib.Error('Missing output from co.<br>'
+                        'fname="%s". url="%s"' % (filename, where))
+  
+    match = _re_co_filename.match(line)
+    if not match:
+      raise debug.ViewcvsException(
+        'First line of co output is not the filename.<br>'
+        'Line was: %s<br>'
+        'fname="%s". url="%s"' % (line, filename, where))
+    filename = match.group(1)
+  
+    line = fp.readline()
+    if not line:
+      raise vclib.Error(
+        'Missing second line of output from co.<br>'
+        'fname="%s". url="%s"' % (filename, where))
+    match = _re_co_revision.match(line)
+    if not match:
+      match = _re_co_warning.match(line)
+      if not match:
+        raise vclib.Error(
+          'Second line of co output is not the revision.<br>'
+          'Line was: %s<br>'
+          'fname="%s". url="%s"' % (line, filename, where))
+  
+      # second line was a warning. ignore it and move along.
+      line = fp.readline()
+      if not line:
+        raise vclib.Error(
+          'Missing third line of output from co (after a warning).<br>'
+          'fname="%s". url="%s"' % (filename, where))
+      match = _re_co_revision.match(line)
+      if not match:
+        raise vclib.Error(
+          'Third line of co output is not the revision.<br>'
+          'Line was: %s<br>'
+          'fname="%s". url="%s"' % (line, filename, where))
+  
+    # one of the above cases matches the revision. grab it.
+    revision = match.group(1)
+  
+    if filename != full_name:
+      raise vclib.Error(
+        'The filename from co did not match. Found "%s". Wanted "%s"<br>'
+        'url="%s"' % (filename, full_name, where))
+  
+    return fp, revision
 
   def _getpath(self, path_parts):
     return apply(os.path.join, (self.rootpath,) + tuple(path_parts))
