@@ -103,12 +103,14 @@ a:active  { color: #0000ff; }
 /*** Annotate Styles ***/
 .vc_blame_line, .vc_blame_author, .vc_blame_rev {
   font-family: monospace;
+  font-size: smaller;
   text-align: right;
   white-space: nowrap;
-  padding-right: 0.5em;
+  padding-right: 1em;
 }
 .vc_blame_text {
   font-family: monospace;
+  font-size: smaller;
   text-align: left;
   white-space: pre;
   width: 100%;
