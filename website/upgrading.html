@@ -41,8 +41,8 @@
     </p>
 
     <ul>
-      <li><a href="#from7">Upgrading from ViewCVS 0.7 or earlier</a></li>
       <li><a href="#from8">Upgrading from ViewCVS 0.8</a></li>
+      <li><a href="#from7">Upgrading from ViewCVS 0.7 or earlier</a></li>
     </ul>
 
     <hr>
@@ -191,14 +191,27 @@
 		the revision in front.
 		<p></p>
 	      </dd>
+
+	      <dt><code>directory.ezt</code>:
+		<var>rows.attic</var>
+		and <var>rows.hide_attic_href</var></dt>
+	      <dd>
+		These variable were used to manage the hide and
+		showing of the contents of the <code>Attic/</code>
+		subdirectory. Several new variables were introduced
+		which can be used to replace this functionality:
+		<var>show_attic_href</var>,
+		<var>hide_attic_href</var>, and <var>rows.state</var>.
+		<p></p>
+	      </dd>
 	    </dl>
 	  </blockquote>
     <hr>
 
     <h2><a name="from7">Upgrading from ViewCVS 0.7 or earlier</a></h2>
     <p>
-      This section discusses how to upgrade ViewCVS 0.7 or earlier to 
-      0.8 or a later version of the software.
+      This section discusses how to upgrade ViewCVS 0.7, or earlier,
+      to 0.8 or a later version of the software.
     </p>
     <p>
       <strong>NOTE:</strong> these changes will bring you up to the
@@ -337,7 +350,7 @@
   <address><a href="mailto:viewcvs@lyra.org">ViewCVS Users Group</a></address>
 <!-- Created: Mon Sep 24 04:23:53 PDT 2001 -->
 <!-- hhmts start -->
-Last modified: Fri Dec 21 02:55:13 PST 2001
+Last modified: Sat Dec 22 20:05:14 PST 2001
 <!-- hhmts end -->
 </body>
 </html>

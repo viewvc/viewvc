@@ -261,9 +261,9 @@ log = templates/log.ezt
 #   log    Sort by log message
 sort_by = file
 
-# hide_attic: Hide or show files in Attic
-#   1      Hide files in Attic
-#   0      Show files in Attic
+# hide_attic: Hide or show the contents of the Attic subdirectory
+#   1      Hide dead files inside Attic subdir
+#   0      Show the files which are inside the Attic subdir
 hide_attic = 1
 
 # log_sort: Sort order for CVS logs

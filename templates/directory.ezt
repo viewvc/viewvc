@@ -128,8 +128,8 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
         <img src="/icons/small/dir.gif" alt="(dir)" border=0 width=16 height=16>
         [rows.name]
         </a>
-        [if-any rows.hide_attic_href]
-          &nbsp; <a href="[rows.hide_attic_href]">[[]Don't hide]</a>
+        [is rows.name "Attic/"]
+          &nbsp; <a href="./[show_attic_href]#dirlist">[[]show contents]</a>
         [end]
       </td>
       [is rows.cvs "error"]
@@ -169,7 +169,10 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
                  width=16 height=16>
             [rows.name]
             </a>
-            [rows.attic]
+            [is rows.state "dead"]
+              [# don't let this phrase/link be wrapped ]
+              [if-any view_tag](not&nbsp;exist)[else](in&nbsp;the&nbsp;Attic)[end]&nbsp;<a href="./[hide_attic_href]#dirlist">[[]hide]</a>
+            [end]
         </td>
         [if-any rows.graph_href]
           <td width="1%"><a href="[rows.graph_href]"><img
