@@ -2006,7 +2006,7 @@ def view_cvsgraph(cfg, request):
                     "-c", cfg.options.cvsgraph_conf,
                     "-r", request.cvsroot,
                     "-6", request.amp_query, 
-                    "-7", '?'+request.amp_query[1:], # replace '&' with '?'
+                    "-7", request.qmark_query,
                     request.where + ',v'), 'r')
   copy_stream(fp)
   fp.close()
@@ -2031,7 +2031,7 @@ def view_helppage(request):
     doc_directory = os.path.join(viewcvs_install_directory, "doc")
   else:
     # aid testing from CVS working copy:
-    doc_directory = os.path.join(viewcvs_install_directory, "website")
+    doc_directory = os.path.join(os.pardir, "website")
   try:
     fp = open(os.path.join(doc_directory, help_page), "rt")
     if help_page[-3:] == 'png':

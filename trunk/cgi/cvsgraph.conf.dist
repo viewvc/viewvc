@@ -34,8 +34,8 @@
 #	%0..%9 = command-line argument -0 .. -9
 #   ViewCVS currently uses the following two command-line arguments to
 #   pass URL information to cvsgraph:
-#       -6 request.ampquery
-#       -7 request.ampquery but with the leading amp ('&') replaced by '?'
+#       -6 request.amp_query (the query preceeded with '&')
+#       -7 request.qmark_query (the query preceed with '?')
 #
 # - Numbers may be entered as octal, decimal or
 #   hex as in 0117, 79 and 0x4f respectively.
@@ -184,7 +184,7 @@ map_branch_alt	= "alt=\"%0 %t (%B)\"";
 map_rev_href	= "href=\"%m%F?rev=%R&content-type=text/vnd.viewcvs-markup%6\"";
 # 2. This alternative setting will take you to the anchor representing this
 #    revision on a ViewCVS generated Log page for that file:
-# map_rev_href   = "href=\"%m%F#rev%R%7\"";
+# map_rev_href   = "href=\"%m%F%7#rev%R\"";
 #
 map_rev_alt	= "alt=\"%1 %t (%R)\"";
 map_diff_href	= "href=\"%m%F.diff?r1=%P&r2=%R%8%6\"";
