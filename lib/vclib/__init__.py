@@ -248,3 +248,8 @@ class ItemNotFound(Error):
     # use '/' rather than os.sep because this is for user consumption, and
     # it was defined using URL separators
     Error.__init__(self, string.join(path_parts, '/'))
+class InvalidRevision(Error):
+  def __init__(self, revision):
+    if revision is None:
+      revision = "(None)"
+    Error.__init__(self, "Invalid revision " + str(revision))
