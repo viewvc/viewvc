@@ -16,6 +16,9 @@
       [jump_rev_hidden_values]
       <input type="text" name="rev" value="[jump_rev]">
       <input type=submit value="Go">
+      [if-any prev_href]
+        <a href="[prev_href]"><img src="[icons]/back.gif" border=0 alt="Previous"></a>[end]
+      [if-any next_href] <a href="[next_href]"><img src="[icons]/forward.gif" border=0 alt="Next"></a>[end]
       </form>
     </td>
   </tr>
