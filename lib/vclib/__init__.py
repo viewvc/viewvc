@@ -68,10 +68,10 @@ class Repository:
 
     New properties will be set on all of the DirEntry objects in the entries
     list. At the very least, a "rev" property will be set to a revision
-    number or None if the entry doesn't have a number. And a "log_error"
-    boolean property will be set indicating whether the entry's log
-    information was retrievable. Other properties that may be set include
-    "date", "author", and "log".
+    number or None if the entry doesn't have a number. And a "log_errors"
+    list property will be set holding a list of error messages pertaining
+    to the file. Other properties that may be set include "date", "author",
+    and "log".
 
     The path is specified as a list of components, relative to the root
     of the repository. e.g. ["subdir1", "subdir2", "filename"]

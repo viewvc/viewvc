@@ -105,7 +105,7 @@ class BinCVSRepository(CVSRepository):
       # that precedes it and check out that revision instead
       args = self._getpath(path_parts) + ',v',
       fp = self.rcs_popen('rlog', args, 'rt', 0)
-      filename, default_branch, tags, eof = _parse_log_header(fp)
+      filename, default_branch, tags, msg, eof = _parse_log_header(fp)
 
       # Retrieve revision objects
       revs = []
@@ -181,7 +181,7 @@ class BinCVSRepository(CVSRepository):
     # Invoke rlog
     args = self._getpath(path_parts) + ',v',
     fp = self.rcs_popen('rlog', args, 'rt', 0)
-    filename, default_branch, tags, eof = _parse_log_header(fp)
+    filename, default_branch, tags, msg, eof = _parse_log_header(fp)
 
     # Retrieve revision objects
     revs = []
@@ -493,7 +493,29 @@ _EOF_FILE = 'end of file entries'       # no more entries for this RCS file
 _EOF_LOG = 'end of log'                 # hit the true EOF on the pipe
 _EOF_ERROR = 'error message found'      # rlog issued an error
 
-_re_lineno = re.compile(r'\:\d+$')
+# rlog error messages look like
+#
+#   rlog: filename/goes/here,v: error message
+#   rlog: filename/goes/here,v:123: error message
+#
+# so we should be able to match them with a regex like
+#
+#   ^rlog\: (.*)(?:\:\d+)?\: (.*)$
+#
+# But for some reason the windows version of rlog omits the "rlog: " prefix
+# for the first error message when the standard error stream has been 
+# redirected to a file or pipe. (the prefix is present in subsequent errors
+# and when rlog is run from the console). So the expression below is more
+# complicated
+_re_log_error = re.compile(r'^(?:rlog\: )*(.*,v)(?:\:\d+)?\: (.*)$')
+
+# CVSNT error messages look like:
+# cvs rcsfile: `C:/path/to/file,v' does not appear to be a valid rcs file
+# cvs [rcsfile aborted]: C:/path/to/file,v: No such file or directory
+# cvs [rcsfile aborted]: cannot open C:/path/to/file,v: Permission denied
+_re_cvsnt_error = re.compile(r'^(?:cvs rcsfile\: |cvs \[rcsfile aborted\]: )'
+                             r'(?:\`(.*,v)\' |cannot open (.*,v)\: |(.*,v)\: |)'
+                             r'(.*)$')
 
 def _parse_log_header(fp):
   """Parse and RCS/CVS log header.
@@ -507,9 +529,10 @@ def _parse_log_header(fp):
   If there is no revision information (e.g. the "-h" switch was passed to
   rlog), then fp will consumed the file separator line on exit.
 
-  Returns: filename, default branch, tag dictionary, and eof flag
+  Returns: filename, default branch, tag dictionary, rlog error message, 
+  and eof flag
   """
-  filename = head = branch = ""
+  filename = head = branch = msg = ""
   taginfo = { }         # tag name => number
 
   parsing_tags = 0
@@ -547,41 +570,31 @@ def _parse_log_header(fp):
         # end of this file's log information
         eof = _EOF_FILE
         break
-      elif line[:6] == 'rlog: ':
-        # rlog: filename/goes/here,v: error message
-        # rlog: filename/goes/here,v:123: error message
-        idx = string.find(line, ': ', 6)
-        if idx != -1:
-          if line[idx:idx+32] == ': warning: Unknown phrases like ':
+      else:
+        error = _re_cvsnt_error.match(line)
+        if error:
+          p1, p2, p3, msg = error.groups()
+          filename = p1 or p2 or p3
+          if not filename:
+            raise vclib.Error("Could not get filename from CVSNT error:\n%s"
+                               % line)
+          eof = _EOF_ERROR
+          break
+
+        error = _re_log_error.match(line)
+        if error:
+          filename, msg = error.groups()
+          if msg[:30] == 'warning: Unknown phrases like ':
             # don't worry about this warning. it can happen with some RCS
             # files that have unknown fields in them (e.g. "permissions 644;"
             continue
-
-          # look for a line number after the filename
-          match = _re_lineno.search(line, 6, idx)
-          if match:
-            idx = match.start()
-
-          # looks like a filename
-          filename = line[6:idx]
           eof = _EOF_ERROR
           break
-      elif line[-28:] == ": No such file or directory\n":
-        # For some reason the windows version of rlog omits the "rlog: "
-        # prefix for first error message when the standard error stream
-        # is redirected to a file or pipe. (the prefix is present
-        # in subsequent errors and when rlog is run from the console
-        # This is just a special case to prevent an especially common
-        # error message from being lost when this happens
-        filename = line[:-28]
-        eof = _EOF_ERROR
-        break
-        # dunno what this is
 
   # CVSNT versions 2.0.29 and later put forward slashes in filename
   filename = string.replace(filename, '/', os.sep)
 
-  return filename, branch, taginfo, eof
+  return filename, branch, taginfo, msg, eof
 
 _re_log_info = re.compile(r'^date:\s+([^;]+);'
                           r'\s+author:\s+([^;]+);'
@@ -743,15 +756,15 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
 
     while len(chunk) < max_args and entries_idx < entries_len:
       entry = entries[entries_idx]
-      path = _log_path(entry, dirpath, get_dirs)
+      path, errors = _log_path(entry, dirpath, get_dirs)
       if path:
         entry.path = path
         entry.idx = entries_idx
         chunk.append(entry)
 
-      # set rev and log_error values even if we don't retrieve logs
-      entry.rev = None
-      entry.log_error = 0
+      # set properties even if we don't retrieve logs
+      entry.rev = entry.date = entry.author = entry.dead = entry.log = None
+      entry.log_errors = errors
 
       entries_idx = entries_idx + 1
 
@@ -768,41 +781,46 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
     rlog = repos.rcs_popen('rlog', args, 'rt')
 
     # consume each file found in the resulting log
-    for file in chunk:
-      filename, default_branch, taginfo, eof = _parse_log_header(rlog)
+    chunk_idx = 0
+    while chunk_idx < len(chunk):
+      file = chunk[chunk_idx]
+      filename, default_branch, taginfo, msg, eof = _parse_log_header(rlog)
 
       if eof == _EOF_LOG:
-        # the rlog output ended early. this happens on errors that rlog thinks
-        # are so serious that it stops parsing the current file and refuses
-        # to parse any of the files that come after it. one of the errors that
-        # triggers this obnoxious behavior looks like:
+        # the rlog output ended early. this can happen on errors that rlog 
+        # thinks are so serious that it stops parsing the current file and
+        # refuses to parse any of the files that come after it. one of the
+        # errors that triggers this obnoxious behavior looks like:
         #
         # rlog: c:\cvsroot\dir\file,v:8: unknown expand mode u
         # rlog aborted
 
-        if file is not chunk[0]:
-          # if this isn't the first file, go back and run rlog again
-          # starting with this file
-          entries_idx = file.idx
+        # if current file has errors, restart on the next one
+        if file.log_errors:
+          chunk_idx = chunk_idx + 1
+          if chunk_idx < len(chunk):
+            entries_idx = chunk[chunk_idx].idx
           break
 
-        # if this is the first file and there's no output, then
-        # something really is wrong
+        # otherwise just error out
         raise vclib.Error('Rlog output ended early. Expected RCS file "%s"'
                           % file.path)
 
-      if not (filename and file.path == filename):
-        raise vclib.Error('Error parsing rlog output. Expected RCS file "%s"'
-                          ', found "%s"' % (file.path, filename))
+      # if rlog filename doesn't match current file and we already have an
+      # error message about this file, move on to the next file
+      while not (file and file.path == filename):
+        if file and file.log_errors:
+          chunk_idx = chunk_idx + 1
+          file = chunk_idx < len(chunk) and chunk[chunk_idx] or None
+          continue
 
-      # an error was found regarding this file
+        raise vclib.Error('Error parsing rlog output. Expected RCS file %s'
+                          ', found %s' % (file and file.path, filename))
+
+      # if we get an rlog error message, restart loop without advancing
+      # chunk_idx cause there might be more output about the same file
       if eof == _EOF_ERROR:
-        file.log_error = 1
-        continue
-
-      # if we hit the end of the log information (already!), then there is
-      # nothing we can do with this file
-      if eof:
+        file.log_errors.append("rlog error: %s" % msg)
         continue
 
       if view_tag == 'MAIN' or view_tag == 'HEAD':
@@ -812,7 +830,7 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
       elif view_tag:
         # the tag wasn't found, so skip this file
         _skip_file(rlog)
-        continue
+        eof = 1
       else:
         tag = None
 
@@ -824,7 +842,7 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
 
       # read all of the log entries until we find the revision we want
       wanted_entry = None
-      while 1:
+      while not eof:
 
         # fetch one of the log entries
         entry, eof = _parse_log_entry(rlog)
@@ -849,26 +867,31 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
           if perfect:
             break
 
-        # if we hit the true EOF, or just this file's end-of-info, then we are
-        # done collecting log entries.
-        if eof:
-          break
-
       if wanted_entry:
         file.rev = wanted_entry.string
         file.date = wanted_entry.date
         file.author = wanted_entry.author
         file.dead = wanted_entry.dead
         file.log = wanted_entry.log
+        # suppress rlog errors if we find a usable revision in the end
+        del file.log_errors[:]
+      elif file.kind == vclib.FILE:
+        file.dead = 1
+        file.log_errors.append("No revisions exist on %s" 
+                               % (view_tag or "MAIN"))
 
       # done with this file now, skip the rest of this file's revisions
       if not eof:
         _skip_file(rlog)
 
+      # end of while loop, advance index
+      chunk_idx = chunk_idx + 1
+
     rlog.close()
 
 def _log_path(entry, dirpath, getdirs):
   path = name = None
+  errors = []
   if not entry.verboten:
     if entry.kind == vclib.FILE:
       path = entry.in_attic and 'Attic' or ''
@@ -879,10 +902,12 @@ def _log_path(entry, dirpath, getdirs):
       if entry.newest_file:
         path = entry.name
         name = entry.newest_file
+  elif entry.kind == vclib.FILE:
+    errors.append("Repository file is not readable")
 
   if name:
-    return os.path.join(dirpath, path, name + ',v')
-  return None
+    return os.path.join(dirpath, path, name + ',v'), errors
+  return None, errors
 
 def fetch_log(repos, full_name, which_rev=None):
   if which_rev:
@@ -891,7 +916,7 @@ def fetch_log(repos, full_name, which_rev=None):
     args = (full_name,)
   rlog = repos.rcs_popen('rlog', args, 'rt', 0)
 
-  filename, branch, taginfo, eof = _parse_log_header(rlog)
+  filename, branch, taginfo, msg, eof = _parse_log_header(rlog)
 
   if eof:
     # no log entries or a parsing failure
