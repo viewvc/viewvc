@@ -2455,7 +2455,7 @@ def main():
 
   # is the CVS root really there?
   if not os.path.isdir(request.cvsroot):
-    error('%s not found!<p>The server on which the CVS tree lives is '
+    error('%s not found!\nThe server on which the CVS tree lives is '
           'probably down. Please try again in a few minutes.' %
           request.cvsroot)
 
