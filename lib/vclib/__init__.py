@@ -27,8 +27,6 @@ DIR = 'DIR'
 
 # ======================================================================
 #
-# TODO: Add a last modified property
-#
 class Repository:
   """Abstract class representing a repository."""
 
@@ -47,20 +45,49 @@ class Repository:
 
     The return value is a 2-tuple of containg the file object and revision
     number in canonical form.
-  
+
     The path is specified as a list of components, relative to the root
     of the repository. e.g. ["subdir1", "subdir2", "filename"]
 
     The revision number can be None to access a default revision.  
     """
 
-  def listdir(self, path_parts):
+  def listdir(self, path_parts, options):
     """Return list of files in a directory
-    
+
     The result is a list of DirEntry objects
 
     The path is specified as a list of components, relative to the root
     of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+    options is a dictionary of implementation specific options
+    """
+
+  def dirlogs(self, path_parts, entries, options):
+    """Augment directory entries with log information
+
+    The path is specified as a list of components, relative to the root
+    of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+    entries is a list of DirEntry objects returned from a previous call to
+    the listdir() method
+
+    options is a dictionary of implementation specific options
+    """
+  
+  def filelog(self, path_parts, rev, options):
+    """Retrieve a file's log information
+
+    The result is a list of Revision objects
+
+    The path is specified as a list of components, relative to the root
+    of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+    The rev parameter can be set to only retrieve log information for a
+    specified revision, or it can be None to return information on all
+    file revisions.
+
+    options is a dictionary of implementation specific options
     """
 
 # ======================================================================

@@ -315,7 +315,7 @@ class SubversionRepository(vclib.Repository):
     revision = str(_get_last_history_rev(self, path, self.pool))
     return fp, revision
 
-  def listdir(self, path_parts):
+  def listdir(self, path_parts, options):
     basepath = self._getpath(path_parts)
     if self.itemtype(path_parts) != vclib.DIR:
       raise vclib.Error("Path '%s' is not a directory." % basepath)
@@ -330,6 +330,36 @@ class SubversionRepository(vclib.Repository):
       entries.append(vclib.DirEntry(entry.name, kind))
 
     return entries
+
+  def dirlogs(self, path_parts, entries, options):
+    get_logs(self, self._getpath(path_parts), entries)
+
+  def filelog(self, path_parts, rev, options):
+    full_name = self._getpath(path_parts)
+
+    if rev is not None:
+      full_name = '/' + full_name
+      try:
+        rev = int(rev)
+      except ValueError:
+        vclib.InvalidRevision(rev)
+
+    logs = fetch_log(self, full_name, rev)[1]
+
+    revs = []
+    prev = None
+    numbers = logs.keys()
+    numbers.sort()
+
+    for number in numbers:
+      rev = logs[number]
+      rev.number = number
+      rev.string = str(number)
+      rev.prev = prev
+      revs.append(rev)
+      prev = rev
+
+    return revs
 
   def _getpath(self, path_parts):
     return string.join(path_parts, '/')
