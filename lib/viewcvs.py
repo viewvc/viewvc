@@ -596,6 +596,19 @@ enscript_filenames = {
   'makefile' : 'makefile',
   }
 
+
+def make_time_string(date):
+  """Returns formatted date string in either local time or UTC.
+
+  The passed in 'date' variable is seconds since epoch.
+
+  """
+  if (cfg.options.use_localtime):
+    return time.asctime(time.localtime(date)) + ' ' + time.tzname[0]
+  else:
+    return time.asctime(time.gmtime(date)) + ' UTC'
+
+
 def markup_stream(request, fp, revision, mime_type):
   full_name = request.full_name
   where = request.where
@@ -627,8 +640,10 @@ def markup_stream(request, fp, revision, mime_type):
     idx = string.rfind(revision, '.')
     branch = revision[:idx]
 
+    entry.date_str = make_time_string(entry.date)
+
     data.update({
-      'utc_date' : time.asctime(time.gmtime(entry.date)),
+      'date_str' : entry.date_str,
       'ago' : html_time(request, entry.date, 1),
       'author' : entry.author,
       'branches' : None,
@@ -918,7 +933,7 @@ def parse_log_entry(fp):
   # parse out a time tuple for the local time
   tm = compat.cvs_strptime(match.group(1))
   try:
-   date = int(time.mktime(tm)) - time.timezone
+    date = int(time.mktime(tm)) - time.timezone
   except OverflowError:
     # it is possible that CVS recorded an "illegal" time, such as those
     # which occur during a Daylight Savings Time switchover (there is a
@@ -1682,7 +1697,8 @@ def augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
 
   entry.vendor_branch = ezt.boolean(_re_is_vendor_branch.match(rev))
 
-  entry.utc_date = time.asctime(time.gmtime(entry.date))
+  entry.date_str = make_time_string(entry.date)
+
   entry.ago = html_time(request, entry.date, 1)
 
   entry.branches = prep_tags(query_dict, file_url, rev2tag.get(branch, [ ]))
@@ -2231,6 +2247,19 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
     rcs_diff = [ (_item(type='error')) ]
   else:
     rcs_diff = DiffSource(fp)
+
+  # Convert to local time if option is set, otherwise remains UTC
+  if (cfg.options.use_localtime):
+    def time_format(date):
+      date = time.strptime(date[-19:], "%Y/%m/%d %H:%M:%S")
+      date = time.mktime(date) - time.timezone
+      date = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(date))
+      return ', ' + date + ' ' + time.tzname[0]
+    date1 = time_format(date1)
+    date2 = time_format(date2)
+  else:
+    date1 = date1 + ' UTC'
+    date2 = date2 + ' UTC'
 
   data.update({
     'cfg' : cfg,
