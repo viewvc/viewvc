@@ -47,9 +47,14 @@ def TicksFromDateTime(datetime):
   """Return a unix timestamp from a MySQL DATETIME value"""
 
   if type(datetime) == types.StringType:
+    # datetime is a MySQL DATETIME string
     matches = _re_datetime.match(datetime).groups()
     t = tuple(map(int, matches)) + (0, 0, 0)
-  else: # datetime is an mx.DateTime object
+  elif hasattr(datetime, "timetuple"):
+    # datetime is a Python >=2.3 datetime.DateTime object
+    t = datetime.timetuple()
+  else:
+    # datetime is an eGenix mx.DateTime object
     t = datetime.tuple()
 
   if utc_time:
