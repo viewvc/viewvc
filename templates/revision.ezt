@@ -40,6 +40,7 @@
 
 <p><b>Changed paths:</b></p>
 <table border="0" cellspacing="1" cellpadding="2">
+  <thead>
   <tr align=left>
     <th class="vc_header_sort">Path</th>
     <th class="vc_header">Action</th>
@@ -47,6 +48,8 @@
     <th class="vc_header">Prop Changes</th>
     <th class="vc_header">Diff to Previous</th>
   </tr>
+  </thead>
+  <tbody>
   [if-any changes]
     [for changes]
       <tr class="vc_row_[if-index changes even]even[else]odd[end]">
@@ -82,6 +85,7 @@
     <td colspan="5">No changed paths.</td>
     </tr>
   [end]
+  </tbody>
 </table>
 
 [include "include/footer.ezt"]
