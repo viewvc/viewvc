@@ -288,18 +288,15 @@ def cvsroot_name_from_path(cvsroot):
             break
     return cvsroot_name
 
-def html_commit_list(commit_list, color):
-    rs = len(commit_list)
-
-    ## one description for these commits
-    desc = commit_list[0].GetDescription()
-    if not desc:
-        desc = "&nbsp";
-    else:
-        desc = cgi.escape(desc)
-        desc = string.replace(desc, "\n", "<br>")
+def build_commit(desc, files):
+    ob = _item(num_files=len(files), files=[])
     
-    for commit in commit_list:
+    if desc:
+        ob.desc = string.replace(cgi.escape(desc), '\n', '<br>')
+    else:
+        ob.desc = '&nbsp;'
+
+    for commit in files:
         ctime = commit.GetTime()
         if not ctime:
             ctime = "&nbsp";
@@ -325,69 +322,42 @@ def html_commit_list(commit_list, color):
         branch = commit.GetBranch() or "&nbsp"
         plusminus = "%d/%d" % (commit.GetPlusCount(), commit.GetMinusCount())
 
-        print "<tr bgcolor=%s>" % (color)
-        print "<td align=left valign=top>%s</td>" % (ctime)
-        print "<td align=left valign=top>%s</td>" % (author)
-        print "<td align=left valign=top>%s</td>" % (flink)
-        print "<td align=left valign=top>%s</td>" % (revision)
-        print "<td align=left valign=top>%s</td>" % (branch)
-        print "<td align=left valign=top>%s</td>" % (plusminus)
+        ob.files.append(_item(date=ctime,
+                              author=author,
+                              link=flink,
+                              rev=revision,
+                              branch=branch,
+                              plusminus=plusminus))
 
-        if commit == commit_list[0]:
-            print "<td align=left valign=top rowspan=%d>%s</td>" % (rs,desc)
-        print "</tr>"
-    
+    return ob
+
 def run_query(form_data):
     query = form_to_cvsdb_query(form_data)
     db = cvsdb.ConnectDatabaseReadOnly()
     db.RunQuery(query)
 
-    print "<p><b>%d</b> matches found.</p>" % (len(query.commit_list))
-    
-    print "<table width=100%% border=0 cellspacing=0 cellpadding=2>"
-    print " <tr bgcolor=#88ff88>"
-    print "  <th align=left valign=top>Date</th>"
-    print "  <th align=left valign=top>Author</th>"
-    print "  <th align=left valign=top>File</th>"
-    print "  <th align=left valign=top>Revision</th>"
-    print "  <th align=left valign=top>Branch</th>"
-    print "  <th align=left valign=top>+/-</th>"
-    print "  <th align=left valign=top>Description</th>"
-    print " </tr>"
+    if not query.commit_list:
+        return [ ]
 
-    commit_num = 0
-    commit_list = []
-    current_desc = None
+    commits = [ ]
+    files = [ ]
 
-    if len(query.commit_list):
-        current_desc = query.commit_list[0].GetDescription()
-        
+    current_desc = query.commit_list[0].GetDescription()
     for commit in query.commit_list:
         desc = commit.GetDescription()
-        
         if current_desc == desc:
-            commit_list.append(commit)
+            files.append(commit)
             continue
 
-        html_commit_list(commit_list, cfg.colors.even_odd[commit_num % 2])
-        commit_list = [commit]
+        commits.append(build_commit(current_desc, files))
+
+        files = [ commit ]
         current_desc = desc
-        commit_num = commit_num + 1
 
-    ## display the last commit_list
-    if len(commit_list):
-        html_commit_list(commit_list, cfg.colors.even_odd[commit_num % 2])
+    ## add the last file group to the commit list
+    commits.append(build_commit(current_desc, files))
 
-    print " <tr bgcolor=#88ff88>"
-    print "  <th align=left valign=top>&nbsp</th>"
-    print "  <th align=left valign=top>&nbsp</th>"
-    print "  <th align=left valign=top>&nbsp</th>"
-    print "  <th align=left valign=top>&nbsp</th>"
-    print "  <th align=left valign=top>&nbsp</th>"
-    print "  <th align=left valign=top>&nbsp</th>"
-    print "  <th align=left valign=top>&nbsp</th>"
-    print " </tr>"
-    print "</table>"
+    return commits
 
 def handle_config():
     viewcvs.handle_config()
@@ -399,6 +369,11 @@ def main():
     
     form = cgi.FieldStorage()
     form_data = FormData(form)
+
+    if form_data.valid:
+        commits = run_query(form_data)
+    else:
+        commits = [ ]
 
     data = {
       'cfg' : cfg,
@@ -413,6 +388,9 @@ def main():
 
       'sortby' : form_data.sortby,
       'date' : form_data.date,
+
+      'commits' : commits,
+      'num_commits' : len(commits),
       }
 
     if form_data.hours:
@@ -428,10 +406,6 @@ def main():
 
     # generate the page
     template.generate(sys.stdout, data)
-
-    ### urk. the output comes after the footer. just deal with it for now...
-    if form_data.valid:
-        run_query(form_data)
 
 def run_cgi():
 
@@ -453,3 +427,8 @@ def run_cgi():
     print cgi.escape(string.join(lines, ''))
     print '</pre>'
     viewcvs.html_footer()
+
+
+class _item:
+  def __init__(self, **kw):
+    vars(self).update(kw)

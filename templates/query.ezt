@@ -155,6 +155,48 @@
 
 </form>
 
+<p><b>[num_commits]</b> matches found.</p>
+
+<table width="100%" border=0 cellspacing=0 cellpadding=2>
+ <tr bgcolor="#88ff88">
+  <th align=left valign=top>Date</th>
+  <th align=left valign=top>Author</th>
+  <th align=left valign=top>File</th>
+  <th align=left valign=top>Revision</th>
+  <th align=left valign=top>Branch</th>
+  <th align=left valign=top>+/-</th>
+  <th align=left valign=top>Description</th>
+ </tr>
+[for commits]
+  [for commits.files]
+    <tr bgcolor="[if-index commits even]#ffffff[else]#ccccee[end]">
+      <td align=left valign=top>[commits.files.date]</td>
+      <td align=left valign=top>[commits.files.author]</td>
+      <td align=left valign=top>[commits.files.link]</td>
+      <td align=left valign=top>[commits.files.rev]</td>
+      <td align=left valign=top>[commits.files.branch]</td>
+      <td align=left valign=top>[commits.files.plusminus]</td>
+
+      [if-index commits.files first]
+        <td align=left valign=top rowspan=[commits.num_files]>
+          [commits.desc]
+        </td>
+      [end]
+    </tr>
+  [end]
+[end]
+
+ <tr bgcolor="#88ff88">
+  <th align=left valign=top>&nbsp;</th>
+  <th align=left valign=top>&nbsp;</th>
+  <th align=left valign=top>&nbsp;</th>
+  <th align=left valign=top>&nbsp;</th>
+  <th align=left valign=top>&nbsp;</th>
+  <th align=left valign=top>&nbsp;</th>
+  <th align=left valign=top>&nbsp;</th>
+ </tr>
+</table>
+
 <hr noshade>
 <table width="100%" border=0 cellpadding=0 cellspacing=0><tr>
 <td align=left><address>[address]</address></td>
