@@ -46,14 +46,15 @@
     [else]<td bgcolor="#eeee77">&nbsp;</td>[end]
     </tr>
   [else]
-  [is changes.type "no-changes"]
+  [is changes.type "diff-info"]
     <tr><td colspan=2>&nbsp;</td></tr>
     <tr bgcolor="#cccccc"><td colspan=2 align=center>
-      <br><b>- No changes -</b><br>&nbsp;
+      <br><b>[changes.text]</b><br>&nbsp;
     </td></tr>
   [else][# a line of context]
     <tr><td>[changes.left]</td><td>[changes.right]</td></tr>
-  [end][end][end][end][end]
+  [end][end][end][end]
+  [end]
 [end]
 
 </table><br><hr noshade width="100%">
