@@ -32,19 +32,24 @@ import py_compile
 sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), 'lib'))
 
 import compat
+import viewcvs 
+version = viewcvs.__version__
 
 
 ## installer text
 INFO_TEXT = """\
 
-This is the ViewCVS installer.  It will allow you to choose the install
-path for ViewCVS.  You will now be asked some installation questions.
-Defaults are given in square brackets.  Just hit [Enter] if a default
-is okay.
-"""
+This is the ViewCVS Version %s installer.  
+
+It will allow you to choose the install path for ViewCVS.  
+You will now be asked some installation questions.
+
+Defaults are given in square brackets.  
+Just hit [Enter] if a default is okay.
+""" % version
 
 ## installer defaults
-ROOT_DIR = "/usr/local/viewcvs-dev"
+ROOT_DIR = "/usr/local/viewcvs-" + version
 
 
 ## list of files for installation
@@ -62,7 +67,7 @@ FILE_INFO_LIST = [
     ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 0,
 	     """Note: If you are upgrading from viewcvs-0.7 or earlier: 
 The section [text] has been removed from viewcvs.conf.  The functionality
-went into the new file templates/directory.ezt.""", 0),
+went into the new files in subdirectory templates.""", 0),
     ("cgi/cvsgraph.conf.dist", "cvsgraph.conf", 0644, 0, 1, 0),
 
     ("lib/PyFontify.py", "lib/PyFontify.py", 0644, 0, 0, 1),
