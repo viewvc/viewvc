@@ -183,10 +183,10 @@ href="[docroot]/help_[if-any where]dir[else]root[end]view.html">ViewCVS and CVS 
       <td [if-any have_logs][is cfg.options.use_cvsgraph "1"]colspan=2[end][end]>
         <a name="[rows.anchor]" href="[rows.href]">
         <img src="[icons]/small/dir.gif" alt="(dir)" border=0 width=16 height=16>
-        [rows.name]
+        [rows.name]/
         </a>
         [is roottype "cvs"]
-          [is rows.name "Attic/"]
+          [is rows.name "Attic"]
             &nbsp; <a href="[show_attic_href]#dirlist">[[]show contents]</a>
           [end]
         [end]
