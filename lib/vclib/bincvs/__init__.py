@@ -55,19 +55,25 @@ class CVSRepository(vclib.Repository):
 
     full_name = self._getpath(path_parts)
     for file in os.listdir(full_name):
-      kind, verboten = _check_path(os.path.join(full_name, file))
+      kind, errors = _check_path(os.path.join(full_name, file))
       if kind == vclib.FILE:
         if file[-2:] == ',v':
-          data.append(CVSDirEntry(file[:-2], kind, verboten, 0))
-      elif file != 'Attic' and file != 'CVS': # CVS directory is for fileattr
-        data.append(CVSDirEntry(file, kind, verboten, 0))
+          data.append(CVSDirEntry(file[:-2], kind, errors, 0))
+      elif kind == vclib.DIR:
+        if file != 'Attic' and file != 'CVS': # CVS directory is for fileattr
+          data.append(CVSDirEntry(file, kind, errors, 0))
+      else:
+        data.append(CVSDirEntry(file, kind, errors, 0))
 
     full_name = os.path.join(full_name, 'Attic')
     if os.path.isdir(full_name):
       for file in os.listdir(full_name):
-        kind, verboten = _check_path(os.path.join(full_name, file))
-        if kind == vclib.FILE and file[-2:] == ',v':
-          data.append(CVSDirEntry(file[:-2], kind, verboten, 1))
+        kind, errors = _check_path(os.path.join(full_name, file))
+        if kind == vclib.FILE:
+          if file[-2:] == ',v':
+            data.append(CVSDirEntry(file[:-2], kind, errors, 1))
+        elif kind != vclib.DIR:
+          data.append(CVSDirEntry(file, kind, errors, 1))
 
     return data
     
@@ -234,8 +240,8 @@ class BinCVSRepository(CVSRepository):
     return popen.popen(cmd, args, mode, capture_err)
 
 class CVSDirEntry(vclib.DirEntry):
-  def __init__(self, name, kind, verboten, in_attic):
-    vclib.DirEntry.__init__(self, name, kind, verboten)
+  def __init__(self, name, kind, errors, in_attic):
+    vclib.DirEntry.__init__(self, name, kind, errors)
     self.in_attic = in_attic
 
 class Revision(vclib.Revision):
@@ -784,7 +790,7 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
 
     while len(chunk) < max_args and entries_idx < entries_len:
       entry = entries[entries_idx]
-      path, errors = _log_path(entry, dirpath, get_dirs)
+      path = _log_path(entry, dirpath, get_dirs)
       if path:
         entry.path = path
         entry.idx = entries_idx
@@ -792,7 +798,6 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
 
       # set properties even if we don't retrieve logs
       entry.rev = entry.date = entry.author = entry.dead = entry.log = None
-      entry.log_errors = errors
 
       entries_idx = entries_idx + 1
 
@@ -824,7 +829,7 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
         # rlog aborted
 
         # if current file has errors, restart on the next one
-        if file.log_errors:
+        if file.errors:
           chunk_idx = chunk_idx + 1
           if chunk_idx < len(chunk):
             entries_idx = chunk[chunk_idx].idx
@@ -837,7 +842,7 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
       # if rlog filename doesn't match current file and we already have an
       # error message about this file, move on to the next file
       while not (file and _paths_eq(file.path, filename)):
-        if file and file.log_errors:
+        if file and file.errors:
           chunk_idx = chunk_idx + 1
           file = chunk_idx < len(chunk) and chunk[chunk_idx] or None
           continue
@@ -848,7 +853,7 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
       # if we get an rlog error message, restart loop without advancing
       # chunk_idx cause there might be more output about the same file
       if eof == _EOF_ERROR:
-        file.log_errors.append("rlog error: %s" % msg)
+        file.errors.append("rlog error: %s" % msg)
         continue
 
       if view_tag == 'MAIN' or view_tag == 'HEAD':
@@ -902,11 +907,10 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
         file.dead = file.kind == vclib.FILE and wanted_entry.dead
         file.log = wanted_entry.log
         # suppress rlog errors if we find a usable revision in the end
-        del file.log_errors[:]
+        del file.errors[:]
       elif file.kind == vclib.FILE:
         file.dead = 1
-        file.log_errors.append("No revisions exist on %s" 
-                               % (view_tag or "MAIN"))
+        file.errors.append("No revisions exist on %s" % (view_tag or "MAIN"))
 
       # done with this file now, skip the rest of this file's revisions
       if not eof:
@@ -920,7 +924,7 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
 def _log_path(entry, dirpath, getdirs):
   path = name = None
   errors = []
-  if not entry.verboten:
+  if not entry.errors:
     if entry.kind == vclib.FILE:
       path = entry.in_attic and 'Attic' or ''
       name = entry.name
@@ -929,12 +933,10 @@ def _log_path(entry, dirpath, getdirs):
       if entry.newest_file:
         path = entry.name
         name = entry.newest_file
-  elif entry.kind == vclib.FILE:
-    errors.append("Repository file is not readable")
 
   if name:
-    return os.path.join(dirpath, path, name + ',v'), errors
-  return None, errors
+    return os.path.join(dirpath, path, name + ',v')
+  return None
 
 
 # ======================================================================
@@ -943,11 +945,19 @@ def _log_path(entry, dirpath, getdirs):
 if sys.platform == "win32":
   def _check_path(path):
     kind = None
+    errors = []
+
     if os.path.isfile(path):
       kind = vclib.FILE
     elif os.path.isdir(path):
       kind = vclib.DIR
-    return kind, not os.access(path, os.R_OK)
+    else:
+      errors.append("error: path is not a file or directory")
+
+    if not os.access(path, os.R_OK):
+      errors.append("error: path is not accessible")
+
+    return kind, errors
 
 else:
   _uid = os.getuid()
@@ -956,8 +966,11 @@ else:
   def _check_path(pathname):
     try:
       info = os.stat(pathname)
-    except os.error:
-      return None, 1
+    except os.error, e:
+      return None, [str(e)]
+
+    kind = None
+    errors = []
 
     mode = info[stat.ST_MODE]
     isdir = stat.S_ISDIR(mode)
@@ -983,28 +996,28 @@ else:
       else:
         mask = stat.S_IROTH
 
-      valid = 1
       if info[stat.ST_UID] == _uid:
         if ((mode >> 6) & mask) != mask:
-          valid = 0
+          errors.append("error: path is not accessible to user %i" % _uid)
       elif info[stat.ST_GID] == _gid:
         if ((mode >> 3) & mask) != mask:
-          valid = 0
+          errors.append("error: path is not accessible to group %i" % _gid)
       # If the process running the web server is a member of
       # the group stat.ST_GID access may be granted.
       # so the fall back to os.access is needed to figure this out.
       elif (mode & mask) != mask:
         if not os.access(pathname, isdir and (os.R_OK | os.X_OK) or os.R_OK):
-          valid = 0
+          errors.append("error: path is not accessible")
 
       if isdir:
         kind = vclib.DIR
       else:
         kind = vclib.FILE
 
-      return kind, not valid
+    else:
+      errors.append("error: path is not a file or directory")
 
-    return None, 1
+    return kind, errors
 
 def _newest_file(dirpath):
   """Find the last modified RCS file in a directory"""
