@@ -321,6 +321,10 @@ def _escape_msvcrt_shell_arg(arg):
 _re_slashquote = re.compile(r'(\\+)(\"|$)')
 
 
+def get_youngest_revision(svnrepos):
+  return svnrepos.youngest
+
+
 def do_diff(svnrepos, path1, rev1, path2, rev2, diffoptions):
   url1 = svnrepos.rootpath + (path1 and '/' + path1)
   url2 = svnrepos.rootpath + (path2 and '/' + path2)

@@ -1605,6 +1605,12 @@ def view_directory(request):
     'num_files' :  num_files,
     'files_shown' : num_displayed,
     'num_dead' : num_dead,
+    'youngest_rev' : None,
+    'youngest_rev_href' : None,
+    'view_tag' : None,
+    'has_tags' : None,
+    'selection_form' : None,
+    'queryform_href' : None,
   })
 
   # clicking on sort column reverses sort order
@@ -1641,12 +1647,6 @@ def view_directory(request):
       'branch_tags': branch_tags,
       'plain_tags': plain_tags,
     })
-  else:
-    data.update({
-      'view_tag' : None,
-      'has_tags' : None,
-      'selection_form' : None,
-    })
 
   # should we show the query link?
   if is_query_supported(request):
@@ -1656,8 +1656,6 @@ def view_directory(request):
     data['queryform_href'] = request.get_url(view_func=view_queryform,
                                              params=params,
                                              escape=1)
-  else:
-    data['queryform_href'] = None
 
   if cfg.options.use_pagesize:
     url, params = request.get_link(params={'dir_pagestart': None})
@@ -1673,11 +1671,14 @@ def view_directory(request):
     data['tree_rev_href'] = request.get_url(view_func=view_revision,
                                             params={'rev': data['tree_rev']},
                                             escape=1)
+    data['youngest_rev'] = vclib.svn.get_youngest_revision(request.repos)
+    data['youngest_rev_href'] = request.get_url(view_func=view_revision,
+                                                params={},
+                                                escape=1)
     if request.query_dict.has_key('rev'):
       data['jump_rev'] = request.query_dict['rev']
     else:
       data['jump_rev'] = str(request.repos.rev)
-
     url, params = request.get_link(params={'rev': None})
     data['jump_rev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
     data['jump_rev_hidden_values'] = prepare_hidden_values(params)
