@@ -239,6 +239,8 @@ class Request:
               'configured, or the server on which the CVS tree lives may be '
               'down. Please try again in a few minutes.'
               % cgi.escape(root_name))
+      # required so that spawned rcs programs correctly expand $CVSHeader$
+      os.environ['CVSROOT'] = rootpath
     elif cfg.general.svn_roots.has_key(root_name):
       rootpath = cfg.general.svn_roots[root_name]
       try:
