@@ -1165,7 +1165,7 @@ def view_directory(request):
     if isdir:
       if not hideattic and file == 'Attic':
         continue
-      if where == '' and (file == 'CVSROOT' or file in cfg.general.forbidden):
+      if where == '' and (file == 'CVSROOT' or cfg.is_forbidden(file)):
         continue
 
       print '<tr bgcolor="%s"><td>' % cfg.colors.even_odd[cur_row % 2]
@@ -2186,7 +2186,7 @@ def main():
     redirect(url + '/' + request.qmark_query)
 
   # check the forbidden list
-  if request.module in cfg.general.forbidden:
+  if cfg.is_forbidden(request.module):
     error('Access to "%s" is forbidden.' % request.module, '403 Forbidden')
 
   if isdir:

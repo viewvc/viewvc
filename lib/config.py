@@ -39,6 +39,7 @@ import sys
 import os
 import string
 import ConfigParser
+import fnmatch
 
 
 #########################################################################
@@ -81,7 +82,7 @@ class Config:
       for opt in parser.options(section):
         value = parser.get(section, opt)
         if opt in self._force_multi_value or section == 'images':
-          value = map(string.strip, string.split(value, ','))
+          value = filter(None, map(string.strip, string.split(value, ',')))
         else:
           try:
             value = int(value)
@@ -237,6 +238,19 @@ class Config:
     its revision history and to get a chance to display diffs between revisions. 
     </p>
     """
+
+  def is_forbidden(self, module):
+    if not module:
+      return 0
+    default = 0
+    for pat in self.general.forbidden:
+      if pat[0] == '!':
+        default = 1
+        if fnmatch.fnmatchcase(module, pat[1:]):
+          return 0
+      elif fnmatch.fnmatchcase(module, pat):
+        return 1
+    return default
 
 class _sub_config:
   def get_image(self, which):
