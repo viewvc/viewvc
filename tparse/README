@@ -1,0 +1,6 @@
+	TPARSE
+		
+	What is tparse ?
+	----------------
+TPARSE is a C++ coded RCS file format parser with bindings for the Python scripting language.
+It was originally designed after rcsparser.py from Greg Stein and blame.py from Curt Hagenlocher.
