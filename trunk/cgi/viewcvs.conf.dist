@@ -147,6 +147,7 @@ forbidden =
 
 directory = templates/directory.ezt
 log = templates/log.ezt
+query = templates/query.ezt
 
 #---------------------------------------------------------------------------
 [cvsdb]
