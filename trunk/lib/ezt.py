@@ -7,14 +7,14 @@ it possible to generate the dynamic content from the ezt templates.
 
 These directives are enclosed in square brackets.  If you are a 
 C-programmer, you might be familar with the #ifdef directives of the
-C preprocessor 'cpp'.  provides a similar concept for HTML.  Additionally 
-EZT provides a 'for' directive, which allows to iterate (repeat) certain 
+C preprocessor 'cpp'.  ezt provides a similar concept for HTML.  Additionally 
+EZT has a 'for' directive, which allows to iterate (repeat) certain 
 subsections of the template according to sequence of data items
 provided by the application.
 
 The HTML rendering is performed by the method generate() of the Template
 class.  Building template instances can either be done using external
-files (per convention called .ezt files):
+EZT files (convention: use the suffix .ezt for such files):
 
     >>> template = Template("../templates/log.ezt")
 
@@ -27,7 +27,7 @@ a EZT template string:
     ... <body><h1>[title_string]</h1>
     ...    [for a_sequence] <p>[a_sequence]</p>
     ...    [end] <hr>
-    ...    [footer]
+    ...    The [person] is [if-any state]in[else]out[end].
     ... </body>
     ... </html>
     ... ''')
@@ -35,21 +35,76 @@ a EZT template string:
 The application should build a dictionary 'data' and pass it together
 with the output fileobject to the templates generate method:
 
-    >>> data = {'title_string' : "A Dummy page",
+    >>> data = {'title_string' : "A Dummy Page",
     ...         'a_sequence' : ['list item 1', 'list item 2', 'another element'],
-    ...         'footer': "Sorry: The doctor is out." }
+    ...         'person': "doctor",
+    ...         'state' : None }
     >>> import sys
     >>> template.generate(sys.stdout, data)
     <html><head>
-    <title>A Dummy page</title></head>
-    <body><h1>A Dummy page</h1>
+    <title>A Dummy Page</title></head>
+    <body><h1>A Dummy Page</h1>
         <p>list item 1</p>
         <p>list item 2</p>
         <p>another element</p>
         <hr>
-       Sorry: The doctor is out.
+       The doctor is out.
     </body>
     </html>
+
+Directives
+==========
+
+ Several directives allow the use of dotted qualified names refering to objects
+ or attributes of objects contained in the data dictionary given to the 
+ .generate() method.
+
+ Simple directives
+ -----------------
+
+   [QUAL_NAME]
+
+   This directive is simply replaced by the value of identifier from the data 
+   dictionary.  QUAL_NAME might be a dotted qualified name refering to some
+   instance attribute of objects contained in the dats dictionary.
+   Numbers are converted to string though.
+
+   [include "filename"]  or [include QUAL_NAME]
+
+   This directive is replaced by content of the named include file.
+
+ Block directives
+ ----------------
+
+   [for QUAL_NAME] ... [end]
+   
+   The text within the [for ...] directive and the corresponding [end]
+   is repeated for each element in the sequence referred to by the qualified
+   name in the for directive.  Within the for block this identifiers now 
+   refers to the actual item indexed by this loop iteration.
+
+   [if-any QUAL_NAME] ... [else] ... [end]
+
+   Test if the value QUAL_NAME is not None or an empty string or list.  
+   The [else] clause is optional.  CAUTION: Numeric values are converted to string,
+   so if QUAL_NAME refers to a numeric value 0, the then-clause is
+   substituted!
+
+   [if-index odd] ... [else] ... [end]
+   [if-index even] ... [else] ... [end]
+   [if-index last] ... [else] ... [end]
+
+   These three directives work similar to [if-any], but are only useful 
+   within a [for ...]-block (see above).  They are useful to choose 
+   different background colors for adjacent rows in a table.
+
+   [is QUAL_NAME STRING] ... [else] ... [end]
+   [is QUAL_NAME QUAL_NAME] ... [else] ... [end]
+
+   The [is ...] directive is similar to the other conditional directives
+   above.  But it allows to compare two value references or a value reference
+   with some constant string.
+ 
 """
 #
 # Copyright (C) 2001 Greg Stein. All Rights Reserved.
@@ -113,18 +168,44 @@ class Template:
       self.parse_file(fname)
 
   def parse_file(self, fname):
-    self.parse(open(fname).read())
+    """fname -> a string object with pathname of file containg an EZT template.
+    """
+    self.program = self._parse_file(fname)
 
   def parse(self, text):
-    # parse the program into: (TEXT DIRECTIVE BRACKET)* TEXT
-    # DIRECTIVE will be '[directive]' or None
-    # BRACKET will be '[[]' or None
-    # note that comments are automatically dropped
+    """text -> a string object containing the HTML template.
+
+    parse the template program into: (TEXT DIRECTIVE BRACKET)* TEXT
+    DIRECTIVE will be '[directive]' or None
+    BRACKET will be '[[]' or None
+    """
+    self.program = self._parse(text)
+
+  def generate(self, fp, data):
+    ctx = _context()
+    ctx.data = data
+    ctx.for_index = { }
+    self._execute(self.program, fp, ctx)
+
+  def _parse_file(self, fname, for_names=None):
+    return self._parse(open(fname, "rt").read(), for_names)
+
+  def _parse(self, text, for_names=None):
+    """text -> string object containing the HTML template.
+
+    This is a private helper function doing the real work for method parse.
+    It returns the parsed template as a 'program'.  This program is a sequence
+    made out of strings or (function, argument) 2-tuples.
+
+    Note: comment directives [# ...] are automatically dropped by _re_parse.
+    """
+
     parts = _re_parse.split(text)
 
     program = [ ]
     stack = [ ]
-    for_names = [ ]
+    if not for_names:
+       for_names = [ ]
 
     for i in range(len(parts)):
       piece = parts[i]
@@ -177,21 +258,27 @@ class Template:
 
           # remember the cmd, current pos, args, and a section placeholder
           stack.append([cmd, len(program), args[1:], None])
+        elif cmd == 'include':
+          if len(args) != 2:
+            raise ArgCountSyntaxError()
+          if args[1][0] in ('"', "'"):
+            include_filename = args[1][1:-1]
+            program.extend(self._parse_file(include_filename, for_names))
+          else:
+            program.append((self._cmd_include, _prepare_ref(args[1], for_names)))
         else:
           # implied PRINT command
           if len(args) > 1:
             raise ArgCountSyntaxError()
           program.append((self._cmd_print, _prepare_ref(args[0], for_names)))
 
-    self.program = program
-
-  def generate(self, fp, data):
-    ctx = _context()
-    ctx.data = data
-    ctx.for_index = { }
-    self._execute(self.program, fp, ctx)
+    return program
 
   def _execute(self, program, fp, ctx):
+    """This private helper function takes a 'program' sequence as created
+    by the method '_parse' and executes it step by step.  strings are written
+    to the file object 'fp' and functions are called.
+    """
     for step in program:
       if isinstance(step, StringType):
         fp.write(step)
@@ -201,6 +288,9 @@ class Template:
   def _cmd_print(self, valref, fp, ctx):
     ### type check the value
     fp.write(_get_value(valref, ctx))
+
+  def _cmd_include(self, valref, fp, ctx):
+    self._execute(self._parse_file(_get_value(valref, ctx)), fp, ctx)
 
   def _cmd_if_any(self, args, fp, ctx):
     "If the value is a non-empty string or non-empty list, then T else F."
@@ -253,7 +343,12 @@ class Template:
 
 
 def _prepare_ref(refname, for_names):
-  "Prepare a value reference for fast access later."
+  """refname -> a string containing a dotted identifier. example:"foo.bar.bang"
+  for_names -> a list of active for sequences.
+
+  Returns a `value reference', a 3-Tupel made out of (refname, start, rest), 
+  for fast access later.
+  """
   parts = string.split(refname, '.')
   start = parts[0]
   rest = parts[1:]
@@ -268,6 +363,13 @@ def _prepare_ref(refname, for_names):
   return refname, start, rest
 
 def _get_value((refname, start, rest), ctx):
+  """(refname, start, rest) -> a prepared `value reference' (see above).
+  ctx -> an execution context instance.
+
+  Does a name space lookup within the template name space.  Active 
+  for blocks take precedence over data dictionary members with the 
+  same name.
+  """
   if ctx.for_index.has_key(start):
     list, idx = ctx.for_index[start]
     ob = list[idx]
