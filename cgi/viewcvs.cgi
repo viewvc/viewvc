@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/python
 # -*-python-*-
 #
 # Copyright (C) 1999-2000 The ViewCVS Group. All Rights Reserved.
@@ -645,15 +645,44 @@ def get_file_data(full_name):
   
   files = os.listdir(full_name)
   data = [ ]
+
+  uid = os.getuid()
+  gid = os.getgid()
+
   for file in files:
     pathname = full_name + '/' + file
     try:
       info = os.stat(pathname)
     except os.error:
       continue
-    isdir = stat.S_ISDIR(info[stat.ST_MODE])
-    isreg = stat.S_ISREG(info[stat.ST_MODE])
+    mode = info[stat.ST_MODE]
+    isdir = stat.S_ISDIR(mode)
+    isreg = stat.S_ISREG(mode)
     if (isreg and file[-2:] == ',v') or isdir:
+      #
+      # Quick version of access() where we use existing stat() data.
+      #
+      # This might not be perfect -- the OS may return slightly different
+      # results for some bizarre reason. However, we make a good show of
+      # "can I read this file/dir?" by checking the various perm bits.
+      #
+      # NOTE: if the UID matches, then we must match the user bits -- we
+      # cannot defer to group or other bits. Similarly, if the GID matches,
+      # then we must have read access in the group bits.
+      #
+      if isdir:
+        mask = stat.S_IROTH | stat.S_IXOTH
+      else:
+        mask = stat.S_IROTH
+
+      if info[stat.ST_UID] == uid:
+        if ((mode >> 6) & mask) != mask:
+          continue
+      elif info[stat.ST_GID] == gid:
+        if ((mode >> 3) & mask) != mask:
+          continue
+      elif (mode & mask) != mask:
+        continue
       data.append((file, pathname, isdir))
 
   return data
