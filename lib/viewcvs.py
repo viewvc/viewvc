@@ -291,19 +291,6 @@ def clickable_path(request, path, leaf_is_link, leaf_is_file, drop_leaf):
 def html_link(contents, link):
   return '<a href="%s">%s</a>' % (link, contents)
 
-def link_tags(query_dict, where, tags, add_links):
-  if not add_links:
-    return string.join(tags, ', ')
-
-  file_url = urllib.quote(os.path.basename(where))
-  links = [ ]
-  for tag in tags:
-    links.append('<a href="%s%s">%s</a>' %
-                 (file_url,
-                  toggle_query(query_dict, 'only_with_tag', tag),
-                  tag))
-  return string.join(links, ', ')
-
 def prep_tags(query_dict, file_url, tags):
   links = [ ]
   for tag in tags:
@@ -588,7 +575,7 @@ def markup_stream(request, fp, revision, mime_type):
                cur_branch, branch_points, branch_names = read_log(full_name)
 
     print_log(request, rev_map, rev_order, rev_map[revision], rev2tag,
-              branch_points, 0)
+              branch_points)
   else:
     print 'Version: <b>%s</b><br>' % revision
     tag = query_dict.get('only_with_tag')
@@ -1554,6 +1541,7 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
   return show_revs, rev_map, rev_order, taginfo, rev2tag, \
          cur_branch, branch_points, branch_names
 
+g_name_printed = { }    ### gawd, what a hack...
 def augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
                   rev_order, extended):
   "Augment the entry with additional, computed data from the log output."
@@ -1657,61 +1645,17 @@ def augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
       entry.to_selected = None
 
 _re_is_vendor_branch = re.compile(r'^1\.1\.1\.\d+$')
-g_name_printed = { }    ### gawd, what a hack...
-def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
-              add_links):
+def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points):
   query_dict = request.query_dict
   where = request.where
   rev = entry.rev
 
   idx = string.rfind(rev, '.')
   branch = rev[:idx]
-  idx = string.rfind(branch, '.')
-  if idx == -1:
-    branch_point = ''
-  else:
-    branch_point = branch[:idx]
 
-  is_dead = entry.state == 'dead'
+  print 'Revision <b>%s</b>' % rev
 
-  if add_links and not is_dead:
-    file_url = urllib.quote(os.path.basename(where))
-    print '<a name="rev%s"></a>' % rev
-    if rev2tag.has_key(rev):
-      for tag in rev2tag[rev]:
-        print '<a name="%s"></a>' % tag
-    if rev2tag.has_key(branch) and not g_name_printed.has_key(branch):
-      for tag in rev2tag[branch]:
-        print '<a name="%s"></a>' % tag
-      g_name_printed[branch] = 1
-    print 'Revision'
-    if not request.default_viewable:
-      download_link(request, file_url, rev, rev, viewcvs_mime_type)
-      print '/'
-      download_link(request, file_url, rev, '(download)', request.mime_type)
-    else:
-      download_link(request, file_url, rev, rev)
-    if not request.default_text_plain:
-      print '/'
-      download_link(request, file_url, rev, '(as text)', 'text/plain')
-    if request.default_viewable:
-      print '/'
-      download_link(request, file_url, rev, '(view)', viewcvs_mime_type)
-    if cfg.options.allow_annotate:
-      print '- <a href="%s?annotate=%s%s">annotate</a>' % \
-            (request.url, rev, request.amp_query)
-    if cfg.options.allow_version_select:
-      if query_dict.get('r1') != rev:
-        print '- <a href="%s?r1=%s%s">[select for diffs]</a>' % \
-              (request.url, rev, request.amp_query)
-      else:
-        print '- <b>[selected]</b>'
-
-  else:
-    print 'Revision <b>%s</b>' % rev
-
-  is_vendor_branch = _re_is_vendor_branch.match(rev)
-  if is_vendor_branch:
+  if _re_is_vendor_branch.match(rev):
     print '<i>(vendor branch)</i>'
 
   print ', <i>%s UTC</i> (%s ago) by <i>%s</i>' % \
@@ -1720,14 +1664,12 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
          entry.author)
 
   if rev2tag.has_key(branch):
-    print '<br>Branch: <b>%s</b>' % \
-          link_tags(query_dict, where, rev2tag[branch], add_links)
+    print '<br>Branch: <b>%s</b>' % string.join(rev2tag[branch], ', ')
   if rev2tag.has_key(rev):
-    print '<br>CVS Tags: <b>%s</b>' % \
-          link_tags(query_dict, where, rev2tag[rev], add_links)
+    print '<br>CVS Tags: <b>%s</b>' % string.join(rev2tag[rev], ', ')
   if branch_points.has_key(rev):
     print '<br>Branch point for: <b>%s</b>' % \
-          link_tags(query_dict, where, branch_points[rev], add_links)
+          string.join(branch_points[rev], ', ')
 
   prev_rev = string.split(rev, '.')
   while 1:
@@ -1741,81 +1683,8 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
   if prev and entry.changed:
     print '<br>Changes since <b>%s: %s lines</b>' % (prev, entry.changed)
 
-  if is_dead:
+  if entry.state == 'dead':
     print '<br><b><i>FILE REMOVED</i></b>'
-  elif add_links:
-    diff_rev = { rev : 1, '' : 1 }
-    print '<br>Diff'
-
-    # is the (current) diff format human readable?
-    human_readable = query_dict['diff_format'] == 'h'
-
-    # diff against previous version
-    if prev:
-      diff_rev[prev] = 1
-      print 'to previous <a href="%s.diff?r1=%s&r2=%s%s">%s</a>' % \
-            (request.url, prev, rev, request.amp_query, prev)
-      if not human_readable:
-        print '(<a href="%s.diff?r1=%s&r2=%s%s' \
-              '&diff_format=h">colored</a>)' % \
-              (request.url, prev, rev, request.amp_query)
-
-    # diff against branch point (if not a vendor branch)
-    if rev2tag.has_key(branch_point) and \
-       not is_vendor_branch and \
-       not diff_rev.has_key(branch_point):
-      diff_rev[branch_point] = 1
-      print 'to a branchpoint <a href="%s.diff?r1=%s&r2=%s%s">%s</a>' % \
-            (request.url, branch_point, rev, request.amp_query,
-             branch_point)
-      if not human_readable:
-        print '(<a href="%s.diff?r1=%s&r2=%s%s' \
-              '&diff_format=h">colored</a>)' % \
-              (request.url, branch_point, rev, request.amp_query)
-
-    # if it's on a branch (and not a vendor branch), then diff against the
-    # next revision of the higher branch (e.g. change is committed and
-    # brought over to -stable)
-    if string.count(rev, '.') > 1 and not is_vendor_branch:
-      # locate this rev in the ordered list of revisions
-      i = rev_order.index(rev)
-
-      # create a rev that can be compared component-wise
-      c_rev = string.split(rev, '.')
-
-      next_main = ''
-      while i:
-        next = rev_order[i - 1]
-        c_work = string.split(next, '.')
-        if len(c_work) < len(c_rev):
-          # found something not on the branch
-          next_main = next
-          break
-
-        # this is a higher version on the same branch; the lower one (rev)
-        # shouldn't have a diff against the "next main branch"
-        if c_work[:-1] == c_rev[:len(c_work) - 1]:
-          break
-
-        i = i - 1
-
-      if not diff_rev.has_key(next_main):
-        diff_rev[next_main] = 1
-        print 'next main <a href="%s.diff?r1=%s&r2=%s%s">%s</a>' % \
-              (request.url, next_main, rev, request.amp_query, next_main)
-        if not human_readable:
-          print '(<a href="%s.diff?r1=%s&r2=%s%s&diff_format=h">colored</a>)' \
-                % (request.url, next_main, rev, request.amp_query)
-
-    # if they have selected r1, then diff against that
-    r1 = query_dict.get('r1')
-    if r1 and not diff_rev.has_key(r1):
-      diff_rev[r1] = 1
-      print 'to selected <a href="%s.diff?r1=%s&r2=%s%s">%s</a>' % \
-            (request.url, r1, rev, request.amp_query, r1)
-      if not human_readable:
-        print '(<a href="%s.diff?r1=%s&r2=%s%s&diff_format=h">colored</a>)' \
-              % (request.url, r1, rev, request.amp_query)
 
   print '<pre>' + htmlify(entry.log) + '</pre>'
 
