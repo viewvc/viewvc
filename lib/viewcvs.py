@@ -1758,6 +1758,8 @@ def view_log(request):
                                     'rev': rev.string})
     else:
       entry.view_href = request.get_url(view_func=view_directory,
+                                        where=entry.filename,
+                                        pathtype=vclib.DIR,
                                         params={'rev': entry.rev})
 
     # calculate diff links
