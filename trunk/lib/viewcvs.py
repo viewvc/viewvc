@@ -62,6 +62,7 @@ import config
 import popen
 import ezt
 import accept
+from vclib import bincvs
 
 debug.t_end('imports')
 
@@ -92,20 +93,12 @@ _sticky_vars = (
 # regex used to move from a file to a directory
 _re_up_path = re.compile('(Attic/)?[^/]+$')
 
-_EOF_FILE = 'end of file entries'       # no more entries for this RCS file
-_EOF_LOG = 'end of log'                 # hit the true EOF on the pipe
-_EOF_ERROR = 'error message found'      # rlog issued an error
-
 _FILE_HAD_ERROR = 'could not read file'
 
 _UNREADABLE_MARKER = '//UNREADABLE-MARKER//'
 
 # for reading/writing between a couple descriptors
 CHUNK_SIZE = 8192
-
-# if your rlog doesn't use 77 '=' characters, then this must change
-LOG_END_MARKER = '=' * 77 + '\n'
-ENTRY_END_MARKER = '-' * 28 + '\n'
 
 # for rcsdiff processing of header
 _RCSDIFF_IS_BINARY = 'binary'
@@ -237,25 +230,6 @@ class Request:
       self.mime_type = 'text/plain'
     self.default_viewable = cfg.options.allow_markup and \
                             is_viewable(self.mime_type)
-
-class LogHeader:
-  "Hold state from the header portion of an 'rlog' output."
-  def __init__(self, filename, head=None, branch=None, taginfo=None):
-    self.filename = filename
-    self.head = head
-    self.branch = branch
-    self.taginfo = taginfo
-
-
-class LogEntry:
-  "Hold state for each revision entry in an 'rlog' output."
-  def __init__(self, rev, date, author, state, changed, log):
-    self.rev = rev
-    self.date = date
-    self.author = author
-    self.state = state
-    self.changed = changed
-    self.log = log
 
 
 def redirect(location):
@@ -815,327 +789,6 @@ def get_last_modified(file_data):
       lastmod[file] = latest
   return lastmod
 
-def parse_log_header(fp):
-  """Parse and RCS/CVS log header.
-
-  fp is a file (pipe) opened for reading the log information.
-
-  On entry, fp should point to the start of a log entry.
-  On exit, fp will have consumed the separator line between the header and
-  the first revision log.
-
-  If there is no revision information (e.g. the "-h" switch was passed to
-  rlog), then fp will consumed the file separator line on exit.
-  """
-  filename = head = branch = None
-  taginfo = { }         # tag name => revision
-
-  parsing_tags = 0
-  eof = None
-
-  while 1:
-    line = fp.readline()
-    if not line:
-      # the true end-of-file
-      eof = _EOF_LOG
-      break
-
-    if parsing_tags:
-      if line[0] == '\t':
-        [ tag, rev ] = map(string.strip, string.split(line, ':'))
-        taginfo[tag] = rev
-      else:
-        # oops. this line isn't tag info. stop parsing tags.
-        parsing_tags = 0
-
-    if not parsing_tags:
-      if line[:9] == 'RCS file:':
-        # remove the trailing ,v
-        filename = line[10:-3]
-      elif line[:5] == 'head:':
-        head = line[6:-1]
-      elif line[:7] == 'branch:':
-        branch = line[8:-1]
-      elif line[:14] == 'symbolic names':
-        # start parsing the tag information
-        parsing_tags = 1
-      elif line == ENTRY_END_MARKER:
-        # end of the headers
-        break
-      elif line == LOG_END_MARKER:
-        # end of this file's log information
-        eof = _EOF_FILE
-        break
-      elif line[:6] == 'rlog: ':
-        # rlog: filename/goes/here,v: error message
-        idx = string.find(line, ':', 6)
-        if idx != -1:
-          if line[idx:idx+32] == ': warning: Unknown phrases like ':
-            # don't worry about this warning. it can happen with some RCS
-            # files that have unknown fields in them (e.g. "permissions 644;"
-            continue
-
-          # looks like a filename
-          filename = line[6:idx]
-          if filename[-2:] == ',v':
-            filename = filename[:-2]
-          return LogHeader(filename), _EOF_ERROR
-        # dunno what this is
-
-  return LogHeader(filename, head, branch, taginfo), eof
-
-_re_log_info = re.compile(r'^date:\s+([^;]+);'
-                          r'\s+author:\s+([^;]+);'
-                          r'\s+state:\s+([^;]+);'
-                          r'(\s+lines:\s+([0-9\s+-]+))?\n$')
-### _re_rev should be updated to extract the "locked" flag
-_re_rev = re.compile(r'^revision\s+([0-9.]+).*')
-def parse_log_entry(fp):
-  """Parse a single log entry.
-
-  On entry, fp should point to the first line of the entry (the "revision"
-  line).
-  On exit, fp will have consumed the log separator line (dashes) or the
-  end-of-file marker (equals).
-
-  Returns: revision, date (time_t secs), author, state, lines changed,
-  the log text, and eof flag (see _EOF_*)
-  """
-  rev = None
-  line = fp.readline()
-  if not line:
-    return None, _EOF_LOG
-  if line[:8] == 'revision':
-    match = _re_rev.match(line)
-    if not match:
-      return None, _EOF_LOG
-    rev = match.group(1)
-
-    line = fp.readline()
-    if not line:
-      return None, _EOF_LOG
-    match = _re_log_info.match(line)
-
-  eof = None
-  log = ''
-  while 1:
-    line = fp.readline()
-    if not line:
-      # true end-of-file
-      eof = _EOF_LOG
-      break
-    if line[:9] == 'branches:':
-      continue
-    if line == ENTRY_END_MARKER:
-      break
-    if line == LOG_END_MARKER:
-      # end of this file's log information
-      eof = _EOF_FILE
-      break
-
-    log = log + line
-
-  if not rev or not match:
-    # there was a parsing error
-    return None, eof
-
-  # parse out a time tuple for the local time
-  tm = compat.cvs_strptime(match.group(1))
-  try:
-    date = int(time.mktime(tm)) - time.timezone
-  except OverflowError:
-    # it is possible that CVS recorded an "illegal" time, such as those
-    # which occur during a Daylight Savings Time switchover (there is a
-    # gap in the time continuum). Let's advance one hour and try again.
-    # While the time isn't necessarily "correct", recall that the gap means
-    # that times *should* be an hour forward. This is certainly close enough
-    # for our needs.
-    #
-    # Note: a true overflow will simply raise an error again, which we won't
-    # try to catch a second time.
-    tm = tm[:3] + (tm[3] + 1,) + tm[4:]
-    date = int(time.mktime(tm)) - time.timezone
-
-  return LogEntry(rev, date,
-                  # author, state, lines changed
-                  match.group(2), match.group(3), match.group(5),
-                  log), eof
-
-def skip_file(fp):
-  "Skip the rest of a file's log information."
-  while 1:
-    line = fp.readline()
-    if not line:
-      break
-    if line == LOG_END_MARKER:
-      break
-
-def process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags):
-  "Fill in fileinfo and alltags with info from the rlog output."
-
-  # consume each file found in the resulting log
-  while 1:
-
-    revwanted = None
-    branch = None
-    branchpoint = None
-
-    header, eof = parse_log_header(rlog)
-    filename = header.filename
-    head = header.head
-    branch = header.branch
-    symrev = header.taginfo
-
-    # the rlog output is done
-    if eof == _EOF_LOG:
-      break
-
-    if filename:
-      # convert from absolute to relative
-      if filename[:len(full_name)] == full_name:
-        filename = filename[len(full_name)+1:]
-
-      # for a subdir (not Attic files!), use the subdir for a key
-      idx = string.find(filename, '/')
-      if idx != -1 and filename[:6] != 'Attic/':
-        info_key = filename[:idx]
-      else:
-        info_key = filename
-
-    # an error was found regarding this file
-    if eof == _EOF_ERROR:
-      fileinfo[info_key] = _FILE_HAD_ERROR
-      continue
-
-    # if we hit the end of the log information (already!), then there is
-    # nothing we can do with this file
-    if eof:
-      continue
-
-    if not filename or not head:
-      # parsing error. skip the rest of this file.
-      skip_file(rlog)
-      continue
-
-    if not branch:
-      idx = string.rfind(head, '.')
-      branch = head[:idx]
-    idx = string.rfind(branch, '.')
-    if idx == -1:
-      branch = '0.' + branch
-    else:
-      branch = branch[:idx] + '.0' + branch[idx:]
-
-    symrev['MAIN'] = symrev['HEAD'] = branch
-
-    if symrev.has_key(view_tag):
-      revwanted = symrev[view_tag]
-      if revwanted[:2] == '0.': ### possible?
-        branch = revwanted[2:]
-      else:
-        idx = string.find(revwanted, '.0.')
-        if idx == -1:
-          branch = revwanted
-        else:
-          branch = revwanted[:idx] + revwanted[idx+2:]
-      if revwanted != branch:
-        revwanted = None
-
-      idx = string.rfind(branch, '.')
-      if idx == -1:
-        branchpoint = ''
-      else:
-        branchpoint = branch[:idx]
-
-    elif view_tag:
-      # the tag wasn't found, so skip this file
-      skip_file(rlog)
-      continue
-
-    # we don't care about the values -- just the keys. this the fastest
-    # way to merge the set of keys
-    alltags.update(symrev)
-
-    # read all of the log entries until we find the revision we want
-    while 1:
-
-      # fetch one of the log entries
-      entry, eof = parse_log_entry(rlog)
-
-      if not entry:
-        # parsing error
-        if not eof:
-          skip_file(rlog)
-        break
-
-      rev = entry.rev
-
-      idx = string.rfind(rev, '.')
-      revbranch = rev[:idx]
-
-      if not view_tag or (not revwanted and branch == revbranch):
-        revwanted = rev
-
-      if rev == revwanted or rev == branchpoint:
-        fileinfo[info_key] = (rev, entry.date, entry.log, entry.author,
-                              filename, entry.state)
-
-        if rev == revwanted:
-          # done with this file now
-          if not eof:
-            skip_file(rlog)
-          break
-
-      # if we hit the true EOF, or just this file's end-of-info, then we are
-      # done collecting log entries.
-      if eof:
-        break
-
-def get_logs(full_name, files, view_tag):
-
-  if len(files) == 0:
-    return { }, { }
-
-  fileinfo = { }
-  alltags = {           # all the tags seen in the files of this dir
-    'MAIN' : '1',
-    'HEAD' : '1',
-    }
-
-  chunk_size = 100
-  while files:
-    chunk = files[:chunk_size]
-    del files[:chunk_size]
-
-    # prepend the full pathname for each file
-    for i in range(len(chunk)):
-      chunk[i] = full_name + '/' + chunk[i]
-
-    if not view_tag:
-      # NOTE: can't pass tag on command line since a tag may contain "-"
-      #       we'll search the output for the appropriate revision
-      # fetch the latest revision on the default branch
-      chunk = ('-r',) + tuple(chunk)
-
-    rlog = popen.popen(os.path.normpath(os.path.join(cfg.general.rcs_path,'rlog')), chunk, 'r')
-
-    process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags)
-
-    ### it would be nice to verify that we got SOMETHING from rlog about
-    ### each file. if we didn't, then it could be that the chunk is still
-    ### too large, so we want to cut the chunk_size in half and try again.
-    ###
-    ### BUT: if we didn't get feedback for some *other* reason, then halving
-    ### the chunk size could merely send us into a needless retry loop.
-    ###
-    ### more work for later...
-
-    status = rlog.close()
-    if status:
-      raise 'error during rlog: '+hex(status)
-
-  return fileinfo, alltags
-
 def revcmp(rev1, rev2):
   rev1 = map(int, string.split(rev1, '.'))
   rev2 = map(int, string.split(rev2, '.'))
@@ -1204,7 +857,8 @@ def view_directory(request):
   for file, pathname, isdir in file_data:
     if not isdir and pathname != _UNREADABLE_MARKER:
       rcs_files.append(file)
-  fileinfo, alltags = get_logs(full_name, rcs_files, view_tag)
+  fileinfo, alltags = bincvs.get_logs(cfg.general.rcs_path, full_name,
+                                      rcs_files, view_tag)
 
   # append the Attic files into the file_data now
   # NOTE: we only insert the filename and isdir==0
@@ -1520,33 +1174,6 @@ def paging(data, key, pagestart, local_name):
   # Slice
   return data[key][pagestart:pageend]
 
-def fetch_log(full_name, which_rev=None):
-  if which_rev:
-    args = ('-r' + which_rev, full_name)
-  else:
-    args = (full_name,)
-  rlog = popen.popen(os.path.normpath(os.path.join(cfg.general.rcs_path,'rlog')), args, 'r')
-
-  header, eof = parse_log_header(rlog)
-  head = header.head
-  branch = header.branch
-  taginfo = header.taginfo
-
-  if eof:
-    # no log entries or a parsing failure
-    return head, branch, taginfo, [ ]
-
-  revs = [ ]
-  while 1:
-    entry, eof = parse_log_entry(rlog)
-    if entry:
-      # valid revision info
-      revs.append(entry)
-    if eof:
-      break
-
-  return head, branch, taginfo, revs
-
 def logsort_date_cmp(rev1, rev2):
   # sort on date; secondary on revision number
   return -cmp(rev1.date, rev2.date) or -revcmp(rev1.rev, rev2.rev)
@@ -1557,7 +1184,8 @@ def logsort_rev_cmp(rev1, rev2):
 
 _re_is_branch = re.compile(r'^((.*)\.)?\b0\.(\d+)$')
 def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
-  head, cur_branch, taginfo, revs = fetch_log(full_name, which_rev)
+  head, cur_branch, taginfo, revs = bincvs.fetch_log(cfg.general.rcs_path,
+                                                     full_name, which_rev)
 
   if not cur_branch:
     idx = string.rfind(head, '.')
@@ -2611,7 +2239,8 @@ def generate_tarball(out, request, tar_top, rep_top, reldir, tag, stack=[]):
 
   stack.append(tar_dir)
 
-  fileinfo, alltags = get_logs(rep_dir, rcs_files, tag)
+  fileinfo, alltags = bincvs.get_logs(cfg.general.rcs_path, rep_dir,
+                                      rcs_files, tag)
 
   files = fileinfo.keys()
   files.sort(lambda a, b: cmp(os.path.basename(a), os.path.basename(b)))
