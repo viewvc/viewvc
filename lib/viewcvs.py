@@ -315,7 +315,11 @@ class Request:
       # view parameter is not set, try looking at pathtype and the 
       # other parameters
       if self.pathtype == vclib.DIR:
-        self.view_func = view_directory
+        # ViewCVS 0.9.2 used to put ?tarball=1 at the end of tarball urls
+	if self.query_dict.has_key('tarball'):
+          self.view_func = download_tarball
+        else:
+          self.view_func = view_directory
       elif self.pathtype == vclib.FILE:
         if self.query_dict.has_key('r1') and self.query_dict.has_key('r2'):
           self.view_func = view_diff
@@ -329,8 +333,6 @@ class Request:
             self.view_func = view_checkout
         elif self.query_dict.has_key('annotate'):
           self.view_func = view_annotate
-        elif self.query_dict.has_key('tarball'):
-          self.view_func = download_tarball
         elif self.query_dict.has_key('graph'):
           if not self.query_dict.has_key('makeimage'):
             self.view_func = view_cvsgraph
