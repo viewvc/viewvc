@@ -400,6 +400,12 @@ class Template:
       idx[1] = idx[1] + 1
     del ctx.for_index[refname]
 
+def boolean(value):
+  "Return a value suitable for [if-any bool_var] usage in a template."
+  if value:
+    return 'yes'
+  return None
+
 
 def _prepare_ref(refname, for_names):
   """refname -> a string containing a dotted identifier. example:"foo.bar.bang"
