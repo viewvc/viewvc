@@ -1969,7 +1969,8 @@ def view_log(request):
     data['log_paging_action'] = urllib.quote(url, _URL_SAFE_CHARS)
     data['log_paging_hidden_values'] = prepare_hidden_values(params)
 
-  url, params = request.get_link(params={'r1': None, 'r2': None, 'tr1': None,
+  url, params = request.get_link(view_func=view_diff,
+                                 params={'r1': None, 'r2': None, 'tr1': None,
                                          'tr2': None, 'diff_format': None})
   data['diff_select_action'] = urllib.quote(url, _URL_SAFE_CHARS)
   data['diff_select_hidden_values'] = prepare_hidden_values(params)
