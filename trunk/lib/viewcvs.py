@@ -1106,6 +1106,9 @@ def view_directory(request):
 
   attic_files = [ ]
   if not hideattic or view_tag:
+    # if we are not hiding the contents of the Attic dir, or we have a
+    # specific tag, then the Attic may contain files/revs to display.
+    # grab the info for those files, too.
     try:
       attic_files = os.listdir(full_name + '/Attic')
     except os.error:
@@ -1148,6 +1151,9 @@ def view_directory(request):
     'sortby_date_href' :   toggle_query(query_dict, 'sortby', 'date'),
     'sortby_author_href' : toggle_query(query_dict, 'sortby', 'author'),
     'sortby_log_href' :    toggle_query(query_dict, 'sortby', 'log'),
+
+    'show_attic_href' : toggle_query(query_dict, 'hideattic', 0),
+    'hide_attic_href' : toggle_query(query_dict, 'hideattic', 1),
 
     'has_tags' : ezt.boolean(alltags or view_tag),
 
@@ -1232,18 +1238,15 @@ def view_directory(request):
   num_displayed = 0
   unreadable = 0
 
-  attic_toggle_link = '<a href="./%s#dirlist">[Hide]</a>' % \
-                      toggle_query(query_dict, 'hideattic', 1)
-
   ### display a row for ".." ?
 
   rows = data['rows'] = [ ]
 
   for file, pathname, isdir in file_data:
 
-    row = _item(href=None, hide_attic_href=None, graph_href=None,
+    row = _item(href=None, graph_href=None,
                 author=None, log=None, log_file=None, log_rev=None,
-                show_log=None)
+                show_log=None, state=None)
 
     if pathname == _UNREADABLE_MARKER:
       if isdir is None:
@@ -1279,10 +1282,6 @@ def view_directory(request):
       row.href = url
       row.name = file + '/'
       row.type = 'dir'
-
-      if file == 'Attic':
-        row.hide_attic_href = './' + toggle_query(query_dict, 'hideattic', 0) \
-                              + '#dirlist'
 
       info = fileinfo.get(file)
       if info == _FILE_HAD_ERROR:
@@ -1334,17 +1333,6 @@ def view_directory(request):
       file_url = urllib.quote(file)
       url = file_url + request.qmark_query
 
-      if view_tag:
-        if info[5] == 'dead':
-          attic = ' (not exist)&nbsp;' + attic_toggle_link
-        else:
-          attic = ''
-      else:
-        if file[:6] == 'Attic/':
-          attic = ' (in the Attic)&nbsp;' + attic_toggle_link
-        else:
-          attic = ''
-
       if file[:6] == 'Attic/':
         file = file[6:]
 
@@ -1353,10 +1341,7 @@ def view_directory(request):
       row.href = url
       row.rev = info[0]
       row.author = info[3]
-
-      ### it would be good to break this out into bits so the .ezt can
-      ### format this info however it likes
-      row.attic = attic
+      row.state = info[5]
 
       row.rev_href = file_url + '?rev=' + row.rev + request.amp_query
 
