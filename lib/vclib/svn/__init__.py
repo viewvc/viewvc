@@ -259,14 +259,6 @@ class SubversionRepository(vclib.Repository):
     core.svn_pool_destroy(self.pool)
     core.apr_terminate()
     
-  def getitem(self, path_parts):
-    basepath = self._getpath(path_parts)
-    item = self.itemtype(path_parts)
-    if item is vclib.DIR:
-      return vclib.Versdir(self, basepath)
-    else:
-      return vclib.Versfile(self, basepath)
-
   def itemtype(self, path_parts):
     basepath = self._getpath(path_parts)
     kind = fs.check_path(self.fsroot, basepath, self.pool)
@@ -301,76 +293,4 @@ class SubversionRepository(vclib.Repository):
 
   def _getpath(self, path_parts):
     return string.join(path_parts, '/')
-
-  def _getvf_subdirs(self, basepath):
-    entries = fs.dir_entries(self.fsroot, basepath, self.pool)
-    subdirs = { }
-    names = entries.keys()
-    names.sort()
-    subpool = core.svn_pool_create(self.pool)
-    for name in names:
-      child = fs_path_join(basepath, name)
-      if fs.is_dir(self.fsroot, child, subpool):
-        subdirs[name] = vclib.Versdir(self, child)
-      core.svn_pool_clear(subpool)
-    core.svn_pool_destroy(subpool)
-    return subdirs
-    
-  def _getvf_files(self, basepath):
-    entries = fs.dir_entries(self.fsroot, basepath, self.pool)
-    files = { }
-    names = entries.keys()
-    names.sort()
-    subpool = core.svn_pool_create(self.pool)
-    for name in names:
-      child = fs_path_join(basepath, name)
-      if fs.is_file(self.fsroot, child, subpool):
-        files[name] = vclib.Versfile(self, child)
-      core.svn_pool_clear(subpool)
-    core.svn_pool_destroy(subpool)
-    return files
-  
-  def _getvf_info(self, target, basepath):
-    if not fs.is_file(self.fsroot, basepath, self.pool):
-      raise "Unknown file: %s " % basepath
-    # todo
-    pass
-  
-  def _getvf_tree(self, versfile):
-    """
-    should return a dictionary of Revisions
-    Developers: method to be overloaded.
-    """
-    # todo
-
-  def _getvf_properties(self, target, basepath, revisionnumber):
-    """
-    Add/update into target's attributes (expected to be an instance of
-    Revision) a certain number of attributes:
-    rev
-    date
-    author
-    state
-    log
-    previous revision number
-    branches ( a list of revision numbers )
-    changes ( string of the form: e.g. "+1 -0 lines" )
-    tags
-    ... ( there can be other stuff here)
-    
-    Developers: in the cvs implementation, the method will never be called.
-    There is no point in developping this method as  _getvf_tree already
-    gets the properties.
-    """
-    # todo
-
-  def _getvf_cofile(self, target, basepath):
-    """
-    should return a file object representing the checked out revision.
-    Notice that _getvf_co can also add the properties in <target> the
-    way _getvf_properties does.  
-
-    Developers: method to be overloaded.
-    """
-    # todo
 
