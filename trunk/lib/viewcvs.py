@@ -83,7 +83,6 @@ alt_mime_type = 'text/x-cvsweb-markup'
 # put here the variables we need in order to hold our state - they will be
 # added (with their current value) to any link/query string you construct
 _sticky_vars = (
-  'root',
   'hideattic',
   'sortby',
   'sortdir',
@@ -366,8 +365,8 @@ class Request:
        result = self.server.escape(result)
     return result
 
-  def get_link(self, view_func = None, rootname = None, where = None,
-    params = None, pathtype = None):
+  def get_link(self, view_func = None, where = None, pathtype = None,
+               params = None):
     """Constructs a link pointing to another ViewCVS page. All arguments
     correspond to members of the Request object. If they are set to 
     None they take values from the current page. Return value is a base
@@ -375,9 +374,6 @@ class Request:
 
     if view_func is None:
       view_func = self.view_func
-
-    if rootname is None:
-      rootname = self.rootname
 
     if params is None:
       params = self.query_dict.copy()
@@ -393,7 +389,8 @@ class Request:
       where = self.where
       pathtype = self.pathtype
 
-    last_link = view_func is view_checkout or view_func is download_tarball
+    # tack on sticky variables by default
+    sticky_vars = 1
 
     # The logic used to construct the URL is an inverse of the
     # logic used to interpret URLs in Request.run_viewcvs
@@ -405,14 +402,27 @@ class Request:
       url = url + '/' + checkout_magic_path
       view_func = None
 
-    # add root name
+    # add root to url
     if cfg.options.root_as_url_component:
-      url = url + '/' + rootname
-    elif not (params.has_key('root') and params['root'] is None):
-      if rootname != cfg.general.default_root:
-        params['root'] = rootname
+      # remove root from parameter list if present
+      try:
+        rootname = params['root']
+      except KeyError:
+        rootname = self.rootname
       else:
-        params['root'] = None
+        del params['root']
+
+      # add root path component
+      if rootname is not None:
+        url = url + '/' + rootname
+
+    else:
+      # add root to parameter list
+      rootname = params.setdefault('root', self.rootname)
+      
+      # no need to specify default root
+      if rootname == cfg.general.default_root:
+        del params['root']   
 
     # add path
     if where and where != '':
@@ -422,10 +432,15 @@ class Request:
     if view_func is download_tarball:
       if not where: url = url + '/root'
       url = url + '.tar.gz'
+
+      # no need to add sticky variables, download_tarball won't use them ...
+      sticky_vars = 0
+
+      # ... except for "only_with_tag" which we add manually
       if not params.has_key('only_with_tag'):
         params['only_with_tag'] = self.query_dict.get('only_with_tag')
 
-    # add trailing slash for a directory      
+    # add trailing slash for a directory
     elif pathtype == vclib.DIR:
       url = url + '/'
 
@@ -456,6 +471,10 @@ class Request:
       and params.has_key('r2'):
       view_func = None
 
+    # no need to add sticky variables for checkout view
+    if view_func is view_checkout:
+      sticky_vars = 0
+
     # no need to explicitly specify checkout view when
     # there's a rev parameter
     if view_func is view_checkout and params.has_key('rev'):
@@ -465,19 +484,27 @@ class Request:
     if view_code and not (params.has_key('view') and params['view'] is None):
       params['view'] = view_code
 
-    return url, self.get_options(params, not last_link)
-
-  def get_options(self, params = {}, sticky_vars=1):
-    """Combine params with current sticky values"""
-    ret = { }
+    # add sticky values to parameter list
     if sticky_vars:
       for name in _sticky_vars:
         value = self.query_dict.get(name)
-        if value is not None and not params.has_key(name):
-          ret[name] = self.query_dict[name]
-    for name, val in params.items():
-      if val is not None:
-        ret[name] = val
+        if value is not None:
+          params.setdefault(name, value)
+
+    # remove null values from parameter list
+    for name, value in params.items():
+      if value is None:
+        del params[name]
+
+    return url, params
+
+  def sticky_vars(self):
+    """Return a dictionary of sticky variables"""
+    ret = { }
+    for name in _sticky_vars:
+      value = self.query_dict.get(name)
+      if value is not None:
+        ret[name] = value
     return ret
 
   def setup_mime_type_info(self):
@@ -1953,7 +1980,7 @@ def view_annotate(request):
   rcsfile = request.repos.rcsfile(request.path_parts)
   data['lines'] = blame.BlameSource(request.repos.rootpath,
                                     rcsfile, rev,
-                                    request.server.escape(compat.urlencode(request.get_options())))
+                                    request.server.escape(compat.urlencode(request.sticky_vars())))
 
   request.server.header()
   generate_page(request, cfg.templates.annotate, data)
@@ -1988,7 +2015,7 @@ def view_cvsgraph(request):
   # Uncomment and set accordingly if required.
   #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib'
 
-  query = compat.urlencode(request.get_options({}))
+  query = compat.urlencode(request.sticky_vars())
   amp_query = query and '&' + query
   qmark_query = query and '?' + query
 
