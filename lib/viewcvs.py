@@ -97,6 +97,12 @@ CHUNK_SIZE = 8192
 LOG_END_MARKER = '=' * 77 + '\n'
 ENTRY_END_MARKER = '-' * 28 + '\n'
 
+### until we formalize the template path/file stuff
+if CONF_PATHNAME:
+  # installed
+  g_template_dir = os.path.join(os.path.dirname(CONF_PATHNAME), 'templates')
+else:
+  g_template_dir = os.path.join('..', 'templates')
 
 class Request:
   def __init__(self):
@@ -1091,8 +1097,7 @@ def view_directory(request):
   template = ezt.Template()
 
   ### get the template fname from the .conf file
-  template.parse_file(os.path.dirname(CONF_PATHNAME) + 
-                      '/templates/directory.ezt')
+  template.parse_file(os.path.join(g_template_dir, 'directory.ezt'))
 
   # prepare the data that will be passed to the template
   data = {
