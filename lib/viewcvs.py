@@ -1264,6 +1264,7 @@ def view_directory_cvs(request, data, sortby, sortdir):
         have_logs = 1
 
     row.anchor = file.name
+    row.name = file.name
 
     row.type = (file.kind == vclib.FILE and 'file') or \
                (file.kind == vclib.DIR and 'dir')
@@ -1281,7 +1282,6 @@ def view_directory_cvs(request, data, sortby, sortdir):
       if file.name == 'CVS': # CVS directory in repository is for fileattr.
         continue
 
-      row.name = file.name + '/'
       row.href = request.get_url(view_func=view_directory,
                                  where=where_prefix+file.name,
                                  pathtype=vclib.DIR,
@@ -1294,19 +1294,16 @@ def view_directory_cvs(request, data, sortby, sortdir):
           row.log_file = file.newest_file
           row.log_rev = file.rev
 
-      rows.append(row)
-
     elif file.kind == vclib.FILE:
       num_files = num_files + 1
 
-      if file.rev is None:
+      if file.rev is None and not file.verboten:
         continue
       elif hideattic and view_tag and file.state == 'dead':
         continue
       num_displayed = num_displayed + 1
 
       file_where = where_prefix + (file.in_attic and 'Attic/' or '') + file.name
-      row.name = file.name
 
       row.href = request.get_url(view_func=view_log,
                                  where=file_where,
@@ -1324,7 +1321,7 @@ def view_directory_cvs(request, data, sortby, sortdir):
                                           pathtype=vclib.FILE,
                                           params={})
 
-      rows.append(row)
+    rows.append(row)
   
   data.update({
     'num_files' :  num_files,
@@ -1391,7 +1388,7 @@ def view_directory_svn(request, data, sortby, sortdir):
 
     if file.kind == vclib.DIR:
       row.type = 'dir'
-      row.name = file.name + '/'
+      row.name = file.name
       row.cvs = 'none' # What the heck is this?
       row.href = request.get_url(view_func=view_directory,
                                  where=where_prefix + file.name,
