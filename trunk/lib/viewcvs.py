@@ -55,6 +55,7 @@ import struct
 import compat
 import config
 import popen
+import ezt
 
 #########################################################################
 
@@ -1043,18 +1044,6 @@ def revcmp(rev1, rev2):
   rev2 = map(int, string.split(rev2, '.'))
   return cmp(rev1, rev2)
 
-def print_roots(current_root):
-  if len(cfg.general.cvs_roots) < 2:
-    return
-  print '<h3>Project Root</h3>'
-  print '<form method=GET action="./">'
-  print '<select name=cvsroot onchange="submit()">'
-  names = cfg.general.cvs_roots.keys()
-  names.sort(lambda n1, n2: cmp(string.lower(n1), string.lower(n2)))
-  for name in names:
-    html_option(name, current_root)
-  print '</select><input type=submit value="Go"></form>'
-
 def view_directory(request):
   full_name = request.full_name
   where = request.where
@@ -1097,18 +1086,31 @@ def view_directory(request):
   for file in attic_files:
     file_data.append((file, None, 0))
 
-  if where == '':
-    html_header(cfg.general.main_title)
+  http_header()
 
-    # these may be commented out or altered in the configuration section
-    print cfg.text.long_intro
-    print cfg.text.doc_info
-    print cfg.text.repository_info
+  template = ezt.Template()
 
-    print_roots(request.cvsrep)
+  ### get the template fname from the .conf file
+  template.parse_file('../templates/directory.ezt')
+
+  # prepare the data that will be passed to the template
+  data = {
+    'where' : where,
+    'cfg' : cfg,
+    'current_root' : request.cvsrep
+    }
+
+  # add in the CVS roots for the selection
+  if len(cfg.general.cvs_roots) < 2:
+    roots = [ ]
   else:
-    html_header(where)
-    print cfg.text.short_intro
+    roots = cfg.general.cvs_roots.keys()
+    roots.sort(lambda n1, n2: cmp(string.lower(n1), string.lower(n2)))
+  data['roots'] = roots
+
+  # generate the page
+  ### for now, it is just the top part of the page
+  template.generate(sys.stdout, data)
 
   print '<p><a name="dirlist">'
 

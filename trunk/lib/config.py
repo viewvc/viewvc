@@ -41,7 +41,7 @@ import fnmatch
 #########################################################################
 
 class Config:
-  _sections = ('general', 'images', 'options', 'colors', 'text', 'cvsdb')
+  _sections = ('general', 'images', 'options', 'colors', 'cvsdb')
   _force_multi_value = ('cvs_roots', 'forbidden', 'even_odd',
                         'disable_enscript_lang')
 
@@ -190,67 +190,6 @@ class Config:
     self.options.enscript_path = ''
     self.options.disable_enscript_lang = ()
     self.options.allow_tar = 0
-
-    self.text.long_intro = """\
-    <p>
-    This is a WWW interface for CVS Repositories.
-    You can browse the file hierarchy by picking directories
-    (which have slashes after them, <i>e.g.</i>, <b>src/</b>).
-    If you pick a file, you will see the revision history
-    for that file.
-    Selecting a revision number will download that revision of
-    the file.  There is a link at each revision to display
-    diffs between that revision and the previous one, and
-    a form at the bottom of the page that allows you to
-    display diffs between arbitrary revisions.
-    </p>
-    <p>
-    This script
-    (<a href="http://viewcvs.sourceforge.net/">ViewCVS</a>)
-    has been written by Greg Stein
-    &lt;<a href="mailto:gstein@lyra.org">gstein@lyra.org</a>&gt;
-    based on the
-    <a href="http://linux.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi">cvsweb</a>
-    script by Henner Zeller
-    &lt;<a href="mailto:zeller@think.de">zeller@think.de</a>&gt;;
-    it is covered by the
-    <a href="http://www.opensource.org/licenses/bsd-license.html">BSD-License</a>.
-    If you would like to use this CGI script on your own web server and
-    CVS tree, see Greg's
-    <a href="http://viewcvs.sourceforge.net/">ViewCVS distribution
-    site</a>.
-    Please send any suggestions, comments, etc. to
-    <a href="mailto:gstein@lyra.org">Greg Stein</a>.
-    </p>
-    """
-    # ' stupid emacs...
-
-    self.text.doc_info = """
-    <h3>CVS Documentation</h3>
-    <blockquote>
-    <p>
-      <a href="http://cvsbook.red-bean.com/">Karl Fogel's CVS book</a><br>
-      <a href="http://www.loria.fr/~molli/cvs/doc/cvs_toc.html">CVS
-      User's Guide</a><br>
-      <a href="http://cellworks.washington.edu/pub/docs/cvs/tutorial/cvs_tutorial_1.html">Another CVS tutorial</a><br>
-      <a href="http://www.csc.calpoly.edu/~dbutler/tutorials/winter96/cvs/">Yet another CVS tutorial (a little old, but nice)</a><br>
-      <a href="http://www.cs.utah.edu/dept/old/texinfo/cvs/FAQ.txt">An old but very useful FAQ about CVS</a>
-    </p>
-    </blockquote>
-    """
-
-    # Fill in stuff on (say) anonymous pserver access here. For example, what
-    # access mechanism, login, path, etc should be used.
-    self.text.repository_info = """
-    <!-- insert repository access instructions here -->
-    """
-
-    self.text.short_intro = """\
-    <p>
-    Click on a directory to enter that directory. Click on a file to display
-    its revision history and to get a chance to display diffs between revisions. 
-    </p>
-    """
 
   def is_forbidden(self, module):
     if not module:
