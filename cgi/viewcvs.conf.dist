@@ -22,7 +22,6 @@
 #
 #    address
 #    main_title
-#    logo
 #    forbidden
 #
 #    use_enscript
@@ -151,9 +150,6 @@ forbidden =
 #
 # All images are defined with three values: URL, WIDTH, HEIGHT
 #
-
-# this logo will appear on the page
-logo = /icons/apache_pb.gif, 259, 32
 
 #
 # these icons represent a back-pointer, a directory (folder), and a file.

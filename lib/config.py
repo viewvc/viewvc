@@ -130,7 +130,6 @@ class Config:
     self.cvsdb.readonly_user = ''
     self.cvsdb.readonly_passwd = '' 
 
-    self.images.logo = "/icons/apache_pb.gif", 259, 32
     self.images.back_icon = "/icons/small/back.gif", 16, 16
     self.images.dir_icon = "/icons/small/dir.gif",  16, 16
     self.images.file_icon = "/icons/small/text.gif", 16, 16

@@ -236,22 +236,6 @@ def http_header(content_type='text/html'):
   print
   _header_sent = 1
 
-def html_header(title):
-  http_header()
-  logo = cfg.images.get_image('logo')
-  print '''\
-<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
- "http://www.w3.org/TR/REC-html40/loose.dtd">
-<html><head>
-%s
-<title>%s</title>
-</head>
-<body text="%s" bgcolor="%s">
-<table width="100&#37;" border=0 cellspacing=0 cellpadding=0>
-  <tr><td><h1>%s</h1></td><td align=right>%s</td></tr></table>
-''' % (header_comment, title, cfg.colors.text, cfg.colors.background,
-       title, logo)
-
 def html_footer():
   print '<hr noshade><table width="100&#37;" border=0 cellpadding=0 cellspacing=0><tr>'
   print '<td align=left><address>%s</address></td>' % cfg.general.address
@@ -2511,7 +2495,9 @@ def run_cgi():
     sys.exit(e[0])
   except:
     info = sys.exc_info()
-    html_header('Python Exception Occurred')
+    http_header()
+    print '<html><head><title>Python Exception Occurred</title></head>'
+    print '<body bgcolor=white><h1>Python Exception Occurred</h1>'
     import traceback
     lines = apply(traceback.format_exception, info)
     print '<pre>'
