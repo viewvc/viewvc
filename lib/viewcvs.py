@@ -329,7 +329,7 @@ class Request:
     function except that it returns a single URL instead of a URL
     split into components"""
 
-    url, params = self.get_link(**args)
+    url, params = apply(self.get_link, (), args)
     qs = compat.urlencode(params)
     if qs:
       return urllib.quote(url, _URL_SAFE_CHARS) + '?' + qs
