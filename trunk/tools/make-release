@@ -18,22 +18,22 @@
 #
 
 if [ "x$1" = "x" ]; then
-  echo "USAGE: $0 target-directory"
+  echo "USAGE: $0 tagname target-directory"
   exit 1
 fi
 
-# grab a copy of the CVS repository  (export requires a tag, so just use 'co')
-rm -r $1
-echo 'Checking out into:' $1
-cvs -d /home/cvsroot co -d $1 -kv -P -R viewcvs
+if test -e $2; then
+  echo "ERROR: must remove $2 first."
+  exit 1
+fi
 
-echo 'Cleaning up...'
-# clean out the CVS crap
-find $1 -name CVS | xargs rm -r
+# grab a copy of the CVS repository
+echo 'Checking out into:' $2
+cvs -d :pserver:anonymous@cvs.viewcvs.sourceforge.net:/cvsroot/viewcvs export -r $1 -d $2 viewcvs
 
 # various shifting, cleanup
-mv $1/website/license-1.html $1/LICENSE.html
-rm -r $1/website
-rm $1/tools/make-release
+mv $2/website/license-1.html $2/LICENSE.html
+rm -r $2/website
+rm $2/tools/make-release
 
 echo 'Done.'
