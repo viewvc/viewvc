@@ -1521,6 +1521,13 @@ def view_directory_svn(request):
   # the number actually displayed
   data['files_shown'] = num_displayed
 
+  if cfg.options.allow_tar:
+    tar_basename = os.path.basename(where)
+    if not tar_basename:
+      tar_basename = "svn_root"
+    url = tar_basename + '.tar.gz?tarball=1' + request.amp_query
+    data['tarball_href'] = url
+
   request.server.header()
   generate_page(request, cfg.templates.directory, data)
 
@@ -2789,7 +2796,7 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0, uid=0, gid=0,
 
   out.write(block)
 
-def generate_tarball(out, request, tar_top, rep_top, reldir, tag, stack=[]):
+def generate_tarball_cvs(out, request, tar_top, rep_top, reldir, tag, stack=[]):
   if (rep_top == '' and 0 < len(reldir) and
       ((reldir[0] == 'CVSROOT' and cfg.options.hide_cvsroot)
        or cfg.is_forbidden(reldir[0]))):
@@ -2851,8 +2858,60 @@ def generate_tarball(out, request, tar_top, rep_top, reldir, tag, stack=[]):
   subdirs.sort()
   for subdir in subdirs:
     if subdir != 'Attic':
-      generate_tarball(out, request, tar_top, rep_top,
+      generate_tarball_cvs(out, request, tar_top, rep_top,
 		       reldir + [subdir], tag, stack)
+
+  if len(stack):
+    del stack[-1:]
+
+def generate_tarball_svn(out, request, tar_top, rep_top, reldir, tag, stack=[]):
+  rep_dir = string.join([rep_top] + reldir, '/')
+  tar_dir = string.join([tar_top] + reldir, '/') + '/'
+
+  curdir = rep_dir
+
+  item = request.repos.getitem([curdir])
+
+  files = item.getfiles()
+  subdirs = item.getsubdirs()
+
+  fileinfo, alltags = vclib.svn.get_logs(request.repos, curdir, files)
+
+  stack.append(tar_dir)
+
+  for file in files:
+    info = fileinfo.get(file)
+    rev = info.rev
+    date = info.date
+    filename = info.filename
+    state = info.state
+
+    for dir in stack:
+      generate_tarball_header(out, dir)
+    del stack[0:]
+
+    mode = 0644
+
+    full_name = curdir + '/' + file
+    fp = vclib.svn.get_file_contents(request.repos, full_name)
+
+    contents = ""
+    while 1:
+      chunk = fp.read(CHUNK_SIZE)
+      if not chunk:
+        break
+      contents = contents + chunk
+
+    status = fp.close()
+
+    generate_tarball_header(out, tar_dir + os.path.basename(filename),
+                            len(contents), mode, date)
+    out.write(contents)
+    out.write('\0' * (511 - ((len(contents) + 511) % 512)))
+
+  for subdir in subdirs:
+    generate_tarball_svn(out, request, tar_top, rep_top,
+                         reldir + [subdir], tag, stack)
 
   if len(stack):
     del stack[-1:]
@@ -2868,7 +2927,13 @@ def download_tarball(request):
   request.server.header('application/octet-stream')
   sys.stdout.flush()
   fp = popen.pipe_cmds([('gzip', '-c', '-n')])
-  generate_tarball(fp, request, tar_top, rep_top, [], tag)
+
+  # Switch based on the repository root type.
+  if request.roottype == 'cvs':
+    generate_tarball_cvs(fp, request, tar_top, rep_top, [], tag)
+  elif request.roottype == 'svn':
+    generate_tarball_svn(fp, request, tar_top, rep_top, [], tag)
+
   fp.write('\0' * 1024)
   fp.close()
 
