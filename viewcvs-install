@@ -27,6 +27,7 @@ import string
 import re
 import traceback
 import py_compile
+import getopt
 import StringIO
 
 # get access to our library modules
@@ -51,11 +52,8 @@ is okay.
 """ % version
 
 ## installer defaults
-if sys.platform == "win32":
-  pf = os.getenv("ProgramFiles", "C:\\Program Files")
-  ROOT_DIR = os.path.join(pf, "viewcvs-" + version)  
-else:
-  ROOT_DIR = "/usr/local/viewcvs-" + version
+DESTDIR = None
+ROOT_DIR = None
 
 
 ## list of files for installation
@@ -152,10 +150,10 @@ def InstallFile(src_path, dest_path, mode, set_python_paths, prompt_replace,
                 compile_it):
   dest_path = os.path.join(ROOT_DIR, dest_path)
     
-  if prompt_replace and os.path.exists(dest_path):
+  if prompt_replace and os.path.exists(DESTDIR + dest_path):
     # Collect ndiff output from ndiff
     sys.stdout = StringIO.StringIO()
-    ndiff.main([dest_path,src_path])
+    ndiff.main([DESTDIR + dest_path,src_path])
     ndiff_output = sys.stdout.getvalue()
 
     # Return everything to normal
@@ -178,13 +176,13 @@ def InstallFile(src_path, dest_path, mode, set_python_paths, prompt_replace,
           flag = 0
 
     if total == "\n":
-      print "    File %s exists,\n    but there is no difference between target and source files.\n" % (dest_path)
+      print "    File %s exists,\n    but there is no difference between target and source files.\n" % (DESTDIR + dest_path)
       return
 
     if type(prompt_replace) == type(""):
       print prompt_replace
     while 1:
-      temp = raw_input("\n    File %s\n    exists and is different from source file.\n      DO YOU WANT TO,\n        overwrite [o]\n        do not overwrite [d]\n        view differences [v]: " % (dest_path))
+      temp = raw_input("\n    File %s\n    exists and is different from source file.\n      DO YOU WANT TO,\n        overwrite [o]\n        do not overwrite [d]\n        view differences [v]: " % (DESTDIR + dest_path))
       print
 
       temp = string.lower(temp[0])
@@ -216,21 +214,21 @@ def ReplaceFile(src_path, dest_path, mode, set_python_paths, prompt_replace, com
     contents = SetPythonPaths(contents)
 
   ## write the file to the destination location
-  path, basename = os.path.split(dest_path)
+  path, basename = os.path.split(DESTDIR + dest_path)
   MkDir(path)
   
   try:
-    open(dest_path, "wb").write(contents)
+    open(DESTDIR + dest_path, "wb").write(contents)
   except IOError, e:
     if e[0] == 13:
       # EACCES: permission denied
       Error("You do not have permission to write file %s" % dest_path)
     Error("Unknown error writing file %s" % dest_path, IOError, e)
     
-  os.chmod(dest_path, mode)
+  os.chmod(DESTDIR + dest_path, mode)
   
   if compile_it:
-    py_compile.compile(dest_path)
+    py_compile.compile(DESTDIR + dest_path, DESTDIR + dest_path + "c" , dest_path)
   
   return
 
@@ -258,7 +256,7 @@ def install_tree(src_path, dst_path, prompt_replace):
       InstallFile(src, dst, 0644, set_paths, prompt_replace, compile_it)
 
   # prompt to delete all .py and .pyc files that don't belong in installation
-  full_dst_path = os.path.join(ROOT_DIR, dst_path)
+  full_dst_path = os.path.join(DESTDIR + ROOT_DIR, dst_path)
   for fname in os.listdir(full_dst_path):
     if not os.path.isfile(os.path.join(full_dst_path, fname)) or \
        not ((fname[-3:] == '.py' and fname not in files) or
@@ -281,16 +279,45 @@ def install_tree(src_path, dst_path, prompt_replace):
 ## MAIN
 if __name__ == "__main__":
     print INFO_TEXT
-    
-    ## get the install path
-    temp = raw_input("Installation Path [%s]: " % ROOT_DIR)
-    temp = string.strip(temp)
-    if len(temp):
+
+    # option parsing
+    optlist, args = getopt.getopt(sys.argv[1:], None, ['prefix=', 'destdir='])
+    for opt, arg in optlist:
+      if opt == '--prefix':
+        ROOT_DIR = arg
+      if opt == '--destdir':
+        DESTDIR = arg
+
+    ## prompt for ROOT_DIR if none provided
+    if ROOT_DIR is None:
+      if sys.platform == "win32":
+        pf = os.getenv("ProgramFiles", "C:\\Program Files")
+        default = os.path.join(pf, "viewcvs-" + version)  
+      else:
+        default = "/usr/local/viewcvs-" + version
+      temp = string.strip(raw_input("Installation Path [%s]: " % default))
+      print
+      if len(temp):
         ROOT_DIR = temp
+      else:
+        ROOT_DIR = default
+        
+    ## prompt for DESTDIR if none provided
+    if DESTDIR is None:
+      default = ''
+      temp = string.strip(raw_input("DESTDIR Path [%s]: " % default))
+      print
+      if len(temp):
+        DESTDIR = temp
+      else:
+        DESTDIR = default
         
     ## install the files
-    print
-    print "Installing ViewCVS to:", ROOT_DIR
+    print "Installing ViewCVS to:", ROOT_DIR,
+    if DESTDIR:
+      print "(DESTDIR = %s)" % (DESTDIR)
+    else:
+      print
 
     for args in FILE_INFO_LIST:
         print " ", args[0]
