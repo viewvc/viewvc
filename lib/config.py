@@ -190,6 +190,7 @@ class Config:
     self.options.enscript_path = ''
     self.options.disable_enscript_lang = ()
     self.options.allow_tar = 0
+    self.options.use_cvsgraph = 0
 
   def is_forbidden(self, module):
     if not module:
