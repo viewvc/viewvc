@@ -33,8 +33,6 @@
 # -----------------------------------------------------------------------
 #
 
-cvsroots = ['/home/cvsroot']
-
 import string
 import sys
 import os
@@ -43,8 +41,6 @@ import time
 import math
 import cgi
 
-is_mozilla  = re.compile('[mM]ozilla/4')
-is_msie     = re.compile('MSIE')
 path_sep    = os.path.normpath('/')[-1]
 
 class CVSParser:
@@ -115,7 +111,7 @@ class CVSParser:
     token = match.group(1)
 
     # Detect single @ character used to close RCS-encoded string
-    while string.find(self.line_buffer, '@') < 0 or not self.single_at.match(self.line_buffer):
+    while string.find(self.line_buffer, '@') < 0 or not self.single_at.search(self.line_buffer):
       token = token + self.line_buffer
       self.line_buffer = self.rcsfile.readline()
       if self.line_buffer == '':
@@ -598,76 +594,6 @@ class CVSParser:
 
     return revision
 
-opt_a = 1
-opt_v = 1
-opt_d = 0
-opt_A = 0
-opt_m = 0
-opt_w = 0
-opt_l = 1
-
-def show_annotated_cvs_file(pathname):
-  global revision_map, output, text
-
-  output = []
-  revision = parse_cvs_file(pathname)
-
-  text = extract_revision(revision)
-  if len(text) != len(revision_map):
-    raise RuntimeError, 'Internal consistency error'
-
-  # Set total width of line annotation.
-  # Warning: field widths here must match format strings below.
-  annotation_width = 0;
-  if opt_a:
-    # author
-    annotation_width = annotation_width +  8
-  if opt_v:
-    # revision
-    annotation_width = annotation_width +  7
-  if opt_A:
-    # age
-    annotation_width = annotation_width +  6
-  if opt_d:
-    # date
-    annotation_width = annotation_width + 12
-  blank_annotation = ' ' * annotation_width
-
-  # Print each line of the revision, preceded by its annotation.
-  line = 0
-  for revision in revision_map:
-    linetxt = text[line]
-    line = line + 1
-    annotation = ''
-
-    if opt_a:
-      # Annotate with revision author
-      annotation = annotation + "%-8s" % revision_author[revision]
-
-    if opt_v:
-      # Annotate with revision number
-      annotation = annotation + " %-6s" % revision
-
-    if opt_d:
-      # Date annotation
-      annotation = annotation + revision_ctime[revision]
-
-    if opt_A:
-      # Age annotation ?
-      annotation = annotation + " (%3s)" % int(revision_age[revision])
-
-    # -m (if-modified-since) annotion ?
-    if opt_m and timestamp[revision] < opt_m_timestamp:
-      annotation = blank_annotation
-
-    if opt_w and string.strip(linetxt) == '':
-      # Suppress annotation of whitespace lines, if requested;
-      annotation = blank_annotation
-
-    if opt_l:
-      output.append('%4d' % line)
-    output.append(annotation + ' - ' + linetxt)
-
 
 re_includes = re.compile('\\#(\\s*)include(\\s*)"(.*?)"')
 re_filename = re.compile('(.*[\\\\/])?(.+)')
@@ -720,7 +646,7 @@ def make_html(root, rcs_path, opt_rev = None):
   if count == 0:
     count = 1
 
-  line_num_width = int(math.log(count) / math.log(10)) + 1
+  line_num_width = int(math.log10(count)) + 1
   revision_width = 3
   author_width = 5
   line = 0
@@ -815,38 +741,11 @@ def make_html(root, rcs_path, opt_rev = None):
   print endOfRow + '</table><hr width="100%"></body></html>'
 
 
-if __name__ == '__main__':
-  CVSROOT = cvsroots[0]
-  if len(sys.argv) == 2:
-    # Command-line testing
-    make_html(CVSROOT, sys.argv[1])
-  else:
-    form = cgi.FieldStorage()
-    if form.has_key('root'):
-      root = form['root'].value
-    else:
-      root = CVSROOT
-    try:
-      cvsroots.index(root)
-      root_ok = 1
-    except:
-      root_ok = 0
+def main():
+  if len(sys.argv) != 3:
+    print 'USAGE: %s cvsroot rcs-file' % sys.argv[0]
+    sys.exit(1)
+  make_html(sys.argv[1], sys.argv[2])
 
-    rev = None
-    if form.has_key('rev'):
-      rev = form['rev'].value
-    if root_ok and form.has_key('file'):
-      rcs_path = form['file'].value
-      while rcs_path[0] in ('\\', '/'):
-        rcs_path = rcs_path[1:]
-      if string.lower(rcs_path[-2:]) != ',v':
-        rcs_path = rcs_path + ',v'
-      make_html(root, rcs_path, rev)
-    else:
-      print 'Content-Type: text/html'
-      print
-      print '''\
-<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
- "http://www.w3.org/TR/REC-html40/loose.dtd">
-<html>Sorry...</html>
-'''
+if __name__ == '__main__':
+  main()
