@@ -85,8 +85,9 @@ default_root = Development
 # For example, you can use the mime.types from apache here:
 #mime_types_file = /usr/local/apache/conf/mime.types
 
-# This address is shown in the footer. It should contain the CVS maintainer.
-address = <a href="mailto:gstein@lyra.org">gstein@lyra.org</a>
+# This address is shown in the footer of the generated pages. 
+# It must be replaced with the address of the local CVS maintainer.
+address = <a href="mailto:cvs-admin@insert.your.domain.here">No CVS admin address has been configured</a>
 
 # this title is used on the main entry page
 main_title = CVS Repository
