@@ -43,7 +43,12 @@ else:
 
 #########################################################################
 
-import os, string, cgi, time, cvsdbapi
+import os
+import string
+import cgi
+import time
+
+import cvsdbapi
 
 
 ## tuple of alternating row colors
@@ -72,7 +77,7 @@ def FormToCheckinQuery(form):
 
     if form.has_key("file"):
         temp = form["file"].value
-        query.SetFile(temp)
+        query.SetFile(temp, "regex")
 
     if form.has_key("who"):
         temp = form["who"].value
@@ -81,11 +86,11 @@ def FormToCheckinQuery(form):
     if form.has_key("sortby"):
         temp = form["sortby"].value
         if temp == "date":
-            query.SetSortMethod(query.SORT_DATE)
+            query.SetSortMethod("date")
         elif temp == "author":
-            query.SetSortMethod(query.SORT_AUTHOR)
+            query.SetSortMethod("author")
         else:
-            query.SetSortMethod(query.SORT_FILE)
+            query.SetSortMethod("file")
 
     if form.has_key("date"):
         temp = form["date"].value

@@ -13,7 +13,10 @@
 # -----------------------------------------------------------------------
 #
 
-import os, sys, string, time
+import os
+import sys
+import string
+import time
 
 ## imports from the database API; we re-assign the namespace here so it
 ## is easier to switch databases
@@ -27,17 +30,19 @@ from commit import CreateCommit, PrintCommit
 ## of the CheckinDatabase class
 
 sqlBase = 'SELECT checkins.type, checkins.ci_when,checkins. whoid, checkins.repositoryid, checkins.dirid, checkins.fileid, checkins.revision, checkins.stickytag, checkins.branchid, checkins.addedlines, checkins.removedlines, checkins.descid FROM %s WHERE %s %s'
-sqlRepository = '(checkins.repositoryid=repositories.id AND repositories.repository="%s")'
-sqlBranch = '(checkins.branchid=branches.id AND branches.branch="%s")'
-sqlDirectory = '(checkins.dirid=dirs.id AND dirs.dir LIKE "%s%%")'         
-sqlFile = '(checkins.fileid=files.id AND files.file="%s")'
-sqlFromDate ='(checkins.ci_when>="%s")'
-sqlToDate = '(checkins.ci_when<="%s")'
-sqlAuthor = '(checkins.whoid=people.id AND people.who="%s")'
+
+sqlRepository = '(checkins.repositoryid = repositories.id AND repositories.repository %s "%s")'
+sqlBranch = '(checkins.branchid = branches.id AND branches.branch %s "%s")'
+sqlDirectory = '(checkins.dirid = dirs.id AND dirs.dir %s "%s")'         
+sqlFile = '(checkins.fileid = files.id AND files.file %s "%s")'
+sqlAuthor = '(checkins.whoid = people.id AND people.who %s "%s")'
+
+sqlFromDate ='(checkins.ci_when >= "%s")'
+sqlToDate = '(checkins.ci_when <= "%s")'
 sqlSortByDate = 'ORDER BY checkins.ci_when DESC'
 sqlSortByAuthor = 'ORDER BY checkins.whoid'
 sqlSortByFile = 'ORDER BY checkins.fileid'  
-sqlExcludeVersionFiles = '(checkins.fileid=files.id AND files.file NOT LIKE "%%.ver")'
+sqlExcludeVersionFiles = '(checkins.fileid = files.id AND files.file NOT LIKE "%%.ver")'
 sqlCheckCommit = 'SELECT * FROM checkins WHERE checkins.repositoryid=%s AND checkins.dirid=%s AND checkins.fileid=%s AND checkins.revision=%s'
 
 ## CheckinDatabase provides all interfaces needed to the SQL database
@@ -262,45 +267,73 @@ class CheckinDatabase:
         cursor = self.dbConn.cursor()
         cursor.execute(sql, sqlArguments)
 
+    def SQLQueryListString(self, sqlString, query_entry_list):
+        sqlList = []
+
+        for query_entry in query_entry_list:
+
+            ## figure out the correct match type
+            if query_entry.match == "exact":
+                match = "="
+            elif query_entry.match == "like":
+                match = "LIKE"
+            elif query_entry.match == "regex":
+                match = "REGEXP"
+
+            sqlList.append(sqlString % (match, query_entry.data))
+
+        return "(%s)" % (string.join(sqlList, " OR "))
+
     def CreateSQLQueryString(self, query):
         tableList = ['checkins']
         condList = []
-   
-        tableList.append('files')
+
+        ## XXX: this is to exclude .ver files -- RN specific hack --JMP
+        tableList.append("files")
         condList.append(sqlExcludeVersionFiles)
- 
-        if query.repository:
-            tableList.append('repositories')
-            condList.append(sqlRepository % (query.repository))
 
-        if query.branch:
-            tableList.append('branches')
-            condList.append(sqlBranch % (query.branch))
+        if len(query.repository_list):
+            tableList.append("repositories")
+            condList.append(
+                self.SQLQueryListString(sqlRepository, query.repository_list))
 
+        if len(query.branch_list):
+            tableList.append("branches")
+            condList.append(
+                self.SQLQueryListString(sqlBranch, query.branch_list))
+
+        if len(query.directory_list):
+            tableList.append("dirs")
+            condList.append(
+                self.SQLQueryListString(sqlDirectory, query.directory_list))
+            
+        if len(query.file_list):
+            tableList.append("files")
+            condList.append(
+                self.SQLQueryListString(sqlFile, query.file_list))
+            
+        if len(query.author_list):
+            tableList.append("people")
+            condList.append(
+                self.SQLQueryListString(sqlAuthor, query.author_list))
+            
         if query.from_date:
             condList.append(sqlFromDate % (str(query.from_date)))
 
         if query.to_date:
             condList.append(sqlToDate % (str(query.to_date)))
 
-        if query.author:
-            tableList.append('people')
-            condList.append(sqlAuthor % (query.author))
-
-        if query.directory:
-            tableList.append('dirs')
-            condList.append(sqlDirectory % (query.directory))
-
-        if query.file:
-            #tableList.append('files')
-            condList.append(sqlFile % (query.file))
-
-        if query.sort == query.SORT_DATE:
+        if query.sort == "date":
             order_by = sqlSortByDate
-        elif query.sort == query.SORT_AUTHOR:
+        elif query.sort == "author":
             order_by = sqlSortByAuthor
-        elif query.sort == query.SORT_FILE:
+        elif query.sort == "file":
             order_by = sqlSortByFile
+
+        ## exclude duplicates from the table list
+        for table in tableList[:]:
+            while tableList.count(table) > 1:
+                tableList.remove(table)
 
         sql = sqlBase % (
             string.join(tableList, ', '),
@@ -382,95 +415,8 @@ class MySQLCheckinDatabase(CheckinDatabase):
             db = self.dbDatabase)
 
 
-## CheckinDatabaseQueryData is a object which contains the search parameters
-## for a query to the CheckinDatabase
-
-class CheckinDatabaseQuery:
-
-    SORT_DATE = 0
-    SORT_AUTHOR = 1
-    SORT_FILE = 2
-    SORT_CHANGESIZE = 3
-    
-    def __init__(self):
-        ## repository to query
-        self.repository = None
-
-        ## branch
-        self.branch = None
-
-        ## directory to seach
-        self.directory = None
-
-        ## file to search for
-        self.file = None
-
-        ## sorting method
-        self.sort = CheckinDatabaseQuery.SORT_DATE;
-        
-        ## author to search for
-        self.author = None
-
-        ## date range in DBI 2.0 timedate objects
-        self.from_date = None
-        self.to_date = None
-
-        ## list of commits -- filled in by CVS query
-        self.commit_list = []
-
-        ## commit_cb provides a callback for commits as they
-        ## are added
-        self.commit_cb = None
-
-    def SetRepository(self, repository):
-        self.repository = repository
-
-    def SetBranch(self, branch):
-        self.branch = branch
-
-    def SetDirectory(self, directory):
-        self.directory = directory
-
-    def SetFile(self, file):
-        self.file = file
-
-    def SetSortMethod(self, sort):
-        self.sort = sort
-
-    def SetAuthor(self, author):
-        self.author = author
-
-    def SetFromDateObject(self, date):
-        self.from_date = date
-
-    def SetToDateObject(self, date):
-        self.to_date = date
-
-    def SetFromDateHoursAgo(self, hours_ago):
-        ticks = time.time() - (3600 * hours_ago)
-        self.from_date = DBI.TimestampFromTicks(ticks)
-        
-    def SetFromDateDaysAgo(self, days_ago):
-        ticks = time.time() - (86400 * days_ago)
-        self.from_date = DBI.TimestampFromTicks(ticks)
-
-    def SetToDateDaysAgo(self, days_ago):
-        ticks = time.time() - (86400 * days_ago)
-        self.to_date = DBI.TimestampFromTicks(ticks)
-
-    def AddCommit(self, commit):
-        self.commit_list.append(commit)
-        if self.commit_cb:
-            self.commit_cb(commit)
-        
-    def SetCommitCB(self, callback):
-        self.commit_cb = callback
-        
 
 ## entrypoints
 
 def CreateCheckinDatabase(host, user, passwd, database):
     return MySQLCheckinDatabase(host, user, passwd, database)
-
-def CreateCheckinQuery():
-    return CheckinDatabaseQuery()
