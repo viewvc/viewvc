@@ -971,9 +971,9 @@ def get_logs(full_name, files, view_tag):
     ###
     ### more work for later...
 
-    if rlog.close():
-      ### what to do?
-      pass
+    status = rlog.close()
+    if status:
+      raise 'error during rlog: '+hex(status)
 
   return fileinfo, alltags.keys()
 
@@ -2232,9 +2232,9 @@ def main():
 
 try:
   main()
-except SystemExit:
-  # don't stop on a SystemExit (caused by sys.exit())
-  pass
+except SystemExit, e:
+  # don't catch SystemExit (caused by sys.exit()). propagate the exit code
+  sys.exit(e[0])
 except:
   info = sys.exc_info()
   html_header('Python Exception Occurred')
