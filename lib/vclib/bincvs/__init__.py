@@ -617,9 +617,60 @@ class BinCVSRepository(vclib.Repository):
     filename = revision = None
 
     line = fp.readline()
+
     if not line:
-      raise vclib.Error('Missing output from co.<br>'
-                        'fname="%s".' % full_name)
+      # CVSNT's co exits without any output if a dead revision is requested.
+      # Bug at http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=190
+      # As a workaround, we invoke rlog to find the first non-dead revision
+      # that precedes it and check out that revision instead
+      rlog = rcs_popen(self.rcs_paths, 'rlog', (full_name,), 'rt', 0)
+      header, eof = parse_log_header(rlog)
+      
+      # interpret rev parameter using header information
+      header.taginfo['HEAD'] = header.head
+      header.taginfo['MAIN'] = header.branch
+      t = TagInfo(header.taginfo.get(rev, rev))
+      is_branch = t.is_branch()
+      t = t.number()
+      revtuple = t and map(int, string.split(t, '.')) or []
+
+      # build up list containing revtuple and all non-dead revisions
+      revs = [revtuple]
+      while not eof:
+        entry, eof = parse_log_entry(rlog)
+        if entry and entry.state == "Exp":
+          # valid revision info
+          revs.append(map(int, string.split(entry.rev, '.')))
+
+      # sort the list of revision numbers in descending lexicographic order
+      revs.sort()
+      revs.reverse()
+
+      # loop through list, breaking when we hit the first revision that
+      # precedes rev, or the first revision on a branch specified by rev
+      pastrev = 0
+      for corev in revs:
+        if corev is revtuple:
+          pastrev = 1
+        elif pastrev:
+          if len(corev) == 2 or corev[:-1] == revtuple[:len(corev)-1]:
+            break
+        elif is_branch:
+          if len(corev) == len(revtuple)+1 and revtuple == corev[:-1]:
+            break
+          if len(corev) == len(revtuple)+2 and revtuple == []:
+            break
+      else:
+       corev = None
+
+      # if we find a good revision, invoke co again, otherwise error out
+      if corev:
+        rev_flag = '-p' + string.join(map(str, corev), '.') 
+        fp = rcs_popen(self.rcs_paths, 'co', (rev_flag, full_name), 'rb')
+        line = fp.readline()
+      else:
+        raise vclib.Error("CVSNT co workaround could not find non-dead "
+                          "revision preceding \"%s\"" %rev)
 
     match = _re_co_filename.match(line)
     if not match:
