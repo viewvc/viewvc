@@ -164,7 +164,9 @@ from types import StringType, IntType, FloatType
 # "splitting" value and simply dropped.
 #
 _item = r'(?:"(?:[^\\"]|\\.)*"|[-\w.]+)'
-_re_parse = re.compile(r'(\[%s(?: +%s)*\])|(\[\[\])|\[#[^\]]*\]' % (_item, _item))
+_re_parse = re.compile(r'\[(%s(?: +%s)*)\]|(\[\[\])|\[#[^\]]*\]' % (_item, _item))
+
+_re_args = re.compile(r'"(?:[^\\"]|\\.)*"|[-\w.]+')
 
 # block commands and their argument counts
 _block_cmd_specs = { 'if-any':1, 'if-index':2, 'for':1, 'is':2 }
@@ -236,7 +238,7 @@ class Template:
           program.append('[')
       elif piece:
         # DIRECTIVE is present.
-        args = string.split(piece[1:-1])
+        args = _re_args.findall(piece)
         cmd = args[0]
         if cmd == 'else':
           if len(args) > 1:
