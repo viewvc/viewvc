@@ -179,6 +179,9 @@ If this doesn't work, please click on the link above.
             env = os.environ
             # Since we're going to modify the env in the parent, provide empty
             # values to override previously set values
+            for k in env.keys():
+                if k[:5] == 'HTTP_':
+                    del env[k]
             for k in ('QUERY_STRING', 'REMOTE_HOST', 'CONTENT_LENGTH',
                       'HTTP_USER_AGENT', 'HTTP_COOKIE'):
                 if env.has_key(k): 
@@ -219,6 +222,12 @@ If this doesn't work, please click on the link above.
             ua = self.headers.getheader('user-agent')
             if ua:
                 env['HTTP_USER_AGENT'] = ua
+            modified = self.headers.getheader('if-modified-since')
+            if modified:
+                env['HTTP_IF_MODIFIED_SINCE'] = modified
+            etag = self.headers.getheader('if-none-match')
+            if etag:
+                env['HTTP_IF_NONE_MATCH'] = etag
             # XXX Other HTTP_* headers
             decoded_query = string.replace(query, '+', ' ')
 
