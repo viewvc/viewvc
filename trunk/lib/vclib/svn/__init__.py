@@ -209,10 +209,6 @@ def _get_last_history_rev(svnrepos, path, pool):
   
   
 def get_logs(svnrepos, full_name, files):
-  alltags = {           # all the tags seen in the files of this dir
-    'MAIN' : '1',
-    'HEAD' : '1',
-    }
   subpool = core.svn_pool_create(svnrepos.pool)
   for file in files:
     core.svn_pool_clear(subpool)
@@ -227,7 +223,6 @@ def get_logs(svnrepos, full_name, files):
     if file.kind == vclib.FILE:
       file.size = fs.file_length(svnrepos.fsroot, path, subpool)
   core.svn_pool_destroy(subpool)
-  return alltags
 
 
 def do_diff(svnrepos, path1, rev1, path2, rev2, diffoptions):
