@@ -144,8 +144,8 @@ def parse_log_header(fp):
   If there is no revision information (e.g. the "-h" switch was passed to
   rlog), then fp will consumed the file separator line on exit.
   """
-  filename = head = branch = None
-  taginfo = { }         # tag name => revision
+  filename = head = branch = ""
+  taginfo = { }         # tag name => number
 
   parsing_tags = 0
   eof = None
@@ -167,8 +167,7 @@ def parse_log_header(fp):
 
     if not parsing_tags:
       if line[:9] == 'RCS file:':
-        # remove the trailing ,v
-        filename = line[10:-3]
+        filename = line[10:-1]
       elif line[:5] == 'head:':
         head = line[6:-1]
       elif line[:7] == 'branch:':
@@ -185,7 +184,7 @@ def parse_log_header(fp):
         break
       elif line[:6] == 'rlog: ':
         # rlog: filename/goes/here,v: error message
-        idx = string.find(line, ':', 6)
+        idx = string.find(line, ': ', 6)
         if idx != -1:
           if line[idx:idx+32] == ': warning: Unknown phrases like ':
             # don't worry about this warning. it can happen with some RCS
@@ -194,8 +193,6 @@ def parse_log_header(fp):
 
           # looks like a filename
           filename = line[6:idx]
-          if filename[-2:] == ',v':
-            filename = filename[:-2]
           return LogHeader(filename), _EOF_ERROR
         # dunno what this is
 
@@ -288,77 +285,85 @@ def rcs_popen(rcs_paths, rcs_cmd, rcs_args, mode, capture_err=1):
     args = rcs_args
   return popen.popen(cmd, args, mode, capture_err)
 
-def get_logs(rcs_paths, full_name, files, view_tag):
+def path_ends_in(path, ending):
+  if path == ending:
+    return 1
+  le = len(ending)
+  if le >= len(path):
+    return 0
+  return path[-le:] == ending and path[-le-1] == os.sep
 
-  if len(files) == 0:
-    return { }, { }
-
-  files = files[:]
-  fileinfo = { }
+def get_logs(repos, path_parts, entries, view_tag, get_dirs=1):
+  have_logs = 0
   alltags = {           # all the tags seen in the files of this dir
     'MAIN' : '',
     'HEAD' : '1.1'
     }
 
-  chunk_size = 100
-  while files:
-    chunk = files[:chunk_size]
-    del files[:chunk_size]
+  entries_idx = 0
+  entries_len = len(entries)
+  max_args = 100
 
-    # prepend the full pathname for each file
-    for i in range(len(chunk)):
-      chunk[i] = full_name + '/' + chunk[i]
+  while 1:
+    chunk = []
 
+    while len(chunk) < max_args and entries_idx < entries_len:
+      entry = entries[entries_idx]
+      entries_idx = entries_idx + 1
+
+      path = None
+      if not entry.verboten:
+        if entry.kind == vclib.FILE:
+          path = (entry.in_attic and ['Attic'] or []) + [entry.name]
+        elif entry.kind == vclib.DIR and get_dirs and entry.name != 'Attic':
+          assert not entry.in_attic
+          entry.newest_file = repos._newest_file(path_parts + [entry.name])
+          if entry.newest_file:
+            path = [entry.name, entry.newest_file]
+
+      if path:
+        entry.path = repos._getpath(path_parts + path) + ',v'
+        chunk.append(entry)
+
+      # set a value even if we don't retrieve logs
+      entry.rev = None
+
+    if not chunk:
+      return have_logs, alltags
+
+    args = []
     if not view_tag:
       # NOTE: can't pass tag on command line since a tag may contain "-"
       #       we'll search the output for the appropriate revision
       # fetch the latest revision on the default branch
-      chunk = ('-r',) + tuple(chunk)
-
-    rlog = rcs_popen(rcs_paths, 'rlog', chunk, 'rt', 0)
+      args.append('-r')
+    args.extend(map(lambda x: x.path, chunk))
+    rlog = rcs_popen(repos.rcs_paths, 'rlog', args, 'rt')
 
     # consume each file found in the resulting log
-    while 1:
-
-      revwanted = None
-      branch = None
-      branchpoint = None
-
+    for file in chunk:
       header, eof = parse_log_header(rlog)
-      filename = header.filename
-      head = header.head
-      branch = header.branch
-      symrev = header.taginfo
 
       # the rlog output is done
       if eof == _EOF_LOG:
-        break
+        raise vclib.Error('Rlog output ended early. Expected RCS file "%s"'
+                          % file.path)
 
-      if filename:
-        # convert from absolute to relative
-        if filename[:len(full_name)] == full_name:
-          filename = filename[len(full_name)+1:]
-
-        # for a subdir (not Attic files!), use the subdir for a key
-        idx = string.find(filename, '/')
-        if idx != -1 and filename[:6] != 'Attic/':
-          info_key = filename[:idx]
-        else:
-          info_key = filename
+      # check path_ends_in instead of file == header.filename because of
+      # cvsnt's rlog, which only outputs the base filename 
+      # http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=188
+      if not (header.filename and path_ends_in(file.path, header.filename)):
+        raise vclib.Error('Error parsing rlog output. Expected RCS file "%s"'
+                          ', found "%s"' % (file.path, header.filename))
 
       # an error was found regarding this file
       if eof == _EOF_ERROR:
-        fileinfo[info_key] = _FILE_HAD_ERROR
+        file.rev = _FILE_HAD_ERROR
         continue
 
       # if we hit the end of the log information (already!), then there is
       # nothing we can do with this file
       if eof:
-        continue
-
-      if not filename or not head:
-        # parsing error. skip the rest of this file.
-        skip_file(rlog)
         continue
 
       if view_tag == 'MAIN':
@@ -378,7 +383,7 @@ def get_logs(rcs_paths, full_name, files, view_tag):
       # the values point to branches or revisions. this the fastest way to 
       # merge the set of keys and keep values that allow us to make the 
       # distinction between branch tags and normal tags
-      alltags.update(symrev)
+      alltags.update(header.taginfo)
 
       # read all of the log entries until we find the revision we want
       while 1:
@@ -396,12 +401,12 @@ def get_logs(rcs_paths, full_name, files, view_tag):
         if (not view_tag_info or view_tag_info.matches_rev(rev) or
             view_tag_info.holds_rev(rev)):
 
-          new_entry = LogEntry(rev, entry.date, entry.author, entry.state,
-                               None, entry.log)
-          new_entry.filename = filename
-          fileinfo[info_key] = new_entry
-#         fileinfo[info_key] = (rev, entry.date, entry.log, entry.author,
-#                               filename, entry.state)
+          have_logs = 1
+          file.rev = rev
+          file.date = entry.date
+          file.author = entry.author
+          file.state = entry.state
+          file.log = entry.log
 
           # done with this file now, skip the rest of this file's revisions
           if not eof:
@@ -413,20 +418,9 @@ def get_logs(rcs_paths, full_name, files, view_tag):
         if eof:
           break
 
-    ### it would be nice to verify that we got SOMETHING from rlog about
-    ### each file. if we didn't, then it could be that the chunk is still
-    ### too large, so we want to cut the chunk_size in half and try again.
-    ###
-    ### BUT: if we didn't get feedback for some *other* reason, then halving
-    ### the chunk size could merely send us into a needless retry loop.
-    ###
-    ### more work for later...
-
     status = rlog.close()
     if status:
       raise 'error during rlog: '+hex(status)
-
-  return fileinfo, alltags
 
 def fetch_log(rcs_paths, full_name, which_rev=None):
   if which_rev:
