@@ -13,29 +13,10 @@
 # -----------------------------------------------------------------------
 #
 
-#########################################################################
-#
-# INSTALL-TIME CONFIGURATION
-#
-# These values will be set during the installation process. During
-# development, they will remain None.
-#
-
-CONF_PATHNAME = None
-
-#########################################################################
-
 import os
-import sys
 import string
 import re
 import time
-import config
-
-## load configuration file, the data is used globally here
-cfg = config.Config()
-cfg.set_defaults()
-cfg.load_config(CONF_PATHNAME)
 
 
 ## RLogOutputParser uses the output of rlog to build a list of Commit
@@ -99,7 +80,7 @@ class RLogEntry:
 class RLog:
     "Provides a alternative file-like interface for running 'rlog'."
     
-    def __init__(self, filename, revision, date):
+    def __init__(self, cfg, filename, revision, date):
         self.filename = self.fix_filename(filename)
         self.checkout_filename = self.create_checkout_filename(self.filename)
         self.revision = revision
@@ -352,7 +333,7 @@ class RLogOutputParser:
 
 ## entrypoints
 
-def GetRLogData(path, revision = '', date = ''):
-    rlog = RLog(path, revision, date)
+def GetRLogData(cfg, path, revision = '', date = ''):
+    rlog = RLog(cfg, path, revision, date)
     rlog_parser = RLogOutputParser(rlog)
     return rlog_parser.rlog_data

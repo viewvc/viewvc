@@ -34,10 +34,17 @@ import config
 import dbi
 import rlog
 
+
 ## load configuration file, the data is used globally here
+if CONF_PATHNAME:
+  _cfg_pathname = CONF_PATHNAME
+else:
+  # developer assistance: running from a CVS working copy
+  _cfg_pathname = os.path.join(os.path.dirname(__file__), os.pardir, 'cgi',
+                               'viewcvs.conf')
 cfg = config.Config()
 cfg.set_defaults()
-cfg.load_config(CONF_PATHNAME)
+cfg.load_config(_cfg_pathname)
 
 ## error
 error = "cvsdb error"
@@ -726,7 +733,7 @@ def RLogDataToCommitList(repository, rlog_data):
 
 def GetCommitListFromRCSFile(repository, filename):
     try:
-        rlog_data = rlog.GetRLogData(filename)
+        rlog_data = rlog.GetRLogData(cfg, filename)
     except rlog.error, e:
         raise error, e
     
