@@ -9,11 +9,12 @@
 <body text="#000000" bgcolor="#ffffff">
 <table width="100%" border=0 cellspacing=0 cellpadding=0>
   <tr>
-    <td rowspan=2><h1>[if-any where][where][else][cfg.general.main_title][end]</h1></td>
+    <td><h1>[if-any where][where][else][cfg.general.main_title][end]</h1></td>
     <td align=right><img src="/icons/apache_pb.gif" alt="(logo)" border=0
 			width=259 height=32></td>
   </tr>
   <tr>
+    <td>[is roottype "svn"]<h2>(revision [tree_rev])</h2>[else]&nbsp;[end]</td>
     <td align=right><h3><b><a target="_blank"
 href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.html">ViewCVS and CVS Help</a></b></h3></td>
   </tr>
@@ -24,7 +25,8 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
 
   [if-any roots]
     <h3>Project Root</h3>
-    <form method=GET action="[request.script_name]/[if-any request.embedded_root][request.embedded_root]/[end][if-any where][where]/[end]">
+    <form method=get action="[change_root_action]">
+      [change_root_hidden_values]
       <select name=root onchange="submit()">
       [for roots]
         [is roots current_root]
@@ -44,6 +46,20 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
 [if-any where]
 <table>
 <tr><td>Current directory:</td><td><b>[nav_path]</b></td></tr>
+  [is roottype "svn"]
+    <tr>
+      <td>
+        Jump to directory revision:
+      </td>
+      <td>
+        <form method=get action="[jump_rev_action]">
+        [jump_rev_hidden_values]
+        <input type="text" name="rev" value="[jump_rev]">
+        <input type=submit value="Go">
+        </form>
+      </td>
+    </tr>
+  [end]
 [if-any view_tag]
 <tr><td>Current tag:</td><td><b>[view_tag]</b></td></tr>
 [end]
@@ -59,7 +75,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
   [else]
     [is picklist_len "1"]
     [else]
-      <form method=GET action="[request.script_name]/[if-any request.embedded_root][request.embedded_root]/[end][if-any where][where]/[end]">
+      <form method=get action="[dir_paging_action]">
         [dir_paging_hidden_values]
         <input type=submit value="Go to:">
         <select name=dir_pagestart  onchange="submit()">
@@ -87,56 +103,56 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
 [if-any have_logs]
   [is sortby "rev"]
     <th align=left bgcolor="#88ff88">Rev.&nbsp;[is sortdir "up"]<a 
-         href="./[sortdir_down_href]#dirlist"><img 
+         href="[sortdir_down_href]#dirlist"><img
 	 src="[request.script_name]/*docroot*/images/down.png"></a>[else]<a
-         href="./[sortdir_up_href]#dirlist"><img 
+         href="[sortdir_up_href]#dirlist"><img
 	 src="[request.script_name]/*docroot*/images/up.png"></a>[end]</th>
   [else]
     <th align=left bgcolor="#cccccc"
-      ><a href="./[sortby_rev_href]#dirlist">Rev.</a></th>
+      ><a href="[sortby_rev_href]#dirlist">Rev.</a></th>
   [end]
   [is sortby "file"]
     <th align=left bgcolor="#88ff88"
       [is cfg.options.use_cvsgraph "1"]colspan=2[end]
       >File&nbsp;[is sortdir "up"]<a
-         href="./[sortdir_down_href]#dirlist"><img 
+         href="[sortdir_down_href]#dirlist"><img
 	 src="[request.script_name]/*docroot*/images/down.png"></a>[else]<a
-         href="./[sortdir_up_href]#dirlist"><img 
+         href="[sortdir_up_href]#dirlist"><img
 	 src="[request.script_name]/*docroot*/images/up.png"></a>[end]</th>
   [else]
     <th align=left bgcolor="#cccccc"
       [is cfg.options.use_cvsgraph "1"]colspan=2[end]
-      ><a href="./[sortby_file_href]#dirlist">File</a></th>
+      ><a href="[sortby_file_href]#dirlist">File</a></th>
   [end]
   [is sortby "date"]
     <th align=left bgcolor="#88ff88">Age&nbsp;[is sortdir "up"]<a 
-         href="./[sortdir_down_href]#dirlist"><img 
+         href="[sortdir_down_href]#dirlist"><img
 	 src="[request.script_name]/*docroot*/images/down.png"></a>[else]<a
-         href="./[sortdir_up_href]#dirlist"><img 
+         href="[sortdir_up_href]#dirlist"><img
 	 src="[request.script_name]/*docroot*/images/up.png"></a>[end]</th>
   [else]
     <th align=left bgcolor="#cccccc"
-      ><a href="./[sortby_date_href]#dirlist">Age</a></th>
+      ><a href="[sortby_date_href]#dirlist">Age</a></th>
   [end]
   [is sortby "author"]
     <th align=left bgcolor="#88ff88">Author&nbsp;[is sortdir "up"]<a 
-         href="./[sortdir_down_href]#dirlist"><img 
+         href="[sortdir_down_href]#dirlist"><img
 	 src="[request.script_name]/*docroot*/images/down.png"></a>[else]<a
-         href="./[sortdir_up_href]#dirlist"><img 
+         href="[sortdir_up_href]#dirlist"><img
 	 src="[request.script_name]/*docroot*/images/up.png"></a>[end]</th>
   [else]
     <th align=left bgcolor="#cccccc"
-      ><a href="./[sortby_author_href]#dirlist">Author</a></th>
+      ><a href="[sortby_author_href]#dirlist">Author</a></th>
   [end]
   [is sortby "log"]
     <th align=left bgcolor="#88ff88">Last log entry&nbsp;[is sortdir "up"]<a 
-         href="./[sortdir_down_href]#dirlist"><img 
+         href="[sortdir_down_href]#dirlist"><img
 	 src="[request.script_name]/*docroot*/images/down.png"></a>[else]<a
-         href="./[sortdir_up_href]#dirlist"><img 
+         href="[sortdir_up_href]#dirlist"><img
 	 src="[request.script_name]/*docroot*/images/up.png"></a>[end]</th>
   [else]
     <th align=left bgcolor="#cccccc"
-      ><a href="./[sortby_log_href]#dirlist">Last log entry</a></th>
+      ><a href="[sortby_log_href]#dirlist">Last log entry</a></th>
   [end]
 [else]
   <th align=left bgcolor="#cccccc">File</th>
@@ -171,7 +187,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
         </a>
         [is roottype "cvs"]
           [is rows.name "Attic/"]
-            &nbsp; <a href="./[show_attic_href]#dirlist">[[]show contents]</a>
+            &nbsp; <a href="[show_attic_href]#dirlist">[[]show contents]</a>
           [end]
         [end]
       </td>
@@ -208,7 +224,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
         <td colspan=3><i>CVS information is unreadable</i></td>
       [else]
         <td width="1%">&nbsp;<a href="[rows.href]"><b>[rows.rev]</b></a></td>
-        <td><a name="[rows.anchor]" href="[rows.rev_href]&amp;content-type=text/vnd.viewcvs-markup">
+        <td><a name="[rows.anchor]" href="[rows.rev_href]">
 [# to display the revision in a separate window, you could use:
 
    <a name="{rows.anchor}" href="{rows.rev_href}" target="cvs_checkout"
@@ -223,7 +239,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
             </a>
             [is rows.state "dead"]
               [# don't let this phrase/link be wrapped ]
-              [if-any view_tag](not&nbsp;exist)[else](in&nbsp;the&nbsp;Attic)[end][if-any attic_showing]&nbsp;<a href="./[hide_attic_href]#dirlist">[[]hide][end]</a>
+              [if-any view_tag](not&nbsp;exist)[else](in&nbsp;the&nbsp;Attic)[end][if-any attic_showing]&nbsp;<a href="[hide_attic_href]#dirlist">[[]hide][end]</a>
             [end]
         </td>
         [if-any rows.graph_href]
@@ -267,7 +283,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
 
 [if-any selection_form]
   <hr size=1 noshade>
-  <form method=GET action="[request.script_name]/[if-any request.embedded_root][request.embedded_root]/[end][if-any where][where]/[end]">
+  <form method=get action="[search_tag_action]">
     [search_tag_hidden_values]
     [# this table holds the selectors on the left, and reset on the right ]
     <table>
@@ -319,15 +335,16 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
   </form>
       [if-any view_tag]
         <td valign=bottom>
-          <form method=GET action="[request.script_name]/[if-any request.embedded_root][request.embedded_root]/[end][if-any where][where]/[end]">
-            <input type="hidden" name="root" value="[current_root]">
+          <form method=get action="[search_tag_action]">
+            [search_tag_hidden_values]
             <input type="submit" value="Show all files">
           </form>
         </td>
       [else]
         [if-any search_re]
           <td valign=bottom>
-            <form method=GET action="[request.script_name]/[if-any request.embedded_root][request.embedded_root]/[end][if-any where][where]/[end]">
+            <form method=get action="[search_tag_action]">
+              [search_tag_hidden_values]
               <input type="submit" value="Show all files">
             </form>
           </td>

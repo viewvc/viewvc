@@ -4,12 +4,12 @@
 <!-- ViewCVS       -- http://viewcvs.sourceforge.net/
      by Greg Stein -- mailto:gstein@lyra.org
   -->
-<title>CVS log for [where]</title>
+<title>[is roottype "svn"]Subversion[else]CVS[end] log for [where]</title>
 </head>
 <body text="#000000" bgcolor="#ffffff">
 <table width="100%" border=0 cellspacing=0 cellpadding=0>
   <tr>
-    <td rowspan=2><h1>CVS log for [where]</h1></td>
+    <td rowspan=2><h1>[is roottype "svn"]Subversion[else]CVS[end] log for [where]</h1></td>
     <td align=right><img src="/icons/apache_pb.gif" alt="(logo)" border=0
 			width=259 height=32></td>
   </tr>
@@ -19,7 +19,7 @@ href="[request.script_name]/*docroot*/help_logtable.html">ViewCVS and CVS Help</
   </tr>
 </table>
 
-<a href="[back_url]"><img src="/icons/small/back.gif" alt="(back)" border=0
+<a href="[back_url]#[filename]"><img src="/icons/small/back.gif" alt="(back)" border=0
 			width=16 height=16></a>
 <b>Up to [nav_path]</b><p>
 <a href="#diff">Request diff between arbitrary revisions</a>
@@ -39,7 +39,9 @@ href="[request.script_name]/*docroot*/help_logtable.html">ViewCVS and CVS Help</
   <th align=left bgcolor="#88ff88">Revision</th>
   <th align=left bgcolor="#88ff88">Tasks</th>
     <th align=left bgcolor="#88ff88">Diffs</th>
+  [is roottype "cvs"]
   <th align=left bgcolor="#88ff88">Branches/<br>Tags</th>
+  [end]
   <th align=left bgcolor="#88ff88">Age</th>
   <th align=left bgcolor="#88ff88">Author</th>
 [for entries]
@@ -67,7 +69,7 @@ href="[request.script_name]/*docroot*/help_logtable.html">ViewCVS and CVS Help</
         <a href="[entries.view_href]"><b>View markup</b></a><br>
 
         [# if you don't want to allow annotation, then remove this line]
-        [is roottype "svn"][else]<a href="[href]?annotate=[entries.rev][query]"><b>View annotated</b></a><br>[end]
+        [is roottype "svn"][else]<a href="[entries.annotate_href]"><b>View annotated</b></a><br>[end]
       [else]
         [if-any viewable]
           <a href="[entries.view_href]"><b>View</b></a><br>
@@ -87,25 +89,25 @@ href="[request.script_name]/*docroot*/help_logtable.html">ViewCVS and CVS Help</
       [is entries.rev rev_selected]
         <b>[[]selected]</b><br>
       [else]
-      <a href="[href]?r1=[entries.rev][query]"><b>[[]select&nbsp;for&nbsp;diffs]</b></a><br>
+      <a href="[diff_url]?r1=[entries.rev][diff_params]"><b>[[]select&nbsp;for&nbsp;diffs]</b></a><br>
       [end]
         [if-any entries.to_selected]
-          <a href="[href]?r1=[rev_selected]&amp;r2=[entries.rev][query]"><b>Diff&nbsp;to&nbsp;selected&nbsp;[rev_selected]</b></a><br>
+          <a href="[diff_url]?r1=[rev_selected]&amp;r2=[entries.rev][diff_params]"><b>Diff&nbsp;to&nbsp;selected&nbsp;[rev_selected]</b></a><br>
           [if-any human_readable]
           [else]
-            <a href="[href]?r1=[rev_selected]&amp;r2=[entries.rev]&amp;diff_format=h[query]"><b>colored</b></a><br>
+            <a href="[diff_url]?r1=[rev_selected]&amp;r2=[entries.rev]&amp;diff_format=h[diff_params]"><b>colored</b></a><br>
           [end]
         [end]
         [if-any entries.prev]
-          <a href="[href]?r1=[entries.prev]&amp;r2=[entries.rev][query]"><b>Diff&nbsp;to&nbsp;previous&nbsp;[entries.prev]</b></a><br>
+          <a href="[diff_url]?r1=[entries.prev]&amp;r2=[entries.rev][diff_params]"><b>Diff&nbsp;to&nbsp;previous&nbsp;[entries.prev]</b></a><br>
           [if-any human_readable]
           [else]
-            <a href="[href]?r1=[entries.prev]&amp;r2=[entries.rev]&amp;diff_format=h[query]"><b>colored</b></a><br>
+            <a href="[diff_url]?r1=[entries.prev]&amp;r2=[entries.rev]&amp;diff_format=h[diff_params]"><b>colored</b></a><br>
           [end]
         [end]
       [end]  
       </td>
-
+    [is roottype "cvs"]
     <td>
       [# Branches column]
       [if-any entries.vendor_branch]
@@ -123,23 +125,24 @@ href="[request.script_name]/*docroot*/help_logtable.html">ViewCVS and CVS Help</
         [end]
       [end]
       [if-any entries.next_main]
-        <a href="[href]?r1=[entries.next_main]&amp;r2=[entries.rev][query]"><b>Diff&nbsp;to&nbsp;next&nbsp;MAIN&nbsp;[entries.next_main]</b></a><br>
+        <a href="[diff_url]?r1=[entries.next_main]&amp;r2=[entries.rev][diff_params]"><b>Diff&nbsp;to&nbsp;next&nbsp;MAIN&nbsp;[entries.next_main]</b></a><br>
         [if-any human_readable]
         [else]
-          <a href="[href]?r1=[entries.next_main]&amp;r2=[entries.rev]&amp;diff_format=h[query]"><b>colored</b></a><br>
+          <a href="[diff_url]?r1=[entries.next_main]&amp;r2=[entries.rev]&amp;diff_format=h[diff_params]"><b>colored</b></a><br>
         [end]
       [end]
       [if-any entries.branch_point]
-        <a href="[href]?r1=[entries.branch_point]&amp;r2=[entries.rev][query]"><b>Diff&nbsp;to&nbsp;branch&nbsp;point&nbsp;[entries.branch_point]</b></a><br>
+        <a href="[diff_url]?r1=[entries.branch_point]&amp;r2=[entries.rev][diff_params]"><b>Diff&nbsp;to&nbsp;branch&nbsp;point&nbsp;[entries.branch_point]</b></a><br>
         [if-any human_readable]
         [else]
-          <a href="[href]?r1=[entries.branches.name]&amp;r2=[entries.rev]&amp;diff_format=h[query]"><b>colored</b></a><br>
+          <a href="[diff_url]?r1=[entries.branches.name]&amp;r2=[entries.rev]&amp;diff_format=h[diff_params]"><b>colored</b></a><br>
         [end]
       [end]
 
       [# Tags ]
       [if-any entries.tags]
-        <form action="[href]" >
+        <form method=get action="[branch_select_action]" >
+          [branch_select_hidden_values]
           <select name="only_with_tag" onChange="submit()">
           <option value="" [is view_tag ""]selected[end]>Show all tags</option>
           [for entries.tags]
@@ -150,10 +153,26 @@ href="[request.script_name]/*docroot*/help_logtable.html">ViewCVS and CVS Help</
       [else]&nbsp;
       [end]
     </td>
+    [end]
 
     [# Time column]
     <td>
+      [is roottype "svn"]
+        [if-any entries.action]
+          [is entries.action "M"]Modified[else]
+          [is entries.action "A"]Added[else]
+          [is entries.action "D"]Deleted[else]
+          [is entries.action "R"]Replaced[end][end][end][end]
+        [end]
+      [end]
       [entries.ago] ago<br><i>[entries.date_str]</i>
+      [is roottype "cvs"]
+        [if-any entries.prev]
+          [if-any entries.changed]
+            <br>Changes since <b>[entries.prev]: [entries.changed] lines</b>
+          [end]
+        [end]
+      [end]
     </td>
 
     [# Author column]
@@ -163,7 +182,25 @@ href="[request.script_name]/*docroot*/help_logtable.html">ViewCVS and CVS Help</
 
   </tr>
   <tr bgcolor="[if-index entries even]#ffffff[else]#ccccee[end]">
-    <td colspan=5><b>Log: </b><i><pre>[entries.html_log]</pre></i></td>
+    <td colspan=5>
+      [is roottype "svn"]
+        [is entries.filename where][else]<b>File name: </b>[entries.filename]<br>[end]
+        [if-any entries.size]
+          <b>File length: </b>[entries.size] byte(s)<br>
+        [end]
+
+        [if-any entries.copy_path]
+           <b>Copied from: </b><a href="[entries.copy_href]#rev[entries.copy_rev]">[entries.copy_path]</a> revision [entries.copy_rev]<br>
+        [end]
+    
+        [if-any entries.other_paths]
+          [for entries.other_paths][if-index entries.other_paths first]<b>Other changed files:</b>[else],[end]
+            <a href="[entries.other_paths.href]#rev[entries.rev]">[entries.other_paths.filename]</a>[end]<br>
+        [end]
+      [end]    
+
+      <b>Log: </b><i><pre>[entries.html_log]</pre></i>
+    </td>
   </tr>
 
 [end]
