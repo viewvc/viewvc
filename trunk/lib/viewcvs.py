@@ -1179,18 +1179,19 @@ def view_directory(request):
                                            params={})
 
   if request.roottype == 'svn':
-    view_directory_svn(request, data, sortby, sortdir)
+    if request.query_dict.has_key('rev'):
+      data['jump_rev'] = request.query_dict['rev']
+    else:
+      data['jump_rev'] = str(request.repos.rev)
+
+    url, params = request.get_link(params={'rev': None})
+    data['jump_rev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
+    data['jump_rev_hidden_values'] = prepare_hidden_values(params)
+
+    dir_params = {'rev': request.query_dict.get('rev')}
   else:
-    view_directory_cvs(request, data, sortby, sortdir)
+    dir_params = {}
 
-  if cfg.options.use_pagesize:
-    data['dir_pagestart'] = int(query_dict.get('dir_pagestart',0))
-    data['rows'] = paging(data, 'rows', data['dir_pagestart'], 'name')
-
-  request.server.header()
-  generate_page(request, cfg.templates.directory, data)
-
-def view_directory_cvs(request, data, sortby, sortdir):
   where = request.where
   query_dict = request.query_dict
 
@@ -1200,8 +1201,11 @@ def view_directory_cvs(request, data, sortby, sortdir):
   search_re = query_dict.get('search', '')
 
   # Search current directory
-  file_data = request.repos.listdir(request.path_parts,
-                                    not hideattic or view_tag)
+  if request.roottype == 'cvs':
+    file_data = request.repos.listdir(request.path_parts,
+                                      not hideattic or view_tag)
+  else:
+    file_data = request.repos.listdir(request.path_parts)
 
   if cfg.options.use_re_search and search_re:
     file_data = search_files(request.repos, request.path_parts,
@@ -1209,23 +1213,30 @@ def view_directory_cvs(request, data, sortby, sortdir):
 
   get_dirs = cfg.options.show_subdir_lastmod and cfg.options.show_logs
 
-  bincvs.get_logs(request.repos, request.path_parts,
-                  file_data, view_tag, get_dirs)
-
-  has_tags = view_tag or request.repos.branch_tags or request.repos.plain_tags
-
-  # prepare the data that will be passed to the template
-  data.update({
-    'view_tag' : view_tag,
-    'attic_showing' : ezt.boolean(not hideattic),
-    'show_attic_href' : request.get_url(params={'hideattic': 0}),
-    'hide_attic_href' : request.get_url(params={'hideattic': 1}),
-    'has_tags' : ezt.boolean(has_tags),
-    ### one day, if EZT has "or" capability, we can lose this
-    'selection_form' : ezt.boolean(has_tags or cfg.options.use_re_search),
-    'branch_tags': request.repos.branch_tags,
-    'plain_tags': request.repos.plain_tags,
-  })
+  if request.roottype == 'cvs':
+    bincvs.get_logs(request.repos, request.path_parts,
+                    file_data, view_tag, get_dirs)
+    has_tags = (view_tag or request.repos.branch_tags 
+                or request.repos.plain_tags)
+    data.update({
+      'view_tag' : view_tag,    
+      'attic_showing' : ezt.boolean(not hideattic),
+      'show_attic_href' : request.get_url(params={'hideattic': 0}),
+      'hide_attic_href' : request.get_url(params={'hideattic': 1}),
+      'has_tags' : ezt.boolean(has_tags),
+      ### one day, if EZT has "or" capability, we can lose this
+      'selection_form' : ezt.boolean(has_tags or cfg.options.use_re_search),
+      'branch_tags': request.repos.branch_tags,
+      'plain_tags': request.repos.plain_tags,
+    })
+  else:
+    vclib.svn.get_logs(request.repos, where, file_data)
+    data.update({
+      'view_tag' : None,
+      'tree_rev' : str(request.repos.rev),
+      'has_tags' : ezt.boolean(0),
+      'selection_form' : ezt.boolean(0)
+    })
 
   if search_re:
     data['search_re'] = htmlify(search_re)
@@ -1255,8 +1266,11 @@ def view_directory_cvs(request, data, sortby, sortdir):
     else:
       row.cvs = 'data'
       row.rev = file.rev
-      row.author = file.author
-      row.state = file.state
+      row.author = file.author or "&nbsp;"
+      if request.roottype == 'cvs':
+        row.state = file.state
+      else:
+        row.state = ''
       row.time = html_time(request, file.date)
       if cfg.options.show_logs and file.log:
         row.show_log = 'yes'
@@ -1274,36 +1288,44 @@ def view_directory_cvs(request, data, sortby, sortdir):
       unreadable = 1
 
     if file.kind == vclib.DIR:
-      if not hideattic and file.name == 'Attic':
-        continue
-      if where == '' and ((file.name == 'CVSROOT' and cfg.options.hide_cvsroot)
-                          or cfg.is_forbidden(file.name)):
-        continue
-      if file.name == 'CVS': # CVS directory in repository is for fileattr.
+      if (request.roottype == 'cvs' and
+          ((file.name == 'CVS') or # CVS directory is for fileattr
+           (not hideattic and file.name == 'Attic') or
+           (where == '' and (cfg.is_forbidden(file.name) or
+                             (file.name == 'CVSROOT' and 
+                              cfg.options.hide_cvsroot))))):
         continue
 
       row.href = request.get_url(view_func=view_directory,
                                  where=where_prefix+file.name,
                                  pathtype=vclib.DIR,
-                                 params={})
+                                 params=dir_params)
 
-      if row.cvs == 'data':
+      if request.roottype == 'cvs' and row.cvs == 'data':
         if cfg.options.use_cvsgraph:
           row.graph_href = '&nbsp;' 
         if cfg.options.show_logs:
           row.log_file = file.newest_file
           row.log_rev = file.rev
 
+      ### needed because the subversion vclib retrieves logs for directories
+      ### but the template code can't display them properly
+      if request.roottype == 'svn':
+        row.cvs = 'none'
+
     elif file.kind == vclib.FILE:
       num_files = num_files + 1
-
-      if file.rev is None and not file.verboten:
-        continue
-      elif hideattic and view_tag and file.state == 'dead':
+      if (request.roottype == 'cvs' and 
+          ((file.rev is None and not file.verboten) or 
+           (hideattic and view_tag and file.state == 'dead'))):
         continue
       num_displayed = num_displayed + 1
 
-      file_where = where_prefix + (file.in_attic and 'Attic/' or '') + file.name
+      if request.roottype == 'cvs': 
+        file_where = where_prefix + (file.in_attic and 'Attic/' or '') \
+                     + file.name
+      else:
+        file_where = where_prefix + file.name
 
       row.href = request.get_url(view_func=view_log,
                                  where=file_where,
@@ -1340,89 +1362,12 @@ def view_directory_cvs(request, data, sortby, sortdir):
     data['search_tag_action'] = urllib.quote(url, _URL_SAFE_CHARS)
     data['search_tag_hidden_values'] = prepare_hidden_values(params)
 
+  if cfg.options.use_pagesize:
+    data['dir_pagestart'] = int(query_dict.get('dir_pagestart',0))
+    data['rows'] = paging(data, 'rows', data['dir_pagestart'], 'name')
 
-def view_directory_svn(request, data, sortby, sortdir):
-  query_dict = request.query_dict
-  where = request.where
-
-  file_data = request.repos.listdir(request.path_parts)
-  vclib.svn.get_logs(request.repos, where, file_data)
-
-  data.update({
-    'view_tag' : None,
-    'tree_rev' : str(request.repos.rev),
-    'has_tags' : ezt.boolean(0),
-    'selection_form' : ezt.boolean(0)
-  })
-
-  if request.query_dict.has_key('rev'):
-    data['jump_rev'] = request.query_dict['rev']
-  else:
-    data['jump_rev'] = str(request.repos.rev)
-    
-  url, params = request.get_link(params={'rev': None})
-  data['jump_rev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-  data['jump_rev_hidden_values'] = prepare_hidden_values(params)
-
-  # sort with directories first, and using the "sortby" criteria
-  sort_file_data(file_data, sortdir, sortby)
-
-  num_files = 0
-  num_displayed = 0
-  unreadable = 0
-  rows = data['rows'] = [ ]
-
-  where_prefix = where and where + '/'
-  dir_params = {'rev': query_dict.get('rev')}
-
-  for file in file_data:
-    row = _item(href=None, graph_href=None,
-                author=None, log=None, log_file=None, log_rev=None,
-                show_log=None, state=None)
-
-    row.rev = file.rev
-    row.author = file.author or "&nbsp;"
-    row.state = ''
-    row.time = html_time(request, file.date)
-    row.anchor = file.name
-
-    if file.kind == vclib.DIR:
-      row.type = 'dir'
-      row.name = file.name
-      row.cvs = 'none' # What the heck is this?
-      row.href = request.get_url(view_func=view_directory,
-                                 where=where_prefix + file.name,
-                                 pathtype=vclib.DIR,
-                                 params=dir_params)
-    else:
-      row.type = 'file'
-      row.name = file.name
-      row.cvs = 'data' # What the heck is this?
-
-      row.href = request.get_url(view_func=view_log,
-                                 where=where_prefix + file.name,
-                                 pathtype=vclib.FILE,
-                                 params={})
-
-      row.rev_href = request.get_url(view_func=view_auto,
-                                     where=where_prefix + file.name,
-                                     pathtype=vclib.FILE,
-                                     params={'rev': str(row.rev)})
-
-      num_files = num_files + 1
-      num_displayed = num_displayed + 1
-      if cfg.options.show_logs:
-        row.show_log = 'yes'
-        row.log = format_log(file.log or "")
-
-    rows.append(row)
-
-  ### we need to fix the template w.r.t num_files. it usually is not a
-  ### correct (original) count of the files available for selecting
-  data['num_files'] = num_files
-
-  # the number actually displayed
-  data['files_shown'] = num_displayed
+  request.server.header()
+  generate_page(request, cfg.templates.directory, data)
 
 def paging(data, key, pagestart, local_name):
   # Implement paging
