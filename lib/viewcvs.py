@@ -2745,6 +2745,25 @@ def handle_config():
     pathname = CONF_PATHNAME or 'viewcvs.conf'
     cfg.load_config(pathname, os.environ.get('HTTP_HOST'))
 
+    # special handling for svn_parent_path.  any subdirectories
+    # present in the directory specified as the svn_parent_path that
+    # have a child file named "format" will be treated as svn_roots.
+    if cfg.general.svn_parent_path is not None:
+      try:
+        pp = cfg.general.svn_parent_path
+        subpaths = os.listdir(pp)
+        for subpath in subpaths:
+          info = os.stat(os.path.join(pp, subpath))
+          if not stat.S_ISDIR(info[stat.ST_MODE]):
+            continue
+          info = os.stat(os.path.join(pp, subpath, "format"))
+          if not stat.S_ISREG(info[stat.ST_MODE]):
+            continue
+          cfg.general.svn_roots[subpath] = os.path.join(pp, subpath)
+      except:
+        error("The setting for 'svn_parent_path' is misconfigured in the "
+              "viewcvs.conf file. ")
+      
   global default_settings
   default_settings = {
     "sortby" : cfg.options.sort_by,
