@@ -37,6 +37,8 @@ cvs -d :pserver:anonymous@cvs.viewcvs.sourceforge.net:/cvsroot/viewcvs export -r
 # and many files still contain comments refering to this location):
 cp $2/website/license-1.html $2/LICENSE.html
 # rm -r $2/website
+# remove some tools only useful for ViewCVS developers:
 rm $2/tools/make-release
+rm $2/tools/bin2inline_py.py
 
 echo 'Done.'
