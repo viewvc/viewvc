@@ -54,6 +54,6 @@ import sapi
 import query
 
 sapi.AspServer(Server, Request, Response, Application)
-query.main()
+query.main('viewcvs.asp')
 
 %>
