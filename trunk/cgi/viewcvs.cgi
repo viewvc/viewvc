@@ -1684,8 +1684,8 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
         print 'next main <a href="%s.diff?r1=%s&r2=%s%s">%s</a>' % \
               (request.url, next_main, rev, request.amp_query, next_main)
         if not human_readable:
-          print '(<a href="%s.diff?r1=%s&r2=%s%s">colord</a>' % \
-                (request.url, next_main, rev, request.amp_query)
+          print '(<a href="%s.diff?r1=%s&r2=%s%s&diff_format=h">colored</a>)' \
+                % (request.url, next_main, rev, request.amp_query)
 
     # if they have selected r1, then diff against that
     r1 = query_dict.get('r1')
@@ -1694,8 +1694,8 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
       print 'to selected <a href="%s.diff?r1=%s&r2=%s%s">%s</a>' % \
             (request.url, r1, rev, request.amp_query, r1)
       if not human_readable:
-        print '(<a href="%s.diff?r1=%s&r2=%s%s">colored</a>' % \
-              (request.url, r1, rev, request.amp_query)
+        print '(<a href="%s.diff?r1=%s&r2=%s%s&diff_format=h">colored</a>)' \
+              % (request.url, r1, rev, request.amp_query)
 
   print '<pre>' + htmlify(revinfo[5]) + '</pre>'
 
