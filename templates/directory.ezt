@@ -42,19 +42,69 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
 <p><a name="dirlist"></a></p>
 
 [if-any where]
-<table>
-<tr><td>Current directory:</td><td><b>[nav_path]</b></td></tr>
-[if-any view_tag]
-<tr><td>Current tag:</td><td><b>[view_tag]</b></td></tr>
-[end]
-[if-any search_re]
-<tr><td>Current search:</td><td><b>[search_re]</b></td></tr>
-[end]
-[is num_files "0"]
-[else]
-<tr><td>Files shown:</td><td><b>[files_shown]</b></td></tr>
-[end]
+  <table>
+    <tr>
+      <td>
+        Current directory:
+      </td>
+      <td>
+        <b>[nav_path]</b>
+      </td>
+      <td>
+      [# saved for paging]
+      </td>
+    </tr>
+  [if-any view_tag]
+    <tr>
+      <td>
+        Current tag:
+      </td>
+      <td>
+        <b>[view_tag]</b>
+      </td>
+      <td>
+      [# saved for paging]
+      </td>
+    </tr>
+  [end]
+  [if-any search_re]
+    <tr>
+      <td>
+        Current search:
+      </td>
+      <td>
+        <b>[search_re]</b>
+      </td>
+      <td>
+      [# saved for paging]
+      </td>
+    </tr>
+  [end]
+  [is num_files "0"]
+  [else]
+    <tr>
+      <td>
+        Files shown:
+      </td>
+      <td>
+        <b>[files_shown]</b>
+      </td>
+  [end]
 </table>
+  [is cfg.options.use_pagesize "0"]
+  [else]
+    [is picklist_len "1"]
+    [else]
+      <form method=GET action="./">
+        <input type=submit value="Go to:">
+        <select name=dir_pagestart  onchange="submit()">
+          [for picklist]
+            <option [is picklist.count dir_pagestart]selected[end] value="[picklist.count]">[picklist.start] to [picklist.end]</option>
+          [end]
+        </select>
+      </form>
+    [end]
+  [end]
 [end]
 
 <hr noshade>
@@ -293,6 +343,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
       <input type="submit" value="Show all files">
     </form></td>
   [end][end]
+
 
   </tr></table>
 [end]

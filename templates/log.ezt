@@ -15,7 +15,7 @@
   </tr>
   <tr>
     <td align=right><h3><b><a target="_blank"
-     href="[request.script_name]/*docroot*/help_log.html">Help</a></b></h3></td>
+     href="[request.script_name]/*docroot*/help_log.html">ViewCVS and CVS Help</a></b></h3></td>
   </tr>
 </table>
 
@@ -53,6 +53,22 @@
 [if-any view_tag]
   Current tag: [view_tag] <br>
 [end]
+
+  [is cfg.options.use_pagesize "0"]
+  [else]
+    [is picklist_len "1"]
+    [else]
+      <form method=GET action="[href]">
+        <input type=submit value="Go to:">
+        <select name=log_pagestart  onchange="submit()">
+          [for picklist]
+            <option [is picklist.count log_pagestart]selected[end] value="[picklist.count]">[picklist.start] to [picklist.end]</option>
+          [end]
+        </select>
+      </form>
+    [end]
+  [end]
+
 
 [for entries]
   <hr size=1 noshade>

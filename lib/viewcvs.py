@@ -84,6 +84,8 @@ _sticky_vars = (
   'diff_format',
   'only_with_tag',
   'search',
+  'dir_pagestart',
+  'log_pagestart',
   )
 
 # regex used to move from a file to a directory
@@ -1163,6 +1165,7 @@ def view_directory(request):
     'address' : cfg.general.address,
     'vsn' : __version__,
     'search_re' : None,
+    'dir_pagestart' : None,
     'have_logs' : None,
 
     'sortby_file_href' :   toggle_query(query_dict, 'sortby', 'file'),
@@ -1419,8 +1422,39 @@ def view_directory(request):
     url = tar_basename + '.tar.gz?tarball=1' + request.amp_query
     data['tarball_href'] = url
 
+  if cfg.options.use_pagesize:
+    data['dir_pagestart'] = int(query_dict.get('dir_pagestart',0))
+    data['rows'] = paging(data, 'rows', data['dir_pagestart'], 'name')
+
   http_header()
   generate_page(request, cfg.templates.directory, data)
+
+def paging(data, key, pagestart, local_name):
+  # Implement paging
+  # Create the picklist
+  picklist = data['picklist'] = []
+  for i in range(0, len(data[key]), cfg.options.use_pagesize):
+    pick = _item(start=None, end=None, count=None)
+    pick.start = getattr(data[key][i], local_name)
+    pick.count = i
+    try:
+      pick.end = getattr(data[key][i+cfg.options.use_pagesize-1], local_name)
+    except IndexError:
+      pick.end = getattr(data[key][-1], local_name)
+    picklist.append(pick)
+  data['picklist_len'] = len(picklist)
+  # Need to fix
+  # pagestart can be greater than the length of data[key] if you
+  # select a tag or search while on a page other than the first.
+  # Should reset to the first page, this test won't do that every
+  # time that it is needed.
+  # Problem might go away if we don't hide non-matching files when
+  # selecting for tags or searching.
+  if pagestart > len(data[key]):
+    pagestart = 0
+  pageend = pagestart + cfg.options.use_pagesize
+  # Slice
+  return data[key][pagestart:pageend]
 
 def fetch_log(full_name, which_rev=None):
   if which_rev:
@@ -1754,6 +1788,7 @@ def view_log(request):
     'viewable' : ezt.boolean(request.default_viewable),
     'human_readable' : ezt.boolean(query_dict['diff_format'] == 'h'
                                    or query_dict['diff_format'] == 'l'),
+    'log_pagestart' : None,
     }
 
   if cfg.options.use_cvsgraph:
@@ -1821,6 +1856,10 @@ def view_log(request):
   branch_names.sort()
   branch_names.reverse()
   data['branch_names'] = branch_names
+
+  if cfg.options.use_pagesize:
+    data['log_pagestart'] = int(query_dict.get('log_pagestart',0))
+    data['entries'] = paging(data, 'entries', data['log_pagestart'], 'rev')
 
   http_header()
   generate_page(request, cfg.templates.log, data)
