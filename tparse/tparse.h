@@ -145,6 +145,7 @@ class TokenParser {
 	
 	~TokenParser() {
 		if (input!=NULL) { delete input;input=NULL; };
+		if (backget!=NULL) { delstr(backget); backget=NULL; };
 	};
 };
 
