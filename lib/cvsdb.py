@@ -509,10 +509,7 @@ class Commit:
         return self.__author
 
     def SetBranch(self, branch):
-        if not branch:
-            self.__branch = ''
-        else:
-            self.__branch = branch
+        self.__branch = branch or ''
 
     def GetBranch(self):
         return self.__branch
@@ -625,11 +622,6 @@ class CheckinDatabaseQuery:
 
     def AddCommit(self, commit):
         self.commit_list.append(commit)
-        if self.commit_cb:
-            self.commit_cb(commit)
-        
-    def SetCommitCB(self, callback):
-        self.commit_cb = callback
 
 
 ##
