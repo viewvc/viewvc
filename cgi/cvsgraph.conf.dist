@@ -136,7 +136,7 @@ branch_connect	= 8;
 #	1 = center
 #	2 = right
 # title_color <color>
-title		= "%c%m%f\nRevisions: %r, Branches: %b";
+title		= "%C: %p%F\nRevisions: %r, Branches: %b";
 title_x		= 10;
 title_y		= 5;
 title_font	= small;
