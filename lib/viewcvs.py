@@ -939,8 +939,8 @@ def prepare_hidden_values(request, var_list, vars_to_omit_list):
                              (varname, cgi.escape(value)))
   return string.join(hidden_values, '')
 
-def sort_file_data(file_data, sortdir, sortby, fileinfo):
-  def file_sort_cmp(data1, data2, sortby=sortby, fileinfo=fileinfo):
+def sort_file_data(file_data, sortdir, sortby, fileinfo, roottype):
+  def file_sort_cmp_cvs(data1, data2, sortby=sortby, fileinfo=fileinfo):
     if data1[2]:        # is_directory
       if data2[2]:
         # both are directories. sort on name.
@@ -983,7 +983,42 @@ def sort_file_data(file_data, sortdir, sortby, fileinfo):
 
     return 1
 
-  file_data.sort(file_sort_cmp)
+  def file_sort_cmp_svn(data1, data2, sortby=sortby, fileinfo=fileinfo):
+    if data1[2]:        # is_directory
+      if data2[2]:
+        # both are directories. sort on name.
+        return cmp(data1[0], data2[0])
+      # data1 is a directory, it sorts first.
+      return -1
+    if data2[2]:
+      # data2 is a directory, it sorts first.
+      return 1
+
+    # the two files should be RCS files. drop the ",v" from the end.
+    file1 = data1[0]
+    file2 = data2[0]
+
+    # we should have data on these. if not, then it is because we requested
+    # a specific tag and that tag is not present on the file.
+    info1 = fileinfo[file1]
+    info2 = fileinfo[file2]
+    if sortby == 'rev':
+      return cmp(info1.rev, info2.rev)
+    elif sortby == 'date':
+      return cmp(info2.date, info1.date)        # latest date is first
+    elif sortby == 'log':
+      return cmp(info1.log, info2.log)
+    elif sortby == 'author':
+      return cmp(info1.author, info2.author)
+    else:
+      # sort by file name
+      return cmp(file1, file2)
+    return 1
+
+  if roottype == 'cvs':
+    file_data.sort(file_sort_cmp_cvs)
+  else:
+    file_data.sort(file_sort_cmp_svn)
   if sortdir == "down":
     file_data.reverse()
 
@@ -1104,7 +1139,7 @@ def view_directory_cvs(request):
     data['search_re'] = htmlify(search_re)
 
   # sort with directories first, and using the "sortby" criteria
-  sort_file_data(file_data, sortdir, sortby, fileinfo)
+  sort_file_data(file_data, sortdir, sortby, fileinfo, request.roottype)
 
   num_files = 0
   num_displayed = 0
@@ -1308,7 +1343,7 @@ def view_directory_svn(request):
     'vsn' : __version__,
     'search_re' : None,
     'dir_pagestart' : None,
-    'have_logs' : None,
+    'have_logs' : 'yes',
     
     'sortby_file_href' :   toggle_query(query_dict, 'sortby', 'file'),
     'sortby_rev_href' :    toggle_query(query_dict, 'sortby', 'rev'),
@@ -1346,7 +1381,7 @@ def view_directory_svn(request):
     data['nav_path'] = clickable_path(request, where, 0, 0, 0)
 
   # sort with directories first, and using the "sortby" criteria
-  sort_file_data(file_data, sortdir, sortby, fileinfo)
+  sort_file_data(file_data, sortdir, sortby, fileinfo, request.roottype)
 
   num_files = 0
   num_displayed = 0
@@ -1357,37 +1392,40 @@ def view_directory_svn(request):
     row = _item(href=None, graph_href=None,
                 author=None, log=None, log_file=None, log_rev=None,
                 show_log=None, state=None)
+
+    info = fileinfo.get(file)
+    if info is None:
+      error("Error getting info for '%s'" % file)
+
+    row.rev = info.rev
+    row.author = info.author
+    row.state = info.state
+    row.time = html_time(request, info.date)
+    row.anchor = file
+
     if isdir:
+      row.type = 'dir'
+      row.name = file + '/'
+      row.cvs = 'none' # What the heck is this?
       url = urllib.quote(file) + '/' + request.qmark_query
       if query_dict.has_key('rev'):
         row.href = url + '&rev=' + query_dict['rev']
       else:
         row.href = url
-      row.anchor = file
-      row.name = file + '/'
-      row.type = 'dir'
     else:
       row.type = 'file'
-      row.anchor = file
-      num_files = num_files + 1
-      info = fileinfo.get(file)
-      num_displayed = num_displayed + 1
+      row.name = file
+      row.cvs = 'data' # What the heck is this?
       file_url = urllib.quote(file)
       url = file_url + request.qmark_query
-      row.name = file
       row.href = url
-      if info is None:
-        error("Error getting info for '%s'" % file)
-      row.rev = info.rev
-      row.author = info.author
-      row.state = info.state
       row.rev_href = file_url + '?rev=' + str(row.rev) + request.amp_query
-      row.time = html_time(request, info.date)
+      num_files = num_files + 1
+      num_displayed = num_displayed + 1
       if cfg.options.show_logs:
         row.show_log = 'yes'
         row.log = format_log(info.log)
 
-    row.cvs = 'data'
     rows.append(row)
 
   ### we need to fix the template w.r.t num_files. it usually is not a
