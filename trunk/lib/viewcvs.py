@@ -1749,6 +1749,15 @@ def view_log_svn(request):
     entry.html_log = htmlify(entry.log)
     entry.tag_names = [ ]
     entry.branch_names = [ ]
+
+    # the template could do all these comparisons itself, but let's help
+    # it out.
+    r1 = int(query_dict.get('r1'))
+    if r1 and r1 != rev and r1 != prev_rev:
+      entry.to_selected = 'yes'
+    else:
+      entry.to_selected = None
+
     entries.append(entry)
     prev_rev = rev
   show_revs.reverse()
