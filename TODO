@@ -25,6 +25,8 @@ TODO ITEMS
 *) add a check for the rcs programs/paths to viewcvs-install. clarify the
    dependency on RCS in the docs.
 
+*) add a page that describes how to reach anonymous CVS for ViewCVS
+
 
 KNOWN BUGS
 ----------
