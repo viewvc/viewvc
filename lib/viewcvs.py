@@ -588,6 +588,7 @@ def markup_stream_enscript(lang, fp):
     raise
 
   enscript.close()
+  os.wait()
 
 markup_streamers = {
 #  '.py' : markup_stream_python,
