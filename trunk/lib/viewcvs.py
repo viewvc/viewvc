@@ -2752,6 +2752,8 @@ def view_revision_svn(request, data):
   for change in changes:
     change.view_href = change.diff_href = change.type = None
     change.prev_path = change.prev_rev = None
+    change.text_mods = ezt.boolean(change.text_mods)
+    change.prop_mods = ezt.boolean(change.prop_mods)
     if change.pathtype is vclib.FILE:
       change.type = 'file'
       change.view_href = request.get_url(view_func=view_markup,
