@@ -73,7 +73,6 @@ cvs_roots =
 default_root = Development
 
 # uncomment if the RCS binaries are not on the standard path
-# NOTE: the trailing slash is required!
 #rcs_path = /usr/bin/
 
 #
@@ -359,7 +358,6 @@ use_enscript = 0
 
 #
 # if the enscript program is not on the path, set this value
-# Note: there should be a trailing slash
 #
 enscript_path =
 # enscript_path = /usr/bin/
@@ -387,7 +385,6 @@ use_cvsgraph = 0
 
 #
 # if the cvsgraph program is not on the path, set this value
-# Note: there should be a trailing slash
 #
 cvsgraph_path =
 # cvsgraph_path = /usr/local/bin/
