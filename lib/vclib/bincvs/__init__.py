@@ -1,6 +1,5 @@
 # -*-python-*-
 #
-#
 # Copyright (C) 1999-2002 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
@@ -13,12 +12,11 @@
 #
 # -----------------------------------------------------------------------
 
-"""Version Control lib driver for locally accessible cvs-repositories.
-"""
-
+"Version Control lib driver for locally accessible cvs-repositories."
 
 
 # ======================================================================
+
 import vclib
 import os
 import os.path
@@ -37,6 +35,8 @@ ENTRY_END_MARKER = '-' * 28 + '\n'
 _EOF_FILE = 'end of file entries'       # no more entries for this RCS file
 _EOF_LOG = 'end of log'                 # hit the true EOF on the pipe
 _EOF_ERROR = 'error message found'      # rlog issued an error
+
+_FILE_HAD_ERROR = 'could not read file'
 
 
 class LogHeader:
@@ -57,6 +57,12 @@ class LogEntry:
     self.state = state
     self.changed = changed
     self.log = log
+
+
+class LogError:
+  "Represent an entry that had an (unknown) error."
+  pass
+
 
 def parse_log_header(fp):
   """Parse and RCS/CVS log header.
@@ -320,8 +326,12 @@ def process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags):
         revwanted = rev
 
       if rev == revwanted or rev == branchpoint:
-        fileinfo[info_key] = (rev, entry.date, entry.log, entry.author,
-                              filename, entry.state)
+        new_entry = LogEntry(rev, entry.date, entry.author, entry.state,
+                             None, entry.log)
+        new_entry.filename = filename
+        fileinfo[info_key] = new_entry
+#        fileinfo[info_key] = (rev, entry.date, entry.log, entry.author,
+#                              filename, entry.state)
 
         if rev == revwanted:
           # done with this file now
@@ -408,45 +418,58 @@ def fetch_log(rcs_path, full_name, which_rev=None):
 
 
 class BinCVSRepository:
-  def __init__(self,name,basepath):
-    self.name=name
-    self.basepath=basepath
-    if self.basepath[-1:]!=os.sep:
-      self.basepath=self.basepath+os.sep
-      
-  def _getpath(self,pathname):
-    return self.basepath+string.join(pathname,os.sep)
+  def __init__(self, name, rootpath):
+    if not os.path.isdir(rootpath):
+      raise vclib.ReposNotFound()
 
-  def _getrcsname(self,filename):
-    if filename[-2:]==',v':
+    self.name = name
+    self.rootpath = rootpath
+
+  def getitem(self, path_parts):
+    basepath = self._getpath(path_parts)
+    if os.path.isdir(basepath):
+      return vclib.Versdir(self, basepath)
+    rcspath = self._getrcsname(basepath)
+    if os.path.isfile(rcspath):
+      return vclib.Versfile(self, rcspath)
+    raise vclib.ItemNotFound()
+
+  def itemtype(self, path_parts):
+    basepath = self._getpath(path_parts)
+    if os.path.isdir(basepath):
+      return vclib.DIR
+    if os.path.isfile(self._getrcsname(basepath)):
+      return vclib.FILE
+    raise vclib.ItemNotFound()
+
+  def _getpath(self, path_parts):
+    return apply(os.path.join, (self.rootpath,) + tuple(path_parts))
+
+  def _getrcsname(self, filename):
+    if filename[-2:] == ',v':
       return filename
     else:
-      return filename+',v'  
+      return filename + ',v'  
 
-  def getfile(self,pathname):
-    if os.path.isfile(self._getrcsname(self._getpath(pathname))):
-      return vclib.Versfile(self,self._getrcsname(self._getpath(pathname)) )
-    raise IOError("File not found %s in repository %s"% (self._getpath(pathname),self.name) ) 
-
-  def getsubdirs(self,path):
-    h=os.listdir(self._getpath(path))
-    g=[]
+  def _getvf_subdirs(self, basepath):
+    h = os.listdir(basepath)
+    g = { }
     for i in h:
-      if os.path.isdir(self._getpath(path+[i])):
-      	g.append(i)
+      thispath = os.path.join(basepath, i)
+      if os.path.isdir(thispath):
+        g[i] = vclib.Versdir(self, thispath)
     return g
     
-  def getfiles(self,path):
-    h=os.listdir(self._getpath(path))
-    g={}
+  def _getvf_files(self, basepath):
+    h = os.listdir(basepath)
+    g = { }
     for i in h:
-      ci=self._getrcsname(self._getpath(path+[i]))
-      if os.path.isfile(ci):
-      	g[i]=vclib.Versfile(self,ci)
+      rcspath = self._getrcsname(os.path.join(basepath, i))
+      if os.path.isfile(rcspath):
+      	g[i] = vclib.Versfile(self, rcspath)
     return g  
-  # Private methods ( accessed by Versfile and Revision )
   
-  def _getvf_info(self,target, path):
+  def _getvf_info(self, target, basepath):
     """
     This method will had to <target> (expect to be an instance of Versfile)
     a certain number of attributes:
@@ -459,21 +482,21 @@ class BinCVSRepository:
     
     Developers: method to be overloaded.
     """
-    if not os.path.isfile(path):
-      raise "Unknown file: %s " % path
-    rlog = popen.popen('rlog', path, 'r')
+    if not os.path.isfile(basepath):
+      raise "Unknown file: %s " % basepath
+    rlog = popen.popen('rlog', basepath, 'r')
     header, eof = parse_log_header(rlog)
     target.head = header.head
     target.branch = header.branch
     target.taginfo = header.taginfo
     
-  def _getvf_tree(self,versfile):
+  def _getvf_tree(self, versfile):
     """
     should return a dictionary of Revisions
     Developers: method to be overloaded.
     """
 
-  def _getvf_properties(self,target,path,revisionnumber):
+  def _getvf_properties(self, target, basepath, revisionnumber):
     """
     Add/update into target's attributes (expected to be an instance of
     Revision) a certain number of attributes:
@@ -493,7 +516,7 @@ class BinCVSRepository:
     gets the properties.
     """
 
-  def _getvf_cofile(self, target, path):
+  def _getvf_cofile(self, target, basepath):
     """
     should return a file object representing the checked out revision.
     Notice that _getvf_co can also add the properties in <target> the
@@ -501,11 +524,7 @@ class BinCVSRepository:
 
     Developers: method to be overloaded.
     """
-    fp = popen.popen('co',
-                    ('-p'+rev, os.path.join(repo,file) ), 'r')
+    fp = popen.popen('co', ('-p' + rev, basepath, 'r'))
     fp.readline()
     fp.readline()
     return fp
-
-
-                                             

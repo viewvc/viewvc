@@ -62,6 +62,7 @@ import config
 import popen
 import ezt
 import accept
+import vclib
 from vclib import bincvs
 
 debug.t_end('imports')
@@ -93,7 +94,6 @@ _sticky_vars = (
 # regex used to move from a file to a directory
 _re_up_path = re.compile('(Attic/)?[^/]+$')
 
-_FILE_HAD_ERROR = 'could not read file'
 
 _UNREADABLE_MARKER = '//UNREADABLE-MARKER//'
 
@@ -141,6 +141,9 @@ class Request:
       elif parts[0] == docroot_magic_path:
         self.has_docroot_magic = 1
         del parts[0]
+
+    # remember the parts of the path
+    self.path_parts = parts
 
     # put it back together
     where = string.join(parts, '/')
@@ -201,19 +204,29 @@ class Request:
     self.query_dict = query_dict
 
     # set up the CVS repository to use
-    self.cvsrep = query_dict.get('cvsroot', cfg.general.default_root)
-    try:
-      self.cvsroot = cfg.general.cvs_roots[self.cvsrep]
-    except KeyError:
-      if query_dict.has_key('cvsroot'):
-          error("Repository cvsroot %s not configured in viewcvs.conf" % 
-                self.cvsrep, "404 Repository not found")
-      else:
-          error("The settings of 'cvs_roots' and "
-                "default_root=%s are misconfigured in the viewcvs.conf file." %
-                self.cvsrep)
+    name = query_dict.get('cvsroot', cfg.general.default_root)
 
-    self.full_name = self.cvsroot + '/' + where
+    ### maybe move some of this into the BinCVSRepository class. of course,
+    ### it cannot call error() to generate responses, but hey...
+    try:
+      rootpath = cfg.general.cvs_roots[name]
+    except KeyError:
+      # we must have tried the default because if a param was provided,
+      # then it has already been checked during parameter validation.
+      assert not query_dict.has_key('cvsroot')
+      error("The settings of 'cvs_roots' and 'default_root' are misconfigured "
+            "in the viewcvs.conf file. "
+            "The default root, '%s', is not present in cvs_roots."
+            % cgi.escape(name))
+
+    try:
+      self.repos = bincvs.BinCVSRepository(name, rootpath)
+    except bincvs.ReposNotFound:
+      error('%s not found!\nThe wrong path for this repository was '
+            'configured, or the server on which the CVS tree lives may be '
+            'down. Please try again in a few minutes.' % cgi.escape(name))
+
+    self.full_name = rootpath + '/' + where
 
     # process the Accept-Language: header
     hal = os.environ.get('HTTP_ACCEPT_LANGUAGE')
@@ -257,7 +270,10 @@ def _validate_param(name, value):
 
 def _validate_cvsroot(value):
   if not cfg.general.cvs_roots.has_key(value):
-    error('The CVS root "%s" is unknown.' % cgi.escape(value))
+    error('The CVS root "%s" is unknown. If you believe the value is '
+          'correct, then please double-check your configuration.'
+          % cgi.escape(value),
+          "404 Repository not found")
 
 def _validate_regex(value):
   # hmm. there isn't anything that we can do here.
@@ -374,7 +390,7 @@ def toggle_query(query_dict, which, value=None):
 
 def clickable_path(request, path, leaf_is_link, leaf_is_file, drop_leaf):
   s = '<a href="%s/%s#dirlist">[%s]</a>' % \
-      (request.script_name, request.qmark_query, request.cvsrep)
+      (request.script_name, request.qmark_query, request.repos.name)
   parts = filter(None, string.split(path, '/'))
   if drop_leaf:
     del parts[-1]
@@ -890,7 +906,7 @@ def view_directory(request):
   query_dict = request.query_dict
 
   view_tag = query_dict.get('only_with_tag')
-  hideattic = int(query_dict.get('hideattic'))  ### watch for errors in int()?
+  hideattic = int(query_dict.get('hideattic'))
   sortby = query_dict.get('sortby', 'file')
   sortdir = query_dict.get('sortdir', 'up')
 
@@ -943,7 +959,7 @@ def view_directory(request):
     'request' : request,
     'cfg' : cfg,
     'kv' : request.kv,
-    'current_root' : request.cvsrep,
+    'current_root' : request.repos.name,
     'view_tag' : view_tag,
     'sortby' : sortby,
     'sortdir' : sortdir,
@@ -1014,18 +1030,18 @@ def view_directory(request):
 
     # we should have data on these. if not, then it is because we requested
     # a specific tag and that tag is not present on the file.
-    info1 = fileinfo.get(file1, _FILE_HAD_ERROR)
-    info2 = fileinfo.get(file2, _FILE_HAD_ERROR)
-    if info1 != _FILE_HAD_ERROR and info2 != _FILE_HAD_ERROR:
+    info1 = fileinfo.get(file1, bincvs._FILE_HAD_ERROR)
+    info2 = fileinfo.get(file2, bincvs._FILE_HAD_ERROR)
+    if info1 != bincvs._FILE_HAD_ERROR and info2 != bincvs._FILE_HAD_ERROR:
       # both are files, sort according to sortby
       if sortby == 'rev':
-        return revcmp(info1[0], info2[0])
+        return revcmp(info1.rev, info2.rev)
       elif sortby == 'date':
-        return cmp(info2[1], info1[1])        # latest date is first
+        return cmp(info2.date, info1.date)        # latest date is first
       elif sortby == 'log':
-        return cmp(info1[2], info2[2])
+        return cmp(info1.log, info2.log)
       elif sortby == 'author':
-        return cmp(info1[3], info2[3])
+        return cmp(info1.author, info2.author)
       else:
         # sort by file name
         if file1[:6] == 'Attic/':
@@ -1035,7 +1051,7 @@ def view_directory(request):
         return cmp(file1, file2)
 
     # at this point only one of file1 or file2 are _FILE_HAD_ERROR.
-    if info1 != _FILE_HAD_ERROR:
+    if info1 != bincvs._FILE_HAD_ERROR:
       return -1
 
     return 1
@@ -1095,25 +1111,25 @@ def view_directory(request):
       row.type = 'dir'
 
       info = fileinfo.get(file)
-      if info == _FILE_HAD_ERROR:
+      if info == bincvs._FILE_HAD_ERROR:
         row.cvs = 'error'
 
         unreadable = 1
       elif info:
         row.cvs = 'data'
-        row.time = html_time(request, info[1])
-        row.author = info[3]
+        row.time = html_time(request, info.date)
+        row.author = info.author
 
         if cfg.options.use_cvsgraph:
           row.graph_href = '&nbsp;' 
         if cfg.options.show_logs:
           row.show_log = 'yes'
-          subfile = info[4]
+          subfile = info.filename
           idx = string.find(subfile, '/')
           row.log_file = subfile[idx+1:]
-          row.log_rev = info[0]
-          if info[2]:
-            row.log = format_log(info[2])
+          row.log_rev = info.rev
+          if info.log:
+            row.log = format_log(info.log)
       else:
         row.cvs = 'none'
 
@@ -1128,7 +1144,7 @@ def view_directory(request):
 
       num_files = num_files + 1
       info = fileinfo.get(file)
-      if info == _FILE_HAD_ERROR:
+      if info == bincvs._FILE_HAD_ERROR:
         row.cvs = 'error'
         rows.append(row)
 
@@ -1137,7 +1153,7 @@ def view_directory(request):
         continue
       elif not info:
         continue
-      elif hideattic and view_tag and info[5] == 'dead':
+      elif hideattic and view_tag and info.state == 'dead':
         continue
       num_displayed = num_displayed + 1
 
@@ -1150,20 +1166,20 @@ def view_directory(request):
       row.cvs = 'data'
       row.name = file	# ensure this occurs after we strip Attic/
       row.href = url
-      row.rev = info[0]
-      row.author = info[3]
-      row.state = info[5]
+      row.rev = info.rev
+      row.author = info.author
+      row.state = info.state
 
       row.rev_href = file_url + '?rev=' + row.rev + request.amp_query
 
-      row.time = html_time(request, info[1])
+      row.time = html_time(request, info.date)
 
       if cfg.options.use_cvsgraph:
          row.graph_href = file_url + '?graph=' + row.rev + request.amp_query
 
       if cfg.options.show_logs:
         row.show_log = 'yes'
-        row.log = format_log(info[2])
+        row.log = format_log(info.log)
 
       rows.append(row)
 
@@ -1733,7 +1749,7 @@ def view_annotate(request):
 
   ### be nice to hook this into the template...
   import blame
-  blame.make_html(request.cvsroot, request.where + ',v', rev,
+  blame.make_html(request.repos.rootpath, request.where + ',v', rev,
                   sticky_query(request.query_dict))
 
   html_footer(request)
@@ -1745,7 +1761,7 @@ def cvsgraph_image(cfg, request):
   http_header('image/png')
   fp = popen.popen(os.path.normpath(os.path.join(cfg.options.cvsgraph_path,'cvsgraph')),
                                ("-c", cfg.options.cvsgraph_conf,
-                                "-r", request.cvsroot,
+                                "-r", request.repos.rootpath,
                                 request.where + ',v'), 'r')
   copy_stream(fp)
   fp.close()
@@ -1770,7 +1786,7 @@ def view_cvsgraph(cfg, request):
   fp = popen.popen(os.path.join(cfg.options.cvsgraph_path, 'cvsgraph'),
                    ("-i",
                     "-c", cfg.options.cvsgraph_conf,
-                    "-r", request.cvsroot,
+                    "-r", request.repos.rootpath,
                     "-6", request.amp_query, 
                     "-7", request.qmark_query,
                     request.where + ',v'), 'r')
@@ -1822,7 +1838,7 @@ def search_files(request, search_re):
     full_name = full_name[:-2]
 
     # figure out where we are and its mime type
-    where = string.replace(full_name, request.cvsroot, '')
+    where = string.replace(full_name, request.repos.rootpath, '')
     mime_type, encoding = mimetypes.guess_type(where)
     if not mime_type:
       mime_type = 'text/plain'
@@ -2142,7 +2158,6 @@ class DiffSequencingError(Exception):
 
 def view_diff(request, cvs_filename):
   query_dict = request.query_dict
-  cvsroot = request.cvsroot
 
   r1 = query_dict['r1']
   r2 = query_dict['r2']
@@ -2216,12 +2231,13 @@ def view_diff(request, cvs_filename):
 
   http_header('text/plain')
 
+  rootpath = request.repos.rootpath
   if unified:
-    f1 = '--- ' + cvsroot
-    f2 = '+++ ' + cvsroot
+    f1 = '--- ' + rootpath
+    f2 = '+++ ' + rootpath
   else:
-    f1 = '*** ' + cvsroot
-    f2 = '--- ' + cvsroot
+    f1 = '*** ' + rootpath
+    f2 = '--- ' + rootpath
 
   while 1:
     line = fp.readline()
@@ -2229,11 +2245,11 @@ def view_diff(request, cvs_filename):
       break
 
     if line[:len(f1)] == f1:
-      line = string.replace(line, cvsroot + '/', '')
+      line = string.replace(line, rootpath + '/', '')
       if sym1:
         line = line[:-1] + ' %s\n' % sym1
     elif line[:len(f2)] == f2:
-      line = string.replace(line, cvsroot + '/', '')
+      line = string.replace(line, rootpath + '/', '')
       if sym2:
         line = line[:-1] + ' %s\n' % sym2
 
@@ -2292,7 +2308,7 @@ def generate_tarball(out, request, tar_top, rep_top, reldir, tag, stack=[]):
        or cfg.is_forbidden(reldir[0]))):
     return
 
-  rep_dir = string.join([request.cvsroot, rep_top] + reldir, '/')
+  rep_dir = string.join([request.repos.rootpath, rep_top] + reldir, '/')
   tar_dir = string.join([tar_top] + reldir, '/') + '/'
 
   subdirs = [ ]
@@ -2319,10 +2335,10 @@ def generate_tarball(out, request, tar_top, rep_top, reldir, tag, stack=[]):
 
   for file in files:
     info = fileinfo.get(file)
-    rev = info[0]
-    date = info[1]
-    filename = info[4]
-    state = info[5]
+    rev = info.rev
+    date = info.date
+    filename = info.filename
+    state = info.state
     if state == 'dead':
       continue
 
@@ -2359,6 +2375,8 @@ def download_tarball(request):
   rep_top = re.sub(_re_up_path, '', request.where)[0:-1]
   tar_top = os.path.basename(re.sub(_re_up_path, '', request.full_name)[0:-1])
   tag = query_dict.get('only_with_tag')
+
+  ### look for GZIP binary
 
   http_header('application/octet-stream')
   fp = popen.pipe_cmds([('gzip', '-c', '-n')])
@@ -2400,31 +2418,30 @@ def main():
   # most of the startup is done now.
   debug.t_end('startup')
 
-  # is the CVS root really there?
-  if not os.path.isdir(request.cvsroot):
-    error('%s not found!\nThe server on which the CVS tree lives is '
-          'probably down. Please try again in a few minutes.' %
-          request.cvsroot)
+  # if this is just a simple hunk of doc, then serve it up
+  if request.has_docroot_magic:
+    view_doc(request)
+    return
 
-  full_name = request.full_name
-  isdir = os.path.isdir(full_name)
+  # check the forbidden list
+  if cfg.is_forbidden(request.module):
+    error('Access to "%s" is forbidden.' % request.module, '403 Forbidden')
+
+  # we must be referring to something in the repository. what is it?
+  isdir = request.repos.itemtype(request.path_parts) == vclib.DIR
 
   url = request.url
-
-  ### look for GZIP binary
 
   # if we have a directory and the request didn't end in "/", then redirect
   # so that it does. (so that relative URLs in our output work right)
   if isdir and os.environ.get('PATH_INFO', '')[-1:] != '/':
     redirect(url + '/' + request.qmark_query)
 
-  # check the forbidden list
-  if cfg.is_forbidden(request.module):
-    error('Access to "%s" is forbidden.' % request.module, '403 Forbidden')
-
   if isdir:
     view_directory(request)
     return
+
+  full_name = request.full_name
 
   # since we aren't talking about a directory, set up the mime type info
   # for the file.
@@ -2452,8 +2469,6 @@ def main():
   elif cfg.options.allow_tar \
        and full_name[-7:] == '.tar.gz' and query_dict.has_key('tarball'):
     download_tarball(request)
-  elif request.has_docroot_magic:
-    view_doc(request)
   else:
     # if the file is in the Attic, then redirect
     idx = string.rfind(full_name, '/')
