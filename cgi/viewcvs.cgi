@@ -77,6 +77,15 @@ forbidden_modules = ( )
 # checkout; you can use the mime.types from apache here:
 mime_types_file = '/usr/local/apache/conf/mime.types'
 
+# This address is shown in the footer
+address = '<a href="mailto:gstein@lyra.org">gstein@lyra.org</a>'
+
+# The title of the Page on startup
+defaulttitle = "CVS Repository"
+
+# Wanna have a logo on the page ?
+logo = '<img src="/icons/apache_pb.gif">'
+
 #####################
 
 default_settings = {
@@ -117,21 +126,24 @@ default_settings = {
   "hidenonreadable" : 1,
   }
 
+#####################
+
+#
+# If you want to Marc-Andrew Lemburg's py2html (and Just van Rossum's
+# PyFontify) to colorize Python files, then you may need to change this
+# variable to point to their directory location.
+#
+# This directory AND the standard Python path will be searched.
+#
+py2html_path = '.'
+#py2html_path = '/usr/local/lib/python1.5/site-python'
+
 ##############
 # some layout stuff
 ##############
 
 # color settings in the body-tag
 body_tag = '<body text="#000000" bgcolor="#ffffff">'
-
-# Wanna have a logo on the page ?
-logo = '<img src="/icons/apache_pb.gif">'
-
-# The title of the Page on startup
-defaulttitle = "CVS Repository"
-
-# The address is shown on the footer
-address = '<a href="mailto:gstein@lyra.org">gstein@lyra.org</a>'
 
 # Default page background color for the diffs
 # and annotations
@@ -738,6 +750,42 @@ def navigate_header(request, swhere, path, filename, rev, title):
         (html_icon('dir'), clickable_path(request, path, 1, 0))
   print '</tr></table>'
 
+def markup_stream_default(fp):
+  print '<pre>'
+  while 1:
+    ### technically, the htmlify() could fail if something falls across
+    ### the chunk boundary. TFB.
+    chunk = fp.read(8192)
+    if not chunk:
+      break
+    sys.stdout.write(htmlify(chunk))
+  print '</pre>'
+
+def markup_stream_python(fp):
+  try:
+    # see if Marc-Andre Lemburg's py2html stuff is around
+    # http://starship.python.net/crew/lemburg/SoftwareDescriptions.html#py2html.py
+    ### maybe restrict the import to *only* this directory?
+    sys.path.insert(0, py2html_path)
+    import py2html
+    import PyFontify
+  except ImportError:
+    # fall back to the default streamer
+    markup_stream_default(fp)
+  else:
+    ### it doesn't escape stuff quite right, nor does it munge URLs and
+    ### mailtos as well as we do.
+    html = cgi.escape(fp.read())
+    pp = py2html.PrettyPrint(PyFontify.fontify, "rawhtml", "color")
+    html = pp.fontify(html)
+    html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
+    html = re.sub(_re_rewrite_email, r'<a href="mailto:\1">\1</a>', html)
+    sys.stdout.write(html)
+
+markup_streamers = {
+  '.py' : markup_stream_python,
+  }
+
 def markup_stream(request, fp, revision, mime_type):
   full_name = request.full_name
   where = request.where
@@ -779,13 +827,9 @@ def markup_stream(request, fp, revision, mime_type):
   if mime_type[:6] == 'image/':
     print '<img src="%s%s"><br>' % (url, request.amp_query)
   else:
-    print '<pre>'
-    while 1:
-      chunk = fp.read(8192)
-      if not chunk:
-        break
-      sys.stdout.write(htmlify(chunk))
-    print '</pre>'
+    basename, ext = os.path.splitext(filename)
+    streamer = markup_streamers.get(ext, markup_stream_default)
+    streamer(fp)
 
 def get_file_data(full_name):
   """Return a sequence of tuples containing various data about the files.
@@ -1161,6 +1205,8 @@ def view_directory(request):
 
   if where == '':
     html_header(defaulttitle)
+
+    # these may be commented out or altered in the configuration section
     print long_intro
     print doc_information
     print repository_info
