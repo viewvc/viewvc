@@ -22,7 +22,12 @@
 #
 
 import os, sys, string, re
+import traceback
 
+# get access to our library modules
+sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), 'lib'))
+
+import compat
 
 
 ## installer text
@@ -70,63 +75,49 @@ FILE_INFO_LIST = [
     ]
 
 
-def Error(text):
+def Error(text, etype=None, evalue=None):
     print
-    print "[ERROR] %s" % (text)
+    print "[ERROR] %s" % text
+    if etype:
+        print '[ERROR] ',
+        traceback.print_exception(etype, evalue, None, file=sys.stdout)
     sys.exit(1)
     
 
 def MkDir(path):
-    make_dirs = []
-
-    while len(path) and not os.path.exists(path):
-        make_dirs.insert(0, path)
-        (path, basename) = os.path.split(path)
-        
-    for path in make_dirs:
-        try:
-            os.mkdir(path)
-        except OSError, e:
-            if e.errno != 13:
-                Error("Unknown error creating directory %s" % (path))
-            
-            Error("You do not have permission to create directory %s" % (path))
+    try:
+        compat.makedirs(path)
+    except OSError, e:
+        if e.errno == 17:
+            # EEXIST: file exists
+            return
+        if e.errno == 13:
+            # EACCES: permission denied
+            Error("You do not have permission to create directory %s" % path)
+        Error("Unknown error creating directory %s" % path, OSError, e)
 
 
-## regular expressions used to find key lines the installer needs
-## to rewrite
-_re_library_dir = re.compile("^LIBRARY_DIR\s*=\s*.*$")
-_re_conf_pathname = re.compile("^CONF_PATHNAME\s*=\s*.*$")
-_re_html_template_dir = re.compile("^HTML_TEMPLATE_DIR\s*=\s*.*$")
 
-def SetPythonPaths(line_list):
-    for index in range(len(line_list)):
-        line = line_list[index]
+def SetOnePath(contents, var, value):
+    pattern = re.compile('^' + var + r'\s*=\s*.*$', re.MULTILINE)
+    repl = '%s = "%s"' % (var, os.path.join(ROOT_DIR, value))
+    return re.sub(pattern, repl, contents)
 
-        if _re_library_dir.match(line):
-            temp = os.path.join(ROOT_DIR, "lib")
-            line_list[index] = "LIBRARY_DIR = \"%s\"\n" % (temp)
-            continue
-
-        if _re_conf_pathname.match(line):
-            temp = os.path.join(ROOT_DIR, "viewcvs.conf")
-            line_list[index] = "CONF_PATHNAME = \"%s\"\n" % (temp)
-            continue
-
-        if _re_html_template_dir.match(line):
-            temp = os.path.join(ROOT_DIR, "html-templates")
-            line_list[index] = "HTML_TEMPLATE_DIR = \"%s\"\n" % (temp)
-            continue
+def SetPythonPaths(contents):
+    contents = SetOnePath(contents, 'LIBRARY_DIR', 'lib')
+    contents = SetOnePath(contents, 'CONF_PATHNAME', 'viewcvs.conf')
+    contents = SetOnePath(contents, 'HTML_TEMPLATE_DIR', 'html-templates')
+    return contents
 
 
 def InstallFile(src_path, dest_path, mode, set_python_paths):
     try:
-        line_list = open(src_path, "r").readlines()
+        contents = open(src_path, "r").read()
     except IOError, e:
         Error(str(e))
 
     if set_python_paths:
-        SetPythonPaths(line_list)
+        contents = SetPythonPaths(contents)
 
     ## write the file to the destination location
     dest_path = os.path.join(ROOT_DIR, dest_path)
@@ -134,12 +125,12 @@ def InstallFile(src_path, dest_path, mode, set_python_paths):
     MkDir(path)
 
     try:
-        open(dest_path, "w").writelines(line_list)
+        open(dest_path, "w").write(contents)
     except IOError, e:
-        if e.errno != 13:
-            Error("Unknown error writing file %s" % (dest_path))
-
-        Error("You do not have permission to write file %s" % (dest_path))
+        if e.errno == 13:
+            # EACCES: permission denied
+            Error("You do not have permission to write file %s" % dest_path)
+        Error("Unknown error writing file %s" % dest_path, IOError, e)
         
     os.chmod(dest_path, mode)
 
@@ -150,19 +141,18 @@ if __name__ == "__main__":
     print INFO_TEXT
     
     ## get the install path
-    temp = raw_input("Installation Path [%s]: " % (ROOT_DIR))
+    temp = raw_input("Installation Path [%s]: " % ROOT_DIR)
     temp = string.strip(temp)
     if len(temp):
         ROOT_DIR = temp
         
     ## install the files
     print
-    print "Installing ViewCVS to: %s" % (ROOT_DIR)
-        
-    for file_info in FILE_INFO_LIST:
-        (src_path, dest_path, mode, set_python_paths) = file_info
-        print "        %s" % (src_path)
-        InstallFile(src_path, dest_path, mode, set_python_paths)
+    print "Installing ViewCVS to:", ROOT_DIR
+
+    for src, dst, mode, set_paths in FILE_INFO_LIST:
+        print "        ", src
+        InstallFile(src, dst, mode, set_paths)
 
     print
     print "Installation Complete"
