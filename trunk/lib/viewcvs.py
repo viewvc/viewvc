@@ -1395,9 +1395,10 @@ def view_directory(request):
     if cfg.options.use_java_script:
       print ' onchange="submit()"'
     print '>'
-    print '<option value="">- Branches -</option>'
-    for tag in branchtags:
-      html_option(tag, view_tag)
+    if len(branchtags):
+      print '<option value="">- Branches -</option>'
+      for tag in branchtags:
+	html_option(tag, view_tag)
     print '<option value="">- Non-branch tags -</option>'
     for tag in nonbranchtags:
       html_option(tag, view_tag)
