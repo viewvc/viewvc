@@ -205,6 +205,8 @@ class Config:
     self.options.short_log_len = 80
     self.options.use_enscript = 0
     self.options.enscript_path = ''
+    self.options.use_php = 0
+    self.options.php_path = 'php'
     self.options.disable_enscript_lang = ()
     self.options.allow_tar = 0
     self.options.use_cvsgraph = 0
