@@ -69,6 +69,9 @@ FILE_INFO_LIST = [
     ("cgi/query.cgi", "cgi/query.cgi", 0755, 1, 0, 0),
     ("cgi/viewcvs.asp", "cgi/viewcvs.asp", 0755, 1, 0, 0),
     ("cgi/query.asp", "cgi/query.asp", 0755, 1, 0, 0),
+    ("cgi/viewcvs.py", "cgi/viewcvs.py", 0755, 1, 0, 0),
+    ("cgi/query.py", "cgi/query.py", 0755, 1, 0, 0),
+    ("cgi/htaccess.mod_python", "cgi/htaccess.mod_python", 0755, 1, 0, 0),
     ("standalone.py", "standalone.py", 0755, 1, 0, 0),
 
     ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 1,
@@ -92,9 +95,14 @@ TREE_LIST = [
 # good because it blindly puts backslashes in front of anything that is not
 # a number or letter regardless of whether the resulting sequence will be
 # interpreted.
-
 def ReEscape(str):
   return string.replace(str, "\\", "\\\\")
+
+# Used to escape backslashes and quotes in apache options
+def ApacheEscape(str):
+  return re.sub(_re_apache, r"\\\g<0>", str)
+
+_re_apache = re.compile("[\\\\\"]")
 
 def Error(text, etype=None, evalue=None):
     print
@@ -130,6 +138,8 @@ def SetPythonPaths(contents):
         shbang = '#!' + sys.executable
         contents = re.sub('^#![^\n]*', ReEscape(shbang), contents)
     contents = re.sub("<VIEWCVS_INSTALL_DIRECTORY>", ReEscape(ROOT_DIR), contents)
+    apacheDir = ApacheEscape(os.path.join(ROOT_DIR, 'lib'))
+    contents = re.sub("<VIEWCVS_APACHE_LIBRARY_DIRECTORY>", ReEscape(apacheDir), contents)
     contents = SetOnePath(contents, 'LIBRARY_DIR', 'lib')
     contents = SetOnePath(contents, 'CONF_PATHNAME', 'viewcvs.conf')
     return contents
