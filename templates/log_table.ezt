@@ -185,4 +185,4 @@ href="[docroot]/help_logtable.html">ViewCVS and CVS Help</a></b></h3></td>
 
 [include "include/sort.ezt"]
 
-[include "footer.ezt"]
+[include "include/footer.ezt"]

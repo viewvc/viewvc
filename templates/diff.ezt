@@ -1,4 +1,4 @@
-[include "header.ezt" "diff"]
+[include "include/header.ezt" "diff"]
 
 <h3 align=center>Diff for /[where] between version [rev1] and [rev2]</h3>
 <table border=0 cellspacing=0 cellpadding=0 width="100%">
