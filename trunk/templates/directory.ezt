@@ -250,14 +250,6 @@ href="[docroot]/help_[if-any where]dir[else]root[end]view.html">ViewCVS and CVS 
           <a href="[rows.rev_href]">
             <b>[rows.rev]</b>
           </a>
-[# to display the revision in a separate window, you could use:
-
-   <a href="{rows.rev_href}" target="cvs_checkout"
-      onclick="window.open('{rows.rev_href}', 'cvs_checkout',
-                           'resizable=1,scrollbars=1');return false"><b>{rows.rev}</b></a>
-
-   (substitute brackets for the braces)
-]
         </td>
         <td>&nbsp;[rows.time]</td>
         [if-any rows.author]
