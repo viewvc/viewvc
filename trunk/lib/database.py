@@ -18,11 +18,7 @@ import sys
 import string
 import time
 
-## imports from the database API; we re-assign the namespace here so it
-## is easier to switch databases
-import MySQLdb
-DBI = MySQLdb
-
+import dbi
 from commit import CreateCommit, PrintCommit
 
 
@@ -63,7 +59,8 @@ class CheckinDatabase:
         self.dbDescriptionIDCache = {}
 
     def Connect(self):
-        self.dbConn = self.SQLConnect()
+        self.dbConn = dbi.connect(
+            self.dbHost, self.dbUser, self.dbPasswd, self.dbDatabase)
 
     def SQLGetID(self, table, field, identifier, auto_set):
         sql = 'SELECT id FROM %s x WHERE x.%s="%s"' % (
@@ -244,7 +241,7 @@ class CheckinDatabase:
         ## module to do the conversion
         temp = time.localtime(commit.GetTime())
 
-        dbCI_When = DBI.Timestamp(
+        dbCI_When = dbi.Timestamp(
             temp[0], temp[1], temp[2], temp[3], temp[4], temp[5])
         
         dbWhoID = self.GetAuthorID(commit.GetAuthor())
@@ -404,19 +401,8 @@ class CheckinDatabase:
             return None
 
         return commit
-        
-
-class MySQLCheckinDatabase(CheckinDatabase):
-    def SQLConnect(self):
-        return MySQLdb.connect(
-            host = self.dbHost,
-            user = self.dbUser,
-            passwd = self.dbPasswd,
-            db = self.dbDatabase)
-
 
 
 ## entrypoints
-
 def CreateCheckinDatabase(host, user, passwd, database):
-    return MySQLCheckinDatabase(host, user, passwd, database)
+    return CheckinDatabase(host, user, passwd, database)

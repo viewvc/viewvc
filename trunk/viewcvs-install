@@ -66,6 +66,7 @@ FILE_INFO_LIST = [
     ("lib/config.py", "lib/config.py", 0644, 0, 0, 1),
     ("lib/cvsdbapi.py", "lib/cvsdbapi.py", 0644, 1, 0, 1),
     ("lib/database.py", "lib/database.py", 0644, 0, 0, 1),
+    ("lib/dbi.py", "lib/dbi.py", 0644, 0, 0, 1),
     ("lib/popen.py", "lib/popen.py", 0644, 0, 0, 1),
     ("lib/py2html.py", "lib/py2html.py", 0644, 0, 0, 1),
     ("lib/rlog.py", "lib/rlog.py", 0644, 1, 0, 1),

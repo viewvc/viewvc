@@ -14,11 +14,7 @@
 #
 
 import time
-
-## imports from the database API; we re-assign the namespace here so it
-## is easier to switch databases
-import MySQLdb
-DBI = MySQLdb
+import dbi
 
 
 ## QueryEntry holds data on one match-type in the SQL database
