@@ -50,7 +50,7 @@ from types import StringType, IntType, FloatType
 _re_parse = re.compile('(\[[-\w. ]+\])|(\[\[\])|\[#[^\]]*\]')
 
 # block commands and their argument counts
-_block_cmd_specs = { 'if-any':1, 'if-index':2, 'for':1 }
+_block_cmd_specs = { 'if-any':1, 'if-index':2, 'for':1, 'is':2 }
 _block_cmds = _block_cmd_specs.keys()
 
 class Template:
@@ -108,6 +108,15 @@ class Template:
             raise ArgCountSyntaxError()
           ### this assumes arg1 is always a ref
           args[1] = _prepare_ref(args[1])
+
+          # handle arg2 for the 'is' command
+          if cmd == 'is':
+            if args[2][0] == '"':
+              # strip the quotes
+              args[2] = args[2][1:-1]
+            else:
+              args[2] = _prepare_ref(args[2])
+
           # remember the cmd, current pos, args, and a section placeholder
           stack.append([cmd, len(program), args[1:], None])
         else:
@@ -152,6 +161,13 @@ class Template:
       value = idx == len(list)-1
     else:
       value = idx == int(value)
+    self._do_if(value, t_section, f_section, fp, ctx)
+
+  def _cmd_is(self, args, fp, ctx):
+    (((refname, ref), value), t_section, f_section) = args
+    if not isinstance(value, StringType):
+      value = _get_value(value[0], value[1], ctx)
+    value = string.lower(_get_value(refname, ref, ctx)) == string.lower(value)
     self._do_if(value, t_section, f_section, fp, ctx)
 
   def _do_if(self, value, t_section, f_section, fp, ctx):
