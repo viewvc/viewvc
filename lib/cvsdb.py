@@ -264,14 +264,7 @@ class CheckinDatabase:
             self.AddCommit(commit)
 
     def AddCommit(self, commit):
-        ## MORE TIME HELL: the MySQLdb module doesn't construct times
-        ## correctly when created with TimestampFromTicks -- it doesn't
-        ## account for daylight savings time, so we use Python's time
-        ## module to do the conversion
-        temp = time.localtime(commit.GetTime())
-        ci_when = dbi.Timestamp(
-            temp[0], temp[1], temp[2], temp[3], temp[4], temp[5])
-
+        ci_when = dbi.DateTimeFromTicks(commit.GetTime())
         ci_type = commit.GetTypeString()
         who_id = self.GetAuthorID(commit.GetAuthor())
         repository_id = self.GetRepositoryID(commit.GetRepository())
@@ -407,18 +400,7 @@ class CheckinDatabase:
              dbRemovedLines, dbDescID) = row
 
             commit = CreateCommit()
-
-            ## TIME, TIME, TIME is all fucked up; dateobject.gmticks()
-            ## is broken, dateobject.ticks() returns somthing like
-            ## GMT ticks, except it forgets about daylight savings
-            ## time -- we handle it ourself in the following painful way
-            gmt_time = time.mktime(
-                (dbCI_When.year, dbCI_When.month, dbCI_When.day,
-                 dbCI_When.hour, dbCI_When.minute, dbCI_When.second,
-                 0, 0, dbCI_When.dst))
-    
-            commit.SetTime(gmt_time)
-            
+            commit.SetTime(dbi.TicksFromDateTime(dbCI_When))
             commit.SetFile(self.GetFile(dbFileID))
             commit.SetDirectory(self.GetDirectory(dbDirID))
             commit.SetRevision(dbRevision)
@@ -616,12 +598,14 @@ class CheckinDatabaseQuery:
         self.commit_cb = None
 
     def SetRepository(self, repository, match = "exact"):
+        repository = string.replace(repository, '/', os.sep)
         self.repository_list.append(QueryEntry(repository, match))
 
     def SetBranch(self, branch, match = "exact"):
         self.branch_list.append(QueryEntry(branch, match))
 
     def SetDirectory(self, directory, match = "exact"):
+        directory = string.replace(directory, '/', os.sep)
         self.directory_list.append(QueryEntry(directory, match))
 
     def SetFile(self, file, match = "exact"):
@@ -634,22 +618,22 @@ class CheckinDatabaseQuery:
         self.sort = sort
 
     def SetFromDateObject(self, ticks):
-        self.from_date = dbi.TimestampFromTicks(ticks)
+        self.from_date = dbi.DateTimeFromTicks(ticks)
 
     def SetToDateObject(self, ticks):
-        self.to_date = dbi.TimestampFromTicks(ticks)
+        self.to_date = dbi.DateTimeFromTicks(ticks)
 
     def SetFromDateHoursAgo(self, hours_ago):
         ticks = time.time() - (3600 * hours_ago)
-        self.from_date = dbi.TimestampFromTicks(ticks)
+        self.from_date = dbi.DateTimeFromTicks(ticks)
         
     def SetFromDateDaysAgo(self, days_ago):
         ticks = time.time() - (86400 * days_ago)
-        self.from_date = dbi.TimestampFromTicks(ticks)
+        self.from_date = dbi.DateTimeFromTicks(ticks)
 
     def SetToDateDaysAgo(self, days_ago):
         ticks = time.time() - (86400 * days_ago)
-        self.to_date = dbi.TimestampFromTicks(ticks)
+        self.to_date = dbi.DateTimeFromTicks(ticks)
 
     def AddCommit(self, commit):
         self.commit_list.append(commit)
@@ -720,11 +704,11 @@ def RLogDataToCommitList(repository, rlog_data):
         commit.SetMinusCount(rlog_entry.minuscount)
         commit.SetBranch(rlog_data.LookupBranch(rlog_entry))
 
-        if rlog_entry.type == rlog_entry.CHANGE:
+        if rlog_entry.type == rlog.RLogEntry.CHANGE:
             commit.SetTypeChange()
-        elif rlog_entry.type == rlog_entry.ADD:
+        elif rlog_entry.type == rlog.RLogEntry.ADD:
             commit.SetTypeAdd()
-        elif rlog_entry.type == rlog_entry.REMOVE:
+        elif rlog_entry.type == rlog.RLogEntry.REMOVE:
             commit.SetTypeRemove()
 
         commit_list.append(commit)
