@@ -1,142 +1,160 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
-  <head>
-    <title>Upgrading a ViewCVS Installation</title>
-  </head>
+<head>
+<title>ViewCVS: Upgrading</title>
+<link rel="stylesheet" type="text/css" href="./styles.css"/>
+</head>
 
-<body background="images/chalk.jpg">
-  <table width="100&#37;" cellspacing=5>
-    <tr>
-      <td width="1%"><a href="index.html"><img border=0
-	     src="images/logo.png"></a>
-      </td>
-      <td>
-	<h1>Upgrading a ViewCVS Installation</h1>
-      </td>
-      <td width="1%"><a href="http://sourceforge.net/"><img border=0
-	    src="http://sourceforge.net/sflogo.php?group_id=18760&type=1"></a><br><a href="http://sourceforge.net/projects/viewcvs/">ViewCVS&nbsp;project&nbsp;page</a>
-      </td>
-    </tr>
-    <tr><td width="1%" valign=top>
-       <a href="index.html">Overview</a><br>
-       Upgrading<br>
-       <a href="contributing.html">Contributing</a><br>
-       <a href="license-1.html">License</a><br>
-       <a href="who.html">Who</a><br>
-    </td><td colspan=2>
+<body>
 
-    <p>
-      This document describes some of the things that you will need to 
-      consider, change, or handle when upgrading an existing ViewCVS
-      installation to a newer version.
-    </p>
-    <p>
-      Upgrading from an ancient version of ViewCVS to the latest version
-      isn't necessarily a multi step process.  The instructions are only 
-      organized that way.  You can certainly upgrade in a single step.
-    </p>
-    <p>
-      It is always recommended to install the new version in a fresh directory
-      and to carefully compare the configuration files.  A possible approach
-      is to name the directories <code>/usr/local/viewcvs-0.6</code>, 
-      <code>/usr/local/viewcvs-0.7</code> and so on and than create a 
-      symbolic link <code>viewcvs</code> pointing to the production 
-      version.  This way you can easily test several versions and switch
-      back, if your users start to complain.
-    </p>
+<div id="title">
+<a href="http://viewcvs.sourceforge.net/"><img 
+   src="./images/title.jpg" alt="ViewCVS: Repository Browsing"/></a>
+</div>
 
-    <ul>
-      <li><a href="#from9">Upgrading from ViewCVS 0.9</a></li>
-      <li><a href="#from8">Upgrading from ViewCVS 0.8</a></li>
-      <li><a href="#from7">Upgrading from ViewCVS 0.7 or earlier</a></li>
-    </ul>
+<div id="menu">
+<p><a href="./index.html">Home</a> |
+   <a href="http://sourceforge.net/projects/viewcvs/">Project Page</a> |
+   <a href="./download.html">Download</a> |
+   <a href="./upgrading.html">Upgrading</a> |
+   <a href="./contributing.html">Contributing</a> |
+   <a href="./license-1.html">License</a> |
+   <a href="./contact.html">Contact</a> |
+   <a href="./who.html">About</a>
+</p>
+</div>
 
-    <hr>
+<table id="pagetable">
+<tr>
+<td id="pagecolumn1">
 
-    <h2><a name="from9">Upgrading from ViewCVS 0.9</a></h2>
-    <p>
-      This section discusses how to upgrade ViewCVS 0.9 to version
-      1.0 or a later version of the software.
-    </p>
-    <h3>CGI Stubs</h3>
+<h4>On this page:</h4>
+
+<ul id="bookmarks">
+  <li><a href="#sec-upgrading">Upgrading Basics</a></li>
+  <li><a href="#sec-from-0-9">Upgrading from 0.9</a></li>
+  <li><a href="#sec-from-0-8">Upgrading from 0.8</a></li>
+</ul>
+
+<hr/>
+
+<p align="center"><a href="http://sourceforge.net/"><img
+   src="http://sourceforge.net/sflogo.php?group_id=18760&type=2"></a></p>
+
+<address><a href="mailto:viewcvs@lyra.org">ViewCVS Users Group</a></address>
+
+</td>
+<td id="pagecolumn2">
+
+<div class="section">
+
+<h2 id="sec-upgrading">Upgrading Basics</h2>
+
+<p>This document describes some of the things that you will need to 
+   consider, change, or handle when upgrading an existing ViewCVS
+   installation to a newer version.</p>
+
+<p>Upgrading from an ancient version of ViewCVS to the latest version
+   isn't necessarily a multi step process.  The instructions are only
+   organized that way.  You can certainly upgrade in a single step.</p>
+
+<p>It is always recommended to install the new version in a fresh
+   directory and to carefully compare the configuration files.  A
+   possible approach is to name the directories
+   <code>/usr/local/viewcvs-0.6</code>,
+   <code>/usr/local/viewcvs-0.7</code> and so on and than create a
+   symbolic link <code>viewcvs</code> pointing to the production
+   version.  This way you can easily test several versions and switch
+   back, if your users start to complain.  </p>
+
+</div>
+<div class="section">
+
+<h2 id="sec-from-0-9">Upgrading From 0.9</h2>
+
+<p>This section discusses how to upgrade ViewCVS 0.9 to version 1.0 or
+   a later version of the software.</p>
+
+<h3>CGI Stubs</h3>
     
-    <p>The CGI stub scripts haved been moved from 
-    <code>&lt;VIEWCVS_INSTALLATION_DIRECTORY&gt;/cgi/</code> to 
-    <code>&lt;VIEWCVS_INSTALLATION_DIRECTORY&gt;/www/cgi/</code>, so you 
-    will need update any ScriptAlias directives pointing to them in 
-    your apache configuration. Also, the contents of these scripts
-    have changed, so you may need to replace copies of the old scripts
-    you put in other directories.</p>
+<p>The CGI stub scripts haved been moved from
+   <code>&lt;VIEWCVS_INSTALLATION_DIRECTORY&gt;/cgi/</code> to
+   <code>&lt;VIEWCVS_INSTALLATION_DIRECTORY&gt;/www/cgi/</code>, so
+   you will need update any ScriptAlias directives pointing to them in
+   your apache configuration. Also, the contents of these scripts have
+   changed, so you may need to replace copies of the old scripts you
+   put in other directories.</p>
 
-    <h3>Checkin Database</h3>
+<h3>Checkin Database</h3>
     
-    <p>ViewCVS 1.0 reads and writes commit times in the MySQL
-    database in UTC time rather than local time. This can cause
-    times displayed on the query page to be a few hours off if
-    an old database is being used with a new version of ViewCVS.
-    The best way to fix this is to rebuild the database with the
-    new version of cvsdbadmin, but it it is also possible to
-    enable a backwards compatibility mode by setting
-    <code>utc_time = 0</code> at the top of lib/dbi.py</p>
+<p>ViewCVS 1.0 reads and writes commit times in the MySQL database in
+   UTC time rather than local time. This can cause times displayed on
+   the query page to be a few hours off if an old database is being
+   used with a new version of ViewCVS.  The best way to fix this is to
+   rebuild the database with the new version of cvsdbadmin, but it it
+   is also possible to enable a backwards compatibility mode by
+   setting <code>utc_time = 0</code> at the top of lib/dbi.py</p>
 
-    <h3>Configuration Options</h3>
+<h3>Configuration Options</h3>
 
-    <p>The following options have been added:</p>
-    <ul>
-      <li>general/svn_roots</li>
-      <li>general/root_parents</li>
-      <li>general/use_rcsparse</li>
-      <li>general/cvsnt_exe_path</li>
-      <li>options/docroot</li>
-      <li>options/http_expiration_time</li>
-      <li>options/generate_etags</li>
-      <li>options/root_as_url_component</li>
-      <li>options/use_pagesize</li>
-      <li>options/use_localtime</li>
-      <li>options/cross_copies</li>
-      <li>options/use_php</li>
-      <li>options/php_path</li>
-      <li>templates/error</li>
-      <li>templates/query_form</li>
-      <li>templates/query_results</li>
-    </ul>
+<p>The following options have been added:</p>
 
-    <p>The following options have been removed:</p>
-    <ul>
-      <li>options/diff_font_face</li> 
-      <li>options/diff_font_size</li>
-      <li>templates/footer</li>
-    </ul>
+<ul>
+  <li>general/svn_roots</li>
+  <li>general/root_parents</li>
+  <li>general/use_rcsparse</li>
+  <li>general/cvsnt_exe_path</li>
+  <li>options/docroot</li>
+  <li>options/http_expiration_time</li>
+  <li>options/generate_etags</li>
+  <li>options/root_as_url_component</li>
+  <li>options/use_pagesize</li>
+  <li>options/use_localtime</li>
+  <li>options/cross_copies</li>
+  <li>options/use_php</li>
+  <li>options/php_path</li>
+  <li>templates/error</li>
+  <li>templates/query_form</li>
+  <li>templates/query_results</li>
+</ul>
 
-    <h3>Templates</h3>
+<p>The following options have been removed:</p>
+
+<ul>
+  <li>options/diff_font_face</li> 
+  <li>options/diff_font_size</li>
+  <li>templates/footer</li>
+</ul>
+
+<h3>Templates</h3>
     
-    <p>The templates have changed drastically in this version of
-    ViewCVS. If you are using customized templates from 0.9 or
-    earlier, you will almost certainly find it easier to port your old
-    customizations to the new templates than to port the old templates
-    themselves. Either way, you might find it helpful to know what's
-    different in the templates since 0.9, so we've listed the changes
-    below.</p>
+<p>The templates have changed drastically in this version of
+   ViewCVS. If you are using customized templates from 0.9 or earlier,
+   you will almost certainly find it easier to port your old
+   customizations to the new templates than to port the old templates
+   themselves. Either way, you might find it helpful to know what's
+   different in the templates since 0.9, so we've listed the changes
+   below.</p>
 
-    <h4>Template Arrangement</h4>
+<h4>Template Arrangement</h4>
     
-    <p>The default templates have been rearranged a bit in ViewCVS
-    1.0.  Specifically, "header.ezt" and "footer.ezt" have moved into
-    the "templates/include/" subdirectory.  Also, "directory.ezt" and
-    "dir_alternate.ezt" now reference new template files
-    "dir_header.ezt" and "dir_footer.ezt", also found in the
-    "templates/include/" subdirectory.</p>
+<p>The default templates have been rearranged a bit in ViewCVS 1.0.
+   Specifically, "header.ezt" and "footer.ezt" have moved into the
+   "templates/include/" subdirectory.  Also, "directory.ezt" and
+   "dir_alternate.ezt" now reference new template files
+   "dir_header.ezt" and "dir_footer.ezt", also found in the
+   "templates/include/" subdirectory.</p>
 
-    <p>Notably, the "markup.ezt" and "annotate.ezt" templates are now
-    fully self-contained.  That is, the markup and annotation data
-    generated by ViewCVS is now accessible in those templates just
-    like other template variables.  As a result, ViewCVS now has no
-    more internal need for the <var>templates.footer</var>
-    configuration variable, so that variable has been removed from the
-    default configuration file.</p>
+<p>Notably, the "markup.ezt" and "annotate.ezt" templates are now
+   fully self-contained.  That is, the markup and annotation data
+   generated by ViewCVS is now accessible in those templates just like
+   other template variables.  As a result, ViewCVS now has no more
+   internal need for the <var>templates.footer</var> configuration
+   variable, so that variable has been removed from the default
+   configuration file.</p>
 
-    <h4>Removed Template Variables</h4>
-    <blockquote>
+<h4>Removed Template Variables</h4>
+
       <dl>
         <dt>
           <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
@@ -246,10 +264,9 @@
           Deemed unnecessary.
         </dd>
       </dl>
-    </blockquote>
 
-    <h4>New Template Variables</h4>
-    <blockquote>
+<h4>New Template Variables</h4>
+
       <dl>
         <dt>All files: <var>roottype</var>, <var>rootname</var>, and 
             <var>pathtype</var></dt>
@@ -368,28 +385,23 @@
         </dt>
         <dd>New variables for links.</dd>
       </dl>
-    </blockquote>
 
+<h4>New Template Form Variables</h4>
 
-    <h4>New Template Form Variables</h4>
-    <p>
-      Each HTML form that appears in ViewCVS templates is now
-      associated with 2 new variables which should be used to
-      determine its <code>ACTION</code> value and its hidden field
-      values. Forms using the new variables look like
-    </p>
+<p>Each HTML form that appears in ViewCVS templates is now associated
+   with 2 new variables which should be used to determine its
+   <code>ACTION</code> value and its hidden field values.  Forms using
+   the new variables look like:</p>
 
-    <pre>
-      &lt;form method=get action="[my_form_action]"&gt;
-        [my_form_hidden_values]
-        ... form widgets go here ...
-      &lt;/form&gt;
-    </pre>
+<pre>
+&lt;form method=get action="[my_form_action]"&gt;
+  [my_form_hidden_values]
+   ... form widgets go here ...
+&lt;/form&gt;
+</pre>
 
-    <p>
-      Here is a list of the new variable names and the forms they are
-      associated with:
-    </p>
+<p>Here is a list of the new variable names and the forms they are
+   associated with:</p>
 
     <table border=1>
       <tr>
@@ -486,8 +498,10 @@
       </tr>
     </table>
 
-    <h4>Other Template Changes</h4>
-    <h4>In <code>directory.ezt</code> and <code>dir_alternate.ezt</code></h4>
+<h4>Other Template Changes</h4>
+
+<p>In <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:</p>
+
     <ul>
       <li>
         A new form for changing the current directory revision is 
@@ -514,7 +528,8 @@
       </li>
     </ul>
 
-    <h4>In <code>log.ezt</code> and <code>log_table.ezt</code></h4>
+<p>In <code>log.ezt</code> and <code>log_table.ezt</code>:</p>
+
     <ul>
       <li>
         "Default branch" section moved into include/branch.ezt and is
@@ -541,9 +556,11 @@
       </li>
     </ul>
 
-    <hr>
+</div>
+<div class="section">
 
-    <h2><a name="from8">Upgrading from ViewCVS 0.8</a></h2>
+<h2 id="sec-from-0-8">Upgrading From 0.8</h2>
+
     <p>
       This section discusses how to upgrade ViewCVS 0.8 to version
       0.9 or a later version of the software.
@@ -563,7 +580,7 @@
       changes to these options, then you will need to make
       corresponding changes in the templates.
     </p>
-    <blockquote>
+
       <dl>
 	<dt>
 	  Colors:
@@ -650,7 +667,6 @@
 	</dd>
 
       </dl>
-    </blockquote>
 
     <h3>Template Variables</h3>
     <p>
@@ -659,7 +675,6 @@
       variables, then you will need to modify your templates.
     </p>
 
-	  <blockquote>
 	    <dl>
 	      <dt><code>directory.ezt</code>: <var>headers</var></dt>
 	      <dd>
@@ -707,152 +722,11 @@
 		<p></p>
 	      </dd>
 	    </dl>
-	  </blockquote>
-    <hr>
 
-    <h2><a name="from7">Upgrading from ViewCVS 0.7 or earlier</a></h2>
-    <p>
-      This section discusses how to upgrade ViewCVS 0.7, or earlier,
-      to 0.8 or a later version of the software.
-    </p>
-    <p>
-      <strong>NOTE:</strong> these changes will bring you up to the
-      requirements of version 0.8. You must also follow the directions
-      for <a href="#from8">upgrading from 0.8</a>.
-    </p>
+</div>
 
-    <h3>Configuration Options</h3>
-    <p>
-      The largest change from 0.7 to 0.8, that you will need to deal
-      with, is the introduction of templates. This shifted many
-      configuration file options into the templates, for more direct
-      editing of the output style, colors, and layout. Below is a list 
-      of options that no longer exist, and where you can find their
-      counterpart in the current version of ViewCVS.
-    </p>
-    <p>
-      The following options have all been removed in ViewCVS 0.8. If
-      you made local changes to your ViewCVS configuration, then you
-      will need to edit templates in the <code>templates/</code>
-      subdirectory.
-    </p>
-
-    <blockquote>
-      <dl>
-	<dt>
-	  The [text] section:
-	  <strong>short_intro</strong>,
-	  <strong>long_intro</strong>,
-	  and <strong>doc_info</strong>
-	</dt>
-	<dd>
-	  These options have been incorporated into the
-	  <code>doc/help_rootview.html</code> page and the
-	  <code>doc/help_dirview.html</code> page.
-
-	  <p></p>
-	</dd>
-
-	<dt><strong>repository_info</strong></dt>
-	<dd>
-	This option is now incorporated into the
-	<code>directory.ezt</code> template.
-
-	<p></p>
-	</dd>
-
-	<dt><strong>table_padding</strong></dt>
-	<dd>
-	  The table padding values can be changed in the
-	  <code>directory.ezt</code> template.
-
-	  <p></p>
-	</dd>
-
-	<dt><strong>table_border</strong></dt>
-	<dd>
-	  Edit <code>directory.ezt</code> to add a border around the
-	  directory table.
-
-	  <p></p>
-	</dd>
-
-	<dt>
-	  <strong>column_header_normal</strong> and
-	  <strong>column_header_sorted</strong>
-	</dt>
-	<dd>
-	  Edit <code>directory.ezt</code> to modify the colors of the
-	  column headers.
-
-	  <p></p>
-	</dd>
-
-	<dt>
-	  <strong>extern_window_width</strong> and
-	  <strong>extern_window_height</strong>
-	</dt>
-	<dd>
-	  These options were never used and have been removed.
-	  <p></p>
-	</dd>
-
-	<dt><strong>logo</strong></dt>
-	<dd>
-	  Edit the templates directly (<code>directory.ezt</code>,
-	  <code>log.ezt</code> or <code>log_table.ezt</code> and if
-	  needed <code>query.ezt</code>) to alter the URL and size of
-	  your logo.
-
-	  <p></p>
-	</dd>
-
-	<dt><strong>allow_version_select</strong></dt>
-	<dd>
-	  Edit the <code>log.ezt</code> template if you want to remove
-	  the link which allows the user to select a revision for a
-	  diff.
-
-	  <p></p>
-	</dd>
-
-	<dt><strong>input_text_size</strong></dt>
-	<dd>
-	  Edit the <code>log.ezt</code> template if you want to change
-	  the size of the entry box for revisions for performing
-	  diffs.
-
-	  <p></p>
-	</dd>
-
-	<dt><strong>even_odd</strong></dt>
-	<dd>
-	  Edit the <code>directory.ezt</code> and
-	  <code>query.ezt</code> templates if you want to change the
-	  colors of the rows in the directory and query result tables.
-
-          <p></p>
-	</dd>
-
-        <dt>Colors: <strong>text</strong>
-          and <strong>background</strong></dt>
-	<dd>
-	  These options have been incorporated into the
-	  <code>directory.ezt</code>, <code>log.ezt</code>, and
-	  <code>log_table.ezt</code> templates.
-
-	  <p></p>
-	</dd>
-
-      </dl>
-    </blockquote>
-
-  </td></tr></table>
-  <hr>
-  <address><a href="mailto:viewcvs@lyra.org">ViewCVS Users Group</a></address>
-<!-- Created: Mon Sep 24 04:23:53 PDT 2001 -->
-<!-- hhmts start -->
-Last modified: Sat Dec 22 20:05:14 PST 2001
-<!-- hhmts end -->
+</td>
+</tr>
+</table>
 </body>
 </html>
