@@ -791,12 +791,13 @@ def common_template_data(request):
   data['change_root_action'] = urllib.quote(url, _URL_SAFE_CHARS)
   data['change_root_hidden_values'] = prepare_hidden_values(params)
   # add in the roots for the selection
+  roots = []
   allroots = list_roots(cfg)
-  if len(allroots) < 2:
-    roots = [ ]
-  else:
-    roots = allroots.keys()
-    roots.sort(icmp)
+  if len(allroots) >= 2:
+    rootnames = allroots.keys()
+    rootnames.sort(icmp)
+    for rootname in rootnames:
+      roots.append(_item(name=rootname, type=allroots[rootname][1]))
   data['roots'] = roots
   return data
 
@@ -2682,8 +2683,10 @@ for code, view in _views.items():
 
 def list_roots(cfg):
   allroots = { }
-  allroots.update(cfg.general.cvs_roots)
-  allroots.update(cfg.general.svn_roots)
+  for root in cfg.general.cvs_roots.keys():
+    allroots[root] = [cfg.general.cvs_roots[root], 'cvs']
+  for root in cfg.general.svn_roots.keys():
+    allroots[root] = [cfg.general.svn_roots[root], 'svn']
   return allroots
   
 def handle_config():
