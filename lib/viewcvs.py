@@ -168,7 +168,12 @@ class Request:
 
     # set up the CVS repository to use
     self.cvsrep = query_dict.get('cvsroot', cfg.general.default_root)
-    self.cvsroot = cfg.general.cvs_roots[self.cvsrep]
+    try:
+      self.cvsroot = cfg.general.cvs_roots[self.cvsrep]
+    except KeyError:
+      print "To the administrator: Probably the settings of 'cvs_roots' and "
+      print "'default_root' are misconfigured in the viewcvs.conf file."
+      raise
 
     self.full_name = self.cvsroot + '/' + where
 
