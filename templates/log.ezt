@@ -10,16 +10,16 @@
 <table width="100%" border=0 cellspacing=0 cellpadding=0>
   <tr>
     <td rowspan=2><h1>[is roottype "svn"]Subversion[else]CVS[end] log for [where]</h1></td>
-    <td align=right><img src="[request.icons]/apache_pb.gif" alt="(logo)" border=0
+    <td align=right><img src="[icons]/apache_pb.gif" alt="(logo)" border=0
 			width=259 height=32></td>
   </tr>
   <tr>
     <td align=right><h3><b><a target="_blank"
-     href="[request.docroot]/help_log.html">ViewCVS and CVS Help</a></b></h3></td>
+     href="[docroot]/help_log.html">ViewCVS and CVS Help</a></b></h3></td>
   </tr>
 </table>
 
-<a href="[back_url]#[filename]"><img src="[request.icons]/small/back.gif" alt="(back)" border=0
+<a href="[back_url]#[filename]"><img src="[icons]/small/back.gif" alt="(back)" border=0
 			width=16 height=16></a>
 <b>Up to [nav_path]</b><p>
 <a href="#diff">Request diff between arbitrary revisions</a>

@@ -146,13 +146,6 @@ class Request:
     # load the key/value files, given the selected language
     self.kv = cfg.load_kv_files(self.language)
 
-    self.icons = cfg.options.icons
-
-    if cfg.options.docroot is None:
-      self.docroot = self.script_name + '/' + docroot_magic_path
-    else:
-      self.docroot = cfg.options.docroot
-
   def run_viewcvs(self):
     
     # global needed because "import vclib.svn" causes the
@@ -571,15 +564,7 @@ def generate_page(request, tname, data):
   template.generate(sys.stdout, data)
 
 def html_footer(request):
-  ### would be nice to have a "standard" set of data available to all
-  ### templates. should move that to the request ob, probably
-  data = {
-    'cfg' : cfg,
-    'vsn' : __version__,
-    }
-
-  if request:
-    data['kv'] = request.kv
+  data = common_template_data(request)
 
   # generate the footer
   generate_page(request, cfg.templates.footer, data)
@@ -703,19 +688,32 @@ def html_time(request, secs, extended=0):
       s = s + ', ' + ext
   return s
 
-def nav_header_data(request, rev):
+def common_template_data(request):
+  data = {
+    'cfg' : cfg,
+    'vsn' : __version__,
+    'kv'  : request.kv,
+    'icons' : cfg.options.icons,
+    'docroot' : cfg.options.docroot is None                        \
+                and request.script_name + '/' + docroot_magic_path \
+                or cfg.options.docroot,
+  }
+  return data
 
+def nav_header_data(request, rev):
   path, filename = os.path.split(request.where)
   if request.roottype == 'cvs' and path[-6:] == '/Attic':
     path = path[:-6]
 
-  return {
+  data = common_template_data(request)
+  data.update({
     'nav_path' : clickable_path(request, 1, 0),
     'path' : path,
     'filename' : filename,
     'file_url' : request.get_url(view_func=view_log, params={}),
     'rev' : rev
-    }
+  })
+  return data
 
 def copy_stream(fp):
   while 1:
@@ -941,10 +939,6 @@ def view_markup(request):
 
   data = nav_header_data(request, revision)
   data.update({
-    'request' : request,
-    'cfg' : cfg,
-    'vsn' : __version__,
-    'kv' : request.kv,
     'nav_file' : clickable_path(request, 1, 0),
     'href' : request.get_url(view_func=view_checkout, params={}),
     'text_href' : request.get_url(view_func=view_checkout, 
@@ -1286,20 +1280,16 @@ def view_directory(request):
   sortdir = request.query_dict.get('sortdir', 'up')
 
   # prepare the data that will be passed to the template
-  data = {
+  data = common_template_data(request)
+  data.update({
     'roottype' : request.roottype,
     'where' : request.where,
-    'request' : request,
-    'cfg' : cfg,
-    'kv' : request.kv,
     'current_root' : request.repos.name,
     'sortby' : sortby,
     'sortdir' : sortdir,
     'no_match' : None,
     'unreadable' : None,
     'tarball_href' : None,
-    'address' : cfg.general.address,
-    'vsn' : __version__,
     'search_re' : None,
     'dir_pagestart' : None,
     'have_logs' : 'yes',
@@ -1310,7 +1300,7 @@ def view_directory(request):
     'sortby_log_href' :    request.get_url(params={'sortby': 'log'}),
     'sortdir_down_href' :  request.get_url(params={'sortdir': 'down'}),
     'sortdir_up_href' :    request.get_url(params={'sortdir': 'up'}),
-  }
+  })
 
   if not request.where:
     url, params = request.get_link(params={'root': None})
@@ -1959,26 +1949,23 @@ def view_log(request):
   diff_format = request.query_dict.get('diff_format', cfg.options.diff_format)
   logsort = request.query_dict.get('logsort', cfg.options.log_sort)
   
-  data = {
+  data = common_template_data(request)
+  data.update({
     'roottype' : request.roottype,
     'current_root' : request.repos.name,
     'where' : request.where,
-    'request' : request,
     'nav_path' : clickable_path(request, 1, 0),
     'branch' : None,
     'mime_type' : request.mime_type,
     'rev_selected' : request.query_dict.get('r1'),    
     'diff_format' : diff_format,
     'logsort' : logsort,
-    'cfg' : cfg,
-    'vsn' : __version__,
-    'kv' : request.kv,
     'viewable' : ezt.boolean(request.default_viewable),
     'is_text'  : ezt.boolean(is_text(request.mime_type)),
     'human_readable' : ezt.boolean(diff_format in ('h', 'l')),
     'log_pagestart' : None,
     'graph_href' : None,    
-  }
+  })
 
   url, params = request.get_link(view_func=view_diff, 
                                  params={'r1': None, 'r2': None, 
@@ -2276,13 +2263,7 @@ def view_annotate(request):
     raise "annotate no allows"
 
   rev = request.query_dict.get('annotate')
-
   data = nav_header_data(request, rev)
-  data.update({
-    'cfg' : cfg,
-    'vsn' : __version__,
-    'kv' : request.kv,
-    })
 
   request.server.header()
   generate_page(request, cfg.templates.annotate, data)
@@ -2345,12 +2326,8 @@ def view_cvsgraph(request):
                     request.where + ',v'), 'rb', 0)
 
   data.update({
-    'request' : request,
     'imagemap' : fp,
     'imagesrc' : imagesrc,
-    'cfg' : cfg,
-    'vsn' : __version__,
-    'kv' : request.kv,
     })
 
   request.server.header()
@@ -2539,10 +2516,6 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
     date2 = date2 + ' UTC'
 
   data.update({
-    'cfg' : cfg,
-    'vsn' : __version__,
-    'kv' : request.kv,
-    'request' : request,
     'where' : where,
     'rev1' : rev1,
     'rev2' : rev2,
@@ -3110,8 +3083,6 @@ def view_error(server):
   # available, or if something went wrong
   if not handled:
     debug.PrintException(server, exc_dict)
-    html_footer(None)
-
 
 def main(server):
   try:
