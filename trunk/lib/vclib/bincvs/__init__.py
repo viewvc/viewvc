@@ -46,7 +46,7 @@ class LogEntry:
     self.changed = changed
     self.log = log
 
-def parse_log_header(fp):
+def parse_log_header(target,fp):
   """Parse and RCS/CVS log header.
 
   fp is a file (pipe) opened for reading the log information.
@@ -112,8 +112,9 @@ def parse_log_header(fp):
             filename = filename[:-2]
           return LogHeader(filename), _EOF_ERROR
         # dunno what this is
-
-  return LogHeader(filename, head, branch, taginfo), eof
+  target.__dict__["head"]=head
+  target.__dict__["branch"]=branch
+  target.__dict__["taginfo"]=taginfo
 
 _re_log_info = re.compile(r'^date:\s+([^;]+);'
                           r'\s+author:\s+([^;]+);'
@@ -423,6 +424,9 @@ class BinCVSRepository:
     """
     if not os.path.isfile(path):
       raise "Unknown file: %s " % path
+    rlog = popen.popen('rlog', path, 'r')
+    parse_log_header(target,rlog)
+
     
   def _getvf_tree(self,versfile):
     """
@@ -465,3 +469,4 @@ class BinCVSRepository:
     return fp
 
 
+                                             
