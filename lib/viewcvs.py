@@ -118,7 +118,7 @@ else:
 class Request:
   def __init__(self, server):
     self.server = server
-    self.script_name = server.getenv('SCRIPT_NAME', '')
+    self.script_name = _normalize_path(server.getenv('SCRIPT_NAME', ''))
     self.browser = server.getenv('HTTP_USER_AGENT', 'unknown')
 
     # in lynx, it it very annoying to have two links per file, so
@@ -489,6 +489,14 @@ class Request:
       if value is not None:
         ret[name] = value
     return ret
+
+def _normalize_path(path):
+  if not path or not len(path):
+    return path
+  is_abs = path[0] == '/'
+  parts = filter(None, string.split(os.path.normpath(path), '/'))
+  path = (is_abs and '/' or '') + string.join(parts, '/')
+  return path
 
 def _validate_param(name, value):
   """Validate whether the given value is acceptable for the param name.
