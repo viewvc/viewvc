@@ -1429,6 +1429,8 @@ def view_log(request):
     entry.ago = html_time(request, rev.date, 1)
     entry.html_log = htmlify(rev.log or "")
     entry.size = rev.size
+    entry.branch_point = None
+    entry.next_main = None
 
     entry.view_href = request.get_url(view_func=view_markup,
                                       params={'rev': rev.string})
@@ -1463,10 +1465,6 @@ def view_log(request):
       else:
         entry.branch_names = [ ]
 
-      # figure out some target revisions for performing diffs
-      entry.branch_point = None
-      entry.next_main = None
-      
       if rev.parent and rev.parent is not prev and not entry.vendor_branch:
         entry.branch_point = rev.parent.string
 
