@@ -152,11 +152,6 @@ class Config:
     self.colors.background = "#ffffff"
     self.colors.alt_background = "#eeeeee"
 
-    self.colors.column_header_normal = "#cccccc"
-    self.colors.column_header_sorted = "#88ff88"
-
-    self.colors.table_border = None	# no border
-
     self.options.sort_by = 'file'
     self.options.hide_attic = 1
     self.options.log_sort = 'date'
@@ -173,8 +168,6 @@ class Config:
     self.options.allow_compress = 1
     self.options.use_java_script = 1
     self.options.open_extern_window = 1
-    self.options.extern_window_width = 600
-    self.options.extern_window_height = 440
     self.options.checkout_magic = 1
     self.options.show_subdir_lastmod = 0
     self.options.show_logs = 1
@@ -182,7 +175,6 @@ class Config:
     self.options.allow_version_select = 1
     self.options.py2html_path = '.'
     self.options.short_log_len = 80
-    self.options.table_padding = 2
     self.options.diff_font_face = 'Helvetica,Arial'
     self.options.diff_font_size = -1
     self.options.input_text_size = 12
