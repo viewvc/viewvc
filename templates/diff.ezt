@@ -1,14 +1,14 @@
 [# setup page definitions]
   [define location][rootname][if-any where]: [where][end][end]
   [define page_title][cfg.general.main_title] - diff - [location][end]
-  [define help_href][docroot]/help_root.html[end]
+  [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
 [include "include/header.ezt" "diff"]
 
 <h3 align=center>Diff for /[where] between version [rev1] and [rev2]</h3>
 <table border=0 cellspacing=0 cellpadding=0 width="100%">
-  <tr bgcolor=white>
+  <tr class="vc_diff_header">
     <th width="50%" valign=top>
       version [rev1][date1]
       [if-any tag1]<br>Tag: [tag1][end]
@@ -21,12 +21,12 @@
 
   [for changes]
     [is changes.type "header"]
-      <tr bgcolor="#99cccc">
+      <tr class="vc_diff_chunk_header">
         <td width="50%">
           <table width="100%" border=1 cellpadding=5>
             <tr>
               <td> <b>Line [changes.line1]</b>&nbsp;
-              <font size="-1">[changes.extra]</font></td>
+              <span class="vc_diff_chunk_extra">[changes.extra]</span></td>
             </tr>
           </table>
         </td>
@@ -34,7 +34,7 @@
           <table width="100%" border=1 cellpadding=5>
             <tr>
               <td> <b>Line [changes.line2]</b>&nbsp;
-              <font size="-1">[changes.extra]</font></td>
+              <span class="vc_diff_chunk_extra">[changes.extra]</span></td>
             </tr>
           </table>
         </td>
@@ -42,27 +42,27 @@
     [else]
       [is changes.type "add"]
         <tr>
-          <td bgcolor="#cccccc">&nbsp;</td>
-          <td bgcolor="#aaffaa"><font face="Helvetica,Arial" size="-1">&nbsp;[changes.right]</font></td>
+          <td class="vc_diff_empty">&nbsp;</td>
+          <td class="vc_diff_add">&nbsp;[changes.right]</td>
         </tr>
       [else]
         [is changes.type "remove"]
           <tr>
-            <td bgcolor="#ffaaaa"><font face="Helvetica,Arial" size="-1">&nbsp;[changes.left]</font></td>
-            <td bgcolor="#cccccc">&nbsp;</td>
+            <td class="vc_diff_remove">&nbsp;[changes.left]</td>
+            <td class="vc_diff_empty">&nbsp;</td>
           </tr>
         [else]
           [is changes.type "change"]
             <tr>
               [if-any changes.have_left]
-                <td bgcolor="#ffff77"><font face="Helvetica,Arial" size="-1">&nbsp;[changes.left]</font></td>
+                <td class="vc_diff_change">&nbsp;[changes.left]</td>
               [else]
-                <td bgcolor="#eeee77">&nbsp;</td>
+                <td class="vc_diff_change_empty">&nbsp;</td>
               [end]
               [if-any changes.have_right]
-                <td bgcolor="#ffff77"><font face="Helvetica,Arial" size="-1">&nbsp;[changes.right]</font></td>
+                <td class="vc_diff_change">&nbsp;[changes.right]</td>
               [else]
-                <td bgcolor="#eeee77">&nbsp;</td>
+                <td class="vc_diff_change_empty">&nbsp;</td>
               [end]
             </tr>
           [else]
@@ -70,7 +70,7 @@
               <tr>
                 <td colspan=2>&nbsp;</td>
               </tr>
-              <tr bgcolor="#cccccc">
+              <tr class="vc_diff_empty">
                 <td colspan=2 align=center><br>
                 <b>- No changes -</b><br>&nbsp; </td>
               </tr>
@@ -79,7 +79,7 @@
                 <tr>
                   <td colspan=2>&nbsp;</td>
                 </tr>
-                <tr bgcolor="#cccccc">
+                <tr class="vc_diff_empty">
                   <td colspan=2 align=center><br>
                   <b>- Binary file revisions differ -</b><br>&nbsp; </td>
                 </tr>
@@ -88,7 +88,7 @@
                   <tr>
                     <td colspan=2>&nbsp;</td>
                   </tr>
-                  <tr bgcolor="#cccccc">
+                  <tr class="vc_diff_empty">
                     <td colspan=2 align=center> <br>
                     <b>- ViewCVS depends on rcsdiff and GNU diff to create 
                     this page.  ViewCVS cannot find GNU diff. Even if you 
@@ -98,8 +98,8 @@
                   </tr>
                 [else]
                   <tr>
-                    <td><font face="Helvetica,Arial" size="-1">&nbsp;[changes.left]</size></td>
-                    <td><font face="Helvetica,Arial" size="-1">&nbsp;[changes.right]</size></td>
+                    <td class="vc_diff_nochange">&nbsp;[changes.left]</td>
+                    <td class="vc_diff_nochange">&nbsp;[changes.right]</td>
                   </tr>
                 [end]
               [end]
@@ -121,15 +121,15 @@
           <td>Legend:<br>
             <table border=0 cellspacing=0 cellpadding=1>
               <tr>
-                <td align=center bgcolor="#ffaaaa">Removed from v.[rev1]</td>
-                <td bgcolor="#cccccc">&nbsp;</td>
-              </tr>
-              <tr bgcolor="#ffff77">
-                <td align=center colspan=2>changed lines</td>
+                <td align=center class="vc_diff_remove">Removed from v.[rev1]</td>
+                <td class="vc_diff_empty">&nbsp;</td>
               </tr>
               <tr>
-                <td bgcolor="#cccccc">&nbsp;</td>
-                <td align=center bgcolor="#aaffaa">Added in v.[rev2]</td>
+                <td align=center colspan=2 class="vc_diff_change">changed lines</td>
+              </tr>
+              <tr>
+                <td class="vc_diff_empty">&nbsp;</td>
+                <td align=center class="vc_diff_add">Added in v.[rev2]</td>
               </tr>
             </table>
           </td>

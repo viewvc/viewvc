@@ -16,18 +16,18 @@
 
 <hr noshade>
 <table width="100%" border=0 cellspacing=1 cellpadding=2>
-  <th align=left bgcolor="#88ff88">Revision</th>
+  <th align=left class="vc_header">Revision</th>
   [is pathtype "file"]
-  <th align=left bgcolor="#88ff88">Tasks</th>
-  <th align=left bgcolor="#88ff88">Diffs</th>
+  <th align=left class="vc_header">Tasks</th>
+  <th align=left class="vc_header">Diffs</th>
   [end]
   [is roottype "cvs"]
-  <th align=left bgcolor="#88ff88">Branches/<br>Tags</th>
+  <th align=left class="vc_header">Branches/<br>Tags</th>
   [end]
-  <th align=left bgcolor="#88ff88">Age</th>
-  <th align=left bgcolor="#88ff88">Author</th>
+  <th align=left class="vc_header">Age</th>
+  <th align=left class="vc_header">Author</th>
 [for entries]
-  <tr valign="top" bgcolor="[if-index entries even]#ffffff[else]#ccccee[end]">
+  <tr valign="top" class="vc_row_[if-index entries even]even[else]odd[end]">
 
     [# Revision column]
     <td rowspan=2>
@@ -141,7 +141,7 @@
     </td>
 
   </tr>
-  <tr bgcolor="[if-index entries even]#ffffff[else]#ccccee[end]">
+  <tr class="vc_row_[if-index entries even]even[else]odd[end]">
     <td colspan=5>
       [is roottype "svn"]
         [is entries.filename where][else]<b>File name: </b>[entries.filename]<br>[end]

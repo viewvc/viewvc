@@ -6,7 +6,7 @@
   -->
 <title>ViewCVS Exception</title>
 </head>
-<body text="#000000" bgcolor="#ffffff">
+<body>
 <h3>An Exception Has Occurred</h3>
 
 [if-any msg]

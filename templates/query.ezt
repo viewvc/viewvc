@@ -1,12 +1,15 @@
 <!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
  "http://www.w3.org/TR/REC-html40/loose.dtd">
-<html><head>
 <!-- ViewCVS       -- http://viewcvs.sourceforge.net/
-     by Greg Stein -- mailto:gstein@lyra.org
-  -->
-<title>[cfg.general.main_title] - query</title>
+     by Greg Stein -- mailto:gstein@lyra.org  -->
+
+<html>
+<head>
+  <title>[cfg.general.main_title] - query</title>
+  <link rel="stylesheet" href="[docroot]/styles.css" type="text/css">
 </head>
-<body text="#000000" bgcolor="#ffffff">
+
+<body>
 
 [# setup page definitions]
   [define help_href][docroot]/help_query.html[end]
@@ -48,7 +51,8 @@
 
 <form method=get>
 
-<table border=0 cellspacing=0 cellpadding=2 width=100% bgcolor=e6e6e6>
+<div class="vc_query_form">
+<table border=0 cellspacing=0 cellpadding=2 width=100%>
  <tr>
   <td>
    <table>
@@ -149,6 +153,7 @@
   </td>
  </tr>
 </table>
+</div>
 
 </form>
 
@@ -158,7 +163,7 @@
 
 [if-any commits]
 <table width="100%" border=0 cellspacing=0 cellpadding=2>
- <tr bgcolor="#88ff88">
+ <tr class="vc_header">
   <th align=left valign=top>Revision</th>
   <th align=left valign=top>File</th>
   <th align=left valign=top>Branch</th>
@@ -171,7 +176,7 @@
  </tr>
 [for commits]
   [for commits.files]
-    <tr bgcolor="[if-index commits even]#ffffff[else]#ccccee[end]">
+    <tr class="vc_row_[if-index commits even]even[else]odd[end]">
       <td align=left valign=top>
 	[if-any commits.files.rev][commits.files.rev][else]&nbsp;[end]
       </td>
@@ -199,7 +204,7 @@
     </tr>
 [# and also take the following out in the "Description column"-case:]
       [if-index commits.files last]
-	<tr bgcolor="[if-index commits even]#ffffff[else]#ccccee[end]">
+	<tr class="vc_row_[if-index commits even]even[else]odd[end]">
 	  <td>&nbsp;</td>
 	  <td colspan=5><b>Log:</b><br>
 			  <pre>[commits.desc]</pre></td>
@@ -209,7 +214,7 @@
   [end]
 [end]
 
- <tr bgcolor="#88ff88">
+ <tr class="vc_header">
   <th align=left valign=top>&nbsp;</th>
   <th align=left valign=top>&nbsp;</th>
   <th align=left valign=top>&nbsp;</th>
