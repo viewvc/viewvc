@@ -53,6 +53,7 @@
         [is svn_root_options ""][else]
           <optgroup label="Subversion Repositories">[svn_root_options]</optgroup>
         [end]
+        <option value="*viewroots*"[is view "roots"] selected[else][end]>Repository Listing</option>
       </select>
       <input type=submit value="Go">
     </form>
