@@ -90,44 +90,26 @@ def get_logs(svnrepos, full_name, files):
   return fileinfo, alltags
 
 
-def get_history(svnrepos, full_name):
-  pool = svnrepos.pool
-  oldpool = core.svn_pool_create(pool)
-  newpool = core.svn_pool_create(pool)
+
+class NodeHistory:
+  def __init__(self):
+    self.histories = {}
+
+  def add_history(self, path, revision, pool):
+    self.histories[revision] = path
+    
   
-  history_set = {}
-  end = svnrepos.rev
-  start = 1
+def get_history(svnrepos, full_name):
+  # Instantiate a NodeHistory collector object.
+  history = NodeHistory()
 
-  # Get a revision root for END, and an initial HISTORY baton.
-  rev_root = fs.revision_root(svnrepos.fs_ptr, end, svnrepos.pool)
-  history = fs.node_history(rev_root, full_name, oldpool)
+  # Do we want to cross copy history?
+  cross_copies = getattr(svnrepos, 'cross_copies', 1)
 
-  # Now, we loop over the history items, calling svn_fs_history_prev().
-  while 1:
-    # Note that we have to do some crazy pool work here.  We can't get
-    # rid of the old history until we use it to get the new, so we
-    # alternate back and forth between our subpools.
-    history = fs.history_prev(history,
-                              getattr(svnrepos, 'cross_copies', 1),
-                              newpool)
-
-    # Only continue if there is further history to deal with.
-    if not history:
-      break
-
-    # Fetch the location information for this history step.
-    history_path, history_rev = fs.history_location(history, newpool)
-    history_set[history_rev] = history_path
-
-    # We're done with the old history item, so we can clear its pool,
-    # and then toggle our notion of "the old pool".
-    core.svn_pool_clear(oldpool)
-    oldpool, newpool = newpool, oldpool
-
-  core.svn_pool_destroy(oldpool)
-  core.svn_pool_destroy(newpool)
-  return history_set
+  # Get the history items for PATH.
+  repos.svn_repos_history(svnrepos.fs_ptr, full_name, history.add_history,
+                          1, svnrepos.rev, cross_copies, svnrepos.pool)
+  return history.histories
 
 
 def log_helper(svnrepos, rev, path, show_changed_paths, pool):
