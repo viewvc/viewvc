@@ -48,9 +48,9 @@ ROOT_DIR = "/usr/local/viewcvs"
 ##       
 
 FILE_INFO_LIST = [
-    ("cgi/viewcvs.cgi", "cgi/viewcvs.cgi", 0755, 1, 0),
-    ("cgi/queryform.cgi", "cgi/queryform.cgi", 0755, 1, 0),
-    ("cgi/query.cgi", "cgi/query.cgi", 0755, 1, 0),
+    ("cgi/viewcvs.cgi", "viewcvs.cgi", 0755, 1, 0),
+    ("cgi/queryform.cgi", "queryform.cgi", 0755, 1, 0),
+    ("cgi/query.cgi", "query.cgi", 0755, 1, 0),
 
     ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 0, 1),
 
@@ -65,7 +65,7 @@ FILE_INFO_LIST = [
     ("lib/py2html.py", "lib/py2html.py", 0644, 0, 0),
     ("lib/rlog.py", "lib/rlog.py", 0644, 0, 0),
     
-    ("scripts/loginfo-handler", "loginfo-handler", 0755, 1, 0),
+    ("tools/loginfo-handler", "loginfo-handler", 0755, 1, 0),
     ("tools/cvsdbadmin", "cvsdbadmin", 0755, 1, 0),
     ("tools/make-database", "make-database", 0755, 1, 0),
 
@@ -105,6 +105,9 @@ def SetOnePath(contents, var, value):
     return re.sub(pattern, repl, contents)
 
 def SetPythonPaths(contents):
+    if contents[:2] == '#!':
+        shbang = '#!' + sys.executable
+        contents = re.sub('^#![^\n]*', shbang, contents)
     contents = SetOnePath(contents, 'LIBRARY_DIR', 'lib')
     contents = SetOnePath(contents, 'CONF_PATHNAME', 'viewcvs.conf')
     contents = SetOnePath(contents, 'HTML_TEMPLATE_DIR', 'html-templates')
