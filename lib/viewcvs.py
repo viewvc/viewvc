@@ -1089,9 +1089,9 @@ def sort_file_data(file_data, sortdir, sortby):
 
     # we should have data on these. if not, then it is because we requested
     # a specific tag and that tag is not present on the file.
-    info1 = file1.rev or bincvs._FILE_HAD_ERROR
-    info2 = file2.rev or bincvs._FILE_HAD_ERROR
-    if info1 != bincvs._FILE_HAD_ERROR and info2 != bincvs._FILE_HAD_ERROR:
+    info1 = file1.rev is not None and file1.rev != bincvs._FILE_HAD_ERROR
+    info2 = file2.rev is not None and file2.rev != bincvs._FILE_HAD_ERROR
+    if info1 and info2:
       # both are files, sort according to sortby
       if sortby == 'rev':
         return revcmp(file1.rev, file2.rev)
@@ -1101,15 +1101,13 @@ def sort_file_data(file_data, sortdir, sortby):
         return cmp(file1.log, file2.log)
       elif sortby == 'author':
         return cmp(file1.author, file2.author)
-      else:
-        # sort by file name
-        return cmp(file1.name, file2.name)
-
-    # at this point only one of file1 or file2 are _FILE_HAD_ERROR.
-    if info1 != bincvs._FILE_HAD_ERROR:
+    elif info1:
       return -1
+    elif info2:
+      return 1
 
-    return 1
+    # sort by file name
+    return cmp(file1.name, file2.name)
 
   file_data.sort(file_sort_cmp)
 
