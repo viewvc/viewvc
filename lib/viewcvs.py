@@ -1492,6 +1492,7 @@ def view_log(request):
       entry.vendor_branch = None
 
       entry.copy_path = rev.copy_path
+      entry.copy_rev = rev.copy_rev
       entry.filename = rev.filename
 
     # the template could do all these comparisons itself, but let's help
