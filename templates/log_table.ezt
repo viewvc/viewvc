@@ -49,18 +49,19 @@
 [if-any view_tag]
   Current tag: [view_tag] <br>
 [end]
-
+<hr noshade>
 <table width="100%" border=0 cellspacing=1 cellpadding=2>
   <th bgcolor="#cccccc">Revision</th>
   <th bgcolor="#cccccc">Tasks</th>
   <th bgcolor="#cccccc">Branches</th>
+  <th bgcolor="#cccccc">Tags</th>
   <th bgcolor="#cccccc">Age</th>
   <th bgcolor="#cccccc">Author</th>
-  <th bgcolor="#cccccc">Tags</th>
-  <th bgcolor="#cccccc">Branch<br>Path</th>
   <th bgcolor="#cccccc">Log</th>
 [for entries]
   <tr bgcolor="[if-index entries even]#ffffff[else]#ccccee[end]">
+
+    [# Revision column]
     <td>
       [is entries.state "dead"]
         <b>[entries.rev]</b>
@@ -80,7 +81,9 @@
         <a href="[entries.view_href]"><b>[entries.rev]</b></a>
       [end]
     </td>
+
     <td>
+      [# Tasks column]
       [if-any viewable]
       [else]
         (<a href="[entries.href]" target="cvs_checkout"
@@ -105,74 +108,21 @@
       [is entries.rev rev_selected]
         <b>[[]selected]</b><br>
       [else]
-        <a href="[href]?r1=[entries.rev][query]">[[]select for diffs]</a><br>
+        <a href="[href]?r1=[entries.rev][query]">[[]select&nbsp;for&nbsp;diffs]</a><br>
       [end]
 
       [is entries.state "dead"]
         <b><i>FILE REMOVED</i></b>
       [else]
         [if-any entries.prev]
-          Diff to previous <a href="[href].diff?r1=[entries.prev]&r2=[entries.rev][query]">[entries.prev]</a>
+          Diff&nbsp;to&nbsp;previous&nbsp;<a href="[href].diff?r1=[entries.prev]&r2=[entries.rev][query]">[entries.prev]</a><br>
           [if-any human_readable]
           [else]
             (<a href="[href].diff?r1=[entries.prev]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
           [end]
         [end]
-    </td>
-    <td>
-
-      [if-any entries.vendor_branch]
-        <i>vendor branch</i><br>
-      [end]
-      [if-any entries.branches]
-        [for entries.branches]
-          <a href="[entries.branches.href]"><b>[entries.branches.name]</b></a>[if-index entries.branches last][else],[end]
-        [end]
-      [end]
-    </td>
-
-    <td>
-      [entries.ago] ago
-    </td>
-
-    <td>
-      [entries.author]
-    </td>
-
-    <td>
-      [if-any entries.tags]
-        [for entries.tags]
-          <a href="[entries.tags.href]"><b>[entries.tags.name]</b></a>[if-index entries.tags last][else],[end]
-        [end]
-      [end]
-    </td>
-
-    <td>
-      [if-any entries.branch_points]
-        Branch point for:
-        [for entries.branch_points]
-          <a href="[entries.branch_points.href]"><b>[entries.branch_points.name]</b></a>[if-index entries.branch_points last][else],[end]
-        [end]
-      [end]
-
-      [if-any entries.branch_point]
-        to a branchpoint <a href="[href].diff?r1=[entries.branch_point]&r2=[entries.rev][query]">[entries.branch_point]</a>
-        [if-any human_readable]
-        [else]
-          (<a href="[href].diff?r1=[entries.branch_point]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
-        [end]
-      [end]
-
-      [if-any entries.next_main]
-        next main <a href="[href].diff?r1=[entries.next_main]&r2=[entries.rev][query]">[entries.next_main]</a>
-        [if-any human_readable]
-        [else]
-          (<a href="[href].diff?r1=[entries.next_main]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
-        [end]
-      [end]
-
       [if-any entries.to_selected]
-        to selected <a href="[href].diff?r1=[rev_selected]&r2=[entries.rev][query]">[rev_selected]</a>
+        Diff&nbsp;to&nbsp;selected&nbsp;<a href="[href].diff?r1=[rev_selected]&r2=[entries.rev][query]">[rev_selected]</a>
         [if-any human_readable]
         [else]
           (<a href="[href].diff?r1=[rev_selected]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
@@ -180,9 +130,64 @@
       [end]
     [end]  
     </td>
+
     <td>
-      <pre>[entries.html_log]</pre>
+      [# Branches column]
+      [if-any entries.vendor_branch]
+        <i>vendor branch</i><br>
+      [end]
+      [if-any entries.branches]
+        [for entries.branches]
+          <a href="[entries.branches.href]"><b>[entries.branches.name]</b></a>[if-index entries.branches last][else]<br>[end]
+        [end]
+      [end]
+      [if-any entries.branch_points]
+        <br>Branch point for:
+        [for entries.branch_points]
+          <a href="[entries.branch_points.href]"><b>[entries.branch_points.name]</b></a><br>[if-index entries.branch_points last][else]<br>[end]
+        [end]
+      [end]
+      [if-any entries.next_main]
+        Diff&nbsp;to&nbsp;next&nbsp;main&nbsp;<a href="[href].diff?r1=[entries.next_main]&r2=[entries.rev][query]">[entries.next_main]</a>
+        [if-any human_readable]
+        [else]
+          (<a href="[href].diff?r1=[entries.next_main]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
+        [end]
+      [end]
+      [if-any entries.branch_point]
+          Diff&nbsp;to&nbsp;branch&nbsp;point&nbsp;<a href="[href].diff?r1=[entries.branch_point]&r2=[entries.rev][query]">[entries.branch_point]</a>
+          [if-any human_readable]
+          [else]
+            (<a href="[href].diff?r1=[entries.branches.name]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
+          [end]
+      [end]
     </td>
+
+    [# Tags column]
+    <td>
+      [if-any entries.tags]
+        [for entries.tags]
+          <a href="[entries.tags.href]"><b>[entries.tags.name]</b></a>[if-index entries.tags last][else]<br>[end]
+        [end]
+      [else]&nbsp;
+      [end]
+    </td>
+
+    [# Time column]
+    <td>
+      [entries.ago] ago
+    </td>
+
+    [# Author column]
+    <td>
+      [entries.author]
+    </td>
+
+    [# Log column]
+    <td>
+      [entries.html_log]
+    </td>
+
   </tr>
 [end]
 </table>
