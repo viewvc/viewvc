@@ -1870,9 +1870,24 @@ def view_log(request):
     data['graph_href'] = request.get_url(view_func=view_cvsgraph, params={},
                                          escape=1)
 
-  taginfo = options.get('cvs_tags', {})
-  main = taginfo.get('MAIN')
+  data['view_href'] = request.get_url(view_func=view_markup, params={},
+                                      escape=1)
+  data['download_href'] = request.get_url(view_func=view_checkout, params={},
+                                          escape=1)
+  if not is_plain_text(request.mime_type):
+    data['download_text_href'] = \
+      request.get_url(view_func=view_checkout,
+                      params={'content-type': 'text/plain'},
+                      escape=1)
+  else:
+    data['download_text_href'] = None
 
+  taginfo = options.get('cvs_tags', {})
+  tagitems = taginfo.items()
+  tagitems.sort()
+  tagitems.reverse()
+
+  main = taginfo.get('MAIN')
   if main:
     # Default branch may have multiple names so we list them
     branches = []
@@ -1880,25 +1895,8 @@ def view_log(request):
       # Don't list MAIN unless there are no other names
       if branch is not main or len(main.aliases) == 1:
         branches.append(branch.name)
-
     ### this formatting should be moved into the ezt template
     data['branch'] = string.join(branches, ', ')
-
-    data['view_href'] = request.get_url(view_func=view_markup, params={},
-                                        escape=1)
-    data['download_href'] = request.get_url(view_func=view_checkout, params={},
-                                            escape=1)
-    if not is_plain_text(request.mime_type):
-      data['download_text_href'] = \
-        request.get_url(view_func=view_checkout,
-                        params={'content-type': 'text/plain'},
-                        escape=1)
-    else:
-      data['download_text_href'] = None
-
-  tagitems = taginfo.items()
-  tagitems.sort()
-  tagitems.reverse()
 
   data['tags'] = tags = [ ]
   for tag, rev in tagitems:
