@@ -210,7 +210,7 @@ and
 <option value="l" [is diff_format "l"]selected[end]>Long Colored Diff</option>
 <option value="u" [is diff_format "u"]selected[end]>Unidiff</option>
 <option value="c" [is diff_format "c"]selected[end]>Context Diff</option>
-<option value="s" [is diff_format "c"]selected[end]>Side by Side</option>
+<option value="s" [is diff_format "s"]selected[end]>Side by Side</option>
 </select>
 
 <input type=submit value="  Get Diffs  "></form>
