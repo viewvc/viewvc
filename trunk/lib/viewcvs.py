@@ -340,8 +340,7 @@ class Request:
 
     # if we have a directory and the request didn't end in "/", then redirect
     # so that it does.
-    if (self.view_func is view_directory
-        and path_info[-1:] != '/'):
+    if (self.pathtype == vclib.DIR and path_info[-1:] != '/'):
       needs_redirect = 1
 
     # redirect now that we know the URL is valid
