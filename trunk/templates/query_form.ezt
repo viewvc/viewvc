@@ -19,22 +19,22 @@
       <input type="text" name="branch" value="[branch]" /><br />
       <label for="branch_match_exact">
         <input type="radio" name="branch_match" id="branch_match_exact"
-           value="exact" [is branch_match "exact"]checked=""[end] />
+           value="exact" [is branch_match "exact"]checked="checked"[end] />
         Exact match
       </label>
       <label for="branch_match_glob">
         <input type="radio" name="branch_match" id="branch_match_glob"
-           value="glob" [is branch_match "glob"]checked=""[end] />
+           value="glob" [is branch_match "glob"]checked="checked"[end] />
         Glob pattern match
       </label>
       <label for="branch_match_regex">
         <input type="radio" name="branch_match" id="branch_match_regex"
-           value="regex" [is branch_match "regex"]checked=""[end] />
+           value="regex" [is branch_match "regex"]checked="checked"[end] />
         Regex match
       </label>
       <label for="branch_match_notregex">
         <input type="radio" name="branch_match" id="branch_match_notregex"
-           value="notregex" [is branch_match "notregex"]checked=""[end] />
+           value="notregex" [is branch_match "notregex"]checked="checked"[end] />
         Regex doesn't match
       </label>
     </td>
@@ -53,22 +53,22 @@
       <input type="text" name="file" value="[file]" /><br />
       <label for="file_match_exact">
         <input type="radio" name="file_match" id="file_match_exact"
-           value="exact" [is file_match "exact"]checked=""[end] />
+           value="exact" [is file_match "exact"]checked="checked"[end] />
         Exact match
       </label>
       <label for="file_match_glob">
         <input type="radio" name="file_match" id="file_match_glob"
-           value="glob" [is file_match "glob"]checked=""[end] />
+           value="glob" [is file_match "glob"]checked="checked"[end] />
         Glob pattern match
       </label>
       <label for="file_match_regex">
         <input type="radio" name="file_match" id="file_match_regex"
-           value="regex" [is file_match "regex"]checked=""[end] />
+           value="regex" [is file_match "regex"]checked="checked"[end] />
         Regex match
       </label>
       <label for="file_match_notregex">
         <input type="radio" name="file_match" id="file_match_notregex"
-           value="notregex" [is file_match "notregex"]checked=""[end] />
+           value="notregex" [is file_match "notregex"]checked="checked"[end] />
         Regex doesn't match
       </label>
     </td>
@@ -79,22 +79,22 @@
       <input type="text" name="who" value="[who]" /><br />
       <label for="who_match_exact">
         <input type="radio" name="who_match" id="who_match_exact"
-           value="exact" [is who_match "exact"]checked=""[end] />
+           value="exact" [is who_match "exact"]checked="checked"[end] />
         Exact match
       </label>
       <label for="who_match_glob">
         <input type="radio" name="who_match" id="who_match_glob"
-           value="glob" [is who_match "glob"]checked=""[end] />
+           value="glob" [is who_match "glob"]checked="checked"[end] />
         Glob pattern match
       </label>
       <label for="who_match_regex">
         <input type="radio" name="who_match" id="who_match_regex"
-           value="regex" [is who_match "regex"]checked=""[end] />
+           value="regex" [is who_match "regex"]checked="checked"[end] />
         Regex match
       </label>
       <label for="who_match_notregex">
         <input type="radio" name="who_match" id="who_match_notregex"
-           value="notregex" [is who_match "notregex"]checked=""[end] />
+           value="notregex" [is who_match "notregex"]checked="checked"[end] />
         Regex doesn't match
       </label>
     </td>
@@ -103,9 +103,9 @@
     <th align="right" valign="top">Sort By:</th>
     <td>
       <select name="querysort">
-        <option value="date" [is querysort "date"]selected=""[end]>Date</option>
-        <option value="author" [is querysort "author"]selected=""[end]>Author</option>
-        <option value="file" [is querysort "file"]selected=""[end]>File</option>
+        <option value="date" [is querysort "date"]selected="selected"[end]>Date</option>
+        <option value="author" [is querysort "author"]selected="selected"[end]>Author</option>
+        <option value="file" [is querysort "file"]selected="selected"[end]>File</option>
       </select>
     </td>
   </tr>
@@ -115,7 +115,7 @@
       <table border="0" cellspacing="0" cellpadding="0">
         <tr>
           <td><input type="radio" name="date" id="date_hours"
-                 value="hours" [is date "hours"]checked=""[end] /></td>
+                 value="hours" [is date "hours"]checked="checked"[end] /></td>
           <td>
             <label for="date_hours">In the last</label>
             <input type="text" name="hours" value="[hours]" size="4" />
@@ -124,27 +124,27 @@
         </tr>
         <tr>
           <td><input type="radio" name="date" id="date_day"
-                 value="day" [is date "day"]checked=""[end] /></td>
+                 value="day" [is date "day"]checked="checked"[end] /></td>
           <td><label for="date_day">In the last day</label></td>
         </tr>
         <tr>
           <td><input type="radio" name="date" id="date_week"
-                 value="week" [is date "week"]checked=""[end] /></td>
+                 value="week" [is date "week"]checked="checked"[end] /></td>
           <td><label for="date_week">In the last week</label></td>
         </tr>
         <tr>
           <td><input type="radio" name="date" id="date_month"
-                 value="month" [is date "month"]checked=""[end] /></td>
+                 value="month" [is date "month"]checked="checked"[end] /></td>
           <td><label for="date_month">In the last month</label></td>
         </tr>
         <tr>
           <td><input type="radio" name="date" id="date_all"
-                 value="all" [is date "all"]checked=""[end] /></td>
+                 value="all" [is date "all"]checked="checked"[end] /></td>
           <td><label for="date_all">Since the beginning of time</label></td>
         </tr>
         <tr>
           <td><input type="radio" name="date" id="date_explicit"
-                 value="explicit" [is date "explicit"]checked=""[end] /></td>
+                 value="explicit" [is date "explicit"]checked="checked"[end] /></td>
           <td>
             <label for="date_explicit">Between</label>
             <input type="text" name="mindate" value="[mindate]" size="20" />
@@ -163,5 +163,7 @@
   </tr>
 </table>
 </div>
+
+</form>
 
 [include "include/footer.ezt"]
