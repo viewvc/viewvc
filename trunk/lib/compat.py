@@ -20,6 +20,7 @@
 import urllib
 import string
 import time
+import calendar
 import re
 import os
 
@@ -66,6 +67,39 @@ except AttributeError:
     if head and tail and not os.path.exists(head):
       makedirs(head, mode)
     os.mkdir(path, mode)
+
+# 
+# calendar.timegm() is new to Python 2.x and 
+# calendar.leapdays() was wrong in Python 1.5.2
+#
+try:
+  timegm = calendar.timegm 
+except AttributeError:
+  def leapdays(year1, year2):
+    """Return number of leap years in range [year1, year2).
+       Assume year1 <= year2."""
+    year1 = year1 - 1
+    year2 = year2 - 1
+    return (year2/4 - year1/4) - (year2/100 - 
+                                  year1/100) + (year2/400 - year1/400)
+
+  EPOCH = 1970
+  def timegm(tuple):
+    """Unrelated but handy function to calculate Unix timestamp from GMT."""
+    year, month, day, hour, minute, second = tuple[:6]
+    # assert year >= EPOCH
+    # assert 1 <= month <= 12
+    days = 365*(year-EPOCH) + leapdays(EPOCH, year)
+    for i in range(1, month):
+      days = days + calendar.mdays[i]
+    if month > 2 and calendar.isleap(year):
+      days = days + 1
+    days = days + day - 1
+    hours = days*24 + hour
+    minutes = hours*60 + minute
+    seconds = minutes*60 + second
+    return seconds
+
 
 # 
 # the following stuff is *ONLY* needed for standalone.py.

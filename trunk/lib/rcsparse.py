@@ -22,7 +22,7 @@
 
 import string
 import time
-import calendar
+import compat
 
 
 class _TokenStream:
@@ -552,7 +552,7 @@ class Parser:
           if date_fields[0] < EPOCH:
               raise ValueError, 'invalid year'
 
-      timestamp = calendar.timegm(tuple(date_fields))
+      timestamp = compat.timegm(tuple(date_fields))
 
       # Parse author
       semi, author, sym = self.ts.mget(3)
