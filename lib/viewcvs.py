@@ -2388,7 +2388,7 @@ def view_revision_svn(request, data):
   })
 
   if date is not None:
-    html_time(request, date, 1)
+    data['ago'] = html_time(request, date, 1)
 
   url, params = request.get_link(view_func=view_revision,
                                  where=None,
