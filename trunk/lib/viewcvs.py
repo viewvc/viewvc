@@ -1294,6 +1294,8 @@ def view_markup(request):
     data['annotate_href'] = request.get_url(view_func=view_annotate,
                                             params={'annotate': rev},
                                             escape=1)
+  else:
+    data['annotate_href'] = None
 
   if cfg.options.show_log_in_markup:
     options = {}
