@@ -82,6 +82,8 @@ def CommandUpdate():
     ## connect to the database we are updating
     db = cvsdb.ConnectDatabase()
     repository = sys.argv[2]
+    if sys.platform == "win32":
+        repository = string.replace(repository, '/', os.sep)    
     RecurseUpdate(db, repository, repository)
 
 
@@ -122,6 +124,8 @@ def CommandRebuild():
     ## connect to the database we are updating
     db = cvsdb.ConnectDatabase()
     repository = sys.argv[2]
+    if sys.platform == "win32":
+        repository = string.replace(repository, '/', os.sep)
     RecurseRebuild(db, repository, repository)
 
 
