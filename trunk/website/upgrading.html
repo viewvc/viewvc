@@ -86,7 +86,7 @@
     the "templates/include/" subdirectory.  Also, "directory.ezt" and
     "dir_alternate.ezt" now reference new template files
     "dir_header.ezt" and "dir_footer.ezt", also found in the
-    templates/include/" subdirectory.</p>
+    "templates/include/" subdirectory.</p>
 
     <p>Notably, both the "markup.ezt" and "annotate.ezt" templates are
     now fully self-contained.  That is, the markup and annotation data
@@ -179,7 +179,8 @@
     <h3>New Template Variables</h3>
     <blockquote>
       <dl>
-        <dt>All files: <var>roottype</var>, and <var>rootname</var></dt>
+        <dt>All files: <var>roottype</var>, <var>rootname</var>, and 
+            <var>pathtype</var></dt>
         <dd>
           Strings denoting the type ("cvs" or "svn") and name current
           repository. 
@@ -224,6 +225,20 @@
           and <var>jump_rev</var>
         </dt>
         <dd>New Subversion-only directory revision items.</dd>
+      </dl>
+      <dl>
+        <dt>
+          <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
+          <var>rows.mime_type</var>
+        </dt>
+        <dd>New mime-type variable for file directory entries.</dd>
+      </dl>
+      <dl>
+        <dt>
+          <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
+          <var>rows.size</var>
+        </dt>
+        <dd>New filesize variable for file directory entries.</dd>
       </dl>
       <dl>
         <dt>
