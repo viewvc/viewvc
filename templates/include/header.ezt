@@ -1,11 +1,12 @@
-<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
  "http://www.w3.org/TR/REC-html40/loose.dtd">
-<!-- ViewCVS       -- http://viewcvs.sourceforge.net/
-     by Greg Stein -- mailto:gstein@lyra.org  -->
+<!-- ViewCVS       - http://viewcvs.sourceforge.net/
+     by Greg Stein - mailto:gstein@lyra.org  -->
 
 <html>
 <head>
   <title>[page_title]</title>
+  <meta name="generator" content="ViewCVS [vsn]">
   <link rel="stylesheet" href="[docroot]/styles.css" type="text/css">
 </head>
 
