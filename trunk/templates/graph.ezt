@@ -4,6 +4,9 @@
 [# end]
 
 [include "include/header.ezt" "graph"]
+[include "include/file_header.ezt"]
+
+<hr>
 
 <center>
 [imagemap]

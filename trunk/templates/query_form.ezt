@@ -5,6 +5,10 @@
 
 [include "include/header.ezt" "query"]
 
+<p><a href=[dir_href]>
+<img src="[docroot]/images/dir.png" width=16 height=16 border=0>
+Browse Directory</a></p>
+
 <form action="[query_action]" method="get">
   [query_hidden_values]
 
