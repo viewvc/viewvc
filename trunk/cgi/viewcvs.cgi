@@ -17,16 +17,11 @@
 #
 # -----------------------------------------------------------------------
 #
-# This software is based on "cvsweb" by Henner Zeller (which is, in turn,
-# derived from software by Bill Fenner, with additional modifications by
-# Henrik Nordstrom and Ken Coar). The cvsweb distribution can be found
-# on Zeller's site:
-#   http://stud.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi/
+# This is a teeny stub to launch the main ViewCVS app. It checks the load
+# average, then loads the (precompiled) viewcvs.py file and runs it.
 #
 # -----------------------------------------------------------------------
 #
-
-__version__ = '0.6'
 
 #########################################################################
 #
@@ -37,35 +32,25 @@ __version__ = '0.6'
 #
 
 LIBRARY_DIR = None
-CONF_PATHNAME = None
-
-#########################################################################
-
-import sys
-import os
-import cgi
-import string
-import urllib
-import mimetypes
-import time
-import re
-import stat
-import struct
 
 #########################################################################
 #
 # Adjust sys.path to include our library directory
 #
 
+import sys
+
 if LIBRARY_DIR:
   sys.path.insert(0, LIBRARY_DIR)
 else:
   sys.path[:0] = ['../lib']	# any other places to look?
 
-# time for our imports now
-import compat
-import config
-import popen
+#########################################################################
 
+### add code for checking the load average
 
 #########################################################################
+
+# go do the work
+import viewcvs
+viewcvs.run_cgi()
