@@ -15,7 +15,7 @@
 #
 #    cvs_roots (for CVS)
 #    svn_roots (for Subversion)
-#    svn_parent_path (for Subversion)
+#    root_parents (for CVS or Subversion)
 #    default_root
 #    rcs_path or cvsnt_exe_path
 #    mime_types_file 
@@ -79,22 +79,26 @@ cvs_roots = cvs: /home/cvsroot
 #
 #svn_roots = svn: /home/svnrepos
 
-#
-# The 'svn_parent_path' is a directory in which any number of
-# Subversion repositories may reside.  Rather than force you to add a
-# new entry to 'svn_roots' each time you create a new repository,
-# ViewCVS rewards you for putting all your Subversion repositories in
-# a single parent directory by allowing you to simply specifiy that
-# parent directory.  ViewCVS will then notice each Subversion
+# The 'root_parents' setting specifies a list of directories in which
+# any number of repositories may reside.  Rather than force you to add
+# a new entry to 'cvs_roots' or 'svn_roots' each time you create a new
+# repository, ViewCVS rewards you for organising all your repositories
+# under a few parent directories by allowing you to simply specifiy
+# just those parent directories.  ViewCVS will then notice each
 # repository in that directory as a new root whose name is the
 # subdirectory of the parent path in which that repository lives.
+#
+# You can specify multiple parent paths separated by commas or new lines.
 #
 # Caution: these names can, of course, clash with names you have
 # defined in your cvs_roots or svn_roots configuration items.  If this
 # occurs, you can either rename the offending repository on disk, or
 # grant new names to the clashing item in cvs_roots or svn_roots.
+# Each parent path is processed sequentially, so repositories under
+# later parent paths may override earlier ones.
 #
-#svn_parent_path = /home/svn-repositories
+#root_parents = /home/svn-repositories : svn,
+#               /home/cvs-repositories : cvs
 
 # this is the name of the default root.
 default_root = cvs

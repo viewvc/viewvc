@@ -2703,22 +2703,38 @@ def handle_config():
     else:
       cfg.load_config(pathname, None)
 
-    # special handling for svn_parent_path.  any subdirectories
-    # present in the directory specified as the svn_parent_path that
-    # have a child file named "format" will be treated as svn_roots.
-    if cfg.general.svn_parent_path is not None:
-      pp = cfg.general.svn_parent_path
+    # special handling for root_parents.  Each item in root_parents is
+    # a "directory : repo_type" string.  For each item in
+    # root_parents, we get a list of the subdirectories.
+    #
+    # If repo_type is "cvs", and the subdirectory contains a child
+    # "CVSROOT/config", then it is added to cvs_roots.
+    #
+    # If repo_type is "svn", and the subdirectory contains a child
+    # "format", then it is added to svn_roots.
+    for pp in cfg.general.root_parents:
+      pos = string.rfind(pp, ':')
+      if pos < 0:
+        raise debug.ViewcvsException(
+          "The path '%s' in 'root_parents' does not include a "
+          "repository type." % pp)
+      pp, repo_type = map(string.strip, (pp[:pos], pp[pos+1:]))
+
       try:
         subpaths = os.listdir(pp)
       except OSError:
         raise debug.ViewcvsException(
-          "The setting for 'svn_parent_path' does not refer to "
-          "a valid directory.")
+          "The path '%s' in 'root_parents' does not refer to "
+          "a valid directory." % pp)
 
       for subpath in subpaths:
-        if os.path.exists(os.path.join(pp, subpath)) \
-           and os.path.exists(os.path.join(pp, subpath, "format")):
-          cfg.general.svn_roots[subpath] = os.path.join(pp, subpath)
+        if os.path.exists(os.path.join(pp, subpath)):
+          if repo_type == 'cvs' and \
+               os.path.exists(os.path.join(pp, subpath, "CVSROOT", "config")):
+            cfg.general.cvs_roots[subpath] = os.path.join(pp, subpath)
+          elif repo_type == 'svn' and \
+               os.path.exists(os.path.join(pp, subpath, "format")):
+            cfg.general.svn_roots[subpath] = os.path.join(pp, subpath)
 
   debug.t_end('load-config')
 
