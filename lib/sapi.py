@@ -281,6 +281,17 @@ class ModPythonServer(ThreadedServer):
     return cgi.escape(s, quote)
 
   def getenv(self, name, value = None):
+
+    ### Due to a bug in mod_python versions 3.0.3 and 2.7.8 and earlier
+    ### SCRIPT_NAME needs to be handled specially
+    ### see http://www.modpython.org/pipermail/mod_python/2003-August/003495.html
+
+    if name == 'SCRIPT_NAME':
+      path_len = len(self.request.path_info)
+      if path_len:
+        assert self.request.uri[-path_len:] == self.request.path_info
+        return self.request.uri[:-path_len]
+
     try:
       return self.request.subprocess_env[name]
     except KeyError:
