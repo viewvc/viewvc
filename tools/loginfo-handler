@@ -102,8 +102,8 @@ def GetUnrecordedCommitList(repository, file_data):
     return cvsdb.GetUnrecordedCommitList(repository, filename)
 
 _re_revisions = re.compile(                            
-  r",(?P<old>(?:\d\.\d)(?:\.\d\.\d)*|NONE)"  # comma and first revision number
-  r",(?P<new>(?:\d\.\d)(?:\.\d\.\d)*|NONE)"  # comma and second revision number
+  r",(?P<old>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and first revision number
+  r",(?P<new>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and second revision number
   r"(?:$| )"                                # space or end of string
 )    
 
@@ -191,8 +191,8 @@ def HeuristicArgParseDirectory(s, repository):
 
 _re_cvsnt_revisions = re.compile(                            
   r"(?P<filename>.*)"                      # comma and first revision number
-  r",(?P<old>(?:\d\.\d)(?:\.\d\.\d)*|NONE)"  # comma and first revision number
-  r",(?P<new>(?:\d\.\d)(?:\.\d\.\d)*|NONE)"  # comma and second revision number
+  r",(?P<old>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and first revision number
+  r",(?P<new>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and second revision number
   r"$"                                       # end of string
 )
 
