@@ -20,7 +20,7 @@
 This is a Version Control library driver for locally accessible cvs-repositories.
 """
 
-from vclib import Repository, Versfile, Revision
+from vclib import Repository, Versfile, Versdir, Revision, ReposNotFound, ItemNotFound, DIR , FILE
 import os
 import os.path
 import string
@@ -291,13 +291,24 @@ class COSink(rcsparse.Sink):
 
 
 class CVSRepository(Repository):
-  def __init__(self, name, basepath):
+  def __init__(self, name, basepath, show_CVSROOT=0 ):
     self.name = name
     self.basepath = basepath
+    self.show_CVSROOT = show_CVSROOT
     if self.basepath[-1:] != os.sep:
       self.basepath = self.basepath + os.sep
+    # Some checking:
+    # Is the basepath a real directory ?
+    if not os.path.isdir(self.basepath):
+      raise ReposNotFound(self.basepath)
+    # do we have a CVSROOT as an immediat subdirectory ?
+    if not os.path.isdir(self.basepath + "CVSROOT/"):
+      raise ReposNotFound(self.basepath)
       
   def _getpath(self, pathname):
+    if pathname != []:
+      if (pathname[0] == "CVSROOT") and( self.show_CVSROOT == 0):
+        raise ItemNotFound(pathname)
     return self.basepath + string.join(pathname, os.sep)
 
   def _getrcsname(self, filename):
@@ -306,30 +317,52 @@ class CVSRepository(Repository):
     else:
       return filename + ',v'  
 
-  def getfile(self,pathname):
-    if os.path.isfile(self._getrcsname(self._getpath(pathname))):
-      return Versfile(self, self._getrcsname(self._getpath(pathname)))
-    raise exceptions.IOError("File not found %s in repository %s"% (self._getpath(pathname),self.name) ) 
+# API as of revision 1.5 
 
-  def getsubdirs(self, path):
-    h = os.listdir(self._getpath(path))
-    g = [ ]
-    for i in h:
-      if os.path.isdir(self._getpath(path + [i])):
-      	g.append(i)
-    return g
+  def getitem(self, path_parts):
+    path = self._getpath(path_parts)
+    if os.path.isdir(path):
+      return Versdir(self, path_parts)
+    if os.path.isfile(self._getrcsname(path)):
+      return Versfile(self, path_parts)
+    raise ItemNotFound(path) 
     
-  def getfiles(self, path):
-    h = os.listdir(self._getpath(path))
+  def getitemtype(self, path_parts):
+    path = self._getpath(path_parts)
+    if os.path.isdir(path):
+      return DIR
+    if os.path.isfile(path):
+      return FILE
+    raise ItemNotFound(path)
+  
+  # Private methods ( accessed by Versfile and Revision )
+
+  def _getvf_files(self, path_parts):
+    "Return a dictionary of versioned files. (name : Versfile)"
+    h = os.listdir(self._getpath(path_parts))
     g = { }
     for i in h:
-      ci = self._getrcsname(self._getpath(path + [i]))
-      if os.path.isfile(ci):
-      	g[i] = Versfile(self,ci)
+      if os.path.isfile(self._getrcsname(self._getpath(path_parts + [i]))):
+      	g[i] = Versfile(self, path_parts + [i])
+    return g
+
+  def _getvf_subdirs(self, path_parts):
+    "Return a dictionary of subdirectories. (name : Versdir)"
+    h = os.listdir(self._getpath(path_parts))
+    if ( not self.show_CVSROOT ):
+      if (path_parts == []):
+        del h[h.index("CVSROOT")]
+    g = { }
+    for i in h:
+      
+      p = self._getpath(path_parts + [i])
+      if os.path.isdir(p):
+    	  g[i] = Versdir(self, path_parts + [i]) 
     return g
   
   # Private methods
-  def _getvf_info(self, target, path):
+  def _getvf_info(self, target, path_parts):
+    path = self._getrcsname(self._getpath(path_parts))
     if not os.path.isfile(path):
       raise "Unknown file: %s " % path
     try:
@@ -338,13 +371,15 @@ class CVSRepository(Repository):
       pass
 
   def _getvf_tree(self,versfile):
-    if not os.path.isfile(versfile.path):
-      raise "Unknown file: %s " % versfile.path
+    path = self._getrcsname(self._getpath(versfile.path))
+    if not os.path.isfile(path):
+      raise "Unknown file: %s " % path
     sink = TreeSink(versfile)
-    rcsparse.Parser().parse(open(versfile.path), sink)
+    rcsparse.Parser().parse(open(path), sink)
     return sink.tree
 
-  def _getvf_cofile(self, target, path):
+  def _getvf_cofile(self, target, path_parts):
+    path = self._getrcsname(self._getpath(path_parts))
     if not os.path.isfile(path):
       raise "Unknown file: %s " % path
     sink = COSink(target)
