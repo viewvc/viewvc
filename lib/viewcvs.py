@@ -1019,7 +1019,8 @@ def view_markup(request):
       rev_idx = revs.index(this_rev)
       if rev_idx > 0:
         data['prev'] = str(revs[rev_idx - 1])
-    
+      else:
+        data['prev'] = None
   else:
     data['tag'] = query_dict.get('only_with_tag')
 
