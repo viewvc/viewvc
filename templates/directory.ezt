@@ -68,13 +68,14 @@
 
   [if-any roots]
     <h3>Project Root</h3>
-    [# ### temporary... to show access of current root ]
-    [current_root]
     <form method=GET action="./">
       <select name=cvsroot onchange="submit()">
       [for roots]
-        [# ### need to add "selected" in here, based on current selection ]
-        <option>[roots]</option>
+        [is roots current_root]
+          <option selected>[roots]</option>
+        [else]
+          <option>[roots]</option>
+        [end]
       [end]
       </select>
       <input type=submit value="Go">
@@ -115,7 +116,140 @@
 [end]
 </tr>
 
-[# ### the body goes here ]
+[for rows]
+  <tr bgcolor="[if-index rows even]#ccccee[else]#ffffff[end]">
+  [is rows.type "unreadable"]
+    <td><a name="[rows.anchor]">[rows.name]</a></td>
+    <td colspan=[rows.span]><i>this entry is unreadable</i></td>
+  [else]
+    [is rows.type "dir"]
+      <td><a name="[rows.anchor]" href="[rows.href]">
+        <img src="/icons/small/dir.gif" alt="(dir)" border=0 width=16 height=16>
+        [rows.name]
+        </a>
+        [if-any rows.hide_attic_href]
+          &nbsp; <a href="[rows.hide_attic_href]">[[]Don't hide]</a>
+        [end]
+      </td>
+      [is rows.cvs "error"]
+        <td colspan=[rows.span]><i>CVS information is unreadable</i></td>
+      [else]
+        [is rows.cvs "none"]
+          [for rows.cols]<td>&nbsp;</td>[end]
+        [else]
+          <td>&nbsp;</td>
+          <td>&nbsp;[rows.time]</td>
+          [if-any rows.author]
+            <td>&nbsp;[rows.author]</td>
+          [end]
+          [if-any rows.show_log]
+            <td>&nbsp;[rows.log_file]/[rows.log_rev]<br>
+              &nbsp;<font size="-1">[rows.log]</font></td>
+          [end]
+        [end]
+      [end]
+          
+    [else]
+      [is rows.cvs "error"]
+        <td><a name="[rows.anchor]">[rows.name]</a></td>
+        <td colspan=[rows.span]><i>CVS information is unreadable</i></td>
+      [else]
+        <td><a name="[rows.anchor]" href="[rows.href]">
+          <img src="/icons/small/text.gif" alt="(file)" border=0
+             width=16 height=16>
+          [rows.name]
+          </a>
+          [rows.attic]
+        </td>
+        <td>&nbsp;
+          <a href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
+            <b>[rows.rev]</b>
+          </a>
+[# to display the revision in a separate window, you could use:
+
+   <a href="{rows.rev_href}" target="cvs_checkout"
+      onClick="window.open('{rows.rev_href}', 'cvs_checkout',
+                           'resizeable=1,scrollbars=1')"><b>{rows.rev}</b></a>
+
+   (substitute brackets for the braces)
+]
+        </td>
+        <td>&nbsp;[rows.time]</td>
+        [if-any rows.graph_href]
+          <td>&nbsp;<a href="[rows.graph_href]">(graph)</a></td>
+        [end]
+        [if-any rows.author]
+          <td>&nbsp;[rows.author]</td>
+        [end]
+        [if-any rows.show_log]
+          <td>&nbsp;[rows.log]</td>
+        [end]
+      [end]
+    [end]
+  [end]
+  </tr>
+[end]
+
+</table>
+
+[# if you are using a table border, then add:
+
+   </td></tr></table>
+]
+
+[if-any no_match]
+  <p><b>NOTE:</b> There are [num_files] files, but none match the
+  current tag ([view_tag])
+[end]
+
+[if-any unreadable]
+  <hr size=1 noshade>
+  <b>NOTE:</b> One or more files were unreadable. The files in the CVS
+  repository should be readable by the web server process. Please
+  report this condition to the administrator of this CVS repository.
+[end]
+
+[if-any has_tags]
+  <hr size=1 noshade>
+  <form method=GET action="./">
+  [for params]
+    <input type=hidden name="[params.name]" value="[params.value]">
+  [end]
+
+  Show only files with tag:
+  <select name=only_with_tag onchange="submit()">
+  [if-any branch_tags]
+    <option value="">- Branches -</option>
+    [for branch_tags]
+      [is branch_tags view_tag]
+        <option selected>[branch_tags]</option>
+      [else]
+        <option>[branch_tags]</option>
+      [end]
+    [end]
+  [end]
+  <option value="">- Non-branch tags -</option>
+  [for plain_tags]
+    [is plain_tags view_tag]
+      <option selected>[plain_tags]</option>
+    [else]
+      <option>[plain_tags]</option>
+    [end]
+  [end]
+  </select>
+  <input type=submit value="Go">
+  </form>
+[end]
 
 
-[# ### the footer goes here ]
+[if-any tarball_href]
+  <a href="[tarball_href]">Download tarball</a>
+[end]
+
+<hr noshade>
+<table width="100%" border=0 cellpadding=0 cellspacing=0><tr>
+<td align=left><address>[address]</address></td>
+<td align=right>
+  Powered by<br><a href="http://viewcvs.sourceforge.net/">ViewCVS [vsn]</a>
+</td></tr></table>
+</body></html>
