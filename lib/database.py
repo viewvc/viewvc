@@ -342,7 +342,7 @@ class CheckinDatabase:
             gmt_time = time.mktime(
                 (dbCI_When.year, dbCI_When.month, dbCI_When.day,
                  dbCI_When.hour, dbCI_When.minute, dbCI_When.second,
-                 0, 0, 0)) + time.timezone
+                 0, 0, dbCI_When.dst))
     
             commit.SetTime(gmt_time)
             
