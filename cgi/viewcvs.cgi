@@ -276,7 +276,7 @@ def toggle_query(query_dict, which, value=None):
     return '?' + query
   return ''
 
-def clickable_path(request, path, leaf_is_link, drop_leaf):
+def clickable_path(request, path, leaf_is_link, leaf_is_file, drop_leaf):
   if path == '/':
     # this should never happen - chooseCVSRoot() is
     # intended to do this
@@ -288,13 +288,19 @@ def clickable_path(request, path, leaf_is_link, drop_leaf):
   if drop_leaf:
     del parts[-1]
     leaf_is_link = 1
+    leaf_is_file = 0
   where = ''
   for i in range(len(parts)):
     where = where + '/' + parts[i]
-    if i < len(parts) - 1 or leaf_is_link:
+    is_leaf = i == len(parts) - 1
+    if not is_leaf or leaf_is_link:
+      if is_leaf and leaf_is_file:
+        slash = ''
+      else:
+        slash = '/'
       ### should we be encoding/quoting the URL stuff? (probably...)
-      s = s + ' / <a href="%s%s/%s#dirlist">%s</a>' % \
-          (request.script_name, where, request.qmark_query, parts[i])
+      s = s + ' / <a href="%s%s%s%s#dirlist">%s</a>' % \
+          (request.script_name, where, slash, request.qmark_query, parts[i])
     else:
       s = s + ' / ' + parts[i]
 
@@ -449,7 +455,7 @@ def navigate_header(request, swhere, path, filename, rev, title):
                    '%s%s#rev%s' % (swhere, request.qmark_query, rev)),
          html_icon('file'))
   print '<td align=right>%s <b>Up to %s</b></td>' % \
-        (html_icon('dir'), clickable_path(request, path, 1, 0))
+        (html_icon('dir'), clickable_path(request, path, 1, 0, 0))
   print '</tr></table>'
 
 def markup_stream_default(fp):
@@ -582,7 +588,7 @@ def markup_stream(request, fp, revision, mime_type):
   navigate_header(request, request.url, pathname, filename, revision, 'view')
   print '<hr noshade>'
   print '<table width="100&#37;"><tr><td bgcolor="%s">' % cfg.colors.markup_log
-  print 'File:', clickable_path(request, where, 1, 0), '</b>'
+  print 'File:', clickable_path(request, where, 1, 1, 0), '</b>'
   download_link(request, file_url, revision, '(download)')
   if not request.default_text_plain:
     download_link(request, file_url, revision, '(as text)', 'text/plain')
@@ -1056,7 +1062,8 @@ def view_directory(request):
     #choose_cvsroot()
     pass
   else:
-    print '<p>Current directory: <b>', clickable_path(request, where, 0, 0), '</b>'
+    print '<p>Current directory: <b>', \
+          clickable_path(request, where, 0, 0, 0), '</b>'
     if view_tag:
       print '<p>Current tag: <b>', view_tag, '</b>'
 
@@ -1658,12 +1665,20 @@ def view_log(request):
   html_header('CVS log for %s' % where)
 
   up_where = re.sub(_re_up_path, '', where)
-  filename = os.path.basename(full_name[:-2])	# drop the ",v"
+
+  ### whoops. this sometimes/always? does not have the ",v"
+  assert full_name[-2:] != ',v', 'please report this error to viewcvs@lyra.org'
+  #filename = os.path.basename(full_name[:-2])	# drop the ",v"
+  filename = os.path.basename(full_name)
+
+  ### try: "./" + query + "#" + filename
   back_url = request.script_name + '/' + urllib.quote(up_where) + \
              request.qmark_query
 
   print html_link(html_icon('back'), back_url + '#' + filename)
-  print '<b>Up to %s</b><p>' % clickable_path(request, up_where, 1, 0)
+
+  ### use drop_leaf
+  print '<b>Up to %s</b><p>' % clickable_path(request, up_where, 1, 0, 0)
   print '<a href="#diff">Request diff between arbitrary revisions</a>'
   print '<hr noshade>'
 
