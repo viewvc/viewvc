@@ -84,7 +84,6 @@ went into the new files in subdirectory templates.""", 0),
     ("lib/ezt.py", "lib/ezt.py", 0644, 0, 0, 1),
     
     ("templates/directory.ezt", "templates/directory.ezt", 0644, 0, 1, 0),
-    ("templates/direasy.ezt", "templates/direasy.ezt", 0644, 0, 1, 0),
     ("templates/log.ezt", "templates/log.ezt", 0644, 0, 1, 0),
     ("templates/log_table.ezt", "templates/log_table.ezt", 0644, 0, 1, 0),
     ("templates/query.ezt", "templates/query.ezt", 0644, 0, 1, 0),

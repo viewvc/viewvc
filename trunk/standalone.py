@@ -313,10 +313,6 @@ def gui(port):
                 text="directory.ezt", value="templates/directory.ezt", 
                 var=self.dirtemplate_svar, command=self.set_templates_directory)
             self.templates_dir.pack(side='top', anchor='w')
-            self.templates_dir_table = Tkinter.Radiobutton(self.options_frm,
-                text="direasy.ezt", value="templates/direasy.ezt", 
-                var=self.dirtemplate_svar, command=self.set_templates_directory)
-            self.templates_dir_table.pack(side='top', anchor='w')
 
             self.logtemplate_lbl = Tkinter.Label(self.options_frm,
                 text='Chooose HTML Template for the Log pages:')
