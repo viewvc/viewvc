@@ -526,7 +526,7 @@ _re_validate_alpha = re.compile('^[a-z]+$')
 _re_validate_number = re.compile('^[0-9]+$')
 
 # when comparing two revs, we sometimes construct REV:SYMBOL, so ':' is needed
-_re_validate_revnum = re.compile('^[-_.a-zA-Z0-9:~]*$')
+_re_validate_revnum = re.compile('^[-_.a-zA-Z0-9:~\\[\\]]*$')
 
 # it appears that RFC 2045 also says these chars are legal: !#$%&'*+^{|}~`
 # but woah... I'll just leave them out for now
