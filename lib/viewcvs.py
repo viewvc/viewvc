@@ -2433,10 +2433,10 @@ def view_doc(request):
   fp.close()
 
 def rcsdiff_date_reformat(date_str):
-  date = compat.cvs_strptime(date_str)
-  if date:
-    return make_time_string(compat.timegm(date))
-  return date_str
+  try:
+    return compat.cvs_strptime(date_str)
+  except ValueError:
+    return date_str
 
 _re_extract_rev = re.compile(r'^[-+]+ [^\t]+\t([^\t]+)\t((\d+\.)*\d+)$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
