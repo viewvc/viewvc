@@ -74,10 +74,10 @@
       [is rows.state "error"]
         <td>&nbsp;</td> [# revision ]
       [else]
-        <td>&nbsp;[is roottype "svn"]<a href="[rows.href]"><b>[rows.rev]</b></a>[end]</td>
+        <td>&nbsp;[is roottype "svn"]<a href="[rows.rev_href]"><b>[rows.rev]</b></a>[end]</td>
       [end]
       <td [is cfg.options.use_cvsgraph "1"]colspan=2[end]>
-        <a name="[rows.anchor]" href="[rows.rev_href]">
+        <a name="[rows.anchor]" href="[rows.href]">
         <img src="[icons]/small/dir.gif" alt="(dir)" border=0 width=16 height=16>
         [rows.name]/</a>
         [is roottype "cvs"]
