@@ -105,6 +105,9 @@ _RCSDIFF_ERROR = 'error'
 # global configuration:
 cfg = None # see below
 
+# special characters that don't need to be URL encoded
+_URL_SAFE_CHARS = "/*~"
+
 if CONF_PATHNAME:
   # installed
   g_install_dir = os.path.dirname(CONF_PATHNAME)
@@ -217,7 +220,7 @@ class Request:
       # at least we tried.
       if cfg.options.root_as_url_component:
         del self.query_dict['root']
-        self.server.redirect(self.get_url(rootname=self.rootname))
+        self.server.redirect(self.get_url())
 
     elif self.rootname is None:
       self.rootname = cfg.general.default_root
@@ -267,13 +270,13 @@ class Request:
     if self.pathtype is None:
       # path doesn't exist, try stripping known fake suffixes
       result = _strip_suffix('.diff', self.where, self.path_parts,        \
-                             vclib.FILE, self.repos) or                   \
+                             vclib.FILE, self.repos, view_diff) or        \
                _strip_suffix('.tar.gz', self.where, self.path_parts,      \
-                             vclib.DIR, self.repos) or                    \
+                             vclib.DIR, self.repos, download_tarball) or  \
                _strip_suffix('root.tar.gz', self.where, self.path_parts,  \
-                             vclib.DIR, self.repos)                             
+                             vclib.DIR, self.repos, download_tarball)                             
       if result:
-        self.where, self.path_parts, self.pathtype = result
+        self.where, self.path_parts, self.pathtype, self.view_func = result
       else:
         raise debug.ViewcvsException('%s: unknown location'
                                      % self.where, '404 Not Found')
@@ -327,9 +330,9 @@ class Request:
     url, params = self.get_link(**args)
     qs = compat.urlencode(params)
     if qs:
-      return url + '?' + qs
+      return urllib.quote(url, _URL_SAFE_CHARS) + '?' + qs
     else:
-      return url
+      return urllib.quote(url, _URL_SAFE_CHARS)
 
   def get_link(self, view_func = None, rootname = None, where = None,
     params = None, pathtype = None):
@@ -523,7 +526,7 @@ def get_up_path(request, path, hideattic=0):
   else:
     return re.sub(_re_up_attic_path, '', path)
 
-def _strip_suffix(suffix, where, path_parts, pathtype, repos):
+def _strip_suffix(suffix, where, path_parts, pathtype, repos, view_func):
   """strip the suffix from a repository path if the resulting path
   is of the specified type, otherwise return None"""
   l = len(suffix)
@@ -532,7 +535,7 @@ def _strip_suffix(suffix, where, path_parts, pathtype, repos):
     path_parts[-1] = path_parts[-1][:-l]
     t = _repos_pathtype(repos, path_parts)
     if pathtype == t:
-      return where[:-l], path_parts, t
+      return where[:-l], path_parts, t, view_func
   return None
 
 def _repos_pathtype(repos, path_parts):
@@ -604,9 +607,9 @@ def prep_tags(request, tags):
   url, params = request.get_link(params={'only_with_tag': None})
   params = compat.urlencode(params)
   if params:
-    url = url + '?' + params + '&only_with_tag='
+    url = urllib.quote(url, _URL_SAFE_CHARS) + '?' + params + '&only_with_tag='
   else:
-    url = url + '?only_with_tag='
+    url = urllib.quote(url, _URL_SAFE_CHARS) + '?only_with_tag='
 
   links = [ ]
   for tag in tags:
@@ -1273,12 +1276,12 @@ def view_directory(request):
 
   if not request.where:
     url, params = request.get_link(params={'root': None})
-    data['change_root_action'] = url
+    data['change_root_action'] = urllib.quote(url, _URL_SAFE_CHARS)
     data['change_root_hidden_values'] = prepare_hidden_values(params)
 
   if cfg.options.use_pagesize:
     url, params = request.get_link(params={'dir_pagestart': None})
-    data['dir_paging_action'] = url
+    data['dir_paging_action'] = urllib.quote(url, _URL_SAFE_CHARS)
     data['dir_paging_hidden_values'] = prepare_hidden_values(params)
 
   if cfg.options.allow_tar:
@@ -1524,7 +1527,7 @@ def view_directory_cvs(request, data, sortby, sortdir):
   if data['selection_form']:
     url, params = request.get_link(params={'only_with_tag': None, 
                                            'search': None})
-    data['search_tag_action'] = url
+    data['search_tag_action'] = urllib.quote(url, _URL_SAFE_CHARS)
     data['search_tag_hidden_values'] = prepare_hidden_values(params)
 
   if alltags or view_tag:
@@ -1573,7 +1576,7 @@ def view_directory_svn(request, data, sortby, sortdir):
     data['jump_rev'] = str(request.repos.rev)
     
   url, params = request.get_link(params={'rev': None})
-  data['jump_rev_action'] = url
+  data['jump_rev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
   data['jump_rev_hidden_values'] = prepare_hidden_values(params)
 
   # add in the roots for the selection
@@ -1966,21 +1969,21 @@ def view_log(request):
                                  params={'r1': None, 'r2': None, 
                                          'diff_format': None})
   params = compat.urlencode(params)
-  data['diff_url'] = urllib.quote(url)
+  data['diff_url'] = urllib.quote(url, _URL_SAFE_CHARS)
   data['diff_params'] = params and '&' + params
 
   if cfg.options.use_pagesize:
     url, params = request.get_link(params={'log_pagestart': None})
-    data['log_paging_action'] = url
+    data['log_paging_action'] = urllib.quote(url, _URL_SAFE_CHARS)
     data['log_paging_hidden_values'] = prepare_hidden_values(params)
 
   url, params = request.get_link(params={'r1': None, 'r2': None, 'tr1': None,
                                          'tr2': None, 'diff_format': None})
-  data['diff_select_action'] = url
+  data['diff_select_action'] = urllib.quote(url, _URL_SAFE_CHARS)
   data['diff_select_hidden_values'] = prepare_hidden_values(params)
 
   url, params = request.get_link(params={'logsort': None})
-  data['logsort_action'] = url
+  data['logsort_action'] = urllib.quote(url, _URL_SAFE_CHARS)
   data['logsort_hidden_values'] = prepare_hidden_values(params)
 
   if request.roottype == 'svn':
@@ -2160,7 +2163,7 @@ def view_log_cvs(request, data, logsort):
 
   if branch_names:
     url, params = request.get_link(params={'only_with_tag': None})
-    data['branch_select_action'] = url
+    data['branch_select_action'] = urllib.quote(url, _URL_SAFE_CHARS)
     data['branch_select_hidden_values'] = prepare_hidden_values(params)
 
   if cfg.options.use_pagesize:
@@ -2548,7 +2551,7 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
   params['diff_format'] = None
     
   url, params = request.get_link(params=params)
-  data['diff_format_action'] = url
+  data['diff_format_action'] = urllib.quote(url, _URL_SAFE_CHARS)
   data['diff_format_hidden_values'] = prepare_hidden_values(params)
 
   generate_page(request, cfg.templates.diff, data)
