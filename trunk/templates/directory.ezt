@@ -1,134 +1,7 @@
-<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
- "http://www.w3.org/TR/REC-html40/loose.dtd">
-<html><head>
-<!-- ViewCVS       -- http://viewcvs.sourceforge.net/
-     by Greg Stein -- mailto:gstein@lyra.org
-  -->
-<title>[if-any where][where][else][cfg.general.main_title][end]</title>
-</head>
-<body text="#000000" bgcolor="#ffffff">
-<table width="100%" border=0 cellspacing=0 cellpadding=0>
-  <tr>
-    <td><h1>[if-any where][where][else][cfg.general.main_title][end]</h1></td>
-    <td align=right><img src="[icons]/apache_pb.gif" alt="(logo)" border=0
-			width=259 height=32></td>
-  </tr>
-  <tr>
-    <td>[is roottype "svn"]<h2>(revision [tree_rev])</h2>[else]&nbsp;[end]</td>
-    <td align=right><h3><b><a target="_blank"
-href="[docroot]/help_[if-any where]dir[else]root[end]view.html">ViewCVS and CVS Help</a></b></h3></td>
-  </tr>
-</table>
-
-[if-any where][else]
-  <!-- you may insert repository access instructions here -->
-
-  [if-any roots]
-    <h3>Project Root</h3>
-    <form method=get action="[change_root_action]">
-      [change_root_hidden_values]
-      <select name=root onchange="submit()">
-      [for roots]
-        [is roots current_root]
-          <option selected>[roots]</option>
-        [else]
-          <option>[roots]</option>
-        [end]
-      [end]
-      </select>
-      <input type=submit value="Go">
-    </form>
-  [end]
-[end]
-
-<p><a name="dirlist"></a></p>
-
-[if-any where]
-  <table>
-    <tr>
-      <td>
-        Current directory:
-      </td>
-      <td>
-        <b>[nav_path]</b> 
-      </td>
-    </tr>
-  [is roottype "svn"]
-    <tr>
-      <td>
-        Jump to directory revision:
-      </td>
-      <td>
-        <form method=get action="[jump_rev_action]">
-        [jump_rev_hidden_values]
-        <input type="text" name="rev" value="[jump_rev]">
-        <input type=submit value="Go">
-        </form>
-      </td>
-    </tr>
-  [end]
-  [if-any view_tag]
-    <tr>
-      <td>
-        Current tag:
-      </td>
-      <td>
-        <b>[view_tag]</b>
-      </td>
-    </tr>
-  [end]
-  [if-any search_re]
-    <tr>
-      <td>
-        Current search:
-      </td>
-      <td>
-        <b>[search_re]</b>
-      </td>
-    </tr>
-  [end]
-  [is num_files "0"]
-  [else]
-    <tr>
-      <td>
-        Files shown:
-      </td>
-      <td>
-        <b>[files_shown]</b>
-      </td>
-    </tr>
-  [end]
-</table>
-  [is cfg.options.use_pagesize "0"]
-  [else]
-    [is picklist_len "1"]
-    [else]
-      <form method=get action="[dir_paging_action]">
-        [dir_paging_hidden_values]
-        <input type=submit value="Go to:">
-        <select name=dir_pagestart  onchange="submit()">
-          [for picklist]
-            <option [is picklist.count dir_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] to [picklist.end]</option>
-          [end]
-        </select>
-      </form>
-    [end]
-  [end]
-[end]
-
-<hr noshade>
-
-[# if you want a colored border around the table of directory
-   information, then add this additional table tag:
-
-   <table border=0 cellpadding=0 width="100%"><tr>
-     <td bgcolor="#999999">
-]
-
+[include "dir_header.ezt"]
 
 <table width="100%" border=0 cellspacing=1 cellpadding=2>
 <tr>
-[if-any have_logs]
   [is sortby "file"]
     <th align=left bgcolor="#88ff88"
       [is cfg.options.use_cvsgraph "1"]colspan=2[end]
@@ -156,74 +29,71 @@ href="[docroot]/help_[if-any where]dir[else]root[end]view.html">ViewCVS and CVS 
     <th align=left bgcolor="#cccccc"
       ><a href="[sortby_author_href]#dirlist">Author</a></th>
   [end]
+[is cfg.options.show_logs "1"]
   [is sortby "log"]
     <th align=left bgcolor="#88ff88">Last log entry</th>
   [else]
     <th align=left bgcolor="#cccccc"
       ><a href="[sortby_log_href]#dirlist">Last log entry</a></th>
   [end]
-[else]
-  <th align=left bgcolor="#cccccc">File</th>
 [end]
 </tr>
 
 [for rows]
   <tr bgcolor="[if-index rows even]#ffffff[else]#ccccee[end]">
   [is rows.type "unreadable"]
-    <td><a name="[rows.anchor]">[rows.name]</a>
-      [if-any have_logs]
-        </td>
-        <td colspan=[is cfg.options.use_cvsgraph "1"]5[else]4[end]>
-          <i>this entry is unreadable</i>
-        </td>
-      [else]
-      - <i>this entry is unreadable</i>
-      [end]
+    <td [is cfg.options.use_cvsgraph "1"]colspan=2[end]>
+      <a name="[rows.anchor]">[rows.name]</a>
+    </td>
+    <td colspan=[is cfg.options.show_logs "1"]4[else]3[end]>
+       <i>This entry is unreadable</i>
     </td>
   [else]
     [is rows.type "dir"]
-      <td [if-any have_logs][is cfg.options.use_cvsgraph "1"]colspan=2[end][end]>
+      <td [is cfg.options.use_cvsgraph "1"]colspan=2[end]>
         <a name="[rows.anchor]" href="[rows.href]">
         <img src="[icons]/small/dir.gif" alt="(dir)" border=0 width=16 height=16>
-        [rows.name]/
-        </a>
+        [rows.name]/</a>
         [is roottype "cvs"]
           [is rows.name "Attic"]
             &nbsp; <a href="[show_attic_href]#dirlist">[[]show contents]</a>
           [end]
         [end]
       </td>
-      [is rows.cvs "error"]
-        [# for an error to occur, we must have some logs. always use colspan]
-        <td colspan=4>
+      [is rows.state "error"]
+        <td colspan=[is cfg.options.show_logs "1"]4[else]3[end]>
           <i>Last modification unavailable - could not read CVS information</i>
         </td>
       [else]
-      [if-any have_logs]
-        <td>&nbsp;</td> [# revision ]
-        [is rows.cvs "none"]
+        <td>&nbsp;[is roottype "svn"]<a href="[rows.rev_href]"><b>[rows.rev]</b></a>[end]</td>
+        [is rows.state "none"]
           <td>&nbsp;</td> [# age ]
           <td>&nbsp;</td> [# author ]
-          <td>&nbsp;</td> [# log ]
+          [is cfg.options.show_logs "1"]<td>&nbsp;</td> [# log ][end]
         [else]
           <td>&nbsp;[rows.time]</td>
           [if-any rows.author]
             <td>&nbsp;[rows.author]</td>
           [end]
-          [if-any rows.show_log]
-            <td>&nbsp;[rows.log_file]/[rows.log_rev]<br>
-              &nbsp;<font size="-1">[rows.log]</font></td>
+          [is cfg.options.show_logs "1"]
+            [if-any rows.show_log]
+              <td>&nbsp;[rows.log][is roottype "cvs"] 
+                <i>(from [rows.log_file]/[rows.log_rev])</i>[end]</td>
+            [else]
+              <td>&nbsp;</td>
+            [end]
           [end]
         [end]
       [end]
-      [end]
           
     [else]
-      [is rows.cvs "error"]
+      [is rows.state "error"]
         <td [is cfg.options.use_cvsgraph "1"]colspan=2[end]>
           <a name="[rows.anchor]">[rows.name]</a>
         </td>
-        <td colspan=4><i>CVS information is unreadable</i></td>
+        <td colspan=[is cfg.options.show_logs "1"]4[else]3[end]>
+         <i>CVS information is unreadable</i>
+        </td>
       [else]
         <td><a name="[rows.anchor]" href="[rows.href]">
             <img src="[icons]/small/text.gif" alt="(file)" border=0
@@ -245,18 +115,13 @@ href="[docroot]/help_[if-any where]dir[else]root[end]view.html">ViewCVS and CVS 
             <td>&nbsp;</td>
           [end]
         [end]
-
-        <td>&nbsp;
-          <a href="[rows.rev_href]">
-            <b>[rows.rev]</b>
-          </a>
-        </td>
+        <td>&nbsp;<a href="[rows.rev_href]"><b>[rows.rev]</b></a></td>
         <td>&nbsp;[rows.time]</td>
         [if-any rows.author]
           <td>&nbsp;[rows.author]</td>
         [end]
-        [if-any rows.show_log]
-          <td>&nbsp;[rows.log]</td>
+        [is cfg.options.show_logs "1"]
+          <td>&nbsp;[if-any rows.show_log][rows.log][end]</td>
         [end]
       [end]
     [end]
@@ -266,99 +131,4 @@ href="[docroot]/help_[if-any where]dir[else]root[end]view.html">ViewCVS and CVS 
 
 </table>
 
-[# if you are using a table border (see above), then add:
-
-   </td></tr></table>
-]
-
-[if-any no_match]
-  <p><b>NOTE:</b> There are [num_files] files, but none match the
-  current selection criteria.
-[end]
-
-[if-any unreadable]
-  <hr size=1 noshade>
-  <b>NOTE:</b> One or more files were unreadable. The files in the CVS
-  repository should be readable by the web server process. Please
-  report this condition to the administrator of this CVS repository.
-[end]
-
-[if-any selection_form]
-  <hr size=1 noshade>
-  <form method=get action="[search_tag_action]">
-    [search_tag_hidden_values]
-    [# this table holds the selectors on the left, and reset on the right ]
-    <table>
-      [if-any has_tags]
-        <tr>
-          <td> Show files using tag: </td>
-          <td>
-            <select name=only_with_tag onchange="submit()">
-            [if-any branch_tags]
-              <option value="">- Branches -</option>
-              [for branch_tags]
-                [is branch_tags view_tag]
-                  <option selected>[branch_tags]</option>
-                [else]
-                  <option>[branch_tags]</option>
-                [end]
-              [end]
-            [end]
-            <option value="">- Non-branch tags -</option>
-            [for plain_tags]
-              [is plain_tags view_tag]
-                <option selected>[plain_tags]</option>
-              [else]
-                <option>[plain_tags]</option>
-              [end]
-            [end]
-            </select>
-          </td>
-          <td> &nbsp; </td>
-        </tr>
-      [end]
-
-      [is num_files "0"]
-      [else]
-        [is cfg.options.use_re_search "1"]
-          <tr>
-            <td>Show files containing the regular expression:</td>
-            <td><input type="text" name="search" value="[search_re]"></td>
-            <td> &nbsp; </td>
-          </tr>
-        [end]
-
-        <tr>
-          <td> &nbsp; </td>
-          <td> <input type="submit" value="Show"> </td>
-      [end]
-  [# I don't like closing the form here, but I thought this is better than 
-     having forms inside forms ]
-  </form>
-      [if-any view_tag]
-        <td valign=bottom>
-          <form method=get action="[search_tag_action]">
-            [search_tag_hidden_values]
-            <input type="submit" value="Show all files">
-          </form>
-        </td>
-      [else]
-        [if-any search_re]
-          <td valign=bottom>
-            <form method=get action="[search_tag_action]">
-              [search_tag_hidden_values]
-              <input type="submit" value="Show all files">
-            </form>
-          </td>
-        [end]
-      [end]
-    </tr>
-  </table>
-[end]
-
-[# if you want to disable tarball generation remove the following: ]
-[if-any tarball_href]
-  <a href="[tarball_href]">Download tarball</a>
-[end]
-
-[include "footer.ezt"]
+[include "dir_footer.ezt"]

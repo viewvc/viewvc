@@ -83,14 +83,32 @@
     <blockquote>
       <dl>
         <dt>
-          <code>directory.ezt</code> and
-          <code>dir_alternate.ezt</code>:
+          <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
           <var>params</var>
         </dt>
         <dd>
           Replaced with new <var>search_tag_hidden_values</var>
           variable.
         </dd>
+      </dl>
+      <dl>
+        <dt>
+          <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
+          <var>rows.cvs</var>
+        </dt>
+        <dd>
+          Merged with <var>rows.state</var>.  Interesting states for
+          <var>rows.state</var> now include "none" (no information
+          known), "error" (an error occured trying to get
+          information), "dead" (this revision is marked as 'dead').
+        </dd>
+      </dl>
+      <dl>
+        <dt>
+          <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
+          <var>have_logs</var>
+        </dt>
+        <dd>Deemed unnecessary.</dd>
       </dl>
       <dl>
         <dt><code>graph.ezt</code>: <var>request.url</var></dt>
@@ -332,7 +350,7 @@
       <li>
         Directory <var>rows.name</var> values no longer have
         trailing slashes
-      </li>      
+      </li>
     </ul>
 
     <h4>In <code>log.ezt</code> and <code>log_table.ezt</code></h4>
