@@ -923,7 +923,6 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
 
 def _log_path(entry, dirpath, getdirs):
   path = name = None
-  errors = []
   if not entry.errors:
     if entry.kind == vclib.FILE:
       path = entry.in_attic and 'Attic' or ''
@@ -967,7 +966,7 @@ else:
     try:
       info = os.stat(pathname)
     except os.error, e:
-      return None, [str(e)]
+      return None, ["stat error: %s" % e]
 
     kind = None
     errors = []
