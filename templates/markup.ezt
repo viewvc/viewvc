@@ -6,14 +6,14 @@ File: [nav_file]
 
 (<a href="[href]" target="cvs_checkout"
   onclick="window.open('[href]','cvs_checkout',
-  'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]');return false"
+  'resizable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]');return false"
   ><b>download</b></a>)
 [is mime_type "text/plain"]
 [else]
       /
       (<a href="[text_href]" target="cvs_checkout"
 	onclick="window.open('[text_href]', 'cvs_checkout',
-	'resizeable=1,scrollbars=1');return false"><b>as text</b></a>)
+	'resizable=1,scrollbars=1');return false"><b>as text</b></a>)
 [end]
 <br>
 
