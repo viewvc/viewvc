@@ -15,20 +15,25 @@ server = None
 class CgiServer:
 
   def __init__(self):
-    global server
-    server = self
     self.inheritableOut = 1
     self.header_sent = 0
     self.pageGlobals = {}
+
     if os.getenv('SERVER_SOFTWARE', '')[:13] == 'Microsoft-IIS':
       self.iis = 1
     else:
       self.iis = 0
-      
+
     if sys.platform == "win32":
       import msvcrt
       msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
-      
+
+    global server
+    server = self
+
+    global cgi
+    import cgi
+
   def header(self, content_type='text/html'):
     if self.header_sent:
       return
@@ -44,11 +49,9 @@ class CgiServer:
     sys.exit(0)
 
   def params(self):
-    import cgi
     return cgi.parse()
 
   def escape(self, s, quote = None):
-    import cgi
     return cgi.escape(s, quote)
 
   def getenv(self, name,value = None):
@@ -65,25 +68,20 @@ class CgiServer:
     # I'm not sure how these variables are supposed to work on a unix server,
     # but this next statement was needed in order to get existing script
     # to work properly on windows.
-    
+
     if self.iis and name == 'PATH_INFO':
       return os.environ.get('PATH_INFO', '')[len(os.environ.get('SCRIPT_NAME', '')):]
     else:
       return os.environ.get(name, value)
 
-  def cgi_add_query(self, query_dict):
-    for name, values in cgi.parse().items():
-      query_dict[name] = values[0]
-
   def FieldStorage(fp=None, headers=None, outerboundary="",
                  environ=os.environ, keep_blank_values=0, strict_parsing=0):
-    import cgi
     return cgi.FieldStorage(fp, headers, outerboundary, environ,
       keep_blank_values, strict_parsing)
 
   def self(self):
     return self
-    
+
   def getFile(self):
     return sys.stdout
 
@@ -122,15 +120,6 @@ def IIS_FixURL(url):
 class AspServer:
 
   def __init__(self, Server, Request, Response, Application):
-    global server
-
-    if not isinstance(server, AspProxy):
-      server = AspProxy()
-    if not isinstance(sys.stdout, AspFile):
-      sys.stdout = AspFile(server)
-
-    server.registerThread(self)
-
     self.inheritableOut = 0
     self.header_sent = 0
     self.server = Server
@@ -138,6 +127,14 @@ class AspServer:
     self.response = Response
     self.application = Application
     self.pageGlobals = {}
+
+    global server
+    if not isinstance(server, AspProxy):
+      server = AspProxy()
+    if not isinstance(sys.stdout, AspFile):
+      sys.stdout = AspFile(server)
+
+    server.registerThread(self)
 
   def escape(self, s, quote = None):
     return self.server.HTMLEncode(str(s))
@@ -158,7 +155,7 @@ class AspServer:
     # the self.header_sent member, and only checking for the
     # exception as a secondary measure
     if not self.header_sent:
-      try: 
+      try:
         self.header_sent = 1
         self.response.ContentType = content_type
         return 0
@@ -217,7 +214,7 @@ class AspFile:
     self.name = "<AspFile file>"
     self.softspace = 0
     self.server = server
-  
+
   def flush(self):
     self.server.response.Flush()
 
@@ -247,19 +244,18 @@ class AspProxy:
 
   def __init__(self):
     self.__dict__['servers'] = { }
+    global thread
+    import thread
 
   def registerThread(self, server):
-    import thread
     self.__dict__['servers'][thread.get_ident()] = server
 
   def unregisterThread(self):
-    import thread
     del self.__dict__['servers'][thread.get_ident()]
 
   def self(self):
     """This function bypasses the getattr and setattr trickery and returns
     the actual server object."""
-    import thread
     return self.__dict__['servers'][thread.get_ident()]
 
   def __getattr__(self, key):
@@ -272,10 +268,12 @@ class AspProxy:
     delattr(self.self(), key)
 
 class ModPythonServer:
-
   def __init__(self, request):
-    global server
+    self.inheritableOut = 0
+    self.request = request
+    self.pageGlobals = {}
 
+    global server
     if not isinstance(server, AspProxy):
       server = AspProxy()
     if not isinstance(sys.stdout, ModPythonFile):
@@ -283,16 +281,10 @@ class ModPythonServer:
 
     server.registerThread(self)
 
-    self.inheritableOut = 0
-    self.request = request
-    
-    import StringIO
-    self.buffer = StringIO.StringIO()
-    
-    self.pageGlobals = {}
-    
-  def escape(self, s, quote = None):
+    global cgi
     import cgi
+
+  def escape(self, s, quote = None):
     return cgi.escape(s, quote)
 
   def params(self):
@@ -329,7 +321,6 @@ class ModPythonServer:
     return ModPythonFile(self)
 
   def close(self, code = 0):
-    sys.stdout.flush()
     server.unregisterThread()
 
 class ModPythonFile:
@@ -340,7 +331,7 @@ class ModPythonFile:
     self.name = "<ModPythonFile file>"
     self.softspace = 0
     self.server = server
-  
+
   def flush(self):
     pass
 
@@ -355,4 +346,3 @@ class ModPythonFile:
 
   def close(self):
     pass
-
