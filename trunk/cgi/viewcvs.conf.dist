@@ -392,6 +392,12 @@ cvsgraph_path =
 #
 cvsgraph_conf = <VIEWCVS_INSTALL_DIRECTORY>/cvsgraph.conf
 
+#
+# Set to enable regular expression search of all files in a directory
+#
+use_re_search = 0
+# use_re_search = 1
+
 #---------------------------------------------------------------------------
 [vhosts]
 ### DOC

@@ -15,7 +15,7 @@
   </tr>
   <tr>
     <td align=right><h3><b><a target="_blank"
-href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.html">Help</a></b></h3></td>
+href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.html">ViewCVS and CVS Help</a></b></h3></td>
   </tr>
 </table>
 
@@ -48,7 +48,67 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
 [end]
 [end]
 
-<p></p><hr noshade>
+[is num_files "0"]
+[else]
+  <form action="./" name="reset">
+    <input type="submit" value="Show all files">
+  </form>
+  [is cfg.options.use_re_search "1"]
+    <form action="./" name="search_form">
+      <input type="submit" value="Show files containing the regular expression string:">
+      <input type="text" name="search" value="[search_re]">
+    </form>
+  [end]
+  [if-any has_tags]
+    <form method=GET action="./">
+    [for params]
+      <input type=hidden name="[params.name]" value="[params.value]">
+    [end]
+
+    <input type=submit value="Show files with tag:">
+    <select name=only_with_tag onchange="submit()">
+    [if-any branch_tags]
+      <option value="">- Branches -</option>
+      [for branch_tags]
+        [is branch_tags view_tag]
+          <option selected>[branch_tags]</option>
+        [else]
+          <option>[branch_tags]</option>
+        [end]
+      [end]
+    [end]
+    <option value="">- Non-branch tags -</option>
+    [for plain_tags]
+      [is plain_tags view_tag]
+        <option selected>[plain_tags]</option>
+      [else]
+        <option>[plain_tags]</option>
+      [end]
+    [end]
+    </select>
+    </form>
+  [end]
+[end]
+
+<hr>
+
+[is num_files "0"]
+[else]
+  [is num_files "1"]
+    <b>1 file 
+  [else]
+    <b>[num_files] files 
+  [end]
+  [if-any search_re]
+      with contents matching regular expression: '[search_re]'</b>
+  [else]
+  [if-any view_tag]
+      with tag: '[view_tag]'</b>
+  [end]
+[end]
+
+
+<hr noshade>
 
 [# if you want a colored border around the table of directory
    information, then add this additional table tag:
@@ -97,7 +157,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
           [if-any rows.graph_href]
             <td width="1%">&nbsp;</td>
           [end]
-	  [is cfg.options.flip_links_in_dirview "0"]<td>&nbsp;</td>[end]
+        [is cfg.options.flip_links_in_dirview "0"]<td>&nbsp;</td>[end]
           <td>&nbsp;[rows.time]</td>
           [if-any rows.author]
             <td>&nbsp;[rows.author]</td>
@@ -111,43 +171,43 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
           
     [else]
       [is rows.cvs "error"]
-	[is rev_in_front "1"]<td>&nbsp;</td>[end]
+      [is rev_in_front "1"]<td>&nbsp;</td>[end]
         <td><a name="[rows.anchor]">[rows.name]</a></td>
         <td colspan=[rows.span]><i>CVS information is unreadable</i></td>
       [else]
-	[is cfg.options.flip_links_in_dirview "1"]
-	  <td><a name="[rows.anchor]" href="[rows.href]"><b>[rows.rev]</b></a>
-	  </td>
-	[end]
-	  <td><a name="[rows.anchor]" 
-	       [is cfg.options.flip_links_in_dirview "0"]
-		 href="[rows.href]">
-	       [else]
-		 href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
+        [is cfg.options.flip_links_in_dirview "1"]
+        <td><a name="[rows.anchor]" href="[rows.href]"><b>[rows.rev]</b></a>
+        </td>
+      [end]
+        <td><a name="[rows.anchor]"
+             [is cfg.options.flip_links_in_dirview "0"]
+               href="[rows.href]">
+             [else]
+               href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
 [# to display the revision in a separate window, you could use:
 
-		 href="{rows.rev_href}" target="cvs_checkout"
-		 onClick="window.open('{rows.rev_href}', 'cvs_checkout',
-				      'resizeable=1,scrollbars=1')">
+               href="{rows.rev_href}" target="cvs_checkout"
+               onClick="window.open('{rows.rev_href}', 'cvs_checkout',
+                                    'resizeable=1,scrollbars=1')">
 
    (substitute brackets for the braces)
-]	       [end]<img src="/icons/small/text.gif" alt="(file)" border=0
-		   width=16 height=16>
-	      [rows.name]
-	      </a>
-	      [rows.attic]
-	  </td>
+]            [end]<img src="/icons/small/text.gif" alt="(file)" border=0
+                 width=16 height=16>
+            [rows.name]
+            </a>
+            [rows.attic]
+        </td>
         [if-any rows.graph_href]
           <td width="1%"><a href="[rows.graph_href]"><img
             src="[request.script_name]/*docroot*/images/cvsgraph_16x16.png"
             alt="(graph)" width=16 height=16 border=0>
           </a></td>
         [end]
-	[is cfg.options.flip_links_in_dirview "0"]
-	  <td>&nbsp;
-	    <a href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
-	      <b>[rows.rev]</b>
-	    </a>
+      [is cfg.options.flip_links_in_dirview "0"]
+        <td>&nbsp;
+          <a href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
+            <b>[rows.rev]</b>
+          </a>
 [# to display the revision in a separate window, you could use:
 
    <a href="{rows.rev_href}" target="cvs_checkout"
@@ -156,8 +216,8 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
 
    (substitute brackets for the braces)
 ]
-	  </td>
-	[end]
+        </td>
+      [end]
         <td>&nbsp;[rows.time]</td>
         [if-any rows.author]
           <td>&nbsp;[rows.author]</td>
@@ -190,37 +250,6 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
   report this condition to the administrator of this CVS repository.
 [end]
 
-[if-any has_tags]
-  <hr size=1 noshade>
-  <form method=GET action="./">
-  [for params]
-    <input type=hidden name="[params.name]" value="[params.value]">
-  [end]
-
-  Show only files with tag:
-  <select name=only_with_tag onchange="submit()">
-  [if-any branch_tags]
-    <option value="">- Branches -</option>
-    [for branch_tags]
-      [is branch_tags view_tag]
-        <option selected>[branch_tags]</option>
-      [else]
-        <option>[branch_tags]</option>
-      [end]
-    [end]
-  [end]
-  <option value="">- Non-branch tags -</option>
-  [for plain_tags]
-    [is plain_tags view_tag]
-      <option selected>[plain_tags]</option>
-    [else]
-      <option>[plain_tags]</option>
-    [end]
-  [end]
-  </select>
-  <input type=submit value="Go">
-  </form>
-[end]
 
 [# if you want to disable tarball generation remove the following: ]
 [if-any tarball_href]

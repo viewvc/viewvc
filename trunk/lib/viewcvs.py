@@ -25,7 +25,7 @@
 # -----------------------------------------------------------------------
 #
 
-__version__ = '0.8'
+__version__ = '0.8-dev'
 
 #########################################################################
 #
@@ -659,6 +659,10 @@ def get_file_data(full_name):
   """
   
   files = os.listdir(full_name)
+ 
+  return get_file_tests(full_name,files)
+ 
+def get_file_tests(full_name,files):
   data = [ ]
 
   uid = os.getuid()
@@ -669,7 +673,7 @@ def get_file_data(full_name):
     try:
       info = os.stat(pathname)
     except os.error:
-      data.append((file, _UNREADABLE_MARKER, None))
+      data.append((full_name, _UNREADABLE_MARKER, None))
       continue
     mode = info[stat.ST_MODE]
     isdir = stat.S_ISDIR(mode)
@@ -1083,7 +1087,13 @@ def view_directory(request):
   hideattic = int(query_dict.get('hideattic'))  ### watch for errors in int()?
   sortby = query_dict.get('sortby', 'file')
 
-  file_data = get_file_data(full_name)
+  search_re = query_dict.get('search')
+ 
+  # Search current directory
+  if search_re and cfg.options.use_re_search:
+    file_data = search_files(request,search_re)
+  else:
+    file_data = get_file_data(full_name)
 
   if cfg.options.show_subdir_lastmod:
     lastmod = get_last_modified(file_data)
@@ -1141,6 +1151,7 @@ def view_directory(request):
     # fileinfo will be len==0 if we only have dirs and !show_subdir_lastmod
     # in that case, we don't need the extra columns
     'rev_in_front' : len(fileinfo) and cfg.options.flip_links_in_dirview,
+    'search_re' : search_re,
     }
 
   # add in the CVS roots for the selection
@@ -1891,7 +1902,7 @@ def view_log(request):
 _re_co_filename = re.compile(r'^(.*),v\s+-->\s+standard output\s*\n$')
 _re_co_warning = re.compile(r'^.*co: .*,v: warning: Unknown phrases like .*\n$')
 _re_co_revision = re.compile(r'^revision\s+([\d\.]+)\s*\n$')
-def view_checkout(request):
+def process_checkout(request):
   full_name = request.full_name
   where = request.where
   query_dict = request.query_dict
@@ -1967,6 +1978,10 @@ def view_checkout(request):
     error('The filename from co did not match. Found "%s". Wanted "%s"<br>'
           'url="%s"' % (filename, full_name, where))
 
+  return fp, revision, mime_type
+ 
+def view_checkout(request):
+  fp, revision, mime_type = process_checkout(request)
   if mime_type == viewcvs_mime_type:
     # use the "real" MIME type
     markup_stream(request, fp, revision, request.mime_type)
@@ -2053,6 +2068,64 @@ def view_cvsgraph(cfg, request):
 
   print '</center>'
   html_footer()
+
+def search_files(url_request,search_re):
+  # Pass in Request object and the search regular expression.
+  # Objects in Request are altered then the Request object is
+  # passed to other functions to checkout the file and to
+  # make standard tests against the files in the directoy.
+ 
+  # Compile to make sure we do this as fast as possible.
+  searchstr = re.compile(search_re)
+ 
+  # Will become list of files that have at least one match.
+  new_file_list = []
+ 
+  # Get list of files AND directories
+  files = os.listdir(url_request.full_name)
+ 
+  # In the loop, url_request.full_name will change for each file.
+  # Set full_name here to keep original directory.
+  full_name = url_request.full_name
+ 
+  # Loop on every file (and directory)
+  for file in files:
+    # Configure new url_request.full_name and url_request.where
+    # in order to find the mime type.
+    url_request.full_name = os.path.join(full_name,file)
+    url_request.where = string.replace(url_request.full_name,url_request.cvsroot,'')
+    url_request.setup_mime_type_info()
+ 
+    # Is this a directory?  If so, append name to new_file_list.
+    if os.path.isdir(url_request.full_name):
+      new_file_list.append(file)
+      continue
+ 
+    # At this point everything should be a file.
+    # Remove the ,v
+    url_request.full_name = url_request.full_name[:-2]
+    url_request.where = url_request.where[:-2]
+ 
+    # process_checkout will checkout the head version out of the repository
+    # Assign contents of checked out file to fp.
+    fp, revision, mime_type = process_checkout(url_request)
+ 
+    # Shouldn't search binary files, or should we?
+    # Should allow all text mime types to pass.
+    if string.split(mime_type,'/')[0] != 'text':
+      continue
+ 
+    # Read in each line, use re.search to search line.
+    # If successful, add file to new_file_list and break.
+    while 1:
+      line = fp.readline()
+      if not line:
+        break
+      if searchstr.search(line):
+        new_file_list.append(file)
+        break
+ 
+  return get_file_tests(full_name,new_file_list)
 
 
 def view_doc(request):
@@ -2511,6 +2584,7 @@ def handle_config():
     "diff_format" : cfg.options.diff_format,
     "hidecvsroot" : cfg.options.hide_cvsroot,
     "hidenonreadable" : cfg.options.hide_non_readable,
+    "search": None,
     }
 
 
