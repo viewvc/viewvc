@@ -132,6 +132,7 @@ class Config:
     self.cvsdb.passwd = ''
     self.cvsdb.readonly_user = ''
     self.cvsdb.readonly_passwd = '' 
+    self.cvsdb.row_limit = 1000
 
     self.images.back_icon = "/icons/small/back.gif", 16, 16
     self.images.dir_icon = "/icons/small/dir.gif",  16, 16
