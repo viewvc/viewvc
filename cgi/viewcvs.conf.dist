@@ -238,7 +238,7 @@ log_sort = date
 #   u      Unified diff
 #   c      Context diff
 #   s      Side by side
-#   H      Long human readable
+#   l      Long human readable (more context)
 diff_format = h
 
 # hide_cvsroot: Don't show the CVSROOT directory

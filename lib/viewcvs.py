@@ -409,7 +409,7 @@ def print_diff_select(query_dict):
 
   format = query_dict['diff_format']
   html_option('h', format, 'Colored Diff')
-  html_option('H', format, 'Long Colored Diff')
+  html_option('l', format, 'Long Colored Diff')
   html_option('u', format, 'Unidiff')
   html_option('c', format, 'Context Diff')
   html_option('s', format, 'Side by Side')
@@ -1717,7 +1717,9 @@ def view_log(request):
     'where' : where,
     'back_url' : back_url,
     'href' : file_url,
+
     'query' : request.amp_query,
+    'qquery' : request.qmark_query,
 
     ### in the future, it might be nice to break this path up into
     ### a list of elements, allowing the template to display it in
@@ -1730,6 +1732,11 @@ def view_log(request):
     'view_tag' : view_tag,
     'entries' : show_revs,   ### rename the show_rev local to entries?
     'rev_selected' : query_dict.get('r1'),
+    'diff_format' : query_dict['diff_format'],
+    'logsort' : query_dict['logsort'],
+
+    'address' : cfg.general.address,
+    'vsn' : __version__,
     }
 
   if request.default_viewable:
@@ -1737,7 +1744,7 @@ def view_log(request):
   else:
     data['viewable'] = None
 
-  if query_dict['diff_format'] == 'h':
+  if query_dict['diff_format'] == 'h' or query_dict['diff_format'] == 'l':
     data['human_readable'] = 'yes'
   else:
     data['human_readable'] = None
@@ -1768,69 +1775,27 @@ def view_log(request):
     augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
                   rev_order, 1)
 
-  template = ezt.Template()
-  template.parse_file(os.path.join(g_template_dir, cfg.templates.log))
-
-  http_header()
-
-  # generate the page
-  template.generate(sys.stdout, data)
-
-  sel = [ ]
   tagitems = taginfo.items()
   tagitems.sort()
   tagitems.reverse()
+
+  data['tags'] = tags = [ ]
   for tag, rev in tagitems:
-    sel.append('<option value="%s:%s">%s</option>' % (rev, tag, tag))
-  sel = string.join(sel, '\n')
-
-  print '<a name=diff><hr noshade>'
-  print 'This form allows you to request diffs between any two revisions of'
-  print 'a file. You may select a symbolic revision name using the selection'
-  print 'box or you may type in a numeric name using the type-in text box.'
-  print '</a><p>'
-
-  print '<form method="GET" action="%s.diff" name="diff_select">' % \
-        request.url
-  for varname in _sticky_vars:
-    value = query_dict.get(varname, '')
-    if value != '' and value != default_settings.get(varname):
-      print '<input type=hidden name="%s" value="%s">' % (varname, value)
-
-  print 'Diffs between'
-  print '<select name="r1">'
-  print '<option value="text" selected>Use Text Field</option>'
-  print sel
-  print '</select>'
+    tags.append(_item(rev=rev, name=tag))
 
   if query_dict.has_key('r1'):
     diff_rev = query_dict['r1']
   else:
     diff_rev = show_revs[-1].rev
-  print '<input type="TEXT" size="%d" name="tr1" value="%s" ' \
-        ' onChange="document.diff_select.r1.selectedIndex=0">' % \
-        (cfg.options.input_text_size, diff_rev)
-
-  print 'and'
-  print '<select name="r2">'
-  print '<option value="text" selected>Use Text Field</option>'
-  print sel
-  print '</select>'
+  data['tr1'] = diff_rev
 
   if query_dict.has_key('r2'):
     diff_rev = query_dict['r2']
   else:
     diff_rev = show_revs[0].rev
-  print '<input type="TEXT" size="%d" name="tr2" value="%s" ' \
-        ' onChange="document.diff_select.r2.selectedIndex=0">' % \
-        (cfg.options.input_text_size, diff_rev)
+  data['tr2'] = diff_rev
 
-  print '<br>Type of Diff should be a'
-  print_diff_select(query_dict)
-
-  print '<input type=submit value="  Get Diffs  "></form>'
-  print '<hr noshade>'
-
+  ### would be nice to find a way to use [query] or somesuch instead
   hidden_values = ''
   for varname in _sticky_vars:
     if varname != 'only_with_tag' and varname != 'logsort':
@@ -1839,39 +1804,19 @@ def view_log(request):
         hidden_values = hidden_values + \
                         '<input type=hidden name="%s" value="%s">' % \
                         (varname, value)
+  data['hidden_values'] = hidden_values
 
-  if branch_names:
-    print '<a name=branch><form method="GET" action="%s">' % request.url
-    print hidden_values
+  branch_names.sort()
+  branch_names.reverse()
+  data['branch_names'] = branch_names
 
-    print 'View only Branch:'
-    print '<select name="only_with_tag"'
-    if cfg.options.use_java_script:
-      print 'onchange="submit()"'
-    print '>'
-    html_option('', query_dict.get('only_with_tag'), 'Show all branches')
-    branch_names.sort()
-    branch_names.reverse()
-    for name in branch_names:
-      html_option(name, query_dict.get('only_with_tag'))
-    print '</select>'
-    print '<input type=submit value="  View Branch  "></form></a>'
+  template = ezt.Template()
+  template.parse_file(os.path.join(g_template_dir, cfg.templates.log))
 
-  print '<a name=logsort>'
-  print '<form method="GET" action="%s">' % request.url
-  print hidden_values
-  print 'Sort log by:'
-  print '<select name="logsort"'
-  if cfg.options.use_java_script:
-    print 'onchange="submit()"'
-  print '>'
-  logsort = query_dict['logsort']
-  html_option('cvs', logsort, 'Not sorted')
-  html_option('date', logsort, 'Commit date')
-  html_option('rev', logsort, 'Revision')
-  print '</select><input type=submit value="  Sort  "></form></a>'
+  http_header()
 
-  html_footer()
+  # generate the page
+  template.generate(sys.stdout, data)
 
 ### suck up other warnings in _re_co_warning?
 _re_co_filename = re.compile(r'^(.*),v\s+-->\s+standard output\s*\n$')
@@ -2216,7 +2161,7 @@ def view_diff(request, cvs_filename):
     args.append('--side-by-side')
     args.append('--width=164')
     diff_name = 'Side by Side'
-  elif format == 'H':
+  elif format == 'l':
     args.append('--unified=15')
     diff_name = 'Long Human readable'
     human_readable = 1
