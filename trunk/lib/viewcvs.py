@@ -1086,7 +1086,8 @@ def view_directory(request):
   template = ezt.Template()
 
   ### get the template fname from the .conf file
-  template.parse_file('../templates/directory.ezt')
+  template.parse_file(os.path.dirname(CONF_PATHNAME) + 
+                      '/templates/directory.ezt')
 
   # prepare the data that will be passed to the template
   data = {
@@ -1328,8 +1329,8 @@ def view_directory(request):
 
       if cfg.options.use_cvsgraph:
         ### the URL to the wrapper should not be hard-coded
-        row.graph_href = '/cgi-bin/cvsgraphwrapper.cgi?f=%s/%s/%s,v' % \
-                         (request.cvsroot, request.module, file)
+        row.graph_href = '/cgi-bin/cvsgraphwrapper.cgi?&r=%s&m=%s&f=%s,v' % \
+                         (request.cvsroot, request.where, file)
 
       if cfg.options.show_author:
         row.author = info[3]
