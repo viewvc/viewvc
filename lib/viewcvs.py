@@ -1420,7 +1420,7 @@ def view_directory(request):
     row.name = file.name
     row.type = (file.kind == vclib.FILE and 'file') or \
                (file.kind == vclib.DIR and 'dir')
-    row.errors = file.log_errors
+    row.errors = file.errors
 
     if (where == '') and (cfg.is_forbidden(file.name)):
       continue
@@ -2637,7 +2637,7 @@ def generate_tarball(out, request, tar_top, rep_top,
 
   subdirs = [ ]
   for file in entries:
-    if not file.verboten and file.kind == vclib.DIR:
+    if not file.errors and file.kind == vclib.DIR:
       subdirs.append(file.name)
 
   stack.append(tar_dir)

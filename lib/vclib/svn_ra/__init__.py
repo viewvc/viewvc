@@ -213,7 +213,6 @@ def get_logs(svnrepos, full_name, files):
       rev, author, date, log, changes = \
            _get_rev_details(svnrepos, entry.created_rev, subpool)
       rev_info_cache[entry.created_rev] = rev, author, date, log
-    file.log_errors = []
     file.rev = rev
     file.author = author
     file.date = _datestr_to_date(date, subpool)
