@@ -1,3 +1,13 @@
+PREFACE
+-------
+This file will go away soon after release 0.8.  Please use the SourceForge 
+tracker to resubmit any of the items listed below, if you think, it is 
+still an issue:  
+	http://sourceforge.net/tracker/?group_id=18760
+Before reporting please check, whether someone else has already done this.
+Working patches increase the chance to be included into the next release.
+                                                     -- PeFu / October 2001
+
 TODO ITEMS
 ----------
 *) add Tamminen Eero's comments on how to make Linux directly execute
@@ -25,24 +35,19 @@ TODO ITEMS
 *) add a check for the rcs programs/paths to viewcvs-install. clarify the
    dependency on RCS in the docs.
 
-*) add a page that describes how to reach anonymous CVS for ViewCVS
-
 *) have a "check" mode that verifies binaries are available on rcs_path
 
    -> alternately (probably?): use rcsparse rather than external tools
 
-*) Make a link from the Check-In database's result page back to the
-   repository such that a click on a result will warp you to the
-   directory where the file clicked is contained in.  *)
-   (from Gottfried.Ganssauge@HAUFE.DE)
-
-
 KNOWN BUGS
 ----------
-*) from Dieter Deyke, Jan 12: if the CVS revisions differ by just a
-   keyword, then the diff output chokes.
+*) time.timezone seems to not be available on some 1.5.2 installs.
+   I was unable to verify this.  On RedHat and SuSE Linux this bug
+   is non existant.
 
-*) no scroll bar in Netscape browser when you click "as text" on an
-   HTML document.
-
-*) time.timezone seems to not be available on some 1.5.2 installs
+*) With old repositories containing many branches, tags or thousands
+   or revisions, the cvsgraph feature becomes unusable (see INSTALL).  
+   ViewCVS can't do much about this, but it might be possible to 
+   investigate the number of branches, tags and revision in advance
+   and disable the cvsgraph links, if the numbers exceed a certain
+   treshold.
