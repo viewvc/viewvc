@@ -318,6 +318,15 @@ checkout_magic = 1
 # Enable this if you like the feature, but don't rely on correct results.
 show_subdir_lastmod = 0
 
+# The next flag defines the meaning of clicking on either a filename or 
+# the revision number of that file in the directory view.  if 0 then
+# the traditional behavior applies: clicking on the name takes you to the
+# CVS log page, where clicking on the revision number displays that revision.
+# If the flag is set to 1 then both columns will be swapped and the meaning
+# of clicking is also exchanged.  This should be more intuitive to new users.
+# The classic setting is default:
+flip_links_in_dirview = 0
+
 # show a portion of the most recent log entry in directory listings
 show_logs = 1
 

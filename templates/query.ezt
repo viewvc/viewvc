@@ -162,12 +162,12 @@
 [if-any commits]
 <table width="100%" border=0 cellspacing=0 cellpadding=2>
  <tr bgcolor="#88ff88">
-  <th align=left valign=top>Date</th>
-  <th align=left valign=top>Author</th>
-  <th align=left valign=top>File</th>
   <th align=left valign=top>Revision</th>
+  <th align=left valign=top>File</th>
   <th align=left valign=top>Branch</th>
   <th align=left valign=top>+/-</th>
+  <th align=left valign=top>Date</th>
+  <th align=left valign=top>Author</th>
 [# uncommment, if you want a separate Description column: (also see below)
 <th align=left valign=top>Description</th>
 ]
@@ -176,19 +176,19 @@
   [for commits.files]
     <tr bgcolor="[if-index commits even]#ffffff[else]#ccccee[end]">
       <td align=left valign=top>
+	[if-any commits.files.rev][commits.files.rev][else]&nbsp;[end]
+      </td>
+      <td align=left valign=top>[commits.files.link]</td>
+      <td align=left valign=top>
+	[if-any commits.files.branch][commits.files.branch][else]&nbsp;[end]
+      </td>
+      <td align=left valign=top>[commits.files.plus]/[commits.files.minus]</td>
+      <td align=left valign=top>
 	[if-any commits.files.date][commits.files.date][else]&nbsp;[end]
       </td>
       <td align=left valign=top>
 	[if-any commits.files.author][commits.files.author][else]&nbsp;[end]
       </td>
-      <td align=left valign=top>[commits.files.link]</td>
-      <td align=left valign=top>
-	[if-any commits.files.rev][commits.files.rev][else]&nbsp;[end]
-      </td>
-      <td align=left valign=top>
-	[if-any commits.files.branch][commits.files.branch][else]&nbsp;[end]
-      </td>
-      <td align=left valign=top>[commits.files.plus]/[commits.files.minus]</td>
 
 [# uncommment, if you want a separate Description column:
       {if-index commits.files first{
@@ -196,13 +196,15 @@
           {commits.desc}
         </td>
       {end}
+
+   (substitute brackets for the braces)
 ]
     </tr>
-[# and take the following out in this case:]
+[# and also take the following out in the "Description column"-case:]
       [if-index commits.files last]
 	<tr bgcolor="[if-index commits even]#ffffff[else]#ccccee[end]">
 	  <td>&nbsp;</td>
-	  <td colspan=5><b>Description</b><br>
+	  <td colspan=5><b>Log:</b><br>
 			  <pre>[commits.desc]</pre></td>
 	</tr>
       [end]

@@ -60,8 +60,11 @@ import debug
 
 #########################################################################
 
-checkout_magic_path = '~checkout~'
-docroot_magic_path = '~docroot~'
+checkout_magic_path = '*checkout*'
+# According to RFC 1738 the '~' character is unsafe in URLs.
+# But for compatibility with URLs bookmarked with older releases of ViewCVS:
+oldstyle_checkout_magic_path = '~checkout~'
+docroot_magic_path = '*docroot*'
 viewcvs_mime_type = 'text/vnd.viewcvs-markup'
 
 # put here the variables we need in order to hold our state - they will be
@@ -122,7 +125,7 @@ class Request:
     self.has_docroot_magic = 0
     # does it have a magic prefix?
     if parts:
-      if parts[0] == checkout_magic_path:
+      if parts[0] in (checkout_magic_path, oldstyle_checkout_magic_path):
         self.has_checkout_magic = 1
         del parts[0]
       elif parts[0] == docroot_magic_path:
@@ -1135,6 +1138,9 @@ def view_directory(request):
     'tarball_href' : None,
     'address' : cfg.general.address,
     'vsn' : __version__,
+    # fileinfo will be len==0 if we only have dirs and !show_subdir_lastmod
+    # in that case, we don't need the extra columns
+    'rev_in_front' : len(fileinfo) and cfg.options.flip_links_in_dirview,
     }
 
   # add in the CVS roots for the selection
@@ -1156,15 +1162,18 @@ def view_directory(request):
     data['headers'].append(_item(title=title, which=which, href=href,
                                  colspan=colspan))
 
+  if cfg.options.flip_links_in_dirview and len(fileinfo):
+    add_header('Rev.', 'rev')
   if cfg.options.use_cvsgraph:
     add_header('File', 'file', colspan=2)
   else:
     add_header('File', 'file')
 
+  if not cfg.options.flip_links_in_dirview and len(fileinfo):
+    add_header('Rev.', 'rev')
   # fileinfo will be len==0 if we only have dirs and !show_subdir_lastmod
   # in that case, we don't need the extra columns
   if len(fileinfo):
-    add_header('Rev.', 'rev')
     add_header('Age', 'date')
     if cfg.options.show_author:
       add_header('Author', 'author')
@@ -1172,6 +1181,8 @@ def view_directory(request):
       add_header('Last log entry', 'log')
 
   num_cols = len(data['headers']) + cfg.options.use_cvsgraph
+  # remaining columns to span:
+  span = num_cols - 1 - cfg.options.flip_links_in_dirview
 
 
   def file_sort_cmp(data1, data2, sortby=sortby, fileinfo=fileinfo):
@@ -1253,7 +1264,7 @@ def view_directory(request):
         num_displayed = num_displayed + 1
       row.anchor = file
       row.name = file + slash
-      row.span = num_cols - 1
+      row.span = span
       row.type = 'unreadable'
 
       rows.append(row)
@@ -1284,7 +1295,7 @@ def view_directory(request):
       info = fileinfo.get(file)
       if info == _FILE_HAD_ERROR:
         row.cvs = 'error'
-        row.span = num_cols - 1
+        row.span = span
 
         unreadable = 1
       elif info:
@@ -1305,7 +1316,7 @@ def view_directory(request):
             row.log = format_log(info[2])
       else:
         row.cvs = 'none'
-        row.cols = [ '' ] * (num_cols - 1)
+        row.cols = [ '' ] * (span)
 
       rows.append(row)
 
@@ -1321,7 +1332,7 @@ def view_directory(request):
       info = fileinfo.get(file)
       if info == _FILE_HAD_ERROR:
         row.cvs = 'error'
-        row.span = num_cols - 1
+        row.span = span
         rows.append(row)
 
         num_displayed = num_displayed + 1
