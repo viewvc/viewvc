@@ -309,9 +309,9 @@ enabled = 0
 # alternative to using the 'root=' query key.  If no path components
 # exists in the script url after the script location, or if the first
 # such path component does not identify the name of configured root
-# (see the 'cvs_roots', 'svn_roots', and 'svn_parent_path'
-# configuration items), the path will be expected to exist inside the
-# configured default root (the 'default_root' configuration item).
+# (see the 'cvs_roots', 'svn_roots', and 'root_parents' configuration
+# items), the path will be expected to exist inside the configured
+# default root (the 'default_root' configuration item).
 #   1      Treat first path component as root name
 #   0      No special treatment of first path component (use root=)
 root_as_url_component = 0
