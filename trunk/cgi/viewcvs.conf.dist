@@ -203,13 +203,6 @@ background = #ffffff
 # color of alternate background (diffs, file view, annotations, etc)
 alt_background = #eeeeee
 
-# table header colors (normal and the sorted-by column)
-column_header_normal = #cccccc
-column_header_sorted = #88ff88
-
-# Uncomment the following line for colored borders in tables
-#table_border = #999999
-
 #---------------------------------------------------------------------------
 [options]
 ### DOC
@@ -297,11 +290,6 @@ use_java_script = 1
 # open Download-Links in another window
 open_extern_window = 1
 
-# The size of this extern window; this size option needs use_java_script
-# to be defined
-extern_window_width = 600
-extern_window_height = 440
-
 # If you have files which automatically refers to other files
 # (such as HTML) then this allows you to browse the checked
 # out files as if outside CVS.
@@ -341,8 +329,6 @@ py2html_path = .
 # the length to which the most recent log entry should be truncated when
 # shown in the directory view
 short_log_len = 80
-
-table_padding = 2
 
 diff_font_face = Helvetica,Arial
 diff_font_size = -1
