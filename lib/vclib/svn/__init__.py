@@ -168,9 +168,10 @@ class SubversionRepository(vclib.Repository):
 
   def itemtype(self, path_parts):
     basepath = self._getpath(path_parts)
-    if fs.is_dir(self.fsroot, basepath, self.pool):
+    kind = fs.check_path(self.fsroot, basepath, self.pool)
+    if kind == util.svn_node_dir:
       return vclib.DIR
-    if fs.is_file(self.fsroot, basepath, self.pool):
+    if kind == util.svn_node_file:
       return vclib.FILE
     raise vclib.ItemNotFound(path_parts)
 
