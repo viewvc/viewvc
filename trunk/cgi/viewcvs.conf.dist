@@ -136,6 +136,17 @@ forbidden =
 #
 
 #---------------------------------------------------------------------------
+[templates]
+
+#
+# The templates are specified relative to the configuration file. Absolute
+# paths may be used, if you want to keep these elsewhere.
+#
+
+directory = templates/directory.ezt
+log = templates/log.ezt
+
+#---------------------------------------------------------------------------
 [cvsdb]
 
 #host = localhost

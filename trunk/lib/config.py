@@ -41,7 +41,7 @@ import fnmatch
 #########################################################################
 
 class Config:
-  _sections = ('general', 'images', 'options', 'colors', 'cvsdb')
+  _sections = ('general', 'images', 'options', 'colors', 'cvsdb', 'templates')
   _force_multi_value = ('cvs_roots', 'forbidden', 'even_odd',
                         'disable_enscript_lang')
 
@@ -121,6 +121,9 @@ class Config:
     self.general.address = '<a href="mailto:gstein@lyra.org">gstein@lyra.org</a>'
     self.general.main_title = 'CVS Repository'
     self.general.forbidden = ()
+
+    self.templates.directory = 'templates/directory.ezt'
+    self.templates.log = 'templates/log.ezt'
 
     self.cvsdb.enabled = 0
     self.cvsdb.host = ''
