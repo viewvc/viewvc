@@ -718,11 +718,11 @@ def RLogDataToCommitList(repository, rlog_data):
 
 def GetCommitListFromRCSFile(repository, filename):
     try:
-        rlog_data = rlog.GetRLogData(cfg, filename)
+        rlog_data = rlog.GetRLogData(repository, filename)
     except rlog.error, e:
         raise error, e
     
-    commit_list = RLogDataToCommitList(repository, rlog_data)
+    commit_list = RLogDataToCommitList(repository.rootpath, rlog_data)
     return commit_list
 
 def GetUnrecordedCommitList(repository, filename):

@@ -880,7 +880,7 @@ def _log_path(entry, dirpath, getdirs):
     return os.path.join(dirpath, path, name + ',v')
   return None
 
-def fetch_log(rcs_paths, full_name, which_rev=None):
+def fetch_log(repos, full_name, which_rev=None):
   if which_rev:
     args = ('-r' + which_rev, full_name)
   else:

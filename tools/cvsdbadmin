@@ -43,6 +43,7 @@ else:
 import os
 import string
 import cvsdb
+import vclib.bincvs
 
 
 def UpdateFile(db, repository, path):
@@ -81,8 +82,9 @@ def RecurseUpdate(db, repository, directory):
 def CommandUpdate():
     ## connect to the database we are updating
     db = cvsdb.ConnectDatabase()
-    repository = os.path.normcase(sys.argv[2])
-    RecurseUpdate(db, repository, repository)
+    repository = vclib.bincvs.BinCVSRepository \
+      (None, os.path.normcase(sys.argv[2]), cvsdb.cfg.general)
+    RecurseUpdate(db, repository, repository.rootpath)
 
 
 def RebuildFile(db, repository, path):
@@ -121,8 +123,9 @@ def RecurseRebuild(db, repository, directory):
 def CommandRebuild():
     ## connect to the database we are updating
     db = cvsdb.ConnectDatabase()
-    repository = os.path.normcase(sys.argv[2])
-    RecurseRebuild(db, repository, repository)
+    repository = vclib.bincvs.BinCVSRepository \
+      (None, os.path.normcase(sys.argv[2]), cvsdb.cfg.general)
+    RecurseRebuild(db, repository, repository.rootpath)
 
 
 def usage():
