@@ -602,7 +602,7 @@ def link_includes(text, root, rcs_path):
                 os.path.join(rel_path, incfile), incfile)
   return text
 
-def make_html(root, rcs_path, opt_rev = None):
+def make_html(root, rcs_path, opt_rev = None, sticky = None):
   filename = root + path_sep + rcs_path
   parser = CVSParser()
   revision = parser.parse_cvs_file(filename, opt_rev)
@@ -685,9 +685,11 @@ def make_html(root, rcs_path, opt_rev = None):
 
       if parser.prev_revision.get(revision):
         fname = file_tail[:-2]	# strip the ",v"
-        ### need the sticky options! need cvsroot if not-default
-        output = output + ' <a href="%s.diff?r1=%s&amp;r2=%s"' % \
-                 (fname, parser.prev_revision[revision], revision)
+	url = '%s.diff?r1=%s&amp;r2=%s' % \
+	      (fname, parser.prev_revision[revision], revision)
+	if sticky:
+	  url = url + '&' + sticky
+	output = output + ' <a href="%s"' % (url, )
         if 0: # use_layers
           output = output + " onmouseover='return log(event,\"%s\",\"%s\");'" % (
                   parser.prev_revision[revision], revision)

@@ -1905,7 +1905,8 @@ def view_annotate(request):
   print '<hr noshade>'
 
   import blame
-  blame.make_html(request.cvsroot, request.where + ',v', rev)
+  blame.make_html(request.cvsroot, request.where + ',v', rev,
+  		  sticky_query(request.query_dict))
 
   html_footer()
 
