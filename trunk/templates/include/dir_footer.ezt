@@ -1,13 +1,8 @@
 [if-any no_match]
   <p><b>NOTE:</b> There are [num_files] files, but none match the
-  current selection criteria.
-[end]
-
-[if-any unreadable]
-  <hr size=1 noshade>
-  <b>NOTE:</b> One or more files were unreadable. The files in the CVS
-  repository should be readable by the web server process. Please
-  report this condition to the administrator of this CVS repository.
+  current selection criteria. Click <a href="[show_attic_href]#dirlist">here</a>
+  to display dead files[if-any view_tag], or <a href="[main_href]#dirlist">here</a>
+  to view files on the default branch[end].
 [end]
 
 [if-any selection_form]

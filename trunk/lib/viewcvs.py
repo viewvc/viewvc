@@ -1358,7 +1358,6 @@ def view_directory(request):
   rows = [ ]
   num_files = 0
   num_displayed = 0
-  unreadable = 0
 
   # set some values to be used inside loop
   where = request.where
@@ -1374,34 +1373,21 @@ def view_directory(request):
                 author=None, log=None, log_file=None, log_rev=None,
                 show_log=None, state=None, size=None, mime_type=None)
 
-    if file.log_error:
-      row.state = 'error'
-      unreadable = 1
-    elif file.rev is None:
-      row.state = 'none'
-    else:
-      row.rev = file.rev
-      row.author = file.author or "&nbsp;"
-      if request.roottype == 'cvs' and file.dead:
-        row.state = 'dead'
-      else:
-        row.state = ''
-      row.time = None
-      if file.date is not None:
-        row.time = html_time(request, file.date)
-      if cfg.options.show_logs and file.log is not None:
-        row.show_log = 'yes'
-        row.log = format_log(file.log)
+    row.rev = file.rev
+    row.author = file.author
+    row.state = (request.roottype == 'cvs' and file.dead) and 'dead' or ''
+    row.time = None
+    if file.date is not None:
+      row.time = html_time(request, file.date)
+    if cfg.options.show_logs and file.log is not None:
+      row.show_log = 'yes'
+      row.log = format_log(file.log)
 
     row.anchor = file.name
     row.name = file.name
-
     row.type = (file.kind == vclib.FILE and 'file') or \
                (file.kind == vclib.DIR and 'dir')
-
-    if file.verboten or not row.type:
-      row.type = 'unreadable'
-      unreadable = 1
+    row.errors = file.log_errors
 
     if (where == '') and (cfg.is_forbidden(file.name)):
       continue
@@ -1420,8 +1406,7 @@ def view_directory(request):
                                  params=dir_params)
 
       if request.roottype == 'cvs' and file.rev is not None:
-        if cfg.options.use_cvsgraph:
-          row.graph_href = '&nbsp;' 
+        row.rev = None
         if cfg.options.show_logs:
           row.log_file = file.newest_file
           row.log_rev = file.rev
@@ -1434,9 +1419,7 @@ def view_directory(request):
       
     elif file.kind == vclib.FILE:
       num_files = num_files + 1
-      if (request.roottype == 'cvs' and 
-          ((file.rev is None and not file.log_error and not file.verboten) or 
-           (file.rev is not None and file.dead and hideattic and view_tag))):
+      if request.roottype == 'cvs' and hideattic and file.dead:
         continue
       num_displayed = num_displayed + 1
 
@@ -1493,7 +1476,6 @@ def view_directory(request):
     'num_files' :  num_files,
     'files_shown' : num_displayed,
     'no_match' : ezt.boolean(num_files and not num_displayed),
-    'unreadable' : ezt.boolean(unreadable),
 
     ### in the future, it might be nice to break this path up into
     ### a list of elements, allowing the template to display it in
@@ -1527,6 +1509,7 @@ def view_directory(request):
       'attic_showing' : ezt.boolean(not hideattic),
       'show_attic_href' : request.get_url(params={'hideattic': 0}),
       'hide_attic_href' : request.get_url(params={'hideattic': 1}),
+      'main_href' : request.get_url(params={'only_with_tag': None}),
       'has_tags' : ezt.boolean(has_tags),
       ### one day, if EZT has "or" capability, we can lose this
       'selection_form' : ezt.boolean(has_tags or cfg.options.use_re_search),

@@ -120,16 +120,13 @@
           <var>rows.cvs</var>
         </dt>
         <dd>
-          Merged with <var>rows.state</var>.  Interesting states for
-          <var>rows.state</var> now include "none" (no information
-          known), "error" (an error occured trying to get
-          information), "dead" (this revision is marked as 'dead').
+          Replaced by <var>rows.errors</var>
         </dd>
       </dl>
       <dl>
         <dt>
           <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
-          <var>have_logs</var>
+          <var>have_logs</var> and <var>unreadable</var>
         </dt>
         <dd>Deemed unnecessary.</dd>
       </dl>
@@ -245,6 +242,13 @@
           <var>rows.size</var>
         </dt>
         <dd>New filesize variable for file directory entries.</dd>
+      </dl>
+      <dl>
+        <dt>
+          <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
+          <var>rows.errors</var>
+        </dt>
+        <dd>List of error messages pertaining to an entry.</dd>
       </dl>
       <dl>
         <dt>
