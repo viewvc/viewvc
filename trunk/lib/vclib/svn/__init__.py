@@ -50,11 +50,11 @@ def get_logs(repos, full_name, files):
   for file in files:
     path = fs_path_join(full_name, file)
     rev = fs.node_created_rev(repos.fsroot, path, repos.pool)
-    date = fs.revision_prop(repos.fs_ptr, rev, 'svn:date', repos.pool)
+    datestr = fs.revision_prop(repos.fs_ptr, rev, 'svn:date', repos.pool)
+    date = util.svn_time_from_nts(datestr, repos.pool) / 1000000
     author = fs.revision_prop(repos.fs_ptr, rev, 'svn:author', repos.pool)
     log = fs.revision_prop(repos.fs_ptr, rev, 'svn:log', repos.pool)
-    ### todo: convert DATE to the real number of seconds since epoch
-    new_entry = LogEntry(rev, 1000000000, author, log)
+    new_entry = LogEntry(rev, date, author, log)
     new_entry.filename = file
     fileinfo[file] = new_entry
   return fileinfo, alltags
