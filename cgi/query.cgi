@@ -55,33 +55,143 @@ import cvsdbapi
 Colors = ("#ccccee", "#ffffff")
 
 
-def HTMLHeader():
-    print "Content-type: text/html"
-    print
-    
+## returns a tuple-list (mod-str, string)
+def listparse_string(str):
+    return_list = []
+
+    cmd = ""
+    temp = ""
+    escaped = 0
+    state = "eat leading whitespace"
+
+    for c in str:
+
+        ## handle escaped charactors
+        if not escaped and c == "\\":
+            escaped = 1
+            continue
+
+        ## strip leading white space
+        if state == "eat leading whitespace":
+            if c in string.whitespace:
+                continue
+            else:
+                state = "get command or data"
+
+        ## parse to '"' or ","
+        if state == "get command or data":
+
+            ## just add escaped charactors
+            if escaped:
+                escaped = 0
+                temp = temp + c
+                continue
+
+            ## the data is in quotes after the command
+            elif c == "\"":
+                cmd = temp
+                temp = ""
+                state = "get quoted data"
+                continue
+
+            ## this tells us there was no quoted data, therefore no
+            ## command; add the command and start over
+            elif c == ",":
+                ## strip ending whitespace on un-quoted data
+                temp = string.rstrip(temp)
+                return_list.append( ("", temp) )
+                temp = ""
+                state = "eat leading whitespace"
+                continue
+
+            ## record the data
+            else:
+                temp = temp + c
+                continue
+                
+        ## parse until ending '"'
+        if state == "get quoted data":
+            
+            ## just add escaped charactors
+            if escaped:
+                escaped = 0
+                temp = temp + c
+                continue
+
+            ## look for ending '"'
+            elif c == "\"":
+                return_list.append( (cmd, temp) )
+                cmd = ""
+                temp = ""
+                state = "eat comma after quotes"
+                continue
+
+            ## record the data
+            else:
+                temp = temp + c
+                continue
+
+
+        ## parse until ","
+        if state == "eat comma after quotes":
+            if c in string.whitespace:
+                continue
+
+            elif c == ",":
+                state = "eat leading whitespace"
+                continue
+
+            else:
+                print "format error"
+                sys.exit(1)
+
+    if cmd or temp:
+        return_list.append( (cmd, temp) )
+
+    return return_list
+
+
+def decode_command(cmd):
+  if cmd == "r":
+    return "regex"
+  elif cmd == "l":
+    return "like"
+  else:
+    return "exact"
+
 
 def FormToCheckinQuery(form):
     query = cvsdbapi.CreateCheckinQuery()
 
     if form.has_key("repository"):
         temp = form["repository"].value
-        query.SetRepository(temp)
+        for cmd, str in listparse_string(temp):
+            cmd = decode_command(cmd)
+            query.SetRepository(str, cmd)
         
     if form.has_key("branch"):
         temp = form["branch"].value
-        query.SetBranch(temp)
+        for cmd, str in listparse_string(temp):
+            cmd = decode_command(cmd)
+            query.SetBranch(str, cmd)
         
     if form.has_key("directory"):
         temp = form["directory"].value
-        query.SetDirectory(temp)
+        for cmd, str in listparse_string(temp):
+            cmd = decode_command(cmd)
+            query.SetDirectory(str, cmd)
 
     if form.has_key("file"):
         temp = form["file"].value
-        query.SetFile(temp, "regex")
+        for cmd, str in listparse_string(temp):
+            cmd = decode_command(cmd)
+            query.SetFile(str, cmd)
 
     if form.has_key("who"):
         temp = form["who"].value
-        query.SetAuthor(temp)
+        for cmd, str in listparse_string(temp):
+            cmd = decode_command(cmd)
+            query.SetAuthor(str, cmd)
 
     if form.has_key("sortby"):
         temp = form["sortby"].value
@@ -187,7 +297,7 @@ class HTMLTemplate:
 
 
 def Main():
-    HTMLHeader()
+    print "Content-type: text/html\n\n"
 
     template_path = os.path.join(HTML_TEMPLATE_DIR, "querytemplate.html")
     template = HTMLTemplate(template_path)
