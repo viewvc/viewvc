@@ -59,7 +59,8 @@ import ConfigParser
 
 class Config:
   _sections = ('general', 'images', 'options', 'colors', 'text', 'cvsdb')
-  _force_multi_value = ('cvs_roots', 'forbidden', 'even_odd')
+  _force_multi_value = ('cvs_roots', 'forbidden', 'even_odd',
+                        'disable_enscript_lang')
 
   def __init__(self):
     for section in self._sections:
@@ -173,7 +174,7 @@ class Config:
     self.options.diff_font_face = 'Helvetica,Arial'
     self.options.diff_font_size = -1
     self.options.input_text_size = 12
-    self.options.allow_elisp_coloring = 0
+    self.options.disable_enscript_lang = ()
     self.options.enscript_path = ''
 
     self.text.long_intro = """\

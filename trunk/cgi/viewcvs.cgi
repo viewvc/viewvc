@@ -497,13 +497,8 @@ def markup_stream_python(fp):
     html = re.sub(_re_rewrite_email, r'<a href="mailto:\1">\1</a>', html)
     sys.stdout.write(html)
 
-def markup_stream_elisp(fp):
-  if not cfg.options.allow_elisp_coloring:
-    markup_stream_default(fp)
-    return
-
+def markup_stream_enscript(lang, fp):
   sys.stdout.flush()
-  lang = "elisp"
   cmd = "%senscript --color -W html -E%s -o - - 2> /dev/null " \
         "| sed -n '/^<PRE>$/,/<\\/PRE>$/p'" % \
         (cfg.options.enscript_path, lang,)
@@ -516,8 +511,69 @@ def markup_stream_elisp(fp):
   enscript.close()
 
 markup_streamers = {
-  '.py' : markup_stream_python,
-  '.el' : markup_stream_elisp,
+#  '.py' : markup_stream_python,
+  }
+
+### this sucks... we have to duplicate the extensions defined by enscript
+enscript_extensions = {
+  '.c' : 'c',
+  '.h' : 'c',
+  '.c++' : 'cpp',
+  '.C' : 'cpp',
+  '.H' : 'cpp',
+  '.cpp' : 'cpp',
+  '.cc' : 'cpp',
+  '.cxx' : 'cpp',
+  '.m' : 'objc',
+  '.scm' : 'scheme',
+  '.scheme' : 'scheme',
+  '.el' : 'elisp',
+  '.ada' : 'ada',
+  '.adb' : 'ada',
+  '.ads' : 'ada',
+  '.s' : 'asm',
+  '.S' : 'asm',
+  '.st' : 'states',
+  '.tcl' : 'tcl',
+  '.v' : 'verilog',
+  '.vh' : 'verilog',
+  '.htm' : 'html',
+  '.html' : 'html',
+  '.shtml' : 'html',
+  '.vhd' : 'vhdl',
+  '.vhdl' : 'vhdl',
+  '.scr' : 'synopsys',
+  '.syn' : 'synopsys',
+  '.synth' : 'synopsys',
+  '.idl' : 'idl',
+  '.hs' : 'haskell',
+  '.lhs' : 'haskell',
+  '.gs' : 'haskell',
+  '.lgs' : 'haskell',
+  '.pm' : 'perl',
+  '.pl' : 'perl',
+  '.eps' : 'postscript',
+  '.EPS' : 'postscript',
+  '.ps' : 'postscript',
+  '.PS' : 'postscript',
+  '.js' : 'javascript',
+  '.java' : 'java',
+  '.pas' : 'pascal',
+  '.pp' : 'pascal',
+  '.p' : 'pascal',
+  '.f' : 'fortran',
+  '.F' : 'fortran',
+  '.awk' : 'awk',
+  '.sh' : 'sh',
+  '.vba' : 'vba',
+
+  ### use enscript or py2html?
+  '.py' : 'python',
+  }
+enscript_filenames = {
+  '.emacs' : 'elisp',
+  'Makefile' : 'makefile',
+  'makefile' : 'makefile',
   }
 
 def markup_stream(request, fp, revision, mime_type):
@@ -552,14 +608,24 @@ def markup_stream(request, fp, revision, mime_type):
       print 'Tag: <b>%s</b><br>' % tag
   print '</td></tr></table>'
 
-  url = download_url(request, file_url, revision, mime_type)
   print '<hr noshade>'
   if mime_type[:6] == 'image/':
+    url = download_url(request, file_url, revision, mime_type)
     print '<img src="%s%s"><br>' % (url, request.amp_query)
   else:
     basename, ext = os.path.splitext(filename)
-    streamer = markup_streamers.get(ext, markup_stream_default)
-    streamer(fp)
+    streamer = markup_streamers.get(ext)
+    if streamer:
+      streamer(fp)
+    else:
+      lang = enscript_extensions.get(ext)
+      if not lang:
+        lang = enscript_filenames.get(basename)
+      if lang and lang not in cfg.options.disable_enscript_lang:
+        markup_stream_enscript(lang, fp)
+      else:
+        markup_stream_default(fp)
+  html_footer()
 
 def get_file_data(full_name):
   """Return a sequence of tuples containing various data about the files.
@@ -1767,6 +1833,13 @@ def view_checkout(request):
           (header, filename, where))
 
   if mime_type == viewcvs_mime_type:
+    # get the "real" MIME type
+    ### can we pass this thru on the URL, or use something other than
+    ### the content-type to control the markup output? IOW, the overloading
+    ### of content-type introduces some (unneeded) complexity
+    mime_type, encoding = mimetypes.guess_type(where)
+    if not mime_type:
+      mime_type = 'text/plain'
     markup_stream(request, fp, revision, mime_type)
   else:
     http_header(mime_type)

@@ -378,8 +378,13 @@ diff_font_size = -1
 # the width of the textinput in the request-diff-form
 input_text_size = 12
 
-# should elisp colorization be allowed? (is "enscript" present and working?)
-allow_elisp_coloring = 0
+#
+# ViewCVS has its own set of mappings from filename extensions and filenames
+# to languages. If the language is not supported by enscript, then it can
+# be listed here to disable the use of enscript.
+#
+disable_enscript_lang =
+# disable_enscript_lang = perl, cpp
 
 #
 # if the enscript program is not on the path, set this value
