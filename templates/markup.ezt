@@ -1,4 +1,4 @@
-[include "include/header.ezt" "view"]
+[include "include/header.ezt" "markup"]
 
 <hr noshade>
 <table width="100%"><tr><td bgcolor="#ffffff">
@@ -42,3 +42,7 @@ File: [nav_file]
 [end]
 </td></tr></table>
 <hr noshade>
+
+[markup]
+
+[include "include/footer.ezt"]
