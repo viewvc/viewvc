@@ -2546,10 +2546,18 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0, uid=0, gid=0,
 
   out.write(block)
 
-def generate_tarball(out, relative, directory, tag, stack=[]):
+def generate_tarball(out, request, tar_top, rep_top, reldir, tag, stack=[]):
+  if (rep_top == '' and 0 < len(reldir) and
+      ((reldir[0] == 'CVSROOT' and cfg.options.hide_cvsroot)
+       or cfg.is_forbidden(reldir[0]))):
+    return
+
+  rep_dir = string.join([request.cvsroot, rep_top] + reldir, '/')
+  tar_dir = string.join([tar_top] + reldir, '/') + '/'
+
   subdirs = [ ]
   rcs_files = [ ]
-  for file, pathname, isdir in get_file_data(directory):
+  for file, pathname, isdir in get_file_data(rep_dir):
     if pathname == _UNREADABLE_MARKER:
       continue
     if isdir:
@@ -2557,13 +2565,13 @@ def generate_tarball(out, relative, directory, tag, stack=[]):
     else:
       rcs_files.append(file)
   if tag and 'Attic' in subdirs:
-    for file, pathname, isdir in get_file_data(directory + '/Attic'):
+    for file, pathname, isdir in get_file_data(rep_dir + '/Attic'):
       if not isdir and pathname != _UNREADABLE_MARKER:
         rcs_files.append('Attic/' + file)
 
-  stack.append(relative + '/')
+  stack.append(tar_dir)
 
-  fileinfo, alltags = get_logs(directory, rcs_files, tag)
+  fileinfo, alltags = get_logs(rep_dir, rcs_files, tag)
 
   files = fileinfo.keys()
   files.sort(lambda a, b: cmp(os.path.basename(a), os.path.basename(b)))
@@ -2581,38 +2589,39 @@ def generate_tarball(out, relative, directory, tag, stack=[]):
       generate_tarball_header(out, dir)
     del stack[0:]
 
-    info = os.stat(directory + '/' + file + ',v')
+    info = os.stat(rep_dir + '/' + file + ',v')
     mode = (info[stat.ST_MODE] & 0555) | 0200
 
     rev_flag = '-p' + rev
-    full_name = directory + '/' + file + ',v'
-    fp = popen.popen(os.path.normpath(os.path.join(cfg.general.rcs_path,'co')), (rev_flag, full_name), 'r', 0)
+    full_name = rep_dir + '/' + file + ',v'
+    fp = popen.popen(os.path.normpath(os.path.join(cfg.general.rcs_path,'co')),
+                     (rev_flag, full_name), 'r', 0)
     contents = fp.read()
     status = fp.close()
 
-    generate_tarball_header(out, relative + '/' + os.path.basename(filename), len(contents), mode, date)
+    generate_tarball_header(out, tar_dir + os.path.basename(filename),
+                            len(contents), mode, date)
     out.write(contents)
     out.write('\0' * (511 - ((len(contents) + 511) % 512)))
 
   subdirs.sort()
   for subdir in subdirs:
     if subdir != 'Attic':
-      generate_tarball(out, relative + '/' + subdir, directory + '/' + subdir, tag, stack)
+      generate_tarball(out, request, tar_top, rep_top,
+		       reldir + [subdir], tag, stack)
 
   if len(stack):
     del stack[-1:]
 
 def download_tarball(request):
   query_dict = request.query_dict
-  full_name = request.full_name
-
-  directory = re.sub(_re_up_path, '', full_name)[0:-1]
-
+  rep_top = re.sub(_re_up_path, '', request.where)[0:-1]
+  tar_top = os.path.basename(re.sub(_re_up_path, '', request.full_name)[0:-1])
   tag = query_dict.get('only_with_tag')
 
   http_header('application/octet-stream')
   fp = popen.pipe_cmds([('gzip', '-c', '-n')])
-  generate_tarball(fp, os.path.basename(directory), directory, tag)
+  generate_tarball(fp, request, tar_top, rep_top, [], tag)
   fp.write('\0' * 1024)
   fp.close()
 
