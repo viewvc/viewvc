@@ -85,7 +85,7 @@ class FetchSink(rcsparse.Sink):
 
 def fetch_log2(full_name, which_rev=None):
   sink = FetchSink(which_rev)
-  rcsparse.parse(open(full_name), sink)
+  rcsparse.parse(open(full_name, 'rb'), sink)
   return sink.head, sink.branch, sink.tags, sink.revs
 
 def fetch_log3(full_name, which_rev=None):
@@ -133,7 +133,7 @@ def time_stream(stream_class, filename, n=10):
   d1 = d2 = d3 = d4 = 0
   t = time.time()
   for i in range(n):
-    ts = stream_class(open(filename))
+    ts = stream_class(open(filename, 'rb'))
     while ts.get() is not None:
       pass
   t = time.time() - t
@@ -165,7 +165,7 @@ def profile_stream(stream_class, filename, n=20):
   p = profile.Profile()
   def many_calls(filename, n):
     for i in xrange(n):
-      ts = stream_class(open(filename))
+      ts = stream_class(open(filename, 'rb'))
       while ts.get() is not None:
         pass
   p.runcall(many_calls, filename, n)

@@ -365,7 +365,7 @@ class CVSRepository(vclib.Repository):
     if not os.path.isfile(path):
       raise "Unknown file: %s " % path
     try:
-      rcsparse.Parser().parse(open(path), InfoSink(target))
+      rcsparse.Parser().parse(open(path, 'rb'), InfoSink(target))
     except rcsparse.RCSStopParser:
       pass
 
@@ -374,7 +374,7 @@ class CVSRepository(vclib.Repository):
     if not os.path.isfile(path):
       raise "Unknown file: %s " % path
     sink = TreeSink(versfile)
-    rcsparse.Parser().parse(open(path), sink)
+    rcsparse.Parser().parse(open(path, 'rb'), sink)
     return sink.tree
 
   def _getvf_cofile(self, target, path_parts):
@@ -382,5 +382,5 @@ class CVSRepository(vclib.Repository):
     if not os.path.isfile(path):
       raise "Unknown file: %s " % path
     sink = COSink(target)
-    rcsparse.Parser().parse(open(path), sink)
+    rcsparse.Parser().parse(open(path, 'rb'), sink)
     return cStringIO.StringIO(string.join(sink.sstext.text, "\n"))
