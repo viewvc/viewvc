@@ -43,7 +43,8 @@ import fnmatch
 class Config:
   _sections = ('general', 'options', 'cvsdb', 'templates')
   _force_multi_value = ('cvs_roots', 'forbidden', 'disable_enscript_lang',
-                        'svn_roots', 'languages', 'kv_files')
+                        'svn_roots', 'languages', 'kv_files',
+                        'root_parents')
 
   def __init__(self):
     for section in self._sections:
@@ -148,7 +149,7 @@ class Config:
 
     self.general.cvs_roots = { }
     self.general.svn_roots = { }
-    self.general.svn_parent_path = None
+    self.general.root_parents = []
     self.general.default_root = ''
     self.general.rcs_path = ''
     if sys.platform == "win32":
