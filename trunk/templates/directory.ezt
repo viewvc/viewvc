@@ -10,8 +10,8 @@
 <table width="100%" border=0 cellspacing=0 cellpadding=0>
   <tr>
     <td><h1>[if-any where][where][else][cfg.general.main_title][end]</h1></td>
-    <td align=right><img src=[q][logo_file][q] alt="(logo)" border=0
-			width=[logo_width] height=[logo_height]></td>
+    <td align=right><img src="/icons/apache_pb.gif" alt="(logo)" border=0
+			width=259 height=32></td>
   </tr>
 </table>
 
