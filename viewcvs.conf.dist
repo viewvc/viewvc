@@ -400,9 +400,6 @@ show_logs = 1
 # Show log when viewing file contents
 show_log_in_markup = 1
 
-# Show list of changed paths in Subversion logs entries
-show_changed_paths = 0
-
 # Cross filesystem copies when traversing Subversion file revision histories
 cross_copies = 0
 

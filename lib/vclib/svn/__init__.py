@@ -98,7 +98,7 @@ def get_history(svnrepos, full_name):
   return history.histories
 
 
-def log_helper(svnrepos, rev, path, show_changed_paths, pool):
+def log_helper(svnrepos, rev, path, pool):
   rev_root = fs.revision_root(svnrepos.fs_ptr, rev, pool)
   other_paths = []
   changed_paths = fs.paths_changed(rev_root, pool)
@@ -125,13 +125,9 @@ def log_helper(svnrepos, rev, path, show_changed_paths, pool):
        (change.change_kind == fs.path_change_replace):
       copyfrom_rev, copyfrom_path = fs.copied_from(rev_root, path, pool)
 
-    # We're done with this path, so remove it from the changed_paths list.
-    del changed_paths[path]
-
-  # Now, make ChangedPathEntry objects for all the other paths (if
-  # show_changed_paths is set).
-  if show_changed_paths:
-    for other_path in changed_paths.keys():
+  # Now, make ChangedPathEntry objects for all the other paths
+  for other_path in changed_paths.keys():
+    if other_path != path:
       other_paths.append(ChangedPathEntry(_trim_path(other_path)))
 
   # Finally, assemble our LogEntry.
@@ -151,14 +147,12 @@ def fetch_log(svnrepos, full_name, which_rev=None):
     'HEAD' : '1',
     }
   logs = {}
-  show_changed_paths = getattr(svnrepos, 'get_changed_paths', 1)
 
   if which_rev is not None:
     if (which_rev < 0) \
        or (which_rev > fs.youngest_rev(svnrepos.fs_ptr, svnrepos.pool)):
       raise vclib.InvalidRevision(which_rev)
-    entry = log_helper(svnrepos, which_rev, full_name,
-                       show_changed_paths, svnrepos.pool)
+    entry = log_helper(svnrepos, which_rev, full_name, svnrepos.pool)
     if entry:
       logs[which_rev] = entry
   else:
@@ -170,7 +164,7 @@ def fetch_log(svnrepos, full_name, which_rev=None):
     for history_rev in history_revs:
       core.svn_pool_clear(subpool)
       entry = log_helper(svnrepos, history_rev, history_set[history_rev],
-                         show_changed_paths, subpool)
+                         subpool)
       if entry:
         logs[history_rev] = entry        
     core.svn_pool_destroy(subpool)
