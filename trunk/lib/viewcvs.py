@@ -268,11 +268,6 @@ def toggle_query(query_dict, which, value=None):
   return ''
 
 def clickable_path(request, path, leaf_is_link, leaf_is_file, drop_leaf):
-  if path == '/':
-    # this should never happen - chooseCVSRoot() is
-    # intended to do this
-    return '[%s]' % cvsrep
-
   s = '<a href="%s/%s#dirlist">[%s]</a>' % \
       (request.script_name, request.qmark_query, request.cvsrep)
   parts = filter(None, string.split(path, '/'))
