@@ -52,11 +52,14 @@ if LIBRARY_DIR:
     sys.path.insert(0, LIBRARY_DIR)
 else:
     sys.path[:0] = ['lib']
-    os.chdir('lib')
+
 import sapi
 import viewcvs
 import apache_icons
 import compat; compat.for_standalone()
+
+if viewcvs.CONF_PATHNAME is None:
+  viewcvs.g_install_dir = ''
 
 class Options:
     port = 7467 # default TCP/IP port used for the server
