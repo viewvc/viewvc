@@ -189,7 +189,7 @@ If this doesn't work, please click on the link above.
                     os.close(1) 
                     assert os.dup(self.wfile.fileno()) == 1
                     sys.stdin = self.rfile
-                    viewcvs.main()
+                    viewcvs.run_cgi()
                 finally:
                     sys.argv = save_argv
                     sys.stdin = save_stdin
@@ -290,6 +290,7 @@ def gui(port):
 
             self.options_frm = Tkinter.Frame(window)
 
+            # cvsgraph toggle:
             self.cvsgraph_ivar = Tkinter.IntVar()
             self.cvsgraph_ivar.set(viewcvs.cfg.options.use_cvsgraph)
             self.cvsgraph_toggle = Tkinter.Checkbutton(self.options_frm,
@@ -297,6 +298,7 @@ def gui(port):
                 command=self.toggle_use_cvsgraph)
             self.cvsgraph_toggle.pack(side='top', anchor='w')
 
+            # enscript toggle:
             self.enscript_ivar = Tkinter.IntVar()
             self.enscript_ivar.set(viewcvs.cfg.options.use_enscript)
             self.enscript_toggle = Tkinter.Checkbutton(self.options_frm,
@@ -304,6 +306,23 @@ def gui(port):
                 command=self.toggle_use_enscript)
             self.enscript_toggle.pack(side='top', anchor='w')
 
+            # show_subdir_lastmod toggle:
+            self.subdirmod_ivar = Tkinter.IntVar()
+            self.subdirmod_ivar.set(viewcvs.cfg.options.show_subdir_lastmod)
+            self.subdirmod_toggle = Tkinter.Checkbutton(self.options_frm,
+                text="show subdir last mod (dir view)", var=self.subdirmod_ivar,
+                command=self.toggle_subdirmod)
+            self.subdirmod_toggle.pack(side='top', anchor='w')
+
+            # flip_links_in_dirview toggle:
+            self.fliplinks_ivar = Tkinter.IntVar()
+            self.fliplinks_ivar.set(viewcvs.cfg.options.flip_links_in_dirview)
+            self.fliplinks_toggle = Tkinter.Checkbutton(self.options_frm,
+                text="flip file/rev columns (dir view)", var=self.fliplinks_ivar,
+                command=self.toggle_fliplinks)
+            self.fliplinks_toggle.pack(side='top', anchor='w')
+
+            # directory view template:
             self.dirtemplate_lbl = Tkinter.Label(self.options_frm,
                 text='Chooose HTML Template for the Directory pages:')
             self.dirtemplate_lbl.pack(side='top', anchor='w')
@@ -318,6 +337,7 @@ def gui(port):
                 var=self.dirtemplate_svar, command=self.set_templates_directory)
             self.templates_dir.pack(side='top', anchor='w')
 
+            # log view template:
             self.logtemplate_lbl = Tkinter.Label(self.options_frm,
                 text='Chooose HTML Template for the Log pages:')
             self.logtemplate_lbl.pack(side='top', anchor='w')
@@ -336,8 +356,9 @@ def gui(port):
                 var=self.logtemplate_svar, command=self.set_templates_log)
             self.templates_log_table.pack(side='top', anchor='w')
 
+            # query view template:
             self.querytemplate_lbl = Tkinter.Label(self.options_frm,
-                text='Chooose HTML Template for the commit database query:')
+                text='Template for the database query page:')
             self.querytemplate_lbl.pack(side='top', anchor='w')
             self.querytemplate_svar = Tkinter.StringVar()
             self.querytemplate_svar.set(viewcvs.cfg.templates.query)
@@ -350,7 +371,7 @@ def gui(port):
                 var=self.querytemplate_svar, command=self.set_templates_query)
             self.templates_query.pack(side='top', anchor='w')
 
-
+            # pack and set window manager hints:
             self.server_frm.pack(side='top', fill='x')
             self.options_frm.pack(side='top', fill='x')
 
@@ -369,6 +390,12 @@ def gui(port):
 
         def toggle_use_enscript(self, event=None):
             viewcvs.cfg.options.use_enscript = self.enscript_ivar.get()
+
+        def toggle_subdirmod(self, event=None):
+            viewcvs.cfg.options.show_subdir_lastmod = self.subdirmod_ivar.get()
+
+        def toggle_fliplinks(self, event=None):
+            viewcvs.cfg.options.flip_links_in_dirview = self.fliplinks_ivar.get()
 
         def set_templates_log(self, event=None):
             viewcvs.cfg.templates.log = self.logtemplate_svar.get()

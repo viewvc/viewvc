@@ -175,6 +175,7 @@ class Config:
     self.options.open_extern_window = 1
     self.options.checkout_magic = 1
     self.options.show_subdir_lastmod = 0
+    self.options.flip_links_in_dirview = 0
     self.options.show_logs = 1
     self.options.show_log_in_markup = 1
     self.options.py2html_path = '.'

@@ -15,7 +15,7 @@
   </tr>
   <tr>
     <td align=right><h3><b><a target="_blank"
-href="[request.script_name]/~docroot~/help_[if-any where]dir[else]root[end]view.html">Help</a></b></h3></td>
+href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.html">Help</a></b></h3></td>
   </tr>
 </table>
 
@@ -74,10 +74,12 @@ href="[request.script_name]/~docroot~/help_[if-any where]dir[else]root[end]view.
 [for rows]
   <tr bgcolor="[if-index rows even]#ffffff[else]#ccccee[end]">
   [is rows.type "unreadable"]
+    [is rev_in_front "1"]<td width="0%">&nbsp;</td>[end]
     <td><a name="[rows.anchor]">[rows.name]</a></td>
     <td colspan=[rows.span]><i>this entry is unreadable</i></td>
   [else]
     [is rows.type "dir"]
+      [is rev_in_front "1"]<td width="0%">&nbsp;</td>[end]
       <td><a name="[rows.anchor]" href="[rows.href]">
         <img src="/icons/small/dir.gif" alt="(dir)" border=0 width=16 height=16>
         [rows.name]
@@ -95,7 +97,7 @@ href="[request.script_name]/~docroot~/help_[if-any where]dir[else]root[end]view.
           [if-any rows.graph_href]
             <td width="1%">&nbsp;</td>
           [end]
-          <td>&nbsp;</td>
+	  [is cfg.options.flip_links_in_dirview "0"]<td>&nbsp;</td>[end]
           <td>&nbsp;[rows.time]</td>
           [if-any rows.author]
             <td>&nbsp;[rows.author]</td>
@@ -109,26 +111,43 @@ href="[request.script_name]/~docroot~/help_[if-any where]dir[else]root[end]view.
           
     [else]
       [is rows.cvs "error"]
+	[is rev_in_front "1"]<td>&nbsp;</td>[end]
         <td><a name="[rows.anchor]">[rows.name]</a></td>
         <td colspan=[rows.span]><i>CVS information is unreadable</i></td>
       [else]
-        <td><a name="[rows.anchor]" href="[rows.href]">
-          <img src="/icons/small/text.gif" alt="(file)" border=0
-             width=16 height=16>
-          [rows.name]
-          </a>
-          [rows.attic]
-        </td>
+	[is cfg.options.flip_links_in_dirview "1"]
+	  <td><a name="[rows.anchor]" href="[rows.href]"><b>[rows.rev]</b></a>
+	  </td>
+	[end]
+	  <td><a name="[rows.anchor]" 
+	       [is cfg.options.flip_links_in_dirview "0"]
+		 href="[rows.href]">
+	       [else]
+		 href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
+[# to display the revision in a separate window, you could use:
+
+		 href="{rows.rev_href}" target="cvs_checkout"
+		 onClick="window.open('{rows.rev_href}', 'cvs_checkout',
+				      'resizeable=1,scrollbars=1')">
+
+   (substitute brackets for the braces)
+]	       [end]<img src="/icons/small/text.gif" alt="(file)" border=0
+		   width=16 height=16>
+	      [rows.name]
+	      </a>
+	      [rows.attic]
+	  </td>
         [if-any rows.graph_href]
           <td width="1%"><a href="[rows.graph_href]"><img
-            src="[request.script_name]/~docroot~/images/cvsgraph_16x16.png"
+            src="[request.script_name]/*docroot*/images/cvsgraph_16x16.png"
             alt="(graph)" width=16 height=16 border=0>
           </a></td>
         [end]
-        <td>&nbsp;
-          <a href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
-            <b>[rows.rev]</b>
-          </a>
+	[is cfg.options.flip_links_in_dirview "0"]
+	  <td>&nbsp;
+	    <a href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
+	      <b>[rows.rev]</b>
+	    </a>
 [# to display the revision in a separate window, you could use:
 
    <a href="{rows.rev_href}" target="cvs_checkout"
@@ -137,7 +156,8 @@ href="[request.script_name]/~docroot~/help_[if-any where]dir[else]root[end]view.
 
    (substitute brackets for the braces)
 ]
-        </td>
+	  </td>
+	[end]
         <td>&nbsp;[rows.time]</td>
         [if-any rows.author]
           <td>&nbsp;[rows.author]</td>
