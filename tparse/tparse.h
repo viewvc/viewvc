@@ -34,12 +34,14 @@
 #ifndef __PARSE_H
 #define __PARSE_H
 #include <iostream.h>
-#include <strstream.h>
+#include <strstream>
 #include <stdio.h>
 #include <fstream.h>
 #include <string.h>
 #include <stdlib.h>
 #define delstr(a) if (a != NULL) { delete [] a; a=NULL; };
+
+using namespace std;
 
 /* This class represents a exception that occured during the parsing
    of a file */
