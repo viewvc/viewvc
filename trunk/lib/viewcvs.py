@@ -2345,7 +2345,13 @@ def view_diff(request):
     diffobj = vclib.svn.do_diff(request.repos, p1, int(rev1),
                                 p2, int(rev2), args)
     
-    fp = diffobj.get_pipe()
+    try:
+      fp = diffobj.get_pipe()
+    except vclib.svn.core.SubversionException, e:
+      if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
+        raise debug.ViewcvsException('Invalid path(s) or revision(s) passed '
+                                     'to diff', '400 Bad Request')
+      raise e
     
   if human_readable:
     human_readable_diff(request, fp, rev1, rev2, sym1, sym2)
