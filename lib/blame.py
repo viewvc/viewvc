@@ -461,6 +461,7 @@ class BlameSource:
     self.path_parts = path_parts
     self.diff_url = diff_url
     self.include_url = include_url
+    self.revision = revision
     self.lines = lines
     self.num_lines = count
     self.parser = parser
