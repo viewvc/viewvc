@@ -1755,6 +1755,8 @@ def view_log(request):
 
   if cfg.options.use_cvsgraph:
     data['graph_href'] = file_url + '?graph=1' + request.amp_query
+  else:
+    data['graph_href'] = None
 
   if request.default_viewable:
     data['viewable'] = 'yes'
