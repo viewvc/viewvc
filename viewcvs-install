@@ -67,11 +67,11 @@ else:
 FILE_INFO_LIST = [
     ("cgi/viewcvs.cgi", "cgi/viewcvs.cgi", 0755, 1, 0, 0),
     ("cgi/query.cgi", "cgi/query.cgi", 0755, 1, 0, 0),
-    ("cgi/viewcvs.asp", "cgi/viewcvs.asp", 0755, 1, 0, 0),
-    ("cgi/query.asp", "cgi/query.asp", 0755, 1, 0, 0),
-    ("cgi/viewcvs.py", "cgi/viewcvs.py", 0755, 1, 0, 0),
-    ("cgi/query.py", "cgi/query.py", 0755, 1, 0, 0),
-    ("cgi/htaccess.mod_python", "cgi/htaccess.mod_python", 0755, 1, 0, 0),
+    ("windows/viewcvs.asp", "windows/viewcvs.asp", 0755, 1, 0, 0),
+    ("windows/query.asp", "windows/query.asp", 0755, 1, 0, 0),
+    ("windows/viewcvs.py", "windows/viewcvs.py", 0755, 1, 0, 0),
+    ("windows/query.py", "windows/query.py", 0755, 1, 0, 0),
+    ("windows/htaccess.mod_python", "windows/htaccess.mod_python", 0755, 1, 0, 0),
     ("standalone.py", "standalone.py", 0755, 1, 0, 0),
 
     ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 1,
