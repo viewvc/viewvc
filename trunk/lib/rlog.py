@@ -245,7 +245,9 @@ class RLogOutputParser:
     def parse_one_rlog_entry(self):
         ## revision line/first line
         line = self.rlog.readline()
-        if not line:
+	# Since FreeBSD's rlog outputs extra "---...---\n" before
+	# "===...===\n", _rlog_end may be occured here.
+        if not line or line == _rlog_end:
             return None
 
         ## revision
