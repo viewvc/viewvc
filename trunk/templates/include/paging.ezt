@@ -1,0 +1,17 @@
+  [is cfg.options.use_pagesize "0"]
+  [else]
+    [is picklist_len "1"]
+    [else]
+      <hr noshade>
+      <form method=GET action="[href]">
+        <input type=submit value="Go to:">
+        <select name=log_pagestart  onchange="submit()">
+          [for picklist]
+            <option [is picklist.count log_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] - [picklist.end]</option>
+          [end]
+        </select>
+      </form>
+    [end]
+  [end]
+
+

@@ -1,0 +1,22 @@
+[if-any branch]
+  Default branch: [branch]
+  <br>
+  Bookmark a link to:
+  [if-any viewable]
+    <a href="[head_href]"><b>HEAD</b></a>
+    /
+    (<a href="[head_abs_href]" target="cvs_checkout"
+        onClick="window.open('about:blank', 'cvs_checkout',
+        'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]')"
+        ><b>download</b></a>)
+  [else]
+    <a href="[head_href]" target="cvs_checkout"
+        onClick="window.open('about:blank', 'cvs_checkout',
+        'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]')"
+        ><b>HEAD</b></a>
+  [end]
+[else]
+  No default branch
+[end]
+<br>
+
