@@ -33,6 +33,9 @@ Optional:      a web server capable of running CGI programs
                  (http://people.ssh.com/mtr/genscript/)
                CvsGraph for a graphical representation of the CVS revisions
                  (http://www.akhphd.au.dk/~bertho/cvsgraph/)
+               Subversion, Version Control System
+                 (binary installation and Python bindings)
+                 (http://subversion.tigris.org/)
 
   GUI Operation:
 
@@ -352,6 +355,37 @@ a reasonable number of revisions and branches.
    you may want to edit if desired to set color and font characteristics.
    See the cvsgraph.conf documentation.  No edits are required in
    cvsgraph.conf for operation with viewcvs.
+
+
+SUBVERSION INTEGRATION
+----------------------
+
+ViewCVS now supports browsing of Subversion repositories.  To use
+ViewCVS with Subversion, make sure you have both Subversion itself and
+the Subversion Python bindings installed.  See Subversion's
+installation notes for more details on how to build and install these
+items.  
+
+Generally speaking, you'll know when your installation of Subversion's
+bindings has been successful if you can import the 'svn.repos' module
+from within your Python interpreter:
+
+   % python
+   Python 2.2.2 (#1, Oct 29 2002, 02:47:30) 
+   [GCC 2.96 20000731 (Red Hat Linux 7.2 2.96-108.7.2)] on linux2
+   Type "help", "copyright", "credits" or "license" for more information.
+   >>> from svn.repos
+   >>> 
+
+Configuration of the Subversion repositories happens in much the same
+way as with CVS repositories, only with the 'svn_roots' configuration
+variable instead of the 'cvs_roots' one.  One difference is that if
+you have multiple Subversion repositories that live in a common
+directory, you can use the 'svn_parent_path' configuration directive
+to specify that directory.  This allows you to create new Subversion
+repositories at a later time, and ViewCVS will automagically be able
+to view them without your having to remember to update the ViewCVS
+configuration.
 
 
 IF YOU HAVE PROBLEMS ...
