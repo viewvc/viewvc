@@ -7,14 +7,18 @@
 [include "include/header.ezt" "diff"]
 
 <h3 align=center>Diff for /[where] between version [rev1] and [rev2]</h3>
+
+[if-any raw_diff]
+  <pre class="vc_raw_diff">[raw_diff]</pre>
+[else]
 <table border=0 cellspacing=0 cellpadding=0 width="100%">
   <tr class="vc_diff_header">
     <th width="50%" valign=top>
-      version [rev1][date1]
+      version [rev1], [date1]
       [if-any tag1]<br>Tag: [tag1][end]
     </th>
     <th width="50%" valign=top>
-      version [rev2][date2]
+      version [rev2], [date2]
       [if-any tag2]<br>Tag: [tag2][end]
     </th>
   </tr>
@@ -110,12 +114,31 @@
     [end]
   [end]
 </table>
+[end]
 
 <br><hr noshade width="100%">
 
 <table border=0 cellpadding=10>
   <tr>
-    <td> 
+    <td>
+      <form method=get action="[diff_format_action]">
+        [diff_format_hidden_values]
+        <input type=checkbox name="makepatch" value="1"> 
+        Generate output suitable for use with a patch program<br>
+        <select name="diff_format" onchange="submit()">
+          <option value="h" [is diff_format "h"]selected[end]>Colored Diff</option>
+          <option value="l" [is diff_format "l"]selected[end]>Long Colored Diff</option>
+          <option value="u" [is diff_format "u"]selected[end]>Unidiff</option>
+          <option value="c" [is diff_format "c"]selected[end]>Context Diff</option>
+          <option value="s" [is diff_format "s"]selected[end]>Side by Side</option>
+        </select>
+        <input type=submit value="Show">
+      </form>
+    </td>
+    <td>
+[if-any raw_diff]
+      &nbsp;
+[else]
       <table border=1>
         <tr>
           <td>Legend:<br>
@@ -135,20 +158,7 @@
           </td>
         </tr>
       </table>
-    </td>
-
-    <td>
-      <form method=get action="[diff_format_action]">
-        [diff_format_hidden_values]
-        <select name="diff_format" onchange="submit()">
-          <option value="h" [is diff_format "h"]selected[end]>Colored Diff</option>
-          <option value="l" [is diff_format "l"]selected[end]>Long Colored Diff</option>
-          <option value="u" [is diff_format "u"]selected[end]>Unidiff</option>
-          <option value="c" [is diff_format "c"]selected[end]>Context Diff</option>
-          <option value="s" [is diff_format "s"]selected[end]>Side by Side</option>
-        </select>
-        <input type=submit value="Show">
-      </form>
+[end]
     </td>
   </tr>
 </table>
