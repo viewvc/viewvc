@@ -935,7 +935,7 @@ def prepare_hidden_values(request, var_list, vars_to_omit_list):
     if varname not in vars_to_omit_list:
       value = query_dict.get(varname, '')
       if value != '' and value != default_settings.get(varname):
-        hidden_values.append('<input type=hidden name="%s" value="%s">' %
+        hidden_values.append('<input type="hidden" name="%s" value="%s" />' %
                              (varname, cgi.escape(value)))
   return string.join(hidden_values, '')
 
