@@ -53,20 +53,20 @@
       [is entries.rev rev_selected]
         <b>[[]selected]</b><br>
       [else]
-      <a href="[diff_url]?r1=[entries.rev][is roottype "svn"]&amp;p1=[entries.filename][end][diff_params]"><b>[[]select&nbsp;for&nbsp;diffs]</b></a><br>
+      <a href="[diff_url]?r1=[entries.rev][is roottype "svn"]&amp;rev=[entries.rev]&amp;p1=[entries.filename][end][diff_params]"><b>[[]select&nbsp;for&nbsp;diffs]</b></a><br>
       [end]
         [if-any entries.to_selected]
-          <a href="[diff_url]?r1=[rev_selected]&amp;r2=[entries.rev][is roottype "svn"][if-any entries.prev_path]&amp;p1=[path_selected][end]&amp;p2=[entries.filename][end][diff_params]"><b>Diff&nbsp;to&nbsp;selected&nbsp;[rev_selected]</b></a><br>
+          <a href="[diff_url]?r1=[rev_selected]&amp;r2=[entries.rev][is roottype "svn"]&amp;rev=[entries.rev][if-any entries.prev_path]&amp;p1=[path_selected][end]&amp;p2=[entries.filename][end][diff_params]"><b>Diff&nbsp;to&nbsp;selected&nbsp;[rev_selected]</b></a><br>
           [if-any human_readable]
           [else]
-            <a href="[diff_url]?r1=[rev_selected]&amp;r2=[entries.rev][is roottype "svn"][if-any entries.prev_path]&amp;p1=[path_selected][end]&amp;p2=[entries.filename][end]&amp;diff_format=h[diff_params]"><b>colored</b></a><br>
+            <a href="[diff_url]?r1=[rev_selected]&amp;r2=[entries.rev][is roottype "svn"]&amp;rev=[entries.rev][if-any entries.prev_path]&amp;p1=[path_selected][end]&amp;p2=[entries.filename][end]&amp;diff_format=h[diff_params]"><b>colored</b></a><br>
           [end]
         [end]
         [if-any entries.prev]
-          <a href="[diff_url]?r1=[entries.prev]&amp;r2=[entries.rev][is roottype "svn"][if-any entries.prev_path]&amp;p1=[entries.prev_path][end]&amp;p2=[entries.filename][end][diff_params]"><b>Diff&nbsp;to&nbsp;previous&nbsp;[entries.prev]</b></a><br>
+          <a href="[diff_url]?r1=[entries.prev]&amp;r2=[entries.rev][is roottype "svn"]&amp;rev=[entries.rev][if-any entries.prev_path]&amp;p1=[entries.prev_path][end]&amp;p2=[entries.filename][end][diff_params]"><b>Diff&nbsp;to&nbsp;previous&nbsp;[entries.prev]</b></a><br>
           [if-any human_readable]
           [else]
-            <a href="[diff_url]?r1=[entries.prev]&amp;r2=[entries.rev][is roottype "svn"][if-any entries.prev_path]&amp;p1=[entries.prev_path][end]&amp;p2=[entries.filename][end]&amp;diff_format=h[diff_params]"><b>colored</b></a><br>
+            <a href="[diff_url]?r1=[entries.prev]&amp;r2=[entries.rev][is roottype "svn"]&amp;rev=[entries.rev][if-any entries.prev_path]&amp;p1=[entries.prev_path][end]&amp;p2=[entries.filename][end]&amp;diff_format=h[diff_params]"><b>colored</b></a><br>
           [end]
         [end]
       [end]  

@@ -316,7 +316,11 @@ class Request:
       if self.pathtype == vclib.DIR:
         self.view_func = view_directory
       elif self.pathtype == vclib.FILE:
-        if self.query_dict.has_key('rev'):
+        if self.query_dict.has_key('r1') and self.query_dict.has_key('r2'):
+          self.view_func = view_diff
+        elif self.query_dict.has_key('r1') and self.query_dict.has_key('rev'):
+          self.view_func = view_log
+        elif self.query_dict.has_key('rev'):
           if self.query_dict.get('content-type', None) in (viewcvs_mime_type,
                                                            alt_mime_type):
             self.view_func = view_markup
@@ -324,8 +328,6 @@ class Request:
             self.view_func = view_checkout
         elif self.query_dict.has_key('annotate'):
           self.view_func = view_annotate
-        elif self.query_dict.has_key('r1') and self.query_dict.has_key('r2'):
-          self.view_func = view_diff
         elif self.query_dict.has_key('tarball'):
           self.view_func = download_tarball
         elif self.query_dict.has_key('graph'):
@@ -436,6 +438,12 @@ class Request:
     # there's an annotate parameter
     if view_func is view_annotate and params.has_key('annotate'):
       view_func = None
+
+    # For diffs on Subversion repositories, set rev to the value of r2
+    # otherwise, we get 404's on movied files
+    if view_func is view_diff and self.roottype == 'svn' \
+       and not params.has_key('rev'):
+      params['rev'] = params.get('r2')
 
     # no need to explicitly specify diff view when
     # there's r1 and r2 parameters
