@@ -25,3 +25,5 @@ KNOWN BUGS
 
 *) no scroll bar in Netscape browser when you click "as text" on an
    HTML document.
+
+*) time.timezone seems to not be available on some 1.5.2 installs
