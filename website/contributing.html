@@ -56,10 +56,10 @@
 <h2 id="sec-getting-started">Getting Started</h2>
 
 <p>Some basic knowledge about <a
-   href="http://www.python.org">Python</a> and development Tools like
-   <code>diff</code> is required.  Best is you start with a fresh
-   snapshot, which you may obtain from the <a
-   href="http://sourceforge.net/cvs/?group_id=18760">CVS-Repository</a>
+   href="http://www.python.org">Python</a> and development tools like
+   <code>diff</code> is required.  Your best bet is to start with a
+   fresh source code snapshot, which you may obtain from our <a
+   href="http://sourceforge.net/cvs/?group_id=18760">CVS Repository</a>
    at SourceForge.</p>
 
 </div>
@@ -69,12 +69,29 @@
 
 <p>Testing usability and the installation process on different
    platforms is also a valuable contribution.  Please report your
-   results back to us developers.  But always tell us, which version
-   of ViewCVS you used on which platform (and in particular which
-   version of Python you use).</p>
+   results back to us developers.  Bandwidth is getting cheaper daily,
+   so don't be afraid &mdash; in fact, feel encouraged &mdash; to dump
+   as much detail about the problems you are seeing as possible into
+   your bug reports.  Here are some things you definitely should
+   try to include:</p>
 
-<p>If you are using the latest current development version please note
-   the date of your latest download or cvs update when reporting.</p>
+<ul>
+
+  <li>What version of ViewCVS you are using (if you are using a source
+  snapshot, tell us the date of that snapshot).</li>
+
+  <li>What operating system your ViewCVS is running on.</li>
+
+  <li>What version of Python you are using.</li>
+
+  <li>Whether you are running ViewCVS standalone, or as a CGI program
+      under a web server (and if so, what web server).</li>
+
+  <li>The URL of your ViewCVS instantiation, if it is public.
+      Sometimes, letting developers see the problem for themselves can
+      save everyone alot of time.</li>
+
+</ul>
 
 </div>
 <div class="section">
@@ -85,14 +102,10 @@
    code can use anything sane (which generally means <a
    href="http://python.sourceforge.net/peps/pep-0008.html">PEP&nbsp;8</a>).
    Our only real peeve is if someone writes a function call as:
-   <code>some_func&nbsp;(args)</code> &mdash; that space is Huge
-   Badness.</p>
-
-<p>We don't use CVS keyword macros (such as
-   <code>$</code><code>Id$</code>) within the source.  It seems Greg
-   has some <a
-   href="http://mailman.lyra.org/pipermail/viewcvs-dev/2002-June/000730.html">strong
-   opinions</a> about those things (skip to the second half).</p>
+   <code>some_func&nbsp;(args)</code> &mdash; that space between the
+   function name and opening parenthesis is Huge Badness.  Oh, and we
+   do <strong>not</strong> use CVS keyword macros (such as
+   <code>$</code><code>Id$</code>) within the source.</p>
 
 <p>Otherwise&hellip; <em>shrug</em>.</p>
 
@@ -101,10 +114,19 @@
 
 <h2 id="sec-patches">Submitting Patches</h2>
 
+<p>Nothing speaks more loudly when bugs or features are the topic than
+   a patch.  And quite frankly, sometimes if you want something done,
+   you gotta do it yourself.  So, patches are always welcome.  If you
+   aren't sure what exactly a &quot;patch&quot; is, or don't know how
+   to generate one, but you've got code contributions to make, please
+   don't hesitate to ask questions on the mailing lists.  Patch
+   generation and application are pretty easy thing to get the hang of,
+   and drastically simplify code submission and review.</p>
+
 <p>Please use the <a
-   href="http://sourceforge.net/tracker/?func=add&group_id=18760&atid=318760">SourceForge&nbsp;project&nbsp;patch&nbsp;manager</a>
-   to submit your patches.  Unified context diffs relative to the
-   latest development version are preferred.</p>
+   href="http://sourceforge.net/tracker/?func=add&group_id=18760&atid=318760">SourceForge
+   patch manager</a> to submit your patches.  Unified contextual diffs
+   against the latest development snapshot are preferred.</p>
 
 <p>If you have commit access, then you should know what you're doing.
    Just make changes directly.  Subscribing to the <a
@@ -116,49 +138,49 @@
 
 <h2 id="sec-security">Security</h2>
 
-<p>Since ViewCVS is used in the internet, security is a major issue.
+<p>Since ViewCVS is used on the Internet, security is a major concern.
    If you need to pass data from the request into an external program,
    please don't use <code>os.system()</code> or
    <code>os.popen()</code>.  Please use the module
-   <code>lib/popen</code> that comes with ViewCVS instead.</p>
+   <code>lib/popen.py</code> that is included in the ViewCVS
+   distribution instead.</p>
 
 </div>
 <div class="section">
 
 <h2 id="sec-adding-features">Adding Features</h2>
 
-<p>If a new file or module is added, a new line in the installer
-   program <code>viewcvs-install</code> is required.</p>
-
-<p>The library subdirectory contains a module <code>debug</code>,
-   which may useful to make performance tests.  </p>
-
 <p>If you need a new configuration option think carefully, into which
    section it belongs.  Try to keep the content of
    <code>cgi/viewcvs.conf.dist</code> file and the library module
    <code>lib/config.py</code> in sync.</p>
+
+<p>The library subdirectory contains a module <code>debug.py</code>,
+   which you may find useful for performance testing.</p>
+
+<p>If a new file or module is added, a new line in the installer
+   program <code>viewcvs-install</code> is required.</p>
 
 </div>
 <div class="section">
 
 <h2 id="sec-templates">Hacking on Templates</h2>
 
-<p>The library module <code>ezt</code> contains a module doc string
-   which describes the directives used in the HTML templates, which
-   can be found in the <code>templates</code> subdirectory.</p>
+<p>The library module <code>ezt.py</code> contains a module docstring
+   which describes the directives used in the HTML templates used by
+   ViewCVS.  The templates themselves can be found in the
+   <code>templates</code> subdirectory.</p>
 
 </div>
 <div class="section">
 
 <h2 id="sec-releasing">Release Management</h2>
 
-<p>Also there actually is a script <code>tools/make-release</code>,
-   which creates a release directory, all other steps required to get
-   a ViewCVS release out of the door will be currently executed
-   manually by Greg Stein.</p>
-
-<p>Nevertheless in case he ever wants to retire from this job, it is
-   probably a good idea to write the procedure down here:</p>
+<p>There is a script, <code>tools/make-release</code>, which creates a
+   release directory and the various archive files that we distribute.
+   All other steps required to get a ViewCVS release out of the door
+   require manual execution (currently by Greg Stein).  Those steps
+   are as follows:</p>
 
 <ol>
 
