@@ -602,6 +602,8 @@ def markup_stream(request, fp, revision, mime_type):
   if mime_type[:6] == 'image/':
     url = download_url(request, file_url, revision, mime_type)
     print '<img src="%s%s"><br>' % (url, request.amp_query)
+    while fp.read(8192):
+      pass
   else:
     basename, ext = os.path.splitext(filename)
     streamer = markup_streamers.get(ext)
@@ -619,7 +621,7 @@ def markup_stream(request, fp, revision, mime_type):
         markup_stream_default(fp)
   status = fp.close()
   if status:
-    raise error, 'pipe error status: %d' % status
+    raise 'pipe error status: %d' % status
   html_footer()
 
 def get_file_data(full_name):
