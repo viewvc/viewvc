@@ -2,7 +2,7 @@
 # Copyright (C) 2000-2002 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
-# the LICENSE.html file which can be found at the top level of the ViewCVS
+# the LICENSE.html file which can be fousnd at the top level of the ViewCVS
 # distribution or at http://viewcvs.sourceforge.net/license-1.html.
 #
 # Contact information:
@@ -32,6 +32,18 @@ class Sink:
   def set_principal_branch(self, branch_name):
     pass
   def define_tag(self, name, revision):
+    pass
+  def set_access(self, accessors):
+    pass
+  def set_expansion(self, mode):
+    pass
+  def set_locking(self, mode):
+    """Used to signal locking mode.
+
+    Called with mode argument 'strict' if strict locking
+    Not called when no locking used."""
+    pass
+  def set_locker(self, revision, locker):
     pass
   def set_comment(self, comment):
     pass
@@ -109,14 +121,36 @@ class _Parser:
         self.sink.set_comment(comment)
         if semi != ';':
           raise RCSExpected(semi, ';')
-
-      # Ignore all these other fields - We don't care about them. Also chews
-      # up "newphrase".
-      elif token in ("locks", "strict", "expand", "access"):
+      elif token == "expand":
+        semi, expand_mode = self.ts.mget(2)
+        self.sink.set_expansion(expand_mode)
+        if semi != ';':
+          raise RCSExpected(semi, ';')
+      elif token == "locks":
         while 1:
           tag = self.ts.get()
           if tag == ';':
             break
+          (locker, rev) = string.split(tag,':')
+          self.sink.set_locker(rev, locker)
+
+        tag = self.ts.get()
+        if tag == "strict":
+          self.sink.set_locking("strict")
+          self.ts.match(';')
+        else:
+          self.ts.unget(tag)
+      elif token == "access":
+        accessors = []
+        while 1:
+          tag = self.ts.get()
+          if tag == ';':
+            if accessors != []:
+              self.sink.set_access(accessors)
+            break
+          accessors = accessors + [ tag ]
+
+      # Chew up "newphrase"
       else:
         pass
         # warn("Unexpected RCS token: $token\n")
