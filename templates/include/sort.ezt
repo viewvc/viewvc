@@ -1,0 +1,13 @@
+<hr noshade>
+<a name=logsort></a>
+<form method="GET" action="[href]">
+  [hidden_values]
+  Sort log by:
+  <select name="logsort" onchange="submit()">
+    <option value="cvs" [is logsort "cvs"]selected[end]>Not sorted</option>
+    <option value="date" [is logsort "date"]selected[end]>Commit date</option>
+    <option value="rev" [is logsort "rev"]selected[end]>Revision</option>
+  </select>
+  <input type=submit value="  Sort  ">
+</form>
+
