@@ -18,7 +18,9 @@
 #
 # -----------------------------------------------------------------------
 #
+
 import os, sys, string
+import popen2
 
 INTRO_TEXT = """\
 This script creates the database and tables in MySQL used by the ViewCVS
@@ -132,10 +134,12 @@ if __name__ == "__main__":
 
     cmd = "{ mysql --user=%s --password=%s ; } 2>&1" % (user, passwd)
     dscript = string.replace(DATABASE_SCRIPT, "<dbname>", dbase)
-    
-    mysql = os.popen(cmd, "w")
-    mysql.write(dscript)
-    status = mysql.close()
+
+    pipes = popen2.Popen3(cmd)
+    pipes.tochild.write(dscript)
+    pipes.tochild.close()
+    print pipes.fromchild.read()
+    status = pipes.wait()
 
     if status:
         print "[ERROR] the database did not create sucessfully."
