@@ -64,6 +64,8 @@ else:
 # time for our imports now
 import compat
 import config
+import popen
+
 
 #########################################################################
 
@@ -929,18 +931,18 @@ def get_logs(full_name, files, view_tag):
     chunk = files[:chunk_size]
     del files[:chunk_size]
 
-    arglist = string.join(chunk, "' '" + full_name + '/')
+    # prepend the full pathname for each file
+    for i in range(len(chunk)):
+      chunk[i] = full_name + '/' + chunk[i]
+
     if view_tag:
       # NOTE: can't pass tag on command line since a tag may contain "-"
       #       we'll search the output for the appropriate revision
-      rlog = os.popen("%srlog '%s/%s' 2>&1" %
-                      (cfg.general.rcs_path, full_name, arglist),
-                      "r")
+      rlog = popen.popen(cfg.general.rcs_path + 'rlog', chunk, 'r')
     else:
       # fetch the latest revision on the default branch
-      rlog = os.popen("%srlog -r '%s/%s' 2>&1" %
-                      (cfg.general.rcs_path, full_name, arglist),
-                      "r")
+      chunk = ('-r',) + tuple(chunk)
+      rlog = popen.popen(cfg.general.rcs_path + 'rlog', chunk, 'r')
 
     process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags)
 
@@ -952,6 +954,10 @@ def get_logs(full_name, files, view_tag):
     ### the chunk size could merely send us into a needless retry loop.
     ###
     ### more work for later...
+
+    if rlog.close():
+      ### what to do?
+      pass
 
   return fileinfo, alltags.keys()
 
@@ -1279,12 +1285,10 @@ def view_directory(request):
 
 def fetch_log(full_name, which_rev=None):
   if which_rev:
-    rev_flag = '-r' + which_rev
+    args = ('-r' + which_rev, full_name)
   else:
-    rev_flag = ''
-  rlog = os.popen("%srlog %s '%s' 2>&1" %
-                  (cfg.general.rcs_path, rev_flag, full_name),
-                  "r")
+    args = (full_name,)
+  rlog = popen.popen(cfg.general.rcs_path + 'rlog', args, 'r')
 
   header, eof = parse_log_header(rlog)
   filename = header.filename
@@ -1781,9 +1785,7 @@ def view_checkout(request):
   else:
     rev_flag = '-p'
 
-  fp = os.popen("%sco '%s' '%s' 2>&1" %
-                (cfg.general.rcs_path, rev_flag, full_name),
-                'r')
+  fp = popen.popen(cfg.general.rcs_path + 'co', (rev_flag, full_name), 'r')
 
   # header from co:
 
@@ -1926,6 +1928,11 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
       state = 'dump'
       left_col = [ ]
       right_col = [ ]
+    elif line[0] == '\\':
+      # \ No newline at end of file
+      flush_diff_rows(state, left_col, right_col)
+      left_col = [ ]
+      right_col = [ ]
     else:
       match = _re_extract_diff.match(line)
       line = spaced_html_text(match.group(2))
@@ -2049,45 +2056,51 @@ def view_diff(request, cvs_filename):
       rev2 = r2[:idx]
       sym2 = r2[idx+1:]
 
-  ### check rev1, rev2 for well-formed-ness (security reasons)
-
   if revcmp(rev1, rev2) > 0:
     rev1, rev2 = rev2, rev1
     sym1, sym2 = sym2, sym1
 
   human_readable = 0
+  unified = 0
+
+  args = [ ]
+
   format = query_dict['diff_format']
   if format == 'c':
-    diff_type = '-c'
+    args.append('-c')
     diff_name = 'Context diff'
   elif format == 's':
-    diff_type = '--side-by-side --width=164'
+    args.append('--side-by-side')
+    args.append('--width=164')
     diff_name = 'Side by Side'
   elif format == 'H':
-    diff_type = '--unified=15'
+    args.append('--unified=15')
     diff_name = 'Long Human readable'
     human_readable = 1
+    unified = 1
   elif format == 'h':
-    diff_type = '-u'
+    args.append('-u')
     diff_name = 'Human readable'
     human_readable = 1
+    unified = 1
   elif format == 'u':
-    diff_type = '-u'
+    args.append('-u')
     diff_name = 'Unidiff'
+    unified = 1
   else:
     error('Diff format %s not understood' % format, '400 Bad arguments')
 
   if human_readable:
     if cfg.options.hr_funout:
-      diff_type = diff_type + ' -p'
+      args.append('-p')
     if cfg.options.hr_ignore_white:
-      diff_type = diff_type + ' -w'
+      args.append('-w')
     if cfg.options.hr_ignore_keyword_subst:
-      diff_type = diff_type + ' -kk'
+      args.append('-kk')
 
-  fp = os.popen("%srcsdiff %s '-r%s' '-r%s' '%s' 2>&1" %
-                (cfg.general.rcs_path, diff_type, rev1, rev2, cvs_filename),
-                'r')
+  args[len(args):] = ['-r' + rev1, '-r' + rev2, cvs_filename]
+  fp = popen.popen(cfg.general.rcs_path + 'rcsdiff', args, 'r')
+
   if human_readable:
     http_header()
     human_readable_diff(request, fp, rev1, rev2, sym1, sym2)
@@ -2095,7 +2108,7 @@ def view_diff(request, cvs_filename):
 
   http_header('text/plain')
 
-  if diff_type == '-u':
+  if unified:
     f1 = '--- ' + cvsroot
     f2 = '+++ ' + cvsroot
   else:
