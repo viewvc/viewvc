@@ -614,10 +614,10 @@ class BinCVSRepository(vclib.Repository):
 
     match = _re_co_filename.match(line)
     if not match:
-      raise debug.ViewcvsException(
+      raise vclib.Error(
         'First line of co output is not the filename.<br>'
         'Line was: %s<br>'
-        'fname="%s". url="%s"' % (line, filename, where))
+        'fname="%s"' % (line, full_name))
     filename = match.group(1)
 
     line = fp.readline()
