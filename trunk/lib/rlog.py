@@ -88,7 +88,7 @@ class RLogEntry:
 ##         self.pluscount = ''
 ##         self.minuscount = ''
 ##         self.description = ''
-##         self.date = None
+##         self.time = None
 ##         self.type = RLogEntry.CHANGE
 
 
@@ -303,13 +303,18 @@ class RLogOutputParser:
             ## append line to the descripton list
             desc_line_list.append(string.rstrip(line))
 
+        ## compute time using time routines in seconds from epoc GMT
+        gmt_time = int(
+            time.mktime((year, month, day, hour, minute, second, 0, 0 -1) ) -
+            time.timezone)
+
         ## now create and return the RLogEntry
         rlog_entry = RLogEntry()
         rlog_entry.type = cmit_type
         rlog_entry.revision = revision
         rlog_entry.author = author
         rlog_entry.description = string.join(desc_line_list, '\n')
-        rlog_entry.date = (year, month, day, hour, minute, second)
+        rlog_entry.time = gmt_time
         rlog_entry.pluscount = pluscount
         rlog_entry.minuscount = minuscount
 

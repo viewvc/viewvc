@@ -251,8 +251,7 @@ class CheckinDatabase:
 
     def AddCommit(self, commit):
         dbType = commit.GetTypeString()
-        (year, month, day, hour, minute, second) = commit.GetDate()
-        dbCI_When = DBI.Timestamp(year, month, day, hour, minute, second)
+        dbCI_When = DBI.TimestampFromTicks(commit.GetTime())
         dbWhoID = self.GetAuthorID(commit.GetAuthor())
         dbRepositoryID = self.GetRepositoryID(commit.GetRepository())
         dbDirectoryID = self.GetDirectoryID(commit.GetDirectory())
@@ -335,8 +334,7 @@ class CheckinDatabase:
              dbRemovedLines, dbDescID) = row
 
             commit = CreateCommit()
-            commit.SetDate((dbCI_When.year, dbCI_When.month, dbCI_When.day,
-                           dbCI_When.hour, dbCI_When.minute, dbCI_When.second))
+            commit.SetTime(dbCI_When.gmticks())
             commit.SetFile(self.GetFile(dbFileID))
             commit.SetDirectory(self.GetDirectory(dbDirID))
             commit.SetRevision(dbRevision)

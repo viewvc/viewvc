@@ -55,7 +55,7 @@ class Commit:
         self.__pluscount = ''
         self.__minuscount = ''
         self.__description = ''
-        self.__date = None
+        self.__time = None
         self.__type = Commit.CHANGE
 
     def SetRepository(self, repository):
@@ -101,11 +101,11 @@ class Commit:
     def GetRevision(self):
         return self.__revision
 
-    def SetDate(self, date):
-        self.__date = date
+    def SetTime(self, time):
+        self.__time = time
 
-    def GetDate(self):
-        return self.__date
+    def GetTime(self):
+        return self.__time
 
     def SetAuthor(self, author):
         self.__author = author
@@ -172,8 +172,6 @@ def PrintCommit(commit):
           commit.GetRevision(),\
           commit.GetAuthor()
         
-    print '%d/%d/%d %d:%d:%d' % commit.GetDate()
-    
     if commit.GetBranch():
         print commit.GetBranch()
     print commit.GetDescription()
