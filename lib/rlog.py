@@ -120,7 +120,7 @@ def GetRLogData(cfg, path, revision=''):
             new_entry.pluscount = plus[1:]
             new_entry.minuscount = minus[1:]
 
-            if entry.state == 'dead':
+            if entry.dead:
                 new_entry.type = RLogEntry.REMOVE
             else:
                 new_entry.type = RLogEntry.CHANGE

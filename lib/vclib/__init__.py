@@ -66,6 +66,13 @@ class Repository:
   def dirlogs(self, path_parts, entries, options):
     """Augment directory entries with log information
 
+    New properties will be set on all of the DirEntry objects in the entries
+    list. At the very least, a "rev" property will be set to a revision
+    number or None if the entry doesn't have a number. And a "log_error"
+    boolean property will be set indicating whether the entry's log
+    information was retrievable. Other properties that may be set include
+    "date", "author", and "log".
+
     The path is specified as a list of components, relative to the root
     of the repository. e.g. ["subdir1", "subdir2", "filename"]
 
@@ -98,7 +105,21 @@ class DirEntry:
     self.name = name
     self.kind = kind
     self.verboten = verboten
- 
+
+class Revision:
+  """Instances holds information about file revisions"""
+  def __init__(self, number, string, date, author, changed, log, size):
+    self.number = number
+    self.string = string
+    self.date = date
+    self.author = author
+    self.changed = changed
+    self.log = log
+    self.size = size
+
+  def __cmp__(self, other):
+    return cmp(self.number, other.number)
+
 # ======================================================================
 
 class Error(Exception):
