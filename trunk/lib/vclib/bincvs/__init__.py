@@ -293,7 +293,7 @@ def path_ends_in(path, ending):
     return 0
   return path[-le:] == ending and path[-le-1] == os.sep
 
-def get_logs(repos, path_parts, entries, view_tag, get_dirs=1):
+def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
   have_logs = 0
   alltags = {           # all the tags seen in the files of this dir
     'MAIN' : '',
@@ -610,21 +610,28 @@ class BinCVSRepository(vclib.Repository):
 
     return fp, revision
 
-  def listdir(self, path_parts):
+  def listdir(self, path_parts, list_attic=1):
     # Only RCS files (*,v) and subdirs are returned.
 
-    full_name = self._getpath(path_parts)
-    files = os.listdir(full_name)
     data = [ ]
 
-    for file in files:
-      pathname = os.path.join(full_name, file)
-      kind, verboten = _check_path(pathname)
+    full_name = self._getpath(path_parts)
+    for file in os.listdir(full_name):
+      kind, verboten = _check_path(os.path.join(full_name, file))
       if kind == vclib.FILE:
         if file[-2:] == ',v':
-          data.append(vclib.DirEntry(file[:-2], kind, verboten))
+          data.append(CVSDirEntry(file[:-2], kind, verboten, 0))
       else:
-        data.append(vclib.DirEntry(file, kind, verboten))
+        data.append(CVSDirEntry(file, kind, verboten, 0))
+
+    if list_attic:
+      full_name = os.path.join(full_name, 'Attic')
+      if os.path.isdir(full_name):
+        for file in os.listdir(full_name):
+          kind, verboten = _check_path(os.path.join(full_name, file))
+          if kind == vclib.FILE and file[-2:] == ',v':
+            data.append(CVSDirEntry(file[:-2], kind, verboten, 1))
+
     return data
 
   def _getpath(self, path_parts):
@@ -654,3 +661,9 @@ class BinCVSRepository(vclib.Repository):
         newest_time = info[stat.ST_MTIME]
 
     return newest_file
+
+
+class CVSDirEntry(vclib.DirEntry):
+  def __init__(self, name, kind, verboten, in_attic):
+    vclib.DirEntry.__init__(self, name, kind, verboten)
+    self.in_attic = in_attic
