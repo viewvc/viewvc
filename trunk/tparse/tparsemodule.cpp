@@ -198,14 +198,18 @@ class PythonSink : public Sink {
 static PyObject * tparse( PyObject *self, PyObject *args)
 {
 	char *filename;
-	ifstream *input;
+	istream *input;
 	PyObject *file=NULL;
 	PyObject *hsink;
 	
 	if (PyArg_ParseTuple(args, "sO!", &filename,&PyInstance_Type,&hsink))
         	input=new ifstream(filename,ios::nocreate|ios::in);
     	else if (PyArg_ParseTuple(args, "O!O!",&PyFile_Type ,&file,&PyInstance_Type, &hsink))
-    		input=(ifstream *) new stdiobuf(PyFile_AsFile(file));
+    	{
+    		PyErr_Clear();            // Reset the exception PyArg_ParseTuple has raised.
+    		input=new istdiostream(PyFile_AsFile(file));
+ 		    ((istdiostream *)input)->buffered(1);  // We need buffering as because otherwise, it reads the file 4096 bytes at a time, with no readahead.
+    	}
     	else
     		return NULL;
     	Py_INCREF(hsink);

@@ -184,7 +184,7 @@ class tparseParser {
 	int parse_rcs_description();
 	int parse_rcs_deltatext();
 	public:
-	tparseParser(ifstream *myinput,Sink* mysink) {
+	tparseParser(istream *myinput,Sink* mysink) {
 		sink=mysink;
 		tokenstream= new TokenParser(myinput);
 		
