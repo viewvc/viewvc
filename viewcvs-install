@@ -55,14 +55,15 @@ FILE_INFO_LIST = [
     ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 0, 1),
 
     ("lib/PyFontify.py", "lib/PyFontify.py", 0644, 0, 0),
+    ("lib/blame.py", "lib/blame.py", 0644, 0, 0),
     ("lib/commit.py", "lib/commit.py", 0644, 0, 0),
     ("lib/compat.py", "lib/compat.py", 0644, 0, 0),
     ("lib/config.py", "lib/config.py", 0644, 0, 0),
     ("lib/cvsdbapi.py", "lib/cvsdbapi.py", 0644, 1, 0),
     ("lib/database.py", "lib/database.py", 0644, 0, 0),
+    ("lib/popen.py", "lib/popen.py", 0644, 0, 0),
     ("lib/py2html.py", "lib/py2html.py", 0644, 0, 0),
     ("lib/rlog.py", "lib/rlog.py", 0644, 0, 0),
-    ("lib/blame.py", "lib/blame.py", 0644, 0, 0),
     
     ("scripts/loginfo-handler", "loginfo-handler", 0755, 1, 0),
     ("tools/cvsdbadmin", "cvsdbadmin", 0755, 1, 0),
