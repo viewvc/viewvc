@@ -74,7 +74,7 @@ def RecurseUpdate(db, repository, directory, update):
     for entry in repository.listdir(directory, {}):
         path = directory + [entry.name]
 
-        if entry.verboten:
+        if entry.errors:
             continue
 
         if entry.kind is vclib.DIR:
