@@ -1477,7 +1477,7 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
     show_revs = [ ]
     for entry in revs:
       rev = entry.rev
-      if tag.matches_rev(rev) or tag.branches_at()==rev or tag.holds_rev(rev):
+      if tag.matches_rev(rev) or tag.holds_rev(rev):
         show_revs.append(entry)
   else:
     show_revs = revs

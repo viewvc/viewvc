@@ -72,7 +72,7 @@ _re_revision = re.compile(r'^\d+\.\d+(?:\.\d+\.\d+)*$')
 
 # match a branch number with optional 0
 _re_branch = re.compile(r'^(?P<base>(?:\d+\.\d+)(?:\.\d+\.\d+)*)'
-                        r'(?P<zero>\.0)?\.(?P<branch>\d+)$')
+                        r'(?:\.0)?\.(?P<branch>\d+)$')
 
 
 class TagInfo:
@@ -80,21 +80,18 @@ class TagInfo:
     if number == '': # number has special value used to refer to the trunk
       self._rev = number
       self._branch = ''
-      self._zero_branch = 0
       return
 
     match = _re_branch.match(number)
     if match: # number refers to a branch
       self._rev = match.group('base')
       self._branch = self._rev + '.' + match.group('branch')
-      self._zero_branch = match.group('zero') is not None
       return
 
     match = _re_revision.match(number)
     if match: # number refers to a revision
       self._rev = number
       self._branch = ''
-      self._zero_branch = 0
       return
 
     raise vclib.InvalidRevision(number)
@@ -112,8 +109,8 @@ class TagInfo:
     return self._branch and self._rev or None
 
   def matches_rev(self, number):
-    "true if specified revision number has this tag"
-    return number == self._rev and (not self._branch or self._zero_branch)
+    "true if the tag either specifies or branches off the revision"
+    return number == self._rev
 
   def holds_rev(self, number):
     "true if specified revision number is on this branch"
@@ -356,7 +353,7 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
         chunk.append(entry)
 
       # set a value even if we don't retrieve logs
-      entry.rev = None
+      entry.rev = entry.state = None
 
       entries_idx = entries_idx + 1
 
@@ -434,6 +431,7 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
       alltags.update(header.taginfo)
 
       # read all of the log entries until we find the revision we want
+      wanted_entry = None
       while 1:
 
         # fetch one of the log entries
@@ -441,30 +439,41 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
 
         if not entry:
           # parsing error
-          if not eof:
-            skip_file(rlog)
           break
 
         rev = entry.rev
-        if (not view_tag_info or view_tag_info.matches_rev(rev) or
-            view_tag_info.holds_rev(rev)):
 
-          have_logs = 1
-          file.rev = rev
-          file.date = entry.date
-          file.author = entry.author
-          file.state = entry.state
-          file.log = entry.log
-
-          # done with this file now, skip the rest of this file's revisions
-          if not eof:
-            skip_file(rlog)
-          break
+        # A perfect match is a revision on the branch being viewed or
+        # a revision having the tag being viewed or any revision
+        # when nothing is being viewed. When there's a perfect match
+        # we set the wanted_entry value and break out of the loop.
+        # An imperfect match is a revision at the branch point of the
+        # branch being viewed. When there's an imperfect match we
+        # also set the wanted_entry value but keep looping in case
+        # something better comes along.
+        perfect = not view_tag_info or view_tag_info.holds_rev(rev)
+        if perfect or view_tag_info.matches_rev(rev):
+          perfect = perfect or not view_tag_info.is_branch()
+          wanted_entry = entry
+          if perfect:
+            break
 
         # if we hit the true EOF, or just this file's end-of-info, then we are
         # done collecting log entries.
         if eof:
           break
+
+      if wanted_entry:
+        have_logs = 1
+        file.rev = wanted_entry.rev
+        file.date = wanted_entry.date
+        file.author = wanted_entry.author
+        file.state = wanted_entry.state
+        file.log = wanted_entry.log
+
+      # done with this file now, skip the rest of this file's revisions
+      if not eof:
+        skip_file(rlog)
 
     rlog.close()
 
