@@ -1265,8 +1265,8 @@ def view_directory(request):
 
     # we should have data on these. if not, then it is because we requested
     # a specific tag and that tag is not present on the file.
-    info1 = fileinfo.get(file1)
-    info2 = fileinfo.get(file2)
+    info1 = fileinfo.get(file1, _FILE_HAD_ERROR)
+    info2 = fileinfo.get(file2, _FILE_HAD_ERROR)
     if info1 != _FILE_HAD_ERROR and info2 != _FILE_HAD_ERROR:
       # both are files, sort according to sortby
       if sortby == 'rev':
@@ -1288,9 +1288,8 @@ def view_directory(request):
     # at this point only one of file1 or file2 are _FILE_HAD_ERROR.
     if info1 != _FILE_HAD_ERROR:
       return -1
-    if info2 != _FILE_HAD_ERROR:
-      return 1
 
+    return 1
 
   # sort with directories first, and using the "sortby" criteria
   file_data.sort(file_sort_cmp)
