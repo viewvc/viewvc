@@ -417,10 +417,8 @@ import stat
 checkout_magic_path = '~checkout~/'
 viewcvs_mime_type = 'text/vnd.viewcvs-markup'
 
-# put here the variables we need in order
-# to hold our state - they will be added (with
-# their current value) to any link/query string 
-# you construct
+# put here the variables we need in order to hold our state - they will be
+# added (with their current value) to any link/query string you construct
 _sticky_vars = (
   'cvsroot',
   'hideattic',
@@ -523,6 +521,26 @@ class Request:
       self.mime_type = 'text/plain'
     self.default_text_plain = self.mime_type == 'text/plain'
     self.default_viewable = allow_markup and is_viewable(self.mime_type)
+
+
+class LogHeader:
+  "Hold state from the header portion of an 'rlog' output."
+  def __init__(self, filename, head=None, branch=None, taginfo=None):
+    self.filename = filename
+    self.head = head
+    self.branch = branch
+    self.taginfo = taginfo
+
+
+class LogEntry:
+  "Hold state for each revision entry in an 'rlog' output."
+  def __init__(self, rev, date, author, state, changed, log):
+    self.rev = rev
+    self.date = date
+    self.author = author
+    self.state = state
+    self.changed = changed
+    self.log = log
 
 
 #
@@ -989,10 +1007,10 @@ def parse_log_header(fp):
           filename = line[6:idx+6]
           if filename[-2:] == ',v':
             filename = filename[:-2]
-          return filename, None, None, None, _EOF_ERROR
+          return LogHeader(filename), _EOF_ERROR
         # dunno what this is
 
-  return filename, head, branch, taginfo, eof
+  return LogHeader(filename, head, branch, taginfo), eof
 
 _re_date_author = re.compile(r'^date:\s+([^;]+);\s+author:\s+([^;]+);.*')
 _re_log_info = re.compile(r'^date:\s+([^;]+);'
@@ -1015,16 +1033,16 @@ def parse_log_entry(fp):
   rev = None
   line = fp.readline()
   if not line:
-    return None, None, None, None, None, None, _EOF_LOG
+    return None, _EOF_LOG
   if line[:8] == 'revision':
     match = _re_rev.match(line)
     if not match:
-      return None, None, None, None, None, None, _EOF_LOG
+      return None, _EOF_LOG
     rev = match.group(1)
 
     line = fp.readline()
     if not line:
-      return None, None, None, None, None, None, _EOF_LOG
+      return None, _EOF_LOG
     match = _re_log_info.match(line)
 
   eof = None
@@ -1048,12 +1066,14 @@ def parse_log_entry(fp):
 
   if not rev or not match:
     # there was a parsing error
-    return None, None, None, None, None, None, eof
+    return None, eof
 
   date = int(time.mktime(my_strptime(match.group(1)))) - time.timezone
 
-  # revision, date, author, state, lines changed, log, eof
-  return rev, date, match.group(2), match.group(3), match.group(5), log, eof
+  return LogEntry(rev, date,
+                  # author, state, lines changed
+                  match.group(2), match.group(3), match.group(5),
+                  log), eof
 
 def skip_file(fp):
   "Skip the rest of a file's log information."
@@ -1095,7 +1115,11 @@ def get_logs(full_name, files, view_tag):
     branch = None
     branchpoint = None
 
-    filename, head, branch, symrev, eof = parse_log_header(rlog)
+    header, eof = parse_log_header(rlog)
+    filename = header.filename
+    head = header.head
+    branch = header.branch
+    symrev = header.taginfo
 
     # the rlog output is done
     if eof == _EOF_LOG:
@@ -1173,13 +1197,20 @@ def get_logs(full_name, files, view_tag):
 
       # fetch one of the log entries
       # note: we don't use <state> or <changed> here.
-      rev, date, author, state, changed, log, eof = parse_log_entry(rlog)
+      entry, eof = parse_log_entry(rlog)
 
-      if not rev:
+      if not entry:
         # parsing error
         if not eof:
           skip_file(rlog)
         break
+
+      rev = entry.rev
+      date = entry.date
+      author = entry.author
+      state = entry.state
+      changed = entry.changed
+      log = entry.log
 
       idx = string.rfind(rev, '.')
       revbranch = rev[:idx]
@@ -1425,12 +1456,12 @@ def view_directory(request):
       num_files = num_files + 1
       info = fileinfo.get(file)
       if info == _FILE_HAD_ERROR:
-          print '<tr bgcolor="%s"><td><a name="%s">%s</a></td>' % \
-                (table_colors[cur_row % 2], file, file)
-          print '<td colspan=%d><i>CVS information is unreadable</i></td>' % \
-                (num_cols - 1)
-          print '</tr>'
-          cur_row = cur_row + 1
+        print '<tr bgcolor="%s"><td><a name="%s">%s</a></td>' % \
+              (table_colors[cur_row % 2], file, file)
+        print '<td colspan=%d><i>CVS information is unreadable</i></td>' % \
+              (num_cols - 1)
+        print '</tr>'
+        cur_row = cur_row + 1
         num_displayed = num_displayed + 1
         unreadable = 1
         continue
@@ -1520,17 +1551,24 @@ def fetch_log(full_name, which_rev=None):
                   (rcs_path, rev_flag, full_name),
                   "r")
 
-  filename, head, branch, taginfo, eof = parse_log_header(rlog)
+  header, eof = parse_log_header(rlog)
+  filename = header.filename
+  head = header.head
+  branch = header.branch
+  taginfo = header.taginfo
+
   if eof:
     # no log entries or a parsing failure
     return head, branch, taginfo, { }
 
   revs = [ ]
   while 1:
-    entry = parse_log_entry(rlog)
-    if entry[0]:	# valid revision info
-      revs.append(entry[:6])
-    if entry[6]:	# eof
+    entry, eof = parse_log_entry(rlog)
+    if entry:
+      # valid revision info
+      revs.append((entry.rev, entry.date, entry.author, entry.state,
+                   entry.changed, entry.log))
+    if eof:
       break
 
   return head, branch, taginfo, revs
@@ -2279,7 +2317,7 @@ def view_diff(request, cvs_filename):
     diff_type = '-u'
     diff_name = 'Unidiff'
   else:
-    error('Diff format %s not understood' % format, '400 Bad arugments')
+    error('Diff format %s not understood' % format, '400 Bad arguments')
 
   if human_readable:
     if hr_funout:
