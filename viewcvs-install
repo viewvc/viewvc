@@ -71,58 +71,16 @@ The section [text] has been removed from viewcvs.conf.  The functionality
 went into the new files in subdirectory templates.""", 0),
     ("cgi/cvsgraph.conf.dist", "cvsgraph.conf", 0644, 0, 1, 0),
 
-    ("lib/PyFontify.py", "lib/PyFontify.py", 0644, 0, 0, 1),
-    ("lib/blame.py", "lib/blame.py", 0644, 0, 0, 1),
-    ("lib/compat.py", "lib/compat.py", 0644, 0, 0, 1),
-    ("lib/config.py", "lib/config.py", 0644, 0, 0, 1),
-    ("lib/cvsdb.py", "lib/cvsdb.py", 0644, 1, 0, 1),
-    ("lib/dbi.py", "lib/dbi.py", 0644, 0, 0, 1),
-    ("lib/debug.py", "lib/debug.py", 0644, 0, 0, 1),
-    ("lib/popen.py", "lib/popen.py", 0644, 0, 0, 1),
-    ("lib/py2html.py", "lib/py2html.py", 0644, 0, 0, 1),
-    ("lib/query.py", "lib/query.py", 0644, 1, 0, 1),
-    ("lib/rcsparse.py", "lib/rcsparse.py", 0644, 0, 0, 1),
-    ("lib/rlog.py", "lib/rlog.py", 0644, 0, 0, 1),
-    ("lib/viewcvs.py", "lib/viewcvs.py", 0644, 1, 0, 1),
-    ("lib/ezt.py", "lib/ezt.py", 0644, 0, 0, 1),
-    ("lib/apache_icons.py", "lib/apache_icons.py", 0644, 0, 0, 1),
-    ("lib/accept.py", "lib/accept.py", 0644, 0, 0, 1),
-    
-    ("templates/annotate.ezt", "templates/annotate.ezt", 0644, 0, 1, 0),
-    ("templates/diff.ezt", "templates/diff.ezt", 0644, 0, 1, 0),
-    ("templates/directory.ezt", "templates/directory.ezt", 0644, 0, 1, 0),
-    ("templates/dir_alternate.ezt", "templates/dir_alternate.ezt", 0644, 0, 1, 0),
-    ("templates/header.ezt", "templates/header.ezt", 0644, 0, 1, 0),
-    ("templates/include/branch.ezt", "templates/include/branch.ezt", 0644, 0, 1, 0),
-    ("templates/include/branch_form.ezt", "templates/include/branch_form.ezt", 0644, 0, 1, 0),
-    ("templates/include/diff_form.ezt", "templates/include/diff_form.ezt", 0644, 0, 1, 0),
-    ("templates/include/sort.ezt", "templates/include/sort.ezt", 0644, 0, 1, 0),
-    ("templates/include/view_tag.ezt", "templates/include/view_tag.ezt", 0644, 0, 1, 0),
-    ("templates/footer.ezt", "templates/footer.ezt", 0644, 0, 1, 0),
-    ("templates/include/paging.ezt", "templates/include/paging.ezt", 0644, 0, 1, 0),
-    ("templates/graph.ezt", "templates/graph.ezt", 0644, 0, 1, 0),
-    ("templates/log.ezt", "templates/log.ezt", 0644, 0, 1, 0),
-    ("templates/log_table.ezt", "templates/log_table.ezt", 0644, 0, 1, 0),
-    ("templates/markup.ezt", "templates/markup.ezt", 0644, 0, 1, 0),
-    ("templates/query.ezt", "templates/query.ezt", 0644, 0, 1, 0),
-
     ("tools/loginfo-handler", "loginfo-handler", 0755, 1, 0, 0),
     ("tools/cvsdbadmin", "cvsdbadmin", 0755, 1, 0, 0),
     ("tools/make-database", "make-database", 0755, 1, 0, 0),
-
-    ("website/help_rootview.html", "doc/help_rootview.html", 0644, 0, 0, 0),
-    ("website/help_dirview.html", "doc/help_dirview.html", 0644, 0, 0, 0),
-    ("website/help_query.html", "doc/help_query.html", 0644, 0, 0, 0),
-    ("website/help_log.html", "doc/help_log.html", 0644, 0, 0, 0),
-    ("website/help_logtable.html", "doc/help_logtable.html", 0644, 0, 0, 0),
-
-    ("website/images/logo.png", "doc/images/logo.png", 0644, 0, 0, 0),
-    ("website/images/chalk.jpg", "doc/images/chalk.jpg", 0644, 0, 0, 0),
-    ("website/images/down.png", "doc/images/down.png", 0644, 0, 0, 0),
-    ("website/images/up.png", "doc/images/up.png", 0644, 0, 0, 0),
-    ("website/images/cvsgraph_16x16.png", "doc/images/cvsgraph_16x16.png", 0644, 0, 0, 0),
-    ("website/images/cvsgraph_32x32.png", "doc/images/cvsgraph_32x32.png", 0644, 0, 0, 0),
     ]
+
+TREE_LIST = [
+  ("lib",       "lib",       0),
+  ("website",   "doc",       0),
+  ("templates", "templates", 1),
+  ]
 
 
 def Error(text, etype=None, evalue=None):
@@ -248,6 +206,27 @@ def ReplaceFile(src_path, dest_path, mode, set_python_paths, prompt_replace, com
   return
 
 
+def install_tree(src_path, dst_path, prompt_replace):
+  files = os.listdir(src_path)
+  files.sort()
+  for fname in files:
+    # eliminate some items which appear in a development area
+    if fname == 'CVS' or fname[-4:] == '.pyc' or fname[-5:] == '.orig' \
+       or fname[-4:] == '.rej' or fname[0] == '.':
+      continue
+
+    src = os.path.join(src_path, fname)
+    dst = os.path.join(dst_path, fname)
+    if os.path.isdir(src):
+      install_tree(src, dst, prompt_replace)
+    else:
+      print " ", src
+      compile_it = fname[-3:] == '.py'
+      # install the file. use '1' for set_python_paths -- it doesn't hurt
+      # to do a search/replace on these files [at install time]
+      InstallFile(src, dst, 0644, 1, prompt_replace, compile_it)
+
+
 ## MAIN
 if __name__ == "__main__":
     print INFO_TEXT
@@ -265,6 +244,9 @@ if __name__ == "__main__":
     for args in FILE_INFO_LIST:
         print " ", args[0]
         apply(InstallFile, args)
+
+    for args in TREE_LIST:
+      apply(install_tree, args)
 
     print """
 
