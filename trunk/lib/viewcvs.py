@@ -1714,6 +1714,105 @@ def augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
     else:
       entry.to_selected = None
 
+def view_log_svn(request):
+  full_name = request.full_name
+  where = request.where
+  query_dict = request.query_dict
+
+  alltags, logs = vclib.svn.fetch_log(request.repos, where)
+  
+  up_where = re.sub(_re_up_path, '', where)
+  filename = os.path.basename(full_name)
+
+  ### can we use filename rather than where? need to clarify the two vars
+  file_url = urllib.quote(os.path.basename(where))
+
+  ### try: "./" + query + "#" + filename
+  back_url = request.script_name + '/' + urllib.quote(up_where) + \
+             request.qmark_query + '#' + filename
+
+  entries = []
+  prev_rev = None
+  show_revs = logs.keys()
+  show_revs.sort()
+  for rev in show_revs:
+    entry = logs[rev]
+    entry.prev = prev_rev
+    entry.href = download_url(request, file_url, str(rev), None)
+    entry.text_href = download_url(request, file_url, str(rev), 'text/plain')
+    entry.view_href = download_url(request, file_url, str(rev), 'text/plain')
+    entry.tags = [ ]
+    entry.branches = [ ]
+    entry.branch_point = None
+    entry.branch_points = [ ]
+    entry.next_main = None
+    entry.to_selected = None
+    entry.vendor_branch = None
+    entry.ago = html_time(request, entry.date, 1)
+    entry.date_str = make_time_string(entry.date)
+    entry.html_log = htmlify(entry.log)
+    entry.tag_names = [ ]
+    entry.branch_names = [ ]
+    entries.append(entry)
+    prev_rev = rev
+  show_revs.reverse()
+  entries.reverse()
+  
+  data = {
+    'where' : where,
+    'request' : request,
+    'back_url' : back_url,
+    'href' : file_url,
+
+    'query' : request.amp_query,
+    'qquery' : request.qmark_query,
+
+    ### in the future, it might be nice to break this path up into
+    ### a list of elements, allowing the template to display it in
+    ### a variety of schemes.
+    ### maybe use drop_leaf here?
+    'nav_path' : clickable_path(request, up_where, 1, 0, 0),
+
+    'branch' : None,
+    'mime_type' : request.mime_type,
+    'view_tag' : None,
+    'entries' : entries,
+    'rev_selected' : query_dict.get('r1'),
+    'diff_format' : query_dict['diff_format'],
+    'logsort' : query_dict['logsort'],
+
+    ### should toss 'address' and just stick to cfg... in the template
+    'address' : cfg.general.address,
+
+    'cfg' : cfg,
+    'vsn' : __version__,
+    'kv' : request.kv,
+
+    'viewable' : ezt.boolean(request.default_viewable),
+    'is_text'     : ezt.boolean(is_text(request.mime_type)),
+    'human_readable' : ezt.boolean(query_dict['diff_format'] == 'h'
+                                   or query_dict['diff_format'] == 'l'),
+    'log_pagestart' : None,
+    'graph_href' : None,
+    'tags' : [ ],
+    'branch_names' : [ ],
+    }
+
+  data['tr1'] = show_revs[-1]
+  data['tr2'] = show_revs[0]
+
+  ### would be nice to find a way to use [query] or somesuch instead
+  data['hidden_values'] = prepare_hidden_values(request, 
+                                                _sticky_vars, 
+                                                ['only_with_tag', 'logsort'])
+
+  if cfg.options.use_pagesize:
+    data['log_pagestart'] = int(query_dict.get('log_pagestart',0))
+    data['entries'] = paging(data, 'entries', data['log_pagestart'], 'rev')
+
+  http_header()
+  generate_page(request, cfg.templates.log, data)
+  
 def view_log(request):
   full_name = request.full_name
   where = request.where
@@ -2664,7 +2763,10 @@ def main():
 
   # do Subversion-y things here until more concepts mesh with CVS's
   if request.roottype == 'svn':
-    view_checkout(request)
+    if query_dict.has_key('rev') or request.has_checkout_magic:
+      view_checkout(request)
+    else:
+      view_log_svn(request)
     return
   
   if os.path.isfile(full_name + ',v'):
