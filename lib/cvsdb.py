@@ -30,6 +30,7 @@ import sys
 import string
 import time
 import fnmatch
+import re
 
 import config
 import dbi
@@ -751,3 +752,8 @@ def GetUnrecordedCommitList(repository, filename):
 
     return unrecorded_commit_list
 
+_re_likechars = re.compile(r"([_%\\])")
+
+def EscapeLike(literal):
+  """Escape literal string for use in a MySQL LIKE pattern"""
+  return re.sub(_re_likechars, r"\\\1", literal)
