@@ -2170,7 +2170,7 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
       line = spaced_html_text(match.group(2))
 
       # add font stuff
-      line = '<tt>' + fs + '&nbsp;' + line + '</font>' + '</tt>' 
+      line = fs + '&nbsp;' + line + '</font>'
 
       diff_code = match.group(1)
       if diff_code == '+':
