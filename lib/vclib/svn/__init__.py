@@ -59,7 +59,7 @@ def date_from_rev(svnrepos, rev):
 class LogEntry:
   "Hold state for each revision's log entry."
   def __init__(self, rev, date, author, msg, filename, other_paths,
-               action, copy_path, copy_rev):
+               copy_path, copy_rev):
     self.rev = rev
     self.date = date
     self.author = author
@@ -68,7 +68,6 @@ class LogEntry:
     self.log = msg
     self.filename = filename
     self.other_paths = other_paths
-    self.action = action
     self.copy_path = copy_path
     self.copy_rev = copy_rev
 
@@ -118,15 +117,11 @@ def log_helper(svnrepos, rev, path, pool):
   changed_paths = fs.paths_changed(rev_root, pool)
 
   copyfrom_rev = copyfrom_path = None
-  action = None
 
   # Optionally skip revisions in which this path didn't change.
   change = changed_paths.get(path)
   if change:
     
-    # Figure out the type of change that happened on the path.
-    action = _unparse_action(change.change_kind)
-
     # Was this thing the target of a copy?
     if (change.change_kind == fs.path_change_add) or \
        (change.change_kind == fs.path_change_replace):
@@ -143,7 +138,7 @@ def log_helper(svnrepos, rev, path, pool):
   datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, pool)
   date = _datestr_to_date(datestr, pool)
   entry = LogEntry(rev, date, author, msg, _trim_path(path), other_paths,
-                   action, copyfrom_path and _trim_path(copyfrom_path),
+                   copyfrom_path and _trim_path(copyfrom_path),
                    copyfrom_rev)
   if fs.is_file(rev_root, path, pool):
     entry.size = fs.file_length(rev_root, path, pool)
@@ -200,7 +195,7 @@ def get_logs(svnrepos, full_name, files):
     rev = get_last_history_rev(svnrepos, path, subpool)
     datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, subpool)
     date = _datestr_to_date(datestr, subpool)
-    new_entry = LogEntry(rev, date, author, msg, file, [], None, None, None)
+    new_entry = LogEntry(rev, date, author, msg, file, [], None, None)
     if fs.is_file(svnrepos.fsroot, path, subpool):
       new_entry.size = fs.file_length(svnrepos.fsroot, path, subpool)
     fileinfo[file] = new_entry
