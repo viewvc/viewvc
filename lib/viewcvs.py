@@ -1236,7 +1236,6 @@ def view_markup(request):
 
   data = nav_header_data(request, revision)
   data.update({
-    'nav_file' : clickable_path(request, 1, 0),
     'mime_type' : request.mime_type,
     'log' : None,
     'tag' : None,
