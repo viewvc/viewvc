@@ -266,6 +266,7 @@ diff = templates/diff.ezt
 graph = templates/graph.ezt
 annotate = templates/annotate.ezt
 markup = templates/markup.ezt
+revision = templates/revision.ezt
 error = templates/error.ezt
 
 directory = templates/directory.ezt
