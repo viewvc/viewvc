@@ -50,7 +50,10 @@ class Config:
       setattr(self, section, _sub_config())
 
   def load_config(self, fname, vhost=None):
-    this_dir = os.path.dirname(sys.argv[0])
+    if hasattr(sys, 'argv'):
+      this_dir = os.path.dirname(sys.argv[0])
+    else:
+      this_dir = ''
     pathname = os.path.join(this_dir, fname)
     self.base = os.path.dirname(pathname)
 
