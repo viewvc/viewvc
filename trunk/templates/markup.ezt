@@ -19,7 +19,7 @@ File: [nav_file]
 
 [if-any log]
   Revision: <b>[rev]</b>[if-any vendor_branch] <i>(vendor branch)</i>[end],
-  <i>[utc_date] UTC</i> ([ago] ago) by <i>[author]</i>
+  <i>[date_str]</i> ([ago] ago) by <i>[author]</i>
   
   [if-any branches]
     <br>Branch: <b>[branches]</b>

@@ -86,7 +86,7 @@
     <i>(vendor branch)</i>
   [end]
 
-  <br><i>[entries.utc_date] UTC</i> ([entries.ago] ago) by <i>[entries.author]</i>
+  <br><i>[entries.date_str]</i> ([entries.ago] ago) by <i>[entries.author]</i>
 
   [if-any entries.branches]
     <br>Branch:

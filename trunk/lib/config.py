@@ -204,6 +204,7 @@ class Config:
     self.options.cvsgraph_conf = "<VIEWCVS_INSTALL_DIRECTORY>/cvsgraph.conf"
     self.options.use_re_search = 0
     self.options.use_pagesize = 0
+    self.options.use_localtime = 0
 
   def is_forbidden(self, module):
     if not module:

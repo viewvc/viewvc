@@ -338,6 +338,10 @@ show_logs = 1
 # Show CVS log when viewing file contents
 show_log_in_markup = 1
 
+# Display dates as UTC or in local time zone
+use_localtime = 0
+#use_localtime = 1
+
 # == Configuration defaults ==
 # Defaults for configuration variables that shouldn't need
 # to be configured..
