@@ -4,6 +4,8 @@
 # Released to the public domain 08-Dec-2000,
 # by Tim Peters (tim.one@home.com).
 
+# Backported to Python 1.5.2 for ViewCVS by pf@artcom-gmbh.de, 24-Dec-2001
+
 # Provided as-is; use at your own risk; no warranty; no promises; enjoy!
 
 """ndiff [-q] file1 file2
@@ -43,7 +45,7 @@ recovered by piping the output through
 See module comments for details and programmatic interface.
 """
 
-__version__ = 1, 5, 0
+__version__ = 1, 6, 1
 
 # SequenceMatcher tries to compute a "human-friendly diff" between
 # two sequences (chiefly picturing a file as a sequence of lines,
@@ -200,15 +202,15 @@ def fancy_replace(a, alo, ahi, b, blo, bhi):
         for tag, ai1, ai2, bj1, bj2 in cruncher.get_opcodes():
             la, lb = ai2 - ai1, bj2 - bj1
             if tag == 'replace':
-                atags += '^' * la
-                btags += '^' * lb
+                atags = atags + '^' * la
+                btags = btags + '^' * lb
             elif tag == 'delete':
-                atags += '-' * la
+                atags = atags + '-' * la
             elif tag == 'insert':
-                btags += '+' * lb
+                btags = btags + '+' * lb
             elif tag == 'equal':
-                atags += ' ' * la
-                btags += ' ' * lb
+                atags = atags + ' ' * la
+                btags = btags + ' ' * lb
             else:
                 raise ValueError, 'unknown tag ' + `tag`
         printq(aelt, belt, atags, btags)
@@ -245,7 +247,7 @@ def printq(aline, bline, atags, btags):
 def count_leading(line, ch):
     i, n = 0, len(line)
     while i < n and line[i] == ch:
-        i += 1
+        i = i+1
     return i
 
 def fail(msg):
