@@ -422,9 +422,9 @@ def clickable_path(request, path, leaf_is_link, leaf_is_file, drop_leaf):
         slash = ''
       else:
         slash = '/'
-      ### should we be encoding/quoting the URL stuff? (probably...)
       s = s + ' / <a href="%s%s%s%s#dirlist">%s</a>' % \
-          (request.script_name, where, slash, request.qmark_query, parts[i])
+          (request.script_name, urllib.quote(where), slash,
+           request.qmark_query, parts[i])
     else:
       s = s + ' / ' + parts[i]
 
@@ -457,17 +457,17 @@ def format_log(log):
     s = s + '...'
   return s
 
-def download_url(request, url, revision, mime_type):
+def download_url(request, file_url, revision, mime_type):
   if cfg.options.checkout_magic \
      and mime_type != viewcvs_mime_type and mime_type != alt_mime_type:
-    url = '%s/%s/%s/%s' % \
-          (request.script_name, checkout_magic_path,
-           os.path.dirname(request.where), url)
+    file_url = '%s/%s/%s/%s' % \
+               (request.script_name, checkout_magic_path,
+                urllib.quote(os.path.dirname(request.where)), file_url)
 
-  url = url + '?rev=' + revision + request.amp_query
+  file_url = file_url + '?rev=' + revision + request.amp_query
   if mime_type:
-    return url + '&content-type=' + mime_type
-  return url
+    return file_url + '&content-type=' + mime_type
+  return file_url
 
 _time_desc = {
          1 : 'second',
