@@ -112,7 +112,7 @@ logo = '<img src="/icons/apache_pb.gif">'
 # Modules in the repository that should not be displayed, either by default
 # nor by explicit path specification.
 #
-forbidden_modules = ( )
+forbidden_modules = ( 'willy', )
 # forbidden_modules = ( 'example', )	# note the trailing comma!
 # forbidden_modules = ( 'example1', 'example2' )
 
@@ -465,7 +465,8 @@ class Request:
 
     # clean it up. this removes duplicate '/' characters and any that may
     # exist at the front or end of the path.
-    where = string.join(filter(None, string.split(where, '/')), '/')
+    parts = filter(None, string.split(where, '/'))
+    where = string.join(parts, '/')
 
     # does it have the magic checkout prefix?
     if where[:len(checkout_magic_path)] == checkout_magic_path:
@@ -483,6 +484,10 @@ class Request:
     self.where = where
     self.script_name = script_name
     self.url = url
+    if parts:
+      self.module = parts[0]
+    else:
+      self.module = None
 
     self.browser = os.environ.get('HTTP_USER_AGENT', 'unknown')
 
@@ -2369,9 +2374,8 @@ def main():
     redirect(url + '/' + request.qmark_query)
 
   # check the forbidden list
-  idx = string.find(where, '/')
-  if idx != -1 and where[:idx] in forbidden_modules:
-    error('Access to %s is forbidden.' % where, '403 Forbidden')
+  if request.module in forbidden_modules:
+    error('Access to "%s" is forbidden.' % request.module, '403 Forbidden')
 
   if isdir:
     view_directory(request)
