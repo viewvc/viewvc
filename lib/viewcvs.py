@@ -2321,24 +2321,19 @@ def view_diff(request, cvs_filename):
   format = query_dict['diff_format']
   if format == 'c':
     args.append('-c')
-    diff_name = 'Context diff'
   elif format == 's':
     args.append('--side-by-side')
     args.append('--width=164')
-    diff_name = 'Side by Side'
   elif format == 'l':
     args.append('--unified=15')
-    diff_name = 'Long Human readable'
     human_readable = 1
     unified = 1
   elif format == 'h':
     args.append('-u')
-    diff_name = 'Human readable'
     human_readable = 1
     unified = 1
   elif format == 'u':
     args.append('-u')
-    diff_name = 'Unidiff'
     unified = 1
   else:
     error('Diff format %s not understood' % format, '400 Bad arguments')
