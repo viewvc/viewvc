@@ -557,12 +557,12 @@ _legal_params = {
   'content-type'  : _re_validate_mimetype,
 
   # for query
-  'branch'        : _re_validate_revnum,
+  'branch'        : _validate_regex,
   'branch_match'  : _re_validate_alpha,
   'dir'           : None,
-  'file'          : _re_validate_revnum,
+  'file'          : _validate_regex,
   'file_match'    : _re_validate_alpha,
-  'who'           : _re_validate_revnum,
+  'who'           : _validate_regex,
   'who_match'     : _re_validate_alpha,
   'sortby'        : _re_validate_alpha,
   'date'          : _re_validate_alpha,
@@ -2704,6 +2704,8 @@ def view_queryform(request):
   data = common_template_data(request)
 
   url, params = request.get_link(view_func=view_query, params={})
+  # sortby is handled in the form itself.
+  if params.has_key('sortby'): del params['sortby']
   data['query_action'] = urllib.quote(url, _URL_SAFE_CHARS)
   data['query_hidden_values'] = prepare_hidden_values(params)
 
@@ -2878,17 +2880,17 @@ def view_query(request):
   mindate = request.query_dict.get('mindate', '')
   maxdate = request.query_dict.get('maxdate', '')
 
-  match_types = { 'exact': 'exact', 'like': 'like', 'regex': 'regex' }
-  sort_types = { 'date': 'date', 'author': 'author', 'file': 'file' }
-  date_types = { 'hours': 'hours', 'day': 'day', 'week': 'week',
-                 'month': 'month', 'all': 'all', 'explicit': 'explicit' }
+  match_types = { 'exact':1, 'like':1, 'glob':1, 'regex':1, 'notregex':1 }
+  sort_types = { 'date':1, 'author':1, 'file':1 }
+  date_types = { 'hours':1, 'day':1, 'week':1, 'month':1,
+                 'all':1, 'explicit':1 }
 
   # parse various fields, validating or converting them
-  branch_match = match_types.get(branch_match, 'exact')
-  file_match = match_types.get(file_match, 'exact')
-  who_match = match_types.get(who_match, 'exact')
-  sortby = sort_types.get(sortby, 'date')
-  date = date_types.get(date, 'hours')
+  if not match_types.has_key(branch_match): branch_match = 'exact'
+  if not match_types.has_key(file_match): file_match = 'exact'
+  if not match_types.has_key(who_match): who_match = 'exact'
+  if not sort_types.has_key(sortby): sortby = 'date'
+  if not date_types.has_key(date): date = 'hours'
   mindate = parse_date(mindate)
   maxdate = parse_date(maxdate)
 
@@ -2900,7 +2902,7 @@ def view_query(request):
   query.SetRepository(request.rootpath)
   # treat "HEAD" specially ...
   if branch_match == 'exact' and branch == 'HEAD':
-    query.SetBranch('', branch_match)
+    query.SetBranch('')
   elif branch:
     query.SetBranch(branch, branch_match)
   if dir:
@@ -2909,8 +2911,7 @@ def view_query(request):
       query.SetDirectory('%s%%' % path, 'like')
   else:
     if request.path_parts: # if we are in a subdirectory ...
-      path = string.join(request.path_parts, '/')
-      query.SetDirectory('%s%%' % path, 'like')
+      query.SetDirectory('%s%%' % request.where, 'like')
   if file:
     query.SetFile(file, file_match)
   if who:
