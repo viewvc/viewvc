@@ -113,29 +113,29 @@
           </tr>
           <tr>
            <td><input type=radio name=date value=hours
-		  [is date "hours"]selected[end]></td>
+		  [is date "hours"]checked[end]></td>
            <td>In the last
              <input type=text name=hours value=[hours] size=4>hours
            </td>
           </tr>
           <tr>
            <td><input type=radio name=date value=day
-		  [is date "day"]selected[end]></td>
+		  [is date "day"]checked[end]></td>
            <td>In the last day</td>
           </tr>
           <tr>
            <td><input type=radio name=date value=week
-		  [is date "week"]selected[end]></td>
+		  [is date "week"]checked[end]></td>
            <td>In the last week</td>
           </tr>
           <tr>
            <td><input type=radio name=date value=month
-		  [is date "month"]selected[end]></td>
+		  [is date "month"]checked[end]></td>
            <td>In the last month</td>
           </tr>
           <tr>
            <td><input type=radio name=date value=all
-		  [is date "date"]selected[end]></td>
+		  [is date "all"]checked[end]></td>
            <td>Since the beginning of time</td>
           </tr>
          </table>
