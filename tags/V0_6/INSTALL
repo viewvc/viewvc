@@ -1,0 +1,187 @@
+INSTALLING VIEWCVS
+------------------
+
+1) To get viewcvs.cgi to work, make sure that you have Python 1.5
+   installed and a webserver which is capable of executing cgi-scripts
+   (either based on the .cgi extension, or by placing the script
+   within a specific directory).
+
+   You need to have RCS installed. Specifically, "rlog", "rcsdiff",
+   and "co". This script was tested against RedHat's rcs-5.7-10.rpm
+
+   Note, that the viewcvs.cgi script needs to have READ-ONLY, physical
+   access to the CVS repository (or a copy of it).  Therefore, rsh/ssh or
+   pserver access doesn't work yet.
+
+   For the checkin database to work, you will need MySQL >= 3.22, 
+   and the Python DBAPI 2.0 module, MySQLdb.  This was tested with
+   MySQLdb 1.12.
+
+2) Installation is handled by the ./viewcvs-install script.  Run this
+   script and you will be prompted for a installation root path.
+   The default is /usr/local/viewcvs.  The installer sets the install 
+   path in some of the files, and ViewCVS cannot be moved to a 
+   different path after the install.
+
+   Note: while 'root' is usually required to create /usr/local/viewcvs,
+   ViewCVS does not have to be installed as root, nor does it run as root.
+   It is just as valid to place ViewCVS in a home directory, too.
+
+   Note: viewcvs-install will create directories if needed. It will
+   prompt before overwriting files that may have been modified (such
+   as viewcvs.conf), thus making it safe to install over the top of
+   a previous installation. It will always overwrite program files,
+   however.
+
+3) Edit <install-root>viewcvs.conf for your specific configuration. 
+   In particular, examine the following configuration options:
+
+      cvs_roots
+      default_root
+      rcs_path
+      mime_types_file
+
+   There are some other options that are usually nice to change. See
+   viewcvs.conf for more information.
+
+4) The CGI programs are in <install-root>/cgi/.  You can symlink to this
+   directory from somewhere in your published HTTP server path if your 
+   webserver is configured to follow symbolic links.  You can also copy
+   the installed <install-root>/cgi/*.cgi scripts after the install
+   (unlike the other files in ViewCVS, the CGI scripts can be moved).
+
+   NOTE: for security reasons, it is not advisable to install ViewCVS
+   directly into your published HTTP directory tree (due to the MySQL
+   passwords in viewcvs.conf).
+
+5) That's it for repository browsing.  Instructions for getting the
+   SQL checkin database working are below.
+
+
+WARNING: ViewCVS has not been tested on web servers operating on the
+         Win32 platform.
+
+
+
+SQL Checkin Database
+--------------------
+
+This feature is a clone of the Mozilla Project's Bonsai database.  It
+catalogs every commit in the CVS repository into a SQL database.  In fact,
+the databases are 100% compatible.
+
+Various queries can be preformed on the database.  After installing ViewCVS,
+there are some additional steps required to get the database working.
+
+1) You need MySQL >= 3.22, and the Python module MySQLdb >= 1.12 installed.
+   Python 1.5.2 is REQUIRED by MySQLdb, therefore to use this part of
+   ViewCVS you must be useing Python 1.5.2.
+
+2) You need to create a MySQL user who has permission to create databases.
+   Optionally, you can create a second user with read-only access to the
+   database.
+
+3) Run the <install-root>/make-database script.  It will prompt you for
+   your MySQL user, password, and the name of database you want to 
+   create.  The database name defaults to "ViewCVS".  This script creates
+   the database and sets up the empty tables.  If you run this on a 
+   existing ViewCVS database, you will loose all your data!
+
+4) Edit your <install-root>/viewcvs.conf file.  There is a [cvsdb]
+   section.  You will need to set:
+     
+      
+      host =             # MySQL database server host
+      database_name =    # the name of the database you created with
+                         # make-database
+      user =             # the read/write database user
+      passwd =           # password for read/write database user
+      readonly_user =    # the readonly database user -- it's pretty 
+                         # safe to use the read/write user here
+      readonly_passwd =  # password for the readonly user
+
+5) Two programs are provided for updating the checkin database, 
+   cvsdbadmin and loginfo-handler.  They serve two different purposes.
+   The cvsdbadmin program walks through your CVS repository and adds
+   every commit in every file.  This is commonly used for initalizing
+   the database from a repository which has been in use.  The 
+   loginfo-handler script is executed by the CVS server's CVSROOT/loginfo 
+   system upon each commit.  It makes real-time updates to the checkin
+   database as commits are made to the repository.
+
+   To build a database of all the commits in the CVS repository /home/cvs,
+   invoke: "./cvsdbadmin rebuild /home/cvs".  If you want to update
+   the checkin database, invoke: "./cvsdbadmin update /home/cvs".  The
+   update mode checks to see if a commit is already in the database,
+   and only adds it if it is abscent.
+
+   To get real-time updates, you'll want to checkout the CVSROOT module
+   from your CVS repository and edit CVSROOT/loginfo.  Add the line:
+
+       ALL (echo %{sVv}; cat) | <install-root>/loginfo-handler
+
+   If you have other scripts invoked by CVSROOT/loginfo, you will want
+   to make sure to change any running under the "DEFAULT" keyword to
+   "ALL" like the loginfo handler, and probably carefully read the
+   execution rules for CVSROOT/loginfo from the CVS manual.
+
+6) You may want to modify the HTML template files:
+
+      <install-root>/html-templates/queryformtemplate.html
+      <install-root>/html-templates/querytemplate.html
+
+   They're used by the queryform.cgi and query.cgi scripts generate
+   HTML output.  At some point, viewcvs.cgi, query.cgi, and queryform.cgi
+   will use the same mechanism for HTML generation, but not yet.
+
+7) You should be ready to go.  Load up the queryform.cgi script and give 
+   it a try.
+
+
+IF YOU HAVE PROBLEMS ...
+------------------------
+
+If you've trouble to make viewcvs.cgi work:
+
+=== If nothing seems to work:
+
+ o check if you can execute CGI-scripts (Apache needs to have an
+   ScriptAlias /cgi-bin or cgi-script Handler defined). Try to 
+   execute a simple CGI-script that often comes with the distribution
+   of the webserver; locate the logfiles and try to find hints
+   which explain the malfunction
+
+ o view the entries in the webserver's error.log
+ 
+ o make sure there is a trailing slash on the URL. for example:
+ 
+     http://www.example.com/cgi-bin/viewcvs.cgi/
+     
+   (ViewCVS should perform a redirection to ensure this, but a report
+    has indicated that it doesn't always do this... please send more
+    of these bug reports if you run into this)
+
+=== If viewcvs seems to work but doesn't show the expected result
+    (Typical error: you can't see any files)
+
+ o check whether the CGI-script has read-permissions to your
+   CVS-Repository. The CGI-script often runs as the user 'nobody' 
+   or 'httpd' ..
+
+ o does viewcvs find your RCS utililties? (edit rcs_path)
+
+=== If something else happens or you can't get it to work:
+
+ o check the ViewCVS home page:
+
+     http://www.lyra.org/viewcvs/
+
+ o review the ViewCVS mailing list archive to see if somebody else had
+   the same problem, and it was solved:
+
+     http://mailman.lyra.org/pipermail/viewcvs/
+
+ o send mail to the ViewCVS mailing list: viewcvs@lyra.org
+
+   NOTE: make sure you provide an accurate description of the problem
+         and any relevant tracebacks or error logs.

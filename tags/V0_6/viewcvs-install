@@ -1,0 +1,178 @@
+#!/usr/bin/env python
+# -*- Mode: python -*-
+#
+# Copyright (C) 2000 The ViewCVS Group. All Rights Reserved.
+#
+# By using this file, you agree to the terms and conditions set forth in
+# the LICENSE.html file which can be found at the top level of the ViewCVS
+# distribution or at http://www.lyra.org/viewcvs/license-1.html.
+#
+# Contact information:
+#   Greg Stein, PO Box 760, Palo Alto, CA, 94302
+#   gstein@lyra.org, http://www.lyra.org/viewcvs/
+#
+# -----------------------------------------------------------------------
+#
+# install script for viewcvs -- temporary?
+#
+# ### this will eventually be replaced by autoconf plus tools. an
+# ### interactive front-end to ./configure may be provided.
+#
+# -----------------------------------------------------------------------
+#
+
+import os
+import sys
+import string
+import re
+import traceback
+import py_compile
+
+# get access to our library modules
+sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), 'lib'))
+
+import compat
+
+
+## installer text
+INFO_TEXT = """\
+
+This is the ViewCVS installer.  It will allow you to choose the install
+path for ViewCVS.  You will now be asked some installation questions.
+Defaults are given in square brackets.  Just hit [Enter] if a default
+is okay.
+"""
+
+## installer defaults
+ROOT_DIR = "/usr/local/viewcvs-dev"
+
+
+## list of files for installation
+## tuple (source path, destination path, install mode, true/false flag for
+##        search-and-replace, flag for prompt before replace, compile_it)
+##       
+
+FILE_INFO_LIST = [
+    ("cgi/viewcvs.cgi", "cgi/viewcvs.cgi", 0755, 1, 0, 0),
+    ("cgi/queryform.cgi", "cgi/queryform.cgi", 0755, 1, 0, 0),
+    ("cgi/query.cgi", "cgi/query.cgi", 0755, 1, 0, 0),
+
+    ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 0, 1, 0),
+
+    ("lib/PyFontify.py", "lib/PyFontify.py", 0644, 0, 0, 1),
+    ("lib/blame.py", "lib/blame.py", 0644, 0, 0, 1),
+    ("lib/commit.py", "lib/commit.py", 0644, 0, 0, 1),
+    ("lib/compat.py", "lib/compat.py", 0644, 0, 0, 1),
+    ("lib/config.py", "lib/config.py", 0644, 0, 0, 1),
+    ("lib/cvsdbapi.py", "lib/cvsdbapi.py", 0644, 1, 0, 1),
+    ("lib/database.py", "lib/database.py", 0644, 0, 0, 1),
+    ("lib/dbi.py", "lib/dbi.py", 0644, 0, 0, 1),
+    ("lib/popen.py", "lib/popen.py", 0644, 0, 0, 1),
+    ("lib/py2html.py", "lib/py2html.py", 0644, 0, 0, 1),
+    ("lib/rlog.py", "lib/rlog.py", 0644, 1, 0, 1),
+    ("lib/query.py", "lib/query.py", 0644, 1, 0, 1),
+    
+    ("tools/loginfo-handler", "loginfo-handler", 0755, 1, 0, 0),
+    ("tools/cvsdbadmin", "cvsdbadmin", 0755, 1, 0, 0),
+    ("tools/make-database", "make-database", 0755, 1, 0, 0),
+
+    ("html-templates/queryformtemplate.html",
+     "html-templates/queryformtemplate.html", 0644, 0, 1, 0),
+    ("html-templates/querytemplate.html",
+     "html-templates/querytemplate.html", 0644, 0, 1, 0),
+    ]
+
+
+def Error(text, etype=None, evalue=None):
+    print
+    print "[ERROR] %s" % text
+    if etype:
+        print '[ERROR] ',
+        traceback.print_exception(etype, evalue, None, file=sys.stdout)
+    sys.exit(1)
+    
+
+def MkDir(path):
+    try:
+        compat.makedirs(path)
+    except os.error, e:
+        if e[0] == 17:
+            # EEXIST: file exists
+            return
+        if e[0] == 13:
+            # EACCES: permission denied
+            Error("You do not have permission to create directory %s" % path)
+        Error("Unknown error creating directory %s" % path, OSError, e)
+
+
+
+def SetOnePath(contents, var, value):
+    pattern = re.compile('^' + var + r'\s*=\s*.*$', re.MULTILINE)
+    repl = '%s = "%s"' % (var, os.path.join(ROOT_DIR, value))
+    return re.sub(pattern, repl, contents)
+
+def SetPythonPaths(contents):
+    if contents[:2] == '#!':
+        shbang = '#!' + sys.executable
+        contents = re.sub('^#![^\n]*', shbang, contents)
+    contents = SetOnePath(contents, 'LIBRARY_DIR', 'lib')
+    contents = SetOnePath(contents, 'CONF_PATHNAME', 'viewcvs.conf')
+    contents = SetOnePath(contents, 'HTML_TEMPLATE_DIR', 'html-templates')
+    return contents
+
+
+def InstallFile(src_path, dest_path, mode, set_python_paths, prompt_replace,
+                compile_it):
+    dest_path = os.path.join(ROOT_DIR, dest_path)
+    
+    if prompt_replace and os.path.exists(dest_path):
+        temp = raw_input("File %s exists, overwright? [y/N]: " % (dest_path))
+        if not temp or string.lower(temp[0]) != "y":
+            return
+    
+    try:
+        contents = open(src_path, "r").read()
+    except IOError, e:
+        Error(str(e))
+
+    if set_python_paths:
+        contents = SetPythonPaths(contents)
+
+    ## write the file to the destination location
+    path, basename = os.path.split(dest_path)
+    MkDir(path)
+
+    try:
+        open(dest_path, "w").write(contents)
+    except IOError, e:
+        if e[0] == 13:
+            # EACCES: permission denied
+            Error("You do not have permission to write file %s" % dest_path)
+        Error("Unknown error writing file %s" % dest_path, IOError, e)
+        
+    os.chmod(dest_path, mode)
+
+    if compile_it:
+      py_compile.compile(dest_path)
+
+
+## MAIN
+if __name__ == "__main__":
+    print INFO_TEXT
+    
+    ## get the install path
+    temp = raw_input("Installation Path [%s]: " % ROOT_DIR)
+    temp = string.strip(temp)
+    if len(temp):
+        ROOT_DIR = temp
+        
+    ## install the files
+    print
+    print "Installing ViewCVS to:", ROOT_DIR
+
+    for args in FILE_INFO_LIST:
+        print "        ", args[0]
+        apply(InstallFile, args)
+
+    print
+    print "Installation Complete"
