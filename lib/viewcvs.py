@@ -61,7 +61,7 @@ import debug
 #########################################################################
 
 checkout_magic_path = '~checkout~'
-helppage_magic_path = '~helppage~'
+docroot_magic_path = '~docroot~'
 viewcvs_mime_type = 'text/vnd.viewcvs-markup'
 
 # put here the variables we need in order to hold our state - they will be
@@ -104,10 +104,10 @@ cfg = None # see below
 
 if CONF_PATHNAME:
   # installed
-  g_template_dir = os.path.dirname(CONF_PATHNAME)
+  g_install_dir = os.path.dirname(CONF_PATHNAME)
 else:
   # development directories
-  g_template_dir = os.pardir # typically, ".."
+  g_install_dir = os.pardir # typically, ".."
 
 
 class Request:
@@ -119,14 +119,14 @@ class Request:
     parts = filter(None, string.split(where, '/'))
 
     self.has_checkout_magic = 0
-    self.has_helppage_magic = 0
+    self.has_docroot_magic = 0
     # does it have a magic prefix?
     if parts:
       if parts[0] == checkout_magic_path:
         self.has_checkout_magic = 1
         del parts[0]
-      elif parts[0] == helppage_magic_path:
-        self.has_helppage_magic = 1
+      elif parts[0] == docroot_magic_path:
+        self.has_docroot_magic = 1
         del parts[0]
 
     # put it back together
@@ -1117,7 +1117,7 @@ def view_directory(request):
 
   debug.t_start()
   template = ezt.Template()
-  template.parse_file(os.path.join(g_template_dir, cfg.templates.directory))
+  template.parse_file(os.path.join(g_install_dir, cfg.templates.directory))
   debug.t_end('ezt-parse')
 
   # prepare the data that will be passed to the template
@@ -1868,7 +1868,7 @@ def view_log(request):
 
   debug.t_start()
   template = ezt.Template()
-  template.parse_file(os.path.join(g_template_dir, cfg.templates.log))
+  template.parse_file(os.path.join(g_install_dir, cfg.templates.log))
   debug.t_end('ezt-parse')
 
   http_header()
@@ -2046,19 +2046,17 @@ def view_cvsgraph(cfg, request):
   html_footer()
 
 
-def view_helppage(request):
-  """serve ViewCVS help pages locally.  Using this avoids the need for 
-  modifying the setup of the web server."""
+def view_doc(request):
+  """Serve ViewCVS help pages locally.
+
+  Using this avoids the need for modifying the setup of the web server.
+  """
   help_page = request.where
-  # FIXME: The following is an ugly hack.  It depends on knowledge about what
-  # happens in ../cgi/viewcvs.cgi with LIBRARYDIR.  But I dunno how to do this
-  # clean here:
-  viewcvs_install_directory = os.path.dirname(sys.path[0])
   if CONF_PATHNAME:
-    doc_directory = os.path.join(viewcvs_install_directory, "doc")
+    doc_directory = os.path.join(g_install_dir, "doc")
   else:
     # aid testing from CVS working copy:
-    doc_directory = os.path.join(os.pardir, "website")
+    doc_directory = os.path.join(g_install_dir, "website")
   try:
     fp = open(os.path.join(doc_directory, help_page), "rt")
   except IOError, v:
@@ -2567,8 +2565,8 @@ def main():
   elif cfg.options.allow_tar \
        and full_name[-7:] == '.tar.gz' and query_dict.has_key('tarball'):
     download_tarball(request)
-  elif request.has_helppage_magic:
-    view_helppage(request)
+  elif request.has_docroot_magic:
+    view_doc(request)
   else:
     # if the file is in the Attic, then redirect
     idx = string.rfind(full_name, '/')
