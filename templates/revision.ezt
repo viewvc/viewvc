@@ -10,7 +10,7 @@
 
 <table border="0" cellspacing="1" cellpadding="2">
   <tr align=left>
-    <th>Jump to revision:</td>
+    <th>Jump to revision:</th>
     <td>
       <form method=get action="[jump_rev_action]">
       [jump_rev_hidden_values]
@@ -32,9 +32,8 @@
   </tr>
 </table>
 
-<p><b>Log Message:</b><br/>
+<p><b>Log Message:</b></p>
    <pre class="vc_log">[log]</pre>
-</p>
 
 <hr noshade>
 
@@ -55,9 +54,9 @@
       <tr class="vc_row_[if-index changes even]even[else]odd[end]">
       <td>
         [is changes.pathtype "dir"]
-          <img src="[icons]/small/dir.gif">
+          <img src="[icons]/small/dir.gif" alt="">
         [else]
-          <img src="[icons]/small/text.gif">
+          <img src="[icons]/small/text.gif" alt="">
         [end]
         [is changes.action "deleted"]
           [changes.filename]

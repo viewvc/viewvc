@@ -483,7 +483,7 @@ class BlameSource:
     if prev_rev:
       diff_url = '%s?r1=%s&amp;r2=%s' % (self.file_tail[:-2], prev_rev, rev)
       if self.sticky:
-        diff_url = diff_url + '&' + self.sticky
+        diff_url = diff_url + '&amp;' + self.sticky
     
     thisline = self.lines[idx]
     thisline = cgi.escape(thisline)
