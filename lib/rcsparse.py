@@ -27,17 +27,21 @@ import time
 
 class _TokenStream:
   # Precompiled regular expressions
-  find_token  = re.compile('^\\s*(;|@|.([^;\\s]*))(?P<ws>\\s*)')
-  rest_token  = re.compile('^([^;\\s]*)(?P<ws>\\s*)')
-  odd_at      = re.compile('(([^@]|^)(@@)*)@([^@]|$)')
-  undo_escape = re.compile('@@')
+  nonws_token = re.compile('([^;\\s]*)(\\s*)')
+#  odd_at      = re.compile('(([^@]|^)(@@)*)@([^@]|$)')
+#  odd_at      = re.compile('((@@)*)@([^@]|$)')
+#  undo_escape = re.compile('@@')
 
   CHUNK_SIZE  = 16384
+#  CHUNK_SIZE  = 5	# for debugging, make the function grind...
 
   def __init__(self, file):
     self.rcsfile = file
     self.save_token = None
-    self.buf = ''
+    self.idx = 0
+    self.buf = self.rcsfile.read(self.CHUNK_SIZE)
+    if self.buf == '':
+      raise RuntimeError, 'EOF'
 
   def get(self):
     "Get the next token from the RCS file."
@@ -48,66 +52,87 @@ class _TokenStream:
       self.save_token = None
       return token
 
+    idx = self.idx
     while 1:
-      match = self.find_token.match(self.buf)
-      if match:
+      self.buf = string.lstrip(self.buf[idx:])
+      idx = 0
+      if self.buf:
+        # some non-whitespace exists, so go parse it
         break
-      # if we didn't find something, then it is all white space (note that
-      # the pattern will match a non-white because of the "."). we can just
-      # toss the whole buffer and go for more.
+      # the whole buffer was whitespace. go get more.
       self.buf = self.rcsfile.read(self.CHUNK_SIZE)
       if self.buf == '':
         # signal EOF by returning None as the token
         return None
 
-    # retrieve the match and trim it from the buffer
-    token = match.group(1)
-    self.buf = self.buf[match.end():]
-
-    if token == ';':
+    if self.buf[idx] == ';':
+      self.idx = idx + 1
       return ';'
 
-    if token != '@':
+    if self.buf[idx] != '@':
+      match = self.nonws_token.match(self.buf, idx)
+      start, idx = match.span(1)
+      token = self.buf[start:idx]
       # got a string of non-whitespace characters. if we recognized the rest
       # of the buffer (and we didn't see trailing white space), then we may
       # not have the whole token.
-      while self.buf == '' and match.group('ws') == 0:
+      while idx == len(self.buf) == match.end(2):
         # hit the end (and trimmed it). get more data, and append the results
         self.buf = self.rcsfile.read(self.CHUNK_SIZE)
-        match = self.rest_token.match(self.buf)
-        if not match.group(1):
-          # first character (';' or '\\s') terminates the token
+        match = self.nonws_token.match(self.buf)
+        start, idx = match.span(1)
+        if idx == 0:
+          # the first character (';' or '\\s') terminated the token
           break
-        token = token + match.group(1)
-        self.buf = self.buf[match.end():]
+        token = token + self.buf[start:idx]
 
+      self.idx = idx
       # done piecing together tokens; return the bugger
       return token
 
-    # a "string" which starts with the "@" character. the white space that
-    # we may have sucked up is the initial token.
-    token = match.group(3)
+    # a "string" which starts with the "@" character. we'll skip it when we
+    # search for content. initialize the token for gathering content.
+    idx = idx + 1
+    token = ''
 
-    # start scanning blocks looking for the odd @ character which closes
-    # the RCS "string"
+    chunks = [ ]
+
     while 1:
-      match = self.odd_at.search(self.buf)
-      if match:
-        break
+      if idx == len(self.buf):
+        idx = 0
+        self.buf = self.rcsfile.read(self.CHUNK_SIZE)
+        if self.buf == '':
+          raise RuntimeError, 'EOF'
+      double = string.find(self.buf, '@@', idx)
+      single = string.find(self.buf, '@', idx)
+#      print 'I:', idx, double, single
+      if double != -1 and double <= single:
+        chunks.append(self.buf[idx:double+1])
+        idx = double + 2
+        continue
+      if single == -1:
+        chunks.append(self.buf[idx:])
+        idx = len(self.buf)
+        continue
+      if single == len(self.buf) - 1:
+        chunks.append(self.buf[idx:single])
+        idx = 0
+        buf = self.rcsfile.read(self.CHUNK_SIZE)
+        if buf == '':
+          raise RuntimeError, 'EOF'
+        self.buf = '@' + buf
+        continue
+      chunks.append(self.buf[idx:single])
+      self.idx = single + 1
+      break
 
-      # nothing in the whole chunk. append it all and go for more.
-      token = token + self.buf
-      self.buf = self.rcsfile.read(self.CHUNK_SIZE)
-      if self.buf == '':
-        raise RuntimeError, 'EOF'
+#    print 'S:', `self.buf[self.idx:self.idx+10]`
+    return string.join(chunks, '')
 
-    # split up the chunk into "token" and "the rest"
-    token = token + self.buf[:match.end(1)]
-    self.buf = self.buf[match.end(1)+1:]
-
-    # undo the escape-encoding of @ characters
-    token = self.undo_escape.sub('@', token)
-
+#  _get = get
+#  def get(self):
+    token = self._get()
+    print 'T:', `token`
     return token
 
   def match(self, match):
