@@ -9,11 +9,12 @@
 <body text="#000000" bgcolor="#ffffff">
 <table width="100%" border=0 cellspacing=0 cellpadding=0>
   <tr>
-    <td rowspan=2><h1>[if-any where][where][else][cfg.general.main_title][end]</h1></td>
+    <td><h1>[if-any where][where][else][cfg.general.main_title][end]</h1></td>
     <td align=right><img src="/icons/apache_pb.gif" alt="(logo)" border=0
 			width=259 height=32></td>
   </tr>
   <tr>
+    <td>[is roottype "svn"]<h2>(revision [tree_rev])</h2>[else]&nbsp;[end]</td>
     <td align=right><h3><b><a target="_blank"
 href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.html">ViewCVS and CVS Help</a></b></h3></td>
   </tr>
@@ -48,12 +49,31 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
         Current directory:
       </td>
       <td>
-        <b>[nav_path]</b>
+        <b>[nav_path]</b> 
       </td>
       <td>
       [# saved for paging]
       </td>
     </tr>
+  [is roottype "svn"]
+    <tr>
+      <td>
+        Jump to directory revision:
+      </td>
+      <td>
+        <form method=GET action="[request.script_name]/[where]/">
+        [if-any current_root]
+        <input type="hidden" name="root" value="[current_root]">
+        [end]
+        <input type="text" name="rev" value="[jump_rev]">
+        <input type=submit value="Go">
+        </form>
+      </td>
+      <td>
+      [# saved for paging]
+      </td>
+    </tr>
+  [end]
   [if-any view_tag]
     <tr>
       <td>

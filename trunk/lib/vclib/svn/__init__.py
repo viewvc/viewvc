@@ -101,11 +101,34 @@ def do_diff(repos, path, rev1, rev2, diffoptions):
   root2 = fs.revision_root(repos.fs_ptr, rev2, repos.pool)
   return fs.FileDiff(root1, path, root2, path, repos.pool, diffoptions)
 
+
+class StreamPipe:
+  def __init__(self, stream):
+    self._stream = stream
+    self._eof = 0
+    
+  def read(self, len):
+    chunk = util.svn_stream_read(self._stream, len)
+    if not chunk:
+      self._eof = 1
+    return chunk
+  
+  def readline(self):
+    chunk = util.svn_stream_readline(self._stream)
+    if not chunk:
+      self._eof = 1
+    return chunk
+
+  def close(self):
+    return util.svn_stream_close(self._stream)
+
+  def eof(self):
+    return self._eof
     
 def get_file_contents(repos, path):
-  len = fs.file_length(repos.fsroot, path, repos.pool)
+  # len = fs.file_length(repos.fsroot, path, repos.pool)
   stream = fs.file_contents(repos.fsroot, path, repos.pool)
-  return util.svn_stream_read(stream, len)
+  return StreamPipe(stream)
 
   
 class SubversionRepository(vclib.Repository):
