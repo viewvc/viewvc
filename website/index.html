@@ -19,31 +19,29 @@
     <p>
       ViewCVS can browse directories, change logs, and specific
       revisions of files. It can display diffs between versions and
-      show selections of files based on tags or branches.
+      show selections of files based on tags or branches. In addition, 
+      ViewCVS has "annotation" or "blame" support, and the beginnings
+      of Bonsai-like query facilities.
     </p>
     <p>
-      ViewCVS is currently at version 0.4. It was a
-      port of the cvsweb script, but has had numerous cleanups and other
-      modifications, based on some of Python's strengths. There is
-      still some "badness" in there, but I've been working on flushing 
-      that out, along with a few new features. The
-      functionality of ViewCVS is equal to that of cvsweb, minus the
-      "annotation" support. Annotation requires read/write access to
-      the CVS repository (at this time), and I believe that is a 
-      Bad Thing to do. One of my tasks will be eliminating the
-      read/write requirement.
+      ViewCVS is currently at version 0.5. It was a port of the cvsweb
+      script, but has had numerous cleanups and other modifications,
+      based on some of Python's strengths. There is still some minor
+      "badness" in there, but I've been working on flushing that out,
+      while adding new features. Currently, the functionality of ViewCVS
+      surpasses that of cvsweb.
     </p>
     <p>
       The software is available for download:
     </p>
     <blockquote>
-      <a href="viewcvs-0.4.tar.gz">Version 0.4 of ViewCVS</a>
+      <a href="viewcvs-0.5.tar.gz">Version 0.5 of ViewCVS</a>
     </blockquote>
     <p>
       Of course, it is also available through ViewCVS itself:
     </p>
     <blockquote>
-      <a href="/cgi-bin/viewcvs.cgi/gjspy/viewcvs/">http://www.lyra.org/cgi-bin/viewcvs.cgi/gjspy/viewcvs/</a>
+      <a href="/cgi-bin/viewcvs.cgi/viewcvs/">http://www.lyra.org/cgi-bin/viewcvs.cgi/viewcvs/</a>
     </blockquote>
 
     <p>
@@ -53,8 +51,8 @@
     </p>
 
     <p>
-      [ <a href="../">up to Python software</a> ]
-      [ <a href="../../">up to Greg's page</a> ]
+      [ <a href="/greg/">Greg's page</a> ]
+      [ <a href="/greg/python/">other Python software</a> ]
     </p>
 
     <hr width="75&#37;">
@@ -66,16 +64,22 @@
       <a href="http://mailman.lyra.org/mailman/listinfo/viewcvs">ViewCVS
 	mailing list</a>.
     </p>
+    <p>
+      A <a href="http://mailman.lyra.org/mailman/listinfo/viewcvs-dev">mailing
+	list for ViewCVS developers</a> is also available. 
+    </p>
 
     <hr width="75&#37;">
     <h2>Additional features over cvsweb</h2>
 
     <ul>
-      <li>Colorization for Python files</li>
-      <li>Better reporting for unreadable files</li>
-      <li>More robust when given varying <code>rcsdiff</code> or
-	<code>rlog</code> outputs</li>
-      <li>Hard breaks in human-readable diffs</li>
+      <li>Colorization for many file types via <code>enscript</code>.</li>
+      <li>Better reporting for unreadable files.</li>
+      <li>
+	More robust when given varying <code>rcsdiff</code> or
+	<code>rlog</code> outputs.
+      </li>
+      <li>Hard breaks in human-readable diffs.</li>
       <li>
 	The configuration file is optional (you can change the values
 	right in the CGI script and avoid the config file, if you so
@@ -85,6 +89,17 @@
       <li>
 	Directories with a large number of files can be viewed.
       </li>
+      <li>Bonsai-like query features.</li>
+      <li>
+	Annotation/blame support against a <strong>read-only</strong>
+	repository.
+      </li>
+      <li>
+	Configuration on a per-virtual-host basis. This allows you
+	to share the configuration file and ViewCVS installation
+	across virtual hosts, yet still be able to fine-tune the
+	options when necessary.
+      </li>
     </ul>
 
     <p>
@@ -93,6 +108,7 @@
     <ul>
       <li>UI streamlining/simplification</li>
       <li>Integration with CVS checkin auto-mail scripts</li>
+      <li>Tighter integration the query features</li>
       <li>
 	<i>Suggestions? Send mail to the
 	  <a href="mailto:viewcvs@lyra.org">viewcvs@lyra.org</a>
@@ -105,14 +121,29 @@
       Longer term:
     </p>
     <ul>
-      <li>Annotation ("blame") support (similar to cvsweb)</li>
       <li>Integration with an indexer such as LXR</li>
-      <li>Additional colorizers</li>
     </ul>
 
     <hr width="75&#37;">
-    <h2>Colorization of Python files</h2>
+    <h2>Colorization of files</h2>
+    <p>
+      ViewCVS can make use of the <code>enscript</code> program to
+      colorize files in the CVS repository. If <code>enscript</code>
+      is present on your system, then set the
+      <code>use_enscript</code> option in the
+      <code>viewcvs.conf</code> configuration file. If necessary,
+      update the <code>enscript_path</code> option to point to your
+      installation directory. ... That's it! Now, as you view files
+      through ViewCVS, they will be colored.
+    </p>
 
+    <h3>Colorization of Python files</h3>
+
+    <p>
+      ViewCVS currently comes with a builtin colorizer for Python
+      source files. This may go away, given the new
+      <code>enscript</code> support...
+    </p>
     <p>
       Christophe Pelte suggested this feature: colorize Python source
       files using
@@ -130,7 +161,7 @@
     <address><a href="mailto:gstein@lyra.org">Greg Stein</a></address>
 <!-- Created: Fri Dec  3 02:51:37 PST 1999 -->
 <!-- hhmts start -->
-Last modified: Fri Mar 24 03:12:34 PST 2000
+Last modified: Fri May 12 03:53:51 PDT 2000
 <!-- hhmts end -->
   </body>
 </html>
