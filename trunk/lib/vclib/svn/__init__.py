@@ -31,6 +31,11 @@ def fs_path_join(base, relative):
   parts = filter(None, string.split(joined_path, '/'))
   return string.join(parts, '/')
 
+
+def _trim_path(path):
+  assert path[0] == '/'
+  return path[1:]
+
   
 def _datestr_to_date(datestr, pool):
   return core.svn_time_from_cstring(datestr, pool) / 1000000
@@ -127,13 +132,14 @@ def log_helper(svnrepos, rev, path, show_changed_paths, pool):
   # show_changed_paths is set).
   if show_changed_paths:
     for other_path in changed_paths.keys():
-      other_paths.append(ChangedPathEntry(other_path))
+      other_paths.append(ChangedPathEntry(_trim_path(other_path)))
 
   # Finally, assemble our LogEntry.
   datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, pool)
   date = _datestr_to_date(datestr, pool)
-  entry = LogEntry(rev, date, author, msg, path,
-                   other_paths, action, copyfrom_path, copyfrom_rev)
+  entry = LogEntry(rev, date, author, msg, _trim_path(path), other_paths,
+                   action, copyfrom_path and _trim_path(copyfrom_path),
+                   copyfrom_rev)
   if fs.is_file(rev_root, path, pool):
     entry.size = fs.file_length(rev_root, path, pool)
   return entry
