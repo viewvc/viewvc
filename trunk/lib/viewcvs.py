@@ -261,7 +261,6 @@ class Request:
           rev = int(self.query_dict['rev'])
         self.repos = vclib.svn.SubversionRepository(self.rootname,
                                                     self.rootpath, rev)
-        self.repos.cross_copies = cfg.options.cross_copies
         self.roottype = 'svn'
       except vclib.ReposNotFound:
         raise debug.ViewCVSException(
@@ -1316,9 +1315,9 @@ def view_directory(request):
           row.log_rev = file.rev
 
       if request.roottype == 'svn':
-        row.rev_href = request.get_url(view_func=view_directory,
+        row.rev_href = request.get_url(view_func=view_log,
                                        where=where_prefix + file.name,
-                                       pathtype=vclib.FILE,
+                                       pathtype=vclib.DIR,
                                        params={'rev': str(file.rev)})
       
     elif file.kind == vclib.FILE:
@@ -1485,7 +1484,19 @@ def view_log(request):
   logsort = request.query_dict.get('logsort', cfg.options.log_sort)
   view_tag = request.query_dict.get('only_with_tag')
   hide_attic = int(request.query_dict.get('hideattic',cfg.options.hide_attic))
+  pathtype = request.pathtype
 
+  mime_type = None
+  if pathtype is vclib.FILE:
+    mime_type = request.mime_type
+  elif request.roottype == 'cvs':
+    raise debug.ViewcvsException('Unsupported feature: log view on CVS '
+                                 'directory', '400 Bad Request')
+
+  options = {}
+  options['svn_show_all_dir_logs'] = 1 ### someday make this optional?
+  options['svn_cross_copies'] = cfg.options.cross_copies
+    
   if request.roottype == 'cvs':
     up_where = get_up_path(request, request.where, hide_attic)
     filename = os.path.basename(request.where)
@@ -1493,7 +1504,6 @@ def view_log(request):
   else:
     up_where, filename = os.path.split(request.where)
     rev = None
-  options = {}
 
   show_revs = request.repos.filelog(request.path_parts, rev, options)
   if logsort == 'date':
@@ -1522,18 +1532,24 @@ def view_log(request):
     entry.branch_point = None
     entry.next_main = None
 
-    entry.view_href = request.get_url(view_func=view_markup,
-                                      params={'rev': rev.string})
-    entry.download_href = request.get_url(view_func=view_checkout,
-                                          params={'rev': rev.string})
-    if request.mime_type != 'text/plain':
-      entry.download_text_href = \
-        request.get_url(view_func=view_checkout,
-                        params={'content-type': 'text/plain',
-                                'rev': rev.string})
+    entry.view_href = None
+    entry.download_href = None
+    entry.download_text_href = None
+    if pathtype is vclib.FILE:
+      entry.view_href = request.get_url(view_func=view_markup,
+                                        params={'rev': rev.string})
+      entry.download_href = request.get_url(view_func=view_checkout,
+                                            params={'rev': rev.string})
+      if mime_type != 'text/plain':
+        entry.download_text_href = \
+            request.get_url(view_func=view_checkout,
+                            params={'content-type': 'text/plain',
+                                    'rev': rev.string})
     else:
-      entry.download_text_href = None
+      entry.view_href = request.get_url(view_func=view_directory,
+                                        params={'rev': entry.rev})
 
+        
     if request.roottype == 'cvs':
       entry.annotate_href = request.get_url(view_func=view_annotate, 
                                             params={'annotate': rev.string})
@@ -1601,18 +1617,20 @@ def view_log(request):
   data.update({
     'nav_path' : clickable_path(request, 1, 0),
     'branch' : None,
-    'mime_type' : request.mime_type,
+    'mime_type' : mime_type,
     'rev_selected' : request.query_dict.get('r1'), 
     'path_selected' : request.query_dict.get('p1'), 
     'diff_format' : diff_format,
     'logsort' : logsort,
-    'viewable' : ezt.boolean(request.default_viewable),
-    'is_text'  : ezt.boolean(is_text(request.mime_type)),
     'human_readable' : ezt.boolean(diff_format in ('h', 'l')),
     'log_pagestart' : None,
     'graph_href' : None,    
     'entries': entries,
   })
+
+  if pathtype is vclib.FILE:
+    data['viewable'] = ezt.boolean(request.default_viewable)
+    data['is_text'] = ezt.boolean(is_text(mime_type))
 
   url, params = request.get_link(view_func=view_diff, 
                                  params={'r1': None, 'r2': None, 

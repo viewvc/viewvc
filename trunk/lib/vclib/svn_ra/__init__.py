@@ -86,25 +86,85 @@ def _datestr_to_date(datestr, pool):
     return None
   return core.svn_time_from_cstring(datestr, pool) / 1000000
 
-  
-def fetch_log(svnrepos, full_name):
-  logs = []
 
+def _compare_paths(path1, path2):
+  path1_len = len (path1);
+  path2_len = len (path2);
+  min_len = min(path1_len, path2_len)
+  i = 0
+
+  # Are the paths exactly the same?
+  if path1 == path2:
+    return 0
+  
+  # Skip past common prefix
+  while (i < min_len) and (path1[i] == path2[i]):
+    i = i + 1
+
+  # Children of paths are greater than their parents, but less than
+  # greater siblings of their parents
+  char1 = '\0'
+  char2 = '\0'
+  if (i < path1_len):
+    char1 = path1[i]
+  if (i < path2_len):
+    char2 = path2[i]
+    
+  if (char1 == '/') and (i == path2_len):
+    return 1
+  if (char2 == '/') and (i == path1_len):
+    return -1
+  if (i < path1_len) and (char1 == '/'):
+    return -1
+  if (i < path2_len) and (char2 == '/'):
+    return 1
+
+  # Common prefix was skipped above, next character is compared to
+  # determine order
+  return cmp(char1, char2)
+
+class LogCollector:
+  def __init__(self, path, options):
+    self.path = path
+    self.logs = []
+    self.filter_path = options.get('svn_show_all_dir_logs', 0)
+
+  def add_log(self, paths, revision, author, date, message, pool):
+    ### This is unfinished code for tracking path changes over time,
+    ### and filtering out unwanted directory logs.
+    # changed_paths = paths.keys()
+    # changed_paths.sort(lambda a, b: _compare_paths(a, b))
+    # if self.path in changed_paths:
+    #   change = paths[self.path]
+    #   if change.copyfrom_path:
+    #     self.path = copyfrom_path
+    # else:
+    #   for changed_path in changed_paths:
+    #     if (string.rfind(changed_path, self.path) == 0) and \
+    #            change_path[len(self.path)] == '/':
+    #       change = paths[changed_path]
+    #       if change.copyfrom_path:
+    #         self.path = copyfrom_path[(len(self.path) + 1):]
+    #   if self.filter_path:
+    #     return
+    date = _datestr_to_date(date, pool)
+    entry = Revision(revision, date, author, message, None,
+                     self.path, None, None)
+    self.logs.append(entry)
+    
+def _fetch_log(svnrepos, full_name, options):
+  lc = LogCollector(full_name, options)
+  
   dir_url = svnrepos.rootpath
   if full_name:
     dir_url = dir_url + '/' + full_name
 
-  def _log_cb(paths, revision, author, date, message, pool,
-              logs=logs, path=full_name):
-    date = _datestr_to_date(date, pool)
-    entry = Revision(revision, date, author, message, None, path, None, None)
-    logs.append(entry)
-    
-  cross_copies = getattr(svnrepos, 'cross_copies', 1)
+  cross_copies = options.get('svn_cross_copies', 0)
+  
   client.svn_client_log([dir_url], _rev2optrev(1), _rev2optrev(svnrepos.rev),
-                        0, not cross_copies, _log_cb,
+                        1, not cross_copies, lc.add_log,
                         svnrepos.ctx, svnrepos.pool)
-  return logs
+  return lc.logs
 
 
 def get_logs(svnrepos, full_name, files):
@@ -356,7 +416,7 @@ class SubversionRepository(vclib.Repository):
       except ValueError:
         vclib.InvalidRevision(rev)
 
-    revs = fetch_log(self, full_name)
+    revs = _fetch_log(self, full_name, options)
 
     revs.sort()
     prev = None

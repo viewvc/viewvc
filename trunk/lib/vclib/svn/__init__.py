@@ -74,19 +74,36 @@ class Revision(vclib.Revision):
 
 
 class NodeHistory:
-  def __init__(self):
+  def __init__(self, fs_ptr, filter_path=0):
     self.histories = {}
+    self.fs_ptr = fs_ptr
+    self.filter_path = filter_path
 
   def add_history(self, path, revision, pool):
+    # If filtering, only add the path and revision to the histories
+    # list if they were actually changed in this revision.  This is
+    # useful for omitting bubble-up directory changes.
+    if self.filter_path:
+      rev_root = fs.revision_root(self.fs_ptr, revision, pool)
+      changed_paths = fs.paths_changed(rev_root, pool)
+      if path not in changed_paths.keys():
+        return
     self.histories[revision] = _trim_path(path)
     
   
-def _get_history(svnrepos, full_name):
+def _get_history(svnrepos, full_name, options):
+  filter_path = 0
+  if options.get('svn_show_all_dir_logs', 0):
+    # See if the path is a file or directory.
+    kind = fs.check_path(svnrepos.fsroot, full_name, svnrepos.pool)
+    if kind is core.svn_node_dir:
+      filter_path = 1
+      
   # Instantiate a NodeHistory collector object.
-  history = NodeHistory()
+  history = NodeHistory(svnrepos.fs_ptr, filter_path)
 
   # Do we want to cross copy history?
-  cross_copies = getattr(svnrepos, 'cross_copies', 1)
+  cross_copies = options.get('svn_cross_copies', 0)
 
   # Get the history items for PATH.
   repos.svn_repos_history(svnrepos.fs_ptr, full_name, history.add_history,
@@ -164,7 +181,7 @@ def _log_helper(svnrepos, rev, path, pool):
   return entry
   
 
-def fetch_log(svnrepos, full_name, which_rev=None):
+def _fetch_log(svnrepos, full_name, which_rev, options):
   revs = []
 
   if which_rev is not None:
@@ -174,7 +191,7 @@ def fetch_log(svnrepos, full_name, which_rev=None):
     if rev:
       revs.append(rev)
   else:
-    history_set = _get_history(svnrepos, full_name)
+    history_set = _get_history(svnrepos, full_name, options)
     history_revs = history_set.keys()
     history_revs.sort()
     history_revs.reverse()
@@ -338,7 +355,7 @@ class SubversionRepository(vclib.Repository):
       except ValueError:
         vclib.InvalidRevision(rev)
 
-    revs = fetch_log(self, full_name, rev)
+    revs = _fetch_log(self, full_name, rev, options)
 
     revs.sort()
     prev = None
