@@ -22,7 +22,7 @@
       show selections of files based on tags or branches.
     </p>
     <p>
-      ViewCVS is currently at version 0.3. It is almost a straight
+      ViewCVS is currently at version 0.4. It was a
       port of the cvsweb script, but has had numerous cleanups and other
       modifications, based on some of Python's strengths. There is
       still some "badness" in there, but I've been working on flushing 
@@ -37,7 +37,7 @@
       The software is available for download:
     </p>
     <blockquote>
-      <a href="viewcvs-0.3.tar.gz">Version 0.3 of ViewCVS</a>
+      <a href="viewcvs-0.4.tar.gz">Version 0.4 of ViewCVS</a>
     </blockquote>
     <p>
       Of course, it is also available through ViewCVS itself:
@@ -47,8 +47,9 @@
     </blockquote>
 
     <p>
-      ViewCVS <font color=red>requires <strong>Python
-	1.5.2</strong></font>.
+      ViewCVS requires <strong>Python 1.5</strong> (which has been out 
+      for a couple years and is readily available for your favorite
+      operating system).
     </p>
 
     <p>
@@ -67,34 +68,6 @@
     </p>
 
     <hr width="75&#37;">
-    <h2>FAQ</h2>
-
-    <p>Kinda short :-)</p>
-
-    <dl>
-      <!-- one of (dd dt) -->
-      <dt><strong>I got an <code>AttributeError: urlencode</code></strong></dt>
-      <dd>
-	If you see the following traceback in your browser:
-	<blockquote>
-	  <pre>
-Traceback (innermost last):
-  File "/home/httpd/cgi-bin/viewcvs.cgi", line 2205, in ?
-    main()
-  File "/home/httpd/cgi-bin/viewcvs.cgi", line 2123, in main
-    query_string = sticky_query(query_dict)
-  File "/home/httpd/cgi-bin/viewcvs.cgi", line 444, in sticky_query
-    bare_query = urllib.urlencode(sticky_dict)
-AttributeError: urlencode
-</pre>
-	</blockquote>
-	This is indicative of using an earlier version of
-	Python. <code>urllib.urlencode()</code> was introduced in
-	Python 1.5.2.
-      </dd>
-    </dl>
-
-    <hr width="75&#37;">
     <h2>Additional features over cvsweb</h2>
 
     <ul>
@@ -103,16 +76,18 @@ AttributeError: urlencode
       <li>More robust when given varying <code>rcsdiff</code> or
 	<code>rlog</code> outputs</li>
       <li>Hard breaks in human-readable diffs</li>
+      <li>
+	The configuration file is optional (you can change the values
+	right in the CGI script and avoid the config file, if you so
+	choose). The config file syntax is also cleaner, since it is
+	human-manageable rather than source code.
+      </li>
     </ul>
 
     <p>
       Future features, coming soon:
     </p>
     <ul>
-      <li>
-	Optional, separate configuration file (similar to
-	cvsweb). This will make upgrading easier.
-      </li>
       <li>UI streamlining/simplification</li>
       <li>Integration with CVS checkin auto-mail scripts</li>
       <li>
@@ -138,9 +113,9 @@ AttributeError: urlencode
     <p>
       Christophe Pelte suggested this feature: colorize Python source
       files using
-      <a href="http://starship.python.net/crew/lemburg/SoftwareDescriptions.html#py2html.py">py2html</a>
+      <a href="http://starship.python.net/crew/lemburg/SoftwareDescriptions.html#py2html.py"><i>py2html</i></a>
       (by Marc-Andrew Lemburg, based on
-      <a href="http://starship.python.net/crew/just/code/PyFontify.py">PyFontify</a>
+      <a href="http://starship.python.net/crew/just/code/PyFontify.py"><i>PyFontify</i></a>
       by Just van Rossum). I've added this feature to ViewCVS 0.3,
       along with a generalized plugin mechanism for custom coloring other
       types of files. See the instructions within the viewcvs.cgi for
@@ -152,7 +127,7 @@ AttributeError: urlencode
     <address><a href="mailto:gstein@lyra.org">Greg Stein</a></address>
 <!-- Created: Fri Dec  3 02:51:37 PST 1999 -->
 <!-- hhmts start -->
-Last modified: Fri Feb 11 07:51:53 PST 2000
+Last modified: Fri Mar 24 03:06:08 PST 2000
 <!-- hhmts end -->
   </body>
 </html>
