@@ -160,7 +160,8 @@ int tparseParser::parse_rcs_admin()
     }
     if (strcmp(token, "head") == 0)
     {
-      if (sink->set_head_revision(tokenstream->get()))
+      delstr(token);
+      if (sink->set_head_revision(token = tokenstream->get()))
       {
         delstr(token);
         return 1;
@@ -176,9 +177,11 @@ int tparseParser::parse_rcs_admin()
       {
         if (sink->set_principal_branch(branch))
         {
+          delstr(branch);
           delstr(token);
           return 1;
         }
+        delstr(branch);
         tokenstream->matchsemicol();
       }
       delstr(token);
@@ -197,16 +200,19 @@ int tparseParser::parse_rcs_admin()
         second++;
         if (sink->define_tag(tag, second))
         {
+          delstr(tag);
           delstr(token);
           return 1;
         }
+        delstr(tag);
       }
       delstr(token);
       continue;
     }
     if (strcmp(token, "comment") == 0)
     {
-      if (sink->set_comment(tokenstream->get()))
+      delstr(token);
+      if (sink->set_comment(token = tokenstream->get()))
       {
         delstr(token);
         return 1;
@@ -324,16 +330,37 @@ int tparseParser::parse_rcs_tree()
         delstr(token);
     }
 
-    if (sink->define_revision(revision, timestamp, author, hstate, branches, next))
-      return 1;
+    if (sink->define_revision(revision, timestamp, author,
+                              hstate, branches, next))
+      {
+        delstr(revision);
+        delstr(author);
+        delstr(hstate);
+        delete branches;
+        delstr(next);
+        return 1;
+      }
+    delstr(revision);
+    delstr(author);
+    delstr(hstate);
+    delete branches;
+    delstr(next);
   }
   return 0;
 }
 
 int tparseParser::parse_rcs_description()
 {
+  char *token;
   tokenstream->match("desc");
-  return (this->sink->set_description(tokenstream->get()));
+  if (sink->set_description(token = tokenstream->get()))
+  {
+    delstr(token);
+    return 1;
+  }
+  delstr(token);
+
+  return 0;
 }
 
 int tparseParser::parse_rcs_deltatext()
@@ -351,7 +378,15 @@ int tparseParser::parse_rcs_deltatext()
     tokenstream->match("text");
     text = tokenstream->get();
     if (sink->set_revision_info(revision, log, text))
+    {
+      delstr(revision);
+      delstr(log);
+      delstr(text);
       return 1;
+    }
+    delstr(revision);
+    delstr(log);
+    delstr(text);
   }
   return 0;
 }

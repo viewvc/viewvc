@@ -100,8 +100,7 @@ class PythonSink : public Sink
       PyObject *rv = PyObject_CallMethod(sink, "set_head_revision", "s",
                                          revision);
       if (!rv) {
-        delstr(revision);
-        if (PyErr_ExceptionMatches(pyRCSStopParser))
+         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
         else
           throw PythonException();
@@ -109,7 +108,6 @@ class PythonSink : public Sink
       else {
         Py_DECREF(rv);
       }
-      delstr(revision);
       return 0;
     };
     int set_principal_branch(char *branch_name)
@@ -117,7 +115,6 @@ class PythonSink : public Sink
       PyObject *rv = PyObject_CallMethod(sink, "set_principal_branch", "s",
                                          branch_name);
       if (!rv) {
-        delstr(branch_name);
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
         else
@@ -126,7 +123,6 @@ class PythonSink : public Sink
       else {
         Py_DECREF(rv);
       }
-      delstr(branch_name);
       return 0;
     };
     int define_tag(char *name, char *revision)
@@ -134,7 +130,6 @@ class PythonSink : public Sink
       PyObject *rv = PyObject_CallMethod(sink, "define_tag", "ss",
                                          name, revision);
       if (!rv) {
-        delstr(name);
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
         else
@@ -143,14 +138,12 @@ class PythonSink : public Sink
       else {
         Py_DECREF(rv);
       }
-      delstr(name);
       return 0;
     };
     int set_comment(char *comment)
     {
       PyObject *rv = PyObject_CallMethod(sink, "set_comment", "s", comment);
       if (!rv) {
-        delstr(comment);
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
         else
@@ -159,7 +152,6 @@ class PythonSink : public Sink
       else {
         Py_DECREF(rv);
       }
-      delstr(comment);
       return 0;
     };
     int set_description(char *description)
@@ -167,7 +159,6 @@ class PythonSink : public Sink
       PyObject *rv = PyObject_CallMethod(sink, "set_description", "s",
                                          description);
       if (!rv) {
-        delstr(description);
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
         else
@@ -176,7 +167,6 @@ class PythonSink : public Sink
       else {
         Py_DECREF(rv);
       }
-      delstr(description);
       return 0;
     };
     int define_revision(char *revision, long timestamp, char *author,
@@ -197,12 +187,6 @@ class PythonSink : public Sink
                                          author,state,pbranchs,next);
       if (!rv) {
         Py_DECREF(pbranchs);
-        delstr(revision);
-        delstr(author);
-        delstr(state);
-        if (branches != NULL)
-          delete branches;
-        delstr(next);
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
         else
@@ -212,12 +196,6 @@ class PythonSink : public Sink
         Py_DECREF(rv);
       }
       Py_DECREF(pbranchs);
-      delstr(revision);
-      delstr(author);
-      delstr(state);
-      if (branches != NULL)
-        delete branches;
-      delstr(next);
       return 0;
     };
     int set_revision_info(char *revision, char *log, char *text)
@@ -225,9 +203,6 @@ class PythonSink : public Sink
       PyObject *rv = PyObject_CallMethod(sink, "set_revision_info", "sss", 
                                          revision,log,text);
       if (!rv) {
-        delstr(revision);
-        delstr(log);
-        delstr(text);
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
         else
@@ -236,9 +211,6 @@ class PythonSink : public Sink
       else {
         Py_DECREF(rv);
       }
-      delstr(revision);
-      delstr(log);
-      delstr(text);
       return 0;
     };
     int tree_completed()
