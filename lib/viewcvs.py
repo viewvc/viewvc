@@ -57,6 +57,7 @@ import re
 import stat
 import struct
 import types
+import tempfile
 
 # these modules come from our library (the stub has set up the path)
 import compat
@@ -599,12 +600,6 @@ def generate_page(request, tname, data):
 
   template.generate(sys.stdout, data)
 
-def html_footer(request):
-  data = common_template_data(request)
-
-  # generate the footer
-  generate_page(request, cfg.templates.footer, data)
-
 def clickable_path(request, leaf_is_link, drop_leaf):
   where = ''
   s = '<a href="%s#dirlist">[%s]</a>' % (_dir_url(request, where),
@@ -751,52 +746,185 @@ def nav_header_data(request, rev):
   })
   return data
 
-def copy_stream(fp):
+def retry_read(src, reqlen=CHUNK_SIZE):
   while 1:
-    chunk = fp.read(CHUNK_SIZE)
+    chunk = src.read(CHUNK_SIZE)
+    if not chunk:
+      # need to check for eof methods because the cStringIO file objects
+      # returned by ccvs don't provide them
+      if hasattr(src, 'eof') and src.eof() is None:
+        time.sleep(1)
+        continue
+    return chunk
+  
+def copy_stream(src, dst=sys.stdout):
+  while 1:
+    chunk = retry_read(src)
     if not chunk:
       break
-    sys.stdout.write(chunk)
+    dst.write(chunk)
 
-def markup_stream_default(fp):
-  print '<pre>'
-  while 1:
-    ### technically, the htmlify() could fail if something falls across
-    ### the chunk boundary. TFB.
-    chunk = fp.read(CHUNK_SIZE)
-    if not chunk:
-      break
-    sys.stdout.write(htmlify(chunk))
-  print '</pre>'
+class MarkupBuffer:
+  """A file-pointer-ish object from a string buffer"""
+  
+  def __init__(self, buffer):
+    self.buffer = buffer
+    self.size = len(buffer)
+    
+  def read(self, reqlen=None):
+    if not self.size > 0:
+      return None
+    if not reqlen:
+      reqlen = self.size
+    if not reqlen > 0:
+      return ''
+    if reqlen > self.size:
+      reqlen = self.size
+    chunk = self.buffer[0:reqlen]
+    self.buffer = self.buffer[reqlen:]
+    self.size = self.size - reqlen
+    return chunk
+
+class MarkupPipeWrapper:
+  """A file-pointer-ish object from another filepointer, plus some optional
+  pre- and post- text.  Closes and closes FP."""
+  
+  def __init__(self, fp, pretext=None, posttext=None):
+    self.pre_fp = pretext and MarkupBuffer(pretext)
+    self.post_fp = posttext and MarkupBuffer(posttext)
+    self.fp = fp
+
+  def _readfp(self, fp, reqlen):
+    readlen = 0
+    chunk = None
+    if fp is not None:
+      chunk = retry_read(fp, reqlen)
+    if chunk:
+      readlen = len(chunk)
+      if fp == self.fp:
+        chunk = htmlify(chunk)
+    return chunk, readlen
+      
+  def read(self, reqlen):
+    if not (self.pre_fp and self.post_fp and self.fp):
+      return None
+    if not reqlen > 0:
+      return ''
+    
+    chunk = None
+    for fp in [self.pre_fp, self.fp, self.post_fp]:
+      if fp is None:
+        continue
+      readchunk, readlen = self._readfp(fp, reqlen)
+      if readchunk:
+        chunk = (chunk or '') + readchunk
+      reqlen = reqlen - readlen
+    return chunk
+
+  def __del__(self):
+    self.fp.close()
+
+class MarkupEnscript:
+  """A file-pointer-ish object for reading file contents slammed
+  through the 'enscript' tool.  Consumes and closes FP."""
+  
+  def __init__(self, enscript_path, lang, fp):
+    ### Man, oh, man, had I any idea how to deal with bi-directional
+    ### pipes, I would.  But I don't.
+
+    self.temp_file = tempfile.mktemp()
+    self.fp = None
+    
+    # I've tried to pass option '-C' to enscript to generate line numbers
+    # Unfortunately this option doesn't work with HTML output in enscript
+    # version 1.6.2.
+    enscript_cmd = [os.path.normpath(os.path.join(cfg.options.enscript_path,
+                                                  'enscript')),
+                    '--color', '--language=html', '--pretty-print=' + lang,
+                    '-o', self.temp_file, '-']
+    try:
+      copy_stream(fp, popen.pipe_cmds([enscript_cmd]))
+      fp.close()
+    except IOError:
+      raise debug.ViewcvsException('Error running external program. ' +
+                                   'Command line was: %s'
+                                   % string.join(enscript_cmd, ' '))
+
+    ### I started to use '1,/^<PRE>$/d;/<\\/PRE>/,$d;p' here to
+    ### actually strip out the <PRE> and </PRE> tags, too, but I
+    ### couldn't think of any good reason to do that.
+    self.fp = popen.popen('sed',
+                          ['-n', '/^<PRE>$/,/<\\/PRE>$/p', self.temp_file],
+                          'rb', 0)
+
+  def __del__(self):
+    # Cleanup the tempfile we made, and close the pipe.
+    os.remove(self.temp_file)
+    if self.fp:
+      self.fp.close()
+    
+  def read(self, len):
+    if self.fp is None:
+      return None
+    return retry_read(self.fp, len)
+
+class MarkupPHP:
+  """A file-pointer-ish object for reading file contents slammed
+  through the 'php' tool.  Consumes and closes FP."""
+  
+  def __init__(self, php_exe_path, fp):
+    ### Man, oh, man, had I any idea how to deal with bi-directional
+    ### pipes, I would.  But I don't.
+
+    self.temp_file = tempfile.mktemp()
+    self.fp = None
+
+    # Dump the version resource contents to our tempfile
+    copy_stream(fp, open(self.temp_file, 'wb'))
+    fp.close()
+    
+    self.fp = popen.popen(php_exe_path,
+                          ['-q', '-s', '-n', '-f', self.temp_file],
+                          'rb', 0)
+
+  def __del__(self):
+    # Cleanup the tempfile we made, and close the pipe.
+    os.remove(self.temp_file)
+    if self.fp:
+      self.fp.close()
+    
+  def read(self, len):
+    if self.fp is None:
+      return None
+    return retry_read(self.fp, len)
 
 def markup_stream_python(fp):
-  ### convert this code to use the recipe at:
+  ### Convert this code to use the recipe at:
   ###     http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52298
-  ### note that the cookbook states all the code is licensed according to
+  ### Note that the cookbook states all the code is licensed according to
   ### the Python license.
   try:
-    # see if Marc-Andre Lemburg's py2html stuff is around
-    # http://starship.python.net/crew/lemburg/SoftwareDescriptions.html#py2html.py
+    # See if Marc-Andre Lemburg's py2html stuff is around.
+    # http://www.egenix.com/files/python/SoftwareDescriptions.html#py2html.py
     ### maybe restrict the import to *only* this directory?
     sys.path.insert(0, cfg.options.py2html_path)
     import py2html
     import PyFontify
   except ImportError:
-    # fall back to the default streamer
-    markup_stream_default(fp)
-  else:
-    ### it doesn't escape stuff quite right, nor does it munge URLs and
-    ### mailtos as well as we do.
-    html = cgi.escape(fp.read())
-    pp = py2html.PrettyPrint(PyFontify.fontify, "rawhtml", "color")
-    html = pp.fontify(html)
-    html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
-    html = re.sub(_re_rewrite_email, r'<a href="mailto:\1">\1</a>', html)
-    sys.stdout.write(html)
+    return None
+
+  ### It doesn't escape stuff quite right, nor does it munge URLs and
+  ### mailtos as well as we do.
+  html = cgi.escape(fp.read())
+  pp = py2html.PrettyPrint(PyFontify.fontify, "rawhtml", "color")
+  html = pp.fontify(html)
+  html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
+  html = re.sub(_re_rewrite_email, r'<a href="mailto:\1">\1</a>', html)
+  return MarkupBuffer(html)
 
 def markup_stream_php(fp):
   if not cfg.options.use_php:
-    return markup_stream_default(fp)
+    return None
 
   sys.stdout.flush()
 
@@ -811,57 +939,10 @@ def markup_stream_php(fp):
   #os.putenv("SERVER_NAME", "")
   #os.putenv("SERVER_SOFTWARE", "")
 
-  php = popen.pipe_cmds([[cfg.options.php_exe_path, "-q", "-s", "-n"]])
-
-  while 1:
-    chunk = fp.read(CHUNK_SIZE)
-    if not chunk:
-      if fp.eof() is None:
-        time.sleep(1)
-        continue
-      break
-    php.write(chunk)
-
-  php.close()
-
-def markup_stream_enscript(lang, fp):
-  sys.stdout.flush()
-  # I've tried to pass option '-C' to enscript to generate line numbers
-  # Unfortunately this option doesn'nt work with HTML output in enscript
-  # version 1.6.2.
-  enscript = popen.pipe_cmds([(os.path.normpath(os.path.join(cfg.options.enscript_path,'enscript')),
-                               '--color', '--language=html', 
-                               '--pretty-print=' + lang, '-o',
-                               '-', '-'),
-                              ('sed', '-n', '/^<PRE>$/,/<\\/PRE>$/p')])
-
-  try:
-    while 1:
-      chunk = fp.read(CHUNK_SIZE)
-      if not chunk:
-        # need to check for eof methods because the cStringIO file objects
-        # returned by ccvs don't provide them
-        if hasattr(fp, 'eof') and fp.eof() is None:
-          time.sleep(1)
-          continue
-        break
-      enscript.write(chunk)
-  except IOError:
-    print "<h3>Failure during use of an external program:</h3>"
-    print "The command line was:"
-    print "<pre>"
-    print os.path.normpath(os.path.join(cfg.options.enscript_path,'enscript')
-                          ) + " --color --language=html --pretty-print="+lang+" -o - -"
-    print "</pre>"
-    print "Please look at the error log of your webserver for more info."
-    raise
-
-  enscript.close()
-  if sys.platform != "win32":
-    os.wait()
+  return MarkupPHP(cfg.options.php_exe_path, fp)
 
 markup_streamers = {
-#  '.py' : markup_stream_python,
+# '.py' : markup_stream_python,
   '.php' : markup_stream_php,
   '.inc' : markup_stream_php,
   }
@@ -909,20 +990,14 @@ enscript_extensions = {
   '.man' : 'nroff',
   '.nr' : 'nroff',
   '.p' : 'pascal',
-  # classic setting:
-  # '.pas' : 'pascal',
-  # most people using pascal today are using the Delphi system originally 
-  # brought to us as Turbo-Pascal during the eighties of the last century:
-  '.pas' : 'delphi',
-  # ---
+  '.pas' : 'delphi', ### Might instead be 'pascal'.
   '.patch' : 'diffu',
-  # For Oracle sql packages.  The '.pkg' extension might be used for other
-  # file types, adjust here if necessary.
-  '.pkg' : 'sql', 
+  '.pkg' : 'sql', ### Oracle SQL, but might be something else.
   '.pl' : 'perl',
   '.pm' : 'perl',
   '.pp' : 'pascal',
   '.ps' : 'postscript',
+  '.py' : 'python',
   '.s' : 'asm',
   '.scheme' : 'scheme',
   '.scm' : 'scheme',
@@ -942,9 +1017,6 @@ enscript_extensions = {
   '.vh' : 'verilog',
   '.vhd' : 'vhdl',
   '.vhdl' : 'vhdl',
-
-  ### use enscript or py2html?
-  '.py' : 'python',
   }
 enscript_filenames = {
   '.emacs' : 'elisp',
@@ -996,8 +1068,7 @@ def view_markup(request):
   if request.mime_type != 'text/plain':
     data['download_text_href'] = \
       request.get_url(view_func=view_checkout,
-                      params={'content-type': 'text/plain',
-                              'rev': rev})
+                      params={'content-type': 'text/plain', 'rev': rev})
   else:
     data['download_text_href'] = None
 
@@ -1042,33 +1113,31 @@ def view_markup(request):
   else:
     data['tag'] = query_dict.get('only_with_tag')
 
-  request.server.header()
-  generate_page(request, cfg.templates.markup, data)
-
+  markup_fp = None
   if is_viewable_image(request.mime_type):
+    fp.close()
     url = request.get_url(view_func=view_checkout, params={'rev': rev})
-    print '<img src="%s"><br>' % url
-    while fp.read(8192):
-      pass
+    markup_fp = MarkupBuffer('<img src="%s"><br>' % url)
   else:
     basename, ext = os.path.splitext(data['filename'])
     streamer = markup_streamers.get(ext)
     if streamer:
-      streamer(fp)
-    elif not cfg.options.use_enscript:
-      markup_stream_default(fp)
-    else:
+      markup_fp = streamer(fp)
+    elif cfg.options.use_enscript:
       lang = enscript_extensions.get(ext)
       if not lang:
         lang = enscript_filenames.get(basename)
       if lang and lang not in cfg.options.disable_enscript_lang:
-        markup_stream_enscript(lang, fp)
-      else:
-        markup_stream_default(fp)
-  status = fp.close()
-  if status:
-    raise 'pipe error status: %d' % status
-  html_footer(request)
+        markup_fp = MarkupEnscript(cfg.options.enscript_path, lang, fp)
+
+  # If no one has a suitable markup handler, we'll use the default.
+  if not markup_fp:
+    markup_fp = MarkupPipeWrapper(fp, '<pre>', '</pre>')
+    
+  data['markup'] = markup_fp
+  
+  request.server.header()
+  generate_page(request, cfg.templates.markup, data)
 
 def revcmp(rev1, rev2):
   rev1 = map(int, string.split(rev1, '.'))
@@ -1655,7 +1724,8 @@ def view_annotate(request):
   blame.make_html(request.repos.rootpath, request.where + ',v', rev,
                   compat.urlencode(request.get_options()))
 
-  html_footer(request)
+  # generate the footer
+  generate_page(request, cfg.templates.footer, data)
 
 
 def view_cvsgraph_image(request):
@@ -1666,10 +1736,11 @@ def view_cvsgraph_image(request):
     raise "cvsgraph no allows"
   
   request.server.header('image/png')
-  fp = popen.popen(os.path.normpath(os.path.join(cfg.options.cvsgraph_path,'cvsgraph')),
-                               ("-c", cfg.options.cvsgraph_conf,
-                                "-r", request.repos.rootpath,
-                                request.where + ',v'), 'rb', 0)
+  fp = popen.popen(os.path.normpath(os.path.join(cfg.options.cvsgraph_path,
+                                                 'cvsgraph')),
+                   ("-c", cfg.options.cvsgraph_conf,
+                    "-r", request.repos.rootpath,
+                    request.where + ',v'), 'rb', 0)
   copy_stream(fp)
   fp.close()
 
@@ -2306,7 +2377,7 @@ def generate_tarball(out, request, tar_top, rep_top,
     fp = request.repos.openfile(rep_top + reldir + [file.name], rev)[0]
 
     contents = fp.read()
-    status = fp.close()
+    fp.close()
 
     generate_tarball_header(out, tar_dir + file.name,
                             len(contents), mode, file.date)

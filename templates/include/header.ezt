@@ -5,7 +5,7 @@
   [### NOTE: the "diff" is the TITLE param to navigate_header() ]
   <title>[path]/[filename] - [arg0] - [rev]</title>
 </head>
-<body bgcolor="#eeeeee">
+<body bgcolor="#ffffff">
   <table width="100%" border=0 cellspacing=0 cellpadding=1 bgcolor="#9999ee">
   <tr valign=bottom>
     <td>
