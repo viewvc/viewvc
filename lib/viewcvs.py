@@ -1817,7 +1817,7 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
     view_rev = taginfo.get(view_tag)
     if not view_rev:
       raise debug.ViewcvsException('Tag %s not defined.' % view_tag,
-                                   '404 Tag not found')
+                                   '404 Tag Not Found')
 
     show_revs = [ ]
 
@@ -2693,7 +2693,7 @@ def view_diff(request):
     rev1 = query_dict.get('tr1', None)
     if not rev1:
       raise debug.ViewcvsException('Missing revision from the diff '
-                                   'form text field')
+                                   'form text field', '400 Bad Request')
   else:
     idx = string.find(r1, ':')
     if idx == -1:
@@ -2706,7 +2706,7 @@ def view_diff(request):
     rev2 = query_dict.get('tr2', None)
     if not rev2:
       raise debug.ViewcvsException('Missing revision from the diff '
-                                   'form text field')
+                                   'form text field', '400 Bad Request')
     sym2 = ''
   else:
     idx = string.find(r2, ':')
@@ -2722,7 +2722,8 @@ def view_diff(request):
       sym1, sym2 = sym2, sym1
       p1, p2 = p2, p1
   except ValueError:
-    raise debug.ViewcvsException('Invalid revision(s) passed to diff')
+    raise debug.ViewcvsException('Invalid revision(s) passed to diff',
+                                 '400 Bad Request')
     
   human_readable = 0
   unified = 0
@@ -2753,7 +2754,7 @@ def view_diff(request):
     unified = 1
   else:
     raise debug.ViewcvsException('Diff format %s not understood'
-                                 % format, '400 Bad arguments')
+                                 % format, '400 Bad Request')
 
   if human_readable:
     if cfg.options.hr_funout:
@@ -2775,7 +2776,8 @@ def view_diff(request):
       date1 = vclib.svn.date_from_rev(request.repos, int(rev1))
       date2 = vclib.svn.date_from_rev(request.repos, int(rev2))
     except vclib.InvalidRevision:
-      raise debug.ViewcvsException('Invalid revision(s) passed to diff')
+      raise debug.ViewcvsException('Invalid revision(s) passed to diff',
+                                   '400 Bad Request')
       
     date1 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date1))
     date2 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date2))
