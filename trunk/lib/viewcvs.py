@@ -1851,6 +1851,7 @@ def view_log_svn(request):
     'request' : request,
     'back_url' : back_url,
     'href' : file_url,
+    'filename' : filename,
 
     'query' : request.amp_query,
     'qquery' : request.qmark_query,
@@ -1932,6 +1933,7 @@ def view_log_cvs(request):
     'request' : request,
     'back_url' : back_url,
     'href' : file_url,
+    'filename' : filename,
 
     'query' : request.amp_query,
     'qquery' : request.qmark_query,
