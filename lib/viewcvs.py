@@ -721,40 +721,49 @@ def generate_page(request, tname, data):
 
   template.generate(sys.stdout, data)
 
-def clickable_path(request, leaf_is_link, drop_leaf):
-  where = ''
-  s = '<a href="%s#dirlist">[%s]</a>' \
-      % (_dir_url(request, where), request.server.escape(request.repos.name))
+def nav_path(request):
+  """Return current path as list of items with "name" and "href" members
 
-  for part in request.path_parts[:-1]:
-    if where: where = where + '/'
-    where = where + part
-    s = s + ' / <a href="%s#dirlist">%s</a>' % (_dir_url(request, where),
-                                                request.server.escape(part))
+  The href members are view_directory links for directories and view_log
+  links for files, but are set to None when the link would point to
+  the current view"""
 
-  if not drop_leaf and request.path_parts:
-    if not leaf_is_link:
-      s = s + ' / %s' % (request.server.escape(request.path_parts[-1]))
-    else:
-      if request.pathtype == vclib.DIR:
-        url = request.get_url(view_func=view_directory, params={},
-                              escape=1) + '#dirlist'
-      else:
-        url = request.get_url(view_func=view_log, params={}, escape=1)
-      s = s + ' / <a href="%s">%s</a>' \
-          % (url, request.server.escape(request.path_parts[-1]))
-
-  return s
-
-def _dir_url(request, where):
-  """convenient wrapper for get_url used by clickable_path()"""
+  # set convenient "rev" and "is_dir" values
   rev = None
   if request.roottype == "svn":
     rev = request.repos.rev
-  return request.get_url(view_func=view_directory, where=where, 
-                         pathtype=vclib.DIR, params={'rev' : rev},
-                         escape=1)
+  is_dir = request.pathtype == vclib.DIR
 
+  # add root item
+  items = []
+  root_item = _item(name=request.repos.name, href=None)
+  if request.path_parts or request.view_func is not view_directory:
+    root_item.href = request.get_url(view_func=view_directory,
+                                     where='', pathtype=vclib.DIR,
+                                     params={'rev' : rev}, escape=1)
+  items.append(root_item)
+
+  # add path part items
+  path_parts = []
+  for part in request.path_parts:
+    path_parts.append(part)
+    is_last = len(path_parts) == len(request.path_parts)
+
+    item = _item(name=part, href=None)
+
+    if not is_last or (is_dir and request.view_func is not view_directory):
+      item.href = request.get_url(view_func=view_directory,
+                                  where=string.join(path_parts, '/'),
+                                  pathtype=vclib.DIR,
+                                  params={'rev': rev}, escape=1)
+    elif not is_dir and request.view_func is not view_log:
+      item.href = request.get_url(view_func=view_log,
+                                  where=string.join(path_parts, '/'),
+                                  pathtype=vclib.FILE,
+                                  params={'rev': rev}, escape=1)
+    items.append(item)
+
+  return items
 
 def prep_tags(request, tags):
   url, params = request.get_link(params={'only_with_tag': None})
@@ -869,7 +878,7 @@ def common_template_data(request):
     'roottype' : request.roottype,
     'rootname' : request.server.escape(request.rootname),
     'pathtype' : request.pathtype == vclib.DIR and 'dir' or 'file',
-    'nav_path' : clickable_path(request, 1, 0),
+    'nav_path' : nav_path(request),
   }
   url, params = request.get_link(view_func=view_directory,
                                  where='',
@@ -1535,11 +1544,6 @@ def view_directory(request):
     'num_files' :  num_files,
     'files_shown' : num_displayed,
     'num_dead' : num_dead,
-
-    ### in the future, it might be nice to break this path up into
-    ### a list of elements, allowing the template to display it in
-    ### a variety of schemes.
-    'nav_path' : clickable_path(request, 0, 0),
   })
 
   if request.path_parts:
@@ -1890,7 +1894,6 @@ def view_log(request):
 
   data = common_template_data(request)
   data.update({
-    'nav_path' : clickable_path(request, 1, 0),
     'branch' : None,
     'mime_type' : request.mime_type,
     'rev_selected' : request.query_dict.get('r1'), 
@@ -2887,8 +2890,6 @@ def view_queryform(request):
   data['mindate'] = request.query_dict.get('mindate', '')
   data['maxdate'] = request.query_dict.get('maxdate', '')
 
-  data['nav_path'] = clickable_path(request, 0, 0)
-
   request.server.header()
   generate_page(request, cfg.templates.query_form, data)
 
@@ -3180,7 +3181,6 @@ def view_query(request):
 
   data = common_template_data(request)
   data.update({
-    'nav_path' : clickable_path(request, 0, 0),
     'sql': sql,
     'english_query': english_query(request),
     'queryform_href': queryform_href,
