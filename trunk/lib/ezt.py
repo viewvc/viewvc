@@ -90,11 +90,11 @@ Directives
    so if QUAL_NAME refers to a numeric value 0, the then-clause is
    substituted!
 
-   [if-index odd] ... [else] ... [end]
-   [if-index even] ... [else] ... [end]
-   [if-index first] ... [else] ... [end]
-   [if-index last] ... [else] ... [end]
-   [if-index NUMBER] ... [else] ... [end]
+   [if-index INDEX_FROM_FOR odd] ... [else] ... [end]
+   [if-index INDEX_FROM_FOR even] ... [else] ... [end]
+   [if-index INDEX_FROM_FOR first] ... [else] ... [end]
+   [if-index INDEX_FROM_FOR last] ... [else] ... [end]
+   [if-index INDEX_FROM_FOR NUMBER] ... [else] ... [end]
 
    These five directives work similar to [if-any], but are only useful 
    within a [for ...]-block (see above).  The odd/even directives are 
