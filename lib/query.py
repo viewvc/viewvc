@@ -36,7 +36,6 @@ CONF_PATHNAME = None
 import os
 import sys
 import string
-import sapi
 import time
 
 import cvsdb
@@ -278,7 +277,7 @@ def form_to_cvsdb_query(form_data):
             
     return query
 
-def build_commit(desc, files, cvsroots):
+def build_commit(server, desc, files, cvsroots, viewcvs_link):
     ob = _item(num_files=len(files), files=[])
     
     if desc:
@@ -311,7 +310,7 @@ def build_commit(desc, files, cvsroots):
         
         if cvsroot_name:
             flink = '<a href="%s/%s?root=%s">%s</a>' % (
-                    server.pageGlobals['viewcvs_link'], file, cvsroot_name, 
+                    viewcvs_link, file, cvsroot_name, 
                     file_full_path)
         else:
             flink = file_full_path
@@ -327,7 +326,7 @@ def build_commit(desc, files, cvsroots):
 
     return ob
 
-def run_query(form_data):
+def run_query(server, form_data, viewcvs_link):
     query = form_to_cvsdb_query(form_data)
     db = cvsdb.ConnectDatabaseReadOnly()
     db.RunQuery(query)
@@ -352,13 +351,13 @@ def run_query(form_data):
             files.append(commit)
             continue
 
-        commits.append(build_commit(current_desc, files, cvsroots))
+        commits.append(build_commit(server, current_desc, files, cvsroots, viewcvs_link))
 
         files = [ commit ]
         current_desc = desc
 
     ## add the last file group to the commit list
-    commits.append(build_commit(current_desc, files, cvsroots))
+    commits.append(build_commit(server, current_desc, files, cvsroots, viewcvs_link))
 
     return commits
 
@@ -367,19 +366,15 @@ def handle_config():
     global cfg
     cfg = viewcvs.cfg
 
-def main(viewcvs_link):
-  global server
+def main(server, viewcvs_link):
   try:
-    server = sapi.server
     handle_config()
 
-    server.pageGlobals['viewcvs_link'] = viewcvs_link
-    
     form = server.FieldStorage()
     form_data = FormData(form)
 
     if form_data.valid:
-        commits = run_query(form_data)
+        commits = run_query(server, form_data, viewcvs_link)
         query = None
     else:
         commits = [ ]

@@ -3,6 +3,6 @@ import viewcvs
 
 s = sapi.ModPythonServer(Request)
 try:
-  viewcvs.main()  
+  viewcvs.main(s)  
 finally:
   s.close()

@@ -60,7 +60,7 @@ import viewcvs
 
 s = sapi.AspServer(Server, Request, Response, Application)
 try:
-  viewcvs.main()  
+  viewcvs.main(s)  
 finally:
   s.close()
 

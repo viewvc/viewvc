@@ -162,7 +162,7 @@ def pipe_cmds(cmds):
           x, hStdErr = win32popen.MakeSpyPipe(None, 1, (dbgErr,))
         else:
           ehandle = win32event.CreateEvent(None, 1, 0, None)
-          nextStdIn, hStdOut = win32popen.MakeSpyPipe(None, 1, (dbgOut, sapi.server.getFile()), ehandle)
+          nextStdIn, hStdOut = win32popen.MakeSpyPipe(None, 1, (dbgOut, sapi.server.file()), ehandle)
           x, hStdErr = win32popen.MakeSpyPipe(None, 1, (dbgErr,))
 
         command = win32popen.CommandLine(cmd[0], cmd[1:])
@@ -194,7 +194,7 @@ def pipe_cmds(cmds):
             ehandle = None
           else:
             ehandle = win32event.CreateEvent(None, 1, 0, None)
-            x, hStdOut = win32popen.MakeSpyPipe(None, 1, (sapi.server.getFile(),), ehandle)            
+            x, hStdOut = win32popen.MakeSpyPipe(None, 1, (sapi.server.file(),), ehandle)            
   
         command = win32popen.CommandLine(cmd[0], cmd[1:])
         phandle, pid, thandle, tid = win32popen.CreateProcess(command, hStdIn, hStdOut, None)
