@@ -181,12 +181,12 @@ map_branch_alt	= "alt=\"%0 %t (%B)\"";
 # You might want to experiment with the following setting:
 # 1. The default setting will take you to a ViewCVS generated page displaying 
 #    that revision of the file, if you click into a revision box:
-map_rev_href	= "href=\"%m%F?rev=%R&content-type=text/vnd.viewcvs-markup%6\"";
+map_rev_href	= "href=\"%m%F?view=markup&rev=%R%6\"";
 # 2. This alternative setting will take you to the anchor representing this
 #    revision on a ViewCVS generated Log page for that file:
 # map_rev_href   = "href=\"%m%F%7#rev%R\"";
 #
 map_rev_alt	= "alt=\"%1 %t (%R)\"";
-map_diff_href	= "href=\"%m%F.diff?r1=%P&r2=%R%8%6\"";
+map_diff_href	= "href=\"%m%F?r1=%P&r2=%R%8%6\"";
 map_diff_alt	= "alt=\"%2 %P &lt;-&gt; %R\"";
 
