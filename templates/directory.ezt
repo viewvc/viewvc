@@ -1,0 +1,89 @@
+<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
+ "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html><head>
+<!-- ViewCVS       -- http://viewcvs.sourceforge.net/
+     by Greg Stein -- mailto:gstein@lyra.org
+  -->
+<title>[if-any where][where][else][cfg.general.main_title][end]</title>
+</head>
+<body text="#000000" bgcolor="#ffffff">
+<table width="100%" border=0 cellspacing=0 cellpadding=0>
+  <tr>
+    <td><h1>[if-any where][where][else][cfg.general.main_title][end]</h1></td>
+    <td align=right><img src="/icons/apache_pb.gif" alt="(logo)" border=0
+			width=259 height=32></td>
+  </tr>
+</table>
+
+[if-any where]
+  <p>
+    Click on a directory to enter that directory. Click on a file to
+    display its revision history and to get a chance to display diffs
+    between revisions.
+  </p>
+[else]
+  <p>
+    This is a WWW interface for CVS Repositories.  You can browse the
+    file hierarchy by picking directories (which have slashes after
+    them, <i>e.g.</i>, <b>src/</b>).  If you pick a file, you will see
+    the revision history for that file.  Selecting a revision number
+    will download that revision of the file.  There is a link at each
+    revision to display diffs between that revision and the previous
+    one, and a form at the bottom of the page that allows you to
+    display diffs between arbitrary revisions.
+  </p>
+  <p>
+    This script
+    (<a href="http://viewcvs.sourceforge.net/">ViewCVS</a>)
+    has been written by Greg Stein
+    &lt;<a href="mailto:gstein@lyra.org">gstein@lyra.org</a>&gt;
+    based on the
+    <a href="http://linux.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi">cvsweb</a>
+    script by Henner Zeller
+    &lt;<a href="mailto:zeller@think.de">zeller@think.de</a>&gt;;
+    it is covered by the
+    <a href="http://www.opensource.org/licenses/bsd-license.html">BSD-License</a>.
+    If you would like to use this CGI script on your own web server and
+    CVS tree, see Greg's
+    <a href="http://viewcvs.sourceforge.net/">ViewCVS distribution
+    site</a>.
+    Please send any suggestions, comments, etc. to
+    <a href="mailto:gstein@lyra.org">Greg Stein</a>.
+  </p>
+
+  <h3>CVS Documentation</h3>
+  <blockquote>
+    <p>
+      <a href="http://cvsbook.red-bean.com/">Karl Fogel's CVS book</a><br>
+      <a href="http://www.loria.fr/~molli/cvs/doc/cvs_toc.html">CVS
+      User's Guide</a><br>
+      <a href="http://cellworks.washington.edu/pub/docs/cvs/tutorial/cvs_tutorial_1.html">Another CVS tutorial</a><br>
+      <a href="http://www.csc.calpoly.edu/~dbutler/tutorials/winter96/cvs/">Yet another CVS tutorial (a little old, but nice)</a><br>
+      <a href="http://www.cs.utah.edu/dept/old/texinfo/cvs/FAQ.txt">An old but very useful FAQ about CVS</a>
+    </p>
+  </blockquote>
+
+  <!-- insert repository access instructions here -->
+
+
+  [if-any roots]
+    <h3>Project Root</h3>
+    [# ### temporary... to show access of current root ]
+    [current_root]
+    <form method=GET action="./">
+      <select name=cvsroot onchange="submit()">
+      [for roots]
+        [# ### need to add "selected" in here, based on current selection ]
+        <option>[roots]</option>
+      [end]
+      </select>
+      <input type=submit value="Go">
+    </form>
+  [end]
+
+[end]
+
+[# ### the body goes here ]
+
+
+[# ### the footer goes here ]
