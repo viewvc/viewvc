@@ -1,21 +1,21 @@
 
-import re
 import time
 import string
+import profile
 
 import rcsparse
 import viewcvs
 
-_re_extract_lines = re.compile('(\\d+)\\s(\\d+)\n')
 def lines_changed(delta):
   idx = 0
   added = deleted = 0
   while idx < len(delta):
     op = delta[idx]
-    match = _re_extract_lines.match(delta, idx + 1)
-    line = int(match.group(1))
-    count = int(match.group(2))
-    idx = match.end()
+    i = string.index(delta, ' ', idx + 1)
+    j = string.index(delta, '\n', i + 1)
+    line = int(delta[idx+1:i])
+    count = int(delta[i+1:j])
+    idx = j + 1
     if op == 'd':
       deleted = deleted + count
     else: # 'a' for adding text
@@ -28,7 +28,6 @@ def lines_changed(delta):
         count = count - 1
   return added, deleted
 
-_re_trunk_rev = re.compile('^[0-9]+\\.[0-9]+$')
 class FetchSink(rcsparse.Sink):
   def __init__(self, which_rev=None):
     self.head = self.branch = ''
@@ -66,14 +65,14 @@ class FetchSink(rcsparse.Sink):
 
     if revision != self.head:
       added, deleted = lines_changed(text)
-      if _re_trunk_rev.match(revision) is None:
-        # on a branch. forward delta.
-        changed = '+%d -%d' % (added, deleted)
-        self.entries[revision].changed = changed
-      else:
+      if string.count(revision, '.') == 1:
         # on the trunk. reverse delta.
         changed = '+%d -%d' % (deleted, added)
         self.entries[self.base[revision]].changed = changed
+      else:
+        # on a branch. forward delta.
+        changed = '+%d -%d' % (added, deleted)
+        self.entries[revision].changed = changed
 
   def parse_completed(self):
     if self.which:
@@ -111,3 +110,11 @@ def time_fetch(full_name, which_rev=None):
   fetch_log2(full_name, which_rev)
   t2 = time.time() - t
   print t1, t2
+
+def profile_fetch(full_name, which_rev=None):
+  p = profile.Profile()
+  def many_calls(*args):
+    for i in xrange(5):
+      apply(fetch_log2, args)
+  p.runcall(many_calls, full_name, which_rev)
+  p.print_stats()
