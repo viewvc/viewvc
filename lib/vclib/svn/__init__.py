@@ -78,16 +78,34 @@ class NodeHistory:
     self.histories = {}
     self.fs_ptr = fs_ptr
     self.filter_path = filter_path
-
+    
   def add_history(self, path, revision, pool):
     # If filtering, only add the path and revision to the histories
-    # list if they were actually changed in this revision.  This is
-    # useful for omitting bubble-up directory changes.
+    # list if they were actually changed in this revision (where
+    # change means the path itself was changed, or one of its parents
+    # was copied).  This is useful for omitting bubble-up directory
+    # changes.
     if self.filter_path:
       rev_root = fs.revision_root(self.fs_ptr, revision, pool)
       changed_paths = fs.paths_changed(rev_root, pool)
-      if path not in changed_paths.keys():
-        return
+      paths = changed_paths.keys()
+      if path not in paths:
+        # Look for a copied parent
+        test_path = path
+        found = 0
+        while 1:
+          off = string.rfind(test_path, '/')
+          if off < 0:
+            break
+          test_path = test_path[0:off]
+          if test_path in paths:
+            copyfrom_rev, copyfrom_path = \
+                          fs.copied_from(rev_root, test_path, pool)
+            if copyfrom_rev >= 0 and copyfrom_path:
+              found = 1
+              break
+        if not found:
+          return
     self.histories[revision] = _trim_path(path)
     
   
