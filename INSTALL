@@ -184,6 +184,16 @@ or alternatively METHOD B:
    </Location>
 
    This idea is courtesy to Nick Bauman from http://www.cortexity.com/
+   Unfortunately some additional tweaking is necessary to avoid that
+   people "sneak in" with URLs like
+   	http://<server_name>/viewcvs/*checkout*/<module_name>
+   	http://<server_name>/viewcvs/~checkout~/<module_name>
+   and get access to seeing the file contents. :-(  At the moment
+   the only solution seems to be to create two additional duplicates 
+   of the location directives abvoce with paths modified to 
+   <Location "<url to viewcvs.cgi>/*checkout*/<modname_you_wish_to_access_ctl>">
+   and
+   <Location "<url to viewcvs.cgi>/~checkout~/<modname_you_wish_to_access_ctl>">
 
 
 UPGRADING VIEWCVS
