@@ -23,6 +23,12 @@ import string
 import ConfigParser
 import fnmatch
 
+def error(msg, status='500 Internal Server Error'):
+  """a simple error reporting utility function"""
+  print 'Status:', status
+  print
+  print msg
+  sys.exit(0)
 
 #########################################################################
 #
@@ -109,8 +115,11 @@ class Config:
       if opt == 'cvs_roots':
         roots = { }
         for root in value:
-          name, path = map(string.strip, string.split(root, ':'))
-          roots[name] = path
+          try:
+            name, path = map(string.strip, string.split(root, ':'))
+            roots[name] = path
+          except ValueError:
+            error("malformed configuration file: wrong cvs_roots syntax:"+root)
         value = roots
       setattr(sc, opt, value)
 

@@ -59,6 +59,7 @@ import struct
 # these modules come from our library (the stub has set up the path)
 import compat
 import config
+from config import error
 import popen
 import ezt
 import accept
@@ -325,12 +326,6 @@ def redirect(location):
   print 'Location:', location
   print
   print 'This document is located <a href="%s">here</a>.' % location
-  sys.exit(0)
-
-def error(msg, status='500 Internal Server Error'):
-  print 'Status:', status
-  print
-  print msg
   sys.exit(0)
 
 def generate_page(request, tname, data):
