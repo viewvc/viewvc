@@ -24,7 +24,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
 
   [if-any roots]
     <h3>Project Root</h3>
-    <form method=GET action="[request.script_name][if-any where]/[where][end]">
+    <form method=GET action="[request.script_name]/[if-any where][where]/[end]">
       <select name=cvsroot onchange="submit()">
       [for roots]
         [is roots current_root]
@@ -59,7 +59,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
   [else]
     [is picklist_len "1"]
     [else]
-      <form method=GET action="[request.script_name][if-any where]/[where][end]">
+      <form method=GET action="[request.script_name]/[if-any where][where]/[end]">
         [dir_paging_hidden_values]
         <input type=submit value="Go to:">
         <select name=dir_pagestart  onchange="submit()">
@@ -265,7 +265,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
 
 [if-any selection_form]
   <hr size=1 noshade>
-  <form method=GET action="[request.script_name][if-any where]/[where][end]">
+  <form method=GET action="[request.script_name]/[if-any where][where]/[end]">
     [search_tag_hidden_values]
     [# this table holds the selectors on the left, and reset on the right ]
     <table>
@@ -317,7 +317,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
   </form>
       [if-any view_tag]
         <td valign=bottom>
-          <form method=GET action="[request.script_name][if-any where]/[where][end]">
+          <form method=GET action="[request.script_name]/[if-any where][where]/[end]">
             <input type="hidden" name="cvsroot" value="[current_root]">
             <input type="submit" value="Show all files">
           </form>
@@ -325,7 +325,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
       [else]
         [if-any search_re]
           <td valign=bottom>
-            <form method=GET action="[request.script_name][if-any where]/[where][end]">
+            <form method=GET action="[request.script_name]/[if-any where][where]/[end]">
               <input type="submit" value="Show all files">
             </form>
           </td>
