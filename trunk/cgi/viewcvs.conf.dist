@@ -203,9 +203,6 @@ diff_add = #aaffaa
 # default is a greyish yellow: the color should match the hue of 'diff_change')
 diff_dark_change = #eeee77
 
-# even/odd row colors
-even_odd = #ccccee, #ffffff
-
 # navigation header (in diff screen, file view, annotation, etc)
 nav_header = #9999ee
 

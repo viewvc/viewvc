@@ -42,8 +42,7 @@ import fnmatch
 
 class Config:
   _sections = ('general', 'images', 'options', 'colors', 'cvsdb', 'templates')
-  _force_multi_value = ('cvs_roots', 'forbidden', 'even_odd',
-                        'disable_enscript_lang')
+  _force_multi_value = ('cvs_roots', 'forbidden', 'disable_enscript_lang')
 
   def __init__(self):
     for section in self._sections:
@@ -148,8 +147,6 @@ class Config:
     self.colors.diff_change = "#ffff77" # yellow/orange
     self.colors.diff_add = "#aaffaa" # green
     self.colors.diff_dark_change = "#eeee77" # meets hue of diff_change
-
-    self.colors.even_odd = ("#ccccee", "#ffffff")
 
     self.colors.nav_header = "#9999ee"
 
