@@ -11,7 +11,7 @@ Run this script from within the tools subdirectory to recreate the source file
 
 """
 
-import sys, os, string, base64, fnmatch
+import sys, os, string, fnmatch
 
 
 PREAMBLE="""#! /usr/bin/env python
@@ -23,13 +23,11 @@ PREAMBLE="""#! /usr/bin/env python
 ## vim:ts=4:et:nowrap
 # [Emacs: -*- python -*-]
 
-import base64
-
 _ap_icons = """
 
 def encodefile(filename):
     """returns the binary content of 'filename' as string"""
-    return base64.encodestring(open(filename, "rb").read())
+    return repr(open(filename, "rb").read())
 
 class Encode:
     """Starting at a given directory find all files matching a certain 
@@ -63,9 +61,9 @@ class Encode:
         return fnmatch.fnmatch(candidate, self.fn_pattern)
 
     def put_item(self, pathname):
-        self.result.append(' '*8
-            +'"'+self.compute_key(pathname)+'" :\n  """'
-            +encodefile(pathname)+'""",\n')
+        self.result.append('  "%s" :\n    %s,\n\n'
+                           % (self.compute_key(pathname),
+                              encodefile(pathname)))
 
     def compute_key(self, pathname):
         """computes the dictionary key.  Tkinter compatible"""
@@ -94,16 +92,7 @@ class WebserverIconEncode(Encode):
             return pathname[l:]
         return pathname
 
-# --- standard test environment ---
-def _test(argv):
-    import doctest, bin2inline_py           
-    verbose = "-v" in argv
-    return doctest.testmod(bin2inline_py, verbose=verbose)
-
 POSTAMBLE="""
-# optimize:
-for k, v in _ap_icons.items():
-    _ap_icons[k] = base64.decodestring(v)
 
 def serve_icon(pathname, fp):
     if _ap_icons.has_key(pathname):
@@ -115,7 +104,8 @@ def serve_icon(pathname, fp):
 
 if __name__ == "__main__":
     import sys
-    # sys.exit(_test()[0]) # XXX No doctest unittest here yet. (maybe never? ;-)
-    open("../lib/apache_icons.py", "wt").write(PREAMBLE
-        +str(WebserverIconEncode(startdir="/usr/local/httpd"))
-        +POSTAMBLE)
+
+    f = open("../lib/apache_icons.py", "wt")
+    f.write(PREAMBLE)
+    f.write(str(WebserverIconEncode(startdir="/usr/local/httpd")))
+    f.write(POSTAMBLE)
