@@ -39,6 +39,12 @@
 [if-any num_files]
 <tr><td>Files shown:</td><td><b>[files_shown]</b></td></tr>
 [end]
+[if-any queryform_href]
+<tr>
+  <td>Query:</td>
+  <td><a href="[queryform_href]">Query revision history</a></td>
+</tr>
+[end]
 </table>
   [is cfg.options.use_pagesize "0"]
   [else]
