@@ -2240,8 +2240,9 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0, uid=0, gid=0,
 
   out.write(block)
 
-def generate_tarball_cvs(out, request, tar_top, rep_top, reldir, tag, stack=[]):
-  if (rep_top == '' and 0 < len(reldir) and
+def generate_tarball(out, request, tar_top, rep_top, reldir, tag, stack=[]):
+  cvs = request.roottype == 'cvs'
+  if cvs and (rep_top == '' and 0 < len(reldir) and
       ((reldir[0] == 'CVSROOT' and cfg.options.hide_cvsroot)
        or cfg.is_forbidden(reldir[0]))):
     return
@@ -2249,7 +2250,10 @@ def generate_tarball_cvs(out, request, tar_top, rep_top, reldir, tag, stack=[]):
   rep_path = rep_top + reldir
   tar_dir = string.join(tar_top + reldir, '/') + '/'
 
-  entries = request.repos.listdir(rep_path, tag)
+  if cvs:
+    entries = request.repos.listdir(rep_path, tag)
+  else:
+    entries = request.repos.listdir(rep_path)
 
   subdirs = [ ]
   for file in entries:
@@ -2258,23 +2262,32 @@ def generate_tarball_cvs(out, request, tar_top, rep_top, reldir, tag, stack=[]):
 
   stack.append(tar_dir)
 
-  bincvs.get_logs(request.repos, rep_path, entries, tag)
+  if cvs:
+    bincvs.get_logs(request.repos, rep_path, entries, tag)
+  else:
+    rep_dir = string.join(rep_path, '/')
+    vclib.svn.get_logs(request.repos, rep_dir, entries)
 
   entries.sort(lambda a, b: cmp(a.name, b.name))
 
   for file in entries:
-    if file.rev is None or file.state == 'dead':
+    if (file.kind != vclib.FILE or
+        (cvs and (file.rev is None or file.state == 'dead'))):
       continue
 
     for dir in stack:
       generate_tarball_header(out, dir)
     del stack[0:]
 
-    info = os.stat(file.path)
-    mode = (info[stat.ST_MODE] & 0555) | 0200
+    if cvs:
+      info = os.stat(file.path)
+      mode = (info[stat.ST_MODE] & 0555) | 0200
+      rev_flag = '-p' + file.rev
+      fp = request.repos.rcs_popen('co', (rev_flag, file.path), 'rb', 0)
+    else:
+      mode = 0644
+      fp = request.repos.openfile(rep_top + reldir + [file.name])[0]
 
-    rev_flag = '-p' + file.rev
-    fp = request.repos.rcs_popen('co', (rev_flag, file.path), 'rb', 0)
     contents = fp.read()
     status = fp.close()
 
@@ -2285,57 +2298,9 @@ def generate_tarball_cvs(out, request, tar_top, rep_top, reldir, tag, stack=[]):
 
   subdirs.sort()
   for subdir in subdirs:
-    if subdir != 'Attic':
-      generate_tarball_cvs(out, request, tar_top, rep_top,
+    if not cvs or subdir != 'Attic':
+      generate_tarball(out, request, tar_top, rep_top,
 		       reldir + [subdir], tag, stack)
-
-  if len(stack):
-    del stack[-1:]
-
-def generate_tarball_svn(out, request, tar_top, rep_top, reldir, tag, stack=[]):
-  rep_dir = string.join(rep_top + reldir, '/')
-  tar_dir = string.join(tar_top + reldir, '/') + '/'
-
-  entries = request.repos.listdir(rep_top + reldir)
-
-  subdirs = []
-  for entry in entries:
-    if entry.kind == vclib.DIR:
-      subdirs.append(entry.name)
-
-  vclib.svn.get_logs(request.repos, rep_dir, entries)
-
-  stack.append(tar_dir)
-
-  for file in entries:
-    if file.kind != vclib.FILE:
-      continue
-
-    for dir in stack:
-      generate_tarball_header(out, dir)
-    del stack[0:]
-
-    mode = 0644
-
-    fp = request.repos.openfile(rep_top + reldir + [file.name])[0]
-
-    contents = ""
-    while 1:
-      chunk = fp.read(CHUNK_SIZE)
-      if not chunk:
-        break
-      contents = contents + chunk
-
-    status = fp.close()
-
-    generate_tarball_header(out, tar_dir + file.name,
-                            len(contents), mode, file.date)
-    out.write(contents)
-    out.write('\0' * (511 - ((len(contents) + 511) % 512)))
-
-  for subdir in subdirs:
-    generate_tarball_svn(out, request, tar_top, rep_top,
-                         reldir + [subdir], tag, stack)
 
   if len(stack):
     del stack[-1:]
@@ -2354,11 +2319,7 @@ def download_tarball(request):
   sys.stdout.flush()
   fp = popen.pipe_cmds([('gzip', '-c', '-n')])
 
-  # Switch based on the repository root type.
-  if request.roottype == 'cvs':
-    generate_tarball_cvs(fp, request, tar_top, rep_top, [], tag)
-  elif request.roottype == 'svn':
-    generate_tarball_svn(fp, request, tar_top, rep_top, [], tag)
+  generate_tarball(fp, request, tar_top, rep_top, [], tag)
 
   fp.write('\0' * 1024)
   fp.close()
