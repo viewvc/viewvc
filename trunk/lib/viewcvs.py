@@ -578,6 +578,10 @@ def markup_stream_default(fp):
   print '</pre>'
 
 def markup_stream_python(fp):
+  ### convert this code to use the recipe at:
+  ###     http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52298
+  ### note that the cookbook states all the code is licensed according to
+  ### the Python license.
   try:
     # see if Marc-Andre Lemburg's py2html stuff is around
     # http://starship.python.net/crew/lemburg/SoftwareDescriptions.html#py2html.py
@@ -2898,123 +2902,134 @@ def handle_config():
   debug.t_end('load-config')
 
 
-def main():
-  global server
+def run_viewcvs(server):
+  # handle the configuration stuff
+  handle_config()
+
+  # build a Request object, which contains info about the HTTP request
+  request = Request()
+
+  # most of the startup is done now.
+  debug.t_end('startup')
+
+  # if this is just a simple hunk of doc, then serve it up
+  if request.has_docroot_magic:
+    view_doc(request)
+    return
+
+  # check the forbidden list
+  if cfg.is_forbidden(request.module):
+    raise debug.ViewcvsException('Access to "%s" is forbidden.'
+                                 % request.module, '403 Forbidden')
+
+  # we must be referring to something in the repository. what is it?
+  isdir = 0
+  type = None
   try:
+    type = request.repos.itemtype(request.path_parts)
+    isdir = (type == vclib.DIR)
+  except vclib.ItemNotFound: # Let ItemNotFound errors fall through for now
+    pass
+
+  url = request.url
+
+  # if we have a directory and the request didn't end in "/", then redirect
+  # so that it does. (so that relative URLs in our output work right)
+  if isdir and server.getenv('PATH_INFO', '')[-1:] != '/':
+    server.redirect(url + '/' + request.qmark_query)
+
+  if isdir:
+    if request.roottype == 'cvs':
+      view_directory_cvs(request)
+    else:
+      view_directory_svn(request)
+    return
+
+  full_name = request.full_name
+
+  # since we aren't talking about a directory, set up the mime type info
+  # for the potential file.
+  request.setup_mime_type_info()
+
+  query_dict = request.query_dict
+
+  # Not a dir, and not a file ... is this some kind of URL hackery
+  # (blessed or otherwise) ?
+  if type != vclib.FILE:
+    if full_name[-5:] == '.diff' \
+       and query_dict.has_key('r1') and query_dict.has_key('r2'):
+      path_parts = request.path_parts[:]
+      path_parts[-1] = path_parts[-1][:-5]
+      if request.repos.itemtype(path_parts) == vclib.FILE:
+        # this is a versioned file with the old .diff tack-on present.
+        # redirect.
+        server.redirect(url[:-5] + '?' + compat.urlencode(query_dict))
+    elif cfg.options.allow_tar \
+         and full_name[-7:] == '.tar.gz' and query_dict.has_key('tarball'):
+      # getting your tarball on?  so be it.
+      download_tarball(request)
+      return
+    elif request.roottype == 'cvs':
+      # if the file is in a cvs Attic, then redirect.
+      idx = string.rfind(full_name, '/')
+      attic_name = full_name[:idx] + '/Attic' + full_name[idx:]
+      if os.path.isfile(attic_name + ',v') or \
+         full_name[-5:] == '.diff' and os.path.isfile(attic_name[:-5] + ',v'):
+        idx = string.rfind(url, '/')
+        server.redirect(url[:idx] + '/Attic' + url[idx:] + \
+                 '?' + compat.urlencode(query_dict))
+
+    # when all else fails: complain about it.
+    raise debug.ViewcvsException('%s: unknown location'
+                                 % request.url, '404 Not Found')
+
+  ### at this point, we know we're talking about a file.
+
+  # do Subversion-y things here until more concepts mesh with CVS's
+  if request.roottype == 'svn':
+    if query_dict.has_key('rev') or request.has_checkout_magic:
+      view_checkout(request)
+    elif query_dict.has_key('r1') and query_dict.has_key('r2'):
+      view_diff(request)
+    else:
+      view_log_svn(request)
+    return
+  else:
+    if query_dict.has_key('rev') or request.has_checkout_magic:
+      view_checkout(request)
+    elif query_dict.has_key('annotate') and cfg.options.allow_annotate:
+      view_annotate(request)
+    elif query_dict.has_key('r1') and query_dict.has_key('r2'):
+      view_diff(request)
+    elif query_dict.has_key('graph') and cfg.options.use_cvsgraph:
+      if not query_dict.has_key('makeimage'):
+        view_cvsgraph(cfg, request)
+      else: 
+        cvsgraph_image(cfg, request)
+    else:
+      view_log_cvs(request)
+    return
+
+  raise debug.ViewcvsException(
+    '%s: unable to determine desired operation'
+    % request.url, '404 Not Found')
+
+
+def main():
+  ### this is a bad hack. various functions expect a runtime global
+  ### named 'server' which corresponds to how we generate output.
+  ### bleck. the right answer is to make this part of the Request object
+  ### and ensure that every function is passed the Request instance.
+  ### this would also allow us to toss the AspProxy and its per-thread
+  ### nonsense.
+  global server
+  server = sapi.server
+
+  try:
+    debug.t_start('main')
+
     try:
-      server = sapi.server
-      debug.t_start('main')
-      
-      # handle the configuration stuff
-      handle_config()
-    
-      # build a Request object, which contains info about the HTTP request
-      request = Request()
-    
-      # most of the startup is done now.
-      debug.t_end('startup')
-    
-      # if this is just a simple hunk of doc, then serve it up
-      if request.has_docroot_magic:
-        view_doc(request)
-        return
-    
-      # check the forbidden list
-      if cfg.is_forbidden(request.module):
-        raise debug.ViewcvsException('Access to "%s" is forbidden.'
-                                     % request.module, '403 Forbidden')
-    
-      # we must be referring to something in the repository. what is it?
-      isdir = 0
-      type = None
-      try:
-        type = request.repos.itemtype(request.path_parts)
-        isdir = (type == vclib.DIR)
-      except vclib.ItemNotFound: # Let ItemNotFound errors fall through for now
-        pass
-      
-      url = request.url
-    
-      # if we have a directory and the request didn't end in "/", then redirect
-      # so that it does. (so that relative URLs in our output work right)
-      if isdir and server.getenv('PATH_INFO', '')[-1:] != '/':
-        server.redirect(url + '/' + request.qmark_query)
-    
-      if isdir:
-        if request.roottype == 'cvs':
-          view_directory_cvs(request)
-        else:
-          view_directory_svn(request)
-        return
-    
-      full_name = request.full_name
-    
-      # since we aren't talking about a directory, set up the mime type info
-      # for the potential file.
-      request.setup_mime_type_info()
-    
-      query_dict = request.query_dict
-    
-      # Not a dir, and not a file ... is this some kind of URL hackery
-      # (blessed or otherwise) ?
-      if type != vclib.FILE:
-        if full_name[-5:] == '.diff' \
-           and query_dict.has_key('r1') and query_dict.has_key('r2'):
-          path_parts = request.path_parts[:]
-          path_parts[-1] = path_parts[-1][:-5]
-          if request.repos.itemtype(path_parts) == vclib.FILE:
-            # this is a versioned file with the old .diff tack-on present.
-            # redirect.
-            server.redirect(url[:-5] + '?' + compat.urlencode(query_dict))
-        elif cfg.options.allow_tar \
-             and full_name[-7:] == '.tar.gz' and query_dict.has_key('tarball'):
-          # getting your tarball on?  so be it.
-          download_tarball(request)
-          return
-        elif request.roottype == 'cvs':
-          # if the file is in a cvs Attic, then redirect.
-          idx = string.rfind(full_name, '/')
-          attic_name = full_name[:idx] + '/Attic' + full_name[idx:]
-          if os.path.isfile(attic_name + ',v') or \
-             full_name[-5:] == '.diff' and os.path.isfile(attic_name[:-5] + ',v'):
-            idx = string.rfind(url, '/')
-            server.redirect(url[:idx] + '/Attic' + url[idx:] + \
-                     '?' + compat.urlencode(query_dict))
-    
-        # when all else fails: complain about it.
-        raise debug.ViewcvsException('%s: unknown location'
-                                     % request.url, '404 Not Found')
-    
-      ### at this point, we know we're talking about a file.
-        
-      # do Subversion-y things here until more concepts mesh with CVS's
-      if request.roottype == 'svn':
-        if query_dict.has_key('rev') or request.has_checkout_magic:
-          view_checkout(request)
-        elif query_dict.has_key('r1') and query_dict.has_key('r2'):
-          view_diff(request)
-        else:
-          view_log_svn(request)
-        return
-      else:
-        if query_dict.has_key('rev') or request.has_checkout_magic:
-          view_checkout(request)
-        elif query_dict.has_key('annotate') and cfg.options.allow_annotate:
-          view_annotate(request)
-        elif query_dict.has_key('r1') and query_dict.has_key('r2'):
-          view_diff(request)
-        elif query_dict.has_key('graph') and cfg.options.use_cvsgraph:
-          if not query_dict.has_key('makeimage'):
-            view_cvsgraph(cfg, request)
-          else: 
-            cvsgraph_image(cfg, request)
-        else:
-          view_log_cvs(request)
-        return
-      
-      raise debug.ViewcvsException(
-        '%s: unable to determine desired operation'
-        % request.url, '404 Not Found')
+      run_viewcvs(sapi.server)
     except SystemExit, e:
       return
     except:
@@ -3024,6 +3039,7 @@ def main():
     debug.t_end('main')
     debug.dump()
     debug.DumpChildren()
+
 
 class _item:
   def __init__(self, **kw):

@@ -19,7 +19,7 @@ class CgiServer:
     self.header_sent = 0
     self.pageGlobals = {}
 
-    if os.getenv('SERVER_SOFTWARE', '')[:13] == 'Microsoft-IIS':
+    if os.environ.get('SERVER_SOFTWARE', '')[:13] == 'Microsoft-IIS':
       self.iis = 1
     else:
       self.iis = 0
@@ -54,7 +54,7 @@ class CgiServer:
   def escape(self, s, quote = None):
     return cgi.escape(s, quote)
 
-  def getenv(self, name,value = None):
+  def getenv(self, name, value=None):
     # If the viewcvs cgi's are in the /viewcvs/ folder on the web server and a
     # request looks like
     #
@@ -111,9 +111,9 @@ def IIS_FixURL(url):
     else:
       dport = "80"
       prefix = "http://"
-    prefix += os.environ['HTTP_HOST']
+    prefix = prefix + os.environ['HTTP_HOST']
     if os.environ['SERVER_PORT'] != dport:
-      prefix += ":" + os.environ['SERVER_PORT']
+      prefix = prefix + ":" + os.environ['SERVER_PORT']
     return prefix + url
   return url
 
