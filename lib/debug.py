@@ -99,6 +99,7 @@ def GetExceptionData():
   exc_dict = {
     'status' : None,
     'msg' : None,
+    'stacktrace' : None,
     }
   
   try:

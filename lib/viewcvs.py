@@ -577,7 +577,7 @@ _legal_params = {
   'dir_pagestart' : _re_validate_number,
   'log_pagestart' : _re_validate_number,
   'hidecvsroot'   : _re_validate_number,
-  'makepatch'    : _re_validate_number,
+  'makepatch'     : _re_validate_number,
   'annotate'      : _re_validate_revnum,
   'graph'         : _re_validate_revnum,
   'makeimage'     : _re_validate_number,
@@ -3235,6 +3235,10 @@ def handle_config():
 def view_error(server):
   exc_dict = debug.GetExceptionData()
   status = exc_dict['status']
+  if exc_dict['msg']:
+    exc_dict['msg'] = htmlify(exc_dict['msg'])
+  if exc_dict['stacktrace']:
+    exc_dict['stacktrace'] = htmlify(exc_dict['stacktrace'])
   handled = 0
   
   # use the configured error template if possible
