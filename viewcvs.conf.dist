@@ -98,7 +98,8 @@ cvs_roots = cvs: /home/cvsroot
 #root_parents = /home/svn-repositories : svn,
 #               /home/cvs-repositories : cvs
 
-# this is the name of the default root.
+# this is the name of the default root
+# (ignored when root_as_url_component is turned on)
 default_root = cvs
 
 # uncomment if the RCS binaries are not on the standard path
@@ -272,6 +273,7 @@ revision = templates/revision.ezt
 query_form = templates/query_form.ezt
 query_results = templates/query_results.ezt
 error = templates/error.ezt
+roots = templates/roots.ezt
 
 directory = templates/directory.ezt
 # For an alternate form, where the first column displays a revision number
@@ -302,14 +304,7 @@ enabled = 0
 
 # root_as_url_component: Interpret the first path component in the URL
 # after the script location as the root to use.  This is an
-# alternative to using the 'root=' query key.  If no path components
-# exists in the script url after the script location, or if the first
-# such path component does not identify the name of configured root
-# (see the 'cvs_roots', 'svn_roots', and 'root_parents' configuration
-# items), the path will be expected to exist inside the configured
-# default root (the 'default_root' configuration item).
-#   1      Treat first path component as root name
-#   0      No special treatment of first path component (use root=)
+# alternative to using the 'root=' query key.
 root_as_url_component = 0
 
 # http_expiration_time: Expiration time (in seconds) for cacheable

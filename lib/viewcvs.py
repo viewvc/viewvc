@@ -206,8 +206,7 @@ class Request:
         if path_parts:
           self.rootname = path_parts.pop(0)
         else:
-          self.rootname = cfg.general.default_root
-          needs_redirect = 1
+          self.rootname = ""
       else:
         self.rootname = cfg.general.default_root
     elif cfg.options.root_as_url_component:
@@ -221,89 +220,90 @@ class Request:
       raise debug.ViewCVSException('Access to "%s" is forbidden.'
                                    % path_parts[0], '403 Forbidden')
 
-    # Create the repository object
-    if cfg.general.cvs_roots.has_key(self.rootname):
-      self.rootpath = os.path.normpath(cfg.general.cvs_roots[self.rootname])
-      try:
-        if cfg.general.use_rcsparse:
-          import vclib.ccvs
-          self.repos = vclib.ccvs.CCVSRepository(self.rootname, self.rootpath)
-        else:
-          import vclib.bincvs
-          self.repos = vclib.bincvs.BinCVSRepository(self.rootname, 
-                                                     self.rootpath,
-                                                     cfg.general)
-        self.roottype = 'cvs'
-      except vclib.ReposNotFound:
-        raise debug.ViewCVSException(
-          '%s not found!\nThe wrong path for this repository was '
-          'configured, or the server on which the CVS tree lives may be '
-          'down. Please try again in a few minutes.'
-          % self.rootname)
-      # required so that spawned rcs programs correctly expand $CVSHeader$
-      os.environ['CVSROOT'] = self.rootpath
-    elif cfg.general.svn_roots.has_key(self.rootname):
-      self.rootpath = cfg.general.svn_roots[self.rootname]
-      try:
-        if re.match(_re_rewrite_url, self.rootpath):
-          # If the rootpath is a URL, we'll use the svn_ra module, but
-          # lie about its name.
-          import vclib.svn_ra
-          vclib.svn = vclib.svn_ra
-        else:
-          self.rootpath = os.path.normpath(self.rootpath)
-          import vclib.svn
-        rev = None
-        if self.query_dict.has_key('rev') \
-          and self.query_dict['rev'] != 'HEAD':
-          rev = int(self.query_dict['rev'])
-        self.repos = vclib.svn.SubversionRepository(self.rootname,
-                                                    self.rootpath, rev)
-        self.roottype = 'svn'
-      except vclib.ReposNotFound:
-        raise debug.ViewCVSException(
-          '%s not found!\nThe wrong path for this repository was '
-          'configured, or the server on which the Subversion tree lives may'
-          'be down. Please try again in a few minutes.'
-          % self.rootname)
-      except vclib.InvalidRevision, ex:
-        raise debug.ViewCVSException(str(ex))
-    else:
-      raise debug.ViewCVSException(
-        'The root "%s" is unknown. If you believe the value is '
-        'correct, then please double-check your configuration.'
-        % self.rootname, "404 Repository not found")
-
-    # Make sure path exists
-    self.pathtype = _repos_pathtype(self.repos, self.path_parts)
-
-    if self.pathtype is None:
-      # path doesn't exist, try stripping known fake suffixes
-      result = _strip_suffix('.diff', self.where, self.path_parts,        \
-                             vclib.FILE, self.repos, view_diff) or        \
-               _strip_suffix('.tar.gz', self.where, self.path_parts,      \
-                             vclib.DIR, self.repos, download_tarball) or  \
-               _strip_suffix('root.tar.gz', self.where, self.path_parts,  \
-                             vclib.DIR, self.repos, download_tarball)
-      if result:
-        self.where, self.path_parts, self.pathtype, self.view_func = result
+    if self.rootname:
+      # Create the repository object
+      if cfg.general.cvs_roots.has_key(self.rootname):
+        self.rootpath = os.path.normpath(cfg.general.cvs_roots[self.rootname])
+        try:
+          if cfg.general.use_rcsparse:
+            import vclib.ccvs
+            self.repos = vclib.ccvs.CCVSRepository(self.rootname, self.rootpath)
+          else:
+            import vclib.bincvs
+            self.repos = vclib.bincvs.BinCVSRepository(self.rootname, 
+                                                       self.rootpath,
+                                                       cfg.general)
+          self.roottype = 'cvs'
+        except vclib.ReposNotFound:
+          raise debug.ViewCVSException(
+            '%s not found!\nThe wrong path for this repository was '
+            'configured, or the server on which the CVS tree lives may be '
+            'down. Please try again in a few minutes.'
+            % self.rootname)
+        # required so that spawned rcs programs correctly expand $CVSHeader$
+        os.environ['CVSROOT'] = self.rootpath
+      elif cfg.general.svn_roots.has_key(self.rootname):
+        self.rootpath = cfg.general.svn_roots[self.rootname]
+        try:
+          if re.match(_re_rewrite_url, self.rootpath):
+            # If the rootpath is a URL, we'll use the svn_ra module, but
+            # lie about its name.
+            import vclib.svn_ra
+            vclib.svn = vclib.svn_ra
+          else:
+            self.rootpath = os.path.normpath(self.rootpath)
+            import vclib.svn
+          rev = None
+          if self.query_dict.has_key('rev') \
+            and self.query_dict['rev'] != 'HEAD':
+            rev = int(self.query_dict['rev'])
+          self.repos = vclib.svn.SubversionRepository(self.rootname,
+                                                      self.rootpath, rev)
+          self.roottype = 'svn'
+        except vclib.ReposNotFound:
+          raise debug.ViewCVSException(
+            '%s not found!\nThe wrong path for this repository was '
+            'configured, or the server on which the Subversion tree lives may'
+            'be down. Please try again in a few minutes.'
+            % self.rootname)
+        except vclib.InvalidRevision, ex:
+          raise debug.ViewCVSException(str(ex))
       else:
-        raise debug.ViewCVSException('%s: unknown location'
-                                     % self.where, '404 Not Found')
+        raise debug.ViewCVSException(
+          'The root "%s" is unknown. If you believe the value is '
+          'correct, then please double-check your configuration.'
+          % self.rootname, "404 Repository not found")
 
-    # If we have an old ViewCVS Attic URL which is still valid, then redirect
-    if self.roottype == 'cvs':
-      attic_parts = None
-      if (self.pathtype == vclib.FILE and len(self.path_parts) > 1
-          and self.path_parts[-2] == 'Attic'):
-        attic_parts = self.path_parts[:-2] + self.path_parts[-1:]
-      elif (self.pathtype == vclib.DIR and len(self.path_parts) > 0
-            and self.path_parts[-1] == 'Attic'):
-        attic_parts = self.path_parts[:-1]
-      if attic_parts:
-        self.path_parts = attic_parts
-        self.where = _path_join(attic_parts)
-        needs_redirect = 1
+      # Make sure path exists
+      self.pathtype = _repos_pathtype(self.repos, self.path_parts)
+
+      if self.pathtype is None:
+        # path doesn't exist, try stripping known fake suffixes
+        result = _strip_suffix('.diff', self.where, self.path_parts,        \
+                               vclib.FILE, self.repos, view_diff) or        \
+                 _strip_suffix('.tar.gz', self.where, self.path_parts,      \
+                               vclib.DIR, self.repos, download_tarball) or  \
+                 _strip_suffix('root.tar.gz', self.where, self.path_parts,  \
+                               vclib.DIR, self.repos, download_tarball)
+        if result:
+          self.where, self.path_parts, self.pathtype, self.view_func = result
+        else:
+          raise debug.ViewCVSException('%s: unknown location'
+                                       % self.where, '404 Not Found')
+
+      # If we have an old ViewCVS Attic URL which is still valid, then redirect
+      if self.roottype == 'cvs':
+        attic_parts = None
+        if (self.pathtype == vclib.FILE and len(self.path_parts) > 1
+            and self.path_parts[-2] == 'Attic'):
+          attic_parts = self.path_parts[:-2] + self.path_parts[-1:]
+        elif (self.pathtype == vclib.DIR and len(self.path_parts) > 0
+              and self.path_parts[-1] == 'Attic'):
+          attic_parts = self.path_parts[:-1]
+        if attic_parts:
+          self.path_parts = attic_parts
+          self.where = _path_join(attic_parts)
+          needs_redirect = 1
 
     # Try to figure out what to do based on view parameter
     self.view_func = _views.get(self.query_dict.get('view', None), 
@@ -312,7 +312,9 @@ class Request:
     if self.view_func is None:
       # view parameter is not set, try looking at pathtype and the 
       # other parameters
-      if self.pathtype == vclib.DIR:
+      if not self.rootname:
+        self.view_func = view_roots
+      elif self.pathtype == vclib.DIR:
         # ViewCVS 0.9.2 used to put ?tarball=1 at the end of tarball urls
 	if self.query_dict.has_key('tarball'):
           self.view_func = download_tarball
@@ -343,6 +345,7 @@ class Request:
     # so that it does.
     if (self.pathtype == vclib.DIR and path_info[-1:] != '/'
         and self.view_func is not view_revision
+        and self.view_func is not view_roots
         and self.view_func is not download_tarball):
       needs_redirect = 1
 
@@ -396,7 +399,7 @@ class Request:
 
     # if we are asking for the revision info view, we don't need any
     # path information
-    if view_func is view_revision:
+    if view_func is view_revision or view_func is view_roots:
       where = pathtype = None
     elif where is None:
       where = self.where
@@ -416,26 +419,27 @@ class Request:
       view_func = None
 
     # add root to url
-    if cfg.options.root_as_url_component:
-      # remove root from parameter list if present
-      try:
-        rootname = params['root']
-      except KeyError:
-        rootname = self.rootname
+    if view_func is not view_roots:
+      if cfg.options.root_as_url_component:
+        # remove root from parameter list if present
+        try:
+          rootname = params['root']
+        except KeyError:
+          rootname = self.rootname
+        else:
+          del params['root']
+
+        # add root path component
+        if rootname is not None:
+          url = url + '/' + rootname
+
       else:
-        del params['root']
-
-      # add root path component
-      if rootname is not None:
-        url = url + '/' + rootname
-
-    else:
-      # add root to parameter list
-      rootname = params.setdefault('root', self.rootname)
+        # add root to parameter list
+        rootname = params.setdefault('root', self.rootname)
       
-      # no need to specify default root
-      if rootname == cfg.general.default_root:
-        del params['root']   
+        # no need to specify default root
+        if rootname == cfg.general.default_root:
+          del params['root']   
 
     # add path
     if where:
@@ -465,6 +469,12 @@ class Request:
 
     # no need to explicitly specify directory view for a directory
     if view_func is view_directory and pathtype == vclib.DIR:
+      view_func = None
+
+    # no need to explicitly specify roots view when in root_as_url
+    # mode or there's no default root
+    if view_func is view_roots and (cfg.options.root_as_url_component
+                                    or not cfg.general.default_root):
       view_func = None
 
     # no need to explicitly specify annotate view when
@@ -720,6 +730,9 @@ def nav_path(request):
   links for files, but are set to None when the link would point to
   the current view"""
 
+  if not request.repos:
+    return []
+
   # set convenient "rev" and "is_dir" values
   rev = None
   if request.roottype == "svn":
@@ -902,9 +915,15 @@ def common_template_data(request):
     rootnames = allroots.keys()
     rootnames.sort(icmp)
     for rootname in rootnames:
+      href = request.get_url(view_func=view_directory,
+                             where='', pathtype=vclib.DIR,
+                             params={'root': rootname}, escape=1)
       roots.append(_item(name=request.server.escape(rootname),
-                         type=allroots[rootname][1]))
+                         type=allroots[rootname][1], href=href))
   data['roots'] = roots
+
+  data['roots_href'] = request.get_url(view_func=view_roots,
+                                       params={}, escape=1)
 
   if request.path_parts:
     dir = _path_join(request.path_parts[:-1])
@@ -1405,6 +1424,11 @@ def sort_file_data(file_data, sortdir, sortby):
 def icmp(x, y):
   """case insensitive comparison"""
   return cmp(string.lower(x), string.lower(y))
+
+def view_roots(request):
+  data = common_template_data(request)
+  request.server.header()
+  generate_page(request, cfg.templates.roots, data)
 
 def view_directory(request):
   # For Subversion repositories, the revision acts as a weak validator for
@@ -3222,6 +3246,7 @@ _views = {
   'annotate': view_annotate,
   'co':       view_checkout,
   'diff':     view_diff,
+  'roots':    view_roots,
   'dir':      view_directory,
   'graph':    view_cvsgraph,
   'graphimg': view_cvsgraph_image,
