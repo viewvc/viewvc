@@ -300,16 +300,16 @@ class CVSRepository(Repository):
     # Some checking:
     # Is the basepath a real directory ?
     if not os.path.isdir(self.basepath):
-      raise ReposNotFound(self.basepath)
+      raise ReposNotFound(name)
     # do we have a CVSROOT as an immediat subdirectory ?
     if not os.path.isdir(self.basepath + "CVSROOT/"):
-      raise ReposNotFound(self.basepath)
+      raise ReposNotFound(name)
       
-  def _getpath(self, pathname):
-    if pathname != []:
-      if (pathname[0] == "CVSROOT") and (self.show_CVSROOT == 0):
-        raise ItemNotFound(pathname)
-    return self.basepath + string.join(pathname, os.sep)
+  def _getpath(self, path_parts):
+    if path_parts != []:
+      if (path_parts[0] == "CVSROOT") and (self.show_CVSROOT == 0):
+        raise ItemNotFound(path_parts)
+    return self.basepath + string.join(path_parts, os.sep)
 
   def _getrcsname(self, filename):
     if filename[-2:] == ',v':
@@ -325,7 +325,7 @@ class CVSRepository(Repository):
       return Versdir(self, path_parts)
     if os.path.isfile(self._getrcsname(path)):
       return Versfile(self, path_parts)
-    raise ItemNotFound(path) 
+    raise ItemNotFound(path_parts)
     
   def getitemtype(self, path_parts):
     path = self._getpath(path_parts)
@@ -333,7 +333,7 @@ class CVSRepository(Repository):
       return DIR
     if os.path.isfile(path):
       return FILE
-    raise ItemNotFound(path)
+    raise ItemNotFound(path_parts)
   
   # Private methods ( accessed by Versfile and Revision )
 
