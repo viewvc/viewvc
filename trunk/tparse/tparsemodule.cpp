@@ -92,12 +92,14 @@ class PythonSink : public Sink
       PyObject *rv = PyObject_CallMethod(sink, "set_head_revision", "s",
                                          revision);
       if (!rv) {
-        Py_DECREF(rv);
         delstr(revision);
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
         else
           throw PythonException();
+      }
+      else {
+        Py_DECREF(rv);
       }
       delstr(revision);
       return 0;
@@ -107,12 +109,14 @@ class PythonSink : public Sink
       PyObject *rv = PyObject_CallMethod(sink, "set_principal_branch", "s",
                                          branch_name);
       if (!rv) {
-        Py_DECREF(rv);
         delstr(branch_name);
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
         else
           throw PythonException();
+      }
+      else {
+        Py_DECREF(rv);
       }
       delstr(branch_name);
       return 0;
@@ -122,12 +126,14 @@ class PythonSink : public Sink
       PyObject *rv = PyObject_CallMethod(sink, "define_tag", "ss",
                                          name, revision);
       if (!rv) {
-        Py_DECREF(rv);
         delstr(name);
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
         else
           throw PythonException();
+      }
+      else {
+        Py_DECREF(rv);
       }
       delstr(name);
       return 0;
@@ -136,12 +142,14 @@ class PythonSink : public Sink
     {
       PyObject *rv = PyObject_CallMethod(sink, "set_comment", "s", comment);
       if (!rv) {
-        Py_DECREF(rv);
         delstr(comment);
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
         else
           throw PythonException();
+      }
+      else {
+        Py_DECREF(rv);
       }
       delstr(comment);
       return 0;
@@ -151,12 +159,14 @@ class PythonSink : public Sink
       PyObject *rv = PyObject_CallMethod(sink, "set_description", "s",
                                          description);
       if (!rv) {
-        Py_DECREF(rv);
         delstr(description);
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
         else
           throw PythonException();
+      }
+      else {
+        Py_DECREF(rv);
       }
       delstr(description);
       return 0;
@@ -178,7 +188,6 @@ class PythonSink : public Sink
                                          revision,timestamp,
                                          author,state,pbranchs,next);
       if (!rv) {
-        Py_DECREF(rv);
         Py_DECREF(pbranchs);
         delstr(revision);
         delstr(author);
@@ -189,7 +198,10 @@ class PythonSink : public Sink
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
         else
-            throw PythonException();
+          throw PythonException();
+      }
+      else {
+        Py_DECREF(rv);
       }
       Py_DECREF(pbranchs);
       delstr(revision);
@@ -205,7 +217,6 @@ class PythonSink : public Sink
       PyObject *rv = PyObject_CallMethod(sink, "set_revision_info", "sss", 
                                          revision,log,text);
       if (!rv) {
-        Py_DECREF(rv);
         delstr(revision);
         delstr(log);
         delstr(text);
@@ -213,6 +224,9 @@ class PythonSink : public Sink
           return 1;
         else
           throw PythonException();
+      }
+      else {
+        Py_DECREF(rv);
       }
       delstr(revision);
       delstr(log);
@@ -223,11 +237,13 @@ class PythonSink : public Sink
     {
       PyObject *rv = PyObject_CallMethod(sink, "tree_completed", NULL);
       if (!rv) {
-        Py_DECREF(rv);
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
         else
           throw PythonException();
+      }
+      else {
+        Py_DECREF(rv);
       }
       return 0;
     };
@@ -235,11 +251,13 @@ class PythonSink : public Sink
     {
       PyObject *rv = PyObject_CallMethod(sink, "parse_completed", NULL);
       if (!rv) {
-        Py_DECREF(rv);
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
         else
           throw PythonException();
+      }
+      else {
+        Py_DECREF(rv);
       }
       return 0;
 
