@@ -10,13 +10,13 @@ import pywintypes, msvcrt
 SPOOL_BYTES = 4096
 
 # File object to write error messages
-SPOOL_ERROR = sys.stderr 
+SPOOL_ERROR = sys.stderr
 #SPOOL_ERROR = open("m:/temp/error.txt", "wt")
 
 def CommandLine(command, args):
   """Convert an executable path and a sequence of arguments into a command
   line that can be passed to CreateProcess"""
-  
+
   cmd = "\"" + string.replace(command, "\"", "\"\"") + "\"";
   for arg in args:
     cmd += " \"" + string.replace(arg, "\"", "\"\"") + "\""
@@ -37,14 +37,14 @@ def CreateProcess(cmd, hStdInput, hStdOutput, hStdError):
     si.hStdInput = win32api.GetStdHandle(win32api.STD_INPUT_HANDLE)
   else:
     si.hStdInput = hStdInput
-    
+
   if hStdOutput == 0:
     si.hStdOutput = win32api.GetStdHandle(win32api.STD_OUTPUT_HANDLE)
   else:
     si.hStdOutput = hStdOutput
 
   if hStdError == 0:
-    si.hStdError = win32api.GetStdHandle(win32api.STD_ERROR_HANDLE)    
+    si.hStdError = win32api.GetStdHandle(win32api.STD_ERROR_HANDLE)
   else:
     si.hStdError = hStdError
 
@@ -60,7 +60,7 @@ def CreateProcess(cmd, hStdInput, hStdOutput, hStdError):
     None,                            # currentDirectory
     si                               # startupinfo
   )
-  
+
   if hStdInput and hasattr(hStdInput, 'Close'):
     hStdInput.Close()
 
@@ -69,14 +69,14 @@ def CreateProcess(cmd, hStdInput, hStdOutput, hStdError):
 
   if hStdError and hasattr(hStdError, 'Close'):
     hStdError.Close()
-  
+
   return phandle, pid, thandle, tid
-       
+
 def CreatePipe(readInheritable, writeInheritable):
   """Create a new pipe specifying whether the read and write ends are
   inheritable and whether they should be created for blocking or nonblocking
   I/O."""
-  
+
   r, w = win32pipe.CreatePipe(None, SPOOL_BYTES)
   if readInheritable:
     r = MakeInheritedHandle(r)
@@ -106,12 +106,12 @@ def DuplicateHandle(handle):
   return win32api.DuplicateHandle(proc,handle,proc,0,0,win32con.DUPLICATE_SAME_ACCESS)
 
 def MakePrivateHandle(handle, replace = 1):
-  """Turn an inherited handle into a non inherited one. This avoids the 
+  """Turn an inherited handle into a non inherited one. This avoids the
   handle duplication that occurs on CreateProcess calls which can create
   uncloseable pipes."""
-  
+
   ### Could change implementation to use SetHandleInformation()...
-  
+
   flags = win32con.DUPLICATE_SAME_ACCESS;
   proc = win32api.GetCurrentProcess()
   if replace: flags |= win32con.DUPLICATE_CLOSE_SOURCE
@@ -121,9 +121,9 @@ def MakePrivateHandle(handle, replace = 1):
 
 def MakeInheritedHandle(handle, replace = 1):
   """Turn a private handle into an inherited one."""
-  
+
   ### Could change implementation to use SetHandleInformation()...
-  
+
   flags = win32con.DUPLICATE_SAME_ACCESS;
   proc = win32api.GetCurrentProcess()
   if replace: flags |= win32con.DUPLICATE_CLOSE_SOURCE
@@ -145,7 +145,7 @@ def MakeSpyPipe(readInheritable, writeInheritable, outFiles = None, doneEvent = 
     readHandle, w = None, None
   else:
     readHandle, w = CreatePipe(readInheritable, 0)
-  
+
   thread.start_new_thread(SpoolWorker, (r, w, outFiles, doneEvent))
 
   return readHandle, writeHandle
@@ -154,7 +154,7 @@ def SpoolWorker(srcHandle, destHandle, outFiles, doneEvent):
   """Thread entry point for implementation of MakeSpyPipe"""
   try:
     buffer = win32file.AllocateReadBuffer(SPOOL_BYTES)
-  
+
     while 1:
       try:
         #print >> SPOOL_ERROR, "Calling ReadFile..."; SPOOL_ERROR.flush()
@@ -166,7 +166,7 @@ def SpoolWorker(srcHandle, destHandle, outFiles, doneEvent):
           break
       except pywintypes.error, e:
         #print >> SPOOL_ERROR, "ReadFile threw '%s'" % str(e); SPOOL_ERROR.flush()
-        if e.args[0] == winerror.ERROR_BROKEN_PIPE:      
+        if e.args[0] == winerror.ERROR_BROKEN_PIPE:
           break
         else:
           raise e
@@ -183,16 +183,29 @@ def SpoolWorker(srcHandle, destHandle, outFiles, doneEvent):
         #print >> SPOOL_ERROR, "WriteFile() passed %i bytes and returned %i, %i" % (len(data), hr, bytes); SPOOL_ERROR.flush()
         if hr != 0 or bytes != len(data):
           raise "win32file.WriteFile() passed %i bytes and returned %i, %i" % (len(data), hr, bytes)
-  
+
     srcHandle.Close()
-  
+
     if doneEvent:
       win32event.SetEvent(doneEvent)
-  
+
     if destHandle:
-      destHandle.Close()   
-      
+      destHandle.Close()
+
   except:
     info = sys.exc_info()
     print >> SPOOL_ERROR, string.join(apply(traceback.format_exception, info), ''); SPOOL_ERROR.flush()
-    del info  
+    del info
+
+def NullFile(inheritable):
+  """Create a null file handle."""
+  if inheritable:
+    sa = pywintypes.SECURITY_ATTRIBUTES()
+    sa.bInheritHandle = 1
+  else:
+    sa = None
+
+  return win32file.CreateFile("nul",
+    win32file.GENERIC_READ | win32file.GENERIC_WRITE,
+    win32file.FILE_SHARE_READ | win32file.FILE_SHARE_WRITE,
+    sa, win32file.OPEN_EXISTING, 0, None)
