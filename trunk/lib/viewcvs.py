@@ -2698,11 +2698,10 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
 def generate_tarball(out, request, tar_top, rep_top,
                      reldir, options, stack=[]):
   cvs = request.roottype == 'cvs'
-  if cvs and (rep_top == '' and 0 < len(reldir) and
+  if cvs and (0 == len(rep_top) and 0 < len(reldir) and
               reldir[0] == 'CVSROOT' and cfg.options.hide_cvsroot):
     return
-
-  if (rep_top == '' and cfg.is_forbidden(reldir[0])):
+  if 0 == len(rep_top) and 0 < len(reldir) and cfg.is_forbidden(reldir[0]):
     return
 
   rep_path = rep_top + reldir
