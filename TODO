@@ -1,0 +1,27 @@
+TODO ITEMS
+----------
+*) add Tamminen Eero's comments on how to make Linux directly execute
+   the Python script. From email on Feb 19.
+   [ add other examples, such as my /bin/sh hack or the teeny CGI stub 
+     importing the bulk hack ]
+
+*) insert rcs_path into PATH before calling "rcsdiff". rcsdiff might
+   use "co" and needs to find it on the path.
+
+*) show the "locked" flag (attach it to the LogEntry objects).
+   Idea from Russell Gordon <russell@hoopscotch.dhs.org>
+
+*) committing with a specific revision number:
+   http://mailman.lyra.org/pipermail/viewcvs/2000q1/000008.html
+
+
+KNOWN BUGS
+----------
+*) from Harri Pasanen, Feb 7: when hideattic is set, files added in a
+   branch are not visible.
+
+*) from Dieter Deyke, Jan 12: if the CVS revisions differ by just a
+   keyword, then the diff output chokes.
+
+*) no scroll bar in Netscape browser when you click "as text" on an
+   HTML document.
