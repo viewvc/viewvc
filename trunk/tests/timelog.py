@@ -3,8 +3,13 @@ import time
 import string
 import profile
 
-import rcsparse
+from vclib.ccvs import rcsparse
 import viewcvs
+
+try:
+  import tparse
+except ImportError:
+  tparse = None
 
 def lines_changed(delta):
   idx = 0
@@ -80,14 +85,15 @@ class FetchSink(rcsparse.Sink):
 
 def fetch_log2(full_name, which_rev=None):
   sink = FetchSink(which_rev)
-  rcsparse.Parser().parse(open(full_name), sink)
+  rcsparse.parse(open(full_name), sink)
   return sink.head, sink.branch, sink.tags, sink.revs
 
-def compare_fetch(full_name, which_rev=None):
-  # d1 and d2 are:
-  #   ( HEAD revision, branch name, TAGS { name : revision }, [ LogEntry ] )
-  d1 = viewcvs.fetch_log(full_name, which_rev)
-  d2 = fetch_log2(full_name, which_rev)
+def fetch_log3(full_name, which_rev=None):
+  sink = FetchSink(which_rev)
+  tparse.parse(full_name, sink)
+  return sink.head, sink.branch, sink.tags, sink.revs
+
+def compare_data(d1, d2):
   if d1[:3] != d2[:3]:
     print 'd1:', d1[:3]
     print 'd2:', d2[:3]
@@ -103,6 +109,20 @@ def compare_fetch(full_name, which_rev=None):
   for i in range(len(d1[3])):
     if vars(d1[3][i]) != vars(d2[3][i]):
       pprint.pprint((i, vars(d1[3][i]), vars(d2[3][i])))
+
+def compare_fetch(full_name, which_rev=None):
+  # d1 and d2 are:
+  #   ( HEAD revision, branch name, TAGS { name : revision }, [ LogEntry ] )
+  d1 = viewcvs.fetch_log(full_name, which_rev)
+  d2 = fetch_log2(full_name, which_rev)
+
+  print 'comparing external tools vs a parser module:'
+  compare_data(d1, d2)
+
+  if tparse:
+    d2 = fetch_log3(full_name, which_rev)
+    print 'comparing external tools vs the tparse module:'
+    compare_data(d1, d2)
 
 def compare_many(files):
   for file in files:
@@ -158,22 +178,3 @@ def profile_fetch(full_name, which_rev=None, n=10):
       fetch_log2(full_name, which_rev)
   p.runcall(many_calls, full_name, which_rev, n)
   p.print_stats()
-
-def varysize(full_name, which_rev=None):
-  def one_run(n, *args):
-    rcsparse._TokenStream.CHUNK_SIZE = n
-    t = time.time()
-    for i in xrange(5):
-      apply(fetch_log2, args)
-    print n, time.time() - t
-
-  #one_run(2020, full_name, which_rev)
-  #one_run(4070, full_name, which_rev)
-  #one_run(8170, full_name, which_rev)
-  #one_run(8192, full_name, which_rev)
-  #one_run(16384, full_name, which_rev)
-  one_run(32740, full_name, which_rev)
-  one_run(65500, full_name, which_rev)
-  one_run(100000, full_name, which_rev)
-  one_run(200000, full_name, which_rev)
-  one_run(500000, full_name, which_rev)
