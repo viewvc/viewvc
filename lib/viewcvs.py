@@ -56,6 +56,7 @@ import compat
 import config
 import popen
 import ezt
+import debug
 
 #########################################################################
 
@@ -1114,8 +1115,10 @@ def view_directory(request):
 
   http_header()
 
+  debug.t_start()
   template = ezt.Template()
   template.parse_file(os.path.join(g_template_dir, cfg.templates.directory))
+  debug.t_end('ezt-parse')
 
   # prepare the data that will be passed to the template
   data = {
@@ -1863,8 +1866,10 @@ def view_log(request):
   branch_names.reverse()
   data['branch_names'] = branch_names
 
+  debug.t_start()
   template = ezt.Template()
   template.parse_file(os.path.join(g_template_dir, cfg.templates.log))
+  debug.t_end('ezt-parse')
 
   http_header()
 
@@ -2336,7 +2341,7 @@ def view_diff(request, cvs_filename):
   if human_readable:
     http_header()
     human_readable_diff(request, fp, rev1, rev2, sym1, sym2)
-    sys.exit(0)
+    return
 
   http_header('text/plain')
 
@@ -2577,7 +2582,10 @@ def main():
 
 def run_cgi():
   try:
+    debug.t_start()
     main()
+    debug.t_end('main')
+    debug.dump()
   except SystemExit, e:
     # don't catch SystemExit (caused by sys.exit()). propagate the exit code
     sys.exit(e[0])

@@ -161,6 +161,12 @@ _re_parse = re.compile('(\[[-\w."/ ]+\])|(\[\[\])|\[#[^\]]*\]')
 _block_cmd_specs = { 'if-any':1, 'if-index':2, 'for':1, 'is':2 }
 _block_cmds = _block_cmd_specs.keys()
 
+# two regular expresssions for compressing whitespace. the first is used to
+# compress any whitespace including a newline into a single newline. the
+# second regex is used to compress runs of whitespace into a single space.
+_re_newline = re.compile('[ \t\r\f\v]*\n\\s*')
+_re_whitespace = re.compile(r'\s\s+')
+
 class Template:
 
   def __init__(self, fname=None):
@@ -213,6 +219,7 @@ class Template:
       if which == 0:
         # TEXT. append if non-empty.
         if piece:
+          piece = _re_whitespace.sub(' ', _re_newline.sub('\n', piece))
           program.append(piece)
       elif which == 2:
         # BRACKET directive. append '[' if present.
