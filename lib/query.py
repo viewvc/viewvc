@@ -396,7 +396,7 @@ def main():
       data['hours'] = 2
 
     template = ezt.Template()
-    template.parse_file(os.path.join(viewcvs.g_template_dir,
+    template.parse_file(os.path.join(viewcvs.g_install_dir,
                                      cfg.templates.query))
 
     viewcvs.http_header()
