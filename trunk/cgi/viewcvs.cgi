@@ -1848,10 +1848,16 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
        (cfg.options.diff_font_face, cfg.options.diff_font_size)
   left_row = right_row = 0
 
+  # this will be set to true if any changes are found
+  changes_seen = 0
+
   while 1:
     line = fp.readline()
     if not line:
       break
+
+    # we've seen some kind of change
+    changes_seen = 1
 
     if line[:2] == '@@':
       match = _re_extract_info.match(line)
@@ -1894,10 +1900,11 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
         left_col = [ ]
         right_col = [ ]
 
-  flush_diff_rows(state, left_col, right_col)
-  if not state:
+  if changes_seen:
+    flush_diff_rows(state, left_col, right_col)
+  else:
     print '<tr><td colspan=2>&nbsp;</td></tr>'
-    print '<tr bgcolor="%s"><td colspan=2 align=center><b>- No viewable change -</b></td></tr>' % (cfg.colors.diff_empty)
+    print '<tr bgcolor="%s"><td colspan=2 align=center><br><b>- No changes -</b><br>&nbsp;</td></tr>' % (cfg.colors.diff_empty)
 
   print '</table><br><hr noshade width="100&#37;">'
   print '<table border=0 cellpadding=10><tr><td>'
