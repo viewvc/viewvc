@@ -116,7 +116,7 @@
 </tr>
 
 [for rows]
-  <tr bgcolor="[if-index rows even]#ccccee[else]#ffffff[end]">
+  <tr bgcolor="[if-index rows even]#ffffff[else]#ccccee[end]">
   [is rows.type "unreadable"]
     <td><a name="[rows.anchor]">[rows.name]</a></td>
     <td colspan=[rows.span]><i>this entry is unreadable</i></td>
