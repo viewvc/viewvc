@@ -1674,9 +1674,13 @@ def view_log(request):
     entry.download_text_href = None
     entry.sel_for_diff_href = None
     entry.diff_to_sel_href = None
+    entry.diff_to_sel_hr_href = None
     entry.diff_to_prev_href = None
+    entry.diff_to_prev_hr_href = None
     entry.diff_to_branch_href = None
+    entry.diff_to_branch_hr_href = None
     entry.diff_to_main_href = None
+    entry.diff_to_main_hr_href = None
     if pathtype is vclib.FILE:
       entry.view_href = request.get_url(view_func=view_markup,
                                         params={'rev': rev.string})
@@ -1768,8 +1772,14 @@ def view_log(request):
                           where=entry.filename, pathtype=vclib.FILE,
                           params={'r1': entry.prev,
                                   'p1': other_path,
+                                  'r2': entry.rev})
+      entry.diff_to_prev_hr_href = \
+          request.get_url(view_func=view_diff,
+                          where=entry.filename, pathtype=vclib.FILE,
+                          params={'r1': entry.prev,
+                                  'p1': other_path,
                                   'r2': entry.rev,
-                                  'diff_format': None})
+                                  'diff_format': 'h'})
     if selected_rev and \
            selected_rev != str(entry.rev) and \
            selected_rev != str(entry.prev) and \
@@ -1784,21 +1794,35 @@ def view_log(request):
                           where=entry.filename, pathtype=vclib.FILE,
                           params={'r1': selected_rev,
                                   'p1': other_path,
+                                  'r2': entry.rev})
+      entry.diff_to_sel_hr_href = \
+          request.get_url(view_func=view_diff,
+                          where=entry.filename, pathtype=vclib.FILE,
+                          params={'r1': selected_rev,
+                                  'p1': other_path,
                                   'r2': entry.rev,
-                                  'diff_format': None})
+                                  'diff_format': 'h'})
     # moves aren't handled here but they are only supported by CVS right now.
     if entry.next_main:
       entry.diff_to_main_href = \
           request.get_url(view_func=view_diff,
                           params={'r1': entry.next_main,
+                                  'r2': entry.rev})
+      entry.diff_to_main_hr_href = \
+          request.get_url(view_func=view_diff,
+                          params={'r1': entry.next_main,
                                   'r2': entry.rev,
-                                  'diff_format': None})
+                                  'diff_format': 'h'})
     if entry.branch_point:
       entry.diff_to_branch_href = \
           request.get_url(view_func=view_diff,
                           params={'r1': entry.branch_point,
+                                  'r2': entry.rev})
+      entry.diff_to_branch_hr_href = \
+          request.get_url(view_func=view_diff,
+                          params={'r1': entry.branch_point,
                                   'r2': entry.rev,
-                                  'diff_format': None})
+                                  'diff_format': 'h'})
 
     entries.append(entry)
 

@@ -12,24 +12,32 @@
   <td>&nbsp;</td>
   <td>
   Diffs between
+[if-any tags]
   <select name="r1">
     <option value="text" selected>Use Text Field</option>
   [for tags]
     <option value="[tags.rev]:[tags.name]">[tags.name]</option>
   [end]
   </select>
+[else]
+  <input type="hidden" name="r1" value="text" />
+[end]
   <input type="TEXT" size="12" name="tr1" value="[tr1]"
-        onChange="document.diff_select.r1.selectedIndex=0">
+        [if-any tags]onChange="document.diff_select.r1.selectedIndex=0"[end]>
 
   and
+[if-any tags]
   <select name="r2">
     <option value="text" selected>Use Text Field</option>
   [for tags]
     <option value="[tags.rev]:[tags.name]">[tags.name]</option>
   [end]
   </select>
+[else]
+  <input type="hidden" name="r2" value="text" />
+[end]
   <input type="TEXT" size="12" name="tr2" value="[tr2]"
-        onChange="document.diff_select.r1.selectedIndex=0">
+        [if-any tags]onChange="document.diff_select.r1.selectedIndex=0"[end]>
   </td>
   </tr>
   <tr>
