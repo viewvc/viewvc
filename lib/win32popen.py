@@ -201,7 +201,9 @@ def SpoolWorker(srcHandle, destHandle, outFiles, doneEvent):
     while 1:
       try:
         hr, data = win32file.ReadFile(srcHandle, buffer)
-        if hr == winerror.ERROR_HANDLE_EOF:
+        if hr != 0:
+          raise "win32file.ReadFile returned %i, '%s'" % (hr, data)
+        elif len(data) == 0:
           break
       except pywintypes.error, e:
         if e.args[0] == winerror.ERROR_BROKEN_PIPE:      
