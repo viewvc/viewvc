@@ -42,8 +42,10 @@ LIBRARY_DIR = None
 
 import sys
 import os
+import stat
 import string
 import urllib
+import rfc822
 import socket
 import select
 import BaseHTTPServer
@@ -57,6 +59,12 @@ import sapi
 import viewcvs
 import apache_icons
 import compat; compat.for_standalone()
+
+
+# calculate the mtime of the apache_icons module, for use when serving icons
+mtime = os.stat(apache_icons.__file__)[stat.ST_MTIME]
+icons_last_modified = rfc822.formatdate(mtime)
+del mtime
 
 if viewcvs.CONF_PATHNAME is None:
   viewcvs.g_install_dir = ''
@@ -93,6 +101,8 @@ class StandaloneServer(sapi.CgiServer):
                 statusText = status[p+1:]
             self.handler.send_response(statusCode, statusText)
             self.handler.send_header("Content-type", content_type)
+            for (name, value) in self.headers:
+                self.handler.send_header(name, value)
             self.handler.end_headers()
             
 
@@ -115,7 +125,8 @@ def serve(host, port, callback=None):
             elif self.path[:7] == "/icons/":
                 # XXX icon type should not be hardcoded to GIF:
                 self.send_response(200)
-                self.send_header("Content-type", "image/gif") 
+                self.send_header("Content-type", "image/gif")
+                self.send_header("Last-Modified", icons_last_modified)
                 self.end_headers()
                 apache_icons.serve_icon(self.path, self.wfile)
             else:
