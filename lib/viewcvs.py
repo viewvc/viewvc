@@ -249,6 +249,7 @@ class Request:
           rev = int(self.query_dict['rev'])
         self.repos = vclib.svn.SubversionRepository(self.rootname,
                                                     self.rootpath, rev)
+        self.repos.get_changed_paths = cfg.options.show_changed_paths
         self.roottype = 'svn'
       except vclib.ReposNotFound:
         raise debug.ViewCVSException(
@@ -2004,12 +2005,27 @@ def view_log_svn(request, data, logsort):
   for rev in show_revs:
     entry = logs[rev]
     entry.prev = prev_rev
-    entry.href = request.get_url(view_func=view_checkout, params={'rev': rev})
+    entry.href = request.get_url(view_func=view_checkout, where=entry.filename,
+                                 pathtype=vclib.FILE, params={'rev': rev})
     entry.view_href = request.get_url(view_func=view_markup, 
+                                      where=entry.filename,
+                                      pathtype=vclib.FILE,
                                       params={'rev': rev})
     entry.text_href = request.get_url(view_func=view_checkout,
+                                      where=entry.filename,
+                                      pathtype=vclib.FILE,
                                       params={'content-type': 'text/plain',
                                               'rev': rev})
+
+    if entry.copy_path:
+      entry.copy_href = request.get_url(view_func=view_log, 
+                                        where=entry.copy_path,
+                                        pathtype=vclib.FILE, params={})
+
+    for path in entry.other_paths:
+      path.href = request.get_url(view_func=view_log, where=path.filename, 
+                                  pathtype=vclib.FILE, params={})
+
     entry.tags = [ ]
     entry.branches = [ ]
     entry.branch_point = None

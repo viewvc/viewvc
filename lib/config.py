@@ -196,6 +196,7 @@ class Config:
     self.options.show_subdir_lastmod = 0
     self.options.show_logs = 1
     self.options.show_log_in_markup = 1
+    self.options.show_changed_paths = 1
     self.options.py2html_path = '.'
     self.options.short_log_len = 80
     self.options.use_enscript = 0
