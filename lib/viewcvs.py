@@ -48,6 +48,7 @@ debug.t_start('imports')
 import sys
 import os
 import sapi
+import cgi
 import string
 import urllib
 import mimetypes
@@ -113,10 +114,12 @@ else:
 
 
 class Request:
-  def __init__(self):
+  def __init__(self, server):
     # global needed because "import vclib.svn" causes the
     # interpreter to make vclib a local variable
     global vclib
+    
+    self.server = server
     
     where = server.getenv('PATH_INFO', '')
 
@@ -299,14 +302,14 @@ def _validate_param(name, value):
     validator = _legal_params[name]
   except KeyError:
     raise debug.ViewcvsException(
-      'An illegal parameter name ("%s") was passed.' % server.escape(name))
+      'An illegal parameter name ("%s") was passed.' % cgi.escape(name))
 
   # is the validator a regex?
   if hasattr(validator, 'match'):
     if not validator.match(value):
       raise debug.ViewcvsException(
         'An illegal value ("%s") was passed as a parameter.' %
-        server.escape(value))
+        cgi.escape(value))
     return
 
   # the validator must be a function
@@ -318,7 +321,7 @@ def _validate_root(value):
     raise debug.ViewcvsException(
       'The root "%s" is unknown. If you believe the value is '
       'correct, then please double-check your configuration.'
-      % server.escape(value), "404 Repository not found")
+      % cgi.escape(value), "404 Repository not found")
 
 def _validate_regex(value):
   # hmm. there isn't anything that we can do here.
@@ -465,7 +468,7 @@ def is_text(mime_type):
 _re_rewrite_url = re.compile('((http|ftp)(://[-a-zA-Z0-9%.~:_/]+)([?&]([-a-zA-Z0-9%.~:_]+)=([-a-zA-Z0-9%.~:_])+)*(#([-a-zA-Z0-9%.~:_]+)?)?)')
 _re_rewrite_email = re.compile('([-a-zA-Z0-9_.]+@([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
 def htmlify(html):
-  html = server.escape(html)
+  html = cgi.escape(html)
   html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
   html = re.sub(_re_rewrite_email, r'<a href="mailto:\1">\1</a>', html)
   return html
@@ -595,7 +598,7 @@ def markup_stream_python(fp):
   else:
     ### it doesn't escape stuff quite right, nor does it munge URLs and
     ### mailtos as well as we do.
-    html = server.escape(fp.read())
+    html = cgi.escape(fp.read())
     pp = py2html.PrettyPrint(PyFontify.fontify, "rawhtml", "color")
     html = pp.fontify(html)
     html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
@@ -835,7 +838,7 @@ def markup_stream(request, fp, revision, mime_type):
   else:
     data['tag'] = query_dict.get('only_with_tag')
 
-  server.header()
+  request.server.header()
   generate_page(request, cfg.templates.markup, data)
 
   if mime_type[:6] == 'image/':
@@ -1010,7 +1013,7 @@ def prepare_hidden_values(request, var_list, vars_to_omit_list):
       value = query_dict.get(varname, '')
       if value != '' and value != default_settings.get(varname):
         hidden_values.append('<input type="hidden" name="%s" value="%s" />' %
-                             (varname, server.escape(value)))
+                             (varname, request.server.escape(value)))
   return string.join(hidden_values, '')
 
 def sort_file_data(file_data, sortdir, sortby, fileinfo, roottype):
@@ -1388,7 +1391,7 @@ def view_directory_cvs(request):
     data['dir_pagestart'] = int(query_dict.get('dir_pagestart',0))
     data['rows'] = paging(data, 'rows', data['dir_pagestart'], 'name')
 
-  server.header()
+  request.server.header()
   generate_page(request, cfg.templates.directory, data)
 
 def view_directory_svn(request):
@@ -1515,7 +1518,7 @@ def view_directory_svn(request):
   # the number actually displayed
   data['files_shown'] = num_displayed
 
-  server.header()
+  request.server.header()
   generate_page(request, cfg.templates.directory, data)
 
 def paging(data, key, pagestart, local_name):
@@ -1695,11 +1698,10 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
 _re_is_vendor_branch = re.compile(r'^1\.1\.1\.\d+$')
 
 def augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
-                  rev_order, extended):
+                  rev_order, extended, name_printed):
   "Augment the entry with additional, computed data from the log output."
 
   query_dict = request.query_dict
-  g_name_printed = server.pageGlobals['g_name_printed']
 
   rev = entry.rev
   idx = string.rfind(rev, '.')
@@ -1732,9 +1734,9 @@ def augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
 
   if extended:
     entry.tag_names = rev2tag.get(rev, [ ])
-    if rev2tag.has_key(branch) and not g_name_printed.has_key(branch):
+    if rev2tag.has_key(branch) and not name_printed.has_key(branch):
       entry.branch_names = rev2tag.get(branch)
-      g_name_printed[branch] = 1
+      name_printed[branch] = 1
     else:
       entry.branch_names = [ ]
 
@@ -1907,7 +1909,7 @@ def view_log_svn(request):
     data['log_pagestart'] = int(query_dict.get('log_pagestart',0))
     data['entries'] = paging(data, 'entries', data['log_pagestart'], 'rev')
 
-  server.header()
+  request.server.header()
   generate_page(request, cfg.templates.log, data)
   
 def view_log_cvs(request):
@@ -2000,11 +2002,11 @@ def view_log_cvs(request):
     else:
       data['head_href'] = download_url(request, file_url, 'HEAD', None)
 
-  server.pageGlobals['g_name_printed'] = { } ### gawd, what a hack...
+  name_printed = { }
   for entry in show_revs:
     # augment the entry with (extended=1) info.
     augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
-                  rev_order, 1)
+                  rev_order, 1, name_printed)
 
   tagitems = taginfo.items()
   tagitems.sort()
@@ -2061,7 +2063,7 @@ def view_log_cvs(request):
     data['log_pagestart'] = int(query_dict.get('log_pagestart',0))
     data['entries'] = paging(data, 'entries', data['log_pagestart'], 'rev')
 
-  server.header()
+  request.server.header()
   generate_page(request, cfg.templates.log, data)
 
 ### suck up other warnings in _re_co_warning?
@@ -2167,7 +2169,7 @@ def view_checkout(request):
     # use the "real" MIME type
     markup_stream(request, fp, revision, request.mime_type)
   else:
-    server.header(mime_type)
+    request.server.header(mime_type)
     copy_stream(fp)
 
 def view_annotate(request):
@@ -2184,7 +2186,7 @@ def view_annotate(request):
     'kv' : request.kv,
     })
 
-  server.header()
+  request.server.header()
   generate_page(request, cfg.templates.annotate, data)
 
   ### be nice to hook this into the template...
@@ -2198,7 +2200,7 @@ def view_annotate(request):
 def cvsgraph_image(cfg, request):
   "output the image rendered by cvsgraph"
   # this function is derived from cgi/cvsgraphmkimg.cgi
-  server.header('image/png')
+  request.server.header('image/png')
   fp = popen.popen(os.path.normpath(os.path.join(cfg.options.cvsgraph_path,'cvsgraph')),
                                ("-c", cfg.options.cvsgraph_conf,
                                 "-r", request.repos.rootpath,
@@ -2239,7 +2241,7 @@ def view_cvsgraph(cfg, request):
     'kv' : request.kv,
     })
 
-  server.header()
+  request.server.header()
   generate_page(request, cfg.templates.graph, data)
 
 def search_files(request, search_re):
@@ -2334,13 +2336,13 @@ def view_doc(request):
     raise debug.ViewcvsException('help file "%s" not available\n(%s)'
                                  % (help_page, str(v)), '404 Not Found')
   if help_page[-3:] == 'png':
-    server.header('image/png')
+    request.server.header('image/png')
   elif help_page[-3:] == 'jpg':
-    server.header('image/jpeg')
+    request.server.header('image/jpeg')
   elif help_page[-3:] == 'gif':
-    server.header('image/gif')
+    request.server.header('image/gif')
   else: # assume HTML:
-    server.header()
+    request.server.header()
   copy_stream(fp)
   fp.close()
 
@@ -2349,7 +2351,7 @@ _re_extract_rev = re.compile(r'^[-+]+ [^\t]+\t([^\t]+)\t((\d+\.)*\d+)$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
 def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
   # do this now, in case we need to print an error
-  server.header()
+  request.server.header()
 
   query_dict = request.query_dict
 
@@ -2373,12 +2375,12 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
     if line[:4] == '--- ':
       match = _re_extract_rev.match(line)
       if match:
-        date1 = ', ' + match.group(1)
+        date1 = match.group(1)
         log_rev1 = match.group(2)
     elif line[:4] == '+++ ':
       match = _re_extract_rev.match(line)
       if match:
-        date2 = ', ' + match.group(1)
+        date2 = match.group(1)
         log_rev2 = match.group(2)
       break
 
@@ -2421,11 +2423,11 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
   # Convert to local time if option is set, otherwise remains UTC
   if (cfg.options.use_localtime):
     def time_format(date):
-      date = compat.cvs_strptime(date[-19:])
+      date = compat.cvs_strptime(date)
       date = compat.timegm(date)
       localtime = time.localtime(date)
       date = time.strftime('%Y/%m/%d %H:%M:%S', localtime)
-      return ', ' + date + ' ' + time.tzname[localtime[8]]
+      return date + ' ' + time.tzname[localtime[8]]
     date1 = time_format(date1)
     date2 = time_format(date2)
   else:
@@ -2442,8 +2444,8 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
     'rev2' : rev2,
     'tag1' : sym1,
     'tag2' : sym2,
-    'date1' : date1,
-    'date2' : date2,
+    'date1' : ', ' + date1,
+    'date2' : ', ' + date2,
     'changes' : rcs_diff,
     'diff_format' : query_dict['diff_format'],
     'hidden_values' : hidden_values,
@@ -2706,7 +2708,7 @@ def view_diff(request):
     human_readable_diff(request, fp, rev1, rev2, sym1, sym2)
     return
 
-  server.header('text/plain')
+  request.server.header('text/plain')
 
   rootpath = request.repos.rootpath
   if unified:
@@ -2856,7 +2858,7 @@ def download_tarball(request):
 
   ### look for GZIP binary
 
-  server.header('application/octet-stream')
+  request.server.header('application/octet-stream')
   sys.stdout.flush()
   fp = popen.pipe_cmds([('gzip', '-c', '-n')])
   generate_tarball(fp, request, tar_top, rep_top, [], tag)
@@ -2919,7 +2921,7 @@ def run_viewcvs(server):
   handle_config()
 
   # build a Request object, which contains info about the HTTP request
-  request = Request()
+  request = Request(server)
 
   # most of the startup is done now.
   debug.t_end('startup')
@@ -3027,30 +3029,21 @@ def run_viewcvs(server):
     % request.url, '404 Not Found')
 
 
-def main():
-  ### this is a bad hack. various functions expect a runtime global
-  ### named 'server' which corresponds to how we generate output.
-  ### bleck. the right answer is to make this part of the Request object
-  ### and ensure that every function is passed the Request instance.
-  ### this would also allow us to toss the AspProxy and its per-thread
-  ### nonsense.
-  global server
-  server = sapi.server
-
+def main(server):
   try:
     debug.t_start('main')
 
     try:
-      run_viewcvs(sapi.server)
+      run_viewcvs(server)
     except SystemExit, e:
       return
     except:
-      debug.PrintException()
+      debug.PrintException(server)
       html_footer(None)
   finally:
     debug.t_end('main')
     debug.dump()
-    debug.DumpChildren()
+    debug.DumpChildren(server)
 
 
 class _item:

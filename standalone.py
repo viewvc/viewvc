@@ -71,16 +71,23 @@ class Options:
 
 class StandaloneServer(sapi.CgiServer):
     def __init__(self, handler):
-        sapi.CgiServer.__init__(self)
+        sapi.CgiServer.__init__(self, inheritableOut = sys.platform != "win32")
         self.handler = handler
-        self.sent = 0
-        self.inheritableOut = sys.platform != "win32"
 
-    def header(self, content_type='text/html'):
-        if not self.sent:
+    def header(self, content_type='text/html', status = '200 OK'):
+        if not self.headerSent:
+            self.headerSent = 1
+            p = string.find(status, ' ')
+            if p < 0:
+              statusCode = status
+              statusText = ''
+            else:
+              statusCode = status[:p]
+              statusText = status[p+1:]
+            self.handler.send_response(statusCode, statusText)
             self.handler.send_header("Content-type", content_type)
             self.handler.end_headers()
-            self.sent = 1
+            
 
 def serve(host, port, callback=None):
     """start a HTTP server on the given port.  call 'callback' when the
@@ -93,7 +100,6 @@ def serve(host, port, callback=None):
             if not self.path or self.path == "/":
                 self.redirect()
             elif self.is_viewcvs():
-                StandaloneServer(self)
                 try:
                     self.run_viewcvs()
                 except IOError:
@@ -203,8 +209,6 @@ If this doesn't work, please click on the link above.
             # XXX Other HTTP_* headers
             decoded_query = string.replace(query, '+', ' ')
 
-            self.send_response(200)
-
             # Preserve state, because we execute script in current process:
             save_argv = sys.argv
             save_stdin = sys.stdin
@@ -222,7 +226,7 @@ If this doesn't work, please click on the link above.
                       os.close(1) 
                       assert os.dup(self.wfile.fileno()) == 1
                     sys.stdin = self.rfile
-                    viewcvs.main()
+                    viewcvs.main(StandaloneServer(self))
                 finally:
                     sys.argv = save_argv
                     sys.stdin = save_stdin

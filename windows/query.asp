@@ -55,7 +55,7 @@ import query
 
 s = sapi.AspServer(Server, Request, Response, Application)
 try:
-  query.main('viewcvs.asp')
+  query.main(s, 'viewcvs.asp')
 finally:
   s.close()
 
