@@ -154,7 +154,7 @@
         [end]
       [end]
 
-      <b>Log: </b><pre><i>[entries.html_log]</i></pre>
+      <b>Log: </b><pre class="vc_log">[entries.html_log]</pre>
     </td>
   </tr>
 

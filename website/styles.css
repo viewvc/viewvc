@@ -39,6 +39,18 @@ a:active  { color: #0000ff; }
 }
 
 
+/*** Log messages ***/
+.vc_log {
+  font-style: italic;
+  /* unfortunately, white-space: pre-wrap isn't widely supported ... */
+  white-space: -moz-pre-wrap; /* Mozilla based browsers */
+  white-space: -pre-wrap;     /* Opera 4 - 6 */
+  white-space: -o-pre-wrap;   /* Opera >= 7 */
+  white-space: pre-wrap;      /* CSS3 */
+  word-wrap: break-word;      /* IE 5.5+ */
+}
+
+
 /*** Markup Summary Header ***/
 .vc_summary {
   background-color: #eeeeee;

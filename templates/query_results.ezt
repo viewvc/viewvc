@@ -66,7 +66,7 @@
   <tr class="vc_row_[if-index commits even]even[else]odd[end]">
     <td>&nbsp;</td>
     <td colspan="5"><b>Log:</b><br>
-      <pre><i>[commits.desc]<i></pre></td>
+      <pre class="vc_log">[commits.desc]</pre></td>
   </tr>
   </tbody>
 [end]

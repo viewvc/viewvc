@@ -38,7 +38,7 @@ File: [nav_file]
   [is state "dead"]
     <br><b><i>FILE REMOVED</i></b>
   [end]
-  <pre>[log]</pre>
+  <pre class="vc_log">[log]</pre>
 [else]
   Revision: <b>[rev]</b><br>
   [if-any tag]
