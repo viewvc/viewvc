@@ -22,6 +22,7 @@ import os
 import os.path
 import string
 import cStringIO
+import signal
 
 # Subversion swig libs
 from svn import fs, repos, core, delta
@@ -310,9 +311,22 @@ class SubversionRepository(vclib.Repository):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
 
-    # Initialize some stuff that __del__ will look for.
+    # Initialize some stuff.
     self.pool = None
     self.apr_init = 0
+    self.rootpath = rootpath
+    self.name = name
+    self.rev = rev
+
+    # Register a handler for SIGTERM so we can have a chance to
+    # cleanup.  If ViewCVS takes too long to start generating CGI
+    # output, Apache will grow impatient and SIGTERM it.  While we
+    # don't mind getting told to bail, we want to gracefully close the
+    # repository before we bail.
+    def _sigterm_handler(signum, frame):
+      self._close()
+      sys.exit(-1)
+    signal.signal(signal.SIGTERM, _sigterm_handler)
 
     # Initialize APR and get our top-level pool.
     core.apr_initialize()
@@ -322,10 +336,7 @@ class SubversionRepository(vclib.Repository):
     
     # Open the repository and init some other variables.
     self.repos = repos.svn_repos_open(rootpath, self.pool)
-    self.name = name
-    self.rootpath = rootpath
     self.fs_ptr = repos.svn_repos_fs(self.repos)
-    self.rev = rev
     self.youngest = fs.youngest_rev(self.fs_ptr, self.pool)
     if self.rev is None:
       self.rev = self.youngest
@@ -334,10 +345,15 @@ class SubversionRepository(vclib.Repository):
     self.fsroot = fs.revision_root(self.fs_ptr, self.rev, self.pool)
 
   def __del__(self):
+    self._close()
+    
+  def _close(self):
     if self.pool:
       core.svn_pool_destroy(self.pool)
+      self.pool = None
     if self.apr_init:
       core.apr_terminate()
+      self.apr_init = 0
 
   def _scratch_clear(self):
     core.svn_pool_clear(self.scratch_pool)
