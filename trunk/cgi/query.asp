@@ -53,7 +53,10 @@ else:
 import sapi
 import query
 
-sapi.AspServer(Server, Request, Response, Application)
-query.main('viewcvs.asp')
+s = sapi.AspServer(Server, Request, Response, Application)
+try:
+  query.main('viewcvs.asp')
+finally:
+  s.close()
 
 %>

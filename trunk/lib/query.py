@@ -419,11 +419,9 @@ def main(viewcvs_link):
     template.generate(sys.stdout, data)
 
   except SystemExit, e:
-    server.exit(e[0])
+    pass
   except:
     debug.PrintException()
-    server.exit(0)
-
 
 class _item:
   def __init__(self, **kw):
