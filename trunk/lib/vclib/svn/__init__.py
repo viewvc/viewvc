@@ -65,7 +65,8 @@ def created_rev(svnrepos, full_name):
 
 class Revision(vclib.Revision):
   "Hold state for each revision's log entry."
-  def __init__(self, rev, date, author, msg, size, filename, copy_path, copy_rev):
+  def __init__(self, rev, date, author, msg, size,
+               filename, copy_path, copy_rev):
     vclib.Revision.__init__(self, rev, str(rev), date, author, None, msg, size)
     self.filename = filename
     self.copy_path = copy_path
