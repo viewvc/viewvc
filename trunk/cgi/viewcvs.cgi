@@ -101,6 +101,10 @@ header_comment = '''\
 # for reading/writing between a couple descriptors
 CHUNK_SIZE = 8192
 
+# if your rlog doesn't use 77 '=' characters, then this must change
+LOG_END_MARKER = '=' * 77 + '\n'
+ENTRY_END_MARKER = '-' * 28 + '\n'
+
 
 class Request:
   def __init__(self):
@@ -705,10 +709,10 @@ def parse_log_header(fp):
       elif line[:14] == 'symbolic names':
         # start parsing the tag information
         parsing_tags = 1
-      elif line == '----------------------------\n':
+      elif line == ENTRY_END_MARKER:
         # end of the headers
         break
-      elif line[:10] == '==========':
+      elif line == LOG_END_MARKER:
         # end of this file's log information
         eof = _EOF_FILE
         break
@@ -768,9 +772,9 @@ def parse_log_entry(fp):
       break
     if line[:9] == 'branches:':
       continue
-    if line == '----------------------------\n':
+    if line == ENTRY_END_MARKER:
       break
-    if line[:10] == '==========':
+    if line == LOG_END_MARKER:
       # end of this file's log information
       eof = _EOF_FILE
       break
@@ -794,7 +798,7 @@ def skip_file(fp):
     line = fp.readline()
     if not line:
       break
-    if line[:10] == '==========':
+    if line == LOG_END_MARKER:
       break
 
 def process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags):
