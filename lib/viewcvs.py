@@ -1859,7 +1859,6 @@ def view_log(request):
     'back_url' : request.get_url(view_func=view_directory, pathtype=vclib.DIR,
                                  where=up_where, params={},
                                  escape=1),
-    'filename' : filename,
     'view_tag' : view_tag,
   })
 
