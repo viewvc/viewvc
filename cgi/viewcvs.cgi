@@ -647,7 +647,10 @@ def get_file_data(full_name):
   data = [ ]
   for file in files:
     pathname = full_name + '/' + file
-    info = os.stat(pathname)
+    try:
+      info = os.stat(pathname)
+    except os.error:
+      continue
     isdir = stat.S_ISDIR(info[stat.ST_MODE])
     isreg = stat.S_ISREG(info[stat.ST_MODE])
     if (isreg and file[-2:] == ',v') or isdir:
