@@ -712,7 +712,7 @@ def clickable_path(request, leaf_is_link, drop_leaf):
     s = s + ' / <a href="%s#dirlist">%s</a>' % (_dir_url(request, where), part)
 
   if not drop_leaf and request.path_parts:
-    if leaf_is_link:
+    if not leaf_is_link:
       s = s + ' / %s' % (request.path_parts[-1])
     else:
       if request.pathtype == vclib.DIR:
