@@ -1865,12 +1865,13 @@ def view_log_svn(request):
   
   data = {
     'roottype' : 'svn',
+    'current_root' : request.repos.name,
     'where' : where,
     'request' : request,
     'back_url' : back_url,
     'href' : file_url,
     'filename' : filename,
-
+    
     'query' : request.amp_query,
     'qquery' : request.qmark_query,
 
@@ -1951,6 +1952,7 @@ def view_log_cvs(request):
 
   data = {
     'roottype' : 'cvs',
+    'current_root' : request.repos.name,
     'where' : where,
     'request' : request,
     'back_url' : back_url,

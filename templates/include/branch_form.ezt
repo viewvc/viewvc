@@ -1,7 +1,7 @@
 [if-any branch_names]
   <hr noshade>
   <a name=branch></a>
-  <form method="GET" action="[href]">
+  <form method="GET" action="[request.script_name]/[if-any request.embedded_root][request.embedded_root]/[end][if-any where][where]/[end]">
     [hidden_values]
     View only Branch:
     <select name="only_with_tag" onchange="submit()">
