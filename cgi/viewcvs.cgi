@@ -934,10 +934,11 @@ def process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags):
         fileinfo[info_key] = (rev, entry.date, entry.log, entry.author,
                               filename)
 
-        # done with this file now
-        if not eof:
-          skip_file(rlog)
-        break
+        if rev == revwanted:
+          # done with this file now
+          if not eof:
+            skip_file(rlog)
+          break
 
       # if we hit the true EOF, or just this file's end-of-info, then we are
       # done collecting log entries.
