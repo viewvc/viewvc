@@ -260,11 +260,7 @@ class Template:
 
           # handle arg2 for the 'is' command
           if cmd == 'is':
-            if args[2][0] == '"':
-              # strip the quotes
-              args[2] = args[2][1:-1]
-            else:
-              args[2] = _prepare_ref(args[2], for_names)
+            args[2] = _prepare_ref(args[2], for_names)
           elif cmd == 'for':
             for_names.append(args[1][0])
 
@@ -273,7 +269,7 @@ class Template:
         elif cmd == 'include':
           if len(args) != 2:
             raise ArgCountSyntaxError()
-          if args[1][0] in ('"', "'"):
+          if args[1][0] == '"':
             include_filename = args[1][1:-1]
             program.extend(self._parse_file(include_filename, for_names))
           else:
@@ -326,10 +322,9 @@ class Template:
     self._do_if(value, t_section, f_section, fp, ctx)
 
   def _cmd_is(self, args, fp, ctx):
-    ((valref, value), t_section, f_section) = args
-    if not isinstance(value, StringType):
-      value = _get_value(value, ctx)
-    value = string.lower(_get_value(valref, ctx)) == string.lower(value)
+    ((left_ref, right_ref), t_section, f_section) = args
+    value = _get_value(right_ref, ctx)
+    value = string.lower(_get_value(left_ref, ctx)) == string.lower(value)
     self._do_if(value, t_section, f_section, fp, ctx)
 
   def _do_if(self, value, t_section, f_section, fp, ctx):
@@ -363,6 +358,9 @@ def _prepare_ref(refname, for_names):
   Returns a `value reference', a 3-Tupel made out of (refname, start, rest), 
   for fast access later.
   """
+  # is the reference a string constant?
+  if refname[0] == '"':
+    return None, refname[1:-1], None
   parts = string.split(refname, '.')
   start = parts[0]
   rest = parts[1:]
@@ -384,6 +382,9 @@ def _get_value((refname, start, rest), ctx):
   for blocks take precedence over data dictionary members with the 
   same name.
   """
+  if rest is None:
+    # it was a string constant
+    return start
   if ctx.for_index.has_key(start):
     list, idx = ctx.for_index[start]
     ob = list[idx]
