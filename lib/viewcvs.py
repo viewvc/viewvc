@@ -2753,13 +2753,16 @@ def handle_config():
         pp = cfg.general.svn_parent_path
         subpaths = os.listdir(pp)
         for subpath in subpaths:
-          info = os.stat(os.path.join(pp, subpath))
-          if not stat.S_ISDIR(info[stat.ST_MODE]):
-            continue
-          info = os.stat(os.path.join(pp, subpath, "format"))
-          if not stat.S_ISREG(info[stat.ST_MODE]):
-            continue
-          cfg.general.svn_roots[subpath] = os.path.join(pp, subpath)
+          try:
+            info = os.stat(os.path.join(pp, subpath))
+            if not stat.S_ISDIR(info[stat.ST_MODE]):
+              continue
+            info = os.stat(os.path.join(pp, subpath, "format"))
+            if not stat.S_ISREG(info[stat.ST_MODE]):
+              continue
+            cfg.general.svn_roots[subpath] = os.path.join(pp, subpath)
+          except:
+            pass
       except:
         error("The setting for 'svn_parent_path' is misconfigured in the "
               "viewcvs.conf file. ")
