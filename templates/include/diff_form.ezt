@@ -6,6 +6,11 @@
   <p>
   <form method=get action="[diff_select_action]" name=diff_select>
   [diff_select_hidden_values]
+
+  <table border="0" cellpadding="2" cellspacing="0">
+  <tr>
+  <td>&nbsp;</td>
+  <td>
   Diffs between
   <select name="r1">
     <option value="text" selected>Use Text Field</option>
@@ -25,8 +30,16 @@
   </select>
   <input type="TEXT" size="12" name="tr2" value="[tr2]"
         onChange="document.diff_select.r1.selectedIndex=0">
-
-  <br>Type of Diff should be a
+  </td>
+  </tr>
+  <tr>
+  <td><input type=checkbox name="makepatch" value="1"></td>
+  <td>Generate output suitable for use with a patch program</td>
+  </tr>
+  <tr>
+  <td>&nbsp;</td>
+  <td>
+  Type of Diff should be a
   <select name="diff_format" onchange="submit()">
     <option value="h" [is diff_format "h"]selected[end]>Colored Diff</option>
     <option value="l" [is diff_format "l"]selected[end]>Long Colored Diff</option>
@@ -34,5 +47,7 @@
     <option value="c" [is diff_format "c"]selected[end]>Context Diff</option>
     <option value="s" [is diff_format "s"]selected[end]>Side by Side</option>
   </select>
-
   <input type=submit value="  Get Diffs  "></form>
+  </td>
+  </tr>
+  </table>
