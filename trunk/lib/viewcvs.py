@@ -98,6 +98,9 @@ CHUNK_SIZE = 8192
 LOG_END_MARKER = '=' * 77 + '\n'
 ENTRY_END_MARKER = '-' * 28 + '\n'
 
+# global configuration:
+cfg = None # see below
+
 if CONF_PATHNAME:
   # installed
   g_template_dir = os.path.dirname(CONF_PATHNAME)
@@ -671,6 +674,11 @@ def get_file_data(full_name):
       # NOTE: if the UID matches, then we must match the user bits -- we
       # cannot defer to group or other bits. Similarly, if the GID matches,
       # then we must have read access in the group bits.
+      # 
+      # If the UID or GID don't match, we need to check the
+      # results of an os.access() call, in case the web server process
+      # is in the group that owns the directory.
+
       #
       if isdir:
         mask = stat.S_IROTH | stat.S_IXOTH
@@ -684,9 +692,12 @@ def get_file_data(full_name):
       elif info[stat.ST_GID] == gid:
         if ((mode >> 3) & mask) != mask:
           valid = 0
-      elif (mode & mask) != mask:
+      # If the process running the web server is a member of 
+      # the group stat.ST_GID access may be granted.
+      # so the fall back to os.access is needed to figure this out.
+      elif ((mode & mask) != mask) and (os.access(pathname,os.R_OK) == -1):
         valid = 0
-
+      
       if valid:
         data.append((file, pathname, isdir))
       else:
@@ -2461,12 +2472,13 @@ def download_tarball(request):
 
 def handle_config():
   global cfg
-  cfg = config.Config()
-  cfg.set_defaults()
+  if cfg is None:
+    cfg = config.Config()
+    cfg.set_defaults()
 
-  # load in configuration information from the config file
-  pathname = CONF_PATHNAME or 'viewcvs.conf'
-  cfg.load_config(pathname, os.environ.get('HTTP_HOST'))
+    # load in configuration information from the config file
+    pathname = CONF_PATHNAME or 'viewcvs.conf'
+    cfg.load_config(pathname, os.environ.get('HTTP_HOST'))
 
   global default_settings
   default_settings = {
