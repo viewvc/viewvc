@@ -177,10 +177,10 @@ def fetch_log(svnrepos, full_name, which_rev=None):
   return alltags, logs
 
 
-def do_diff(svnrepos, path, rev1, rev2, diffoptions):
+def do_diff(svnrepos, path1, rev1, path2, rev2, diffoptions):
   root1 = fs.revision_root(svnrepos.fs_ptr, rev1, svnrepos.pool)
   root2 = fs.revision_root(svnrepos.fs_ptr, rev2, svnrepos.pool)
-  return fs.FileDiff(root1, path, root2, path, svnrepos.pool, diffoptions)
+  return fs.FileDiff(root1, path1, root2, path2, svnrepos.pool, diffoptions)
 
 
 class StreamPipe:
