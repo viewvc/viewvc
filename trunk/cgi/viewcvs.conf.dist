@@ -145,11 +145,17 @@ forbidden =
 #
 
 directory = templates/directory.ezt
+query = templates/query.ezt
+footer = templates/footer.ezt
+diff = templates/diff.ezt
+graph = templates/graph.ezt
+annotate = templates/annotate.ezt
+markup = templates/annotate.ezt
+
 log = templates/log.ezt
 # There is also a new style table based alternative template available.
 # You might want to try it out:
 # log = templates/log_table.ezt
-query = templates/query.ezt
 
 #---------------------------------------------------------------------------
 [cvsdb]
@@ -161,59 +167,6 @@ query = templates/query.ezt
 #readonly_user = 
 #readonly_passwd = 
 #row_limit = 1000
-
-#---------------------------------------------------------------------------
-[images]
-#
-# All images are defined with three values: URL, WIDTH, HEIGHT
-#
-
-#
-# these icons represent a back-pointer, a directory (folder), and a file.
-# they are normally available in a standard Apache distribution, along
-# with larger versions if these are too small for you.
-#
-back_icon = /icons/small/back.gif, 16, 16
-dir_icon  = /icons/small/dir.gif, 16, 16
-file_icon = /icons/small/text.gif, 16, 16
-
-#---------------------------------------------------------------------------
-[colors]
-
-# background color of log entry in markup
-markup_log = #ffffff
-
-# The following six colors are used together:
-# color of change-section headings in a diff (default turquoise)
-diff_heading = #99cccc
-
-# color of "empty" lines (default light gray)
-diff_empty = #cccccc
-
-# removed lines (default light red)
-diff_remove = #ffaaaa
-
-# changed lines (default light yellow)
-diff_change = #ffff77
-
-# added lines (default light green)
-diff_add = #aaffaa
-
-# empty lines in a change block (if one part smaller is than the other;
-# default is a greyish yellow: the color should match the hue of 'diff_change')
-diff_dark_change = #eeee77
-
-# navigation header (in diff screen, file view, annotation, etc)
-nav_header = #9999ee
-
-# color of text on most pages
-text = #000000
-
-# color of standard background
-background = #ffffff
-
-# color of alternate background (diffs, file view, annotations, etc)
-alt_background = #eeeeee
 
 #---------------------------------------------------------------------------
 [options]
