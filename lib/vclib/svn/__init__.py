@@ -56,6 +56,10 @@ def date_from_rev(svnrepos, rev):
   return _datestr_to_date(datestr, svnrepos.pool)
 
 
+def created_rev(svnrepos, full_name):
+  return fs.node_created_rev(svnrepos.fsroot, full_name, svnrepos.pool)
+
+
 class LogEntry:
   "Hold state for each revision's log entry."
   def __init__(self, rev, date, author, msg, filename, copy_path, copy_rev):
