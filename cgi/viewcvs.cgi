@@ -82,106 +82,98 @@ __version__ = '0.4-dev'
 #    icons
 #
 
-cvs_roots = {
+#########################################################################
+
+
+class Config:
+  def __init__(self):
+    class _blank:
+      pass
+    self.general = _blank()
+    self.images = _blank()
+    self.options = _blank()
+    self.colors = _blank()
+    self.text = _blank()
+
+  def get_image(self, which):
+    text = '[%s]' % string.upper(which)
+    path, width, height = getattr(self, which)
+    if path:
+      return '<img src="%s" alt="%s" border=0 width=%d height=%d>' % \
+             (path, text, width, height)
+    return text
+
+cfg = Config()
+
+cfg.general.cvs_roots = {
   # user-visible-name : path
   "Development" : "/home/cvsroot",
   }
+cfg.general.default_root = "Development"
+cfg.general.rcs_path = ''
+cfg.general.mime_types_file = '/usr/local/apache/conf/mime.types'
+cfg.general.address = '<a href="mailto:gstein@lyra.org">gstein@lyra.org</a>'
+cfg.general.main_title = 'CVS Repository'
+cfg.general.forbidden = ()
 
-default_root = "Development"
+cfg.images.logo = "/icons/apache_pb.gif", 259, 32
+cfg.images.back_icon = "/icons/small/back.gif", 16, 16
+cfg.images.dir_icon = "/icons/small/dir.gif",  16, 16
+cfg.images.file_icon = "/icons/small/text.gif", 16, 16
 
-# set the path to the RCS binaries if they are not on the path.
-rcs_path = ''
-# rcs_path = '/usr/bin/'	# the trailing slash is required!
+cfg.colors.markup_log = "#ffffff"
 
-# mapping to mimetypes to help viewcvs to guess the correct mime-type on
-# checkout; you can use the mime.types from apache here:
-mime_types_file = '/usr/local/apache/conf/mime.types'
+cfg.colors.diff_heading = "#99cccc"
+cfg.colors.diff_empty = "#cccccc"
+cfg.colors.diff_remove = "#ff9999"
+cfg.colors.diff_change = "#99ff99"
+cfg.colors.diff_add = "#ccccff"
+cfg.colors.diff_dark_change = "#99cc99"
 
-#########################################################################
+cfg.colors.even_odd = ("#ccccee", "#ffffff")
 
-# This address is shown in the footer
-address = '<a href="mailto:gstein@lyra.org">gstein@lyra.org</a>'
+cfg.colors.nav_header = "#9999ee"
 
-# The title of the Page on startup
-defaulttitle = "CVS Repository"
+cfg.colors.text = "#000000"
+cfg.colors.background = "#ffffff"
+cfg.colors.alt_background = "#eeeeee"
 
-# Wanna have a logo on the page ?
-logo = '<img src="/icons/apache_pb.gif">'
+cfg.colors.column_header_normal = "#cccccc"
+cfg.colors.column_header_sorted = "#88ff88"
 
-#
-# Modules in the repository that should not be displayed, either by default
-# nor by explicit path specification.
-#
-forbidden_modules = ( )
-# forbidden_modules = ( 'example', )	# note the trailing comma!
-# forbidden_modules = ( 'example1', 'example2' )
+cfg.colors.table_border = None	# no border
 
-#########################################################################
+cfg.options.sort_by = 'file'
+cfg.options.hide_attic = 1
+cfg.options.log_sort = 'date'
+cfg.options.diff_format = 'h'
+cfg.options.hide_cvsroot = 1
+cfg.options.hide_non_readable = 1
+cfg.options.show_author = 1
+cfg.options.hr_breakable = 1
+cfg.options.hr_funout = 1
+cfg.options.hr_ignore_white = 1
+cfg.options.hr_ignore_keyword_subst = 1
+cfg.options.allow_annotate = 0	### doesn't work yet!
+cfg.options.allow_markup = 1
+cfg.options.allow_compress = 1
+cfg.options.use_java_script = 1
+cfg.options.open_extern_window = 1
+cfg.options.extern_window_width = 600
+cfg.options.extern_window_height = 440
+cfg.options.checkout_magic = 1
+cfg.options.show_subdir_lastmod = 0
+cfg.options.show_logs = 1
+cfg.options.show_log_in_markup = 1
+cfg.options.allow_version_select = 1
+cfg.options.py2html_path = '.'
+cfg.options.short_log_len = 80
+cfg.options.table_padding = 2
+cfg.options.diff_font_face = 'Helvetica,Arial'
+cfg.options.diff_font_size = -1
+cfg.options.input_text_size = 12
 
-#
-# If you want to Marc-Andrew Lemburg's py2html (and Just van Rossum's
-# PyFontify) to colorize Python files, then you may need to change this
-# variable to point to their directory location.
-#
-# This directory AND the standard Python path will be searched.
-#
-py2html_path = '.'
-#py2html_path = '/usr/local/lib/python1.5/site-python'
-
-#########################################################################
-
-default_settings = {
-  # sortby: File sort order
-  #   file   Sort by filename
-  #   rev    Sort by revision number
-  #   date   Sort by commit date
-  #   author Sort by author
-  #   log    Sort by log message
-  "sortby" : "file",
-
-  # hideattic: Hide or show files in Attic
-  #   1      Hide files in Attic
-  #   0      Show files in Attic
-  "hideattic" : 1,
-
-  # logsort: Sort order for CVS logs
-  #   date   Sort revisions by date
-  #   rev    Sort revision by revision number
-  #   cvs    Don't sort them. Same order as CVS/RCS shows them.
-  "logsort" : "date",
-
-  # diff_format: Default diff format
-  #   h      Human readable
-  #   u      Unified diff
-  #   c      Context diff
-  #   s      Side by side
-  "diff_format" : "h",	  
-
-  # hidecvsroot: Don't show the CVSROOT directory
-  #   1      Hide CVSROOT directory
-  #   0      Show CVSROOT directory
-  "hidecvsroot" : 1,
-
-  # hidenonreadable: Don't show entries which cannot be read
-  #   1      Hide non-readable entries
-  #   0      Show non-readble entries
-  "hidenonreadable" : 1,
-  }
-
-#########################################################################
-
-# color settings in the body-tag
-body_tag = '<body text="#000000" bgcolor="#ffffff">'
-
-# Default page background color for the diffs
-# and annotations
-backcolor = "#eeeeee"
-
-# color of navigation Header for
-# diffs and annotations
-navigationHeaderColor = '#9999ee'
-
-long_intro = """\
+cfg.text.long_intro = """\
 <p>
 This is a WWW interface for CVS Repositories.
 You can browse the file hierarchy by picking directories
@@ -215,7 +207,7 @@ Please send any suggestions, comments, etc. to
 """
 # ' stupid emacs...
 
-doc_information = """
+cfg.text.doc_info = """
 <h3>CVS Documentation</h3>
 <blockquote>
 <p>
@@ -230,173 +222,16 @@ doc_information = """
 
 # Fill in stuff on (say) anonymous pserver access here. For example, what
 # access mechanism, login, path, etc should be used.
-repository_info = """
+cfg.text.repository_info = """
 <!-- insert repository access instructions here -->
 """
 
-short_instruction = """\
+cfg.text.short_intro = """\
 <p>
 Click on a directory to enter that directory. Click on a file to display
 its revision history and to get a chance to display diffs between revisions. 
 </p>
 """
-
-# used icons; if icon-url is empty, the text representation is used; if
-# you do not want to have an ugly tooltip for the icon, remove the
-# text-representation.
-# The width and height of the icon allow the browser to correcly display
-# the table while still loading the icons.
-# These default icons are coming with apache.
-# If these icons are too small, check out the similarly-named icons in the
-# icons/ directory; they have a width/height of 20/22
-# format:   TEXT      ICON-URL                 width height
-icons = {
-  'back' : ("[BACK]", "/icons/small/back.gif", 16,   16),
-  'dir'  : ("[DIR]",  "/icons/small/dir.gif",  16,   16),
-  'file' : ("[TXT]",  "/icons/small/text.gif", 16,   16),
-  }
-
-# the length to which the last logentry should
-# be truncated when shown in the directory view
-short_log_len = 80
-
-# Show author of last change
-show_author = 1
-
-##############
-# table view for directories
-##############
-
-# show different colors for even/odd rows
-table_colors = ('#ccccee', '#ffffff')
-tablepadding = 2
-
-# Color of Header
-columnHeaderColorDefault = '#cccccc'
-columnHeaderColorSorted = '#88ff88'
-
-#
-# Uncomment the line for your row-border style selection
-# tableBorderColor = '#999999'		# for colored borders
-tableBorderColor = None			# no borders around each row
-
-##############
-# Human Readable Diff
-##############
-
-# (c) 1998 H. Zeller <zeller@think.de>
-#
-# Generates two columns of color encoded
-# diff; much like xdiff or emacs-ediff mode.
-#
-# The diff-stuff is a piece of code I once made for
-# cvs2html which is under GPL,
-# see http://www.sslug.dk/cvs2html
-# (c) 1997/98 Peter Toft <pto@sslug.imm.dtu.dk>
-#
-# some parameters to screw:
-##
-
-# set to 1 to make lines break at spaces,
-# set to 0 to make no-break lines,
-# set to a positive integer to make the lines cut at that length
-hr_breakable = 1
-
-# give out function names in human readable diffs
-# this just makes sense if we have C-files, otherwise
-# diff's heuristic doesn't work well ..
-# ( '-p' option to diff)
-hr_funout = 0
-
-# ignore whitespaces for human readable diffs
-# (indendation and stuff ..)
-# ( '-w' option to diff)
-hr_ignore_white = 1
-
-# ignore diffs which are caused by
-# keyword-substitution like $Id - Stuff
-# ( '-kk' option to rcsdiff)
-hr_ignore_keyword_subst = 1
-
-# Colors and font to show the diff type of code changes
-diff_color_heading     = '#99cccc'  # color of 'Line'-head of each diffed file
-diff_color_empty       = '#cccccc'  # color of 'empty' lines
-diff_color_remove      = '#ff9999'  # Removed line(s) (left)  (  -  )
-diff_color_change      = '#99ff99'  # Changed line(s) (     both    )
-diff_color_add         = '#ccccff'  # Added line(s)   (  - )  (right)
-diff_color_dark_change = '#99cc99'  # lines, which are empty in change
-diff_font_face         = "Helvetica,Arial"
-diff_font_size         = "-1"
-
-# the width of the textinput of the
-# request-diff-form
-input_text_size = 12
-
-##############
-# Misc
-##############
-# allow annotation of files
-# this requires rw-access to the
-# CVSROOT/history - file and rw-access
-# to the subdirectory to place the lock
-# so you maybe don't want it
-
-# WARNING: this is not yet implemented!!
-allow_annotate = 0
-
-# allow pretty-printed version of files
-allow_markup = 1
-
-# allow compression with gzip
-# of output if the Browser accepts
-# it (HTTP_ACCEPT_ENCODING=gzip)
-# [make sure to have gzip in the path]
-allow_compress = 1
-
-# Make use of javascript functions.
-# This way you can select one of your CVSroot
-# without pressing 'Go' (.. if you do have more
-# than one CVSROOT defined)
-use_java_script = 1
-
-# open Download-Links in another window
-open_extern_window = 1
-
-# The size of this extern window; this size option
-# needs use_java_script to be defined
-# just comment them if you don't want to have a fixed
-# size
-#extern_window_width = 600
-#extern_window_height = 440
-
-# If you have files which automatically refers to other files
-# (such as HTML) then this allows you to browse the checked
-# out files as if outside CVS.
-checkout_magic = 1
-
-# Show last changelog message for sub directories
-# The current implementation makes many assumptions and may show the
-# incorrect file at some times. The main assumption is that the last
-# modified file has the newest filedate. But some CVS operations
-# touches the file without even when a new version is't checked in,
-# and TAG based browsing essientially puts this out of order, unless
-# the last checkin was on the same tag as you are viewing.
-# Enable this if you like the feature, but don't rely on correct results.
-show_subdir_lastmod = 0
-
-# show a portion of the most recent log entry in directory listings
-show_logs = 1
-
-# Background color of logentry in markup
-markup_log_color = "#ffffff"
-
-# Show CVS log when viewing file contents
-show_log_in_markup = 1
-
-# == Configuration defaults ==
-# Defaults for configuration variables that shouldn't need
-# to be configured..
-allow_version_select = 1
 
 #
 # CONFIGURATION END
@@ -442,6 +277,74 @@ header_comment = '''\
      by Greg Stein -- mailto:gstein@lyra.org
   -->
 '''
+
+####################
+# back-compat crap
+
+cvs_roots = cfg.general.cvs_roots
+default_root = cfg.general.default_root
+rcs_path = cfg.general.rcs_path
+mime_types_file = cfg.general.mime_types_file
+defaulttitle = cfg.general.main_title
+forbidden_modules = cfg.general.forbidden
+
+markup_log_color = cfg.colors.markup_log
+diff_color_heading = cfg.colors.diff_heading
+diff_color_empty = cfg.colors.diff_empty
+diff_color_remove = cfg.colors.diff_remove
+diff_color_change = cfg.colors.diff_change
+diff_color_add = cfg.colors.diff_add
+diff_color_dark_change = cfg.colors.diff_dark_change
+table_colors = cfg.colors.even_odd
+navigationHeaderColor = cfg.colors.nav_header
+backcolor = cfg.colors.alt_background
+columnHeaderColorDefault = cfg.colors.column_header_normal
+columnHeaderColorSorted = cfg.colors.column_header_sorted
+tableBorderColor = cfg.colors.table_border
+
+show_author = cfg.options.show_author
+hr_breakable = cfg.options.hr_breakable
+hr_funout = cfg.options.hr_funout
+hr_ignore_white = cfg.options.hr_ignore_white
+hr_ignore_keyword_subst = cfg.options.hr_ignore_keyword_subst
+allow_annotate = cfg.options.allow_annotate
+allow_markup = cfg.options.allow_markup
+allow_compress = cfg.options.allow_compress
+use_java_script = cfg.options.use_java_script
+open_extern_window = cfg.options.open_extern_window
+extern_window_width = cfg.options.extern_window_width
+extern_window_height = cfg.options.extern_window_height
+checkout_magic = cfg.options.checkout_magic
+show_subdir_lastmod = cfg.options.show_subdir_lastmod
+show_logs = cfg.options.show_logs
+show_log_in_markup = cfg.options.show_log_in_markup
+allow_version_select = cfg.options.allow_version_select
+py2html_path = cfg.options.py2html_path
+short_log_len = cfg.options.short_log_len
+tablepadding = cfg.options.table_padding
+diff_font_face = cfg.options.diff_font_face
+diff_font_size = cfg.options.diff_font_size
+input_text_size = cfg.options.input_text_size
+
+short_instruction = cfg.text.short_intro
+repository_info = cfg.text.repository_info
+long_intro = cfg.text.long_intro
+doc_information = cfg.text.doc_info
+
+body_tag = '<body text="%s" bgcolor="%s">' % \
+           (cfg.colors.text, cfg.colors.background)
+default_settings = {
+  "sortby" : cfg.options.sort_by,
+  "hideattic" : cfg.options.hide_attic,
+  "logsort" : cfg.options.log_sort,
+  "diff_format" : cfg.options.diff_format,
+  "hidecvsroot" : cfg.options.hide_cvsroot,
+  "hidenonreadable" : cfg.options.hide_non_readable,
+  }
+
+
+####################
+
 
 class Request:
   def __init__(self):
@@ -595,6 +498,7 @@ def http_header(content_type='text/html'):
 
 def html_header(title):
   http_header()
+  logo = cfg.images.get_image('logo')
   print '''\
 <!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
  "http://www.w3.org/TR/REC-html40/loose.dtd">
@@ -609,7 +513,7 @@ def html_header(title):
 
 def html_footer():
   print '<hr noshade><table width="100&#37;" border=0 cellpadding=0 cellspacing=0><tr>'
-  print '<td align=left><address>%s</address></td>' % address
+  print '<td align=left><address>%s</address></td>' % cfg.general.address
   print '<td align=right><a href="http://www.lyra.org/greg/python/viewcvs/">ViewCVS %s</a><br>' % __version__
   print 'by <a href="mailto:gstein@lyra.org">Greg Stein</a>'
   print '</td></tr></table>'
@@ -726,11 +630,7 @@ def download_link(request, url, revision, text, mime_type=None):
   print '><b>%s</b></a>%s' % (text, rparen)
 
 def html_icon(which):
-  text, path, width, height = icons[which]
-  if path:
-    return '<img src="%s" alt="%s" border=0 width=%d height=%d>' % \
-           (path, text, width, height)
-  return text
+  return cfg.images.get_image(which + '_icon')
 
 def plural(num, text):
   if num == 1:
@@ -1269,7 +1169,7 @@ def view_directory(request):
   # append the Attic files into the file_data now
   # NOTE: we only insert the filename and isdir==0
   for file in attic_files:
-    file_data.append(file, None, 0)
+    file_data.append((file, None, 0))
 
   if where == '':
     html_header(defaulttitle)
