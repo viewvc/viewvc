@@ -1,36 +1,17 @@
 # -*- Mode: python -*-
-# -----------------------------------------------------------------------
-# Copyright (C) 2000 Jay Painter. All Rights Reserved.
 #
-# By using this file, you agree to the terms and conditions set forth below:
+# Copyright (C) 2000 The ViewCVS Group. All Rights Reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in the
-#    documentation and/or other materials provided with the distribution.
+# By using this file, you agree to the terms and conditions set forth in
+# the LICENSE.html file which can be found at the top level of the ViewCVS
+# distribution or at http://www.lyra.org/viewcvs/license-1.html.
 #
-# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-# SUCH DAMAGE.
+# Contact information:
+#   Greg Stein, PO Box 760, Palo Alto, CA, 94302
+#   gstein@lyra.org, http://www.lyra.org/viewcvs/
 #
 # -----------------------------------------------------------------------
 #
-# For tracking purposes, this software is identified by:
-#   $Id$
-#
-# -----------------------------------------------------------------------
 
 import os, sys, string, time, re
 
