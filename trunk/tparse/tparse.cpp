@@ -195,20 +195,22 @@ int tparseParser::parse_rcs_tree() {
 		date = tokenstream->get();
 		tokenstream->matchsemicol();
    		memset ((void *) &tm, 0, sizeof(struct tm));
-   		strptime(date, "%Y.%m.%d.%H.%M.%S", &tm);
+		if (strptime(date, "%y.%m.%d.%H.%M.%S", &tm) == NULL)
+			res = strptime(date, "%Y.%m.%d.%H.%M.%S", &tm);
    		timestamp=mktime(&tm);delstr(date);
    		tokenstream->match("author");
    		author= tokenstream->get();
    		tokenstream->matchsemicol();
    		tokenstream->match("state");
+		state= new ostrstream();
    		while (1) {
    			char *token=tokenstream->get();
    			if (token==tokenstream->semicol) {
    				break;
    			}
-   			state= new ostrstream();
+			if (state->pcount())
+				state->put(' ');
    			(*state)<<token;delstr(token);
-   			(*state)<<" ";
    		}
    		state->put('\0');
    		hstate=state->str();
