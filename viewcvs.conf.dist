@@ -403,10 +403,11 @@ checkout_magic = 1
 # Web path to a directory containing apache icon files
 icons = /icons
 
-# Web path to a directory that contains ViewCVS static files. 
-# (The ones installed in <VIEWCVS_INSTALL_DIRECTORY>/doc). If set, static
-# files will get served from this location, otherwise static files will
-# be served by the ViewCVS script which is less efficient
+# Web path to a directory that contains ViewCVS static files.  (The
+# ones installed in <VIEWCVS_INSTALL_DIRECTORY>/templates/docroot). If
+# set, static files will get served from this location, otherwise
+# static files will be served by the ViewCVS script which is less
+# efficient
 #docroot = /doc
 
 # Show last changelog message for sub directories
