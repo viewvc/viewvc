@@ -155,8 +155,11 @@
 
 </form>
 
+[is query "skipped"]
+[else]
 <p><b>[num_commits]</b> matches found.</p>
 
+[if-any commits]
 <table width="100%" border=0 cellspacing=0 cellpadding=2>
  <tr bgcolor="#88ff88">
   <th align=left valign=top>Date</th>
@@ -170,12 +173,20 @@
 [for commits]
   [for commits.files]
     <tr bgcolor="[if-index commits even]#ffffff[else]#ccccee[end]">
-      <td align=left valign=top>[commits.files.date]</td>
-      <td align=left valign=top>[commits.files.author]</td>
+      <td align=left valign=top>
+	[if-any commits.files.date][commits.files.date][else]&nbsp;[end]
+      </td>
+      <td align=left valign=top>
+	[if-any commits.files.author][commits.files.author][else]&nbsp;[end]
+      </td>
       <td align=left valign=top>[commits.files.link]</td>
-      <td align=left valign=top>[commits.files.rev]</td>
-      <td align=left valign=top>[commits.files.branch]</td>
-      <td align=left valign=top>[commits.files.plusminus]</td>
+      <td align=left valign=top>
+	[if-any commits.files.rev][commits.files.rev][else]&nbsp;[end]
+      </td>
+      <td align=left valign=top>
+	[if-any commits.files.branch][commits.files.branch][else]&nbsp;[end]
+      </td>
+      <td align=left valign=top>[commits.files.plus]/[commits.files.minus]</td>
 
       [if-index commits.files first]
         <td align=left valign=top rowspan=[commits.num_files]>
@@ -196,6 +207,8 @@
   <th align=left valign=top>&nbsp;</th>
  </tr>
 </table>
+[end]
+[end]
 
 <hr noshade>
 <table width="100%" border=0 cellpadding=0 cellspacing=0><tr>
