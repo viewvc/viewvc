@@ -23,12 +23,12 @@ import sys
 
 # Set during install process.
 LIBRARY_DIR = None
- 
-# I was going to pass this from viewcvs, but thought that the path printed
+
+# I was going to pass this from viewcvs, but thought that the path printed 
 # out in the URL would be insecure.  Is that true?
 # Put cvsgraph executable in the viewcvs install directory.
 path_to_cvsgraph = os.path.dirname(LIBRARY_DIR) + '/cvsgraph'
- 
+
 path_to_cvsgraph_conf = os.path.dirname(LIBRARY_DIR) + '/cvsgraph.conf'
 
 form = cgi.FieldStorage()
@@ -43,38 +43,20 @@ for key in defaults.keys():
   except KeyError:
     exec '%s = "%s"' % (key,defaults[key])
 
-# Start the web page
-print """Content-Type: text/html
-
-<html>
-<head>
-  <title>Revisions of %s</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-    <meta name="generator" content="handcrafted">
-</head>
-<body bgcolor="#f0f0f0">
-<center>
-<title>Revisions of %s</title>""" % (f,f)
-
+# For debugging interaction with cvsgraph, it is sometimes useful to
+# change 'Content-type: image/png' to 'Content-type: text/plain'.
+# You might then see any error message from cvsgraph, or your browser
+# will crash.  YMMV.
+print 'Content-type: image/png'
+print ''
 
 # This statement is very important!  Otherwise you can't garantee the order
 # that things get printed out to the browser!
 sys.stdout.flush()
 
-
 # Required only if cvsgraph needs to find it's supporting libraries.
 # Uncomment and set accordingly if required.
 #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib'
 
-# Create an image map
-os.system('%s -i -c %s -r %s -m %s %s' % (path_to_cvsgraph, path_to_cvsgraph_conf,r,m,f))
-
-print """<img border="0" 
-          usemap="#MyMapName" 
-          src="cvsgraphmkimg.cgi?c=%s&r=%s&m=%s&f=%s" 
-          alt="Revisions of %s">""" % (path_to_cvsgraph_conf,r,m,f,f)
-
-print '</center>'
-print '</body>'
-print '</html>'
+os.system('%s -c %s -r %s -m %s %s' % (path_to_cvsgraph, path_to_cvsgraph_conf, r,m,f))
 
