@@ -93,6 +93,8 @@ _EOF_ERROR = 'error message found'	# rlog issued an error
 
 _FILE_HAD_ERROR = 'could not read file'
 
+_UNREADABLE_MARKER = '//UNREADABLE-MARKER//'
+
 header_comment = '''\
 <!-- ViewCVS       -- http://www.lyra.org/viewcvs/
      by Greg Stein -- mailto:gstein@lyra.org
@@ -654,6 +656,7 @@ def get_file_data(full_name):
     try:
       info = os.stat(pathname)
     except os.error:
+      data.append((file, _UNREADABLE_MARKER, None))
       continue
     mode = info[stat.ST_MODE]
     isdir = stat.S_ISDIR(mode)
@@ -675,15 +678,20 @@ def get_file_data(full_name):
       else:
         mask = stat.S_IROTH
 
+      valid = 1
       if info[stat.ST_UID] == uid:
         if ((mode >> 6) & mask) != mask:
-          continue
+          valid = 0
       elif info[stat.ST_GID] == gid:
         if ((mode >> 3) & mask) != mask:
-          continue
+          valid = 0
       elif (mode & mask) != mask:
-        continue
-      data.append((file, pathname, isdir))
+        valid = 0
+
+      if valid:
+        data.append((file, pathname, isdir))
+      else:
+        data.append((file, _UNREADABLE_MARKER, isdir))
 
   return data
 
@@ -697,7 +705,7 @@ def get_last_modified(file_data):
 
   lastmod = { }
   for file, pathname, isdir in file_data:
-    if not isdir:
+    if not isdir or pathname == _UNREADABLE_MARKER:
       continue
     if file == 'Attic':
       continue
@@ -1076,7 +1084,7 @@ def view_directory(request):
   # get all the required info
   rcs_files = subfiles + attic_files
   for file, pathname, isdir in file_data:
-    if not isdir:
+    if not isdir and pathname != _UNREADABLE_MARKER:
       rcs_files.append(file)
   fileinfo, alltags = get_logs(full_name, rcs_files, view_tag)
 
@@ -1211,7 +1219,24 @@ def view_directory(request):
 
   for file, pathname, isdir in file_data:
 
-    ### hide unreadable files?
+    if pathname == _UNREADABLE_MARKER:
+      if isdir is None:
+        # We couldn't even stat() the file to figure out what it is.
+        slash = ''
+      elif isdir:
+        slash = '/'
+      else:
+        slash = ''
+        file = file[:-2]	# strip the ,v
+        num_displayed = num_displayed + 1
+      print '<tr bgcolor="%s"><td><a name="%s">%s%s</a></td>' % \
+            (cfg.colors.even_odd[cur_row % 2], file, file, slash)
+      print '<td colspan=%d><i>unreadable</i></td>' % \
+            (num_cols - 1)
+      print '</tr>'
+      cur_row = cur_row + 1
+      unreadable = 1
+      continue
 
     if isdir:
       if not hideattic and file == 'Attic':
@@ -2320,17 +2345,16 @@ def generate_tarball(out, relative, directory, tag, stack=[]):
   subdirs = [ ]
   rcs_files = [ ]
   for file, pathname, isdir in get_file_data(directory):
+    if pathname == _UNREADABLE_MARKER:
+      continue
     if isdir:
       subdirs.append(file)
     else:
       rcs_files.append(file)
   if tag:
-    try:
-      for file, pathname, isdir in get_file_data(directory + '/Attic'):
-       if not isdir:
-	 rcs_files.append('Attic/' + file)
-    except os.error:
-      pass
+    for file, pathname, isdir in get_file_data(directory + '/Attic'):
+      if not isdir and pathname != _UNREADABLE_MARKER:
+        rcs_files.append('Attic/' + file)
 
   stack.append(relative + '/')
 
