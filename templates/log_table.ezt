@@ -166,7 +166,7 @@ href="[docroot]/help_logtable.html">ViewCVS and CVS Help</a></b></h3></td>
         [end]
 
         [if-any entries.copy_path]
-           <b>Copied from: </b><a href="[entries.copy_href]#rev[entries.copy_rev]">[entries.copy_path]</a> revision [entries.copy_rev]<br>
+           <b>Copied from: </b><a href="[entries.copy_href]">[entries.copy_path]</a> revision [entries.copy_rev]<br>
         [end]
       [end]
 

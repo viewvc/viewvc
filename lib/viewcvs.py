@@ -409,8 +409,10 @@ class Request:
     elif pathtype == vclib.DIR:
       url = url + '/'
 
-    # no need to explicitly specify log view for a file
-    if view_func is view_log and pathtype == vclib.FILE:
+    # no need to explicitly specify log view for a file, unless we
+    # want the logs on a specific revision
+    if view_func is view_log and pathtype == vclib.FILE and \
+          not params.has_key('rev'):
       view_func = None
 
     # no need to explicitly specify directory view for a directory
@@ -1483,7 +1485,8 @@ def view_log(request):
       if rev.copy_path:
         entry.copy_href = request.get_url(view_func=view_log,
                                           where=rev.copy_path,
-                                          pathtype=vclib.FILE, params={})
+                                          pathtype=vclib.FILE,
+                                          params={'rev': rev.copy_rev})
 
       entry.prev = rev.prev and rev.prev.string
       entry.prev_path = rev.prev and rev.prev.filename
@@ -1498,8 +1501,8 @@ def view_log(request):
     # the template could do all these comparisons itself, but let's help
     # it out.
     r1 = request.query_dict.get('r1')
-    if r1 and r1 != entry.rev and r1 != entry.prev and r1 != entry.branch_point \
-       and r1 != entry.next_main:
+    if r1 and r1 != entry.rev and r1 != entry.prev \
+           and r1 != entry.branch_point and r1 != entry.next_main:
       entry.to_selected = 'yes'
     else:
       entry.to_selected = None
