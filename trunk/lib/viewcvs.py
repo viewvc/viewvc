@@ -332,7 +332,7 @@ class Request:
     
     self.view_func(self)
 
-  def get_url(self, escape=0, **args):
+  def get_url(self, escape=0, partial=0, **args):
     """Constructs a link to another ViewCVS page just like the get_link
     function except that it returns a single URL instead of a URL
     split into components"""
@@ -344,6 +344,8 @@ class Request:
     else:
       result = urllib.quote(url, _URL_SAFE_CHARS)
 
+    if partial:
+      result = result + (qs and '&' or '?')
     if escape:
        result = self.server.escape(result)
     return result
@@ -2001,8 +2003,6 @@ def view_cvsgraph_image(request):
 
 def view_cvsgraph(request):
   "output a page containing an image rendered by cvsgraph"
-  # this function is derived from cgi/cvsgraphwrapper.cgi
-
   if not cfg.options.use_cvsgraph:
     raise debug.ViewCVSException('Graph view is disabled', '403 Forbidden')
 
@@ -2012,10 +2012,6 @@ def view_cvsgraph(request):
   # Uncomment and set accordingly if required.
   #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib'
 
-  query = compat.urlencode(request.sticky_vars())
-  amp_query = query and '&' + query
-  qmark_query = query and '?' + query
-
   imagesrc = request.get_url(view_func=view_cvsgraph_image, escape=1)
 
   # Create an image map
@@ -2024,8 +2020,19 @@ def view_cvsgraph(request):
                    ("-i",
                     "-c", cfg.options.cvsgraph_conf,
                     "-r", request.repos.rootpath,
-                    "-7", qmark_query,
-                    "-8", amp_query,
+                    "-3", request.get_url(view_func=view_log, params={},
+                                          escape=1),
+                    "-4", request.get_url(view_func=view_auto, 
+                                          params={"rev": None},
+                                          escape=1, partial=1),
+                    "-5", request.get_url(view_func=view_diff,
+                                          params={"r1": None, "r2": None},
+                                          escape=1, partial=1),
+                    "-6", request.get_url(view_func=view_directory,
+                                          where=get_up_path(request.where),
+                                          pathtype=vclib.DIR,
+                                          params={"only_with_tag": None},
+                                          escape=1, partial=1),
                     rcsfile), 'rb', 0)
 
   data.update({
