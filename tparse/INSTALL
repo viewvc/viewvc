@@ -5,15 +5,19 @@
 	
 type as root:
 
-$ python Setup.py install
-in the /viewcvs/tparse directory will install tparse in 
-your python distribution.
-
-In order to check if tparse has been correctly installed type: 
+$ python Setup.py build_ext
+in the /viewcvs/tparse directory will compile tparse.
+Normally, you can find a tparse.so dynamic library, in a directory called
+build/lib.****/
+where **** depends on OS.
+cd into that directory.
+Then check if tparse has been correctly installed: 
 $ python                                                              
 Python 2.1.2 (#1, Jan 21 2002, 04:12:22)
 [GCC 2.96 20000731 (Mandrake Linux 8.1 2.96-0.62mdk)] on linux2
 Type "copyright", "credits" or "license" for more information.
 >>> import tparse
 >>> 
+This is ok.
 
+now move the tparse.so into your lib/rcsparse directory

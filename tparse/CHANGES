@@ -1,3 +1,14 @@
+Modif ( 11-Feb-2002)
+  * Support for parser exceptions  ( RCS* ):
+     tparse will try import those exceptions from the "common" module.
+     If it fails, tparse create those exceptions inside itself.
+  * Changed the INSTALL file to make installation clearer.
+
+Modif ( 08-Feb-2002)
+  * Added Daniel Berlin's patch:
+    Use a buffer stdiobufstream to access a python File in C++.
+    Much faster.
+    
 Modif ( 30-Jan-2002)
 	* Fixed compilation problem of revision 1.2 of tparser.cpp
 	* Streamlined some part of the code. ( Added returns here and there...)

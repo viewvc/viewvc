@@ -87,7 +87,7 @@ char *  TokenParser::get() {
 			idx=0;
 			input->read(buf,CHUNK_SIZE);
 			if ( (buflength=input->gcount())==0 )
-				throw tparseException(" Unterminated string \"@\" missing!");		
+				throw RCSIllegalCharacter(" Unterminated string \"@\" missing!");		
 		}
 		//i=strchr(buf+idx,'@');
 		for(i=idx;i<buflength && (buf[i]!='@');i++) ;
@@ -103,7 +103,7 @@ char *  TokenParser::get() {
 			buf[0]='@';
 			input->read(buf+1,CHUNK_SIZE-1);
 			if ( (buflength=input->gcount())==0 )
-				throw tparseException("Unterminated string; @ missing");
+				throw RCSIllegalCharacter("Unterminated string; @ missing");
 			buflength++;
 			continue;
 		}
@@ -122,7 +122,7 @@ char *  TokenParser::get() {
 
 void TokenParser::unget(char *token) {
 	if (backget) {
-		throw tparseException(" Error, ungetting a token while already having an ungetted token ");
+		throw RCSParseError(" Error, ungetting a token while already having an ungetted token ");
 		
 	}
 	backget=token;

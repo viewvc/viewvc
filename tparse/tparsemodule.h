@@ -29,11 +29,21 @@ tparse is a C++ library that offers an API to a performance-oriented RCSFILE par
 It does little syntax checking.\n\
 \n\
 Version: $Id$\n";
-static char *__version__ = "0.13";
-static char *__date__ = "2002/01/27";
+static char *__version__ = "0.14";
+static char *__date__ = "2002/02/11";
 static char *__author__ ="Lucas Bruand <lucas.bruand@ecl2002.ec-lyon.fr>"; 
-static char *StopParser__doc__ ="Stop parser exception: to be raised from the sink to abort parsing.";
-static PyObject *StopParser;
+
+static char *pyRCSStopParser__doc__ ="Stop parser exception: to be raised from the sink to abort parsing.";
+static PyObject *pyRCSStopParser;
+
+static char *pyRCSParseError__doc__ ="Ancestor Exception";
+static PyObject *pyRCSParseError;
+
+static char *pyRCSIllegalCharacter__doc__ ="Parser has encountered an Illegal Character.";
+static PyObject *pyRCSIllegalCharacter;
+
+static char *pyRCSExpected__doc__ ="Parse has found something but the expected.";
+static PyObject *pyRCSExpected;
 
 static char *tparse__doc__=" Main function: parse a file and send the result to the sink \n\
 Two ways of invoking this function from python:\n\

@@ -43,15 +43,40 @@
 
 
 /* This class represents a exception that occured during the parsing of a file */
-class tparseException {
+class RCSParseError {
 	
-	char *value;
+	
 	public:
-	tparseException(char *myvalue) { value=myvalue; };
+	char *value;
+	RCSParseError() {};
+	RCSParseError(char *myvalue) { value=myvalue; };
 	char *getvalue() { return value; };
 };
 
-/* This class is used to stored a list of the branches of a revision */
+class RCSIllegalCharacter :public RCSParseError {
+  public:
+  RCSIllegalCharacter(char *myvalue) { value=myvalue; };
+};
+
+class RCSExpected :public RCSParseError {
+  public:
+  char *got;
+  char *wanted;
+  RCSExpected( char *mygot, char *mywanted) 
+  {
+    got=mygot;
+    wanted=mywanted;
+  }
+  char *getvalue() { 
+    ostrstream *out= new ostrstream();
+    (*out)<<"RCSExcepted: "<<wanted<<" Got: "<< got<<endl;
+    out->put('\0');
+    return out->str();
+  };
+  
+};
+
+/* This class is used to store a list of the branches of a revision */
 class Branche {
 	public:
 	char *name;
@@ -150,11 +175,11 @@ class TokenParser {
 	};
 	void matchsemicol() {
 		char *ptr=get();
-		if (ptr!=semicol) throw tparseException(" Incorrect syntax in the RCSFILE parsed!");
+		if (ptr!=semicol) throw RCSExpected(ptr,semicol);
 	};
 	void match(char *token) {
 		char *ptr;
-		if (strcmp(ptr=get(),token)!=0) throw tparseException(" Incorrect syntax in the RCSFILE parsed!");
+		if (strcmp(ptr=get(),token)!=0) throw RCSExpected(ptr,token);
 		delstr( ptr);
 	};
 	
@@ -164,7 +189,7 @@ class TokenParser {
 		idx=0;semicol=";";
 		input->read(buf,CHUNK_SIZE);
 		if ( (buflength=input->gcount())==0 )
-			throw tparseException("Non-existing file or empty file");
+			throw RCSParseError("Non-existing file or empty file");
 	};
 	
 	

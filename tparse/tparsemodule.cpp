@@ -42,12 +42,45 @@ static PyMethodDef tparseMethods[] = {
 
 void inittparse()
 {
-    PyObject *m, *d;
+    PyObject *m, *d, *common, *commondict;
     m= Py_InitModule3("tparse", tparseMethods,__doc__);
+    
+    common = PyImport_ImportModule("common");
+    if (!common) {
+      PyErr_Clear();
+      pyRCSStopParser = PyErr_NewException("tparse.RCSStopParser", NULL, NULL);
+      PyObject_SetAttrString(pyRCSStopParser,"__doc__",PyString_FromString(pyRCSStopParser__doc__));
+      
+      pyRCSParseError = PyErr_NewException("tparse.RCSParseError", NULL, NULL);
+      PyObject_SetAttrString(pyRCSParseError,"__doc__",PyString_FromString(pyRCSParseError__doc__));
+ 
+      pyRCSIllegalCharacter = PyErr_NewException("tparse.RCSIllegalCharacter", NULL, NULL);
+      PyObject_SetAttrString(pyRCSIllegalCharacter,"__doc__",PyString_FromString(pyRCSIllegalCharacter__doc__));
+      
+      pyRCSExpected = PyErr_NewException("tparse.RCSExpected", NULL, NULL);
+      PyObject_SetAttrString(pyRCSExpected,"__doc__",PyString_FromString(pyRCSExpected__doc__));
+    }
+    else {
+      commondict = PyModule_GetDict(common);
+      pyRCSStopParser = PyDict_GetItemString(commondict,"RCSStopParser");
+      Py_INCREF(pyRCSStopParser);
+      
+      pyRCSParseError = PyDict_GetItemString(commondict,"RCSParseError");
+      Py_INCREF(pyRCSParseError);
+      
+      pyRCSIllegalCharacter = PyDict_GetItemString(commondict,"RCSIllegalCharacter");
+      Py_INCREF(pyRCSIllegalCharacter);
+      
+      pyRCSExpected = PyDict_GetItemString(commondict,"RCSExpected");
+      Py_INCREF(pyRCSExpected);
+    }
     d = PyModule_GetDict(m);
-    StopParser = PyErr_NewException("tparse.stopparser", NULL, NULL);
-    PyObject_SetAttrString(StopParser,"__doc__",PyString_FromString(StopParser__doc__));
-    PyDict_SetItemString(d, "stopparser", StopParser);
+    
+    PyDict_SetItemString(d, "RCSStopParser", pyRCSStopParser);
+    PyDict_SetItemString(d, "RCSParseError", pyRCSParseError);
+    PyDict_SetItemString(d, "RCSIllegalCharacter", pyRCSIllegalCharacter);
+    PyDict_SetItemString(d, "RCSExpected", pyRCSExpected);
+    
     PyDict_SetItemString(d, "__version__", PyString_FromString(__version__));
     PyDict_SetItemString(d, "__date__", PyString_FromString(__date__));
     PyDict_SetItemString(d, "__author__", PyString_FromString(__author__));
@@ -67,7 +100,7 @@ class PythonSink : public Sink {
 	{
 		if (!PyObject_CallMethod(sink,"set_head_revision", "s", revision)) {
 			delstr(revision);
-			if (PyErr_ExceptionMatches(StopParser))
+			if (PyErr_ExceptionMatches(pyRCSStopParser))
 				return 1;
 			else  
 				throw PythonException();
@@ -79,7 +112,7 @@ class PythonSink : public Sink {
 	{
 		if (!PyObject_CallMethod(sink,"set_principal_branch", "s", branch_name)) {
 			delstr(branch_name);
-			if (PyErr_ExceptionMatches(StopParser)) 
+			if (PyErr_ExceptionMatches(pyRCSStopParser)) 
 				return 1;
 			else 
 				throw PythonException();
@@ -91,7 +124,7 @@ class PythonSink : public Sink {
 	{
 		if (!PyObject_CallMethod(sink,"define_tag", "ss", name,revision)) {
 			delstr(name);
-			if (PyErr_ExceptionMatches(StopParser))
+			if (PyErr_ExceptionMatches(pyRCSStopParser))
 				return 1;
 			else 
 				throw PythonException();
@@ -103,7 +136,7 @@ class PythonSink : public Sink {
 	{
 		if (!PyObject_CallMethod(sink,"set_comment", "s", comment)) {
 			delstr(comment);
-			if (PyErr_ExceptionMatches(StopParser)) 
+			if (PyErr_ExceptionMatches(pyRCSStopParser)) 
 				return 1;
 			else 
 				throw PythonException();
@@ -115,7 +148,7 @@ class PythonSink : public Sink {
 	{
 		if (!PyObject_CallMethod(sink,"set_description", "s", description)) {
 			delstr(description);
-			if (PyErr_ExceptionMatches(StopParser))
+			if (PyErr_ExceptionMatches(pyRCSStopParser))
 				return 1;
 			else 
 				throw PythonException();
@@ -140,7 +173,7 @@ class PythonSink : public Sink {
 			delstr(author);
 			delstr(state);
 			if (branches!=NULL) delete branches;delstr(next);
-			if (PyErr_ExceptionMatches(StopParser))
+			if (PyErr_ExceptionMatches(pyRCSStopParser))
 				return 1;
 			else 
 				throw PythonException();
@@ -159,7 +192,7 @@ class PythonSink : public Sink {
 			delstr(revision);
 			delstr(log);
 			delstr(text);
-			if (PyErr_ExceptionMatches(StopParser)) 
+			if (PyErr_ExceptionMatches(pyRCSStopParser)) 
 				return 1;
 			else
 				throw PythonException();
@@ -173,7 +206,7 @@ class PythonSink : public Sink {
   	{
   		if (!PyObject_CallMethod(sink,"tree_completed", NULL))
   		{
-			if (PyErr_ExceptionMatches(StopParser)) 
+			if (PyErr_ExceptionMatches(pyRCSStopParser)) 
   				return 1;
   			else
   				throw PythonException();
@@ -184,7 +217,7 @@ class PythonSink : public Sink {
   	{
   		if (!PyObject_CallMethod(sink,"parse_completed", NULL))
   		{
-			if (PyErr_ExceptionMatches(StopParser)) 
+			if (PyErr_ExceptionMatches(pyRCSStopParser)) 
   				return 1;
   			else
   				throw PythonException();
@@ -217,9 +250,26 @@ static PyObject * tparse( PyObject *self, PyObject *args)
     	try {
     		tparseParser *tp=new tparseParser(input,new PythonSink(hsink) );
     	}
-    	catch (tparseException e) 
+    	catch (RCSExpected e) 
+    	  {
+    	    PyObject *exp= PyInstance_New(pyRCSExpected, Py_BuildValue("(ss)", e.got, e.wanted), NULL);
+        	PyErr_SetObject(pyRCSExpected, exp);
+        	Py_DECREF(hsink);
+        	Py_XDECREF(file);
+        	return NULL;
+        }
+    	catch (RCSIllegalCharacter e)
+    	  {
+        	PyObject *exp= PyInstance_New(pyRCSIllegalCharacter, Py_BuildValue("(s)", e.value), NULL);
+        	PyErr_SetObject(pyRCSIllegalCharacter, exp);
+        	Py_DECREF(hsink);
+        	Py_XDECREF(file);
+        	return NULL;
+        }
+      catch (RCSParseError e) 
         {
-        	PyErr_SetString(PyExc_Exception,e.getvalue());
+        	PyObject *exp= PyInstance_New(pyRCSParseError, Py_BuildValue("(s)", e.value), NULL);
+        	PyErr_SetObject(pyRCSParseError, exp);
         	Py_DECREF(hsink);
         	Py_XDECREF(file);
         	return NULL;
@@ -230,9 +280,9 @@ static PyObject * tparse( PyObject *self, PyObject *args)
         	Py_XDECREF(file);
         	return NULL;	
         }
-    	Py_DECREF(hsink);
-    	Py_XDECREF(file);
-    	Py_INCREF(Py_None);
-        return Py_None;
+   Py_DECREF(hsink);
+   Py_XDECREF(file);
+   Py_INCREF(Py_None);
+   return Py_None;
 
 }
