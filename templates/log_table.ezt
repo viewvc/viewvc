@@ -51,12 +51,12 @@
 [end]
 <hr noshade>
 <table width="100%" border=0 cellspacing=1 cellpadding=2>
-  <th bgcolor="#cccccc">Revision</th>
-  <th bgcolor="#cccccc">Tasks</th>
-  <th bgcolor="#cccccc">Diffs</th>
-  <th bgcolor="#cccccc">Branches and Tags</th>
-  <th bgcolor="#cccccc">Age</th>
-  <th bgcolor="#cccccc">Author</th>
+  <th align=left bgcolor="#88ff88">Revision</th>
+  <th align=left bgcolor="#88ff88">Tasks</th>
+  <th align=left bgcolor="#88ff88">Diffs</th>
+  <th align=left bgcolor="#88ff88">Branches and Tags</th>
+  <th align=left bgcolor="#88ff88">Age</th>
+  <th align=left bgcolor="#88ff88">Author</th>
 [for entries]
   <tr valign="top" bgcolor="[if-index entries even]#ffffff[else]#ccccee[end]">
 
