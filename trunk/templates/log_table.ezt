@@ -1,31 +1,11 @@
-<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
- "http://www.w3.org/TR/REC-html40/loose.dtd">
-<html><head>
-<!-- ViewCVS       -- http://viewcvs.sourceforge.net/
-     by Greg Stein -- mailto:gstein@lyra.org
-  -->
-<title>[is roottype "svn"]Subversion[else]CVS[end] log for [where]</title>
-</head>
-<body text="#000000" bgcolor="#ffffff">
-<table width="100%" border=0 cellspacing=0 cellpadding=0>
-  <tr>
-    <td rowspan=2><h1>[is roottype "svn"]Subversion[else]CVS[end] log for [where]</h1></td>
-    <td align=right><img src="[icons]/apache_pb.gif" alt="(logo)" border=0
-			width=259 height=32></td>
-  </tr>
-  <tr>
-    <td align=right><h3><b><a target="_blank"
-href="[docroot]/help_logtable.html">ViewCVS and CVS Help</a></b></h3></td>
-  </tr>
-</table>
+[# setup page definitions]
+  [define location][rootname][if-any where]: [where][end][end]
+  [define page_title][cfg.general.main_title] - log - [location][end]
+  [define help_href][docroot]/help_logtable.html[end]
+[# end]
 
-<a href="[back_url]#[filename]"><img src="[icons]/small/back.gif" alt="(back)" border=0
-			width=16 height=16></a>
-<b>Up to [nav_path]</b><p>
-<a href="#diff">Request diff between arbitrary revisions</a>
-[if-any graph_href]
-/ <a href="[graph_href]">Display revisions graphically</a>
-[end]
+[include "include/header.ezt" "logtable"]
+
 <hr noshade>
 
 [include "include/branch.ezt"]

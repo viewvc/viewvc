@@ -624,8 +624,11 @@ def clickable_path(request, leaf_is_link, drop_leaf):
 
 def _dir_url(request, where):
   """convenient wrapper for get_url used by clickable_path()"""
+  rev = None
+  if request.roottype == "svn":
+    rev = request.repos.rev
   return request.get_url(view_func=view_directory, where=where, 
-                         pathtype=vclib.DIR, params={})
+                         pathtype=vclib.DIR, params={'rev' : rev})
 
 
 def prep_tags(request, tags):
@@ -728,7 +731,22 @@ def common_template_data(request):
     'docroot' : cfg.options.docroot is None                        \
                 and request.script_name + '/' + docroot_magic_path \
                 or cfg.options.docroot,
+    'where' : request.where,
+    'roottype' : request.roottype,
+    'rootname' : request.rootname,
+    'nav_path' : clickable_path(request, 1, 0),
   }
+  url, params = request.get_link(params={'root': None})
+  data['change_root_action'] = urllib.quote(url, _URL_SAFE_CHARS)
+  data['change_root_hidden_values'] = prepare_hidden_values(params)
+  # add in the roots for the selection
+  allroots = list_roots(cfg)
+  if len(allroots) < 2:
+    roots = [ ]
+  else:
+    roots = allroots.keys()
+    roots.sort(icmp)
+  data['roots'] = roots
   return data
 
 def nav_header_data(request, rev):
@@ -738,7 +756,6 @@ def nav_header_data(request, rev):
 
   data = common_template_data(request)
   data.update({
-    'nav_path' : clickable_path(request, 1, 0),
     'path' : path,
     'filename' : filename,
     'file_url' : request.get_url(view_func=view_log, params={}),
@@ -1079,7 +1096,6 @@ def view_markup(request):
     entry = revs[-1]
 
     data.update({
-        'roottype' : request.roottype,
         'date_str' : make_time_string(entry.date),
         'ago' : None,
         'author' : entry.author,
@@ -1322,7 +1338,7 @@ def view_directory(request):
       row.href = request.get_url(view_func=view_log,
                                  where=file_where,
                                  pathtype=vclib.FILE,
-                                 params={})
+                                 params={'rev': str(file.rev)})
 
       row.rev_href = request.get_url(view_func=view_auto,
                                      where=file_where,
@@ -1340,9 +1356,6 @@ def view_directory(request):
   # prepare the data that will be passed to the template
   data = common_template_data(request)
   data.update({
-    'roottype' : request.roottype,
-    'where' : request.where,
-    'current_root' : request.repos.name,
     'rows' : rows,
     'sortby' : sortby,
     'sortdir' : sortdir,
@@ -1397,20 +1410,6 @@ def view_directory(request):
       'selection_form' : None,
     })
 
-  if not request.where:
-    url, params = request.get_link(params={'root': None})
-    data['change_root_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-    data['change_root_hidden_values'] = prepare_hidden_values(params)
-
-    # add in the roots for the selection
-    allroots = list_roots(cfg)
-    if len(allroots) < 2:
-      roots = [ ]
-    else:
-      roots = allroots.keys()
-      roots.sort(icmp)
-    data['roots'] = roots
-
   if cfg.options.use_pagesize:
     url, params = request.get_link(params={'dir_pagestart': None})
     data['dir_paging_action'] = urllib.quote(url, _URL_SAFE_CHARS)
@@ -1421,6 +1420,8 @@ def view_directory(request):
                                            params={})
   if request.roottype == 'svn':
     data['tree_rev'] = vclib.svn.created_rev(request.repos, where)
+    data['tree_rev_href'] = request.get_url(view_func=view_revision,
+                                            params={'rev': data['tree_rev']})
     if request.query_dict.has_key('rev'):
       data['jump_rev'] = request.query_dict['rev']
     else:
@@ -1598,9 +1599,6 @@ def view_log(request):
 
   data = common_template_data(request)
   data.update({
-    'roottype' : request.roottype,
-    'current_root' : request.repos.name,
-    'where' : request.where,
     'nav_path' : clickable_path(request, 1, 0),
     'branch' : None,
     'mime_type' : request.mime_type,
@@ -1945,7 +1943,6 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
     rcs_diff = DiffSource(fp)
 
   data.update({
-    'where' : where,
     'rev1' : rev1,
     'rev2' : rev2,
     'tag1' : sym1,
@@ -2422,9 +2419,6 @@ def download_tarball(request):
 
 def view_revision(request):
   data = common_template_data(request)
-  data.update({
-    'roottype' : request.roottype,
-  })
 
   if request.roottype == "cvs":
     raise ViewcvsException("Revision view not supported for CVS repositories "

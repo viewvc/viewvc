@@ -1,25 +1,43 @@
-<html><head>
+<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
+ "http://www.w3.org/TR/REC-html40/loose.dtd">
 <!-- ViewCVS       -- http://viewcvs.sourceforge.net/
-     by Greg Stein -- mailto:gstein@lyra.org
-  -->
-  [### NOTE: the "diff" is the TITLE param to navigate_header() ]
-  <title>[path]/[filename] - [arg0] - [rev]</title>
+     by Greg Stein -- mailto:gstein@lyra.org  -->
+
+<html>
+<head>
+  <title>[page_title]</title>
 </head>
-<body bgcolor="#ffffff">
-  <table width="100%" border=0 cellspacing=0 cellpadding=1 bgcolor="#9999ee">
-  <tr valign=bottom>
-    <td>
-      <a href="[file_url]#rev[rev]">
-        <img src="[icons]/small/back.gif" alt="(file)" border=0 width=16 height=16>
-      </a>
-      <b>Return to
-        <a href="[file_url]#rev[rev]">[filename]</a>
-        CVS log</b>
-      <img src="[icons]/small/text.gif" alt="(file)" border=0 width=16 height=16>
-    </td>
-    <td align=right>
-      <img src="[icons]/small/dir.gif" alt="(dir)" border=0 width=16 height=16>
-      <b>Up to [nav_path]</b>
-    </td>
-  </tr>
+
+<body text="#000000" bgcolor="#ffffff" text="#000000" 
+      link="#0000ff" alink="#0000ff" vlink="#880088">
+
+<table width="100%" bgcolor="#8888ff"
+       border="0" cellpadding="0" cellspacing="0">
+<tr>
+  <td align="left">[nav_path]</h1></td>
+  <td align="right">
+  [if-any roots]
+    <form method=get action="[change_root_action]">
+      [change_root_hidden_values]
+      <b>Project Root:</b>
+      <select name=root onchange="submit()">
+      [for roots]
+        [is roots rootname]
+          <option selected>[roots]</option>
+        [else]
+          <option>[roots]</option>
+        [end]
+      [end]
+      </select>
+      <input type=submit value="Go">
+    </form>
+  [else]
+    &nbsp;
+  [end]
+  </td>
+</tr>
 </table>
+
+<h1>[location]</h1>
+
+
