@@ -103,10 +103,21 @@ class BinCVSRepository(CVSRepository):
       # Bug at http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=190
       # As a workaround, we invoke rlog to find the first non-dead revision
       # that precedes it and check out that revision instead
-      revs = _file_log(self, path_parts, rev)[0]
+      args = self._getpath(path_parts) + ',v',
+      fp = self.rcs_popen('rlog', args, 'rt', 0)
+      filename, default_branch, tags, eof = _parse_log_header(fp)
+
+      # Retrieve revision objects
+      revs = []
+      while not eof:
+        revision, eof = _parse_log_entry(fp)
+        if revision:
+          revs.append(revision)
+
+      revs = _file_log(revs, tags, default_branch, rev)
 
       # if we find a good revision, invoke co again, otherwise error out
-      if len(revs) and revs[-1].undead:
+      if revs and revs[-1].undead:
         rev_flag = '-p' + revs[-1].undead.string
         fp = self.rcs_popen('co', (rev_flag, full_name), 'rb')
         filename, revision = _parse_co_header(fp)
