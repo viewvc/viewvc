@@ -3,7 +3,8 @@
     [is picklist_len "1"]
     [else]
       <hr noshade>
-      <form method=GET action="[href]">
+      <form method=GET action="[log_paging_action]">
+        [log_paging_hidden_values]
         <input type=submit value="Go to:">
         <select name=log_pagestart  onchange="submit()">
           [for picklist]

@@ -1,7 +1,7 @@
 <hr noshade>
 <a name=logsort></a>
-<form method="GET" action="[request.script_name]/[if-any request.embedded_root][request.embedded_root]/[end][if-any where][where]/[end]">
-  [hidden_values]
+<form method=get action="[logsort_action]">
+  [logsort_hidden_values]
   Sort log by:
   <select name="logsort" onchange="submit()">
     <option value="cvs" [is logsort "cvs"]selected[end]>Not sorted</option>
