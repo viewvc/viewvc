@@ -932,7 +932,7 @@ def process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags):
 
       if rev == revwanted or rev == branchpoint:
         fileinfo[info_key] = (rev, entry.date, entry.log, entry.author,
-                              filename)
+                              filename, entry.state)
 
         if rev == revwanted:
           # done with this file now
@@ -1029,7 +1029,7 @@ def view_directory(request):
     subfiles = [ ]
 
   attic_files = [ ]
-  if not hideattic:
+  if not hideattic or view_tag:
     try:
       attic_files = os.listdir(full_name + '/Attic')
     except os.error:
@@ -1243,16 +1243,26 @@ def view_directory(request):
         continue
       elif not info:
         continue
+      elif hideattic and view_tag and info[5] == 'dead':
+        continue
       num_displayed = num_displayed + 1
 
       file_url = urllib.quote(file)
       url = file_url + request.qmark_query
 
-      if file[:6] == 'Attic/':
-        attic = ' (in the Attic)&nbsp;' + attic_toggle_link
-        file = file[6:]
+      if view_tag:
+        if info[5] == 'dead':
+          attic = ' (not exist)&nbsp;' + attic_toggle_link
+        else:
+          attic = ''
       else:
-        attic = ''
+	if file[:6] == 'Attic/':
+	  attic = ' (in the Attic)&nbsp;' + attic_toggle_link
+	else:
+	  attic = ''
+
+      if file[:6] == 'Attic/':
+	file = file[6:]
 
       print '<tr bgcolor="%s"><td>' % cfg.colors.even_odd[cur_row % 2]
       print '<a name="%s">' % file
