@@ -135,9 +135,8 @@
   [is entries.state "dead"]
     <br><b><i>FILE REMOVED</i></b>
   [else]
-    <br>Diff
     [if-any entries.prev]
-      to previous <a href="[href].diff?r1=[entries.prev]&r2=[entries.rev][query]">[entries.prev]</a>
+      <br>Diff to previous <a href="[href].diff?r1=[entries.prev]&r2=[entries.rev][query]">[entries.prev]</a>
       [if-any human_readable]
       [else]
         (<a href="[href].diff?r1=[entries.prev]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
