@@ -272,3 +272,10 @@ class _sub_config:
       return '<img src="%s" alt="%s" border=0 width=%s height=%s>' % \
              (path, text, width, height)
     return text
+
+if not hasattr(sys, 'hexversion'):
+  # Python 1.5 or 1.5.1. fix the syntax for ConfigParser options.
+  import regex
+  ConfigParser.option_cre = regex.compile('^\([-A-Za-z0-9._]+\)\(:\|['
+                                          + string.whitespace
+                                          + ']*=\)\(.*\)$')
