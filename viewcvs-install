@@ -81,13 +81,13 @@ went into the new files in subdirectory templates.""", 0),
     ]
 
 if sys.platform == "win32":
-  FILE_INFO_LIST += [
+  FILE_INFO_LIST.extend([
     ("windows/viewcvs.asp", "windows/viewcvs.asp", 0755, 1, 0, 0),
     ("windows/query.asp", "windows/query.asp", 0755, 1, 0, 0),
     ("windows/viewcvs.py", "windows/viewcvs.py", 0755, 1, 0, 0),
     ("windows/query.py", "windows/query.py", 0755, 1, 0, 0),
     ("windows/htaccess.mod_python", "windows/htaccess.mod_python", 0755, 1, 0, 0)
-  ]
+  ])
 
 TREE_LIST = [
   ("lib",       "lib",       0),
