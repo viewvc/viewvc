@@ -13,7 +13,7 @@
 [define last_rev]0[end]
 [define rowclass][class1][end]
 
-<table border=0 cellspacing=0 cellpadding=2>
+<table border="0" cellspacing="0" cellpadding="0" width="100%">
 [for lines]
   [is lines.rev last_rev]
   [else]
@@ -25,21 +25,18 @@
   [end]
 
   <tr class="[rowclass]">
-    <td align="right">&nbsp;
-      <tt>[lines.line_number] : </tt>
+    <td class="vc_blame_line">[lines.line_number] :</td>
+    <td class="vc_blame_author">
+      [is lines.rev last_rev]&nbsp;[else][lines.author][end]
     </td>
-    <td align="right">&nbsp;
-      [is lines.rev last_rev][else]<tt>[lines.author]</tt>[end]
-    </td>
-    <td align="right">&nbsp;
+    <td class="vc_blame_rev">
       [is lines.rev last_rev]
+        &nbsp;
       [else]
-        [if-any lines.diff_url]<a href="[lines.diff_url]">[end]<tt>[lines.rev]</tt>[if-any lines.diff_url]</a>[end]
+        [if-any lines.diff_url]<a href="[lines.diff_url]">[end][lines.rev][if-any lines.diff_url]</a>[end]
       [end]
     </td>
-    <td align="left">&nbsp;
-      <tt>[lines.text]</tt>
-    </td>
+    <td class="vc_blame_text">[lines.text]</td>
   </tr>
   [define last_rev][lines.rev][end]
 [end]

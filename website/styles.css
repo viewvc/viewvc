@@ -3,14 +3,14 @@
 /*******************************/
 
 /*** Standard Tags ***/
-HTML, BODY {
+html, body {
   color: #000000;
   background-color: #ffffff;
 }
 
-A:link    { color: #0000ff; }
-A:visited { color: #880088; }
-A:active  { color: #0000ff; }
+a:link    { color: #0000ff; }
+a:visited { color: #880088; }
+a:active  { color: #0000ff; }
 
 
 /** Navigation Headers ***/
@@ -87,6 +87,20 @@ A:active  { color: #0000ff; }
 .vc_raw_diff {
   background-color: #cccccc;
   font-size: smaller;
+}
+
+/*** Annotate Styles ***/
+.vc_blame_line, .vc_blame_author, .vc_blame_rev {
+  font-family: monospace;
+  text-align: right;
+  white-space: nowrap;
+  padding-right: 0.5em;
+}
+.vc_blame_text {
+  font-family: monospace;
+  text-align: left;
+  white-space: pre;
+  width: 100%;
 }
 
 /*** Query Form ***/
