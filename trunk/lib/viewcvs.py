@@ -75,6 +75,7 @@ checkout_magic_path = '*checkout*'
 oldstyle_checkout_magic_path = '~checkout~'
 docroot_magic_path = '*docroot*'
 viewcvs_mime_type = 'text/vnd.viewcvs-markup'
+alt_mime_type = 'text/x-cvsweb-markup'
 
 # put here the variables we need in order to hold our state - they will be
 # added (with their current value) to any link/query string you construct
@@ -457,7 +458,8 @@ def format_log(log):
   return s
 
 def download_url(request, url, revision, mime_type):
-  if cfg.options.checkout_magic and mime_type != viewcvs_mime_type:
+  if cfg.options.checkout_magic \
+     and mime_type != viewcvs_mime_type and mime_type != alt_mime_type:
     url = '%s/%s/%s/%s' % \
           (request.script_name, checkout_magic_path,
            os.path.dirname(request.where), url)
@@ -2050,7 +2052,8 @@ def view_checkout(request):
                                                request.query_dict,
                                                request.mime_type)
 
-  if mime_type == viewcvs_mime_type and is_viewable(mime_type):
+  if (mime_type == viewcvs_mime_type or mime_type == alt_mime_type) \
+     and is_viewable(mime_type):
     # use the "real" MIME type
     markup_stream(request, fp, revision, request.mime_type)
   else:
