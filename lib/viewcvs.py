@@ -1336,7 +1336,7 @@ def view_directory_cvs(request, data, sortby, sortdir):
   for file, pathname, isdir in file_data:
     if not isdir and pathname != _UNREADABLE_MARKER:
       rcs_files.append(file)
-  fileinfo, alltags = bincvs.get_logs(cfg.general.rcs_path, full_name,
+  fileinfo, alltags = bincvs.get_logs(cfg.general, full_name,
                                       rcs_files, view_tag)
 
   # append the Attic files into the file_data now
@@ -1704,7 +1704,7 @@ def logsort_rev_cmp(rev1, rev2):
 
 _re_is_branch = re.compile(r'^((.*)\.)?\b0\.(\d+)$')
 def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
-  head, cur_branch, taginfo, revs = bincvs.fetch_log(cfg.general.rcs_path,
+  head, cur_branch, taginfo, revs = bincvs.fetch_log(cfg.general,
                                                      full_name, which_rev)
 
   if not cur_branch:
@@ -2194,8 +2194,7 @@ def process_checkout(request, where):
 
   full_name = os.path.join(request.rootpath, where)
 
-  fp = popen.popen(os.path.join(cfg.general.rcs_path, 'co'),
-                   (rev_flag, full_name), 'rb')
+  fp = bincvs.rcs_popen(cfg.general, 'co', (rev_flag, full_name), 'rb')
 
   # header from co:
   #
@@ -2786,8 +2785,7 @@ def view_diff(request):
   file2 = None
   if request.roottype == 'cvs':
     args[len(args):] = ['-r' + rev1, '-r' + rev2, request.full_name]
-    diff_cmd = os.path.normpath(os.path.join(cfg.general.rcs_path,'rcsdiff'))
-    fp = popen.popen(diff_cmd, args, 'rt')
+    fp = bincvs.rcs_popen(cfg.general, 'rcsdiff', args, 'rt')
   else:
     try:
       date1 = vclib.svn.date_from_rev(request.repos, int(rev1))
@@ -2912,8 +2910,7 @@ def generate_tarball_cvs(out, request, tar_top, rep_top, reldir, tag, stack=[]):
 
   stack.append(tar_dir)
 
-  fileinfo, alltags = bincvs.get_logs(cfg.general.rcs_path, rep_dir,
-                                      rcs_files, tag)
+  fileinfo, alltags = bincvs.get_logs(cfg.general, rep_dir, rcs_files, tag)
 
   files = fileinfo.keys()
   files.sort(lambda a, b: cmp(os.path.basename(a), os.path.basename(b)))
@@ -2936,8 +2933,7 @@ def generate_tarball_cvs(out, request, tar_top, rep_top, reldir, tag, stack=[]):
 
     rev_flag = '-p' + rev
     full_name = rep_dir + '/' + file + ',v'
-    fp = popen.popen(os.path.normpath(os.path.join(cfg.general.rcs_path,'co')),
-                     (rev_flag, full_name), 'rb', 0)
+    fp = bincvs.rcs_popen(cfg.general, 'co', (rev_flag, full_name), 'rb', 0)
     contents = fp.read()
     status = fp.close()
 

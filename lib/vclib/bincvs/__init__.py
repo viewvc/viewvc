@@ -331,7 +331,17 @@ def process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags):
       if eof:
         break
 
-def get_logs(rcs_path, full_name, files, view_tag):
+def rcs_popen(rcs_paths, rcs_cmd, rcs_args, mode, capture_err=1):
+  if rcs_paths.cvsnt_exe_path:
+    cmd = rcs_paths.cvsnt_exe_path
+    args = ['rcsfile', rcs_cmd]
+    args.extend(rcs_args)
+  else:
+    cmd = os.path.join(rcs_paths.rcs_path, rcs_cmd)
+    args = rcs_args
+  return popen.popen(cmd, args, mode, capture_err)
+
+def get_logs(rcs_paths, full_name, files, view_tag):
 
   if len(files) == 0:
     return { }, { }
@@ -357,7 +367,7 @@ def get_logs(rcs_path, full_name, files, view_tag):
       # fetch the latest revision on the default branch
       chunk = ('-r',) + tuple(chunk)
 
-    rlog = popen.popen(os.path.join(rcs_path, 'rlog'), chunk, 'rt', 0)
+    rlog = rcs_popen(rcs_paths, 'rlog', chunk, 'rt', 0)
 
     process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags)
 
@@ -376,12 +386,12 @@ def get_logs(rcs_path, full_name, files, view_tag):
 
   return fileinfo, alltags
 
-def fetch_log(rcs_path, full_name, which_rev=None):
+def fetch_log(rcs_paths, full_name, which_rev=None):
   if which_rev:
     args = ('-r' + which_rev, full_name)
   else:
     args = (full_name,)
-  rlog = popen.popen(os.path.join(rcs_path, 'rlog'), args, 'rt', 0)
+  rlog = rcs_popen(rcs_paths, 'rlog', args, 'rt', 0)
 
   header, eof = parse_log_header(rlog)
   head = header.head
