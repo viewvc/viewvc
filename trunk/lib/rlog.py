@@ -92,7 +92,7 @@ def _get_co_file(v_file):
 
 def GetRLogData(cfg, path, revision=''):
     v_file = _get_v_file(path)
-    head, branch, taginfo, revs = bincvs.fetch_log(cfg.general.rcs_path,
+    head, branch, taginfo, revs = bincvs.fetch_log(cfg.general,
                                                    v_file,
                                                    revision)
     class _blank:
