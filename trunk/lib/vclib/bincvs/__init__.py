@@ -19,13 +19,25 @@
 
 
 # ======================================================================
-from vclib import Repository, Versfile, Revision
+import vclib
 import os
 import os.path
 import string
 import re
-import exceptions
+import time
+
+# ViewCVS libs
+import compat
 import popen
+
+# if your rlog doesn't use 77 '=' characters, then this must change
+LOG_END_MARKER = '=' * 77 + '\n'
+ENTRY_END_MARKER = '-' * 28 + '\n'
+
+_EOF_FILE = 'end of file entries'       # no more entries for this RCS file
+_EOF_LOG = 'end of log'                 # hit the true EOF on the pipe
+_EOF_ERROR = 'error message found'      # rlog issued an error
+
 
 class LogHeader:
   "Hold state from the header portion of an 'rlog' output."
@@ -46,7 +58,7 @@ class LogEntry:
     self.changed = changed
     self.log = log
 
-def parse_log_header(target,fp):
+def parse_log_header(fp):
   """Parse and RCS/CVS log header.
 
   fp is a file (pipe) opened for reading the log information.
@@ -112,9 +124,8 @@ def parse_log_header(target,fp):
             filename = filename[:-2]
           return LogHeader(filename), _EOF_ERROR
         # dunno what this is
-  target.__dict__["head"]=head
-  target.__dict__["branch"]=branch
-  target.__dict__["taginfo"]=taginfo
+
+  return LogHeader(filename, head, branch, taginfo), eof
 
 _re_log_info = re.compile(r'^date:\s+([^;]+);'
                           r'\s+author:\s+([^;]+);'
@@ -174,7 +185,7 @@ def parse_log_entry(fp):
   # parse out a time tuple for the local time
   tm = compat.cvs_strptime(match.group(1))
   try:
-   date = int(time.mktime(tm)) - time.timezone
+    date = int(time.mktime(tm)) - time.timezone
   except OverflowError:
     # it is possible that CVS recorded an "illegal" time, such as those
     # which occur during a Daylight Savings Time switchover (there is a
@@ -323,7 +334,7 @@ def process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags):
       if eof:
         break
 
-def get_logs(full_name, files, view_tag):
+def get_logs(rcs_path, full_name, files, view_tag):
 
   if len(files) == 0:
     return { }, { }
@@ -349,7 +360,7 @@ def get_logs(full_name, files, view_tag):
       # fetch the latest revision on the default branch
       chunk = ('-r',) + tuple(chunk)
 
-    rlog = popen.popen(os.path.normpath(os.path.join(cfg.general.rcs_path,'rlog')), chunk, 'r')
+    rlog = popen.popen(os.path.join(rcs_path, 'rlog'), chunk, 'r')
 
     process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags)
 
@@ -368,6 +379,32 @@ def get_logs(full_name, files, view_tag):
 
   return fileinfo, alltags
 
+def fetch_log(rcs_path, full_name, which_rev=None):
+  if which_rev:
+    args = ('-r' + which_rev, full_name)
+  else:
+    args = (full_name,)
+  rlog = popen.popen(os.path.join(rcs_path, 'rlog'), args, 'r')
+
+  header, eof = parse_log_header(rlog)
+  head = header.head
+  branch = header.branch
+  taginfo = header.taginfo
+
+  if eof:
+    # no log entries or a parsing failure
+    return head, branch, taginfo, [ ]
+
+  revs = [ ]
+  while 1:
+    entry, eof = parse_log_entry(rlog)
+    if entry:
+      # valid revision info
+      revs.append(entry)
+    if eof:
+      break
+
+  return head, branch, taginfo, revs
 
 
 class BinCVSRepository:
@@ -388,8 +425,8 @@ class BinCVSRepository:
 
   def getfile(self,pathname):
     if os.path.isfile(self._getrcsname(self._getpath(pathname))):
-      return Versfile(self,self._getrcsname(self._getpath(pathname)) )
-    raise exceptions.IOError("File not found %s in repository %s"% (self._getpath(pathname),self.name) ) 
+      return vclib.Versfile(self,self._getrcsname(self._getpath(pathname)) )
+    raise IOError("File not found %s in repository %s"% (self._getpath(pathname),self.name) ) 
 
   def getsubdirs(self,path):
     h=os.listdir(self._getpath(path))
@@ -405,7 +442,7 @@ class BinCVSRepository:
     for i in h:
       ci=self._getrcsname(self._getpath(path+[i]))
       if os.path.isfile(ci):
-      	g[i]=Versfile(self,ci)
+      	g[i]=vclib.Versfile(self,ci)
     return g  
   # Private methods ( accessed by Versfile and Revision )
   
@@ -425,8 +462,10 @@ class BinCVSRepository:
     if not os.path.isfile(path):
       raise "Unknown file: %s " % path
     rlog = popen.popen('rlog', path, 'r')
-    parse_log_header(target,rlog)
-
+    header, eof = parse_log_header(rlog)
+    target.head = header.head
+    target.branch = header.branch
+    target.taginfo = header.taginfo
     
   def _getvf_tree(self,versfile):
     """
