@@ -146,6 +146,13 @@ class Request:
     # load the key/value files, given the selected language
     self.kv = cfg.load_kv_files(self.language)
 
+    self.icons = cfg.options.icons
+
+    if cfg.options.docroot is None:
+      self.docroot = self.script_name + '/' + docroot_magic_path
+    else:
+      self.docroot = cfg.options.docroot
+
   def run_viewcvs(self):
     
     # global needed because "import vclib.svn" causes the

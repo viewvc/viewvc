@@ -285,6 +285,11 @@ If this doesn't work, please click on the link above.
             raise KeyboardInterrupt # Hack!
         os.close(0) # To avoid problems with shell job control
 
+        # always use default icon and docroot locations
+        viewcvs.cfg.options.icons = "/icons"
+        viewcvs.cfg.options.docroot = None
+
+        # if cvsnt isn't found, fall back to rcs
         if (viewcvs.cfg.conf_path is None 
             and viewcvs.cfg.general.cvsnt_exe_path):
           import popen
