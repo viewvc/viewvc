@@ -61,18 +61,18 @@
       <a href="[entries.sel_for_diff_href]"><b>[[]select&nbsp;for&nbsp;diffs]</b></a><br>
       [end]
         [if-any entries.diff_to_sel_href]
-          <a href="[entries.diff_to_sel_href]"><b>Diff&nbsp;to&nbsp;selected&nbsp;[rev_selected]</b></a><br>
+          <a href="[entries.diff_to_sel_href]"><b>Diff&nbsp;to&nbsp;selected&nbsp;[rev_selected]</b></a>
           [if-any human_readable]
           [else]
-            <a href="[entries.diff_to_sel_href]&amp;diff_format=h"><b>colored</b></a><br>
-          [end]
+            (<a href="[entries.diff_to_sel_hr_href]"><b>colored</b></a>)
+          [end]<br />
         [end]
         [if-any entries.prev]
-          <a href="[entries.diff_to_prev_href]"><b>Diff&nbsp;to&nbsp;previous&nbsp;[entries.prev]</b></a><br>
+          <a href="[entries.diff_to_prev_href]"><b>Diff&nbsp;to&nbsp;previous&nbsp;[entries.prev]</b></a>
           [if-any human_readable]
           [else]
-            <a href="[entries.diff_to_prev_href]&amp;diff_format=h"><b>colored</b></a><br>
-          [end]
+            (<a href="[entries.diff_to_prev_hr_href]"><b>colored</b></a>)
+          [end]<br />
         [end]
       [end]  
       </td>
@@ -95,18 +95,18 @@
         [end]
       [end]
       [if-any entries.next_main]
-        <a href="[entries.diff_to_main_href]"><b>Diff&nbsp;to&nbsp;next&nbsp;MAIN&nbsp;[entries.next_main]</b></a><br>
+        <a href="[entries.diff_to_main_href]"><b>Diff&nbsp;to&nbsp;next&nbsp;MAIN&nbsp;[entries.next_main]</b></a>
         [if-any human_readable]
         [else]
-          <a href="[entries.diff_to_main_href]&amp;diff_format=h"><b>colored</b></a><br>
-        [end]
+          (<a href="[entries.diff_to_main_hr_href]"><b>colored</b></a>)
+        [end]<br />
       [end]
       [if-any entries.branch_point]
-        <a href="[entries.diff_to_branch_href]"><b>Diff&nbsp;to&nbsp;branch&nbsp;point&nbsp;[entries.branch_point]</b></a><br>
+        <a href="[entries.diff_to_branch_href]"><b>Diff&nbsp;to&nbsp;branch&nbsp;point&nbsp;[entries.branch_point]</b></a>
         [if-any human_readable]
         [else]
-          <a href="[entries.diff_to_branch_href]&amp;diff_format=h"><b>colored</b></a><br>
-        [end]
+          (<a href="[entries.diff_to_branch_hr_href]"><b>colored</b></a>)
+        [end]<br />
       [end]
 
       [# Tags ]
