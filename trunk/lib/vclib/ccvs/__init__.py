@@ -19,7 +19,7 @@
 """
 This is a Version Control library driver for locally accessible cvs-repositories.
 """
-from versionlib import Repository, Versfile, Revision
+from vclib import Repository, Versfile, Revision
 import os
 import os.path
 import string

@@ -17,6 +17,8 @@
 #
 # -----------------------------------------------------------------------
 
+import string
+
 # note: this will raise an ImportError if it isn't available. the rcsparse
 # package will recognize this and switch over to the default parser.
 from mx import TextTools
