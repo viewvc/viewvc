@@ -32,7 +32,7 @@ def handler(req):
   
   requests[thread.get_ident()] = req
   try:
-    imp.load_module(module_name + '_page', fd, path, desc)
+    imp.load_module(module_name, fd, path, desc)
   finally:
     del requests[thread.get_ident()]
 
