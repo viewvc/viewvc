@@ -27,7 +27,12 @@ _ap_icons = """
 
 def encodefile(filename):
     """returns the binary content of 'filename' as string"""
-    return repr(open(filename, "rb").read())
+    s = open(filename, 'rb').read()
+    result = [ ]
+    while s:
+      result.append(repr(s[:16]))
+      s = s[16:]
+    return string.join(result, '\n    ')
 
 class Encode:
     """Starting at a given directory find all files matching a certain 
