@@ -148,7 +148,9 @@ class PythonSink : public Sink {
 		PyObject *pbranchs=PyList_New(0);
 		Branche *move=branches;
 		while (move!=NULL) {
-			PyList_Append(pbranchs, PyString_FromString(move->name) );
+			PyObject *str = PyString_FromString(move->name);
+			PyList_Append(pbranchs, str );
+			Py_DECREF(str);
 			move=move->next;
 		}
 		
