@@ -33,27 +33,28 @@ class Repository:
   Developers: This should be the only class to be derived to obtain an
   actual implementation of a versioning system.
   """
+
   # Public methods ( accessible from the upper layers )
-  def getfile(self,path):
+  def getfile(self, path):
     """
     return the versioned file at <path> ( instance of Versfile )
     Path should be of the form:
     ["Subdir1","Subdir2","filename"]
     """
 
-  def getfiles(self,path):
+  def getfiles(self, path):
     """
     return a dictionary of versioned files. (instance of Versfile )
     """
 
-  def getsubdirs(self,path):
+  def getsubdirs(self, path):
     """
     return the list of the subdirectories in <path> as a list of strings
     """
   
   # Private methods ( accessed by Versfile and Revision )
   
-  def _getvf_info(self,target, path):
+  def _getvf_info(self, target, path):
     """
     This method will had to <target> (expect to be an instance of Versfile)
     a certain number of attributes:
@@ -67,13 +68,13 @@ class Repository:
     Developers: method to be overloaded.
     """
 
-  def _getvf_tree(self,versfile):
+  def _getvf_tree(self, versfile):
     """
     should return a dictionary of Revisions
     Developers: method to be overloaded.
     """
 
-  def _getvf_properties(self,target,path,revisionnumber):
+  def _getvf_properties(self, target, path, revisionnumber):
     """
     Add/update into target's attributes (expected to be an instance of
     Revision) a certain number of attributes:
@@ -111,36 +112,37 @@ class Versfile:
   
   Developers: You do not need to derive this class.
   """
-  names=("head","age","author","log","branch","tags")
 
-  def __init__(self,repository, path, tree=None):
+  names = ("head", "age", "author", "log", "branch", "tags")
+
+  def __init__(self, repository, path, tree=None):
     """
     Called by Repository.getfile
     """
-    if not isinstance(repository,Repository):
+    if not isinstance(repository, Repository):
       raise TypeError(repository)
-    self.repository=repository
-    self.path=path
+    self.repository = repository
+    self.path = path
     
-    if tree!=None:
-      self.tree=tree
+    if tree != None:
+      self.tree = tree
       
   # if an attribute is not present in the dict of the instance, look for it in
   # the repository. Special treatment for the "tree" attribute.
-  def __getattr__(self,name):
-    if name=="tree":
-      self.__dict__["tree"]=self.repository._getvf_tree(self)
-      return self.__dict__["tree"]
+  def __getattr__(self, name):
+    if name == "tree":
+      self.tree = self.repository._getvf_tree(self)
+      return self.tree
     if name in self.names:
-      self.repository._getvf_info(self,self.path)
+      self.repository._getvf_info(self, self.path)
       return self.__dict__[name]
     raise AttributeError()
 
   # private methods ( access from Revision's methods )
   def _getvf_properties(self, target, revisionnumber):
-    return self.repository._getvf_properties(target, self.path,revisionnumber)
+    return self.repository._getvf_properties(target, self.path, revisionnumber)
 
-  def _getvf_cofile(self,target):
+  def _getvf_cofile(self, target):
     return self.repository._getvf_cofile(target, self.path)
   
 # ======================================================================
@@ -151,16 +153,19 @@ class Revision:
   
   Developers: You do not need to derive this class.
   """
-  names=("date","author","state","log","previous","branches","changes","tags")
-  def __init__(self,versfile,number):
-    if not isinstance(versfile,Versfile):
+
+  names = ("date", "author", "state", "log", "previous", "branches",
+           "changes", "tags")
+
+  def __init__(self, versfile, number):
+    if not isinstance(versfile, Versfile):
       raise TypeError(versfile)	
-    self.versfile=versfile
-    self.rev=number
+    self.versfile = versfile
+    self.rev = number
     
   # if an attribute is not present in the dict of the instance, look for it in
   # the repository. 
-  def __getattr__(self,name):
+  def __getattr__(self, name):
     if name in self.names:
       self.versfile._getvf_properties(self,self.rev)
       return self.__dict__[name]
@@ -174,7 +179,7 @@ class Revision:
     return self.versfile.tree[self.previous]
 
   def getbranches(self):
-    res=[]
+    res = []
     for i in self.branches:
-      res.append( self.versfile.tree[i] )
+      res.append(self.versfile.tree[i])
     return res
