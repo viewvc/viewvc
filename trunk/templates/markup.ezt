@@ -29,9 +29,9 @@ Revision: <b>[rev]</b> -
       <br>Changes since <b>[prev]: [changed] lines</b>
     [end]
   [end]
-  [is roottype "svn"]
+  [is roottype "svn"][if-any size]
     <br>File size: [size] byte(s)
-  [end]
+  [end][end]
   [is state "dead"]
     <br><b><i>FILE REMOVED</i></b>
   [end]

@@ -1666,7 +1666,7 @@ def view_directory(request):
                                            params={},
                                            escape=1)
   if request.roottype == 'svn':
-    data['tree_rev'] = vclib.svn.created_rev(request.repos, where)
+    data['tree_rev'] = revision
     data['tree_rev_href'] = request.get_url(view_func=view_revision,
                                             params={'rev': data['tree_rev']},
                                             escape=1)
