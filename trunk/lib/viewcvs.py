@@ -1685,20 +1685,6 @@ def view_log(request):
     entry.diff_to_prev_href = None
     entry.diff_to_branch_href = None
     entry.diff_to_main_href = None
-    if pathtype is vclib.FILE:
-      entry.view_href = request.get_url(view_func=view_markup,
-                                        params={'rev': rev.string})
-      entry.download_href = request.get_url(view_func=view_checkout,
-                                            params={'rev': rev.string})
-      if mime_type != 'text/plain':
-        entry.download_text_href = \
-            request.get_url(view_func=view_checkout,
-                            params={'content-type': 'text/plain',
-                                    'rev': rev.string})
-    else:
-      entry.view_href = request.get_url(view_func=view_directory,
-                                        params={'rev': entry.rev})
-
         
     if request.roottype == 'cvs':
       entry.annotate_href = request.get_url(view_func=view_annotate, 
@@ -1754,6 +1740,25 @@ def view_log(request):
       entry.copy_path = rev.copy_path
       entry.copy_rev = rev.copy_rev
       entry.filename = rev.filename
+
+    # view/download links
+    if pathtype is vclib.FILE:
+      entry.view_href = request.get_url(view_func=view_markup,
+                                        where=entry.filename,
+                                        pathtype=vclib.FILE,
+                                        params={'rev': rev.string})
+      entry.download_href = request.get_url(view_func=view_checkout,
+                                            where=entry.filename,
+                                            pathtype=vclib.FILE,
+                                            params={'rev': rev.string})
+      if mime_type != 'text/plain':
+        entry.download_text_href = \
+            request.get_url(view_func=view_checkout,
+                            params={'content-type': 'text/plain',
+                                    'rev': rev.string})
+    else:
+      entry.view_href = request.get_url(view_func=view_directory,
+                                        params={'rev': entry.rev})
 
     # calculate diff links
     if selected_rev != entry.rev:
