@@ -31,7 +31,7 @@
 # -----------------------------------------------------------------------
 #
 # This module is maintained by Greg and is available at:
-#    http://www.lyra.org/greg/python/viewcvs/
+#    http://www.lyra.org/viewcvs/
 #
 # For tracking purposes, this software is identified by:
 #   $Id$
@@ -47,205 +47,19 @@
 # -----------------------------------------------------------------------
 #
 
-__version__ = '0.4'
+__version__ = '0.5-dev'
 
 #########################################################################
 #
-# CONFIGURATION
+# INSTALL-TIME CONFIGURATION
 #
-# There are three forms of configuration:
-#
-#       1) copy viewcvs.conf.dist to viewcvs.conf and edit
-#       2) as (1), but delete all unchanged entries from viewcvs.conf
-#       3) do not use viewcvs.conf and just edit the defaults in this file
-#
-# Most users will want to use (1), but there are slight speed advantages
-# to the other two options. Note that viewcvs.conf values are a bit easier
-# to work with since it is raw text, rather than python literal values.
+# These values will be set during the installation process. During
+# development, they will remain None.
 #
 
-class Config:
-  _sections = ('general', 'images', 'options', 'colors', 'text')
-  _force_multi_value = ('cvs_roots', 'forbidden')
+LIBRARY_DIR = None
+CONF_PATHNAME = None
 
-  def __init__(self):
-    for section in self._sections:
-      setattr(self, section, _sub_config())
-
-  def load_config(self, fname):
-    this_dir = os.path.dirname(sys.argv[0])
-    pathname = os.path.join(this_dir, fname)
-    parser = ConfigParser.ConfigParser()
-    parser.read(pathname)
-
-    for section in self._sections:
-      if not parser.has_section(section):
-        continue
-
-      sc = getattr(self, section)
-
-      for opt in parser.options(section):
-        value = parser.get(section, opt)
-        if (section != 'text' and ',' in value) or \
-           opt in self._force_multi_value:
-          value = map(string.strip, string.split(value, ','))
-        else:
-          try:
-            value = int(value)
-          except ValueError:
-            pass
-
-        if opt == 'cvs_roots':
-          roots = { }
-          for root in value:
-            name, path = map(string.strip, string.split(root, ':'))
-            roots[name] = path
-          value = roots
-        setattr(sc, opt, value)
-
-class _sub_config:
-  def get_image(self, which):
-    text = '[%s]' % string.upper(which)
-    path, width, height = getattr(self, which)
-    if path:
-      return '<img src="%s" alt="%s" border=0 width=%s height=%s>' % \
-             (path, text, width, height)
-    return text
-
-cfg = Config()
-
-cfg.general.cvs_roots = {
-  # user-visible-name : path
-  "Development" : "/home/cvsroot",
-  }
-cfg.general.default_root = "Development"
-cfg.general.rcs_path = ''
-cfg.general.mime_types_file = ''
-cfg.general.address = '<a href="mailto:gstein@lyra.org">gstein@lyra.org</a>'
-cfg.general.main_title = 'CVS Repository'
-cfg.general.forbidden = ()
-
-cfg.images.logo = "/icons/apache_pb.gif", 259, 32
-cfg.images.back_icon = "/icons/small/back.gif", 16, 16
-cfg.images.dir_icon = "/icons/small/dir.gif",  16, 16
-cfg.images.file_icon = "/icons/small/text.gif", 16, 16
-
-cfg.colors.markup_log = "#ffffff"
-
-cfg.colors.diff_heading = "#99cccc"
-cfg.colors.diff_empty = "#cccccc"
-cfg.colors.diff_remove = "#ff9999"
-cfg.colors.diff_change = "#99ff99"
-cfg.colors.diff_add = "#ccccff"
-cfg.colors.diff_dark_change = "#99cc99"
-
-cfg.colors.even_odd = ("#ccccee", "#ffffff")
-
-cfg.colors.nav_header = "#9999ee"
-
-cfg.colors.text = "#000000"
-cfg.colors.background = "#ffffff"
-cfg.colors.alt_background = "#eeeeee"
-
-cfg.colors.column_header_normal = "#cccccc"
-cfg.colors.column_header_sorted = "#88ff88"
-
-cfg.colors.table_border = None	# no border
-
-cfg.options.sort_by = 'file'
-cfg.options.hide_attic = 1
-cfg.options.log_sort = 'date'
-cfg.options.diff_format = 'h'
-cfg.options.hide_cvsroot = 1
-cfg.options.hide_non_readable = 1
-cfg.options.show_author = 1
-cfg.options.hr_breakable = 1
-cfg.options.hr_funout = 1
-cfg.options.hr_ignore_white = 1
-cfg.options.hr_ignore_keyword_subst = 1
-cfg.options.allow_annotate = 0	### doesn't work yet!
-cfg.options.allow_markup = 1
-cfg.options.allow_compress = 1
-cfg.options.use_java_script = 1
-cfg.options.open_extern_window = 1
-cfg.options.extern_window_width = 600
-cfg.options.extern_window_height = 440
-cfg.options.checkout_magic = 1
-cfg.options.show_subdir_lastmod = 0
-cfg.options.show_logs = 1
-cfg.options.show_log_in_markup = 1
-cfg.options.allow_version_select = 1
-cfg.options.py2html_path = '.'
-cfg.options.short_log_len = 80
-cfg.options.table_padding = 2
-cfg.options.diff_font_face = 'Helvetica,Arial'
-cfg.options.diff_font_size = -1
-cfg.options.input_text_size = 12
-
-cfg.text.long_intro = """\
-<p>
-This is a WWW interface for CVS Repositories.
-You can browse the file hierarchy by picking directories
-(which have slashes after them, <i>e.g.</i>, <b>src/</b>).
-If you pick a file, you will see the revision history
-for that file.
-Selecting a revision number will download that revision of
-the file.  There is a link at each revision to display
-diffs between that revision and the previous one, and
-a form at the bottom of the page that allows you to
-display diffs between arbitrary revisions.
-</p>
-<p>
-This script
-(<a href="http://www.lyra.org/greg/python/viewcvs/">ViewCVS</a>)
-has been written by Greg Stein
-&lt;<a href="mailto:gstein@lyra.org">gstein@lyra.org</a>&gt;
-based on the
-<a href="http://linux.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi">cvsweb</a>
-script by Henner Zeller
-&lt;<a href="mailto:zeller@think.de">zeller@think.de</a>&gt;;
-it is covered by the
-<a href="http://www.opensource.org/licenses/bsd-license.html">BSD-Licence</a>.
-If you would like to use this CGI script on your own web server and
-CVS tree, see Greg's
-<a href="http://www.lyra.org/greg/python/viewcvs/">ViewCVS distribution
-site</a>.
-Please send any suggestions, comments, etc. to
-<a href="mailto:gstein@lyra.org">Greg Stein</a>.
-</p>
-"""
-# ' stupid emacs...
-
-cfg.text.doc_info = """
-<h3>CVS Documentation</h3>
-<blockquote>
-<p>
-  <a href="http://www.loria.fr/~molli/cvs/doc/cvs_toc.html">CVS
-  User's Guide</a><br>
-  <a href="http://www.arc.unm.edu/~rsahu/cvs.html">CVS Tutorial</a><br>
-  <a href="http://cellworks.washington.edu/pub/docs/cvs/tutorial/cvs_tutorial_1.html">Another CVS tutorial</a><br>
-  <a href="http://www.csc.calpoly.edu/~dbutler/tutorials/winter96/cvs/">Yet another CVS tutorial (a little old, but nice)</a><br>
-  <a href="http://www.cs.utah.edu/dept/old/texinfo/cvs/FAQ.txt">An old but very useful FAQ about CVS</a>
-</p>
-</blockquote>
-"""
-
-# Fill in stuff on (say) anonymous pserver access here. For example, what
-# access mechanism, login, path, etc should be used.
-cfg.text.repository_info = """
-<!-- insert repository access instructions here -->
-"""
-
-cfg.text.short_intro = """\
-<p>
-Click on a directory to enter that directory. Click on a file to display
-its revision history and to get a chance to display diffs between revisions. 
-</p>
-"""
-
-#
-# CONFIGURATION END
-#
 #########################################################################
 
 import sys
@@ -257,8 +71,22 @@ import mimetypes
 import time
 import re
 import stat
-import ConfigParser
 
+#########################################################################
+#
+# Adjust sys.path to include our library directory
+#
+
+if LIBRARY_DIR:
+  sys.path.insert(0, LIBRARY_DIR)
+else:
+  sys.path[:0] = ['../lib']	# any other places to look?
+
+# time for our imports now
+import compat
+import config
+
+#########################################################################
 
 checkout_magic_path = '~checkout~/'
 viewcvs_mime_type = 'text/vnd.viewcvs-markup'
@@ -284,7 +112,7 @@ _EOF_ERROR = 'error message found'	# rlog issued an error
 _FILE_HAD_ERROR = 'could not read file'
 
 header_comment = '''\
-<!-- ViewCVS       -- http://www.lyra.org/greg/python/viewcvs/
+<!-- ViewCVS       -- http://www.lyra.org/viewcvs/
      by Greg Stein -- mailto:gstein@lyra.org
   -->
 '''
@@ -393,34 +221,6 @@ class LogEntry:
     self.log = log
 
 
-#
-# Compatibility stuff for pre-1.5.2 versions of Python
-#
-# Two items: urllib.urlencode and time.strptime
-#
-try:
-  my_urlencode = urllib.urlencode
-except AttributeError:
-  def my_urlencode(dict):
-    if not dict:
-      return ''
-    quote = urllib.quote_plus
-    keyvalue = [ ]
-    for key, value in dict.items():
-      keyvalue.append(quote(key) + '=' + quote(str(value)))
-    return '?' + string.join(keyvalue, '&')
-
-if hasattr(time, 'strptime'):
-  def my_strptime(timestr):
-    return time.strptime(timestr, '%Y/%m/%d %H:%M:%S')
-else:
-  _re_rev_date = re.compile('([0-9]{4})/([0-9][0-9])/([0-9][0-9]) '
-                            '([0-9][0-9]):([0-9][0-9]):([0-9][0-9])')
-  def my_strptime(timestr):
-    matches = _re_rev_date.match(timestr).groups()
-    return tuple(map(int, matches)) + (0, 1, -1)
-
-
 def redirect(location):
   print 'Status: 301 Moved'
   print 'Location:', location
@@ -462,7 +262,7 @@ def html_header(title):
 def html_footer():
   print '<hr noshade><table width="100&#37;" border=0 cellpadding=0 cellspacing=0><tr>'
   print '<td align=left><address>%s</address></td>' % cfg.general.address
-  print '<td align=right><a href="http://www.lyra.org/greg/python/viewcvs/">ViewCVS %s</a><br>' % __version__
+  print '<td align=right><a href="http://www.lyra.org/viewcvs/">ViewCVS %s</a><br>' % __version__
   print 'by <a href="mailto:gstein@lyra.org">Greg Stein</a>'
   print '</td></tr></table>'
   print '</body></html>'
@@ -473,7 +273,7 @@ def sticky_query(dict):
     value = dict.get(varname)
     if value is not None and value != default_settings.get(varname, ''):
       sticky_dict[varname] = value
-  return my_urlencode(sticky_dict)
+  return compat.urlencode(sticky_dict)
 
 def toggle_query(query_dict, which, value=None):
   dict = query_dict.copy()
@@ -912,7 +712,7 @@ def parse_log_entry(fp):
     # there was a parsing error
     return None, eof
 
-  date = int(time.mktime(my_strptime(match.group(1)))) - time.timezone
+  date = int(time.mktime(compat.cvs_strptime(match.group(1)))) - time.timezone
 
   return LogEntry(rev, date,
                   # author, state, lines changed
@@ -2238,9 +2038,13 @@ def view_diff(request, cvs_filename):
     print line[:-1]
 
 def handle_config():
+  global cfg
+  cfg = config.Config()
+  cfg.set_defaults()
+
   # load in configuration information from the config file
-  ### allow changes and paths here...??
-  cfg.load_config('viewcvs.conf')
+  pathname = CONF_PATHNAME or 'viewcvs.conf'
+  cfg.load_config(pathname)
 
   global default_settings
   default_settings = {
