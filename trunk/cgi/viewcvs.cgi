@@ -53,36 +53,16 @@ __version__ = '0.4-dev'
 #
 # CONFIGURATION
 #
-
+# There are three forms of configuration:
 #
-# For correct operation, you will probably need to change the following
-# configuration variables:
+#       1) copy viewcvs.conf.dist to viewcvs.conf and edit
+#       2) as (1), but delete all unchanged entries from viewcvs.conf
+#       3) do not use viewcvs.conf and just edit the defaults in this file
 #
-#    cvs_roots
-#    default_root
-#    rcs_path
-#    mime_types_file
+# Most users will want to use (1), but there are slight speed advantages
+# to the other two options. Note that viewcvs.conf values are a bit easier
+# to work with since it is raw text, rather than python literal values.
 #
-# It is usually desirable to change the following variables:
-#
-#    address
-#    main_title
-#    logo
-#    forbidden
-#
-#    long_intro
-#    repository_info
-#
-# For Python source colorization:
-#
-#    py2html_path
-#
-# If your icons are in a special location:
-#
-#    icons
-#
-
-#########################################################################
 
 class Config:
   _sections = ('general', 'images', 'options', 'colors', 'text')
@@ -140,7 +120,7 @@ cfg.general.cvs_roots = {
   }
 cfg.general.default_root = "Development"
 cfg.general.rcs_path = ''
-cfg.general.mime_types_file = '/usr/local/apache/conf/mime.types'
+cfg.general.mime_types_file = ''
 cfg.general.address = '<a href="mailto:gstein@lyra.org">gstein@lyra.org</a>'
 cfg.general.main_title = 'CVS Repository'
 cfg.general.forbidden = ()
