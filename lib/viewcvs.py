@@ -239,10 +239,11 @@ class Request:
         self.repos = bincvs.BinCVSRepository(root_name, rootpath)
         self.roottype = 'cvs'
       except vclib.ReposNotFound:
-        raise debug.ViewcvsException('%s not found!\nThe wrong path for this repository was '
-              'configured, or the server on which the CVS tree lives may be '
-              'down. Please try again in a few minutes.'
-              % server.escape(root_name))
+        raise debug.ViewcvsException(
+          '%s not found!\nThe wrong path for this repository was '
+          'configured, or the server on which the CVS tree lives may be '
+          'down. Please try again in a few minutes.'
+          % server.escape(root_name))
       # required so that spawned rcs programs correctly expand $CVSHeader$
       os.environ['CVSROOT'] = rootpath
     elif cfg.general.svn_roots.has_key(root_name):
@@ -255,18 +256,20 @@ class Request:
         self.repos = vclib.svn.SubversionRepository(root_name, rootpath, rev)
         self.roottype = 'svn'
       except vclib.ReposNotFound:
-        raise debug.ViewcvsException('%s not found!\nThe wrong path for this repository was '
-              'configured, or the server on which the CVS tree lives may be '
-              'down. Please try again in a few minutes.'
-              % server.escape(root_name))
+        raise debug.ViewcvsException(
+          '%s not found!\nThe wrong path for this repository was '
+          'configured, or the server on which the CVS tree lives may be '
+          'down. Please try again in a few minutes.'
+          % server.escape(root_name))
     else:
       # if the query had 'root' in it, we would have caught this error
       # during validation.  so, we know this failed on the default root.
       assert not query_dict.has_key('root')
-      raise debug.ViewcvsException("The settings of 'cvs_roots' and 'default_root' are misconfigured "
-            "in the viewcvs.conf file. "
-            "The default root, '%s', is not present in cvs_roots."
-            % server.escape(root_name))
+      raise debug.ViewcvsException(
+        "The settings of 'cvs_roots' and 'default_root' are misconfigured "
+        "in the viewcvs.conf file. "
+        "The default root, '%s', is not present in cvs_roots."
+        % server.escape(root_name))
 
     self.root_name = root_name
     self.full_name = rootpath + '/' + where
@@ -299,13 +302,15 @@ def _validate_param(name, value):
   try:
     validator = _legal_params[name]
   except KeyError:
-    raise debug.ViewcvsException('An illegal parameter name ("%s") was passed.' % server.escape(name))
+    raise debug.ViewcvsException(
+      'An illegal parameter name ("%s") was passed.' % server.escape(name))
 
   # is the validator a regex?
   if hasattr(validator, 'match'):
     if not validator.match(value):
-      raise debug.ViewcvsException('An illegal value ("%s") was passed as a parameter.' %
-            server.escape(value))
+      raise debug.ViewcvsException(
+        'An illegal value ("%s") was passed as a parameter.' %
+        server.escape(value))
     return
 
   # the validator must be a function
@@ -314,10 +319,10 @@ def _validate_param(name, value):
 def _validate_root(value):
   if not cfg.general.cvs_roots.has_key(value) \
      and not cfg.general.svn_roots.has_key(value):
-    raise debug.ViewcvsException('The root "%s" is unknown. If you believe the value is '
-          'correct, then please double-check your configuration.'
-          % server.escape(value),
-          "404 Repository not found")
+    raise debug.ViewcvsException(
+      'The root "%s" is unknown. If you believe the value is '
+      'correct, then please double-check your configuration.'
+      % server.escape(value), "404 Repository not found")
 
 def _validate_regex(value):
   # hmm. there isn't anything that we can do here.
@@ -1634,7 +1639,8 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
   if view_tag:
     view_rev = taginfo.get(view_tag)
     if not view_rev:
-      raise debug.ViewcvsException('Tag %s not defined.' % view_tag, '404 Tag not found')
+      raise debug.ViewcvsException('Tag %s not defined.' % view_tag,
+                                   '404 Tag not found')
 
     if view_rev[:2] == '0.':
       view_rev = view_rev[2:]
@@ -1988,10 +1994,32 @@ def view_log_cvs(request):
   tagitems.sort()
   tagitems.reverse()
 
+  # Build the list of tags and branch tips.
+  def _get_real_rev(tag_rev, revisions):
+    match = _re_is_branch.match(tag_rev)
+    if not match:
+      return tag_rev
+    else:
+      head = match.group(2) or ''
+      branch = match.group(3)
+      if head:
+        branch_rev = head + '.' + branch
+      else:
+        branch_rev = branch
+      for r in revisions:
+        if r == branch_rev or r[:len(branch_rev)+1] == branch_rev + '.':
+          return r
+    return None
+
   data['tags'] = tags = [ ]
   for tag, rev in tagitems:
-    tags.append(_item(rev=rev, name=tag))
-
+    if tag == 'MAIN':
+      real_rev = taginfo['HEAD']
+    else:
+      real_rev = _get_real_rev(rev, rev_order)
+    if real_rev:
+      tags.append(_item(rev=real_rev, name=tag))
+        
   if query_dict.has_key('r1'):
     diff_rev = query_dict['r1']
   else:
@@ -2058,44 +2086,50 @@ def process_checkout(full_name, where, query_dict, default_mime_type):
   line = fp.readline()
   if not line:
     raise debug.ViewcvsException('Missing output from co.<br>'
-          'fname="%s". url="%s"' % (filename, where))
+                                 'fname="%s". url="%s"' % (filename, where))
 
   match = _re_co_filename.match(line)
   if not match:
-    raise debug.ViewcvsException('First line of co output is not the filename.<br>'
-          'Line was: %s<br>'
-          'fname="%s". url="%s"' % (line, filename, where))
+    raise debug.ViewcvsException(
+      'First line of co output is not the filename.<br>'
+      'Line was: %s<br>'
+      'fname="%s". url="%s"' % (line, filename, where))
   filename = match.group(1)
 
   line = fp.readline()
   if not line:
-    raise debug.ViewcvsException('Missing second line of output from co.<br>'
-          'fname="%s". url="%s"' % (filename, where))
+    raise debug.ViewcvsException(
+      'Missing second line of output from co.<br>'
+      'fname="%s". url="%s"' % (filename, where))
   match = _re_co_revision.match(line)
   if not match:
     match = _re_co_warning.match(line)
     if not match:
-      raise debug.ViewcvsException('Second line of co output is not the revision.<br>'
-            'Line was: %s<br>'
-            'fname="%s". url="%s"' % (line, filename, where))
+      raise debug.ViewcvsException(
+        'Second line of co output is not the revision.<br>'
+        'Line was: %s<br>'
+        'fname="%s". url="%s"' % (line, filename, where))
 
     # second line was a warning. ignore it and move along.
     line = fp.readline()
     if not line:
-      raise debug.ViewcvsException('Missing third line of output from co (after a warning).<br>'
-            'fname="%s". url="%s"' % (filename, where))
+      raise debug.ViewcvsException(
+        'Missing third line of output from co (after a warning).<br>'
+        'fname="%s". url="%s"' % (filename, where))
     match = _re_co_revision.match(line)
     if not match:
-      raise debug.ViewcvsException('Third line of co output is not the revision.<br>'
-            'Line was: %s<br>'
-            'fname="%s". url="%s"' % (line, filename, where))
+      raise debug.ViewcvsException(
+        'Third line of co output is not the revision.<br>'
+        'Line was: %s<br>'
+        'fname="%s". url="%s"' % (line, filename, where))
 
   # one of the above cases matches the revision. grab it.
   revision = match.group(1)
 
   if filename != full_name:
-    raise debug.ViewcvsException('The filename from co did not match. Found "%s". Wanted "%s"<br>'
-          'url="%s"' % (filename, full_name, where))
+    raise debug.ViewcvsException(
+      'The filename from co did not match. Found "%s". Wanted "%s"<br>'
+      'url="%s"' % (filename, full_name, where))
 
   return fp, revision, mime_type
 
@@ -2281,8 +2315,8 @@ def view_doc(request):
   try:
     fp = open(os.path.join(doc_directory, help_page), "rb")
   except IOError, v:
-    raise debug.ViewcvsException('help file "%s" not available\n(%s)' % (help_page, str(v)), 
-          '404 Not Found')
+    raise debug.ViewcvsException('help file "%s" not available\n(%s)'
+                                 % (help_page, str(v)), '404 Not Found')
   if help_page[-3:] == 'png':
     server.header('image/png')
   elif help_page[-3:] == 'jpg':
@@ -2606,7 +2640,8 @@ def view_diff(request):
     args.append('-u')
     unified = 1
   else:
-    raise debug.ViewcvsException('Diff format %s not understood' % format, '400 Bad arguments')
+    raise debug.ViewcvsException('Diff format %s not understood'
+                                 % format, '400 Bad arguments')
 
   if human_readable:
     if cfg.options.hr_funout:
@@ -2832,8 +2867,9 @@ def handle_config():
       try:
         subpaths = os.listdir(pp)
       except OSError:
-        raise debug.ViewcvsException("The setting for 'svn_parent_path' does not refer to "
-              "a valid directory.")
+        raise debug.ViewcvsException(
+          "The setting for 'svn_parent_path' does not refer to "
+          "a valid directory.")
 
       for subpath in subpaths:
         if os.path.exists(os.path.join(pp, subpath)) \
@@ -2877,7 +2913,8 @@ def main():
     
       # check the forbidden list
       if cfg.is_forbidden(request.module):
-        raise debug.ViewcvsException('Access to "%s" is forbidden.' % request.module, '403 Forbidden')
+        raise debug.ViewcvsException('Access to "%s" is forbidden.'
+                                     % request.module, '403 Forbidden')
     
       # we must be referring to something in the repository. what is it?
       isdir = 0
@@ -2937,7 +2974,8 @@ def main():
                      '?' + compat.urlencode(query_dict))
     
         # when all else fails: complain about it.
-        raise debug.ViewcvsException('%s: unknown location' % request.url, '404 Not Found')
+        raise debug.ViewcvsException('%s: unknown location'
+                                     % request.url, '404 Not Found')
     
       ### at this point, we know we're talking about a file.
         
@@ -2966,8 +3004,9 @@ def main():
           view_log_cvs(request)
         return
       
-      raise debug.ViewcvsException('%s: unable to determine desired operation' % request.url,
-            '404 Not Found')
+      raise debug.ViewcvsException(
+        '%s: unable to determine desired operation'
+        % request.url, '404 Not Found')
     except SystemExit, e:
       return
     except:
