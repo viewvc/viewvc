@@ -18,9 +18,6 @@
 # version of Python from 1.5 and up.  That's why some 2.0 features 
 # (like string methods) are conspicuously avoided.
 
-# XXX Unresolved issues: avoid forking for each request.
-# XXX Make /icons/ source directory configurable.  currently it is simply 
-#     hardcoded to /usr/local/httpd.
 # XXX Security issues?
 
 """Run "standalone.py -p <port>" to start an HTTP server on a given port 
@@ -37,8 +34,8 @@ Ka-Ping Yee, for the GUI code and the framework stolen from pydoc.py.
 
 # INSTALL-TIME CONFIGURATION
 #
-# These values will be set during the installation process. During
-# development, they will remain None.
+# This value will be set during the installation process. During
+# development, it will remain None.
 #
 
 LIBRARY_DIR = None
@@ -48,9 +45,16 @@ import os
 import string
 import urllib
 
+class Options:
+    port = 7467 # default TCP/IP port used for the server
+    start_gui = 0 # No GUI unless requested.
+    apache_root = "/usr/local/httpd" # where the /icons/ subdir can be found
+
 # --- web browser interface: ----------------------------------------------
 
 def serve(port, callback=None):
+    """start a HTTP server on the given port.  call 'callback' when the
+    server is ready to serve"""
     import BaseHTTPServer, SimpleHTTPServer, select
 
     class ViewCVS_Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
@@ -64,8 +68,7 @@ def serve(port, callback=None):
             else:
                 save_cwd = os.getcwd() # XXX: Ugly hack around SimpleHTTPServer
                 if self.path[:7] == "/icons/":
-                    APACHE_ROOT="/usr/local/httpd" # FIXME.
-                    os.chdir(APACHE_ROOT)
+                    os.chdir(options.apache_root)
                 self.base.do_GET(self)
                 os.chdir(save_cwd)
 
@@ -84,11 +87,14 @@ def serve(port, callback=None):
                 return self.base.send_head(self)
 
         def is_viewcvs(self):
+            """Check whether self.path matches the hardcoded ScriptAlias
+            /viewcvs"""
             if self.path[:8] == "/viewcvs":
                 return 1
             return 0
 
         def redirect(self):
+            """redirect the browser to the viewcvs URL"""
             self.send_response(200, "redirection follows")
             self.send_header("Content-type", "text/html")
             self.end_headers()
@@ -105,8 +111,9 @@ If this doesn't work, please click on the link above.
 """ % tuple([self.server.url + "viewcvs/"]*2))
 
         def run_viewcvs(self):
-            """This a quick and dirty cut'n'rape from Pythons 
+            """This is a quick and dirty cut'n'rape from Pythons 
             standard library module CGIHTTPServer."""
+            assert self.path[:8] == "/viewcvs"
             viewcvs_url, rest = self.server.url[:-1]+"/viewcvs", self.path[8:]
             i = string.rfind(rest, '?')
             if i >= 0:
@@ -238,12 +245,37 @@ def gui(port):
             self.quit_btn = Tkinter.Button(self.server_frm,
                 text='quit serving', command=self.quit, state='disabled')
 
+
             self.window.title('ViewCVS standalone')
             self.window.protocol('WM_DELETE_WINDOW', self.quit)
             self.title_lbl.pack(side='top', fill='x')
             self.open_btn.pack(side='left', fill='x', expand=1)
             self.quit_btn.pack(side='right', fill='x', expand=1)
+
+            # Early loading of configuration here.  Used to
+            # allow tinering with configuration settings through the gui:
+            viewcvs.handle_config()
+            if not LIBRARY_DIR:
+                viewcvs.cfg.options.cvsgraph_conf = "../cgi/cvsgraph.conf.dist"
+
+            self.options_frm = Tkinter.Frame(window)
+
+            self.cvsgraph_ivar = Tkinter.IntVar()
+            self.cvsgraph_ivar.set(viewcvs.cfg.options.use_cvsgraph)
+            self.cvsgraph_toggle = Tkinter.Checkbutton(self.options_frm,
+                text="enable cvsgraph (needs binary)", var=self.cvsgraph_ivar,
+                command=self.toggle_use_cvsgraph)
+            self.cvsgraph_toggle.pack(side='top', fill='x', expand=1)
+
+            self.enscript_ivar = Tkinter.IntVar()
+            self.enscript_ivar.set(viewcvs.cfg.options.use_enscript)
+            self.enscript_toggle = Tkinter.Checkbutton(self.options_frm,
+                text="enable enscript (needs binary)", var=self.enscript_ivar,
+                command=self.toggle_use_enscript)
+            self.enscript_toggle.pack(side='top', fill='x', expand=1)
+
             self.server_frm.pack(side='top', fill='x')
+            self.options_frm.pack(side='top', fill='x')
 
             self.window.update()
             self.minwidth = self.window.winfo_width()
@@ -255,7 +287,14 @@ def gui(port):
             import threading
             threading.Thread(target=serve, args=(port, self.ready)).start()
 
+        def toggle_use_cvsgraph(self, event=None):
+            viewcvs.cfg.options.use_cvsgraph = self.cvsgraph_ivar.get()
+
+        def toggle_use_enscript(self, event=None):
+            viewcvs.cfg.options.use_enscript = self.enscript_ivar.get()
+
         def ready(self, server):
+            """used as callback parameter to the serve() function"""
             self.server = server
             self.title_lbl.config(
                 text='ViewCVS standalone server at\n' + server.url)
@@ -263,6 +302,7 @@ def gui(port):
             self.quit_btn.config(state='normal')
 
         def open(self, event=None, url=None):
+            """opens a browser window on the local machine"""
             url = url or self.server.url
             try:
                 import webbrowser
@@ -298,36 +338,49 @@ def cli(argv):
     import getopt
     class BadUsage(Exception): pass
 
-    port = 7467
-    start_gui = 0
     try:
-        opts, args = getopt.getopt(argv[1:], 'gp:', ['gui', 'port='])
+        opts, args = getopt.getopt(argv[1:], 'gp:i:', 
+            ['gui', 'apache_root=', 'port='])
         for opt, val in opts:
             if opt in ('-g', '--gui'):
-                start_gui = 1
-            if opt in ('-p', '--port'):
+                options.start_gui = 1
+            elif opt in ('-i', '--apache_root'):
+                options.apache_root = val
+            elif opt in ('-p', '--port'):
                 try:
-                    port = int(val)
+                    options.port = int(val)
                 except ValueError:
                     raise BadUsage
-        if start_gui:
-            gui(port)
+        if options.start_gui:
+            gui(options.port)
             return
-        elif port:
+        elif options.port:
             def ready(server):
                 print 'server ready at %s' % server.url
-            serve(port, ready)
+            serve(options.port, ready)
             return
         raise BadUsage
     except (getopt.error, BadUsage):
         cmd = sys.argv[0]
+        port = options.port
+        apath = options.apache_root
         print """ViewCVS standalone - a simple standalone HTTP-Server
 
-%(cmd)s -p <port> or --port=<port>
-    Start an HTTP server on the given port on the local machine.
+Usage: %(cmd)s [ <options> ]
 
-%(cmd)s -g or --gui
+Available Options:
+-p <port> or --port=<port>
+    Start an HTTP server on the given port on the local machine.
+    Default port is %(port)d.
+
+-g or --gui
     Pop up a graphical interface for serving and testing ViewCVS .
+
+-i <path> or --apache_root=<path>
+    Specify another path for the directory where the standard icons
+    sub directory can be found.  On typical Unix systems this is
+    the default %(apath)s.  Look for example for "/icons/small/back.gif".
+
 """ % locals()
 
 if __name__ == '__main__': 
@@ -337,4 +390,6 @@ if __name__ == '__main__':
         sys.path[:0] = ['lib']
         os.chdir('lib')
     import viewcvs
+    options = Options()
+    options.use_cvsgraph = 0
     cli(sys.argv)
