@@ -1103,6 +1103,7 @@ def view_directory(request):
   # prepare the data that will be passed to the template
   data = {
     'where' : where,
+    'request' : request,
     'cfg' : cfg,
     'current_root' : request.cvsrep,
     'view_tag' : view_tag,
