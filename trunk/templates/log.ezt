@@ -119,35 +119,35 @@
     <br><b><i>FILE REMOVED</i></b>
   [else]
     [if-any entries.prev]
-      <br>Diff to <a href="[href]?r1=[entries.prev]&r2=[entries.rev][query]">previous [entries.prev]</a>
+      <br>Diff to <a href="[href]?r1=[entries.prev]&amp;r2=[entries.rev][query]">previous [entries.prev]</a>
       [if-any human_readable]
       [else]
-        (<a href="[href]?r1=[entries.prev]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
+        (<a href="[href]?r1=[entries.prev]&amp;r2=[entries.rev]&amp;diff_format=h[query]">colored</a>)
       [end]
     [end]
 
     [if-any entries.branch_point]
-      , to <a href="[href]?r1=[entries.branch_point]&r2=[entries.rev][query]">branch point [entries.branch_point]</a>
+      , to <a href="[href]?r1=[entries.branch_point]&amp;r2=[entries.rev][query]">branch point [entries.branch_point]</a>
       [if-any human_readable]
       [else]
-        , (<a href="[href]?r1=[entries.branch_point]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
+        , (<a href="[href]?r1=[entries.branch_point]&amp;r2=[entries.rev]&amp;diff_format=h[query]">colored</a>)
       [end]
     [end]
 
     [if-any entries.next_main]
-      , to <a href="[href]?r1=[entries.next_main]&r2=[entries.rev][query]">next main [entries.next_main]</a>
+      , to <a href="[href]?r1=[entries.next_main]&amp;r2=[entries.rev][query]">next main [entries.next_main]</a>
       [if-any human_readable]
       [else]
-        , (<a href="[href]?r1=[entries.next_main]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
+        , (<a href="[href]?r1=[entries.next_main]&amp;r2=[entries.rev]&amp;diff_format=h[query]">colored</a>)
       [end]
     [end]
 
     [if-any entries.to_selected]
       [if-any entries.prev], [else]<br>Diff[end]
-        to <a href="[href]?r1=[rev_selected]&r2=[entries.rev][query]">selected [rev_selected]</a>
+        to <a href="[href]?r1=[rev_selected]&amp;r2=[entries.rev][query]">selected [rev_selected]</a>
       [if-any human_readable]
       [else]
-        (<a href="[href]?r1=[rev_selected]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
+        (<a href="[href]?r1=[rev_selected]&amp;r2=[entries.rev]&amp;diff_format=h[query]">colored</a>)
       [end]
     [end]
   [end]
