@@ -62,7 +62,6 @@
       <img src="[docroot]/images/[is rows.type "dir"]dir[else][is rows.state "dead"]broken[else]text[end][end].png" alt="" border=0 width=16 height=16>
       [rows.name][is rows.type "dir"]/[end]</a>
       [is rows.state "dead"](dead)[end]
-      [end]
     </td>
     [if-any rows.graph_href]
       <td width="1%"><a href="[rows.graph_href]"><img
