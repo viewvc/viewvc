@@ -5,16 +5,33 @@
   </head>
 
   <body background="/images/chalk.jpg">
-    <h1>ViewCVS: Viewing CVS Repositories</h1>
+
+    <table width="100&#37;" cellspacing=5>
+      <tr>
+	<td>
+	  <h1>ViewCVS: Viewing CVS Repositories</h1>
+	</td>
+	<td align=center valign=top bgcolor="white" width="1%">
+	  <b>Quickstart:</b>
+	  <a href="viewcvs-0.6.tar.gz">download</a>
+	</td>
+	<td width="1%"><a href="http://sourceforge.net/"><img border=0
+	      src="http://sourceforge.net/sflogo.php?group_id=18760&type=1"></a><br><a href="http://sourceforge.net/projects/viewcvs/">ViewCVS&nbsp;project&nbsp;page</a>
+	</td>
+      </tr>
+    </table>
 
     <p>
       The ViewCVS software was inspired by
       <a href="http://stud.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi/"><i>cvsweb</i></a>
       (by <a href="mailto:zeller@think.de">Henner Zeller</a>).
       I wanted to make some changes and updates, but cvsweb was
-      implemented in Perl (and rather poorly, IMO). So I undertook the 
+      implemented in Perl. While I can manage some Perl, cvsweb was
+      rather unmaintainable for me. So I undertook the 
       task to convert the software to
-      <a href="http://www.python.org/"><i>Python</i></a>.
+      <a href="http://www.python.org/"><i>Python</i></a>. As a result, 
+      I've actually been able to go <em>way</em> beyond the simple
+      changes that I had envisioned.
     </p>
     <p>
       ViewCVS can browse directories, change logs, and specific
@@ -117,6 +134,16 @@
       <li>
 	Directories with a large number of files can be viewed.
       </li>
+      <li>
+	<strong>Security</strong>: ViewCVS only requires read access
+	to the CVS repository (not read/write). With the correct
+	security partitioning, this means that even if ViewCVS were to 
+	be subverted, your source code is safe. Further, ViewCVS does
+	not use any <code>system()</code> or <code>popen()</code>
+	calls, which are very susceptible to abuse.
+	<br>
+	<small>(cvsweb had a hole due to a popen() call)</small>
+      </li>
     </ul>
 
     <p>
@@ -178,7 +205,7 @@
     <address><a href="mailto:gstein@lyra.org">Greg Stein</a></address>
 <!-- Created: Fri Dec  3 02:51:37 PST 1999 -->
 <!-- hhmts start -->
-Last modified: Wed May  2 12:26:52 PDT 2001
+Last modified: Fri May 11 14:22:36 PDT 2001
 <!-- hhmts end -->
   </body>
 </html>
