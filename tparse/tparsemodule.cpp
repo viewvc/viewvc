@@ -31,9 +31,17 @@
    Version: $Id$
 */
 #include <Python.h>
-#include <stdiostream.h>
 #include "tparsemodule.h"
 #include "tparse.cpp"
+
+#if (__GNUC__ >= 4) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1)
+#include <memory> // for auto_ptr
+#include <ext/stdio_filebuf.h>
+typedef __gnu_cxx::stdio_filebuf<char> stdio_filebuf;
+#define GNUC_STDIO_FILEBUF_AVAILABLE
+#endif
+
+using namespace std;
 
 static PyMethodDef tparseMethods[] = {
   {"parse", tparse, METH_VARARGS, tparse__doc__},
@@ -270,17 +278,26 @@ static PyObject * tparse( PyObject *self, PyObject *args)
   istream *input;
   PyObject *file = NULL;
   PyObject *hsink;
+#ifdef GNUC_STDIO_FILEBUF_AVAILABLE
+  auto_ptr<streambuf> rdbuf;
+#endif
 
   if (PyArg_ParseTuple(args, "sO!", &filename, &PyInstance_Type, &hsink))
-    input = new ifstream(filename, ios::nocreate | ios::in);
+    input = new ifstream(filename, ios::in);
   else if (PyArg_ParseTuple(args, "O!O!", &PyFile_Type, &file, 
                             &PyInstance_Type, &hsink))
   {
     PyErr_Clear();   // Reset the exception PyArg_ParseTuple has raised.
-    input = new istdiostream(PyFile_AsFile(file));
-    ((istdiostream *)input)->buffered(1);
-    // We need buffering as because otherwise, it reads the file 4096
-    // bytes at a time, with no readahead.
+#ifdef GNUC_STDIO_FILEBUF_AVAILABLE
+    rdbuf.reset(new stdio_filebuf(PyFile_AsFile(file), ios::in | ios::binary));
+    input = new istream(rdbuf.get());
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "tparse only implements the parsing of filehandles "
+                    "when compiled with GNU C++ version 3.1 or later - "
+                    "please pass a filename instead");
+    return NULL;
+#endif
   }
   else
     return NULL;
