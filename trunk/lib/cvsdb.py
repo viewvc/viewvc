@@ -360,11 +360,11 @@ class CheckinDatabase:
             condList.append(temp)
 
         if query.sort == "date":
-            order_by = "ORDER BY checkins.ci_when DESC"
+            order_by = "ORDER BY checkins.ci_when DESC,descid"
         elif query.sort == "author":
-            order_by = "ORDER BY checkins.whoid"
+            order_by = "ORDER BY checkins.whoid,descid"
         elif query.sort == "file":
-            order_by = "ORDER BY checkins.fileid"
+            order_by = "ORDER BY checkins.fileid,descid"
 
         ## exclude duplicates from the table list
         for table in tableList[:]:
