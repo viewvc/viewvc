@@ -54,7 +54,7 @@ print """Content-Type: text/html
 </head>
 <body bgcolor="#f0f0f0">
 <center>
-<title>Revisions of %s</title>""" % (f,f)
+<title>Revisions of %s</title>""" % (f[:-2],f[:-2])
 
 
 # This statement is very important!  Otherwise you can't garantee the order
@@ -72,7 +72,7 @@ os.system('%s -i -c %s -r %s -m %s %s' % (path_to_cvsgraph, path_to_cvsgraph_con
 print """<img border="0" 
           usemap="#MyMapName" 
           src="cvsgraphmkimg.cgi?c=%s&r=%s&m=%s&f=%s" 
-          alt="Revisions of %s">""" % (path_to_cvsgraph_conf,r,m,f,f)
+          alt="Revisions of %s">""" % (path_to_cvsgraph_conf,r,m,f,f[:-2])
 
 print '</center>'
 print '</body>'
