@@ -52,13 +52,13 @@ DEBUG_FLAG = 0
 ## output functions
 def debug(text):
     if DEBUG_FLAG:
-        sys.stderr.write('DEBUG(viewcvs-loginfo): %s\n' % (text))
+        print 'DEBUG(viewcvs-loginfo):', text
 
 def warning(text):
-    sys.stderr.write('WARNING(viewcvs-loginfo): %s\n' % (text))
+    print 'WARNING(viewcvs-loginfo):', text
 
 def error(text):
-    sys.stderr.write('ERROR(viewcvs-loginfo): %s\n' % (text))
+    print 'ERROR(viewcvs-loginfo):', text
     sys.exit(1)
 
 class FileData:
@@ -134,7 +134,10 @@ def HeuristicArgParse(s, repository):
 
   if s[-16:] == ' - New directory':
     return None
-  
+
+  if s[-19:] == r' - Imported sources':
+    return None    
+
   file_data_list = []
   start = 0
 
@@ -201,6 +204,9 @@ def CvsNtArgParse(s, repository):
   backslashes"""
 
   if s[-18:] == r' -\ New\ directory':
+    return None
+
+  if s[-21:] == r' -\ Imported\ sources':
     return None
 
   file_data_list = []
