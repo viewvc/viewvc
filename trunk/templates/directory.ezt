@@ -106,9 +106,9 @@
 <tr>
 [for headers]
   [is headers.which sortby]
-    <th align=left bgcolor="#88ff88">[headers.title]</th>
+    <th align=left bgcolor="#88ff88" colspan=[headers.colspan]>[headers.title]</th>
   [else]
-    <th align=left bgcolor="#cccccc">
+    <th align=left bgcolor="#cccccc" colspan=[headers.colspan]>
       <a href="[headers.href]">[headers.title]</a>
     </th>
   [end]
@@ -136,11 +136,11 @@
         [is rows.cvs "none"]
           [for rows.cols]<td>&nbsp;</td>[end]
         [else]
+          [if-any rows.graph_href]
+            <td width="1%">&nbsp;<a href="[rows.graph_href]">(graph)</a></td>
+          [end]
           <td>&nbsp;</td>
           <td>&nbsp;[rows.time]</td>
-          [if-any rows.graph_href]
-            <td>&nbsp;[rows.graph_href]</td>
-          [end]
           [if-any rows.author]
             <td>&nbsp;[rows.author]</td>
           [end]
@@ -163,6 +163,9 @@
           </a>
           [rows.attic]
         </td>
+        [if-any rows.graph_href]
+          <td width="1%">&nbsp;<a href="[rows.graph_href]">(graph)</a></td>
+        [end]
         <td>&nbsp;
           <a href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
             <b>[rows.rev]</b>
@@ -177,9 +180,6 @@
 ]
         </td>
         <td>&nbsp;[rows.time]</td>
-        [if-any rows.graph_href]
-          <td>&nbsp;<a href="[rows.graph_href]">(graph)</a></td>
-        [end]
         [if-any rows.author]
           <td>&nbsp;[rows.author]</td>
         [end]

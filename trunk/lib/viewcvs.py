@@ -1118,25 +1118,27 @@ def view_directory(request):
     ### a variety of schemes.
     data['nav_path'] = clickable_path(request, where, 0, 0, 0)
 
-  def add_header(title, which, data=data, query_dict=query_dict):
+  def add_header(title, which, data=data, query_dict=query_dict, colspan=1):
     href = './' + toggle_query(query_dict, 'sortby', which) + '#dirlist'
-    data['headers'].append(_item(title=title, which=which, href=href))
+    data['headers'].append(_item(title=title, which=which, href=href,
+                                 colspan=colspan))
 
-  add_header('File', 'file')
+  if cfg.options.use_cvsgraph:
+    add_header('File', 'file', colspan=2)
+  else:
+    add_header('File', 'file')
 
   # fileinfo will be len==0 if we only have dirs and !show_subdir_lastmod
   # in that case, we don't need the extra columns
   if len(fileinfo):
     add_header('Rev.', 'rev')
     add_header('Age', 'date')
-    if cfg.options.use_cvsgraph:
-      add_header('Graph', 'graph')
     if cfg.options.show_author:
       add_header('Author', 'author')
     if cfg.options.show_logs:
       add_header('Last log entry', 'log')
 
-  num_cols = len(data['headers'])
+  num_cols = len(data['headers']) + cfg.options.use_cvsgraph
 
 
   def file_sort_cmp(data1, data2, sortby=sortby, fileinfo=fileinfo):
@@ -1750,6 +1752,9 @@ def view_log(request):
     'address' : cfg.general.address,
     'vsn' : __version__,
     }
+
+  if cfg.options.use_cvsgraph:
+    data['graph_href'] = file_url + '?graph=1' + request.amp_query
 
   if request.default_viewable:
     data['viewable'] = 'yes'

@@ -19,6 +19,9 @@
 			width=16 height=16></a>
 <b>Up to [nav_path]</b><p>
 <a href="#diff">Request diff between arbitrary revisions</a>
+[if-any graph_href]
+/ <a href="[graph_href]">Display revisions graphically</a>
+[end]
 <hr noshade>
 
 [if-any branch]
