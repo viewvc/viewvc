@@ -39,6 +39,7 @@ import re
 import time
 import math
 import cgi
+import vclib
 from vclib.ccvs import rcsparse
 
 class CVSParser(rcsparse.Sink):
@@ -420,48 +421,50 @@ class CVSParser(rcsparse.Sink):
 
 
 re_includes = re.compile('\\#(\\s*)include(\\s*)"(.*?)"')
-re_filename = re.compile('(.*[\\\\/])?(.+)')
 
-def link_includes(text, root, rcs_path, sticky = None):
+def link_includes(text, repos, path_parts, include_url):
   match = re_includes.match(text)
   if match:
     incfile = match.group(3)
-    for rel_path in ('', 'Attic', '..'):
-      trial_root = os.path.join(rcs_path, rel_path)
-      file = os.path.join(root, trial_root)
-      file = os.path.normpath(os.path.join(file, incfile + ',v'))
-      if os.access(file, os.F_OK):
-	url = os.path.join(rel_path, incfile)
-	if sticky:
-	  url = url + '?' + sticky
+
+    # check current directory and parent directory for file
+    for depth in (-1, -2):
+      include_path = path_parts[:depth] + [incfile]
+      try:
+        repos.rcsfile(include_path) # will throw if path doesn't exist
+        break
+      except vclib.ItemNotFound:
+        pass
+    else:
+      include_path = None
+
+    if include_path:
+        url = string.replace(include_url, '/WHERE/', 
+                             string.join(include_path, '/'))
         return '#%sinclude%s"<a href="%s">%s</a>"' % \
                (match.group(1), match.group(2), url, incfile)
+       
   return text
 
 class BlameSource:
-  def __init__(self, root, rcs_path, opt_rev = None, sticky = None):
+  def __init__(self, repos, path_parts, diff_url, include_url, opt_rev = None):
     # Parse the CVS file
     parser = CVSParser()
-    revision = parser.parse_cvs_file(os.path.join(root, rcs_path), opt_rev)
+    revision = parser.parse_cvs_file(repos.rcsfile(path_parts, 1), opt_rev)
     count = len(parser.revision_map)
     lines = parser.extract_revision(revision)
     if len(lines) != count:
       raise RuntimeError, 'Internal consistency error'
-    match = re_filename.match(rcs_path)
-    if not match:
-      raise RuntimeError, 'Unable to parse filename'
 
     # set up some state variables
-    self.file_head = match.group(1)
-    self.file_tail = match.group(2)
+    self.repos = repos
+    self.path_parts = path_parts
+    self.diff_url = diff_url
+    self.include_url = include_url
     self.lines = lines
     self.num_lines = count
-    self.root = root
-    self.sticky = sticky
     self.parser = parser
 
-    ### TODO: do something with file_tail
-    
     # keep track of where we are during an iteration
     self.idx = -1
     self.last = None
@@ -481,15 +484,13 @@ class BlameSource:
     author = self.parser.revision_author[rev]
     diff_url = None
     if prev_rev:
-      diff_url = '%s?r1=%s&amp;r2=%s' % (self.file_tail[:-2], prev_rev, rev)
-      if self.sticky:
-        diff_url = diff_url + '&amp;' + self.sticky
-    
+      diff_url = '%sr1=%s&amp;r2=%s' % (self.diff_url, prev_rev, rev)
+
     thisline = self.lines[idx]
     thisline = cgi.escape(thisline)
     if 1: #cfg.options.blame_link_includes:
-      thisline = link_includes(thisline, self.root,
-                               self.file_head, self.sticky)
+      thisline = link_includes(thisline, self.repos, self.path_parts,
+                               self.include_url)
 
     item = _item(text=thisline, line_number=line_number, rev=rev,
                  prev_rev=prev_rev, diff_url=diff_url, author=author)

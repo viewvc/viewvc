@@ -511,15 +511,6 @@ class Request:
 
     return url, params
 
-  def sticky_vars(self):
-    """Return a dictionary of sticky variables"""
-    ret = { }
-    for name in _sticky_vars:
-      value = self.query_dict.get(name)
-      if value is not None:
-        ret[name] = value
-    return ret
-
 def _normalize_path(path):
   """Collapse leading slashes in the script name
 
@@ -2048,10 +2039,16 @@ def view_annotate(request):
 
   ### be nice to hook this into the template...
   import blame
-  rcsfile = request.repos.rcsfile(request.path_parts)
-  data['lines'] = blame.BlameSource(request.repos.rootpath,
-                                    rcsfile, rev,
-                                    request.server.escape(compat.urlencode(request.sticky_vars())))
+
+  diff_url = request.get_url(view_func=view_diff,
+                             params={'r1': None, 'r2': None},
+			     escape=1, partial=1)
+
+  include_url = request.get_url(view_func=view_log, where='/WHERE/',
+                                pathtype=vclib.FILE, params={}, escape=1)
+
+  data['lines'] = blame.BlameSource(request.repos, request.path_parts,
+                                    diff_url, include_url, rev)
 
   request.server.header()
   generate_page(request, cfg.templates.annotate, data)
