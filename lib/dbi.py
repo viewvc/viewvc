@@ -21,12 +21,15 @@ dbi_error = "dbi error"
 
 
 ## make some checks in MySQLdb
+_no_datetime = """\
+ERROR: Your version of MySQLdb requires the mxDateTime module
+       for the Timestamp() and TimestampFromTicks() methods.
+       You will need to install mxDateTime to use the ViewCVS
+       database."""
+
 if "Timestamp" not in dir(MySQLdb) or \
    "TimestampFromTicks" not in dir(MySQLdb):
-    print "ERROR: Your version of MySQLdb requires the mxDateTime module"
-    print "       for the Timestamp() and TimestampFromTicks() methods."
-    print "       You will need to install mxDateTime to use the ViewCVS"
-    print "       database."
+    sys.stderr.write(_no_datetime)
     sys.exit(1)
 
 
