@@ -2548,7 +2548,7 @@ def view_diff(request):
     if cfg.options.hr_ignore_white:
       args.append('-w')
     if cfg.options.hr_ignore_keyword_subst and request.roottype == 'cvs':
-      # -k isn't a regular diff option
+      # -kk isn't a regular diff option
       args.append('-kk')
 
   file1 = None
