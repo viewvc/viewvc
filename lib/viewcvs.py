@@ -2199,7 +2199,6 @@ class DiffSource:
       if item:
         self.idx = idx
         self.last = item
-        open('/tmp/log','a').write('idx=%d  item=%s\n' % (idx,vars(item)))
         return item
 
   def _get_row(self):
