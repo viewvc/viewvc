@@ -17,7 +17,7 @@ def CommandLine(command, args):
   """Convert an executable path and a sequence of arguments into a command
   line that can be passed to CreateProcess"""
 
-  cmd = "\"" + string.replace(command, "\"", "\"\"") + "\"";
+  cmd = "\"" + string.replace(command, "\"", "\"\"") + "\""
   for arg in args:
     cmd += " \"" + string.replace(arg, "\"", "\"\"") + "\""
   return cmd
@@ -112,7 +112,7 @@ def MakePrivateHandle(handle, replace = 1):
 
   ### Could change implementation to use SetHandleInformation()...
 
-  flags = win32con.DUPLICATE_SAME_ACCESS;
+  flags = win32con.DUPLICATE_SAME_ACCESS
   proc = win32api.GetCurrentProcess()
   if replace: flags |= win32con.DUPLICATE_CLOSE_SOURCE
   newhandle = win32api.DuplicateHandle(proc,handle,proc,0,0,flags)
@@ -124,7 +124,7 @@ def MakeInheritedHandle(handle, replace = 1):
 
   ### Could change implementation to use SetHandleInformation()...
 
-  flags = win32con.DUPLICATE_SAME_ACCESS;
+  flags = win32con.DUPLICATE_SAME_ACCESS
   proc = win32api.GetCurrentProcess()
   if replace: flags |= win32con.DUPLICATE_CLOSE_SOURCE
   newhandle = win32api.DuplicateHandle(proc,handle,proc,0,1,flags)

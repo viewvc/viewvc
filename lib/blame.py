@@ -269,7 +269,7 @@ class CVSParser(rcsparse.Sink):
     #           timestamp
     #           revision_deltatext
 
-    # CheckHidden(rcs_pathname);
+    # CheckHidden(rcs_pathname)
     try:
       rcsfile = open(rcs_pathname, 'rb')
     except:
@@ -326,7 +326,7 @@ class CVSParser(rcsparse.Sink):
           # "a" - Add command
           start_line = string.atoi(amatch.group(1))
           count      = string.atoi(amatch.group(2))
-          skip       = count;
+          skip       = count
           line_count = line_count + count
         else:
           raise RuntimeError, 'error: illegal RCS file'
