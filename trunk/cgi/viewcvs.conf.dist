@@ -1,0 +1,296 @@
+#---------------------------------------------------------------------------
+### DOC
+
+#---------------------------------------------------------------------------
+[general]
+
+### DOC
+cvs_roots =
+	Development : /home/cvsroot
+
+### DOC
+default_root = Development
+
+# uncomment if the RCS binaries are not on the standard path
+# NOTE: the trailing slash is required!
+# rcs_path = /usr/bin/
+
+# mapping to mimetypes to help viewcvs to guess the correct mime-type on
+# checkout; you can use the mime.types from apache here:
+mime_types_file = /usr/local/apache/conf/mime.types
+
+# This address is shown in the footer. It should contain the CVS maintainer.
+address = <a href="mailto:gstein@lyra.org">gstein@lyra.org</a>
+
+# this title is used on the main entry page
+main_title = CVS Repository
+
+#
+# This should contain a list of modules in the repository that should not be
+# displayed (by default or by explicit path specification).
+#
+forbidden =
+# forbidden = example
+# forbidden = example1, example2
+
+#---------------------------------------------------------------------------
+[images]
+#
+# All images are defined with three values: URL, WIDTH, HEIGHT
+#
+
+# this logo will appear on the page
+logo = /icons/apache_pb.gif, 259, 32
+
+#
+# these icons represent a back-pointer, a directory (folder), and a file.
+# they are normally available in a standard Apache distribution, along
+# with larger versions if these are too small for you.
+#
+back_icon = /icons/small/back.gif, 16, 16
+dir_icon  = /icons/small/dir.gif, 16, 16
+file_icon = /icons/small/text.gif, 16, 16
+
+#---------------------------------------------------------------------------
+[colors]
+
+# background color of log entry in markup
+markup_log = #ffffff
+
+# color of change-section headings in a diff
+diff_heading = #99cccc
+
+# color of "empty" lines
+diff_empty = #cccccc
+
+# removed lines
+diff_remove = #ff9999
+
+# changed lines
+diff_change = #99ff99
+
+# added lines
+diff_add = #ccccff
+
+# empty lines in a change block (one part smaller than the other)
+diff_dark_change = #99cc99
+
+# even/odd row colors
+even_odd = #ccccee, #ffffff
+
+# navigation header (in diff screen, file view, annotation, etc)
+nav_header = #9999ee
+
+# color of text on most pages
+text = #000000
+
+# color of standard background
+background = #ffffff
+
+# color of alternate background (diffs, file view, annotations, etc)
+alt_background = #eeeeee
+
+# table header colors (normal and the sorted-by column)
+column_header_normal = #cccccc
+column_header_sorted = #88ff88
+
+# Uncomment the following line for colored borders in tables
+# table_border = #999999
+
+#---------------------------------------------------------------------------
+[text]
+
+short_intro =
+    <p>
+    Click on a directory to enter that directory. Click on a file to display
+    its revision history and to get a chance to display diffs between
+    revisions. 
+    </p>
+
+long_intro =
+    <p>
+    This is a WWW interface for CVS Repositories.
+    You can browse the file hierarchy by picking directories
+    (which have slashes after them, <i>e.g.</i>, <b>src/</b>).
+    If you pick a file, you will see the revision history
+    for that file.
+    Selecting a revision number will download that revision of
+    the file.  There is a link at each revision to display
+    diffs between that revision and the previous one, and
+    a form at the bottom of the page that allows you to
+    display diffs between arbitrary revisions.
+    </p>
+    <p>
+    This script
+    (<a href="http://www.lyra.org/greg/python/viewcvs/">ViewCVS</a>)
+    has been written by Greg Stein
+    &lt;<a href="mailto:gstein@lyra.org">gstein@lyra.org</a>&gt;
+    based on the
+    <a href="http://linux.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi">cvsweb</a>
+    script by Henner Zeller
+    &lt;<a href="mailto:zeller@think.de">zeller@think.de</a>&gt;;
+    it is covered by the
+    <a href="http://www.opensource.org/licenses/bsd-license.html">BSD
+    Licence</a>.
+    If you would like to use this CGI script on your own web server and
+    CVS tree, see Greg's
+    <a href="http://www.lyra.org/greg/python/viewcvs/">ViewCVS distribution
+    site</a>.
+    Please send any suggestions, comments, etc. to
+    <a href="mailto:gstein@lyra.org">Greg Stein</a>.
+    </p>
+
+doc_info =
+    <h3>CVS Documentation</h3>
+    <blockquote>
+    <p>
+    <a href="http://www.loria.fr/~molli/cvs/doc/cvs_toc.html">CVS
+    User's Guide</a><br>
+    <a href="http://www.arc.unm.edu/~rsahu/cvs.html">CVS Tutorial</a><br>
+    <a href="http://cellworks.washington.edu/pub/docs/cvs/tutorial/cvs_tutorial_1.html">Another CVS tutorial</a><br>
+    <a href="http://www.csc.calpoly.edu/~dbutler/tutorials/winter96/cvs/">Yet
+    another CVS tutorial (a little old, but nice)</a>
+    </p>
+    </blockquote>
+
+repository_info =
+    <!-- insert repository access instructions here -->
+
+#---------------------------------------------------------------------------
+[options]
+### DOC
+
+# sort_by: File sort order
+#   file   Sort by filename
+#   rev    Sort by revision number
+#   date   Sort by commit date
+#   author Sort by author
+#   log    Sort by log message
+sort_by = file
+
+# hide_attic: Hide or show files in Attic
+#   1      Hide files in Attic
+#   0      Show files in Attic
+hide_attic = 1
+
+# log_sort: Sort order for CVS logs
+#   date   Sort revisions by date
+#   rev    Sort revision by revision number
+#   cvs    Don't sort them. Same order as CVS/RCS shows them.
+log_sort = date
+
+# diff_format: Default diff format
+#   h      Human readable
+#   u      Unified diff
+#   c      Context diff
+#   s      Side by side
+diff_format = h
+
+# hide_cvsroot: Don't show the CVSROOT directory
+#   1      Hide CVSROOT directory
+#   0      Show CVSROOT directory
+hide_cvsroot = 1
+
+# hide_non_readable: Don't show entries which cannot be read
+#   1      Hide non-readable entries
+#   0      Show non-readble entries
+hide_non_readable = 1
+
+# Show author of last change
+show_author = 1
+
+# set to 1 to make lines break at spaces,
+# set to 0 to make no-break lines,
+# set to a positive integer to make the lines cut at that length
+hr_breakable = 1
+
+# give out function names in human readable diffs
+# this just makes sense if we have C-files, otherwise
+# diff's heuristic doesn't work well ..
+# ( '-p' option to diff)
+hr_funout = 0
+
+# ignore whitespaces for human readable diffs
+# (indendation and stuff ..)
+# ( '-w' option to diff)
+hr_ignore_white = 1
+
+# ignore diffs which are caused by
+# keyword-substitution like $Id - Stuff
+# ( '-kk' option to rcsdiff)
+hr_ignore_keyword_subst = 1
+
+# allow annotation of files.
+# NOTE: this requires rw-access to the CVSROOT/history file, and rw-access to
+# the subdirectory to place the lock... so you maybe don't want it
+# WARNING: this is not yet implemented!!
+allow_annotate = 0
+
+# allow pretty-printed version of files
+allow_markup = 1
+
+# allow compression with gzip of output if the Browser accepts it
+# (HTTP_ACCEPT_ENCODING=gzip)
+# [make sure to have gzip in the path]
+allow_compress = 1
+
+# Make use of javascript functions to skip the need for submitting a form.
+# For example, this way you can select one of your CVS roots without
+# pressing 'Go' (... if you have more than one CVSROOT defined)
+use_java_script = 1
+
+# open Download-Links in another window
+open_extern_window = 1
+
+# The size of this extern window; this size option needs use_java_script
+# to be defined
+extern_window_width = 600
+extern_window_height = 440
+
+# If you have files which automatically refers to other files
+# (such as HTML) then this allows you to browse the checked
+# out files as if outside CVS.
+checkout_magic = 1
+
+# Show last changelog message for sub directories
+# The current implementation makes many assumptions and may show the
+# incorrect file at some times. The main assumption is that the last
+# modified file has the newest filedate. But some CVS operations
+# touches the file without even when a new version is't checked in,
+# and TAG based browsing essientially puts this out of order, unless
+# the last checkin was on the same tag as you are viewing.
+# Enable this if you like the feature, but don't rely on correct results.
+show_subdir_lastmod = 0
+
+# show a portion of the most recent log entry in directory listings
+show_logs = 1
+
+# Show CVS log when viewing file contents
+show_log_in_markup = 1
+
+# == Configuration defaults ==
+# Defaults for configuration variables that shouldn't need
+# to be configured..
+allow_version_select = 1
+
+#
+# If you want to use Marc-Andrew Lemburg's py2html (and Just van Rossum's
+# PyFontify) to colorize Python files, then you may need to change this
+# variable to point to their directory location.
+#
+# This directory AND the standard Python path will be searched.
+#
+py2html_path = .
+#py2html_path = /usr/local/lib/python1.5/site-python
+
+# the length to which the most recent log entry should be truncated when
+# shown in the directory view
+short_log_len = 80
+
+table_padding = 2
+
+diff_font_face = Helvetica,Arial
+diff_font_size = -1
+
+# the width of the textinput in the request-diff-form
+input_text_size = 12
