@@ -51,7 +51,7 @@ import BaseHTTPServer
 class Options:
     port = 7467 # default TCP/IP port used for the server
     start_gui = 0 # No GUI unless requested.
-    repository = None # use default repository specified in config
+    repositories = {} # use default repositories specified in config
     if sys.platform == 'mac':
         host = '127.0.0.1' 
     else:
@@ -245,12 +245,8 @@ If this doesn't work, please click on the link above.
         # Early loading of configuration here.  Used to
         # allow tinkering with some configuration settings:
         viewcvs.handle_config()
-        if options.repository:
-            if viewcvs.cfg.general.cvs_roots.has_key("Development"):
-                viewcvs.cfg.general.cvs_roots["Development"] = options.repository
-            else:
-                sys.stderr.write("*** No default ViewCVS configuration. Edit viewcvs.conf\n")
-                raise KeyboardInterrupt # Hack!
+        if options.repositories:
+            viewcvs.cfg.general.cvs_roots.update(options.repositories)
         elif viewcvs.cfg.general.cvs_roots.has_key("Development") and \
              not os.path.isdir(viewcvs.cfg.general.cvs_roots["Development"]):
             sys.stderr.write("*** No repository found. Please use the -r option.\n")
@@ -497,7 +493,12 @@ def cli(argv):
             if opt in ('-g', '--gui'):
                 options.start_gui = 1
             elif opt in ('-r', '--repository'):
-                options.repository = val
+                if options.repositories: # option may be used more than once:
+                    num = len(options.repositories.keys())+1
+                    symbolic_name = "Repository"+str(num)
+                    options.repositories[symbolic_name] = val
+                else:
+                    options.repositories["Development"] = val
             elif opt in ('-p', '--port'):
                 try:
                     options.port = int(val)
@@ -533,8 +534,8 @@ Available Options:
     Default port is %(port)d.
 
 -r <path> or --repository=<path>
-    Specify another path for the default CVS repository "Development".
-    If you don't have your repository at /home/cvsroot you will need to
+    Specify path for a CVS repository.  May be used more than once.
+    If you don't have a CVS repository at /home/cvsroot you will need to
     use this option or you have to install first and edit viewcvs.conf.
 
 -g or --gui
