@@ -1092,7 +1092,10 @@ def view_directory(request):
   data = {
     'where' : where,
     'cfg' : cfg,
-    'current_root' : request.cvsrep
+    'current_root' : request.cvsrep,
+    'view_tag' : view_tag,
+    'sortby' : sortby,
+    'headers' : [ ],
     }
 
   # add in the CVS roots for the selection
@@ -1103,63 +1106,36 @@ def view_directory(request):
     roots.sort(lambda n1, n2: cmp(string.lower(n1), string.lower(n2)))
   data['roots'] = roots
 
-  # generate the page
-  ### for now, it is just the top part of the page
-  template.generate(sys.stdout, data)
+  if where:
+    ### in the future, it might be nice to break this path up into
+    ### a list of elements, allowing the template to display it in
+    ### a variety of schemes.
+    data['nav_path'] = clickable_path(request, where, 0, 0, 0)
 
-  print '<p><a name="dirlist">'
+  def add_header(title, which, data=data, query_dict=query_dict):
+    href = './' + toggle_query(query_dict, 'sortby', which) + '#dirlist'
+    data['headers'].append(_item(title=title, which=which, href=href))
 
-  if where == '':
-    #choose_mirror()
-    #choose_cvsroot()
-    pass
-  else:
-    print '<p>Current directory: <b>', \
-          clickable_path(request, where, 0, 0, 0), '</b>'
-    if view_tag:
-      print '<p>Current tag: <b>', view_tag, '</b>'
-
-  print '<p><hr noshade>'
-
-  num_cols = 0
-
-  if cfg.colors.table_border:
-    print '<table border=0 cellpadding=0 width="100&#37;"><tr>' \
-          '<td bgcolor="%s">' % cfg.colors.table_border
-  print '<table width="100&#37;" border=0 cellspacing=1 ' \
-        'cellpadding=%s>' % cfg.options.table_padding
-
-  def print_header(title, which, sortby=sortby, query_dict=query_dict):
-    if sortby == which:
-      print '<th align=left bgcolor=%s>%s</th>' % \
-            (cfg.colors.column_header_sorted, title)
-    else:
-      query = toggle_query(query_dict, 'sortby', which)
-      print '<th align=left bgcolor=%s>' \
-            '<a href="./%s#dirlist">%s</a>' \
-            '</th>' % \
-            (cfg.colors.column_header_normal, query, title)
-
-  print '<tr>'
-  num_cols = 1
-  print_header('File', 'file')
+  add_header('File', 'file')
 
   # fileinfo will be len==0 if we only have dirs and !show_subdir_lastmod
   # in that case, we don't need the extra columns
   if len(fileinfo):
-    num_cols = 3
-    print_header('Rev.', 'rev')
-    print_header('Age', 'date')
+    add_header('Rev.', 'rev')
+    add_header('Age', 'date')
     if cfg.options.use_cvsgraph:
-      num_cols = num_cols + 1
-      print_header('Graph', 'graph')
+      add_header('Graph', 'graph')
     if cfg.options.show_author:
-      num_cols = num_cols + 1   
-      print_header('Author', 'author')
+      add_header('Author', 'author')
     if cfg.options.show_logs:
-      num_cols = num_cols + 1
-      print_header('Last log entry', 'log')
-  print '</tr>'
+      add_header('Last log entry', 'log')
+
+  num_cols = len(data['headers'])
+
+  # generate the page
+  ### for now, it is just the top part of the page
+  template.generate(sys.stdout, data)
+
 
   def file_sort_cmp(data1, data2, sortby=sortby, fileinfo=fileinfo):
     if data1[2]:	# is_directory
@@ -2530,3 +2506,8 @@ def run_cgi():
     print cgi.escape(string.join(lines, ''))
     print '</pre>'
     html_footer()
+
+
+class _item:
+  def __init__(self, **kw):
+    vars(self).update(kw)

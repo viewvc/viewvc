@@ -83,6 +83,38 @@
 
 [end]
 
+<p><a name="dirlist"></a></p>
+
+[if-any where]
+<p>Current directory: <b>[nav_path]</b></p>
+[if-any view_tag]
+<p>Current tag: <b>[view_tag]</b></p>
+[end]
+[end]
+
+<p></p><hr noshade>
+
+[# if you want a colored border around the table of directory
+   information, then add this additional table tag:
+
+   <table border=0 cellpadding=0 width="100%"><tr>
+     <td bgcolor="#999999">
+]
+
+
+<table width="100%" border=0 cellspacing=1 cellpadding=2>
+<tr>
+[for headers]
+  [is headers.which sortby]
+    <th align=left bgcolor="#88ff88">[headers.title]</th>
+  [else]
+    <th align=left bgcolor="#cccccc">
+      <a href="[headers.href]">[headers.title]</a>
+    </th>
+  [end]
+[end]
+</tr>
+
 [# ### the body goes here ]
 
 
