@@ -23,7 +23,7 @@ import os.path
 import string
 
 # Subversion swig libs
-from svn import fs, _repos, util
+from svn import fs, _repos, util, _util
 
 # Subversion filesystem paths are '/'-delimited, regardless of OS.
 def fs_path_join(base, relative):
@@ -132,19 +132,25 @@ def get_file_contents(repos, path):
 
   
 class SubversionRepository(vclib.Repository):
-  def __init__(self, name, rootpath, pool, rev=None):
+  def __init__(self, name, rootpath, rev=None):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
-    self.repos = _repos.svn_repos_open(rootpath, pool)
-    self.pool = pool
+    _util.apr_initialize()
+    self.pool = _util.svn_pool_create(None)
+    self.repos = _repos.svn_repos_open(rootpath, self.pool)
     self.name = name
     self.rootpath = rootpath
     self.fs_ptr = _repos.svn_repos_fs(self.repos)
     self.rev = rev
     if self.rev is None:
-      self.rev = fs.youngest_rev(self.fs_ptr, pool)
+      self.rev = fs.youngest_rev(self.fs_ptr, self.pool)
     self.fsroot = fs.revision_root(self.fs_ptr, self.rev, self.pool)
 
+  def __del__(self):
+    _repos.svn_repos_close(self.repos)
+    util.svn_pool_destroy(self.pool)
+    _util.apr_terminate()
+    
   def getitem(self, path_parts):
     basepath = self._getpath(path_parts)
     item = self.itemtype(path_parts)
