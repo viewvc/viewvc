@@ -139,9 +139,7 @@
           [if-any rows.graph_href]
             <td width="1%">&nbsp;</td>
           [end]
-          [if-any rows.show_subdir_lastmod]
-            <td>&nbsp;</td>
-          [end]
+          <td>&nbsp;</td>
           <td>&nbsp;[rows.time]</td>
           [if-any rows.author]
             <td>&nbsp;[rows.author]</td>
@@ -166,7 +164,7 @@
           [rows.attic]
         </td>
         [if-any rows.graph_href]
-          <td width="1%">&nbsp;<a href="[rows.graph_href]">(graph)</a></td>
+          <td width="1%"><a href="[rows.graph_href]">(graph)</a></td>
         [end]
         <td>&nbsp;
           <a href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
