@@ -40,17 +40,10 @@ import re
 import time
 import math
 import cgi
+import rcsparse
 
-path_sep    = os.path.normpath('/')[-1]
-
-class CVSParser:
+class CVSParser(rcsparse.Sink):
   # Precompiled regular expressions
-  nonws_token = re.compile('^([^;@][^;\\s]*)\\s*')
-  semic_token = re.compile('^;\\s*')
-  rcsen_token = re.compile('^@([^@]*)')
-  undo_escape = re.compile('@@')
-  odd_at      = re.compile('(([^@]|^)(@@)*)@([^@]|$)')
-  rcs_tree    = re.compile('^\\d')
   trunk_rev   = re.compile('^[0-9]+\\.[0-9]+$')
   last_branch = re.compile('(.*)\\.[0-9]+')
   is_branch   = re.compile('(.*)\\.0\\.([0-9]+)')
@@ -63,9 +56,6 @@ class CVSParser:
     self.Reset()
 
   def Reset(self):
-    self.line_buffer = ''
-    self.rcsfile = None
-    self.debug = 0
     self.last_revision = {}
     self.prev_revision = {}
     self.revision_date = {}
@@ -73,7 +63,6 @@ class CVSParser:
     self.revision_branches = {}
     self.next_delta = {}
     self.prev_delta = {}
-    self.feof = 0
     self.tag_revision = {}
     self.revision_symbolic_name = {}
     self.timestamp = {}
@@ -84,66 +73,6 @@ class CVSParser:
     self.revision_map = []
     self.lines_added  = {}
     self.lines_removed = {}
-
-  # Get the next token from the RCS file
-  def get_token(self):
-    # Erase all-whitespace lines
-    while len(self.line_buffer) == 0:
-      self.line_buffer = self.rcsfile.readline()
-      if self.line_buffer == '':
-        raise RuntimeError, 'EOF'
-      self.line_buffer = string.lstrip(self.line_buffer)
-
-    # A string of non-whitespace characters is a token
-    match = self.nonws_token.match(self.line_buffer)
-    if match:
-      self.line_buffer = self.nonws_token.sub('', self.line_buffer)
-      return match.group(1)
-
-    # ...and so is a single semicolon
-    if self.semic_token.match(self.line_buffer):
-      self.line_buffer = self.semic_token.sub('', self.line_buffer)
-      return ';'
-
-    # ...or an RCS-encoded string that starts with an @ character
-    match = self.rcsen_token.match(self.line_buffer)
-    self.line_buffer = self.rcsen_token.sub('', self.line_buffer)
-    token = match.group(1)
-
-    # Detect odd @ character used to close RCS-encoded string
-    while string.find(self.line_buffer, '@') < 0 or not self.odd_at.search(self.line_buffer):
-      token = token + self.line_buffer
-      self.line_buffer = self.rcsfile.readline()
-      if self.line_buffer == '':
-        raise RuntimeError, 'EOF'
-
-    # Retain the remainder of the line after the terminating @ character
-    i = self.odd_at.search(self.line_buffer).end(1)
-    token = token + self.line_buffer[:i]
-    self.line_buffer = self.line_buffer[i+1:]
-
-    # Undo escape-coding of @ characters.
-    token = self.undo_escape.sub('@', token)
-
-    # Digest any extra blank lines
-    while len(self.line_buffer) == 0 or self.line_buffer == '\n':
-      self.line_buffer = self.rcsfile.readline()
-      if self.line_buffer == '':
-        self.feof = 1
-        break
-
-    return token
-
-  # Try to match the next token from the input buffer
-  def match_token(self, match):
-    token = self.get_token()
-    if token != match:
-      raise RuntimeError, ('Unexpected parsing error in RCS file.\n' +
-                           'Expected token: %s, but saw: %s' % (match, token))
-
-  # Push RCS token back into the input buffer.
-  def unget_token(self, token):
-    self.line_buffer = token + " " + self.line_buffer
 
   # Map a tag to a numerical revision number.  The tag can be a symbolic
   # branch tag, a symbolic revision tag, or an ordinary numerical
@@ -239,49 +168,25 @@ class CVSParser:
       self.lines_removed[revision] = self.lines_removed[revision] + lines_removed_now
     return text
 
-  def parse_rcs_admin(self):
-    while 1:
-      # Read initial token at beginning of line
-      token = self.get_token()
+  def set_head_revision(self, revision):
+    self.head_revision = revision
 
-      # We're done once we reach the description of the RCS tree
-      if self.rcs_tree.match(token):
-        self.unget_token(token)
-        return
+  def set_principal_branch(self, branch_name):
+    self.principal_branch = branch_name
 
-      # print "token:", token
+  def define_tag(self, name, revision):
+    # Create an associate array that maps from tag name to
+    # revision number and vice-versa.
+    self.tag_revision[name] = revision
 
-      if token == "head":
-        self.head_revision = self.get_token()
-        self.get_token()         # Eat semicolon
-      elif token == "branch":
-        self.principal_branch = self.get_token()
-        self.get_token()         # Eat semicolon
-      elif token == "symbols":
-        # Create an associate array that maps from tag name to
-        # revision number and vice-versa.
-        while 1:
-          tag = self.get_token()
-          if tag == ';':
-            break
-          (tag_name, tag_rev) = string.split(tag, ':')
-          self.tag_revision[tag_name] = tag_rev
-          self.revision_symbolic_name[tag_rev] = tag_name
-      elif token == "comment":
-        self.file_description = self.get_token()
-        self.get_token()         # Eat semicolon
+    ### actually, this is a bit bogus... a rev can have multiple names
+    self.revision_symbolic_name[revision] = name
 
-      # Ignore all these other fields - We don't care about them.         
-      elif token in ("locks", "strict", "expand", "access"):
-        while 1:
-          tag = self.get_token()
-          if tag == ';':
-            break
-      else:
-        pass
-        # warn("Unexpected RCS token: $token\n")
+  def set_comment(self, comment):
+    self.file_description = comment
 
-    raise RuntimeError, "Unexpected EOF";
+  def set_description(self, description):
+    self.rcs_file_description = description
 
   # Construct dicts that represent the topology of the RCS tree
   # and other arrays that contain info about individual revisions.
@@ -305,91 +210,47 @@ class CVSParser:
   # Also creates self.last_revision, keyed by a branch revision number, which
   # indicates the latest revision on a given branch,
   #   e.g. self.last_revision{"1.2.8"} == 1.2.8.5
+  def define_revision(self, revision, timestamp, author, state,
+                      branches, next):
+    self.tag_revision[revision] = revision
+    branch = self.last_branch.match(revision).group(1)
+    self.last_revision[branch] = revision
 
-  def parse_rcs_tree(self):
-    while 1:
-      revision = self.get_token()
+    #self.revision_date[revision] = date
+    self.timestamp[revision] = timestamp
 
-      # End of RCS tree description ?
-      if revision == 'desc':
-        self.unget_token(revision)
-        return
+    # Pretty print the date string
+    ltime = time.localtime(self.timestamp[revision])
+    formatted_date = time.strftime("%d %b %Y %H:%M", ltime)
+    self.revision_ctime[revision] = formatted_date
 
+    # Save age
+    self.revision_age[revision] = ((time.time() - self.timestamp[revision])
+                                   / self.SECONDS_PER_DAY)
+
+    # save author
+    self.revision_author[revision] = author
+
+    # ignore the state
+
+    # process the branch information
+    branch_text = ''
+    for branch in branches:
+      self.prev_revision[branch] = revision
+      self.next_delta[revision] = branch
+      self.prev_delta[branch] = revision
+      branch_text = branch_text + branch + ''
+    self.revision_branches[revision] = branch_text
+
+    # process the "next revision" information
+    if next:
+      self.next_delta[revision] = next
+      self.prev_delta[next] = revision
       is_trunk_revision = self.trunk_rev.match(revision) is not None
-
-      self.tag_revision[revision] = revision
-      branch = self.last_branch.match(revision).group(1)
-      self.last_revision[branch] = revision
-
-      # Parse date
-      self.match_token('date')
-      date = self.get_token()
-      self.revision_date[revision] = date
-      self.match_token(';')
-
-      # Convert date into timestamp
-      date_fields = string.split(date, '.') + ['0', '0', '0']
-      date_fields = map(string.atoi, date_fields)
-      if date_fields[0] < 100:
-        date_fields[0] = date_fields[0] + 1900
-      self.timestamp[revision] = time.mktime(date_fields)
-
-      # Pretty print the date string
-      ltime = time.localtime(self.timestamp[revision])
-      formatted_date = time.strftime("%d %b %Y %H:%M", ltime)
-      self.revision_ctime[revision] = formatted_date
-
-      # Save age
-      self.revision_age[revision] = (
-              (time.time() - self.timestamp[revision]) / self.SECONDS_PER_DAY)
-
-      # Parse author
-      self.match_token('author')
-      author = self.get_token()
-      self.revision_author[revision] = author
-      self.match_token(';')
-
-      # Parse state
-      self.match_token('state')
-      while self.get_token() != ';':
-        pass
-
-      # Parse branches
-      self.match_token('branches')
-      branches = ''
-      while 1:
-        token = self.get_token()
-        if token == ';':
-          break
-        self.prev_revision[token] = revision
-        self.prev_delta[token] = revision
-        branches = branches + token + ' '
-      self.revision_branches[revision] = branches
-
-      # Parse revision of next delta in chain
-      self.match_token('next')
-      next = ''
-      token = self.get_token()
-      if token != ';':
-        next = token
-        self.get_token()         # Eat semicolon
-        self.next_delta[revision] = next
-        self.prev_delta[next] = revision
-        if is_trunk_revision:
-          self.prev_revision[revision] = next
-        else:
-          self.prev_revision[next] = revision
-
-      if self.debug >= 3:
-        print "<pre>revision =", revision
-        print "date     = ", date
-        print "author   = ", author
-        print "branches = ", branches
-        print "next     = ", next + "</pre>\n"
-
-  def parse_rcs_description(self):
-    self.match_token('desc')
-    self.rcs_file_description = self.get_token()
+      if is_trunk_revision:
+        self.prev_revision[revision] = next
+      else:
+        self.prev_revision[next] = revision
 
   # Construct associative arrays containing info about individual revisions.
   #
@@ -402,36 +263,9 @@ class CVSParser:
   #                          revision if this revision is on the trunk or
   #                          relative to its immediate predecessor if this
   #                          revision is on a branch.
-  def parse_rcs_deltatext(self):
-    while not self.feof:
-      revision = self.get_token()
-      if self.debug >= 3:
-        print "Reading delta for revision:", revision
-      self.match_token('log')
-      self.revision_log[revision] = self.get_token()
-      self.match_token('text')
-      self.revision_deltatext[revision] = self.get_token()
-
-  def parse_rcs_file(self):
-    if self.debug >= 2:
-      print "Reading RCS admin..."
-    self.parse_rcs_admin()
-    if self.debug >= 2:
-      print "Reading RCS revision tree topology..."
-    self.parse_rcs_tree()
-
-    if self.debug >= 3:
-      print "<pre>Keys:\n"
-      for i in self.tag_revision.keys():
-        print "yoyuo %s: %s" % (i, self.tag_revision[i])
-      print "</pre>"
-
-    self.parse_rcs_description()
-    if self.debug >= 2:
-      print "Reading RCS revision deltas..."
-    self.parse_rcs_deltatext()
-    if self.debug >= 2:
-      print "Done reading RCS file..."
+  def set_revision_info(self, revision, log, text):
+    self.revision_log[revision] = log
+    self.revision_deltatext[revision] = text
 
   def parse_cvs_file(self, rcs_pathname, opt_rev = None, opt_m_timestamp = None):
     # Args in:  opt_rev - requested revision
@@ -442,13 +276,13 @@ class CVSParser:
 
     # CheckHidden(rcs_pathname);
     try:
-      self.rcsfile = open(rcs_pathname, 'r')
+      rcsfile = open(rcs_pathname, 'r')
     except:
       raise RuntimeError, ('error: %s appeared to be under CVS control, ' +
               'but the RCS file is inaccessible.') % rcs_pathname
 
-    self.parse_rcs_file()
-    self.rcsfile.close()
+    rcsparse.Parser().parse(rcsfile, self)
+    rcsfile.close()
 
     if opt_rev in [None, '', 'HEAD']:
       # Explicitly specified topmost revision in tree
@@ -599,7 +433,8 @@ def link_includes(text, root, rcs_path):
     incfile = match.group(3)
     for rel_path in ('', 'Attic', '..'):
       trial_root = os.path.join(rcs_path, rel_path)
-      file = os.path.normpath('%s%s%s%s%s,v' % (root, path_sep, trial_root, path_sep, incfile))
+      file = os.path.join(root, trial_root)
+      file = os.path.normpath(os.path.join(file, incfile + ',v'))
       if os.access(file, os.F_OK):
         return '#%sinclude%s"<a href="%s">%s</a>"' % \
                (match.group(1), match.group(2),
@@ -607,7 +442,7 @@ def link_includes(text, root, rcs_path):
   return text
 
 def make_html(root, rcs_path, opt_rev = None, sticky = None):
-  filename = root + path_sep + rcs_path
+  filename = os.path.join(root, rcs_path)
   parser = CVSParser()
   revision = parser.parse_cvs_file(filename, opt_rev)
   count = len(parser.revision_map)
