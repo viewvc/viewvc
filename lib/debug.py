@@ -81,7 +81,7 @@ def PrintException(server, exc_data):
 
   s = ''
   if msg:
-    s = '<p><pre>%s</pre></p>' % msg
+    s = '<p><pre>%s</pre></p>' % server.escape(msg)
   if status:
     s = s + ('<h4>HTTP Response Status</h4>\n<p><pre>\n%s</pre></p><hr>\n'
              % status)

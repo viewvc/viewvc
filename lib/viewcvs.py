@@ -225,7 +225,7 @@ class Request:
           '%s not found!\nThe wrong path for this repository was '
           'configured, or the server on which the CVS tree lives may be '
           'down. Please try again in a few minutes.'
-          % self.server.escape(self.rootname))
+          % self.rootname)
       # required so that spawned rcs programs correctly expand $CVSHeader$
       os.environ['CVSROOT'] = self.rootpath
     elif cfg.general.svn_roots.has_key(self.rootname):
@@ -251,14 +251,14 @@ class Request:
           '%s not found!\nThe wrong path for this repository was '
           'configured, or the server on which the Subversion tree lives may'
           'be down. Please try again in a few minutes.'
-          % self.server.escape(self.rootname))
+          % self.rootname)
       except vclib.InvalidRevision, ex:
         raise debug.ViewCVSException(str(ex))
     else:
       raise debug.ViewCVSException(
         'The root "%s" is unknown. If you believe the value is '
         'correct, then please double-check your configuration.'
-        % self.server.escape(self.rootname), "404 Repository not found")
+        % self.rootname, "404 Repository not found")
 
     # Make sure path exists
     self.pathtype = _repos_pathtype(self.repos, self.path_parts)
@@ -523,7 +523,7 @@ def _validate_param(name, value):
     validator = _legal_params[name]
   except KeyError:
     raise debug.ViewCVSException(
-      'An illegal parameter name ("%s") was passed.' % cgi.escape(name),
+      'An illegal parameter name ("%s") was passed.' % name,
       '400 Bad Request')
 
   if validator is None:
@@ -534,7 +534,7 @@ def _validate_param(name, value):
     if not validator.match(value):
       raise debug.ViewCVSException(
         'An illegal value ("%s") was passed as a parameter.' %
-        cgi.escape(value), '400 Bad Request')
+        value, '400 Bad Request')
     return
 
   # the validator must be a function
@@ -698,24 +698,26 @@ def generate_page(request, tname, data):
 
 def clickable_path(request, leaf_is_link, drop_leaf):
   where = ''
-  s = '<a href="%s#dirlist">[%s]</a>' % (_dir_url(request, where),
-                                         request.repos.name)
+  s = '<a href="%s#dirlist">[%s]</a>' \
+      % (_dir_url(request, where), request.server.escape(request.repos.name))
 
   for part in request.path_parts[:-1]:
     if where: where = where + '/'
     where = where + part
-    s = s + ' / <a href="%s#dirlist">%s</a>' % (_dir_url(request, where), part)
+    s = s + ' / <a href="%s#dirlist">%s</a>' % (_dir_url(request, where),
+                                                request.server.escape(part))
 
   if not drop_leaf and request.path_parts:
     if not leaf_is_link:
-      s = s + ' / %s' % (request.path_parts[-1])
+      s = s + ' / %s' % (request.server.escape(request.path_parts[-1]))
     else:
       if request.pathtype == vclib.DIR:
         url = request.get_url(view_func=view_directory, params={},
                               escape=1) + '#dirlist'
       else:
         url = request.get_url(view_func=view_log, params={}, escape=1)
-      s = s + ' / <a href="%s">%s</a>' % (url, request.path_parts[-1])
+      s = s + ' / <a href="%s">%s</a>' \
+          % (url, request.server.escape(request.path_parts[-1]))
 
   return s
 
@@ -838,9 +840,9 @@ def common_template_data(request):
     'docroot' : cfg.options.docroot is None                        \
                 and request.script_name + '/' + docroot_magic_path \
                 or cfg.options.docroot,
-    'where' : request.where,
+    'where' : request.server.escape(request.where),
     'roottype' : request.roottype,
-    'rootname' : request.rootname,
+    'rootname' : request.server.escape(request.rootname),
     'pathtype' : request.pathtype == vclib.DIR and 'dir' or 'file',
     'nav_path' : clickable_path(request, 1, 0),
   }
@@ -857,7 +859,8 @@ def common_template_data(request):
     rootnames = allroots.keys()
     rootnames.sort(icmp)
     for rootname in rootnames:
-      roots.append(_item(name=rootname, type=allroots[rootname][1]))
+      roots.append(_item(name=request.server.escape(rootname),
+                         type=allroots[rootname][1]))
   data['roots'] = roots
   return data
 
@@ -866,8 +869,8 @@ def nav_header_data(request, rev):
 
   data = common_template_data(request)
   data.update({
-    'path' : path,
-    'filename' : filename,
+    'path' : request.server.escape(path),
+    'filename' : request.server.escape(filename),
     'file_url' : request.get_url(view_func=view_log, params={}, escape=1),
     'rev' : rev
   })
@@ -884,9 +887,7 @@ def retry_read(src, reqlen=CHUNK_SIZE):
         continue
     return chunk
   
-def copy_stream(src, dst=None):
-  if dst is None:
-    dst = sys.stdout
+def copy_stream(src, dst=sys.stdout):
   while 1:
     chunk = retry_read(src)
     if not chunk:
@@ -1198,7 +1199,8 @@ def view_markup(request):
   where = request.where
   query_dict = request.query_dict
   rev = request.query_dict.get('rev')
-
+  filename = os.path.basename(where)
+  
   fp, revision = request.repos.openfile(request.path_parts, rev)
 
   # Since the templates could be changed by the user, we can't provide
@@ -1273,7 +1275,7 @@ def view_markup(request):
                           escape=1)
     markup_fp = MarkupBuffer('<img src="%s"><br>' % url)
   else:
-    basename, ext = os.path.splitext(data['filename'])
+    basename, ext = os.path.splitext(filename)
     streamer = markup_streamers.get(ext)
     if streamer:
       markup_fp = streamer(fp)
@@ -1418,8 +1420,8 @@ def view_directory(request):
       row.show_log = 'yes'
       row.log = format_log(file.log)
 
-    row.anchor = file.name
-    row.name = file.name
+    row.anchor = request.server.escape(file.name)
+    row.name = request.server.escape(file.name)
     row.type = (file.kind == vclib.FILE and 'file') or \
                (file.kind == vclib.DIR and 'dir')
     row.errors = file.errors
@@ -1850,6 +1852,12 @@ def view_log(request):
                                   'diff_format': None},
                           escape=1)
 
+    # Save our escaping until the end so stuff above works
+    entry.filename = request.server.escape(entry.filename)
+    if entry.copy_path:
+      entry.copy_path = request.server.escape(entry.copy_path)
+    if entry.prev_path:
+      entry.prev_path = request.server.escape(entry.prev_path)
     entries.append(entry)
 
   data = common_template_data(request)
@@ -1958,13 +1966,12 @@ def view_checkout(request):
   fp, revision = request.repos.openfile(request.path_parts, rev)
 
   # The revision number acts as a strong validator.
-  if check_freshness(request, None, revision):
-    fp.close()
-    return
+  if not check_freshness(request, None, revision):
+    request.server.header(request.query_dict.get('content-type')
+                          or request.mime_type or 'text/plain')
+    copy_stream(fp)
+  fp.close()
 
-  request.server.header(request.query_dict.get('content-type')
-                        or request.mime_type or 'text/plain')
-  copy_stream(fp)
 
 def view_annotate(request):
   if not cfg.options.allow_annotate:
