@@ -26,14 +26,14 @@
   <br>
   Bookmark a link to:
   [if-any viewable]
-    <a href="[href]"><b>HEAD</b></a>
+    <a href="[head_href]"><b>HEAD</b></a>
     /
-    (<a href="[abs_href]" target="cvs_checkout"
+    (<a href="[head_abs_href]" target="cvs_checkout"
 	onClick="window.open('about:blank', 'cvs_checkout',
 	'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]')"
 	><b>download</b></a>)
   [else]
-    <a href="[href]" target="cvs_checkout"
+    <a href="[head_href]" target="cvs_checkout"
 	onClick="window.open('about:blank', 'cvs_checkout',
 	'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]')"
 	><b>HEAD</b></a>
@@ -45,4 +45,126 @@
 
 [if-any view_tag]
   Current tag: [view_tag] <br>
+[end]
+
+[for entries]
+  <hr size=1 noshade>
+
+  [is entries.state "dead"]
+    Revision <b>[entries.rev]</b>
+  [else]
+    <a name="rev[entries.rev]"></a>
+    [for entries.tag_names]<a name="[entries.tag_names]"></a>
+    [end]
+    [for entries.branch_names]<a name="[entries.branch_names]"></a>
+    [end]
+
+    Revision
+    [if-any viewable]
+      <a href="[entries.href]" target="cvs_checkout"
+	onClick="window.open('about:blank', 'cvs_checkout',
+	'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]')"
+	><b>[entries.rev]</b></a>
+    [else]
+      <a href="[entries.view_href]"><b>[entries.rev]</b></a>
+      /
+      (<a href="[entries.href]" target="cvs_checkout"
+	onClick="window.open('about:blank', 'cvs_checkout',
+	'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]')"
+	><b>download</b></a>)
+    [end]
+    [is mime_type "text/plain"]
+    [else]
+      /
+      (<a href="[entries.text_href]" target="cvs_checkout"
+	onClick="window.open('about:blank', 'cvs_checkout',
+	'resizeable=1,scrollbars=1')"><b>as text</b></a>)
+    [end]
+    [if-any viewable]
+      /
+      <a href="[entries.view_href]"><b>(view)</b></a>
+    [end]
+
+    [# if you don't want to allow annotation, then remove this line]
+    - <a href="[href]?annotate=[entries.rev][query]">annotate</a>
+
+    [# if you don't want to allow select for diffs then remove this section]
+    [is entries.rev rev_selected]
+      - <b>[[]selected]</b>
+    [else]
+      - <a href="[href]?r1=[entries.rev][query]">[[]select for diffs]</a>
+    [end]
+  [end]
+
+  [if-any entries.vendor_branch]
+    <i>(vendor branch)</i>
+  [end]
+
+  , <i>[entries.utc_date] UTC</i> ([entries.ago] ago) by <i>[entries.author]</i>
+
+  [if-any entries.branches]
+    <br>Branch:
+    [for entries.branches]
+      <a href="[entries.branches.href]"><b>[entries.branches.name]</b></a>[if-index entries.branches last][else],[end]
+    [end]
+  [end]
+
+  [if-any entries.tags]
+    <br>CVS Tags:
+    [for entries.tags]
+      <a href="[entries.tags.href]"><b>[entries.tags.name]</b></a>[if-index entries.tags last][else],[end]
+    [end]
+  [end]
+
+  [if-any entries.branch_points]
+    <br>Branch point for:
+    [for entries.branch_points]
+      <a href="[entries.branch_points.href]"><b>[entries.branch_points.name]</b></a>[if-index entries.branch_points last][else],[end]
+    [end]
+  [end]
+
+  [if-any entries.prev]
+    [if-any entries.changed]
+      <br>Changes since <b>[entries.prev]: [entries.changed] lines</b>
+    [end]
+  [end]
+
+  [is entries.state "dead"]
+    <br><b><i>FILE REMOVED</i></b>
+  [else]
+    <br>Diff
+    [if-any entries.prev]
+      to previous <a href="[href].diff?r1=[entries.prev]&r2=[entries.rev][query]">[entries.prev]</a>
+      [if-any human_readable]
+      [else]
+        (<a href="[href].diff?r1=[entries.prev]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
+      [end]
+    [end]
+
+    [if-any entries.branch_point]
+      to a branchpoint <a href="[href].diff?r1=[entries.branch_point]&r2=[entries.rev][query]">[entries.branch_point]</a>
+      [if-any human_readable]
+      [else]
+        (<a href="[href].diff?r1=[entries.branch_point]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
+      [end]
+    [end]
+
+    [if-any entries.next_main]
+      next main <a href="[href].diff?r1=[entries.next_main]&r2=[entries.rev][query]">[entries.next_main]</a>
+      [if-any human_readable]
+      [else]
+        (<a href="[href].diff?r1=[entries.next_main]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
+      [end]
+    [end]
+
+    [if-any entries.to_selected]
+      to selected <a href="[href].diff?r1=[rev_selected]&r2=[entries.rev][query]">[rev_selected]</a>
+      [if-any human_readable]
+      [else]
+        (<a href="[href].diff?r1=[rev_selected]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
+      [end]
+    [end]
+  [end]
+
+<pre>[entries.html_log]</pre>
 [end]

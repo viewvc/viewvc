@@ -295,8 +295,7 @@ def link_tags(query_dict, where, tags, add_links):
   if not add_links:
     return string.join(tags, ', ')
 
-  filename = os.path.basename(where)
-  file_url = urllib.quote(filename)
+  file_url = urllib.quote(os.path.basename(where))
   links = [ ]
   for tag in tags:
     links.append('<a href="%s%s">%s</a>' %
@@ -304,6 +303,13 @@ def link_tags(query_dict, where, tags, add_links):
                   toggle_query(query_dict, 'only_with_tag', tag),
                   tag))
   return string.join(links, ', ')
+
+def prep_tags(query_dict, file_url, tags):
+  links = [ ]
+  for tag in tags:
+    href = file_url + toggle_query(query_dict, 'only_with_tag', tag)
+    links.append(_item(name=tag, href=href))
+  return links
 
 def is_viewable(mime_type):
   return mime_type[:5] == 'text/' or mime_type[:6] == 'image/'
@@ -1548,6 +1554,108 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
   return show_revs, rev_map, rev_order, taginfo, rev2tag, \
          cur_branch, branch_points, branch_names
 
+def augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
+                  rev_order, extended):
+  "Augment the entry with additional, computed data from the log output."
+
+  query_dict = request.query_dict
+
+  rev = entry.rev
+  idx = string.rfind(rev, '.')
+  branch = rev[:idx]
+
+  if _re_is_vendor_branch.match(rev):
+    entry.vendor_branch = 'yes'
+  else:
+    entry.vendor_branch = None
+
+  entry.utc_date = time.asctime(time.gmtime(entry.date))
+  entry.ago = html_time(entry.date, 1)
+
+  entry.branches = prep_tags(query_dict, file_url, rev2tag.get(branch, [ ]))
+  entry.tags = prep_tags(query_dict, file_url, rev2tag.get(rev, [ ]))
+  entry.branch_points = prep_tags(query_dict, file_url,
+                                  branch_points.get(rev, [ ]))
+
+  prev_rev = string.split(rev, '.')
+  while 1:
+    if prev_rev[-1] == '0':     # .0 can be caused by 'commit -r X.Y.Z.0'
+      prev_rev = prev_rev[:-2]  # X.Y.Z.0 becomes X.Y.Z
+    else:
+      prev_rev[-1] = str(int(prev_rev[-1]) - 1)
+    prev = string.join(prev_rev, '.')
+    if rev_map.has_key(prev) or prev == '':
+      break
+  entry.prev = prev
+
+  ### maybe just overwrite entry.log?
+  entry.html_log = htmlify(entry.log)
+
+  if extended:
+    entry.tag_names = rev2tag.get(rev, [ ])
+    if rev2tag.has_key(branch) and not g_name_printed.has_key(branch):
+      entry.branch_names = rev2tag.get(branch)
+      g_name_printed[branch] = 1
+    else:
+      entry.branch_names = [ ]
+
+    ### I don't like this URL construction stuff. not obvious enough (how
+    ### it keys off the mime_type to do different things). also, the
+    ### value for entry.href is a bit bogus: why decide to include/exclude
+    ### the mime type from the URL? should just always be the same, right?
+    entry.view_href = download_url(request, file_url, rev, viewcvs_mime_type)
+    if request.default_viewable:
+      entry.href = download_url(request, file_url, rev, None)
+    else:
+      entry.href = download_url(request, file_url, rev, request.mime_type)
+    entry.text_href = download_url(request, file_url, rev, 'text/plain')
+
+    # figure out some target revisions for performing diffs
+    entry.branch_point = None
+    entry.next_main = None
+
+    idx = string.rfind(branch, '.')
+    if idx != -1:
+      branch_point = branch[:idx]
+
+      if rev2tag.has_key(branch_point) and not entry.vendor_branch \
+         and branch_point != rev and branch_point != prev:
+        entry.branch_point = branch_point
+
+    # if it's on a branch (and not a vendor branch), then diff against the
+    # next revision of the higher branch (e.g. change is committed and
+    # brought over to -stable)
+    if string.count(rev, '.') > 1 and not entry.vendor_branch:
+      # locate this rev in the ordered list of revisions
+      i = rev_order.index(rev)
+
+      # create a rev that can be compared component-wise
+      c_rev = string.split(rev, '.')
+
+      while i:
+        next = rev_order[i - 1]
+        c_work = string.split(next, '.')
+        if len(c_work) < len(c_rev):
+          # found something not on the branch
+          entry.next_main = next
+          break
+
+        # this is a higher version on the same branch; the lower one (rev)
+        # shouldn't have a diff against the "next main branch"
+        if c_work[:-1] == c_rev[:len(c_work) - 1]:
+          break
+
+        i = i - 1
+
+    # the template could do all these comparisons itself, but let's help
+    # it out.
+    r1 = query_dict.get('r1')
+    if r1 and r1 != rev and r1 != prev and r1 != entry.branch_point \
+       and r1 != entry.next_main:
+      entry.to_selected = 'yes'
+    else:
+      entry.to_selected = None
+
 _re_is_vendor_branch = re.compile(r'^1\.1\.1\.\d+$')
 g_name_printed = { }    ### gawd, what a hack...
 def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
@@ -1567,8 +1675,7 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
   is_dead = entry.state == 'dead'
 
   if add_links and not is_dead:
-    filename = os.path.basename(where)
-    file_url = urllib.quote(filename)
+    file_url = urllib.quote(os.path.basename(where))
     print '<a name="rev%s"></a>' % rev
     if rev2tag.has_key(rev):
       for tag in rev2tag[rev]:
@@ -1631,9 +1738,8 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
     prev = string.join(prev_rev, '.')
     if rev_map.has_key(prev) or prev == '':
       break
-  if prev and rev_map[rev].changed:
-    print '<br>Changes since <b>%s: %s lines</b>' % \
-          (prev, rev_map[rev].changed)
+  if prev and entry.changed:
+    print '<br>Changes since <b>%s: %s lines</b>' % (prev, entry.changed)
 
   if is_dead:
     print '<br><b><i>FILE REMOVED</i></b>'
@@ -1672,17 +1778,15 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
     # brought over to -stable)
     if string.count(rev, '.') > 1 and not is_vendor_branch:
       # locate this rev in the ordered list of revisions
-      for i in range(len(rev_order)):
-        if rev_order[i] == rev:
-          break
+      i = rev_order.index(rev)
 
-      # create a rev that can be compared
-      c_rev = map(int, string.split(rev, '.'))
+      # create a rev that can be compared component-wise
+      c_rev = string.split(rev, '.')
 
       next_main = ''
       while i:
         next = rev_order[i - 1]
-        c_work = string.split(rev, '.')
+        c_work = string.split(next, '.')
         if len(c_work) < len(c_rev):
           # found something not on the branch
           next_main = next
@@ -1733,6 +1837,9 @@ def view_log(request):
   #filename = os.path.basename(full_name[:-2])  # drop the ",v"
   filename = os.path.basename(full_name)
 
+  ### can we use filename rather than where? need to clarify the two vars
+  file_url = urllib.quote(os.path.basename(where))
+
   ### try: "./" + query + "#" + filename
   back_url = request.script_name + '/' + urllib.quote(up_where) + \
              request.qmark_query + '#' + filename
@@ -1740,6 +1847,8 @@ def view_log(request):
   data = {
     'where' : where,
     'back_url' : back_url,
+    'href' : file_url,
+    'query' : request.amp_query,
 
     ### in the future, it might be nice to break this path up into
     ### a list of elements, allowing the template to display it in
@@ -1750,12 +1859,19 @@ def view_log(request):
     'branch' : None,
     'mime_type' : request.mime_type,
     'view_tag' : view_tag,
+    'entries' : show_revs,   ### rename the show_rev local to entries?
+    'rev_selected' : query_dict.get('r1'),
     }
 
   if request.default_viewable:
     data['viewable'] = 'yes'
   else:
     data['viewable'] = None
+
+  if query_dict['diff_format'] == 'h':
+    data['human_readable'] = 'yes'
+  else:
+    data['human_readable'] = None
 
   if cur_branch:
     ### note: we really shouldn't have more than one tag in here. a "default
@@ -1765,15 +1881,23 @@ def view_log(request):
     ### FUTURE: fix all the branch point logic in ViewCVS and get this right.
     data['branch'] = string.join(rev2tag.get(cur_branch, [ cur_branch ]), ', ')
 
-    file_url = urllib.quote(os.path.basename(where))
-
     ### I don't like this URL construction stuff. not obvious enough (how
-    ### it keys off the mime_type to do different things).
+    ### it keys off the mime_type to do different things). also, the value
+    ### for head_abs_href vs head_href is a bit bogus: why decide to
+    ### include/exclude the mime type from the URL? should just always be
+    ### the same, right?
     if request.default_viewable:
-      data['href'] = download_url(request, file_url, 'HEAD', viewcvs_mime_type)
-      data['abs_href'] = download_url(request, file_url, 'HEAD', request.mime_type)
+      data['head_href'] = download_url(request, file_url, 'HEAD',
+                                       viewcvs_mime_type)
+      data['head_abs_href'] = download_url(request, file_url, 'HEAD',
+                                           request.mime_type)
     else:
-      data['href'] = download_url(request, file_url, 'HEAD', None)
+      data['head_href'] = download_url(request, file_url, 'HEAD', None)
+
+  for entry in show_revs:
+    # augment the entry with (extended=1) info.
+    augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
+                  rev_order, 1)
 
   template = ezt.Template()
   template.parse_file(os.path.join(g_template_dir, cfg.templates.log))
@@ -1782,10 +1906,6 @@ def view_log(request):
 
   # generate the page
   template.generate(sys.stdout, data)
-
-  for entry in show_revs:
-    print '<hr size=1 noshade>'
-    print_log(request, rev_map, rev_order, entry, rev2tag, branch_points, 1)
 
   sel = [ ]
   tagitems = taginfo.items()
