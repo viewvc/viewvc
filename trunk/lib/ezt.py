@@ -44,11 +44,11 @@ with the output fileobject to the templates generate method:
     <html><head>
     <title>A Dummy Page</title></head>
     <body><h1>A Dummy Page</h1>
-        <p>list item 1</p>
-        <p>list item 2</p>
-        <p>another element</p>
-        <hr>
-       The doctor is out.
+     <p>list item 1</p>
+     <p>list item 2</p>
+     <p>another element</p>
+     <hr>
+    The doctor is out.
     </body>
     </html>
 
@@ -92,11 +92,16 @@ Directives
 
    [if-index odd] ... [else] ... [end]
    [if-index even] ... [else] ... [end]
+   [if-index first] ... [else] ... [end]
    [if-index last] ... [else] ... [end]
+   [if-index NUMBER] ... [else] ... [end]
 
-   These three directives work similar to [if-any], but are only useful 
-   within a [for ...]-block (see above).  They are useful to choose 
-   different background colors for adjacent rows in a table.
+   These five directives work similar to [if-any], but are only useful 
+   within a [for ...]-block (see above).  The odd/even directives are 
+   for example useful to choose different background colors for adjacent rows 
+   in a table.  Similar the first/last directives might be used to
+   remove certain parts (for example "Diff to previous" doesn't make sense,
+   if there is no previous).
 
    [is QUAL_NAME STRING] ... [else] ... [end]
    [is QUAL_NAME QUAL_NAME] ... [else] ... [end]
