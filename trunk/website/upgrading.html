@@ -36,21 +36,13 @@
       is to name the directories <code>/usr/local/viewcvs-0.6</code>, 
       <code>/usr/local/viewcvs-0.7</code> and so on and than create a 
       symbolic link <code>viewcvs</code> pointing to the production 
-      version.  This way you can easiely test several versions and switch
+      version.  This way you can easily test several versions and switch
       back, if your users start to complain.
     </p>
 
     <ul>
       <li><a href="#from7">Upgrading from ViewCVS 0.7 or earlier</a></li>
     </ul>
-
-    <p>
-      <strong><font color=red>NOTE</font></strong>: this page
-      describes how to update to version 0.8, but that version has
-      <strong>not</strong> been released yet. People who use ViewCVS
-      from the CVS repository (0.8-dev) will want to follow this
-      document.
-    </p>
 
     <hr>
 
@@ -69,6 +61,12 @@
       of options that no longer exist, and where you can find their
       counterpart in the current version of ViewCVS.
     </p>
+    <p>
+      The following options have all been removed in ViewCVS 0.8. If
+      you made local changes to your ViewCVS configuration, then you
+      will need to edit templates in the <code>templates/</code>
+      subdirectory.
+    </p>
 
     <blockquote>
       <dl>
@@ -76,28 +74,37 @@
 	  The [text] section:
 	  <strong>short_intro</strong>,
 	  <strong>long_intro</strong>,
-	  <strong>doc_info</strong>,
-	  and
-	  <strong>repository_info</strong>
+	  and <strong>doc_info</strong>
 	</dt>
 	<dd>
-	  These options have been incorporated into the new
-	  <code>directory.ezt</code> template.
+	  These options have been incorporated into the
+	  <code>doc/help_rootview.html</code> page and the
+	  <code>doc/help_dirview.html</code> page.
+
 	  <p></p>
+	</dd>
+
+	<dt><strong>repository_info</strong></dt>
+	<dd>
+	This option is now incorporated into the
+	<code>directory.ezt</code> template.
+
+	<p></p>
 	</dd>
 
 	<dt><strong>table_padding</strong></dt>
 	<dd>
-	  This option has been removed; the table padding values can
-	  be changed in the <code>directory.ezt</code> template.
+	  The table padding values can be changed in the
+	  <code>directory.ezt</code> template.
+
 	  <p></p>
 	</dd>
 
 	<dt><strong>table_border</strong></dt>
 	<dd>
-	  This option has been removed; edit
-	  <code>directory.ezt</code> to add a border around the
+	  Edit <code>directory.ezt</code> to add a border around the
 	  directory table.
+
 	  <p></p>
 	</dd>
 
@@ -106,9 +113,9 @@
 	  <strong>column_header_sorted</strong>
 	</dt>
 	<dd>
-	  These options have been removed; edit
-	  <code>directory.ezt</code> to modify the colors of the
+	  Edit <code>directory.ezt</code> to modify the colors of the
 	  column headers.
+
 	  <p></p>
 	</dd>
 
@@ -117,57 +124,55 @@
 	  <strong>extern_window_height</strong>
 	</dt>
 	<dd>
-	  These options have been removed; they were never used.
+	  These options were never used and have been removed.
 	  <p></p>
 	</dd>
 
 	<dt><strong>logo</strong></dt>
 	<dd>
-	  This option has been removed. Edit the templates directly
-	  (<code>directory.ezt</code>, <code>log.ezt</code> or 
-	  <code>log_table.ezt</code> and if needed <code>query.ezt</code>) to
-	  alter the URL and size of your logo.
+	  Edit the templates directly (<code>directory.ezt</code>,
+	  <code>log.ezt</code> or <code>log_table.ezt</code> and if
+	  needed <code>query.ezt</code>) to alter the URL and size of
+	  your logo.
+
 	  <p></p>
 	</dd>
 
 	<dt><strong>allow_version_select</strong></dt>
 	<dd>
-	  This option has been removed. Edit the <code>log.ezt</code>
-	  template if you want to remove the link which allows the
-	  user to select a revision for a diff.
+	  Edit the <code>log.ezt</code> template if you want to remove
+	  the link which allows the user to select a revision for a
+	  diff.
+
 	  <p></p>
 	</dd>
 
 	<dt><strong>input_text_size</strong></dt>
 	<dd>
-	  This option has been removed. Edit the <code>log.ezt</code>
-	  template if you want to change the size of the entry box for
-	  revisions for performing diffs.
+	  Edit the <code>log.ezt</code> template if you want to change
+	  the size of the entry box for revisions for performing
+	  diffs.
+
 	  <p></p>
 	</dd>
 
 	<dt><strong>even_odd</strong></dt>
 	<dd>
-	  This option has been removed. Edit the
-	  <code>directory.ezt</code> and <code>query.ezt</code>
-	  templates if you want to change the colors of the rows in the
-	  directory and query result tables.
+	  Edit the <code>directory.ezt</code> and
+	  <code>query.ezt</code> templates if you want to change the
+	  colors of the rows in the directory and query result tables.
+
           <p></p>
 	</dd>
       </dl>
     </blockquote>
-
-    <h3>CVS Database</h3>
-    <p>
-      <i>need some info from Jay here?</i>
-    </p>
 
   </td></tr></table>
   <hr>
   <address><a href="mailto:viewcvs@lyra.org">ViewCVS Users Group</a></address>
 <!-- Created: Mon Sep 24 04:23:53 PDT 2001 -->
 <!-- hhmts start -->
-Last modified: Mon Dec 10 00:53:13 PST 2001
+Last modified: Mon Dec 10 02:06:31 PST 2001
 <!-- hhmts end -->
 </body>
 </html>
