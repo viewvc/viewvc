@@ -16,7 +16,7 @@
 
 <hr noshade>
 <table width="100%" border=0 cellspacing=1 cellpadding=2>
-  <th align=left class="vc_header">Revision</th>
+  <th align=left class="vc_header[is logsort "rev"]_sort[end]">Revision</th>
   [is pathtype "file"]
   <th align=left class="vc_header">Tasks</th>
   <th align=left class="vc_header">Diffs</th>
@@ -24,7 +24,7 @@
   [is roottype "cvs"]
   <th align=left class="vc_header">Branches/<br>Tags</th>
   [end]
-  <th align=left class="vc_header">Age</th>
+  <th align=left class="vc_header[is logsort "date"]_sort[end]">Age</th>
   <th align=left class="vc_header">Author</th>
 [for entries]
   <tr valign="top" class="vc_row_[if-index entries even]even[else]odd[end]">
@@ -154,7 +154,7 @@
         [end]
       [end]
 
-      <b>Log: </b><i><pre>[entries.html_log]</pre></i>
+      <b>Log: </b><pre><i>[entries.html_log]</i></pre>
     </td>
   </tr>
 
