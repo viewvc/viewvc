@@ -68,7 +68,7 @@ sys.stdout.flush()
 
 # Create an image map
 command = "%s -i -c %s -r %s -m '%s' %s" % (path_to_cvsgraph, 
-		    path_to_cvsgraph_conf, r, m, f))
+		    path_to_cvsgraph_conf, r, m, f)
 if os.system(command) != 0:
     sys.stderr.write("\nFailed to execute '"+command+"'.\n")
 
