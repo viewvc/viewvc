@@ -44,12 +44,6 @@ import os, sys, string, time, re
 ## will go smoothly, and trap errors via exception handlers above this
 ## function
 
-
-## constants
-RLOG_COMMIT_SEP = '----------------------------\n'
-RLOG_END = '=============================================================================\n'
-
-
 ## exception for this class
 error = 'rlog error'
 
@@ -75,21 +69,27 @@ class RLogData:
     
 
 class RLogEntry:
-
-    ## static constants for type of log entry
+    ## static constants for type of log entry; this will be changed
+    ## to strings I guess -JMP
     CHANGE = 0
     ADD = 1
     REMOVE = 2
-  
-    def __init__(self):
-        self.revision = ''
-        self.author = ''
-        self.branch = ''
-        self.pluscount = ''
-        self.minuscount = ''
-        self.description = ''
-        self.date = None
-        self.type = RLogEntry.CHANGE
+
+## Here's the init function, which isn't needed since this class
+## is fully initalized by RLogParser when creating a new log entry.
+## Let's keep this initializer as a description of what is held in
+## the class, but keep it commented out since it only makes things
+## slow.
+##
+##     def __init__(self):
+##         self.revision = ''
+##         self.author = ''
+##         self.branch = ''
+##         self.pluscount = ''
+##         self.minuscount = ''
+##         self.description = ''
+##         self.date = None
+##         self.type = RLogEntry.CHANGE
 
 
 class RLog:
@@ -158,6 +158,11 @@ class RLog:
         return status
 
 
+## constants used in the output parser
+
+_rlog_commit_sep = '----------------------------\n'
+_rlog_end = '=============================================================================\n'
+
 ## regular expression used in the output parser
 _re_symbolic_name = re.compile("\s+([^:]+):\s+(.+)$")
 
@@ -220,7 +225,7 @@ class RLogOutputParser:
         ## eat all lines until we reach '-----' seperator
         while 1:
             line = self.rlog.readline()
-            if line == RLOG_COMMIT_SEP:
+            if line == _rlog_commit_sep:
                 break
 
     def parse_rlog_entries(self):
@@ -238,7 +243,7 @@ class RLogOutputParser:
 
         ## revision
         match = _re_revision.match(line)
-        revision = match.group(1)
+        (revision,) = match.groups()
 
         ## data line
         line = self.rlog.readline()
@@ -292,7 +297,7 @@ class RLogOutputParser:
 
             ## the last line printed out by rlog is '===='...
             ## or '------'... between entries
-            if line == RLOG_END or line == RLOG_COMMIT_SEP:
+            if line == _rlog_commit_sep or line == _rlog_end:
                 break
 
             ## append line to the descripton list
