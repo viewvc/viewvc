@@ -191,7 +191,7 @@ class Request:
       # handle magic path prefixes
       if path_parts[0] == docroot_magic_path:
         # if this is just a simple hunk of doc, then serve it up
-        self.where = string.join(path_parts[1:], '/')
+        self.where = _path_join(path_parts[1:])
         return view_doc(self)
       elif path_parts[0] in (checkout_magic_path, oldstyle_checkout_magic_path):
         path_parts.pop(0)
@@ -213,7 +213,7 @@ class Request:
     elif cfg.options.root_as_url_component:
       needs_redirect = 1
 
-    self.where = string.join(path_parts, '/')
+    self.where = _path_join(path_parts)
     self.path_parts = path_parts
 
     # If this is a forbidden path, stop now
@@ -302,7 +302,7 @@ class Request:
         attic_parts = self.path_parts[:-1]
       if attic_parts:
         self.path_parts = attic_parts
-        self.where = string.join(attic_parts, '/')
+        self.where = _path_join(attic_parts)
         needs_redirect = 1
 
     # Try to figure out what to do based on view parameter
@@ -635,10 +635,8 @@ _legal_params = {
   'format'        : _re_validate_alpha,
   }
 
-# regex used to move from a file to a directory
-_re_up_path       = re.compile('(^|/)[^/]+$')
-def get_up_path(path):
-  return re.sub(_re_up_path, '', path)
+def _path_join(path_parts):
+  return string.join(path_parts, '/')
 
 def _strip_suffix(suffix, where, path_parts, pathtype, repos, view_func):
   """strip the suffix from a repository path if the resulting path
@@ -756,12 +754,12 @@ def nav_path(request):
 
     if not is_last or (is_dir and request.view_func is not view_directory):
       item.href = request.get_url(view_func=view_directory,
-                                  where=string.join(path_parts, '/'),
+                                  where=_path_join(path_parts),
                                   pathtype=vclib.DIR,
                                   params={'rev': rev}, escape=1)
     elif not is_dir and request.view_func is not view_log:
       item.href = request.get_url(view_func=view_log,
-                                  where=string.join(path_parts, '/'),
+                                  where=_path_join(path_parts),
                                   pathtype=vclib.FILE,
                                   params={'rev': rev}, escape=1)
     items.append(item)
@@ -918,7 +916,7 @@ def common_template_data(request):
   data['roots'] = roots
 
   if request.path_parts:
-    dir = string.join(request.path_parts[:-1], '/')
+    dir = _path_join(request.path_parts[:-1])
     data['up_href'] = request.get_url(view_func=view_directory,
                                       where=dir, pathtype=vclib.DIR,
                                       params={}, escape=1)
@@ -936,13 +934,8 @@ def common_template_data(request):
   return data
 
 def nav_header_data(request, rev):
-  path, filename = os.path.split(request.where)
-
   data = common_template_data(request)
   data.update({
-    'path' : request.server.escape(path),
-    'filename' : request.server.escape(filename),
-    'file_url' : request.get_url(view_func=view_log, params={}, escape=1),
     'rev' : rev
   })
   return data
@@ -1262,8 +1255,7 @@ def view_markup(request):
   where = request.where
   query_dict = request.query_dict
   rev = request.query_dict.get('rev')
-  filename = os.path.basename(where)
-  
+
   fp, revision = request.repos.openfile(request.path_parts, rev)
 
   # Since the templates could be changed by the user, we can't provide
@@ -1276,7 +1268,6 @@ def view_markup(request):
   data.update({
     'mime_type' : request.mime_type,
     'log' : None,
-    'tag' : None,
     })
 
   data['download_href'] = request.get_url(view_func=view_checkout,
@@ -1333,9 +1324,6 @@ def view_markup(request):
                                          entry.branch_points), ', ')
         })
 
-  else:
-    data['tag'] = query_dict.get('only_with_tag')
-
   markup_fp = None
   if is_viewable_image(request.mime_type):
     fp.close()
@@ -1343,7 +1331,7 @@ def view_markup(request):
                           escape=1)
     markup_fp = MarkupBuffer('<img src="%s"><br>' % url)
   else:
-    basename, ext = os.path.splitext(filename)
+    basename, ext = os.path.splitext(request.path_parts[-1])
     streamer = markup_streamers.get(ext)
     if streamer:
       markup_fp = streamer(fp)
@@ -1722,11 +1710,8 @@ def view_log(request):
   options['svn_cross_copies'] = cfg.options.cross_copies
     
   if request.roottype == 'cvs':
-    up_where = get_up_path(request.where)
-    filename = os.path.basename(request.where)
     rev = view_tag
   else:
-    up_where, filename = os.path.split(request.where)
     rev = None
 
   show_revs = request.repos.filelog(request.path_parts, rev, options)
@@ -2078,6 +2063,7 @@ def view_cvsgraph(request):
   imagesrc = request.get_url(view_func=view_cvsgraph_image, escape=1)
 
   view = is_viewable(request.mime_type) and view_markup or view_checkout
+  up_where = _path_join(request.path_parts[:-1])
 
   # Create an image map
   rcsfile = request.repos.rcsfile(request.path_parts)
@@ -2094,7 +2080,7 @@ def view_cvsgraph(request):
                                           params={"r1": None, "r2": None},
                                           escape=1, partial=1),
                     "-6", request.get_url(view_func=view_directory,
-                                          where=get_up_path(request.where),
+                                          where=up_where,
                                           pathtype=vclib.DIR,
                                           params={"only_with_tag": None},
                                           escape=1, partial=1),
@@ -2705,7 +2691,7 @@ def generate_tarball(out, request, tar_top, rep_top,
     return
 
   rep_path = rep_top + reldir
-  tar_dir = string.join(tar_top + reldir, '/') + '/'
+  tar_dir = _path_join(tar_top + reldir) + '/'
 
   entries = request.repos.listdir(rep_path, options)
 
@@ -3130,7 +3116,7 @@ def view_query(request):
     query.SetBranch(branch, branch_match)
   if dir:
     for subdir in string.split(dir, ','):
-      path = string.join(request.path_parts + [ string.strip(subdir) ], '/')
+      path = _path_join(request.path_parts + [ string.strip(subdir) ])
       query.SetDirectory('%s%%' % cvsdb.EscapeLike(path), 'like')
   else:
     if request.path_parts: # if we are in a subdirectory ...
