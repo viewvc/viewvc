@@ -19,7 +19,7 @@ class CgiServer:
     server = self
     self.inheritableOut = 1
     self.header_sent = 0
-    self.processes = []
+    self.pageGlobals = {}
     if os.getenv('SERVER_SOFTWARE', '')[:13] == 'Microsoft-IIS':
       self.iis = 1
     else:
@@ -145,7 +145,7 @@ class AspServer:
     self.request = Request
     self.response = Response
     self.application = Application
-    self.processes = []
+    self.pageGlobals = {}
 
   def escape(self, s, quote = None):
     return self.server.HTMLEncode(str(s))
