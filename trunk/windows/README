@@ -109,9 +109,9 @@ ENSCRIPT HIGHLIGHTING
 
   1) Extract all packages to a folder on your hard drive, for example c:\gnuwin32
 
-  2) Add "c:\gnuwin32\bin" to the system "PATH" environment variable,
+  2) Add "c:\gnuwin32\bin" to the system "PATH" environment variable
 
-  3) Create a new system environment variable called "ENSCRIPT_LIBRARY" and set it to the location of the enscript.cfg file, which should be "c:\gnuwin32\share\enscript"
+  3) Create a new system environment variable called "ENSCRIPT_LIBRARY" and set it to "c:\gnuwin32\share\enscript" (The ENSCRIPT_LIBRARY variable will be used by enscript to load two important files: %ENSCRIPT_LIBRARY%\hl\states.st and %ENSCRIPT_LIBRARY%\..\..\etc\enscript.cfg)
 
   4) Update the system paths in enscript.cfg. The ones that need to be set are:
 
@@ -264,5 +264,5 @@ THANKS
 - Gyula Faller and Tony Cook for independently coming up with CVSNT loginfo handlers that accept spaces and don't rely on unix-style echo commands. Tony Cook's patch also eliminated the dependency on cat.exe.
 - Mathieu Mazerolle for making the unix loginfo handler handle spaces in filenames
 - Paul Russell for analyzing problems with new fields in CVSNT RCS files. Terry.Ninnis@pgen.com for coming up with a partial solution
-- Bo Berglund for tracking down a case-sensitivity issue that could lead to problems in the commit database and for working with me to finally fix the CVSNT RCS fields problem.
+- Bo Berglund for tracking down the cause of a case-sensitivity issue that could lead to problems in the commit database and for patiently working with me to finally fix the CVSNT RCS fields problem and another problem with enscript.
 - Ivo Roessling for finding and fixing a bug in the query page's commit grouping code.
