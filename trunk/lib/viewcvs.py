@@ -2132,7 +2132,7 @@ def view_diff(request):
   file2 = None
   if request.roottype == 'cvs':
     args[len(args):] = ['-r' + rev1, '-r' + rev2, request.full_name]
-    fp = bincvs.rcs_popen(cfg.general, 'rcsdiff', args, 'rt')
+    fp = request.repos.rcs_popen('rcsdiff', args, 'rt')
   else:
     try:
       date1 = vclib.svn.date_from_rev(request.repos, int(rev1))
@@ -2274,7 +2274,7 @@ def generate_tarball_cvs(out, request, tar_top, rep_top, reldir, tag, stack=[]):
     mode = (info[stat.ST_MODE] & 0555) | 0200
 
     rev_flag = '-p' + file.rev
-    fp = bincvs.rcs_popen(cfg.general, 'co', (rev_flag, file.path), 'rb', 0)
+    fp = request.repos.rcs_popen('co', (rev_flag, file.path), 'rb', 0)
     contents = fp.read()
     status = fp.close()
 
