@@ -530,7 +530,6 @@ enscript_extensions = {
   '.EPS' : 'postscript',
   '.DEF' : 'modula_2',  # requires a patch for enscript 1.6.2, see INSTALL
   '.F' : 'fortran',
-  '.for': 'fortran',
   '.H' : 'cpp',
   '.MOD' : 'modula_2',  # requires a patch for enscript 1.6.2, see INSTALL
   '.PS' : 'postscript',
@@ -548,6 +547,7 @@ enscript_extensions = {
   '.el' : 'elisp',
   '.eps' : 'postscript',
   '.f' : 'fortran',
+  '.for': 'fortran',
   '.gs' : 'haskell',
   '.h' : 'c',
   '.hs' : 'haskell',
@@ -591,6 +591,7 @@ enscript_extensions = {
   }
 enscript_filenames = {
   '.emacs' : 'elisp',
+  'GNUmakefile' : 'makefile',
   'Makefile' : 'makefile',
   'makefile' : 'makefile',
   }
