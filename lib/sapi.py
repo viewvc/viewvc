@@ -259,7 +259,11 @@ class ModPythonServer(ThreadedServer):
     import cgi
 
   def header(self, content_type=None, status=None):
-    if content_type is not None: self.request.content_type = content_type
+    if content_type is None: 
+      self.request.content_type = 'text/html'
+    else:
+      self.request.content_type = content_type
+
     if status is not None:
       m = _re_status.match(status)
       if not m is None:
