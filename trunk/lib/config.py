@@ -242,7 +242,7 @@ def _parse_roots(config_name, config_value):
     if pos < 0:
       raise MalformedRoot(config_name, root)
     name, path = map(string.strip, (root[:pos], root[pos+1:]))
-    roots[name] = path
+    roots[name] = os.path.normpath(path)
   return roots
 
 
