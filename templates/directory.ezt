@@ -54,6 +54,21 @@
 </thead>
 
 <tbody>
+[if-any up_href]
+  <tr class="vc_row_odd">
+    <td colspan=2>
+      <a href="[up_href]">
+      <img src="[docroot]/images/back_small.png" alt="" width=16 height=16
+      border=0>&nbsp;Parent&nbsp;Directory</a>
+    </td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    [is cfg.options.show_logs "1"]
+      <td>&nbsp;</td>
+    [end]
+  </tr>
+[end]
 [for rows]
   <tr class="vc_row_[if-index rows even]even[else]odd[end]">
     <td[if-any rows.graph_href][else] colspan=2[end]>
