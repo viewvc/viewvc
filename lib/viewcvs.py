@@ -1756,6 +1756,8 @@ def view_log(request):
       if not is_plain_text(request.mime_type):
         entry.download_text_href = \
             request.get_url(view_func=view_checkout,
+                            where=entry.filename,
+                            pathtype=vclib.FILE,
                             params={'content-type': 'text/plain',
                                     'rev': rev.string},
                             escape=1)
