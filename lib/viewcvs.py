@@ -223,14 +223,10 @@ class Request:
       rootpath = cfg.general.svn_roots[name]
       try:
         import vclib.svn
-        from svn import _util
-        _util.apr_initialize()
-        self.pool = _util.svn_pool_create(None)
         rev = None
         if query_dict.has_key('rev') and query_dict['rev'] != 'HEAD':
           rev = int(query_dict['rev'])
-        self.repos = vclib.svn.SubversionRepository(name, rootpath,
-                                                    self.pool, rev)
+        self.repos = vclib.svn.SubversionRepository(name, rootpath, rev)
         self.roottype = 'svn'
       except vclib.ReposNotFound:
         error('%s not found!\nThe wrong path for this repository was '
