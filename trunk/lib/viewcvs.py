@@ -604,7 +604,8 @@ def make_time_string(date):
 
   """
   if (cfg.options.use_localtime):
-    return time.asctime(time.localtime(date)) + ' ' + time.tzname[0]
+    localtime = time.localtime(date)
+    return time.asctime(localtime) + ' ' + time.tzname[localtime[8]]
   else:
     return time.asctime(time.gmtime(date)) + ' UTC'
 
@@ -2253,8 +2254,9 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
     def time_format(date):
       date = time.strptime(date[-19:], "%Y/%m/%d %H:%M:%S")
       date = time.mktime(date) - time.timezone
-      date = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(date))
-      return ', ' + date + ' ' + time.tzname[0]
+      localtime = time.localtime(date)
+      date = time.strftime('%Y/%m/%d %H:%M:%S', localtime)
+      return ', ' + date + ' ' + time.tzname[localtime[8]]
     date1 = time_format(date1)
     date2 = time_format(date2)
   else:
