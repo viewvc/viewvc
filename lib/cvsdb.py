@@ -40,7 +40,7 @@ if CONF_PATHNAME:
   _cfg_pathname = CONF_PATHNAME
 else:
   # developer assistance: running from a CVS working copy
-  _cfg_pathname = os.path.join(os.path.dirname(__file__), os.pardir, 'cgi',
+  _cfg_pathname = os.path.join(os.path.dirname(__file__), os.pardir,
                                'viewcvs.conf')
 cfg = config.Config()
 cfg.set_defaults()
