@@ -407,7 +407,7 @@ class Request:
         params['root'] = None
 
     # add path
-    if where:
+    if where and where != '':
       url = url + '/' + where
 
     # add suffix for tarball
@@ -735,7 +735,10 @@ def common_template_data(request):
     'rootname' : request.rootname,
     'nav_path' : clickable_path(request, 1, 0),
   }
-  url, params = request.get_link(params={'root': None})
+  url, params = request.get_link(view_func=view_directory,
+                                 where='',
+                                 pathtype=vclib.DIR,
+                                 params={'root': None})
   data['change_root_action'] = urllib.quote(url, _URL_SAFE_CHARS)
   data['change_root_hidden_values'] = prepare_hidden_values(params)
   # add in the roots for the selection
