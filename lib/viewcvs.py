@@ -1699,6 +1699,7 @@ def view_log(request):
     entry.size = rev.size
     entry.branch_point = None
     entry.next_main = None
+    entry.copy_path = None
 
     entry.view_href = None
     entry.download_href = None
