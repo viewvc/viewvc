@@ -1987,11 +1987,7 @@ def view_checkout(request):
     markup_stream(request, fp, revision, request.mime_type)
   else:
     http_header(mime_type)
-    while 1:
-      chunk = fp.read(8192)
-      if not chunk:
-        break
-      sys.stdout.write(chunk)
+    copy_stream(fp)
 
 def view_annotate(request):
   rev = request.query_dict['annotate']
