@@ -78,12 +78,13 @@ class Config:
     self.general.main_title = 'CVS Repository'
     self.general.forbidden = ()
 
-    self.cvsdb.host = 'master'
-    self.cvsdb.database_name = 'bonsai'
-    self.cvsdb.user = 'root'
-    self.cvsdb.passwd = 'ogieta50'
-    self.cvsdb.readonly_user = 'root'
-    self.cvsdb.readonly_passwd = 'ogieta50' 
+    self.cvsdb.enabled = 0
+    self.cvsdb.host = ''
+    self.cvsdb.database_name = ''
+    self.cvsdb.user = ''
+    self.cvsdb.passwd = ''
+    self.cvsdb.readonly_user = ''
+    self.cvsdb.readonly_passwd = '' 
 
     self.images.logo = "/icons/apache_pb.gif", 259, 32
     self.images.back_icon = "/icons/small/back.gif", 16, 16
