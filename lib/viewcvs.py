@@ -1494,7 +1494,7 @@ def view_directory(request):
 
   ### display a row for ".." ?
   for file in file_data:
-    row = _item(href=None, graph_href=None,
+    row = _item(viewable=None, href=None, graph_href=None,
                 author=None, log=None, log_file=None, log_rev=None,
                 show_log=None, state=None, size=None, mime_type=None)
 
@@ -1555,7 +1555,9 @@ def view_directory(request):
 
       ### for Subversion, we should first try to get this from the properties
       row.mime_type = guess_mime(file.name)
-      view = is_viewable(row.mime_type) and view_markup or view_checkout
+      row.viewable = ezt.boolean(is_viewable(row.mime_type))
+
+      view = row.viewable and view_markup or view_checkout
 
       row.href = request.get_url(view_func=view_log,
                                  where=file_where,
