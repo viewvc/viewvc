@@ -1,0 +1,56 @@
+INSTALLING VIEWCVS
+------------------
+
+1) To get viewcvs.cgi to work, make sure that you have Python 1.5
+   installed and a webserver which is capable to execute cgi-scripts
+   (either based on the .cgi extension, or by placing the script
+   within a specific directory).
+
+   You need to have RCS installed. Specifically, "rlog", "rcsdiff",
+   and "co". This script was tested against RedHat's rcs-5.7-10.rpm
+
+   Note, that the viewcvs.cgi-script needs to have READ-ONLY, physical
+   access to the repository (or a copy of it).  Therefore, rsh/ssh or
+   pserver access doesn't work yet.
+
+2) Copy viewcvs.cgi to the cgi-script location of your web
+   server. Edit the file for your specific configuration. In
+   particular, examine the following configuration variables:
+
+      cvs_roots
+      rcs_path
+      forbidden_modules
+      mime_types_file
+
+   If Python is not located in /usr/local/bin, then you'll need to
+   edit the first line of the file.
+
+   ViewCVS has not been tested on the Win32 platform.
+
+3) That's it. Try it out.
+
+
+
+IF YOU HAVE PROBLEMS ...
+------------------------
+
+If you've trouble to make viewcvs.cgi work:
+
+=== If nothing seems to work:
+
+ o check, if you can execute CGI-scripts (Apache needs to have an
+   ScriptAlias /cgi-bin or cgi-script Handler defined). Try to 
+   execute a simple CGI-script that often comes with the distribution
+   of the webserver; locate the logfiles and try to find hints
+   which explain the malfunction
+
+ o view the entries in the webservers error.log
+
+=== If viewcvs seems to work but doesn't show the expected result
+    (Typical error: you can't see any files)
+
+ o check, whether the CGI-script has read-permissions to your
+   CVS-Repository. The CGI-script often runs as the user 'nobody' 
+   or 'httpd' ..
+
+ o does viewcvs find your RCS utililties? (edit rcs_path)
