@@ -725,11 +725,11 @@ def is_text(mime_type):
   return mime_type[:5] == 'text/'
 
 _re_rewrite_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)(://[-a-zA-Z0-9%.~:_/]+)([?&]([-a-zA-Z0-9%.~:_]+)=([-a-zA-Z0-9%.~:_])+)*(#([-a-zA-Z0-9%.~:_]+)?)?)')
-_re_rewrite_email = re.compile('([-a-zA-Z0-9_.]+@([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
+_re_rewrite_email = re.compile('([-a-zA-Z0-9_.]+)@(([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
 def htmlify(html):
   html = cgi.escape(html)
   html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
-  html = re.sub(_re_rewrite_email, r'<a href="mailto:\1">\1</a>', html)
+  html = re.sub(_re_rewrite_email, r'<a href="mailto:\1&#64;\2">\1&#64;\2</a>', html)
   return html
 
 def format_log(log):
