@@ -172,8 +172,11 @@ If this doesn't work, please click on the link above.
             decoded_query = string.replace(query, '+', ' ')
 
             self.send_response(200)
-            self.send_header("Content-type", "text/html")
-            self.end_headers()
+            # FIXME: I'm not sure about this:  Sometimes it hurts, sometimes 
+            #        it is required.  Please enlight me
+            if 1:
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
 
             # Preserve state, because we execute script in current process:
             save_argv = sys.argv
@@ -322,6 +325,14 @@ def gui(port):
                 command=self.toggle_fliplinks)
             self.fliplinks_toggle.pack(side='top', anchor='w')
 
+            # use_re_search toggle:
+            self.useresearch_ivar = Tkinter.IntVar()
+            self.useresearch_ivar.set(viewcvs.cfg.options.use_re_search)
+            self.useresearch_toggle = Tkinter.Checkbutton(self.options_frm,
+                text="allow regular expr search", var=self.useresearch_ivar,
+                command=self.toggle_useresearch)
+            self.useresearch_toggle.pack(side='top', anchor='w')
+
             # directory view template:
             self.dirtemplate_lbl = Tkinter.Label(self.options_frm,
                 text='Chooose HTML Template for the Directory pages:')
@@ -396,6 +407,9 @@ def gui(port):
 
         def toggle_fliplinks(self, event=None):
             viewcvs.cfg.options.flip_links_in_dirview = self.fliplinks_ivar.get()
+
+        def toggle_useresearch(self, event=None):
+            viewcvs.cfg.options.use_re_search = self.useresearch_ivar.get()
 
         def set_templates_log(self, event=None):
             viewcvs.cfg.templates.log = self.logtemplate_svar.get()
