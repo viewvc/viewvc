@@ -57,15 +57,9 @@
       <img src="[icons]/small/[is rows.type "dir"]dir[else]text[end].gif" alt="" border=0 width=16 height=16>
       [rows.name][is rows.type "dir"]/[end]</a>
       [is roottype "cvs"]
-        [is rows.type "dir"]
-          [is rows.name "Attic"]
-            &nbsp; <a href="[show_attic_href]#dirlist">[[]show contents]</a>
-          [end]
-        [else]
-          [is rows.state "dead"]
-            [# don't let this phrase/link be wrapped ]
-            [if-any view_tag](not&nbsp;exist)[else](in&nbsp;the&nbsp;Attic)[end][if-any attic_showing]&nbsp;<a href="[hide_attic_href]#dirlist">[[]hide][end]</a>
-          [end]
+        [is rows.state "dead"]
+          [# don't let this phrase/link be wrapped ]
+          (dead)&nbsp;<a href="[hide_attic_href]#dirlist">[[]hide]</a>
         [end]
       [end]
     </td>
