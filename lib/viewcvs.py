@@ -1163,7 +1163,6 @@ def view_directory(request):
   num_files = 0
   num_displayed = 0
   unreadable = 0
-  have_logs = 0
 
   # set some values to be used inside loop
   where = request.where
@@ -1180,12 +1179,11 @@ def view_directory(request):
                 show_log=None, state=None)
 
     if file.log_error:
-      row.cvs = 'error'
+      row.state = 'error'
       unreadable = 1
     elif file.rev is None:
-      row.cvs = 'none'
+      row.state = 'none'
     else:
-      row.cvs = 'data'
       row.rev = file.rev
       row.author = file.author or "&nbsp;"
       if request.roottype == 'cvs' and file.dead:
@@ -1198,7 +1196,6 @@ def view_directory(request):
       if cfg.options.show_logs and file.log is not None:
         row.show_log = 'yes'
         row.log = format_log(file.log)
-        have_logs = 1
 
     row.anchor = file.name
     row.name = file.name
@@ -1233,11 +1230,12 @@ def view_directory(request):
           row.log_file = file.newest_file
           row.log_rev = file.rev
 
-      ### needed because the subversion vclib retrieves logs for directories
-      ### but the template code can't display them properly
       if request.roottype == 'svn':
-        row.cvs = 'none'
-
+        row.rev_href = request.get_url(view_func=view_directory,
+                                       where=where_prefix + file.name,
+                                       pathtype=vclib.FILE,
+                                       params={'rev': str(file.rev)})
+      
     elif file.kind == vclib.FILE:
       num_files = num_files + 1
       if (request.roottype == 'cvs' and 
@@ -1293,10 +1291,6 @@ def view_directory(request):
     'files_shown' : num_displayed,
     'no_match' : ezt.boolean(num_files and not num_displayed),
     'unreadable' : ezt.boolean(unreadable),
-
-    # have_logs will be 0 if we only have dirs and !show_subdir_lastmod.
-    # in that case, we don't need the extra columns
-    'have_logs' : ezt.boolean(have_logs),
 
     ### in the future, it might be nice to break this path up into
     ### a list of elements, allowing the template to display it in
@@ -1446,7 +1440,7 @@ def view_log(request):
   for rev in show_revs:
     entry = _item()
     entry.rev = rev.string
-    entry.state = cvs and rev.dead and 'dead'
+    entry.state = (cvs and rev.dead and 'dead')
     entry.author = rev.author
     entry.changed = rev.changed
     entry.date_str = make_time_string(rev.date)

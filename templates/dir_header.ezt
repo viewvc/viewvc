@@ -1,0 +1,92 @@
+<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
+ "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html><head>
+<!-- ViewCVS       -- http://viewcvs.sourceforge.net/
+     by Greg Stein -- mailto:gstein@lyra.org
+  -->
+<title>[if-any where][where][else][cfg.general.main_title][end]</title>
+</head>
+<body text="#000000" bgcolor="#ffffff">
+<table width="100%" border=0 cellspacing=0 cellpadding=0>
+  <tr>
+    <td><h1>[if-any where][where][else][cfg.general.main_title][end]</h1></td>
+    <td align=right><img src="[icons]/apache_pb.gif" alt="(logo)" border=0
+			width=259 height=32></td>
+  </tr>
+  <tr>
+    <td>[is roottype "svn"]<h2>(revision [tree_rev])</h2>[else]&nbsp;[end]</td>
+    <td align=right><h3><b><a target="_blank"
+href="[docroot]/help_[if-any where]dir[else]root[end]view.html">ViewCVS and CVS Help</a></b></h3></td>
+  </tr>
+</table>
+
+[if-any where][else]
+  <!-- you may insert repository access instructions here -->
+
+  [if-any roots]
+    <h3>Project Root</h3>
+    <form method=get action="[change_root_action]">
+      [change_root_hidden_values]
+      <select name=root onchange="submit()">
+      [for roots]
+        [is roots current_root]
+          <option selected>[roots]</option>
+        [else]
+          <option>[roots]</option>
+        [end]
+      [end]
+      </select>
+      <input type=submit value="Go">
+    </form>
+  [end]
+[end]
+
+<p><a name="dirlist"></a></p>
+
+[if-any where]
+<table>
+<tr><td>Current directory:</td><td><b>[nav_path]</b></td></tr>
+  [is roottype "svn"]
+    <tr>
+      <td>
+        Jump to directory revision:
+      </td>
+      <td>
+        <form method=get action="[jump_rev_action]">
+        [jump_rev_hidden_values]
+        <input type="text" name="rev" value="[jump_rev]">
+        <input type=submit value="Go">
+        </form>
+      </td>
+    </tr>
+  [end]
+[if-any view_tag]
+<tr><td>Current tag:</td><td><b>[view_tag]</b></td></tr>
+[end]
+[if-any search_re]
+<tr><td>Current search:</td><td><b>[search_re]</b></td></tr>
+[end]
+[is num_files "0"]
+[else]
+<tr><td>Files shown:</td><td><b>[files_shown]</b></td></tr>
+[end]
+</table>
+  [is cfg.options.use_pagesize "0"]
+  [else]
+    [is picklist_len "1"]
+    [else]
+      <form method=get action="[dir_paging_action]">
+        [dir_paging_hidden_values]
+        <input type=submit value="Go to:">
+        <select name=dir_pagestart  onchange="submit()">
+          [for picklist]
+            <option [is picklist.count dir_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] to [picklist.end]</option>
+          [end]
+        </select>
+      </form>
+    [end]
+  [end]
+[end]
+
+<hr noshade>
+
