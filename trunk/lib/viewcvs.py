@@ -39,6 +39,11 @@ CONF_PATHNAME = None
 
 #########################################################################
 
+# this comes from our library; measure the startup time
+import debug
+debug.t_start('startup')
+debug.t_start('imports')
+
 # standard modules that we know are in the path or builtin
 import sys
 import os
@@ -56,8 +61,9 @@ import compat
 import config
 import popen
 import ezt
-import debug
 import accept
+
+debug.t_end('imports')
 
 #########################################################################
 
@@ -90,12 +96,6 @@ _EOF_ERROR = 'error message found'      # rlog issued an error
 _FILE_HAD_ERROR = 'could not read file'
 
 _UNREADABLE_MARKER = '//UNREADABLE-MARKER//'
-
-header_comment = '''\
-<!-- ViewCVS       -- http://viewcvs.sourceforge.net/
-     by Greg Stein -- mailto:gstein@lyra.org
-  -->
-'''
 
 # for reading/writing between a couple descriptors
 CHUNK_SIZE = 8192
@@ -260,7 +260,7 @@ def generate_page(request, tname, data):
   else:
     tname = string.replace(tname, '%lang%', 'en')
 
-  debug.t_start()
+  debug.t_start('ezt-parse')
   template = ezt.Template(os.path.join(g_install_dir, tname))
   debug.t_end('ezt-parse')
 
@@ -332,9 +332,6 @@ def clickable_path(request, path, leaf_is_link, leaf_is_file, drop_leaf):
       s = s + ' / ' + parts[i]
 
   return s
-
-def html_link(contents, link):
-  return '<a href="%s">%s</a>' % (link, contents)
 
 def prep_tags(query_dict, file_url, tags):
   links = [ ]
@@ -1415,10 +1412,7 @@ def view_directory(request):
     tar_basename = os.path.basename(where) 
     if not tar_basename:
       tar_basename = "cvs_root"
-    url = tar_basename + '.tar.gz?tarball=1'
-    query = sticky_query(query_dict)
-    if query:
-      url = url + '&' + query
+    url = tar_basename + '.tar.gz?tarball=1' + request.amp_query
     data['tarball_href'] = url
 
   http_header()
@@ -2523,6 +2517,7 @@ def download_tarball(request):
   fp.close()
 
 def handle_config():
+  debug.t_start('load-config')
   global cfg
   if cfg is None:
     cfg = config.Config()
@@ -2542,6 +2537,8 @@ def handle_config():
     "search": None,
     }
 
+  debug.t_end('load-config')
+
 
 def main():
   # handle the configuration stuff
@@ -2549,6 +2546,9 @@ def main():
 
   # build a Request object, which contains info about the HTTP request
   request = Request()
+
+  # most of the startup is done now.
+  debug.t_end('startup')
 
   # is the CVS root really there?
   if not os.path.isdir(request.cvsroot):
@@ -2618,7 +2618,7 @@ def main():
 
 def run_cgi():
   try:
-    debug.t_start()
+    debug.t_start('main')
     main()
     debug.t_end('main')
     debug.dump()

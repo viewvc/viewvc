@@ -12,19 +12,22 @@
 #
 # -----------------------------------------------------------------------
 #
+# Note: a t_start/t_end pair consumes about 0.00005 seconds on a P3/700.
+#       the lambda form (when debugging is disabled) should be even faster.
+#
 
 if 0:
 
   import time
 
-  _stack = [ ]
+  _timers = { }
   _times = { }
 
-  def t_start():
-    _stack.append(time.time())
+  def t_start(which):
+    _timers[which] = time.time()
 
   def t_end(which):
-    t = time.time() - _stack.pop()
+    t = time.time() - _timers[which]
     if _times.has_key(which):
       _times[which] = _times[which] + t
     else:
