@@ -53,25 +53,77 @@ def date_from_rev(svnrepos, rev):
 
 class LogEntry:
   "Hold state for each revision's log entry."
-  def __init__(self, rev, date, author, msg):
+  def __init__(self, rev, date, author, msg, filename, other_paths,
+               action, copy_path, copy_rev):
     self.rev = rev
     self.date = date
     self.author = author
     self.state = '' # should we populate this?
     self.changed = 0
     self.log = msg
+    self.filename = filename
+    self.other_paths = other_paths
+    self.action = action
+    self.copy_path = copy_path
+    self.copy_rev = copy_rev
 
+class ChangedPathEntry:
+  def __init__(self, filename):
+    self.filename = filename
 
 class LogReceiver:
   "Handler for Subversion log message chunks"
-  def __init__(self):
+  def __init__(self, filename, fs_ptr):
     self.logs = { }
+    self.filename = filename
+    self.fs_ptr = fs_ptr
 
   def receive(self, paths, revision, author, datestr, msg, pool):
+    root = fs.revision_root(self.fs_ptr, revision, pool)
+
+    action = copy_path = copy_rev = None
+    filename = self.filename
+    other_paths = [ ]
+
+    if paths:
+
+      import sapi
+      sapi.server.header()
+
+      subpool = core.svn_pool_create(pool)
+      for path, change in paths.items():
+        core.svn_pool_clear(subpool)
+
+        kind = fs.check_path(root, path, subpool)
+        if kind != core.svn_node_file:
+          continue
+
+        assert path[0] == '/'
+        path = path[1:]
+
+        if path == filename:
+          assert action is None and copy_path is None and copy_rev is None
+          action = change.action
+          if change.copyfrom_path:
+            assert change.copyfrom_path[0] == '/'
+            copy_path = self.filename = change.copyfrom_path[1:]
+            copy_rev = change.copyfrom_rev
+        else:
+          other_paths.append(ChangedPathEntry(path))
+
+      core.svn_pool_destroy(subpool)
+      
+      assert action is not None
+
     date = _datestr_to_date(datestr, pool)
-    self.logs[revision] = LogEntry(revision, date, author, msg)
 
+    log = LogEntry(revision, date, author, msg, filename,
+                   other_paths, action, copy_path, copy_rev)
 
+    log.size = fs.file_length(root, filename, pool)
+
+    self.logs[revision] = log
+    
 def get_logs(svnrepos, full_name, files):
   fileinfo = { }
   alltags = {           # all the tags seen in the files of this dir
@@ -83,8 +135,7 @@ def get_logs(svnrepos, full_name, files):
     rev = fs.node_created_rev(svnrepos.fsroot, path, svnrepos.pool)
     datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, svnrepos.pool)
     date = _datestr_to_date(datestr, svnrepos.pool)
-    new_entry = LogEntry(rev, date, author, msg)
-    new_entry.filename = file
+    new_entry = LogEntry(rev, date, author, msg, file, [], None, None, None)
     if fs.is_file(svnrepos.fsroot, path, svnrepos.pool):
       new_entry.size = fs.file_length(svnrepos.fsroot, path, svnrepos.pool)
     fileinfo[file] = new_entry
@@ -92,7 +143,7 @@ def get_logs(svnrepos, full_name, files):
 
 
 def fetch_log(svnrepos, full_name, which_rev=None):
-  receiver = LogReceiver();
+  receiver = LogReceiver(full_name, svnrepos.fs_ptr);
   alltags = {           # all the tags seen in the files of this dir
     'MAIN' : '1',
     'HEAD' : '1',
@@ -107,14 +158,9 @@ def fetch_log(svnrepos, full_name, which_rev=None):
     receiver.receive(which_rev, author, datestr, msg, svnrepos.pool)
   else:
     repos.svn_repos_get_logs(svnrepos.repos, [ full_name ],
-                             svnrepos.rev, 0, 0, 1,
+                             svnrepos.rev, 0,
+                             getattr(svnrepos, 'get_changed_paths', 1), 1,
                              receiver.receive, svnrepos.pool)
-  subpool = core.svn_pool_create(svnrepos.pool)
-  for rev in receiver.logs.keys():
-    core.svn_pool_clear(subpool)   
-    root = fs.revision_root(svnrepos.fs_ptr, rev, subpool)
-    receiver.logs[rev].size = fs.file_length(root, full_name, subpool)
-  core.svn_pool_destroy(subpool)
   return alltags, receiver.logs
 
 
