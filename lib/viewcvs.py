@@ -341,7 +341,9 @@ class Request:
 
     # if we have a directory and the request didn't end in "/", then redirect
     # so that it does.
-    if (self.pathtype == vclib.DIR and path_info[-1:] != '/'):
+    if (self.pathtype == vclib.DIR and path_info[-1:] != '/'
+        and self.view_func is not view_revision
+        and self.view_func is not download_tarball):
       needs_redirect = 1
 
     # redirect now that we know the URL is valid
@@ -395,8 +397,7 @@ class Request:
     # if we are asking for the revision info view, we don't need any
     # path information
     if view_func is view_revision:
-      where = ''
-      pathtype = vclib.DIR
+      where = pathtype = None
     elif where is None:
       where = self.where
       pathtype = self.pathtype
