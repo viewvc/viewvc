@@ -46,6 +46,7 @@ import re
 import cvsdb
 import rlog
 import config
+import vclib.bincvs
 
 DEBUG_FLAG = 0
 
@@ -77,14 +78,14 @@ class FileData:
         else:
             self.ctype = "changed"
 
-def CommitFromFileData(cfg, repository, file_data):
+def CommitFromFileData(repos, file_data):
     ## construct the full path for the RCS file
-    filename = os.path.join(repository, file_data.directory, file_data.file)
+    filename = os.path.join(repos.rootpath, file_data.directory, file_data.file)
 
     ## get the 'rlog' output for just this revision, and then convert
     ## to a commit object
-    rlog_data = rlog.GetRLogData(cfg, filename, file_data.new_version)
-    commit_list = cvsdb.RLogDataToCommitList(repository, rlog_data)
+    rlog_data = rlog.GetRLogData(repos, filename, file_data.new_version)
+    commit_list = cvsdb.RLogDataToCommitList(repos.rootpath, rlog_data)
     commit = commit_list[0]
 
     ## set the type of commit from the file_data setting
@@ -97,9 +98,9 @@ def CommitFromFileData(cfg, repository, file_data):
         
     return commit
 
-def GetUnrecordedCommitList(repository, file_data):
-    filename = os.path.join(repository, file_data.directory, file_data.file)
-    return cvsdb.GetUnrecordedCommitList(repository, filename)
+def GetUnrecordedCommitList(repos, file_data):
+    filename = os.path.join(repos.rootpath, file_data.directory, file_data.file)
+    return cvsdb.GetUnrecordedCommitList(repos, filename)
 
 _re_revisions = re.compile(                            
   r",(?P<old>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and first revision number
@@ -278,12 +279,12 @@ def BrokenCvsNtArgParse(s, repository):
       us += c
   return CvsNtArgParse(us, repository)
 
-def ProcessLoginfo(repository, file_data_list):
+def ProcessLoginfo(rootpath, file_data_list):
     ## XXX This is a somewhat dirty hack:
     ## cvsdb already loads the configuration file and provides a cfg
     ## instance.  Pick it from there in order to be able to pass it down
     ## to rlog (see below).
-    cfg = cvsdb.cfg
+    repository = vclib.bincvs.BinCVSRepository(None, rootpath, cvsdb.cfg.general)
 
     ## convert FileData objects into Commit objects so we can insert them
     ## into the database
@@ -297,7 +298,7 @@ def ProcessLoginfo(repository, file_data_list):
             temp = GetUnrecordedCommitList(repository, file_data)
             commit_list = commit_list + temp
         else:
-            commit_list.append(CommitFromFileData(cfg, repository, file_data))
+            commit_list.append(CommitFromFileData(repository, file_data))
 
     ## add to the database
     db = cvsdb.ConnectDatabase()

@@ -90,9 +90,9 @@ def _get_co_file(v_file):
 
     return co_file
 
-def GetRLogData(cfg, path, revision=''):
+def GetRLogData(repository, path, revision=''):
     v_file = _get_v_file(path)
-    branch, taginfo, revs = bincvs.fetch_log(cfg.general, v_file, revision)
+    branch, taginfo, revs = bincvs.fetch_log(repository, v_file, revision)
     class _blank:
       pass
 
