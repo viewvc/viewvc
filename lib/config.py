@@ -160,6 +160,7 @@ class Config:
 
     self.general.cvs_roots = { }
     self.general.svn_roots = { }
+    self.general.svn_parent_path = None
     self.general.default_root = ''
     self.general.rcs_path = ''
     self.general.mime_types_file = ''
