@@ -381,6 +381,8 @@ def main(server, viewcvs_link):
         commits = [ ]
         query = 'skipped'
 
+    script_name = server.getenv('SCRIPT_NAME', '')
+
     data = {
       'cfg' : cfg,
       'address' : cfg.general.address,
@@ -392,6 +394,9 @@ def main(server, viewcvs_link):
       'directory' : server.escape(form_data.directory, 1),
       'file' : server.escape(form_data.file, 1),
       'who' : server.escape(form_data.who, 1),
+      'docroot' : cfg.options.docroot is None \
+                  and script_name + '/' + viewcvs.docroot_magic_path \
+                  or cfg.options.docroot,
 
       'sortby' : form_data.sortby,
       'date' : form_data.date,
