@@ -125,7 +125,7 @@ class RLog:
         if os.path.isfile(filename):
             return filename
         
-        raise error, "file not found"
+        raise error, "rlog file not found: %s" % (filename)
 
     def create_checkout_filename(self, filename):
         ## cut off the ",v"
@@ -141,14 +141,17 @@ class RLog:
         return checkout_filename
         
     def readline(self):
-        line = self.rlog.readline()
+        try:
+            line = self.rlog.readline()
+        except AttributeError:
+            self.error()
+            
         if line:
             return line
 
         status = self.close()
         if status:
-            temp = '[ERROR] %s' % (self.cmd)
-            raise error, temp
+            self.error()
 
         return None
 
@@ -156,6 +159,10 @@ class RLog:
         status = self.rlog.close()
         self.rlog = None
         return status
+
+
+    def error(self):
+        raise error, "unexpected rlog exit: %s" % (self.cmd)
 
 
 ## constants used in the output parser
@@ -252,7 +259,7 @@ class RLogOutputParser:
             match = _re_data_line_add.match(line)
 
         if not match:
-            raise error, 'bad rlog parser, no cookie!'
+            raise error, "bad rlog parser, no cookie!"
 
         ## retrieve the matched grops as a tuple in hopes
         ## this will be faster (ala profiler)
