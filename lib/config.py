@@ -186,6 +186,7 @@ class Config:
 
     self.options.root_as_url_component = 0
     self.options.sort_by = 'file'
+    self.options.sort_group_dirs = 1
     self.options.hide_attic = 1
     self.options.log_sort = 'date'
     self.options.diff_format = 'h'

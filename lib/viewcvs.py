@@ -1396,21 +1396,25 @@ def prepare_hidden_values(params):
 
 def sort_file_data(file_data, sortdir, sortby):
   def file_sort_cmp(file1, file2, sortby=sortby):
-    if sortby == 'file':
-      if file1.kind == vclib.DIR:        # is_directory
+    # if we're grouping directories together, sorting is pretty
+    # simple.  a directory sorts "higher" than a non-directory, and
+    # two directories are sorted as normal.
+    if cfg.options.sort_group_dirs:
+      if file1.kind == vclib.DIR:
         if file2.kind == vclib.DIR:
-          # both are directories. sort on name.
-          return cmp(file1.name, file2.name)
-        # file1 is a directory, it sorts first.
-        return -1
-      if file2.kind == vclib.DIR:
+          # two directories, no special handling.
+          pass
+        else:
+          # file1 is a directory, it sorts first.
+          return -1
+      elif file2.kind == vclib.DIR:
         # file2 is a directory, it sorts first.
         return 1
 
     # we should have data on these. if not, then it is because we requested
     # a specific tag and that tag is not present on the file.
     if file1.rev is not None and file2.rev is not None:
-      # both are files, sort according to sortby
+      # sort according to sortby
       if sortby == 'rev':
         return revcmp(file1.rev, file2.rev)
       elif sortby == 'date':
