@@ -220,7 +220,6 @@ languages = en-us
 #       header.
 #
 
-directory = templates/directory.ezt
 query = templates/query.ezt
 footer = templates/footer.ezt
 diff = templates/diff.ezt
@@ -228,9 +227,15 @@ graph = templates/graph.ezt
 annotate = templates/annotate.ezt
 markup = templates/annotate.ezt
 
+directory = templates/directory.ezt
+# For an alternate form, where the first column displays a revision number
+# and brings you to the log view (and the filename displays the HEAD), then
+# you may use this template:
+# directory = templates/dir_alternate.ezt
+
 log = templates/log.ezt
-# There is also a new style table based alternative template available.
-# You might want to try it out:
+# For a log view where the revisions are displayed in a table, you may
+# want to try this template:
 # log = templates/log_table.ezt
 
 #---------------------------------------------------------------------------
@@ -280,14 +285,6 @@ diff_format = h
 #   0      Show CVSROOT directory
 hide_cvsroot = 1
 
-# hide_non_readable: Don't show entries which cannot be read
-#   1      Hide non-readable entries
-#   0      Show non-readble entries
-hide_non_readable = 1
-
-# Show author of last change
-show_author = 1
-
 # set to 1 to make lines break at spaces,
 # set to 0 to make no-break lines,
 # set to a positive integer to make the lines cut at that length
@@ -320,14 +317,6 @@ allow_markup = 1
 # [make sure to have gzip in the path]
 allow_compress = 1
 
-# Make use of javascript functions to skip the need for submitting a form.
-# For example, this way you can select one of your CVS roots without
-# pressing 'Go' (... if you have more than one CVSROOT defined)
-use_java_script = 1
-
-# open Download-Links in another window
-open_extern_window = 1
-
 # If you have files which automatically refers to other files
 # (such as HTML) then this allows you to browse the checked
 # out files as if outside CVS.
@@ -342,15 +331,6 @@ checkout_magic = 1
 # the last checkin was on the same tag as you are viewing.
 # Enable this if you like the feature, but don't rely on correct results.
 show_subdir_lastmod = 0
-
-# The next flag defines the meaning of clicking on either a filename or 
-# the revision number of that file in the directory view.  if 0 then
-# the traditional behavior applies: clicking on the name takes you to the
-# CVS log page, where clicking on the revision number displays that revision.
-# If the flag is set to 1 then both columns will be swapped and the meaning
-# of clicking is also exchanged.  This should be more intuitive to new users.
-# The classic setting is default:
-flip_links_in_dirview = 0
 
 # show a portion of the most recent log entry in directory listings
 show_logs = 1

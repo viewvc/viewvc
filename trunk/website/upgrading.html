@@ -53,7 +53,7 @@
       0.9 or a later version of the software.
     </p>
 
-    <h3>Templates</h3>
+    <h3>Configuration Options</h3>
     <p>
       More templates were introduced in version 0.8 of the software,
       which made many of the configuration options obsolete. This
@@ -122,9 +122,77 @@
 	  <p></p>
 	</dd>
 
+	<dt><strong>show_author</strong></dt>
+	<dd>
+          Changing this option would be quite strange and rare. If you
+          do not want to show the author for the revisions, then you
+          should remove it from the various templates.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>hide_non_readable</strong></dt>
+	<dd>
+          This option was never used, so it has been removed.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>flip_links_in_dirview</strong></dt>
+	<dd>
+          This option is no longer available. If you want the links in
+          your directory view flipped, then you may use the
+          <code>dir_alternate.ezt</code> template.
+
+	  <p></p>
+	</dd>
+
       </dl>
     </blockquote>
 
+    <h3>Template Variables</h3>
+    <p>
+      Some template variables that were available in 0.8 have been
+      removed in 0.9. If you have custom templates that refer to these
+      variables, then you will need to modify your templates.
+    </p>
+
+	  <blockquote>
+	    <dl>
+	      <dt><code>directory.ezt</code>: <var>headers</var></dt>
+	      <dd>
+		The headers are now listed explicitly in the template,
+		rather than made available through a list.
+		<p></p>
+	      </dd>
+
+	      <dt>
+		<code>directory.ezt</code>:
+		<var>rows.cols</var>,
+		and <var>rows.span</var>
+	      </dt>
+	      <dd>
+		These variables were used in conjunction with the
+		<var>headers</var> variable to control the column
+		displays. This is now controlled explicitly within the
+		templates.
+		<p></p>
+	      </dd>
+
+	      <dt><code>directory.ezt</code>:
+		<var>rev_in_front</var></dt>
+	      <dd>
+		This was used to indicate that revision links should
+		be used in the first column, rather than in their
+		standard place in the second column. Changing the
+		links should now be done in the template, rather than
+		according to this variable. You may want to look at
+		the <code>dir_alternate.ezt</code> template, which has
+		the revision in front.
+		<p></p>
+	      </dd>
+	    </dl>
+	  </blockquote>
     <hr>
 
     <h2><a name="from7">Upgrading from ViewCVS 0.7 or earlier</a></h2>
@@ -138,7 +206,7 @@
       for <a href="#from8">upgrading from 0.8</a>.
     </p>
 
-    <h3>Templates</h3>
+    <h3>Configuration Options</h3>
     <p>
       The largest change from 0.7 to 0.8, that you will need to deal
       with, is the introduction of templates. This shifted many
@@ -276,7 +344,7 @@
   <address><a href="mailto:viewcvs@lyra.org">ViewCVS Users Group</a></address>
 <!-- Created: Mon Sep 24 04:23:53 PDT 2001 -->
 <!-- hhmts start -->
-Last modified: Mon Dec 17 00:54:43 PST 2001
+Last modified: Thu Dec 20 20:30:43 PST 2001
 <!-- hhmts end -->
 </body>
 </html>

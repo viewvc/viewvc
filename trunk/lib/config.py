@@ -177,8 +177,6 @@ class Config:
     self.options.log_sort = 'date'
     self.options.diff_format = 'h'
     self.options.hide_cvsroot = 1
-    self.options.hide_non_readable = 1
-    self.options.show_author = 1
     self.options.hr_breakable = 1
     self.options.hr_funout = 1
     self.options.hr_ignore_white = 1
@@ -188,7 +186,6 @@ class Config:
     self.options.allow_compress = 1
     self.options.checkout_magic = 1
     self.options.show_subdir_lastmod = 0
-    self.options.flip_links_in_dirview = 0
     self.options.show_logs = 1
     self.options.show_log_in_markup = 1
     self.options.py2html_path = '.'

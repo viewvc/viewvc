@@ -1140,18 +1140,21 @@ def view_directory(request):
     'current_root' : request.cvsrep,
     'view_tag' : view_tag,
     'sortby' : sortby,
-    'headers' : [ ],
     'no_match' : None,
     'unreadable' : None,
     'has_tags' : None,
     'tarball_href' : None,
     'address' : cfg.general.address,
     'vsn' : __version__,
-    # fileinfo will be len==0 if we only have dirs and !show_subdir_lastmod
-    # in that case, we don't need the extra columns
-    'rev_in_front' : len(fileinfo) and cfg.options.flip_links_in_dirview,
     'search_re' : search_re,
-    }
+    'have_logs' : None,
+
+    'sortby_file_href' :   toggle_query(query_dict, 'sortby', 'file'),
+    'sortby_rev_href' :    toggle_query(query_dict, 'sortby', 'rev'),
+    'sortby_date_href' :   toggle_query(query_dict, 'sortby', 'date'),
+    'sortby_author_href' : toggle_query(query_dict, 'sortby', 'author'),
+    'sortby_log_href' :    toggle_query(query_dict, 'sortby', 'log'),
+  }
 
   # add in the CVS roots for the selection
   if len(cfg.general.cvs_roots) < 2:
@@ -1167,33 +1170,10 @@ def view_directory(request):
     ### a variety of schemes.
     data['nav_path'] = clickable_path(request, where, 0, 0, 0)
 
-  def add_header(title, which, data=data, query_dict=query_dict, colspan=1):
-    href = './' + toggle_query(query_dict, 'sortby', which) + '#dirlist'
-    data['headers'].append(_item(title=title, which=which, href=href,
-                                 colspan=colspan))
-
-  if cfg.options.flip_links_in_dirview and len(fileinfo):
-    add_header('Rev.', 'rev')
-  if cfg.options.use_cvsgraph:
-    add_header('File', 'file', colspan=2)
-  else:
-    add_header('File', 'file')
-
-  if not cfg.options.flip_links_in_dirview and len(fileinfo):
-    add_header('Rev.', 'rev')
-  # fileinfo will be len==0 if we only have dirs and !show_subdir_lastmod
+  # fileinfo will be len==0 if we only have dirs and !show_subdir_lastmod.
   # in that case, we don't need the extra columns
   if len(fileinfo):
-    add_header('Age', 'date')
-    if cfg.options.show_author:
-      add_header('Author', 'author')
-    if cfg.options.show_logs:
-      add_header('Last log entry', 'log')
-
-  num_cols = len(data['headers']) + cfg.options.use_cvsgraph
-  # remaining columns to span:
-  span = num_cols - 1 - cfg.options.flip_links_in_dirview
-
+    data['have_logs'] = 'yes'
 
   def file_sort_cmp(data1, data2, sortby=sortby, fileinfo=fileinfo):
     if data1[2]:        # is_directory
@@ -1274,7 +1254,6 @@ def view_directory(request):
         num_displayed = num_displayed + 1
       row.anchor = file
       row.name = file + slash
-      row.span = span
       row.type = 'unreadable'
 
       rows.append(row)
@@ -1305,17 +1284,15 @@ def view_directory(request):
       info = fileinfo.get(file)
       if info == _FILE_HAD_ERROR:
         row.cvs = 'error'
-        row.span = span
 
         unreadable = 1
       elif info:
         row.cvs = 'data'
         row.time = html_time(info[1])
+        row.author = info[3]
 
         if cfg.options.use_cvsgraph:
           row.graph_href = '&nbsp;' 
-        if cfg.options.show_author:
-          row.author = info[3]
         if cfg.options.show_logs:
           row.show_log = 'yes'
           subfile = info[4]
@@ -1326,7 +1303,6 @@ def view_directory(request):
             row.log = format_log(info[2])
       else:
         row.cvs = 'none'
-        row.cols = [ '' ] * (span)
 
       rows.append(row)
 
@@ -1342,7 +1318,6 @@ def view_directory(request):
       info = fileinfo.get(file)
       if info == _FILE_HAD_ERROR:
         row.cvs = 'error'
-        row.span = span
         rows.append(row)
 
         num_displayed = num_displayed + 1
@@ -1374,6 +1349,7 @@ def view_directory(request):
       row.cvs = 'data'
       row.href = url
       row.rev = info[0]
+      row.author = info[3]
 
       ### it would be good to break this out into bits so the .ezt can
       ### format this info however it likes
@@ -1385,9 +1361,6 @@ def view_directory(request):
 
       if cfg.options.use_cvsgraph:
          row.graph_href = file_url + '?graph=' + row.rev + request.amp_query
-
-      if cfg.options.show_author:
-        row.author = info[3]
 
       if cfg.options.show_logs:
         row.show_log = 'yes'
@@ -2564,7 +2537,6 @@ def handle_config():
     "logsort" : cfg.options.log_sort,
     "diff_format" : cfg.options.diff_format,
     "hidecvsroot" : cfg.options.hide_cvsroot,
-    "hidenonreadable" : cfg.options.hide_non_readable,
     "search": None,
     }
 
