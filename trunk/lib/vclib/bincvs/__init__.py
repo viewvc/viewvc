@@ -627,3 +627,22 @@ class BinCVSRepository(vclib.Repository):
       return filename
     else:
       return filename + ',v'
+
+  def _newest_file(self, path_parts):
+    newest_file = None
+    newest_time = 0
+
+    dirpath = self._getpath(path_parts)
+
+    for subfile in os.listdir(dirpath):
+      ### filter CVS locks? stale NFS handles?
+      if subfile[-2:] != ',v':
+        continue
+      info = os.stat(os.path.join(dirpath, subfile))
+      if not stat.S_ISREG(info[stat.ST_MODE]):
+        continue
+      if info[stat.ST_MTIME] > newest_time:
+        newest_file = subfile[:-2]
+        newest_time = info[stat.ST_MTIME]
+
+    return newest_file
