@@ -2599,15 +2599,16 @@ def view_diff(request):
     date2 = time.strftime('%Y/%m/%d %H:%M:%S',
                           time.gmtime(vclib.svn.date_from_rev(request.repos,
                                                               int(rev2))))
-    args.append("'-L " + request.where + "\t" + date1 + "\t" + rev1 + "'")
-    args.append("'-L " + request.where + "\t" + date2 + "\t" + rev2 + "'")
+    args.append("-L")
+    args.append(request.where + "\t" + date1 + "\t" + rev1)
+    args.append("-L")
+    args.append(request.where + "\t" + date2 + "\t" + rev2)
 
     # Need to keep a reference to the FileDiff object around long
     # enough to use.  It destroys its underlying temporary files when
     # the class is destroyed.
     diffobj = vclib.svn.do_diff(request.repos, request.where,
-                                int(rev1), int(rev2),
-                                string.join(args, " "))
+                                int(rev1), int(rev2), args)
     fp = diffobj.get_pipe()
     
   if human_readable:
