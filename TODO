@@ -14,6 +14,19 @@ TODO ITEMS
 *) committing with a specific revision number:
    http://mailman.lyra.org/pipermail/viewcvs/2000q1/000008.html
 
+*) add an "allowed" modules. process the forbidden modules first. any
+   match will throw it out immediately. if an allowed is present, then
+   disallow any module unless it is present in the allowed list.
+
+*) provide a virtual host capability. consider multiple hosts which
+   map a particular Location to the same directory (i.e. the same
+   ViewCVS script and config file). provide for a way to have global
+   options plus vhost-specific options.
+
+*) add capability similar to cvs2cl.pl:
+     http://mailman.lyra.org/pipermail/viewcvs/2000q2/000050.html
+   suggestion from Chris Meyer <cmeyer@gatan.com>.
+
 
 KNOWN BUGS
 ----------
