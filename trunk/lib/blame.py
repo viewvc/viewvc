@@ -175,13 +175,10 @@ class CVSParser:
   #       the path traverses the tree "backwards" on branches.
   def ancestor_revisions(self, revision):
     ancestors = []
-    revision = self.prev_revision[revision]
+    revision = self.prev_revision.get(revision)
     while revision:
       ancestors.append(revision)
-      if self.prev_revision.has_key(revision):
-        revision = self.prev_revision[revision]
-      else:
-        revision = None
+      revision = self.prev_revision.get(revision)
 
     return ancestors
 
@@ -482,7 +479,7 @@ class CVSParser:
 
     skip = 0
 
-    rev = self.prev_revision[self.head_revision]
+    rev = self.prev_revision.get(self.head_revision)
     while rev:
       diffs = string.split(self.revision_deltatext[rev], '\n')
       for command in diffs:
@@ -504,10 +501,8 @@ class CVSParser:
           line_count = line_count + count
         else:
           raise RuntimeError, 'error: illegal RCS file'
-      if self.prev_revision.has_key(rev):
-        rev = self.prev_revision[rev]
-      else:
-        rev = None
+
+      rev = self.prev_revision.get(rev)
 
     # Now, play the delta edit commands *backwards* from the primordial
     # revision forward, but rather than applying the deltas to the text of
@@ -613,13 +608,6 @@ def link_includes(text, root, rcs_path, browse_revtag = 'HEAD'):
   return text
 
 def make_html(root, rcs_path, opt_rev = None):
-  print 'Content-Type: text/html'
-  print
-  print '''\
-<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
- "http://www.w3.org/TR/REC-html40/loose.dtd">
-'''
-
   filename = root + path_sep + rcs_path
   parser = CVSParser()
   revision = parser.parse_cvs_file(filename, opt_rev)
@@ -633,9 +621,6 @@ def make_html(root, rcs_path, opt_rev = None):
     raise RuntimeError, 'Unable to parse filename'
   file_head = match.group(1)
   file_tail = match.group(2)
-
-  print '<html><head><title>CVS Blame</title>'
-  print '<body bgcolor="#FFFFFF" text="#000000" link="#0000EE" vlink="#551A8B" alink="#F0A000">'
 
   open_table_tag = '<table border=0 cellpadding=0 cellspacing=0 width="100%">'
   startOfRow = '<tr><td colspan=3%s><pre>'
@@ -738,7 +723,7 @@ def make_html(root, rcs_path, opt_rev = None):
     #	inMark = 0
 
     print output
-  print endOfRow + '</table><hr width="100%"></body></html>'
+  print endOfRow + '</table>'
 
 
 def main():
