@@ -1843,6 +1843,9 @@ def view_log(request):
     'log_pagestart' : None,
     'graph_href' : None,    
     'entries': entries,
+    'view_href' : None,
+    'download_href': None,
+    'download_text_href': None,
   })
 
   if cfg.options.use_pagesize:
@@ -1870,17 +1873,19 @@ def view_log(request):
     data['graph_href'] = request.get_url(view_func=view_cvsgraph, params={},
                                          escape=1)
 
-  data['view_href'] = request.get_url(view_func=view_markup, params={},
-                                      escape=1)
-  data['download_href'] = request.get_url(view_func=view_checkout, params={},
-                                          escape=1)
-  if not is_plain_text(request.mime_type):
-    data['download_text_href'] = \
-      request.get_url(view_func=view_checkout,
-                      params={'content-type': 'text/plain'},
-                      escape=1)
+  if pathtype is vclib.FILE:
+    data['view_href'] = request.get_url(view_func=view_markup, params={},
+                                        escape=1)
+    data['download_href'] = request.get_url(view_func=view_checkout, params={},
+                                            escape=1)
+    if not is_plain_text(request.mime_type):
+      data['download_text_href'] = \
+          request.get_url(view_func=view_checkout,
+                          params={'content-type': 'text/plain'},
+                          escape=1)
   else:
-    data['download_text_href'] = None
+    data['view_href'] = request.get_url(view_func=view_directory, params={},
+                                        escape=1)
 
   taginfo = options.get('cvs_tags', {})
   tagitems = taginfo.items()
