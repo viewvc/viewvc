@@ -39,10 +39,12 @@
 #		The log entry expansion takes an optional argument to
 #		specify maximum length of the expansion like %L[25].
 #	%(...%) = HTMLize the string within the parenthesis.
-#   ViewCVS currently uses the following two command-line arguments to
+#   ViewCVS currently uses the following four command-line arguments to
 #   pass URL information to cvsgraph:
-#       -7 request.qmark_query (the query preceed with '?')
-#       -8 request.amp_query (the query preceeded with '&')
+#       -3 link to current file's log page
+#       -4 link to current file's checkout page minus "rev" parameter
+#       -5 link to current file's diff page minus "r1" and "r2" parameters
+#       -6 link to current directory page minus "only_with_tag" parameter
 #
 # - Numbers may be entered as octal, decimal or
 #   hex as in 0117, 79 and 0x4f respectively.
@@ -374,19 +376,19 @@ image_interlace	= true;
 #	These are the href= and alt= attributes in the <area>
 #	tags of HTML. The strings are expanded (see above).
 map_name	= "MyMapName";
-map_branch_href	= "href=\"%m?only_with_tag=%(%t%)%8\"";
+map_branch_href	= "href=\"%6only_with_tag=%(%t%)\"";
 map_branch_alt	= "alt=\"%0 %(%t%) (%B)\"";
 # You might want to experiment with the following setting:
 # 1. The default setting will take you to a ViewCVS generated page displaying 
 #    that revision of the file, if you click into a revision box:
-map_rev_href	= "href=\"%m%F?view=markup&amp;rev=%R%8\"";
+map_rev_href	= "href=\"%4rev=%R\"";
 # 2. This alternative setting will take you to the anchor representing this
 #    revision on a ViewCVS generated Log page for that file:
-# map_rev_href   = "href=\"%F%7#rev%R\"";
+# map_rev_href   = "href=\"%3#rev%R\"";
 #
 map_rev_alt	= "alt=\"%1 %(%t%) (%R)\"";
-map_diff_href	= "href=\"%m%F?r1=%P&r2=%R%8\"";
+map_diff_href	= "href=\"%5r1=%P&amp;r2=%R\"";
 map_diff_alt	= "alt=\"%2 %P &lt;-&gt; %R\"";
-map_merge_href	= "href=\"%m%F?r1=%P&amp;r2=%R%8\"";
+map_merge_href	= "href=\"%5r1=%P&amp;r2=%R\"";
 map_merge_alt	= "alt=\"%2 %P &lt;-&gt; %R\"";
 
