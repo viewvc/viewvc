@@ -179,6 +179,12 @@ _block_cmds = _block_cmd_specs.keys()
 _re_newline = re.compile('[ \t\r\f\v]*\n\\s*')
 _re_whitespace = re.compile(r'\s\s+')
 
+# this regex is used to substitute arguments into a value. we split the value,
+# replace the relevant pieces, and then put it all back together. splitting
+# will produce a list of: TEXT ( splitter TEXT )*. splitter will be '%' or
+# an integer.
+_re_subst = re.compile('%(%|[0-9]+)')
+
 class Template:
 
   def __init__(self, fname=None):
@@ -289,8 +295,12 @@ class Template:
         else:
           # implied PRINT command
           if len(args) > 1:
-            raise ArgCountSyntaxError()
-          program.append((self._cmd_print, _prepare_ref(args[0], for_names)))
+            f_args = [ ]
+            for arg in args:
+              f_args.append(_prepare_ref(arg, for_names))
+            program.append((self._cmd_format, (f_args[0], f_args[1:])))
+          else:
+            program.append((self._cmd_print, _prepare_ref(args[0], for_names)))
 
     if stack:
       ### would be nice to say which blocks...
@@ -320,6 +330,19 @@ class Template:
         fp.write(chunk)
     else:
       fp.write(value)
+
+  def _cmd_format(self, (valref, args), fp, ctx):
+    fmt = _get_value(valref, ctx)
+    parts = _re_subst.split(fmt)
+    for i in range(len(parts)):
+      piece = parts[i]
+      if i%2 == 1 and piece != '%':
+        idx = int(piece)
+        if idx < len(args):
+          piece = _get_value(args[idx], ctx)
+        else:
+          piece = '<undef>'
+      fp.write(piece)
 
   def _cmd_include(self, (valref, base), fp, ctx):
     fname = _get_value(valref, ctx)
