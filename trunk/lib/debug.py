@@ -102,16 +102,17 @@ if SHOW_CHILD_PROCESSES:
       self.debugErr = errStream
 
       import sapi
-      if not sapi.server.pageGlobals.has_key('processes'):
-        sapi.server.pageGlobals['processes'] = [self]
-      else:
-        sapi.server.pageGlobals['processes'].append(self)
+      if not sapi.server is None:
+        if not sapi.server.pageGlobals.has_key('processes'):
+          sapi.server.pageGlobals['processes'] = [self]
+        else:
+          sapi.server.pageGlobals['processes'].append(self)
 
     def printInfo(self):
       print "Command Line", command
 
   def DumpChildren():
-    import sapi, sys
+    import sapi, sys, os
     server = sapi.server.self()
 
     if not server.pageGlobals.has_key('processes'):
@@ -123,8 +124,8 @@ if SHOW_CHILD_PROCESSES:
 
     for k in server.pageGlobals['processes']:
       i += 1
-      print "<div align=center>Child Process", i, "</div>"
       print "<table border=1>"
+      print "<tr><td colspan=2>Child Process", i, "</td></tr>"
       sys.stdout.write("<tr>\n  <td valign=top>Command Line</td>  <td><pre>")
       sys.stdout.write(server.escape(k.command))
       sys.stdout.write("</pre></td>\n</tr>\n")
@@ -154,6 +155,18 @@ if SHOW_CHILD_PROCESSES:
 
       sys.stdout.write("</table>\n")
       lastOut = k.debugOut
+
+    print "<table border=1>"
+    print "<tr><td colspan=2>Environment Variables</td></tr>"
+    for k, v in os.environ.items():
+      sys.stdout.write("<tr>\n  <td valign=top><pre>")
+      sys.stdout.write(server.escape(k))
+      sys.stdout.write("</pre></td>\n  <td valign=top><pre>")
+      sys.stdout.write(server.escape(v))
+      sys.stdout.write("</pre></td>\n</tr>")
+    print "</table>"
+
+         
 else:
 
   def DumpChildren():
