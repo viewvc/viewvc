@@ -269,9 +269,6 @@ hr_ignore_white = 1
 hr_ignore_keyword_subst = 1
 
 # allow annotation of files.
-# NOTE: this requires rw-access to the CVSROOT/history file, and rw-access to
-# the subdirectory to place the lock... so you maybe don't want it
-# WARNING: this is not yet implemented!!
 allow_annotate = 1
 
 # allow pretty-printed version of files
