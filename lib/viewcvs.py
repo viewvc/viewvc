@@ -882,6 +882,9 @@ def common_template_data(request):
     'rootname' : request.server.escape(request.rootname),
     'pathtype' : request.pathtype == vclib.DIR and 'dir' or 'file',
     'nav_path' : nav_path(request),
+    'up_href'  : None,
+    'log_href' : None,
+    'graph_href': None,
   }
   url, params = request.get_link(view_func=view_directory,
                                  where='',
@@ -899,6 +902,23 @@ def common_template_data(request):
       roots.append(_item(name=request.server.escape(rootname),
                          type=allroots[rootname][1]))
   data['roots'] = roots
+
+  if request.path_parts:
+    dir = string.join(request.path_parts[:-1], '/')
+    data['up_href'] = request.get_url(view_func=view_directory,
+                                      where=dir, pathtype=vclib.DIR,
+                                      params={}, escape=1)
+
+  if request.pathtype == vclib.FILE:
+    if (request.view_func is not view_log):
+      data['log_href'] = request.get_url(view_func=view_log, params={},
+                                         escape=1)
+
+    if (request.roottype == 'cvs' and cfg.options.use_cvsgraph
+        and request.view_func is not view_cvsgraph):
+      data['graph_href'] = request.get_url(view_func=view_cvsgraph, params={},
+                                           escape=1)
+
   return data
 
 def nav_header_data(request, rev):
@@ -1264,6 +1284,10 @@ def view_markup(request):
   else:
     data['download_text_href'] = None
 
+  if request.roottype == 'cvs':
+    data['annotate_href'] = request.get_url(view_func=view_annotate,
+                                            params={'annotate': rev},
+                                            escape=1)
 
   if cfg.options.show_log_in_markup:
     options = {}
@@ -1548,14 +1572,6 @@ def view_directory(request):
     'files_shown' : num_displayed,
     'num_dead' : num_dead,
   })
-
-  if request.path_parts:
-    dir = string.join(request.path_parts[:-1], '/')
-    data['up_href'] = request.get_url(view_func=view_directory,
-                                      where=dir, pathtype=vclib.DIR,
-                                      params={}, escape=1)
-  else:
-    data['up_href'] = None
 
   # clicking on sort column reverses sort order
   if sortdir == 'down':
@@ -1905,11 +1921,11 @@ def view_log(request):
     'logsort' : logsort,
     'human_readable' : ezt.boolean(diff_format in ('h', 'l')),
     'log_pagestart' : None,
-    'graph_href' : None,    
     'entries': entries,
     'view_href' : None,
     'download_href': None,
     'download_text_href': None,
+    'annotate_href': None,
   })
 
   if cfg.options.use_pagesize:
@@ -1927,15 +1943,8 @@ def view_log(request):
   data['logsort_hidden_values'] = prepare_hidden_values(params)
 
   data.update({
-    'back_url' : request.get_url(view_func=view_directory, pathtype=vclib.DIR,
-                                 where=up_where, params={},
-                                 escape=1),
     'view_tag' : view_tag,
   })
-
-  if request.roottype == 'cvs' and cfg.options.use_cvsgraph:
-    data['graph_href'] = request.get_url(view_func=view_cvsgraph, params={},
-                                         escape=1)
 
   if pathtype is vclib.FILE:
     data['view_href'] = request.get_url(view_func=view_markup, params={},
@@ -1947,6 +1956,9 @@ def view_log(request):
           request.get_url(view_func=view_checkout,
                           params={'content-type': 'text/plain'},
                           escape=1)
+    if request.roottype == 'cvs':
+      data['annotate_href'] = request.get_url(view_func=view_annotate,
+                                              params={}, escape=1)
   else:
     data['view_href'] = request.get_url(view_func=view_directory, params={},
                                         escape=1)
@@ -2892,6 +2904,9 @@ def view_queryform(request):
   data['hours'] = request.query_dict.get('hours', '2')
   data['mindate'] = request.query_dict.get('mindate', '')
   data['maxdate'] = request.query_dict.get('maxdate', '')
+
+  data['dir_href'] = request.get_url(view_func=view_directory, params={},
+                                     escape=1)
 
   request.server.header()
   generate_page(request, cfg.templates.query_form, data)

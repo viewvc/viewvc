@@ -3,6 +3,7 @@ Bookmark a link to HEAD:
 (<a href="[view_href]">view</a>)
 [if-any download_href](<a href="[download_href]">download</a>)[end]
 [if-any download_text_href](<a href="[download_text_href]">as text</a>)[end]
+[if-any annotate_href](<a href="[annotate_href]">annotate</a>)[end]
 </p>
 
 

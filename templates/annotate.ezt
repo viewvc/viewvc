@@ -4,6 +4,7 @@
 [# end]
 
 [include "include/header.ezt" "annotate"]
+[include "include/file_header.ezt"]
 
 <hr noshade>
 

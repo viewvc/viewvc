@@ -1,0 +1,7 @@
+<a href="[up_href]"><img src="[docroot]/images/back_small.png" width=16 height=16 border=0> Parent Directory</a>
+[if-any log_href] 
+  | <a href="[log_href]"><img src="[docroot]/images/text.png" border=0> Revision Log</a>
+[end]
+[if-any graph_href]
+  | <a href="[graph_href]"><img src="[docroot]/images/cvsgraph_16x16.png" border=0> Revision Graph</a>
+[end]
