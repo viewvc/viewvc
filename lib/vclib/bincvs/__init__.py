@@ -924,8 +924,7 @@ def _log_path(entry, dirpath, getdirs):
     if entry.kind == vclib.FILE:
       path = entry.in_attic and 'Attic' or ''
       name = entry.name
-    elif entry.kind == vclib.DIR and getdirs and entry.name != 'Attic':
-      assert not entry.in_attic
+    elif entry.kind == vclib.DIR and getdirs:
       entry.newest_file = _newest_file(os.path.join(dirpath, entry.name))
       if entry.newest_file:
         path = entry.name
