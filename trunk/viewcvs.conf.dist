@@ -252,9 +252,10 @@ languages = en-us
 #
 # This option sets the expiration time for cacheable pages served by
 # ViewCVS.  Note that in most cases, a cache aware client will only
-# revalidate the page after it exires (using the If-Modified-Since and/or
-# If-None-Match headers) and that browsers will also revalidate the
-# page when the reload button is pressed.
+# revalidate the page after it expires (using the If-Modified-Since
+# and/or If-None-Match headers) and that browsers will also revalidate
+# the page when the reload button is pressed.  Set to 0 to disable the
+# transmission of these caching headers.
 #
 # Time is given in seconds.
 #
