@@ -69,8 +69,8 @@
         <td align=center>&nbsp;</td>
         <td align=center>&nbsp;</td>
       [else]
-        <td align=center>[is changes.text_mods "1"]X[else]&nbsp;[end]</td>
-        <td align=center>[is changes.prop_mods "1"]X[else]&nbsp;[end]</td>
+        <td align=center>[if-any changes.text_mods]X[else]&nbsp;[end]</td>
+        <td align=center>[if-any changes.prop_mods]X[else]&nbsp;[end]</td>
       [end]
         [if-any changes.diff_href]
           <td align=center><a href="[changes.diff_href]&amp;r1=[rev]&amp;r2=[changes.prev_rev]&amp;p1=[changes.filename]&amp;p2=[changes.prev_path]">(diff to previous)</a></td>
