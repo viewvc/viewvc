@@ -16,6 +16,9 @@
 #       the lambda form (when debugging is disabled) should be even faster.
 #
 
+import sys
+
+
 SHOW_TIMES = 0
 SHOW_CHILD_PROCESSES = 0
 
@@ -46,27 +49,29 @@ else:
 
 
 class ViewCVSException:
-  def __init__(self, msg, httpCode=None):
+  def __init__(self, msg, status=None):
     self.msg = msg
-    self.httpCode = httpCode
+    self.status = status
 
     s = '<p><pre>%s</pre></p>' % msg
 
-    if httpCode:
-      s = s + ('<h4>HTTP-like status code:</h4>\n<p><pre>\n%s</pre></p><hr>\n'
-               % httpCode)
+    if status:
+      s = s + ('<h4>HTTP Response Status</h4>\n<p><pre>\n%s</pre></p><hr>\n'
+               % status)
     
     self.description = s
 
   def __str__(self):
-    return "ViewCVS Unrecoverable Error (%s): %s" % (self.httpCode, self.msg)
+    if self.status:
+      return '%s: %s' % (self.status, self.msg)
+    return "ViewCVS Unrecoverable Error: %s" % self.msg
 
 ### backwards compat
 ViewcvsException = ViewCVSException
 
 
 def PrintStackTrace(text=''):
-  import sys, traceback, string, sapi
+  import traceback, string, sapi
 
   out = sys.stdout
   server = sapi.server.self()
@@ -77,29 +82,41 @@ def PrintStackTrace(text=''):
   out.flush()
 
 def PrintException():
-  import sys, traceback, string, sapi
-
-  out = sys.stdout
-  server = sapi.server.self()
-  
-  server.header()  
-  out.write("<h3>Exception</h3>\n")
-  info = sys.exc_info()
+  # capture the exception before doing anything else
+  exc_type, exc, exc_tb = sys.exc_info()
   try:
-    # put message in a prominent position (rather than 
-    # at the end of the stack trace)
-    if isinstance(info[1], ViewCVSException):
-      out.write("<h4>ViewCVS Messages:</h4>\n%s\n" % info[1].description)
+    import traceback, string, sapi
+
+    out = sys.stdout
+    server = sapi.server.self()
+
+    if issubclass(exc_type, ViewCVSException):
+      server.header(status=exc.status)
+      desc = "<h4>ViewCVS Messages</h4>\n%s\n" % exc.description
+    else:
+      server.header()
+      desc = ''
+
+    out.write("<h3>An Exception Has Occurred</h3>\n")
+
+    # put message in a prominent position (rather than at the end of the
+    # stack trace)
+    if desc:
+      out.write(desc)
     
-    stacktrace = string.join(apply(traceback.format_exception, info), '')
+    stacktrace = string.join(traceback.format_exception(exc_type,
+                                                        exc,
+                                                        exc_tb),
+                             '')
 
   finally:
     # prevent circular reference. sys.exc_info documentation warns
     # "Assigning the traceback return value to a local variable in a function
     # that is handling an exception will cause a circular reference..."
-    del info
+    # This is all based on 'exc_tb', and we're now done with it. Toss it.
+    del exc_tb
   
-  out.write("<h4>Python Messages:</h4>\n<p><pre>")
+  out.write("<h4>Python Traceback</h4>\n<p><pre>")
   out.write(server.escape(stacktrace))
   out.write("</pre></p>\n")
 
@@ -120,7 +137,7 @@ if SHOW_CHILD_PROCESSES:
           sapi.server.pageGlobals['processes'].append(self)
 
   def DumpChildren():
-    import sapi, sys, os
+    import sapi, os
 
     out = sys.stdout
     server = sapi.server.self()

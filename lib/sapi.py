@@ -34,12 +34,11 @@ class CgiServer:
     global cgi
     import cgi
 
-  def header(self, content_type='text/html'):
-    if self.header_sent:
-      return
-    else:
+  def header(self, content_type='text/html', status='200 OK'):
+    if not self.header_sent:
       self.header_sent = 1
-    sys.stdout.write('Content-Type: '  +  content_type + '\r\n\r\n')
+      sys.stdout.write('Status: %s\r\nContent-Type: %s\r\n\r\n'
+                       % (status, content_type))
 
   def redirect(self, url):
     print 'Status: 301 Moved'
@@ -147,7 +146,9 @@ class AspServer:
       p[str(i)] = map(str, self.request.QueryString[i])
     return p
 
-  def header(self, content_type='text/html'):
+  def header(self, content_type='text/html', status='200 OK'):
+    ### what to do with the status?
+
     # In normal circumstances setting self.response.ContentType
     # after headers have already been sent simply results in
     # an AttributeError exception, but sometimes it leads to
@@ -158,10 +159,8 @@ class AspServer:
       try:
         self.header_sent = 1
         self.response.ContentType = content_type
-        return 0
       except AttributeError:
         pass
-    return 1
 
   def redirect(self, url):
     self.response.Redirect(url)
@@ -294,9 +293,9 @@ class ModPythonServer:
     else:
       return mod_python.util.parse_qs(self.request.args)
 
-  def header(self, content_type='text/html'):
+  def header(self, content_type='text/html', status='200 OK'):
+    ### what to do with the status?
     self.request.content_type = content_type
-    return 1
 
   def redirect(self, url):
     import mod_python.apache
