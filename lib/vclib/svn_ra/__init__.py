@@ -28,7 +28,7 @@ import popen2
 from vclib.svn import Revision
 
 # Subversion swig libs
-from svn import core, delta, client, wc
+from svn import core, delta, client, wc, ra
 
 
 def _rev2optrev(rev):
@@ -45,12 +45,20 @@ def _rev2optrev(rev):
 
 
 def date_from_rev(svnrepos, rev):
-  ### this is, obviously, wrong
-  return 0
+  datestr = ra.svn_ra_rev_prop(svnrepos.ra_session, rev,
+                               'svn:date', svnrepos.pool)
+  return _datestr_to_date(datestr, svnrepos.pool)
+
 
 def created_rev(svnrepos, full_name):
-  ### this is, obviously, wrong
-  return 0
+  kind = ra.svn_ra_check_path(svnrepos.ra_session, full_name, svnrepos.rev,
+                              svnrepos.pool)
+  if kind == core.svn_node_dir:
+    props = ra.svn_ra_get_dir(svnrepos.ra_session, full_name,
+                              svnrepos.rev, svnrepos.pool)
+    return int(props[core.SVN_PROP_ENTRY_COMMITTED_REV])
+  return core.SVN_INVALID_REVNUM
+
 
 class ChangedPath:
   def __init__(self, filename, pathtype, prop_mods, text_mods,
@@ -94,8 +102,8 @@ class LastHistoryCollector:
         ### Wrong, diddily wrong wrong wrong.  Can you say,
         ### "Manufacturing data left and right because it hurts to
         ### figure out the right stuff?"
-        self.changes.append(ChangedPath(changed_path, None, 0, 0,
-                                        changed_path, 0, action))
+        self.changes.append(ChangedPath(changed_path[1:], None, 0, 0,
+                                        changed_path[1:], 0, action))
 
   def get_history(self):
     if not self.has_history:
@@ -241,7 +249,10 @@ class FileDiff:
 
   def either_binary(self):
     "Return true if either of the files are binary."
-    ### broken
+    ### TODO: fix this.  if we use ra-getfile, we can grab props and a
+    ### stream for our tempfiles at the same time.  maybe do all this
+    ### stuff in __init__() and make either_binary() and get_files()
+    ### just hand back cached stuffs.
     return 0
 
   def get_files(self):
@@ -251,13 +262,13 @@ class FileDiff:
 
     self.tempfile1 = tempfile.mktemp()
     stream = core.svn_stream_from_aprfile(self.tempfile1, self.pool)
-    client.svn_client_cat(stream, self.url1, _rev2optrev(self.rev1),
-                          self.ctx, self.pool)
+    client.svn_client_cat(core.Stream(stream), self.url1,
+                          _rev2optrev(self.rev1), self.ctx, self.pool)
     core.svn_stream_close(stream)
     self.tempfile2 = tempfile.mktemp()
     stream = core.svn_stream_from_aprfile(self.tempfile2, self.pool)
-    client.svn_client_cat(stream, self.url2, _rev2optrev(self.rev2),
-                          self.ctx, self.pool)
+    client.svn_client_cat(core.Stream(stream), self.url2,
+                          _rev2optrev(self.rev2), self.ctx, self.pool)
     core.svn_stream_close(stream)
 
     # get rid of anything we put into our subpool
@@ -373,14 +384,11 @@ class SubversionRepository(vclib.Repository):
     ctx.config = core.svn_config_get_config(None, pool)
     self.ctx = ctx
 
-    # Fetch the youngest, which we'll pray is the largest of all the
-    # committed revisions of the root directory's children.
-    dirents = client.svn_client_ls(self.rootpath, _rev2optrev('HEAD'), 0,
-                                   self.ctx, self.pool)
-    self.youngest = -1
-    for name in dirents.keys():
-      entry = dirents[name]
-      self.youngest = max(entry.created_rev, self.youngest)
+    ra_callbacks = ra.svn_ra_callbacks_t()
+    ra_callbacks.auth_baton = ctx.auth_baton
+    self.ra_session = ra.svn_ra_open(self.rootpath, ra_callbacks, None,
+                                     ctx.config, pool)
+    self.youngest = ra.svn_ra_get_latest_revnum(self.ra_session, pool)
     if rev is not None:
       self.rev = rev
       if self.rev > self.youngest:
@@ -388,7 +396,6 @@ class SubversionRepository(vclib.Repository):
     else:
       self.rev = self.youngest
     self._dirent_cache = { }
-    self._dirent_cache[str(self.youngest)] = dirents
 
   def __del__(self):
     core.svn_pool_destroy(self.pool)
@@ -418,7 +425,8 @@ class SubversionRepository(vclib.Repository):
     tmp_file = tempfile.mktemp()
     stream = core.svn_stream_from_aprfile(tmp_file, self.pool)
     ### rev here should be the last history revision of the URL
-    client.svn_client_cat(stream, url, _rev2optrev(rev), self.ctx, self.pool)
+    client.svn_client_cat(core.Stream(stream), url,
+                          _rev2optrev(rev), self.ctx, self.pool)
     core.svn_stream_close(stream)
     return SelfCleanFP(tmp_file), rev
 
