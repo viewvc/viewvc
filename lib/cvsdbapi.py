@@ -92,7 +92,9 @@ def RLogDataToCommitList(repository, rlog_data):
     while temp[0] == os.sep:
         temp = temp[1:]
     directory, file = os.path.split(temp)
-    file = file[:-2]
+
+    if file[-2:] == ",v":
+        file = file[:-2]
 
     for rlog_entry in rlog_data.rlog_entry_list:
         commit = CreateCommit()
