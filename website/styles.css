@@ -41,7 +41,6 @@ a:active  { color: #0000ff; }
 
 /*** Log messages ***/
 .vc_log {
-  font-style: italic;
   /* unfortunately, white-space: pre-wrap isn't widely supported ... */
   white-space: -moz-pre-wrap; /* Mozilla based browsers */
   white-space: -pre-wrap;     /* Opera 4 - 6 */
