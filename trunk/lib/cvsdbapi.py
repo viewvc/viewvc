@@ -86,15 +86,9 @@ def RLogDataToCommitList(repository, rlog_data):
     commit_list = []
 
     ## the filename in rlog_data contains the entire path of the
-    ## repository, and the ,v at the end of the RCS file;
-    ## we strip those out here
+    ## repository; we strip that out here
     temp = rlog_data.filename[len(repository):]
-    while temp[0] == os.sep:
-        temp = temp[1:]
     directory, file = os.path.split(temp)
-
-    if file[-2:] == ",v":
-        file = file[:-2]
 
     for rlog_entry in rlog_data.rlog_entry_list:
         commit = CreateCommit()
