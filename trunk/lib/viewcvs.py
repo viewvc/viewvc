@@ -995,7 +995,7 @@ def process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags):
 def get_logs(full_name, files, view_tag):
 
   if len(files) == 0:
-    return { }, [ ]
+    return { }, { }
 
   fileinfo = { }
   alltags = {		# all the tags seen in the files of this dir
