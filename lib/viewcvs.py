@@ -572,7 +572,7 @@ _legal_params = {
   'file_match'    : _re_validate_alpha,
   'who'           : _validate_regex,
   'who_match'     : _re_validate_alpha,
-  'sortby'        : _re_validate_alpha,
+  'querysort'     : _re_validate_alpha,
   'date'          : _re_validate_alpha,
   'hours'         : _re_validate_number,
   'mindate'       : _re_validate_datetime,
@@ -2724,8 +2724,6 @@ def view_queryform(request):
   data = common_template_data(request)
 
   url, params = request.get_link(view_func=view_query, params={})
-  # sortby is handled in the form itself.
-  if params.has_key('sortby'): del params['sortby']
   data['query_action'] = urllib.quote(url, _URL_SAFE_CHARS)
   data['query_hidden_values'] = prepare_hidden_values(params)
 
@@ -2737,7 +2735,7 @@ def view_queryform(request):
   data['file_match'] = request.query_dict.get('file_match', 'exact')
   data['who'] = request.query_dict.get('who', '')
   data['who_match'] = request.query_dict.get('who_match', 'exact')
-  data['sortby'] = request.query_dict.get('sortby', 'date')
+  data['querysort'] = request.query_dict.get('querysort', 'date')
   data['date'] = request.query_dict.get('date', 'hours')
   data['hours'] = request.query_dict.get('hours', '2')
   data['mindate'] = request.query_dict.get('mindate', '')
@@ -2894,7 +2892,7 @@ def view_query(request):
   file_match = request.query_dict.get('file_match', 'exact')
   who = request.query_dict.get('who', '')
   who_match = request.query_dict.get('who_match', 'exact')
-  sortby = request.query_dict.get('sortby', 'date')
+  querysort = request.query_dict.get('querysort', 'date')
   date = request.query_dict.get('date', 'hours')
   hours = request.query_dict.get('hours', '2')
   mindate = request.query_dict.get('mindate', '')
@@ -2909,7 +2907,7 @@ def view_query(request):
   if not match_types.has_key(branch_match): branch_match = 'exact'
   if not match_types.has_key(file_match): file_match = 'exact'
   if not match_types.has_key(who_match): who_match = 'exact'
-  if not sort_types.has_key(sortby): sortby = 'date'
+  if not sort_types.has_key(querysort): querysort = 'date'
   if not date_types.has_key(date): date = 'hours'
   mindate = parse_date(mindate)
   maxdate = parse_date(maxdate)
@@ -2936,7 +2934,7 @@ def view_query(request):
     query.SetFile(file, file_match)
   if who:
     query.SetAuthor(who, who_match)
-  query.SetSortMethod(sortby)
+  query.SetSortMethod(querysort)
   if date == 'hours':
     query.SetFromDateHoursAgo(int(hours))
   elif date == 'day':
@@ -2985,8 +2983,9 @@ def view_query(request):
     commits.append(build_commit(request, current_desc, files))
 
   # only show the branch column if we are querying all branches
-  # or doing a non-exact branch match.
-  show_branch = ezt.boolean(branch == '' or branch_match != 'exact')
+  # or doing a non-exact branch match on a CVS repository.
+  show_branch = ezt.boolean(request.roottype == 'cvs' and
+                            (branch == '' or branch_match != 'exact'))
 
   # a link to modify query
   queryform_href = request.get_url(view_func=view_queryform,
@@ -3006,7 +3005,7 @@ def view_query(request):
     'plus_count': plus_count,
     'minus_count': minus_count,
     'show_branch': show_branch,
-    'sortby': sortby,
+    'querysort': querysort,
     'commits': commits,
     })
 
