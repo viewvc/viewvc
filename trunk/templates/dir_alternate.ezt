@@ -2,60 +2,43 @@
 
 <table width="100%" border=0 cellspacing=1 cellpadding=2>
 <tr>
-  [is sortby "rev"]
-    <th class="vc_header_sort">Rev.&nbsp;[is sortdir "up"]<a 
-         href="[sortdir_down_href]#dirlist"><img
-	 src="[docroot]/images/down.png"></a>[else]<a
-         href="[sortdir_up_href]#dirlist"><img
-	 src="[docroot]/images/up.png"></a>[end]</th>
-  [else]
-    <th class="vc_header"
-      ><a href="[sortby_rev_href]#dirlist">Rev.</a></th>
-  [end]
-  [is sortby "file"]
-    <th class="vc_header_sort"
-      [is cfg.options.use_cvsgraph "1"]colspan=2[end]
-      >File&nbsp;[is sortdir "up"]<a
-         href="[sortdir_down_href]#dirlist"><img
-	 src="[docroot]/images/down.png"></a>[else]<a
-         href="[sortdir_up_href]#dirlist"><img
-	 src="[docroot]/images/up.png"></a>[end]</th>
-  [else]
-    <th class="vc_header"
-      [is cfg.options.use_cvsgraph "1"]colspan=2[end]
-      ><a href="[sortby_file_href]#dirlist">File</a></th>
-  [end]
-  [is sortby "date"]
-    <th class="vc_header_sort">Age&nbsp;[is sortdir "up"]<a 
-         href="[sortdir_down_href]#dirlist"><img
-	 src="[docroot]/images/down.png"></a>[else]<a
-         href="[sortdir_up_href]#dirlist"><img
-	 src="[docroot]/images/up.png"></a>[end]</th>
-  [else]
-    <th class="vc_header"
-      ><a href="[sortby_date_href]#dirlist">Age</a></th>
-  [end]
-  [is sortby "author"]
-    <th class="vc_header_sort">Author&nbsp;[is sortdir "up"]<a 
-         href="[sortdir_down_href]#dirlist"><img
-	 src="[docroot]/images/down.png"></a>[else]<a
-         href="[sortdir_up_href]#dirlist"><img
-	 src="[docroot]/images/up.png"></a>[end]</th>
-  [else]
-    <th class="vc_header"
-      ><a href="[sortby_author_href]#dirlist">Author</a></th>
-  [end]
+  <th class="vc_header[is sortby "rev"]_sort[end]">
+    <a href="[sortby_rev_href]#dirlist">Rev.</a>
+    [is sortby "rev"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        src="[docroot]/images/[is sortdir "up"]down[else]up[end].png" />
+    [end]
+  </th>
+  <th class="vc_header[is sortby "file"]_sort[end]"
+    [is cfg.options.use_cvsgraph "1"]colspan=2[end]>
+    <a href="[sortby_file_href]#dirlist">File</a>
+    [is sortby "file"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        src="[docroot]/images/[is sortdir "up"]down[else]up[end].png" />
+    [end]
+  </th>
+  <th class="vc_header[is sortby "date"]_sort[end]">
+    <a href="[sortby_date_href]#dirlist">Age</a>
+    [is sortby "date"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        src="[docroot]/images/[is sortdir "up"]down[else]up[end].png" />
+    [end]
+  </th>
+  <th class="vc_header[is sortby "author"]_sort[end]">
+    <a href="[sortby_author_href]#dirlist">Author</a>
+    [is sortby "author"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        src="[docroot]/images/[is sortdir "up"]down[else]up[end].png" />
+    [end]
+  </th>
 [is cfg.options.show_logs "1"]
-  [is sortby "log"]
-    <th class="vc_header_sort">Last log entry&nbsp;[is sortdir "up"]<a 
-         href="[sortdir_down_href]#dirlist"><img
-	 src="[docroot]/images/down.png"></a>[else]<a
-         href="[sortdir_up_href]#dirlist"><img
-	 src="[docroot]/images/up.png"></a>[end]</th>
-  [else]
-    <th class="vc_header"
-      ><a href="[sortby_log_href]#dirlist">Last log entry</a></th>
-  [end]
+  <th class="vc_header[is sortby "log"]_sort[end]">
+    <a href="[sortby_log_href]#dirlist">Last log entry</a>
+    [is sortby "log"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        src="[docroot]/images/[is sortdir "up"]down[else]up[end].png" />
+    [end]
+  </th>
 [end]
 </tr>
 
