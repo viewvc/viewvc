@@ -1,11 +1,64 @@
 Version 1.0 (not yet released)
+
+  * add support for viewing Subversion repositories
+  * add support for running on MS Windows (2003-Feb-09)
+  * add support for caching by sending "Last-Modified", "Expires", 
+    "ETag", and "Cache-Control" headers (2004-Jun-03)
+  * add support for Mod_Python on Apache 2.x and ASP on IIS
   * Several changes to standalone.py:
     - -h commandline option to specify hostname for non local use.
     - -r commandline option may be repeated to use more than repository
       before actually installing ViewCVS.
     - New GUI field to test paging.
+  * add new, better-integrated query interface (2004-Jul-17)
+  * add new "use_localtime" option to display local times instead of
+    UTC times (2002-05-06)
+  * hide CVS "Attic" directories and add simple toggle for showing
+    dead files in directory listings (2004-Jul-31)
+  * show Unified, Context and Side-by-side diffs in HTML instead of
+    in bare text pages (2004-Jun-22)
+  * make View/Download links work the same for all file types
+    (2004-Jan-21)
+  * enable enscript highlighting for more file types
+  * add sorting arrows for directory views (2004-Jul-21)
+  * get rid of popup windows for checkout links (2004-Jan-21)
+  * add page numbers to page pick lists (2002-Feb-01)
+  * Improvements to templates
+    - increase coverage, use templates to produce HTML for diff pages,
+      markup pages, annotate pages, and error pages
+    - move more common page elements into includes
+    - clean up HTML output using CSS for formatting, entities to
+      escape special characters, and content-oriented tags like
+      optgroup, thead, and tbody. Also fix tag nesting.
+  * add new "root_parents" option to make it possible to add and
+    remove repositories without modifying the ViewCVS configuration
+    (2004-Jul-16)
+  * add new [define] EZT directive for assigning variables within
+    templates (2004-Apr-21)
+  * add stricter parameter validation to lower likelihood of CSS
+    vulnerabilities (2002-May-24)
+  * add support for cvsweb's "mime_type=text/x-cvsweb-markup" URLs
+    (2002-Oct-10)
+  * fix incompatibility with enscript 1.6.3 (2002-Feb-05)
+  * fix bug in parsing FreeBSD rlog output (2003-Jul-24)
+  * show diff error when comparing two binary files (2002-Jan-23)
+  * make regular expression search skip binary files (2002-Jan-17)
+  * make regular expression search skip nonversioned files in CVS
+    directories instead of choking on them (2002-Sep-27)
+  * fix tarball generator so it doesn't include forbidden modules
+    (2002-Feb-22)
+  * fix sorting bug in directory view (2002-Apr-18)
+  * fix "Accept-Language" handling for Netscape 4.x browsers
+    (2002-May-23)
+  * fix file descriptor leak in standalone server (2004-Jul-17)
+  * clean up zombie processes from running enscript (2002-Jun-15)
+  * fix mysql "Too many connections" error in cvsdbadmin (2003-Jul-24)
+  * get rid of mxDateTime dependency for query database (2003-Feb-09)
+  * store query database times in UTC instead of local time
+    (2003-Feb-09)
+  * fix daylight saving time bugs in various parts of the code
 
-Version 0.9.2 (released 15-Jan-2001)
+Version 0.9.2 (released 15-Jan-2002)
 
   * fix redirects to Attic for diffs
   * fix diffs that have no changes (causing an infinite loop)
