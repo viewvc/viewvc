@@ -977,14 +977,12 @@ def view_markup(request):
 
 
   if cfg.options.show_log_in_markup:
-    if request.roottype == 'cvs':
-      revs, taginfo = read_log(request.repos, request.path_parts, revision, None)
+    options = {}
+    revs = request.repos.filelog(request.path_parts, revision, options)
+    entry = revs[-1]
 
-      entry = revs[-1]
-      branch = entry.branch_number
-  
-      data.update({
-        'roottype' : 'cvs',
+    data.update({
+        'roottype' : request.roottype,
         'date_str' : make_time_string(entry.date),
         'ago' : html_time(request, entry.date, 1),
         'author' : entry.author,
@@ -993,44 +991,25 @@ def view_markup(request):
         'branch_points' : None,
         'changed' : entry.changed,
         'log' : htmlify(entry.log),
-        'size' : None,
         'state' : entry.state,
+        'vendor_branch' : None,
+        'prev' : None,
+        })
+
+    if request.roottype == 'cvs':
+      branch = entry.branch_number
+      prev = entry.prev or entry.parent
+      data.update({
+        'prev' : prev and prev.string,
         'vendor_branch' : ezt.boolean(branch and branch[2] % 2 == 1),
         'branches' : string.join(map(lambda x: x.name, entry.branches), ', '),
         'tags' : string.join(map(lambda x: x.name, entry.tags), ', '),
         'branch_points': string.join(map(lambda x: x.name,
                                          entry.branch_points), ', ')
         })
-  
-      prev = entry.prev or entry.parent
-      data['prev'] = prev and prev.string
     elif request.roottype == 'svn':
-      alltags, logs = vclib.svn.fetch_log(request.repos, where)
-      this_rev = int(revision)
-      entry = logs[this_rev]
+      data['size'] = entry.size
 
-      data.update({
-        'roottype' : 'svn',
-        'date_str' : make_time_string(entry.date),
-        'ago' : html_time(request, entry.date, 1),
-        'author' : entry.author,
-        'branches' : None,
-        'tags' : None,
-        'branch_points' : None,
-        'changed' : entry.changed,
-        'log' : htmlify(entry.log),
-        'state' : entry.state,
-        'size' : entry.size,
-        'vendor_branch' : None,
-        })
-
-      revs = logs.keys()
-      revs.sort()
-      rev_idx = revs.index(this_rev)
-      if rev_idx > 0:
-        data['prev'] = str(revs[rev_idx - 1])
-      else:
-        data['prev'] = None
   else:
     data['tag'] = query_dict.get('only_with_tag')
 
@@ -1115,6 +1094,10 @@ def sort_file_data(file_data, sortdir, sortby):
   if sortdir == "down":
     file_data.reverse()
 
+def icmp(x, y):
+  """case insensitive comparison"""
+  return cmp(string.lower(x), string.lower(y))
+
 def view_directory(request):
   # if we have a directory and the request didn't end in "/", then redirect
   # so that it does.
@@ -1122,16 +1105,17 @@ def view_directory(request):
     request.server.redirect(request.get_url())
 
   # List current directory
+  options = {}
   if request.roottype == 'cvs':
     view_tag = request.query_dict.get('only_with_tag')
     hideattic = int(request.query_dict.get('hideattic', 
                                            cfg.options.hide_attic))
-    file_data = request.repos.listdir(request.path_parts,
-                                      not hideattic or view_tag)
-    dir_params = {}
-  else:
-    file_data = request.repos.listdir(request.path_parts)
-    dir_params = {'rev': request.query_dict.get('rev')}    
+    options["cvs_list_attic"] = not hideattic or view_tag
+    options["cvs_subdirs"] = (cfg.options.show_subdir_lastmod and
+                              cfg.options.show_logs)
+    options["cvs_dir_tag"] = view_tag
+
+  file_data = request.repos.listdir(request.path_parts, options)
 
   # Filter file list if a regex is specified
   search_re = request.query_dict.get('search', '')
@@ -1139,13 +1123,8 @@ def view_directory(request):
     file_data = search_files(request.repos, request.path_parts,
                              file_data, search_re)
 
-  # Retrieve log messages, authors, revision numbers, timestamps                     
-  if request.roottype == 'cvs':
-    get_dirs = cfg.options.show_subdir_lastmod and cfg.options.show_logs
-    bincvs.get_logs(request.repos, request.path_parts,
-                    file_data, view_tag, get_dirs)
-  else:
-    vclib.svn.get_logs(request.repos, request.where, file_data)
+  # Retrieve log messages, authors, revision numbers, timestamps
+  request.repos.dirlogs(request.path_parts, file_data, options)
 
   # sort with directories first, and using the "sortby" criteria
   sortby = request.query_dict.get('sortby', cfg.options.sort_by) or 'file'
@@ -1159,9 +1138,13 @@ def view_directory(request):
   unreadable = 0
   have_logs = 0
 
-  # current directory name and name plus trailing slash
+  # set some values to be used inside loop
   where = request.where
   where_prefix = where and where + '/'
+  if request.roottype == 'svn':
+    dir_params = {'rev': request.query_dict.get('rev')}    
+  else:
+    dir_params = {}
 
   ### display a row for ".." ?
   for file in file_data:
@@ -1292,8 +1275,16 @@ def view_directory(request):
 
   # set cvs-specific fields
   if request.roottype == 'cvs':
-    has_tags = (view_tag or request.repos.branch_tags 
-                or request.repos.plain_tags)
+    plain_tags = options['cvs_tags']
+    plain_tags.sort(icmp)
+    plain_tags.reverse()
+
+    branch_tags = options['cvs_branches']
+    branch_tags.sort(icmp)
+    branch_tags.reverse()
+
+    has_tags = view_tag or branch_tags or plain_tags
+
     data.update({
       'view_tag' : view_tag,    
       'attic_showing' : ezt.boolean(not hideattic),
@@ -1302,8 +1293,8 @@ def view_directory(request):
       'has_tags' : ezt.boolean(has_tags),
       ### one day, if EZT has "or" capability, we can lose this
       'selection_form' : ezt.boolean(has_tags or cfg.options.use_re_search),
-      'branch_tags': request.repos.branch_tags,
-      'plain_tags': request.repos.plain_tags,
+      'branch_tags': branch_tags,
+      'plain_tags': plain_tags,
     })
   else:
     data.update({
@@ -1323,7 +1314,7 @@ def view_directory(request):
       roots = [ ]
     else:
       roots = allroots.keys()
-      roots.sort(lambda n1, n2: cmp(string.lower(n1), string.lower(n2)))
+      roots.sort(icmp)
     data['roots'] = roots
 
   if cfg.options.use_pagesize:
@@ -1394,19 +1385,6 @@ def logsort_rev_cmp(rev1, rev2):
   # sort highest revision first
   return -cmp(rev1.number, rev2.number)
 
-def read_log(repos, path_parts, filter, logsort):
-  show_revs, taginfo = bincvs.file_log(repos, path_parts, filter)
-
-  if logsort == 'date':
-    show_revs.sort(logsort_date_cmp)
-  elif logsort == 'rev':
-    show_revs.sort(logsort_rev_cmp)
-  else:
-    # no sorting
-    pass
-
-  return show_revs, taginfo
-
 def view_log(request):
   diff_format = request.query_dict.get('diff_format', cfg.options.diff_format)
   logsort = request.query_dict.get('logsort', cfg.options.log_sort)
@@ -1414,30 +1392,22 @@ def view_log(request):
   hide_attic = int(request.query_dict.get('hideattic',cfg.options.hide_attic))
 
   if request.roottype == 'cvs':
-    show_revs, taginfo = read_log(request.repos, request.path_parts, view_tag,
-                                  logsort)
     up_where = get_up_path(request, request.where, hide_attic)
     filename = os.path.basename(request.where)
-
-  elif request.roottype == 'svn':
-    alltags, logs = vclib.svn.fetch_log(request.repos, request.where)
+    rev = view_tag
+  else:
     up_where, filename = os.path.split(request.where)
+    rev = None
+  options = {}
 
-    show_revs = []
-    prev = None
-    numbers = logs.keys()
-    numbers.sort()
-    numbers.reverse()
-
-    for number in numbers:
-      rev = logs[number]
-      rev.string = str(number)
-      rev.prev = prev
-      show_revs.append(rev)
-      prev = rev
-
-    view_tag = None
-    taginfo = {}
+  show_revs = request.repos.filelog(request.path_parts, rev, options)
+  if logsort == 'date':
+    show_revs.sort(logsort_date_cmp)
+  elif logsort == 'rev':
+    show_revs.sort(logsort_rev_cmp)
+  else:
+    # no sorting
+    pass
 
   entries = [ ]
   name_printed = { }
@@ -1580,6 +1550,7 @@ def view_log(request):
   if request.roottype == 'cvs' and cfg.options.use_cvsgraph:
     data['graph_href'] = request.get_url(view_func=view_cvsgraph, params={})
 
+  taginfo = options.get('cvs_tags', {})
   main = taginfo.get('MAIN')
 
   if main:
@@ -2240,7 +2211,8 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0, uid=0, gid=0,
 
   out.write(block)
 
-def generate_tarball(out, request, tar_top, rep_top, reldir, tag, stack=[]):
+def generate_tarball(out, request, tar_top, rep_top,
+                     reldir, options, stack=[]):
   cvs = request.roottype == 'cvs'
   if cvs and (rep_top == '' and 0 < len(reldir) and
       ((reldir[0] == 'CVSROOT' and cfg.options.hide_cvsroot)
@@ -2250,10 +2222,7 @@ def generate_tarball(out, request, tar_top, rep_top, reldir, tag, stack=[]):
   rep_path = rep_top + reldir
   tar_dir = string.join(tar_top + reldir, '/') + '/'
 
-  if cvs:
-    entries = request.repos.listdir(rep_path, tag)
-  else:
-    entries = request.repos.listdir(rep_path)
+  entries = request.repos.listdir(rep_path, options)
 
   subdirs = [ ]
   for file in entries:
@@ -2262,11 +2231,7 @@ def generate_tarball(out, request, tar_top, rep_top, reldir, tag, stack=[]):
 
   stack.append(tar_dir)
 
-  if cvs:
-    bincvs.get_logs(request.repos, rep_path, entries, tag)
-  else:
-    rep_dir = string.join(rep_path, '/')
-    vclib.svn.get_logs(request.repos, rep_dir, entries)
+  request.repos.dirlogs(rep_path, entries, options)
 
   entries.sort(lambda a, b: cmp(a.name, b.name))
 
@@ -2282,11 +2247,12 @@ def generate_tarball(out, request, tar_top, rep_top, reldir, tag, stack=[]):
     if cvs:
       info = os.stat(file.path)
       mode = (info[stat.ST_MODE] & 0555) | 0200
-      rev_flag = '-p' + file.rev
-      fp = request.repos.rcs_popen('co', (rev_flag, file.path), 'rb', 0)
+      rev = file.rev
     else:
       mode = 0644
-      fp = request.repos.openfile(rep_top + reldir + [file.name])[0]
+      rev = None
+
+    fp = request.repos.openfile(rep_top + reldir + [file.name], rev)[0]
 
     contents = fp.read()
     status = fp.close()
@@ -2309,9 +2275,12 @@ def download_tarball(request):
   if not cfg.options.allow_tar:
     raise "tarball no allows"
 
-  query_dict = request.query_dict
   rep_top = tar_top = request.path_parts
-  tag = query_dict.get('only_with_tag')
+  options = {}
+  if request.roottype == 'cvs':
+    tag = request.query_dict.get('only_with_tag')
+    options['cvs_list_attic'] = tag and 1 or 0
+    options['cvs_dir_tag'] = tag
 
   ### look for GZIP binary
 
@@ -2319,7 +2288,7 @@ def download_tarball(request):
   sys.stdout.flush()
   fp = popen.pipe_cmds([('gzip', '-c', '-n')])
 
-  generate_tarball(fp, request, tar_top, rep_top, [], tag)
+  generate_tarball(fp, request, tar_top, rep_top, [], options)
 
   fp.write('\0' * 1024)
   fp.close()
