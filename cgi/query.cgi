@@ -42,7 +42,7 @@ _viewcvs_root = string.strip(open("/etc/viewcvs/root", "r").read())
 sys.path.append(os.path.join(_viewcvs_root, "lib"))
 ##
 
-import cgi, cvsdbapi
+import cgi, time, cvsdbapi
 
 ## tuple of alternating row colors
 Colors = ("#ccccee", "#ffffff")
@@ -104,11 +104,11 @@ def FormToCheckinQuery(form):
 
 
 def PrintCommitRow(commit, color):
-    ctDate = commit.GetDate()
-    if not ctDate:
-        cDate = "&nbsp";
+    cTime = commit.GetTime()
+    if not cTime:
+        cTime = "&nbsp";
     else:
-        cDate = '%d/%d/%d %d:%d:%d' % ctDate
+        cTime = time.strftime("%y/%m/%d %I:%M %p", time.localtime(cTime))
     
     cAuthor = commit.GetAuthor()
     if not cAuthor:
@@ -142,7 +142,7 @@ def PrintCommitRow(commit, color):
            <td align=left valign=top>%s</td>\
            <td aligh=left valign=top>%s</td>\
            <td align=left valign=top>%s</td></tr>' % (
-        color, cDate, cAuthor, cFile, cRevision, cBranch,
+        color, cTime, cAuthor, cFile, cRevision, cBranch,
         cPlusMinus, cDescription)
 
 

@@ -98,7 +98,7 @@ def RLogDataToCommitList(repository, rlog_data):
         commit.SetRevision(rlog_entry.revision)
         commit.SetAuthor(rlog_entry.author)
         commit.SetDescription(rlog_entry.description)
-        commit.SetDate(rlog_entry.date)
+        commit.SetTime(rlog_entry.time)
         commit.SetPlusCount(rlog_entry.pluscount)
         commit.SetMinusCount(rlog_entry.minuscount)
         commit.SetBranch(rlog_data.LookupBranch(rlog_entry))
