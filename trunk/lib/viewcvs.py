@@ -1520,7 +1520,7 @@ def view_directory(request):
     data['search_tag_hidden_values'] = prepare_hidden_values(params)
 
   if cfg.options.use_pagesize:
-    data['dir_pagestart'] = int(query_dict.get('dir_pagestart',0))
+    data['dir_pagestart'] = int(request.query_dict.get('dir_pagestart',0))
     data['rows'] = paging(data, 'rows', data['dir_pagestart'], 'name')
 
   request.server.header()
