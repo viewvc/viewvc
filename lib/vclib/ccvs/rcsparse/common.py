@@ -155,6 +155,9 @@ class _Parser:
       timestamp = compat.timegm(tuple(date_fields))
 
       # Parse author
+      ### NOTE: authors containing whitespace are violations of the
+      ### RCS specification.  We are making an allowance here because
+      ### CVSNT is known to produce these sorts of authors.
       self.ts.match('author')
       author = ''
       while 1:
