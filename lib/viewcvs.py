@@ -57,6 +57,7 @@ import config
 import popen
 import ezt
 import debug
+import accept
 
 #########################################################################
 
@@ -200,6 +201,14 @@ class Request:
 
     self.full_name = self.cvsroot + '/' + where
 
+    # process the Accept-Language: header
+    hal = os.environ.get('HTTP_ACCEPT_LANGUAGE')
+    self.lang_selector = accept.language(hal)
+    self.language = self.lang_selector.select_from(cfg.general.languages)
+
+    # load the key/value files, given the selected language
+    self.kv = cfg.load_kv_files(self.language)
+
   def setup_mime_type_info(self):
     if cfg.general.mime_types_file:
       mimetypes.init([cfg.general.mime_types_file])
@@ -243,7 +252,10 @@ def error(msg, status='500 Internal Server Error'):
   print msg
   sys.exit(0)
 
-def generate_page(tname, data):
+def generate_page(request, tname, data):
+  # allow per-language template selection
+  tname = string.replace(tname, '%lang%', request.language)
+
   debug.t_start()
   template = ezt.Template(os.path.join(g_install_dir, tname))
   debug.t_end('ezt-parse')
@@ -259,7 +271,7 @@ def http_header(content_type='text/html'):
   print
   _header_sent = 1
 
-def html_footer():
+def html_footer(request):
   ### would be nice to have a "standard" set of data available to all
   ### templates. should move that to the request ob, probably
   data = {
@@ -267,8 +279,11 @@ def html_footer():
     'vsn' : __version__,
     }
 
+  if request:
+    data['kv'] = request.kv
+
   # generate the footer
-  generate_page(cfg.templates.footer, data)
+  generate_page(request, cfg.templates.footer, data)
 
 def sticky_query(dict):
   sticky_dict = { }
@@ -555,6 +570,7 @@ def markup_stream(request, fp, revision, mime_type):
     'request' : request,
     'cfg' : cfg,
     'vsn' : __version__,
+    'kv' : request.kv,
     'nav_path' : clickable_path(request, where, 1, 1, 0),
     'href' : download_url(request, file_url, revision, None),
     'text_href' : download_url(request, file_url, revision, 'text/plain'),
@@ -607,7 +623,7 @@ def markup_stream(request, fp, revision, mime_type):
     data['tag'] = query_dict.get('only_with_tag')
 
   http_header()
-  generate_page(cfg.templates.markup, data)
+  generate_page(request, cfg.templates.markup, data)
 
   if mime_type[:6] == 'image/':
     url = download_url(request, file_url, revision, mime_type)
@@ -632,7 +648,7 @@ def markup_stream(request, fp, revision, mime_type):
   status = fp.close()
   if status:
     raise 'pipe error status: %d' % status
-  html_footer()
+  html_footer(request)
 
 def get_file_data(full_name):
   """Return a sequence of tuples containing various data about the files.
@@ -1117,6 +1133,7 @@ def view_directory(request):
     'where' : where,
     'request' : request,
     'cfg' : cfg,
+    'kv' : request.kv,
     'current_root' : request.cvsrep,
     'view_tag' : view_tag,
     'sortby' : sortby,
@@ -1418,7 +1435,7 @@ def view_directory(request):
     data['tarball_href'] = url
 
   http_header()
-  generate_page(cfg.templates.directory, data)
+  generate_page(request, cfg.templates.directory, data)
 
 def fetch_log(full_name, which_rev=None):
   if which_rev:
@@ -1745,8 +1762,12 @@ def view_log(request):
     'diff_format' : query_dict['diff_format'],
     'logsort' : query_dict['logsort'],
 
+    ### should toss 'address' and just stick to cfg... in the template
     'address' : cfg.general.address,
+
+    'cfg' : cfg,
     'vsn' : __version__,
+    'kv' : request.kv,
     }
 
   if cfg.options.use_cvsgraph:
@@ -1826,7 +1847,7 @@ def view_log(request):
   data['branch_names'] = branch_names
 
   http_header()
-  generate_page(cfg.templates.log, data)
+  generate_page(request, cfg.templates.log, data)
 
 ### suck up other warnings in _re_co_warning?
 _re_co_filename = re.compile(r'^(.*),v\s+-->\s+standard output\s*\n$')
@@ -1930,17 +1951,18 @@ def view_annotate(request):
   data.update({
     'cfg' : cfg,
     'vsn' : __version__,
+    'kv' : request.kv,
     })
 
   http_header()
-  generate_page(cfg.templates.annotate, data)
+  generate_page(request, cfg.templates.annotate, data)
 
   ### be nice to hook this into the template...
   import blame
   blame.make_html(request.cvsroot, request.where + ',v', rev,
                   sticky_query(request.query_dict))
 
-  html_footer()
+  html_footer(request)
 
 
 def cvsgraph_image(cfg, request):
@@ -1984,10 +2006,11 @@ def view_cvsgraph(cfg, request):
     'imagemap' : fp,
     'cfg' : cfg,
     'vsn' : __version__,
+    'kv' : request.kv,
     })
 
   http_header()
-  generate_page(cfg.templates.graph, data)
+  generate_page(request, cfg.templates.graph, data)
 
 def search_files(request, search_re):
   # Pass in Request object and the search regular expression. We check out
@@ -2135,6 +2158,7 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
   data.update({
     'cfg' : cfg,
     'vsn' : __version__,
+    'kv' : request.kv,
     'request' : request,
     'where' : where_nd,
     'rev1' : rev1,
@@ -2148,7 +2172,7 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
     'hidden_values' : hidden_values,
     })
 
-  generate_page(cfg.templates.diff, data)
+  generate_page(request, cfg.templates.diff, data)
 
 def spaced_html_text(text):
   text = string.expandtabs(string.rstrip(text))
@@ -2634,7 +2658,7 @@ def run_cgi():
     print '<pre>'
     print cgi.escape(string.join(lines, ''))
     print '</pre>'
-    html_footer()
+    html_footer(None)
 
 
 class _item:

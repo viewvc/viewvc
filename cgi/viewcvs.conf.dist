@@ -136,12 +136,88 @@ forbidden =
 #   forbidden = !xml, x*, !*
 #
 
+#
+# This option provides a mechanism for custom key/value pairs to be
+# available to templates. These are stored in key/value files (KV files).
+#
+# Pathnames to the KV files are listed here, specified as absolute paths
+# or relative to this configuration file. The kV files follow the same
+# format as this configuration file. It may have multiple, user-defined
+# sections, and user-defined options in those sections. These are all
+# placed into a structure available to the templates as:
+#
+#    kv.SECTION.OPTION
+#
+# Note that an option name can be dotted. For example:
+#
+#    [my_images]
+#    logos.small = /images/small-logo.png
+#    logos.big = /images/big-logo.png
+#
+# Templates can use these with a directive like: [kv.my_images.logos.small]
+#
+# Note that sections across multiple files will be merged. If two files
+# have a [my_images] section, then the options will be merged together.
+# If two files have the same option name in a section, then one will
+# overwrite the other (it is unspecified regarding which "wins").
+#
+# To further categorize the KV files, and how the values are provided to
+# the templates, a KV file name may be annotated with an additional level
+# of dotted naming. For example:
+#
+#    kv_files = [asf]kv/images.conf
+#
+# Assuming the same section as above, the template would refer to an image
+# using [kv.asf.my_images.logos.small]
+#
+# Lastly, it is possible to use %lang% in the filenames to specify a
+# substitution of the selected language-tag.
+#
+kv_files =
+
+# example:
+# kv_files = kv/file1.conf, kv/file2.conf, [i18n]kv/%lang%_data.conf
+#
+
+#
+# The languages available to ViewCVS. There are several i18n mechanisms
+# available:
+#
+#   1) using key/value extension system and reading KV files based on
+#      the selected language
+#   2) GNU gettext to substitute text in the templates
+#   3) using different templates, based on the selected language
+#
+# ### NOTE: at the moment, the GNU gettext style is not implemented
+#
+# This option is a comma-separated list of language-tag values. The first
+# language-tag listed is the default language, and will be used if an
+# Accept-Language header is not present in the request, or none of the
+# user's requested languages are available. If there are ties on the
+# selection of a language, then the first to appear in the list is chosen.
+#
+languages = en-us
+
+# other examples:
+#
+# languages = en-us, de
+# languages = en-us, en-gb, de
+# languages = de, fr, en-us
+#
+
 #---------------------------------------------------------------------------
 [templates]
 
 #
 # The templates are specified relative to the configuration file. Absolute
 # paths may be used, if you want to keep these elsewhere.
+#
+# If %lang% occurs in the pathname, then the selected language will be
+# substituted.
+#
+# Note: the selected language is defined by the "languages" item in the
+#       [general] section, and based on the request's Accept-Language
+#       header.
 #
 
 directory = templates/directory.ezt

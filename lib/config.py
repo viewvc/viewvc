@@ -42,7 +42,8 @@ import fnmatch
 
 class Config:
   _sections = ('general', 'options', 'cvsdb', 'templates')
-  _force_multi_value = ('cvs_roots', 'forbidden', 'disable_enscript_lang')
+  _force_multi_value = ('cvs_roots', 'forbidden', 'disable_enscript_lang',
+                        'languages', 'kv_files')
 
   def __init__(self):
     for section in self._sections:
@@ -51,6 +52,8 @@ class Config:
   def load_config(self, fname, vhost=None):
     this_dir = os.path.dirname(sys.argv[0])
     pathname = os.path.join(this_dir, fname)
+    self.base = os.path.dirname(pathname)
+
     parser = ConfigParser.ConfigParser()
     parser.read(pathname)
 
@@ -60,6 +63,35 @@ class Config:
 
     if vhost and parser.has_section('vhosts'):
       self._process_vhost(parser, vhost)
+
+  def load_kv_files(self, language):
+    kv = _sub_config()
+
+    for fname in self.general.kv_files:
+      if fname[0] == '[':
+        idx = string.index(fname, ']')
+        parts = string.split(fname[1:idx], '.')
+        fname = string.strip(fname[idx+1:])
+      else:
+        parts = [ ]
+      fname = string.replace(fname, '%lang%', language)
+
+      parser = ConfigParser.ConfigParser()
+      parser.read(os.path.join(self.base, fname))
+      for section in parser.sections():
+        for option in parser.options(section):
+          full_name = parts + [section]
+          ob = kv
+          for name in full_name:
+            try:
+              ob = getattr(ob, name)
+            except AttributeError:
+              c = _sub_config()
+              setattr(ob, name, c)
+              ob = c
+          setattr(ob, option, parser.get(section, option))
+
+    return kv
 
   def _process_section(self, parser, section, subcfg_name):
     sc = getattr(self, subcfg_name)
@@ -119,6 +151,8 @@ class Config:
     self.general.mime_types_file = ''
     self.general.address = '<a href="mailto:user@insert.your.domain.here">No CVS admin address has been configured</a>'
     self.general.forbidden = ()
+    self.general.kv_files = [ ]
+    self.general.languages = ['en-us']
 
     self.templates.directory = 'templates/directory.ezt'
     self.templates.log = 'templates/log.ezt'
