@@ -314,5 +314,5 @@ Overview of remaining steps:
    %s.
 """ % (
     os.path.join(ROOT_DIR, 'viewcvs.conf'),
-    os.path.join(ROOT_DIR, 'cgi', 'viewcvs.cgi'),
+    os.path.join(ROOT_DIR, 'www', 'cgi', 'viewcvs.cgi'),
     os.path.join(ROOT_DIR, 'standalone.py'))
