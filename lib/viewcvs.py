@@ -124,9 +124,9 @@ class Request:
     # exist at the front or end of the path.
     parts = filter(None, string.split(where, '/'))
 
+    # does it have a magic prefix?
     self.has_checkout_magic = 0
     self.has_docroot_magic = 0
-    # does it have a magic prefix?
     if parts:
       if parts[0] in (checkout_magic_path, oldstyle_checkout_magic_path):
         self.has_checkout_magic = 1
@@ -135,17 +135,32 @@ class Request:
         self.has_docroot_magic = 1
         del parts[0]
 
-    # remember the parts of the path
+    # see if we are treating the first path component (after any
+    # magic) as the repository root.  if there are parts, and the
+    # first component is a named root, use it as such.  else, we'll be
+    # falling back to the default root a little later.
+    root_name = None
+    self.embedded_root = None
+    if cfg.options.root_as_url_component \
+       and parts \
+       and list_roots(cfg).has_key(parts[0]):
+      root_name = parts.pop(0)
+      self.embedded_root = root_name
+
+    # remember the parts of the path.  'path_parts' are used in
+    # conjunction with the vclib interface to represent a path in a
+    # root.
     self.path_parts = parts[:]
 
-    # put it back together
+    # put the path parts back together.  'where' refers always to the
+    # actual path in the chosen root.
     where = string.join(parts, '/')
 
-    script_name = os.environ['SCRIPT_NAME']     ### clean this up?
+    url = script_name = os.environ['SCRIPT_NAME']     ### clean this up?
+    if root_name:
+      url = url + '/' + urllib.quote(root_name)
     if where:
-      url = script_name + '/' + urllib.quote(where)
-    else:
-      url = script_name
+      url = url + '/' + urllib.quote(where)
 
     self.where = where
     self.script_name = script_name
@@ -157,18 +172,15 @@ class Request:
 
     self.browser = os.environ.get('HTTP_USER_AGENT', 'unknown')
 
-    # in lynx, it it very annoying to have two links
-    # per file, so disable the link at the icon
-    # in this case:
+    # in lynx, it it very annoying to have two links per file, so
+    # disable the link at the icon in this case:
     self.no_file_links = string.find(self.browser, 'Lynx') != -1
 
-    # newer browsers accept gzip content encoding
-    # and state this in a header
-    # (netscape did always but didn't state it)
-    # It has been reported that these
-    #  braindamaged MS-Internet Explorers claim that they
-    # accept gzip .. but don't in fact and
-    # display garbage then :-/
+    # newer browsers accept gzip content encoding and state this in a
+    # header (netscape did always but didn't state it) It has been
+    # reported that these braindamaged MS-Internet Explorers claim
+    # that they accept gzip .. but don't in fact and display garbage
+    # then :-/
     self.may_compress = (
       ( string.find(os.environ.get('HTTP_ACCEPT_ENCODING', ''), 'gzip') != -1
         or string.find(self.browser, 'Mozilla/3') != -1)
@@ -201,29 +213,46 @@ class Request:
     self.query_dict = query_dict
 
     # set up the repository to use
-    name = query_dict.get('root', cfg.general.default_root)
-    if cfg.general.cvs_roots.has_key(name):
-      rootpath = cfg.general.cvs_roots[name]
+    name = query_dict.get('root', None)
+    if cfg.options.root_as_url_component and name:
+      # in root_as_url_component mode, if we see a root in the query
+      # data, we'll redirect to the new url schema.  it may fail, but
+      # at least we tried.
+      del(query_dict['root'])
+      query = compat.urlencode(query_dict)
+      url = script_name + '/' + urllib.quote(name) + '/' + urllib.quote(where)
+      redirect(url + '?' + query)
+    elif not root_name:
+      if name:
+        root_name = name
+      else:
+        root_name = cfg.general.default_root
+
+    # get a handle on a repository-representing object. 
+    if cfg.general.cvs_roots.has_key(root_name):
+      rootpath = cfg.general.cvs_roots[root_name]
       try:
-        self.repos = bincvs.BinCVSRepository(name, rootpath)
+        self.repos = bincvs.BinCVSRepository(root_name, rootpath)
         self.roottype = 'cvs'
       except vclib.ReposNotFound:
         error('%s not found!\nThe wrong path for this repository was '
               'configured, or the server on which the CVS tree lives may be '
-              'down. Please try again in a few minutes.' % cgi.escape(name))
-    elif cfg.general.svn_roots.has_key(name):
-      rootpath = cfg.general.svn_roots[name]
+              'down. Please try again in a few minutes.'
+              % cgi.escape(root_name))
+    elif cfg.general.svn_roots.has_key(root_name):
+      rootpath = cfg.general.svn_roots[root_name]
       try:
         import vclib.svn
         rev = None
         if query_dict.has_key('rev') and query_dict['rev'] != 'HEAD':
           rev = int(query_dict['rev'])
-        self.repos = vclib.svn.SubversionRepository(name, rootpath, rev)
+        self.repos = vclib.svn.SubversionRepository(root_name, rootpath, rev)
         self.roottype = 'svn'
       except vclib.ReposNotFound:
         error('%s not found!\nThe wrong path for this repository was '
               'configured, or the server on which the CVS tree lives may be '
-              'down. Please try again in a few minutes.' % cgi.escape(name))
+              'down. Please try again in a few minutes.'
+              % cgi.escape(root_name))
     else:
       # if the query had 'root' in it, we would have caught this error
       # during validation.  so, we know this failed on the default root.
@@ -231,8 +260,9 @@ class Request:
       error("The settings of 'cvs_roots' and 'default_root' are misconfigured "
             "in the viewcvs.conf file. "
             "The default root, '%s', is not present in cvs_roots."
-            % cgi.escape(name))
+            % cgi.escape(root_name))
 
+    self.root_name = root_name
     self.full_name = rootpath + '/' + where
 
     # process the Accept-Language: header
@@ -398,8 +428,11 @@ def toggle_query(query_dict, which, value=None):
   return ''
 
 def clickable_path(request, path, leaf_is_link, leaf_is_file, drop_leaf):
+  script_name = request.script_name
+  if request.embedded_root:
+    script_name = script_name + '/' + request.embedded_root
   s = '<a href="%s/%s#dirlist">[%s]</a>' % \
-      (request.script_name, request.qmark_query, request.repos.name)
+      (script_name, request.qmark_query, request.repos.name)
   parts = filter(None, string.split(path, '/'))
   if drop_leaf:
     del parts[-1]
@@ -415,7 +448,7 @@ def clickable_path(request, path, leaf_is_link, leaf_is_file, drop_leaf):
       else:
         slash = '/'
       s = s + ' / <a href="%s%s%s%s#dirlist">%s</a>' % \
-          (request.script_name, urllib.quote(where), slash,
+          (script_name, urllib.quote(where), slash,
            request.qmark_query, parts[i])
     else:
       s = s + ' / ' + parts[i]
@@ -452,8 +485,11 @@ def format_log(log):
 def download_url(request, file_url, revision, mime_type):
   if cfg.options.checkout_magic \
      and mime_type != viewcvs_mime_type and mime_type != alt_mime_type:
-    file_url = '%s/%s/%s/%s' % \
-               (request.script_name, checkout_magic_path,
+    embroot = ""
+    if request.embedded_root:
+      embroot = request.embedded_root + '/'
+    file_url = '%s/%s/%s%s/%s' % \
+               (request.script_name, checkout_magic_path, embroot,
                 urllib.quote(os.path.dirname(request.where)), file_url)
 
   file_url = file_url + '?rev=' + revision + request.amp_query
@@ -1112,9 +1148,7 @@ def view_directory_cvs(request):
     data['attic_showing'] = None
 
   # add in the roots for the selection
-  allroots = { }
-  allroots.update(cfg.general.cvs_roots)
-  allroots.update(cfg.general.svn_roots)
+  allroots = list_roots(cfg)
   if len(allroots) < 2:
     roots = [ ]
   else:
@@ -1122,11 +1156,10 @@ def view_directory_cvs(request):
     roots.sort(lambda n1, n2: cmp(string.lower(n1), string.lower(n2)))
   data['roots'] = roots
 
-  if where:
-    ### in the future, it might be nice to break this path up into
-    ### a list of elements, allowing the template to display it in
-    ### a variety of schemes.
-    data['nav_path'] = clickable_path(request, where, 0, 0, 0)
+  ### in the future, it might be nice to break this path up into
+  ### a list of elements, allowing the template to display it in
+  ### a variety of schemes.
+  data['nav_path'] = clickable_path(request, where, 0, 0, 0)
 
   # fileinfo will be len==0 if we only have dirs and !show_subdir_lastmod.
   # in that case, we don't need the extra columns
@@ -1366,9 +1399,7 @@ def view_directory_svn(request):
     data['jump_rev'] = str(request.repos.rev)
     
   # add in the roots for the selection
-  allroots = { }
-  allroots.update(cfg.general.cvs_roots)
-  allroots.update(cfg.general.svn_roots)
+  allroots = list_roots(cfg)
   if len(allroots) < 2:
     roots = [ ]
   else:
@@ -1376,11 +1407,10 @@ def view_directory_svn(request):
     roots.sort(lambda n1, n2: cmp(string.lower(n1), string.lower(n2)))
   data['roots'] = roots
 
-  if where:
-    ### in the future, it might be nice to break this path up into
-    ### a list of elements, allowing the template to display it in
-    ### a variety of schemes.
-    data['nav_path'] = clickable_path(request, where, 0, 0, 0)
+  ### in the future, it might be nice to break this path up into
+  ### a list of elements, allowing the template to display it in
+  ### a variety of schemes.
+  data['nav_path'] = clickable_path(request, where, 0, 0, 0)
 
   # sort with directories first, and using the "sortby" criteria
   sort_file_data(file_data, sortdir, sortby, fileinfo, request.roottype)
@@ -1771,6 +1801,7 @@ def view_log_svn(request):
   entries.reverse()
   
   data = {
+    'roottype' : 'svn',
     'where' : where,
     'request' : request,
     'back_url' : back_url,
@@ -1825,7 +1856,7 @@ def view_log_svn(request):
   http_header()
   generate_page(request, cfg.templates.log, data)
   
-def view_log(request):
+def view_log_cvs(request):
   full_name = request.full_name
   where = request.where
   query_dict = request.query_dict
@@ -1851,6 +1882,7 @@ def view_log(request):
              request.qmark_query + '#' + filename
 
   data = {
+    'roottype' : 'cvs',
     'where' : where,
     'request' : request,
     'back_url' : back_url,
@@ -2487,31 +2519,30 @@ def view_diff(request):
   rev2 = r2 = query_dict['r2']
   sym1 = sym2 = None
 
-  if request.roottype == 'cvs':
-    if r1 == 'text':
-      rev1 = query_dict['tr1']
+  if r1 == 'text':
+    rev1 = query_dict['tr1']
+  else:
+    idx = string.find(r1, ':')
+    if idx == -1:
+      rev1 = r1
     else:
-      idx = string.find(r1, ':')
-      if idx == -1:
-        rev1 = r1
-      else:
-        rev1 = r1[:idx]
-        sym1 = r1[idx+1:]
- 
-    if r2 == 'text':
-      rev2 = query_dict['tr2']
-      sym2 = ''
+      rev1 = r1[:idx]
+      sym1 = r1[idx+1:]
+      
+  if r2 == 'text':
+    rev2 = query_dict['tr2']
+    sym2 = ''
+  else:
+    idx = string.find(r2, ':')
+    if idx == -1:
+      rev2 = r2
     else:
-      idx = string.find(r2, ':')
-      if idx == -1:
-        rev2 = r2
-      else:
-        rev2 = r2[:idx]
-        sym2 = r2[idx+1:]
+      rev2 = r2[:idx]
+      sym2 = r2[idx+1:]
   
-    if revcmp(rev1, rev2) > 0:
-      rev1, rev2 = rev2, rev1
-      sym1, sym2 = sym2, sym1
+  if revcmp(rev1, rev2) > 0:
+    rev1, rev2 = rev2, rev1
+    sym1, sym2 = sym2, sym1
 
   human_readable = 0
   unified = 0
@@ -2731,6 +2762,12 @@ def download_tarball(request):
   fp.write('\0' * 1024)
   fp.close()
 
+def list_roots(cfg):
+  allroots = { }
+  allroots.update(cfg.general.cvs_roots)
+  allroots.update(cfg.general.svn_roots)
+  return allroots
+  
 def handle_config():
   debug.t_start('load-config')
   global cfg
@@ -2874,7 +2911,7 @@ def main():
       else: 
         cvsgraph_image(cfg, request)
     else:
-      view_log(request)
+      view_log_cvs(request)
     return
   
   error('%s: unable to determine desired operation' % request.url,

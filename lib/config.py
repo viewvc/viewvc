@@ -147,8 +147,8 @@ class Config:
     self.general.default_root = ''
     self.general.rcs_path = ''
     self.general.mime_types_file = ''
-    self.general.address = '<a href="mailto:user@insert.your.domain.here">No CVS admin address has been configured</a>'
-    self.general.main_title = 'CVS Repository'
+    self.general.address = '<a href="mailto:user@insert.your.domain.here">No admin address has been configured</a>'
+    self.general.main_title = 'Repository'
     self.general.forbidden = ()
     self.general.kv_files = [ ]
     self.general.languages = ['en-us']
@@ -171,6 +171,7 @@ class Config:
     self.cvsdb.readonly_passwd = '' 
     self.cvsdb.row_limit = 1000
 
+    self.options.root_as_url_component = 0
     self.options.sort_by = 'file'
     self.options.hide_attic = 1
     self.options.log_sort = 'date'

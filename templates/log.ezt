@@ -4,12 +4,12 @@
 <!-- ViewCVS       -- http://viewcvs.sourceforge.net/
      by Greg Stein -- mailto:gstein@lyra.org
   -->
-<title>CVS log for [where]</title>
+<title>[is roottype "svn"]Subversion[else]CVS[end] log for [where]</title>
 </head>
 <body text="#000000" bgcolor="#ffffff">
 <table width="100%" border=0 cellspacing=0 cellpadding=0>
   <tr>
-    <td rowspan=2><h1>CVS log for [where]</h1></td>
+    <td rowspan=2><h1>[is roottype "svn"]Subversion[else]CVS[end] log for [where]</h1></td>
     <td align=right><img src="/icons/apache_pb.gif" alt="(logo)" border=0
 			width=259 height=32></td>
   </tr>
@@ -57,11 +57,11 @@
         [end]
       [end]>
       (download)</a>, view 
-      <a href="[entries.text_href]">(text)</a>, 
-      <a href="[entries.view_href]">(markup)</a>, 
+      <a href="[entries.text_href]">(text)</a>
+      <a href="[entries.view_href]">(markup)</a> 
 
       [# if you don't want to allow annotation, then remove this line]
-      <a href="[href]?annotate=[entries.rev][query]">(annotate)</a>
+      [is roottype "svn"][else]<a href="[href]?annotate=[entries.rev][query]">(annotate)</a>[end]
     [else]
       [if-any viewable]
         , <a href="[entries.view_href]">(view)</a>
