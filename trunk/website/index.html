@@ -31,16 +31,14 @@
       <a href="#History">History</a><br>
       <a href="#Mail">Mailing Lists</a><br>
       <a href="#Cvsweb">vs.&nbsp;cvsweb</a><br>
-      <a href="#Colorize">Colorization</a><br>
       <a href="#Download">Download</a><br>
       <a href="#Future">Future&nbsp;directions</a><br>
+      <a href="#Colorize">Colorization</a><br>
     </td>
     <td colspan=3>
 
     <hr width="75&#37;">
-    <a name="Features">
-    <h2>Features:</h2>
-    </a>
+    <h2><a name="Features">Features</a></h2>
     <p>
       ViewCVS can browse directories, change logs, and specific
       revisions of files. It can display diffs between versions and
@@ -56,9 +54,7 @@
     </p>
 
     <hr width="75&#37;">
-    <a name="History">
-    <h2>History:</h2>
-    </a>
+    <h2><a name="History">History</a></h2>
     <p>
       The ViewCVS software was inspired by
       <a href="http://stud.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi/"><i>cvsweb</i></a>
@@ -73,10 +69,12 @@
 	 I've actually been able to go <em>way</em> beyond the simple
 	 changes that I had envisioned.
       </i></blockquote>
+    </p>
     <p>
-      ViewCVS started as a port of the cvsweb script, but has had numerous cleanups and other modifications,
-      based on some of Python's strengths. There is still some minor
-      "badness" remaining from the Perl code, but Greg has been working on
+      ViewCVS started as a port of the cvsweb script, but has had
+      numerous cleanups and other modifications, based on some of
+      Python's strengths. There is still some minor "badness"
+      remaining from the Perl code, but Greg has been working on
       flushing that out, while adding new features.
     </p>
     <p>
@@ -98,9 +96,7 @@
     </p>
 
     <hr width="75&#37;">
-    <a name="Mail">
-    <h2>Mailing Lists</h2>
-    </a>
+    <h2><a name="Mail">Mailing Lists</a></h2>
     <p>
       If you have any comments, questions, or suggestions,
       then please send them to the
@@ -118,9 +114,7 @@
       <a href="contributing.html">contribution</a> is welcome.
 
     <hr width="75&#37;">
-    <a name="Cvsweb">
-    <h2>Additional features over cvsweb</h2>
-    </a>
+    <h2><a name="Cvsweb">Additional features over cvsweb</a></h2>
 
     <ul>
       <li>
@@ -193,45 +187,7 @@
     </p>
 
     <hr width="75&#37;">
-    <a name="Colorize">
-    <h2>Colorization of files</h2>
-    </a>
-    <p>
-      ViewCVS can make use of the <code>enscript</code> program to
-      colorize files in the CVS repository. If <code>enscript</code>
-      is present on your system, then set the
-      <code>use_enscript</code> option in the
-      <code>viewcvs.conf</code> configuration file to <code>1</code>. 
-      If necessary,
-      update the <code>enscript_path</code> option to point to your
-      installation directory. ... That's it! Now, as you view files
-      through ViewCVS, they will be colored.
-    </p>
-
-    <h3>Colorization of Python files</h3>
-
-    <p>
-      ViewCVS currently also comes with a builtin colorizer for Python
-      source files. This may go away in a future version, given the new
-      <code>enscript</code> support...
-    </p>
-    <p>
-      Christophe Pelte suggested this feature: colorize Python source
-      files using
-      <a href="http://starship.python.net/crew/lemburg/SoftwareDescriptions.html#py2html.py"><i>py2html</i></a>
-      (by Marc-Andrew Lemburg, based on
-      <a href="http://starship.python.net/crew/just/code/PyFontify.py"><i>PyFontify</i></a>
-      by Just van Rossum). I've added this feature to ViewCVS 0.3,
-      along with a generalized plugin mechanism for custom coloring other
-      types of files. See the instructions within the viewcvs.cgi for
-      setting the <code>py2html_path</code> configuration variable if
-      you want to use this feature.
-    </p>
-
-    <hr width="75&#37;">
-    <a name="Download">
-    <h2>Download:</h2>
-    </a>
+    <h2><a name="Download">Download</a></h2>
     <p>
       The software is available for download:
     </p>
@@ -257,9 +213,7 @@
     </p>
 
     <hr width="75&#37;">
-    <a name="Future">
-    <h2>Future features, directions</h2>
-    </a>
+    <h2><a name="Future">Future features, directions</a></h2>
     <p>
     ViewCVS is a Open Source project.  So any future development depends
     on the contributions that will be made by its user community.  
@@ -289,12 +243,45 @@
     </ul>
     </p>
 
+    <hr width="75&#37;">
+    <h2><a name="Colorize">Colorization of files</a></h2>
+    <p>
+      ViewCVS can make use of the <code>enscript</code> program to
+      colorize files in the CVS repository. If <code>enscript</code>
+      is present on your system, then set the
+      <code>use_enscript</code> option in the
+      <code>viewcvs.conf</code> configuration file to <code>1</code>. 
+      If necessary,
+      update the <code>enscript_path</code> option to point to your
+      installation directory. ... That's it! Now, as you view files
+      through ViewCVS, they will be colored.
+    </p>
+
+    <h3>Colorization of Python files</h3>
+    <p>
+      ViewCVS currently also comes with a builtin colorizer for Python
+      source files. This may go away in a future version, given the new
+      <code>enscript</code> support...
+    </p>
+    <p>
+      Christophe Pelte suggested this feature: colorize Python source
+      files using
+      <a href="http://starship.python.net/crew/lemburg/SoftwareDescriptions.html#py2html.py"><i>py2html</i></a>
+      (by Marc-Andrew Lemburg, based on
+      <a href="http://starship.python.net/crew/just/code/PyFontify.py"><i>PyFontify</i></a>
+      by Just van Rossum). I've added this feature to ViewCVS 0.3,
+      along with a generalized plugin mechanism for custom coloring other
+      types of files. See the instructions within the viewcvs.cgi for
+      setting the <code>py2html_path</code> configuration variable if
+      you want to use this feature.
+    </p>
+
   </td></tr></table>
   <hr>
   <address><a href="mailto:viewcvs@lyra.org">ViewCVS Users Group</a></address>
 <!-- Created: Fri Dec  3 02:51:37 PST 1999 -->
 <!-- hhmts start -->
-Last modified: Mon Dec 10 05:20:36 PST 2001
+Last modified: Mon Dec 10 05:25:20 PST 2001
 <!-- hhmts end -->
   </body>
 </html>
