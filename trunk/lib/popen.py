@@ -74,7 +74,10 @@ def popen(cmd, args, mode, capture_err=1):
   try:
     os.execvp(cmd, (cmd,) + tuple(args))
   except:
-    pass
+    # aid debugging, if the os.execvp above fails for some reason:
+    import string
+    print "<h2>exec failed:</h2><pre>", cmd, string.join(args), "</pre>"
+    raise
 
   # crap. shouldn't be here.
   sys.exit(127)
