@@ -59,7 +59,7 @@ def date_from_rev(svnrepos, rev):
 class LogEntry:
   "Hold state for each revision's log entry."
   def __init__(self, rev, date, author, msg, filename, copy_path, copy_rev):
-    self.rev = rev
+    self.rev = str(rev)
     self.date = date
     self.author = author
     self.state = '' # should we populate this?
@@ -216,7 +216,7 @@ def get_logs(svnrepos, full_name, files):
     rev = _get_last_history_rev(svnrepos, path, subpool)
     datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, subpool)
     date = _datestr_to_date(datestr, subpool)
-    file.rev = rev
+    file.rev = str(rev)
     file.date = date
     file.author = author
     file.log = msg
