@@ -1822,6 +1822,7 @@ def human_readable_diff(query_dict, fp, rev, sym1, sym2):
   navigate_header(g_script_name + '/' + where_nd, pathname, filename, rev,
                   'diff')
 
+  rev1 = rev2 = '(revision number not found in diff output)'
   r1r = r2r = ''
   while 1:
     line = fp.readline()
@@ -1838,7 +1839,7 @@ def human_readable_diff(query_dict, fp, rev, sym1, sym2):
       rev2 = parts[-1]
       break
 
-  if not _re_valid_rev.match(rev1) or not _re_valid_rev.match(rev1):
+  if not _re_valid_rev.match(rev1) or not _re_valid_rev.match(rev2):
     print 'Internal error: %s and/or %s are not valid revision numbers.' % \
           (rev1, rev2)
     sys.exit(0)
