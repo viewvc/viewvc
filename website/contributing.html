@@ -116,18 +116,24 @@
         <li>Add a new subsection to the file 
 	 <code>website/upgrading.html</code> describing all user visible 
 	 changes for users of previous releases of ViewCVS.
-        <li>Test, Test, Test!  At the time of this writing (0.8-dev) there
+	    </li>
+	    <li>Update the <code>CHANGES</code> file</li>
+	    <li>Update the <code>website/index.html</code> file to
+	      refer to the new X.Y files. (there are three links to
+	      update)</li>
+	<li>Edit the file <code>lib/viewcvs.py</code>  and remove the
+	 <tt>"-dev"</tt> suffix from <code>__version__</code>.  The remainder 
+	 should be of the form X.Y, where X is a positive number and 
+	 Y is a single digit.
+	      </li>
+	    <li>Ensure all of the above changes have been committed.</li>
+        <li>Test, Test, Test!  At the time of this writing (1.0-dev) there
 	 is no automatic testsuite available.  So just run with permuting
 	 different <code>viewcvs.conf</code> settings and ... pray.
 	<li>Review any <a 
 	 href="http://sourceforge.net/tracker/?atid=118760&group_id=18760&func=browse">
 	 bug reports, that are still marked open.</a>
-	<li>Edit the file <code>lib/viewcvs.py</code>  and remove the
-	 <tt>"-dev"</tt> suffix from <code>__version__</code>.  The remainder 
-	 should be of the form X.Y, where X is a positive number and 
-	 Y is a single digit.
-	<li>commit this changed version of <code>lib/viewcvs.py</code>
-	 and than <code>cvs tag V</code><i>X</i><code>_</code><i>Y</i>, where
+	<li><code>cvs tag V</code><i>X</i><code>_</code><i>Y</i>, where
 	 <i>X</i> and <i>Y</i> should be replaced by the release number
 	 from above.  If a developer is willing to volunteer as a
 	 bug fix patch release manager, it is now possible to start here
@@ -143,8 +149,41 @@
 	<li>pack the content of this <code>viewcvs-</code><i>X.Y</i> directory
 	 into a tarball.  
 	<li>Upload the created tarball into the download files section of the
-	 ViewCVS project at SourceForge. 
-	 <br><b>Greg:</b><i>Could you please elaborate this step?</i>
+	 ViewCVS project at SourceForge:
+	      <ul>
+		<li><code>scp viewcvs-X.Y.*
+		    <var>USERNAME</var>@viewcvs.sourceforge.net:/home/groups/v/vi/viewcvs/htdocs</code></li>
+		<li>ssh to viewcvs.sourceforge.net, cd to the above
+		  directory, and do a "<code>cvs update</code>" to
+		  pull down the latest website files.</li>
+		<li>ftp to upload.sourceforge.net, cd to the
+		  <code>/incoming</code> directory, and upload the .gz
+		  and the .zip</li>
+		<li>go to the Admin pages for the ViewCVS project, and
+		go to "Edit/Release Files"</li>
+		<li>select "Add Release" and fill in the new release
+		  name (X.Y)</li>
+		<li>fill in the Change Log section with the relevant
+		  portion from the <code>CHANGES</code> file and
+		  select the "Preserve my pre-formatted text"
+		  option. (and Submit those changes)</li>
+		<li>the files uploaded to upload.sourceforge.net
+		  should appear in the "Add Files To This Release"
+		  section. Select them, and add them.</li>
+
+		<li>For each file: change the processor type to "Any",
+		  select "Source .zip" or "Source .gz" as
+		  appropriate, and hit the Update button. (note: you
+		  need to Update each file separately)</li>
+		<li>After about 15-30 minutes, the files will appear
+		  on the Files page of the project.</li>
+		<li>Select the "I'm sure" button and hit the "Send
+		  Notice" button.</li>
+		<li>Note: if you need to hide a prior release, then go
+		back to the admin page and follow the links for
+		  editing a release. Change the "Status" drop-down to
+		  "Hidden" and submit the change.</li>
+	      </ul>
 	<li>Edit the file <code>lib/viewcvs.py</code> again and this time 
 	 increment the <code>__version__</code> for the next release cycle,
 	 again append the <code>"-dev"</code> to the version and again
@@ -167,7 +206,7 @@
     <address><a href="mailto:viewcvs-dev@lyra.org">ViewCVS Group</a></address>
 <!-- Created: Thu Oct 18 09:05:40 CEST 2001 -->
 <!-- hhmts start -->
-Last modified: Mon Nov 19 20:25:38 CEST 2001
+Last modified: Thu Dec 27 00:13:43 PST 2001
 <!-- hhmts end -->
   </body>
 </html>
