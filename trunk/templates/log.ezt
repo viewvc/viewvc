@@ -111,7 +111,9 @@
 
   [if-any entries.prev]
     [if-any entries.changed]
+      [is roottype "cvs"]
       <br>Changes since <b>[entries.prev]: [entries.changed] lines</b>
+      [end]
     [end]
   [end]
 
