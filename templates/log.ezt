@@ -149,7 +149,11 @@
     <br><b><i>FILE REMOVED</i></b>
   [else]
     [if-any entries.prev]
-      <br>Diff to <a href="[diff_url]?r1=[entries.prev]&amp;r2=[entries.rev][diff_params]">previous [entries.prev]</a>
+      [is roottype "svn"]
+        <br>Diff to <a href="[diff_url]?r1=[entries.prev][if-any entries.prev_path]&amp;p1=[entries.prev_path][end]&amp;r2=[entries.rev]&amp;p2=[entries.filename][diff_params]">previous [entries.prev]</a>
+      [else]
+        <br>Diff to <a href="[diff_url]?r1=[entries.prev]&amp;r2=[entries.rev][diff_params]">previous [entries.prev]</a>
+      [end]
       [if-any human_readable]
       [else]
         (<a href="[diff_url]?r1=[entries.prev]&amp;r2=[entries.rev]&amp;diff_format=h[diff_params]">colored</a>)

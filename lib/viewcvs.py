@@ -498,7 +498,9 @@ _legal_params = {
   'root'          : None,
   'view'          : None,
   'search'        : _validate_regex,
-
+  'p1'            : None,
+  'p2'            : None,
+  
   'hideattic'     : _re_validate_number,
   'sortby'        : _re_validate_alpha,
   'sortdir'       : _re_validate_alpha,
@@ -2002,11 +2004,13 @@ def view_log_svn(request, data, logsort):
 
   entries = []
   prev_rev = None
+  prev_path = None
   show_revs = logs.keys()
   show_revs.sort()
   for rev in show_revs:
     entry = logs[rev]
     entry.prev = prev_rev
+    entry.prev_path = prev_path
     entry.href = request.get_url(view_func=view_checkout, where=entry.filename,
                                  pathtype=vclib.FILE, params={'rev': rev})
     entry.view_href = request.get_url(view_func=view_markup, 
@@ -2053,6 +2057,7 @@ def view_log_svn(request, data, logsort):
 
     entries.append(entry)
     prev_rev = rev
+    prev_path = entry.filename
   show_revs.reverse()
   entries.reverse()
   
@@ -2678,6 +2683,8 @@ def view_diff(request):
 
   rev1 = r1 = query_dict['r1']
   rev2 = r2 = query_dict['r2']
+  p1 = query_dict.get('p1', request.where)
+  p2 = query_dict.get('p2', request.where)
   sym1 = sym2 = None
 
   if r1 == 'text':
@@ -2711,6 +2718,7 @@ def view_diff(request):
     if revcmp(rev1, rev2) > 0:
       rev1, rev2 = rev2, rev1
       sym1, sym2 = sym2, sym1
+      p1, p2 = p2, p1
   except ValueError:
     raise debug.ViewcvsException('Invalid revision(s) passed to diff')
     
@@ -2770,15 +2778,16 @@ def view_diff(request):
     date1 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date1))
     date2 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date2))
     args.append("-L")
-    args.append(request.where + "\t" + date1 + "\t" + rev1)
+    args.append(p1 + "\t" + date1 + "\t" + rev1)
     args.append("-L")
-    args.append(request.where + "\t" + date2 + "\t" + rev2)
+    args.append(p2 + "\t" + date2 + "\t" + rev2)
 
     # Need to keep a reference to the FileDiff object around long
     # enough to use.  It destroys its underlying temporary files when
     # the class is destroyed.
-    diffobj = vclib.svn.do_diff(request.repos, request.where,
-                                int(rev1), int(rev2), args)
+    diffobj = vclib.svn.do_diff(request.repos, p1, int(rev1),
+                                p2, int(rev2), args)
+    
     fp = diffobj.get_pipe()
     
   if human_readable:
