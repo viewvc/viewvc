@@ -1831,13 +1831,11 @@ def view_checkout(request):
       sys.stdout.write(chunk)
 
 def view_annotate(request):
-  ### dunno what this is for... check against cvsweb
-  some_value = request.query_dict['annotate']
+  rev = request.query_dict['annotate']
 
-  ### testing
-  html_header('annotate')
-  print "annotate"
-  html_footer()
+  import blame
+  blame.make_html(request.cvsroot, request.where + ',v', rev)
+
 
 _re_extract_rev = re.compile(r'^[-+]+ [^\t]+\t([^\t]+)\t((\d+\.)+\d+)$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
