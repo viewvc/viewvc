@@ -44,6 +44,8 @@ def _fs_rev_props(fsptr, rev, pool):
 
 
 def date_from_rev(svnrepos, rev):
+  if (rev < 0) or (rev > fs.youngest_rev(svnrepos.fs_ptr, svnrepos.pool)):
+    raise vclib.InvalidRevision(rev);
   datestr = fs.revision_prop(svnrepos.fs_ptr, rev,
                              util.SVN_PROP_REVISION_DATE, svnrepos.pool)
   return _datestr_to_date(datestr, svnrepos.pool)
@@ -94,6 +96,10 @@ def fetch_log(svnrepos, full_name, which_rev=None):
     'HEAD' : '1',
     }
   if which_rev is not None:
+    if (which_rev < 0) \
+       or (which_rev > fs.youngest_rev(svnrepos.fs_ptr, svnrepos.pool)):
+      raise vclib.InvalidRevision(which_rev);
+    
     datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr,
                                          which_rev, svnrepos.pool)
     receiver.receive(which_rev, author, datestr, msg, svnrepos.pool)
@@ -150,8 +156,11 @@ class SubversionRepository(vclib.Repository):
     self.rootpath = rootpath
     self.fs_ptr = repos.svn_repos_fs(self.repos)
     self.rev = rev
+    youngest = fs.youngest_rev(self.fs_ptr, self.pool);
     if self.rev is None:
-      self.rev = fs.youngest_rev(self.fs_ptr, self.pool)
+      self.rev = youngest
+    if (self.rev < 0) or (self.rev > youngest):
+      raise vclib.InvalidRevision(self.rev);
     self.fsroot = fs.revision_root(self.fs_ptr, self.rev, self.pool)
 
   def __del__(self):

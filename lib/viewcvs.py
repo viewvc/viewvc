@@ -260,6 +260,9 @@ class Request:
           'configured, or the server on which the CVS tree lives may be '
           'down. Please try again in a few minutes.'
           % server.escape(root_name))
+      except vclib.InvalidRevision, ex:
+        raise debug.ViewcvsException(str(ex))
+          
     else:
       # if the query had 'root' in it, we would have caught this error
       # during validation.  so, we know this failed on the default root.
@@ -2686,12 +2689,14 @@ def view_diff(request):
     diff_cmd = os.path.normpath(os.path.join(cfg.general.rcs_path,'rcsdiff'))
     fp = popen.popen(diff_cmd, args, 'rt')
   else:
-    date1 = time.strftime('%Y/%m/%d %H:%M:%S',
-                          time.gmtime(vclib.svn.date_from_rev(request.repos,
-                                                              int(rev1))))
-    date2 = time.strftime('%Y/%m/%d %H:%M:%S',
-                          time.gmtime(vclib.svn.date_from_rev(request.repos,
-                                                              int(rev2))))
+    try:
+      date1 = vclib.svn.date_from_rev(request.repos, int(rev1))
+      date2 = vclib.svn.date_from_rev(request.repos, int(rev2))
+    except vclib.InvalidRevision:
+      raise debug.ViewcvsException('Invalid revision(s) passed to diff')
+      
+    date1 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date1))
+    date2 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date2))
     args.append("-L")
     args.append(request.where + "\t" + date1 + "\t" + rev1)
     args.append("-L")
