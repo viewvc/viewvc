@@ -308,17 +308,13 @@ def build_commit(server, desc, files, cvsroots, viewcvs_link):
                   + ' UTC'
         
         ## make the file link
-        file = os.path.join(commit.GetDirectory(), commit.GetFile())
-        file_full_path = os.path.join(commit.GetRepository(), file)
-        file = string.replace(file, os.sep, '/')
+        repository = commit.GetRepository()
+        directory = commit.GetDirectory()
+        file = (directory and directory + "/") + commit.GetFile()
+        cvsroot_name = cvsroots.get(repository)
 
         ## if we couldn't find the cvsroot path configured in the 
         ## viewcvs.conf file, then don't make the link
-        try:
-          cvsroot_name = cvsroots[commit.GetRepository()]
-        except KeyError:
-          cvsroot_name = None
-        
         if cvsroot_name:
             flink = '[%s] <a href="%s/%s?root=%s">%s</a>' % (
                     cvsroot_name, viewcvs_link, urllib.quote(file),
@@ -330,7 +326,7 @@ def build_commit(server, desc, files, cvsroots, viewcvs_link):
             else:
                 dlink = None
         else:
-            flink = file_full_path
+            flink = '[%s] %s' % (repository, file)
             dlink = None
 
         ob.files.append(_item(date=ctime,
@@ -360,10 +356,7 @@ def run_query(server, form_data, viewcvs_link):
     cvsroots = {}
     rootitems = cfg.general.cvs_roots.items() + cfg.general.svn_roots.items()
     for key, value in rootitems:
-        value = os.path.normcase(value)
-        while value[-1] == os.sep:
-            value = value[:-1]
-        cvsroots[value] = key
+        cvsroots[cvsdb.CleanRepository(value)] = key
 
     current_desc = query.commit_list[0].GetDescription()
     for commit in query.commit_list:

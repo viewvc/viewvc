@@ -474,37 +474,18 @@ class Commit:
         self.__type = Commit.CHANGE
 
     def SetRepository(self, repository):
-        ## clean up repository path; make sure it doesn't end with a
-        ## path seperator
-        while len(repository) and repository[-1] == os.sep:
-            repository = repository[:-1]
-
         self.__repository = repository
 
     def GetRepository(self):
         return self.__repository
         
     def SetDirectory(self, dir):
-        ## clean up directory path; make sure it doesn't begin
-        ## or end with a path seperator
-        while len(dir) and dir[0] == os.sep:
-            dir = dir[1:]
-        while len(dir) and dir[-1] == os.sep:
-            dir = dir[:-1]
-        
         self.__directory = dir
 
     def GetDirectory(self):
         return self.__directory
 
     def SetFile(self, file):
-        ## clean up filename; make sure it doesn't begin
-        ## or end with a path seperator
-        while len(file) and file[0] == os.sep:
-            file = file[1:]
-        while len(file) and file[-1] == os.sep:
-            file = file[:-1]
-        
         self.__file = file
 
     def GetFile(self):
@@ -608,13 +589,13 @@ class CheckinDatabaseQuery:
         self.commit_cb = None
 
     def SetRepository(self, repository, match = "exact"):
-        self.repository_list.append(QueryEntry(os.path.normcase(repository), match))
+        self.repository_list.append(QueryEntry(repository, match))
 
     def SetBranch(self, branch, match = "exact"):
         self.branch_list.append(QueryEntry(branch, match))
 
     def SetDirectory(self, directory, match = "exact"):
-        self.directory_list.append(QueryEntry(os.path.normcase(directory), match))
+        self.directory_list.append(QueryEntry(directory, match))
 
     def SetFile(self, file, match = "exact"):
         self.file_list.append(QueryEntry(file, match))
@@ -697,10 +678,7 @@ def ConnectDatabase():
 def RLogDataToCommitList(repository, rlog_data):
     commit_list = []
 
-    ## the filename in rlog_data contains the entire path of the
-    ## repository; we strip that out here
-    temp = rlog_data.filename[len(repository):]
-    directory, file = os.path.split(temp)
+    directory, file = os.path.split(rlog_data.filename)
 
     for rlog_entry in rlog_data.rlog_entry_list:
         commit = CreateCommit()
@@ -752,3 +730,6 @@ _re_likechars = re.compile(r"([_%\\])")
 def EscapeLike(literal):
   """Escape literal string for use in a MySQL LIKE pattern"""
   return re.sub(_re_likechars, r"\\\1", literal)
+
+def CleanRepository(path):
+  return os.path.normcase(os.path.normpath(path))

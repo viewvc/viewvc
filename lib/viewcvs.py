@@ -3019,7 +3019,7 @@ def view_query(request):
 
   # create the database query from the form data
   query = cvsdb.CreateCheckinQuery()
-  query.SetRepository(request.rootpath)
+  query.SetRepository(cvsdb.CleanRepository(request.rootpath))
   # treat "HEAD" specially ...
   if branch_match == 'exact' and branch == 'HEAD':
     query.SetBranch('')
@@ -3031,8 +3031,7 @@ def view_query(request):
       query.SetDirectory('%s%%' % cvsdb.EscapeLike(path), 'like')
   else:
     if request.path_parts: # if we are in a subdirectory ...
-      directory = os.path.normpath(request.where)
-      query.SetDirectory('%s%%' % cvsdb.EscapeLike(directory), 'like')
+      query.SetDirectory('%s%%' % cvsdb.EscapeLike(request.where), 'like')
   if file:
     query.SetFile(file, file_match)
   if who:

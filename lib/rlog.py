@@ -79,9 +79,18 @@ def _get_v_file(filename):
     ### create an exception class
     raise error, "rlog file not found: %s" % (filename)
 
-def _get_co_file(v_file):
+def _get_co_file(repository, v_file):
     # remove the ",v" suffix
+    assert v_file[-2:] == ",v"
     co_file = v_file[:-2]
+
+    # remove the repository prefix
+    assert repository.rootpath == v_file[:len(repository.rootpath)]
+    assert v_file[len(repository.rootpath)] in (os.sep, os.altsep)
+    co_file = co_file[len(repository.rootpath)+1:]
+
+    # convert to use forward slashes
+    co_file = string.replace(co_file, os.sep, "/")
 
     # look for, and remove, any Attic component
     path, basename = os.path.split(co_file)
@@ -96,7 +105,7 @@ def GetRLogData(repository, path, revision=''):
     class _blank:
       pass
 
-    data = RLogData(_get_co_file(v_file))
+    data = RLogData(_get_co_file(repository, v_file))
 
     for name, rev in taginfo.items():
         # if this is a branch (X.Y.0.Z), then remove the .0 portion
