@@ -401,10 +401,10 @@ checkout_magic = 1
 
 # Web path to a directory that contains ViewCVS static files.  (The
 # ones installed in <VIEWCVS_INSTALL_DIRECTORY>/templates/docroot). If
-# set, static files will get served from this location, otherwise
+# set, static files will get downloaded from this location, otherwise
 # static files will be served by the ViewCVS script which is less
 # efficient
-#docroot = /doc
+#docroot = /docroot
 
 # Show last changelog message for sub directories
 # The current implementation makes many assumptions and may show the
