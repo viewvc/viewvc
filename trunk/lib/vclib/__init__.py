@@ -17,6 +17,9 @@
 such as CVS.
 """
 
+import string
+
+
 # item types returned by Repository.itemtype(). these values are also
 # available as object.type where object is a Versfile or Versdir.
 FILE = 'FILE'
@@ -239,8 +242,9 @@ class Revision:
 class Error(Exception):
   pass
 class ReposNotFound(Error):
-  def __init__(self,path):
-    self.path = path
+  pass
 class ItemNotFound(Error):
-  def __init__(self,path):
-    self.path = path
+  def __init__(self, path_parts):
+    # use '/' rather than os.sep because this is for user consumption, and
+    # it was defined using URL separators
+    Error.__init__(self, string.join(path_parts, '/'))

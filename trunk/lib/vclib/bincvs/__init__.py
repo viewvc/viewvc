@@ -420,7 +420,7 @@ def fetch_log(rcs_path, full_name, which_rev=None):
 class BinCVSRepository:
   def __init__(self, name, rootpath):
     if not os.path.isdir(rootpath):
-      raise vclib.ReposNotFound()
+      raise vclib.ReposNotFound(name)
 
     self.name = name
     self.rootpath = rootpath
@@ -432,7 +432,7 @@ class BinCVSRepository:
     rcspath = self._getrcsname(basepath)
     if os.path.isfile(rcspath):
       return vclib.Versfile(self, rcspath)
-    raise vclib.ItemNotFound()
+    raise vclib.ItemNotFound(path_parts)
 
   def itemtype(self, path_parts):
     basepath = self._getpath(path_parts)
@@ -440,7 +440,7 @@ class BinCVSRepository:
       return vclib.DIR
     if os.path.isfile(self._getrcsname(basepath)):
       return vclib.FILE
-    raise vclib.ItemNotFound()
+    raise vclib.ItemNotFound(path_parts)
 
   def _getpath(self, path_parts):
     return apply(os.path.join, (self.rootpath,) + tuple(path_parts))
