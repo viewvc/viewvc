@@ -128,7 +128,7 @@ def InstallFile(src_path, dest_path, mode, set_python_paths, prompt_replace,
     dest_path = os.path.join(ROOT_DIR, dest_path)
     
     if prompt_replace and os.path.exists(dest_path):
-        temp = raw_input("File %s exists, overwright? [y/N]: " % (dest_path))
+        temp = raw_input("File %s exists, overwrite? [y/N]: " % (dest_path))
         if not temp or string.lower(temp[0]) != "y":
             return
     
