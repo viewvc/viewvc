@@ -322,10 +322,10 @@ class Request:
         else:
           self.view_func = view_log
         
-    # Finally done parsing query string, set some extra variables 
-    # and call view_func
+    # Finally done parsing query string, set mime type and call view_func
+    self.mime_type = None
     if self.pathtype == vclib.FILE:
-      self.setup_mime_type_info()
+      self.mime_type = guess_mime(self.where)
 
     # startup is done now.
     debug.t_end('startup')
@@ -489,13 +489,6 @@ class Request:
       if value is not None:
         ret[name] = value
     return ret
-
-  def setup_mime_type_info(self):
-    if cfg.general.mime_types_file:
-      mimetypes.init([cfg.general.mime_types_file])
-    self.mime_type, self.encoding = mimetypes.guess_type(self.where)
-    if not self.mime_type:
-      self.mime_type = 'text/plain'
 
 def _validate_param(name, value):
   """Validate whether the given value is acceptable for the param name.
@@ -729,11 +722,17 @@ def prep_tags(request, tags):
   links.sort(lambda a, b: cmp(a.name, b.name))
   return links
 
+def guess_mime(filename):
+  return mimetypes.guess_type(filename)[0]
+
 def is_viewable_image(mime_type):
-  return mime_type in ('image/gif', 'image/jpeg', 'image/png')
+  return mime_type and mime_type in ('image/gif', 'image/jpeg', 'image/png')
 
 def is_text(mime_type):
-  return mime_type[:5] == 'text/'
+  return not mime_type or mime_type[:5] == 'text/'
+
+def is_plain_text(mime_type):
+  return not mime_type or mime_type == 'text/plain'
 
 _re_rewrite_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)(://[-a-zA-Z0-9%.~:_/]+)([?&]([-a-zA-Z0-9%.~:_]+)=([-a-zA-Z0-9%.~:_])+)*(#([-a-zA-Z0-9%.~:_]+)?)?)')
 _re_rewrite_email = re.compile('([-a-zA-Z0-9_.]+)@(([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
@@ -1195,7 +1194,7 @@ def view_markup(request):
   data['download_href'] = request.get_url(view_func=view_checkout,
                                           params={'rev': rev},
                                           escape=1)
-  if request.mime_type != 'text/plain':
+  if not is_plain_text(request.mime_type):
     data['download_text_href'] = \
       request.get_url(view_func=view_checkout,
                       params={'content-type': 'text/plain', 'rev': rev},
@@ -1441,11 +1440,8 @@ def view_directory(request):
         row.size = file.size
 
       ### for Subversion, we should first try to get this from the properties
-      mime_type, encoding = mimetypes.guess_type(file.name)
-      if not mime_type:
-        mime_type = 'text/plain'
-      row.mime_type = mime_type
-      
+      row.mime_type = guess_mime(file.name)
+
       row.href = request.get_url(view_func=view_log,
                                  where=file_where,
                                  pathtype=vclib.FILE,
@@ -1631,10 +1627,7 @@ def view_log(request):
   view_tag = request.query_dict.get('only_with_tag')
   pathtype = request.pathtype
 
-  mime_type = None
-  if pathtype is vclib.FILE:
-    mime_type = request.mime_type
-  elif request.roottype == 'cvs':
+  if pathtype is vclib.DIR and request.roottype == 'cvs':
     raise debug.ViewCVSException('Unsupported feature: log view on CVS '
                                  'directory', '400 Bad Request')
 
@@ -1760,7 +1753,7 @@ def view_log(request):
                                             pathtype=vclib.FILE,
                                             params={'rev': rev.string},
                                             escape=1)
-      if mime_type != 'text/plain':
+      if not is_plain_text(request.mime_type):
         entry.download_text_href = \
             request.get_url(view_func=view_checkout,
                             params={'content-type': 'text/plain',
@@ -1837,7 +1830,7 @@ def view_log(request):
   data.update({
     'nav_path' : clickable_path(request, 1, 0),
     'branch' : None,
-    'mime_type' : mime_type,
+    'mime_type' : request.mime_type,
     'rev_selected' : request.query_dict.get('r1'), 
     'path_selected' : request.query_dict.get('p1'), 
     'diff_format' : diff_format,
@@ -1892,7 +1885,7 @@ def view_log(request):
                                         escape=1)
     data['download_href'] = request.get_url(view_func=view_checkout, params={},
                                             escape=1)
-    if request.mime_type != 'text/plain':
+    if not is_plain_text(request.mime_type):
       data['download_text_href'] = \
         request.get_url(view_func=view_checkout,
                         params={'content-type': 'text/plain'},
@@ -1941,8 +1934,8 @@ def view_checkout(request):
     fp.close()
     return
 
-  mime_type = request.query_dict.get('content-type', request.mime_type)
-  request.server.header(mime_type)
+  request.server.header(request.query_dict.get('content-type')
+                        or request.mime_type or 'text/plain')
   copy_stream(fp)
 
 def view_annotate(request):
@@ -2045,14 +2038,9 @@ def search_files(repos, path_parts, files, search_re):
 
     # Only files at this point
     
-    # figure out where we are and its mime type
-    mime_type, encoding = mimetypes.guess_type(file.name)
-    if not mime_type:
-      mime_type = 'text/plain'
-
     # Shouldn't search binary files, or should we?
     # Should allow all text mime types to pass.
-    if mime_type[:4] != 'text':
+    if not is_text(guess_mime(file.name)):
       continue
 
     # Only text files at this point
@@ -3177,6 +3165,10 @@ def handle_config():
       cfg.load_config(pathname, sapi.server.getenv('HTTP_HOST'))
     else:
       cfg.load_config(pathname, None)
+
+    # load mime types file
+    if cfg.general.mime_types_file:
+      mimetypes.init([cfg.general.mime_types_file])
 
     # special handling for root_parents.  Each item in root_parents is
     # a "directory : repo_type" string.  For each item in
