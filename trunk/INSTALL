@@ -34,10 +34,11 @@ INSTALLING VIEWCVS
    There are some other options that are usually nice to change. See
    viewcvs.conf for more information.
 
-4) The CGI programs are in <install-root>/cgi.  You can symlink to this
+4) The CGI programs are in <install-root>/*.cgi.  You can symlink to this
    directory from somewhere in your published HTTP server path if your 
    webserver is configured to follow symbolic links.  You can also copy
-   the installed <install-root>/cgi/*.cgi scripts after the install.
+   the installed <install-root>/*.cgi scripts after the install, or just
+   install the whole thing into your published HTTP directory tree.
 
 5) That's it for repository browsing.  Instructions for getting the
    SQL checkin database working are below.
@@ -115,8 +116,8 @@ there are some additional steps required to get the database working.
    HTML output.  At some point, viewcvs.cgi, query.cgi, and queryform.cgi
    will use the same mechanism for HTML generation, but not yet.
 
-7) You should be ready to go.  Load up the query.cgi script and give it a
-   try.
+7) You should be ready to go.  Load up the queryform.cgi script and give 
+   it a try.
 
 
 IF YOU HAVE PROBLEMS ...
