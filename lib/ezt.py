@@ -132,6 +132,16 @@ Directives
    The [is ...] directive is similar to the other conditional
    directives above.  But it allows to compare two value references or
    a value reference with some constant string.
+
+   [define VARIABLE] ... [end]
+
+   The [define ...] directive allows you to create and modify template
+   variables from within the template itself.  Essentially, any data
+   between inside the [define ...] and its matching [end] will be
+   expanded using the other template parsing and output generation
+   rules, and then stored as a string value assigned to the variable
+   VARIABLE.  The new (or changed) variable is then available for use
+   with other template mechanisms such as [is ...] or [if-any ...].
  
 """
 #
@@ -171,6 +181,12 @@ import string
 import re
 from types import StringType, IntType, FloatType, LongType
 import os
+try:
+  import cStringIO
+except ImportError:
+  import StringIO
+  cStringIO = StringIO
+
 
 #
 # This regular expression matches three alternatives:
@@ -193,7 +209,7 @@ _re_parse = re.compile(r'\[(%s(?: +%s)*)\]|(\[\[\])|\[#[^\]]*\]' % (_item, _item
 _re_args = re.compile(r'"(?:[^\\"]|\\.)*"|[-\w.]+')
 
 # block commands and their argument counts
-_block_cmd_specs = { 'if-any':1, 'if-index':2, 'for':1, 'is':2 }
+_block_cmd_specs = { 'if-any':1, 'if-index':2, 'for':1, 'is':2, 'define':1 }
 _block_cmds = _block_cmd_specs.keys()
 
 # two regular expresssions for compressing whitespace. the first is used to
@@ -233,6 +249,7 @@ class Template:
     ctx = _context()
     ctx.data = data
     ctx.for_index = { }
+    ctx.defines = { }
     self._execute(self.program, fp, ctx)
 
   def _parse_file(self, fname, for_names=None, file_args=()):
@@ -297,8 +314,9 @@ class Template:
         elif cmd in _block_cmds:
           if len(args) > _block_cmd_specs[cmd] + 1:
             raise ArgCountSyntaxError(str(args[1:]))
-          ### this assumes arg1 is always a ref
-          args[1] = _prepare_ref(args[1], for_names, file_args)
+          ### this assumes arg1 is always a ref unless cmd is 'define'
+          if cmd != 'define':
+            args[1] = _prepare_ref(args[1], for_names, file_args)
 
           # handle arg2 for the 'is' command
           if cmd == 'is':
@@ -434,6 +452,12 @@ class Template:
       self._execute(section, fp, ctx)
       idx[1] = idx[1] + 1
     del ctx.for_index[refname]
+  def _cmd_define(self, args, fp, ctx):
+    ((name,), unused, section) = args
+    valfp = cStringIO.StringIO()
+    if section is not None:
+      self._execute(section, valfp, ctx)
+    ctx.defines[name] = valfp.getvalue()
 
 def boolean(value):
   "Return a value suitable for [if-any bool_var] usage in a template."
@@ -490,6 +514,8 @@ def _get_value((refname, start, rest), ctx):
   if ctx.for_index.has_key(start):
     list, idx = ctx.for_index[start]
     ob = list[idx]
+  elif ctx.defines.has_key(start):
+    ob = ctx.defines[start]
   elif ctx.data.has_key(start):
     ob = ctx.data[start]
   else:
