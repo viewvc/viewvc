@@ -221,7 +221,9 @@
   <th align=left valign=top>&nbsp;</th>
   <th align=left valign=top>&nbsp;</th>
   <th align=left valign=top>&nbsp;</th>
+[# uncommment, if you want a separate Description column:
   <th align=left valign=top>&nbsp;</th>
+]
  </tr>
 </table>
 [end]
