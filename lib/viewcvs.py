@@ -534,6 +534,7 @@ enscript_extensions = {
   '.cc' : 'cpp',
   '.cpp' : 'cpp',
   '.cxx' : 'cpp',
+  '.dpr' : 'delphi',
   '.el' : 'elisp',
   '.eps' : 'postscript',
   '.f' : 'fortran',
@@ -549,7 +550,12 @@ enscript_extensions = {
   '.lhs' : 'haskell',
   '.m' : 'objc',
   '.p' : 'pascal',
-  '.pas' : 'pascal',
+  # classic setting:
+  # '.pas' : 'pascal',
+  # most people using pascal today are using the Delphi system originally 
+  # brought to us as Turbo-Pascal during the eighties of the last century:
+  '.pas' : 'delphi',
+  # ---
   '.pl' : 'perl',
   '.pm' : 'perl',
   '.pp' : 'pascal',
