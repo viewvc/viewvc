@@ -63,34 +63,32 @@ class ViewcvsException:
     return "ViewCVS Unrecoverable Error"
 
 def PrintStackTrace(text = ""):
-  import sys
-  import traceback
-  import string
-  import sapi
-
-  print "<hr><p><font color=red>", text, "</font></p>\n<p><pre>"
-  print sapi.server.escape(string.join(traceback.format_stack(), ''))
-  print "</pre></p>"
-  sys.stdout.flush()
+  import sys, traceback, string, sapi
+  out, server = sys.stdout, sapi.server.self()
+  out.write("<hr><p><font color=red>%s</font></p>\n<p><pre>" % text)
+  out.write(server.escape(string.join(traceback.format_stack(), '')))
+  out.write("</pre></p>")
+  out.flush()
 
 def PrintException():
-  import sys
-  import traceback
-  import string
-  import sapi
+  import sys, traceback, string, sapi
+  out, server = sys.stdout, sapi.server.self()
   
-  sapi.server.header()  
-  print "<h3>Exception</h3>"
+  server.header()  
+  out.write("<h3>Exception</h3>\n")
   info = sys.exc_info()
   
-  # put message in a more prominent position (rather than at the end of the stack trace)
+  # put message in a prominent position (rather than 
+  # at the end of the stack trace)
   if isinstance(info[1], ViewcvsException):
-    print "<h4>ViewCVS Messages:</h4>"
-    print info[1].description
+    out.write("<h4>ViewCVS Messages:</h4>\n%s\n" % info[1].description)
   
-  print "<h4>Python Messages:</h4>\n<p><pre>"
-  print sapi.server.escape(string.join(apply(traceback.format_exception, info), ''))
-  print "</pre></p>"
+  stacktrace = string.join(apply(traceback.format_exception, info), '')
+  
+  out.write("<h4>Python Messages:</h4>\n<p><pre>")
+  out.write(server.escape(stacktrace))
+  out.write("</pre></p>\n")
+  
   del info
 
 if SHOW_CHILD_PROCESSES:
@@ -108,64 +106,64 @@ if SHOW_CHILD_PROCESSES:
         else:
           sapi.server.pageGlobals['processes'].append(self)
 
-    def printInfo(self):
-      print "Command Line", command
-
   def DumpChildren():
     import sapi, sys, os
-    server = sapi.server.self()
+    out, server = sys.stdout, sapi.server.self()
 
-    if not server.pageGlobals.has_key('processes'):
+    if not 'processes' in server.pageGlobals:
       return
     
-    server.header()    
+    server.header()
     lastOut = None
     i = 0
 
     for k in server.pageGlobals['processes']:
       i += 1
-      print "<table border=1>"
-      print "<tr><td colspan=2>Child Process", i, "</td></tr>"
-      sys.stdout.write("<tr>\n  <td valign=top>Command Line</td>  <td><pre>")
-      sys.stdout.write(server.escape(k.command))
-      sys.stdout.write("</pre></td>\n</tr>\n")
-      sys.stdout.write("<tr>\n  <td valign=top>Standard In:</td>  <td>")
-      if k.debugIn is lastOut and not (lastOut is None):
-        sys.stdout.write("<i>Output from process %i</i>" % (i - 1))
+      out.write("<table border=1>\n")
+      out.write("<tr><td colspan=2>Child Process%i</td></tr>" % i)
+      out.write("<tr>\n  <td valign=top>Command Line</td>  <td><pre>")
+      out.write(server.escape(k.command))
+      out.write("</pre></td>\n</tr>\n")
+      out.write("<tr>\n  <td valign=top>Standard In:</td>  <td>")
+
+      if k.debugIn is lastOut and not lastOut is None:
+        out.write("<i>Output from process %i</i>" % (i - 1))
       elif k.debugIn:
-        sys.stdout.write("<pre>")
-        sys.stdout.write(server.escape(k.debugIn.getvalue()))
-        sys.stdout.write("</pre>")
-      sys.stdout.write("</td>\n</tr>\n")
+        out.write("<pre>")
+        out.write(server.escape(k.debugIn.getvalue()))
+        out.write("</pre>")
+        
+      out.write("</td>\n</tr>\n")
       
       if k.debugOut is k.debugErr:
-        sys.stdout.write("<tr>\n  <td valign=top>Standard Out & Error:</td>  <td><pre>")
+        out.write("<tr>\n  <td valign=top>Standard Out & Error:</td>  <td><pre>")
         if k.debugOut:
-          sys.stdout.write(server.escape(k.debugOut.getvalue()))
-        sys.stdout.write("</pre></td>\n</tr>\n")
+          out.write(server.escape(k.debugOut.getvalue()))
+        out.write("</pre></td>\n</tr>\n")
+        
       else:
-        sys.stdout.write("<tr>\n  <td valign=top>Standard Out:</td>  <td><pre>")
+        out.write("<tr>\n  <td valign=top>Standard Out:</td>  <td><pre>")
         if k.debugOut:
-          sys.stdout.write(server.escape(k.debugOut.getvalue()))
-        sys.stdout.write("</pre></td>\n</tr>\n")
-        sys.stdout.write("<tr>\n  <td valign=top>Standard Error:</td>  <td><pre>")
+          out.write(server.escape(k.debugOut.getvalue()))
+        out.write("</pre></td>\n</tr>\n")
+        out.write("<tr>\n  <td valign=top>Standard Error:</td>  <td><pre>")
         if k.debugErr:
-          sys.stdout.write(server.escape(k.debugErr.getvalue()))
-        sys.stdout.write("</pre></td>\n</tr>\n")
+          out.write(server.escape(k.debugErr.getvalue()))
+        out.write("</pre></td>\n</tr>\n")
 
-      sys.stdout.write("</table>\n")
+      out.write("</table>\n")
+      out.flush()
       lastOut = k.debugOut
 
-    print "<table border=1>"
-    print "<tr><td colspan=2>Environment Variables</td></tr>"
+    out.write("<table border=1>\n")
+    out.write("<tr><td colspan=2>Environment Variables</td></tr>")
     for k, v in os.environ.items():
-      sys.stdout.write("<tr>\n  <td valign=top><pre>")
-      sys.stdout.write(server.escape(k))
-      sys.stdout.write("</pre></td>\n  <td valign=top><pre>")
-      sys.stdout.write(server.escape(v))
-      sys.stdout.write("</pre></td>\n</tr>")
-    print "</table>"
-
+      out.write("<tr>\n  <td valign=top><pre>")
+      out.write(server.escape(k))
+      out.write("</pre></td>\n  <td valign=top><pre>")
+      out.write(server.escape(v))
+      out.write("</pre></td>\n</tr>")
+    out.write("</table>")
          
 else:
 
