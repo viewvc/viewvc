@@ -71,22 +71,22 @@ class CheckinDatabaseQuery:
         self.sort = sort
 
     def SetFromDateObject(self, ticks):
-        self.from_date = DBI.TimestampFromTicks(ticks)
+        self.from_date = dbi.TimestampFromTicks(ticks)
 
     def SetToDateObject(self, ticks):
-        self.to_date = DBI.TimestampFromTicks(ticks)
+        self.to_date = dbi.TimestampFromTicks(ticks)
 
     def SetFromDateHoursAgo(self, hours_ago):
         ticks = time.time() - (3600 * hours_ago)
-        self.from_date = DBI.TimestampFromTicks(ticks)
+        self.from_date = dbi.TimestampFromTicks(ticks)
         
     def SetFromDateDaysAgo(self, days_ago):
         ticks = time.time() - (86400 * days_ago)
-        self.from_date = DBI.TimestampFromTicks(ticks)
+        self.from_date = dbi.TimestampFromTicks(ticks)
 
     def SetToDateDaysAgo(self, days_ago):
         ticks = time.time() - (86400 * days_ago)
-        self.to_date = DBI.TimestampFromTicks(ticks)
+        self.to_date = dbi.TimestampFromTicks(ticks)
 
     def AddCommit(self, commit):
         self.commit_list.append(commit)
