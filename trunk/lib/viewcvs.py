@@ -1051,100 +1051,6 @@ def view_markup(request):
     raise 'pipe error status: %d' % status
   html_footer(request)
 
-class DirEntry:
-  def __init__(self, name, kind, verboten=0):
-    self.name = name
-    self.kind = kind
-    self.verboten = verboten
-
-def get_file_data_svn(repos, path_parts):
-  """Return list of files in a directory"""
-
-  item = repos.getitem(path_parts)
-  if not isinstance(item, vclib.Versdir):
-    raise debug.ViewcvsException("Path '%s' is not a directory." 
-                                 % repos._getpath(path_parts))
-
-  file_data = []
-  sapi.server.header()
-  for name, obj in item.getfiles().items() + item.getsubdirs().items():
-    file_data.append(DirEntry(name, obj.type))
-
-  return file_data
-
-def get_file_data(repos, path_parts):
-  """Return list of files in a directory
-
-  Only RCS files (*,v) and subdirs are returned.
-  """
-  
-  full_name = repos._getpath(path_parts)
-  files = os.listdir(full_name)
-  data = [ ]
-
-  if sys.platform == "win32":
-    uid = 1
-    gid = 1
-  else:
-    uid = os.getuid()
-    gid = os.getgid()
-
-  for file in files:
-    pathname = os.path.join(full_name, file)
-    try:
-      info = os.stat(pathname)
-    except os.error:
-      data.append(DirEntry(file, None, 1))
-      continue
-    mode = info[stat.ST_MODE]
-    isdir = stat.S_ISDIR(mode)
-    isreg = stat.S_ISREG(mode)
-    if (isreg and file[-2:] == ',v') or isdir:
-      #
-      # Quick version of access() where we use existing stat() data.
-      #
-      # This might not be perfect -- the OS may return slightly different
-      # results for some bizarre reason. However, we make a good show of
-      # "can I read this file/dir?" by checking the various perm bits.
-      #
-      # NOTE: if the UID matches, then we must match the user bits -- we
-      # cannot defer to group or other bits. Similarly, if the GID matches,
-      # then we must have read access in the group bits.
-      # 
-      # If the UID or GID don't match, we need to check the
-      # results of an os.access() call, in case the web server process
-      # is in the group that owns the directory.
-
-      #
-      if isdir:
-        mask = stat.S_IROTH | stat.S_IXOTH
-      else:
-        mask = stat.S_IROTH
-
-      valid = 1
-      if info[stat.ST_UID] == uid:
-        if ((mode >> 6) & mask) != mask:
-          valid = 0
-      elif info[stat.ST_GID] == gid:
-        if ((mode >> 3) & mask) != mask:
-          valid = 0
-      # If the process running the web server is a member of 
-      # the group stat.ST_GID access may be granted.
-      # so the fall back to os.access is needed to figure this out.
-      elif ((mode & mask) != mask) and (os.access(pathname,os.R_OK) == -1):
-        valid = 0
-      
-      if isdir:
-        name = file
-        kind = vclib.DIR      
-      else:
-        name = file[:-2]
-        kind = vclib.FILE
-
-      data.append(DirEntry(name, kind, not valid))
-
-  return data
-
 def get_last_modified(repos, path_parts, file_data):
   """Add info about the most recently modified subfile to subdirectory entry
 
@@ -1293,7 +1199,7 @@ def view_directory_cvs(request, data, sortby, sortdir):
   search_re = query_dict.get('search', '')
 
   # Search current directory
-  file_data = get_file_data(request.repos, request.path_parts)
+  file_data = request.repos.listdir(request.path_parts)
 
   if cfg.options.use_re_search and search_re:
     file_data = search_files(request.repos, request.path_parts,
@@ -1307,7 +1213,7 @@ def view_directory_cvs(request, data, sortby, sortdir):
     # specific tag, then the Attic may contain files/revs to display.
     # grab the info for those files, too.
     try:
-      attic_files = get_file_data(request.repos, request.path_parts + ['Attic'])
+      attic_files = request.repos.listdir(request.path_parts + ['Attic'])
     except os.error:
       attic_files = []
     else:
@@ -1537,7 +1443,7 @@ def view_directory_svn(request, data, sortby, sortdir):
   query_dict = request.query_dict
   where = request.where
 
-  file_data = get_file_data_svn(request.repos, request.path_parts)
+  file_data = request.repos.listdir(request.path_parts)
   files = map(lambda x: x.name, file_data)
   fileinfo, alltags = vclib.svn.get_logs(request.repos, where, files)
 
@@ -2734,7 +2640,7 @@ def generate_tarball_cvs(out, request, tar_top, rep_top, reldir, tag, stack=[]):
 
   subdirs = [ ]
   rcs_files = [ ]
-  for file in get_file_data(request.repos, rep_path):
+  for file in request.repos.listdir(rep_path):
     if file.verboten:
       continue
     if file.kind == vclib.DIR:
@@ -2742,7 +2648,7 @@ def generate_tarball_cvs(out, request, tar_top, rep_top, reldir, tag, stack=[]):
     else:
       rcs_files.append(file.name)
   if tag and 'Attic' in subdirs:
-    for file in get_file_data(request.repos, rep_path + ['Attic']):
+    for file in request.repos.listdir(rep_path + ['Attic']):
       if file.kind == vclib.FILE and not file.verboten:
         rcs_files.append('Attic/' + file.name)
 

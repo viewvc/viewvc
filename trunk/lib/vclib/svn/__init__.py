@@ -283,6 +283,18 @@ class SubversionRepository(vclib.Repository):
     revision = str(get_last_history_rev(self, path, self.pool))
     return fp, revision
 
+  def listdir(self, path_parts):
+    item = self.getitem(path_parts)
+    if not isinstance(item, vclib.Versdir):
+      raise vclib.Error("Path '%s' is not a directory."
+                        % self._getpath(path_parts))
+
+    file_data = []
+    for name, obj in item.getfiles().items() + item.getsubdirs().items():
+      file_data.append(vclib.DirEntry(name, obj.type))
+
+    return file_data
+
   def _getpath(self, path_parts):
     return string.join(path_parts, '/')
 

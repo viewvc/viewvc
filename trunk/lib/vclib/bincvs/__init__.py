@@ -20,6 +20,8 @@
 import vclib
 import os
 import os.path
+import sys
+import stat
 import string
 import re
 import time
@@ -520,6 +522,75 @@ class BinCVSRepository(vclib.Repository):
         'url="%s"' % (filename, full_name, where))
   
     return fp, revision
+
+  def listdir(self, path_parts):
+    # Only RCS files (*,v) and subdirs are returned.
+
+    full_name = self._getpath(path_parts)
+    files = os.listdir(full_name)
+    data = [ ]
+
+    if sys.platform == "win32":
+      uid = 1
+      gid = 1
+    else:
+      uid = os.getuid()
+      gid = os.getgid()
+
+    for file in files:
+      pathname = os.path.join(full_name, file)
+      try:
+        info = os.stat(pathname)
+      except os.error:
+        data.append(vclib.DirEntry(file, None, 1))
+        continue
+      mode = info[stat.ST_MODE]
+      isdir = stat.S_ISDIR(mode)
+      isreg = stat.S_ISREG(mode)
+      if (isreg and file[-2:] == ',v') or isdir:
+        #
+        # Quick version of access() where we use existing stat() data.
+        #
+        # This might not be perfect -- the OS may return slightly different
+        # results for some bizarre reason. However, we make a good show of
+        # "can I read this file/dir?" by checking the various perm bits.
+        #
+        # NOTE: if the UID matches, then we must match the user bits -- we
+        # cannot defer to group or other bits. Similarly, if the GID matches,
+        # then we must have read access in the group bits.
+        #
+        # If the UID or GID don't match, we need to check the
+        # results of an os.access() call, in case the web server process
+        # is in the group that owns the directory.
+        #
+        if isdir:
+          mask = stat.S_IROTH | stat.S_IXOTH
+        else:
+          mask = stat.S_IROTH
+
+        valid = 1
+        if info[stat.ST_UID] == uid:
+          if ((mode >> 6) & mask) != mask:
+            valid = 0
+        elif info[stat.ST_GID] == gid:
+          if ((mode >> 3) & mask) != mask:
+            valid = 0
+        # If the process running the web server is a member of
+        # the group stat.ST_GID access may be granted.
+        # so the fall back to os.access is needed to figure this out.
+        elif ((mode & mask) != mask) and (os.access(pathname,os.R_OK) == -1):
+          valid = 0
+
+        if isdir:
+          name = file
+          kind = vclib.DIR
+        else:
+          name = file[:-2]
+          kind = vclib.FILE
+
+        data.append(vclib.DirEntry(name, kind, not valid))
+
+    return data
 
   def _getpath(self, path_parts):
     return apply(os.path.join, (self.rootpath,) + tuple(path_parts))
