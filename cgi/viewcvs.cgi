@@ -84,21 +84,51 @@ __version__ = '0.4-dev'
 
 #########################################################################
 
-
 class Config:
+  _sections = ('general', 'images', 'options', 'colors', 'text')
+  _force_multi_value = ('cvs_roots', 'forbidden')
+
   def __init__(self):
-    self.general = _sub_config()
-    self.images = _sub_config()
-    self.options = _sub_config()
-    self.colors = _sub_config()
-    self.text = _sub_config()
+    for section in self._sections:
+      setattr(self, section, _sub_config())
+
+  def load_config(self, fname):
+    this_dir = os.path.dirname(sys.argv[0])
+    pathname = os.path.join(this_dir, fname)
+    parser = ConfigParser.ConfigParser()
+    parser.read(pathname)
+
+    for section in self._sections:
+      if not parser.has_section(section):
+        continue
+
+      sc = getattr(self, section)
+
+      for opt in parser.options(section):
+        value = parser.get(section, opt)
+        if (section != 'text' and ',' in value) or \
+           opt in self._force_multi_value:
+          value = map(string.strip, string.split(value, ','))
+        else:
+          try:
+            value = int(value)
+          except ValueError:
+            pass
+
+        if opt == 'cvs_roots':
+          roots = { }
+          for root in value:
+            name, path = map(string.strip, string.split(root, ':'))
+            roots[name] = path
+          value = roots
+        setattr(sc, opt, value)
 
 class _sub_config:
   def get_image(self, which):
     text = '[%s]' % string.upper(which)
     path, width, height = getattr(self, which)
     if path:
-      return '<img src="%s" alt="%s" border=0 width=%d height=%d>' % \
+      return '<img src="%s" alt="%s" border=0 width=%s height=%s>' % \
              (path, text, width, height)
     return text
 
@@ -246,6 +276,7 @@ import mimetypes
 import time
 import re
 import stat
+import ConfigParser
 
 
 checkout_magic_path = '~checkout~/'
@@ -276,73 +307,6 @@ header_comment = '''\
      by Greg Stein -- mailto:gstein@lyra.org
   -->
 '''
-
-####################
-# back-compat crap
-
-cvs_roots = cfg.general.cvs_roots
-default_root = cfg.general.default_root
-rcs_path = cfg.general.rcs_path
-mime_types_file = cfg.general.mime_types_file
-defaulttitle = cfg.general.main_title
-forbidden_modules = cfg.general.forbidden
-
-markup_log_color = cfg.colors.markup_log
-diff_color_heading = cfg.colors.diff_heading
-diff_color_empty = cfg.colors.diff_empty
-diff_color_remove = cfg.colors.diff_remove
-diff_color_change = cfg.colors.diff_change
-diff_color_add = cfg.colors.diff_add
-diff_color_dark_change = cfg.colors.diff_dark_change
-table_colors = cfg.colors.even_odd
-navigationHeaderColor = cfg.colors.nav_header
-backcolor = cfg.colors.alt_background
-columnHeaderColorDefault = cfg.colors.column_header_normal
-columnHeaderColorSorted = cfg.colors.column_header_sorted
-tableBorderColor = cfg.colors.table_border
-
-show_author = cfg.options.show_author
-hr_breakable = cfg.options.hr_breakable
-hr_funout = cfg.options.hr_funout
-hr_ignore_white = cfg.options.hr_ignore_white
-hr_ignore_keyword_subst = cfg.options.hr_ignore_keyword_subst
-allow_annotate = cfg.options.allow_annotate
-allow_markup = cfg.options.allow_markup
-allow_compress = cfg.options.allow_compress
-use_java_script = cfg.options.use_java_script
-open_extern_window = cfg.options.open_extern_window
-extern_window_width = cfg.options.extern_window_width
-extern_window_height = cfg.options.extern_window_height
-checkout_magic = cfg.options.checkout_magic
-show_subdir_lastmod = cfg.options.show_subdir_lastmod
-show_logs = cfg.options.show_logs
-show_log_in_markup = cfg.options.show_log_in_markup
-allow_version_select = cfg.options.allow_version_select
-py2html_path = cfg.options.py2html_path
-short_log_len = cfg.options.short_log_len
-tablepadding = cfg.options.table_padding
-diff_font_face = cfg.options.diff_font_face
-diff_font_size = cfg.options.diff_font_size
-input_text_size = cfg.options.input_text_size
-
-short_instruction = cfg.text.short_intro
-repository_info = cfg.text.repository_info
-long_intro = cfg.text.long_intro
-doc_information = cfg.text.doc_info
-
-body_tag = '<body text="%s" bgcolor="%s">' % \
-           (cfg.colors.text, cfg.colors.background)
-default_settings = {
-  "sortby" : cfg.options.sort_by,
-  "hideattic" : cfg.options.hide_attic,
-  "logsort" : cfg.options.log_sort,
-  "diff_format" : cfg.options.diff_format,
-  "hidecvsroot" : cfg.options.hide_cvsroot,
-  "hidenonreadable" : cfg.options.hide_non_readable,
-  }
-
-
-####################
 
 
 class Request:
@@ -505,10 +469,11 @@ def html_header(title):
 %s
 <title>%s</title>
 </head>
-%s
+<body text="%s" bgcolor="%s">
 <table width="100&#37;" border=0 cellspacing=0 cellpadding=0>
   <tr><td><h1>%s</h1></td><td align=right>%s</td></tr></table>
-''' % (header_comment, title, body_tag, title, logo)
+''' % (header_comment, title, cfg.colors.text, cfg.colors.background,
+       title, logo)
 
 def html_footer():
   print '<hr noshade><table width="100&#37;" border=0 cellpadding=0 cellspacing=0><tr>'
@@ -2264,8 +2229,83 @@ def view_module():
   print "module"
   html_footer()
 
+def handle_config():
+  # load in configuration information from the config file
+  ### allow changes and paths here...??
+  cfg.load_config('viewcvs.conf')
+
+  ### backwards compat crap
+  cvs_roots = cfg.general.cvs_roots
+  default_root = cfg.general.default_root
+  rcs_path = cfg.general.rcs_path
+  mime_types_file = cfg.general.mime_types_file
+  defaulttitle = cfg.general.main_title
+  forbidden_modules = cfg.general.forbidden
+
+  markup_log_color = cfg.colors.markup_log
+  diff_color_heading = cfg.colors.diff_heading
+  diff_color_empty = cfg.colors.diff_empty
+  diff_color_remove = cfg.colors.diff_remove
+  diff_color_change = cfg.colors.diff_change
+  diff_color_add = cfg.colors.diff_add
+  diff_color_dark_change = cfg.colors.diff_dark_change
+  table_colors = cfg.colors.even_odd
+  navigationHeaderColor = cfg.colors.nav_header
+  backcolor = cfg.colors.alt_background
+  columnHeaderColorDefault = cfg.colors.column_header_normal
+  columnHeaderColorSorted = cfg.colors.column_header_sorted
+  tableBorderColor = cfg.colors.table_border
+
+  show_author = cfg.options.show_author
+  hr_breakable = cfg.options.hr_breakable
+  hr_funout = cfg.options.hr_funout
+  hr_ignore_white = cfg.options.hr_ignore_white
+  hr_ignore_keyword_subst = cfg.options.hr_ignore_keyword_subst
+  allow_annotate = cfg.options.allow_annotate
+  allow_markup = cfg.options.allow_markup
+  allow_compress = cfg.options.allow_compress
+  use_java_script = cfg.options.use_java_script
+  open_extern_window = cfg.options.open_extern_window
+  extern_window_width = cfg.options.extern_window_width
+  extern_window_height = cfg.options.extern_window_height
+  checkout_magic = cfg.options.checkout_magic
+  show_subdir_lastmod = cfg.options.show_subdir_lastmod
+  show_logs = cfg.options.show_logs
+  show_log_in_markup = cfg.options.show_log_in_markup
+  allow_version_select = cfg.options.allow_version_select
+  py2html_path = cfg.options.py2html_path
+  short_log_len = cfg.options.short_log_len
+  tablepadding = cfg.options.table_padding
+  diff_font_face = cfg.options.diff_font_face
+  diff_font_size = cfg.options.diff_font_size
+  input_text_size = cfg.options.input_text_size
+
+  short_instruction = cfg.text.short_intro
+  repository_info = cfg.text.repository_info
+  long_intro = cfg.text.long_intro
+  doc_information = cfg.text.doc_info
+
+  default_settings = {
+    "sortby" : cfg.options.sort_by,
+    "hideattic" : cfg.options.hide_attic,
+    "logsort" : cfg.options.log_sort,
+    "diff_format" : cfg.options.diff_format,
+    "hidecvsroot" : cfg.options.hide_cvsroot,
+    "hidenonreadable" : cfg.options.hide_non_readable,
+    }
+
+  ### hacky Python stuff... :-)  this copies all locals out to the global
+  ### namespace. I'd rather not type a bazillion "global foo" lines since
+  ### this is just going to go away anyhow...
+  for v in dir():
+    if v != 'v':
+      globals()[v] = vars()[v]
+
 
 def main():
+  # handle the configuration stuff
+  handle_config()
+
   # build a Request object, which contains info about the HTTP request
   request = Request()
 
