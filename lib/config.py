@@ -162,7 +162,6 @@ class Config:
     self.general.forbidden = ()
     self.general.kv_files = [ ]
     self.general.languages = ['en-us']
-    self.general.http_expiration_time = 600
 
     self.templates.directory = 'templates/directory.ezt'
     self.templates.log = 'templates/log.ezt'
@@ -216,6 +215,8 @@ class Config:
     self.options.use_re_search = 0
     self.options.use_pagesize = 0
     self.options.use_localtime = 0
+    self.options.http_expiration_time = 600
+    self.options.generate_etags = 1
 
   def is_forbidden(self, module):
     if not module:
