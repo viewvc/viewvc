@@ -1236,6 +1236,8 @@ def view_directory(request):
     if isdir:
       if cfg.options.use_cvsgraph:
         row.graph_href = '&nbsp;' 
+      if cfg.options.show_subdir_lastmod:
+        row.show_subdir_lastmod = '&nbsp;'
       if not hideattic and file == 'Attic':
         continue
       if where == '' and ((file == 'CVSROOT' and cfg.options.hide_cvsroot)
