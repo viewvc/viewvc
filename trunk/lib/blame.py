@@ -33,7 +33,7 @@
 # -----------------------------------------------------------------------
 #
 
-cvsroots = ['c:\\src\\cvsroot', '/home/cvsroot']
+cvsroots = ['/home/cvsroot']
 
 import string
 import sys
@@ -136,7 +136,7 @@ class CVSParser:
         self.feof = 1
         break
 
-    if token[-1] == '\n':
+    if token[-1:] == '\n':
       token = token[:-1]
 
     return token
