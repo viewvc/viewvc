@@ -164,9 +164,11 @@ You'll also need to have diff.exe installed in a directory on your system PATH. 
 Once the Python bindings and diff are installed, you just need to set the svn_roots option in viewcvs.conf to point to your repositories.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-ICONS FOR IIS
+DOCROOT OPTIMIZATION
 
-The default templates supplied with ViewCVS rely on icons that come with apache. As a replacement for them on IIS, you can use the ones in the windows/icons folder. Just copy the folder to your web server's root directory to use them.
+By default ViewCVS serves up image and stylesheet files in <VIEWCVS_INSTALL_DIR>\templates\docroot\ on its own instead of relying on the webserver to deliver them. This simplifies web server configuration, but is inefficient because it means the Python interpreter has to run each time one of these files is downloaded. This causes ViewCVS pages to load more slowly, especially when ViewCVS is running under CGI on Windows.
+
+To make things more efficient, you can make the <VIEWCVS_INSTALL_DIR>\templates\docroot directory available on your web server and then set the "docroot" value in viewcvs.conf to point to the web address of the directory.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 TROUBLESHOOTING

@@ -805,7 +805,6 @@ def common_template_data(request):
     'cfg' : cfg,
     'vsn' : __version__,
     'kv'  : request.kv,
-    'icons' : cfg.options.icons,
     'docroot' : cfg.options.docroot is None                        \
                 and request.script_name + '/' + docroot_magic_path \
                 or cfg.options.docroot,

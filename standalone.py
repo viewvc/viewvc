@@ -57,14 +57,8 @@ else:
 
 import sapi
 import viewcvs
-import apache_icons
 import compat; compat.for_standalone()
 
-
-# calculate the mtime of the apache_icons module, for use when serving icons
-mtime = os.stat(apache_icons.__file__)[stat.ST_MTIME]
-icons_last_modified = rfc822.formatdate(mtime)
-del mtime
 
 if viewcvs.CONF_PATHNAME is None:
   viewcvs.g_install_dir = ''
@@ -122,13 +116,6 @@ def serve(host, port, callback=None):
                 except IOError:
                     # ignore IOError: [Errno 32] Broken pipe
                     pass
-            elif self.path[:7] == "/icons/":
-                # XXX icon type should not be hardcoded to GIF:
-                self.send_response(200)
-                self.send_header("Content-type", "image/gif")
-                self.send_header("Last-Modified", icons_last_modified)
-                self.end_headers()
-                apache_icons.serve_icon(self.path, self.wfile)
             else:
                 self.send_error(404)
 
@@ -309,8 +296,7 @@ If this doesn't work, please click on the link above.
             raise KeyboardInterrupt # Hack!
         os.close(0) # To avoid problems with shell job control
 
-        # always use default icon and docroot locations
-        viewcvs.cfg.options.icons = "/icons"
+        # always use default docroot location
         viewcvs.cfg.options.docroot = None
 
         # if cvsnt isn't found, fall back to rcs
