@@ -46,14 +46,21 @@ import cvsdb
 import vclib.bincvs
 
 
-def UpdateFile(db, repository, path):
+def UpdateFile(db, repository, path, update):
     try:
-        commit_list = cvsdb.GetUnrecordedCommitList(repository, path)
+        if update:
+            commit_list = cvsdb.GetUnrecordedCommitList(repository, path)
+        else:
+            commit_list = cvsdb.GetCommitListFromRCSFile(repository, path)
     except cvsdb.error, e:
         print '[ERROR] %s' % (e)
         return
 
-    print '[%s[%d new commits]]' % (path, len(commit_list)),
+    file = string.join(path, "/")
+    if update:
+       print '[%s [%d new commits]]' % (file, len(commit_list)),
+    else:
+       print '[%s [%d commits]]' % (file, len(commit_list)),
 
     ## add the commits into the database
     for commit in commit_list:
@@ -63,69 +70,19 @@ def UpdateFile(db, repository, path):
     print
 
 
-def RecurseUpdate(db, repository, directory):
-    for path in os.listdir(directory):
-        path = os.path.join(directory, path)
+def RecurseUpdate(db, repository, directory, update):
+    for entry in repository.listdir(directory, {}):
+        path = directory + [entry.name]
 
-        if os.path.islink(path):
+        if entry.verboten:
             continue
-        
-        if os.path.isdir(path):
-            RecurseUpdate(db, repository, path)
+
+        if entry.kind is vclib.DIR:
+            RecurseUpdate(db, repository, path, update)
             continue
-        
-        if os.path.isfile(path):
-            if path[-2:] == ',v':
-                UpdateFile(db, repository, path)
-        
 
-def CommandUpdate(path):
-    ## connect to the database we are updating
-    db = cvsdb.ConnectDatabase()
-    repository = vclib.bincvs.BinCVSRepository \
-      (None, path, cvsdb.cfg.general)
-    RecurseUpdate(db, repository, repository.rootpath)
-
-
-def RebuildFile(db, repository, path):
-    try:
-        commit_list = cvsdb.GetCommitListFromRCSFile(repository, path)
-    except cvsdb.error, e:
-        print '[ERROR] %s' % (e)
-        return
-
-    print '[%s[%d commits]]' % (path, len(commit_list)),
-
-    ## add the commits into the database
-    for commit in commit_list:
-        db.AddCommit(commit)
-        sys.stdout.write('.')
-        sys.stdout.flush()
-    print
-
-
-def RecurseRebuild(db, repository, directory):
-    for path in os.listdir(directory):
-        path = os.path.join(directory, path)
-
-        if os.path.islink(path):
-            continue
-        
-        if os.path.isdir(path):
-            RecurseRebuild(db, repository, path)
-            continue
-        
-        if os.path.isfile(path):
-            if path[-2:] == ',v':
-                RebuildFile(db, repository, path)
-        
-
-def CommandRebuild(path):
-    ## connect to the database we are updating
-    db = cvsdb.ConnectDatabase()
-    repository = vclib.bincvs.BinCVSRepository \
-      (None, path, cvsdb.cfg.general)
-    RecurseRebuild(db, repository, repository.rootpath)
+        if entry.kind is vclib.FILE:
+            UpdateFile(db, repository, path, update)
 
 
 def usage():
@@ -149,9 +106,9 @@ if __name__ == '__main__':
     ## set the handler function for the command
     command = sys.argv[1]
     if string.lower(command) == 'rebuild':
-        commandFunction = CommandRebuild
+        update = 0
     elif string.lower(command) == 'update':
-        commandFunction = CommandUpdate
+        update = 1
     else:
         print 'ERROR: unknown command %s' % (command)
         usage()
@@ -161,7 +118,14 @@ if __name__ == '__main__':
 
     ## run command
     try:
-        commandFunction(path)
+      ## connect to the database we are updating
+      db = cvsdb.ConnectDatabase()
+
+      repository = vclib.bincvs.BinCVSRepository \
+        (None, path, cvsdb.cfg.general)
+
+      RecurseUpdate(db, repository, [], update)
+
     except KeyboardInterrupt:
         print
         print '** break **'
