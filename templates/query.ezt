@@ -163,6 +163,7 @@
 
 [if-any commits]
 <table width="100%" border=0 cellspacing=0 cellpadding=2>
+ <thead>
  <tr class="vc_header">
   <th align=left valign=top>Revision</th>
   <th align=left valign=top>File</th>
@@ -174,7 +175,9 @@
 <th align=left valign=top>Description</th>
 ]
  </tr>
+ </thead>
 [for commits]
+ <tbody>
   [for commits.files]
     <tr class="vc_row_[if-index commits even]even[else]odd[end]">
       <td align=left valign=top>
@@ -220,6 +223,7 @@
       [end]
 [# ---]
   [end]
+ </tbody>
 [end]
 
  <tr class="vc_header">
