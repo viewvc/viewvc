@@ -106,7 +106,7 @@
       <br>Diff to <a href="[entries.diff_to_prev_href]">previous [entries.prev]</a>
       [if-any human_readable]
       [else]
-        (<a href="[entries.diff_to_prev_hr_href]">colored</a>)
+        (<a href="[entries.diff_to_prev_href]&amp;diff_format=h">colored</a>)
       [end]
     [end]
 
@@ -115,7 +115,7 @@
         , to <a href="[entries.diff_to_branch_href]">branch point [entries.branch_point]</a>
         [if-any human_readable]
         [else]
-           (<a href="[entries.diff_to_branch_hr_href]">colored</a>)
+           (<a href="[entries.diff_to_branch_href]&amp;diff_format=h">colored</a>)
         [end]
       [end]
   
@@ -123,7 +123,7 @@
         , to <a href="[entries.diff_to_main_href]">next main [entries.next_main]</a>
         [if-any human_readable]
         [else]
-           (<a href="[entries.diff_to_main_hr_href]">colored</a>)
+           (<a href="[entries.diff_to_main_href]&amp;diff_format=h">colored</a>)
         [end]
       [end]
     [end]
@@ -133,7 +133,7 @@
         to <a href="[entries.diff_to_sel_href]">selected [rev_selected]</a>
       [if-any human_readable]
       [else]
-        (<a href="[entries.diff_to_sel_hr_href]">colored</a>)
+        (<a href="[entries.diff_to_sel_href]&amp;diff_format=h">colored</a>)
       [end]
     [end]
    [end]
