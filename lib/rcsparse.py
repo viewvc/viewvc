@@ -30,17 +30,29 @@ import string
 import time
 
 
-class Parser:
+class _TokenStream:
   # Precompiled regular expressions
   nonws_token = re.compile('^([^;@][^;\\s]*)\\s*')
   semic_token = re.compile('^;\\s*')
   rcsen_token = re.compile('^@([^@]*)')
   undo_escape = re.compile('@@')
   odd_at      = re.compile('(([^@]|^)(@@)*)@([^@]|$)')
-  rcs_tree    = re.compile('^\\d')
 
-  # Get the next token from the RCS file
-  def get_token(self):
+  def __init__(self, file):
+    self.rcsfile = file
+    self.line_buffer = ''
+    self.feof = 0
+    self.save_token = None
+
+  def get(self):
+    "Get the next token from the RCS file."
+
+    # if one was pushed back, then return it
+    if self.save_token:
+      token = self.save_token
+      self.save_token = None
+      return token
+
     # Erase all-whitespace lines
     while len(self.line_buffer) == 0:
       self.line_buffer = self.rcsfile.readline()
@@ -88,50 +100,58 @@ class Parser:
 
     return token
 
-  # Try to match the next token from the input buffer
-  def match_token(self, match):
-    token = self.get_token()
+  def match(self, match):
+    "Try to match the next token from the input buffer."
+
+    token = self.get()
     if token != match:
       raise RuntimeError, ('Unexpected parsing error in RCS file.\n' +
                            'Expected token: %s, but saw: %s' % (match, token))
 
-  # Push RCS token back into the input buffer.
-  def unget_token(self, token):
-    self.line_buffer = token + " " + self.line_buffer
+  def unget(self, token):
+    "Put this token back, for the next get() to return."
+
+    # note: we don't put this into the input buffer because it may have been
+    # @-unescaped already.
+    self.save_token = token
+
+
+class Parser:
+  rcs_tree = re.compile('^\\d')
 
   def parse_rcs_admin(self):
     while 1:
       # Read initial token at beginning of line
-      token = self.get_token()
+      token = self.ts.get()
 
       # We're done once we reach the description of the RCS tree
       if self.rcs_tree.match(token):
-        self.unget_token(token)
+        self.ts.unget(token)
         return
 
       # print "token:", token
 
       if token == "head":
-        self.sink.set_head_revision(self.get_token())
-        self.match_token(';')
+        self.sink.set_head_revision(self.ts.get())
+        self.ts.match(';')
       elif token == "branch":
-        self.sink.set_principal_branch(self.get_token())
-        self.match_token(';')
+        self.sink.set_principal_branch(self.ts.get())
+        self.ts.match(';')
       elif token == "symbols":
         while 1:
-          tag = self.get_token()
+          tag = self.ts.get()
           if tag == ';':
             break
           (tag_name, tag_rev) = string.split(tag, ':')
           self.sink.define_tag(tag_name, tag_rev)
       elif token == "comment":
-        self.sink.set_comment(self.get_token())
-        self.match_token(';')
+        self.sink.set_comment(self.ts.get())
+        self.ts.match(';')
 
       # Ignore all these other fields - We don't care about them.         
       elif token in ("locks", "strict", "expand", "access"):
         while 1:
-          tag = self.get_token()
+          tag = self.ts.get()
           if tag == ';':
             break
       else:
@@ -142,17 +162,17 @@ class Parser:
 
   def parse_rcs_tree(self):
     while 1:
-      revision = self.get_token()
+      revision = self.ts.get()
 
       # End of RCS tree description ?
       if revision == 'desc':
-        self.unget_token(revision)
+        self.ts.unget(revision)
         return
 
       # Parse date
-      self.match_token('date')
-      date = self.get_token()
-      self.match_token(';')
+      self.ts.match('date')
+      date = self.ts.get()
+      self.ts.match(';')
 
       # Convert date into timestamp
       date_fields = string.split(date, '.') + ['0', '0', '0']
@@ -162,36 +182,36 @@ class Parser:
       timestamp = time.mktime(date_fields)
 
       # Parse author
-      self.match_token('author')
-      author = self.get_token()
-      self.match_token(';')
+      self.ts.match('author')
+      author = self.ts.get()
+      self.ts.match(';')
 
       # Parse state
-      self.match_token('state')
+      self.ts.match('state')
       state = ''
       while 1:
-        token = self.get_token()
+        token = self.ts.get()
         if token == ';':
           break
         state = state + token + ' '
       state = state[:-1]	# toss the trailing space
 
       # Parse branches
-      self.match_token('branches')
+      self.ts.match('branches')
       branches = [ ]
       while 1:
-        token = self.get_token()
+        token = self.ts.get()
         if token == ';':
           break
         branches.append(token)
 
       # Parse revision of next delta in chain
-      self.match_token('next')
-      next = self.get_token()
+      self.ts.match('next')
+      next = self.ts.get()
       if next == ';':
         next = None
       else:
-        self.match_token(';')
+        self.ts.match(';')
 
       # there are some files with extra tags in them. for example:
       #    owner	640;
@@ -200,35 +220,34 @@ class Parser:
       #    hardlinks	@configure.in@;
       # we just want to skip over these
       while 1:
-        token = self.get_token()
+        token = self.ts.get()
         if token == 'desc' or self.rcs_tree.match(token):
-          self.unget_token(token)
+          self.ts.unget(token)
           break
         # consume everything up to the semicolon
-        while self.get_token() != ';':
+        while self.ts.get() != ';':
           pass
 
       self.sink.define_revision(revision, timestamp, author, state, branches,
                                 next)
 
   def parse_rcs_description(self):
-    self.match_token('desc')
-    self.sink.set_description(self.get_token())
+    self.ts.match('desc')
+    self.sink.set_description(self.ts.get())
 
   def parse_rcs_deltatext(self):
-    while not self.feof:
-      revision = self.get_token()
-      self.match_token('log')
-      log = self.get_token()
-      self.match_token('text')
-      text = self.get_token()
+    ### maybe have another way to single EOF?
+    while not self.ts.feof:
+      revision = self.ts.get()
+      self.ts.match('log')
+      log = self.ts.get()
+      self.ts.match('text')
+      text = self.ts.get()
       self.sink.set_revision_info(revision, log, text)
 
   def parse(self, file, sink):
-    self.rcsfile = file
+    self.ts = _TokenStream(file)
     self.sink = sink
-    self.line_buffer = ''
-    self.feof = 0
 
     self.parse_rcs_admin()
     self.parse_rcs_tree()
@@ -244,7 +263,7 @@ class Parser:
     # higher level software doing it.
     self.sink.parse_completed()
 
-    self.rcsfile = self.sink = None
+    self.ts = self.sink = None
 
 
 class Sink:
