@@ -44,19 +44,12 @@ class CVSRepository(vclib.Repository):
       return vclib.DIR
     if os.path.isfile(basepath + ',v'):
       return vclib.FILE
+    atticpath = self._getpath(self._atticpath(path_parts))
+    if os.path.isfile(atticpath + ',v'):
+      return vclib.FILE
     raise vclib.ItemNotFound(path_parts)
 
   def listdir(self, path_parts, options):
-    """see vclib.Repository.listdir docstring
-
-    Option values recognized by this implementation:
-
-      cvs_list_attic
-        boolean, if true listing will include entries from the Attic
-        subdirectory
-    """
-    list_attic = options.get("cvs_list_attic", 1)
-
     # Only RCS files (*,v) and subdirs are returned.
     data = [ ]
 
@@ -66,21 +59,44 @@ class CVSRepository(vclib.Repository):
       if kind == vclib.FILE:
         if file[-2:] == ',v':
           data.append(CVSDirEntry(file[:-2], kind, verboten, 0))
-      else:
+      elif file != 'Attic' and file != 'CVS': # CVS directory is for fileattr
         data.append(CVSDirEntry(file, kind, verboten, 0))
 
-    if list_attic:
-      full_name = os.path.join(full_name, 'Attic')
-      if os.path.isdir(full_name):
-        for file in os.listdir(full_name):
-          kind, verboten = _check_path(os.path.join(full_name, file))
-          if kind == vclib.FILE and file[-2:] == ',v':
-            data.append(CVSDirEntry(file[:-2], kind, verboten, 1))
+    full_name = os.path.join(full_name, 'Attic')
+    if os.path.isdir(full_name):
+      for file in os.listdir(full_name):
+        kind, verboten = _check_path(os.path.join(full_name, file))
+        if kind == vclib.FILE and file[-2:] == ',v':
+          data.append(CVSDirEntry(file[:-2], kind, verboten, 1))
 
     return data
     
   def _getpath(self, path_parts):
     return apply(os.path.join, (self.rootpath,) + tuple(path_parts))
+
+  def _atticpath(self, path_parts):
+    return path_parts[:-1] + ['Attic'] + path_parts[-1:]
+
+  def rcsfile(self, path_parts, root=0, v=1):
+    "Return path to RCS file"
+
+    ret_parts = path_parts
+    ret_file = self._getpath(ret_parts)
+    if not os.path.isfile(ret_file + ',v'):
+      ret_parts = self._atticpath(path_parts)
+      ret_file = self._getpath(ret_parts)
+      if not os.path.isfile(ret_file + ',v'):
+        raise vclib.ItemNotFound(path_parts)
+
+    if root:
+      ret = ret_file
+    else:
+      ret = string.join(ret_parts, "/")
+
+    if v:
+      ret = ret + ",v"
+
+    return ret
 
 class BinCVSRepository(CVSRepository):
   def __init__(self, name, rootpath, rcs_paths):
@@ -93,7 +109,7 @@ class BinCVSRepository(CVSRepository):
     else:
       rev_flag = '-p' + rev
 
-    full_name = self._getpath(path_parts)
+    full_name = self.rcsfile(path_parts, root=1, v=0)
 
     fp = self.rcs_popen('co', (rev_flag, full_name), 'rb')
 
@@ -103,7 +119,7 @@ class BinCVSRepository(CVSRepository):
       # Bug at http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=190
       # As a workaround, we invoke rlog to find the first non-dead revision
       # that precedes it and check out that revision instead
-      args = self._getpath(path_parts) + ',v',
+      args = full_name + ',v',
       fp = self.rcs_popen('rlog', args, 'rt', 0)
       filename, default_branch, tags, msg, eof = _parse_log_header(fp)
 
@@ -179,7 +195,7 @@ class BinCVSRepository(CVSRepository):
     """
 
     # Invoke rlog
-    args = self._getpath(path_parts) + ',v',
+    args = self.rcsfile(path_parts, 1),
     fp = self.rcs_popen('rlog', args, 'rt', 0)
     filename, default_branch, tags, msg, eof = _parse_log_header(fp)
 
@@ -871,7 +887,7 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
         file.rev = wanted_entry.string
         file.date = wanted_entry.date
         file.author = wanted_entry.author
-        file.dead = wanted_entry.dead
+        file.dead = file.kind == vclib.FILE and wanted_entry.dead
         file.log = wanted_entry.log
         # suppress rlog errors if we find a usable revision in the end
         del file.log_errors[:]

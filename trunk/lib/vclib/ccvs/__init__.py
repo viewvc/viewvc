@@ -92,7 +92,7 @@ class CCVSRepository(CVSRepository):
       cvs_tags
         dictionary of Tag objects for all tags encountered
     """
-    path = self._getpath(path_parts) + ',v'
+    path = self.rcsfile(path_parts, 1)
     sink = TreeSink()
     rcsparse.Parser().parse(open(path, 'rb'), sink)
     filtered_revs = _file_log(sink.revs.values(), sink.tags,
@@ -105,7 +105,7 @@ class CCVSRepository(CVSRepository):
     return filtered_revs
 
   def openfile(self, path_parts, rev=None):
-    path = self._getpath(path_parts) + ',v'
+    path = self.rcsfile(path_parts, 1)
     sink = COSink(rev)
     rcsparse.Parser().parse(open(path, 'rb'), sink)
     revision = sink.last and sink.last.string

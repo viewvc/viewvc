@@ -280,17 +280,18 @@ class Request:
     # Make sure path exists
     self.pathtype = _repos_pathtype(self.repos, self.path_parts)
 
-    # If the path doesn't exist, but we have CVS repository, and the
-    # path doesn't already include an 'Attic' component, see if maybe
-    # the thing lives in the Attic.
-    if self.pathtype is None \
-           and self.roottype == 'cvs' \
-           and len(self.path_parts) > 1 \
-           and not self.path_parts[-2] == 'Attic':
-      attic_parts = self.path_parts[0:-1] + ['Attic'] + [self.path_parts[-1]]
-      if _repos_pathtype(self.repos, attic_parts) == vclib.FILE:
+    # If we have an old ViewCVS Attic URL which is still valid, then redirect
+    if self.roottype == 'cvs':
+      attic_parts = None
+      if (self.pathtype == vclib.FILE and len(self.path_parts) > 1
+          and self.path_parts[-2] == 'Attic'):
+        attic_parts = self.path_parts[:-2] + self.path_parts[-1:]
+      elif (self.pathtype == vclib.DIR and len(self.path_parts) > 0
+            and self.path_parts[-1] == 'Attic'):
+        attic_parts = self.path_parts[:-1]
+      if attic_parts:
         self.server.redirect(self.get_url(where=string.join(attic_parts, '/'),
-                                          pathtype=vclib.FILE))
+                                          pathtype=self.pathtype))
       
     if self.pathtype is None:
       # path doesn't exist, try stripping known fake suffixes
@@ -340,7 +341,6 @@ class Request:
         
     # Finally done parsing query string, set some extra variables 
     # and call view_func
-    self.full_name = self.rootpath + (self.where and '/' + self.where)
     if self.pathtype == vclib.FILE:
       self.setup_mime_type_info()
 
@@ -582,12 +582,8 @@ _legal_params = {
 
 # regex used to move from a file to a directory
 _re_up_path       = re.compile('(^|/)[^/]+$')
-_re_up_attic_path = re.compile('(^|/)(Attic/)?[^/]+$')
-def get_up_path(request, path, hideattic=0):
-  if request.roottype == 'svn' or hideattic:
-    return re.sub(_re_up_path, '', path)
-  else:
-    return re.sub(_re_up_attic_path, '', path)
+def get_up_path(path):
+  return re.sub(_re_up_path, '', path)
 
 def _strip_suffix(suffix, where, path_parts, pathtype, repos, view_func):
   """strip the suffix from a repository path if the resulting path
@@ -830,8 +826,6 @@ def common_template_data(request):
 
 def nav_header_data(request, rev):
   path, filename = os.path.split(request.where)
-  if request.roottype == 'cvs' and path[-6:] == '/Attic':
-    path = path[:-6]
 
   data = common_template_data(request)
   data.update({
@@ -1162,7 +1156,6 @@ def view_auto(request):
     view_checkout(request)
 
 def view_markup(request):
-  full_name = request.full_name
   where = request.where
   query_dict = request.query_dict
   rev = request.query_dict.get('rev')
@@ -1333,7 +1326,6 @@ def view_directory(request):
     view_tag = request.query_dict.get('only_with_tag')
     hideattic = int(request.query_dict.get('hideattic', 
                                            cfg.options.hide_attic))
-    options["cvs_list_attic"] = not hideattic or view_tag
     options["cvs_subdirs"] = (cfg.options.show_subdir_lastmod and
                               cfg.options.show_logs)
     options["cvs_dir_tag"] = view_tag
@@ -1393,11 +1385,8 @@ def view_directory(request):
       continue
                              
     if file.kind == vclib.DIR:
-      if (request.roottype == 'cvs' and
-          ((file.name == 'CVS') or # CVS directory is for fileattr
-           (not hideattic and file.name == 'Attic') or
-           (where == '' and (file.name == 'CVSROOT' and 
-                             cfg.options.hide_cvsroot)))):
+      if (request.roottype == 'cvs' and cfg.options.hide_cvsroot
+          and where == '' and file.name == 'CVSROOT'):
         continue
     
       row.href = request.get_url(view_func=view_directory,
@@ -1423,12 +1412,9 @@ def view_directory(request):
         continue
       num_displayed = num_displayed + 1
 
-      if request.roottype == 'cvs': 
-        file_where = where_prefix + (file.in_attic and 'Attic/' or '') \
-                     + file.name
-      else:
+      file_where = where_prefix + file.name
+      if request.roottype == 'svn': 
         row.size = file.size
-        file_where = where_prefix + file.name
 
       ### for Subversion, we should first try to get this from the properties
       mime_type, encoding = mimetypes.guess_type(file.name)
@@ -1475,7 +1461,7 @@ def view_directory(request):
                                                    'sortdir': None}),
     'num_files' :  num_files,
     'files_shown' : num_displayed,
-    'no_match' : ezt.boolean(num_files and not num_displayed),
+    'num_dead' : num_files - num_displayed,
 
     ### in the future, it might be nice to break this path up into
     ### a list of elements, allowing the template to display it in
@@ -1607,7 +1593,6 @@ def view_log(request):
   diff_format = request.query_dict.get('diff_format', cfg.options.diff_format)
   logsort = request.query_dict.get('logsort', cfg.options.log_sort)
   view_tag = request.query_dict.get('only_with_tag')
-  hide_attic = int(request.query_dict.get('hideattic',cfg.options.hide_attic))
   pathtype = request.pathtype
 
   mime_type = None
@@ -1622,7 +1607,7 @@ def view_log(request):
   options['svn_cross_copies'] = cfg.options.cross_copies
     
   if request.roottype == 'cvs':
-    up_where = get_up_path(request, request.where, hide_attic)
+    up_where = get_up_path(request.where)
     filename = os.path.basename(request.where)
     rev = view_tag
   else:
@@ -1920,8 +1905,9 @@ def view_annotate(request):
 
   ### be nice to hook this into the template...
   import blame
+  rcsfile = request.repos.rcsfile(request.path_parts)
   data['lines'] = blame.BlameSource(request.repos.rootpath,
-                                    request.where + ',v', rev,
+                                    rcsfile, rev,
                                     compat.urlencode(request.get_options()))
 
   request.server.header()
@@ -1935,11 +1921,12 @@ def view_cvsgraph_image(request):
     raise "cvsgraph no allows"
   
   request.server.header('image/png')
+  rcsfile = request.repos.rcsfile(request.path_parts)
   fp = popen.popen(os.path.normpath(os.path.join(cfg.options.cvsgraph_path,
                                                  'cvsgraph')),
                    ("-c", cfg.options.cvsgraph_conf,
                     "-r", request.repos.rootpath,
-                    request.where + ',v'), 'rb', 0)
+                    rcsfile), 'rb', 0)
   copy_stream(fp)
   fp.close()
 
@@ -1949,12 +1936,6 @@ def view_cvsgraph(request):
 
   if not cfg.options.use_cvsgraph:
     raise "cvsgraph no allows"
-
-  where = request.where
-
-  pathname, filename = os.path.split(where)
-  if pathname[-6:] == '/Attic':
-    pathname = pathname[:-6]
 
   data = nav_header_data(request, None)
 
@@ -1969,13 +1950,14 @@ def view_cvsgraph(request):
   imagesrc = request.get_url(view_func=view_cvsgraph_image)
 
   # Create an image map
+  rcsfile = request.repos.rcsfile(request.path_parts)
   fp = popen.popen(os.path.join(cfg.options.cvsgraph_path, 'cvsgraph'),
                    ("-i",
                     "-c", cfg.options.cvsgraph_conf,
                     "-r", request.repos.rootpath,
                     "-6", amp_query,
                     "-7", qmark_query,
-                    request.where + ',v'), 'rb', 0)
+                    rcsfile), 'rb', 0)
 
   data.update({
     'imagemap' : fp,
@@ -2447,7 +2429,8 @@ def view_diff(request):
   file1 = None
   file2 = None
   if request.roottype == 'cvs':
-    args[len(args):] = ['-r' + rev1, '-r' + rev2, request.full_name]
+    rcsfile = request.repos.rcsfile(request.path_parts, 1)
+    args[len(args):] = ['-r' + rev1, '-r' + rev2, rcsfile]
     fp = request.repos.rcs_popen('rcsdiff', args, 'rt')
   else:
     try:
@@ -2644,9 +2627,8 @@ def generate_tarball(out, request, tar_top, rep_top,
 
   subdirs.sort()
   for subdir in subdirs:
-    if not cvs or subdir != 'Attic':
-      generate_tarball(out, request, tar_top, rep_top,
-		       reldir + [subdir], options, stack)
+    generate_tarball(out, request, tar_top, rep_top,
+                     reldir + [subdir], options, stack)
 
   if len(stack):
     del stack[-1:]
@@ -2667,7 +2649,6 @@ def download_tarball(request):
   options = {}
   if request.roottype == 'cvs':
     tag = request.query_dict.get('only_with_tag')
-    options['cvs_list_attic'] = tag and 1 or 0
     options['cvs_dir_tag'] = tag
 
   ### look for GZIP binary
