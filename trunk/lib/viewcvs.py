@@ -963,6 +963,7 @@ def view_markup(request):
                                   params={'content-type': 'text/plain'}),
     'mime_type' : request.mime_type,
     'log' : None,
+    'tag' : None,
     })
 
   if cfg.options.show_log_in_markup:
