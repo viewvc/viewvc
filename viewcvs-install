@@ -255,6 +255,26 @@ def install_tree(src_path, dst_path, prompt_replace):
       set_paths = compile_it
       InstallFile(src, dst, 0644, set_paths, prompt_replace, compile_it)
 
+  # prompt to delete all .py and .pyc files that don't belong in installation
+  full_dst_path = os.path.join(ROOT_DIR, dst_path)
+  for fname in os.listdir(full_dst_path):
+    if not os.path.isfile(os.path.join(full_dst_path, fname)) or \
+       not ((fname[-3:] == '.py' and fname not in files) or
+            (fname[-4:] == '.pyc' and fname[:-1] not in files)):
+      continue
+    
+    while 1:
+      temp = raw_input("\n    File %s does not belong in ViewCVS %s.\n      DO YOU WANT TO,\n        delete [d]\n        leave as is [l]: " % (os.path.join(dst_path, fname), version))
+      print
+      
+      temp = string.lower(temp[0])
+      
+      if temp == "l":
+        break
+      
+      if temp == "d": 
+        os.unlink(os.path.join(full_dst_path, fname))
+        break
 
 ## MAIN
 if __name__ == "__main__":
