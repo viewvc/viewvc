@@ -6,17 +6,19 @@ This file contains special instructions for setting up ViewCVS on Windows. It wi
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 REQUIREMENTS
 
-ViewCVS requires a Python interpreter. The best one to use for Windows is ActiveState's ActivePython ( http://aspn.activestate.com/ASPN/Python ).
+ViewCVS requires the Python interpreter which you can download from
 
-ViewCVS also requires that the RCS tools be installed on your computer. If you are using ViewCVS with CVSNT, you should use the RCS utilities that come with CVSNT (they aren't installed by default). Otherwise you can find RCS binaries at
+  http://python.org/
+  
+and the Python for Windows Extensions which are at
 
-  http://ftp.cvshome.org/rcs/
+  http://starship.python.net/crew/mhammond/win32/
+  
+ViewCVS also requires that the RCS tools (rlog.exe, rcsdiff.exe, and co.exe) be installed on your computer. If you are using ViewCVS with a recent version of CVSNT, you can use the RCS utilities that come bundled with it. Otherwise you can find RCS binaries at
 
-and more information at
+  http://www.cs.purdue.edu/homes/trinkle/RCS/
 
-  http://www.cvshome.org/cyclic/cyclic-pages/rcs.html
-
-Once you've got Python and RCS installed you can test out ViewCVS before you install it by running:
+Once you've got Python and RCS installed, you can test out ViewCVS before you install it by running:
 
   python standalone.py -r <PATH_TO_REPOSITORY>
 
@@ -27,7 +29,7 @@ The standalone server has a number of features (including a GUI interface) which
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 BASIC INSTALLATION
 
-Once python is installed you can run the ViewCVS install script with
+Run the ViewCVS install script with
 
   python viewcvs-install
 
@@ -37,7 +39,7 @@ After the installation is finished you will need to edit the viewcvs.conf file i
 
 With the config file set up you should be able to double-click standalone.py and access your repository with a web browser.
 
-See the sections below for information on setting up optional features and troubleshooting. From here on <PYTHON_DIR> will stand for the python root directory (usually something like c:\python2.2) and <VIEWCVS_INSTALL_DIR> will represent the directory where ViewCVS has been installed to (default is C:\Program Files\viewcvs-1.0-dev).
+See the sections below for information on setting up optional features and troubleshooting. From here on <PYTHON_DIR> will stand for the Python root directory (usually something like C:\Python22) and <VIEWCVS_INSTALL_DIR> will represent the directory where ViewCVS has been installed to (default is C:\Program Files\viewcvs-1.0-dev).
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 SERVER CONFIGURATION
@@ -46,7 +48,7 @@ If you want to make ViewCVS available to a network (rather than using it on a st
 
 With IIS, you can run ViewCVS in CGI mode or ASP mode (or both modes). ASP mode gives better performance (faster page loads), but is harder to set up and may be less stable. CGI mode is stable and easy to set up but slower.
 
-On Apache, you can use CGI mode or Mod_Python mode or both modes at once. CGI mode is slower but more likely to work, while the Mod_Python mode is faster but a little harder to get working.
+On Apache, you can use CGI mode or Mod_Python mode or both modes at once. Mod_Python mode is faster than CGI mode.
 
 CGI Mode On IIS
 
@@ -67,11 +69,11 @@ CGI Mode On IIS
 
 ASP Mode On IIS
 
-  In order to run ViewCVS with ASP, you will need to enable Python ActiveX scripting and to install the included Aspfool ISAPI filter on whatever virtual server is being used to serve the viewcvs.asp page. Step by step instructions are given below. Information and source code for Aspfool can be found in the windows\aspfool folder and there is a precompiled version of aspfool.dll in the windows\binaries folder.
+  In order to run ViewCVS with ASP, you will need to enable Python ActiveX scripting and to install the included Aspfool ISAPI filter on whatever virtual server is being used to serve the viewcvs pages. Step by step instructions follow below. Aspfool is located in the windows\aspfool folder.
 
-  To install ASP follow these steps:
+  To set up ASP mode, follow these steps:
 
-  1) Run <PYTHON_DIR>\Lib\site-packages\win32comext\axscript\client\pyscript.py to register Python as an ASP scripting language. (More documentation on this is at http://www.python.org/windows/win32com/ActiveXScripting.html )
+  1) Run <PYTHON_DIR>\Lib\site-packages\win32comext\axscript\client\pyscript.py to register Python as an ASP scripting language. (More documentation on this is at http://www.python.org/windows/win32com/ActiveXScripting.html)
 
   2) Copy the viewcvs.asp and query.asp files from <VIEWCVS_INSTALL_DIR>\www\asp to a folder that is accessible through your web server.
 
@@ -79,10 +81,10 @@ ASP Mode On IIS
 
   4) On the properties dialog that appears, click the "ISAPI Filters" tab. Click the "add" button and enter the following information:
 
-    Filter Name:  aspfool
-    Executable:  aspfool.dll
+     Filter Name:  aspfool
+      Executable:  aspfool.dll
 
-  After you've saved these changes, the ViewCVS ASP pages should begin to work.
+  After you save these changes, the ViewCVS ASP pages should begin to work.
 
 CGI Mode on Apache
 
@@ -96,57 +98,51 @@ Mod_Python Mode on Apache
 
   2) Add the following line to the "Global Environment" section of httpd.conf
 
-    LoadModule python_module modules/mod_python.so
+     LoadModule python_module modules/mod_python.so
 
-  3) Copy viewcvs.py, query.py, and .htaccess from <VIEWCVS_INSTALL_DIR>\www\mod_python to a folder being served by apache. Make sure overrides are allowed in this folder. The relevant virtual directory in httpd.conf should have "AllowOverride All" set, or at least "AllowOverride FileInfo Options".
+  3) Copy viewcvs.py, query.py, and .htaccess from <VIEWCVS_INSTALL_DIR>\www\mod_python to a folder being served by apache. Make sure overrides are allowed in this folder. The relevant parent directory in httpd.conf should have "AllowOverride All" set, or at least "AllowOverride FileInfo Options".
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ENSCRIPT HIGHLIGHTING
 
-  To use enscript, you'll have to install the enscript, libintl, libiconv, and sed packages from the gnuwin32 project (http://gnuwin32.sourceforge.net/). Detailed instructions are on their site, but here is the basic procedure.
+To use enscript, you'll have to install the enscript, libintl, libiconv, and sed packages from the gnuwin32 project (http://gnuwin32.sourceforge.net/). Detailed instructions are on their site, but here is the basic procedure.
 
-  1) Extract all packages to a folder on your hard drive, for example c:\gnuwin32
+1) Extract all packages to a folder on your hard drive, for example c:\gnuwin32
 
-  2) Add "c:\gnuwin32\bin" to the system "PATH" environment variable. If ViewCVS is running as part of a system service like IIS you will need to reboot the computer so it is able to see the value. See the "Troubleshooting" section below for specific information on when a reboot is neccessary.
+2) Add "c:\gnuwin32\bin" to the system "PATH" environment variable. If ViewCVS is running as part of a system service like IIS you will need to reboot the computer so it is able to see the value. See the "Troubleshooting" section below for specific information on when a reboot is neccessary.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 BONSAI-LIKE CHECKIN DATABASE
 
-  To use the checkin database, you'll need to install MySQL and the MySQL-Python interface. MySQL can be downloaded from www.mysql.com. The MySql-Python adapter is available from http://sf.net/projects/mysql-python/ . Make sure to grab the the latest version from the "Files" section. (The "Home Page" link takes you to an outdated page that only links to very old versions.) Both packages come with GUI installers. Once you have MySQL running and set up with a username and password, follow these instructions to set up ViewCVS.
+To use the checkin database, you'll need to install MySQL and the MySQL-Python interface. MySQL can be downloaded from www.mysql.com. The MySql-Python adapter is available from http://sf.net/projects/mysql-python/. Make sure to grab the the latest version from the "Files" section. (The "Home Page" link takes you to an outdated page that only links to very old versions.) Both packages come with GUI installers. Once you have MySQL running and set up with a username and password, follow these instructions to set up ViewCVS.
 
-  1) Open a command prompt and type these commands:
+1) Open a command prompt and type these commands:
 
-     cd /d <VIEWCVS_INSTALL_DIR>
-     python make-database
+   cd /d <VIEWCVS_INSTALL_DIR>
+   python make-database
 
-  The script that comes up will prompt you for the MySQL username and password (you should have created these during the MySQL installation), and the name of the database to create. The default database name "ViewCVS" should be fine unless for some reason a database with that name already exists.
+The script that comes up will prompt you for the MySQL username and password (you should have created these during the MySQL installation), and the name of the database to create. The default database name "ViewCVS" should be fine unless for some reason a database with that name already exists.
 
-  2) Enter the username, password, and database name into the [cvsdb] section of the <VIEWCVS_INSTALL_DIR>\viewcvs.conf file.
+2) Enter the username, password, and database name into the [cvsdb] section of the <VIEWCVS_INSTALL_DIR>\viewcvs.conf file.
 
-  3) At the command prompt run
+3) At the command prompt run
 
-     python cvsdbadmin rebuild <repository>
+   python cvsdbadmin rebuild <repository>
 
-  where <repository> is the path to your CVS repository.
+where <repository> is the path to your CVS repository.
 
-  4) If you want the checkin database to be dynamically updated with every check-in, add the following line to your CVSROOT/loginfo file:
+4) If you want the checkin database to be dynamically updated with every checkin, add the following line to your CVSROOT/loginfo file:
 
-     ALL python "<VIEWCVS_INSTALL_DIR>\loginfo-handler" %{sVv}
+   ALL python "<VIEWCVS_INSTALL_DIR>\loginfo-handler" %{sVv}
 
-  If you decide not to enable dynamic updates, you can periodically refresh the database with "python cvsdbadmin update <repository>"
+If you decide not to enable dynamic updates, you can periodically refresh the database with "python cvsdbadmin update <repository>"
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-CVS Graph
+CvsGraph
 
-  To use CVS Graph, you can either use the precompiled binary that I provided (windows/binaries/cvsgraph.exe, version 1.2.0) or build the source which is available from http://www.akhphd.au.dk/~bertho/cvsgraph/
-
-  To build the source, you will need to have a C compiler like Mingw or Visual C++ installed on your system and these libraries:
-
-    gd 1.x - http://www.boutell.com/gd
-    libpng - http://www.libpng.org/pub/png/
-    zlib   - http://www.gzip.org/zlib/
-
-  Build instructions for Mingw can be found at http://www.cvsnt.org/wiki/CvsGraphMingw
+To use CvsGraph with ViewCVS, just copy cvsgraph.exe to a directory on your system PATH and set the use_cvsgraph option to 1 in your viewcvs.conf file.
+  
+The CvsGraph home page is at http://www.akhphd.au.dk/~bertho/cvsgraph/ and CvsGraph binaries are available from http://www.cvsnt.org/wiki/CvsGraph.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ICONS FOR IIS
@@ -156,19 +152,19 @@ The default templates supplied with ViewCVS rely on icons that come with apache.
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 TROUBLESHOOTING
 
-- By far the most common cause of errors in ViewCVS is failure to successfully execute the programs it depends on (rlog, rcsdiff, co, enscript, sed, and cvsgraph). To help deal with this problem, ViewCVS includes a special debugging mode that displays output from the programs it executes on every web page. This allows you to see error messages and other information that isn't normally visible. To enable the debugging mode, change line 20 of <VIEWCVS_INSTALL_DIR>\lib\debug.py from:
+- By far the most common cause of errors in ViewCVS is failure to successfully execute the programs it depends on (rlog, rcsdiff, co, enscript, sed, and cvsgraph). To help deal with this problem, ViewCVS includes a special debugging mode that displays output from the programs it executes on every web page. This allows you to see error messages and other information that isn't normally visible. To enable the debugging mode, change line 23 of <VIEWCVS_INSTALL_DIR>\lib\debug.py from:
 
-  SHOW_CHILD_PROCESSES = 0
+    SHOW_CHILD_PROCESSES = 0
 
-to:
+  to:
 
-  SHOW_CHILD_PROCESSES = 1
+    SHOW_CHILD_PROCESSES = 1
 
-Important: You may need to restart your web server before this option takes effect. See "Changes made to..." later in this section.
+  Important: You may need to restart your web server before this option takes effect. See "Changes made to..." later in this section.
 
-- A common cause of server errors under IIS are permissions problems. You need to make sure that the virtual directory containing the CGI or ASP files has script execution enabled. You also need to make sure that the web server user accounts (IUSR_machine_name and IWAM_machine_name, where machine_name is your computer name) have read and execute access to the .asp or .cgi stub scripts, the ViewCVS lib/ folder, the paths where external tools like rcs, enscript, sed, and cvsgraph live, and the CVS repositories. NTFS auditing makes it very easy to track down permissions problems. Also look for IIS messages in the event log.
+- A common cause of server errors under IIS is permissions problems. You need to make sure that the virtual directory containing the CGI or ASP files has script execution enabled. You also need to make sure that the web server user accounts (IUSR_machine_name and IWAM_machine_name, where machine_name is your computer name) have read and execute access to the .asp or .cgi stub scripts, the ViewCVS lib/ folder, the paths where external tools like rcs, enscript, sed, and cvsgraph live, and the CVS repositories. NTFS auditing makes it very easy to track down permissions problems. Also look for IIS messages in the event log.
 
-- Certain Apache configurations may hide some environment variables from the ViewCVS CGI scripts and the programs they launch. You can see whether an environment variable is visible from the CGI environment by enabling the SHOW_CHILD_PROCESSES debug mode described above. You can force Apache to let variables through with the PassEnv directive ( http://httpd.apache.org/docs/mod/mod_env.html#passenv ).
+- Certain Apache configurations may hide some environment variables from the ViewCVS CGI scripts and the programs they launch. You can see whether an environment variable is visible from the CGI environment by enabling the SHOW_CHILD_PROCESSES debug mode described above. You can force Apache to let variables through with the PassEnv directive (http://httpd.apache.org/docs/mod/mod_env.html#passenv).
 
 - Changes made to environment variables, ViewCVS source files and the ViewCVS configuration file do not always take effect immediately. The table below shows what actions you need to take after changing any of these things before they will have an effect.
 
@@ -192,20 +188,20 @@ Important: You may need to restart your web server before this option takes effe
 |                |                |                | OR                      |
 |                |                |                | reload(viewcvs) in stub |
 +----------------+----------------+----------------+-------------------------+
-* If standalone.py was launched from a command prompt and you set the environment variable through the control panel, you'll need to open a new command prompt.
+  * If standalone.py was launched from a command prompt and you set the environment variable through the control panel, you'll need to open a new command prompt.
 
-Notes:
+  Notes:
 
-Under mod_python and ASP, changes made to the stub scripts inside the web root do take effect immediately, you only need to take additional action when you make changes to the main source files in <VIEWCVS_INSTALL_DIR>\lib
+  Under mod_python and ASP, changes made to the stub scripts inside the web root do take effect immediately, you only need to take additional action when you make changes to the main source files in <VIEWCVS_INSTALL_DIR>\lib
 
-To "Unload ASP App", go to the IIS properties dialog for the application directory containing the ViewCVS .asp files (in Internet Services Manager). Switch to the [Home] | [Virtual] Directory tab and click the "Unload" button under "Application Settings".
+  To "Unload ASP App", go to the IIS properties dialog for the application directory containing the ViewCVS .asp files (in Internet Services Manager). Switch to the [Home] | [Virtual] Directory tab and click the "Unload" button under "Application Settings".
 
-To "reload(viewcvs) in stub", put these lines in one of the ASP or Mod_Python stub scripts:
+  To "reload(viewcvs) in stub", put these lines in one of the ASP or Mod_Python stub scripts:
 
-  import viewcvs
-  reload (viewcvs)
+    import viewcvs
+    reload (viewcvs)
 
-then load the page one or more times in a web browser.
+  then load the page one or more times in a web browser.
 
 - If you have problems getting ViewCVS to work with mod_python, you can first make sure mod_python works standalone with the testing instructions at http://www.modpython.org/live/current/doc-html/inst-testing.html.
 
@@ -214,24 +210,24 @@ KNOWN ISSUES
 
 - In ViewCVS, if you can browse directories but see messages like "NOTE: There are 11 files, but none match the current tag" with empty file listings, your RCS utilities might not be set up correctly. One particular problem is that they sometimes do not recognize the extensions on RCS files, treating all files specified on the command line like working copies even if they end in ",v". As a result, when the ViewCVS gives commands like
 
-  rlog C:/CVSROOT/myproject/main.cpp,v
+    rlog C:/CVSROOT/myproject/main.cpp,v
 
-rlog replies:
+  rlog replies:
 
-  rlog: C:/CVSROOT/myproject/RCS/main.cpp,v: No such file or directory
+    rlog: C:/CVSROOT/myproject/RCS/main.cpp,v: No such file or directory
 
-and the files do not show up in the directory listing because the script does not have any information about them. You can test for this by entering commands like the one above on the command line. You can fix this by including the following string in your RCSINIT environment variable:
+  and the files do not show up in the directory listing because the script does not have any information about them. You can test for this by entering commands like the one above on the command line. You can fix this by including the following string in your RCSINIT environment variable:
 
-  -x,v
+    -x,v
 
-Important: You may need to reboot your computer before the environment variable has an effect. See "Changes made to..." in the TROUBLESHOOTING section.
+  Important: You may need to reboot your computer before the environment variable has an effect. See "Changes made to..." in the TROUBLESHOOTING section.
 
-- The standalone server will not run under cygwin python because it does not support threads. ASP pages can't be run with cygwin python because it does not support ActiveX. To use either of these features you should install ActiveState Python. Activestate and Cygwin coexist nicely, so they can be installed side by side.
+- The standalone server will not run under Cygwin Python because it does not support threads. ASP pages can't be run with Cygwin Python because it does not support ActiveX. To use either of these features you should install a native Python interpreter.
 
 - On Windows 2003 Server under IIS, enscript might give an error like:
 
-  enscript: couldn't open input filter "states -f "K:/gnuwin32/share/enscript/hl/enscript.st" -p "C://.enscript;K:/gnuwin32/share/enscript/hl" -shtml -Dcolor=1 -Dstyle=emacs -Dlanguage=html -Dnum_input_files=1 -Ddocument_title="Enscript Output" -Dtoc=0 -" for file "": No error
-  no output generated
+    enscript: couldn't open input filter "states -f "K:/gnuwin32/share/enscript/hl/enscript.st" -p "C://.enscript;K:/gnuwin32/share/enscript/hl" -shtml -Dcolor=1 -Dstyle=emacs -Dlanguage=html -Dnum_input_files=1 -Ddocument_title="Enscript Output" -Dtoc=0 -" for file "": No error
+    no output generated
 
   The solution is to give read & execute permissions on cmd.exe for IUSR_computername and IWAM_computername users. (Enscript uses cmd.exe internally to launch it's little helper program, states.exe).
 
