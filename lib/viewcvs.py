@@ -1379,15 +1379,16 @@ def prepare_hidden_values(params):
 
 def sort_file_data(file_data, sortdir, sortby):
   def file_sort_cmp(file1, file2, sortby=sortby):
-    if file1.kind == vclib.DIR:        # is_directory
+    if sortby == 'file':
+      if file1.kind == vclib.DIR:        # is_directory
+        if file2.kind == vclib.DIR:
+          # both are directories. sort on name.
+          return cmp(file1.name, file2.name)
+        # file1 is a directory, it sorts first.
+        return -1
       if file2.kind == vclib.DIR:
-        # both are directories. sort on name.
-        return cmp(file1.name, file2.name)
-      # file1 is a directory, it sorts first.
-      return -1
-    if file2.kind == vclib.DIR:
-      # file2 is a directory, it sorts first.
-      return 1
+        # file2 is a directory, it sorts first.
+        return 1
 
     # we should have data on these. if not, then it is because we requested
     # a specific tag and that tag is not present on the file.
