@@ -186,6 +186,7 @@ class Config:
     self.options.use_cvsgraph = 0
     self.options.cvsgraph_path = ''
     self.options.cvsgraph_conf = "<VIEWCVS_INSTALL_DIRECTORY>/cvsgraph.conf"
+    self.options.use_re_search = 0
 
   def is_forbidden(self, module):
     if not module:
