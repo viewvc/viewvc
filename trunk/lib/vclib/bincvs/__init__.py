@@ -144,7 +144,7 @@ class BinCVSRepository(CVSRepository):
     if filename is None:
       raise vclib.Error('Missing output from co.<br>fname="%s".' % full_name)
 
-    if filename != full_name:
+    if not _paths_eq(filename, full_name):
       raise vclib.Error(
         'The filename from co did not match. Found "%s". Wanted "%s"<br>'
         % (filename, full_name))
@@ -465,9 +465,6 @@ def _parse_co_header(fp):
       'Line was: %s' % (line))
   filename = match.group(1)
 
-  # CVSNT versions 2.0.29 and later put forward slashes in filename
-  filename = string.replace(filename, '/', os.sep)
-
   line = fp.readline()
   if not line:
     raise vclib.Error(
@@ -607,9 +604,6 @@ def _parse_log_header(fp):
           eof = _EOF_ERROR
           break
 
-  # CVSNT versions 2.0.29 and later put forward slashes in filename
-  filename = string.replace(filename, '/', os.sep)
-
   return filename, branch, taginfo, msg, eof
 
 _re_log_info = re.compile(r'^date:\s+([^;]+);'
@@ -687,6 +681,13 @@ def _skip_file(fp):
       break
     if line == LOG_END_MARKER:
       break
+
+def _paths_eq(path1, path2):
+  "See if two path strings are the same"
+  # This function is neccessary because CVSNT (since version 2.0.29)
+  # converts paths passed as arguments to use upper case drive
+  # letter and forward slashes
+  return os.path.normcase(path1) == os.path.normcase(path2)
 
 
 # ======================================================================
@@ -824,7 +825,7 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
 
       # if rlog filename doesn't match current file and we already have an
       # error message about this file, move on to the next file
-      while not (file and file.path == filename):
+      while not (file and _paths_eq(file.path, filename)):
         if file and file.log_errors:
           chunk_idx = chunk_idx + 1
           file = chunk_idx < len(chunk) and chunk[chunk_idx] or None
