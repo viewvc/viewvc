@@ -21,8 +21,7 @@
 # -----------------------------------------------------------------------
 #
 
-import os, sys, string, re
-import traceback
+import os, sys, string, re, traceback
 
 # get access to our library modules
 sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), 'lib'))
@@ -45,33 +44,34 @@ ROOT_DIR = "/usr/local/viewcvs"
 
 ## list of files for installation
 ## tuple (source path, destination path, install mode, true/false flag for
-##        search-and-replace for LIBRARY_DIR, CONF_PATHNAME, etc...)
+##        search-and-replace, flag for prompt before replace)
+##       
 
 FILE_INFO_LIST = [
-    ("cgi/viewcvs.cgi", "cgi/viewcvs.cgi", 0755, 1),
-    ("cgi/queryform.cgi", "cgi/queryform.cgi", 0755, 1),
-    ("cgi/query.cgi", "cgi/query.cgi", 0755, 1),
-    ("cgi/granny.cgi", "cgi/granny.cgi", 0755, 1),
+    ("cgi/viewcvs.cgi", "cgi/viewcvs.cgi", 0755, 1, 0),
+    ("cgi/queryform.cgi", "cgi/queryform.cgi", 0755, 1, 0),
+    ("cgi/query.cgi", "cgi/query.cgi", 0755, 1, 0),
 
-    ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 0),
+    ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 0, 1),
 
-    ("lib/PyFontify.py", "lib/PyFontify.py", 0644, 0),
-    ("lib/commit.py", "lib/commit.py", 0644, 0),
-    ("lib/compat.py", "lib/compat.py", 0644, 0),
-    ("lib/config.py", "lib/config.py", 0644, 0),
-    ("lib/cvsdbapi.py", "lib/cvsdbapi.py", 0644, 1),
-    ("lib/database.py", "lib/database.py", 0644, 0),
-    ("lib/py2html.py", "lib/py2html.py", 0644, 0),
-    ("lib/rlog.py", "lib/rlog.py", 0644, 0),
-
-    ("scripts/loginfo-handler", "scripts/loginfo-handler", 0755, 1),
-
-    ("tools/cvsdbadmin", "tools/cvsdbadmin", 0755, 1),
+    ("lib/PyFontify.py", "lib/PyFontify.py", 0644, 0, 0),
+    ("lib/commit.py", "lib/commit.py", 0644, 0, 0),
+    ("lib/compat.py", "lib/compat.py", 0644, 0, 0),
+    ("lib/config.py", "lib/config.py", 0644, 0, 0),
+    ("lib/cvsdbapi.py", "lib/cvsdbapi.py", 0644, 1, 0),
+    ("lib/database.py", "lib/database.py", 0644, 0, 0),
+    ("lib/py2html.py", "lib/py2html.py", 0644, 0, 0),
+    ("lib/rlog.py", "lib/rlog.py", 0644, 0, 0),
+    ("lib/blame.py", "lib/blame.py", 0644, 0, 0),
+    
+    ("scripts/loginfo-handler", "loginfo-handler", 0755, 1, 0),
+    ("tools/cvsdbadmin", "cvsdbadmin", 0755, 1, 0),
+    ("tools/make-database", "make-database", 0755, 1, 0),
 
     ("html-templates/queryformtemplate.html",
-     "html-templates/queryformtemplate.html", 0644, 0),
+     "html-templates/queryformtemplate.html", 0644, 0, 1),
     ("html-templates/querytemplate.html",
-     "html-templates/querytemplate.html", 0644, 0),
+     "html-templates/querytemplate.html", 0644, 0, 1),
     ]
 
 
@@ -110,7 +110,14 @@ def SetPythonPaths(contents):
     return contents
 
 
-def InstallFile(src_path, dest_path, mode, set_python_paths):
+def InstallFile(src_path, dest_path, mode, set_python_paths, prompt_replace):
+    dest_path = os.path.join(ROOT_DIR, dest_path)
+    
+    if prompt_replace and os.path.exists(dest_path):
+        temp = raw_input("File %s exists, overwright? [y/N]: " % (dest_path))
+        if not temp or string.lower(temp[0]) != "y":
+            return
+    
     try:
         contents = open(src_path, "r").read()
     except IOError, e:
@@ -120,7 +127,6 @@ def InstallFile(src_path, dest_path, mode, set_python_paths):
         contents = SetPythonPaths(contents)
 
     ## write the file to the destination location
-    dest_path = os.path.join(ROOT_DIR, dest_path)
     path, basename = os.path.split(dest_path)
     MkDir(path)
 
@@ -150,9 +156,9 @@ if __name__ == "__main__":
     print
     print "Installing ViewCVS to:", ROOT_DIR
 
-    for src, dst, mode, set_paths in FILE_INFO_LIST:
+    for src, dst, mode, set_paths, prompt_replace in FILE_INFO_LIST:
         print "        ", src
-        InstallFile(src, dst, mode, set_paths)
+        InstallFile(src, dst, mode, set_paths, prompt_replace)
 
     print
     print "Installation Complete"
