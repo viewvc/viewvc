@@ -94,9 +94,45 @@ main_title = CVS Repository
 # This should contain a list of modules in the repository that should not be
 # displayed (by default or by explicit path specification).
 #
+# This configuration can be a simple list of modules, or it can get quite
+# complex:
+#
+#   *) The "!" can be used before a module to explicitly state that it
+#      is NOT forbidden. Whenever this form is seen, then all modules will
+#      be forbidden unless one of the "!" modules match.
+#
+#   *) Shell-style "glob" expressions may be used. "*" will match any
+#      sequence of zero or more characters, "?" will match any single
+#      character, "[seq]" will match any character in seq, and "[!seq]"
+#      will match any character not in seq.
+#
+#   *) Tests are performed in sequence. The first match will terminate the
+#      testing. This allows for more complex allow/deny patterns.
+#
+# Tests are case-sensitive.
+#
 forbidden =
-# forbidden = example
-# forbidden = example1, example2
+
+# Some examples:
+#
+# Disallow "example" but allow all others:
+#   forbidden = example
+#
+# Disallow "example1" and "example2" but allow all others:
+#   forbidden = example1, example2
+#
+# Allow *only* "example1" and "example2":
+#   forbidden = !example1, !example2
+#
+# Forbid modules starting with "x":
+#   forbidden = x*
+#
+# Allow modules starting with "x" but no others:
+#   forbidden = !x*
+#
+# Allow "xml", forbid other modules starting with "x", and allow the rest:
+#   forbidden = !xml, x*, !*
+#
 
 #---------------------------------------------------------------------------
 [cvsdb]
