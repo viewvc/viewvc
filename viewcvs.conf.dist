@@ -296,6 +296,11 @@ generate_etags = 1
 #   log    Sort by log message
 sort_by = file
 
+# sort_group_dirs: Group directories when sorting
+#   1      Group directories together
+#   0      No grouping -- sort directories as any other item would be sorted
+sort_group_dirs = 1
+
 # hide_attic: Hide or show the contents of the Attic subdirectory
 #   1      Hide dead files inside Attic subdir
 #   0      Show the files which are inside the Attic subdir
