@@ -34,7 +34,6 @@ import re
 
 import config
 import dbi
-import rlog
 
 
 ## load configuration file, the data is used globally here
@@ -675,46 +674,46 @@ def ConnectDatabase():
     gCheckinDatabase.Connect()
     return gCheckinDatabase
 
-def RLogDataToCommitList(repository, rlog_data):
+def GetCommitListFromRCSFile(repository, path_parts, revision=None):
     commit_list = []
 
-    directory, file = os.path.split(rlog_data.filename)
+    directory = string.join(path_parts[:-1], "/")
+    file = path_parts[-1]
 
-    for rlog_entry in rlog_data.rlog_entry_list:
+    revs = repository.filelog(path_parts, revision, {"cvs_pass_rev": 1})
+    for rev in revs:
         commit = CreateCommit()
-        commit.SetRepository(repository)
+        commit.SetRepository(repository.rootpath)
         commit.SetDirectory(directory)
         commit.SetFile(file)
-        commit.SetRevision(rlog_entry.revision)
-        commit.SetAuthor(rlog_entry.author)
-        commit.SetDescription(rlog_entry.description)
-        commit.SetTime(rlog_entry.time)
-        commit.SetPlusCount(rlog_entry.pluscount)
-        commit.SetMinusCount(rlog_entry.minuscount)
-        commit.SetBranch(rlog_data.LookupBranch(rlog_entry))
+        commit.SetRevision(rev.string)
+        commit.SetAuthor(rev.author)
+        commit.SetDescription(rev.log)
+        commit.SetTime(rev.date)
 
-        if rlog_entry.type == rlog.RLogEntry.CHANGE:
-            commit.SetTypeChange()
-        elif rlog_entry.type == rlog.RLogEntry.ADD:
+        if rev.changed:
+            # extract the plus/minus and drop the sign
+            plus, minus = string.split(rev.changed)
+            commit.SetPlusCount(plus[1:])
+            commit.SetMinusCount(minus[1:])
+
+            if rev.dead:
+                commit.SetTypeRemove()
+            else:
+                commit.SetTypeChange()
+        else:
             commit.SetTypeAdd()
-        elif rlog_entry.type == rlog.RLogEntry.REMOVE:
-            commit.SetTypeRemove()
 
         commit_list.append(commit)
 
+        # if revision is on a branch which has at least one tag
+        if len(rev.number) > 2 and rev.branches:
+            commit.SetBranch(rev.branches[0].name)
+
     return commit_list
 
-def GetCommitListFromRCSFile(repository, filename):
-    try:
-        rlog_data = rlog.GetRLogData(repository, filename)
-    except rlog.error, e:
-        raise error, e
-    
-    commit_list = RLogDataToCommitList(repository.rootpath, rlog_data)
-    return commit_list
-
-def GetUnrecordedCommitList(repository, filename):
-    commit_list = GetCommitListFromRCSFile(repository, filename)
+def GetUnrecordedCommitList(repository, path_parts):
+    commit_list = GetCommitListFromRCSFile(repository, path_parts)
     db = ConnectDatabase()
 
     unrecorded_commit_list = []
