@@ -671,7 +671,10 @@ def ConnectDatabaseReadOnly():
 
 def ConnectDatabase():
     global gCheckinDatabase
-    
+
+    if gCheckinDatabase:
+        return gCheckinDatabase
+
     gCheckinDatabase = CreateCheckinDatabase(
         cfg.cvsdb.host,
         cfg.cvsdb.user,
