@@ -69,7 +69,7 @@ import popen
 
 #########################################################################
 
-checkout_magic_path = '~checkout~/'
+checkout_magic_path = '~checkout~'
 viewcvs_mime_type = 'text/vnd.viewcvs-markup'
 
 # put here the variables we need in order to hold our state - they will be
@@ -113,14 +113,16 @@ class Request:
     # clean it up. this removes duplicate '/' characters and any that may
     # exist at the front or end of the path.
     parts = filter(None, string.split(where, '/'))
-    where = string.join(parts, '/')
 
     # does it have the magic checkout prefix?
-    if where[:len(checkout_magic_path)] == checkout_magic_path:
+    if parts[0] == checkout_magic_path:
       self.has_checkout_magic = 1
-      where = where[len(checkout_magic_path):]
+      del parts[0]
     else:
       self.has_checkout_magic = 0
+
+    # put it back together
+    where = string.join(parts, '/')
 
     script_name = os.environ['SCRIPT_NAME']	### clean this up?
     if where:
@@ -334,7 +336,7 @@ def html_log(log):
 
 def download_url(request, url, revision, mime_type):
   if cfg.options.checkout_magic and mime_type != viewcvs_mime_type:
-    url = '%s/%s%s/%s' % \
+    url = '%s/%s/%s/%s' % \
           (request.script_name, checkout_magic_path,
            os.path.dirname(request.where), url)
 
@@ -484,15 +486,20 @@ def markup_stream_python(fp):
 
 def markup_stream_enscript(lang, fp):
   sys.stdout.flush()
-  cmd = "%senscript --color -W html -E%s -o - - 2> /dev/null " \
-        "| sed -n '/^<PRE>$/,/<\\/PRE>$/p'" % \
-        (cfg.options.enscript_path, lang,)
-  enscript = os.popen(cmd, "w")
+  enscript = popen.pipe_cmds([(cfg.options.enscript_path + 'enscript',
+                               '--color', '-W', 'html', '-E' + lang, '-o',
+                               '-', '-'),
+                              ('sed', '-n', '/^<PRE>$/,/<\\/PRE>$/p')])
+
   while 1:
     chunk = fp.read(CHUNK_SIZE)
     if not chunk:
+      if fp.eof() is None:
+        time.sleep(1)
+        continue
       break
     enscript.write(chunk)
+
   enscript.close()
 
 markup_streamers = {
@@ -612,6 +619,9 @@ def markup_stream(request, fp, revision, mime_type):
         markup_stream_enscript(lang, fp)
       else:
         markup_stream_default(fp)
+  status = fp.close()
+  if status:
+    raise error, 'pipe error status: %d' % status
   html_footer()
 
 def get_file_data(full_name):
@@ -1258,7 +1268,7 @@ def view_directory(request):
   print '</table>'
 
   if num_files and not num_displayed:
-    print '<p><b>NOTE:</b> There are %d files, but none match the current' \
+    print '<p><b>NOTE:</b> There are %d files, but none match the current ' \
           'tag (%s)' % (num_files, view_tag)
   if unreadable:
     print '<hr size=1 noshade><b>NOTE:</b> One or more files were ' \
