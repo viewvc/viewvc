@@ -1789,6 +1789,15 @@ def view_log(request):
 
   if cur_branch:
     print 'Default branch:', rev2tag.get(cur_branch, cur_branch)
+
+    print '<br>Bookmark a link to'
+    file_url = urllib.quote(os.path.basename(where))
+    if request.default_viewable:
+      download_link(request, file_url, 'HEAD', 'HEAD', viewcvs_mime_type)
+      print '/'
+      download_link(request, file_url, 'HEAD', '(download)', request.mime_type)
+    else:
+      download_link(request, file_url, 'HEAD', 'HEAD')
   else:
     print 'No default branch'
   print '<br>'
@@ -1909,17 +1918,17 @@ def view_checkout(request):
 
   ### validate the revision?
 
+  if not rev or rev == 'HEAD':
+    rev_flag = '-p'
+  else:
+    rev_flag = '-p' + rev
+
   mime_type = query_dict.get('content-type')
   if mime_type:
     ### validate it?
     pass
   else:
     mime_type = request.mime_type
-
-  if rev:
-    rev_flag = '-p' + rev
-  else:
-    rev_flag = '-p'
 
   fp = popen.popen(cfg.general.rcs_path + 'co', (rev_flag, full_name), 'r')
 
