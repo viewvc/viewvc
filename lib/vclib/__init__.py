@@ -23,7 +23,9 @@ such as CVS.
 
 
 # ======================================================================
-
+#
+# TODO: Add a last modified property
+#
 class Repository:
   """
   Abstract class representing a repository.
@@ -91,10 +93,10 @@ class Repository:
     gets the properties.
     """
 
-  def _getvf_co(self, target, path):
+  def _getvf_cofile(self, target, path):
     """
     should return a file object representing the checked out revision.
-    Notice that _getvf_co can also adds the properties in <target> the
+    Notice that _getvf_co can also add the properties in <target> the
     way _getvf_properties does.  
 
     Developers: method to be overloaded.
@@ -118,9 +120,8 @@ class Versfile:
     if not isinstance(repository,Repository):
       raise TypeError(repository)
     self.repository=repository
-    # path is assumed to be of correct type.
-    # TODO: do the actual checking.
     self.path=path
+    
     if tree!=None:
       self.tree=tree
       
@@ -166,7 +167,7 @@ class Revision:
     raise AttributeError()    
   
   def checkout(self):
-    return self.versfile._getvf_co(self)
+    return self.versfile._getvf_cofile(self)
     
   # Here are the shortcuts methods.
   def getprevious(self):

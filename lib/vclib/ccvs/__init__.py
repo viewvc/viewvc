@@ -19,6 +19,7 @@
 """
 This is a Version Control library driver for locally accessible cvs-repositories.
 """
+
 from vclib import Repository, Versfile, Revision
 import os
 import os.path
@@ -26,7 +27,7 @@ import string
 import re
 import exceptions
 import rcsparse
-
+import cStringIO
 class InfoSink(rcsparse.Sink):
 
   def __init__(self,target):
@@ -63,6 +64,7 @@ class TreeSink(rcsparse.Sink):
   def __init__(self,target):
     self.target=target
     self.tree={}
+    self.tags={}
   
   def set_head_revision(self, revision):
     self.target.__dict__["head"]=revision
@@ -74,8 +76,12 @@ class TreeSink(rcsparse.Sink):
     if self.tree.has_key(revision):
       self.tree[revision].__dict__["tags"].append(name)
     else:
-      self.tree[revision]=Revision(self.target,revision)
-      self.tree[revision].__dict__["tags"]=[name]
+      if revision in self.tags:
+        self.tags[revision].append(name)
+      else:
+        self.tags[revision]=[name]
+#      self.tree[revision]=Revision(self.target,revision)
+#      self.tree[revision].__dict__["tags"]=[name]
     
   def define_revision(self, revision, timestamp, author, state,
                       branches, next):
@@ -92,6 +98,11 @@ class TreeSink(rcsparse.Sink):
     rev.__dict__["branches"]=branches
     rev.__dict__["state"]=state
     rev.__dict__["previous"]=next
+    if revision in self.tags:
+      rev.__dict__["tags"]=self.tags[revision]
+      del self.tags[revision]
+    else:
+      rev.__dict__["tags"]=[]
     
   def set_revision_info(self, revision, log, text):
     if self.tree.has_key(revision):
@@ -121,8 +132,66 @@ class TreeSink(rcsparse.Sink):
             idx = idx +count
           else:
             raise "error while parsing deltatext: %s" % command
-      #rev.getprevious().__dict__["changes"]= "+%d -%d lines" %(deled,added)
-
+      rev.__dict__["changes"]= (deled,added)
+  def gobranch(self,rev):
+    rev.__dict__["changes"]="+%d -%d lines" % (rev.__dict__["changes"][1],rev.__dict__["changes"][0])
+    if rev.__dict__["previous"]!=None:
+      self.gobranch(self.tree[rev.__dict__["previous"]])
+    for x in rev.__dict__["branches"]:
+      self.gobranch(self.tree[x])
+  def gotree(self,rev):
+    if rev.__dict__["previous"]!=None:
+      rev.__dict__["changes"]="+%d -%d lines" % self.tree[rev.__dict__["previous"]].__dict__["changes"]
+      self.gotree(self.tree[rev.__dict__["previous"]])
+    else:
+      rev.__dict__["changes"]=""
+    for x in rev.__dict__["branches"]:
+      self.gobranch(self.tree[x])    
+  def parse_completed(self):
+    self.gotree(self.tree[self.target.__dict__["head"]])    
+class StreamText:
+  d_command   = re.compile('^d(\d+)\\s(\\d+)')
+  a_command   = re.compile('^a(\d+)\\s(\\d+)')
+  def __init__(self,text,head):
+    self.next_revision(head)
+    self.text=string.split(text,"\n")
+  def command(self,cmd):
+    adjust = 0
+    add_lines_remaining = 0
+    diffs = string.split(cmd,"\n")
+    if diffs[-1]=="":
+      del diffs[-1]
+    if len(diffs)==0:
+      return
+    if diffs[0]=="":
+      del diffs[0]
+    for command in diffs:
+      if add_lines_remaining > 0:
+        # Insertion lines from a prior "a" command
+        self.text.insert(start_line + adjust, command)
+        add_lines_remaining = add_lines_remaining - 1
+        adjust = adjust + 1
+        continue
+      dmatch = self.d_command.match(command)
+      amatch = self.a_command.match(command)
+      if dmatch:
+        # "d" - Delete command
+        start_line = string.atoi(dmatch.group(1))
+        count      = string.atoi(dmatch.group(2))
+        begin = start_line + adjust - 1
+        del self.text[begin:begin + count]
+        adjust = adjust - count
+      elif amatch:
+        # "a" - Add command
+        start_line = string.atoi(amatch.group(1))
+        count      = string.atoi(amatch.group(2))
+        add_lines_remaining = count
+      else:
+        raise RuntimeError, 'Error parsing diff commands'
+  
+  def next_revision(self,revision):
+    #print "Revision: %s"% revision
+    pass
 class COSink(rcsparse.Sink):
   
   def __init__(self,target):
@@ -130,8 +199,10 @@ class COSink(rcsparse.Sink):
   
   def set_head_revision(self, revision):
     self.head=revision
+    self.position=0
     self.path=[revision]
-    self.pathover=0
+    self.buffer={}
+    self.sstext=None
   
   def define_revision(self, revision, timestamp, author, state,
                       branches, next):
@@ -141,11 +212,67 @@ class COSink(rcsparse.Sink):
       self.target.__dict__["branches"]=branches
       self.target.__dict__["state"]=state
       self.target.__dict__["previous"]=next
-      #self.path.append
+    if self.path[-1]==self.target.rev:
+      return
+    if revision==self.path[-1]:
+      if self.target.rev[:len(revision)]==revision:
+        # Branch ?
+        for x in branches:
+          if self.target.rev[:len(revision)+3]==x[:len(revision)+3]:
+            self.path.append(x)
+            if x in self.buffer:
+              i=self.buffer[x]
+              del self.buffer[x]
+              self.define_revision(x,0,"","",i[0],i[1])  
+            return
+        else:
+          print revision
+          print branches
+          raise " %s revision doesn't exist " % self.target.rev
+      else:
+        # no => next 
+        self.path.append(next)
+        if self.buffer.has_key(next):
+          self.path.append(next)
+          if x in self.buffer:
+            i=self.buffer[next]
+            del self.buffer[next]
+            self.define_revision(next,0,"","",i[0],i[1])
+    else:
+      self.buffer[revision]=(branches,next)
       
-  def set_revision_info(self, revision, log, text):
-    pass
+        
+  def tree_completed(self):
+    if self.path[-1]!=self.target.rev:
+      raise "Error Incomplete path"
+    #print self.path
+    self.buffer={}      
 
+  def set_revision_info(self, revision, log, text):
+    if revision==self.target.rev:
+      self.target.__dict__["log"]=log
+    if revision in self.path:
+      if self.path[self.position]==revision:
+        if revision==self.head:
+          self.sstext=StreamText(text,self.head)
+        else:
+          self.sstext.next_revision(revision)
+          self.sstext.command(text)
+        while self.position+1<len(self.path):
+          self.position = self.position+1
+          x= self.path[self.position]
+          if x not in self.buffer:
+            break
+          self.sstext.next_revision(x)
+          self.sstext.command(self.buffer[x])
+          del self.buffer[x]
+      else:
+        self.buffer[revision]=text
+
+  def parse_completed(self):
+    if self.buffer!={}:
+      raise "Error buffer not emptied"
+    
 class CVSRepository(Repository):
   def __init__(self,name,basepath):
     self.name=name
@@ -166,6 +293,7 @@ class CVSRepository(Repository):
     if os.path.isfile(self._getrcsname(self._getpath(pathname))):
       return Versfile(self,self._getrcsname(self._getpath(pathname)) )
     raise exceptions.IOError("File not found %s in repository %s"% (self._getpath(pathname),self.name) ) 
+
   def getsubdirs(self,path):
     h=os.listdir(self._getpath(path))
     g=[]
@@ -196,18 +324,12 @@ class CVSRepository(Repository):
     if not os.path.isfile(versfile.path):
       raise "Unknown file: %s " % versfile.path
     sink=TreeSink(versfile)
-    try:
-      rcsparse.Parser().parse(open(versfile.path),sink)
-    except RCSStopParser:
-      pass
+    rcsparse.Parser().parse(open(versfile.path),sink)
     return sink.tree
 
-  def _getvf_co(self, target, path):
+  def _getvf_cofile(self, target, path):
     if not os.path.isfile(path):
-      raise "Unknown file: %s " % versfile.path
+      raise "Unknown file: %s " % path
     sink=COSink(target)
-    try:
-      rcsparse.Parser().parse(open(versfile.path),sink)
-    except RCSStopParser:
-      pass
-    return sink.tree
+    rcsparse.Parser().parse(open(path),sink)
+    return cStringIO.StringIO(string.join(sink.sstext.text,"\n"))
