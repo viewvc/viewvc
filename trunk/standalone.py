@@ -551,9 +551,11 @@ Usage: %(cmd)s [ <options> ]
 
 Available Options:
 
--h host or --host=<host>
+-h <host> or --host=<host>
     Start the HTTP server listening on <host>.
-    Defaults to %(host)s.
+    Defaults to %(host)s.  You need to provide the
+    hostname, if you want to access the standalone server
+    from remote.
 
 -p <port> or --port=<port>
     Start an HTTP server on the given port.
@@ -566,10 +568,12 @@ Available Options:
 
 -g or --gui
     Pop up a graphical interface for serving and testing ViewCVS.
+    Note: This requires you start %(cmd)s with a valid X11 display
+    connection on Unix/Linux systems.
 
 """ % locals()
 
-if __name__ == '__main__': 
+if __name__ == '__main__':
     if LIBRARY_DIR:
         sys.path.insert(0, LIBRARY_DIR)
     else:
