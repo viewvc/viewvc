@@ -1266,34 +1266,31 @@ def view_directory(request):
     # we should have data on these. if not, then it is because we requested
     # a specific tag and that tag is not present on the file.
     info1 = fileinfo.get(file1)
-    if info1 == _FILE_HAD_ERROR:
-      info1 = None
     info2 = fileinfo.get(file2)
-    if info2 == _FILE_HAD_ERROR:
-      info2 = None
-    if info1 and info2:
+    if info1 != _FILE_HAD_ERROR and info2 != _FILE_HAD_ERROR:
+      # both are files, sort according to sortby
       if sortby == 'rev':
-        result = revcmp(info1[0], info2[0])
+        return revcmp(info1[0], info2[0])
       elif sortby == 'date':
-        result = cmp(info2[1], info1[1])        # latest date is first
+        return cmp(info2[1], info1[1])        # latest date is first
       elif sortby == 'log':
-        result = cmp(info1[2], info2[2])
+        return cmp(info1[2], info2[2])
       elif sortby == 'author':
-        result = cmp(info1[3], info2[3])
+        return cmp(info1[3], info2[3])
       else:
-        # sortby == 'file' ... fall thru
-        result = 0
+        # sort by file name
+        if file1[:6] == 'Attic/':
+          file1 = file1[6:]
+        if file2[:6] == 'Attic/':
+          file2 = file2[6:]
+        return cmp(file1, file2)
 
-      # return for unequal values; or fall thru for secondary-sort on name
-      if result:
-        return result
+    # at this point only one of file1 or file2 are _FILE_HAD_ERROR.
+    if info1 != _FILE_HAD_ERROR:
+      return -1
+    if info2 != _FILE_HAD_ERROR:
+      return 1
 
-    # sort by file name
-    if file1[:6] == 'Attic/':
-      file1 = file1[6:]
-    if file2[:6] == 'Attic/':
-      file2 = file2[6:]
-    return cmp(file1, file2)
 
   # sort with directories first, and using the "sortby" criteria
   file_data.sort(file_sort_cmp)
