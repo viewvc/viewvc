@@ -14,24 +14,28 @@ TO THE IMPATIENT
 Congratulations on getting this far. :-)
 
 Prerequisites: Python 1.5 or later, 
-               Python 1.5.2 or later to support the checkin database
+               (Python 1.5.2 or later to support the commit database, see below)
                  (http://www.python.org)
                RCS, Revision Control System
                  (http://www.cs.purdue.edu/homes/trinkle/RCS)
-               a web-server capable of running CGI programs
-                 (for example, Apache at http://www.apache.org)
                read-only, physical access to a CVS repository
                  (See http://www.cvshome.org for more information)
 
-Optional:      GNU-diff to replace broken diff implementations
+Optional:      a web-server capable of running CGI programs
+                 (for example, Apache at http://www.apache.org)
+               GNU-diff to replace broken diff implementations
                  (http://www.gnu.org/software/diffutils/diffutils.html)
-               MySQL to develop and search a checkin database
+               MySQL to create and query a commit database
                  (http://www.mysql.com)
                  (http://sourceforge.net/projects/mysql-python)
                Enscript to colorize code displayed from the CVS repository
                  (http://people.ssh.com/mtr/genscript/)
                CvsGraph for a graphical representation of the CVS revisions
                  (http://www.akhphd.au.dk/~bertho/cvsgraph)
+
+If you just want to see, how your CVS repository looks like with
+ViewCVS, type "./standalone.py -g -r /WHERE_YOUR_CVS_REPOSITORY_ROOT_IS".
+This will start a tiny webserver serving at http://localhost:7467.
 
 To start installing right away (on UNIX): type "./viewcvs-install" in
 the current directory and answer the prompts.  When it finishes, edit
