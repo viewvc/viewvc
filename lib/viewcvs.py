@@ -180,8 +180,14 @@ class Request:
 
     # parse the query params into a dictionary (and use defaults)
     query_dict = default_settings.copy()
+
+    # RE that ViewCVS doesn't use in any URL, but a CSS attack might
+    re_url_validate = re.compile('\'|"|<|>')
     for name, values in cgi.parse().items():
-      query_dict[name] = values[0]
+      # do not accept values that contain non-ViewCVS characters
+      # except for search
+      if not re.search(re_url_validate, values[0]) or name == 'search':
+        query_dict[name] = values[0]
 
     # set up query strings, prefixed by question marks and ampersands
     query = sticky_query(query_dict)
