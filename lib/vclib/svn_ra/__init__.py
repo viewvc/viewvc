@@ -125,47 +125,42 @@ def _compare_paths(path1, path2):
 
 class LogCollector:
   def __init__(self, path, options):
-    self.path = path
+    # This class uses leading slashes for paths internally
+    if not path:
+      self.path = '/'
+    else:
+      self.path = path[0] == '/' and path or '/' + path
     self.logs = []
     self.filter_path = options.get('svn_show_all_dir_logs', 0)
-
+    
   def add_log(self, paths, revision, author, date, message, pool):
-    ### This is unfinished code for tracking path changes over time,
-    ### and filtering out unwanted directory logs.
-    # changed_paths = paths.keys()
-    # changed_paths.sort(lambda a, b: _compare_paths(a, b))
-    # if self.path in changed_paths:
-    #   change = paths[self.path]
-    #   if change.copyfrom_path:
-    #     self.path = copyfrom_path
-    # else:
-    #   for changed_path in changed_paths:
-    #     if (string.rfind(changed_path, self.path) == 0) and \
-    #            change_path[len(self.path)] == '/':
-    #       change = paths[changed_path]
-    #       if change.copyfrom_path:
-    #         self.path = copyfrom_path[(len(self.path) + 1):]
-    #   if self.filter_path:
-    #     return
+    # Changed paths have leading slashes
+    changed_paths = paths.keys()
+    changed_paths.sort(lambda a, b: _compare_paths(a, b))
+    this_path = None
+    if self.path in changed_paths:
+      this_path = self.path
+      change = paths[self.path]
+      if change.copyfrom_path:
+        this_path = change.copyfrom_path
+    else:
+      for changed_path in changed_paths:
+        # If a parent of our path was copied, our "next previous"
+        # (huh?) path will exist elsewhere (under the copy source).
+        if (string.rfind(self.path, changed_path) == 0) and \
+               self.path[len(changed_path)] == '/':
+          change = paths[changed_path]
+          if change.copyfrom_path:
+            this_path = change.copyfrom_path + \
+                        self.path[len(changed_path):]
+    if self.filter_path and not this_path:
+      return
+    self.path = this_path
     date = _datestr_to_date(date, pool)
     entry = Revision(revision, date, author, message, None,
-                     self.path, None, None)
+                     self.path[1:], None, None)
     self.logs.append(entry)
     
-def _fetch_log(svnrepos, full_name, options):
-  lc = LogCollector(full_name, options)
-  
-  dir_url = svnrepos.rootpath
-  if full_name:
-    dir_url = dir_url + '/' + full_name
-
-  cross_copies = options.get('svn_cross_copies', 0)
-  
-  client.svn_client_log([dir_url], _rev2optrev(1), _rev2optrev(svnrepos.rev),
-                        1, not cross_copies, lc.add_log,
-                        svnrepos.ctx, svnrepos.pool)
-  return lc.logs
-
 
 def get_logs(svnrepos, full_name, files):
   parts = filter(None, string.split(full_name, '/'))
@@ -416,8 +411,16 @@ class SubversionRepository(vclib.Repository):
       except ValueError:
         vclib.InvalidRevision(rev)
 
-    revs = _fetch_log(self, full_name, options)
+    lc = LogCollector(full_name, options)
+    dir_url = self.rootpath
+    if full_name:
+      dir_url = dir_url + '/' + full_name
 
+    cross_copies = options.get('svn_cross_copies', 0)
+    client.svn_client_log([dir_url], _rev2optrev(self.rev), _rev2optrev(1),
+                          1, not cross_copies, lc.add_log,
+                          self.ctx, self.pool)
+    revs = lc.logs
     revs.sort()
     prev = None
     for rev in revs:
