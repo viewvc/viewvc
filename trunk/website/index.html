@@ -1,0 +1,50 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>ViewCVS: Viewing CVS Repositories</title>
+  </head>
+
+  <body>
+    <h1>ViewCVS: Viewing CVS Repositories</h1>
+
+    <p>
+      The ViewCVS software was inspired by
+      <a href="http://linux.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi"><i>cvsweb</i></a>
+      (by <a href="mailto:zeller@think.de">Henner Zeller</a>).
+      I wanted to make some changes and updates, but cvsweb was
+      implemented in Perl (and rather poorly, IMO). So I undertook the 
+      task to convert the software to Python.
+    </p>
+    <p>
+      ViewCVS is currently at version 0.1. It is almost a straight
+      port of the cvsweb script. I made some cleanups and other
+      modifications, based on some of Python's strengths, but there
+      is still some ugly stuff in there. Future revisions will clear
+      that out, along with my work to start adding features. The
+      functionality of ViewCVS is equal to that of cvsweb, minus the
+      "annotation" support. Annotation requires read/write access to
+      the CVS repository (at this time), and I believe that is a 
+      Bad Thing to do. One of my tasks will be eliminating the
+      read/write requirement.
+    </p>
+    <p>
+      The software is available for download:
+    </p>
+    <blockquote>
+      <a href="viewcvs-0.1.tar.gz">Version 0.1 of ViewCVS</a>
+    </blockquote>
+
+    <p>
+      If you have any comments, questions, or suggestions, then please 
+      email me at
+      <a href="mailto:gstein@lyra.org">gstein@lyra.org</a>. 
+    </p>
+
+    <hr>
+    <address><a href="mailto:gstein@lyra.org">Greg Stein</a></address>
+<!-- Created: Fri Dec  3 02:51:37 PST 1999 -->
+<!-- hhmts start -->
+Last modified: Fri Dec  3 02:57:49 PST 1999
+<!-- hhmts end -->
+  </body>
+</html>
