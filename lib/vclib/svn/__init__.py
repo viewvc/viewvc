@@ -85,6 +85,8 @@ def get_logs(svnrepos, full_name, files):
     date = _datestr_to_date(datestr, svnrepos.pool)
     new_entry = LogEntry(rev, date, author, msg)
     new_entry.filename = file
+    if fs.is_file(svnrepos.fsroot, path, svnrepos.pool):
+      new_entry.size = fs.file_length(svnrepos.fsroot, path, svnrepos.pool)
     fileinfo[file] = new_entry
   return fileinfo, alltags
 
@@ -107,6 +109,12 @@ def fetch_log(svnrepos, full_name, which_rev=None):
     repos.svn_repos_get_logs(svnrepos.repos, [ full_name ],
                              svnrepos.rev, 0, 0, 1,
                              receiver.receive, svnrepos.pool)
+  subpool = core.svn_pool_create(svnrepos.pool)
+  for rev in receiver.logs.keys():
+    core.svn_pool_clear(subpool)   
+    root = fs.revision_root(svnrepos.fs_ptr, rev, subpool)
+    receiver.logs[rev].size = fs.file_length(root, full_name, subpool)
+  core.svn_pool_destroy(subpool)
   return alltags, receiver.logs
 
 
