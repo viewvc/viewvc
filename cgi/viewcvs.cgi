@@ -267,14 +267,6 @@ show_author = 1
 # table view for directories
 ##############
 
-# Show directory as table
-# this is much more readable but has one
-# drawback: the whole table has to be loaded
-# before common browsers display it which may
-# be annoying if you have a slow link - and a
-# large directory ..
-dirtable = 1
-
 # show different colors for even/odd rows
 table_colors = ('#ccccee', '#ffffff')
 tablepadding = 2
@@ -376,12 +368,6 @@ open_extern_window = 1
 # size
 #extern_window_width = 600
 #extern_window_height = 440
-
-# Edit Options
-# Enable form to edit your options (hideattic,sortbydate)
-# this isn't necessary if you've $dirtable defined 'cause
-# this allows editing of all your options more intuitive
-edit_option_form = not dirtable
 
 # If you have files which automatically refers to other files
 # (such as HTML) then this allows you to browse the checked
@@ -1013,6 +999,7 @@ _re_log_info = re.compile(r'^date:\s+([^;]+);'
                           r'\s+author:\s+([^;]+);'
                           r'\s+state:\s+([^;]+);'
                           r'(\s+lines:\s+([0-9\s+-]+))?\n$')
+### _re_rev should be updated to extract the "locked" flag
 _re_rev = re.compile(r'^revision\s+([0-9.]+).*')
 def parse_log_entry(fp):
   """Parse a single log entry.
@@ -1287,43 +1274,41 @@ def view_directory(request):
   print '<p><hr noshade>'
 
   num_cols = 0
-  if not dirtable:
-    print '<menu>'
-  else:
-    if tableBorderColor:
-      print '<table border=0 cellpadding=0 width="100&#37;"><tr>' \
-            '<td bgcolor="%s">' % tableBorderColor
-    print '<table width="100&#37;" border=0 cellspacing=1 ' \
-          'cellpadding=%s>' % tablepadding
 
-    def print_header(title, which, sortby=sortby, query_dict=query_dict):
-      if sortby == which:
-        print '<th align=left bgcolor=%s>%s</th>' % \
-              (columnHeaderColorSorted, title)
-      else:
-        query = toggle_query(query_dict, 'sortby', which)
-        print '<th align=left bgcolor=%s>' \
-              '<a href="./%s#dirlist">%s</a>' \
-              '</th>' % \
-              (columnHeaderColorDefault, query, title)
+  if tableBorderColor:
+    print '<table border=0 cellpadding=0 width="100&#37;"><tr>' \
+          '<td bgcolor="%s">' % tableBorderColor
+  print '<table width="100&#37;" border=0 cellspacing=1 ' \
+        'cellpadding=%s>' % tablepadding
 
-    print '<tr>'
-    num_cols = 1
-    print_header('File', 'file')
+  def print_header(title, which, sortby=sortby, query_dict=query_dict):
+    if sortby == which:
+      print '<th align=left bgcolor=%s>%s</th>' % \
+            (columnHeaderColorSorted, title)
+    else:
+      query = toggle_query(query_dict, 'sortby', which)
+      print '<th align=left bgcolor=%s>' \
+            '<a href="./%s#dirlist">%s</a>' \
+            '</th>' % \
+            (columnHeaderColorDefault, query, title)
 
-    # fileinfo will be len==0 if we only have dirs and !show_subdir_lastmod
-    # in that case, we don't need the extra columns
-    if len(fileinfo):
-      num_cols = 3
-      print_header('Rev.', 'rev')
-      print_header('Age', 'date')
-      if show_author:
-        num_cols = 4
-        print_header('Author', 'author')
-      if show_logs:
-        num_cols = num_cols + 1
-        print_header('Last log entry', 'log')
-    print '</tr>'
+  print '<tr>'
+  num_cols = 1
+  print_header('File', 'file')
+
+  # fileinfo will be len==0 if we only have dirs and !show_subdir_lastmod
+  # in that case, we don't need the extra columns
+  if len(fileinfo):
+    num_cols = 3
+    print_header('Rev.', 'rev')
+    print_header('Age', 'date')
+    if show_author:
+      num_cols = 4
+      print_header('Author', 'author')
+    if show_logs:
+      num_cols = num_cols + 1
+      print_header('Last log entry', 'log')
+  print '</tr>'
 
   def file_sort_cmp(data1, data2, sortby=sortby, fileinfo=fileinfo):
     if data1[2]:	# is_directory
@@ -1395,8 +1380,7 @@ def view_directory(request):
       if where == '' and (file == 'CVSROOT' or file in forbidden_modules):
         continue
 
-      if dirtable:
-        print '<tr bgcolor="%s"><td>' % table_colors[cur_row % 2]
+      print '<tr bgcolor="%s"><td>' % table_colors[cur_row % 2]
       url = urllib.quote(file) + '/' + request.qmark_query
       print '<a name="%s">' % file
       if request.no_file_links:
@@ -1410,39 +1394,29 @@ def view_directory(request):
 
       info = fileinfo.get(file)
       if info == _FILE_HAD_ERROR:
-        if dirtable:
-          print '</td><td colspan=%d><i>CVS information is unreadable</i>' % \
-                (num_cols - 1)
-          cur_row = cur_row + 1
-          unreadable = 1
-        else:
-          print '<i>CVS information is unreadable></i>'
+        print '</td><td colspan=%d><i>CVS information is unreadable</i>' % \
+              (num_cols - 1)
+        cur_row = cur_row + 1
+        unreadable = 1
       elif info:
-        if dirtable:
-          print '</td><td>&nbsp;</td><td>&nbsp;'
+        print '</td><td>&nbsp;</td><td>&nbsp;'
         print html_time(info[1])
         if show_author:
-          if dirtable:
-            print '</td><td>&nbsp;'
+          print '</td><td>&nbsp;'
           print info[3]
         if show_logs:
-          if dirtable:
-            print '</td><td>&nbsp;'
+          print '</td><td>&nbsp;'
           subfile = info[4]
           idx = string.find(subfile, '/')
           print '%s/%s' % (subfile[idx+1:], info[0])
-          if dirtable:
-            print '<br>'
+          print '<br>'
           if info[2]:
             html_log(info[2])
-      elif dirtable:
+      else:
         for i in range(1, num_cols):
           print '</td><td>&nbsp;'
 
-      if dirtable:
-        print '</td></tr>'
-      else:
-        print '<br>'
+      print '</td></tr>'
 
     else:
       # remove the ",v"
@@ -1451,15 +1425,12 @@ def view_directory(request):
       num_files = num_files + 1
       info = fileinfo.get(file)
       if info == _FILE_HAD_ERROR:
-        if dirtable:
           print '<tr bgcolor="%s"><td><a name="%s">%s</a></td>' % \
                 (table_colors[cur_row % 2], file, file)
           print '<td colspan=%d><i>CVS information is unreadable</i></td>' % \
                 (num_cols - 1)
           print '</tr>'
           cur_row = cur_row + 1
-        else:
-          print '<i>CVS information is unreadable></i><br>'
         num_displayed = num_displayed + 1
         unreadable = 1
         continue
@@ -1476,8 +1447,7 @@ def view_directory(request):
       else:
         attic = ''
 
-      if dirtable:
-        print '<tr bgcolor="%s"><td>' % table_colors[cur_row % 2]
+      print '<tr bgcolor="%s"><td>' % table_colors[cur_row % 2]
       print '<a name="%s">' % file
 
       if request.no_file_links:
@@ -1486,37 +1456,27 @@ def view_directory(request):
         print html_link(html_icon('file'), url)
       print html_link(file, url), attic
 
-      if dirtable:
-        print '</td><td>&nbsp;'
+      print '</td><td>&nbsp;'
       if allow_markup:
         download_link(request, file_url, info[0], info[0], viewcvs_mime_type)
       else:
         download_link(request, file_url, info[0], info[0])
-      if dirtable:
-        print '</td><td>&nbsp;'
+      print '</td><td>&nbsp;'
       print html_time(info[1])
       if show_author:
-        if dirtable:
-          print '</td><td>&nbsp;'
+        print '</td><td>&nbsp;'
         print info[3]
       if show_logs:
-        if dirtable:
-          print '</td><td>'
+        print '</td><td>'
         html_log(info[2])
 
-      if dirtable:
-        print '</td></tr>'
-      else:
-        print '<br>'
+      print '</td></tr>'
 
     cur_row = cur_row + 1
 
-  if dirtable:
-    if tableBorderColor:
-      print '</td></tr></table>'
-    print '</table>'
-  else:
-    print '</menu>'
+  if tableBorderColor:
+    print '</td></tr></table>'
+  print '</table>'
 
   if num_files and not num_displayed:
     print '<p><b>NOTE:</b> There are %d files, but none match the current' \
@@ -1527,10 +1487,8 @@ def view_directory(request):
           'by the web server process. Please report this condition to the ' \
           'administrator of this CVS repository.'
 
-  if alltags or view_tag or edit_option_form or query_dict.has_key('options'):
-    print '<hr size=1 noshade>'
-
   if alltags or view_tag:
+    print '<hr size=1 noshade>'
     print '<form method="GET" action="./">'
     for varname in _sticky_vars:
       value = query_dict.get(varname, '')
@@ -1550,10 +1508,6 @@ def view_directory(request):
     for tag in tags:
       html_option(tag, view_tag)
     print '</select><input type=submit value="Go"></form>'
-
-  if edit_option_form or query_dict.has_key('options'):
-    ### option selection
-    pass
 
   html_footer()
 
