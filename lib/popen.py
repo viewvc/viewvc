@@ -38,9 +38,6 @@ def popen(cmd, args, mode, capture_err=1):
   if sys.platform == "win32":
     command = win32popen.CommandLine(cmd, args)
 
-    #sapi.server.header()
-    #debug.PrintStackTrace(command)
-
     if mode.find('r') >= 0:
       hStdIn = None
 
