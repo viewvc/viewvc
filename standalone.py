@@ -161,11 +161,6 @@ If this doesn't work, please click on the link above.
                 rest, query = rest[:i], rest[i+1:]
             else:
                 query = ''
-            i = string.find(rest, '/')
-            if i >= 0:
-                script, rest = rest[:i], rest[i:]
-            else:
-                script, rest = rest, ''
             # sys.stderr.write("Debug: '"+scriptname+"' '"+rest+"' '"+query+"'\n")
             env = os.environ
             # Since we're going to modify the env in the parent, provide empty
