@@ -105,6 +105,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
   [if-any view_tag]
       with tag: '[view_tag]'</b>
   [end]
+  [end]
 [end]
 
 
