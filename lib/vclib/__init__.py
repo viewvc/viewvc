@@ -65,15 +65,15 @@ class Repository:
 
   # Private methods ( accessed by Versfile and Revision )
 
-  def _getvf_files(self, path):
+  def _getvf_files(self, path_parts):
     "Return a dictionary of versioned files. (name : Versfile)"
     pass
 
-  def _getvf_subdirs(self, path):
+  def _getvf_subdirs(self, path_parts):
     "Return a dictionary of subdirectories. (name : Versdir)"
     pass
 
-  def _getvf_info(self, target, path):
+  def _getvf_info(self, target, path_parts):
     """
     This method will had to <target> (expect to be an instance of Versfile)
     a certain number of attributes:
@@ -93,7 +93,7 @@ class Repository:
     Developers: method to be overloaded.
     """
 
-  def _getvf_properties(self, target, path, revisionnumber):
+  def _getvf_properties(self, target, path_parts, revisionnumber):
     """
     Add/update into target's attributes (expected to be an instance of
     Revision) a certain number of attributes:
@@ -113,7 +113,7 @@ class Repository:
     gets the properties.
     """
 
-  def _getvf_cofile(self, target, path):
+  def _getvf_cofile(self, target, path_parts):
     """
     should return a file object representing the checked out revision.
     Notice that _getvf_co can also add the properties in <target> the
@@ -122,10 +122,13 @@ class Repository:
     Developers: method to be overloaded.
     """
 
-
 # ======================================================================
-    
-class Versdir:
+class Versitem:
+  pass
+  
+# ======================================================================
+
+class Versdir(Versitem):
   "Instances represent directories within a repository."
 
   #
@@ -134,11 +137,11 @@ class Versdir:
 
   type = DIR
 
-  def __init__(self, repository, path):
+  def __init__(self, repository, path_parts):
     assert isinstance(repository, Repository)
 
     self.repository = repository
-    self.path = path
+    self.path = path_parts
 
   def getfiles(self):
     "Return a dictionary of versioned files. (name : Versfile)"
@@ -151,7 +154,7 @@ class Versdir:
 
 # ======================================================================
     
-class Versfile:
+class Versfile(Versitem):
   "Instances represent a (versioned) file within a repository."
 
   #
@@ -161,13 +164,13 @@ class Versfile:
   type = FILE
   names = ("head", "age", "author", "log", "branch", "tags")
 
-  def __init__(self, repository, path, tree=None):
+  def __init__(self, repository, path_parts, tree=None):
     "Called by Repository.getfile"
 
     assert isinstance(repository, Repository)
 
     self.repository = repository
-    self.path = path
+    self.path = path_parts 
     
     if tree != None:
       self.tree = tree
@@ -236,6 +239,8 @@ class Revision:
 class Error(Exception):
   pass
 class ReposNotFound(Error):
-  pass
+  def __init__(self,path):
+    self.path = path
 class ItemNotFound(Error):
-  pass
+  def __init__(self,path):
+    self.path = path
