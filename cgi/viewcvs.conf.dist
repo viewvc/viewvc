@@ -1,23 +1,88 @@
 #---------------------------------------------------------------------------
-### DOC
+#
+# Configuration file for ViewCVS
+#
+# Information on ViewCVS is located at the following web site:
+#     http://www.lyra.org/greg/python/viewcvs/
+#
+#---------------------------------------------------------------------------
+
+#
+# BASIC CONFIGURATION
+#
+# For correct operation, you will probably need to change the following
+# configuration variables:
+#
+#    cvs_roots
+#    default_root
+#    rcs_path
+#    mime_types_file
+#
+# It is usually desirable to change the following variables:
+#
+#    address
+#    main_title
+#    logo
+#    forbidden
+#
+#    long_intro
+#    repository_info
+#
+# For Python source colorization:
+#
+#    py2html_path
+#
+# If your icons are in a special location:
+#
+#    icons
+#
+
+#
+# FORMAT INFORMATION
+#
+# This file is delineated by sections, specified in [brackets]. Within each
+# section, are a number of configuration settings. These settings take the
+# form of: name = value. Values may be continued on the following line by
+# indenting the continued line.
+#
+# WARNING: indentation *always* means continuation. name=value lines should
+#          always start in column zero.
+#
+# Comments should always start in column zero, and are identified with "#".
+#
+# Certain configuration settings may have multiple values. These should be
+# separated by a comma. The settings where this is allowed are noted below.
+#
+# Any other setting that requires special syntax is noted at that setting.
+# 
 
 #---------------------------------------------------------------------------
 [general]
 
-### DOC
+#
+# This setting specifies each of the CVS roots on your system and assigns
+# names to them. Each root should be given by a "name: path" value. Multiple
+# roots should be separated by commas.
+#
 cvs_roots =
 	Development : /home/cvsroot
 
-### DOC
+# this is the name of the default CVS root.
 default_root = Development
 
 # uncomment if the RCS binaries are not on the standard path
 # NOTE: the trailing slash is required!
-# rcs_path = /usr/bin/
+#rcs_path = /usr/bin/
 
-# mapping to mimetypes to help viewcvs to guess the correct mime-type on
-# checkout; you can use the mime.types from apache here:
-mime_types_file = /usr/local/apache/conf/mime.types
+#
+# This is a pathname to a MIME types file to help viewcvs to guess the
+# correct MIME type on checkout.
+#
+# If you are having problems with the default guess on the MIME type, then
+# uncomment this option and point it at a MIME type file.
+#
+# For example, you can use the mime.types from apache here:
+#mime_types_file = /usr/local/apache/conf/mime.types
 
 # This address is shown in the footer. It should contain the CVS maintainer.
 address = <a href="mailto:gstein@lyra.org">gstein@lyra.org</a>
@@ -95,10 +160,15 @@ column_header_normal = #cccccc
 column_header_sorted = #88ff88
 
 # Uncomment the following line for colored borders in tables
-# table_border = #999999
+#table_border = #999999
 
 #---------------------------------------------------------------------------
 [text]
+
+#
+# WARNING: if you continue the text onto multiple lines, then make SURE that
+#          you indent the continuations.
+#
 
 short_intro =
     <p>
@@ -186,6 +256,7 @@ log_sort = date
 #   u      Unified diff
 #   c      Context diff
 #   s      Side by side
+#   H      Long human readable
 diff_format = h
 
 # hide_cvsroot: Don't show the CVSROOT directory
@@ -296,3 +367,5 @@ diff_font_size = -1
 
 # the width of the textinput in the request-diff-form
 input_text_size = 12
+
+#---------------------------------------------------------------------------
