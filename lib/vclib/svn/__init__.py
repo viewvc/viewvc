@@ -275,8 +275,17 @@ class SubversionRepository(vclib.Repository):
   def __init__(self, name, rootpath, rev=None):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
+
+    # Initialize some stuff that __del__ will look for.
+    self.pool = None
+    self.apr_init = 0
+
+    # Initialize APR and get our top-level pool.
     core.apr_initialize()
+    self.apr_init = 1
     self.pool = core.svn_pool_create(None)
+
+    # Open the repository and init some other variables.
     self.repos = repos.svn_repos_open(rootpath, self.pool)
     self.name = name
     self.rootpath = rootpath
@@ -290,8 +299,10 @@ class SubversionRepository(vclib.Repository):
     self.fsroot = fs.revision_root(self.fs_ptr, self.rev, self.pool)
 
   def __del__(self):
-    core.svn_pool_destroy(self.pool)
-    core.apr_terminate()
+    if self.pool:
+      core.svn_pool_destroy(self.pool)
+    if self.apr_init:
+      core.apr_terminate()
     
   def itemtype(self, path_parts):
     basepath = self._getpath(path_parts)
