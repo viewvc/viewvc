@@ -67,7 +67,10 @@ sys.stdout.flush()
 #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib'
 
 # Create an image map
-os.system('%s -i -c %s -r %s -m %s %s' % (path_to_cvsgraph, path_to_cvsgraph_conf,r,m,f))
+command = "%s -i -c %s -r %s -m '%s' %s" % (path_to_cvsgraph, 
+		    path_to_cvsgraph_conf, r, m, f))
+if os.system(command) != 0:
+    sys.stderr.write("\nFailed to execute '"+command+"'.\n")
 
 print """<img border="0" 
           usemap="#MyMapName" 
