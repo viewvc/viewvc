@@ -1,3 +1,10 @@
+Version 1.0 (not yet released)
+  * Several changes to standalone.py:
+    - -h commandline option to specify hostname for non local use.
+    - -r commandline option may be repeated to use more than repository
+      before actually installing ViewCVS.
+    - New GUI field to test paging.
+
 Version 0.9.2 (released 15-Jan-2001)
 
   * fix redirects to Attic for diffs
