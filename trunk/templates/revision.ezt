@@ -7,9 +7,17 @@
 <title>Subversion revision - [rev]</title>
 </head>
 <body text="#000000" bgcolor="#ffffff">
-
-<h1>Subversion revision information</h1>
-<h2>Revision [rev]</h2>
+<table width="100%" border=0 cellspacing=0 cellpadding=0>
+  <tr>
+    <td rowspan=2><h1>Subversion revision [rev]</h1></td>
+    <td align=right><img src="[icons]/apache_pb.gif" alt="(logo)" border=0
+			width=259 height=32></td>
+  </tr>
+  <tr>
+    <td align=right><h3><b><a target="_blank"
+     href="[docroot]/help_log.html">ViewCVS and CVS Help</a></b></h3></td>
+  </tr>
+</table>
 
 <p>
   <b>Author:</b> [author]<br>
