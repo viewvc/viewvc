@@ -42,6 +42,7 @@ import cvsdb
 import viewcvs
 import ezt
 import debug
+import urllib
 
 class FormData:
     def __init__(self, form):
@@ -310,8 +311,8 @@ def build_commit(server, desc, files, cvsroots, viewcvs_link):
         
         if cvsroot_name:
             flink = '<a href="%s/%s?root=%s">%s</a>' % (
-                    viewcvs_link, file, cvsroot_name, 
-                    file_full_path)
+                    viewcvs_link, urllib.quote(file),
+                    cvsroot_name, file_full_path)
         else:
             flink = file_full_path
 
