@@ -215,8 +215,7 @@ there are some additional steps required to get the database working.
 
 1) You need MySQL >= 3.22, and the Python module MySQLdb 0.9.0 installed.
    Python 1.5.2 is REQUIRED by MySQLdb, therefore to use this part of
-   ViewCVS you must be using Python 1.5.2.  Additionally you will need the
-   mxDateTime extension.  I've tested with version 1.3.0
+   ViewCVS you must be using Python 1.5.2.
 
 2) You need to create a MySQL user who has permission to create databases.
    Optionally, you can create a second user with read-only access to the
@@ -259,13 +258,21 @@ there are some additional steps required to get the database working.
    To get real-time updates, you'll want to checkout the CVSROOT module
    from your CVS repository and edit CVSROOT/loginfo.  Add the line:
 
-     ALL (echo %{sVv}; cat) | <VIEWCVS_INSTALLATION_DIRECTORY>/loginfo-handler
+     ALL <VIEWCVS_INSTALLATION_DIRECTORY>/loginfo-handler %{sVv}
 
    If you have other scripts invoked by CVSROOT/loginfo, you will want
    to make sure to change any running under the "DEFAULT" keyword to
    "ALL" like the loginfo handler, and probably carefully read the
    execution rules for CVSROOT/loginfo from the CVS manual.
 
+   If you are running the Unix port of CVS-NT, you'll need to use a 
+   slightly different command line:
+   
+     ALL <VIEWCVS_INSTALLATION_DIRECTORY>/loginfo-handler %{sVv} cvsnt
+     
+   The extra 'cvsnt' parameter tells the handler script to parse the 
+   commit information in a different way. 
+   
 6) You may want to modify the HTML template file:
 
       <VIEWCVS_INSTALLATION_DIRECTORY>/templates/query.ezt
