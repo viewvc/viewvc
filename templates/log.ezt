@@ -139,7 +139,7 @@
    [end]
   [end]
 
-<pre>[entries.html_log]</pre>
+<pre class="vc_log">[entries.html_log]</pre>
 [end]
 
 [include "include/paging.ezt"]
