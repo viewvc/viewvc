@@ -1,0 +1,76 @@
+[# setup page definitions]
+  [define location][rootname][if-any where]: [where][end][end]
+  [define page_title][cfg.general.main_title] - query results - [location][end]
+  [define help_href][docroot]/help_rootview.html[end]
+[# end]
+
+[include "include/header.ezt"]
+
+<p><b>[english_query]</b></p>
+[# <!-- {sql} --> ]
+<p><a href="[queryform_href]">Modify query</a></p>
+
+<p><b>+[plus_count]/-[minus_count]</b> lines changed.</p>
+
+[if-any commits]
+<table width="100%" border="0" cellspacing="1" cellpadding="2">
+ <thead>
+  <tr>
+   <th align="left" class="vc_header">Revision</th>
+   <th align="left" class="vc_header[is sortby "file"]_sort[end]">File</th>
+[if-any show_branch]
+   <th align="left" class="vc_header">Branch</th>
+[end]
+   <th align="left" class="vc_header">+/-</th>
+   <th align="left" class="vc_header[is sortby "date"]_sort[end]">Date</th>
+   <th align="left" class="vc_header[is sortby "author"]_sort[end]">Author</th>
+[# uncommment, if you want a separate Description column: (also see below)
+   <th align="left" class="vc_header">Description</th>
+]
+  </tr>
+ </thead>
+[for commits]
+  [for commits.files]
+    <tbody>
+    <tr class="vc_row_[if-index commits even]even[else]odd[end]">
+      <td align=left valign=top>
+	[if-any commits.files.rev]<a href="[commits.files.rev_href]">[commits.files.rev]</a>[else]&nbsp;[end]
+      </td>
+      <td align="left" valign="top">
+        <a href="[commits.files.dir_href]">[commits.files.dir]/</a>
+        <a href="[commits.files.log_href]">[commits.files.file]</a>
+      </td>
+[if-any show_branch]
+      <td align="left" valign="top">
+	[if-any commits.files.branch][commits.files.branch][else]&nbsp;[end]
+      </td>
+[end]
+      <td align="left" valign="top">
+        [# only show a diff link for changes ]
+        [is commits.files.type "Add"]<ins>[end]
+        [is commits.files.type "Change"]<a href="[commits.files.diff_href]">[end]
+        [is commits.files.type "Remove"]<del>[end]
+          [commits.files.plus]/[commits.files.minus]
+        [is commits.files.type "Add"]</ins>[end]
+        [is commits.files.type "Change"]</a>[end]
+        [is commits.files.type "Remove"]</del>[end]
+      </td>
+      <td align="left" valign="top">
+	[if-any commits.files.date][commits.files.date][else]&nbsp;[end]
+      </td>
+      <td align="left" valign="top">
+	[if-any commits.files.author][commits.files.author][else]&nbsp;[end]
+      </td>
+    </tr>
+  [end]
+  <tr class="vc_row_[if-index commits even]even[else]odd[end]">
+    <td>&nbsp;</td>
+    <td colspan="5"><b>Log:</b><br>
+      <pre><i>[commits.desc]<i></pre></td>
+  </tr>
+  </tbody>
+[end]
+</table>
+[end]
+
+[include "include/footer.ezt"]

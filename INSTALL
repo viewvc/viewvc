@@ -259,7 +259,7 @@ there are some additional steps required to get the database working.
 4) Edit your <VIEWCVS_INSTALLATION_DIRECTORY>/viewcvs.conf file.  
    There is a [cvsdb] section.  You will need to set:
      
-      
+      enabled = 1        # Whether to enable query support in viewcvs.cgi
       host =             # MySQL database server host
       database_name =    # the name of the database you created with
                          # make-database

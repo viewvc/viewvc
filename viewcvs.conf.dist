@@ -274,6 +274,8 @@ graph = templates/graph.ezt
 annotate = templates/annotate.ezt
 markup = templates/markup.ezt
 revision = templates/revision.ezt
+query_form = templates/query_form.ezt
+query_results = templates/query_results.ezt
 error = templates/error.ezt
 
 directory = templates/directory.ezt
@@ -290,6 +292,7 @@ log = templates/log.ezt
 #---------------------------------------------------------------------------
 [cvsdb]
 
+enabled = 0
 #host = localhost
 #database_name = ViewCVS
 #user = 
