@@ -90,19 +90,19 @@ class BinCVSRepository(vclib.Repository):
 
     fp = self.rcs_popen('co', (rev_flag, full_name), 'rb')
 
-    filename, revision = parse_co_header(fp)
+    filename, revision = _parse_co_header(fp)
     if filename is None:
       # CVSNT's co exits without any output if a dead revision is requested.
       # Bug at http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=190
       # As a workaround, we invoke rlog to find the first non-dead revision
       # that precedes it and check out that revision instead
-      revs = file_log(self, path_parts, rev)[0]
+      revs = _file_log(self, path_parts, rev)[0]
 
       # if we find a good revision, invoke co again, otherwise error out
       if len(revs) and revs[-1].undead:
         rev_flag = '-p' + revs[-1].undead.string
         fp = self.rcs_popen('co', (rev_flag, full_name), 'rb')
-        filename, revision = parse_co_header(fp)
+        filename, revision = _parse_co_header(fp)
       else:
         raise vclib.Error("CVSNT co workaround could not find non-dead "
                           "revision preceding \"%s\"" % rev)
@@ -139,7 +139,7 @@ class BinCVSRepository(vclib.Repository):
     tag = options.get('cvs_dir_tag')
 
     dirpath = self._getpath(path_parts)
-    alltags = get_logs(self, dirpath, entries, tag, subdirs)
+    alltags = _get_logs(self, dirpath, entries, tag, subdirs)
 
     branches = options['cvs_branches'] = []
     tags = options['cvs_tags'] = []
@@ -159,7 +159,7 @@ class BinCVSRepository(vclib.Repository):
       cvs_tags
         dictionary of Tag objects for all tags encountered
     """
-    revs, tags = file_log(self, path_parts, rev)
+    revs, tags = _file_log(self, path_parts, rev)
     options['cvs_tags'] = tags
     return revs
 
@@ -197,7 +197,7 @@ class Tag:
 # ======================================================================
 # Functions for dealing with Revision and Tag objects
 
-def match_revs_tags(revlist, taglist):
+def _match_revs_tags(revlist, taglist):
   """Match up a list of Revision objects with a list of Tag objects
 
   Sets the following properties on each Revision in revlist:
@@ -338,7 +338,7 @@ def match_revs_tags(revlist, taglist):
       assert depth == len(history)
       history.append(rev)
 
-def add_tag(tag_name, revision):
+def _add_tag(tag_name, revision):
   """Create a new tag object and associate it with a revision"""
   tag = Tag(tag_name, revision.string)
   revision.tags.append(tag)
@@ -346,7 +346,7 @@ def add_tag(tag_name, revision):
   tag.aliases = revision.tags
   return tag
   
-def remove_tag(tag):
+def _remove_tag(tag):
   """Remove a tag's associations"""
   tag.aliases.remove(tag)
   if tag.is_branch and tag.branch_rev:
@@ -389,7 +389,7 @@ _re_co_filename = re.compile(r'^(.*),v\s+-->\s+standard output\s*\n$')
 _re_co_warning = re.compile(r'^.*co: .*,v: warning: Unknown phrases like .*\n$')
 _re_co_revision = re.compile(r'^revision\s+([\d\.]+)\s*\n$')
 
-def parse_co_header(fp):
+def _parse_co_header(fp):
   """Parse RCS co header.
 
   fp is a file (pipe) opened for reading the co standard error stream.
@@ -463,7 +463,7 @@ _EOF_ERROR = 'error message found'      # rlog issued an error
 
 _re_lineno = re.compile(r'\:\d+$')
 
-def parse_log_header(fp):
+def _parse_log_header(fp):
   """Parse and RCS/CVS log header.
 
   fp is a file (pipe) opened for reading the log information.
@@ -552,7 +552,7 @@ _re_log_info = re.compile(r'^date:\s+([^;]+);'
                           r'(\s+lines:\s+([0-9\s+-]+))?\n$')
 ### _re_rev should be updated to extract the "locked" flag
 _re_rev = re.compile(r'^revision\s+([0-9.]+).*')
-def parse_log_entry(fp):
+def _parse_log_entry(fp):
   """Parse a single log entry.
 
   On entry, fp should point to the first line of the entry (the "revision"
@@ -613,7 +613,7 @@ def parse_log_entry(fp):
                   match.group(2), match.group(3) == "dead", match.group(5),
                   log), eof
 
-def skip_file(fp):
+def _skip_file(fp):
   "Skip the rest of a file's log information."
   while 1:
     line = fp.readline()
@@ -626,12 +626,12 @@ def skip_file(fp):
 # ======================================================================
 # Functions for interpreting and manipulating log information
 
-def file_log(repos, path_parts, filter):
+def _file_log(repos, path_parts, filter):
   """Run rlog on a file, return list of Revisions and a dictionary of Tags"""
   # Invoke rlog
   args = repos._getpath(path_parts) + ',v',
   fp = repos.rcs_popen('rlog', args, 'rt', 0)
-  filename, cur_branch, taginfo, eof = parse_log_header(fp)
+  filename, cur_branch, taginfo, eof = _parse_log_header(fp)
 
   # Add artificial ViewCVS tag MAIN. If the file has a default branch, then
   # MAIN acts like a branch tag pointing to that branch. Otherwise MAIN acts
@@ -651,7 +651,7 @@ def file_log(repos, path_parts, filter):
   # Retrieve revision objects
   revs = []
   while not eof:
-    rev, eof = parse_log_entry(fp)
+    rev, eof = _parse_log_entry(fp)
     if rev:
       revs.append(rev)
 
@@ -666,7 +666,7 @@ def file_log(repos, path_parts, filter):
       tags.append(view_tag)  
 
   # Match up tags and revisions
-  match_revs_tags(revs, tags)
+  _match_revs_tags(revs, tags)
 
   # Add artificial ViewCVS tag HEAD, which acts like a non-branch tag pointing
   # at the latest revision on the MAIN branch. The HEAD revision doesn't have
@@ -674,7 +674,7 @@ def file_log(repos, path_parts, filter):
   # and in rlog output. HEAD refers to the revision that the CVS and RCS co
   # commands will check out by default, whereas the "head" field just refers
   # to the highest revision on the trunk.  
-  taginfo['HEAD'] = add_tag('HEAD', taginfo['MAIN'].co_rev)
+  taginfo['HEAD'] = _add_tag('HEAD', taginfo['MAIN'].co_rev)
 
   # Determine what revisions to return
   if filter:
@@ -696,13 +696,13 @@ def file_log(repos, path_parts, filter):
 
     # get rid of the view_tag if it was only created for filtering
     if view_tag.name is None:
-      remove_tag(view_tag)
+      _remove_tag(view_tag)
   else:
     filtered_revs = revs
   
   return filtered_revs, taginfo
 
-def get_logs(repos, dirpath, entries, view_tag, get_dirs):
+def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
   alltags = {           # all the tags seen in the files of this dir
     'MAIN' : '',
     'HEAD' : '1.1'
@@ -755,7 +755,7 @@ def get_logs(repos, dirpath, entries, view_tag, get_dirs):
 
     # consume each file found in the resulting log
     for file in chunk:
-      filename, default_branch, taginfo, eof = parse_log_header(rlog)
+      filename, default_branch, taginfo, eof = _parse_log_header(rlog)
 
       if eof == _EOF_LOG:
         # the rlog output ended early. this happens on errors that rlog thinks
@@ -777,10 +777,10 @@ def get_logs(repos, dirpath, entries, view_tag, get_dirs):
         raise vclib.Error('Rlog output ended early. Expected RCS file "%s"'
                           % file.path)
 
-      # check path_ends_in instead of file.path == filename because of
+      # check _path_ends_in instead of file.path == filename because of
       # cvsnt's rlog, which only outputs the base filename 
       # http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=188
-      if not (filename and path_ends_in(file.path, filename)):
+      if not (filename and _path_ends_in(file.path, filename)):
         raise vclib.Error('Error parsing rlog output. Expected RCS file "%s"'
                           ', found "%s"' % (file.path, filename))
 
@@ -800,7 +800,7 @@ def get_logs(repos, dirpath, entries, view_tag, get_dirs):
         tag = Tag(None, taginfo[view_tag])
       elif view_tag:
         # the tag wasn't found, so skip this file
-        skip_file(rlog)
+        _skip_file(rlog)
         continue
       else:
         tag = None
@@ -816,7 +816,7 @@ def get_logs(repos, dirpath, entries, view_tag, get_dirs):
       while 1:
 
         # fetch one of the log entries
-        entry, eof = parse_log_entry(rlog)
+        entry, eof = _parse_log_entry(rlog)
 
         if not entry:
           # parsing error
@@ -852,7 +852,7 @@ def get_logs(repos, dirpath, entries, view_tag, get_dirs):
 
       # done with this file now, skip the rest of this file's revisions
       if not eof:
-        skip_file(rlog)
+        _skip_file(rlog)
 
     rlog.close()
 
@@ -863,7 +863,7 @@ def fetch_log(rcs_paths, full_name, which_rev=None):
     args = (full_name,)
   rlog = repos.rcs_popen('rlog', args, 'rt', 0)
 
-  filename, branch, taginfo, eof = parse_log_header(rlog)
+  filename, branch, taginfo, eof = _parse_log_header(rlog)
 
   if eof:
     # no log entries or a parsing failure
@@ -871,7 +871,7 @@ def fetch_log(rcs_paths, full_name, which_rev=None):
 
   revs = [ ]
   while 1:
-    entry, eof = parse_log_entry(rlog)
+    entry, eof = _parse_log_entry(rlog)
     if entry:
       # valid revision info
       revs.append(entry)
@@ -971,7 +971,7 @@ def _newest_file(dirpath):
 
   return newest_file
 
-def path_ends_in(path, ending):
+def _path_ends_in(path, ending):
   if path == ending:
     return 1
   le = len(ending)
