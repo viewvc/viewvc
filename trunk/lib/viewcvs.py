@@ -379,6 +379,12 @@ class Request:
       else:
         params['root'] = None
 
+    # if we are asking for the revision info view, we don't need any
+    # path information
+    if view_func == view_revision:
+      where = None
+      pathtype = vclib.DIR
+        
     # add path
     if where:
       url = url + '/' + where
@@ -1876,6 +1882,10 @@ def view_log_svn(request, data, logsort):
                                       pathtype=vclib.FILE,
                                       params={'content-type': 'text/plain',
                                               'rev': rev})
+    entry.revision_href = request.get_url(view_func=view_revision,
+                                          where=None,
+                                          pathtype=None,
+                                          params={'rev': rev})
 
     if entry.copy_path:
       entry.copy_href = request.get_url(view_func=view_log, 
@@ -2771,17 +2781,24 @@ def download_tarball(request):
   fp.write('\0' * 1024)
   fp.close()
 
+def view_revision(request):
+  data = common_template_data(request)
+  request.server.header()
+  generate_page(request, cfg.templates.revision, data)
+
+
 _views = {
-  'dir':      view_directory,
+  'annotate': view_annotate,
+  'auto':     view_auto,
   'co':       view_checkout,
   'diff':     view_diff,
-  'log':      view_log,
-  'annotate': view_annotate,
+  'dir':      view_directory,
   'graph':    view_cvsgraph,
   'graphimg': view_cvsgraph_image,
+  'log':      view_log,
   'markup':   view_markup,
-  'auto':     view_auto,
-  'tar':      download_tarball
+  'rev':      view_revision,
+  'tar':      download_tarball,
 }
 
 _view_codes = {}
