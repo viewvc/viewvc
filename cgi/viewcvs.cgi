@@ -528,7 +528,7 @@ def html_header(title):
 </head>
 %s
 <table width="100&#37;" border=0 cellspacing=0 cellpadding=0>
-  <tr><td><h1>%s</h1></td><td align=right>%s</td></tr><table>
+  <tr><td><h1>%s</h1></td><td align=right>%s</td></tr></table>
 ''' % (header_comment, title, body_tag, title, logo)
 
 def html_footer():
