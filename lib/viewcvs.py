@@ -2024,8 +2024,8 @@ def view_cvsgraph(request):
                    ("-i",
                     "-c", cfg.options.cvsgraph_conf,
                     "-r", request.repos.rootpath,
-                    "-6", amp_query,
                     "-7", qmark_query,
+                    "-8", amp_query,
                     rcsfile), 'rb', 0)
 
   data.update({
