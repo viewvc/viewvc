@@ -408,7 +408,7 @@ class Request:
         del params['root']   
 
     # add path
-    if where and where != '':
+    if where:
       url = url + '/' + where
 
     # add suffix for tarball
