@@ -43,6 +43,12 @@ typedef __gnu_cxx::stdio_filebuf<char> stdio_filebuf;
 
 using namespace std;
 
+class PythonException
+{
+  public:
+    PythonException() {};
+};
+
 static PyMethodDef tparseMethods[] = {
   {"parse", tparse, METH_VARARGS, tparse__doc__},
   {NULL, NULL}        /* Sentinel */
@@ -80,12 +86,6 @@ void inittparse()
   PyDict_SetItemString(d, "__date__", PyString_FromString(__date__));
   PyDict_SetItemString(d, "__author__", PyString_FromString(__author__));
 }
-
-class PythonException
-{
-  public:
-    PythonException() {};
-};
 
 class PythonSink : public Sink
 {
@@ -309,11 +309,10 @@ static PyObject * tparse( PyObject *self, PyObject *args)
     return NULL;
   }
 
-  Py_INCREF(hsink);
-  Py_XINCREF(file);
   try
   {
     tparseParser tp(input, new PythonSink(hsink));
+    tp.parse();
   }
   catch (RCSExpected e)
   {
@@ -321,8 +320,6 @@ static PyObject * tparse( PyObject *self, PyObject *args)
                                    Py_BuildValue("(ss)", e.got, e.wanted), 
                                    NULL);
     PyErr_SetObject(pyRCSExpected, exp);
-    Py_DECREF(hsink);
-    Py_XDECREF(file);
     return NULL;
   }
   catch (RCSIllegalCharacter e)
@@ -330,8 +327,6 @@ static PyObject * tparse( PyObject *self, PyObject *args)
     PyObject *exp = PyInstance_New(pyRCSIllegalCharacter,
                                    Py_BuildValue("(s)", e.value), NULL);
     PyErr_SetObject(pyRCSIllegalCharacter, exp);
-    Py_DECREF(hsink);
-    Py_XDECREF(file);
     return NULL;
   }
   catch (RCSParseError e)
@@ -339,18 +334,13 @@ static PyObject * tparse( PyObject *self, PyObject *args)
     PyObject *exp = PyInstance_New(pyRCSParseError,
                                    Py_BuildValue("(s)", e.value), NULL);
     PyErr_SetObject(pyRCSParseError, exp);
-    Py_DECREF(hsink);
-    Py_XDECREF(file);
     return NULL;
   }
   catch (PythonException e)
   {
-    Py_DECREF(hsink);
-    Py_XDECREF(file);
     return NULL;
   }
-  Py_DECREF(hsink);
-  Py_XDECREF(file);
+
   Py_INCREF(Py_None);
   return Py_None;
 };
