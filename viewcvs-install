@@ -51,7 +51,11 @@ is okay.
 """ % version
 
 ## installer defaults
-ROOT_DIR = "/usr/local/viewcvs-" + version
+if sys.platform == "win32":
+  pf = os.getenv("ProgramFiles", "C:\\Program Files")
+  ROOT_DIR = os.path.join(pf, "viewcvs-" + version)  
+else:
+  ROOT_DIR = "/usr/local/viewcvs-" + version
 
 
 ## list of files for installation
@@ -63,6 +67,8 @@ ROOT_DIR = "/usr/local/viewcvs-" + version
 FILE_INFO_LIST = [
     ("cgi/viewcvs.cgi", "cgi/viewcvs.cgi", 0755, 1, 0, 0),
     ("cgi/query.cgi", "cgi/query.cgi", 0755, 1, 0, 0),
+    ("cgi/viewcvs.asp", "cgi/viewcvs.asp", 0755, 1, 0, 0),
+    ("cgi/query.asp", "cgi/query.asp", 0755, 1, 0, 0),
     ("standalone.py", "standalone.py", 0755, 1, 0, 0),
 
     ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 1,
@@ -82,6 +88,13 @@ TREE_LIST = [
   ("templates", "templates", 1),
   ]
 
+# used to escape substitution strings passed to re.sub(). re.escape() is no
+# good because it blindly puts backslashes in front of anything that is not
+# a number or letter regardless of whether the resulting sequence will be
+# interpreted.
+
+def ReEscape(str):
+  return string.replace(str, "\\", "\\\\")
 
 def Error(text, etype=None, evalue=None):
     print
@@ -108,15 +121,15 @@ def MkDir(path):
 
 def SetOnePath(contents, var, value):
     pattern = re.compile('^' + var + r'\s*=\s*.*$', re.MULTILINE)
-    repl = '%s = "%s"' % (var, os.path.join(ROOT_DIR, value))
-    return re.sub(pattern, repl, contents)
+    repl = '%s = r"%s"' % (var, os.path.join(ROOT_DIR, value))
+    return re.sub(pattern, ReEscape(repl), contents)
 
 
 def SetPythonPaths(contents):
     if contents[:2] == '#!':
         shbang = '#!' + sys.executable
-        contents = re.sub('^#![^\n]*', shbang, contents)
-    contents = re.sub("<VIEWCVS_INSTALL_DIRECTORY>", ROOT_DIR, contents)
+        contents = re.sub('^#![^\n]*', ReEscape(shbang), contents)
+    contents = re.sub("<VIEWCVS_INSTALL_DIRECTORY>", ReEscape(ROOT_DIR), contents)
     contents = SetOnePath(contents, 'LIBRARY_DIR', 'lib')
     contents = SetOnePath(contents, 'CONF_PATHNAME', 'viewcvs.conf')
     return contents
@@ -179,7 +192,7 @@ def InstallFile(src_path, dest_path, mode, set_python_paths, prompt_replace,
 
 def ReplaceFile(src_path, dest_path, mode, set_python_paths, prompt_replace, compile_it):
   try:
-    contents = open(src_path, "r").read()
+    contents = open(src_path, "rb").read()
   except IOError, e:
     Error(str(e))
 
@@ -191,7 +204,7 @@ def ReplaceFile(src_path, dest_path, mode, set_python_paths, prompt_replace, com
   MkDir(path)
   
   try:
-    open(dest_path, "w").write(contents)
+    open(dest_path, "wb").write(contents)
   except IOError, e:
     if e[0] == 13:
       # EACCES: permission denied
@@ -259,12 +272,14 @@ and configure ViewCVS for your system.
 
 Overview of remaining steps:
 
-1) Edit the %s/viewcvs.conf file.
+1) Edit the %s file.
 
 2) Configure an existing web server to run (or copy to cgi-bin) 
-   %s/cgi/viewcvs.cgi.
+   %s.
      OR 
    Run the web server that comes with ViewCVS at 
-   %s/standalone.py.
-
-""" % (ROOT_DIR, ROOT_DIR, ROOT_DIR)
+   %s.
+""" % (
+    os.path.join(ROOT_DIR, 'viewcvs.conf'),
+    os.path.join(ROOT_DIR, 'cgi', 'viewcvs.cgi'),
+    os.path.join(ROOT_DIR, 'standalone.py'))
