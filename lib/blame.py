@@ -49,7 +49,7 @@ class CVSParser:
   semic_token = re.compile('^;\\s*')
   rcsen_token = re.compile('^@([^@]*)')
   undo_escape = re.compile('@@')
-  single_at   = re.compile('([^@]|^)@([^@]|$)')
+  odd_at      = re.compile('([^@]|^)(@@)*@([^@]|$)')
   rcs_tree    = re.compile('^\\d')
   trunk_rev   = re.compile('^[0-9]+\\.[0-9]+$')
   last_branch = re.compile('(.*)\\.[0-9]+')
@@ -110,8 +110,8 @@ class CVSParser:
     self.line_buffer = self.rcsen_token.sub('', self.line_buffer)
     token = match.group(1)
 
-    # Detect single @ character used to close RCS-encoded string
-    while string.find(self.line_buffer, '@') < 0 or not self.single_at.search(self.line_buffer):
+    # Detect odd @ character used to close RCS-encoded string
+    while string.find(self.line_buffer, '@') < 0 or not self.odd_at.search(self.line_buffer):
       token = token + self.line_buffer
       self.line_buffer = self.rcsfile.readline()
       if self.line_buffer == '':
