@@ -1426,7 +1426,7 @@ def fetch_log(full_name, which_rev=None):
 
   if eof:
     # no log entries or a parsing failure
-    return head, branch, taginfo, { }
+    return head, branch, taginfo, [ ]
 
   revs = [ ]
   while 1:
