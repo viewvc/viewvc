@@ -171,11 +171,10 @@ def fetch_log(svnrepos, full_name, which_rev=None):
   return alltags, logs
 
 
-
-def get_last_history_rev(svnrepos, path):
-  history = fs.node_history(svnrepos.fsroot, path, svnrepos.pool)
-  history = fs.history_prev(history, 0, svnrepos.pool)
-  history_path, history_rev = fs.history_location(history, svnrepos.pool);
+def get_last_history_rev(svnrepos, path, pool):
+  history = fs.node_history(svnrepos.fsroot, path, pool)
+  history = fs.history_prev(history, 0, pool)
+  history_path, history_rev = fs.history_location(history, pool);
   return history_rev
   
   
@@ -185,15 +184,18 @@ def get_logs(svnrepos, full_name, files):
     'MAIN' : '1',
     'HEAD' : '1',
     }
+  subpool = core.svn_pool_create(svnrepos.pool)
   for file in files:
+    core.svn_pool_clear(subpool)
     path = fs_path_join(full_name, file)
-    rev = get_last_history_rev(svnrepos, path)
-    datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, svnrepos.pool)
-    date = _datestr_to_date(datestr, svnrepos.pool)
+    rev = get_last_history_rev(svnrepos, path, subpool)
+    datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, subpool)
+    date = _datestr_to_date(datestr, subpool)
     new_entry = LogEntry(rev, date, author, msg, file, [], None, None, None)
-    if fs.is_file(svnrepos.fsroot, path, svnrepos.pool):
-      new_entry.size = fs.file_length(svnrepos.fsroot, path, svnrepos.pool)
+    if fs.is_file(svnrepos.fsroot, path, subpool):
+      new_entry.size = fs.file_length(svnrepos.fsroot, path, subpool)
     fileinfo[file] = new_entry
+  core.svn_pool_destroy(subpool)
   return fileinfo, alltags
 
 
