@@ -1563,7 +1563,7 @@ def view_log(request):
 
     elif request.roottype == 'svn':
       entry.revision_href = request.get_url(view_func=view_revision,
-                                            params={'rev': rev})
+                                            params={'rev': rev.string})
       if rev.copy_path:
         entry.copy_href = request.get_url(view_func=view_log,
                                           where=rev.copy_path,
