@@ -58,11 +58,7 @@ class RLogData:
     "Container object for all data parsed from a 'rlog' output."
   
     def __init__(self, filename):
-        ## remove the RCS ",v" from the filename
-        if filename[-2:] == ",v":
-            filename = filename[:-2]
         self.filename = filename
-        
         self.symbolic_name_hash = {}
         self.rlog_entry_list = []
 
