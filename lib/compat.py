@@ -53,8 +53,11 @@ else:
                             '([0-9][0-9]):([0-9][0-9]):([0-9][0-9])')
   def cvs_strptime(timestr):
     'Parse a CVS-style date/time value.'
-    matches = _re_rev_date.match(timestr).groups()
-    return tuple(map(int, matches)) + (0, 1, 0)
+    match = _re_rev_date.match(timestr)
+    if match:
+      return tuple(map(int, match.groups())) + (0, 1, 0)
+    else:
+      return None
 
 #
 # os.makedirs() is new to Python 1.5.2
