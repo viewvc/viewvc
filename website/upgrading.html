@@ -79,7 +79,46 @@
     enable a backwards compatibility mode by setting
     <code>utc_time = 0</code> at the top of lib/dbi.py</p>
 
-    <h3>Template Arrangement</h3>
+    <h3>Configuration Options</h3>
+
+    <p>The following options have been added:</p>
+    <ul>
+      <li>general/svn_roots</li>
+      <li>general/root_parents</li>
+      <li>general/use_rcsparse</li>
+      <li>general/cvsnt_exe_path</li>
+      <li>options/docroot</li>
+      <li>options/http_expiration_time</li>
+      <li>options/generate_etags</li>
+      <li>options/root_as_url_component</li>
+      <li>options/use_pagesize</li>
+      <li>options/use_localtime</li>
+      <li>options/cross_copies</li>
+      <li>options/use_php</li>
+      <li>options/php_path</li>
+      <li>templates/error</li>
+      <li>templates/query_form</li>
+      <li>templates/query_results</li>
+    </ul>
+
+    <p>The following options have been removed:</p>
+    <ul>
+      <li>options/diff_font_face</li> 
+      <li>options/diff_font_size</li>
+      <li>templates/footer</li>
+    </ul>
+
+    <h3>Templates</h3>
+    
+    <p>The templates have changed drastically in this version of
+    ViewCVS. If you are using customized templates from 0.9 or
+    earlier, you will almost certainly find it easier to port your old
+    customizations to the new templates than to port the old templates
+    themselves. Either way, you might find it helpful to know what's
+    different in the templates since 0.9, so we've listed the changes
+    below.</p>
+
+    <h4>Template Arrangement</h4>
     
     <p>The default templates have been rearranged a bit in ViewCVS
     1.0.  Specifically, "header.ezt" and "footer.ezt" have moved into
@@ -96,13 +135,7 @@
     configuration variable, so that variable has been removed from the
     default configuration file.</p>
 
-    <h3>Configuration Options</h3>
-    <p>
-      Lots of options have been added.  <i style="color:red;">### Need to
-      document them.</i>
-    </p>
-
-    <h3>Removed Template Variables</h3>
+    <h4>Removed Template Variables</h4>
     <blockquote>
       <dl>
         <dt>
@@ -195,7 +228,7 @@
       </dl>
     </blockquote>
 
-    <h3>New Template Variables</h3>
+    <h4>New Template Variables</h4>
     <blockquote>
       <dl>
         <dt>All files: <var>roottype</var>, <var>rootname</var>, and 
@@ -307,7 +340,7 @@
     </blockquote>
 
 
-    <h3>New Template Form Variables</h3>
+    <h4>New Template Form Variables</h4>
     <p>
       Each HTML form that appears in ViewCVS templates is now
       associated with 2 new variables which should be used to
@@ -422,7 +455,7 @@
       </tr>
     </table>
 
-    <h3>Other Template Changes</h3>
+    <h4>Other Template Changes</h4>
     <h4>In <code>directory.ezt</code> and <code>dir_alternate.ezt</code></h4>
     <ul>
       <li>
