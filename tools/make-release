@@ -17,7 +17,7 @@
 # -----------------------------------------------------------------------
 #
 
-if [ "x$1" = "x" ]; then
+if test $# != 2; then
   echo "USAGE: $0 tagname target-directory"
   exit 1
 fi
