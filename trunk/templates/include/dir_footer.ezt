@@ -21,8 +21,9 @@
           <td> Show files using tag: </td>
           <td>
             <select name=only_with_tag onchange="submit()">
+            <option value="">Select Branch</option>
             [if-any branch_tags]
-              <option value="">- Branches -</option>
+              <optgroup label="Branches">
               [for branch_tags]
                 [is branch_tags view_tag]
                   <option selected>[branch_tags]</option>
@@ -30,8 +31,9 @@
                   <option>[branch_tags]</option>
                 [end]
               [end]
+              </optgroup>
             [end]
-            <option value="">- Non-branch tags -</option>
+            <optgroup label="Non-branch tags">
             [for plain_tags]
               [is plain_tags view_tag]
                 <option selected>[plain_tags]</option>
@@ -39,6 +41,7 @@
                 <option>[plain_tags]</option>
               [end]
             [end]
+            </optgroup>
             </select>
           </td>
           <td> &nbsp; </td>
