@@ -2022,13 +2022,11 @@ def view_cvsgraph(cfg, request):
   # FIXME: Move this into a template ?
   print """<html>
 <head>
-  <title>Revision graph of %(where)s</title>
-        <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-        <meta name="generator" content="handcrafted">
+  <title>Revision graph of %s</title>
 </head>
 <body bgcolor="#f0f0f0">
   <center>
-  <h1>Revision graph of %(where)s</h1>""" % locals()
+  <h1>Revision graph of %s</h1>""" % (where, where)
 
   #" fix Emacs font-lock: close a quote above
 
