@@ -73,7 +73,7 @@ ASP Mode On IIS
 
   1) Run <PYTHON_DIR>\win32comext\axscript\client\pyscript.py to register Python as an ASP scripting language. (More documentation on this is at http://www.python.org/windows/win32com/ActiveXScripting.html )
 
-  2) Copy the viewcvs.asp and query.asp files from <VIEWCVS_DIR>\cgi to a folder that is accessible through your web server.
+  2) Copy the viewcvs.asp and query.asp files from <VIEWCVS_DIR>\windows to a folder that is accessible through your web server.
 
   3) Start up the IIS "Internet Services Manager" and right click on the virtual server that contains the files you just copied. Choose "Properties" from the context menu that appears.
 
@@ -98,9 +98,9 @@ Mod_Python Mode on Apache
 
     LoadModule python_module modules/mod_python.so
 
-  3) Copy viewcvs.py and query.py from <VIEWCVS_INSTALL_DIR>\cgi to a folder being served by apache.
+  3) Copy viewcvs.py and query.py from <VIEWCVS_INSTALL_DIR>\windows to a folder being served by apache.
 
-  4) Create a new .htaccess file in the folder where you put viewcvs.py and query.py (or edit an existing .htaccess file there) and paste in the contents of <VIEWCVS_INSTALL_DIR>\htaccess-mod_python. Make sure overrides are allowed in this folder. The relevant virtual directory in httpd.conf should have "AllowOverride All" set, or at least "AllowOverride FileInfo Options".
+  4) Create a new .htaccess file in the folder where you put viewcvs.py and query.py (or edit an existing .htaccess file there) and paste in the contents of <VIEWCVS_INSTALL_DIR>\windows\htaccess-mod_python. Make sure overrides are allowed in this folder. The relevant virtual directory in httpd.conf should have "AllowOverride All" set, or at least "AllowOverride FileInfo Options".
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ENSCRIPT HIGHLIGHTING
@@ -257,7 +257,7 @@ Important: You may need to reboot your computer before the environment variable 
 THANKS
 
 - Bryan T. Vold for improving the original ViewCVS patch by adding support for enscript and tarball generation.
-- David Resnick for tracking down the cause or re_search failures in repositories with non-rcs files and for bringing a bug in sapi.AspFile.header() to my attention
+- David Resnick for tracking down the cause of re_search failures in repositories with non-rcs files and for bringing a bug in sapi.AspFile.header() to my attention
 - Matt Bunch for finding a better way to address the ASP blank page problem, and Keith D. Zimmerman for finding another workaround.
 - Rüdiger Koch for reporting a bug in viewcvs PATH_INFO parsing code with Apache for Windows as well as Jelle Ouwerkerk and Steffen Yount for providing fixes.
 - Nick Minutello and Rüdiger Koch for providing workarounds for setting enscript_library environment variable with apache. David Duminy for providing the first bug report on this.
