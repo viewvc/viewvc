@@ -149,6 +149,17 @@ To use CvsGraph with ViewCVS, just put cvsgraph.exe in a directory on your syste
 The CvsGraph home page is http://www.akhphd.au.dk/~bertho/cvsgraph/.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+SUBVERSION SUPPORT
+
+To use ViewCVS with Subversion, you'll need to have the Subversion Python bindings installed. Binaries are available on the Subversion website and build instructions can be found here:
+
+  http://svn.collab.net/repos/svn/trunk/subversion/bindings/swig/INSTALL
+
+You'll also need to have diff.exe installed in a directory on your system PATH. diff.exe is available as part of the GnuWin32 project's DiffUtils package at http://gnuwin32.sf.net/.
+
+Once the Python bindings and diff are installed, you just need to set the svn_roots option in viewcvs.conf to point to your repositories.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ICONS FOR IIS
 
 The default templates supplied with ViewCVS rely on icons that come with apache. As a replacement for them on IIS, you can use the ones in the windows/icons folder. Just copy the folder to your web server's root directory to use them.
@@ -212,19 +223,27 @@ TROUBLESHOOTING
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 KNOWN ISSUES
 
-- In ViewCVS, if you can browse directories but see messages like "NOTE: There are 11 files, but none match the current tag" with empty file listings, your RCS utilities might not be set up correctly. One particular problem is that they sometimes do not recognize the extensions on RCS files, treating all files specified on the command line like working copies even if they end in ",v". As a result, when the ViewCVS gives commands like
+- If you see ViewCVS errors like
 
-    rlog C:/CVSROOT/myproject/main.cpp,v
+    Error parsing rlog output. Expected RCS file "c:\cvsroot\dir\file,v", found "c:\cvsroot\dir\RCS/file,v"
 
-  rlog replies:
-
-    rlog: C:/CVSROOT/myproject/RCS/main.cpp,v: No such file or directory
-
-  and the files do not show up in the directory listing because the script does not have any information about them. You can test for this by entering commands like the one above on the command line. You can fix this by including the following string in your RCSINIT environment variable:
+  it's because your RCS utilities don't recognize the RCS file suffix and are treating all files specified on the command line like working copies even when they end in ",v". You can fix this by including the following string in your RCSINIT environment variable:
 
     -x,v
 
   Important: You may need to reboot your computer before the environment variable has an effect. See "Changes made to..." in the TROUBLESHOOTING section.
+
+- The GNU RCS utilities won't work with repository files that use CVSNT's unicode expansion mode (-ku). Files that use this mode will show up with the "CVS information is unreadable" error message in ViewCVS directory listings. To work around this, you can set up ViewCVS to use the CVSNT executable (cvs.exe) or CVSNT RCS tools (co.exe, rlog.exe, and rcsdiff.exe) instead of the GNU tools. 
+
+- CVSNT RCS emulation has a few quirks which affect ViewCVS. They've been reported as bugs in the CVSNT bugzilla database.
+
+  Bug 190 (http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=190) is the most serious. It causes exceptions when you try to view the HEAD revision of an Attic file.
+  
+  Bug 153 (http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=153) is a more minor issue. It causes timestamps on color coded diff pages to be displayed in UTC time even when the use_localtime option is enabled.
+  
+  Bug 188 (http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=188) isn't noticeable at all because ViewCVS works around it, but it'd still be nice to see it fixed so the workaround can be removed.
+
+  Bug 127 (http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=127) causes errors browsing repositories with spaces in file or directory names. This bug only occurs when ViewCVS is used with the rlog.exe, co.exe, and rcsdiff.exe provided with CVSNT. There are no problems with spaces when ViewCVS is configured to use cvs.exe directly (via the cvsnt_exe_path option), which is set by default on Windows.
 
 - The standalone server will not run under Cygwin Python because it does not support threads. ASP pages can't be run with Cygwin Python because it does not support ActiveX. To use either of these features you should install a native Python interpreter.
 
