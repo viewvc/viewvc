@@ -225,7 +225,7 @@ footer = templates/footer.ezt
 diff = templates/diff.ezt
 graph = templates/graph.ezt
 annotate = templates/annotate.ezt
-markup = templates/annotate.ezt
+markup = templates/markup.ezt
 
 directory = templates/directory.ezt
 # For an alternate form, where the first column displays a revision number
