@@ -166,7 +166,7 @@ def pipe_cmds(cmds):
           x, hStdErr = win32popen.MakeSpyPipe(None, 1, (dbgErr,))
 
         command = win32popen.CommandLine(cmd[0], cmd[1:])
-        phandle, pid, thandle, tid = win32popen.CreateProcess(command, hStdIn, hStdOut, None)
+        phandle, pid, thandle, tid = win32popen.CreateProcess(command, hStdIn, hStdOut, hStdErr)
         if debug.SHOW_CHILD_PROCESSES:
           debug.Process(command, dbgIn, dbgOut, dbgErr)
           
