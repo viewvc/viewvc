@@ -59,7 +59,6 @@ import struct
 # these modules come from our library (the stub has set up the path)
 import compat
 import config
-from config import error
 import popen
 import ezt
 import accept
@@ -335,6 +334,13 @@ _legal_params = {
   'rev'           : _re_validate_revnum,
   'content-type'  : _re_validate_mimetype,
   }
+
+def error(msg, status='500 Internal Server Error'):
+  """a simple error reporting utility function"""
+  print 'Status:', status
+  print
+  print msg
+  sys.exit(0)
 
 def redirect(location):
   print 'Status: 301 Moved'
@@ -2432,12 +2438,6 @@ class DiffSource:
     diff_code = line[0]
     output = spaced_html_text(line[1:])
 
-    fs = '<font face="%s" size="%s">' % \
-         (cfg.options.diff_font_face, cfg.options.diff_font_size)
-
-    # add font stuff
-    output = fs + '&nbsp;' + output + '</font>'
-
     if diff_code == '+':
       if self.state == 'dump':
         return _item(type='add', right=output)
@@ -2749,23 +2749,18 @@ def handle_config():
     # present in the directory specified as the svn_parent_path that
     # have a child file named "format" will be treated as svn_roots.
     if cfg.general.svn_parent_path is not None:
+      pp = cfg.general.svn_parent_path
       try:
-        pp = cfg.general.svn_parent_path
         subpaths = os.listdir(pp)
-        for subpath in subpaths:
-          try:
-            info = os.stat(os.path.join(pp, subpath))
-            if not stat.S_ISDIR(info[stat.ST_MODE]):
-              continue
-            info = os.stat(os.path.join(pp, subpath, "format"))
-            if not stat.S_ISREG(info[stat.ST_MODE]):
-              continue
-            cfg.general.svn_roots[subpath] = os.path.join(pp, subpath)
-          except:
-            pass
-      except:
-        error("The setting for 'svn_parent_path' is misconfigured in the "
-              "viewcvs.conf file. ")
+      except OSError:
+        error("The setting for 'svn_parent_path' does not refer to "
+              "a valid directory.")
+
+      for subpath in subpaths:
+        if os.path.exists(os.path.join(pp, subpath)) \
+           and os.path.exists(os.path.join(pp, subpath, "format")):
+          cfg.general.svn_roots[subpath] = os.path.join(pp, subpath)
+
       
   global default_settings
   default_settings = {

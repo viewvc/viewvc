@@ -37,24 +37,24 @@
       [is changes.type "add"]
         <tr>
           <td bgcolor="#cccccc">&nbsp;</td>
-          <td bgcolor="#aaffaa">[changes.right]</td>
+          <td bgcolor="#aaffaa"><font face="Helvetica,Arial" size="-1">&nbsp;[changes.right]</font></td>
         </tr>
       [else]
         [is changes.type "remove"]
           <tr>
-            <td bgcolor="#ffaaaa">[changes.left]</td>
+            <td bgcolor="#ffaaaa"><font face="Helvetica,Arial" size="-1">&nbsp;[changes.left]</font></td>
             <td bgcolor="#cccccc">&nbsp;</td>
           </tr>
         [else]
           [is changes.type "change"]
             <tr>
               [if-any changes.have_left]
-                <td bgcolor="#ffff77">[changes.left]</td>
+                <td bgcolor="#ffff77"><font face="Helvetica,Arial" size="-1">&nbsp;[changes.left]</font></td>
               [else]
                 <td bgcolor="#eeee77">&nbsp;</td>
               [end]
               [if-any changes.have_right]
-                <td bgcolor="#ffff77">[changes.right]</td>
+                <td bgcolor="#ffff77"><font face="Helvetica,Arial" size="-1">&nbsp;[changes.right]</font></td>
               [else]
                 <td bgcolor="#eeee77">&nbsp;</td>
               [end]
@@ -92,8 +92,8 @@
                   </tr>
                 [else]
                   <tr>
-                    <td>[changes.left]</td>
-                    <td>[changes.right]</td>
+                    <td><font face="Helvetica,Arial" size="-1">&nbsp;[changes.left]</size></td>
+                    <td><font face="Helvetica,Arial" size="-1">&nbsp;[changes.right]</size></td>
                   </tr>
                 [end]
               [end]
