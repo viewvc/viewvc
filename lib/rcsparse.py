@@ -20,17 +20,16 @@
 #
 # -----------------------------------------------------------------------
 
-import re
 import string
 import time
 
 
 class _TokenStream:
-  # Precompiled regular expressions
-  nonws_token = re.compile('[^;\\s]*')
+  token_term = string.whitespace + ';'
 
   CHUNK_SIZE  = 16384
 #  CHUNK_SIZE  = 500000
+#  CHUNK_SIZE  = 4096
 #  CHUNK_SIZE  = 5	# for debugging, make the function grind...
 
   def __init__(self, file):
@@ -43,29 +42,27 @@ class _TokenStream:
   def get(self):
     "Get the next token from the RCS file."
 
+    # Note: we can afford to loop within Python, examining individual
+    # characters. For the whitespace and tokens, the number of iterations
+    # is typically quite small. Thus, a simple iterative loop will beat
+    # out more complex solutions.
+
     buf = self.buf
     idx = self.idx
 
-    if idx == len(buf):
-      buf = self.rcsfile.read(self.CHUNK_SIZE)
-      if buf == '':
-        # signal EOF by returning None as the token
-        del self.buf	# so we fail if get() is called again
-        return None
-      idx = 0
+    while 1:
+      if idx == len(buf):
+        buf = self.rcsfile.read(self.CHUNK_SIZE)
+        if buf == '':
+          # signal EOF by returning None as the token
+          del self.buf	# so we fail if get() is called again
+          return None
+        idx = 0
 
-    while buf[idx] in string.whitespace:
-      buf = string.lstrip(buf[idx:])
-      idx = 0
-      if buf:
-        # some non-whitespace exists, so go parse it
+      if buf[idx] not in string.whitespace:
         break
-      # the whole buffer was whitespace. go get more.
-      buf = self.rcsfile.read(self.CHUNK_SIZE)
-      if buf == '':
-        # signal EOF by returning None as the token
-        del self.buf	# so we fail if get() is called again
-        return None
+
+      idx = idx + 1
 
     if buf[idx] == ';':
       self.buf = buf
@@ -73,25 +70,25 @@ class _TokenStream:
       return ';'
 
     if buf[idx] != '@':
-      match = self.nonws_token.match(buf, idx)
-      start, idx = match.span()
-      token = buf[start:idx]
-      # got a string of non-whitespace characters. if we recognized the rest
-      # of the buffer, then we may not have the whole token.
-      while idx == len(buf):
-        # hit the end. get more data, and append the results.
-        buf = self.rcsfile.read(self.CHUNK_SIZE)
-        match = self.nonws_token.match(buf)
-        start, idx = match.span()
-        if idx == 0:
-          # the first character (';' or '\\s') terminated the token
+      end = idx + 1
+      token = ''
+      while 1:
+        # find token characters in the current buffer
+        while end < len(buf) and buf[end] not in self.token_term:
+          end = end + 1
+        token = token + buf[idx:end]
+
+        if end < len(buf):
+          # we stopped before the end, so we have a full token
+          idx = end
           break
-        token = token + buf[start:idx]
+
+        # we stopped at the end of the buffer, so we may have a partial token
+        buf = self.rcsfile.read(self.CHUNK_SIZE)
+        idx = end = 0
 
       self.buf = buf
       self.idx = idx
-
-      # done piecing together tokens; return the bugger
       return token
 
     # a "string" which starts with the "@" character. we'll skip it when we
@@ -124,6 +121,7 @@ class _TokenStream:
         if buf == '@':
           raise RuntimeError, 'EOF'
         continue
+
       chunks.append(buf[idx:single])
 
       self.buf = buf
@@ -165,7 +163,6 @@ class _TokenStream:
     self.get = give_it_back
 
 class Parser:
-  rcs_tree = re.compile('^\\d')
 
   def parse_rcs_admin(self):
     while 1:
@@ -173,7 +170,7 @@ class Parser:
       token = self.ts.get()
 
       # We're done once we reach the description of the RCS tree
-      if self.rcs_tree.match(token):
+      if token[0] in string.digits:
         self.ts.unget(token)
         return
 
@@ -270,7 +267,7 @@ class Parser:
       # this is "newphrase" in RCSFILE(5). we just want to skip over these.
       while 1:
         token = self.ts.get()
-        if token == 'desc' or self.rcs_tree.match(token):
+        if token == 'desc' or token[0] in string.digits:
           self.ts.unget(token)
           break
         # consume everything up to the semicolon
