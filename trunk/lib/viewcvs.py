@@ -572,7 +572,7 @@ def markup_stream(request, fp, revision, mime_type):
     'cfg' : cfg,
     'vsn' : __version__,
     'kv' : request.kv,
-    'nav_path' : clickable_path(request, where, 1, 1, 0),
+    'nav_file' : clickable_path(request, where, 1, 1, 0),
     'href' : download_url(request, file_url, revision, None),
     'text_href' : download_url(request, file_url, revision, 'text/plain'),
     'mime_type' : request.mime_type,
