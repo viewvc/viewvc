@@ -172,10 +172,10 @@ image_quality	= 75;
 #	These are the href= and alt= attributes in the <area>
 #	tags of html. The strings are expanded (see above).
 map_name	= "MyMapName";
-map_branch_href	= "href=\"%m%F?only_with_tag=%t%8\"";
+map_branch_href	= "href=\"%m%F?only_with_tag=%t%8%6\"";
 map_branch_alt	= "alt=\"%0 %t (%B)\"";
-map_rev_href	= "href=\"%m%F#rev%R\"";
+map_rev_href	= "href=\"%m%F#rev%R%7\"";
 map_rev_alt	= "alt=\"%1 %t (%R)\"";
-map_diff_href	= "href=\"%m%F.diff?r1=%P&r2=%R%8\"";
+map_diff_href	= "href=\"%m%F.diff?r1=%P&r2=%R%8%6\"";
 map_diff_alt	= "alt=\"%2 %P &lt;-&gt; %R\"";
 

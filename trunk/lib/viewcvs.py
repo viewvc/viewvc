@@ -2005,6 +2005,8 @@ def view_cvsgraph(cfg, request):
                    ("-i",
                     "-c", cfg.options.cvsgraph_conf,
                     "-r", request.cvsroot,
+                    "-6", request.amp_query, 
+                    "-7", '?'+request.amp_query[1:], # replace '&' with '?'
                     request.where + ',v'), 'r')
   copy_stream(fp)
   fp.close()
