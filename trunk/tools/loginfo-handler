@@ -57,7 +57,7 @@ else:
 
 #########################################################################
 
-import os,  getopt, re, cvsdbapi
+import os, string, getopt, re, cvsdbapi
 
 DEBUG_FLAG = 0
 
