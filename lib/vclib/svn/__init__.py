@@ -255,6 +255,10 @@ def get_logs(svnrepos, full_name, files):
   core.svn_pool_destroy(subpool)
 
 
+def get_youngest_revision(svnrepos):
+  return svnrepos.youngest
+
+  
 def do_diff(svnrepos, path1, rev1, path2, rev2, diffoptions):
   root1 = fs.revision_root(svnrepos.fs_ptr, rev1, svnrepos.pool)
   root2 = fs.revision_root(svnrepos.fs_ptr, rev2, svnrepos.pool)
