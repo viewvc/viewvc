@@ -169,7 +169,7 @@ Directives
 
 import string
 import re
-from types import StringType, IntType, FloatType
+from types import StringType, IntType, FloatType, LongType
 import os
 
 #
@@ -503,7 +503,9 @@ def _get_value((refname, start, rest), ctx):
       raise UnknownReference(refname)
 
   # make sure we return a string instead of some various Python types
-  if isinstance(ob, IntType) or isinstance(ob, FloatType):
+  if isinstance(ob, IntType) \
+         or isinstance(ob, LongType) \
+         or isinstance(ob, FloatType):
     return str(ob)
   if ob is None:
     return ''
