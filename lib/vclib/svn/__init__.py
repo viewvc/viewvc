@@ -72,25 +72,6 @@ class ChangedPathEntry:
     self.filename = filename
 
     
-def get_logs(svnrepos, full_name, files):
-  fileinfo = { }
-  alltags = {           # all the tags seen in the files of this dir
-    'MAIN' : '1',
-    'HEAD' : '1',
-    }
-  for file in files:
-    path = fs_path_join(full_name, file)
-    rev = fs.node_created_rev(svnrepos.fsroot, path, svnrepos.pool)
-    datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, svnrepos.pool)
-    date = _datestr_to_date(datestr, svnrepos.pool)
-    new_entry = LogEntry(rev, date, author, msg, file, [], None, None, None)
-    if fs.is_file(svnrepos.fsroot, path, svnrepos.pool):
-      new_entry.size = fs.file_length(svnrepos.fsroot, path, svnrepos.pool)
-    fileinfo[file] = new_entry
-  return fileinfo, alltags
-
-
-
 class NodeHistory:
   def __init__(self):
     self.histories = {}
@@ -117,29 +98,33 @@ def log_helper(svnrepos, rev, path, show_changed_paths, pool):
   other_paths = []
   changed_paths = fs.paths_changed(rev_root, pool)
 
-  # Skip revisions in which this path didn't change.
-  change = changed_paths.get(path)
-  if not change:
-    return None
-
-  # Figure out the type of change that happened on the path.
-  if change.change_kind == fs.path_change_add:
-    action = "added"
-  elif change.change_kind == fs.path_change_delete:
-    action = "deleted"
-  elif change.change_kind == fs.path_change_replace:
-    action = "replaced"
-  else:
-    action = "modified"
-
   copyfrom_rev = copyfrom_path = None
-  if (change.change_kind == fs.path_change_add) or \
-     (change.change_kind == fs.path_change_replace):
-    copyfrom_rev, copyfrom_path = fs.copied_from(rev_root, path, pool)
+  action = None
+
+  # Optionally skip revisions in which this path didn't change.
+  change = changed_paths.get(path)
+  if change:
+    
+    # Figure out the type of change that happened on the path.
+    if change.change_kind == fs.path_change_add:
+      action = "added"
+    elif change.change_kind == fs.path_change_delete:
+      action = "deleted"
+    elif change.change_kind == fs.path_change_replace:
+      action = "replaced"
+    else:
+      action = "modified"
+
+    # Was this thing the target of a copy?
+    if (change.change_kind == fs.path_change_add) or \
+       (change.change_kind == fs.path_change_replace):
+      copyfrom_rev, copyfrom_path = fs.copied_from(rev_root, path, pool)
+
+    # We're done with this path, so remove it from the changed_paths list.
+    del changed_paths[path]
 
   # Now, make ChangedPathEntry objects for all the other paths (if
   # show_changed_paths is set).
-  del changed_paths[path]
   if show_changed_paths:
     for other_path in changed_paths.keys():
       other_paths.append(ChangedPathEntry(other_path))
@@ -184,6 +169,32 @@ def fetch_log(svnrepos, full_name, which_rev=None):
         logs[history_rev] = entry        
     core.svn_pool_destroy(subpool)
   return alltags, logs
+
+
+
+def get_last_history_rev(svnrepos, path):
+  history = fs.node_history(svnrepos.fsroot, path, svnrepos.pool)
+  history = fs.history_prev(history, 0, svnrepos.pool)
+  history_path, history_rev = fs.history_location(history, svnrepos.pool);
+  return history_rev
+  
+  
+def get_logs(svnrepos, full_name, files):
+  fileinfo = { }
+  alltags = {           # all the tags seen in the files of this dir
+    'MAIN' : '1',
+    'HEAD' : '1',
+    }
+  for file in files:
+    path = fs_path_join(full_name, file)
+    rev = get_last_history_rev(svnrepos, path)
+    datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, svnrepos.pool)
+    date = _datestr_to_date(datestr, svnrepos.pool)
+    new_entry = LogEntry(rev, date, author, msg, file, [], None, None, None)
+    if fs.is_file(svnrepos.fsroot, path, svnrepos.pool):
+      new_entry.size = fs.file_length(svnrepos.fsroot, path, svnrepos.pool)
+    fileinfo[file] = new_entry
+  return fileinfo, alltags
 
 
 def do_diff(svnrepos, path1, rev1, path2, rev2, diffoptions):
