@@ -3,7 +3,7 @@
 # Configuration file for ViewCVS
 #
 # Information on ViewCVS is located at the following web site:
-#     http://www.lyra.org/viewcvs/
+#     http://viewcvs.sourceforge.net/
 #
 #---------------------------------------------------------------------------
 
@@ -240,7 +240,7 @@ long_intro =
     </p>
     <p>
     This script
-    (<a href="http://www.lyra.org/viewcvs/">ViewCVS</a>)
+    (<a href="http://viewcvs.sourceforge.net/">ViewCVS</a>)
     has been written by Greg Stein
     &lt;<a href="mailto:gstein@lyra.org">gstein@lyra.org</a>&gt;
     based on the
@@ -252,7 +252,7 @@ long_intro =
     Licence</a>.
     If you would like to use this CGI script on your own web server and
     CVS tree, see Greg's
-    <a href="http://www.lyra.org/viewcvs/">ViewCVS distribution
+    <a href="http://viewcvs.sourceforge.net/">ViewCVS distribution
     site</a>.
     Please send any suggestions, comments, etc. to
     <a href="mailto:gstein@lyra.org">Greg Stein</a>.

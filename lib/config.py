@@ -4,11 +4,11 @@
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewCVS
-# distribution or at http://www.lyra.org/viewcvs/license-1.html.
+# distribution or at http://viewcvs.sourceforge.net/license-1.html.
 #
 # Contact information:
 #   Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://www.lyra.org/viewcvs/
+#   gstein@lyra.org, http://viewcvs.sourceforge.net/
 #
 # -----------------------------------------------------------------------
 #
@@ -206,7 +206,7 @@ class Config:
     </p>
     <p>
     This script
-    (<a href="http://www.lyra.org/viewcvs/">ViewCVS</a>)
+    (<a href="http://viewcvs.sourceforge.net/">ViewCVS</a>)
     has been written by Greg Stein
     &lt;<a href="mailto:gstein@lyra.org">gstein@lyra.org</a>&gt;
     based on the
@@ -217,7 +217,7 @@ class Config:
     <a href="http://www.opensource.org/licenses/bsd-license.html">BSD-License</a>.
     If you would like to use this CGI script on your own web server and
     CVS tree, see Greg's
-    <a href="http://www.lyra.org/viewcvs/">ViewCVS distribution
+    <a href="http://viewcvs.sourceforge.net/">ViewCVS distribution
     site</a>.
     Please send any suggestions, comments, etc. to
     <a href="mailto:gstein@lyra.org">Greg Stein</a>.
