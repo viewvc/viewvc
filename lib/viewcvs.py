@@ -208,6 +208,7 @@ class Request:
         if path_parts:
           self.rootname = path_parts.pop(0)
         else:
+          self.rootname = cfg.general.default_root
           needs_redirect = 1
       else:
         self.rootname = cfg.general.default_root
