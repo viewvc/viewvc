@@ -43,7 +43,7 @@ import sys
 if LIBRARY_DIR:
   sys.path.insert(0, LIBRARY_DIR)
 else:
-  sys.path[:0] = ['../lib']	# any other places to look?
+  sys.path[:0] = ['../../lib']	# any other places to look?
 
 #########################################################################
 
