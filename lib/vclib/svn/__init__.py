@@ -130,10 +130,10 @@ def get_history(svnrepos, full_name):
   return history_set
 
 
-def log_helper(svnrepos, rev, path, show_changed_paths):
-  rev_root = fs.revision_root(svnrepos.fs_ptr, rev, svnrepos.pool)
+def log_helper(svnrepos, rev, path, show_changed_paths, pool):
+  rev_root = fs.revision_root(svnrepos.fs_ptr, rev, pool)
   other_paths = []
-  changed_paths = fs.paths_changed(rev_root, svnrepos.pool)
+  changed_paths = fs.paths_changed(rev_root, pool)
 
   # Skip revisions in which this path didn't change.
   change = changed_paths.get(path)
@@ -150,6 +150,11 @@ def log_helper(svnrepos, rev, path, show_changed_paths):
   else:
     action = "modified"
 
+  copyfrom_rev = copyfrom_path = None
+  if (change.change_kind == fs.path_change_add) or \
+     (change.change_kind == fs.path_change_replace):
+    copyfrom_rev, copyfrom_path = fs.copied_from(rev_root, path, pool)
+
   # Now, make ChangedPathEntry objects for all the other paths (if
   # show_changed_paths is set).
   del changed_paths[path]
@@ -158,12 +163,12 @@ def log_helper(svnrepos, rev, path, show_changed_paths):
       other_paths.append(ChangedPathEntry(other_path))
 
   # Finally, assemble our LogEntry.
-  datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, svnrepos.pool)
-  date = _datestr_to_date(datestr, svnrepos.pool)
+  datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, pool)
+  date = _datestr_to_date(datestr, pool)
   entry = LogEntry(rev, date, author, msg, path,
-                   other_paths, action, None, None)
-  if fs.is_file(rev_root, path, svnrepos.pool):
-    entry.size = fs.file_length(rev_root, path, svnrepos.pool)
+                   other_paths, action, copyfrom_path, copyfrom_rev)
+  if fs.is_file(rev_root, path, pool):
+    entry.size = fs.file_length(rev_root, path, pool)
   return entry
   
 
@@ -179,7 +184,8 @@ def fetch_log(svnrepos, full_name, which_rev=None):
     if (which_rev < 0) \
        or (which_rev > fs.youngest_rev(svnrepos.fs_ptr, svnrepos.pool)):
       raise vclib.InvalidRevision(which_rev);
-    entry = log_helper(svnrepos, which_rev, full_name, show_changed_paths)
+    entry = log_helper(svnrepos, which_rev, full_name,
+                       show_changed_paths, svnrepos.pool)
     if entry:
       logs[which_rev] = entry
   else:
@@ -187,11 +193,14 @@ def fetch_log(svnrepos, full_name, which_rev=None):
     history_revs = history_set.keys()
     history_revs.sort()
     history_revs.reverse()
+    subpool = core.svn_pool_create(svnrepos.pool)
     for history_rev in history_revs:
+      core.svn_pool_clear(subpool)
       entry = log_helper(svnrepos, history_rev, history_set[history_rev],
-                         show_changed_paths)
+                         show_changed_paths, subpool)
       if entry:
         logs[history_rev] = entry        
+    core.svn_pool_destroy(subpool)
   return alltags, logs
 
 
