@@ -61,7 +61,7 @@
   <tr valign="top" bgcolor="[if-index entries even]#ffffff[else]#ccccee[end]">
 
     [# Revision column]
-    <td>
+    <td rowspan=2>
       <b>[entries.rev]</b>
       <a name="rev[entries.rev]"></a>
     </td>
@@ -83,7 +83,7 @@
       [end]
       
       [# if you don't want to allow annotation, then remove this line]
-      <a href="[href]?annotate=[entries.rev][query]"><b>View annotation</b></a><br>
+      <a href="[href]?annotate=[entries.rev][query]"><b>View annotated</b></a><br>
 
       </td>
       <td>
@@ -171,7 +171,6 @@
 
   </tr>
   <tr bgcolor="[if-index entries even]#ffffff[else]#ccccee[end]">
-    <td>&nbsp;</td>
     <td colspan=5><b>Log: </b><i>[entries.html_log]</i></td>
   </tr>
 
