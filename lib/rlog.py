@@ -17,7 +17,7 @@ import os
 import string
 import re
 import time
-import calendar
+import compat
 
 
 ## RLogOutputParser uses the output of rlog to build a list of Commit
@@ -310,7 +310,7 @@ class RLogOutputParser:
             if year < EPOCH:
                 raise ValueError, 'invalid year'
         gmt_time = \
-            calendar.timegm((year, month, day, hour, minute, second, 0, 0, 0))
+            compat.timegm((year, month, day, hour, minute, second, 0, 0, 0))
 
         ## now create and return the RLogEntry
         rlog_entry = RLogEntry()
