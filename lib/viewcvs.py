@@ -2362,7 +2362,7 @@ def generate_tarball(out, relative, directory, tag, stack=[]):
       subdirs.append(file)
     else:
       rcs_files.append(file)
-  if tag:
+  if tag and 'Attic' in subdirs:
     for file, pathname, isdir in get_file_data(directory + '/Attic'):
       if not isdir and pathname != _UNREADABLE_MARKER:
         rcs_files.append('Attic/' + file)
