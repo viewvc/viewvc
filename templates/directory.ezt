@@ -3,8 +3,7 @@
 <table width="100%" border=0 cellspacing=1 cellpadding=2>
 <thead>
 <tr>
-  <th class="vc_header[is sortby "file"]_sort[end]"
-    [is cfg.options.use_cvsgraph "1"]colspan=2[end]>
+  <th class="vc_header[is sortby "file"]_sort[end]" colspan=2>
     <a href="[sortby_file_href]#dirlist">File</a>
     [is sortby "file"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
@@ -52,91 +51,46 @@
 <tbody>
 [for rows]
   <tr class="vc_row_[if-index rows even]even[else]odd[end]">
-  [is rows.type "unreadable"]
-    <td [is cfg.options.use_cvsgraph "1"]colspan=2[end]>
-      <a name="[rows.anchor]">[rows.name]</a>
-    </td>
-    <td colspan=[is cfg.options.show_logs "1"]4[else]3[end]>
-       <i>This entry is unreadable</i>
-    </td>
-  [else]
-    [is rows.type "dir"]
-      <td [is cfg.options.use_cvsgraph "1"]colspan=2[end]>
-        <a name="[rows.anchor]" href="[rows.href]">
-        <img src="[icons]/small/dir.gif" alt="(dir)" border=0 width=16 height=16>
-        [rows.name]/</a>
-        [is roottype "cvs"]
+    <td[if-any rows.graph_href][else] colspan=2[end]>
+      <a name="[rows.anchor]" href="[rows.href]">
+      <img src="[icons]/small/[is rows.type "dir"]dir[else]text[end].gif" alt="" border=0 width=16 height=16>
+      [rows.name][is rows.type "dir"]/[end]</a>
+      [is roottype "cvs"]
+        [is rows.type "dir"]
           [is rows.name "Attic"]
             &nbsp; <a href="[show_attic_href]#dirlist">[[]show contents]</a>
           [end]
-        [end]
-      </td>
-      [is rows.state "error"]
-        <td colspan=[is cfg.options.show_logs "1"]4[else]3[end]>
-          <i>Last modification unavailable - could not read CVS information</i>
-        </td>
-      [else]
-        <td>&nbsp;[is roottype "svn"]<a href="[rows.rev_href]"><b>[rows.rev]</b></a>[end]</td>
-        [is rows.state "none"]
-          <td>&nbsp;</td> [# age ]
-          <td>&nbsp;</td> [# author ]
-          [is cfg.options.show_logs "1"]<td>&nbsp;</td> [# log ][end]
         [else]
-          <td>&nbsp;[rows.time]</td>
-          [if-any rows.author]
-            <td>&nbsp;[rows.author]</td>
-          [end]
-          [is cfg.options.show_logs "1"]
-            [if-any rows.show_log]
-              <td>&nbsp;[rows.log][is roottype "cvs"] 
-                <i>(from [rows.log_file]/[rows.log_rev])</i>[end]</td>
-            [else]
-              <td>&nbsp;</td>
-            [end]
+          [is rows.state "dead"]
+            [# don't let this phrase/link be wrapped ]
+            [if-any view_tag](not&nbsp;exist)[else](in&nbsp;the&nbsp;Attic)[end][if-any attic_showing]&nbsp;<a href="[hide_attic_href]#dirlist">[[]hide][end]</a>
           [end]
         [end]
       [end]
-          
+    </td>
+    [if-any rows.graph_href]
+      <td width="1%"><a href="[rows.graph_href]"><img
+      src="[docroot]/images/cvsgraph_16x16.png"
+      alt="(graph)" width=16 height=16 border=0>
+      </a></td>
+    [end]
+    [if-any rows.errors]
+      <td colspan=[is cfg.options.show_logs "1"]4[else]3[end]>
+        [for rows.errors]<p><i>[rows.errors]</i></p>[end]
+      </td>
     [else]
-      [is rows.state "error"]
-        <td [is cfg.options.use_cvsgraph "1"]colspan=2[end]>
-          <a name="[rows.anchor]">[rows.name]</a>
-        </td>
-        <td colspan=[is cfg.options.show_logs "1"]4[else]3[end]>
-         <i>CVS information is unreadable</i>
-        </td>
-      [else]
-        <td><a name="[rows.anchor]" href="[rows.href]">
-            <img src="[icons]/small/text.gif" alt="(file)" border=0
-                 width=16 height=16>
-            [rows.name]
-            </a>
-            [is rows.state "dead"]
-              [# don't let this phrase/link be wrapped ]
-              [if-any view_tag](not&nbsp;exist)[else](in&nbsp;the&nbsp;Attic)[end][if-any attic_showing]&nbsp;<a href="[hide_attic_href]#dirlist">[[]hide][end]</a>
-            [end]
-        </td>
-        [is cfg.options.use_cvsgraph "1"]
-          [if-any rows.graph_href]
-            <td width="1%"><a href="[rows.graph_href]"><img
-              src="[docroot]/images/cvsgraph_16x16.png"
-              alt="(graph)" width=16 height=16 border=0>
-            </a></td>
-          [else]
-            <td>&nbsp;</td>
-          [end]
-        [end]
-        <td>&nbsp;<a href="[rows.rev_href]"><b>[rows.rev]</b></a></td>
-        <td>&nbsp;[rows.time]</td>
-        [if-any rows.author]
-          <td>&nbsp;[rows.author]</td>
-        [end]
-        [is cfg.options.show_logs "1"]
-          <td>&nbsp;[if-any rows.show_log][rows.log][end]</td>
+      <td>&nbsp;[if-any rows.rev]<a href="[rows.rev_href]"><b>[rows.rev]</b></a>[end]</td>
+      <td>&nbsp;[rows.time]</td>
+      <td>&nbsp;[rows.author]</td>
+      [is cfg.options.show_logs "1"]
+        [if-any rows.show_log]
+          <td>&nbsp;[rows.log][is rows.type "dir"][is roottype "cvs"]
+            <i>(from [rows.log_file]/[rows.log_rev])</i>[end][end]</td>
+        [else]
+          <td>&nbsp;</td>
         [end]
       [end]
     [end]
-  [end]
   </tr>
 [end]
 </tbody>

@@ -242,7 +242,7 @@ def get_logs(svnrepos, full_name, files):
     rev = _get_last_history_rev(svnrepos, path, subpool)
     datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, subpool)
     date = _datestr_to_date(datestr, subpool)
-    file.log_error = 0
+    file.log_errors = []
     file.rev = str(rev)
     file.date = date
     file.author = author

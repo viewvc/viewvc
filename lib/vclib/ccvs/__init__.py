@@ -62,14 +62,15 @@ class CCVSRepository(CVSRepository):
     }
 
     for entry in entries:
-      entry.log_error = 0
-      entry.rev = None
-      path = _log_path(entry, dirpath, subdirs)
+      entry.rev = entry.date = entry.author = entry.dead = entry.log = None
+      path, entry.log_errors = _log_path(entry, dirpath, subdirs)
       if path:
         try:
           rcsparse.Parser().parse(open(path, 'rb'), InfoSink(entry, tag, alltags))
-        except RuntimeError:
-          entry.log_error = 1
+        except IOError, e:
+          entry.log_errors.append("rcsparse error: %s" % e)
+        except RuntimeError, e:
+          entry.log_errors.append("rcsparse error: %s" % e)
         except rcsparse.RCSStopParser:
           pass
 
