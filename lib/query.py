@@ -384,6 +384,7 @@ def main(server, viewcvs_link):
       'cfg' : cfg,
       'address' : cfg.general.address,
       'vsn' : viewcvs.__version__,
+      'icons' : cfg.options.icons,
 
       'repository' : server.escape(form_data.repository, 1),
       'branch' : server.escape(form_data.branch, 1),
