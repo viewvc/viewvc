@@ -1,0 +1,180 @@
+Teach Subversion's mailer.py how to send ViewCVS diffs.  This adds a
+new configuration option to the mailer.conf configuration file called
+'viewcvs_base_url'.  If that variable is set for the repository group
+to which the commit applies, URLs will be transmitted.
+
+NOTE: This doesn't work if you use ViewCVS in a way that requires your
+root to be specified as a CGI query variable, such as:
+
+   http://server.com/viewcvs/path/to/file?root=reposname
+
+You must either be viewing the default root, or have the
+root_as_url_component option enabled so that URLs look like:
+
+   http://server.com/viewcvs/reposname/path/to/file
+
+Index: tools/hook-scripts/mailer/mailer.py
+===================================================================
+--- tools/hook-scripts/mailer/mailer.py	(revision 9928)
++++ tools/hook-scripts/mailer/mailer.py	(working copy)
+@@ -23,6 +23,7 @@
+ import cStringIO
+ import smtplib
+ import re
++import urllib
+ 
+ import svn.fs
+ import svn.delta
+@@ -420,6 +421,7 @@
+     return
+ 
+   gen_diffs = cfg.get('generate_diffs', group, params)
++  viewcvs_base_url = cfg.get('viewcvs_base_url', group, params)
+ 
+   ### Do a little dance for deprecated options.  Note that even if you
+   ### don't have an option anywhere in your configuration file, it
+@@ -452,37 +454,73 @@
+     if suppress == 'yes':
+       diff_add = False
+ 
++  # Figure out if we're supposed to show ViewCVS URLs
++  if len(viewcvs_base_url):
++    show_urls = True
++  else:
++    show_urls = False
++    
++  diff = None
++  diff_url = None
++  header = None
++  
+   if not change.path:
+     ### params is a bit silly here
+-    if diff_delete == False:
+-      # a record of the deletion is in the summary. no need to write
+-      # anything further here.
+-      return
+ 
+-    output.write('\nDeleted: %s\n' % change.base_path)
+-    diff = svn.fs.FileDiff(repos.get_root(change.base_rev),
+-                           change.base_path, None, None, pool)
++    header = 'Deleted: %s' % change.base_path
++    if show_urls:
++      diff_url = '%s/%s?view=auto&rev=%d' \
++                 % (viewcvs_base_url,
++                    urllib.quote(change.base_path[1:]), change.base_rev)
++    if diff_delete:
++      diff = svn.fs.FileDiff(repos.get_root(change.base_rev),
++                             change.base_path, None, None, pool)
++      label1 = '%s\t%s' % (change.base_path, date)
++      label2 = '(empty file)'
++      singular = True
+ 
+-    label1 = '%s\t%s' % (change.base_path, date)
+-    label2 = '(empty file)'
+-    singular = True
+   elif change.added:
+-    if change.base_path and (change.base_rev != -1):
+-      # this file was copied.
+-
+-      if not change.text_changed:
+-        # copies with no changes are reported in the header, so we can just
+-        # skip them here.
+-        return
+-
+-      if diff_copy == False:
+-        # a record of the copy is in the summary, no need to write
+-        # anything further here.
+-	return
+-
++    if change.base_path and (change.base_rev != -1): # this file was copied.
+       # note that we strip the leading slash from the base (copyfrom) path
+-      output.write('\nCopied: %s (from r%d, %s)\n'
+-                   % (change.path, change.base_rev, change.base_path[1:]))
++      header = 'Copied: %s (from r%d, %s)' \
++               % (change.path, change.base_rev, change.base_path[1:])
++      if show_urls:
++        diff_url = '%s/%s?view=diff&rev=%d&p1=%s&r1=%d&p2=%s&r2=%d' \
++                   % (viewcvs_base_url,
++                      urllib.quote(change.path), repos.rev,
++                      urllib.quote(change.base_path[1:]), change.base_rev,
++                      urllib.quote(change.path), repos.rev)
++      if change.text_changed and diff_copy:
++        diff = svn.fs.FileDiff(repos.get_root(change.base_rev),
++                               change.base_path[1:],
++                               repos.root_this, change.path,
++                               pool)
++        label1 = change.base_path[1:] + '\t(original)'
++        label2 = '%s\t%s' % (change.path, date)
++        singular = False
++    else:
++      header = 'Added: %s' % change.path
++      if show_urls:
++        diff_url = '%s/%s?view=auto&rev=%d' \
++                   % (viewcvs_base_url,
++                      urllib.quote(change.path), repos.rev)
++      if diff_add:
++        diff = svn.fs.FileDiff(None, None, repos.root_this, change.path, pool)
++        label1 = '(empty file)'
++        label2 = '%s\t%s' % (change.path, date)
++        singular = True
++  elif not change.text_changed:
++    # don't bother to show an empty diff. prolly just a prop change.
++    return
++  else:
++    header = 'Modified: %s' % change.path
++    if show_urls:
++      diff_url = '%s/%s?view=diff&rev=%d&p1=%s&r1=%d&p2=%s&r2=%d' \
++                 % (viewcvs_base_url,
++                    urllib.quote(change.path), repos.rev,
++                    urllib.quote(change.base_path[1:]), change.base_rev,
++                    urllib.quote(change.path), repos.rev)
++    if diff_modify:
+       diff = svn.fs.FileDiff(repos.get_root(change.base_rev),
+                              change.base_path[1:],
+                              repos.root_this, change.path,
+@@ -490,37 +528,17 @@
+       label1 = change.base_path[1:] + '\t(original)'
+       label2 = '%s\t%s' % (change.path, date)
+       singular = False
+-    else:
+-      if diff_add == False:
+-        # a record of the addition is in the summary. no need to write
+-        # anything further here.
+-        return
+ 
+-      output.write('\nAdded: %s\n' % change.path)
+-      diff = svn.fs.FileDiff(None, None, repos.root_this, change.path, pool)
+-      label1 = '(empty file)'
+-      label2 = '%s\t%s' % (change.path, date)
+-      singular = True
+-  elif not change.text_changed:
+-    # don't bother to show an empty diff. prolly just a prop change.
++  if not (show_urls or diff):
+     return
+-  else:
+-    if diff_modify == False:
+-      # a record of the modification is in the summary, no need to write
+-      # anything further here.
+-      return
+-
+-    output.write('\nModified: %s\n' % change.path)
+-    diff = svn.fs.FileDiff(repos.get_root(change.base_rev),
+-                           change.base_path[1:],
+-                           repos.root_this, change.path,
+-                           pool)
+-    label1 = change.base_path[1:] + '\t(original)'
+-    label2 = '%s\t%s' % (change.path, date)
+-    singular = False
+-
++  
++  output.write('\n' + header + '\n')
++  if diff_url:
++    output.write('Url: ' + diff_url + '\n')
+   output.write(SEPARATOR + '\n')
+-
++  if not diff:
++    return
++  
+   if diff.either_binary():
+     if singular:
+       output.write('Binary file. No diff available.\n')
