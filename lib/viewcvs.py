@@ -227,9 +227,14 @@ class Request:
     if cfg.general.cvs_roots.has_key(self.rootname):
       self.rootpath = cfg.general.cvs_roots[self.rootname]
       try:
-        import vclib.bincvs
-        self.repos = vclib.bincvs.BinCVSRepository(self.rootname,
-                                                   self.rootpath, cfg.general)
+        if cfg.general.use_rcsparse:
+          import vclib.ccvs
+          self.repos = vclib.ccvs.CCVSRepository(self.rootname, self.rootpath)
+        else:
+          import vclib.bincvs
+          self.repos = vclib.bincvs.BinCVSRepository(self.rootname, 
+                                                     self.rootpath,
+                                                     cfg.general)
         self.roottype = 'cvs'
       except vclib.ReposNotFound:
         raise debug.ViewCVSException(
@@ -817,7 +822,9 @@ def markup_stream_enscript(lang, fp):
     while 1:
       chunk = fp.read(CHUNK_SIZE)
       if not chunk:
-        if fp.eof() is None:
+        # need to check for eof methods because the cStringIO file objects
+        # returned by ccvs don't provide them
+        if hasattr(fp, 'eof') and fp.eof() is None:
           time.sleep(1)
           continue
         break

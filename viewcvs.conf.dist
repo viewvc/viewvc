@@ -115,6 +115,10 @@ default_root = cvs
 #cvsnt_exe_path = K:\Program Files\cvsnt\cvs.exe
 #cvsnt_exe_path = /usr/bin/cvs
 
+# use rcsparse python module to retrieve cvs repository information instead
+# of invoking rcs utilities. this feature is experimental
+use_rcsparse = 0
+
 #
 # This is a pathname to a MIME types file to help viewcvs to guess the
 # correct MIME type on checkout.

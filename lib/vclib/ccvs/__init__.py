@@ -28,98 +28,202 @@ import cStringIO
 import vclib
 import rcsparse
 
+### The functionality shared with bincvs should probably be moved to a
+### separate module
+from vclib.bincvs import CVSRepository, Revision, Tag, \
+                         _file_log, _log_path
 
-class InfoSink(rcsparse.Sink):
+class CCVSRepository(CVSRepository):
+  def dirlogs(self, path_parts, entries, options):
+    """see vclib.Repository.dirlogs docstring
 
-  def __init__(self, target):
-    self.target = target
-    self.updr = 0
-    self.upri = 0
+    Option values recognized by this implementation:
 
-  def set_head_revision(self, revision):
-    self.target.head = revision
+      cvs_subdirs
+        boolean. true to fetch logs of the most recently modified file in each
+        subdirectory
 
-  def set_principal_branch(self, branch_name):
-    self.target.branch = revision
+      cvs_dir_tag
+        string set to a tag name. if set only logs from revisions matching the
+        tag will be retrieved
 
-  def define_revision(self, revision, timestamp, author, state,
-                      branches, next):
-    if self.target.head == revision:
-      self.target.age = timestamp
-      self.target.author = author
-      self.updr = 1
-      if self.upri:
-        raise rcsparse.RCSStopParser()
-        
+    Option values returned by this implementation:
+
+      cvs_tags, cvs_branches
+        lists of tag and branch names encountered in the directory
+    """
+    subdirs = options.get('cvs_subdirs', 0)
+    tag = options.get('cvs_dir_tag')
+
+    dirpath = self._getpath(path_parts)
+    alltags = {           # all the tags seen in the files of this dir
+      'MAIN' : '',
+      'HEAD' : '1.1'
+    }
+
+    for entry in entries:
+      entry.log_error = 0
+      entry.rev = None
+      path = _log_path(entry, dirpath, subdirs)
+      if path:
+        try:
+          rcsparse.Parser().parse(open(path, 'rb'), InfoSink(entry, tag, alltags))
+        except RuntimeError:
+          entry.log_error = 1
+        except rcsparse.RCSStopParser:
+          pass
+
+    branches = options['cvs_branches'] = []
+    tags = options['cvs_tags'] = []
+    for name, rev in alltags.items():
+      if Tag(None, rev).is_branch:
+        branches.append(name)
+      else:
+        tags.append(name)
+
+  def filelog(self, path_parts, rev, options):
+    """see vclib.Repository.filelog docstring
+
+    rev parameter can be a revision number, branch number or tag name
+
+    Option values returned by this implementation:
+
+      cvs_tags
+        dictionary of Tag objects for all tags encountered
+    """
+    path = self._getpath(path_parts) + ',v'
+    sink = TreeSink()
+    rcsparse.Parser().parse(open(path, 'rb'), sink)
+    filtered_revs = _file_log(sink.revs.values(), sink.tags,
+                                           sink.default_branch, rev)
+    for rev in filtered_revs:
+      if rev.prev and len(rev.number) == 2:
+        rev.changed = rev.prev.next_changed
+    options['cvs_tags'] = sink.tags
+
+    return filtered_revs
+
+  def openfile(self, path_parts, rev=None):
+    path = self._getpath(path_parts) + ',v'
+    sink = COSink(rev)
+    rcsparse.Parser().parse(open(path, 'rb'), sink)
+    revision = sink.last and sink.last.string
+    return cStringIO.StringIO(string.join(sink.sstext.text, "\n")), revision
+
+class MatchingSink(rcsparse.Sink):
+  """Superclass for sinks that search for revisions based on tag or number"""
+
+  def __init__(self, find):
+    """Initialize with tag name or revision number string to match against"""
+    if not find or find == 'MAIN' or find == 'HEAD':
+      self.find = None
+    else:
+      self.find = find
+
+    self.find_tag = None
+
+  def set_principal_branch(self, branch_number):
+    if self.find is None:
+      self.find_tag = Tag(None, branch_number)
+
+  def define_tag(self, name, revision):
+    if name == self.find:
+      self.find_tag = Tag(None, revision)
+
+  def admin_completed(self):
+    if self.find_tag is None:
+      if self.find is None:
+        self.find_tag = Tag(None, '')
+      else:
+        try:
+          self.find_tag = Tag(None, self.find)
+        except ValueError:
+          pass
+
+class InfoSink(MatchingSink):
+  def __init__(self, entry, tag, alltags):
+    MatchingSink.__init__(self, tag)
+    self.entry = entry
+    self.alltags = alltags
+    self.matching_rev = None
+    self.perfect_match = 0
+
+  def define_tag(self, name, revision):
+    MatchingSink.define_tag(self, name, revision)
+    self.alltags[name] = revision
+
+  def admin_completed(self):
+    MatchingSink.admin_completed(self)
+    if self.find_tag is None:
+      # tag we're looking for doesn't exist
+      raise rcsparse.RCSStopParser
+
+  def define_revision(self, revision, date, author, state, branches, next):
+    if self.perfect_match:
+      return
+
+    tag = self.find_tag
+    rev = Revision(revision, date, author, state == "dead")
+
+    # perfect match if revision number matches tag number or if revision is on
+    # trunk and tag points to trunk. imperfect match if tag refers to a branch
+    # and this revision is the highest revision so far found on that branch
+    perfect = ((rev.number == tag.number) or
+               (not tag.number and len(rev.number) == 2))
+    if perfect or (tag.is_branch and tag.number == rev.number[:-1] and
+                   (not self.matching_rev or
+                    rev.number > self.matching_rev.number)):
+      self.matching_rev = rev
+      self.perfect_match = perfect
+
   def set_revision_info(self, revision, log, text):
-    if self.target.head == revision:
-      self.target.log = log
-      self.upri = 1
-      if self.updr:
-        raise rcsparse.RCSStopParser()
+    if self.matching_rev:
+      if revision == self.matching_rev.string:
+        self.entry.rev = self.matching_rev.string
+        self.entry.date = self.matching_rev.date
+        self.entry.author = self.matching_rev.author
+        self.entry.dead = self.matching_rev.dead
+        self.entry.log = log
+        raise rcsparse.RCSStopParser
+    else:
+      raise rcsparse.RCSStopParser
 
-        
 class TreeSink(rcsparse.Sink):
   d_command = re.compile('^d(\d+)\\s(\\d+)')
   a_command = re.compile('^a(\d+)\\s(\\d+)')
-  
-  def __init__(self, target):
-    self.target = target
-    self.tree = { }
+
+  def __init__(self):
+    self.revs = { }
     self.tags = { }
-  
+    self.head = None
+    self.default_branch = None
+
   def set_head_revision(self, revision):
-    self.target.head = revision
-  
-  def set_principal_branch(self, branch_name):
-    self.target.branch = revision
-  
+    self.head = revision
+
+  def set_principal_branch(self, branch_number):
+    self.default_branch = branch_number
+
   def define_tag(self, name, revision):
-    if self.tree.has_key(revision):
-      self.tree[revision].tags.append(name)
-    else:
-      if revision in self.tags:
-        self.tags[revision].append(name)
-      else:
-        self.tags[revision] = [name]
-#      self.tree[revision] = vclib.Revision(self.target, revision)
-#      self.tree[revision].tags = [name]
-    
-  def define_revision(self, revision, timestamp, author, state,
-                      branches, next):
-    if self.target.head == revision:
-      self.target.age = timestamp
-      self.target.author = author
-    if self.tree.has_key(revision):
-      rev = self.tree[revision]
-    else:
-      rev = vclib.Revision(self.target, revision)
-      self.tree[revision] = rev
-    rev.date = timestamp
-    rev.author = author
-    rev.branches = branches
-    rev.state = state
-    rev.previous = next
-    if revision in self.tags:
-      rev.tags = self.tags[revision]
-      del self.tags[revision]
-    else:
-      rev.tags = []
-    
+    # check !tags.has_key(tag_name)
+    self.tags[name] = revision
+
+  def define_revision(self, revision, date, author, state, branches, next):
+    # check !revs.has_key(revision)
+    self.revs[revision] = Revision(revision, date, author, state == "dead")
+
   def set_revision_info(self, revision, log, text):
-    if self.tree.has_key(revision):
-      rev = self.tree[revision]
-    else:
-      rev = vclib.Revision(self.target, revision)
-      self.tree[revision] = rev
+    # check revs.has_key(revision)
+    rev = self.revs[revision]
     rev.log = log
-    if self.target.head == revision:
-      self.target.log = log
-    else:
-      lines = text.splitlines()
+
+    changed = None
+    added = 0
+    deled = 0
+    if self.head != revision:
+      changed = 1
+      lines = string.split(text, '\n')
       idx = 0
-      added = 0
-      deled = 0
       while idx < len(lines):
         command = lines[idx]
         dmatch = self.d_command.match(command)
@@ -132,36 +236,19 @@ class TreeSink(rcsparse.Sink):
             count = string.atoi(amatch.group(2))
             added = added + count
             idx = idx + count
-          else:
+          elif command:
             raise "error while parsing deltatext: %s" % command
-      rev.changes = (deled, added)
 
-  def gobranch(self, rev):
-    rev.changes = "+%d -%d lines" % (rev.changes[1], rev.changes[0])
-    if rev.previous != None:
-      self.gobranch(self.tree[rev.previous])
-    for x in rev.branches:
-      self.gobranch(self.tree[x])
-
-  def gotree(self, rev):
-    if rev.previous != None:
-      rev.changes = "+%d -%d lines" % self.tree[rev.previous].changes
-      self.gotree(self.tree[rev.previous])
+    if len(rev.number) == 2:
+      rev.next_changed = changed and "+%i -%i" % (deled, added)
     else:
-      rev.changes = ""
-    for x in rev.branches:
-      self.gobranch(self.tree[x])    
-
-  def parse_completed(self):
-    self.gotree(self.tree[self.target.head])    
-
+      rev.changed = changed and "+%i -%i" % (added, deled)
 
 class StreamText:
   d_command = re.compile('^d(\d+)\\s(\\d+)')
   a_command = re.compile('^a(\d+)\\s(\\d+)')
 
-  def __init__(self, text, head):
-    self.next_revision(head)
+  def __init__(self, text):
     self.text = string.split(text, "\n")
 
   def command(self, cmd):
@@ -197,190 +284,50 @@ class StreamText:
         add_lines_remaining = count
       else:
         raise RuntimeError, 'Error parsing diff commands'
-  
-  def next_revision(self, revision):
-    #print "Revision: %s"% revision
-    pass
 
 def secondnextdot(s, start):
   # find the position the second dot after the start index.
   return string.find(s, '.', string.find(s, '.', start) + 1)
 
 
-class COSink(rcsparse.Sink):
-  
-  def __init__(self, target):
-    self.target = target
-  
+class COSink(MatchingSink):
+  def __init__(self, rev):
+    MatchingSink.__init__(self, rev)
+
   def set_head_revision(self, revision):
-    self.head = revision
-    self.position = 0
-    self.path = [revision]
-    self.buffer = { }
+    self.head = Revision(revision)
+    self.last = None
     self.sstext = None
-  
-  def define_revision(self, revision, timestamp, author, state,
-                      branches, next):
-    if self.target.rev==revision:
-      self.target.date = timestamp
-      self.target.author = author
-      self.target.branches = branches
-      self.target.state = state
-      self.target.previous = next
-    if self.path[-1] == self.target.rev:
-      return
-    if revision == self.path[-1]:
-      if self.target.rev[:len(revision)+1] == revision + '.':
-        # Branch ?
-        for x in branches:
-          if self.target.rev[:secondnextdot(self.target.rev, len(revision))] \
-             == x[:secondnextdot(self.target.rev, len(revision))]:
-            self.path.append(x)
-            if x in self.buffer:
-              i = self.buffer[x]
-              del self.buffer[x]
-              self.define_revision(x, 0, "", "", i[0], i[1])  
-            return
-        else:
-          print revision
-          print branches
-          print next
-          raise " %s revision doesn't exist " % self.target.rev
-      else:
-        # no => next 
-        self.path.append(next)
-        if self.buffer.has_key(next):
-          self.path.append(next)
-          if x in self.buffer:
-            i = self.buffer[next]
-            del self.buffer[next]
-            self.define_revision(next, 0, "", "", i[0], i[1])
-    else:
-      self.buffer[revision] = (branches, next)
-        
-  def tree_completed(self):
-    if self.path[-1] != self.target.rev:
-      raise "Error Incomplete path"
-    #print self.path
-    self.buffer = { }
+
+  def admin_completed(self):
+    MatchingSink.admin_completed(self)
+    if self.find_tag is None:
+      raise vclib.InvalidRevision(self.find)
 
   def set_revision_info(self, revision, log, text):
-    if revision == self.target.rev:
-      self.target.log = log
-    if revision in self.path:
-      if self.path[self.position] == revision:
-        if revision == self.head:
-          self.sstext = StreamText(text, self.head)
-        else:
-          self.sstext.next_revision(revision)
-          self.sstext.command(text)
-        while self.position + 1 < len(self.path):
-          self.position = self.position + 1
-          x= self.path[self.position]
-          if x not in self.buffer:
-            break
-          self.sstext.next_revision(x)
-          self.sstext.command(self.buffer[x])
-          del self.buffer[x]
-      else:
-        self.buffer[revision] = text
+    tag = self.find_tag
+    rev = Revision(revision)
 
-  def parse_completed(self):
-    if self.buffer != {}:
-      raise "Error buffer not emptied"
+    if rev.number == tag.number:
+      self.log = log
 
+    depth = len(rev.number)
 
-class CVSRepository(vclib.Repository):
-  def __init__(self, name, basepath, show_CVSROOT=0):
-    self.name = name
-    self.basepath = basepath
-    self.show_CVSROOT = show_CVSROOT
-    if self.basepath[-1:] != os.sep:
-      self.basepath = self.basepath + os.sep
-    # Some checking:
-    # Is the basepath a real directory ?
-    if not os.path.isdir(self.basepath):
-      raise vclib.ReposNotFound(name)
-    # do we have a CVSROOT as an immediat subdirectory ?
-    if not os.path.isdir(self.basepath + "CVSROOT/"):
-      raise vclib.ReposNotFound(name)
-      
-  def _getpath(self, path_parts):
-    if path_parts != []:
-      if (path_parts[0] == "CVSROOT") and (self.show_CVSROOT == 0):
-        raise vclib.ItemNotFound(path_parts)
-    return self.basepath + string.join(path_parts, os.sep)
-
-  def _getrcsname(self, filename):
-    if filename[-2:] == ',v':
-      return filename
+    if rev.number == self.head.number:
+      assert self.sstext is None
+      self.sstext = StreamText(text)
+    elif (depth == 2 and tag.number and rev.number >= tag.number[:depth]):
+      assert len(self.last.number) == 2
+      assert rev.number < self.last.number
+      self.sstext.command(text)
+    elif (depth > 2 and rev.number[:depth-1] == tag.number[:depth-1] and
+          (rev.number <= tag.number or len(tag.number) == depth-1)):
+      assert len(rev.number) - len(self.last.number) in (0, 2)
+      assert rev.number > self.last.number
+      self.sstext.command(text)
     else:
-      return filename + ',v'  
+      rev = None
 
-# API as of revision 1.5 
-
-  def getitem(self, path_parts):
-    path = self._getpath(path_parts)
-    if os.path.isdir(path):
-      return vclib.Versdir(self, path_parts)
-    if os.path.isfile(self._getrcsname(path)):
-      return vclib.Versfile(self, path_parts)
-    raise vclib.ItemNotFound(path_parts)
-    
-  def getitemtype(self, path_parts):
-    path = self._getpath(path_parts)
-    if os.path.isdir(path):
-      return vclib.DIR
-    if os.path.isfile(path):
-      return vclib.FILE
-    raise vclib.ItemNotFound(path_parts)
-  
-  # Private methods ( accessed by Versfile and Revision )
-
-  def _getvf_files(self, path_parts):
-    "Return a dictionary of versioned files. (name : Versfile)"
-    h = os.listdir(self._getpath(path_parts))
-    g = { }
-    for i in h:
-      if os.path.isfile(self._getrcsname(self._getpath(path_parts + [i]))):
-      	g[i] = vclib.Versfile(self, path_parts + [i])
-    return g
-
-  def _getvf_subdirs(self, path_parts):
-    "Return a dictionary of subdirectories. (name : Versdir)"
-    h = os.listdir(self._getpath(path_parts))
-    if not self.show_CVSROOT:
-      if (path_parts == []):
-        del h[h.index("CVSROOT")]
-    g = { }
-    for i in h:
-      p = self._getpath(path_parts + [i])
-      if os.path.isdir(p):
-    	  g[i] = vclib.Versdir(self, path_parts + [i]) 
-    return g
-  
-  # Private methods
-  def _getvf_info(self, target, path_parts):
-    path = self._getrcsname(self._getpath(path_parts))
-    if not os.path.isfile(path):
-      raise "Unknown file: %s " % path
-    try:
-      rcsparse.Parser().parse(open(path, 'rb'), InfoSink(target))
-    except rcsparse.RCSStopParser:
-      pass
-
-  def _getvf_tree(self,versfile):
-    path = self._getrcsname(self._getpath(versfile.path))
-    if not os.path.isfile(path):
-      raise "Unknown file: %s " % path
-    sink = TreeSink(versfile)
-    rcsparse.Parser().parse(open(path, 'rb'), sink)
-    return sink.tree
-
-  def _getvf_cofile(self, target, path_parts):
-    path = self._getrcsname(self._getpath(path_parts))
-    if not os.path.isfile(path):
-      raise "Unknown file: %s " % path
-    sink = COSink(target)
-    rcsparse.Parser().parse(open(path, 'rb'), sink)
-    return cStringIO.StringIO(string.join(sink.sstext.text, "\n"))
+    if rev:
+      #print "tag =", tag.number, "rev =", rev.number, "<br>"
+      self.last = rev
