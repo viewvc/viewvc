@@ -870,15 +870,11 @@ def markup_stream(request, fp, revision, mime_type):
     download_link(request, file_url, revision, '(as text)', 'text/plain')
   print '<br>'
   if show_log_in_markup:
-    show_revs, revs, rev_order, taginfo, rev2tag, \
+    show_revs, rev_map, rev_order, taginfo, rev2tag, \
                cur_branch, branch_points, branch_names = read_log(full_name)
 
-    rev_map = { }
-    for revinfo in revs:
-      rev_map[revinfo[0]] = revinfo[1:]
-
-    revinfo = (revision,) + rev_map[revision]
-    print_log(request, rev_map, rev_order, revinfo, rev2tag, branch_points, 0)
+    print_log(request, rev_map, rev_order, rev_map[revision], rev2tag,
+              branch_points, 0)
   else:
     print 'Version: <b>%s</b><br>' % revision
     tag = query_dict.get('only_with_tag')
@@ -1196,7 +1192,6 @@ def get_logs(full_name, files, view_tag):
     while 1:
 
       # fetch one of the log entries
-      # note: we don't use <state> or <changed> here.
       entry, eof = parse_log_entry(rlog)
 
       if not entry:
@@ -1206,11 +1201,6 @@ def get_logs(full_name, files, view_tag):
         break
 
       rev = entry.rev
-      date = entry.date
-      author = entry.author
-      state = entry.state
-      changed = entry.changed
-      log = entry.log
 
       idx = string.rfind(rev, '.')
       revbranch = rev[:idx]
@@ -1219,7 +1209,8 @@ def get_logs(full_name, files, view_tag):
         revwanted = rev
 
       if rev == revwanted or rev == branchpoint:
-        fileinfo[info_key] = (rev, date, log, author, filename)
+        fileinfo[info_key] = (rev, entry.date, entry.log, entry.author,
+                              filename)
 
         # done with this file now
         if not eof:
@@ -1566,8 +1557,7 @@ def fetch_log(full_name, which_rev=None):
     entry, eof = parse_log_entry(rlog)
     if entry:
       # valid revision info
-      revs.append((entry.rev, entry.date, entry.author, entry.state,
-                   entry.changed, entry.log))
+      revs.append(entry)
     if eof:
       break
 
@@ -1575,12 +1565,12 @@ def fetch_log(full_name, which_rev=None):
 
 def logsort_date_cmp(rev1, rev2):
   # sort on date; secondary on revision number
-  return -cmp(rev1[1], rev2[1]) or -revcmp(rev1[0], rev2[0])
+  return -cmp(rev1.date, rev2.date) or -revcmp(rev1.rev, rev2.rev)
 
 def logsort_rev_cmp(rev1, rev2):
   # sort highest revision first
-  return -revcmp(rev1[0], rev2[0])
-  
+  return -revcmp(rev1.rev, rev2.rev)
+
 _re_is_branch = re.compile(r'^((.*)\.)?\b0\.(\d+)$')
 def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
   head, cur_branch, taginfo, revs = fetch_log(full_name, which_rev)
@@ -1589,7 +1579,7 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
     idx = string.rfind(head, '.')
     cur_branch = head[:idx]
 
-  rev_order = map(lambda entry: entry[0], revs)
+  rev_order = map(lambda entry: entry.rev, revs)
   rev_order.sort(revcmp)
   rev_order.reverse()
 
@@ -1692,7 +1682,7 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
 
     show_revs = [ ]
     for entry in revs:
-      rev = entry[0]
+      rev = entry.rev
       idx = string.rfind(rev, '.')
       branch = rev[:idx]
       if branch == view_rev or rev == branch_point:
@@ -1708,17 +1698,27 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
     # no sorting
     pass
 
+  # build a map of revision number to entry information
+  rev_map = { }
+  for entry in revs:
+    rev_map[entry.rev] = entry
+
   ### some of this return stuff doesn't make a lot of sense...
-  return show_revs, revs, rev_order, taginfo, rev2tag, cur_branch, branch_points, branch_names
+  return show_revs, rev_map, rev_order, taginfo, rev2tag, \
+         cur_branch, branch_points, branch_names
 
 _re_is_vendor_branch = re.compile(r'^1\.1\.1\.\d+$')
 g_name_printed = { }	### gawd, what a hack...
-def print_log(request, rev_map, rev_order, revinfo, rev2tag, branch_points,
-              add_links=1):
+def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
+              add_links):
   query_dict = request.query_dict
   where = request.where
 
+  ### torch this. some old grandfathering stuff...
   # revinfo = (rev, date, author, state, lines changed, log)
+  revinfo = entry.rev, entry.date, entry.author, entry.state, \
+            entry.changed, entry.log
+
   rev = revinfo[0]
 
   idx = string.rfind(rev, '.')
@@ -1796,8 +1796,9 @@ def print_log(request, rev_map, rev_order, revinfo, rev2tag, branch_points,
     prev = string.join(prev_rev, '.')
     if rev_map.has_key(prev) or prev == '':
       break
-  if prev and rev_map[rev][3]:
-    print '<br>Changes since <b>%s: %s lines</b>' % (prev, rev_map[rev][3])
+  if prev and rev_map[rev].changed:
+    print '<br>Changes since <b>%s: %s lines</b>' % \
+          (prev, rev_map[rev].changed)
 
   if is_dead:
     print '<br><b><i>FILE REMOVED</i></b>'
@@ -1886,7 +1887,7 @@ def view_log(request):
 
   view_tag = query_dict.get('only_with_tag')
 
-  show_revs, revs, rev_order, taginfo, rev2tag, \
+  show_revs, rev_map, rev_order, taginfo, rev2tag, \
              cur_branch, branch_points, branch_names = \
              read_log(full_name, None, view_tag, query_dict['logsort'])
 
@@ -1910,13 +1911,9 @@ def view_log(request):
   if view_tag:
     print 'Current tag:', view_tag, '<br>'
 
-  rev_map = { }
-  for revinfo in revs:
-    rev_map[revinfo[0]] = revinfo[1:]
-
-  for revinfo in show_revs:
+  for entry in show_revs:
     print '<hr size=1 noshade>'
-    print_log(request, rev_map, rev_order, revinfo, rev2tag, branch_points)
+    print_log(request, rev_map, rev_order, entry, rev2tag, branch_points, 1)
 
   sel = [ ]
   tagitems = taginfo.items()
@@ -1948,7 +1945,7 @@ def view_log(request):
   if query_dict.has_key('r1'):
     diff_rev = query_dict['r1']
   else:
-    diff_rev = show_revs[-1][0]
+    diff_rev = show_revs[-1].rev
   print '<input type="TEXT" size="%d" name="tr1" value="%s" ' \
         ' onChange="document.diff_select.r1.selectedIndex=0">' % \
         (input_text_size, diff_rev)
@@ -1962,7 +1959,7 @@ def view_log(request):
   if query_dict.has_key('r2'):
     diff_rev = query_dict['r2']
   else:
-    diff_rev = show_revs[0][0]
+    diff_rev = show_revs[0].rev
   print '<input type="TEXT" size="%d" name="tr2" value="%s" ' \
         ' onChange="document.diff_select.r2.selectedIndex=0">' % \
         (input_text_size, diff_rev)
