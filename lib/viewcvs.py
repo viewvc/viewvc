@@ -1597,7 +1597,7 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
         print '<a name="%s"></a>' % tag
       g_name_printed[branch] = 1
     print 'Revision'
-    if request.default_viewable:
+    if not request.default_viewable:
       download_link(request, file_url, rev, rev, viewcvs_mime_type)
       print '/'
       download_link(request, file_url, rev, '(download)', request.mime_type)
@@ -1606,7 +1606,7 @@ def print_log(request, rev_map, rev_order, entry, rev2tag, branch_points,
     if not request.default_text_plain:
       print '/'
       download_link(request, file_url, rev, '(as text)', 'text/plain')
-    if not request.default_viewable:
+    if request.default_viewable:
       print '/'
       download_link(request, file_url, rev, '(view)', viewcvs_mime_type)
     if cfg.options.allow_annotate:
