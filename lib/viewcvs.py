@@ -1878,7 +1878,7 @@ def view_doc(request):
   try:
     fp = open(os.path.join(doc_directory, help_page), "rb")
   except IOError, v:
-    raise debug.ViewcvsException('help file "%s" not available\n(%s)'
+    raise debug.ViewcvsException('Help file "%s" not available\n(%s)'
                                  % (help_page, str(v)), '404 Not Found')
   if help_page[-3:] == 'png':
     request.server.header('image/png')
@@ -1886,6 +1886,8 @@ def view_doc(request):
     request.server.header('image/jpeg')
   elif help_page[-3:] == 'gif':
     request.server.header('image/gif')
+  elif help_page[-3:] == 'css':
+    request.server.header('text/css')
   else: # assume HTML:
     request.server.header()
   copy_stream(fp)
