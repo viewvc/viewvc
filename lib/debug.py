@@ -84,7 +84,7 @@ def PrintException(server):
   try:
     import traceback, string
 
-    if isinstance(exc_type, ViewCVSException):
+    if isinstance(exc, ViewCVSException):
       server.header(status=exc.status)
       desc = "<h4>ViewCVS Messages</h4>\n%s\n" % exc.description
     else:
