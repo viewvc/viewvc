@@ -31,30 +31,6 @@ import MySQLdb
 # versions.
 utc_time = 1
 
-class Cursor:
-    def __init__(self, mysql_cursor):
-        self.__cursor = mysql_cursor
-
-    def execute(self, *args):
-        apply(self.__cursor.execute, args)
-
-    def fetchone(self):
-        try:
-            row = self.__cursor.fetchone()
-        except IndexError:
-            row = None
-        
-        return row
-    
-
-class Connection:
-    def __init__(self, host, user, passwd, db):
-        self.__mysql = MySQLdb.connect(
-            host=host, user=user, passwd=passwd, db=db)
-
-    def cursor(self):
-        return Cursor(self.__mysql.cursor())
-
 def DateTimeFromTicks(ticks):
   """Return a MySQL DATETIME value from a unix timestamp"""
 
@@ -82,4 +58,4 @@ def TicksFromDateTime(datetime):
     return time.mktime(t[:8] + (-1,))
     
 def connect(host, user, passwd, db):
-    return Connection(host, user, passwd, db)
+    return MySQLdb.connect(host=host, user=user, passwd=passwd, db=db)
