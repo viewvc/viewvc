@@ -47,7 +47,17 @@ class BinCVSRepository(vclib.Repository):
       return vclib.FILE
     raise vclib.ItemNotFound(path_parts)
 
-  def listdir(self, path_parts, list_attic=1):
+  def listdir(self, path_parts, options):
+    """see vclib.Repository.listdir docstring
+
+    Option values recognized by this implementation:
+
+      cvs_list_attic
+        boolean, if true listing will include entries from the Attic
+        subdirectory
+    """
+    list_attic = options.get("cvs_list_attic", 1)
+
     # Only RCS files (*,v) and subdirs are returned.
     data = [ ]
 
@@ -91,7 +101,7 @@ class BinCVSRepository(vclib.Repository):
       # if we find a good revision, invoke co again, otherwise error out
       if len(revs) and revs[-1].undead:
         rev_flag = '-p' + revs[-1].undead.string
-        fp = rcs_popen(self.rcs_paths, 'co', (rev_flag, full_name), 'rb')
+        fp = self.rcs_popen('co', (rev_flag, full_name), 'rb')
         filename, revision = parse_co_header(fp)
       else:
         raise vclib.Error("CVSNT co workaround could not find non-dead "
@@ -106,6 +116,52 @@ class BinCVSRepository(vclib.Repository):
         'url="%s"' % (filename, full_name, where))
 
     return fp, revision
+
+  def dirlogs(self, path_parts, entries, options):
+    """see vclib.Repository.dirlogs docstring
+
+    Option values recognized by this implementation:
+
+      cvs_subdirs
+        boolean. true to fetch logs of the most recently modified file in each
+        subdirectory
+
+      cvs_dir_tag
+        string set to a tag name. if set only logs from revisions matching the
+        tag will be retrieved
+
+    Option values returned by this implementation:
+
+      cvs_tags, cvs_branches
+        lists of tag and branch names encountered in the directory
+    """
+    subdirs = options.get('cvs_subdirs', 0)
+    tag = options.get('cvs_dir_tag')
+
+    dirpath = self._getpath(path_parts)
+    alltags = get_logs(self, dirpath, entries, tag, subdirs)
+
+    branches = options['cvs_branches'] = []
+    tags = options['cvs_tags'] = []
+    for name, rev in alltags.items():
+      if Tag(None, rev).is_branch:
+        branches.append(name)
+      else:
+        tags.append(name)
+
+  def filelog(self, path_parts, rev, options):
+    """see vclib.Repository.filelog docstring
+
+    rev parameter can be a revision number, branch number or tag name
+
+    Option values returned by this implementation:
+
+      cvs_tags
+        dictionary of Tag objects for all tags encountered
+    """
+    revs, tags = file_log(self, path_parts, rev)
+    options['cvs_tags'] = tags
+    return revs
 
   def rcs_popen(self, rcs_cmd, rcs_args, mode, capture_err=1):
     if self.rcs_paths.cvsnt_exe_path:
@@ -656,27 +712,11 @@ def file_log(repos, path_parts, filter):
   
   return filtered_revs, taginfo
 
-def _sort_tags(alltags):
-  alltagnames = alltags.keys()
-  alltagnames.sort(lambda t1, t2: cmp(string.lower(t1), string.lower(t2)))
-  alltagnames.reverse()
-  branch_tags = []
-  plain_tags = []
-  for tag in alltagnames:
-    rev = alltags[tag]
-    if Tag(None, rev).is_branch:
-      branch_tags.append(tag)
-    else:
-      plain_tags.append(tag)      
-  return branch_tags, plain_tags
-
-def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
+def get_logs(repos, dirpath, entries, view_tag, get_dirs):
   alltags = {           # all the tags seen in the files of this dir
     'MAIN' : '',
     'HEAD' : '1.1'
     }
-
-  dirpath = repos._getpath(path_parts)
 
   entries_idx = 0
   entries_len = len(entries)
@@ -711,8 +751,7 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
       entries_idx = entries_idx + 1
 
     if not chunk:
-      repos.branch_tags, repos.plain_tags = _sort_tags(alltags)
-      return
+      return alltags
 
     args = []
     if not view_tag:
