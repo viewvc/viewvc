@@ -146,7 +146,6 @@ class PythonSink : public Sink {
 	int define_revision(char *revision, long timestamp, char *author, char *state, Branche *branches, char *next)
 	{
 		PyObject *pbranchs=PyList_New(0);
-		Py_INCREF(pbranchs);
 		Branche *move=branches;
 		while (move!=NULL) {
 			PyList_Append(pbranchs, PyString_FromString(move->name) );
@@ -277,7 +276,3 @@ static PyObject * tparse( PyObject *self, PyObject *args)
    Py_INCREF(Py_None);
    return Py_None;
 };
-
-
-
-             
