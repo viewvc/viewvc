@@ -47,7 +47,7 @@ import cvsdb
 
 def UpdateFile(db, repository, path):
     try:
-        commit_list = cvsdb.GetUnrecordedCommitList(repository, path)
+        commit_list = cvsdb.GetUnrecordedCommitList(repository, os.path.normcase(path))
     except cvsdb.error, e:
         print '[ERROR] %s' % (e)
         return
@@ -81,15 +81,13 @@ def RecurseUpdate(db, repository, directory):
 def CommandUpdate():
     ## connect to the database we are updating
     db = cvsdb.ConnectDatabase()
-    repository = sys.argv[2]
-    if sys.platform == "win32":
-        repository = string.replace(repository, '/', os.sep)    
+    repository = os.path.normcase(sys.argv[2])
     RecurseUpdate(db, repository, repository)
 
 
 def RebuildFile(db, repository, path):
     try:
-        commit_list = cvsdb.GetCommitListFromRCSFile(repository, path)
+        commit_list = cvsdb.GetCommitListFromRCSFile(repository, os.path.normcase(path))
     except cvsdb.error, e:
         print '[ERROR] %s' % (e)
         return
@@ -123,9 +121,7 @@ def RecurseRebuild(db, repository, directory):
 def CommandRebuild():
     ## connect to the database we are updating
     db = cvsdb.ConnectDatabase()
-    repository = sys.argv[2]
-    if sys.platform == "win32":
-        repository = string.replace(repository, '/', os.sep)
+    repository = os.path.normcase(sys.argv[2])
     RecurseRebuild(db, repository, repository)
 
 
