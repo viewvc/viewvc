@@ -186,8 +186,9 @@ class Config:
     self.options.diff_font_face = 'Helvetica,Arial'
     self.options.diff_font_size = -1
     self.options.input_text_size = 12
-    self.options.disable_enscript_lang = ()
+    self.options.use_enscript = 0
     self.options.enscript_path = ''
+    self.options.disable_enscript_lang = ()
 
     self.text.long_intro = """\
     <p>
