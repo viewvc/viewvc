@@ -890,7 +890,7 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
         perfect = not tag or entry.number == tag.number or       \
                   (len(entry.number) == 2 and not tag.number) or \
                   entry.number[:-1] == tag.number
-        if perfect or entry.number[-2:] == tag.number[:-1]:
+        if perfect or entry.number == tag.number[:-1]:
           wanted_entry = entry
           if perfect:
             break
