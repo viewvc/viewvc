@@ -738,6 +738,11 @@ def parse_log_header(fp):
         # rlog: filename/goes/here,v: error message
         idx = string.find(line, ':', 6)
         if idx != -1:
+          if line[idx:idx+32] == ': warning: Unknown phrases like ':
+            # don't worry about this warning. it can happen with some RCS
+            # files that have unknown fields in them (e.g. "permissions 644;"
+            continue
+
           # looks like a filename
           filename = line[6:idx]
           if filename[-2:] == ',v':
@@ -820,6 +825,8 @@ def skip_file(fp):
       break
 
 def process_rlog_output(rlog, full_name, view_tag, fileinfo, alltags):
+  "Fill in fileinfo and alltags with info from the rlog output."
+
   # consume each file found in the resulting log
   while 1:
 
@@ -1173,7 +1180,8 @@ def view_directory(request):
     if isdir:
       if not hideattic and file == 'Attic':
         continue
-      if where == '' and (file == 'CVSROOT' or cfg.is_forbidden(file)):
+      if where == '' and ((file == 'CVSROOT' and cfg.options.hide_cvsroot)
+                          or cfg.is_forbidden(file)):
         continue
 
       print '<tr bgcolor="%s"><td>' % cfg.colors.even_odd[cur_row % 2]
