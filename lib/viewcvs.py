@@ -114,7 +114,7 @@ if CONF_PATHNAME:
   g_install_dir = os.path.dirname(CONF_PATHNAME)
 else:
   # development directories
-  g_install_dir = os.pardir # typically, ".."
+  g_install_dir = os.path.join(os.pardir, os.pardir) # typically, "../.."
 
 
 class Request:
@@ -1492,6 +1492,12 @@ def view_directory_cvs(request, data, sortby, sortdir):
       row.type = 'file'
       row.anchor = file
 
+      file_where = where_prefix + file
+
+      if file[:6] == 'Attic/':
+        file = file[6:]
+      row.name = file	# ensure this occurs after we strip Attic/
+
       num_files = num_files + 1
       info = fileinfo.get(file)
       if info == bincvs._FILE_HAD_ERROR:
@@ -1507,13 +1513,7 @@ def view_directory_cvs(request, data, sortby, sortdir):
         continue
       num_displayed = num_displayed + 1
 
-      file_where = where_prefix + file
-
-      if file[:6] == 'Attic/':
-        file = file[6:]
-
       row.cvs = 'data'
-      row.name = file	# ensure this occurs after we strip Attic/
       row.href = request.get_url(view_func=view_log, 
                                  where=file_where,
                                  pathtype=vclib.FILE,
