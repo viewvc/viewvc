@@ -1335,8 +1335,7 @@ def view_directory(request):
       row.time = html_time(info[1])
 
       if cfg.options.use_cvsgraph:
-        ### the URL to the wrapper should not be hard-coded
-        row.graph_href = '/cgi-bin/cvsgraphwrapper.cgi?&r=%s&m=%s&f=%s,v' % \
+        row.graph_href = 'cvsgraphwrapper.cgi?&r=%s&m=%s&f=%s,v' % \
                          (request.cvsroot, request.where, file)
 
       if cfg.options.show_author:
