@@ -12,8 +12,6 @@
 [end]
 
 <table>
-<tr><td>Current directory:</td><td><b>[nav_path]</b></td></tr>
-
 [is roottype "svn"]
 <tr>
   <td>Current revision:</td>
