@@ -18,8 +18,8 @@ INSTALLING VIEWCVS
    particular, examine the following configuration variables:
 
       cvs_roots
+      default_root
       rcs_path
-      forbidden_modules
       mime_types_file
 
    If Python is not located in /usr/local/bin, then you'll need to
