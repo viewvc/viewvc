@@ -45,7 +45,7 @@ def _fs_rev_props(fsptr, rev, pool):
 
 def date_from_rev(svnrepos, rev):
   if (rev < 0) or (rev > fs.youngest_rev(svnrepos.fs_ptr, svnrepos.pool)):
-    raise vclib.InvalidRevision(rev);
+    raise vclib.InvalidRevision(rev)
   datestr = fs.revision_prop(svnrepos.fs_ptr, rev,
                              core.SVN_PROP_REVISION_DATE, svnrepos.pool)
   return _datestr_to_date(datestr, svnrepos.pool)
@@ -108,9 +108,9 @@ def get_history(svnrepos, full_name):
     # Note that we have to do some crazy pool work here.  We can't get
     # rid of the old history until we use it to get the new, so we
     # alternate back and forth between our subpools.
-    history = fs.history_prev (history,
-                               getattr(svnrepos, 'cross_copies', 1),
-                               newpool)
+    history = fs.history_prev(history,
+                              getattr(svnrepos, 'cross_copies', 1),
+                              newpool)
 
     # Only continue if there is further history to deal with.
     if not history:
@@ -123,14 +123,31 @@ def get_history(svnrepos, full_name):
     # We're done with the old history item, so we can clear its pool,
     # and then toggle our notion of "the old pool".
     core.svn_pool_clear(oldpool)
-    tmppool = oldpool;
-    oldpool = newpool;
-    newpool = tmppool;
+    oldpool, newpool = newpool, oldpool
 
   core.svn_pool_destroy(oldpool)
   core.svn_pool_destroy(newpool)
   return history_set
 
+
+def log_helper(svnrepos, rev, path, show_changed_paths):
+  rev_root = fs.revision_root(svnrepos.fs_ptr, rev, svnrepos.pool)
+  other_paths = []
+  changed_paths = fs.paths_changed(rev_root, svnrepos.pool)
+  if not changed_paths.has_key(path):
+    return None
+  del changed_paths[path]
+  if show_changed_paths:
+    for other_path in changed_paths.keys():
+      other_paths.append(ChangedPathEntry(other_path))
+  datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, svnrepos.pool)
+  date = _datestr_to_date(datestr, svnrepos.pool)
+  entry = LogEntry(rev, date, author, msg, path,
+                   other_paths, None, None, None)
+  if fs.is_file(rev_root, path, svnrepos.pool):
+    entry.size = fs.file_length(rev_root, path, svnrepos.pool)
+  return entry
+  
 
 def fetch_log(svnrepos, full_name, which_rev=None):
   alltags = {           # all the tags seen in the files of this dir
@@ -138,42 +155,25 @@ def fetch_log(svnrepos, full_name, which_rev=None):
     'HEAD' : '1',
     }
   logs = {}
-  subpool = core.svn_pool_create(svnrepos.pool)
   show_changed_paths = getattr(svnrepos, 'get_changed_paths', 1)
 
-  def log_helper(rev, path):
-    rev_root = fs.revision_root(svnrepos.fs_ptr, rev, subpool)
-    other_paths = []
-    changed_paths = fs.paths_changed(rev_root, subpool)
-    if not changed_paths.has_key(path):
-      return
-    del changed_paths[path]
-    if show_changed_paths:
-      for other_path in changed_paths.keys():
-        other_paths.append(ChangedPathEntry(other_path))
-    datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, svnrepos.pool)
-    date = _datestr_to_date(datestr, svnrepos.pool)
-    entry = LogEntry(rev, date, author, msg, path,
-                     other_paths, None, None, None)
-    if fs.is_file(rev_root, path, subpool):
-      entry.size = fs.file_length(rev_root, path, subpool)
-    core.svn_pool_clear(subpool)
-    logs[rev] = entry
-  
   if which_rev is not None:
     if (which_rev < 0) \
        or (which_rev > fs.youngest_rev(svnrepos.fs_ptr, svnrepos.pool)):
       raise vclib.InvalidRevision(which_rev);
-    log_helper(which_rev, full_name)
+    entry = log_helper(svnrepos, which_rev, full_name, show_changed_paths)
+    if entry:
+      logs[which_rev] = entry
   else:
     history_set = get_history(svnrepos, full_name)
     history_revs = history_set.keys()
     history_revs.sort()
     history_revs.reverse()
     for history_rev in history_revs:
-      log_helper(history_rev, history_set[history_rev])
-
-  core.svn_pool_destroy(subpool)
+      entry = log_helper(svnrepos, history_rev, history_set[history_rev],
+                         show_changed_paths)
+      if entry:
+        logs[history_rev] = entry        
   return alltags, logs
 
 
