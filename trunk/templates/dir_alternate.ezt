@@ -87,9 +87,9 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
   [is sortby "rev"]
     <th align=left bgcolor="#88ff88">Rev.&nbsp;[is sortdir "up"]<a 
          href="./[sortdir_down_href]#dirlist"><img 
-	 src="*docroot*/images/down.png"></a>[else]<a
+	 src="[request.script_name]/*docroot*/images/down.png"></a>[else]<a
          href="./[sortdir_up_href]#dirlist"><img 
-	 src="*docroot*/images/up.png"></a>[end]</th>
+	 src="[request.script_name]/*docroot*/images/up.png"></a>[end]</th>
   [else]
     <th align=left bgcolor="#cccccc"
       ><a href="./[sortby_rev_href]#dirlist">Rev.</a></th>
@@ -99,9 +99,9 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
       [is cfg.options.use_cvsgraph "1"]colspan=2[end]
       >File&nbsp;[is sortdir "up"]<a
          href="./[sortdir_down_href]#dirlist"><img 
-	 src="*docroot*/images/down.png"></a>[else]<a
+	 src="[request.script_name]/*docroot*/images/down.png"></a>[else]<a
          href="./[sortdir_up_href]#dirlist"><img 
-	 src="*docroot*/images/up.png"></a>[end]</th>
+	 src="[request.script_name]/*docroot*/images/up.png"></a>[end]</th>
   [else]
     <th align=left bgcolor="#cccccc"
       [is cfg.options.use_cvsgraph "1"]colspan=2[end]
@@ -110,9 +110,9 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
   [is sortby "date"]
     <th align=left bgcolor="#88ff88">Age&nbsp;[is sortdir "up"]<a 
          href="./[sortdir_down_href]#dirlist"><img 
-	 src="*docroot*/images/down.png"></a>[else]<a
+	 src="[request.script_name]/*docroot*/images/down.png"></a>[else]<a
          href="./[sortdir_up_href]#dirlist"><img 
-	 src="*docroot*/images/up.png"></a>[end]</th>
+	 src="[request.script_name]/*docroot*/images/up.png"></a>[end]</th>
   [else]
     <th align=left bgcolor="#cccccc"
       ><a href="./[sortby_date_href]#dirlist">Age</a></th>
@@ -120,9 +120,9 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
   [is sortby "author"]
     <th align=left bgcolor="#88ff88">Author&nbsp;[is sortdir "up"]<a 
          href="./[sortdir_down_href]#dirlist"><img 
-	 src="*docroot*/images/down.png"></a>[else]<a
+	 src="[request.script_name]/*docroot*/images/down.png"></a>[else]<a
          href="./[sortdir_up_href]#dirlist"><img 
-	 src="*docroot*/images/up.png"></a>[end]</th>
+	 src="[request.script_name]/*docroot*/images/up.png"></a>[end]</th>
   [else]
     <th align=left bgcolor="#cccccc"
       ><a href="./[sortby_author_href]#dirlist">Author</a></th>
@@ -130,9 +130,9 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
   [is sortby "log"]
     <th align=left bgcolor="#88ff88">Last log entry&nbsp;[is sortdir "up"]<a 
          href="./[sortdir_down_href]#dirlist"><img 
-	 src="*docroot*/images/down.png"></a>[else]<a
+	 src="[request.script_name]/*docroot*/images/down.png"></a>[else]<a
          href="./[sortdir_up_href]#dirlist"><img 
-	 src="*docroot*/images/up.png"></a>[end]</th>
+	 src="[request.script_name]/*docroot*/images/up.png"></a>[end]</th>
   [else]
     <th align=left bgcolor="#cccccc"
       ><a href="./[sortby_log_href]#dirlist">Last log entry</a></th>
