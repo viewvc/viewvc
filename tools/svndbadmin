@@ -221,7 +221,7 @@ def main(pool, command, repository, rev=None):
 
 def usage():
     sys.stderr.write('Usage: %s {rebuild | update} <repository> [<revision>]\n'
-                     % os.basename(sys.argv[0]))
+                     % os.path.basename(sys.argv[0]))
     sys.exit(1)
 
 if __name__ == '__main__':
