@@ -102,10 +102,10 @@
   <tr>
     <th align="right" valign="top">Sort By:</th>
     <td>
-      <select name="sortby">
-        <option value="date" [is sortby "date"]selected=""[end]>Date</option>
-        <option value="author" [is sortby "author"]selected=""[end]>Author</option>
-        <option value="file" [is sortby "file"]selected=""[end]>File</option>
+      <select name="querysort">
+        <option value="date" [is querysort "date"]selected=""[end]>Date</option>
+        <option value="author" [is querysort "author"]selected=""[end]>Author</option>
+        <option value="file" [is querysort "file"]selected=""[end]>File</option>
       </select>
     </td>
   </tr>

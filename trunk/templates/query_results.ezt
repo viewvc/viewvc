@@ -17,13 +17,13 @@
  <thead>
   <tr>
    <th align="left" class="vc_header">Revision</th>
-   <th align="left" class="vc_header[is sortby "file"]_sort[end]">File</th>
+   <th align="left" class="vc_header[is querysort "file"]_sort[end]">File</th>
 [if-any show_branch]
    <th align="left" class="vc_header">Branch</th>
 [end]
    <th align="left" class="vc_header">+/-</th>
-   <th align="left" class="vc_header[is sortby "date"]_sort[end]">Date</th>
-   <th align="left" class="vc_header[is sortby "author"]_sort[end]">Author</th>
+   <th align="left" class="vc_header[is querysort "date"]_sort[end]">Date</th>
+   <th align="left" class="vc_header[is querysort "author"]_sort[end]">Author</th>
 [# uncommment, if you want a separate Description column: (also see below)
    <th align="left" class="vc_header">Description</th>
 ]
