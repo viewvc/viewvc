@@ -309,7 +309,7 @@ def build_commit(desc, files):
         ## viewcvs.conf file, then don't make the link
         cvsroot_name = cvsroot_name_from_path(commit.GetRepository())
         if cvsroot_name:
-            flink = '<a href="viewcvs.cgi/%s?cvsroot=%s">%s</a>' \
+            flink = '<a href="viewcvs.cgi/%s?root=%s">%s</a>' \
                     % (file, cvsroot_name, file_full_path)
         else:
             flink = file_full_path

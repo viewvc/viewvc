@@ -80,7 +80,7 @@ viewcvs_mime_type = 'text/vnd.viewcvs-markup'
 # put here the variables we need in order to hold our state - they will be
 # added (with their current value) to any link/query string you construct
 _sticky_vars = (
-  'cvsroot',
+  'root',
   'hideattic',
   'sortby',
   'sortdir',
@@ -191,6 +191,10 @@ class Request:
     query_dict = default_settings.copy()
 
     for name, values in cgi.parse().items():
+      # patch up old queries that use 'cvsroot' to look like they used 'root'
+      if name == 'cvsroot':
+        name = 'root'
+
       # validate the parameter
       _validate_param(name, values[0])
 
@@ -208,28 +212,36 @@ class Request:
 
     self.query_dict = query_dict
 
-    # set up the CVS repository to use
-    name = query_dict.get('cvsroot', cfg.general.default_root)
-
-    ### maybe move some of this into the BinCVSRepository class. of course,
-    ### it cannot call error() to generate responses, but hey...
-    try:
+    # set up the repository to use
+    name = query_dict.get('root', cfg.general.default_root)
+    if cfg.general.cvs_roots.has_key(name):
       rootpath = cfg.general.cvs_roots[name]
-    except KeyError:
-      # we must have tried the default because if a param was provided,
-      # then it has already been checked during parameter validation.
-      assert not query_dict.has_key('cvsroot')
+      try:
+        self.repos = bincvs.BinCVSRepository(name, rootpath)
+      except vclib.ReposNotFound:
+        error('%s not found!\nThe wrong path for this repository was '
+              'configured, or the server on which the CVS tree lives may be '
+              'down. Please try again in a few minutes.' % cgi.escape(name))
+    elif cfg.general.svn_roots.has_key(name):
+      rootpath = cfg.general.svn_roots[name]
+      try:
+        import vclib.svn
+        from svn import _util
+        _util.apr_initialize()
+        self.pool = _util.svn_pool_create(None)
+        self.repos = vclib.svn.SubversionRepository(name, rootpath, self.pool)
+      except vclib.ReposNotFound:
+        error('%s not found!\nThe wrong path for this repository was '
+              'configured, or the server on which the CVS tree lives may be '
+              'down. Please try again in a few minutes.' % cgi.escape(name))
+    else:
+      # if the query had 'root' in it, we would have caught this error
+      # during validation.  so, we know this failed on the default root.
+      assert not query_dict.has_key('root')
       error("The settings of 'cvs_roots' and 'default_root' are misconfigured "
             "in the viewcvs.conf file. "
             "The default root, '%s', is not present in cvs_roots."
             % cgi.escape(name))
-
-    try:
-      self.repos = bincvs.BinCVSRepository(name, rootpath)
-    except vclib.ReposNotFound:
-      error('%s not found!\nThe wrong path for this repository was '
-            'configured, or the server on which the CVS tree lives may be '
-            'down. Please try again in a few minutes.' % cgi.escape(name))
 
     self.full_name = rootpath + '/' + where
 
@@ -273,9 +285,10 @@ def _validate_param(name, value):
   # the validator must be a function
   validator(value)
 
-def _validate_cvsroot(value):
-  if not cfg.general.cvs_roots.has_key(value):
-    error('The CVS root "%s" is unknown. If you believe the value is '
+def _validate_root(value):
+  if not cfg.general.cvs_roots.has_key(value) \
+     and not cfg.general.svn_roots.has_key(value):
+    error('The root "%s" is unknown. If you believe the value is '
           'correct, then please double-check your configuration.'
           % cgi.escape(value),
           "404 Repository not found")
@@ -301,7 +314,7 @@ _re_validate_mimetype = re.compile('^[-_.a-zA-Z0-9/]+$')
 
 # the legal query parameters and their validation functions
 _legal_params = {
-  'cvsroot'       : _validate_cvsroot,
+  'root'          : _validate_root,
   'search'        : _validate_regex,
 
   'hideattic'     : _re_validate_number,
@@ -991,11 +1004,14 @@ def view_directory(request):
                                    or cfg.options.use_re_search),
   }
 
-  # add in the CVS roots for the selection
-  if len(cfg.general.cvs_roots) < 2:
+  # add in the roots for the selection
+  allroots = { }
+  allroots.update(cfg.general.cvs_roots)
+  allroots.update(cfg.general.svn_roots)
+  if len(allroots) < 2:
     roots = [ ]
   else:
-    roots = cfg.general.cvs_roots.keys()
+    roots = allroots.keys()
     roots.sort(lambda n1, n2: cmp(string.lower(n1), string.lower(n2)))
   data['roots'] = roots
 

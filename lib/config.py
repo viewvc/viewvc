@@ -30,6 +30,17 @@ def error(msg, status='500 Internal Server Error'):
   print msg
   sys.exit(0)
 
+def _parse_roots(config_name, config_value):
+  roots = { }
+  for root in config_value:
+    try:
+      name, path = map(string.strip, string.split(root, ':'))
+      roots[name] = path
+    except ValueError:
+      error("malformed configuration file: wrong '%s' syntax: %s"
+            % (config_name, root))
+  return roots
+
 #########################################################################
 #
 # CONFIGURATION
@@ -49,7 +60,7 @@ def error(msg, status='500 Internal Server Error'):
 class Config:
   _sections = ('general', 'options', 'cvsdb', 'templates')
   _force_multi_value = ('cvs_roots', 'forbidden', 'disable_enscript_lang',
-                        'languages', 'kv_files')
+                        'svn_roots', 'languages', 'kv_files')
 
   def __init__(self):
     for section in self._sections:
@@ -112,15 +123,9 @@ class Config:
         except ValueError:
           pass
 
-      if opt == 'cvs_roots':
-        roots = { }
-        for root in value:
-          try:
-            name, path = map(string.strip, string.split(root, ':'))
-            roots[name] = path
-          except ValueError:
-            error("malformed configuration file: wrong cvs_roots syntax:"+root)
-        value = roots
+      if opt == 'cvs_roots' or opt == 'svn_roots':
+        value = _parse_roots(opt, value)
+
       setattr(sc, opt, value)
 
   def _process_vhost(self, parser, vhost):
@@ -157,6 +162,7 @@ class Config:
       # user-visible-name : path
       "Development" : "/home/cvsroot",
       }
+    self.general.svn_roots = { }
     self.general.default_root = "Development"
     self.general.rcs_path = ''
     self.general.mime_types_file = ''
