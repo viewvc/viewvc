@@ -405,8 +405,8 @@ show_logs = 1
 # Show log when viewing file contents
 show_log_in_markup = 1
 
-# Cross filesystem copies when traversing Subversion file revision histories
-cross_copies = 0
+# Cross filesystem copies when traversing Subversion file revision histories.
+cross_copies = 1
 
 # Display dates as UTC or in local time zone
 use_localtime = 0
