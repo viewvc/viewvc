@@ -394,14 +394,16 @@ _time_desc = {
   31536000 : 'year',
   }
 def html_time(secs, extended=0):
-  secs = int(time.time()) - secs
+  secs = long(time.time()) - secs
   if secs < 2:
     return 'very little time'
   breaks = _time_desc.keys()
   breaks.sort()
-  for i in range(len(breaks)):
+  i = 0
+  while i < len(breaks):
     if secs < 2 * breaks[i]:
       break
+    i = i + 1
   value = breaks[i - 1]
   s = plural(secs / value, _time_desc[value])
 
