@@ -13,7 +13,7 @@
       </td>
       <td align=center valign=top bgcolor="white" width="1%">
 	<b>Quickstart:</b>
-	<a href="viewcvs-0.7.tar.gz">download</a>
+	<a href="viewcvs-0.8.tar.gz">download</a>
       </td>
       <td width="1%"><a href="http://sourceforge.net/"><img border=0
 	    src="http://sourceforge.net/sflogo.php?group_id=18760&type=1"></a><br><a href="http://sourceforge.net/projects/viewcvs/">ViewCVS&nbsp;project&nbsp;page</a>
@@ -121,7 +121,13 @@
     <a name="Cvsweb">
     <h2>Additional features over cvsweb</h2>
     </a>
+
     <ul>
+      <li>
+        Template support: you can now customize the look and feel of
+        ViewCVS by editing the provided EZT templates, which are used
+        to generate the pages.
+      </li>
       <li>
 	Colorization for many file types via <code>enscript</code>.
       </li>
@@ -138,6 +144,11 @@
 	to share the configuration file and ViewCVS installation
 	across virtual hosts, yet still be able to fine-tune the
 	options when necessary.
+      </li>
+      <li>
+	Runs either as CGI script, called from an installed web server
+	(such as <a href="http://httpd.apache.org/"><i>Apache</i></a>),
+	or as a standalone server.
       </li>
       <li>Better reporting for unreadable files.</li>
       <li>
@@ -176,17 +187,10 @@
     </ul>
     
     <p>
-      <strong>New in the upcoming version 0.8:</strong>
+      The changes present in each release are available in
+      <a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/viewcvs/viewcvs/CHANGES?rev=HEAD">ViewCVS's
+      CHANGES file</a>.
     </p>
-    <ul>
-      <li>template support: you can now customize the look'n'feel
-        of ViewCVS by editing the included EZT-HTML templates used
-	to generate the pages.
-      </li>
-      <li>runs either as CGI script or as a standalone web server 
-        without the need to run a Webserver (for example <i>Apache</i>).
-      </li>
-    </ul>
 
     <hr width="75&#37;">
     <a name="Colorize">
@@ -232,7 +236,11 @@
       The software is available for download:
     </p>
     <blockquote>
-      <a href="viewcvs-0.7.tar.gz">Version 0.7 of ViewCVS as a gzipped tar</a>
+      <a href="viewcvs-0.8.tar.gz">Version 0.8 of ViewCVS as a gzipped
+      tar</a>
+      <br>
+      <a href="viewcvs-0.8.zip">Version 0.8 of ViewCVS as a ZIP
+      file</a>
     </blockquote>
     <p>
       Of course the current development version is also available 
@@ -241,6 +249,12 @@
     <blockquote>
       <a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/viewcvs/">http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/viewcvs/</a>
     </blockquote>
+
+    <p>
+      You can also
+      <a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/viewcvs/viewcvs/CHANGES?rev=HEAD">see
+      the changes</a> for this release.
+    </p>
 
     <hr width="75&#37;">
     <a name="Future">
@@ -280,7 +294,7 @@
   <address><a href="mailto:viewcvs@lyra.org">ViewCVS Users Group</a></address>
 <!-- Created: Fri Dec  3 02:51:37 PST 1999 -->
 <!-- hhmts start -->
-Last modified: Sat Nov 17 13:21:25 CEST 2001
+Last modified: Mon Dec 10 05:20:36 PST 2001
 <!-- hhmts end -->
   </body>
 </html>
