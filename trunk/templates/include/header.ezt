@@ -5,7 +5,7 @@
 
 <html>
 <head>
-  <title>[[][rootname]] [page_title]</title>
+  <title>[if-any rootname][[][rootname]][else]ViewCVS[end] [page_title]</title>
   <meta name="generator" content="ViewCVS [vsn]">
   <link rel="stylesheet" href="[docroot]/styles.css" type="text/css">
 </head>
