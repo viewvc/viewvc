@@ -79,7 +79,7 @@ CREATE TABLE descs (
 DROP TABLE IF EXISTS dirs;
 CREATE TABLE dirs (
   id mediumint(9) DEFAULT '0' NOT NULL auto_increment,
-  dir varchar(128) binary DEFAULT '' NOT NULL,
+  dir varchar(255) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE dir (dir)
 );
@@ -87,7 +87,7 @@ CREATE TABLE dirs (
 DROP TABLE IF EXISTS files;
 CREATE TABLE files (
   id mediumint(9) DEFAULT '0' NOT NULL auto_increment,
-  file varchar(128) binary DEFAULT '' NOT NULL,
+  file varchar(255) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE file (file)
 );
