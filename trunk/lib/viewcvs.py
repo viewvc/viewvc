@@ -2013,7 +2013,11 @@ def view_helppage(request):
   # happens in ../cgi/viewcvs.cgi with LIBRARYDIR.  But I dunno how to do this
   # clean here:
   viewcvs_install_directory = os.path.dirname(sys.path[0])
-  doc_directory = os.path.join(viewcvs_install_directory, "doc")
+  if CONF_PATHNAME:
+    doc_directory = os.path.join(viewcvs_install_directory, "doc")
+  else:
+    # aid testing from CVS working copy:
+    doc_directory = os.path.join(viewcvs_install_directory, "website")
   try:
     fp = open(os.path.join(doc_directory, help_page), "rt")
     if help_page[-3:] == 'png':
