@@ -2261,7 +2261,7 @@ def view_doc(request):
   fp.close()
 
 
-_re_extract_rev = re.compile(r'^[-+]+ [^\t]+\t([^\t]+)\t((\d+\.)+\d+)$')
+_re_extract_rev = re.compile(r'^[-+]+ [^\t]+\t([^\t]+)\t((\d+\.)*\d+)$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
 def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
   # do this now, in case we need to print an error
@@ -2591,8 +2591,14 @@ def view_diff(request):
     diff_cmd = os.path.normpath(os.path.join(cfg.general.rcs_path,'rcsdiff'))
     fp = popen.popen(diff_cmd, args, 'r')
   else:
-    args.append("'-L " + request.where + " (old)'")
-    args.append("'-L " + request.where + " (new)'")
+    date1 = time.strftime('%Y/%m/%d %H:%M:%S',
+                          time.gmtime(vclib.svn.date_from_rev(request.repos,
+                                                              int(rev1))))
+    date2 = time.strftime('%Y/%m/%d %H:%M:%S',
+                          time.gmtime(vclib.svn.date_from_rev(request.repos,
+                                                              int(rev2))))
+    args.append("'-L " + request.where + "\t" + date1 + "\t" + rev1 + "'")
+    args.append("'-L " + request.where + "\t" + date2 + "\t" + rev2 + "'")
 
     # Need to keep a reference to the FileDiff object around long
     # enough to use.  It destroys its underlying temporary files when
