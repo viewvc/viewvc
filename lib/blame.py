@@ -427,7 +427,7 @@ class CVSParser(rcsparse.Sink):
 re_includes = re.compile('\\#(\\s*)include(\\s*)"(.*?)"')
 re_filename = re.compile('(.*[\\\\/])?(.+)')
 
-def link_includes(text, root, rcs_path):
+def link_includes(text, root, rcs_path, sticky = None):
   match = re_includes.match(text)
   if match:
     incfile = match.group(3)
@@ -436,9 +436,11 @@ def link_includes(text, root, rcs_path):
       file = os.path.join(root, trial_root)
       file = os.path.normpath(os.path.join(file, incfile + ',v'))
       if os.access(file, os.F_OK):
+	url = os.path.join(rel_path, incfile)
+	if sticky:
+	  url = url + '?' + sticky
         return '#%sinclude%s"<a href="%s">%s</a>"' % \
-               (match.group(1), match.group(2),
-                os.path.join(rel_path, incfile), incfile)
+               (match.group(1), match.group(2), url, incfile)
   return text
 
 def make_html(root, rcs_path, opt_rev = None, sticky = None):
@@ -488,7 +490,7 @@ def make_html(root, rcs_path, opt_rev = None, sticky = None):
 
     # Add a link to traverse to included files
     if 1:   # opt_includes
-      thisline = link_includes(thisline, root, file_head)
+      thisline = link_includes(thisline, root, file_head, sticky)
 
     output = ''
 
