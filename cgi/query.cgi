@@ -47,5 +47,8 @@ else:
 
 #########################################################################
 
-import query 
-query.run_cgi()
+import sapi
+import query
+
+sapi.CgiServer()
+query.main()

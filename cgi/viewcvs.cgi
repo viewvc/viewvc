@@ -52,5 +52,8 @@ else:
 #########################################################################
 
 # go do the work
+import sapi
 import viewcvs
-viewcvs.run_cgi()
+
+sapi.CgiServer()
+viewcvs.main()
