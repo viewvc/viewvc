@@ -67,7 +67,7 @@ href="[request.script_name]/*docroot*/help_logtable.html">ViewCVS and CVS Help</
         <a href="[entries.view_href]"><b>View markup</b></a><br>
 
         [# if you don't want to allow annotation, then remove this line]
-        <a href="[href]?annotate=[entries.rev][query]"><b>View annotated</b></a><br>
+        [is roottype "svn"][else]<a href="[href]?annotate=[entries.rev][query]"><b>View annotated</b></a><br>[end]
       [else]
         [if-any viewable]
           <a href="[entries.view_href]"><b>View</b></a><br>
