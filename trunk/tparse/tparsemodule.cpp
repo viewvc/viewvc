@@ -240,7 +240,7 @@ static PyObject * tparse( PyObject *self, PyObject *args)
    Py_INCREF(hsink);
    Py_XINCREF(file);
    try {
-   		tparseParser *tp=new tparseParser(input,new PythonSink(hsink) );
+   		tparseParser tp(input,new PythonSink(hsink) );
    }
    catch (RCSExpected e) 
    {

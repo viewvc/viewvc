@@ -1,3 +1,7 @@
+Bugfix ( 19-Feb-2002 - Daniel Berlin)
+  * tparsemodule.cpp (tparse): Change tparseParser object to
+    non-pointer.
+
 Modif ( 13-Feb-2002)
   * Removed debugging statments from the (C++) Sink class.
   * Changed INSTALL to reflect the move of rcsparse to lib/vclib/ccvs/rcsparse.
