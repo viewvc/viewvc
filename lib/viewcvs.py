@@ -1456,6 +1456,8 @@ def view_directory_svn(request):
       num_displayed = num_displayed + 1
       if cfg.options.show_logs:
         row.show_log = 'yes'
+        if not info.log:
+          info.log = ""
         row.log = format_log(info.log)
 
     rows.append(row)
