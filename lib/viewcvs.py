@@ -1795,7 +1795,7 @@ def view_log(request):
     data['branch_select_hidden_values'] = prepare_hidden_values(params)
 
   if cfg.options.use_pagesize:
-    data['log_pagestart'] = int(query_dict.get('log_pagestart',0))
+    data['log_pagestart'] = int(request.query_dict.get('log_pagestart',0))
     data['entries'] = paging(data, 'entries', data['log_pagestart'], 'rev')
 
   request.server.header()
