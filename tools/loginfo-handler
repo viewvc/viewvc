@@ -80,10 +80,10 @@ def HeuristicArgParse(s, repository):
   exists in the repository"""
 
   if s[-16:] == ' - New directory':
-    return None
+    return None, None
 
   if s[-19:] == r' - Imported sources':
-    return None    
+    return None, None
 
   file_data_list = []
   start = 0
@@ -148,10 +148,10 @@ def CvsNtArgParse(s, repository):
   backslashes"""
 
   if s[-18:] == r' -\ New\ directory':
-    return None
+    return None, None
 
   if s[-21:] == r' -\ Imported\ sources':
-    return None
+    return None, None
 
   file_data_list = []
 
