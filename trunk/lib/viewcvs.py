@@ -2028,6 +2028,12 @@ def view_cvsgraph(cfg, request):
   generate_page(request, cfg.templates.graph, data)
 
 def search_files(request, search_re):
+  """ Search files in a directory for a regular expression.
+
+  Does a check-out of each file in the directory.  Only checks for
+  the first match.  
+  """
+
   # Pass in Request object and the search regular expression. We check out
   # each file and look for the regular expression. We then return the data
   # for all files that match the regex.
@@ -2036,6 +2042,7 @@ def search_files(request, search_re):
   searchstr = re.compile(search_re)
 
   # Will become list of files that have at least one match.
+  # new_file_list also includes directories.
   new_file_list = [ ]
 
   # Get list of files AND directories
@@ -2045,10 +2052,15 @@ def search_files(request, search_re):
   for file in files:
     full_name = os.path.join(request.full_name, file)
 
-    # Is this a directory?  If so, append name to new_file_list.
+    # Is this a directory?  If so, append name to new_file_list
+    # and move to next file.
     if os.path.isdir(full_name):
       new_file_list.append(file)
       continue
+
+    # Only files at this point
+    # Remove the ,v
+    full_name = full_name[:-2]
 
     # figure out where we are and its mime type
     where = string.replace(full_name, request.cvsroot, '')
@@ -2058,13 +2070,10 @@ def search_files(request, search_re):
 
     # Shouldn't search binary files, or should we?
     # Should allow all text mime types to pass.
-    if string.split(mime_type, '/')[0] != 'text':
+    if mime_type[:4] != 'text':
       continue
 
-    # At this point everything should be a file.
-    # Remove the ,v
-    full_name = full_name[:-2]
-    where = where[:-2]
+    # Only text files at this point
 
     # process_checkout will checkout the head version out of the repository
     # Assign contents of checked out file to fp.
