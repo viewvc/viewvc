@@ -458,7 +458,8 @@ def _validate_param(name, value):
     validator = _legal_params[name]
   except KeyError:
     raise debug.ViewcvsException(
-      'An illegal parameter name ("%s") was passed.' % cgi.escape(name))
+      'An illegal parameter name ("%s") was passed.' % cgi.escape(name),
+      '400 Bad Request')
 
   if validator is None:
     return
@@ -468,7 +469,7 @@ def _validate_param(name, value):
     if not validator.match(value):
       raise debug.ViewcvsException(
         'An illegal value ("%s") was passed as a parameter.' %
-        cgi.escape(value))
+        cgi.escape(value), '400 Bad Request')
     return
 
   # the validator must be a function
