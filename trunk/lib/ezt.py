@@ -35,7 +35,19 @@ import string
 import re
 from types import StringType, IntType, FloatType
 
-_re_parse = re.compile('(\[[-\w.# ]+\])|(\[\[\])')
+#
+# This regular expression matches three alternatives:
+#   expr: DIRECTIVE | BRACKET | COMMENT
+#   DIRECTIVE: '[' ('-' | '.' | ' ' | alphanum)+ ']
+#   BRACKET: '[[]'
+#   COMMENT: '[#' not-rbracket* ']'
+#
+# When used with the split() method, the return value will be composed of
+# non-matching text and the two paren groups (DIRECTIVE and BRACKET). Since
+# the COMMENT matches are not placed into a group, they are considered a
+# "splitting" value and simply dropped.
+#
+_re_parse = re.compile('(\[[-\w. ]+\])|(\[\[\])|\[#[^\]]*\]')
 
 # block commands and their argument counts
 _block_cmd_specs = { 'if-any':1, 'if-index':2, 'for':1 }
@@ -54,6 +66,7 @@ class Template:
     # parse the program into: (TEXT DIRECTIVE BRACKET)* TEXT
     # DIRECTIVE will be '[directive]' or None
     # BRACKET will be '[[]' or None
+    # note that comments are automatically dropped
     parts = _re_parse.split(text)
 
     program = [ ]
@@ -74,9 +87,6 @@ class Template:
         # DIRECTIVE is present.
         args = string.split(piece[1:-1])
         cmd = args[0]
-        if cmd == '#':
-          # comment
-          continue
         if cmd == 'else':
           if len(args) > 1:
             raise ArgCountSyntaxError()
