@@ -715,6 +715,7 @@ def prep_tags(request, tags):
   links = [ ]
   for tag in tags:
     links.append(_item(name=tag.name, href=url+tag.name))
+  links.sort(lambda a, b: cmp(a.name, b.name))
   return links
 
 def is_viewable_image(mime_type):
