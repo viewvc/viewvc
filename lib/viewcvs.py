@@ -1020,7 +1020,7 @@ def view_markup(request):
         'log' : htmlify(entry.log),
         'state' : entry.state,
         'size' : entry.size,
-        'vendor_branch' : ezt.boolean(0),
+        'vendor_branch' : None,
         })
 
       revs = logs.keys()
@@ -1276,12 +1276,12 @@ def view_directory(request):
     'sortdir_up_href' :    request.get_url(params={'sortdir': 'up'}),
     'num_files' :  num_files,
     'files_shown' : num_displayed,
-    'no_match' : num_files and not num_displayed and 'yes' or '',
-    'unreadable' : unreadable and 'yes' or '',
+    'no_match' : ezt.boolean(num_files and not num_displayed),
+    'unreadable' : ezt.boolean(unreadable),
 
     # have_logs will be 0 if we only have dirs and !show_subdir_lastmod.
     # in that case, we don't need the extra columns
-    'have_logs' : have_logs and 'yes' or '',
+    'have_logs' : ezt.boolean(have_logs),
 
     ### in the future, it might be nice to break this path up into
     ### a list of elements, allowing the template to display it in
