@@ -26,7 +26,7 @@ import string
 from svn import fs, repos, core, delta
 
 # Subversion filesystem paths are '/'-delimited, regardless of OS.
-def fs_path_join(base, relative):
+def _fs_path_join(base, relative):
   joined_path = base + '/' + relative
   parts = filter(None, string.split(joined_path, '/'))
   return string.join(parts, '/')
@@ -78,7 +78,7 @@ class NodeHistory:
     self.histories[revision] = path
     
   
-def get_history(svnrepos, full_name):
+def _get_history(svnrepos, full_name):
   # Instantiate a NodeHistory collector object.
   history = NodeHistory()
 
@@ -155,7 +155,7 @@ def get_revision_info(svnrepos):
   return date, author, msg, changes
 
 
-def log_helper(svnrepos, rev, path, pool):
+def _log_helper(svnrepos, rev, path, pool):
   rev_root = fs.revision_root(svnrepos.fs_ptr, rev, pool)
 
   # Was this path@rev the target of a copy?
@@ -183,26 +183,26 @@ def fetch_log(svnrepos, full_name, which_rev=None):
     if (which_rev < 0) \
        or (which_rev > fs.youngest_rev(svnrepos.fs_ptr, svnrepos.pool)):
       raise vclib.InvalidRevision(which_rev)
-    entry = log_helper(svnrepos, which_rev, full_name, svnrepos.pool)
+    entry = _log_helper(svnrepos, which_rev, full_name, svnrepos.pool)
     if entry:
       logs[which_rev] = entry
   else:
-    history_set = get_history(svnrepos, full_name)
+    history_set = _get_history(svnrepos, full_name)
     history_revs = history_set.keys()
     history_revs.sort()
     history_revs.reverse()
     subpool = core.svn_pool_create(svnrepos.pool)
     for history_rev in history_revs:
       core.svn_pool_clear(subpool)
-      entry = log_helper(svnrepos, history_rev, history_set[history_rev],
-                         subpool)
+      entry = _log_helper(svnrepos, history_rev, history_set[history_rev],
+                          subpool)
       if entry:
         logs[history_rev] = entry        
     core.svn_pool_destroy(subpool)
   return alltags, logs
 
 
-def get_last_history_rev(svnrepos, path, pool):
+def _get_last_history_rev(svnrepos, path, pool):
   history = fs.node_history(svnrepos.fsroot, path, pool)
   history = fs.history_prev(history, 0, pool)
   history_path, history_rev = fs.history_location(history, pool);
@@ -217,8 +217,8 @@ def get_logs(svnrepos, full_name, files):
   subpool = core.svn_pool_create(svnrepos.pool)
   for file in files:
     core.svn_pool_clear(subpool)
-    path = fs_path_join(full_name, file.name)
-    rev = get_last_history_rev(svnrepos, path, subpool)
+    path = _fs_path_join(full_name, file.name)
+    rev = _get_last_history_rev(svnrepos, path, subpool)
     datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, subpool)
     date = _datestr_to_date(datestr, subpool)
     file.rev = rev
@@ -300,7 +300,7 @@ class SubversionRepository(vclib.Repository):
     assert rev is None or int(rev) == self.rev
     path = self._getpath(path_parts)
     fp = StreamPipe(fs.file_contents(self.fsroot, path, self.pool))
-    revision = str(get_last_history_rev(self, path, self.pool))
+    revision = str(_get_last_history_rev(self, path, self.pool))
     return fp, revision
 
   def listdir(self, path_parts):
