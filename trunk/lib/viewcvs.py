@@ -1071,8 +1071,8 @@ def prepare_hidden_values(params):
                          (name, value))
   return string.join(hidden_values, '')
 
-def sort_file_data(file_data, sortdir, sortby, fileinfo, roottype):
-  def file_sort_cmp(file1, file2, sortby=sortby, fileinfo=fileinfo):
+def sort_file_data(file_data, sortdir, sortby):
+  def file_sort_cmp(file1, file2, sortby=sortby):
     if file1.kind == vclib.DIR:        # is_directory
       if file2.kind == vclib.DIR:
         # both are directories. sort on name.
@@ -1085,18 +1085,18 @@ def sort_file_data(file_data, sortdir, sortby, fileinfo, roottype):
 
     # we should have data on these. if not, then it is because we requested
     # a specific tag and that tag is not present on the file.
-    info1 = fileinfo.get(file1.name, bincvs._FILE_HAD_ERROR)
-    info2 = fileinfo.get(file1.name, bincvs._FILE_HAD_ERROR)
+    info1 = file1.rev or bincvs._FILE_HAD_ERROR
+    info2 = file2.rev or bincvs._FILE_HAD_ERROR
     if info1 != bincvs._FILE_HAD_ERROR and info2 != bincvs._FILE_HAD_ERROR:
       # both are files, sort according to sortby
       if sortby == 'rev':
-        return revcmp(info1.rev, info2.rev)
+        return revcmp(file1.rev, file2.rev)
       elif sortby == 'date':
-        return cmp(info2.date, info1.date)        # latest date is first
+        return cmp(file2.date, file1.date)        # latest date is first
       elif sortby == 'log':
-        return cmp(info1.log, info2.log)
+        return cmp(file1.log, file2.log)
       elif sortby == 'author':
-        return cmp(info1.author, info2.author)
+        return cmp(file1.author, file2.author)
       else:
         # sort by file name
         return cmp(file1.name, file2.name)
@@ -1218,22 +1218,11 @@ def view_directory_cvs(request, data, sortby, sortdir):
           file.in_attic = 1
           file_data.append(file)
 
-  # get all the required info
-  rcs_files = []
-  for file in file_data:
-    if not file.verboten:
-      if file.kind == vclib.FILE:
-        rcs_files.append(file.in_attic and 'Attic/' + file.name or file.name)
-      elif cfg.options.show_subdir_lastmod and cfg.options.show_logs \
-           and file.kind == vclib.DIR and not file.verboten          \
-           and not file.name == 'Attic':
-        newest_file = request.repos._newest_file(request.path_parts
-                                                 + [file.name])
-        if newest_file:
-          rcs_files.append(file.name + '/' + newest_file)
+  get_dirs = cfg.options.show_subdir_lastmod and cfg.options.show_logs
 
-  fileinfo, alltags = bincvs.get_logs(cfg.general, full_name,
-                                      rcs_files, view_tag)
+  have_logs, alltags = bincvs.get_logs(request.repos, request.path_parts,
+                                       file_data, view_tag, get_dirs)
+
   # prepare the data that will be passed to the template
   data.update({
     'view_tag' : view_tag,
@@ -1246,18 +1235,16 @@ def view_directory_cvs(request, data, sortby, sortdir):
                                    or cfg.options.use_re_search),
   })
 
-
-
-  # fileinfo will be len==0 if we only have dirs and !show_subdir_lastmod.
+  # have_logs will be 0 if we only have dirs and !show_subdir_lastmod.
   # in that case, we don't need the extra columns
-  if len(fileinfo):
+  if have_logs:
     data['have_logs'] = 'yes'
 
   if search_re:
     data['search_re'] = htmlify(search_re)
 
   # sort with directories first, and using the "sortby" criteria
-  sort_file_data(file_data, sortdir, sortby, fileinfo, request.roottype)
+  sort_file_data(file_data, sortdir, sortby)
 
   num_files = 0
   num_displayed = 0
@@ -1308,26 +1295,23 @@ def view_directory_cvs(request, data, sortby, sortdir):
       row.name = file.name + '/'
       row.type = 'dir'
 
-      info = fileinfo.get(file.name)
-      if info == bincvs._FILE_HAD_ERROR:
+      if file.rev == bincvs._FILE_HAD_ERROR:
         row.cvs = 'error'
 
         unreadable = 1
-      elif info:
+      elif file.rev:
         row.cvs = 'data'
-        row.time = html_time(request, info.date)
-        row.author = info.author
+        row.time = html_time(request, file.date)
+        row.author = file.author
 
         if cfg.options.use_cvsgraph:
           row.graph_href = '&nbsp;' 
         if cfg.options.show_logs:
           row.show_log = 'yes'
-          subfile = info.filename
-          idx = string.find(subfile, '/')
-          row.log_file = subfile[idx+1:]
-          row.log_rev = info.rev
-          if info.log:
-            row.log = format_log(info.log)
+          row.log_file = file.newest_file
+          row.log_rev = file.rev
+          if file.log:
+            row.log = format_log(file.log)
       else:
         row.cvs = 'none'
 
@@ -1341,17 +1325,16 @@ def view_directory_cvs(request, data, sortby, sortdir):
       row.name = file.name
 
       num_files = num_files + 1
-      info = fileinfo.get(file.name)
-      if info == bincvs._FILE_HAD_ERROR:
+      if file.rev == bincvs._FILE_HAD_ERROR:
         row.cvs = 'error'
         rows.append(row)
 
         num_displayed = num_displayed + 1
         unreadable = 1
         continue
-      elif not info:
+      elif not file.rev:
         continue
-      elif hideattic and view_tag and info.state == 'dead':
+      elif hideattic and view_tag and file.state == 'dead':
         continue
       num_displayed = num_displayed + 1
 
@@ -1360,16 +1343,16 @@ def view_directory_cvs(request, data, sortby, sortdir):
                                  where=file_where,
                                  pathtype=vclib.FILE,
                                  params={})
-      row.rev = info.rev
-      row.author = info.author
-      row.state = info.state
+      row.rev = file.rev
+      row.author = file.author
+      row.state = file.state
 
       row.rev_href = request.get_url(view_func=view_auto,
                                      where=file_where,
                                      pathtype=vclib.FILE,
                                      params={'rev': row.rev})
 
-      row.time = html_time(request, info.date)
+      row.time = html_time(request, file.date)
 
       if cfg.options.use_cvsgraph:
          row.graph_href = request.get_url(view_func=view_cvsgraph,
@@ -1378,7 +1361,7 @@ def view_directory_cvs(request, data, sortby, sortdir):
                                           params={})
       if cfg.options.show_logs:
         row.show_log = 'yes'
-        row.log = format_log(info.log)
+        row.log = format_log(file.log)
 
       rows.append(row)
 
@@ -1421,8 +1404,7 @@ def view_directory_svn(request, data, sortby, sortdir):
   where = request.where
 
   file_data = request.repos.listdir(request.path_parts)
-  files = map(lambda x: x.name, file_data)
-  fileinfo, alltags = vclib.svn.get_logs(request.repos, where, files)
+  alltags = vclib.svn.get_logs(request.repos, where, file_data)
 
   data.update({
     'view_tag' : None,
@@ -1441,7 +1423,7 @@ def view_directory_svn(request, data, sortby, sortdir):
   data['jump_rev_hidden_values'] = prepare_hidden_values(params)
 
   # sort with directories first, and using the "sortby" criteria
-  sort_file_data(file_data, sortdir, sortby, fileinfo, request.roottype)
+  sort_file_data(file_data, sortdir, sortby)
 
   num_files = 0
   num_displayed = 0
@@ -1456,14 +1438,10 @@ def view_directory_svn(request, data, sortby, sortdir):
                 author=None, log=None, log_file=None, log_rev=None,
                 show_log=None, state=None)
 
-    info = fileinfo.get(file.name)
-    if info is None:
-      raise debug.ViewcvsException("Error getting info for '%s'" % file.name)
-
-    row.rev = info.rev
-    row.author = info.author or "&nbsp;"
-    row.state = info.state
-    row.time = html_time(request, info.date)
+    row.rev = file.rev
+    row.author = file.author or "&nbsp;"
+    row.state = ''
+    row.time = html_time(request, file.date)
     row.anchor = file.name
 
     if file.kind == vclib.DIR:
@@ -1493,9 +1471,7 @@ def view_directory_svn(request, data, sortby, sortdir):
       num_displayed = num_displayed + 1
       if cfg.options.show_logs:
         row.show_log = 'yes'
-        if not info.log:
-          info.log = ""
-        row.log = format_log(info.log)
+        row.log = format_log(file.log or "")
 
     rows.append(row)
 
