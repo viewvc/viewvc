@@ -30,9 +30,19 @@
 # SUCH DAMAGE.
 #
 # -----------------------------------------------------------------------
+#
+# For tracking purposes, this software is identified by:
+#   $Id$
+#
+# -----------------------------------------------------------------------
 
-import os, sys, string, getopt, re, cvsdbapi
+## BOOTSTRAP
+import sys, os, string
+_viewcvs_root = string.strip(open("/etc/viewcvs/root", "r").read())
+sys.path.append(os.path.join(_viewcvs_root, "lib"))
+##
 
+import getopt, re, cvsdbapi
 
 DEBUG_FLAG = 0
 

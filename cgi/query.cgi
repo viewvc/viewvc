@@ -36,8 +36,13 @@
 #
 # -----------------------------------------------------------------------
 
-import os, string, cgi, types, database, cvsdbapi
+## BOOTSTRAP
+import sys, os, string
+_viewcvs_root = string.strip(open("/etc/viewcvs/root", "r").read())
+sys.path.append(os.path.join(_viewcvs_root, "lib"))
+##
 
+import cgi, cvsdbapi
 
 ## tuple of alternating row colors
 Colors = ("#ccccee", "#ffffff")
@@ -49,7 +54,7 @@ def HTMLHeader():
     
 
 def FormToCheckinQuery(form):
-    query = database.CreateCheckinQuery()
+    query = cvsdbapi.CreateCheckinQuery()
 
     if form.has_key("repository"):
         temp = form["repository"].value
@@ -176,7 +181,10 @@ class HTMLTemplate:
 
 def Main():
     HTMLHeader()
-    template = HTMLTemplate('html-templates/querytemplate.html')
+
+    template_path = os.path.join(
+        _viewcvs_root, "html-templates", "querytemplate.html")
+    template = HTMLTemplate(template_path)
     template.Print1()
     
     form = cgi.FieldStorage()

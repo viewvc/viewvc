@@ -1,4 +1,4 @@
-# $Id$
+# -*- Mode: python -*-
 # -----------------------------------------------------------------------
 # Copyright (C) 2000 Jay Painter. All Rights Reserved.
 #
@@ -26,7 +26,11 @@
 # SUCH DAMAGE.
 #
 # -----------------------------------------------------------------------
-
+#
+# For tracking purposes, this software is identified by:
+#   $Id$
+#
+# -----------------------------------------------------------------------
 
 class EmptyNameSpace:
     "Placehoder empty class for nesting namespaces."
@@ -36,9 +40,9 @@ class EmptyNameSpace:
 
 ## [cvsdb]
 cvsdb = EmptyNameSpace()
-cvsdb.host = 'localhost'
-cvsdb.database_name = 'CVSdb'
+cvsdb.host = 'master'
+cvsdb.database_name = 'bonsai'
 cvsdb.user = 'root'
-cvsdb.passwd = 'ha1ieWa'
+cvsdb.passwd = 'ogieta50'
 cvsdb.readonly_user = 'root'
-cvsdb.readonly_passwd = 'ha1ieWa' 
+cvsdb.readonly_passwd = 'ogieta50' 

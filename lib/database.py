@@ -1,4 +1,4 @@
-# $Id$
+# -*- Mode: python -*-
 # -----------------------------------------------------------------------
 # Copyright (C) 2000 Jay Painter. All Rights Reserved.
 #
@@ -24,6 +24,11 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------
+#
+# For tracking purposes, this software is identified by:
+#   $Id$
 #
 # -----------------------------------------------------------------------
 
