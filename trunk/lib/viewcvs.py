@@ -56,6 +56,7 @@ import time
 import re
 import stat
 import struct
+import types
 
 # these modules come from our library (the stub has set up the path)
 import compat
@@ -1732,14 +1733,31 @@ def logsort_rev_cmp(rev1, rev2):
   # sort highest revision first
   return -revcmp(rev1.rev, rev2.rev)
 
-_re_is_branch = re.compile(r'^((.*)\.)?\b0\.(\d+)$')
+class CVSBranch:
+  def __init__(self, number, rev_order):
+    self.number = number
+    p = string.rfind(number, '.')
+    self.parent_rev = p != -1 and number[:p] or None    
+    for rev in rev_order:
+      if self.holds_rev(rev):
+        self.latest_rev = rev
+        break
+    else:
+      self.latest_rev = None
+
+  def holds_rev(self, rev):
+    if self.number:
+      l = len(self.number)
+      return rev[:l] == self.number and rev[l] == '.'
+    else:
+      return string.count(rev, '.') == 1
+
+_re_branch_rev = re.compile(r'^(?P<base>(?:\d+\.\d+)(?:\.\d+\.\d+)*)'
+                            r'(?:\.0)?\.(?P<branch>\d+)$')
+
 def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
   head, cur_branch, taginfo, revs = bincvs.fetch_log(cfg.general,
                                                      full_name, which_rev)
-
-  if not cur_branch:
-    idx = string.rfind(head, '.')
-    cur_branch = head[:idx]
 
   rev_order = map(lambda entry: entry.rev, revs)
   rev_order.sort(revcmp)
@@ -1750,20 +1768,9 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
   # it's the highest revision on that branch.  Find it by looking through
   # rev_order; it is the first commit listed on the appropriate branch.
   # This is not neccesary the same revision as marked as head in the RCS file.
-  idx = string.rfind(cur_branch, '.')
-  if idx == -1:
-    taginfo['MAIN'] = '0.' + cur_branch
-  else:
-    taginfo['MAIN'] = cur_branch[:idx] + '.0' + cur_branch[idx:]
-
-  for rev in rev_order:
-    idx = string.rfind(rev, '.')
-    if idx != -1 and cur_branch == rev[:idx]:
-      taginfo['HEAD'] = rev
-      break
-  else:
-    idx = string.rfind(cur_branch, '.')
-    taginfo['HEAD'] = cur_branch[:idx]
+  taginfo['MAIN'] = CVSBranch(cur_branch, rev_order)
+  taginfo['HEAD'] = taginfo['MAIN'].latest_rev
+  default_branch = 'MAIN'
 
   # map revision numbers to tag names
   rev2tag = { }
@@ -1782,42 +1789,22 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
   items.sort()
   items.reverse()
   for tag, rev in items:
-    match = _re_is_branch.match(rev)
-    if match:
-      branch_names.append(tag)
-
-      #
-      # A revision number of A.B.0.D really translates into
-      # "the highest current revision on branch A.B.D".
-      #
-      # If there is no branch A.B.D, then it translates into
-      # the head A.B .
-      #
-      # This reasoning also applies to the main branch A.B,
-      # with the branch number 0.A, with the exception that
-      # it has no head to translate to if there is nothing on
-      # the branch, but I guess this can never happen?
-      # (the code below gracefully forgets about the branch
-      # if it should happen)
-      #
-      head = match.group(2) or ''
-      branch = match.group(3)
-      if head:
-        branch_rev = head + '.' + branch
-      else:
-        branch_rev = branch
-      rev = head
-      for r in rev_order:
-        if r == branch_rev or r[:len(branch_rev)+1] == branch_rev + '.':
-          rev = branch_rev
-          break
-      if rev == '':
-        continue
-      if rev != head and head != '':
-        if branch_points.has_key(head):
-          branch_points[head].append(tag)
+    if type(rev) is types.StringType:
+      match = _re_branch_rev.match(rev)
+      if match:
+        base = match.group('base')
+        if branch_points.has_key(base):
+          branch_points[base].append(tag)
         else:
-          branch_points[head] = [ tag ]
+          branch_points[base] = [ tag ]
+        branch = base + '.' + match.group('branch')
+        taginfo[tag] = rev = CVSBranch(branch, rev_order)
+        if rev.number == cur_branch:
+          default_branch = tag        
+
+    if isinstance(rev, CVSBranch):
+      branch_names.append(tag)
+      rev = rev.number
 
     if rev2tag.has_key(rev):
       rev2tag[rev].append(tag)
@@ -1830,26 +1817,17 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
       raise debug.ViewcvsException('Tag %s not defined.' % view_tag,
                                    '404 Tag not found')
 
-    if view_rev[:2] == '0.':
-      view_rev = view_rev[2:]
-      idx = string.rfind(view_rev, '.')
-      branch_point = view_rev[:idx]
-    else:
-      idx = string.find(view_rev, '.0.')
-      if idx == -1:
-        branch_point = view_rev
-      else:
-        view_rev = view_rev[:idx] + view_rev[idx+2:]
-        idx = string.rfind(view_rev, '.')
-        branch_point = view_rev[:idx]
-
     show_revs = [ ]
-    for entry in revs:
-      rev = entry.rev
-      idx = string.rfind(rev, '.')
-      branch = rev[:idx]
-      if branch == view_rev or rev == branch_point:
-        show_revs.append(entry)
+
+    if isinstance(view_rev, CVSBranch):
+      for entry in revs:
+        if entry.rev == view_rev.parent_rev or view_rev.holds_rev(entry.rev):
+          show_revs.append(entry)
+    else:
+      for entry in revs:
+        if entry.rev == view_rev:
+          show_revs.append(entry)
+
   else:
     show_revs = revs
 
@@ -1868,7 +1846,7 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
 
   ### some of this return stuff doesn't make a lot of sense...
   return show_revs, rev_map, rev_order, taginfo, rev2tag, \
-         cur_branch, branch_points, branch_names
+         default_branch, branch_points, branch_names
 
 _re_is_vendor_branch = re.compile(r'^1\.1\.1\.\d+$')
 
@@ -2136,12 +2114,7 @@ def view_log_cvs(request, data, logsort):
     data['graph_href'] = request.get_url(view_func=view_cvsgraph, params={})
 
   if cur_branch:
-    ### note: we really shouldn't have more than one tag in here. a "default
-    ### branch" implies singular :-)  However, if a vendor branch is created
-    ### and no further changes are made (e.g. the HEAD is 1.1.1.1), then we
-    ### end up seeing the branch point tag and MAIN in this list.
-    ### FUTURE: fix all the branch point logic in ViewCVS and get this right.
-    data['branch'] = string.join(rev2tag.get(cur_branch, [ cur_branch ]), ', ')
+    data['branch'] = cur_branch
 
     ### I don't like this URL construction stuff. the value
     ### for head_abs_href vs head_href is a bit bogus: why decide to
@@ -2164,29 +2137,12 @@ def view_log_cvs(request, data, logsort):
   tagitems.sort()
   tagitems.reverse()
 
-  # Build the list of tags and branch tips.
-  def _get_real_rev(tag_rev, revisions):
-    match = _re_is_branch.match(tag_rev)
-    if not match:
-      return tag_rev
-    else:
-      head = match.group(2) or ''
-      branch = match.group(3)
-      if head:
-        branch_rev = head + '.' + branch
-      else:
-        branch_rev = branch
-      for r in revisions:
-        if r == branch_rev or r[:len(branch_rev)+1] == branch_rev + '.':
-          return r
-    return None
-
   data['tags'] = tags = [ ]
   for tag, rev in tagitems:
-    if tag == 'MAIN':
-      real_rev = taginfo['HEAD']
+    if isinstance(rev, CVSBranch):
+      real_rev = rev.latest_rev
     else:
-      real_rev = _get_real_rev(rev, rev_order)
+      real_rev = rev
     if real_rev:
       tags.append(_item(rev=real_rev, name=tag))
         
