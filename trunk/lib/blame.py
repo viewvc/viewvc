@@ -589,18 +589,17 @@ class CVSParser:
 re_includes = re.compile('\\#(\\s*)include(\\s*)"(.*?)"')
 re_filename = re.compile('(.*[\\\\/])?(.+)')
 
-def link_includes(text, root, rcs_path, browse_revtag = 'HEAD'):
+def link_includes(text, root, rcs_path):
   match = re_includes.match(text)
   if match:
     incfile = match.group(3)
-    use_html = 0
-    for trial_root in (rcs_path, rcs_path + path_sep + "Attic", rcs_path + path_sep + ".."):
+    for rel_path in ('', 'Attic', '..'):
+      trial_root = os.path.join(rcs_path, rel_path)
       file = os.path.normpath('%s%s%s%s%s,v' % (root, path_sep, trial_root, path_sep, incfile))
       if os.access(file, os.F_OK):
-        # blame.py
-        file = os.path.normpath('%s%s%s,v' % (trial_root, path_sep, incfile))
-        return '#%sinclude%s"<a href=\'%s?root=%s&file=%s&rev=%s&use_html=%d\'>%s</a>"' % (
-                match.group(1), match.group(2), "blame.py", root, file, browse_revtag, use_html, incfile)
+        return '#%sinclude%s"<a href="%s">%s</a>"' % \
+               (match.group(1), match.group(2),
+                os.path.join(rel_path, incfile), incfile)
   return text
 
 def make_html(root, rcs_path, opt_rev = None):
@@ -684,25 +683,27 @@ def make_html(root, rcs_path, opt_rev = None):
     if old_revision != revision or rev_count > 20:
       revision_width = max(revision_width, len(revision))
 
-      # output = output + "<a href=\"cvsblame.cgi?file=$filename&rev=$revision&root=$root\""
-      if parser.prev_revision.has_key(revision):
-        output = output + " <a href=\"viewcvs.py?diff_mode=context&whitespace_mode=show&root=%s&subdir=%s&command=DIFF_FRAMESET&file=%s&r2=%s&r1=%s\"" % (
-                root, file_head, file_tail, revision, parser.prev_revision[revision])
+      if parser.prev_revision.get(revision):
+        fname = file_tail[:-2]	# strip the ",v"
+        ### need the sticky options! need cvsroot if not-default
+        output = output + ' <a href="%s.diff?r1=%s&amp;r2=%s"' % \
+                 (fname, parser.prev_revision[revision], revision)
+        if 0: # use_layers
+          output = output + " onmouseover='return log(event,\"%s\",\"%s\");'" % (
+                  parser.prev_revision[revision], revision)
+        output = output + ">"
       else:
-        output = output + " <a href=\"viewcvs.py?root=%s&subdir=%s&command=DIRECTORY&file=%s\"" % (
-                root, file_head, file_tail)
+        output = output + " "
         parser.prev_revision[revision] = ''
 
-      if 0: # use_layers
-        output = output + " onmouseover='return log(event,\"%s\",\"%s\");'" % (
-                parser.prev_revision[revision], revision)
-      output = output + ">"
       author = parser.revision_author[revision]
       # $author =~ s/%.*$//;
       author_width = max(author_width, len(author))
       output = output + ('%%-%ds ' % (author_width, )) % (author, )
-      output = output + revision + '</a> '
-      output = output + (' ' * (revision_width - len(revision)))
+      output = output + revision
+      if parser.prev_revision.get(revision):
+        output = output + '</a>'
+      output = output + (' ' * (revision_width - len(revision) + 1))
 
       old_revision = revision
       rev_count = 0
