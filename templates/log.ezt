@@ -51,31 +51,12 @@
     [end]
 
     Revision [is roottype "svn"]<a href="[entries.revision_href]"><b>[entries.rev]</b></a>[else]<b>[entries.rev]</b>[end] - 
-    [if-any is_text]
-      <a href="[entries.href]"
-      [if-any is_text]
-        type="text/plain"
-      [else]
-        [if-any mime_type]
-          type="[mime_type]"
-        [end]
-      [end]>
-      (download)</a>, view 
-      <a href="[entries.text_href]">(text)</a>
-      <a href="[entries.view_href]">(markup)</a> 
+      (<a href="[entries.view_href]">view</a>)
+      (<a href="[entries.download_href]">download</a>)
+      [if-any entries.download_text_href](<a href="[entries.download_text_href]">as text</a>)[end]
 
       [# if you don't want to allow annotation, then remove this line]
-      [is roottype "svn"][else]<a href="[entries.annotate_href]">(annotate)</a>[end]
-    [else]
-      [if-any viewable]
-        , <a href="[entries.view_href]">(view)</a>
-      [else]
-        , <a href="[entries.href]"
-          [if-any mime_type]
-            type="[mime_type]"
-          [end]>(view/download)</a>
-      [end]
-    [end]
+      [is roottype "svn"][else](<a href="[entries.annotate_href]">annotate</a>)[end]
 
     [# if you don't want to allow select for diffs then remove this section]
     [is entries.rev rev_selected]
