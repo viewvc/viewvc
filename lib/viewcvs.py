@@ -1,3 +1,63 @@
+#!/usr/bin/python
+# -*-python-*-
+#
+# Copyright (C) 1999-2000 The ViewCVS Group. All Rights Reserved.
+#
+# By using this file, you agree to the terms and conditions set forth in
+# the LICENSE.html file which can be found at the top level of the ViewCVS
+# distribution or at http://www.lyra.org/viewcvs/license-1.html.
+#
+# Contact information:
+#   Greg Stein, PO Box 760, Palo Alto, CA, 94302
+#   gstein@lyra.org, http://www.lyra.org/viewcvs/
+#
+# -----------------------------------------------------------------------
+#
+# viewcvs: View CVS repositories via a web browser
+#
+# -----------------------------------------------------------------------
+#
+# This software is based on "cvsweb" by Henner Zeller (which is, in turn,
+# derived from software by Bill Fenner, with additional modifications by
+# Henrik Nordstrom and Ken Coar). The cvsweb distribution can be found
+# on Zeller's site:
+#   http://stud.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi/
+#
+# -----------------------------------------------------------------------
+#
+
+__version__ = '0.6-dev'
+
+#########################################################################
+#
+# INSTALL-TIME CONFIGURATION
+#
+# These values will be set during the installation process. During
+# development, they will remain None.
+#
+
+CONF_PATHNAME = None
+
+#########################################################################
+
+# standard modules that we know are in the path or builtin
+import sys
+import os
+import cgi
+import string
+import urllib
+import mimetypes
+import time
+import re
+import stat
+import struct
+
+# these modules come from our library (the stub has set up the path)
+import compat
+import config
+import popen
+
+#########################################################################
 
 checkout_magic_path = '~checkout~'
 viewcvs_mime_type = 'text/vnd.viewcvs-markup'
@@ -2427,17 +2487,18 @@ def main():
     error('%s: unknown location' % request.url, '404 Not Found')
 
 
-try:
-  main()
-except SystemExit, e:
-  # don't catch SystemExit (caused by sys.exit()). propagate the exit code
-  sys.exit(e[0])
-except:
-  info = sys.exc_info()
-  html_header('Python Exception Occurred')
-  import traceback
-  lines = apply(traceback.format_exception, info)
-  print '<pre>'
-  print cgi.escape(string.join(lines, ''))
-  print '</pre>'
-  html_footer()
+def run_cgi():
+  try:
+    main()
+  except SystemExit, e:
+    # don't catch SystemExit (caused by sys.exit()). propagate the exit code
+    sys.exit(e[0])
+  except:
+    info = sys.exc_info()
+    html_header('Python Exception Occurred')
+    import traceback
+    lines = apply(traceback.format_exception, info)
+    print '<pre>'
+    print cgi.escape(string.join(lines, ''))
+    print '</pre>'
+    html_footer()
