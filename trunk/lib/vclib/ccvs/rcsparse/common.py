@@ -42,6 +42,8 @@ class Sink:
     pass
   def set_revision_info(self, revision, log, text):
     pass
+  def admin_completed(self):
+    pass
   def tree_completed(self):
     pass
   def parse_completed(self):
@@ -229,6 +231,10 @@ class _Parser:
     self.sink = sink
 
     self.parse_rcs_admin()
+
+    # let sink know when the admin section has been completed
+    self.sink.admin_completed()
+
     self.parse_rcs_tree()
 
     # many sinks want to know when the tree has been completed so they can

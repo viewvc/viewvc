@@ -30,14 +30,13 @@ import time
 import compat
 import popen
 
-class BinCVSRepository(vclib.Repository):
-  def __init__(self, name, rootpath, rcs_paths):
+class CVSRepository(vclib.Repository):
+  def __init__(self, name, rootpath):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
 
     self.name = name
     self.rootpath = rootpath
-    self.rcs_paths = rcs_paths
 
   def itemtype(self, path_parts):
     basepath = self._getpath(path_parts)
@@ -79,6 +78,14 @@ class BinCVSRepository(vclib.Repository):
             data.append(CVSDirEntry(file[:-2], kind, verboten, 1))
 
     return data
+    
+  def _getpath(self, path_parts):
+    return apply(os.path.join, (self.rootpath,) + tuple(path_parts))
+
+class BinCVSRepository(CVSRepository):
+  def __init__(self, name, rootpath, rcs_paths):
+    CVSRepository.__init__(self, name, rootpath)
+    self.rcs_paths = rcs_paths
 
   def openfile(self, path_parts, rev=None):
     if not rev or rev == 'HEAD' or rev == 'MAIN':
@@ -159,9 +166,23 @@ class BinCVSRepository(vclib.Repository):
       cvs_tags
         dictionary of Tag objects for all tags encountered
     """
-    revs, tags = _file_log(self, path_parts, rev)
+
+    # Invoke rlog
+    args = self._getpath(path_parts) + ',v',
+    fp = self.rcs_popen('rlog', args, 'rt', 0)
+    filename, default_branch, tags, eof = _parse_log_header(fp)
+
+    # Retrieve revision objects
+    revs = []
+    while not eof:
+      revision, eof = _parse_log_entry(fp)
+      if revision:
+        revs.append(revision)
+
+    filtered_revs = _file_log(revs, tags, default_branch, rev)
+
     options['cvs_tags'] = tags
-    return revs
+    return filtered_revs
 
   def rcs_popen(self, rcs_cmd, rcs_args, mode, capture_err=1):
     if self.rcs_paths.cvsnt_exe_path:
@@ -173,16 +194,14 @@ class BinCVSRepository(vclib.Repository):
       args = rcs_args
     return popen.popen(cmd, args, mode, capture_err)
 
-  def _getpath(self, path_parts):
-    return apply(os.path.join, (self.rootpath,) + tuple(path_parts))
-
 class CVSDirEntry(vclib.DirEntry):
   def __init__(self, name, kind, verboten, in_attic):
     vclib.DirEntry.__init__(self, name, kind, verboten)
     self.in_attic = in_attic
 
 class Revision(vclib.Revision):
-  def __init__(self, revstr, date, author, dead, changed, log):
+  def __init__(self, revstr, date=None, author=None, dead=None,
+               changed=None, log=None):
     vclib.Revision.__init__(self, _revision_tuple(revstr), revstr,
                             date, author, changed, log, None)
     self.dead = dead
@@ -626,12 +645,8 @@ def _skip_file(fp):
 # ======================================================================
 # Functions for interpreting and manipulating log information
 
-def _file_log(repos, path_parts, filter):
-  """Run rlog on a file, return list of Revisions and a dictionary of Tags"""
-  # Invoke rlog
-  args = repos._getpath(path_parts) + ',v',
-  fp = repos.rcs_popen('rlog', args, 'rt', 0)
-  filename, cur_branch, taginfo, eof = _parse_log_header(fp)
+def _file_log(revs, taginfo, cur_branch, filter):
+  """Augment list of Revisions and a dictionary of Tags"""
 
   # Add artificial ViewCVS tag MAIN. If the file has a default branch, then
   # MAIN acts like a branch tag pointing to that branch. Otherwise MAIN acts
@@ -647,13 +662,6 @@ def _file_log(repos, path_parts, filter):
   for name, num in taginfo.items():
     taginfo[name] = Tag(name, num)
   tags = taginfo.values()
-
-  # Retrieve revision objects
-  revs = []
-  while not eof:
-    rev, eof = _parse_log_entry(fp)
-    if rev:
-      revs.append(rev)
 
   # Set view_tag to a Tag object in order to filter results. We can filter by
   # revision number or branch number
@@ -700,7 +708,7 @@ def _file_log(repos, path_parts, filter):
   else:
     filtered_revs = revs
   
-  return filtered_revs, taginfo
+  return filtered_revs
 
 def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
   alltags = {           # all the tags seen in the files of this dir
@@ -717,21 +725,9 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
 
     while len(chunk) < max_args and entries_idx < entries_len:
       entry = entries[entries_idx]
-
-      path = name = None
-      if not entry.verboten:
-        if entry.kind == vclib.FILE:
-          path = entry.in_attic and 'Attic' or ''
-          name = entry.name
-        elif entry.kind == vclib.DIR and get_dirs and entry.name != 'Attic':
-          assert not entry.in_attic
-          entry.newest_file = _newest_file(os.path.join(dirpath, entry.name))
-          if entry.newest_file:
-            path = entry.name
-            name = entry.newest_file
-
-      if name:
-        entry.path = os.path.join(dirpath, path, name + ',v')
+      path = _log_path(entry, dirpath, get_dirs)
+      if path:
+        entry.path = path
         entry.idx = entries_idx
         chunk.append(entry)
 
@@ -855,6 +851,23 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
         _skip_file(rlog)
 
     rlog.close()
+
+def _log_path(entry, dirpath, getdirs):
+  path = name = None
+  if not entry.verboten:
+    if entry.kind == vclib.FILE:
+      path = entry.in_attic and 'Attic' or ''
+      name = entry.name
+    elif entry.kind == vclib.DIR and getdirs and entry.name != 'Attic':
+      assert not entry.in_attic
+      entry.newest_file = _newest_file(os.path.join(dirpath, entry.name))
+      if entry.newest_file:
+        path = entry.name
+        name = entry.newest_file
+
+  if name:
+    return os.path.join(dirpath, path, name + ',v')
+  return None
 
 def fetch_log(rcs_paths, full_name, which_rev=None):
   if which_rev:
