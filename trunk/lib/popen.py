@@ -41,8 +41,8 @@ def popen(cmd, args, mode, capture_err=1):
     #debug.PrintStackTrace(command)
 
     if mode.find('r') >= 0:
-      hStdIn = None        
-      
+      hStdIn = None
+
       if debug.SHOW_CHILD_PROCESSES:
         dbgIn, dbgOut = None, StringIO.StringIO()
 
@@ -53,19 +53,19 @@ def popen(cmd, args, mode, capture_err=1):
           dbgErr = dbgOut
         else:
           dbgErr = StringIO.StringIO()
-          x, hStdErr = win32popen.MakeSpyPipe(None, 1, (dbgErr,))  
+          x, hStdErr = win32popen.MakeSpyPipe(None, 1, (dbgErr,))
       else:
         handle, hStdOut = win32popen.CreatePipe(0, 1)
         if capture_err:
           hStdErr = hStdOut
         else:
-          hStdErr = None
+          hStdErr = win32popen.NullFile(1)
 
     else:
       if debug.SHOW_CHILD_PROCESSES:
         dbgIn, dbgOut, dbgErr = StringIO.StringIO(), StringIO.StringIO(), StringIO.StringIO()
         hStdIn, handle = win32popen.MakeSpyPipe(1, 0, (dbgIn,))
-        x, hStdOut = win32popen.MakeSpyPipe(None, 1, (dbgOut,))        
+        x, hStdOut = win32popen.MakeSpyPipe(None, 1, (dbgOut,))
         x, hStdErr = win32popen.MakeSpyPipe(None, 1, (dbgErr,))
       else:
         hStdIn, handle = win32popen.CreatePipe(0, 1)
@@ -76,7 +76,7 @@ def popen(cmd, args, mode, capture_err=1):
 
     if debug.SHOW_CHILD_PROCESSES:
       debug.Process(command, dbgIn, dbgOut, dbgErr)
-    
+
     return _pipe(win32popen.File2FileObject(handle, mode), phandle)
 
   # flush the stdio buffers since we are about to change the FD under them
@@ -147,17 +147,17 @@ def pipe_cmds(cmds):
   from writing to the standard out until the last process has terminated.
   """
   if sys.platform == "win32":
-  
+
     if debug.SHOW_CHILD_PROCESSES:
       dbgIn = StringIO.StringIO()
       hStdIn, handle = win32popen.MakeSpyPipe(1, 0, (dbgIn,))
-      
+
       i = 0
       for cmd in cmds:
         i = i + 1
-        
+
         dbgOut, dbgErr = StringIO.StringIO(), StringIO.StringIO()
-        
+
         if i < len(cmds):
           nextStdIn, hStdOut = win32popen.MakeSpyPipe(1, 1, (dbgOut,))
           x, hStdErr = win32popen.MakeSpyPipe(None, 1, (dbgErr,))
@@ -170,16 +170,16 @@ def pipe_cmds(cmds):
         phandle, pid, thandle, tid = win32popen.CreateProcess(command, hStdIn, hStdOut, hStdErr)
         if debug.SHOW_CHILD_PROCESSES:
           debug.Process(command, dbgIn, dbgOut, dbgErr)
-          
+
         dbgIn = dbgOut
         hStdIn = nextStdIn
 
-    
-    else:  
-  
+
+    else:
+
       hStdIn, handle = win32popen.CreatePipe(1, 0)
       spool = None
-  
+
       i = 0
       for cmd in cmds:
         i = i + 1
@@ -188,19 +188,19 @@ def pipe_cmds(cmds):
         else:
           # very last process
           nextStdIn = None
-          
+
           if sapi.server.inheritableOut:
             # send child output to standard out
             hStdOut = win32popen.MakeInheritedHandle(win32popen.FileObject2File(sys.stdout),0)
             ehandle = None
           else:
             ehandle = win32event.CreateEvent(None, 1, 0, None)
-            x, hStdOut = win32popen.MakeSpyPipe(None, 1, (sapi.server.file(),), ehandle)            
-  
+            x, hStdOut = win32popen.MakeSpyPipe(None, 1, (sapi.server.file(),), ehandle)
+
         command = win32popen.CommandLine(cmd[0], cmd[1:])
         phandle, pid, thandle, tid = win32popen.CreateProcess(command, hStdIn, hStdOut, None)
         hStdIn = nextStdIn
-        
+
     return _pipe(win32popen.File2FileObject(handle, 'wb'), phandle, ehandle)
 
   # flush the stdio buffers since we are about to change the FD under them
@@ -256,7 +256,7 @@ def pipe_cmds(cmds):
   # done with most of the commands. set up the last command to write to stdout
   if not sapi.server.inheritableOut:
     r, w = os.pipe()
-    
+
   pid = os.fork()
   if not pid:
     # in the child (the last command)
@@ -283,7 +283,7 @@ def pipe_cmds(cmds):
 
   # not needed any more
   os.close(prev_r)
-  
+
   if not sapi.server.inheritableOut:
     os.close(w)
     thread = _copy(r, sapi.server.file())
@@ -323,7 +323,7 @@ class _pipe:
         self.wait_for = (child_pid,)
     else:
       self.thread = thread
-      
+
   def eof(self):
     if sys.platform == "win32":
       r = win32event.WaitForMultipleObjects(self.wait_for, 1, 0)
