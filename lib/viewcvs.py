@@ -1195,28 +1195,12 @@ def view_directory_cvs(request, data, sortby, sortdir):
   search_re = query_dict.get('search', '')
 
   # Search current directory
-  file_data = request.repos.listdir(request.path_parts)
+  file_data = request.repos.listdir(request.path_parts,
+                                    not hideattic or view_tag)
 
   if cfg.options.use_re_search and search_re:
     file_data = search_files(request.repos, request.path_parts,
                              file_data, search_re)
-
-  for file in file_data:
-    file.in_attic = 0
-
-  if not hideattic or view_tag:
-    # if we are not hiding the contents of the Attic dir, or we have a
-    # specific tag, then the Attic may contain files/revs to display.
-    # grab the info for those files, too.
-    try:
-      attic_files = request.repos.listdir(request.path_parts + ['Attic'])
-    except os.error:
-      attic_files = []
-    else:
-      for file in attic_files:
-        if file.kind != vclib.DIR: # Attic shouldn't have subdirectories...
-          file.in_attic = 1
-          file_data.append(file)
 
   get_dirs = cfg.options.show_subdir_lastmod and cfg.options.show_logs
 
@@ -2549,54 +2533,39 @@ def generate_tarball_cvs(out, request, tar_top, rep_top, reldir, tag, stack=[]):
     return
 
   rep_path = rep_top + reldir
-  rep_dir = string.join([request.repos.rootpath] + rep_top + reldir, '/')
   tar_dir = string.join(tar_top + reldir, '/') + '/'
 
+  entries = request.repos.listdir(rep_path, tag)
+
   subdirs = [ ]
-  rcs_files = [ ]
-  for file in request.repos.listdir(rep_path):
-    if file.verboten:
-      continue
-    if file.kind == vclib.DIR:
+  for file in entries:
+    if not file.verboten and file.kind == vclib.DIR:
       subdirs.append(file.name)
-    else:
-      rcs_files.append(file.name)
-  if tag and 'Attic' in subdirs:
-    for file in request.repos.listdir(rep_path + ['Attic']):
-      if file.kind == vclib.FILE and not file.verboten:
-        rcs_files.append('Attic/' + file.name)
 
   stack.append(tar_dir)
 
-  fileinfo, alltags = bincvs.get_logs(cfg.general, rep_dir, rcs_files, tag)
+  bincvs.get_logs(request.repos, rep_path, entries, tag)
 
-  files = fileinfo.keys()
-  files.sort(lambda a, b: cmp(os.path.basename(a), os.path.basename(b)))
+  entries.sort(lambda a, b: cmp(a.name, b.name))
 
-  for file in files:
-    info = fileinfo.get(file)
-    rev = info.rev
-    date = info.date
-    filename = info.filename
-    state = info.state
-    if state == 'dead':
+  for file in entries:
+    if file.rev is None or file.state == 'dead':
       continue
 
     for dir in stack:
       generate_tarball_header(out, dir)
     del stack[0:]
 
-    info = os.stat(rep_dir + '/' + file + ',v')
+    info = os.stat(file.path)
     mode = (info[stat.ST_MODE] & 0555) | 0200
 
-    rev_flag = '-p' + rev
-    full_name = rep_dir + '/' + file + ',v'
-    fp = bincvs.rcs_popen(cfg.general, 'co', (rev_flag, full_name), 'rb', 0)
+    rev_flag = '-p' + file.rev
+    fp = bincvs.rcs_popen(cfg.general, 'co', (rev_flag, file.path), 'rb', 0)
     contents = fp.read()
     status = fp.close()
 
-    generate_tarball_header(out, tar_dir + os.path.basename(filename),
-                            len(contents), mode, date)
+    generate_tarball_header(out, tar_dir + file.name,
+                            len(contents), mode, file.date)
     out.write(contents)
     out.write('\0' * (511 - ((len(contents) + 511) % 512)))
 
@@ -2613,25 +2582,20 @@ def generate_tarball_svn(out, request, tar_top, rep_top, reldir, tag, stack=[]):
   rep_dir = string.join(rep_top + reldir, '/')
   tar_dir = string.join(tar_top + reldir, '/') + '/'
 
-  files = []
-  subdirs = []
+  entries = request.repos.listdir(rep_top + reldir)
 
-  for entry in request.repos.listdir(rep_top + reldir):
+  subdirs = []
+  for entry in entries:
     if entry.kind == vclib.DIR:
       subdirs.append(entry.name)
-    elif entry.kind == vclib.FILE:
-      files.append(entry.name)
 
-  fileinfo, alltags = vclib.svn.get_logs(request.repos, rep_dir, files)
+  vclib.svn.get_logs(request.repos, rep_dir, entries)
 
   stack.append(tar_dir)
 
-  for file in files:
-    info = fileinfo.get(file)
-    rev = info.rev
-    date = info.date
-    filename = info.filename
-    state = info.state
+  for file in entries:
+    if file.kind != vclib.FILE:
+      continue
 
     for dir in stack:
       generate_tarball_header(out, dir)
@@ -2639,7 +2603,7 @@ def generate_tarball_svn(out, request, tar_top, rep_top, reldir, tag, stack=[]):
 
     mode = 0644
 
-    fp = request.repos.openfile(rep_top + reldir + [file])[0]
+    fp = request.repos.openfile(rep_top + reldir + [file.name])[0]
 
     contents = ""
     while 1:
@@ -2650,8 +2614,8 @@ def generate_tarball_svn(out, request, tar_top, rep_top, reldir, tag, stack=[]):
 
     status = fp.close()
 
-    generate_tarball_header(out, tar_dir + os.path.basename(filename),
-                            len(contents), mode, date)
+    generate_tarball_header(out, tar_dir + file.name,
+                            len(contents), mode, file.date)
     out.write(contents)
     out.write('\0' * (511 - ((len(contents) + 511) % 512)))
 
