@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>ViewCVS: Viewing CVS Repositories</title>
+  </head>
+
+  <body background="/images/chalk.jpg">
+    <h1>ViewCVS: Viewing CVS Repositories</h1>
+
+    <p>
+      The ViewCVS software was inspired by
+      <a href="http://linux.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi"><i>cvsweb</i></a>
+      (by <a href="mailto:zeller@think.de">Henner Zeller</a>).
+      I wanted to make some changes and updates, but cvsweb was
+      implemented in Perl (and rather poorly, IMO). So I undertook the 
+      task to convert the software to
+      <a href="http://www.python.org/"><i>Python</i></a>.
+    </p>
+    <p>
+      ViewCVS can browse directories, change logs, and specific
+      revisions of files. It can display diffs between versions and
+      show selections of files based on tags or branches.
+    </p>
+    <p>
+      ViewCVS is currently at version 0.4. It was a
+      port of the cvsweb script, but has had numerous cleanups and other
+      modifications, based on some of Python's strengths. There is
+      still some "badness" in there, but I've been working on flushing 
+      that out, along with a few new features. The
+      functionality of ViewCVS is equal to that of cvsweb, minus the
+      "annotation" support. Annotation requires read/write access to
+      the CVS repository (at this time), and I believe that is a 
+      Bad Thing to do. One of my tasks will be eliminating the
+      read/write requirement.
+    </p>
+    <p>
+      The software is available for download:
+    </p>
+    <blockquote>
+      <a href="viewcvs-0.4.tar.gz">Version 0.4 of ViewCVS</a>
+    </blockquote>
+    <p>
+      Of course, it is also available through ViewCVS itself:
+    </p>
+    <blockquote>
+      <a href="/cgi-bin/viewcvs.cgi/gjspy/viewcvs/">http://www.lyra.org/cgi-bin/viewcvs.cgi/gjspy/viewcvs/</a>
+    </blockquote>
+
+    <p>
+      ViewCVS requires <strong>Python 1.5</strong> (which has been out 
+      for a couple years and is readily available for your favorite
+      operating system).
+    </p>
+
+    <p>
+      [ <a href="../">up to Python software</a> ]
+      [ <a href="../../">up to Greg's page</a> ]
+    </p>
+
+    <hr width="75&#37;">
+    <h2>Mailing List</h2>
+
+    <p>
+      If you have any comments, questions, suggestions, or patches,
+      then please send them to the
+      <a href="http://mailman.lyra.org/mailman/listinfo/viewcvs">ViewCVS
+	mailing list</a>.
+    </p>
+
+    <hr width="75&#37;">
+    <h2>Additional features over cvsweb</h2>
+
+    <ul>
+      <li>Colorization for Python files</li>
+      <li>Better reporting for unreadable files</li>
+      <li>More robust when given varying <code>rcsdiff</code> or
+	<code>rlog</code> outputs</li>
+      <li>Hard breaks in human-readable diffs</li>
+      <li>
+	The configuration file is optional (you can change the values
+	right in the CGI script and avoid the config file, if you so
+	choose). The config file syntax is also cleaner, since it is
+	human-manageable rather than source code.
+      </li>
+      <li>
+	Directories with a large number of files can be viewed.
+      </li>
+    </ul>
+
+    <p>
+      Future features, coming soon:
+    </p>
+    <ul>
+      <li>UI streamlining/simplification</li>
+      <li>Integration with CVS checkin auto-mail scripts</li>
+      <li>
+	<i>Suggestions? Send mail to the
+	  <a href="mailto:viewcvs@lyra.org">viewcvs@lyra.org</a>
+	  mailing list.
+	</i>
+      </li>
+    </ul>
+
+    <p>
+      Longer term:
+    </p>
+    <ul>
+      <li>Annotation ("blame") support (similar to cvsweb)</li>
+      <li>Integration with an indexer such as LXR</li>
+      <li>Additional colorizers</li>
+    </ul>
+
+    <hr width="75&#37;">
+    <h2>Colorization of Python files</h2>
+
+    <p>
+      Christophe Pelte suggested this feature: colorize Python source
+      files using
+      <a href="http://starship.python.net/crew/lemburg/SoftwareDescriptions.html#py2html.py"><i>py2html</i></a>
+      (by Marc-Andrew Lemburg, based on
+      <a href="http://starship.python.net/crew/just/code/PyFontify.py"><i>PyFontify</i></a>
+      by Just van Rossum). I've added this feature to ViewCVS 0.3,
+      along with a generalized plugin mechanism for custom coloring other
+      types of files. See the instructions within the viewcvs.cgi for
+      setting the <code>py2html_path</code> configuration variable if
+      you want to use this feature.
+    </p>
+
+    <hr>
+    <address><a href="mailto:gstein@lyra.org">Greg Stein</a></address>
+<!-- Created: Fri Dec  3 02:51:37 PST 1999 -->
+<!-- hhmts start -->
+Last modified: Fri Mar 24 03:12:34 PST 2000
+<!-- hhmts end -->
+  </body>
+</html>

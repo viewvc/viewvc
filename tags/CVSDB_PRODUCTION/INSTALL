@@ -1,0 +1,88 @@
+INSTALLING VIEWCVS
+------------------
+
+1) To get viewcvs.cgi to work, make sure that you have Python 1.5
+   installed and a webserver which is capable of executing cgi-scripts
+   (either based on the .cgi extension, or by placing the script
+   within a specific directory).
+
+   You need to have RCS installed. Specifically, "rlog", "rcsdiff",
+   and "co". This script was tested against RedHat's rcs-5.7-10.rpm
+
+   Note, that the viewcvs.cgi-script needs to have READ-ONLY, physical
+   access to the repository (or a copy of it).  Therefore, rsh/ssh or
+   pserver access doesn't work yet.
+
+2) Copy viewcvs.cgi to the cgi-script location of your web server.
+
+   If Python is not located in /usr/local/bin, then you'll need to
+   edit the first line of viewcvs.cgi.
+
+3) Copy viewcvs.conf.dist to the same directory and RENAME it to
+   viewcvs.conf
+
+4) Edit viewcvs.conf for your specific configuration. In particular,
+   examine the following configuration options:
+
+      cvs_roots
+      default_root
+      rcs_path
+      mime_types_file
+
+   There are some other options that are usually nice to change. See
+   viewcvs.conf for more information.
+
+5) That's it. Try it out.
+
+   Warning: ViewCVS has not been tested on web servers operating on the
+            Win32 platform.
+
+
+
+IF YOU HAVE PROBLEMS ...
+------------------------
+
+If you've trouble to make viewcvs.cgi work:
+
+=== If nothing seems to work:
+
+ o check if you can execute CGI-scripts (Apache needs to have an
+   ScriptAlias /cgi-bin or cgi-script Handler defined). Try to 
+   execute a simple CGI-script that often comes with the distribution
+   of the webserver; locate the logfiles and try to find hints
+   which explain the malfunction
+
+ o view the entries in the webserver's error.log
+ 
+ o make sure there is a trailing slash on the URL. for example:
+ 
+     http://www.example.com/cgi-bin/viewcvs.cgi/
+     
+   (ViewCVS should perform a redirection to ensure this, but a report
+    has indicated that it doesn't always do this... please send more
+    of these bug reports if you run into this)
+
+=== If viewcvs seems to work but doesn't show the expected result
+    (Typical error: you can't see any files)
+
+ o check whether the CGI-script has read-permissions to your
+   CVS-Repository. The CGI-script often runs as the user 'nobody' 
+   or 'httpd' ..
+
+ o does viewcvs find your RCS utililties? (edit rcs_path)
+
+=== If something else happens or you can't get it to work:
+
+ o check the ViewCVS home page:
+
+     http://www.lyra.org/greg/python/viewcvs/
+
+ o review the ViewCVS mailing list archive to see if somebody else had
+   the same problem, and it was solved:
+
+     http://mailman.lyra.org/pipermail/viewcvs/
+
+ o send mail to the ViewCVS mailing list: viewcvs@lyra.org
+
+   NOTE: make sure you provide an accurate description of the problem
+         and any relevant tracebacks or error logs.
