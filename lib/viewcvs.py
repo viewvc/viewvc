@@ -159,8 +159,20 @@ class Request:
     self.rootpath = None   # physical path to current root
     self.pathtype = None   # type of path, either vclib.FILE or vclib.DIR
     self.where = None      # path to file or directory in current root
-    self.query_dict = None # validated and cleaned up query options
+    self.query_dict = {}   # validated and cleaned up query options
     self.path_parts = None # for convenience, equals where.split('/')
+
+    # Process the query params
+    for name, values in self.server.params().items():
+      # patch up old queries that use 'cvsroot' to look like they used 'root'
+      if name == 'cvsroot':
+        name = 'root'
+
+      # validate the parameter
+      _validate_param(name, values[0])
+
+      # if we're here, then the parameter is okay
+      self.query_dict[name] = values[0]
 
     # Process PATH_INFO component of query string
     path_info = self.server.getenv('PATH_INFO', '')
@@ -179,46 +191,17 @@ class Request:
         path_parts.pop(0)
         self.view_func = view_checkout
 
-      # see if we are treating the first path component (after any
-      # magic) as the repository root.  if there are parts, and the
-      # first component is a named root, use it as such.  else, we'll be
-      # falling back to the default root a little later.
-      if cfg.options.root_as_url_component and path_parts \
-         and list_roots(cfg).has_key(path_parts[0]):
+    # Figure out root name
+    self.rootname = self.query_dict.get('root')
+    if self.rootname is None:
+      if cfg.options.root_as_url_component and path_parts:
         self.rootname = path_parts.pop(0)
+      else:
+        self.rootname = cfg.general.default_root
 
     self.where = string.join(path_parts, '/')
     self.path_parts = path_parts
 
-    # Done with PATH_INFO, now parse the query params
-    self.query_dict = {}
-
-    for name, values in self.server.params().items():
-      # patch up old queries that use 'cvsroot' to look like they used 'root'
-      if name == 'cvsroot':
-        name = 'root'
-
-      # validate the parameter
-      _validate_param(name, values[0])
-
-      # if we're here, then the parameter is okay
-      self.query_dict[name] = values[0]
-    
-    # Special handling for root parameter
-    root_param = self.query_dict.get('root', None)
-    if root_param:
-      self.rootname = root_param
-      
-      # in root_as_url_component mode, if we see a root in the query
-      # data, we'll redirect to the new url schema.  it may fail, but
-      # at least we tried.
-      if cfg.options.root_as_url_component:
-        del self.query_dict['root']
-        self.server.redirect(self.get_url())
-
-    elif self.rootname is None:
-      self.rootname = cfg.general.default_root
-                                         
     # If this is a forbidden path, stop now
     if path_parts and cfg.is_forbidden(path_parts[0]):
       raise debug.ViewCVSException('Access to "%s" is forbidden.'
