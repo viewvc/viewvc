@@ -165,7 +165,7 @@ def fetch_log(svnrepos, full_name, which_rev=None):
   if which_rev is not None:
     if (which_rev < 0) \
        or (which_rev > fs.youngest_rev(svnrepos.fs_ptr, svnrepos.pool)):
-      raise vclib.InvalidRevision(which_rev);
+      raise vclib.InvalidRevision(which_rev)
     entry = log_helper(svnrepos, which_rev, full_name,
                        show_changed_paths, svnrepos.pool)
     if entry:
@@ -236,11 +236,11 @@ class SubversionRepository(vclib.Repository):
     self.rootpath = rootpath
     self.fs_ptr = repos.svn_repos_fs(self.repos)
     self.rev = rev
-    youngest = fs.youngest_rev(self.fs_ptr, self.pool);
+    youngest = fs.youngest_rev(self.fs_ptr, self.pool)
     if self.rev is None:
       self.rev = youngest
     if (self.rev < 0) or (self.rev > youngest):
-      raise vclib.InvalidRevision(self.rev);
+      raise vclib.InvalidRevision(self.rev)
     self.fsroot = fs.revision_root(self.fs_ptr, self.rev, self.pool)
 
   def __del__(self):

@@ -288,7 +288,7 @@ def build_commit(server, desc, files, cvsroots, viewcvs_link):
     for commit in files:
         ctime = commit.GetTime()
         if not ctime:
-            ctime = "&nbsp";
+            ctime = "&nbsp;"
         else:
           if (cfg.options.use_localtime):
             ctime = time.strftime("%y/%m/%d %H:%M %Z", time.localtime(ctime))
