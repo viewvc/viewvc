@@ -63,7 +63,7 @@ FILE_INFO_LIST = [
     ("lib/database.py", "lib/database.py", 0644, 0, 0),
     ("lib/popen.py", "lib/popen.py", 0644, 0, 0),
     ("lib/py2html.py", "lib/py2html.py", 0644, 0, 0),
-    ("lib/rlog.py", "lib/rlog.py", 0644, 0, 0),
+    ("lib/rlog.py", "lib/rlog.py", 0644, 1, 0),
     
     ("tools/loginfo-handler", "loginfo-handler", 0755, 1, 0),
     ("tools/cvsdbadmin", "cvsdbadmin", 0755, 1, 0),

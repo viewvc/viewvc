@@ -13,7 +13,25 @@
 # -----------------------------------------------------------------------
 #
 
-import os, sys, string, time, re
+#########################################################################
+#
+# INSTALL-TIME CONFIGURATION
+#
+# These values will be set during the installation process. During
+# development, they will remain None.
+#
+
+CONF_PATHNAME = None
+
+#########################################################################
+
+import os, sys, string, re, time, config
+
+## load configuration file, the data is used globally here
+cfg = config.Config()
+cfg.set_defaults()
+cfg.load_config(CONF_PATHNAME)
+
 
 ## RLogOutputParser uses the output of rlog to build a list of Commit
 ## objects describing all the checkins from a given RCS file; this
@@ -88,7 +106,8 @@ class RLog:
         if self.date:
             arg_list.append('-d%s' % (self.date))
 
-        self.cmd = 'rlog %s "%s"' % (string.join(arg_list), self.filename)
+        temp = os.path.join(cfg.general.rcs_path, "rlog")
+        self.cmd = '%s %s "%s"' % (temp, string.join(arg_list), self.filename)
         self.rlog = os.popen(self.cmd, 'r')
 
     def fix_filename(self, filename):
