@@ -3090,9 +3090,7 @@ def view_query(request):
                             (branch == '' or branch_match != 'exact'))
 
   # a link to modify query
-  queryform_href = request.get_url(view_func=view_queryform,
-                                   params=request.query_dict.copy(),
-                                   escape=1)
+  queryform_href = request.get_url(view_func=view_queryform, escape=1)
   # backout link
   params = request.query_dict.copy()
   params['format'] = 'backout'
