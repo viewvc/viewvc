@@ -30,21 +30,21 @@
     [for entries.branch_names]<a name="[entries.branch_names]"></a>
     [end]
 
-    Revision [is roottype "svn"]<a href="[entries.revision_href]"><b>[entries.rev]</b></a>[else]<b>[entries.rev]</b>[end] - 
+    Revision [is roottype "svn"]<a href="[entries.revision_href]"><b>[entries.rev]</b></a>[else]<b>[entries.rev]</b>[end]
+    [is pathtype "file"] - 
       (<a href="[entries.view_href]">view</a>)
       (<a href="[entries.download_href]">download</a>)
       [if-any entries.download_text_href](<a href="[entries.download_text_href]">as text</a>)[end]
-
       [# if you don't want to allow annotation, then remove this line]
       [is roottype "svn"][else](<a href="[entries.annotate_href]">annotate</a>)[end]
 
-    [# if you don't want to allow select for diffs then remove this section]
-    [is entries.rev rev_selected]
-      - <b>[[]selected]</b>
-    [else]
-      - <a href="[diff_url]?r1=[entries.rev][is roottype "svn"]&amp;p1=[entries.filename][end][diff_params]">[[]select for diffs]</a>
+      [# if you don't want to allow select for diffs then remove this section]
+      [is entries.rev rev_selected]
+        - <b>[[]selected]</b>
+      [else]
+        - <a href="[diff_url]?r1=[entries.rev][is roottype "svn"]&amp;p1=[entries.filename][end][diff_params]">[[]select for diffs]</a>
+      [end]
     [end]
-
   [end]
 
   [if-any entries.vendor_branch]
@@ -101,6 +101,7 @@
   [is entries.state "dead"]
     <br><b><i>FILE REMOVED</i></b>
   [else]
+   [is pathtype "file"]
     [if-any entries.prev]
       <br>Diff to <a href="[diff_url]?r1=[entries.prev]&amp;r2=[entries.rev][is roottype "svn"][if-any entries.prev_path]&amp;p1=[entries.prev_path][end]&amp;p2=[entries.filename][end][diff_params]">previous [entries.prev]</a>
       [if-any human_readable]
@@ -135,6 +136,7 @@
         (<a href="[diff_url]?r1=[rev_selected]&amp;r2=[entries.rev][is roottype "svn"][if-any entries.prev_path]&amp;p1=[path_selected][end]&amp;p2=[entries.filename][end]&amp;diff_format=h[diff_params]">colored</a>)
       [end]
     [end]
+   [end]
   [end]
 
 <pre>[entries.html_log]</pre>
@@ -142,7 +144,9 @@
 
 [include "include/paging.ezt"]
 
-[include "include/diff_form.ezt"]
+[is pathtype "file"]
+  [include "include/diff_form.ezt"]
+[end]
 
 [include "include/branch_form.ezt"]
 
