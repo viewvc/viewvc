@@ -346,7 +346,10 @@ def prep_tags(query_dict, file_url, tags):
   return links
 
 def is_viewable(mime_type):
-  return mime_type[:5] == 'text/' or mime_type[:6] == 'image/'
+  return mime_type[:5] == 'text/' or (mime_type in ('image/gif', 'image/jpeg', 'image/png'))
+
+def is_text(mime_type):
+  return mime_type[:5] == 'text/'
 
 _re_rewrite_url = re.compile('((http|ftp)(://[-a-zA-Z0-9%.~:_/]+)([?&]([-a-zA-Z0-9%.~:_]+)=([-a-zA-Z0-9%.~:_])+)*(#([-a-zA-Z0-9%.~:_]+)?)?)')
 _re_rewrite_email = re.compile('([-a-zA-Z0-9_.]+@([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
@@ -1790,6 +1793,7 @@ def view_log(request):
     'kv' : request.kv,
 
     'viewable' : ezt.boolean(request.default_viewable),
+    'is_text'     : ezt.boolean(is_text(request.mime_type)),
     'human_readable' : ezt.boolean(query_dict['diff_format'] == 'h'
                                    or query_dict['diff_format'] == 'l'),
     'log_pagestart' : None,
@@ -1952,7 +1956,7 @@ def view_checkout(request):
                                              request.where,
                                              request.query_dict,
                                              request.mime_type)
-  if mime_type == viewcvs_mime_type:
+  if mime_type == viewcvs_mime_type and is_viewable(mime_type):
     # use the "real" MIME type
     markup_stream(request, fp, revision, request.mime_type)
   else:

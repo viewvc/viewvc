@@ -87,42 +87,42 @@ href="[request.script_name]/*docroot*/help_logtable.html">ViewCVS and CVS Help</
 
     <td>
       [# Tasks column]
-        <a href="[entries.href]" target="cvs_checkout"
-        onClick="window.open('about:blank', 'cvs_checkout',
-        'resizeable=1,menubar=1,scrollbars=1[is mime_type "text/html"],status,
-        toolbar[end]')"><b>Download</b></a><br>
-      [is mime_type "text/plain"]
-      [else]
-         <a href="[entries.text_href]" target="cvs_checkout"
-	  onClick="window.open('about:blank', 'cvs_checkout',
-	  'resizeable=1,scrollbars=1')"><b>View as text</b></a><br>
-      [end]
-      [if-any viewable]
-        <a href="[entries.view_href]"><b>View [entries.rev]</b></a><br>
-      [end]
-      
-      [# if you don't want to allow annotation, then remove this line]
-      <a href="[href]?annotate=[entries.rev][query]"><b>View annotated</b></a><br>
+      [if-any is_text]
+        <a href="[entries.href]"
+          [if-any is_text]
+            type="text/plain"
+          [else]
+            [if-any mime_type]
+              type="[mime_type]"
+            [end]
+          [end]>
+        <b>Download</b></a><br>
+        <a href="[entries.text_href]"><b>View as text</b></a><br>
+        <a href="[entries.view_href]"><b>View markup</b></a><br>
 
+        [# if you don't want to allow annotation, then remove this line]
+        <a href="[href]?annotate=[entries.rev][query]"><b>View annotated</b></a><br>
+      [else]
+        [if-any viewable]
+          <a href="[entries.view_href]"><b>View</b></a><br>
+        [else]
+          <a href="[entries.href]"
+            [if-any mime_type]
+              type="[mime_type]"
+            [end]><b>View/Download</b></a><br>
+        [end]
+      [end]
       </td>
       <td>
+      [is entries.state "dead"]
+        <b><i>FILE REMOVED</i></b>
+      [else]
       [# if you don't want to allow select for diffs then remove this section]
       [is entries.rev rev_selected]
         <b>[[]selected]</b><br>
       [else]
-        <a href="[href]?r1=[entries.rev][query]"><b>[[]select&nbsp;for&nbsp;diffs]</b></a><br>
+      <a href="[href]?r1=[entries.rev][query]"><b>[[]select&nbsp;for&nbsp;diffs]</b></a><br>
       [end]
-
-      [is entries.state "dead"]
-        <b><i>FILE REMOVED</i></b>
-      [else]
-        [if-any entries.prev]
-          <a href="[href].diff?r1=[entries.prev]&r2=[entries.rev][query]"><b>Diff&nbsp;to&nbsp;previous&nbsp;[entries.prev]</b></a><br>
-          [if-any human_readable]
-          [else]
-            <a href="[href].diff?r1=[entries.prev]&r2=[entries.rev]&diff_format=h[query]"><b>colored</b></a><br>
-          [end]
-        [end]
         [if-any entries.to_selected]
           <a href="[href].diff?r1=[rev_selected]&r2=[entries.rev][query]"><b>Diff&nbsp;to&nbsp;selected&nbsp;[rev_selected]</b></a><br>
           [if-any human_readable]
@@ -130,8 +130,15 @@ href="[request.script_name]/*docroot*/help_logtable.html">ViewCVS and CVS Help</
             <a href="[href].diff?r1=[rev_selected]&r2=[entries.rev]&diff_format=h[query]"><b>colored</b></a><br>
           [end]
         [end]
+        [if-any entries.prev]
+          <a href="[href].diff?r1=[entries.prev]&r2=[entries.rev][query]"><b>Diff&nbsp;to&nbsp;previous&nbsp;[entries.prev]</b></a><br>
+          [if-any human_readable]
+          [else]
+            <a href="[href].diff?r1=[entries.prev]&r2=[entries.rev]&diff_format=h[query]"><b>colored</b></a><br>
+          [end]
+        [end]
       [end]  
-    </td>
+      </td>
 
     <td>
       [# Branches column]
