@@ -795,6 +795,20 @@ def is_text(mime_type):
 def is_plain_text(mime_type):
   return not mime_type or mime_type == 'text/plain'
 
+def is_viewable(mime_type):
+  "Determine whether file should be viewed through markup page or sent raw"
+  # If the mime type is text/anything or a supported image format we view
+  # through the markup page. If the mime type is something else, we send
+  # it directly to the browser. That way users can see things like flash
+  # animations, pdfs, word documents, multimedia, etc, which wouldn't be
+  # very useful marked up. If the mime type is totally unknown (happens when
+  # we encounter an unrecognized file extension) we also view it through
+  # the markup page since that's better than sending it text/plain.
+  if (cfg.options.allow_markup and 
+      (is_viewable_image(mime_type) or is_text(mime_type))):
+    return 1
+  return 0
+
 # Regular expressions for location text that looks like URLs and email
 # addresses.  Note that the regexps assume the text is already HTML-encoded.
 _re_rewrite_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)(://[-a-zA-Z0-9%.~:_/]+)((\?|\&amp;)([-a-zA-Z0-9%.~:_]+)=([-a-zA-Z0-9%.~:_])+)*(#([-a-zA-Z0-9%.~:_]+)?)?)')
@@ -1244,14 +1258,6 @@ def make_time_string(date):
   else:
     return time.asctime(time.gmtime(date)) + ' UTC'
 
-def view_auto(request):
-  if (cfg.options.allow_markup
-      and (is_viewable_image(request.mime_type)
-           or is_text(request.mime_type))):
-    view_markup(request)
-  else:
-    view_checkout(request)
-
 def view_markup(request):
   where = request.where
   query_dict = request.query_dict
@@ -1522,6 +1528,7 @@ def view_directory(request):
 
       ### for Subversion, we should first try to get this from the properties
       row.mime_type = guess_mime(file.name)
+      view = is_viewable(row.mime_type) and view_markup or view_checkout
 
       row.href = request.get_url(view_func=view_log,
                                  where=file_where,
@@ -1529,7 +1536,7 @@ def view_directory(request):
                                  params={'rev': str(file.rev)},
                                  escape=1)
 
-      row.rev_href = request.get_url(view_func=view_auto,
+      row.rev_href = request.get_url(view_func=view,
                                      where=file_where,
                                      pathtype=vclib.FILE,
                                      params={'rev': str(file.rev)},
@@ -2067,6 +2074,8 @@ def view_cvsgraph(request):
 
   imagesrc = request.get_url(view_func=view_cvsgraph_image, escape=1)
 
+  view = is_viewable(request.mime_type) and view_markup or view_checkout
+
   # Create an image map
   rcsfile = request.repos.rcsfile(request.path_parts)
   fp = popen.popen(os.path.join(cfg.options.cvsgraph_path, 'cvsgraph'),
@@ -2075,7 +2084,7 @@ def view_cvsgraph(request):
                     "-r", request.repos.rootpath,
                     "-3", request.get_url(view_func=view_log, params={},
                                           escape=1),
-                    "-4", request.get_url(view_func=view_auto, 
+                    "-4", request.get_url(view_func=view, 
                                           params={"rev": None},
                                           escape=1, partial=1),
                     "-5", request.get_url(view_func=view_diff,
@@ -3021,7 +3030,8 @@ def build_commit(request, desc, files):
                                where=filename, pathtype=vclib.FILE,
                                params=params,
                                escape=1)
-    rev_href = request.get_url(view_func=view_auto,
+    view = is_viewable(guess_mime(filename)) and view_markup or view_checkout
+    rev_href = request.get_url(view_func=view,
                                where=filename, pathtype=vclib.FILE,
                                params={'rev': f.GetRevision() },
                                escape=1)
@@ -3215,7 +3225,6 @@ def view_query(request):
 
 _views = {
   'annotate': view_annotate,
-  'auto':     view_auto,
   'co':       view_checkout,
   'diff':     view_diff,
   'dir':      view_directory,
