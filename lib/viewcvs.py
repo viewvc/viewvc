@@ -1190,7 +1190,7 @@ def view_directory(request):
       else:
         row.state = ''
       row.time = html_time(request, file.date)
-      if cfg.options.show_logs and file.log:
+      if cfg.options.show_logs and file.log is not None:
         row.show_log = 'yes'
         row.log = format_log(file.log)
         have_logs = 1
@@ -1255,7 +1255,7 @@ def view_directory(request):
                                      pathtype=vclib.FILE,
                                      params={'rev': str(file.rev)})
 
-      if cfg.options.use_cvsgraph:
+      if cfg.options.use_cvsgraph and request.roottype == 'cvs':
          row.graph_href = request.get_url(view_func=view_cvsgraph,
                                           where=file_where,
                                           pathtype=vclib.FILE,
