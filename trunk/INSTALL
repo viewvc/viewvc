@@ -9,12 +9,12 @@ INSTALLING VIEWCVS
    You need to have RCS installed. Specifically, "rlog", "rcsdiff",
    and "co". This script was tested against RedHat's rcs-5.7-10.rpm
 
-   Note, that the viewcvs.cgi-script needs to have READ-ONLY, physical
-   access to the repository (or a copy of it).  Therefore, rsh/ssh or
+   Note, that the viewcvs.cgi script needs to have READ-ONLY, physical
+   access to the CVS repository (or a copy of it).  Therefore, rsh/ssh or
    pserver access doesn't work yet.
 
    For the checkin database to work, you will need MySQL >= 3.22, 
-   and the Python DBI 2.0 module, MySQLdb.  This was tested with
+   and the Python DBAPI 2.0 module, MySQLdb.  This was tested with
    MySQLdb 1.12.
 
 2) Installation is handled by the ./viewcvs-install script.  Run this
@@ -22,6 +22,16 @@ INSTALLING VIEWCVS
    The default is /usr/local/viewcvs.  The installer sets the install 
    path in some of the files, and ViewCVS cannot be moved to a 
    different path after the install.
+
+   Note: while 'root' is usually required to create /usr/local/viewcvs,
+   ViewCVS does not have to be installed as root, nor does it run as root.
+   It is just as valid to place ViewCVS in a home directory, too.
+
+   Note: viewcvs-install will create directories if needed. It will
+   prompt before overwriting files that may have been modified (such
+   as viewcvs.conf), thus making it safe to install over the top of
+   a previous installation. It will always overwrite program files,
+   however.
 
 3) Edit <install-root>viewcvs.conf for your specific configuration. 
    In particular, examine the following configuration options:
@@ -34,17 +44,23 @@ INSTALLING VIEWCVS
    There are some other options that are usually nice to change. See
    viewcvs.conf for more information.
 
-4) The CGI programs are in <install-root>/*.cgi.  You can symlink to this
+4) The CGI programs are in <install-root>/cgi/.  You can symlink to this
    directory from somewhere in your published HTTP server path if your 
    webserver is configured to follow symbolic links.  You can also copy
-   the installed <install-root>/*.cgi scripts after the install, or just
-   install the whole thing into your published HTTP directory tree.
+   the installed <install-root>/cgi/*.cgi scripts after the install
+   (unlike the other files in ViewCVS, the CGI scripts can be moved).
+
+   NOTE: for security reasons, it is not advisable to install ViewCVS
+   directly into your published HTTP directory tree (due to the MySQL
+   passwords in viewcvs.conf).
 
 5) That's it for repository browsing.  Instructions for getting the
    SQL checkin database working are below.
 
-   Warning: ViewCVS has not been tested on web servers operating on the
-            Win32 platform.
+
+WARNING: ViewCVS has not been tested on web servers operating on the
+         Win32 platform.
+
 
 
 SQL Checkin Database
@@ -79,7 +95,7 @@ there are some additional steps required to get the database working.
       user =             # the read/write database user
       passwd =           # password for read/write database user
       readonly_user =    # the readonly database user -- it's pretty 
-                         # use safe to use the read/write user here
+                         # safe to use the read/write user here
       readonly_passwd =  # password for the readonly user
 
 5) Two programs are provided for updating the checkin database, 
@@ -156,7 +172,7 @@ If you've trouble to make viewcvs.cgi work:
 
  o check the ViewCVS home page:
 
-     http://www.lyra.org/greg/python/viewcvs/
+     http://www.lyra.org/viewcvs/
 
  o review the ViewCVS mailing list archive to see if somebody else had
    the same problem, and it was solved:
