@@ -61,6 +61,14 @@
       the <a href="http://mailman.lyra.org/mailman/listinfo/viewcvs-dev">developer 
       mailing list</a> is recommended in any case.
       </p>
+
+      <h2>Preserving security</h2>
+      <p>
+      Since ViewCVS is used in the internet, security is a major issue.
+      If you need to pass data from the request into an external program, 
+      please don't use <code>os.system()</code> or <code>os.popen()</code>.
+      Please use the module <code>lib/popen</code> that comes with ViewCVS
+      instead.
       </td></tr>
     </table>
 
@@ -68,7 +76,7 @@
     <address><a href="mailto:viewcvs-dev@lyra.org">ViewCVS Group</a></address>
 <!-- Created: Thu Oct 18 09:05:40 CEST 2001 -->
 <!-- hhmts start -->
-Last modified: Sun Oct 21 01:34:39 CEST 2001
+Last modified: Thu Oct 25 08:23:38 CEST 2001
 <!-- hhmts end -->
   </body>
 </html>
