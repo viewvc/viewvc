@@ -439,6 +439,13 @@ def navigate_header(request, swhere, path, filename, rev, title):
         (html_icon('dir'), clickable_path(request, path, 1, 0, 0))
   print '</tr></table>'
 
+def copy_stream(fp):
+  while 1:
+    chunk = fp.read(CHUNK_SIZE)
+    if not chunk:
+      break
+    sys.stdout.write(chunk)
+
 def markup_stream_default(fp):
   print '<pre>'
   while 1:
@@ -1931,18 +1938,18 @@ def view_annotate(request):
 
 
 def cvsgraph_image(cfg, request):
+  "output the image rendered by cvsgraph"
   # this function is derived from cgi/cvsgraphmkimg.cgi
   http_header('image/png')
-  # This statement is very important!  Otherwise you can't garantee the order
-  # that things get printed out to the browser!
-  sys.stdout.flush()
-  command = "%s -c %s -r %s %s,v" % (cfg.options.cvsgraph_path,
-                cfg.options.cvsgraph_conf, request.cvsroot, request.where)
-  if os.system(command) != 0:
-    sys.stderr.write("\nFailed to execute '"+command+"'.\n")
-
+  fp = popen.popen(cfg.options.cvsgraph_path, 
+                               ("-c", cfg.options.cvsgraph_conf,
+                                "-r", request.cvsroot,
+                                request.where + ',v'), 'r')
+  copy_stream(fp)
+  fp.close()
 
 def view_cvsgraph(cfg, request):
+  "output a page containing an image rendered by cvsgraph"
   # this function is derived from cgi/cvsgraphwrapper.cgi
   rev = request.query_dict['graph']
   where = request.where
@@ -1963,29 +1970,23 @@ def view_cvsgraph(cfg, request):
 <body bgcolor="#f0f0f0">
   <center>
   <h1>Revision graph of %(where)s</h1>""" % locals()
-
-
-  # This statement is very important!  Otherwise you can't garantee the order
-  # that things get printed out to the browser!
-  sys.stdout.flush()
-
-
   # Required only if cvsgraph needs to find it's supporting libraries.
   # Uncomment and set accordingly if required.
   #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib'
 
   # Create an image map
-  command = "%s -i -c %s -r %s %s,v" % (cfg.options.cvsgraph_path,
-                cfg.options.cvsgraph_conf, request.cvsroot, where)
-  if os.system(command) != 0:
-    sys.stderr.write("\nFailed to execute '"+command+"'.\n")
-
+  fp = popen.popen(cfg.options.cvsgraph_path, 
+                   ("-i",
+                    "-c", cfg.options.cvsgraph_conf,
+                    "-r", request.cvsroot,
+                    request.where + ',v'), 'r')
+  copy_stream(fp)
+  fp.close()
   print """<img border="0" 
               usemap="#MyMapName" 
               src="%s?graph=%s&makeimage=1%s" 
               alt="Revisions of %s">""" % (request.url, 
                                            rev, request.amp_query, where)
-
   print '</center>'
   html_footer()
 

@@ -61,8 +61,6 @@ ROOT_DIR = "/usr/local/viewcvs-" + version
 FILE_INFO_LIST = [
     ("cgi/viewcvs.cgi", "cgi/viewcvs.cgi", 0755, 1, 0, 0),
     ("cgi/query.cgi", "cgi/query.cgi", 0755, 1, 0, 0),
-    ("cgi/cvsgraphwrapper.cgi", "cgi/cvsgraphwrapper.cgi", 0755, 1, 0, 0),
-    ("cgi/cvsgraphmkimg.cgi", "cgi/cvsgraphmkimg.cgi", 0755, 1, 0, 0),
 
     ("cgi/viewcvs.conf.dist", "viewcvs.conf", 0644, 0,
 	     """Note: If you are upgrading from viewcvs-0.7 or earlier: 
@@ -90,6 +88,11 @@ went into the new files in subdirectory templates.""", 0),
     ("tools/loginfo-handler", "loginfo-handler", 0755, 1, 0, 0),
     ("tools/cvsdbadmin", "cvsdbadmin", 0755, 1, 0, 0),
     ("tools/make-database", "make-database", 0755, 1, 0, 0),
+
+    ("website/index.html", "doc/index.html", 0644, 0, 0, 0),
+    ("website/license-1.html", "doc/license-1.html", 0644, 0, 0, 0),
+    ("website/upgrading.html", "doc/upgrading.html", 0644, 0, 0, 0),
+    ("website/who.html", "doc/who.html", 0644, 0, 0, 0),
     ]
 
 
