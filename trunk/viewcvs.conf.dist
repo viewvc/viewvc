@@ -441,6 +441,7 @@ use_php = 0
 # path to php executable
 php_exe_path = php
 # php_exe_path = /usr/local/bin/php
+# php_exe_path = C:\Program Files\php\cli\php.exe
 
 #
 # ViewCVS has its own set of mappings from filename extensions and filenames
