@@ -48,7 +48,15 @@ import socket
 import select
 import BaseHTTPServer
 
-# Note: import of ViewCVS modules is delayed (see bottom of file)
+if LIBRARY_DIR:
+    sys.path.insert(0, LIBRARY_DIR)
+else:
+    sys.path[:0] = ['lib']
+    os.chdir('lib')
+import sapi
+import viewcvs
+import apache_icons
+import compat; compat.for_standalone()
 
 class Options:
     port = 7467 # default TCP/IP port used for the server
@@ -61,12 +69,14 @@ class Options:
 
 # --- web browser interface: ----------------------------------------------
 
-class HTTP_Header:
-    "small helper class used to patch (modify) viewcvs.http_header function"
+class StandaloneServer(sapi.CgiServer):
     def __init__(self, handler):
+        sapi.CgiServer.__init__(self)
         self.handler = handler
         self.sent = 0
-    def __call__(self, content_type="text/html"):
+        self.inheritableOut = sys.platform != "win32"
+
+    def header(self, content_type='text/html'):
         if not self.sent:
             self.handler.send_header("Content-type", content_type)
             self.handler.end_headers()
@@ -83,6 +93,7 @@ def serve(host, port, callback=None):
             if not self.path or self.path == "/":
                 self.redirect()
             elif self.is_viewcvs():
+                StandaloneServer(self)
                 try:
                     self.run_viewcvs()
                 except IOError:
@@ -193,8 +204,6 @@ If this doesn't work, please click on the link above.
             decoded_query = string.replace(query, '+', ' ')
 
             self.send_response(200)
-            # Patch (replace) the viewcvs.http_header function:
-            viewcvs.http_header = HTTP_Header(handler=self)
 
             # Preserve state, because we execute script in current process:
             save_argv = sys.argv
@@ -202,21 +211,25 @@ If this doesn't work, please click on the link above.
             save_stdout = sys.stdout
             save_stderr = sys.stderr
             # For external tools like enscript we also need to redirect
-            # the real stdout file descriptor:
-            save_realstdout = os.dup(1) 
+            # the real stdout file descriptor. (On windows, reassigning the
+            # sys.stdout variable is sufficient because pipe_cmds makes it
+            # the standard output for child processes.)
+            if sys.platform != "win32": save_realstdout = os.dup(1) 
             try:
                 try:
                     sys.stdout = self.wfile
-                    os.close(1) 
-                    assert os.dup(self.wfile.fileno()) == 1
+                    if sys.platform != "win32":
+                      os.close(1) 
+                      assert os.dup(self.wfile.fileno()) == 1
                     sys.stdin = self.rfile
-                    viewcvs.run_cgi()
+                    viewcvs.main()
                 finally:
                     sys.argv = save_argv
                     sys.stdin = save_stdin
                     sys.stdout.flush()
-                    os.close(1)
-                    assert os.dup(save_realstdout) == 1
+                    if sys.platform != "win32":
+                      os.close(1)
+                      assert os.dup(save_realstdout) == 1
                     sys.stdout = save_stdout
                     sys.stderr = save_stderr
             except SystemExit, status:
@@ -260,6 +273,7 @@ If this doesn't work, please click on the link above.
         # allow tinkering with some configuration settings:
         viewcvs.handle_config()
         if options.repositories:
+            viewcvs.cfg.general.default_root = "Development"
             viewcvs.cfg.general.cvs_roots.update(options.repositories)
         elif viewcvs.cfg.general.cvs_roots.has_key("Development") and \
              not os.path.isdir(viewcvs.cfg.general.cvs_roots["Development"]):
@@ -574,13 +588,5 @@ Available Options:
 """ % locals()
 
 if __name__ == '__main__':
-    if LIBRARY_DIR:
-        sys.path.insert(0, LIBRARY_DIR)
-    else:
-        sys.path[:0] = ['lib']
-        os.chdir('lib')
-    import viewcvs
-    import apache_icons
-    import compat; compat.for_standalone()
     options = Options()
     cli(sys.argv)
