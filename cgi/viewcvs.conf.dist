@@ -440,6 +440,13 @@ disable_enscript_lang =
 allow_tar = 0
 # allow_tar = 1
 
+#
+# Use CvsGraph. See http://www.akhphd.au.dk/~bertho/cvsgraph/ for
+# documentation and download. 
+#
+use_cvsgraph = 0
+# use_cvsgraph = 1
+
 #---------------------------------------------------------------------------
 [vhosts]
 ### DOC
