@@ -58,6 +58,15 @@
       This section discusses how to upgrade ViewCVS 0.9 to version
       1.0 or a later version of the software.
     </p>
+    <h3>CGI Stubs</h3>
+    
+    <p>The CGI stub scripts haved been moved from 
+    <code>&lt;VIEWCVS_INSTALLATION_DIRECTORY&gt;/cgi/</code> to 
+    <code>&lt;VIEWCVS_INSTALLATION_DIRECTORY&gt;/www/cgi/</code>, so you 
+    will need update any ScriptAlias directives pointing to them in 
+    your apache configuration. Also, the contents of these scripts
+    have changed, so you may need to replace copies of the old scripts
+    you put in other directories.</p>
 
     <h3>Checkin Database</h3>
     
