@@ -733,6 +733,7 @@ def common_template_data(request):
     'where' : request.where,
     'roottype' : request.roottype,
     'rootname' : request.rootname,
+    'pathtype' : request.pathtype == vclib.DIR and 'dir' or 'file',
     'nav_path' : clickable_path(request, 1, 0),
   }
   url, params = request.get_link(view_func=view_directory,
