@@ -22,8 +22,13 @@
 #
 
 import os
+import sys
 
 def popen(cmd, args, mode, capture_err=1):
+  # flush the stdio buffers since we are about to change the FD under them
+  sys.stdout.flush()
+  sys.stderr.flush()
+
   r, w = os.pipe()
   pid = os.fork()
   if pid:
@@ -45,6 +50,7 @@ def popen(cmd, args, mode, capture_err=1):
     # hook stdout/stderr to the "write" channel
     os.dup2(w, 1)
     # "close" stdin; the child shouldn't use it
+    ### this isn't quite right... we may want the child to read from stdin
     os.dup2(null, 0)
     # what to do with errors?
     if capture_err:
@@ -55,6 +61,7 @@ def popen(cmd, args, mode, capture_err=1):
     # hook stdin to the "read" channel
     os.dup2(r, 0)
     # "close" stdout/stderr; the child shouldn't use them
+    ### this isn't quite right... we may want the child to write to these
     os.dup2(null, 1)
     os.dup2(null, 2)
 
@@ -69,6 +76,77 @@ def popen(cmd, args, mode, capture_err=1):
   # crap. shouldn't be here.
   sys.exit(127)
 
+def pipe_cmds(cmds):
+  # flush the stdio buffers since we are about to change the FD under them
+  sys.stdout.flush()
+  sys.stderr.flush()
+
+  prev_r, parent_w = os.pipe()
+
+  null = os.open('/dev/null', os.O_RDWR)
+
+  for cmd in cmds[:-1]:
+    r, w = os.pipe()
+    pid = os.fork()
+    if not pid:
+      # in the child
+
+      # hook up stdin to the "read" channel
+      os.dup2(prev_r, 0)
+
+      # hook up stdout to the output channel
+      os.dup2(w, 1)
+
+      # toss errors
+      os.dup2(null, 2)
+
+      # close these extra descriptors
+      os.close(prev_r)
+      os.close(parent_w)
+      os.close(null)
+      os.close(r)
+      os.close(w)
+
+      # time to run the command
+      os.execvp(cmd[0], cmd)
+
+      sys.exit(127)
+
+    # in the parent
+
+    # we don't need these any more
+    os.close(prev_r)
+    os.close(w)
+
+    # the read channel of this pipe will feed into to the next command
+    prev_r = r
+
+  # no longer needed
+  os.close(null)
+
+  # done with most of the commands. set up the last command to write to stdout
+  pid = os.fork()
+  if not pid:
+    # in the child (the last command)
+
+    # hook up stdin to the "read" channel
+    os.dup2(prev_r, 0)
+
+    # close these extra descriptors
+    os.close(prev_r)
+    os.close(parent_w)
+
+    # run the last command
+    os.execvp(cmds[-1][0], cmds[-1])
+
+    sys.exit(127)
+
+  # not needed any more
+  os.close(prev_r)
+
+  # write into the first pipe, wait on the final process
+  return _pipe(os.fdopen(parent_w, 'w'), pid)
+
 
 class _pipe:
   "Wrapper for a file which can wait() on a child process at close time."
@@ -77,10 +155,20 @@ class _pipe:
     self.file = file
     self.child_pid = child_pid
 
+  def eof(self):
+    pid, status = os.waitpid(self.child_pid, os.WNOHANG)
+    if pid:
+      self.file.close()
+      self.file = None
+      return status
+    return None
+
   def close(self):
-    self.file.close()
-    self.file = None
-    return os.waitpid(self.child_pid, 0)[1] or None
+    if self.file:
+      self.file.close()
+      self.file = None
+      return os.waitpid(self.child_pid, 0)[1]
+    return None
 
   def __getattr__(self, name):
     return getattr(self.file, name)
