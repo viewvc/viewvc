@@ -17,6 +17,11 @@
 such as CVS.
 """
 
+# item types returned by Repository.itemtype(). these values are also
+# available as object.type where object is a Versfile or Versdir.
+FILE = 'FILE'
+DIR = 'DIR'
+
 # Developers' note:
 # The only class you need to derive to write a new driver for Versionlib
 # is the Repository class.
@@ -35,25 +40,39 @@ class Repository:
   """
 
   # Public methods ( accessible from the upper layers )
-  def getfile(self, path):
-    """
-    return the versioned file at <path> ( instance of Versfile )
-    Path should be of the form:
-    ["Subdir1","Subdir2","filename"]
-    """
 
-  def getfiles(self, path):
-    """
-    return a dictionary of versioned files. (instance of Versfile )
-    """
+  def getitem(self, path_parts):
+    """Return the item (file or dir) at the given path.
 
-  def getsubdirs(self, path):
+    The result will be an instance of Versfile or Versdir. Before calling
+    this method, you can also use .itemtype() to determine the type of
+    the item at the given path.
+
+    The path is specified as a list of components, relative to the root
+    of the repository. e.g. ["subdir1", "subdir2", "filename"]
     """
-    return the list of the subdirectories in <path> as a list of strings
+    pass
+
+  def itemtype(self, path_parts):
+    """Return the type of the item (file or dir) at the given path.
+
+    The result will be vclib.DIR or vclib.FILE
+
+    The path is specified as a list of components, relative to the root
+    of the repository. e.g. ["subdir1", "subdir2", "filename"]
     """
-  
+    pass
+
   # Private methods ( accessed by Versfile and Revision )
-  
+
+  def _getvf_files(self, path):
+    "Return a dictionary of versioned files. (name : Versfile)"
+    pass
+
+  def _getvf_subdirs(self, path):
+    "Return a dictionary of subdirectories. (name : Versdir)"
+    pass
+
   def _getvf_info(self, target, path):
     """
     This method will had to <target> (expect to be an instance of Versfile)
@@ -106,21 +125,47 @@ class Repository:
 
 # ======================================================================
     
-class Versfile:
-  """
-  class representing a versioned file.
-  
-  Developers: You do not need to derive this class.
-  """
+class Versdir:
+  "Instances represent directories within a repository."
 
+  #
+  # Note to developers: you do not need to derive this class.
+  #
+
+  type = DIR
+
+  def __init__(self, repository, path):
+    assert isinstance(repository, Repository)
+
+    self.repository = repository
+    self.path = path
+
+  def getfiles(self):
+    "Return a dictionary of versioned files. (name : Versfile)"
+    return self.repository._getvf_files(self.path)
+
+  def getsubdirs(self):
+    "Return a dictionary of subdirectories. (name : Versdir)"
+    return self.repository._getvf_subdirs(self.path)
+
+
+# ======================================================================
+    
+class Versfile:
+  "Instances represent a (versioned) file within a repository."
+
+  #
+  # Note to developers: you do not need to derive this class.
+  #
+
+  type = FILE
   names = ("head", "age", "author", "log", "branch", "tags")
 
   def __init__(self, repository, path, tree=None):
-    """
-    Called by Repository.getfile
-    """
-    if not isinstance(repository, Repository):
-      raise TypeError(repository)
+    "Called by Repository.getfile"
+
+    assert isinstance(repository, Repository)
+
     self.repository = repository
     self.path = path
     
@@ -144,15 +189,16 @@ class Versfile:
 
   def _getvf_cofile(self, target):
     return self.repository._getvf_cofile(target, self.path)
+
   
 # ======================================================================
 
 class Revision:
-  """
-  This class represents a revision of a versioned file.
-  
-  Developers: You do not need to derive this class.
-  """
+  "Instances represent a specific revision of a (versioned) file."
+
+  #
+  # Note to developers: you do not need to derive this class.
+  #
 
   names = ("date", "author", "state", "log", "previous", "branches",
            "changes", "tags")
@@ -167,7 +213,7 @@ class Revision:
   # the repository. 
   def __getattr__(self, name):
     if name in self.names:
-      self.versfile._getvf_properties(self,self.rev)
+      self.versfile._getvf_properties(self, self.rev)
       return self.__dict__[name]
     raise AttributeError()    
   
@@ -183,3 +229,13 @@ class Revision:
     for i in self.branches:
       res.append(self.versfile.tree[i])
     return res
+
+  
+# ======================================================================
+
+class Error(Exception):
+  pass
+class ReposNotFound(Error):
+  pass
+class ItemNotFound(Error):
+  pass
