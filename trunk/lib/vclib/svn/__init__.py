@@ -150,6 +150,9 @@ def get_revision_info(svnrepos):
                                     svnrepos.pool)
   date = _datestr_to_date(date, svnrepos.pool)
 
+  ### TODO: Switch to the new repos.ChangeCollector interface (pass in
+  ### a root, get changes with editor.get_changes(), etc.)
+
   # Now, get the changes for the revision
   editor = repos.RevisionChangeCollector(svnrepos.fs_ptr,
                                          svnrepos.rev,
