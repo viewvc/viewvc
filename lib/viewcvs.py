@@ -1057,37 +1057,6 @@ def view_markup(request):
     raise 'pipe error status: %d' % status
   html_footer(request)
 
-def get_last_modified(repos, path_parts, file_data):
-  """Add info about the most recently modified subfile to subdirectory entry
-
-  Adds two new members to directory entries: "newest_file" and "newest_time"
-  """
-
-  lastmod = { }
-  for file in file_data:
-    if not file.kind == vclib.DIR or file.verboten:
-      continue
-
-    file.newest_file = None
-    file.newest_time = 0
-      
-    if file.name == 'Attic':
-      continue      
-
-    pathname = repos._getpath(path_parts + [file.name])
-    subfiles = os.listdir(pathname)
-    for subfile in subfiles:
-      ### filter CVS locks? stale NFS handles?
-      if subfile[-2:] != ',v':
-        continue
-      info = os.stat(os.path.join(pathname, subfile))
-      if not stat.S_ISREG(info[stat.ST_MODE]):
-        continue
-      if info[stat.ST_MTIME] > file.newest_time:
-        file.newest_file = subfile
-        file.newest_time = info[stat.ST_MTIME]
-  return lastmod
-
 def revcmp(rev1, rev2):
   rev1 = map(int, string.split(rev1, '.'))
   rev2 = map(int, string.split(rev2, '.'))
@@ -1249,9 +1218,6 @@ def view_directory_cvs(request, data, sortby, sortdir):
           file.in_attic = 1
           file_data.append(file)
 
-  if cfg.options.show_subdir_lastmod:
-    get_last_modified(request.repos, request.path_parts, file_data)
-
   # get all the required info
   rcs_files = []
   for file in file_data:
@@ -1259,8 +1225,12 @@ def view_directory_cvs(request, data, sortby, sortdir):
       if file.kind == vclib.FILE:
         rcs_files.append(file.in_attic and 'Attic/' + file.name or file.name)
       elif cfg.options.show_subdir_lastmod and cfg.options.show_logs \
-           and file.kind == vclib.DIR and file.newest_file:
-        rcs_files.append(file.name + '/' + file.newest_file)
+           and file.kind == vclib.DIR and not file.verboten          \
+           and not file.name == 'Attic':
+        newest_file = request.repos._newest_file(request.path_parts
+                                                 + [file.name])
+        if newest_file:
+          rcs_files.append(file.name + '/' + newest_file)
 
   fileinfo, alltags = bincvs.get_logs(cfg.general, full_name,
                                       rcs_files, view_tag)
