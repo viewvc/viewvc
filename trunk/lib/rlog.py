@@ -304,9 +304,11 @@ class RLogOutputParser:
             desc_line_list.append(string.rstrip(line))
 
         ## compute time using time routines in seconds from epoc GMT
-        gmt_time = int(
-            time.mktime((year, month, day, hour, minute, second, 0, 0 -1) ) -
-            time.timezone)
+        ## NOTE: mktime returns local time, and it WILL account for
+        ##       daylight savings time if you let it!  We don't!
+        gmt_time = \
+            time.mktime((year, month, day, hour, minute, second, 0, 0, 0)) - \
+            time.timezone
 
         ## now create and return the RLogEntry
         rlog_entry = RLogEntry()
