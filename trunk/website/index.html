@@ -38,6 +38,10 @@
     <blockquote>
       <a href="viewcvs-0.1.tar.gz">Version 0.1 of ViewCVS</a>
     </blockquote>
+    <p>
+      ViewCVS <font color=red>requires <strong>Python
+	1.5.2</strong></font>.
+    </p>
 
     <p>
       If you have any comments, questions, or suggestions, then please 
@@ -50,11 +54,37 @@
       [ <a href="../../">up to Greg's page</a> ]
     </p>
 
+    <hr width="75&#37;">
+    <h2>FAQ</h2>
+
+    <dl>
+      <!-- one of (dd dt) -->
+      <dt><strong>I got an <code>AttributeError: urlencode</code></strong></dt>
+      <dd>
+	If you see the following traceback in your browser:
+	<blockquote>
+	  <pre>
+Traceback (innermost last):
+  File "/home/httpd/cgi-bin/viewcvs.cgi", line 2205, in ?
+    main()
+  File "/home/httpd/cgi-bin/viewcvs.cgi", line 2123, in main
+    query_string = sticky_query(query_dict)
+  File "/home/httpd/cgi-bin/viewcvs.cgi", line 444, in sticky_query
+    bare_query = urllib.urlencode(sticky_dict)
+AttributeError: urlencode
+</pre>
+	</blockquote>
+	This is indicative of using an earlier version of
+	Python. <code>urllib.urlencode()</code> was introduced in
+	Python 1.5.2.
+      </dd>
+    </dl>
+
     <hr>
     <address><a href="mailto:gstein@lyra.org">Greg Stein</a></address>
 <!-- Created: Fri Dec  3 02:51:37 PST 1999 -->
 <!-- hhmts start -->
-Last modified: Fri Dec  3 03:29:57 PST 1999
+Last modified: Fri Dec  3 06:45:20 PST 1999
 <!-- hhmts end -->
   </body>
 </html>
