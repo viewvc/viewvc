@@ -55,7 +55,7 @@ def popen(cmd, args, mode, capture_err=1):
           dbgErr = StringIO.StringIO()
           x, hStdErr = win32popen.MakeSpyPipe(None, 1, (dbgErr,))  
       else:
-        handle, hStdOut = win32popen.CreatePipe(0, 1, 1, 1)
+        handle, hStdOut = win32popen.CreatePipe(0, 1)
         if capture_err:
           hStdErr = hStdOut
         else:
@@ -68,7 +68,7 @@ def popen(cmd, args, mode, capture_err=1):
         x, hStdOut = win32popen.MakeSpyPipe(None, 1, (dbgOut,))        
         x, hStdErr = win32popen.MakeSpyPipe(None, 1, (dbgErr,))
       else:
-        hStdIn, handle = win32popen.CreatePipe(0, 1, 1, 1)
+        hStdIn, handle = win32popen.CreatePipe(0, 1)
         hStdOut = None
         hStdErr = None
 
@@ -177,14 +177,14 @@ def pipe_cmds(cmds):
     
     else:  
   
-      hStdIn, handle = win32popen.CreatePipe(1, 1, 0, 1)
+      hStdIn, handle = win32popen.CreatePipe(1, 0)
       spool = None
   
       i = 0
       for cmd in cmds:
         i = i + 1
         if i < len(cmds):
-          nextStdIn, hStdOut = win32popen.CreatePipe(1, 1, 1, 1)
+          nextStdIn, hStdOut = win32popen.CreatePipe(1, 1)
         else:
           # very last process
           nextStdIn = None
