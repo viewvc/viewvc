@@ -137,9 +137,11 @@
           [for rows.cols]<td>&nbsp;</td>[end]
         [else]
           [if-any rows.graph_href]
-            <td width="1%">&nbsp;<a href="[rows.graph_href]">(graph)</a></td>
+            <td width="1%">&nbsp;</td>
           [end]
-          <td>&nbsp;</td>
+          [if-any rows.show_subdir_lastmod]
+            <td>&nbsp;</td>
+          [end]
           <td>&nbsp;[rows.time]</td>
           [if-any rows.author]
             <td>&nbsp;[rows.author]</td>
