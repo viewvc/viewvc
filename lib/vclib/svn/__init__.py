@@ -235,11 +235,6 @@ class StreamPipe:
 
   def eof(self):
     return self._eof
-    
-def get_file_contents(svnrepos, path):
-  # len = fs.file_length(svnrepos.fsroot, path, svnrepos.pool)
-  stream = fs.file_contents(svnrepos.fsroot, path, svnrepos.pool)
-  return StreamPipe(stream)
 
   
 class SubversionRepository(vclib.Repository):
@@ -280,6 +275,13 @@ class SubversionRepository(vclib.Repository):
     if kind == core.svn_node_file:
       return vclib.FILE
     raise vclib.ItemNotFound(path_parts)
+
+  def openfile(self, path_parts, rev=None):
+    assert rev is None or int(rev) == self.rev
+    path = self._getpath(path_parts)
+    fp = StreamPipe(fs.file_contents(self.fsroot, path, self.pool))
+    revision = str(get_last_history_rev(self, path, self.pool))
+    return fp, revision
 
   def _getpath(self, path_parts):
     return string.join(path_parts, '/')

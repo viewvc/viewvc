@@ -66,6 +66,18 @@ class Repository:
     """
     pass
 
+  def openfile(self, path_parts, rev=None):
+    """Open a file object to read file contents at a given path and revision.
+
+    The return value is a 2-tuple of containg the file object and revision
+    number in canonical form.
+  
+    The path is specified as a list of components, relative to the root
+    of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+    The revision number can be None to access a default revision.  
+    """
+
   # Private methods ( accessed by Versfile and Revision )
 
   def _getvf_files(self, path_parts):
