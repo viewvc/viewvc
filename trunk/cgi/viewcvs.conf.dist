@@ -137,12 +137,12 @@ forbidden =
 #---------------------------------------------------------------------------
 [cvsdb]
 
-host = master
-database_name = bonsai
-user = root
-passwd = ogieta50
-readonly_user = root
-readonly_passwd = ogieta50
+#host = localhost
+#database_name = ViewCVS
+#user = 
+#passwd = 
+#readonly_user = 
+#readonly_passwd = 
 
 #---------------------------------------------------------------------------
 [images]
