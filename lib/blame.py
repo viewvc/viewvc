@@ -40,7 +40,7 @@ import re
 import time
 import math
 import cgi
-import rcsparse
+from vclib.ccvs import rcsparse
 
 class CVSParser(rcsparse.Sink):
   # Precompiled regular expressions
