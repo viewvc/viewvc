@@ -279,6 +279,18 @@ class Request:
     # Make sure path exists
     self.pathtype = _repos_pathtype(self.repos, self.path_parts)
 
+    # If the path doesn't exist, but we have CVS repository, and the
+    # path doesn't already include an 'Attic' component, see if maybe
+    # the thing lives in the Attic.
+    if self.pathtype is None \
+           and self.roottype == 'cvs' \
+           and len(self.path_parts) > 1 \
+           and not self.path_parts[-2] == 'Attic':
+      attic_parts = self.path_parts[0:-1] + ['Attic'] + [self.path_parts[-1]]
+      if _repos_pathtype(self.repos, attic_parts) == vclib.FILE:
+        self.server.redirect(self.get_url(where=string.join(attic_parts, '/'),
+                                          pathtype=vclib.FILE))
+      
     if self.pathtype is None:
       # path doesn't exist, try stripping known fake suffixes
       result = _strip_suffix('.diff', self.where, self.path_parts,        \
@@ -615,7 +627,7 @@ def clickable_path(request, leaf_is_link, drop_leaf):
 def _dir_url(request, where):
   """convenient wrapper for get_url used by clickable_path()"""
   return request.get_url(view_func=view_directory, where=where, 
-                      pathtype=vclib.DIR, params={})
+                         pathtype=vclib.DIR, params={})
 
 
 def prep_tags(request, tags):
