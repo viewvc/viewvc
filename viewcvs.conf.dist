@@ -252,54 +252,6 @@ languages = en-us
 #
 
 #---------------------------------------------------------------------------
-[templates]
-
-# You can override the templates used by various ViewCVS views in this
-# section.  By default, ViewCVS will look for templates in the
-# directory specified by the "template_dir" configuration option (see
-# the documentation for that option for details).  But if you want to
-# use a different template for a particular view, simply uncomment the
-# appropriate option below and specify the currect location of the EZT
-# template file you wish to use for that view.
-# 
-# Templates are specified relative to the installation directory
-# (<VIEWCVS_INSTALL_DIRECTORY>), but absolute paths may also be used.
-#
-# If %lang% occurs in the pathname, then the selected language will be
-# substituted.
-#
-# Note: the selected language is defined by the "languages" item in the
-#       [general] section, and based on the request's Accept-Language
-#       header.
-#
-#directory = templates/directory.ezt
-#directory = templates/dir_alternate.ezt   ### an alternative directory view
-#log = templates/log.ezt
-#log = templates/log_table.ezt  ### a table-based alternative log view
-#query = templates/query.ezt
-#diff = templates/diff.ezt
-#graph = templates/graph.ezt
-#annotate = templates/annotate.ezt
-#markup = templates/markup.ezt
-#revision = templates/revision.ezt
-#query_form = templates/query_form.ezt
-#query_results = templates/query_results.ezt
-#error = templates/error.ezt
-#roots = templates/roots.ezt
-
-#---------------------------------------------------------------------------
-[cvsdb]
-
-enabled = 0
-#host = localhost
-#database_name = ViewCVS
-#user = 
-#passwd = 
-#readonly_user = 
-#readonly_passwd = 
-#row_limit = 1000
-
-#---------------------------------------------------------------------------
 [options]
 ### DOC
 
@@ -536,6 +488,54 @@ use_re_search = 0
 #
 use_pagesize = 0
 # use_pagesize = 20
+
+#---------------------------------------------------------------------------
+[templates]
+
+# You can override the templates used by various ViewCVS views in this
+# section.  By default, ViewCVS will look for templates in the
+# directory specified by the "template_dir" configuration option (see
+# the documentation for that option for details).  But if you want to
+# use a different template for a particular view, simply uncomment the
+# appropriate option below and specify the currect location of the EZT
+# template file you wish to use for that view.
+# 
+# Templates are specified relative to the installation directory
+# (<VIEWCVS_INSTALL_DIRECTORY>), but absolute paths may also be used.
+#
+# If %lang% occurs in the pathname, then the selected language will be
+# substituted.
+#
+# Note: the selected language is defined by the "languages" item in the
+#       [general] section, and based on the request's Accept-Language
+#       header.
+#
+#directory = templates/directory.ezt
+#directory = templates/dir_alternate.ezt   ### an alternative directory view
+#log = templates/log.ezt
+#log = templates/log_table.ezt  ### a table-based alternative log view
+#query = templates/query.ezt
+#diff = templates/diff.ezt
+#graph = templates/graph.ezt
+#annotate = templates/annotate.ezt
+#markup = templates/markup.ezt
+#revision = templates/revision.ezt
+#query_form = templates/query_form.ezt
+#query_results = templates/query_results.ezt
+#error = templates/error.ezt
+#roots = templates/roots.ezt
+
+#---------------------------------------------------------------------------
+[cvsdb]
+
+enabled = 0
+#host = localhost
+#database_name = ViewCVS
+#user = 
+#passwd = 
+#readonly_user = 
+#readonly_passwd = 
+#row_limit = 1000
 
 #---------------------------------------------------------------------------
 [vhosts]
