@@ -46,7 +46,7 @@ find $2 -print | xargs chmod uoa+r
 find $2 -type d -print | xargs chmod uoa+x
 
 # cut the tarball:
-tar cfz - $2 | gzip -9 > $2.tar.gz
+tar cf - $2 | gzip -9 > $2.tar.gz
 # create also a ZIP file for those poor souls :-) still using Windows: 
 zip -qor9 $2.zip $2
 
