@@ -65,7 +65,6 @@ import popen
 import ezt
 import accept
 import vclib
-from vclib import bincvs
 
 debug.t_end('imports')
 
@@ -228,8 +227,9 @@ class Request:
     if cfg.general.cvs_roots.has_key(self.rootname):
       self.rootpath = cfg.general.cvs_roots[self.rootname]
       try:
-        self.repos = bincvs.BinCVSRepository(self.rootname, self.rootpath, 
-                                             cfg.general)
+        import vclib.bincvs
+        self.repos = vclib.bincvs.BinCVSRepository(self.rootname,
+                                                   self.rootpath, cfg.general)
         self.roottype = 'cvs'
       except vclib.ReposNotFound:
         raise debug.ViewCVSException(
@@ -991,7 +991,8 @@ def view_markup(request):
         'branch_points' : None,
         'changed' : entry.changed,
         'log' : htmlify(entry.log),
-        'state' : entry.state,
+        'size' : entry.size,
+        'state' : None,
         'vendor_branch' : None,
         'prev' : None,
         })
@@ -1000,6 +1001,7 @@ def view_markup(request):
       branch = entry.branch_number
       prev = entry.prev or entry.parent
       data.update({
+        'state' : entry.dead and 'dead',
         'prev' : prev and prev.string,
         'vendor_branch' : ezt.boolean(branch and branch[2] % 2 == 1),
         'branches' : string.join(map(lambda x: x.name, entry.branches), ', '),
@@ -1007,8 +1009,6 @@ def view_markup(request):
         'branch_points': string.join(map(lambda x: x.name,
                                          entry.branch_points), ', ')
         })
-    elif request.roottype == 'svn':
-      data['size'] = entry.size
 
   else:
     data['tag'] = query_dict.get('only_with_tag')
@@ -1069,9 +1069,7 @@ def sort_file_data(file_data, sortdir, sortby):
 
     # we should have data on these. if not, then it is because we requested
     # a specific tag and that tag is not present on the file.
-    info1 = file1.rev is not None and file1.rev != bincvs._FILE_HAD_ERROR
-    info2 = file2.rev is not None and file2.rev != bincvs._FILE_HAD_ERROR
-    if info1 and info2:
+    if file1.rev is not None and file2.rev is not None:
       # both are files, sort according to sortby
       if sortby == 'rev':
         return revcmp(file1.rev, file2.rev)
@@ -1081,9 +1079,9 @@ def sort_file_data(file_data, sortdir, sortby):
         return cmp(file1.log, file2.log)
       elif sortby == 'author':
         return cmp(file1.author, file2.author)
-    elif info1:
+    elif file1.rev is not None:
       return -1
-    elif info2:
+    elif file2.rev is not None:
       return 1
 
     # sort by file name
@@ -1152,7 +1150,7 @@ def view_directory(request):
                 author=None, log=None, log_file=None, log_rev=None,
                 show_log=None, state=None)
 
-    if file.rev == bincvs._FILE_HAD_ERROR:
+    if file.log_error:
       row.cvs = 'error'
       unreadable = 1
     elif file.rev is None:
@@ -1161,8 +1159,8 @@ def view_directory(request):
       row.cvs = 'data'
       row.rev = file.rev
       row.author = file.author or "&nbsp;"
-      if request.roottype == 'cvs':
-        row.state = file.state
+      if request.roottype == 'cvs' and file.dead:
+        row.state = 'dead'
       else:
         row.state = ''
       row.time = html_time(request, file.date)
@@ -1195,7 +1193,7 @@ def view_directory(request):
                                  pathtype=vclib.DIR,
                                  params=dir_params)
 
-      if request.roottype == 'cvs' and row.cvs == 'data':
+      if request.roottype == 'cvs' and file.rev is not None:
         if cfg.options.use_cvsgraph:
           row.graph_href = '&nbsp;' 
         if cfg.options.show_logs:
@@ -1210,8 +1208,8 @@ def view_directory(request):
     elif file.kind == vclib.FILE:
       num_files = num_files + 1
       if (request.roottype == 'cvs' and 
-          ((file.rev is None and not file.verboten) or 
-           (hideattic and view_tag and file.state == 'dead'))):
+          ((file.rev is None and not file.log_error and not file.verboten) or 
+           (file.rev is not None and file.dead and hideattic and view_tag))):
         continue
       num_displayed = num_displayed + 1
 
@@ -1411,15 +1409,17 @@ def view_log(request):
 
   entries = [ ]
   name_printed = { }
+  cvs = request.roottype == 'cvs'
   for rev in show_revs:
     entry = _item()
     entry.rev = rev.string
-    entry.state = rev.state
+    entry.state = cvs and rev.dead and 'dead'
     entry.author = rev.author
     entry.changed = rev.changed
     entry.date_str = make_time_string(rev.date)
     entry.ago = html_time(request, rev.date, 1)
     entry.html_log = htmlify(rev.log or "")
+    entry.size = rev.size
 
     entry.view_href = request.get_url(view_func=view_markup,
                                       params={'rev': rev.string})
@@ -1486,7 +1486,6 @@ def view_log(request):
 
       entry.copy_path = rev.copy_path
       entry.filename = rev.filename
-      entry.size = rev.size
 
     # the template could do all these comparisons itself, but let's help
     # it out.
@@ -2237,7 +2236,7 @@ def generate_tarball(out, request, tar_top, rep_top,
 
   for file in entries:
     if (file.kind != vclib.FILE or
-        (cvs and (file.rev is None or file.state == 'dead'))):
+        (cvs and (file.rev is None or file.dead))):
       continue
 
     for dir in stack:
