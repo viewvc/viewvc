@@ -257,8 +257,22 @@ languages = en-us
 
 # root_as_url_component: Interpret the first path component in the URL
 # after the script location as the root to use.  This is an
-# alternative to using the 'root=' query key.
+# alternative to using the "root=" query key. If ViewCVS is configured
+# with multiple repositories, this results in more natural looking
+# ViewCVS URLs and allows you to browse checked out HTML files with 
+# relative links to other repository files within ViewCVS.
+# Note: Enabling this option will break backwards compatibility with
+# any old ViewCVS URL which doesn't have an explicit "root" parameter.
 root_as_url_component = 0
+
+# checkout_magic: Generate checkout links with a magic *checkout* prefix.
+# This option is enabled for backwards compatibility with URLs used by old
+# versions of ViewCVS. If you disable it, old *checkout* URLs will continue
+# to work, but old log page urls which don't have explicit "view=log" 
+# parameters will load checkout pages instead. It is recommended that you
+# disable this option in a fresh viewcvs installation, or if you don't need
+# to support old-style log URLs. 
+checkout_magic = 1
 
 # http_expiration_time: Expiration time (in seconds) for cacheable
 # pages served by ViewCVS.  Note that in most cases, a cache aware
@@ -337,11 +351,6 @@ allow_markup = 1
 # (HTTP_ACCEPT_ENCODING=gzip)
 # [make sure to have gzip in the path]
 allow_compress = 1
-
-# If you have files which automatically refers to other files
-# (such as HTML) then this allows you to browse the checked
-# out files as if outside the repository.
-checkout_magic = 1
 
 # The directory which contains the EZT templates used by ViewCVS to
 # customize the display of the various output views.  ViewCVS looks in

@@ -335,13 +335,16 @@ class Request:
             self.view_func = view_cvsgraph
           else: 
             self.view_func = view_cvsgraph_image
-        elif self.query_dict.has_key('rev'):
+        elif self.query_dict.has_key('rev') or not cfg.options.checkout_magic:
+          # if checkout_magic is disabled the default view is view_checkout
+          # so relative links inside checked out files will work
           if self.query_dict.get('content-type', None) in (viewcvs_mime_type,
                                                            alt_mime_type):
             self.view_func = view_markup
           else:
             self.view_func = view_checkout
         else:
+          # without checkout_magic, the default view for files is view_log
           self.view_func = view_log
 
     # if we have a directory and the request didn't end in "/", then redirect
@@ -417,10 +420,13 @@ class Request:
 
     url = self.script_name
 
-    # add checkout magic if possible
-    if view_func is view_checkout and cfg.options.checkout_magic: 
-      url = url + '/' + checkout_magic_path
+    # no need to explicitly specify checkout view for a file
+    if view_func is view_checkout and pathtype == vclib.FILE:
       view_func = None
+
+      # add checkout magic if neccessary
+      if cfg.options.checkout_magic: 
+        url = url + '/' + checkout_magic_path
 
     # add root to url
     if view_func is not view_roots:
@@ -462,12 +468,6 @@ class Request:
     elif pathtype == vclib.DIR:
       url = url + '/'
 
-    # no need to explicitly specify log view for a file, unless we
-    # want the logs on a specific revision
-    if view_func is view_log and pathtype == vclib.FILE and \
-          not params.has_key('rev'):
-      view_func = None
-
     # no need to explicitly specify directory view for a directory
     if view_func is view_directory and pathtype == vclib.DIR:
       view_func = None
@@ -493,11 +493,6 @@ class Request:
     # there's r1 and r2 parameters
     if view_func is view_diff and params.has_key('r1') \
       and params.has_key('r2'):
-      view_func = None
-
-    # no need to explicitly specify checkout view when
-    # there's a rev parameter
-    if view_func is view_checkout and params.has_key('rev'):
       view_func = None
 
     view_code = _view_codes.get(view_func)
