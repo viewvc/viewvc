@@ -791,10 +791,7 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
         raise vclib.Error('Rlog output ended early. Expected RCS file "%s"'
                           % file.path)
 
-      # check _path_ends_in instead of file.path == filename because of
-      # cvsnt's rlog, which only outputs the base filename 
-      # http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=188
-      if not (filename and _path_ends_in(file.path, filename)):
+      if not (filename and file.path == filename):
         raise vclib.Error('Error parsing rlog output. Expected RCS file "%s"'
                           ', found "%s"' % (file.path, filename))
 
@@ -1001,11 +998,3 @@ def _newest_file(dirpath):
         newest_time = info[stat.ST_MTIME]
 
   return newest_file
-
-def _path_ends_in(path, ending):
-  if path == ending:
-    return 1
-  le = len(ending)
-  if le >= len(path):
-    return 0
-  return path[-le:] == ending and path[-le-1] == os.sep
