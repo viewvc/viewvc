@@ -166,7 +166,7 @@ class Config:
     self.templates.directory = 'templates/directory.ezt'
     self.templates.log = 'templates/log.ezt'
     self.templates.query = 'templates/query.ezt'
-    self.templates.footer = 'templates/footer.ezt'
+    self.templates.footer = 'templates/include/footer.ezt'
     self.templates.diff = 'templates/diff.ezt'
     self.templates.graph = 'templates/graph.ezt'
     self.templates.annotate = 'templates/annotate.ezt'
