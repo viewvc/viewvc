@@ -38,7 +38,6 @@ import sys
 import string
 import cgi
 import time
-import traceback
 
 import cvsdb
 import viewcvs
@@ -281,12 +280,11 @@ def form_to_cvsdb_query(form_data):
 def cvsroot_name_from_path(cvsroot):
     ## we need to resolve the cvsroot path from the database
     ## to the name given to it in the viewcvs.conf file
-    cvsroot_name = ""
-    for (key, value) in cfg.general.cvs_roots.items():
+    for key, value in cfg.general.cvs_roots.items():
         if value == cvsroot:
-            cvsroot_name = key
-            break
-    return cvsroot_name
+            return key
+
+    return None
 
 def build_commit(desc, files):
     ob = _item(num_files=len(files), files=[])
@@ -303,8 +301,6 @@ def build_commit(desc, files):
         else:
             ctime = time.strftime("%y/%m/%d %H:%M", time.localtime(ctime))
 
-        author = commit.GetAuthor() or "&nbsp"
-
         ## make the file link
         file = os.path.join(commit.GetDirectory(), commit.GetFile())
         file_full_path = os.path.join(commit.GetRepository(), file)
@@ -313,21 +309,19 @@ def build_commit(desc, files):
         ## viewcvs.conf file, then don't make the link
         cvsroot_name = cvsroot_name_from_path(commit.GetRepository())
         if cvsroot_name:
-            flink = "<a href=\"viewcvs.cgi/%s?cvsroot=%s\">%s</a>" % (
-                file, cvsroot_name, file_full_path)
+            flink = '<a href="viewcvs.cgi/%s?cvsroot=%s">%s</a>' \
+                    % (file, cvsroot_name, file_full_path)
         else:
             flink = file_full_path
 
-        revision = commit.GetRevision() or "&nbsp"
-        branch = commit.GetBranch() or "&nbsp"
-        plusminus = "%d/%d" % (commit.GetPlusCount(), commit.GetMinusCount())
-
         ob.files.append(_item(date=ctime,
-                              author=author,
+                              author=commit.GetAuthor(),
                               link=flink,
-                              rev=revision,
-                              branch=branch,
-                              plusminus=plusminus))
+                              rev=commit.GetRevision(),
+                              branch=commit.GetBranch(),
+                              plus=int(commit.GetPlusCount()),
+                              minus=int(commit.GetMinusCount()),
+                              ))
 
     return ob
 
@@ -372,8 +366,10 @@ def main():
 
     if form_data.valid:
         commits = run_query(form_data)
+        query = None
     else:
         commits = [ ]
+        query = 'skipped'
 
     data = {
       'cfg' : cfg,
@@ -389,6 +385,7 @@ def main():
       'sortby' : form_data.sortby,
       'date' : form_data.date,
 
+      'query' : query,
       'commits' : commits,
       'num_commits' : len(commits),
       }
