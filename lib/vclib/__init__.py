@@ -78,7 +78,7 @@ class Repository:
 
   def _getvf_info(self, target, path_parts):
     """
-    This method will had to <target> (expect to be an instance of Versfile)
+    This method will add to <target> (expect to be an instance of Versfile)
     a certain number of attributes:
     head (string)
     age (int timestamp)
