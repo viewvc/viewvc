@@ -157,7 +157,7 @@ class CVSParser:
       match = self.is_branch.match(revision)
       if match:
         branch = match.group(1) + '.' + match.group(2)
-        if self.last_revision.has_key(branch) and self.last_revision[branch]:
+        if self.last_revision.get(branch):
           return self.last_revision[branch]
         else:
           return match.group(1)
@@ -191,10 +191,7 @@ class CVSParser:
     count = 0
     while revision:
       path.append(revision)
-      if self.prev_delta.has_key(revision):
-        revision = self.prev_delta[revision]
-      else:
-        revision = None
+      revision = self.prev_delta.get(revision)
     path.reverse()
     path = path[1:]  # Get rid of head revision
 
@@ -460,7 +457,7 @@ class CVSParser:
 
     # The primordial revision is not always 1.1!  Go find it.
     primordial = revision
-    while self.prev_revision.has_key(primordial) and self.prev_revision[primordial] != '':
+    while self.prev_revision.get(primordial):
       primordial = self.prev_revision[primordial]
 
     # Don't display file at all, if -m option is specified and no
@@ -472,8 +469,7 @@ class CVSParser:
     # check-in by moving backward in time from the head revision to the
     # first revision.
     line_count = 0
-    if (self.revision_deltatext.has_key(self.head_revision) and
-                    self.revision_deltatext[self.head_revision]):
+    if self.revision_deltatext.get(self.head_revision):
       tmp_array = string.split(self.revision_deltatext[self.head_revision], '\n')
       line_count = len(tmp_array)
 
