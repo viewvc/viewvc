@@ -1184,6 +1184,8 @@ def view_directory(request):
       if where == '' and ((file == 'CVSROOT' and cfg.options.hide_cvsroot)
                           or cfg.is_forbidden(file)):
         continue
+      if file == 'CVS': # CVS directory in a repository is used for fileattr.
+        continue
 
       print '<tr bgcolor="%s"><td>' % cfg.colors.even_odd[cur_row % 2]
       url = urllib.quote(file) + '/' + request.qmark_query
