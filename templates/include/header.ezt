@@ -5,7 +5,7 @@
 
 <html>
 <head>
-  <title>[page_title]</title>
+  <title>[[][rootname]] [page_title]</title>
   <meta name="generator" content="ViewCVS [vsn]">
   <link rel="stylesheet" href="[docroot]/styles.css" type="text/css">
 </head>
@@ -64,6 +64,6 @@
 </table>
 </div>
 
-<h1>[location]</h1>
+<h1>[page_title]</h1>
 
 

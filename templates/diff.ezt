@@ -1,12 +1,11 @@
 [# setup page definitions]
-  [define location][rootname][if-any where]: [where][end][end]
-  [define page_title][cfg.general.main_title] - diff - [location][end]
+  [define page_title]Diff of /[where][end]
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
 [include "include/header.ezt" "diff"]
 
-<h3 align=center>Diff for /[where] between version [rev1] and [rev2]</h3>
+<h3 align=center></h3>
 
 [if-any raw_diff]
   <pre class="vc_raw_diff">[raw_diff]</pre>
