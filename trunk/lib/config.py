@@ -67,35 +67,64 @@ class Config:
     for section in self._sections:
       setattr(self, section, _sub_config())
 
-  def load_config(self, fname):
+  def load_config(self, fname, vhost=None):
     this_dir = os.path.dirname(sys.argv[0])
     pathname = os.path.join(this_dir, fname)
     parser = ConfigParser.ConfigParser()
     parser.read(pathname)
 
     for section in self._sections:
-      if not parser.has_section(section):
-        continue
+      if parser.has_section(section):
+        self._process_section(parser, section, section)
 
-      sc = getattr(self, section)
+    if vhost:
+      self._process_vhost(parser, vhost)
 
-      for opt in parser.options(section):
-        value = parser.get(section, opt)
-        if opt in self._force_multi_value or section == 'images':
-          value = filter(None, map(string.strip, string.split(value, ',')))
-        else:
-          try:
-            value = int(value)
-          except ValueError:
-            pass
+  def _process_section(self, parser, section, subcfg_name):
+    sc = getattr(self, subcfg_name)
 
-        if opt == 'cvs_roots':
-          roots = { }
-          for root in value:
-            name, path = map(string.strip, string.split(root, ':'))
-            roots[name] = path
-          value = roots
-        setattr(sc, opt, value)
+    for opt in parser.options(section):
+      value = parser.get(section, opt)
+      if opt in self._force_multi_value or subcfg_name == 'images':
+        value = map(string.strip, filter(None, string.split(value, ',')))
+      else:
+        try:
+          value = int(value)
+        except ValueError:
+          pass
+
+      if opt == 'cvs_roots':
+        roots = { }
+        for root in value:
+          name, path = map(string.strip, string.split(root, ':'))
+          roots[name] = path
+        value = roots
+      setattr(sc, opt, value)
+
+  def _process_vhost(self, parser, vhost):
+    canon_vhost = self._find_canon_vhost(parser, vhost)
+    if not canon_vhost:
+      # none of the vhost sections matched
+      return
+
+    cv = canon_vhost + '-'
+    lcv = len(cv)
+    for section in parser.sections():
+      if section[:lcv] == cv:
+        self._process_section(parser, section, section[lcv:])
+
+  def _find_canon_vhost(self, parser, vhost):
+    vhost = string.lower(vhost)
+
+    for canon_vhost in parser.options('vhosts'):
+      value = parser.get('vhosts', canon_vhost)
+      patterns = map(string.lower, map(string.strip,
+                                       filter(None, string.split(value, ','))))
+      for pat in patterns:
+        if fnmatch.fnmatchcase(vhost, pat):
+          return canon_vhost
+
+    return None
 
   def set_defaults(self):
     "Set some default values in the configuration."

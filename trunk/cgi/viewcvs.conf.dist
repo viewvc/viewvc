@@ -430,3 +430,34 @@ enscript_path =
 # enscript_path = /usr/bin/
 
 #---------------------------------------------------------------------------
+[vhosts]
+### DOC
+
+# vhost1 = glob1, glob2
+# vhost2 = glob3, glob4
+
+# [vhost1-section]
+# option = value
+# [vhost1-othersection]
+# option = value
+# [vhost2-section]
+# option = value
+
+#
+# Here is an example:
+#
+# [vhosts]
+# lyra = *lyra.org
+#
+# [lyra-general]
+# forbidden = hideme
+#
+# [lyra-options]
+# show_logs = 0
+#
+# Note that "lyra" is the "canonical" name for all hosts in the lyra.org
+# domain. This canonical name is then used within the additional, vhost-
+# specific sections to override specific values in the common sections.
+#
+
+#---------------------------------------------------------------------------

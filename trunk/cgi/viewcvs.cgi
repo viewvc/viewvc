@@ -2146,7 +2146,7 @@ def handle_config():
 
   # load in configuration information from the config file
   pathname = CONF_PATHNAME or 'viewcvs.conf'
-  cfg.load_config(pathname)
+  cfg.load_config(pathname, os.environ.get('HTTP_HOST'))
 
   global default_settings
   default_settings = {
