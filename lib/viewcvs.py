@@ -1342,7 +1342,7 @@ def view_directory(request):
     data['tarball_href'] = request.get_url(view_func=download_tarball, 
                                            params={})
   if request.roottype == 'svn':
-    data['tree_rev'] = str(request.repos.rev)
+    data['tree_rev'] = vclib.svn.created_rev(request.repos, where)
     if request.query_dict.has_key('rev'):
       data['jump_rev'] = request.query_dict['rev']
     else:
