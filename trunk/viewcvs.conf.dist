@@ -249,6 +249,17 @@ languages = en-us
 # languages = de, fr, en-us
 #
 
+#
+# This option sets the expiration time for cacheable pages served by
+# ViewCVS.  Note that in most cases, a cache aware client will only
+# revalidate the page after it exires (using the If-Modified-Since and/or
+# If-None-Match headers) and that browsers will also revalidate the
+# page when the reload button is pressed.
+#
+# Time is given in seconds.
+#
+http_expiration_time = 600
+
 #---------------------------------------------------------------------------
 [templates]
 
