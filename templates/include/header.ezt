@@ -32,6 +32,7 @@
       <select name="root" onchange="submit()">
         [define cvs_root_options][end]
         [define svn_root_options][end]
+        <option value="*viewroots*"[is view "roots"] selected[else][end]>Repository Listing</option>
         [for roots]
           [define root_option][end]
           [is roots.name rootname]
@@ -53,7 +54,6 @@
         [is svn_root_options ""][else]
           <optgroup label="Subversion Repositories">[svn_root_options]</optgroup>
         [end]
-        <option value="*viewroots*"[is view "roots"] selected[else][end]>Repository Listing</option>
       </select>
       <input type=submit value="Go">
     </form>
