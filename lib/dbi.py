@@ -29,7 +29,7 @@ import MySQLdb
 # actual time was recorded before or after clocks were rolled back). Use local
 # times for compatibility with databases used by ViewCVS 0.92 and earlier 
 # versions.
-dbi_utc_time = 1
+utc_time = 1
 
 class Cursor:
     def __init__(self, mysql_cursor):
@@ -58,7 +58,7 @@ class Connection:
 def DateTimeFromTicks(ticks):
   """Return a MySQL DATETIME value from a unix timestamp"""
 
-  if dbi_utc_time:
+  if utc_time:
     t = time.gmtime(ticks)
   else:
     t = time.localtime(ticks)
@@ -76,7 +76,7 @@ def TicksFromDateTime(datetime):
   else: # datetime is an mx.DateTime object
     t = datetime.tuple()
 
-  if dbi_utc_time:
+  if utc_time:
     return compat.timegm(t)
   else:
     return time.mktime(t[:8] + (-1,))
