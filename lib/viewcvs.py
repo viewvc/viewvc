@@ -1191,7 +1191,6 @@ def view_directory(request):
   generate_page(request, cfg.templates.directory, data)
 
 def view_directory_cvs(request, data, sortby, sortdir):
-  full_name = request.full_name
   where = request.where
   query_dict = request.query_dict
 
@@ -1225,11 +1224,6 @@ def view_directory_cvs(request, data, sortby, sortdir):
                                    or cfg.options.use_re_search),
   })
 
-  # have_logs will be 0 if we only have dirs and !show_subdir_lastmod.
-  # in that case, we don't need the extra columns
-  if have_logs:
-    data['have_logs'] = 'yes'
-
   if search_re:
     data['search_re'] = htmlify(search_re)
 
@@ -1239,34 +1233,41 @@ def view_directory_cvs(request, data, sortby, sortdir):
   num_files = 0
   num_displayed = 0
   unreadable = 0
-
-  ### display a row for ".." ?
-
-  where_prefix = where and where + '/'
+  have_logs = 0
   rows = data['rows'] = [ ]
 
+  where_prefix = where and where + '/'
+
+  ### display a row for ".." ?
   for file in file_data:
     row = _item(href=None, graph_href=None,
                 author=None, log=None, log_file=None, log_rev=None,
                 show_log=None, state=None)
 
-    if file.verboten:
-      if file.kind is None:
-        # We couldn't even stat() the file to figure out what it is.
-        slash = ''
-      elif file.kind == vclib.DIR:
-        slash = '/'
-      else:
-        slash = ''
-        num_displayed = num_displayed + 1
-      row.anchor = file.name
-      row.name = file.name + slash
-      row.type = 'unreadable'
-
-      rows.append(row)
-
+    if file.rev == bincvs._FILE_HAD_ERROR:
+      row.cvs = 'error'
       unreadable = 1
-      continue
+    elif file.rev is None:
+      row.cvs = 'none'
+    else:
+      row.cvs = 'data'
+      row.rev = file.rev
+      row.author = file.author
+      row.state = file.state
+      row.time = html_time(request, file.date)
+      if cfg.options.show_logs and file.log:
+        row.show_log = 'yes'
+        row.log = format_log(file.log)
+        have_logs = 1
+
+    row.anchor = file.name
+
+    row.type = (file.kind == vclib.FILE and 'file') or \
+               (file.kind == vclib.DIR and 'dir')
+
+    if file.verboten or not row.type:
+      row.type = 'unreadable'
+      unreadable = 1
 
     if file.kind == vclib.DIR:
       if not hideattic and file.name == 'Attic':
@@ -1277,95 +1278,61 @@ def view_directory_cvs(request, data, sortby, sortdir):
       if file.name == 'CVS': # CVS directory in repository is for fileattr.
         continue
 
-      row.anchor = file.name
-      row.href = request.get_url(view_func=view_directory, 
+      row.name = file.name + '/'
+      row.href = request.get_url(view_func=view_directory,
                                  where=where_prefix+file.name,
                                  pathtype=vclib.DIR,
                                  params={})
-      row.name = file.name + '/'
-      row.type = 'dir'
 
-      if file.rev == bincvs._FILE_HAD_ERROR:
-        row.cvs = 'error'
-
-        unreadable = 1
-      elif file.rev:
-        row.cvs = 'data'
-        row.time = html_time(request, file.date)
-        row.author = file.author
-
+      if row.cvs == 'data':
         if cfg.options.use_cvsgraph:
           row.graph_href = '&nbsp;' 
         if cfg.options.show_logs:
-          row.show_log = 'yes'
           row.log_file = file.newest_file
           row.log_rev = file.rev
-          if file.log:
-            row.log = format_log(file.log)
-      else:
-        row.cvs = 'none'
 
       rows.append(row)
 
-    else:
-      row.type = 'file'
-      row.anchor = file.name
-
-      file_where = where_prefix + (file.in_attic and 'Attic/' or '') + file.name
-      row.name = file.name
-
+    elif file.kind == vclib.FILE:
       num_files = num_files + 1
-      if file.rev == bincvs._FILE_HAD_ERROR:
-        row.cvs = 'error'
-        rows.append(row)
 
-        num_displayed = num_displayed + 1
-        unreadable = 1
-        continue
-      elif not file.rev:
+      if file.rev is None:
         continue
       elif hideattic and view_tag and file.state == 'dead':
         continue
       num_displayed = num_displayed + 1
 
-      row.cvs = 'data'
-      row.href = request.get_url(view_func=view_log, 
+      file_where = where_prefix + (file.in_attic and 'Attic/' or '') + file.name
+      row.name = file.name
+
+      row.href = request.get_url(view_func=view_log,
                                  where=file_where,
                                  pathtype=vclib.FILE,
                                  params={})
-      row.rev = file.rev
-      row.author = file.author
-      row.state = file.state
 
       row.rev_href = request.get_url(view_func=view_auto,
                                      where=file_where,
                                      pathtype=vclib.FILE,
-                                     params={'rev': row.rev})
-
-      row.time = html_time(request, file.date)
+                                     params={'rev': str(file.rev)})
 
       if cfg.options.use_cvsgraph:
          row.graph_href = request.get_url(view_func=view_cvsgraph,
                                           where=file_where,
                                           pathtype=vclib.FILE,
                                           params={})
-      if cfg.options.show_logs:
-        row.show_log = 'yes'
-        row.log = format_log(file.log)
 
       rows.append(row)
+  
+  data.update({
+    'num_files' :  num_files,
+    'files_shown' : num_displayed,
+    'no_match' : num_files and not num_displayed and 'yes' or '',
+    'unreadable' : unreadable and 'yes' or '',
 
-  ### we need to fix the template w.r.t num_files. it usually is not a
-  ### correct (original) count of the files available for selecting
-  data['num_files'] = num_files
-
-  # the number actually displayed
-  data['files_shown'] = num_displayed
-
-  if num_files and not num_displayed:
-    data['no_match'] = 'yes'
-  if unreadable:
-    data['unreadable'] = 'yes'
+    # have_logs will be 0 if we only have dirs and !show_subdir_lastmod.
+    # in that case, we don't need the extra columns
+    'have_logs' : have_logs and 'yes' or '',
+  })
 
   if data['selection_form']:
     url, params = request.get_link(params={'only_with_tag': None, 
