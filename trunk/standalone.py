@@ -48,7 +48,7 @@ import urllib
 class Options:
     port = 7467 # default TCP/IP port used for the server
     start_gui = 0 # No GUI unless requested.
-    apache_root = "/usr/local/httpd" # where the /icons/ subdir can be found
+    repository = None # use default repository specified in config
 
 # --- web browser interface: ----------------------------------------------
 
@@ -65,16 +65,15 @@ def serve(port, callback=None):
                 self.redirect()
             elif self.is_viewcvs():
                 self.run_viewcvs()
+            elif self.path[:7] == "/icons/":
+                # XXX icon type should not be gardcoded to GIF:
+                self.send_header("Content-type", "image/gif") 
+                self.end_headers()
+                apache_icons.serve_icon(self.path, self.wfile)
             else:
-                save_cwd = os.getcwd() # XXX: Ugly hack around SimpleHTTPServer
-                if self.path[:7] == "/icons/":
-                    try:
-                        os.chdir(options.apache_root)
-                    except OSError, v:
-                        sys.stderr.write("Can't find your apache icons\n")
-                        sys.stderr.write("read about the -i option\n")
+                # not needed for ViewCVS, but might be useful, if
+                # people want to serve other things:
                 self.base.do_GET(self)
-                os.chdir(save_cwd)
 
         def do_POST(self):
             """Serve a POST request."""
@@ -224,6 +223,21 @@ If this doesn't work, please click on the link above.
     ViewCVS_Server.handler = ViewCVS_Handler
     ViewCVS_Handler.base = SimpleHTTPServer.SimpleHTTPRequestHandler
     try:
+        # XXX Move this code out of this function.
+        # Early loading of configuration here.  Used to
+        # allow tinkering with some configuration settings:
+        viewcvs.handle_config()
+        if options.repository:
+            if viewcvs.cfg.general.cvs_roots.has_key("Development"):
+                viewcvs.cfg.general.cvs_roots["Development"] = options.repository
+            else:
+                sys.stderr.write("*** No default ViewCVS configuration. Edit viewcvs.conf\n")
+                raise KeyboardInterrupt # Hack!
+        elif viewcvs.cfg.general.cvs_roots.has_key("Development") and \
+             not os.path.isdir(viewcvs.cfg.general.cvs_roots["Development"]):
+            sys.stderr.write("*** No repository found. Please use the -r option.\n")
+            sys.stderr.write("   Use --help for more info.\n")
+            raise KeyboardInterrupt # Hack!
         os.close(0) # To avoid problems with shell job control
         ViewCVS_Server(port, callback).serve_until_quit()
     except (KeyboardInterrupt, select.error):
@@ -257,7 +271,7 @@ def gui(port):
             self.quit_btn.pack(side='right', fill='x', expand=1)
 
             # Early loading of configuration here.  Used to
-            # allow tinering with configuration settings through the gui:
+            # allow tinkering with configuration settings through the gui:
             viewcvs.handle_config()
             if not LIBRARY_DIR:
                 viewcvs.cfg.options.cvsgraph_conf = "../cgi/cvsgraph.conf.dist"
@@ -385,13 +399,13 @@ def cli(argv):
     class BadUsage(Exception): pass
 
     try:
-        opts, args = getopt.getopt(argv[1:], 'gp:i:', 
-            ['gui', 'apache_root=', 'port='])
+        opts, args = getopt.getopt(argv[1:], 'gp:r:', 
+            ['gui', 'port=', 'repository='])
         for opt, val in opts:
             if opt in ('-g', '--gui'):
                 options.start_gui = 1
-            elif opt in ('-i', '--apache_root'):
-                options.apache_root = val
+            elif opt in ('-r', '--repository'):
+                options.repository = val
             elif opt in ('-p', '--port'):
                 try:
                     options.port = int(val)
@@ -409,7 +423,6 @@ def cli(argv):
     except (getopt.error, BadUsage):
         cmd = sys.argv[0]
         port = options.port
-        apath = options.apache_root
         print """ViewCVS standalone - a simple standalone HTTP-Server
 
 Usage: %(cmd)s [ <options> ]
@@ -419,13 +432,13 @@ Available Options:
     Start an HTTP server on the given port on the local machine.
     Default port is %(port)d.
 
--g or --gui
-    Pop up a graphical interface for serving and testing ViewCVS .
+-r <path> or --repository=<path>
+    Specify another path for the default CVS repository "Development".
+    If you don't have your repository at /home/cvsroot you will need to
+    use this option or you have to install first and edit viewcvs.conf.
 
--i <path> or --apache_root=<path>
-    Specify another path for the directory where the standard icons
-    sub directory can be found.  On typical Unix systems this is
-    the default %(apath)s.  Look for example for "/icons/small/back.gif".
+-g or --gui
+    Pop up a graphical interface for serving and testing ViewCVS.
 
 """ % locals()
 
@@ -436,6 +449,7 @@ if __name__ == '__main__':
         sys.path[:0] = ['lib']
         os.chdir('lib')
     import viewcvs
+    import apache_icons
     options = Options()
     options.use_cvsgraph = 0
     cli(sys.argv)
