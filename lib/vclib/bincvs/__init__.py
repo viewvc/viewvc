@@ -66,6 +66,72 @@ class LogError:
   pass
 
 
+# match a revision number
+_re_revision = re.compile(r'^\d+\.\d+(?:\.\d+\.\d+)*$')
+
+
+# match a branch number with optional 0
+_re_branch = re.compile(r'^(?P<base>(?:\d+\.\d+)(?:\.\d+\.\d+)*)'
+                        r'(?P<zero>\.0)?\.(?P<branch>\d+)$')
+
+
+class TagInfo:
+  def __init__(self, number):
+    if number == '': # number has special value used to refer to the trunk
+      self._rev = number
+      self._branch = ''
+      self._zero_branch = 0
+      return
+
+    match = _re_branch.match(number)
+    if match: # number refers to a branch
+      self._rev = match.group('base')
+      self._branch = self._rev + '.' + match.group('branch')
+      self._zero_branch = match.group('zero') is not None
+      return
+
+    match = _re_revision.match(number)
+    if match: # number refers to a revision
+      self._rev = number
+      self._branch = ''
+      self._zero_branch = 0
+      return
+
+    raise vclib.InvalidRevision(number)
+
+  def is_trunk(self):
+    "true if this is a trunk tag (i.e. MAIN when the file has no default branch)"
+    return not self._rev
+
+  def is_branch(self):
+    "true if this is a branch tag"
+    return not self._rev or self._branch
+
+  def branches_at(self):
+    "return revision number that this branch branches off of"
+    return self._branch and self._rev or None
+
+  def matches_rev(self, number):
+    "true if specified revision number has this tag"
+    return number == self._rev and (not self._branch or self._zero_branch)
+
+  def holds_rev(self, number):
+    "true if specified revision number is on this branch"
+    if self._rev:
+      if self._branch: # tag refers to branch
+        p = string.rfind(number, '.')
+        if p < 0:
+          raise vclib.InvalidRevision(number) 
+        return number[:p] == self._branch
+      else: # tag refers to a revision
+        return 0
+    else: # tag refers to the trunk
+      return string.count(number, '.') == 1
+
+  def number(self):
+    return self._branch or self._rev
+
+
 def parse_log_header(fp):
   """Parse and RCS/CVS log header.
 
@@ -230,8 +296,8 @@ def get_logs(rcs_paths, full_name, files, view_tag):
   files = files[:]
   fileinfo = { }
   alltags = {           # all the tags seen in the files of this dir
-    'MAIN' : '1',
-    'HEAD' : '1',
+    'MAIN' : '',
+    'HEAD' : '1.1'
     }
 
   chunk_size = 100
@@ -295,43 +361,23 @@ def get_logs(rcs_paths, full_name, files, view_tag):
         skip_file(rlog)
         continue
 
-      if not branch:
-        idx = string.rfind(head, '.')
-        branch = head[:idx]
-      idx = string.rfind(branch, '.')
-      if idx == -1:
-        branch = '0.' + branch
-      else:
-        branch = branch[:idx] + '.0' + branch[idx:]
-
-      symrev['MAIN'] = symrev['HEAD'] = branch
-
-      if symrev.has_key(view_tag):
-        revwanted = symrev[view_tag]
-        if revwanted[:2] == '0.': ### possible?
-          branch = revwanted[2:]
-        else:
-          idx = string.find(revwanted, '.0.')
-          if idx == -1:
-            branch = revwanted
-          else:
-            branch = revwanted[:idx] + revwanted[idx+2:]
-        if revwanted != branch:
-          revwanted = None
-
-        idx = string.rfind(branch, '.')
-        if idx == -1:
-          branchpoint = ''
-        else:
-          branchpoint = branch[:idx]
-
+      if view_tag == 'MAIN':
+        view_tag_info = TagInfo(header.branch)
+      elif view_tag == 'HEAD':
+        view_tag_info = TagInfo(header.head)
+      elif header.taginfo.has_key(view_tag):
+        view_tag_info = TagInfo(header.taginfo[view_tag])
       elif view_tag:
         # the tag wasn't found, so skip this file
         skip_file(rlog)
         continue
+      else:
+        view_tag_info = None       
 
-      # we don't care about the values -- just the keys. this the fastest
-      # way to merge the set of keys
+      # we don't care about the specific values -- just the keys and whether
+      # the values point to branches or revisions. this the fastest way to 
+      # merge the set of keys and keep values that allow us to make the 
+      # distinction between branch tags and normal tags
       alltags.update(symrev)
 
       # read all of the log entries until we find the revision we want
@@ -347,14 +393,9 @@ def get_logs(rcs_paths, full_name, files, view_tag):
           break
 
         rev = entry.rev
+        if (not view_tag_info or view_tag_info.matches_rev(rev) or
+            view_tag_info.holds_rev(rev)):
 
-        idx = string.rfind(rev, '.')
-        revbranch = rev[:idx]
-
-        if not view_tag or (not revwanted and branch == revbranch):
-          revwanted = rev
-
-        if rev == revwanted or rev == branchpoint:
           new_entry = LogEntry(rev, entry.date, entry.author, entry.state,
                                None, entry.log)
           new_entry.filename = filename
@@ -362,11 +403,10 @@ def get_logs(rcs_paths, full_name, files, view_tag):
 #         fileinfo[info_key] = (rev, entry.date, entry.log, entry.author,
 #                               filename, entry.state)
 
-          if rev == revwanted:
-            # done with this file now
-            if not eof:
-              skip_file(rlog)
-            break
+          # done with this file now, skip the rest of this file's revisions
+          if not eof:
+            skip_file(rlog)
+          break
 
         # if we hit the true EOF, or just this file's end-of-info, then we are
         # done collecting log entries.

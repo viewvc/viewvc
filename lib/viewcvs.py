@@ -1438,7 +1438,7 @@ def view_directory_cvs(request, data, sortby, sortdir):
     nonbranchtags = []
     for tag in alltagnames:
       rev = alltags[tag]
-      if string.find(rev, '.0.') == -1:
+      if not bincvs.TagInfo(rev).is_branch():
         nonbranchtags.append(tag)
       else:
         branchtags.append(tag)
@@ -1572,27 +1572,12 @@ def logsort_rev_cmp(rev1, rev2):
   # sort highest revision first
   return -revcmp(rev1.rev, rev2.rev)
 
-class CVSBranch:
-  def __init__(self, number, rev_order):
-    self.number = number
-    p = string.rfind(number, '.')
-    self.parent_rev = p != -1 and number[:p] or None    
-    for rev in rev_order:
-      if self.holds_rev(rev):
-        self.latest_rev = rev
-        break
-    else:
-      self.latest_rev = None
-
-  def holds_rev(self, rev):
-    if self.number:
-      l = len(self.number)
-      return rev[:l] == self.number and rev[l] == '.'
-    else:
-      return string.count(rev, '.') == 1
-
-_re_branch_rev = re.compile(r'^(?P<base>(?:\d+\.\d+)(?:\.\d+\.\d+)*)'
-                            r'(?:\.0)?\.(?P<branch>\d+)$')
+def find_first_rev(taginfo, revs):
+  "Find first revision that matches a normal tag or is on a branch tag"
+  for rev in revs:
+    if taginfo.matches_rev(rev) or taginfo.holds_rev(rev):
+      return rev
+  return None
 
 def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
   head, cur_branch, taginfo, revs = bincvs.fetch_log(cfg.general,
@@ -1607,9 +1592,10 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
   # it's the highest revision on that branch.  Find it by looking through
   # rev_order; it is the first commit listed on the appropriate branch.
   # This is not neccesary the same revision as marked as head in the RCS file.
-  taginfo['MAIN'] = CVSBranch(cur_branch, rev_order)
-  taginfo['HEAD'] = taginfo['MAIN'].latest_rev
-  default_branch = 'MAIN'
+  ### Why are we defining our own HEAD instead of just using the revision
+  ### marked as head? What's wrong with: taginfo['HEAD'] = bincvs.TagInfo(head)
+  taginfo['MAIN'] = bincvs.TagInfo(cur_branch)
+  taginfo['HEAD'] = find_first_rev(taginfo['MAIN'], rev_order)
 
   # map revision numbers to tag names
   rev2tag = { }
@@ -1627,46 +1613,46 @@ def read_log(full_name, which_rev=None, view_tag=None, logsort='cvs'):
   items = taginfo.items()
   items.sort()
   items.reverse()
-  for tag, rev in items:
-    if type(rev) is types.StringType:
-      match = _re_branch_rev.match(rev)
-      if match:
-        base = match.group('base')
-        if branch_points.has_key(base):
-          branch_points[base].append(tag)
+  for name, tag in items:
+    if not isinstance(tag, bincvs.TagInfo):
+      taginfo[name] = tag = bincvs.TagInfo(tag)
+
+    number = tag.number()
+
+    if tag.is_branch():    
+      branch_names.append(name)
+
+      if number == cur_branch:
+        default_branch = name
+
+      if not tag.is_trunk():
+        rev = tag.branches_at()
+        if branch_points.has_key(rev):
+          branch_points[rev].append(name)
         else:
-          branch_points[base] = [ tag ]
-        branch = base + '.' + match.group('branch')
-        taginfo[tag] = rev = CVSBranch(branch, rev_order)
-        if rev.number == cur_branch:
-          default_branch = tag        
+          branch_points[rev] = [ name ]
 
-    if isinstance(rev, CVSBranch):
-      branch_names.append(tag)
-      rev = rev.number
-
-    if rev2tag.has_key(rev):
-      rev2tag[rev].append(tag)
+      # revision number you'd get if you checked out this branch
+      tag.co_rev = find_first_rev(tag, rev_order)
     else:
-      rev2tag[rev] = [ tag ]
+      tag.co_rev = number
+
+    if rev2tag.has_key(number):
+      rev2tag[number].append(name)
+    else:
+      rev2tag[number] = [ name ]
 
   if view_tag:
-    view_rev = taginfo.get(view_tag)
-    if not view_rev:
+    tag = taginfo.get(view_tag)
+    if not tag:
       raise debug.ViewcvsException('Tag %s not defined.' % view_tag,
                                    '404 Tag Not Found')
 
     show_revs = [ ]
-
-    if isinstance(view_rev, CVSBranch):
-      for entry in revs:
-        if entry.rev == view_rev.parent_rev or view_rev.holds_rev(entry.rev):
-          show_revs.append(entry)
-    else:
-      for entry in revs:
-        if entry.rev == view_rev:
-          show_revs.append(entry)
-
+    for entry in revs:
+      rev = entry.rev
+      if tag.matches_rev(rev) or tag.branches_at()==rev or tag.holds_rev(rev):
+        show_revs.append(entry)
   else:
     show_revs = revs
 
@@ -1979,12 +1965,8 @@ def view_log_cvs(request, data, logsort):
 
   data['tags'] = tags = [ ]
   for tag, rev in tagitems:
-    if isinstance(rev, CVSBranch):
-      real_rev = rev.latest_rev
-    else:
-      real_rev = rev
-    if real_rev:
-      tags.append(_item(rev=real_rev, name=tag))
+    if rev.co_rev:
+      tags.append(_item(rev=rev.co_rev, name=tag))
         
   if query_dict.has_key('r1'):
     diff_rev = query_dict['r1']
