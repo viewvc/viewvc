@@ -71,6 +71,7 @@ class Template:
 
     program = [ ]
     stack = [ ]
+    for_names = [ ]
 
     for i in range(len(parts)):
       piece = parts[i]
@@ -103,11 +104,13 @@ class Template:
           else_section = program[idx:]
           func = getattr(self, '_cmd_' + re.sub('-', '_', cmd))
           program[idx:] = [ (func, (args, true_section, else_section)) ]
+          if cmd == 'for':
+            for_names.pop()
         elif cmd in _block_cmds:
           if len(args) > _block_cmd_specs[cmd] + 1:
             raise ArgCountSyntaxError()
           ### this assumes arg1 is always a ref
-          args[1] = _prepare_ref(args[1])
+          args[1] = _prepare_ref(args[1], for_names)
 
           # handle arg2 for the 'is' command
           if cmd == 'is':
@@ -115,7 +118,9 @@ class Template:
               # strip the quotes
               args[2] = args[2][1:-1]
             else:
-              args[2] = _prepare_ref(args[2])
+              args[2] = _prepare_ref(args[2], for_names)
+          elif cmd == 'for':
+            for_names.append(args[1][0])
 
           # remember the cmd, current pos, args, and a section placeholder
           stack.append([cmd, len(program), args[1:], None])
@@ -123,7 +128,7 @@ class Template:
           # implied PRINT command
           if len(args) > 1:
             raise ArgCountSyntaxError()
-          program.append((self._cmd_print, _prepare_ref(args[0])))
+          program.append((self._cmd_print, _prepare_ref(args[0], for_names)))
 
     self.program = program
 
@@ -140,19 +145,19 @@ class Template:
       else:
         step[0](step[1], fp, ctx)
 
-  def _cmd_print(self, (refname, ref), fp, ctx):
+  def _cmd_print(self, valref, fp, ctx):
     ### type check the value
-    fp.write(_get_value(refname, ref, ctx))
+    fp.write(_get_value(valref, ctx))
 
   def _cmd_if_any(self, args, fp, ctx):
     "If the value is a non-empty string or non-empty list, then T else F."
-    (((refname, ref),), t_section, f_section) = args
-    value = _get_value(refname, ref, ctx)
+    ((valref,), t_section, f_section) = args
+    value = _get_value(valref, ctx)
     self._do_if(value, t_section, f_section, fp, ctx)
 
   def _cmd_if_index(self, args, fp, ctx):
-    (((refname, ref), value), t_section, f_section) = args
-    list, idx = ctx.for_index[refname]
+    ((valref, value), t_section, f_section) = args
+    list, idx = ctx.for_index[valref[0]]
     if value == 'even':
       value = idx % 2 == 0
     elif value == 'odd':
@@ -164,10 +169,10 @@ class Template:
     self._do_if(value, t_section, f_section, fp, ctx)
 
   def _cmd_is(self, args, fp, ctx):
-    (((refname, ref), value), t_section, f_section) = args
+    ((valref, value), t_section, f_section) = args
     if not isinstance(value, StringType):
-      value = _get_value(value[0], value[1], ctx)
-    value = string.lower(_get_value(refname, ref, ctx)) == string.lower(value)
+      value = _get_value(value, ctx)
+    value = string.lower(_get_value(valref, ctx)) == string.lower(value)
     self._do_if(value, t_section, f_section, fp, ctx)
 
   def _do_if(self, value, t_section, f_section, fp, ctx):
@@ -182,10 +187,11 @@ class Template:
       self._execute(section, fp, ctx)
 
   def _cmd_for(self, args, fp, ctx):
-    (((refname, ref),), unused, section) = args
-    list = _get_value(refname, ref, ctx)
+    ((valref,), unused, section) = args
+    list = _get_value(valref, ctx)
     if isinstance(list, StringType):
       raise NeedSequenceError()
+    refname = valref[0]
     ctx.for_index[refname] = [ list, 0 ]
     for i in range(len(list)):
       ctx.for_index[refname][1] = i
@@ -193,30 +199,44 @@ class Template:
     del ctx.for_index[refname]
 
 
-def _prepare_ref(refname):
-  return refname, string.split(refname, '.')
+def _prepare_ref(refname, for_names):
+  "Prepare a value reference for fast access later."
+  parts = string.split(refname, '.')
+  start = parts[0]
+  rest = parts[1:]
+  while rest and (start in for_names):
+    # check if the next part is also a "for name"
+    name = start + '.' + rest[0]
+    if name in for_names:
+      start = name
+      del rest[0]
+    else:
+      break
+  return refname, start, rest
 
-def _get_value(refname, ref, ctx):
-  if ctx.for_index.has_key(ref[0]):
-    list, idx = ctx.for_index[ref[0]]
+def _get_value((refname, start, rest), ctx):
+  if ctx.for_index.has_key(start):
+    list, idx = ctx.for_index[start]
     ob = list[idx]
-  elif ctx.data.has_key(ref[0]):
-    ob = ctx.data[ref[0]]
+  elif ctx.data.has_key(start):
+    ob = ctx.data[start]
   else:
     raise UnknownReference(refname)
 
-  # walk the dotted ref
-  for attr in ref[1:]:
+  # walk the rest of the dotted reference
+  for attr in rest:
     try:
       ob = getattr(ob, attr)
     except AttributeError:
       raise UnknownReference(refname)
 
-  # make sure we return a string.  ### other types?
+  # make sure we return a string instead of some various Python types
   if isinstance(ob, IntType) or isinstance(ob, FloatType):
     return str(ob)
   if ob is None:
     return ''
+
+  # string or a sequence
   return ob
 
 class _context:
