@@ -151,14 +151,13 @@ class LogCollector:
                self.path[len(changed_path)] == '/':
           change = paths[changed_path]
           if change.copyfrom_path:
-            this_path = change.copyfrom_path + \
-                        self.path[len(changed_path):]
+            this_path = change.copyfrom_path + self.path[len(changed_path):]
     if self.filter_path and not this_path:
       return
-    self.path = this_path
     date = _datestr_to_date(date, pool)
     entry = Revision(revision, date, author, message, None,
                      self.path[1:], None, None)
+    self.path = this_path
     self.logs.append(entry)
     
 
