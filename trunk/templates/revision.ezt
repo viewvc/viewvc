@@ -4,12 +4,68 @@
 <!-- ViewCVS       -- http://viewcvs.sourceforge.net/
      by Greg Stein -- mailto:gstein@lyra.org
   -->
-<title>ViewCVS Exception</title>
+<title>Subversion revision - [rev]</title>
 </head>
 <body text="#000000" bgcolor="#ffffff">
 
-<h1>What up, dawg?</h1>
-<h2>Revision information will soon be here.</h2>
+<h1>Subversion revision information</h1>
+<h2>Revision [rev]</h2>
+
+<p>
+  <b>Author:</b> [author]<br>
+  <b>Date:</b> [date_str] <i>([ago] ago)</i>
+</p>
+<p><pre>[log]</pre></p>
+
+<hr noshade>
+
+<p><b>Changed paths:</b></p>
+<table border=0 cellspacing=1 cellpadding=2>
+  <tr align=left>
+    <th align=left bgcolor="#88ff88">Path</th>
+    <th align=left bgcolor="#cccccc">Action</th>
+    <th align=left bgcolor="#cccccc">Text Changes</th>
+    <th align=left bgcolor="#cccccc">Prop Changes</th>
+    <th align=left bgcolor="#cccccc">Diff to Previous</th>
+  </tr>
+  [if-any changes]
+    [for changes]
+      <tr bgcolor="[if-index changes even]#ffffff[else]#ccccee[end]">
+      <td>
+        [is changes.pathtype "dir"]
+          <img src="[icons]/small/dir.gif">
+        [else]
+          <img src="[icons]/small/text.gif">
+        [end]
+        [is changes.action "deleted"]
+          [changes.filename]
+        [else]
+          <a href="[changes.view_href]">[changes.filename]</a>
+        [end]
+      </td>
+      <td align=center>[changes.action]</td>
+      [is changes.action "deleted"]
+        <td align=center>&nbsp;</td>
+        <td align=center>&nbsp;</td>
+      [else]
+        <td align=center>[is changes.text_mods "1"]X[else]&nbsp;[end]</td>
+        <td align=center>[is changes.prop_mods "1"]X[else]&nbsp;[end]</td>
+      [end]
+        [if-any changes.diff_href]
+          [if-any changes.prev_rev]
+            <td align=center><a href="[changes.diff_href]&amp;r1=[rev]&amp;r2=[changes.prev_rev]&amp;p1=[changes.filename]&amp;p2=[changes.prev_path]">(diff to previous)</a></td>
+          [else]
+            <td align=center>&nbsp;</td>
+          [end]
+        [end]
+      </tr>
+    [end]
+  [else]
+    <tr>
+    <td colspan="5">No changed paths.</td>
+    </tr>
+  [end]
+</table>
 
 </body>
 </html>

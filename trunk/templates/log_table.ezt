@@ -49,7 +49,7 @@ href="[docroot]/help_logtable.html">ViewCVS and CVS Help</a></b></h3></td>
 
     [# Revision column]
     <td rowspan=2>
-      <b>[entries.rev]</b>
+      [is roottype "svn"]<a href="[entries.revision_href]"><b>[entries.rev]</b></a>[else]<b>[entries.rev]</b>[end]
       <a name="rev[entries.rev]"></a>
     </td>
 
@@ -186,12 +186,6 @@ href="[docroot]/help_logtable.html">ViewCVS and CVS Help</a></b></h3></td>
 
         [if-any entries.copy_path]
            <b>Copied from: </b><a href="[entries.copy_href]#rev[entries.copy_rev]">[entries.copy_path]</a> revision [entries.copy_rev]<br>
-        [end]
-    
-        [if-any entries.other_paths]
-          [for entries.other_paths][if-index entries.other_paths first]<b>Other changed files:</b>[else],[end]
-            [is entries.other_paths.action "deleted"][entries.other_paths.filename][else]<a href="[entries.other_paths.href]#rev[entries.rev]">[entries.other_paths.filename]</a>[end] ([entries.other_paths.action])[end]
-          <br>
         [end]
       [end]
 
