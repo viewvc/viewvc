@@ -180,23 +180,25 @@ file_icon = /icons/small/text.gif, 16, 16
 # background color of log entry in markup
 markup_log = #ffffff
 
-# color of change-section headings in a diff
+# The following six colors are used together:
+# color of change-section headings in a diff (default turquoise)
 diff_heading = #99cccc
 
-# color of "empty" lines
+# color of "empty" lines (default light gray)
 diff_empty = #cccccc
 
-# removed lines
-diff_remove = #ff9999
+# removed lines (default light red)
+diff_remove = #ffaaaa
 
-# changed lines
-diff_change = #99ff99
+# changed lines (default light yellow)
+diff_change = #ffff77
 
-# added lines
-diff_add = #ccccff
+# added lines (default light green)
+diff_add = #aaffaa
 
-# empty lines in a change block (one part smaller than the other)
-diff_dark_change = #99cc99
+# empty lines in a change block (if one part smaller is than the other;
+# default is a greyish yellow: the color should match the hue of 'diff_change')
+diff_dark_change = #eeee77
 
 # even/odd row colors
 even_odd = #ccccee, #ffffff
