@@ -117,6 +117,9 @@ header_comment = '''\
   -->
 '''
 
+# for reading/writing between a couple descriptors
+CHUNK_SIZE = 8192
+
 
 class Request:
   def __init__(self):
@@ -467,7 +470,7 @@ def markup_stream_default(fp):
   while 1:
     ### technically, the htmlify() could fail if something falls across
     ### the chunk boundary. TFB.
-    chunk = fp.read(8192)
+    chunk = fp.read(CHUNK_SIZE)
     if not chunk:
       break
     sys.stdout.write(htmlify(chunk))
@@ -494,8 +497,27 @@ def markup_stream_python(fp):
     html = re.sub(_re_rewrite_email, r'<a href="mailto:\1">\1</a>', html)
     sys.stdout.write(html)
 
+def markup_stream_elisp(fp):
+  if not cfg.options.allow_elisp_coloring:
+    markup_stream_default(fp)
+    return
+
+  sys.stdout.flush()
+  lang = "elisp"
+  cmd = "%senscript --color -W html -E%s -o - - 2> /dev/null " \
+        "| sed -n '/^<PRE>$/,/<\\/PRE>$/p'" % \
+        (cfg.options.enscript_path, lang,)
+  enscript = os.popen(cmd, "w")
+  while 1:
+    chunk = fp.read(CHUNK_SIZE)
+    if not chunk:
+      break
+    enscript.write(chunk)
+  enscript.close()
+
 markup_streamers = {
   '.py' : markup_stream_python,
+  '.el' : markup_stream_elisp,
   }
 
 def markup_stream(request, fp, revision, mime_type):
