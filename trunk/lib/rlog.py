@@ -141,17 +141,16 @@ class RLog:
         return checkout_filename
         
     def readline(self):
-        if not self.rlog:
-            raise error, 'rlog terminated'
-        
         line = self.rlog.readline()
-        if not line:
-            status = self.close()
-            if status:
-                temp = '[ERROR] %s' % (self.cmd)
-                raise error, temp
+        if line:
+            return line
 
-        return line
+        status = self.close()
+        if status:
+            temp = '[ERROR] %s' % (self.cmd)
+            raise error, temp
+
+        return None
 
     def close(self):
         status = self.rlog.close()
@@ -202,8 +201,7 @@ class RLogOutputParser:
             if not match:
                 break
 
-            tag = match.group(1)
-            revision = match.group(2)
+            (tag, revision) = match.groups()
 
             ## check if the tag represents a branch, in RCS this means
             ## the second-to-last number is a zero
@@ -251,22 +249,26 @@ class RLogOutputParser:
         if not match:
             raise error, 'bad rlog parser, no cookie!'
 
-        year = string.atoi(match.group(1))
-        month = string.atoi(match.group(2))
-        day = string.atoi(match.group(3))
-        hour = string.atoi(match.group(4))
-        minute = string.atoi(match.group(5))
-        second = string.atoi(match.group(6))
-        author = match.group(7)
-        state = match.group(8)
+        ## retrieve the matched grops as a tuple in hopes
+        ## this will be faster (ala profiler)
+        groups = match.groups()
+
+        year = string.atoi(groups[0])
+        month = string.atoi(groups[1])
+        day = string.atoi(groups[2])
+        hour = string.atoi(groups[3])
+        minute = string.atoi(groups[4])
+        second = string.atoi(groups[5])
+        author = groups[6]
+        state = groups[7]
 
         ## very strange; here's the deal: if this is a newly added file,
         ## then there is no plus/minus count count of lines; if there
         ## is, then this could be a "CHANGE" or "REMOVE", you can tell
         ## if the file has been removed by looking if state == 'dead'
         try:
-            pluscount = match.group(9)
-            minuscount = match.group(10)
+            pluscount = groups[8]
+            minuscount = groups[9]
         except IndexError:
             pluscount = ''
             minuscount = ''
@@ -289,12 +291,8 @@ class RLogOutputParser:
             line = self.rlog.readline()
 
             ## the last line printed out by rlog is '===='...
-            if line == RLOG_END:
-                done = 1
-                break
-
-            ## commit delimiters, when we hit one this commit is done
-            if line == RLOG_COMMIT_SEP:
+            ## or '------'... between entries
+            if line == RLOG_END or line == RLOG_COMMIT_SEP:
                 break
 
             ## append line to the descripton list
