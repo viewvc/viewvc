@@ -4,6 +4,7 @@
 [# end]
 
 [include "include/header.ezt" "diff"]
+[include "include/file_header.ezt"]
 
 <h3 align=center></h3>
 

@@ -246,18 +246,20 @@
         <dt><code>log.ezt</code> and <code>log_table.ezt</code>:
         <var>href</var>, <var>query</var>, <var>qquery</var>,
         <var>head_href</var>, <var>head_abs_href</var>,
-        <var>entries.href</var>, and 
+        <var>back_url</var>,
+        <var>entries.href</var>, and
         <var>entries.text_href</var></dt>
         <dd>
-          Replaced with new <var>entries.annotate_href</var>,
+          Replaced with new
           <var>diff_url</var>, <var>diff_params</var>,
           <var>diff_select_action</var>,
           <var>branch_select_action</var>,
           <var>logsort_action</var>,
           <var>view_href</var>, <var>download_href</var>,
-          <var>download_text_href</var>,
-          <var>entries.download_href</var>, and
-          <var>entries.download_text_href</var> variables.
+          <var>download_text_href</var>, <var>up_href</var>,
+          <var>entries.download_href</var>,
+          <var>entries.download_text_href</var>, and
+          <var>entries.annotate_href</var> variables.
         </dd>
       </dl>
       <dl>
@@ -292,6 +294,12 @@
         </dd>
       </dl>
       <dl>
+        <dt>
+          <dt>All files: <var>up_href</var></dt>
+        </dt>
+        <dd>Link to parent directory.</dd>
+      </dl>
+      <dl>
         <dt>All files: <var>roots</var></dt>
         <dd>
           List of roots. Unlike the old <var>roots</var> variable which
@@ -307,9 +315,23 @@
           (files in <code>&lt;VIEWCVS_INSTALLATION_DIRECTORY&gt;/templates/docroot</code>)
         </dd>
       </dl>
+       <dl>
+        <dt>All files: <var>log_href</var> and <var>graph_href</var></dt>
+        <dd>
+          Links to the log and graph pages of the current file,
+          if there is one.
+        </dd>
+      </dl>
       <dl>
         <dt><code>graph.ezt</code>: <var>imagesrc</var></dt>
         <dd>String contain URL for graph image.</dd>
+      </dl>
+      <dl>
+        <dt><code>markup.ezt</code>: <var>annotate_href</var></dt>
+        <dd>
+          Link to the annotation page for the current revision,
+          if available.
+        </dd>
       </dl>
       <dl>
         <dt><code>markup.ezt</code>: <var>date_str</var></dt>
@@ -354,13 +376,6 @@
           <var>rows.errors</var>
         </dt>
         <dd>List of error messages pertaining to an entry.</dd>
-      </dl>
-      <dl>
-        <dt>
-          <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
-          <var>up_href</var>
-        </dt>
-        <dd>Link to parent directory.</dd>
       </dl>
       <dl>
         <dt>
