@@ -436,15 +436,6 @@ class BinCVSRepository(vclib.Repository):
     self.rootpath = rootpath
     self.rcs_paths = rcs_paths
 
-  def getitem(self, path_parts):
-    basepath = self._getpath(path_parts)
-    if os.path.isdir(basepath):
-      return vclib.Versdir(self, basepath)
-    rcspath = self._getrcsname(basepath)
-    if os.path.isfile(rcspath):
-      return vclib.Versfile(self, rcspath)
-    raise vclib.ItemNotFound(path_parts)
-
   def itemtype(self, path_parts):
     basepath = self._getpath(path_parts)
     if os.path.isdir(basepath):
@@ -601,81 +592,3 @@ class BinCVSRepository(vclib.Repository):
       return filename
     else:
       return filename + ',v'  
-
-  def _getvf_subdirs(self, basepath):
-    h = os.listdir(basepath)
-    g = { }
-    for i in h:
-      thispath = os.path.join(basepath, i)
-      if os.path.isdir(thispath):
-        g[i] = vclib.Versdir(self, thispath)
-    return g
-    
-  def _getvf_files(self, basepath):
-    h = os.listdir(basepath)
-    g = { }
-    for i in h:
-      rcspath = self._getrcsname(os.path.join(basepath, i))
-      if os.path.isfile(rcspath):
-      	g[i] = vclib.Versfile(self, rcspath)
-    return g  
-  
-  def _getvf_info(self, target, basepath):
-    """
-    This method will add to <target> (expect to be an instance of Versfile)
-    a certain number of attributes:
-    head (string)
-    age (int timestamp)
-    author (string)
-    log
-    branch
-    ... ( there can be other stuff here)
-    
-    Developers: method to be overloaded.
-    """
-    if not os.path.isfile(basepath):
-      raise "Unknown file: %s " % basepath
-    rlog = popen.popen('rlog', basepath, 'rt')
-    header, eof = parse_log_header(rlog)
-    target.head = header.head
-    target.branch = header.branch
-    target.taginfo = header.taginfo
-    
-  def _getvf_tree(self, versfile):
-    """
-    should return a dictionary of Revisions
-    Developers: method to be overloaded.
-    """
-
-  def _getvf_properties(self, target, basepath, revisionnumber):
-    """
-    Add/update into target's attributes (expected to be an instance of
-    Revision) a certain number of attributes:
-    rev
-    date
-    author
-    state
-    log
-    previous revision number
-    branches ( a list of revision numbers )
-    changes ( string of the form: e.g. "+1 -0 lines" )
-    tags
-    ... ( there can be other stuff here)
-    
-    Developers: in the cvs implementation, the method will never be called.
-    There is no point in developping this method as  _getvf_tree already
-    gets the properties.
-    """
-
-  def _getvf_cofile(self, target, basepath):
-    """
-    should return a file object representing the checked out revision.
-    Notice that _getvf_co can also add the properties in <target> the
-    way _getvf_properties does.  
-
-    Developers: method to be overloaded.
-    """
-    fp = popen.popen('co', ('-p' + rev, basepath, 'rb'))
-    fp.readline()
-    fp.readline()
-    return fp
