@@ -71,79 +71,6 @@ class ChangedPathEntry:
   def __init__(self, filename):
     self.filename = filename
 
-class LogReceiver:
-  "Handler for Subversion log message chunks"
-  def __init__(self, filename, svnrepos):
-    self.logs = { }
-    self.filename = filename
-    self.fs_ptr = svnrepos.fs_ptr
-    self.node_id = fs.node_id(svnrepos.fsroot, filename, svnrepos.pool)
-
-  def receive(self, paths, revision, author, datestr, msg, pool):
-    root = fs.revision_root(self.fs_ptr, revision, pool)
-
-    action = copy_path = copy_rev = None
-    other_paths = [ ]
-
-    if paths:
-      subpool = core.svn_pool_create(pool)
-      for path, change in paths.items():
-        core.svn_pool_clear(subpool)
-
-        if fs.check_path(root, path, subpool) != core.svn_node_file:
-          continue
-
-        node_id = fs.node_id(root, path, subpool)
-
-        assert path[0] == '/'
-        path = path[1:]
-
-        ### There needs to be a subversion API to that tells whether
-        ### two node_ids refer to the same copy. It should take two
-        ### svn_fs_id_t structs as arguments and return
-        ###
-        ###   id1.node_id == id2.node_id and id1.copy_id == id2.copy_id
-        ###
-        ### Since there is no API that can give this information I'm using
-        ### fs.check_related() below, which instead returns
-        ###
-        ###   id2.node_id == id2.node_id
-        ###
-        ### This is correct in most circumstances. When it isn't correct,
-        ### the assertion after the check_related call will be set off.
-        if fs.check_related(node_id, self.node_id):
-          assert action is None and copy_path is None and copy_rev is None
-          action = change.action
-          filename = path
-
-          if change.copyfrom_path:
-            assert change.copyfrom_path[0] == '/'
-            copy_path = change.copyfrom_path[1:]
-            copy_rev = change.copyfrom_rev
-            copy_root = fs.revision_root(self.fs_ptr, copy_rev, subpool)
-            self.node_id = fs.node_id(copy_root, copy_path, subpool)
-
-        else:
-          other_paths.append(ChangedPathEntry(path))
-
-      core.svn_pool_destroy(subpool)
-      
-      assert action is not None
-
-    else:
-      # get_changed_paths is false, so just assume that the filename hasn't
-      # changed. This assumption is not correct for any revision that
-      # precedes a copy
-      filename = self.filename
-
-    date = _datestr_to_date(datestr, pool)
-
-    log = LogEntry(revision, date, author, msg, filename,
-                   other_paths, action, copy_path, copy_rev)
-
-    log.size = fs.file_length(root, filename, pool)
-
-    self.logs[revision] = log
     
 def get_logs(svnrepos, full_name, files):
   fileinfo = { }
@@ -163,26 +90,91 @@ def get_logs(svnrepos, full_name, files):
   return fileinfo, alltags
 
 
+def get_history(svnrepos, full_name):
+  pool = svnrepos.pool
+  oldpool = core.svn_pool_create(pool)
+  newpool = core.svn_pool_create(pool)
+  
+  history_set = {}
+  end = svnrepos.rev
+  start = 1
+
+  # Get a revision root for END, and an initial HISTORY baton.
+  rev_root = fs.revision_root(svnrepos.fs_ptr, end, svnrepos.pool)
+  history = fs.node_history(rev_root, full_name, oldpool)
+
+  # Now, we loop over the history items, calling svn_fs_history_prev().
+  while 1:
+    # Note that we have to do some crazy pool work here.  We can't get
+    # rid of the old history until we use it to get the new, so we
+    # alternate back and forth between our subpools.
+    history = fs.history_prev (history,
+                               getattr(svnrepos, 'cross_copies', 1),
+                               newpool)
+
+    # Only continue if there is further history to deal with.
+    if not history:
+      break
+
+    # Fetch the location information for this history step.
+    history_path, history_rev = fs.history_location(history, newpool)
+    history_set[history_rev] = history_path
+
+    # We're done with the old history item, so we can clear its pool,
+    # and then toggle our notion of "the old pool".
+    core.svn_pool_clear(oldpool)
+    tmppool = oldpool;
+    oldpool = newpool;
+    newpool = tmppool;
+
+  core.svn_pool_destroy(oldpool)
+  core.svn_pool_destroy(newpool)
+  return history_set
+
+
 def fetch_log(svnrepos, full_name, which_rev=None):
-  receiver = LogReceiver(full_name, svnrepos)
   alltags = {           # all the tags seen in the files of this dir
     'MAIN' : '1',
     'HEAD' : '1',
     }
+  logs = {}
+  subpool = core.svn_pool_create(svnrepos.pool)
+  show_changed_paths = getattr(svnrepos, 'get_changed_paths', 1)
+
+  def log_helper(rev, path):
+    rev_root = fs.revision_root(svnrepos.fs_ptr, rev, subpool)
+    other_paths = []
+    changed_paths = fs.paths_changed(rev_root, subpool)
+    if not changed_paths.has_key(path):
+      return
+    del changed_paths[path]
+    if show_changed_paths:
+      for other_path in changed_paths.keys():
+        other_paths.append(ChangedPathEntry(other_path))
+    datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, svnrepos.pool)
+    date = _datestr_to_date(datestr, svnrepos.pool)
+    entry = LogEntry(rev, date, author, msg, path,
+                     other_paths, None, None, None)
+    if fs.is_file(rev_root, path, subpool):
+      entry.size = fs.file_length(rev_root, path, subpool)
+    core.svn_pool_clear(subpool)
+    logs[rev] = entry
+  
   if which_rev is not None:
     if (which_rev < 0) \
        or (which_rev > fs.youngest_rev(svnrepos.fs_ptr, svnrepos.pool)):
       raise vclib.InvalidRevision(which_rev);
-    
-    datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr,
-                                         which_rev, svnrepos.pool)
-    receiver.receive(which_rev, author, datestr, msg, svnrepos.pool)
+    log_helper(which_rev, full_name)
   else:
-    repos.svn_repos_get_logs(svnrepos.repos, [ full_name ],
-                             svnrepos.rev, 0,
-                             getattr(svnrepos, 'get_changed_paths', 1), 1,
-                             receiver.receive, svnrepos.pool)
-  return alltags, receiver.logs
+    history_set = get_history(svnrepos, full_name)
+    history_revs = history_set.keys()
+    history_revs.sort()
+    history_revs.reverse()
+    for history_rev in history_revs:
+      log_helper(history_rev, history_set[history_rev])
+
+  core.svn_pool_destroy(subpool)
+  return alltags, logs
 
 
 def do_diff(svnrepos, path, rev1, rev2, diffoptions):
