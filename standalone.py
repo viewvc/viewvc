@@ -264,6 +264,13 @@ If this doesn't work, please click on the link above.
 
 # --- graphical interface: --------------------------------------------------
 
+def nogui(missing_module):
+    sys.stderr.write(
+        "Sorry! Your Python was compiled without the %s module"%missing_module+
+        " enabled.\nI'm unable to run the GUI part.  Please omit the '-g'\n"+
+        "and '--gui' options or install another Python interpreter.\n")
+    raise SystemExit, 1
+
 def gui(host, port):
     """Graphical interface (starts web server and pops up a control window)."""
     class GUI:
@@ -272,7 +279,11 @@ def gui(host, port):
             self.server = None
             self.scanner = None
 
-            import Tkinter
+            try:
+                import Tkinter
+            except ImportError:
+                nogui("Tkinter")
+
             self.server_frm = Tkinter.Frame(window)
             self.title_lbl = Tkinter.Label(self.server_frm,
                 text='Starting server...\n ')
@@ -403,7 +414,10 @@ def gui(host, port):
             self.window.wm_geometry('%dx%d' % (self.minwidth, self.minheight))
             self.window.wm_minsize(self.minwidth, self.minheight)
 
-            import threading
+            try:
+                import threading
+            except ImportError:
+                nogui("thread")
             threading.Thread(target=serve, 
                              args=(host, port, self.ready)).start()
 
