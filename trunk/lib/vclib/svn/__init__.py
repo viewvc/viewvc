@@ -284,16 +284,20 @@ class SubversionRepository(vclib.Repository):
     return fp, revision
 
   def listdir(self, path_parts):
-    item = self.getitem(path_parts)
-    if not isinstance(item, vclib.Versdir):
-      raise vclib.Error("Path '%s' is not a directory."
-                        % self._getpath(path_parts))
+    basepath = self._getpath(path_parts)
+    if self.itemtype(path_parts) != vclib.DIR:
+      raise vclib.Error("Path '%s' is not a directory." % basepath)
 
-    file_data = []
-    for name, obj in item.getfiles().items() + item.getsubdirs().items():
-      file_data.append(vclib.DirEntry(name, obj.type))
+    entries = [ ]
 
-    return file_data
+    for entry in fs.dir_entries(self.fsroot, basepath, self.pool).values():
+      if entry.kind == core.svn_node_dir:
+        kind = vclib.DIR
+      elif entry.kind == core.svn_node_file:
+        kind = vclib.FILE              
+      entries.append(vclib.DirEntry(entry.name, kind))
+
+    return entries
 
   def _getpath(self, path_parts):
     return string.join(path_parts, '/')
