@@ -738,7 +738,6 @@ def dump_file(fname):
   Parser().parse(open(fname), DumpSink())
 
 def time_file(fname):
-  import time
   p = Parser().parse
   f = open(fname)
   s = Sink()
@@ -759,10 +758,10 @@ def _usage():
 if __name__ == '__main__':
   import sys
   if len(sys.argv) != 3:
-    usage()
+    _usage()
   if sys.argv[1] == 'dump':
     dump_file(sys.argv[2])
   elif sys.argv[1] == 'time':
     time_file(sys.argv[2])
   else:
-    usage()
+    _usage()

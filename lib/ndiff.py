@@ -101,7 +101,6 @@ __version__ = 1, 6, 1
 
 from difflib import SequenceMatcher
 
-import string
 TRACE = 0
 
 # define what "junk" means
