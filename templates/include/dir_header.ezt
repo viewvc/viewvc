@@ -37,13 +37,18 @@
 <tr><td>Current search:</td><td><b>[search_re]</b></td></tr>
 [end]
 [if-any num_files]
-<tr><td>Files shown:</td><td><b>[files_shown]</b></td></tr>
-[end]
+<tr><td>Files shown:</td><td><b>[files_shown]</b>
 [is num_dead "0"]
 [else]
-<tr><td>Dead files:</td><td><b>[num_dead]</b>, [if-any attic_showing]showing[else]hidden[end]
-([if-any attic_showing]<a href="[hide_attic_href]">hide</a>[else]<a href="[show_attic_href]">show</a>[end])</td></tr>
+  [if-any attic_showing]
+    (<a href="[hide_attic_href]">Hide [num_dead] dead files</a>)
+  [else]
+    (<a href="[show_attic_href]">Show [num_dead] dead files</a>)
+  [end]
 [end]
+</td></tr>
+[end]
+
 [if-any queryform_href]
 <tr>
   <td>Query:</td>
