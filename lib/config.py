@@ -143,10 +143,11 @@ class Config:
 
     self.colors.diff_heading = "#99cccc"
     self.colors.diff_empty = "#cccccc"
-    self.colors.diff_remove = "#ff9999"
-    self.colors.diff_change = "#99ff99"
-    self.colors.diff_add = "#ccccff"
-    self.colors.diff_dark_change = "#99cc99"
+    # trafic light methaphor:
+    self.colors.diff_remove = "#ffaaaa" # red
+    self.colors.diff_change = "#ffff77" # yellow/orange
+    self.colors.diff_add = "#aaffaa" # green
+    self.colors.diff_dark_change = "#eeee77" # meets hue of diff_change
 
     self.colors.even_odd = ("#ccccee", "#ffffff")
 
