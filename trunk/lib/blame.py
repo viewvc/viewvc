@@ -49,7 +49,7 @@ class CVSParser:
   semic_token = re.compile('^;\\s*')
   rcsen_token = re.compile('^@([^@]*)')
   undo_escape = re.compile('@@')
-  odd_at      = re.compile('([^@]|^)(@@)*@([^@]|$)')
+  odd_at      = re.compile('(([^@]|^)(@@)*)@([^@]|$)')
   rcs_tree    = re.compile('^\\d')
   trunk_rev   = re.compile('^[0-9]+\\.[0-9]+$')
   last_branch = re.compile('(.*)\\.[0-9]+')
@@ -118,7 +118,7 @@ class CVSParser:
         raise RuntimeError, 'EOF'
 
     # Retain the remainder of the line after the terminating @ character
-    i = string.rindex(self.line_buffer, '@')
+    i = self.odd_at.search(self.line_buffer).end(1)
     token = token + self.line_buffer[:i]
     self.line_buffer = self.line_buffer[i+1:]
 
