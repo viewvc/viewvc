@@ -1,7 +1,7 @@
 #!/usr/local/bin/python
 # -*-python-*-
 #
-# Copyright (C) 2000-2001 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 2000-2002 The ViewCVS Group. All Rights Reserved.
 # Copyright (C) 2000 Curt Hagenlocher <curt@hagenlocher.org>
 #
 # By using this file, you agree to the terms and conditions set forth in
