@@ -76,7 +76,8 @@ _sticky_vars = (
   'sortby',
   'logsort',
   'diff_format',
-  'only_with_tag'
+  'only_with_tag',
+  'search',
   )
 
 # regex used to move from a file to a directory
@@ -589,10 +590,6 @@ def markup_stream(request, fp, revision, mime_type):
     idx = string.rfind(revision, '.')
     branch = revision[:idx]
 
-    if _re_is_vendor_branch.match(revision):
-      data['vendor_branch'] = 'yes'
-    else:
-      data['vendor_branch'] = None
     data.update({
       'utc_date' : time.asctime(time.gmtime(entry.date)),
       'ago' : html_time(entry.date, 1),
@@ -603,6 +600,7 @@ def markup_stream(request, fp, revision, mime_type):
       'changed' : entry.changed,
       'log' : htmlify(entry.log),
       'state' : entry.state,
+      'vendor_branch' : ezt.boolean(_re_is_vendor_branch.match(revision)),
       })
 
     if rev2tag.has_key(branch):
@@ -1142,11 +1140,10 @@ def view_directory(request):
     'sortby' : sortby,
     'no_match' : None,
     'unreadable' : None,
-    'has_tags' : None,
     'tarball_href' : None,
     'address' : cfg.general.address,
     'vsn' : __version__,
-    'search_re' : search_re,
+    'search_re' : None,
     'have_logs' : None,
 
     'sortby_file_href' :   toggle_query(query_dict, 'sortby', 'file'),
@@ -1154,6 +1151,12 @@ def view_directory(request):
     'sortby_date_href' :   toggle_query(query_dict, 'sortby', 'date'),
     'sortby_author_href' : toggle_query(query_dict, 'sortby', 'author'),
     'sortby_log_href' :    toggle_query(query_dict, 'sortby', 'log'),
+
+    'has_tags' : ezt.boolean(alltags or view_tag),
+
+    ### one day, if EZT has "or" capability, we can lose this
+    'selection_form' : ezt.boolean(alltags or view_tag
+                                   or cfg.options.use_re_search),
   }
 
   # add in the CVS roots for the selection
@@ -1174,6 +1177,9 @@ def view_directory(request):
   # in that case, we don't need the extra columns
   if len(fileinfo):
     data['have_logs'] = 'yes'
+
+  if search_re:
+    data['search_re'] = htmlify(search_re)
 
   def file_sort_cmp(data1, data2, sortby=sortby, fileinfo=fileinfo):
     if data1[2]:        # is_directory
@@ -1368,23 +1374,28 @@ def view_directory(request):
 
       rows.append(row)
 
+  ### we need to fix the template w.r.t num_files. it usually is not a
+  ### correct (original) count of the files available for selecting
   data['num_files'] = num_files
+
+  # the number actually displayed
+  data['files_shown'] = num_displayed
 
   if num_files and not num_displayed:
     data['no_match'] = 'yes'
   if unreadable:
     data['unreadable'] = 'yes'
 
+  # always create a set of form parameters, since we may have a search form
+  data['params'] = params = [ ]
+  for varname in _sticky_vars:
+    value = query_dict.get(varname, '')
+    if value != '' and value != default_settings.get(varname, '') \
+       and varname != 'only_with_tag' \
+       and varname != 'search':
+      params.append(_item(name=varname, value=query_dict[varname]))
+
   if alltags or view_tag:
-    data['has_tags'] = 'yes'
-    data['params'] = params = [ ]
-
-    for varname in _sticky_vars:
-      value = query_dict.get(varname, '')
-      if value != '' and value != default_settings.get(varname, '') and \
-         varname != 'only_with_tag':
-        params.append(_item(name=varname, value=query_dict[varname]))
-
     alltagnames = alltags.keys()
     alltagnames.sort(lambda t1, t2: cmp(string.lower(t1), string.lower(t2)))
     alltagnames.reverse()
@@ -1598,10 +1609,7 @@ def augment_entry(entry, request, file_url, rev_map, rev2tag, branch_points,
   idx = string.rfind(rev, '.')
   branch = rev[:idx]
 
-  if _re_is_vendor_branch.match(rev):
-    entry.vendor_branch = 'yes'
-  else:
-    entry.vendor_branch = None
+  entry.vendor_branch = ezt.boolean(_re_is_vendor_branch.match(rev))
 
   entry.utc_date = time.asctime(time.gmtime(entry.date))
   entry.ago = html_time(entry.date, 1)
@@ -1744,22 +1752,16 @@ def view_log(request):
     'cfg' : cfg,
     'vsn' : __version__,
     'kv' : request.kv,
+
+    'viewable' : ezt.boolean(request.default_viewable),
+    'human_readable' : ezt.boolean(query_dict['diff_format'] == 'h'
+                                   or query_dict['diff_format'] == 'l'),
     }
 
   if cfg.options.use_cvsgraph:
     data['graph_href'] = file_url + '?graph=1' + request.amp_query
   else:
     data['graph_href'] = None
-
-  if request.default_viewable:
-    data['viewable'] = 'yes'
-  else:
-    data['viewable'] = None
-
-  if query_dict['diff_format'] == 'h' or query_dict['diff_format'] == 'l':
-    data['human_readable'] = 'yes'
-  else:
-    data['human_readable'] = None
 
   if cur_branch:
     ### note: we really shouldn't have more than one tag in here. a "default
