@@ -317,14 +317,6 @@ def gui(port):
                 command=self.toggle_subdirmod)
             self.subdirmod_toggle.pack(side='top', anchor='w')
 
-            # flip_links_in_dirview toggle:
-            self.fliplinks_ivar = Tkinter.IntVar()
-            self.fliplinks_ivar.set(viewcvs.cfg.options.flip_links_in_dirview)
-            self.fliplinks_toggle = Tkinter.Checkbutton(self.options_frm,
-                text="flip file/rev columns (dir view)", var=self.fliplinks_ivar,
-                command=self.toggle_fliplinks)
-            self.fliplinks_toggle.pack(side='top', anchor='w')
-
             # use_re_search toggle:
             self.useresearch_ivar = Tkinter.IntVar()
             self.useresearch_ivar.set(viewcvs.cfg.options.use_re_search)
@@ -347,6 +339,10 @@ def gui(port):
                 text="directory.ezt", value="templates/directory.ezt", 
                 var=self.dirtemplate_svar, command=self.set_templates_directory)
             self.templates_dir.pack(side='top', anchor='w')
+            self.templates_dir_alt = Tkinter.Radiobutton(self.options_frm,
+                text="dir_alternate.ezt", value="templates/dir_alternate.ezt", 
+                var=self.dirtemplate_svar, command=self.set_templates_directory)
+            self.templates_dir_alt.pack(side='top', anchor='w')
 
             # log view template:
             self.logtemplate_lbl = Tkinter.Label(self.options_frm,
@@ -404,9 +400,6 @@ def gui(port):
 
         def toggle_subdirmod(self, event=None):
             viewcvs.cfg.options.show_subdir_lastmod = self.subdirmod_ivar.get()
-
-        def toggle_fliplinks(self, event=None):
-            viewcvs.cfg.options.flip_links_in_dirview = self.fliplinks_ivar.get()
 
         def toggle_useresearch(self, event=None):
             viewcvs.cfg.options.use_re_search = self.useresearch_ivar.get()
