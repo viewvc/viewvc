@@ -598,15 +598,13 @@ class CheckinDatabaseQuery:
         self.commit_cb = None
 
     def SetRepository(self, repository, match = "exact"):
-        repository = string.replace(repository, '/', os.sep)
-        self.repository_list.append(QueryEntry(repository, match))
+        self.repository_list.append(QueryEntry(os.path.normcase(repository), match))
 
     def SetBranch(self, branch, match = "exact"):
         self.branch_list.append(QueryEntry(branch, match))
 
     def SetDirectory(self, directory, match = "exact"):
-        directory = string.replace(directory, '/', os.sep)
-        self.directory_list.append(QueryEntry(directory, match))
+        self.directory_list.append(QueryEntry(os.path.normcase(directory), match))
 
     def SetFile(self, file, match = "exact"):
         self.file_list.append(QueryEntry(file, match))
@@ -735,3 +733,4 @@ def GetUnrecordedCommitList(repository, filename):
             unrecorded_commit_list.append(commit)
 
     return unrecorded_commit_list
+
