@@ -132,9 +132,6 @@ class CVSParser:
         self.feof = 1
         break
 
-    if token[-1:] == '\n':
-      token = token[:-1]
-
     return token
 
   # Try to match the next token from the input buffer
@@ -182,6 +179,13 @@ class CVSParser:
 
     return ancestors
 
+  # Split deltatext specified by rev to each line.
+  def deltatext_split(self, rev):
+    lines = string.split(self.revision_deltatext[rev], '\n')
+    if lines[-1] == '':
+      del lines[-1]
+    return lines
+
   # Extract the given revision from the digested RCS file.
   # (Essentially the equivalent of cvs up -rXXX)
   def extract_revision(self, revision):
@@ -195,12 +199,12 @@ class CVSParser:
     path.reverse()
     path = path[1:]  # Get rid of head revision
 
-    text = string.split(self.revision_deltatext[self.head_revision], '\n')
+    text = self.deltatext_split(self.head_revision)
 
     # Iterate, applying deltas to previous revision
     for revision in path:
       adjust = 0
-      diffs = string.split(self.revision_deltatext[revision], '\n')
+      diffs = self.deltatext_split(revision)
       self.lines_added[revision]   = 0
       self.lines_removed[revision] = 0
       lines_added_now = 0
@@ -470,14 +474,14 @@ class CVSParser:
     # first revision.
     line_count = 0
     if self.revision_deltatext.get(self.head_revision):
-      tmp_array = string.split(self.revision_deltatext[self.head_revision], '\n')
+      tmp_array = self.deltatext_split(self.head_revision)
       line_count = len(tmp_array)
 
     skip = 0
 
     rev = self.prev_revision.get(self.head_revision)
     while rev:
-      diffs = string.split(self.revision_deltatext[rev], '\n')
+      diffs = self.deltatext_split(rev)
       for command in diffs:
         dmatch = self.d_command.match(command)
         amatch = self.a_command.match(command)
@@ -522,7 +526,7 @@ class CVSParser:
       is_trunk_revision = self.trunk_rev.match(revision) is not None
 
       if is_trunk_revision:
-        diffs = string.split(self.revision_deltatext[last_revision], '\n')
+	diffs = self.deltatext_split(last_revision)
 
         # Revisions on the trunk specify deltas that transform a
         # revision into an earlier revision, so invert the translation
@@ -555,7 +559,7 @@ class CVSParser:
         # the trunk.  They specify deltas that transform a revision
         # into a later revision.
         adjust = 0
-        diffs = string.split(self.revision_deltatext[revision], '\n')
+	diffs = self.deltatext_split(revision)
         for command in diffs:
           if skip > 0:
             skip = skip - 1
