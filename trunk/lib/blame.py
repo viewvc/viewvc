@@ -34,7 +34,6 @@
 #
 
 import string
-import sys
 import os
 import re
 import time
@@ -64,13 +63,12 @@ class CVSParser(rcsparse.Sink):
     self.next_delta = {}
     self.prev_delta = {}
     self.tag_revision = {}
-    self.revision_symbolic_name = {}
     self.timestamp = {}
     self.revision_ctime = {}
     self.revision_age = {}
     self.revision_log = {}
     self.revision_deltatext = {}
-    self.revision_map = []
+    self.revision_map = []    # map line numbers to revisions
     self.lines_added  = {}
     self.lines_removed = {}
 
@@ -178,9 +176,6 @@ class CVSParser(rcsparse.Sink):
     # Create an associate array that maps from tag name to
     # revision number and vice-versa.
     self.tag_revision[name] = revision
-
-    ### actually, this is a bit bogus... a rev can have multiple names
-    self.revision_symbolic_name[revision] = name
 
   def set_comment(self, comment):
     self.file_description = comment
@@ -458,8 +453,8 @@ def make_html(root, rcs_path, opt_rev = None, sticky = None):
   file_head = match.group(1)
   file_tail = match.group(2)
 
-  open_table_tag = '<table border=0 cellpadding=0 cellspacing=0 width="100%">'
-  startOfRow = '<tr><td colspan=3%s><pre>'
+  open_table_tag = '<table border="0" cellpadding="0" cellspacing="0" width="100%">'
+  startOfRow = '<tr><td colspan="3"%s><pre>'
   endOfRow = '</td></tr>'
 
   print open_table_tag + (startOfRow % '')
@@ -471,8 +466,6 @@ def make_html(root, rcs_path, opt_rev = None, sticky = None):
   revision_width = 3
   author_width = 5
   line = 0
-  usedlog = {}
-  usedlog[revision] = 1
   old_revision = 0
   row_color = ''
   lines_in_table = 0
@@ -482,7 +475,6 @@ def make_html(root, rcs_path, opt_rev = None, sticky = None):
   for revision in parser.revision_map:
     thisline = text[line]
     line = line + 1
-    usedlog[revision] = 1
 
     # Escape HTML meta-characters
     thisline = cgi.escape(thisline)
@@ -516,16 +508,14 @@ def make_html(root, rcs_path, opt_rev = None, sticky = None):
       output = output + endOfRow + '</table>' + open_table_tag + (startOfRow % row_color)
       lines_in_table = 0
 
-    output = output + "<a name=%d></a>" % (line, )
-    if 1:  # opt_line_nums
-      output = output + ('%%%dd' % (line_num_width, )) % (line, )
+    output = output + '<a name="%d">%*d</a>' % (line, line_num_width, line)
 
     if old_revision != revision or rev_count > 20:
       revision_width = max(revision_width, len(revision))
 
       if parser.prev_revision.get(revision):
         fname = file_tail[:-2]	# strip the ",v"
-	url = '%s.diff?r1=%s&amp;r2=%s' % \
+	url = '%s?r1=%s&amp;r2=%s' % \
 	      (fname, parser.prev_revision[revision], revision)
 	if sticky:
 	  url = url + '&' + sticky
@@ -541,7 +531,7 @@ def make_html(root, rcs_path, opt_rev = None, sticky = None):
       author = parser.revision_author[revision]
       # $author =~ s/%.*$//;
       author_width = max(author_width, len(author))
-      output = output + ('%%-%ds ' % (author_width, )) % (author, )
+      output = output + ('%-*s ' % (author_width, author))
       output = output + revision
       if parser.prev_revision.get(revision):
         output = output + '</a>'
@@ -566,6 +556,7 @@ def make_html(root, rcs_path, opt_rev = None, sticky = None):
 
 
 def main():
+  import sys
   if len(sys.argv) != 3:
     print 'USAGE: %s cvsroot rcs-file' % sys.argv[0]
     sys.exit(1)
