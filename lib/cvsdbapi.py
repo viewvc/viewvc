@@ -25,14 +25,20 @@ CONF_PATHNAME = None
 
 #########################################################################
 
-import os, database, rlog, commit, config
+import os
+
+import database
+import query
+import rlog
+import commit
+import config
 
 ## error
 error = 'cvsdbapi error'
 
 ## database
 CreateCheckinDatabase = database.CreateCheckinDatabase
-CreateCheckinQuery = database.CreateCheckinQuery
+CreateCheckinQuery = query.CreateCheckinQuery
 
 ## rlog
 GetRLogData = rlog.GetRLogData
