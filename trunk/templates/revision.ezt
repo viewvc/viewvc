@@ -1,6 +1,5 @@
 [# setup page definitions]
-  [define location][rootname][if-any where]: [where][end][end]
-  [define page_title][cfg.general.main_title] - revision - [location][end]
+  [define page_title]Revision [jump_rev][end]
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
