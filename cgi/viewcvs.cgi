@@ -3,7 +3,7 @@
 #
 # viewcvs: View CVS repositories via a web browser
 #
-# Copyright (C) 1999 Greg Stein. All Rights Reserved.
+# Copyright (C) 1999-2000 Greg Stein. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth below:
 #
@@ -395,6 +395,12 @@ _sticky_vars = (
 # regex used to move from a file to a directory
 _re_up_path = re.compile('(Attic/)?[^/]+$')
 
+_EOF_FILE = 'end of file entries'	# no more entries for this RCS file
+_EOF_LOG = 'end of log'			# hit the true EOF on the pipe
+_EOF_ERROR = 'error message found'	# rlog issued an error
+
+_FILE_HAD_ERROR = 'could not read file'
+
 
 class Request:
   def __init__(self):
@@ -413,13 +419,13 @@ class Request:
 
     script_name = os.environ['SCRIPT_NAME']	### clean this up?
     if where:
-      script_where = script_name + '/' + urllib.quote(where)
+      url = script_name + '/' + urllib.quote(where)
     else:
-      script_where = script_name
+      url = script_name
 
     self.where = where
     self.script_name = script_name
-    self.script_where = script_where
+    self.url = url
 
     self.browser = os.environ.get('HTTP_USER_AGENT', 'unknown')
 
@@ -686,9 +692,7 @@ def print_diff_select(query_dict):
   print '</select>'
 
 def navigate_header(request, swhere, path, filename, rev, title):
-  if swhere == request.script_name + '/' + request.where:
-    swhere = ''
-  if swhere == '':
+  if swhere == request.url:
     swhere = urllib.quote(filename)
 
   print '<html><head>'
@@ -718,8 +722,7 @@ def markup_stream(request, fp, revision, mime_type):
   file_url = urllib.quote(filename)
 
   http_header()
-  navigate_header(request, request.script_name + '/' + where, pathname,
-                  filename, revision, 'view')
+  navigate_header(request, request.url, pathname, filename, revision, 'view')
   print '<hr noshade>'
   print '<table width="100&#37;"><tr><td bgcolor="%s">' % markup_log_color
   print 'File:', clickable_path(request, where, 1, 0), '</b>'
@@ -826,13 +829,13 @@ def parse_log_header(fp):
   taginfo = { }		# tag name => revision
 
   parsing_tags = 0
-  eof = 0
+  eof = None
 
   while 1:
     line = fp.readline()
     if not line:
       # the true end-of-file
-      eof = 2
+      eof = _EOF_LOG
       break
 
     if parsing_tags:
@@ -859,8 +862,18 @@ def parse_log_header(fp):
         break
       elif line[:10] == '==========':
         # end of this file's log information
-        eof = 1
+        eof = _EOF_FILE
         break
+      elif line[:6] == 'rlog: ':
+        # rlog: filename/goes/here,v: error message
+        idx = string.find(line[6:], ':')
+        if idx != -1:
+          # looks like a filename
+          filename = line[6:idx+6]
+          if filename[-2:] == ',v':
+            filename = filename[:-2]
+          return filename, None, None, None, _EOF_ERROR
+        # dunno what this is
 
   return filename, head, branch, taginfo, eof
 
@@ -878,27 +891,27 @@ def parse_log_entry(fp):
   end-of-file marker (equals).
 
   Returns: revision, date (time_t secs), author, state, lines changed,
-  the log text, and eof flag (hit log separator (0) or log eof (1)).
+  the log text, and eof flag (see _EOF_*)
   """
   rev = None
   line = fp.readline()
   if not line:
-    return None, None, None, None, None, None, 2
+    return None, None, None, None, None, None, _EOF_LOG
   if line[:8] == 'revision':
     rev = line[9:-1]
 
     line = fp.readline()
     if not line:
-      return None, None, None, None, None, None, 2
+      return None, None, None, None, None, None, _EOF_LOG
     match = _re_log_info.match(line)
 
-  eof = 0
+  eof = None
   log = ''
   while 1:
     line = fp.readline()
     if not line:
       # true end-of-file
-      eof = 2
+      eof = _EOF_LOG
       break
     if line[:9] == 'branches:':
       continue
@@ -906,7 +919,7 @@ def parse_log_entry(fp):
       break
     if line[:10] == '==========':
       # end of this file's log information
-      eof = 1
+      eof = _EOF_FILE
       break
 
     log = log + line
@@ -939,11 +952,12 @@ def get_logs(full_name, files, view_tag):
   if view_tag:
     # NOTE: can't pass tag on command line since a tag may contain "-"
     #       we'll search the output for the appropriate revision
-    rlog = os.popen("%srlog '%s/%s' 2> /dev/null" %
+    rlog = os.popen("%srlog '%s/%s' 2>&1" %
                     (rcs_path, full_name, arglist),
                     "r")
   else:
-    rlog = os.popen("%srlog -r '%s/%s' 2> /dev/null" %
+    # fetch the latest revision on the default branch
+    rlog = os.popen("%srlog -r '%s/%s' 2>&1" %
                     (rcs_path, full_name, arglist),
                     "r")
 
@@ -963,8 +977,25 @@ def get_logs(full_name, files, view_tag):
     filename, head, branch, symrev, eof = parse_log_header(rlog)
 
     # the rlog output is done
-    if eof == 2:
+    if eof == _EOF_LOG:
       break
+
+    if filename:
+      # convert from absolute to relative
+      if filename[:len(full_name)] == full_name:
+        filename = filename[len(full_name)+1:]
+
+      # for a subdir (not Attic files!), use the subdir for a key
+      idx = string.find(filename, '/')
+      if idx != -1 and filename[:6] != 'Attic/':
+        info_key = filename[:idx]
+      else:
+        info_key = filename
+
+    # an error was found regarding this file
+    if eof == _EOF_ERROR:
+      fileinfo[info_key] = _FILE_HAD_ERROR
+      continue
 
     # if we hit the end of the log information (already!), then there is
     # nothing we can do with this file
@@ -975,10 +1006,6 @@ def get_logs(full_name, files, view_tag):
       # parsing error. skip the rest of this file.
       skip_file(rlog)
       continue
-
-    # convert from absolute to relative
-    if filename[:len(full_name)] == full_name:
-      filename = filename[len(full_name)+1:]
 
     if not branch:
       idx = string.rfind(head, '.')
@@ -1040,13 +1067,7 @@ def get_logs(full_name, files, view_tag):
         revwanted = rev
 
       if rev == revwanted or rev == branchpoint:
-        # for a subdir (not Attic files!), use the subdir for a key
-        idx = string.find(filename, '/')
-        if idx != -1 and filename[:6] != 'Attic/':
-          key = filename[:idx]
-        else:
-          key = filename
-        fileinfo[key] = (rev, date, log, author, filename)
+        fileinfo[info_key] = (rev, date, log, author, filename)
 
         # done with this file now
         if not eof:
@@ -1184,7 +1205,11 @@ def view_directory(request):
     # we should have data on these. if not, then it is because we requested
     # a specific tag and that tag is not present on the file.
     info1 = fileinfo.get(file1)
+    if info1 == _FILE_HAD_ERROR:
+      info1 = None
     info2 = fileinfo.get(file2)
+    if info2 == _FILE_HAD_ERROR:
+      info2 = None
     if info1 and info2:
       if sortby == 'rev':
         result = revcmp(info1[0], info2[0])
@@ -1215,6 +1240,7 @@ def view_directory(request):
   cur_row = 0
   num_files = 0
   num_displayed = 0
+  unreadable = 0
 
   attic_toggle_link = '<a href="./%s#dirlist">[Hide]</a>' % \
                       toggle_query(query_dict, 'hideattic', 1)
@@ -1245,7 +1271,15 @@ def view_directory(request):
               toggle_query(query_dict, 'hideattic', 0)
 
       info = fileinfo.get(file)
-      if info:
+      if info == _FILE_HAD_ERROR:
+        if dirtable:
+          print '</td><td colspan=%d><i>CVS informatino is unreadable</i>' % \
+                (num_cols - 1)
+          cur_row = cur_row + 1
+          unreadable = 1
+        else:
+          print '<i>CVS information is unreadable></i>'
+      elif info:
         if dirtable:
           print '</td><td>&nbsp;</td><td>&nbsp;'
         print html_time(info[1])
@@ -1278,7 +1312,20 @@ def view_directory(request):
 
       num_files = num_files + 1
       info = fileinfo.get(file)
-      if not info:
+      if info == _FILE_HAD_ERROR:
+        if dirtable:
+          print '<tr bgcolor="%s"><td><a name="%s">%s</a></td>' % \
+                (table_colors[cur_row % 2], file, file)
+          print '<td colspan=%d><i>CVS information is unreadable</i></td>' % \
+                (num_cols - 1)
+          print '</tr>'
+          cur_row = cur_row + 1
+        else:
+          print '<i>CVS information is unreadable></i><br>'
+        num_displayed = num_displayed + 1
+        unreadable = 1
+        continue
+      elif not info:
         continue
       num_displayed = num_displayed + 1
 
@@ -1336,6 +1383,11 @@ def view_directory(request):
   if num_files and not num_displayed:
     print '<p><b>NOTE:</b> There are %d files, but none match the current' \
           'tag (%s)' % (num_files, view_tag)
+  if unreadable:
+    print '<hr size=1 noshade><b>NOTE:</b> One or more files were ' \
+          'unreadable. The files in the CVS repository should be readable ' \
+          'by the web server process. Please report this condition to the ' \
+          'administrator of this CVS repository.'
 
   if alltags or view_tag or edit_option_form or query_dict.has_key('options'):
     print '<hr size=1 noshade>'
@@ -1372,7 +1424,7 @@ def fetch_log(full_name, which_rev=None):
     rev_flag = '-r' + which_rev
   else:
     rev_flag = ''
-  rlog = os.popen("%srlog %s '%s' 2> /dev/null" %
+  rlog = os.popen("%srlog %s '%s' 2>&1" %
                   (rcs_path, rev_flag, full_name),
                   "r")
 
@@ -1573,12 +1625,12 @@ def print_log(request, rev_map, rev_order, revinfo, rev2tag, branch_points,
       print '/'
       download_link(request, file_url, rev, '(view)', viewcvs_mime_type)
     if allow_annotate:
-      print '- <a href="%s/%s?annotate=%s%s">annotate</a>' % \
-            (request.script_name, urllib.quote(where), rev, request.bare_query)
+      print '- <a href="%s?annotate=%s%s">annotate</a>' % \
+            (request.url, rev, request.bare_query)
     if allow_version_select:
       if query_dict.get('r1') != rev:
-        print '- <a href="%s/%s?r1=%s%s">[select for diffs]</a>' % \
-              (request.script_name, urllib.quote(where), rev, request.bare_query)
+        print '- <a href="%s?r1=%s%s">[select for diffs]</a>' % \
+              (request.url, rev, request.bare_query)
       else:
         print '- <b>[selected]</b>'
 
@@ -1628,25 +1680,25 @@ def print_log(request, rev_map, rev_order, revinfo, rev2tag, branch_points,
     # diff against previous version
     if prev:
       diff_rev[prev] = 1
-      print 'to previous <a href="%s/%s.diff?r1=%s&r2=%s%s">%s</a>' % \
-            (request.script_name, where, prev, rev, request.bare_query, prev)
+      print 'to previous <a href="%s.diff?r1=%s&r2=%s%s">%s</a>' % \
+            (request.url, prev, rev, request.bare_query, prev)
       if not human_readable:
-        print '(<a href="%s/%s.diff?r1=%s&r2=%s%s' \
+        print '(<a href="%s.diff?r1=%s&r2=%s%s' \
               '&diff_format=h">colored</a>)' % \
-              (request.script_name, where, prev, rev, request.bare_query)
+              (request.url, prev, rev, request.bare_query)
 
     # diff against branch point (if not a vendor branch)
     if rev2tag.has_key(branch_point) and \
        not is_vendor_branch and \
        not diff_rev.has_key(branch_point):
       diff_rev[branch_point] = 1
-      print 'to a branchpoint <a href="%s/%s.diff?r1=%s&r2=%s%s">%s</a>' % \
-            (request.script_name, where, branch_point, rev, request.bare_query,
+      print 'to a branchpoint <a href="%s.diff?r1=%s&r2=%s%s">%s</a>' % \
+            (request.url, branch_point, rev, request.bare_query,
              branch_point)
       if not human_readable:
-        print '(<a href="%s/%s.diff?r1=%s&r2=%s%s' \
+        print '(<a href="%s.diff?r1=%s&r2=%s%s' \
               '&diff_format=h">colored</a>)' % \
-              (request.script_name, where, branch_point, rev, request.bare_query)
+              (request.url, branch_point, rev, request.bare_query)
 
     # if it's on a branch (and not a vendor branch), then diff against the
     # next revision of the higher branch (e.g. change is committed and
@@ -1678,21 +1730,21 @@ def print_log(request, rev_map, rev_order, revinfo, rev2tag, branch_points,
 
       if not diff_rev.has_key(next_main):
         diff_rev[next_main] = 1
-        print 'next main <a href="%s/%s.diff?r1=%s&r2=%s%s">%s</a>' % \
-              (request.script_name, where, next_main, rev, request.bare_query, next_main)
+        print 'next main <a href="%s.diff?r1=%s&r2=%s%s">%s</a>' % \
+              (request.url, next_main, rev, request.bare_query, next_main)
         if not human_readable:
-          print '(<a href="%s/%s.diff?r1=%s&r2=%s%s">colord</a>' % \
-                (request.script_name, where, next_main, rev, request.bare_query)
+          print '(<a href="%s.diff?r1=%s&r2=%s%s">colord</a>' % \
+                (request.url, next_main, rev, request.bare_query)
 
     # if they have selected r1, then diff against that
     r1 = query_dict.get('r1')
     if r1 and not diff_rev.has_key(r1):
       diff_rev[r1] = 1
-      print 'to selected <a href="%s/%s.diff?r1=%s&r2=%s%s">%s</a>' % \
-            (request.script_name, where, r1, rev, request.bare_query, r1)
+      print 'to selected <a href="%s.diff?r1=%s&r2=%s%s">%s</a>' % \
+            (request.url, r1, rev, request.bare_query, r1)
       if not human_readable:
-        print '(<a href="%s/%s.diff?r1=%s&r2=%s%s">colored</a>' % \
-              (request.script_name, where, r1, rev, request.bare_query)
+        print '(<a href="%s.diff?r1=%s&r2=%s%s">colored</a>' % \
+              (request.url, r1, rev, request.bare_query)
 
   print '<pre>' + htmlify(revinfo[5]) + '</pre>'
 
@@ -1747,8 +1799,8 @@ def view_log(request):
   print 'box or you may type in a numeric name using the type-in text box.'
   print '</a><p>'
 
-  print '<form method="GET" action="%s/%s.diff" name="diff_select">' % \
-        (request.script_name, where)
+  print '<form method="GET" action="%s.diff" name="diff_select">' % \
+        request.url
   for varname in _sticky_vars:
     value = query_dict.get(varname, '')
     if value != '' and value != default_settings.get(varname):
@@ -1798,8 +1850,7 @@ def view_log(request):
                         (varname, value)
 
   if branch_names:
-    print '<a name=branch><form method="GET" action="%s/%s">' % \
-          (request.script_name, where)
+    print '<a name=branch><form method="GET" action="%s">' % request.url
     print hidden_values
 
     print 'View only Branch:'
@@ -1816,7 +1867,7 @@ def view_log(request):
     print '<input type=submit value="  View Branch  "></form></a>'
 
   print '<a name=logsort>'
-  print '<form method="GET" action="%s/%s">' % (request.script_name, where)
+  print '<form method="GET" action="%s">' % request.url
   print hidden_values
   print 'Sort log by:'
   print '<select name="logsort"'
@@ -2018,8 +2069,7 @@ def human_readable_diff(request, fp, rev, sym1, sym2):
   print '</table></td></tr></table></td>'
 
   # format selector
-  print '<td><form method="GET" action="%s/%s">' % \
-        (request.script_name, request.where)
+  print '<td><form method="GET" action="%s">' % request.url
   for varname, value in query_dict.items():
     if varname != 'diff_format' and value != default_settings.get(varname):
       print '<input type=hidden name="%s" value="%s">' % \
@@ -2174,7 +2224,7 @@ def main():
 
   ### temp
   where = request.where
-  script_where = request.script_where
+  url = request.url
 
   query_dict = request.query_dict
   query_string = request.query_string
@@ -2193,7 +2243,7 @@ def main():
   # if we have a directory and the request didn't end in "/", then redirect
   # so that it does. (so that relative URLs in our output work right)
   if isdir and os.environ.get('PATH_INFO', '')[-1:] != '/':
-    redirect(script_where + '/' + query_string)
+    redirect(url + '/' + query_string)
 
   # check the forbidden list
   idx = string.find(where, '/')
@@ -2225,8 +2275,8 @@ def main():
     idx = string.rfind(full_name, '/')
     attic_name = full_name[:idx] + '/Attic' + full_name[idx:] + ',v'
     if os.path.isfile(attic_name):
-      idx = string.rfind(script_where, '/')
-      redirect(script_where[:idx] + '/Attic' + script_where[idx:])
+      idx = string.rfind(url, '/')
+      redirect(url[:idx] + '/Attic' + url[idx:])
 
     # it is probably a module
     view_module()
