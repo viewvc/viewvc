@@ -261,24 +261,6 @@ def NextFile(s, pos = 0):
   else:
     return None, i + 1
 
-def BrokenCvsNtArgParse(s, repository):
-  """Some earlier versions of CVSNT mistakenly escaped filenames twice, see
-  http://cvs.cvsnt.org/cgi-bin/viewcvs.cgi/cvsnt/src/logmsg.c
-  http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=13
-  http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=33
-  """
-  escaped = 0
-  us = ''
-  for c in s:
-    if escaped:
-      us += c
-      escaped = 0
-    elif c == '\\':
-      escaped = 1
-    else:
-      us += c
-  return CvsNtArgParse(us, repository)
-
 def ProcessLoginfo(rootpath, file_data_list):
     ## XXX This is a somewhat dirty hack:
     ## cvsdb already loads the configuration file and provides a cfg
@@ -335,8 +317,6 @@ if __name__ == '__main__':
           fun = HeuristicArgParse
         elif sys.argv[2] == 'cvsnt':
           fun = CvsNtArgParse
-        elif sys.argv[2] == 'brokencvsnt':
-          fun = BrokenCvsNtArgParse
         else:
           error('Bad arguments')
     else:
