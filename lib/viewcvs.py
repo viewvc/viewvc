@@ -360,7 +360,11 @@ class Request:
     # must specify both where and pathtype or neither
     assert (where is None) == (pathtype is None)
 
-    if where is None:
+    # if we are asking for the revision info view, we don't need any
+    # path information
+    if view_func is view_revision:
+      where = pathtype = None
+    elif where is None:
       where = self.where
       pathtype = self.pathtype
 
@@ -385,12 +389,6 @@ class Request:
       else:
         params['root'] = None
 
-    # if we are asking for the revision info view, we don't need any
-    # path information
-    if view_func == view_revision:
-      where = None
-      pathtype = vclib.DIR
-        
     # add path
     if where:
       url = url + '/' + where
