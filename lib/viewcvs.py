@@ -651,6 +651,7 @@ enscript_extensions = {
   '.MOD' : 'modula_2',  # requires a patch for enscript 1.6.2, see INSTALL
   '.PS' : 'postscript',
   '.S' : 'asm',
+  '.SH' : 'sh',
   '.ada' : 'ada',
   '.adb' : 'ada',
   '.ads' : 'ada',
@@ -659,7 +660,9 @@ enscript_extensions = {
   '.c++' : 'cpp',
   '.cc' : 'cpp',
   '.cpp' : 'cpp',
+  '.csh' : 'csh',
   '.cxx' : 'cpp',
+  '.diff' : 'diffu',
   '.dpr' : 'delphi',
   '.el' : 'elisp',
   '.eps' : 'postscript',
@@ -676,6 +679,9 @@ enscript_extensions = {
   '.lgs' : 'haskell',
   '.lhs' : 'haskell',
   '.m' : 'objc',
+  '.m4' : 'm4',
+  '.man' : 'nroff',
+  '.nr' : 'nroff',
   '.p' : 'pascal',
   # classic setting:
   # '.pas' : 'pascal',
@@ -683,6 +689,10 @@ enscript_extensions = {
   # brought to us as Turbo-Pascal during the eighties of the last century:
   '.pas' : 'delphi',
   # ---
+  '.patch' : 'diffu',
+  # For Oracle sql packages.  The '.pkg' extension might be used for other
+  # file types, adjust here if necessary.
+  '.pkg' : 'sql', 
   '.pl' : 'perl',
   '.pm' : 'perl',
   '.pp' : 'pascal',
@@ -693,10 +703,14 @@ enscript_extensions = {
   '.scr' : 'synopsys',
   '.sh' : 'sh',
   '.shtml' : 'html',
+  '.sql' : 'sql',
   '.st' : 'states',
   '.syn' : 'synopsys',
   '.synth' : 'synopsys',
   '.tcl' : 'tcl',
+  '.tex' : 'tex',
+  '.texi' : 'tex',
+  '.texinfo' : 'tex',
   '.v' : 'verilog',
   '.vba' : 'vba',
   '.vh' : 'verilog',
@@ -711,6 +725,7 @@ enscript_filenames = {
   'GNUmakefile' : 'makefile',
   'Makefile' : 'makefile',
   'makefile' : 'makefile',
+  'ChangeLog' : 'changelog',
   }
 
 
