@@ -221,7 +221,7 @@ class Config:
 def _parse_roots(config_name, config_value):
   roots = { }
   for root in config_value:
-    pos = root.find(':')
+    pos = string.find(root, ':')
     if pos < 0:
       raise MalformedRoot(config_name, root)
     name, path = map(string.strip, (root[:pos], root[pos+1:]))

@@ -153,7 +153,7 @@ def pipe_cmds(cmds):
       
       i = 0
       for cmd in cmds:
-        i += 1
+        i = i + 1
         
         dbgOut, dbgErr = StringIO.StringIO(), StringIO.StringIO()
         
@@ -181,7 +181,7 @@ def pipe_cmds(cmds):
   
       i = 0
       for cmd in cmds:
-        i += 1
+        i = i + 1
         if i < len(cmds):
           nextStdIn, hStdOut = win32popen.CreatePipe(1, 1, 1, 1)
         else:
