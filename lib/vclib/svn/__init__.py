@@ -323,7 +323,7 @@ class SubversionRepository(vclib.Repository):
     # output, Apache will grow impatient and SIGTERM it.  While we
     # don't mind getting told to bail, we want to gracefully close the
     # repository before we bail.
-    def _sigterm_handler(signum, frame):
+    def _sigterm_handler(signum, frame, self=self):
       self._close()
       sys.exit(-1)
     signal.signal(signal.SIGTERM, _sigterm_handler)
