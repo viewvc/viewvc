@@ -1462,13 +1462,16 @@ def view_directory(request):
     'tarball_href' : None,
     'search_re' : search_re and htmlify(search_re) or None,
     'dir_pagestart' : None,
-    'sortby_file_href' :   request.get_url(params={'sortby': 'file'}),
-    'sortby_rev_href' :    request.get_url(params={'sortby': 'rev'}),
-    'sortby_date_href' :   request.get_url(params={'sortby': 'date'}),
-    'sortby_author_href' : request.get_url(params={'sortby': 'author'}),
-    'sortby_log_href' :    request.get_url(params={'sortby': 'log'}),
-    'sortdir_down_href' :  request.get_url(params={'sortdir': 'down'}),
-    'sortdir_up_href' :    request.get_url(params={'sortdir': 'up'}),
+    'sortby_file_href' :   request.get_url(params={'sortby': 'file',
+                                                   'sortdir': None}),
+    'sortby_rev_href' :    request.get_url(params={'sortby': 'rev',
+                                                   'sortdir': None}),
+    'sortby_date_href' :   request.get_url(params={'sortby': 'date',
+                                                   'sortdir': None}),
+    'sortby_author_href' : request.get_url(params={'sortby': 'author',
+                                                   'sortdir': None}),
+    'sortby_log_href' :    request.get_url(params={'sortby': 'log',
+                                                   'sortdir': None}),
     'num_files' :  num_files,
     'files_shown' : num_displayed,
     'no_match' : ezt.boolean(num_files and not num_displayed),
@@ -1479,6 +1482,15 @@ def view_directory(request):
     ### a variety of schemes.
     'nav_path' : clickable_path(request, 0, 0),
   })
+
+  # clicking on sort column reverses sort order
+  if sortdir == 'down':
+    revsortdir = None # 'up'
+  else:
+    revsortdir = 'down'
+  if sortby in ['file', 'rev', 'date', 'log', 'author']:
+    data['sortby_%s_href' % sortby] = request.get_url(params={'sortdir':
+                                                              revsortdir})
 
   # set cvs-specific fields
   if request.roottype == 'cvs':
