@@ -93,11 +93,11 @@ def Error(text, etype=None, evalue=None):
 def MkDir(path):
     try:
         compat.makedirs(path)
-    except OSError, e:
-        if e.errno == 17:
+    except os.error, e:
+        if e[0] == 17:
             # EEXIST: file exists
             return
-        if e.errno == 13:
+        if e[0] == 13:
             # EACCES: permission denied
             Error("You do not have permission to create directory %s" % path)
         Error("Unknown error creating directory %s" % path, OSError, e)
@@ -143,7 +143,7 @@ def InstallFile(src_path, dest_path, mode, set_python_paths, prompt_replace,
     try:
         open(dest_path, "w").write(contents)
     except IOError, e:
-        if e.errno == 13:
+        if e[0] == 13:
             # EACCES: permission denied
             Error("You do not have permission to write file %s" % dest_path)
         Error("Unknown error writing file %s" % dest_path, IOError, e)

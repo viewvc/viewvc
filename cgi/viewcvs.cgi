@@ -21,12 +21,12 @@
 # derived from software by Bill Fenner, with additional modifications by
 # Henrik Nordstrom and Ken Coar). The cvsweb distribution can be found
 # on Zeller's site:
-#   http://linux.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi
+#   http://stud.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi/
 #
 # -----------------------------------------------------------------------
 #
 
-__version__ = '0.5'
+__version__ = '0.6-dev'
 
 #########################################################################
 #
@@ -1008,7 +1008,7 @@ def view_directory(request):
   if not hideattic:
     try:
       attic_files = os.listdir(full_name + '/Attic')
-    except OSError:
+    except os.error:
       pass
     else:
       ### filter for just RCS files?

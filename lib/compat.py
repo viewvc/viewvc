@@ -45,14 +45,15 @@ except AttributeError:
 #
 if hasattr(time, 'strptime'):
   def cvs_strptime(timestr):
+    'Parse a CVS-style date/time value.'
     return time.strptime(timestr, '%Y/%m/%d %H:%M:%S')
 else:
   _re_rev_date = re.compile('([0-9]{4})/([0-9][0-9])/([0-9][0-9]) '
                             '([0-9][0-9]):([0-9][0-9]):([0-9][0-9])')
   def cvs_strptime(timestr):
+    'Parse a CVS-style date/time value.'
     matches = _re_rev_date.match(timestr).groups()
     return tuple(map(int, matches)) + (0, 1, -1)
-cvs_strptime.__doc__ = 'Parse a CVS-style date/time value.'
 
 #
 # os.makedirs() is new to Python 1.5.2
