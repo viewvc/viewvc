@@ -1319,8 +1319,7 @@ def view_directory(request):
       row.time = html_time(info[1])
 
       if cfg.options.use_cvsgraph:
-        row.graph_href = '%s/cvsgraphwrapper.cgi?&r=%s&m=%s&f=%s,v' % \
-                         (os.path.dirname(request.script_name), request.cvsroot, request.where, file)
+         row.graph_href = file_url + '?graph=' + row.rev + request.amp_query
 
       if cfg.options.show_author:
         row.author = info[3]
@@ -1931,6 +1930,66 @@ def view_annotate(request):
   html_footer()
 
 
+def cvsgraph_image(cfg, request):
+  # this function is derived from cgi/cvsgraphmkimg.cgi
+  http_header('image/png')
+  # This statement is very important!  Otherwise you can't garantee the order
+  # that things get printed out to the browser!
+  sys.stdout.flush()
+  command = "%s -c %s -r %s %s,v" % (cfg.options.cvsgraph_path,
+                cfg.options.cvsgraph_conf, request.cvsroot, request.where)
+  if os.system(command) != 0:
+    sys.stderr.write("\nFailed to execute '"+command+"'.\n")
+
+
+def view_cvsgraph(cfg, request):
+  # this function is derived from cgi/cvsgraphwrapper.cgi
+  rev = request.query_dict['graph']
+  where = request.where
+
+  pathname, filename = os.path.split(where)
+  if pathname[-6:] == '/Attic':
+    pathname = pathname[:-6]
+
+  http_header()
+  # FIXME: use navigate_header(request, request.url, pathname, filename, rev, 'view')
+  # FIXME: Move this into a template ?
+  print """<html>
+<head>
+  <title>Revision graph of %(where)s</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+        <meta name="generator" content="handcrafted">
+</head>
+<body bgcolor="#f0f0f0">
+  <center>
+  <h1>Revision graph of %(where)s</h1>""" % locals()
+
+
+  # This statement is very important!  Otherwise you can't garantee the order
+  # that things get printed out to the browser!
+  sys.stdout.flush()
+
+
+  # Required only if cvsgraph needs to find it's supporting libraries.
+  # Uncomment and set accordingly if required.
+  #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib'
+
+  # Create an image map
+  command = "%s -i -c %s -r %s %s,v" % (cfg.options.cvsgraph_path,
+                cfg.options.cvsgraph_conf, request.cvsroot, where)
+  if os.system(command) != 0:
+    sys.stderr.write("\nFailed to execute '"+command+"'.\n")
+
+  print """<img border="0" 
+              usemap="#MyMapName" 
+              src="%s?graph=%s&makeimage=1%s" 
+              alt="Revisions of %s">""" % (request.url, 
+                                           rev, request.amp_query, where)
+
+  print '</center>'
+  html_footer()
+
+
 _re_extract_rev = re.compile(r'^[-+]+ [^\t]+\t([^\t]+)\t((\d+\.)+\d+)$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
 _re_extract_diff = re.compile(r'^([-+ ])(.*)')
@@ -2408,6 +2467,11 @@ def main():
       view_annotate(request)
     elif query_dict.has_key('r1') and query_dict.has_key('r2'):
       view_diff(request, full_name)
+    elif query_dict.has_key('graph') and cfg.options.use_cvsgraph:
+      if not query_dict.has_key('makeimage'):
+        view_cvsgraph(cfg, request)
+      else: 
+        cvsgraph_image(cfg, request)
     else:
       view_log(request)
   elif full_name[-5:] == '.diff' and os.path.isfile(full_name[:-5] + ',v') \

@@ -368,6 +368,17 @@ allow_tar = 0
 use_cvsgraph = 0
 # use_cvsgraph = 1
 
+#
+# Location of your cvsgraph program:
+#
+cvsgraph_path = "/usr/local/bin/cvsgraph" 
+
+#
+# Location of the customized cvsgraph configuration file.  Probably you
+# will need an absolute pathname here:
+#
+cvsgraph_conf = "cvsgraph.conf" 
+
 #---------------------------------------------------------------------------
 [vhosts]
 ### DOC
