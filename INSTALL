@@ -211,6 +211,15 @@ CVSGRAPH CONFIGURATION
 CvsGraph is a program that can display a clickable, graphical tree
 of files in a CVS repository.
 
+WARNING: Under certain circumstances (many revisions of a file
+or many branches or both) cvsgraph can generate very huge images.
+Especially on thin clients these images may crash the Web-Browser.
+Currently there is no known way to avoid this behaviour of cvsgraph.
+So you have been warned!  
+
+Nevertheless cvsgraph can be quite helpful on repositories with 
+a reasonable number of revisions and branches.
+
 1) Install viewcvs according to instructions in 'INSTALLING
    VIEWCVS' section above.  The installation directory is where
    the 'viewcvs-install' script copied and configured the viewcvs
