@@ -10,7 +10,7 @@
 <table width="100%" border=0 cellspacing=0 cellpadding=0>
   <tr>
     <td><h1>[cfg.general.main_title]</h1></td>
-    <td align=right><img src="[request.icons]/apache_pb.gif" alt="(logo)" border=0
+    <td align=right><img src="[icons]/apache_pb.gif" alt="(logo)" border=0
 			width=259 height=32></td>
   </tr>
 </table>

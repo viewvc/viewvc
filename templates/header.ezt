@@ -10,15 +10,15 @@
   <tr valign=bottom>
     <td>
       <a href="[file_url]#rev[rev]">
-        <img src="[request.icons]/small/back.gif" alt="(file)" border=0 width=16 height=16>
+        <img src="[icons]/small/back.gif" alt="(file)" border=0 width=16 height=16>
       </a>
       <b>Return to
         <a href="[file_url]#rev[rev]">[filename]</a>
         CVS log</b>
-      <img src="[request.icons]/small/text.gif" alt="(file)" border=0 width=16 height=16>
+      <img src="[icons]/small/text.gif" alt="(file)" border=0 width=16 height=16>
     </td>
     <td align=right>
-      <img src="[request.icons]/small/dir.gif" alt="(dir)" border=0 width=16 height=16>
+      <img src="[icons]/small/dir.gif" alt="(dir)" border=0 width=16 height=16>
       <b>Up to [nav_path]</b>
     </td>
   </tr>
