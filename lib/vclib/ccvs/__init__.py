@@ -192,6 +192,11 @@ class StreamText:
   def next_revision(self,revision):
     #print "Revision: %s"% revision
     pass
+
+def secondnextdot(s,start):
+  # find the position the second dot after the start index.
+  return string.find(s,'.',string.find(s, '.', start)+1)
+
 class COSink(rcsparse.Sink):
   
   def __init__(self,target):
@@ -215,10 +220,10 @@ class COSink(rcsparse.Sink):
     if self.path[-1]==self.target.rev:
       return
     if revision==self.path[-1]:
-      if self.target.rev[:len(revision)]==revision:
+      if self.target.rev[:len(revision)+1]==revision+'.':
         # Branch ?
         for x in branches:
-          if self.target.rev[:len(revision)+3]==x[:len(revision)+3]:
+          if self.target.rev[:secondnextdot(self.target.rev,len(revision))]==x[:secondnextdot(self.target.rev,len(revision))]:
             self.path.append(x)
             if x in self.buffer:
               i=self.buffer[x]
@@ -228,6 +233,7 @@ class COSink(rcsparse.Sink):
         else:
           print revision
           print branches
+          print next
           raise " %s revision doesn't exist " % self.target.rev
       else:
         # no => next 
