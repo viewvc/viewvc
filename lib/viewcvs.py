@@ -343,7 +343,7 @@ def download_url(request, url, revision, mime_type):
           (request.script_name, checkout_magic_path,
            os.path.dirname(request.where), url)
 
-  url = url + '?rev=' + revision
+  url = url + '?rev=' + revision + request.amp_query
   if mime_type:
     return url + '&content-type=' + mime_type
   return url
@@ -358,13 +358,13 @@ def download_link(request, url, revision, text, mime_type=None):
     rparen = ')'
     text = text[1:-1]
 
-  print '%s<a href="%s%s"' % (lparen, full_url, request.amp_query)
+  print '%s<a href="%s"' % (lparen, full_url)
 
   if cfg.options.open_extern_window and mime_type != viewcvs_mime_type:
     print ' target="cvs_checkout"'
     if cfg.options.use_java_script:
-      print " onClick=\"window.open('%s','cvs_checkout'," \
-            "'resizeable=1,scrollbars=1" % full_url,
+      print " onClick=\"window.open('about:blank','cvs_checkout'," \
+            "'resizeable=1,scrollbars=1",
       if mime_type == 'text/html':
         print ',status,toolbar',
       print "');\""
@@ -608,7 +608,7 @@ def markup_stream(request, fp, revision, mime_type):
   print '<hr noshade>'
   if mime_type[:6] == 'image/':
     url = download_url(request, file_url, revision, mime_type)
-    print '<img src="%s%s"><br>' % (url, request.amp_query)
+    print '<img src="%s"><br>' % url
     while fp.read(8192):
       pass
   else:
@@ -1743,8 +1743,6 @@ def view_log(request):
              cur_branch, branch_points, branch_names = \
              read_log(full_name, None, view_tag, query_dict['logsort'])
 
-  html_header('CVS log for %s' % where)
-
   up_where = re.sub(_re_up_path, '', where)
 
   ### whoops. this sometimes/always? does not have the ",v"
@@ -1754,31 +1752,50 @@ def view_log(request):
 
   ### try: "./" + query + "#" + filename
   back_url = request.script_name + '/' + urllib.quote(up_where) + \
-             request.qmark_query
+             request.qmark_query + '#' + filename
 
-  print html_link(html_icon('back'), back_url + '#' + filename)
+  data = {
+    'where' : where,
+    'back_url' : back_url,
 
-  ### use drop_leaf
-  print '<b>Up to %s</b><p>' % clickable_path(request, up_where, 1, 0, 0)
-  print '<a href="#diff">Request diff between arbitrary revisions</a>'
-  print '<hr noshade>'
+    ### in the future, it might be nice to break this path up into
+    ### a list of elements, allowing the template to display it in
+    ### a variety of schemes.
+    ### maybe use drop_leaf here?
+    'nav_path' : clickable_path(request, up_where, 1, 0, 0),
+
+    'branch' : None,
+    'mime_type' : request.mime_type,
+    'view_tag' : view_tag,
+    }
+
+  if request.default_viewable:
+    data['viewable'] = 'yes'
+  else:
+    data['viewable'] = None
 
   if cur_branch:
-    print 'Default branch:', rev2tag.get(cur_branch, cur_branch)
+    data['branch'] = rev2tag.get(cur_branch, cur_branch)
 
-    print '<br>Bookmark a link to'
     file_url = urllib.quote(os.path.basename(where))
+
+    ### I don't like this URL construction stuff. not obvious enough (how
+    ### it keys off the mime_type to do different things).
     if request.default_viewable:
-      download_link(request, file_url, 'HEAD', 'HEAD', viewcvs_mime_type)
-      print '/'
-      download_link(request, file_url, 'HEAD', '(download)', request.mime_type)
+      data['href'] = download_url(request, file_url, 'HEAD', viewcvs_mime_type)
+      data['abs_href'] = download_url(request, file_url, 'HEAD', request.mime_type)
     else:
-      download_link(request, file_url, 'HEAD', 'HEAD')
-  else:
-    print 'No default branch'
-  print '<br>'
-  if view_tag:
-    print 'Current tag:', view_tag, '<br>'
+      data['href'] = download_url(request, file_url, 'HEAD', None)
+
+  template = ezt.Template()
+
+  ### get the template fname from the .conf file
+  template.parse_file(os.path.join(g_template_dir, 'log.ezt'))
+
+  http_header()
+
+  # generate the page
+  template.generate(sys.stdout, data)
 
   for entry in show_revs:
     print '<hr size=1 noshade>'

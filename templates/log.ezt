@@ -1,0 +1,48 @@
+<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
+ "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html><head>
+<!-- ViewCVS       -- http://viewcvs.sourceforge.net/
+     by Greg Stein -- mailto:gstein@lyra.org
+  -->
+<title>CVS log for [where]</title>
+</head>
+<body text="#000000" bgcolor="#ffffff">
+<table width="100%" border=0 cellspacing=0 cellpadding=0>
+  <tr>
+    <td><h1>CVS log for [where]</h1></td>
+    <td align=right><img src="/icons/apache_pb.gif" alt="(logo)" border=0
+			width=259 height=32></td>
+  </tr>
+</table>
+
+<a href="[back_url]"><img src="/icons/small/back.gif" alt="(back)" border=0
+			width=16 height=16></a>
+<b>Up to [nav_path]</b><p>
+<a href="#diff">Request diff between arbitrary revisions</a>
+<hr noshade>
+
+[if-any branch]
+  Default branch: [branch]
+  <br>
+  Bookmark a link to:
+  [if-any viewable]
+    <a href="[href]"><b>HEAD</b></a>
+    /
+    (<a href="[abs_href]" target="cvs_checkout"
+	onClick="window.open('about:blank', 'cvs_checkout',
+	'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]')"
+	><b>download</b></a>)
+  [else]
+    <a href="[href]" target="cvs_checkout"
+	onClick="window.open('about:blank', 'cvs_checkout',
+	'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]')"
+	><b>HEAD</b></a>
+  [end]
+[else]
+  No default branch
+[end]
+<br>
+
+[if-any view_tag]
+  Current tag: [view_tag] <br>
+[end]
