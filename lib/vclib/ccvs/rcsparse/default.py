@@ -206,14 +206,36 @@ class Parser(common._Parser):
         self.sink.set_comment(comment)
         if semi != ';':
           raise common.RCSExpected(semi, ';')
-
-      # Ignore all these other fields - We don't care about them. Also chews
-      # up "newphrase".
-      elif token in ("locks", "strict", "expand", "access"):
+      elif token == "expand":
+        semi, expand_mode = self.ts.mget(2)
+        self.sink.set_expansion(expand_mode)
+        if semi != ';':
+          raise RCSExpected(semi, ';')
+      elif token == "locks":
         while 1:
           tag = self.ts.get()
           if tag == ';':
             break
+          (locker, rev) = string.split(tag,':')
+          self.sink.set_locker(rev, locker)
+
+        tag = self.ts.get()
+        if tag == "strict":
+          self.sink.set_locking("strict")
+          self.ts.match(';')
+        else:
+          self.ts.unget(tag)
+      elif token == "access":
+        accessors = []
+        while 1:
+          tag = self.ts.get()
+          if tag == ';':
+            if accessors != []:
+              self.sink.set_access(accessors)
+            break
+          accessors = accessors + [ tag ]
+
+      # Chew up "newphrase".
       else:
         pass
         # warn("Unexpected RCS token: $token\n")
