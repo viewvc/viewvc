@@ -1,0 +1,163 @@
+#!/usr/bin/env python
+# -*- Mode: python -*-
+#
+# Copyright (C) 2000 The ViewCVS Group. All Rights Reserved.
+#
+# By using this file, you agree to the terms and conditions set forth in
+# the LICENSE.html file which can be found at the top level of the ViewCVS
+# distribution or at http://www.lyra.org/viewcvs/license-1.html.
+#
+# Contact information:
+#   Greg Stein, PO Box 760, Palo Alto, CA, 94302
+#   gstein@lyra.org, http://www.lyra.org/viewcvs/
+#
+# -----------------------------------------------------------------------
+#
+# administrative program for CVSdb; this is primarily
+# used to add/rebuild CVS repositories to the database
+#
+# -----------------------------------------------------------------------
+#
+
+#########################################################################
+#
+# INSTALL-TIME CONFIGURATION
+#
+# These values will be set during the installation process. During
+# development, they will remain None.
+#
+
+LIBRARY_DIR = None
+CONF_PATHNAME = None
+
+# Adjust sys.path to include our library directory
+import sys
+
+if LIBRARY_DIR:
+  sys.path.insert(0, LIBRARY_DIR)
+else:
+  sys.path[:0] = ['../lib']	# any other places to look?
+
+#########################################################################
+  
+import os
+import string
+import cvsdb
+
+
+def UpdateFile(db, repository, path):
+    try:
+        commit_list = cvsdb.GetUnrecordedCommitList(repository, path)
+    except cvsdb.error, e:
+        print '[ERROR] %s' % (e)
+        return
+
+    print '[%s[%d new commits]]' % (path, len(commit_list)),
+
+    ## add the commits into the database
+    for commit in commit_list:
+        db.AddCommit(commit)
+        sys.stdout.write('.')
+        sys.stdout.flush()
+    print
+
+
+def RecurseUpdate(db, repository, directory):
+    for path in os.listdir(directory):
+        path = os.path.join(directory, path)
+
+        if os.path.islink(path):
+            continue
+        
+        if os.path.isdir(path):
+            RecurseUpdate(db, repository, path)
+            continue
+        
+        if os.path.isfile(path):
+            if path[-2:] == ',v':
+                UpdateFile(db, repository, path)
+        
+
+def CommandUpdate():
+    ## connect to the database we are updating
+    db = cvsdb.ConnectDatabase()
+    repository = sys.argv[2]
+    RecurseUpdate(db, repository, repository)
+
+
+def RebuildFile(db, repository, path):
+    try:
+        commit_list = cvsdb.GetCommitListFromRCSFile(repository, path)
+    except cvsdb.error, e:
+        print '[ERROR] %s' % (e)
+        return
+
+    print '[%s[%d commits]]' % (path, len(commit_list)),
+
+    ## add the commits into the database
+    for commit in commit_list:
+        db.AddCommit(commit)
+        sys.stdout.write('.')
+        sys.stdout.flush()
+    print
+
+
+def RecurseRebuild(db, repository, directory):
+    for path in os.listdir(directory):
+        path = os.path.join(directory, path)
+
+        if os.path.islink(path):
+            continue
+        
+        if os.path.isdir(path):
+            RecurseRebuild(db, repository, path)
+            continue
+        
+        if os.path.isfile(path):
+            if path[-2:] == ',v':
+                RebuildFile(db, repository, path)
+        
+
+def CommandRebuild():
+    ## connect to the database we are updating
+    db = cvsdb.ConnectDatabase()
+    repository = sys.argv[2]
+    RecurseRebuild(db, repository, repository)
+
+
+def usage():
+    print 'Usage: %s <command> [arguments]' % (sys.argv[0])
+    print 'Preforms administrative functions for the CVSdb database'
+    print 'Commands:'
+    print '  rebuild <repository>            rebuilds the CVSdb database'
+    print '                                  for all files in the repository'
+    print '  update <repository>             updates the CVSdb database for'
+    print '                                  all unrecorded commits'
+    print
+    sys.exit(1)
+
+
+## main
+if __name__ == '__main__':
+    ## check that a command was given
+    if len(sys.argv) < 2:
+        usage()
+
+    ## set the handler function for the command
+    command = sys.argv[1]
+    if string.lower(command) == 'rebuild':
+        commandFunction = CommandRebuild
+    elif string.lower(command) == 'update':
+        commandFunction = CommandUpdate
+    else:
+        print 'ERROR: unknown command %s' % (command)
+        usage()
+
+    ## run command
+    try:
+        commandFunction()
+    except KeyboardInterrupt:
+        print
+        print '** break **'
+        
+    sys.exit(0)
