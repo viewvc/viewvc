@@ -95,6 +95,9 @@ went into the new files in subdirectory templates.""", 0),
     ("website/upgrading.html", "doc/upgrading.html", 0644, 0, 0, 0),
     ("website/who.html", "doc/who.html", 0644, 0, 0, 0),
 
+    ("website/help_rootview.html", "doc/help_rootview.html", 0644, 0, 0, 0),
+    ("website/help_dirview.html", "doc/help_dirview.html", 0644, 0, 0, 0),
+
     ("website/images/logo.png", "doc/images/logo.png", 0644, 0, 0, 0),
     ("website/images/chalk.jpg", "doc/images/chalk.jpg", 0644, 0, 0, 0),
     ("website/images/cvsgraph_16x16.png", "doc/images/cvsgraph_16x16.png", 0644, 0, 0, 0),
