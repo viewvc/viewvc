@@ -118,7 +118,10 @@ href="[request.script_name]/~helppage~/help_[if-any where]dir[else]root[end]view
           [rows.attic]
         </td>
         [if-any rows.graph_href]
-          <td width="1%"><a href="[rows.graph_href]">(graph)</a></td>
+          <td width="1%"><a href="[rows.graph_href]"><img
+            src="[request.script_name]/~helppage~/images/cvsgraph_16x16.png"
+            alt="(graph)" width=16 height=16 border=0>
+          </a></td>
         [end]
         <td>&nbsp;
           <a href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
@@ -197,7 +200,7 @@ href="[request.script_name]/~helppage~/help_[if-any where]dir[else]root[end]view
   </form>
 [end]
 
-
+[# if you want to disable tarball generation remove the following: ]
 [if-any tarball_href]
   <a href="[tarball_href]">Download tarball</a>
 [end]
