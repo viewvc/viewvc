@@ -707,17 +707,31 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
       request.server.addheader('Last-Modified', rfc822.formatdate(mtime))
   return isfresh
 
-def generate_page(request, tname, data):
+def get_view_template(view_name, language):
+  # see if the configuration specifies a template for this view
+  tname = vars(cfg.templates).get(view_name)
+
+  # if there is no specific template definition for this view, look in
+  # the default location (relative to the configured template_dir)
+  if not tname:
+    tname = os.path.join(cfg.options.template_dir, view_name + ".ezt")
+
   # allow per-language template selection
+  string.replace(tname, '%lang%', language)
+
+  # finally, construct the whole template path.
+  return os.path.join(g_install_dir, tname)
+  
+def generate_page(request, view_name, data):
   if request:
-    tname = string.replace(tname, '%lang%', request.language)
+    tname = get_view_template(view_name, request.language)
   else:
-    tname = string.replace(tname, '%lang%', 'en')
+    tname = get_view_template(view_name, 'en')
 
   debug.t_start('ezt-parse')
-  template = ezt.Template(os.path.join(g_install_dir, tname))
+  template = ezt.Template(tname)
   debug.t_end('ezt-parse')
-
+  
   template.generate(sys.stdout, data)
 
 def nav_path(request):
@@ -1365,7 +1379,7 @@ def view_markup(request):
   data['markup'] = markup_fp
   
   request.server.header()
-  generate_page(request, cfg.templates.markup, data)
+  generate_page(request, "markup", data)
 
 def revcmp(rev1, rev2):
   rev1 = map(int, string.split(rev1, '.'))
@@ -1426,7 +1440,7 @@ def icmp(x, y):
 def view_roots(request):
   data = common_template_data(request)
   request.server.header()
-  generate_page(request, cfg.templates.roots, data)
+  generate_page(request, "roots", data)
 
 def view_directory(request):
   # For Subversion repositories, the revision acts as a weak validator for
@@ -1678,7 +1692,7 @@ def view_directory(request):
     data['rows'] = paging(data, 'rows', data['dir_pagestart'], 'name')
 
   request.server.header()
-  generate_page(request, cfg.templates.directory, data)
+  generate_page(request, "directory", data)
 
 def paging(data, key, pagestart, local_name):
   # Implement paging
@@ -2021,7 +2035,7 @@ def view_log(request):
     data['entries'] = paging(data, 'entries', data['log_pagestart'], 'rev')
 
   request.server.header()
-  generate_page(request, cfg.templates.log, data)
+  generate_page(request, "log", data)
 
 def view_checkout(request):
   rev = request.query_dict.get('rev')
@@ -2059,7 +2073,7 @@ def view_annotate(request):
   data['lines'] = source
 
   request.server.header()
-  generate_page(request, cfg.templates.annotate, data)
+  generate_page(request, "annotate", data)
 
 def view_cvsgraph_image(request):
   "output the image rendered by cvsgraph"
@@ -2121,7 +2135,7 @@ def view_cvsgraph(request):
     })
 
   request.server.header()
-  generate_page(request, cfg.templates.graph, data)
+  generate_page(request, "graph", data)
 
 def search_files(repos, path_parts, files, search_re):
   """ Search files in a directory for a regular expression.
@@ -2183,7 +2197,8 @@ def view_doc(request):
   Using this avoids the need for modifying the setup of the web server.
   """
   document = request.where
-  doc_directory = os.path.join(g_install_dir, "templates", "docroot")
+  doc_directory = os.path.join(g_install_dir, cfg.options.template_dir,
+                               "docroot")
   filename = os.path.join(doc_directory, document)
 
   # Stat the file to get content length and last-modified date.
@@ -2656,7 +2671,7 @@ def view_diff(request):
     'changes' : changes,
     })
 
-  generate_page(request, cfg.templates.diff, data)
+  generate_page(request, "diff", data)
 
 
 def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
@@ -2897,7 +2912,7 @@ def view_revision_svn(request, data):
   data['jump_rev_hidden_values'] = prepare_hidden_values(params)
 
   request.server.header()
-  generate_page(request, cfg.templates.revision, data)
+  generate_page(request, "revision", data)
 
 def is_query_supported(request):
   """Returns true if querying is supported for the given path."""
@@ -2935,7 +2950,7 @@ def view_queryform(request):
                                      escape=1)
 
   request.server.header()
-  generate_page(request, cfg.templates.query_form, data)
+  generate_page(request, "query_form", data)
 
 def parse_date(s):
   '''Parse a date string from the query form.'''
@@ -3238,7 +3253,7 @@ def view_query(request):
     })
 
   request.server.header()
-  generate_page(request, cfg.templates.query_results, data)
+  generate_page(request, "query_results", data)
 
 _views = {
   'annotate': view_annotate,
@@ -3337,11 +3352,12 @@ def view_error(server):
   try:
     if cfg:
       server.header(status=status)
-      generate_page(None, cfg.templates.error, exc_dict)
+      generate_page(None, "error", exc_dict)
       handled = 1
   except:
     # get new exception data, more important than the first
-    exc_dict = debug.GetExceptionData()
+    #exc_dict = debug.GetExceptionData()
+    pass
 
   # but fallback to the old exception printer if no configuration is
   # available, or if something went wrong

@@ -163,17 +163,17 @@ class Config:
     self.general.kv_files = [ ]
     self.general.languages = ['en-us']
 
-    self.templates.directory = 'templates/directory.ezt'
-    self.templates.log = 'templates/log.ezt'
-    self.templates.query = 'templates/query.ezt'
-    self.templates.diff = 'templates/diff.ezt'
-    self.templates.graph = 'templates/graph.ezt'
-    self.templates.annotate = 'templates/annotate.ezt'
-    self.templates.markup = 'templates/markup.ezt'
-    self.templates.error = 'templates/error.ezt'
-    self.templates.query_form = 'templates/query_form.ezt'
-    self.templates.query_results = 'templates/query_results.ezt'
-    self.templates.roots = 'templates/roots.ezt'
+    self.templates.directory = None
+    self.templates.log = None
+    self.templates.query = None
+    self.templates.diff = None
+    self.templates.graph = None
+    self.templates.annotate = None
+    self.templates.markup = None
+    self.templates.error = None
+    self.templates.query_form = None
+    self.templates.query_results = None
+    self.templates.roots = None
 
     self.cvsdb.enabled = 0
     self.cvsdb.host = ''
@@ -198,6 +198,7 @@ class Config:
     self.options.allow_markup = 1
     self.options.allow_compress = 1
     self.options.checkout_magic = 1
+    self.options.template_dir = "templates"
     self.options.docroot = None
     self.options.show_subdir_lastmod = 0
     self.options.show_logs = 1
