@@ -211,11 +211,11 @@ class Template:
     ctx.for_index = { }
     self._execute(self.program, fp, ctx)
 
-  def _parse_file(self, fname, for_names=None):
-    return self._parse(open(fname, "rt").read(), for_names,
+  def _parse_file(self, fname, for_names=None, file_args=()):
+    return self._parse(open(fname, "rt").read(), for_names, file_args,
                        os.path.dirname(fname))
 
-  def _parse(self, text, for_names=None, base=None):
+  def _parse(self, text, for_names=None, file_args=(), base=None):
     """text -> string object containing the HTML template.
 
     This is a private helper function doing the real work for method parse.
@@ -270,37 +270,42 @@ class Template:
           if len(args) > _block_cmd_specs[cmd] + 1:
             raise ArgCountSyntaxError()
           ### this assumes arg1 is always a ref
-          args[1] = _prepare_ref(args[1], for_names)
+          args[1] = _prepare_ref(args[1], for_names, file_args)
 
           # handle arg2 for the 'is' command
           if cmd == 'is':
-            args[2] = _prepare_ref(args[2], for_names)
+            args[2] = _prepare_ref(args[2], for_names, file_args)
           elif cmd == 'for':
             for_names.append(args[1][0])
 
           # remember the cmd, current pos, args, and a section placeholder
           stack.append([cmd, len(program), args[1:], None])
         elif cmd == 'include':
-          if len(args) != 2:
-            raise ArgCountSyntaxError()
           if args[1][0] == '"':
             include_filename = args[1][1:-1]
             if base:
               include_filename = os.path.join(base, include_filename)
-            program.extend(self._parse_file(include_filename, for_names))
+            f_args = [ ]
+            for arg in args[2:]:
+              f_args.append(_prepare_ref(arg, for_names, file_args))
+            program.extend(self._parse_file(include_filename, for_names,
+                                            f_args))
           else:
+            if len(args) != 2:
+              raise ArgCountSyntaxError()
             program.append((self._cmd_include,
-                            (_prepare_ref(args[1], for_names),
+                            (_prepare_ref(args[1], for_names, file_args),
                              base)))
         else:
           # implied PRINT command
           if len(args) > 1:
             f_args = [ ]
             for arg in args:
-              f_args.append(_prepare_ref(arg, for_names))
+              f_args.append(_prepare_ref(arg, for_names, file_args))
             program.append((self._cmd_format, (f_args[0], f_args[1:])))
           else:
-            program.append((self._cmd_print, _prepare_ref(args[0], for_names)))
+            program.append((self._cmd_print,
+                            _prepare_ref(args[0], for_names, file_args)))
 
     if stack:
       ### would be nice to say which blocks...
@@ -348,6 +353,8 @@ class Template:
     fname = _get_value(valref, ctx)
     if base:
       fname = os.path.join(base, fname)
+    ### note: we don't have the set of for_names to pass into this parse.
+    ### I don't think there is anything to do but document it.
     self._execute(self._parse_file(fname), fp, ctx)
 
   def _cmd_if_any(self, args, fp, ctx):
@@ -407,7 +414,7 @@ def boolean(value):
   return None
 
 
-def _prepare_ref(refname, for_names):
+def _prepare_ref(refname, for_names, file_args):
   """refname -> a string containing a dotted identifier. example:"foo.bar.bang"
   for_names -> a list of active for sequences.
 
@@ -417,6 +424,17 @@ def _prepare_ref(refname, for_names):
   # is the reference a string constant?
   if refname[0] == '"':
     return None, refname[1:-1], None
+
+  # if this is an include-argument, then just return the prepared ref
+  if refname[:3] == 'arg':
+    try:
+      idx = int(refname[3:])
+    except ValueError:
+      pass
+    else:
+      if idx < len(file_args):
+        return file_args[idx]
+
   parts = string.split(refname, '.')
   start = parts[0]
   rest = parts[1:]
