@@ -78,6 +78,15 @@ class Repository:
     The revision number can be None to access a default revision.  
     """
 
+  def listdir(self, path_parts):
+    """Return list of files in a directory
+    
+    The result is a list of DirEntry objects
+
+    The path is specified as a list of components, relative to the root
+    of the repository. e.g. ["subdir1", "subdir2", "filename"]
+    """
+
   # Private methods ( accessed by Versfile and Revision )
 
   def _getvf_files(self, path_parts):
@@ -136,6 +145,15 @@ class Repository:
 
     Developers: method to be overloaded.
     """
+
+# ======================================================================
+class DirEntry:
+  "Instances represent items in a directory listing"
+
+  def __init__(self, name, kind, verboten=0):
+    self.name = name
+    self.kind = kind
+    self.verboten = verboten
 
 # ======================================================================
 class Versitem:
