@@ -92,10 +92,6 @@ _sticky_vars = (
   'log_pagestart',
   )
 
-# regex used to move from a file to a directory
-_re_up_path = re.compile('(Attic/)?[^/]+$')
-
-
 _UNREADABLE_MARKER = '//UNREADABLE-MARKER//'
 
 # for reading/writing between a couple descriptors
@@ -368,6 +364,16 @@ _legal_params = {
   'rev'           : _re_validate_revnum,
   'content-type'  : _re_validate_mimetype,
   }
+
+# regex used to move from a file to a directory
+_re_up_attic_path = re.compile('[^/]+$')
+_re_up_path       = re.compile('(Attic/)?[^/]+$')
+def get_up_path(request, path, hideattic=0):
+  if request.roottype == 'svn' or not hideattic:
+    return re.sub(_re_up_path, '', path)
+  else:
+    return re.sub(_re_up_attic_path, '', path)
+
 
 def generate_page(request, tname, data):
   # allow per-language template selection
@@ -1792,7 +1798,7 @@ def view_log_svn(request):
 
   alltags, logs = vclib.svn.fetch_log(request.repos, where)
   
-  up_where = re.sub(_re_up_path, '', where)
+  up_where = get_up_path(request, where)
   filename = os.path.basename(full_name)
 
   ### can we use filename rather than where? need to clarify the two vars
@@ -1906,7 +1912,7 @@ def view_log_cvs(request):
              cur_branch, branch_points, branch_names = \
              read_log(full_name, None, view_tag, query_dict['logsort'])
 
-  up_where = re.sub(_re_up_path, '', where)
+  up_where = get_up_path(request, where, int(query_dict.get('hideattic')))
 
   ### whoops. this sometimes/always? does not have the ",v"
   assert full_name[-2:] != ',v', 'please report this error to viewcvs@lyra.org'
@@ -2826,8 +2832,8 @@ def generate_tarball(out, request, tar_top, rep_top, reldir, tag, stack=[]):
 
 def download_tarball(request):
   query_dict = request.query_dict
-  rep_top = re.sub(_re_up_path, '', request.where)[0:-1]
-  tar_top = os.path.basename(re.sub(_re_up_path, '', request.full_name)[0:-1])
+  rep_top = get_up_path(request, request.where, 1)[0:-1]
+  tar_top = os.path.basename(get_up_path(request, request.full_name, 1)[0:-1])
   tag = query_dict.get('only_with_tag')
 
   ### look for GZIP binary
