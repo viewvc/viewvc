@@ -2777,32 +2777,27 @@ def view_revision_svn(request, data):
 
   # add the hrefs, types, and prev info
   for change in changes:
+    change.view_href = change.diff_href = change.type = None
+    change.prev_path = change.prev_rev = None
     if change.pathtype is vclib.FILE:
       change.type = 'file'
       change.view_href = request.get_url(view_func=view_markup,
                                          where=change.filename, 
                                          pathtype=change.pathtype,
                                          params={'rev' : rev_str})
-      change.diff_href = request.get_url(view_func=view_diff,
-                                         where=change.filename, 
-                                         pathtype=change.pathtype,
-                                         params={})
+      if change.action == "copied" or change.action == "modified":
+        change.prev_path = change.base_path
+        change.prev_rev = change.base_rev
+        change.diff_href = request.get_url(view_func=view_diff,
+                                           where=change.filename, 
+                                           pathtype=change.pathtype,
+                                           params={})
     elif change.pathtype is vclib.DIR:
       change.type = 'dir'
       change.view_href = request.get_url(view_func=view_directory,
                                          where=change.filename, 
                                          pathtype=change.pathtype,
                                          params={'rev' : rev_str})
-      change.diff_href = None
-    else:
-      change.view_href = change.diff_href = change.type = None
-
-    if (change.action == "added" and change.base_rev and change.base_path) \
-           or (change.action == "modified"):
-      change.prev_path = change.base_path
-      change.prev_rev = change.base_rev
-    else:
-      change.prev_path = change.prev_rev = None
     
   data.update({
     'rev' : rev_str,
