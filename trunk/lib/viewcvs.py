@@ -524,6 +524,9 @@ _re_validate_revnum = re.compile('^[-_.a-zA-Z0-9:~]*$')
 # but woah... I'll just leave them out for now
 _re_validate_mimetype = re.compile('^[-_.a-zA-Z0-9/]+$')
 
+# date time values
+_re_validate_datetime = re.compile(r'^(\d\d\d\d-\d\d-\d\d(\s+\d\d:\d\d(:\d\d)?)?)?$')
+
 # the legal query parameters and their validation functions
 _legal_params = {
   'root'          : None,
@@ -552,6 +555,20 @@ _legal_params = {
   'tr2'           : _re_validate_revnum,
   'rev'           : _re_validate_revnum,
   'content-type'  : _re_validate_mimetype,
+
+  # for query
+  'branch'        : _re_validate_revnum,
+  'branch_match'  : _re_validate_alpha,
+  'dir'           : None,
+  'file'          : _re_validate_revnum,
+  'file_match'    : _re_validate_alpha,
+  'who'           : _re_validate_revnum,
+  'who_match'     : _re_validate_alpha,
+  'sortby'        : _re_validate_alpha,
+  'date'          : _re_validate_alpha,
+  'hours'         : _re_validate_number,
+  'mindate'       : _re_validate_datetime,
+  'maxdate'       : _re_validate_datetime,
   }
 
 # regex used to move from a file to a directory
@@ -1492,6 +1509,16 @@ def view_directory(request):
       'has_tags' : None,
       'selection_form' : None,
     })
+
+  # should we show the query link?
+  if is_query_supported(request):
+    params = {}
+    if options.has_key('cvs_dir_tag'):
+      params['branch'] = options['cvs_dir_tag']
+    data['queryform_href'] = request.get_url(view_func=view_queryform,
+                                             params=params)
+  else:
+    data['queryform_href'] = None
 
   if cfg.options.use_pagesize:
     url, params = request.get_link(params={'dir_pagestart': None})
@@ -2662,6 +2689,308 @@ def view_revision_svn(request, data):
   request.server.header()
   generate_page(request, cfg.templates.revision, data)
 
+def is_query_supported(request):
+  """Returns true if querying is supported for the given path."""
+  return cfg.cvsdb.enabled \
+         and request.pathtype == vclib.DIR \
+         and request.roottype in ['cvs', 'svn']
+
+def view_queryform(request):
+  if not is_query_supported(request):
+    raise debug.ViewCVSException('Can not query project root "%s" at "%s".'
+                                 % (request.rootname, request.where),
+                                 '403 Forbidden')
+
+  data = common_template_data(request)
+
+  url, params = request.get_link(view_func=view_query, params={})
+  data['query_action'] = urllib.quote(url, _URL_SAFE_CHARS)
+  data['query_hidden_values'] = prepare_hidden_values(params)
+
+  # default values ...
+  data['branch'] = request.query_dict.get('branch', '')
+  data['branch_match'] = request.query_dict.get('branch_match', 'exact')
+  data['dir'] = request.query_dict.get('dir', '')
+  data['file'] = request.query_dict.get('file', '')
+  data['file_match'] = request.query_dict.get('file_match', 'exact')
+  data['who'] = request.query_dict.get('who', '')
+  data['who_match'] = request.query_dict.get('who_match', 'exact')
+  data['sortby'] = request.query_dict.get('sortby', 'date')
+  data['date'] = request.query_dict.get('date', 'hours')
+  data['hours'] = request.query_dict.get('hours', '2')
+  data['mindate'] = request.query_dict.get('mindate', '')
+  data['maxdate'] = request.query_dict.get('maxdate', '')
+
+  data['nav_path'] = clickable_path(request, 0, 0)
+
+  request.server.header()
+  generate_page(request, cfg.templates.query_form, data)
+
+def parse_date(s):
+  '''Parse a date string from the query form.'''
+  match = re.match(r'^(\d\d\d\d)-(\d\d)-(\d\d)(?:\ +(\d\d):(\d\d)(?::(\d\d))?)?$', s)
+  if match:
+    year = int(match.group(1))
+    month = int(match.group(2))
+    day = int(match.group(3))
+    hour = match.group(4)
+    if hour is not None:
+      hour = int(hour)
+    else:
+      hour = 0
+    minute = match.group(5)
+    if minute is not None:
+      minute = int(minute)
+    else:
+      minute = 0
+    second = match.group(6)
+    if second is not None:
+      second = int(second)
+    else:
+      second = 0
+    # return a "seconds since epoch" value assuming date given in UTC
+    tm = (year, month, day, hour, minute, second, 0, 0, 0)
+    return time.mktime(tm) - time.timezone
+  else:
+    return None
+
+def english_query(request):
+  '''Generate a sentance describing the query.'''
+  ret = [ 'Checkins ' ]
+  dir = request.query_dict.get('dir', '')
+  if dir:
+    ret.append('to ')
+    if ',' in dir:
+      ret.append('subdirectories')
+    else:
+      ret.append('subdirectory')
+    ret.append(' <i>%s</i> ' % htmlify(dir))
+  file = request.query_dict.get('file', '')
+  if file:
+    if len(ret) != 1: ret.append('and ')
+    ret.append('to file <i>%s</i> ' % htmlify(file))
+  who = request.query_dict.get('who', '')
+  branch = request.query_dict.get('branch', '')
+  if branch:
+    ret.append('on branch <i>%s</i> ' % htmlify(branch))
+  else:
+    ret.append('on all branches ')
+  if who:
+    ret.append('by <i>%s</i> ' % htmlify(who))
+  date = request.query_dict.get('date', 'hours')
+  if date == 'hours':
+    ret.append('in the last %s hours' % htmlify(request.query_dict.get('hours', '2')))
+  elif date == 'day':
+    ret.append('in the last day')
+  elif date == 'week':
+    ret.append('in the last week')
+  elif date == 'month':
+    ret.append('in the last month')
+  elif date == 'all':
+    ret.append('since the beginning of time')
+  elif date == 'explicit':
+    mindate = request.query_dict.get('mindate', '')
+    maxdate = request.query_dict.get('maxdate', '')
+    if mindate and maxdate:
+      w1, w2 = 'between', 'and'
+    else:
+      w1, w2 = 'since', 'before'
+    if mindate:
+      mindate = make_time_string(parse_date(mindate))
+      ret.append('%s <i>%s</i> ' % (w1, mindate))
+    if maxdate:
+      maxdate = make_time_string(parse_date(maxdate))
+      ret.append('%s <i>%s</i> ' % (w2, maxdate))
+  return string.join(ret, '')
+
+def prev_rev(rev):
+  '''Returns a string representing the previous revision of the argument.'''
+  r = string.split(rev, '.')
+  # decrement final revision component
+  r[-1] = str(int(r[-1]) - 1)
+  # prune if we pass the beginning of the branch
+  if len(r) > 2 and r[-1] == '0':
+    r = r[:-2]
+  return string.join(r, '.')
+
+def build_commit(request, desc, files):
+  commit = _item(num_files=len(files), files=[])
+  commit.desc = htmlify(desc)
+  for f in files:
+    commit_time = f.GetTime()
+    if commit_time:
+      commit_time = make_time_string(commit_time)
+    else:
+      commit_time = '&nbsp;'
+    filename = os.path.join(f.GetDirectory(), f.GetFile())
+    filename = string.replace(filename, os.sep, '/')
+    dirname = string.replace(f.GetDirectory(), os.sep, '/')
+
+    params = { 'rev': f.GetRevision() }
+    if f.GetBranch(): params['only_with_tag'] = f.GetBranch()
+    dir_href = request.get_url(view_func=view_directory,
+                               where=dirname, pathtype=vclib.DIR,
+                               params=params)
+    log_href = request.get_url(view_func=view_log,
+                               where=filename, pathtype=vclib.FILE,
+                               params=params)
+    rev_href = request.get_url(view_func=view_auto,
+                               where=filename, pathtype=vclib.FILE,
+                               params={'rev': f.GetRevision() })
+    diff_href = request.get_url(view_func=view_diff,
+                                where=filename, pathtype=vclib.FILE,
+                                params={'r1': prev_rev(f.GetRevision()),
+                                        'r2': f.GetRevision(),
+                                        'diff_format': None})
+
+    commit.files.append(_item(date=commit_time,
+                              dir=htmlify(f.GetDirectory()),
+                              file=htmlify(f.GetFile()),
+                              author=htmlify(f.GetAuthor()),
+                              rev=f.GetRevision(),
+                              branch=f.GetBranch(),
+                              plus=int(f.GetPlusCount()),
+                              minus=int(f.GetMinusCount()),
+                              type=f.GetTypeString(),
+                              dir_href=dir_href,
+                              log_href=log_href,
+                              rev_href=rev_href,
+                              diff_href=diff_href))
+  return commit
+
+def view_query(request):
+  if not is_query_supported(request):
+    raise debug.ViewCVSException('Can not query project root "%s" at "%s".'
+                                 % (request.rootname, request.where),
+                                 '403 Forbidden')
+
+  # get form data
+  branch = request.query_dict.get('branch', '')
+  branch_match = request.query_dict.get('branch_match', 'exact')
+  dir = request.query_dict.get('dir', '')
+  file = request.query_dict.get('file', '')
+  file_match = request.query_dict.get('file_match', 'exact')
+  who = request.query_dict.get('who', '')
+  who_match = request.query_dict.get('who_match', 'exact')
+  sortby = request.query_dict.get('sortby', 'date')
+  date = request.query_dict.get('date', 'hours')
+  hours = request.query_dict.get('hours', '2')
+  mindate = request.query_dict.get('mindate', '')
+  maxdate = request.query_dict.get('maxdate', '')
+
+  match_types = { 'exact': 'exact', 'like': 'like', 'regex': 'regex' }
+  sort_types = { 'date': 'date', 'author': 'author', 'file': 'file' }
+  date_types = { 'hours': 'hours', 'day': 'day', 'week': 'week',
+                 'month': 'month', 'all': 'all', 'explicit': 'explicit' }
+
+  # parse various fields, validating or converting them
+  branch_match = match_types.get(branch_match, 'exact')
+  file_match = match_types.get(file_match, 'exact')
+  who_match = match_types.get(who_match, 'exact')
+  sortby = sort_types.get(sortby, 'date')
+  date = date_types.get(date, 'hours')
+  mindate = parse_date(mindate)
+  maxdate = parse_date(maxdate)
+
+  import cvsdb
+  cvsdb.cfg = cfg
+
+  # create the database query from the form data
+  query = cvsdb.CreateCheckinQuery()
+  query.SetRepository(request.rootpath)
+  # treat "HEAD" specially ...
+  if branch_match == 'exact' and branch == 'HEAD':
+    query.SetBranch('', branch_match)
+  elif branch:
+    query.SetBranch(branch, branch_match)
+  if dir:
+    for subdir in string.split(dir, ','):
+      path = string.join(request.path_parts + [ string.strip(subdir) ], '/')
+      query.SetDirectory('%s%%' % path, 'like')
+  else:
+    if request.path_parts: # if we are in a subdirectory ...
+      path = string.join(request.path_parts, '/')
+      query.SetDirectory('%s%%' % path, 'like')
+  if file:
+    query.SetFile(file, file_match)
+  if who:
+    query.SetAuthor(who, who_match)
+  query.SetSortMethod(sortby)
+  if date == 'hours':
+    query.SetFromDateHoursAgo(int(hours))
+  elif date == 'day':
+    query.SetFromDateDaysAgo(1)
+  elif date == 'week':
+    query.SetFromDateDaysAgo(7)
+  elif date == 'month':
+    query.SetFromDateDaysAgo(31)
+  elif date == 'all':
+    pass
+  elif date == 'explicit':
+    if mindate is not None:
+      query.SetFromDateObject(mindate)
+    if maxdate is not None:
+      query.SetToDateObject(maxdate)
+
+  # run the query
+  db = cvsdb.ConnectDatabaseReadOnly()
+  db.RunQuery(query)
+
+  sql = htmlify(db.CreateSQLQueryString(query))
+
+  # gather commits
+  commits = []
+  plus_count = 0
+  minus_count = 0
+  mod_time = -1
+  if query.commit_list:
+    files = []
+    current_desc = query.commit_list[0].GetDescription()
+    for commit in query.commit_list:
+      # base modification time on the newest commit ...
+      if commit.GetTime() > mod_time: mod_time = commit.GetTime()
+      # form plus/minus totals
+      plus_count = plus_count + int(commit.GetPlusCount())
+      minus_count = minus_count + int(commit.GetMinusCount())
+      # group commits with the same commit message ...
+      desc = commit.GetDescription()
+      if current_desc == desc:
+        files.append(commit)
+        continue
+      commits.append(build_commit(request, current_desc, files))
+
+      files = [ commit ]
+      current_desc = desc
+    commits.append(build_commit(request, current_desc, files))
+
+  # only show the branch column if we are querying all branches
+  # or doing a non-exact branch match.
+  show_branch = ezt.boolean(branch == '' or branch_match != 'exact')
+
+  # a link to modify query
+  queryform_href = request.get_url(view_func=view_queryform,
+                                   params=request.query_dict.copy())
+
+  # if we got any results, use the newest commit as the modification time
+  if mod_time >= 0:
+    if check_freshness(request, mod_time):
+      return
+
+  data = common_template_data(request)
+  data.update({
+    'nav_path' : clickable_path(request, 0, 0),
+    'sql': sql,
+    'english_query': english_query(request),
+    'queryform_href': queryform_href,
+    'plus_count': plus_count,
+    'minus_count': minus_count,
+    'show_branch': show_branch,
+    'sortby': sortby,
+    'commits': commits,
+    })
+
+  request.server.header()
+  generate_page(request, cfg.templates.query_results, data)
 
 _views = {
   'annotate': view_annotate,
@@ -2673,6 +3002,8 @@ _views = {
   'graphimg': view_cvsgraph_image,
   'log':      view_log,
   'markup':   view_markup,
+  'query':    view_query,
+  'queryform':view_queryform,
   'rev':      view_revision,
   'tar':      download_tarball,
 }

@@ -362,9 +362,9 @@ class CheckinDatabase:
         if query.sort == "date":
             order_by = "ORDER BY checkins.ci_when DESC,descid"
         elif query.sort == "author":
-            order_by = "ORDER BY checkins.whoid,descid"
+            order_by = "ORDER BY people.who,descid"
         elif query.sort == "file":
-            order_by = "ORDER BY checkins.fileid,descid"
+            order_by = "ORDER BY files.file,descid"
 
         ## exclude duplicates from the table list
         for table in tableList[:]:
@@ -400,6 +400,12 @@ class CheckinDatabase:
              dbRemovedLines, dbDescID) = row
 
             commit = CreateCommit()
+            if dbType == 'Add':
+              commit.SetTypeAdd()
+            elif dbType == 'Remove':
+              commit.SetTypeRemove()
+            else:
+              commit.SetTypeChange()
             commit.SetTime(dbi.TicksFromDateTime(dbCI_When))
             commit.SetFile(self.GetFile(dbFileID))
             commit.SetDirectory(self.GetDirectory(dbDirID))

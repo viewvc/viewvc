@@ -172,6 +172,8 @@ class Config:
     self.templates.annotate = 'templates/annotate.ezt'
     self.templates.markup = 'templates/markup.ezt'
     self.templates.error = 'templates/error.ezt'
+    self.templates.query_form = 'templates/query_form.ezt'
+    self.templates.query_results = 'templates/query_results.ezt'
 
     self.cvsdb.enabled = 0
     self.cvsdb.host = ''
