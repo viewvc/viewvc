@@ -62,15 +62,6 @@ class ViewCVSException:
 ViewcvsException = ViewCVSException
 
 
-def PrintStackTrace(server, text=''):
-  import traceback, string
-
-  server.write("<hr><p><font color=red>%s</font></p>\n<p><pre>" % text)
-  server.write(server.escape(string.join(traceback.format_stack(), '')))
-  server.write("</pre></p>")
-  server.flush()
-
-
 def PrintException(server, exc_data):
   status = exc_data['status']
   msg = exc_data['msg']
