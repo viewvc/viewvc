@@ -438,27 +438,76 @@ def link_includes(text, root, rcs_path, sticky = None):
                (match.group(1), match.group(2), url, incfile)
   return text
 
+class BlameSource:
+  def __init__(self, root, rcs_path, opt_rev = None, sticky = None):
+    # Parse the CVS file
+    parser = CVSParser()
+    revision = parser.parse_cvs_file(os.path.join(root, rcs_path), opt_rev)
+    count = len(parser.revision_map)
+    lines = parser.extract_revision(revision)
+    if len(lines) != count:
+      raise RuntimeError, 'Internal consistency error'
+    match = re_filename.match(rcs_path)
+    if not match:
+      raise RuntimeError, 'Unable to parse filename'
+
+    # set up some state variables
+    self.file_head = match.group(1)
+    self.file_tail = match.group(2)
+    self.lines = lines
+    self.num_lines = count
+    self.root = root
+    self.sticky = sticky
+    self.parser = parser
+
+    ### TODO: do something with file_tail
+    
+    # keep track of where we are during an iteration
+    self.idx = -1
+    self.last = None
+
+  def __getitem__(self, idx):
+    if idx == self.idx:
+      return self.last
+    if idx >= self.num_lines:
+      raise IndexError("No more annotations")
+    if idx != self.idx + 1:
+      raise BlameSequencingError()
+
+    # Get the line, escape HTML, and (maybe) add include links.
+    rev = self.parser.revision_map[idx]
+    prev_rev = self.parser.prev_revision.get(rev)
+    line_number = idx + 1
+    author = self.parser.revision_author[rev]
+    diff_url = None
+    if prev_rev:
+      diff_url = '%s?r1=%s&amp;r2=%s' % (self.file_tail[:-2], prev_rev, rev)
+      if self.sticky:
+        diff_url = diff_url + '&' + self.sticky
+    
+    thisline = self.lines[idx]
+    thisline = cgi.escape(thisline)
+    if 1: #cfg.options.blame_link_includes:
+      thisline = link_includes(thisline, self.root,
+                               self.file_head, self.sticky)
+
+    item = _item(text=thisline, line_number=line_number, rev=rev,
+                 prev_rev=prev_rev, diff_url=diff_url, author=author)
+    self.last = item
+    self.idx = idx
+    return item
+
+class BlameSequencingError(Exception):
+  pass
+
+class _item:
+  def __init__(self, **kw):
+    vars(self).update(kw)
+
 def make_html(root, rcs_path, opt_rev = None, sticky = None):
-  filename = os.path.join(root, rcs_path)
-  parser = CVSParser()
-  revision = parser.parse_cvs_file(filename, opt_rev)
-  count = len(parser.revision_map)
-  text = parser.extract_revision(revision)
-  if len(text) != count:
-    raise RuntimeError, 'Internal consistency error'
+  bs = BlameSource(root, rcs_path, opt_rev, sticky)
 
-  match = re_filename.match(rcs_path)
-  if not match:
-    raise RuntimeError, 'Unable to parse filename'
-  file_head = match.group(1)
-  file_tail = match.group(2)
-
-  open_table_tag = '<table border="0" cellpadding="0" cellspacing="0" width="100%">'
-  startOfRow = '<tr><td colspan="3"%s><pre>'
-  endOfRow = '</td></tr>'
-
-  print open_table_tag + (startOfRow % '')
-
+  count = bs.num_lines
   if count == 0:
     count = 1
 
@@ -468,28 +517,24 @@ def make_html(root, rcs_path, opt_rev = None, sticky = None):
   line = 0
   old_revision = 0
   row_color = ''
-  lines_in_table = 0
   inMark = 0
   rev_count = 0
 
-  for revision in parser.revision_map:
-    thisline = text[line]
-    line = line + 1
+  open_table_tag = '<table border="0" cellpadding="0" cellspacing="0" width="100%">'
+  startOfRow = '<tr><td colspan="3"%s><pre>'
+  endOfRow = '</td></tr>'
 
-    # Escape HTML meta-characters
-    thisline = cgi.escape(thisline)
+  print open_table_tag + (startOfRow % '')
 
-    # Add a link to traverse to included files
-    if 1:   # opt_includes
-      thisline = link_includes(thisline, root, file_head, sticky)
-
+  for line_data in bs:
+    revision = line_data.rev
+    thisline = line_data.text
+    line = line_data.line_number
+    author = line_data.author
+    prev_rev = line_data.prev_rev
+    diff_url = line_data.diff_url
+    
     output = ''
-
-    # Highlight lines
-    #mark_cmd;
-    #if (defined($mark_cmd = $mark_line{$line}) and mark_cmd != 'end':
-    #	output = output + endOfRow + '<tr><td bgcolor=LIGHTGREEN width="100%"><pre>'
-    #	inMark = 1
 
     if old_revision != revision and line != 1:
       if row_color == '':
@@ -498,42 +543,21 @@ def make_html(root, rcs_path, opt_rev = None, sticky = None):
         row_color = ''
 
       if not inMark:
-        if lines_in_table > 100:
-          output = output + endOfRow + '</table>' + open_table_tag + (startOfRow % row_color)
-          lines_in_table = 0
-        else:
-          output = output + endOfRow + (startOfRow % row_color)
-
-    elif lines_in_table > 200 and not inMark:
-      output = output + endOfRow + '</table>' + open_table_tag + (startOfRow % row_color)
-      lines_in_table = 0
+        output = output + endOfRow + (startOfRow % row_color)
 
     output = output + '<a name="%d">%*d</a>' % (line, line_num_width, line)
 
     if old_revision != revision or rev_count > 20:
       revision_width = max(revision_width, len(revision))
 
-      if parser.prev_revision.get(revision):
-        fname = file_tail[:-2]	# strip the ",v"
-	url = '%s?r1=%s&amp;r2=%s' % \
-	      (fname, parser.prev_revision[revision], revision)
-	if sticky:
-	  url = url + '&' + sticky
-	output = output + ' <a href="%s"' % (url, )
-        if 0: # use_layers
-          output = output + " onmouseover='return log(event,\"%s\",\"%s\");'" % (
-                  parser.prev_revision[revision], revision)
-        output = output + ">"
-      else:
-        output = output + " "
-        parser.prev_revision[revision] = ''
-
-      author = parser.revision_author[revision]
-      # $author =~ s/%.*$//;
+      output = output + ' '
+      if diff_url:
+	output = output + '<a href="%s">' % diff_url
+        
       author_width = max(author_width, len(author))
       output = output + ('%-*s ' % (author_width, author))
       output = output + revision
-      if parser.prev_revision.get(revision):
+      if prev_rev:
         output = output + '</a>'
       output = output + (' ' * (revision_width - len(revision) + 1))
 
