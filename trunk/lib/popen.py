@@ -71,7 +71,10 @@ def popen(cmd, args, mode, capture_err=1):
   os.close(w)
 
   # the stdin/stdout/stderr are all set up. exec the target
-  os.execvp(cmd, (cmd,) + tuple(args))
+  try:
+    os.execvp(cmd, (cmd,) + tuple(args))
+  except:
+    pass
 
   # crap. shouldn't be here.
   sys.exit(127)
@@ -108,7 +111,10 @@ def pipe_cmds(cmds):
       os.close(w)
 
       # time to run the command
-      os.execvp(cmd[0], cmd)
+      try:
+        os.execvp(cmd[0], cmd)
+      except:
+        pass
 
       sys.exit(127)
 
@@ -137,7 +143,10 @@ def pipe_cmds(cmds):
     os.close(parent_w)
 
     # run the last command
-    os.execvp(cmds[-1][0], cmds[-1])
+    try:
+      os.execvp(cmds[-1][0], cmds[-1])
+    except:
+      pass
 
     sys.exit(127)
 
