@@ -478,6 +478,9 @@ def markup_stream_python(fp):
 
 def markup_stream_enscript(lang, fp):
   sys.stdout.flush()
+  # I've tried to pass option '-C' to enscript to generate line numbers
+  # Unfortunately this option doesn'nt work with HTML output in enscript
+  # version 1.6.2.
   enscript = popen.pipe_cmds([(os.path.normpath(os.path.join(cfg.options.enscript_path,'enscript')),
                                '--color', '-W', 'html', '-E' + lang, '-o',
                                '-', '-'),
