@@ -29,7 +29,9 @@ tparse is a C++ library that offers an API to a performance-oriented RCSFILE par
 It does little syntax checking.\n\
 \n\
 Version: $Id$\n";
- 
+static char *__version__ = "0.13";
+static char *__date__ = "2002/01/27";
+static char *__author__ ="Lucas Bruand <lucas.bruand@ecl2002.ec-lyon.fr>"; 
 static char *StopParser__doc__ ="Stop parser exception: to be raised from the sink to abort parsing.";
 static PyObject *StopParser;
 

@@ -48,6 +48,9 @@ void inittparse()
     StopParser = PyErr_NewException("tparse.stopparser", NULL, NULL);
     PyObject_SetAttrString(StopParser,"__doc__",PyString_FromString(StopParser__doc__));
     PyDict_SetItemString(d, "stopparser", StopParser);
+    PyDict_SetItemString(d, "__version__", PyString_FromString(__version__));
+    PyDict_SetItemString(d, "__date__", PyString_FromString(__date__));
+    PyDict_SetItemString(d, "__author__", PyString_FromString(__author__));
 }
 
 class PythonException {
