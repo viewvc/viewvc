@@ -92,9 +92,15 @@ went into the new files in subdirectory templates.""", 0),
     ("templates/diff.ezt", "templates/diff.ezt", 0644, 0, 1, 0),
     ("templates/directory.ezt", "templates/directory.ezt", 0644, 0, 1, 0),
     ("templates/dir_alternate.ezt", "templates/dir_alternate.ezt", 0644, 0, 1, 0),
-    ("templates/footer.ezt", "templates/footer.ezt", 0644, 0, 1, 0),
-    ("templates/graph.ezt", "templates/graph.ezt", 0644, 0, 1, 0),
     ("templates/header.ezt", "templates/header.ezt", 0644, 0, 1, 0),
+    ("templates/include/branch.ezt", "templates/include/branch.ezt", 0644, 0, 1, 0),
+    ("templates/include/branch_form.ezt", "templates/include/branch_form.ezt", 0644, 0, 1, 0),
+    ("templates/include/diff_form.ezt", "templates/include/diff_form.ezt", 0644, 0, 1, 0),
+    ("templates/include/sort.ezt", "templates/include/sort.ezt", 0644, 0, 1, 0),
+    ("templates/include/view_tag.ezt", "templates/include/view_tag.ezt", 0644, 0, 1, 0),
+    ("templates/footer.ezt", "templates/footer.ezt", 0644, 0, 1, 0),
+    ("templates/include/paging.ezt", "templates/include/paging.ezt", 0644, 0, 1, 0),
+    ("templates/graph.ezt", "templates/graph.ezt", 0644, 0, 1, 0),
     ("templates/log.ezt", "templates/log.ezt", 0644, 0, 1, 0),
     ("templates/log_table.ezt", "templates/log_table.ezt", 0644, 0, 1, 0),
     ("templates/markup.ezt", "templates/markup.ezt", 0644, 0, 1, 0),
@@ -258,5 +264,21 @@ if __name__ == "__main__":
         print " ", args[0]
         apply(InstallFile, args)
 
-    print
-    print "Installation Complete"
+    print """
+
+ViewCVS File Installation Complete
+
+Consult INSTALL for detailed information to finish the installation
+and configure ViewCVS for your system.
+
+Overview of remaining steps:
+
+1) Edit the %s/viewcvs.conf file.
+
+2) Configure an existing web server to run (or copy to cgi-bin) 
+   %s/cgi/viewcvs.cgi.
+     OR 
+   Run the web server that comes with ViewCVS at 
+   %s/standalone.py.
+
+""" % (ROOT_DIR, ROOT_DIR, ROOT_DIR)
