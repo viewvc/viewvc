@@ -518,8 +518,9 @@ else:
       # If the process running the web server is a member of
       # the group stat.ST_GID access may be granted.
       # so the fall back to os.access is needed to figure this out.
-      elif ((mode & mask) != mask) and (not os.access(pathname,os.R_OK)):
-        valid = 0
+      elif (mode & mask) != mask:
+        if not os.access(pathname, isdir and (os.R_OK | os.X_OK) or os.R_OK):
+          valid = 0
 
       if isdir:
         kind = vclib.DIR
