@@ -1,7 +1,8 @@
-[if-any no_match]
-  <p><b>NOTE:</b> There are [num_files] files, but none match the
-  current selection criteria. Click <a href="[show_attic_href]#dirlist">here</a>
-  to display dead files[if-any view_tag], or <a href="[main_href]#dirlist">here</a>
+[is num_dead "0"]
+[else]
+  <p><b>NOTE:</b> There are [num_dead] dead files not displayed in this
+  listing, click <a href="[show_attic_href]#dirlist">here</a> to display
+  them[if-any view_tag], or <a href="[main_href]#dirlist">here</a>
   to view files on the default branch[end].
 [end]
 
