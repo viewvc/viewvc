@@ -117,6 +117,12 @@
     [end]
   [end]
 
+  [is roottype "svn"]
+    [if-any entries.size]
+    <br>File length: [entries.size] byte(s)</b>
+    [end]
+  [end]
+
   [is entries.state "dead"]
     <br><b><i>FILE REMOVED</i></b>
   [else]
