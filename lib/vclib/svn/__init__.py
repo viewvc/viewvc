@@ -96,6 +96,12 @@ def fetch_log(repos, full_name, which_rev=None):
   return alltags, receiver.logs
 
 
+def do_diff(repos, path, rev1, rev2, diffoptions):
+  root1 = fs.revision_root(repos.fs_ptr, rev1, repos.pool)
+  root2 = fs.revision_root(repos.fs_ptr, rev2, repos.pool)
+  return fs.FileDiff(root1, path, root2, path, repos.pool, diffoptions)
+
+    
 def get_file_contents(repos, path):
   len = fs.file_length(repos.fsroot, path, repos.pool)
   stream = fs.file_contents(repos.fsroot, path, repos.pool)
