@@ -162,11 +162,18 @@ class Request:
     self.query_dict = {}   # validated and cleaned up query options
     self.path_parts = None # for convenience, equals where.split('/')
 
+    # redirect if we're loading from a valid but irregular URL
+    # These redirects aren't neccessary to make ViewCVS work, it functions
+    # just fine without them, but they make it easier for server admins to
+    # implement access restrictions based on URL
+    needs_redirect = 0
+
     # Process the query params
     for name, values in self.server.params().items():
       # patch up old queries that use 'cvsroot' to look like they used 'root'
       if name == 'cvsroot':
         name = 'root'
+        needs_redirect = 1
 
       # validate the parameter
       _validate_param(name, values[0])
@@ -179,6 +186,7 @@ class Request:
 
     # clean it up. this removes duplicate '/' characters and any that may
     # exist at the front or end of the path.
+    ### we might want to redirect to the cleaned up URL
     path_parts = filter(None, string.split(path_info, '/'))
 
     if path_parts:
@@ -190,14 +198,21 @@ class Request:
       elif path_parts[0] in (checkout_magic_path, oldstyle_checkout_magic_path):
         path_parts.pop(0)
         self.view_func = view_checkout
+        if not cfg.options.magic_checkout:
+          needs_redirect = 1
 
     # Figure out root name
     self.rootname = self.query_dict.get('root')
     if self.rootname is None:
-      if cfg.options.root_as_url_component and path_parts:
-        self.rootname = path_parts.pop(0)
+      if cfg.options.root_as_url_component:
+        if path_parts:
+          self.rootname = path_parts.pop(0)
+        else:
+          needs_redirect = 1
       else:
         self.rootname = cfg.general.default_root
+    elif cfg.options.root_as_url_component:
+      needs_redirect = 1
 
     self.where = string.join(path_parts, '/')
     self.path_parts = path_parts
@@ -263,19 +278,6 @@ class Request:
     # Make sure path exists
     self.pathtype = _repos_pathtype(self.repos, self.path_parts)
 
-    # If we have an old ViewCVS Attic URL which is still valid, then redirect
-    if self.roottype == 'cvs':
-      attic_parts = None
-      if (self.pathtype == vclib.FILE and len(self.path_parts) > 1
-          and self.path_parts[-2] == 'Attic'):
-        attic_parts = self.path_parts[:-2] + self.path_parts[-1:]
-      elif (self.pathtype == vclib.DIR and len(self.path_parts) > 0
-            and self.path_parts[-1] == 'Attic'):
-        attic_parts = self.path_parts[:-1]
-      if attic_parts:
-        self.server.redirect(self.get_url(where=string.join(attic_parts, '/'),
-                                          pathtype=self.pathtype))
-      
     if self.pathtype is None:
       # path doesn't exist, try stripping known fake suffixes
       result = _strip_suffix('.diff', self.where, self.path_parts,        \
@@ -289,6 +291,20 @@ class Request:
       else:
         raise debug.ViewCVSException('%s: unknown location'
                                      % self.where, '404 Not Found')
+
+    # If we have an old ViewCVS Attic URL which is still valid, then redirect
+    if self.roottype == 'cvs':
+      attic_parts = None
+      if (self.pathtype == vclib.FILE and len(self.path_parts) > 1
+          and self.path_parts[-2] == 'Attic'):
+        attic_parts = self.path_parts[:-2] + self.path_parts[-1:]
+      elif (self.pathtype == vclib.DIR and len(self.path_parts) > 0
+            and self.path_parts[-1] == 'Attic'):
+        attic_parts = self.path_parts[:-1]
+      if attic_parts:
+        self.path_parts = attic_parts
+        self.where = string.join(attic_parts, '/')
+        needs_redirect = 1
 
     # Try to figure out what to do based on view parameter
     self.view_func = _views.get(self.query_dict.get('view', None), 
@@ -321,7 +337,17 @@ class Request:
             self.view_func = view_cvsgraph_image
         else:
           self.view_func = view_log
-        
+
+    # if we have a directory and the request didn't end in "/", then redirect
+    # so that it does.
+    if (self.view_func is view_directory
+        and path_info[-1:] != '/'):
+      needs_redirect = 1
+
+    # redirect now that we know the URL is valid
+    if needs_redirect:
+      self.server.redirect(self.get_url())
+
     # Finally done parsing query string, set mime type and call view_func
     self.mime_type = None
     if self.pathtype == vclib.FILE:
@@ -1351,11 +1377,6 @@ def icmp(x, y):
   return cmp(string.lower(x), string.lower(y))
 
 def view_directory(request):
-  # if we have a directory and the request didn't end in "/", then redirect
-  # so that it does.
-  if request.server.getenv('PATH_INFO', '')[-1:] != '/':
-    request.server.redirect(request.get_url())
-
   # For Subversion repositories, the revision acts as a weak validator for
   # the directory listing (to take into account template changes or
   # revision property changes).
