@@ -677,6 +677,7 @@ enscript_extensions = {
   '.for': 'fortran',
   '.gs' : 'haskell',
   '.h' : 'c',
+  '.hpp' : 'cpp',
   '.hs' : 'haskell',
   '.htm' : 'html',
   '.html' : 'html',
@@ -2146,7 +2147,7 @@ def cvsgraph_image(cfg, request):
   fp = popen.popen(os.path.normpath(os.path.join(cfg.options.cvsgraph_path,'cvsgraph')),
                                ("-c", cfg.options.cvsgraph_conf,
                                 "-r", request.repos.rootpath,
-                                request.where + ',v'), 'rb')
+                                request.where + ',v'), 'rb', 0)
   copy_stream(fp)
   fp.close()
 
@@ -2173,7 +2174,7 @@ def view_cvsgraph(cfg, request):
                     "-r", request.repos.rootpath,
                     "-6", request.amp_query, 
                     "-7", request.qmark_query,
-                    request.where + ',v'), 'rb')
+                    request.where + ',v'), 'rb', 0)
 
   data.update({
     'request' : request,
@@ -2919,6 +2920,7 @@ def main():
              and full_name[-7:] == '.tar.gz' and query_dict.has_key('tarball'):
           # getting your tarball on?  so be it.
           download_tarball(request)
+          return
         elif request.roottype == 'cvs':
           # if the file is in a cvs Attic, then redirect.
           idx = string.rfind(full_name, '/')
