@@ -143,7 +143,7 @@
     [end]
     
     [for entries.other_paths][if-index entries.other_paths first]<br>Other changed files:[else],[end]
-      <a href="[entries.other_paths.href]#rev[entries.rev]">[entries.other_paths.filename]</a>[end]
+      [is entries.other_paths.action "deleted"][entries.other_paths.filename][else]<a href="[entries.other_paths.href]#rev[entries.rev]">[entries.other_paths.filename]</a>[end] ([entries.other_paths.action])[end]
   [end]
 
   [is entries.state "dead"]
