@@ -71,7 +71,7 @@ ASP Mode On IIS
 
   To install ASP follow these steps:
 
-  1) Run <PYTHON_DIR>\win32comext\axscript\client\pyscript.py to register Python as an ASP scripting language. (More documentation on this is at http://www.python.org/windows/win32com/ActiveXScripting.html )
+  1) Run <PYTHON_DIR>\Lib\site-packages\win32comext\axscript\client\pyscript.py to register Python as an ASP scripting language. (More documentation on this is at http://www.python.org/windows/win32com/ActiveXScripting.html )
 
   2) Copy the viewcvs.asp and query.asp files from <VIEWCVS_INSTALL_DIR>\windows to a folder that is accessible through your web server.
 
@@ -90,9 +90,9 @@ CGI Mode on Apache
 
 Mod_Python Mode on Apache
 
-  There are probably ten thousand different ways to set up Apache, mod_python, and ViewCVS together. Here are some instructions that work for me using Mod_Python 3.0.1 and Apache 2.0.44. If any Apache gurus want to contribute better instructions, I'd be happy to include them here.
+  There are probably ten thousand different ways to set up Apache, mod_python, and ViewCVS together. Here are some instructions that work for me using Mod_Python 3.0.3 and Apache 2.0.46. If any Apache gurus want to contribute better instructions, I'd be happy to include them here.
 
-  1) Download the win32 mod_python binary AND the unix mod_python source from www.modpython.org. Copy mod_python.so from the win32 binary package to apache's modules\ folder. Copy the lib\python\mod_python folder from the unix source package to <PYTHON_DIR>\Lib\site-packages
+  1) Run the win32 mod_python installer from www.modpython.org. 
 
   2) Add the following line to the "Global Environment" section of httpd.conf
 
@@ -148,7 +148,7 @@ CVS Graph
     libpng - http://www.libpng.org/pub/png/
     zlib   - http://www.gzip.org/zlib/
 
-  The latter two libraries are also available from the Mingw package repository (http://mingwrep.sourceforge.net/)
+  Build instructions for Mingw can be found at http://www.cvsnt.org/wiki/CvsGraphMingw
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ICONS FOR IIS
@@ -209,6 +209,8 @@ To "reload(viewcvs) in stub", put these lines in one of the ASP or Mod_Python st
 
 then load the page one or more times in a web browser.
 
+- If you have problems getting ViewCVS to work with mod_python, you can first make sure mod_python works standalone with the testing instructions at http://www.modpython.org/live/current/doc-html/inst-testing.html.
+
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 KNOWN ISSUES
 
@@ -228,9 +230,12 @@ Important: You may need to reboot your computer before the environment variable 
 
 - The standalone server will not run under cygwin python because it does not support threads. ASP pages can't be run with cygwin python because it does not support ActiveX. To use either of these features you should install ActiveState Python. Activestate and Cygwin coexist nicely, so they can be installed side by side.
 
-- There is a bug in the gnuwin32 enscript 1.6.3-1 (2002-04-05) package which can make enscript.exe cause an access violation whenever it is run. If you are affected by this bug, you can use the patched version of enscript.exe which is included here in the windows\binaries\enscript folder. See the readme.txt there for more information.
+- On Windows 2003 Server under IIS, enscript might give an error like:
 
-- enscript 1.6.2 does not seem to work with the standalone server. When a enscript page is loaded, the enscript process never returns and consumes all available CPU cycles until it is killed manually. enscript 1.6.3 does not have this problem and neither does the PHP colorizer.
+  enscript: couldn't open input filter "states -f "K:/gnuwin32/share/enscript/hl/enscript.st" -p "C://.enscript;K:/gnuwin32/share/enscript/hl" -shtml -Dcolor=1 -Dstyle=emacs -Dlanguage=html -Dnum_input_files=1 -Ddocument_title="Enscript Output" -Dtoc=0 -" for file "": No error
+  no output generated
+
+  The solution is to give read & execute permissions on cmd.exe for IUSR_computername and IWAM_computername users. (Enscript uses cmd.exe internally to launch it's little helper program, states.exe).
 
 - By default, ASP will set session cookies at each page load. ViewCVS does not use these cookies and they can be safely disabled. You can do this by opening the IIS properties dialog for the application directory containing the ViewCVS .asp files. Go to the [Home] | [Virtual] Directory tab and click the "Configuration" button under "Application Settings". On the dialog that comes up, uncheck "Enable Session State" under "App Options" -> "Application Configuration".
 
