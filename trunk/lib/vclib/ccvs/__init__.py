@@ -291,7 +291,7 @@ class COSink(rcsparse.Sink):
 
 
 class CVSRepository(Repository):
-  def __init__(self, name, basepath, show_CVSROOT=0 ):
+  def __init__(self, name, basepath, show_CVSROOT=0):
     self.name = name
     self.basepath = basepath
     self.show_CVSROOT = show_CVSROOT
@@ -307,7 +307,7 @@ class CVSRepository(Repository):
       
   def _getpath(self, pathname):
     if pathname != []:
-      if (pathname[0] == "CVSROOT") and( self.show_CVSROOT == 0):
+      if (pathname[0] == "CVSROOT") and (self.show_CVSROOT == 0):
         raise ItemNotFound(pathname)
     return self.basepath + string.join(pathname, os.sep)
 
@@ -349,12 +349,11 @@ class CVSRepository(Repository):
   def _getvf_subdirs(self, path_parts):
     "Return a dictionary of subdirectories. (name : Versdir)"
     h = os.listdir(self._getpath(path_parts))
-    if ( not self.show_CVSROOT ):
+    if not self.show_CVSROOT:
       if (path_parts == []):
         del h[h.index("CVSROOT")]
     g = { }
     for i in h:
-      
       p = self._getpath(path_parts + [i])
       if os.path.isdir(p):
     	  g[i] = Versdir(self, path_parts + [i]) 
