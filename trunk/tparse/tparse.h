@@ -97,65 +97,15 @@ class Branche {
 class Sink {
 	public:
 	Sink() {};
-	virtual int set_head_revision(char * revision) {
-		cout<<" set head revision : "<<revision<<endl;
-		delstr(revision);
-		return 0;
-	};
-	virtual int set_principal_branch(char *branch_name) {
-		cout<<" set principal branch : "<<branch_name<<endl;
-		delstr(branch_name);
-		return 0;
-	};
-	virtual int define_tag(char *name, char *revision) {
-		cout<< " Tag: name="<<name<<" revision: "<<revision<<endl;
-		delstr(name);
-		return 0;
-	};
-	virtual int set_comment(char *comment) {
-		cout<<" Comment: "<<comment<<endl;
-		delstr(comment);
-		return 0;
-	};
-	virtual int set_description(char *description) {
-		cout<<"description :"<<description<<endl;
-		delstr(description);
-		return 0;
-	};
-	virtual int define_revision(char *revision, long timestamp, char *author, char *state, Branche *branches, char *next) {
-		Branche *move;
-		Branche *anc;
-		cout<<"  Define_revision :"<<endl;
-		cout<<"  |-revision = "<<revision<<endl;delstr(revision);
-		cout<<"  |-timestamp= "<<timestamp<<endl;
-		cout<<"  |-author   = "<<author<<endl;delstr( author);
-		cout<<"  |-state    = "<<state<<endl;delstr(state);
-		cout<<"  |-branches = ";
-		move=branches;
-		while (move!=NULL) {
-			cout<<move->name<<", "; 
-			anc=move;
-			move=move->next; 
-		};
-		if (branches!=NULL) delete branches;
-		cout<<endl;
-		cout<<"  |-next     = "<<next<<endl<<endl;delstr(next);
-		return 0;
-	};
-	virtual int set_revision_info(char *revision, char *log, char *text) 
-	{
-		cout << "set revision info :"<<revision<<endl;
-		cout << "log :"<<log<<endl;
-		cout <<"----text----"<<endl;
-		cout << text;
-		cout <<"----text----"<<endl;
-		delstr(log);
-		delstr(text);
-		delstr(revision);
-		return 0;
-	};
-  	virtual int tree_completed() { cout <<" tree completed"<<endl;return 0;};
-  	virtual int parse_completed() {cout <<" parse completed"<<endl;return 0;};
+	virtual int set_head_revision(char * revision)=0;
+	virtual int set_principal_branch(char *branch_name)=0;
+	virtual int define_tag(char *name, char *revision)=0;
+	virtual int set_comment(char *comment)=0;
+	virtual int set_description(char *description)=0;
+	virtual int define_revision(char *revision, long timestamp, char *author, char *state, Branche *branches, char *next)=0;
+	virtual int set_revision_info(char *revision, char *log, char *text)=0;
+  virtual int tree_completed()=0;
+  virtual int parse_completed()=0;
 };
 
 /* The class is used to get one by one every token in the file. */

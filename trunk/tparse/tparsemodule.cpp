@@ -46,40 +46,25 @@ void inittparse()
     m= Py_InitModule3("tparse", tparseMethods,__doc__);
     
     common = PyImport_ImportModule("common");
-    if (!common) {
-      PyErr_Clear();
-      pyRCSStopParser = PyErr_NewException("tparse.RCSStopParser", NULL, NULL);
-      PyObject_SetAttrString(pyRCSStopParser,"__doc__",PyString_FromString(pyRCSStopParser__doc__));
-      
-      pyRCSParseError = PyErr_NewException("tparse.RCSParseError", NULL, NULL);
-      PyObject_SetAttrString(pyRCSParseError,"__doc__",PyString_FromString(pyRCSParseError__doc__));
- 
-      pyRCSIllegalCharacter = PyErr_NewException("tparse.RCSIllegalCharacter", NULL, NULL);
-      PyObject_SetAttrString(pyRCSIllegalCharacter,"__doc__",PyString_FromString(pyRCSIllegalCharacter__doc__));
-      
-      pyRCSExpected = PyErr_NewException("tparse.RCSExpected", NULL, NULL);
-      PyObject_SetAttrString(pyRCSExpected,"__doc__",PyString_FromString(pyRCSExpected__doc__));
-    }
-    else {
-      commondict = PyModule_GetDict(common);
-      pyRCSStopParser = PyDict_GetItemString(commondict,"RCSStopParser");
-      Py_INCREF(pyRCSStopParser);
-      
-      pyRCSParseError = PyDict_GetItemString(commondict,"RCSParseError");
-      Py_INCREF(pyRCSParseError);
-      
-      pyRCSIllegalCharacter = PyDict_GetItemString(commondict,"RCSIllegalCharacter");
-      Py_INCREF(pyRCSIllegalCharacter);
-      
-      pyRCSExpected = PyDict_GetItemString(commondict,"RCSExpected");
-      Py_INCREF(pyRCSExpected);
-    }
-    d = PyModule_GetDict(m);
+    if (!common) return ; // Common not imported ?
     
-    PyDict_SetItemString(d, "RCSStopParser", pyRCSStopParser);
-    PyDict_SetItemString(d, "RCSParseError", pyRCSParseError);
-    PyDict_SetItemString(d, "RCSIllegalCharacter", pyRCSIllegalCharacter);
-    PyDict_SetItemString(d, "RCSExpected", pyRCSExpected);
+    commondict = PyModule_GetDict(common);
+    pyRCSStopParser = PyDict_GetItemString(commondict,"RCSStopParser");
+    Py_INCREF(pyRCSStopParser);
+    
+    pyRCSParseError = PyDict_GetItemString(commondict,"RCSParseError");
+    Py_INCREF(pyRCSParseError);
+    
+    pyRCSIllegalCharacter = PyDict_GetItemString(commondict,"RCSIllegalCharacter");
+    Py_INCREF(pyRCSIllegalCharacter);
+    
+    pyRCSExpected = PyDict_GetItemString(commondict,"RCSExpected");
+    Py_INCREF(pyRCSExpected);
+    
+    PySink = PyDict_GetItemString(commondict,"Sink");
+    Py_INCREF(PySink);
+    
+    d = PyModule_GetDict(m);
     
     PyDict_SetItemString(d, "__version__", PyString_FromString(__version__));
     PyDict_SetItemString(d, "__date__", PyString_FromString(__date__));
@@ -95,7 +80,9 @@ class PythonSink : public Sink {
 	public:
 	PyObject *sink;
 	PythonSink(PyObject *mysink)
-	{ sink=mysink;};
+	{ 
+	  sink=mysink;
+	};
 	int set_head_revision(char * revision) 
 	{
 		if (!PyObject_CallMethod(sink,"set_head_revision", "s", revision)) {
@@ -245,44 +232,52 @@ static PyObject * tparse( PyObject *self, PyObject *args)
     	}
     	else
     		return NULL;
-    	Py_INCREF(hsink);
-    	Py_XINCREF(file);
-    	try {
-    		tparseParser *tp=new tparseParser(input,new PythonSink(hsink) );
-    	}
-    	catch (RCSExpected e) 
-    	  {
-    	    PyObject *exp= PyInstance_New(pyRCSExpected, Py_BuildValue("(ss)", e.got, e.wanted), NULL);
-        	PyErr_SetObject(pyRCSExpected, exp);
-        	Py_DECREF(hsink);
-        	Py_XDECREF(file);
-        	return NULL;
-        }
-    	catch (RCSIllegalCharacter e)
-    	  {
-        	PyObject *exp= PyInstance_New(pyRCSIllegalCharacter, Py_BuildValue("(s)", e.value), NULL);
-        	PyErr_SetObject(pyRCSIllegalCharacter, exp);
-        	Py_DECREF(hsink);
-        	Py_XDECREF(file);
-        	return NULL;
-        }
-      catch (RCSParseError e) 
-        {
-        	PyObject *exp= PyInstance_New(pyRCSParseError, Py_BuildValue("(s)", e.value), NULL);
-        	PyErr_SetObject(pyRCSParseError, exp);
-        	Py_DECREF(hsink);
-        	Py_XDECREF(file);
-        	return NULL;
-        }
-        catch (PythonException e)
-        {
-        	Py_DECREF(hsink);
-        	Py_XDECREF(file);
-        	return NULL;	
-        }
+   if (!PyObject_IsInstance(hsink,PySink)) {
+      PyErr_SetString(PyExc_TypeError," Sink has to be an instance of class Sink.");
+      return NULL;
+   }
+ 	
+   Py_INCREF(hsink);
+   Py_XINCREF(file);
+   try {
+   		tparseParser *tp=new tparseParser(input,new PythonSink(hsink) );
+   }
+   catch (RCSExpected e) 
+   {
+      PyObject *exp= PyInstance_New(pyRCSExpected, Py_BuildValue("(ss)", e.got, e.wanted), NULL);
+    	PyErr_SetObject(pyRCSExpected, exp);
+     	Py_DECREF(hsink);
+     	Py_XDECREF(file);
+     	return NULL;
+   }
+   catch (RCSIllegalCharacter e)
+   {
+     	PyObject *exp= PyInstance_New(pyRCSIllegalCharacter, Py_BuildValue("(s)", e.value), NULL);
+     	PyErr_SetObject(pyRCSIllegalCharacter, exp);
+     	Py_DECREF(hsink);
+     	Py_XDECREF(file);
+     	return NULL;
+   }
+   catch (RCSParseError e) 
+   {
+    	PyObject *exp= PyInstance_New(pyRCSParseError, Py_BuildValue("(s)", e.value), NULL);
+     	PyErr_SetObject(pyRCSParseError, exp);
+     	Py_DECREF(hsink);
+     	Py_XDECREF(file);
+     	return NULL;
+   }
+   catch (PythonException e)
+   {
+    	Py_DECREF(hsink);
+     	Py_XDECREF(file);
+     	return NULL;	
+   }
    Py_DECREF(hsink);
    Py_XDECREF(file);
    Py_INCREF(Py_None);
    return Py_None;
+};
 
-}
+
+
+             
