@@ -32,17 +32,17 @@ import time
 
 class _TokenStream:
   # Precompiled regular expressions
-  nonws_token = re.compile('^([^;@][^;\\s]*)\\s*')
-  semic_token = re.compile('^;\\s*')
-  rcsen_token = re.compile('^@([^@]*)')
-  undo_escape = re.compile('@@')
+  find_token  = re.compile('^\\s*(;|@|.([^;\\s]*))(?P<ws>\\s*)')
+  rest_token  = re.compile('^([^;\\s]*)(?P<ws>\\s*)')
   odd_at      = re.compile('(([^@]|^)(@@)*)@([^@]|$)')
+  undo_escape = re.compile('@@')
+
+  CHUNK_SIZE  = 16384
 
   def __init__(self, file):
     self.rcsfile = file
-    self.line_buffer = ''
-    self.feof = 0
     self.save_token = None
+    self.buf = ''
 
   def get(self):
     "Get the next token from the RCS file."
@@ -53,50 +53,65 @@ class _TokenStream:
       self.save_token = None
       return token
 
-    # Erase all-whitespace lines
-    while len(self.line_buffer) == 0:
-      self.line_buffer = self.rcsfile.readline()
-      if self.line_buffer == '':
-        raise RuntimeError, 'EOF'
-      self.line_buffer = string.lstrip(self.line_buffer)
+    while 1:
+      match = self.find_token.match(self.buf)
+      if match:
+        break
+      # if we didn't find something, then it is all white space (note that
+      # the pattern will match a non-white because of the "."). we can just
+      # toss the whole buffer and go for more.
+      self.buf = self.rcsfile.read(self.CHUNK_SIZE)
+      if self.buf == '':
+        # signal EOF by returning None as the token
+        return None
 
-    # A string of non-whitespace characters is a token
-    match = self.nonws_token.match(self.line_buffer)
-    if match:
-      self.line_buffer = self.nonws_token.sub('', self.line_buffer)
-      return match.group(1)
+    # retrieve the match and trim it from the buffer
+    token = match.group(1)
+    self.buf = self.buf[match.end():]
 
-    # ...and so is a single semicolon
-    if self.semic_token.match(self.line_buffer):
-      self.line_buffer = self.semic_token.sub('', self.line_buffer)
+    if token == ';':
       return ';'
 
-    # ...or an RCS-encoded string that starts with an @ character
-    match = self.rcsen_token.match(self.line_buffer)
-    self.line_buffer = self.rcsen_token.sub('', self.line_buffer)
-    token = match.group(1)
+    if token != '@':
+      # got a string of non-whitespace characters. if we recognized the rest
+      # of the buffer (and we didn't see trailing white space), then we may
+      # not have the whole token.
+      while self.buf == '' and match.group('ws') == 0:
+        # hit the end (and trimmed it). get more data, and append the results
+        self.buf = self.rcsfile.read(self.CHUNK_SIZE)
+        match = self.rest_token.match(self.buf)
+        if not match.group(1):
+          # first character (';' or '\\s') terminates the token
+          break
+        token = token + match.group(1)
+        self.buf = self.buf[match.end():]
 
-    # Detect odd @ character used to close RCS-encoded string
-    while string.find(self.line_buffer, '@') < 0 or not self.odd_at.search(self.line_buffer):
-      token = token + self.line_buffer
-      self.line_buffer = self.rcsfile.readline()
-      if self.line_buffer == '':
+      # done piecing together tokens; return the bugger
+      return token
+
+    # a "string" which starts with the "@" character. the white space that
+    # we may have sucked up is the initial token.
+    token = match.group(3)
+
+    # start scanning blocks looking for the odd @ character which closes
+    # the RCS "string"
+    while 1:
+      match = self.odd_at.search(self.buf)
+      if match:
+        break
+
+      # nothing in the whole chunk. append it all and go for more.
+      token = token + self.buf
+      self.buf = self.rcsfile.read(self.CHUNK_SIZE)
+      if self.buf == '':
         raise RuntimeError, 'EOF'
 
-    # Retain the remainder of the line after the terminating @ character
-    i = self.odd_at.search(self.line_buffer).end(1)
-    token = token + self.line_buffer[:i]
-    self.line_buffer = self.line_buffer[i+1:]
+    # split up the chunk into "token" and "the rest"
+    token = token + self.buf[:match.end(1)]
+    self.buf = self.buf[match.end(1)+1:]
 
-    # Undo escape-coding of @ characters.
+    # undo the escape-encoding of @ characters
     token = self.undo_escape.sub('@', token)
-
-    # Digest any extra blank lines
-    while len(self.line_buffer) == 0 or self.line_buffer == '\n':
-      self.line_buffer = self.rcsfile.readline()
-      if self.line_buffer == '':
-        self.feof = 1
-        break
 
     return token
 
@@ -148,7 +163,8 @@ class Parser:
         self.sink.set_comment(self.ts.get())
         self.ts.match(';')
 
-      # Ignore all these other fields - We don't care about them.         
+      # Ignore all these other fields - We don't care about them. Also chews
+      # up "newphrase".
       elif token in ("locks", "strict", "expand", "access"):
         while 1:
           tag = self.ts.get()
@@ -218,7 +234,7 @@ class Parser:
       #    group	15;
       #    permissions	644;
       #    hardlinks	@configure.in@;
-      # we just want to skip over these
+      # this is "newphrase" in RCSFILE(5). we just want to skip over these.
       while 1:
         token = self.ts.get()
         if token == 'desc' or self.rcs_tree.match(token):
@@ -236,11 +252,14 @@ class Parser:
     self.sink.set_description(self.ts.get())
 
   def parse_rcs_deltatext(self):
-    ### maybe have another way to single EOF?
-    while not self.ts.feof:
+    while 1:
       revision = self.ts.get()
+      if revision is None:
+        # EOF
+        break
       self.ts.match('log')
       log = self.ts.get()
+      ### need to add code to chew up "newphrase"
       self.ts.match('text')
       text = self.ts.get()
       self.sink.set_revision_info(revision, log, text)
