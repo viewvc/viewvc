@@ -198,7 +198,7 @@ class Request:
       elif path_parts[0] in (checkout_magic_path, oldstyle_checkout_magic_path):
         path_parts.pop(0)
         self.view_func = view_checkout
-        if not cfg.options.magic_checkout:
+        if not cfg.options.checkout_magic:
           needs_redirect = 1
 
     # Figure out root name
