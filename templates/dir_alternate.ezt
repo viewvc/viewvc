@@ -4,45 +4,50 @@
 <thead>
 <tr>
   <th class="vc_header[is sortby "rev"]_sort[end]">
-    <a href="[sortby_rev_href]#dirlist">Rev.</a>
+    <a href="[sortby_rev_href]#dirlist">Rev.
     [is sortby "rev"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
-        width="13" height="13"
+        width="13" height="13" border="0"
         src="[docroot]/images/[is sortdir "up"]down[else]up[end].png" />
     [end]
+    </a>
   </th>
   <th class="vc_header[is sortby "file"]_sort[end]" colspan=2>
-    <a href="[sortby_file_href]#dirlist">File</a>
+    <a href="[sortby_file_href]#dirlist">File
     [is sortby "file"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
-        width="13" height="13"
+        width="13" height="13" border="0"
         src="[docroot]/images/[is sortdir "up"]down[else]up[end].png" />
     [end]
+    </a>
   </th>
   <th class="vc_header[is sortby "date"]_sort[end]">
-    <a href="[sortby_date_href]#dirlist">Age</a>
+    <a href="[sortby_date_href]#dirlist">Age
     [is sortby "date"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
-        width="13" height="13"
+        width="13" height="13" border="0"
         src="[docroot]/images/[is sortdir "up"]down[else]up[end].png" />
     [end]
+    </a>
   </th>
   <th class="vc_header[is sortby "author"]_sort[end]">
-    <a href="[sortby_author_href]#dirlist">Author</a>
+    <a href="[sortby_author_href]#dirlist">Author
     [is sortby "author"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
-        width="13" height="13"
+        width="13" height="13" border="0"
         src="[docroot]/images/[is sortdir "up"]down[else]up[end].png" />
     [end]
+    </a>
   </th>
 [is cfg.options.show_logs "1"]
   <th class="vc_header[is sortby "log"]_sort[end]">
-    <a href="[sortby_log_href]#dirlist">Last log entry</a>
+    <a href="[sortby_log_href]#dirlist">Last log entry
     [is sortby "log"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
-        width="13" height="13"
+        width="13" height="13" border="0"
         src="[docroot]/images/[is sortdir "up"]down[else]up[end].png" />
     [end]
+    </a>
   </th>
 [end]
 </tr>
