@@ -1266,7 +1266,7 @@ def view_directory(request):
   for file in file_data:
     row = _item(href=None, graph_href=None,
                 author=None, log=None, log_file=None, log_rev=None,
-                show_log=None, state=None)
+                show_log=None, state=None, size=None)
 
     if file.log_error:
       row.state = 'error'
@@ -1338,6 +1338,7 @@ def view_directory(request):
         file_where = where_prefix + (file.in_attic and 'Attic/' or '') \
                      + file.name
       else:
+        row.size = file.size
         file_where = where_prefix + file.name
 
       row.href = request.get_url(view_func=view_log,
