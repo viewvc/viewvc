@@ -81,6 +81,12 @@ def _get_revision_info(svnrepos, rev, pool):
   return lhc.get_history()
   
 
+def _datestr_to_date(datestr, pool):
+  if datestr is None:
+    return None
+  return core.svn_time_from_cstring(datestr, pool) / 1000000
+
+  
 def fetch_log(svnrepos, full_name):
   logs = []
 
@@ -90,7 +96,7 @@ def fetch_log(svnrepos, full_name):
 
   def _log_cb(paths, revision, author, date, message, pool,
               logs=logs, path=full_name):
-    date = core.svn_time_from_cstring(date, pool) / 1000000
+    date = _datestr_to_date(date, pool)
     entry = Revision(revision, date, author, message, None, path, None, None)
     logs.append(entry)
     
@@ -119,7 +125,7 @@ def get_logs(svnrepos, full_name, files):
     file.log_error = 0
     file.rev = rev
     file.author = author
-    file.date = core.svn_time_from_cstring(date, subpool) / 1000000
+    file.date = _datestr_to_date(date, subpool)
     file.log = log
     file.size = entry.size
   core.svn_pool_destroy(subpool)    

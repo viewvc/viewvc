@@ -946,6 +946,8 @@ def make_time_string(date):
   The passed in 'date' variable is seconds since epoch.
 
   """
+  if date is None:
+    return 'Unknown date'
   if (cfg.options.use_localtime):
     localtime = time.localtime(date)
     return time.asctime(localtime) + ' ' + time.tzname[localtime[8]]
@@ -993,7 +995,7 @@ def view_markup(request):
     data.update({
         'roottype' : request.roottype,
         'date_str' : make_time_string(entry.date),
-        'ago' : html_time(request, entry.date, 1),
+        'ago' : None,
         'author' : entry.author,
         'branches' : None,
         'tags' : None,
@@ -1006,6 +1008,9 @@ def view_markup(request):
         'prev' : None,
         })
 
+    if entry.date is not None:
+      data['ago'] = html_time(request, entry.date, 1)
+      
     if request.roottype == 'cvs':
       branch = entry.branch_number
       prev = entry.prev or entry.parent
@@ -1172,7 +1177,9 @@ def view_directory(request):
         row.state = 'dead'
       else:
         row.state = ''
-      row.time = html_time(request, file.date)
+      row.time = None
+      if file.date is not None:
+        row.time = html_time(request, file.date)
       if cfg.options.show_logs and file.log is not None:
         row.show_log = 'yes'
         row.log = format_log(file.log)
@@ -1426,7 +1433,9 @@ def view_log(request):
     entry.author = rev.author
     entry.changed = rev.changed
     entry.date_str = make_time_string(rev.date)
-    entry.ago = html_time(request, rev.date, 1)
+    entry.ago = None
+    if rev.date is not None:
+      entry.ago = html_time(request, rev.date, 1)
     entry.html_log = htmlify(rev.log or "")
     entry.size = rev.size
     entry.branch_point = None
@@ -2119,9 +2128,15 @@ def view_diff(request):
     except vclib.InvalidRevision:
       raise debug.ViewcvsException('Invalid revision(s) passed to diff',
                                    '400 Bad Request')
-      
-    date1 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date1))
-    date2 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date2))
+
+    if date1 is not None:
+      date1 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date1))
+    else:
+      date1 = ''
+    if date2 is not None:
+      date2 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date2))
+    else:
+      date2 = ''
     args.append("-L")
     args.append(p1 + "\t" + date1 + "\t" + rev1)
     args.append("-L")
@@ -2361,12 +2376,15 @@ def view_revision_svn(request, data):
     'author' : author,
     'date_str' : date_str,
     'log' : msg,
-    'ago' : html_time(request, date, 1),
+    'ago' : None,
     'changes' : changes,
     'jump_rev' : str(rev),
     'prev_href' : prev_rev_href,
     'next_href' : next_rev_href,
   })
+
+  if date is not None:
+    html_time(request, date, 1)
 
   url, params = request.get_link(view_func=view_revision,
                                  where=None,

@@ -39,6 +39,8 @@ def _trim_path(path):
 
   
 def _datestr_to_date(datestr, pool):
+  if datestr is None:
+    return None
   return core.svn_time_from_cstring(datestr, pool) / 1000000
 
   
