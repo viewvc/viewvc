@@ -29,6 +29,7 @@ import os
 import sys
 import string
 import time
+import fnmatch
 
 import config
 import dbi
@@ -292,62 +293,69 @@ class CheckinDatabase:
         sqlList = []
 
         for query_entry in query_entry_list:
+            data = query_entry.data
             ## figure out the correct match type
             if query_entry.match == "exact":
                 match = "="
             elif query_entry.match == "like":
                 match = " LIKE "
+            elif query_entry.match == "glob":
+                match = " REGEXP "
+                # use fnmatch to translate the glob into a regexp
+                data = fnmatch.translate(data)
+                if data[0] != '^': data = '^' + data
             elif query_entry.match == "regex":
                 match = " REGEXP "
+            elif query_entry.match == "notregex":
+                match = " NOT REGEXP "
 
-            sqlList.append(sqlString % (match, query_entry.data))
+            sqlList.append(sqlString % (match, data))
 
         return "(%s)" % (string.join(sqlList, " OR "))
 
     def CreateSQLQueryString(self, query):
-        tableList = ["checkins"]
+        tableList = [("checkins", None)]
         condList = []
 
         ## XXX: this is to exclude .ver files -- RN specific hack --JMP
-        tableList.append("files")
-        temp = "(checkins.fileid=files.id AND files.file NOT LIKE \"%.ver\")"
+        tableList.append(("files", "(checkins.fileid=files.id)"))
+        temp = "(files.file NOT LIKE \"%.ver\")"
         condList.append(temp)
         ## XXX
 
         if len(query.repository_list):
-            tableList.append("repositories")
+            tableList.append(("repositories",
+                              "(checkins.repositoryid=repositories.id)"))
 
-            sql = "(checkins.repositoryid=repositories.id AND "\
-                  "repositories.repository%s\"%s\")"
+            sql = "repositories.repository%s\"%s\""
             temp = self.SQLQueryListString(sql, query.repository_list)
             condList.append(temp)
 
         if len(query.branch_list):
-            tableList.append("branches")
+            tableList.append(("branches", "(checkins.branchid=branches.id)"))
 
-            sql = "(checkins.branchid=branches.id AND "\
-                  "branches.branch%s\"%s\")"
+            sql = "branches.branch%s\"%s\""
             temp = self.SQLQueryListString(sql, query.branch_list)
             condList.append(temp)
 
         if len(query.directory_list):
-            tableList.append("dirs")
+            tableList.append(("dirs", "(checkins.dirid=dirs.id)"))
 
-            sql = "(checkins.dirid=dirs.id AND dirs.dir%s\"%s\")" 
+            sql = "dirs.dir%s\"%s\"" 
             temp = self.SQLQueryListString(sql, query.directory_list)
             condList.append(temp)
             
         if len(query.file_list):
-            tableList.append("files")
+            tableList.append(("files", "(checkins.fileid=files.id)"))
 
-            sql = "(checkins.fileid=files.id AND files.file%s\"%s\")"
+            sql = "files.file%s\"%s\""
             temp = self.SQLQueryListString(sql, query.file_list)
             condList.append(temp)
             
         if len(query.author_list):
-            tableList.append("people")
+            tableList.append(("people", "(checkins.whoid=people.id)"))
 
-            sql = "(checkins.whoid=people.id AND people.who%s\"%s\")"
+            sql = "people.who%s\"%s\""
             temp = self.SQLQueryListString(sql, query.author_list)
             condList.append(temp)
             
@@ -362,17 +370,25 @@ class CheckinDatabase:
         if query.sort == "date":
             order_by = "ORDER BY checkins.ci_when DESC,descid"
         elif query.sort == "author":
+            tableList.append(("people", "(checkins.whoid=people.id)"))
             order_by = "ORDER BY people.who,descid"
         elif query.sort == "file":
+            tableList.append(("files", "(checkins.fileid=files.id)"))
             order_by = "ORDER BY files.file,descid"
 
-        ## exclude duplicates from the table list
-        for table in tableList[:]:
-            while tableList.count(table) > 1:
-                tableList.remove(table)
+        ## exclude duplicates from the table list, and split out join
+        ## conditions from table names.  In future, the join conditions
+        ## might be handled by INNER JOIN statements instead of WHERE
+        ## clauses, but MySQL 3.22 apparently doesn't support them well.
+        tables = []
+        joinConds = []
+        for (table, cond) in tableList:
+            if table not in tables:
+                tables.append(table)
+                if cond is not None: joinConds.append(cond)
 
-        tables = string.join(tableList, ",")
-        conditions = string.join(condList, " AND ")
+        tables = string.join(tables, ",")
+        conditions = string.join(joinConds + condList, " AND ")
 
         ## limit the number of rows requested or we could really slam
         ## a server with a large database
