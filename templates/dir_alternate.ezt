@@ -242,11 +242,15 @@ href="[docroot]/help_[if-any where]dir[else]root[end]view.html">ViewCVS and CVS 
               [if-any view_tag](not&nbsp;exist)[else](in&nbsp;the&nbsp;Attic)[end][if-any attic_showing]&nbsp;<a href="[hide_attic_href]#dirlist">[[]hide][end]</a>
             [end]
         </td>
-        [if-any rows.graph_href]
-          <td width="1%"><a href="[rows.graph_href]"><img
-            src="[docroot]/images/cvsgraph_16x16.png"
-            alt="(graph)" width=16 height=16 border=0>
-          </a></td>
+        [is cfg.options.use_cvsgraph "1"]
+          [if-any rows.graph_href]
+            <td width="1%"><a href="[rows.graph_href]"><img
+              src="[docroot]/images/cvsgraph_16x16.png"
+              alt="(graph)" width=16 height=16 border=0>
+            </a></td>
+          [else]
+            <td>&nbsp;</td>
+          [end]
         [end]
 
         <td>&nbsp;[rows.time]</td>
