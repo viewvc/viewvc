@@ -1,8 +1,7 @@
 import sapi
 import viewcvs
-import apache
 
-s = sapi.ModPythonServer(apache.GetRequest())
+s = sapi.ModPythonServer(Request)
 try:
   viewcvs.main()  
 finally:
