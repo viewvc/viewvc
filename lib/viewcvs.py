@@ -1350,7 +1350,8 @@ def view_directory(request):
   rows = [ ]
   num_files = 0
   num_displayed = 0
-
+  num_dead = 0
+  
   # set some values to be used inside loop
   where = request.where
   where_prefix = where and where + '/'
@@ -1408,8 +1409,10 @@ def view_directory(request):
       
     elif file.kind == vclib.FILE:
       num_files = num_files + 1
-      if request.roottype == 'cvs' and hideattic and file.dead:
-        continue
+      if request.roottype == 'cvs' and file.dead:
+        num_dead = num_dead + 1
+        if hideattic:
+          continue
       num_displayed = num_displayed + 1
 
       file_where = where_prefix + file.name
@@ -1461,7 +1464,7 @@ def view_directory(request):
                                                    'sortdir': None}),
     'num_files' :  num_files,
     'files_shown' : num_displayed,
-    'num_dead' : num_files - num_displayed,
+    'num_dead' : num_dead,
 
     ### in the future, it might be nice to break this path up into
     ### a list of elements, allowing the template to display it in
