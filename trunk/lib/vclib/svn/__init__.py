@@ -123,7 +123,9 @@ def get_revision_info(svnrepos):
   date = _datestr_to_date(date, svnrepos.pool)
 
   # Now, get the changes for the revision
-  editor = repos.RevisionChangeCollector(svnrepos.fs_ptr, svnrepos.rev)
+  editor = repos.RevisionChangeCollector(svnrepos.fs_ptr,
+                                         svnrepos.rev,
+                                         svnrepos.pool)
   e_ptr, e_baton = delta.make_editor(editor, svnrepos.pool)
   repos.svn_repos_replay(svnrepos.fsroot, e_ptr, e_baton, svnrepos.pool)
 
