@@ -150,6 +150,7 @@ class Config:
     self.general.rcs_path = ''
     self.general.mime_types_file = ''
     self.general.address = '<a href="mailto:user@insert.your.domain.here">No CVS admin address has been configured</a>'
+    self.general.main_title = 'CVS Repository'
     self.general.forbidden = ()
     self.general.kv_files = [ ]
     self.general.languages = ['en-us']
