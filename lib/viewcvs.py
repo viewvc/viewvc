@@ -577,6 +577,7 @@ _legal_params = {
   'hours'         : _re_validate_number,
   'mindate'       : _re_validate_datetime,
   'maxdate'       : _re_validate_datetime,
+  'format'        : _re_validate_alpha,
   }
 
 # regex used to move from a file to a directory
@@ -2878,6 +2879,29 @@ def build_commit(request, desc, files):
                               diff_href=diff_href))
   return commit
 
+def query_backout(request, commits):
+  request.server.header('text/plain')
+  if commits:
+    print '# This page can be saved as a shell script and executed.'
+    print '# It should be run at the top of your work area.  It will update'
+    print '# your working copy to back out the changes selected by the'
+    print '# query.'
+    print
+  else:
+    print '# No changes were selected by the query.'
+    print '# There is nothing to back out.'
+    return
+  for commit in commits:
+    for fileinfo in commit.files:
+      if request.roottype == 'cvs':
+        print 'cvs update -j %s -j %s %s/%s' \
+              % (fileinfo.rev, prev_rev(fileinfo.rev),
+                 fileinfo.dir, fileinfo.file)
+      elif request.roottype == 'svn':
+        print 'svn merge -r %s:%s %s/%s' \
+              % (fileinfo.rev, prev_rev(fileinfo.rev),
+                 fileinfo.dir, fileinfo.file)
+
 def view_query(request):
   if not is_query_supported(request):
     raise debug.ViewCVSException('Can not query project root "%s" at "%s".'
@@ -2897,6 +2921,7 @@ def view_query(request):
   hours = request.query_dict.get('hours', '2')
   mindate = request.query_dict.get('mindate', '')
   maxdate = request.query_dict.get('maxdate', '')
+  format = request.query_dict.get('format')
 
   match_types = { 'exact':1, 'like':1, 'glob':1, 'regex':1, 'notregex':1 }
   sort_types = { 'date':1, 'author':1, 'file':1 }
@@ -2990,11 +3015,19 @@ def view_query(request):
   # a link to modify query
   queryform_href = request.get_url(view_func=view_queryform,
                                    params=request.query_dict.copy())
+  # backout link
+  params = request.query_dict.copy()
+  params['format'] = 'backout'
+  backout_href = request.get_url(params=params)
 
   # if we got any results, use the newest commit as the modification time
   if mod_time >= 0:
     if check_freshness(request, mod_time):
       return
+
+  if format == 'backout':
+    query_backout(request, commits)
+    return
 
   data = common_template_data(request)
   data.update({
@@ -3002,6 +3035,7 @@ def view_query(request):
     'sql': sql,
     'english_query': english_query(request),
     'queryform_href': queryform_href,
+    'backout_href': backout_href,
     'plus_count': plus_count,
     'minus_count': minus_count,
     'show_branch': show_branch,
