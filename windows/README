@@ -228,7 +228,7 @@ KNOWN ISSUES
 
 - The standalone server will not run under Cygwin Python because it does not support threads. ASP pages can't be run with Cygwin Python because it does not support ActiveX. To use either of these features you should install a native Python interpreter.
 
-- On Windows 2003 Server under IIS, enscript might give an error like:
+- On Windows XP and Windows 2003 Server under IIS, enscript might give an error like:
 
     enscript: couldn't open input filter "states -f "K:/gnuwin32/share/enscript/hl/enscript.st" -p "C://.enscript;K:/gnuwin32/share/enscript/hl" -shtml -Dcolor=1 -Dstyle=emacs -Dlanguage=html -Dnum_input_files=1 -Ddocument_title="Enscript Output" -Dtoc=0 -" for file "": No error
     no output generated
