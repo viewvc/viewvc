@@ -196,7 +196,7 @@ class Config:
     self.options.allow_tar = 0
     self.options.use_cvsgraph = 0
     self.options.cvsgraph_path = ''
-    self.options.cvsgraph_conf = "<VIEWCVS_INSTALL_DIRECTORY>/cvsgraph.conf"
+    self.options.cvsgraph_conf = os.path.join(r"<VIEWCVS_INSTALL_DIRECTORY>", "cvsgraph.conf")
     self.options.use_re_search = 0
     self.options.use_pagesize = 0
     self.options.use_localtime = 0
@@ -218,11 +218,13 @@ class Config:
 def _parse_roots(config_name, config_value):
   roots = { }
   for root in config_value:
-    try:
-      name, path = map(string.strip, string.split(root, ':'))
-      roots[name] = path
-    except ValueError:
+    pos = root.find(':')
+    if pos < 0:
       raise MalformedRoot(config_name, root)
+    name, path = map(string.strip, (root[:pos], root[pos+1:]))
+    if sys.platform == "win32":
+      path = string.replace(path, "/", os.sep)
+    roots[name] = path
   return roots
 
 
