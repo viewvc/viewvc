@@ -14,11 +14,15 @@ and the Python for Windows Extensions which are at
 
   http://starship.python.net/crew/mhammond/win32/
   
-ViewCVS also requires that the RCS tools (rlog.exe, rcsdiff.exe, and co.exe) be installed on your computer. If you are using ViewCVS with a recent version of CVSNT, you can use the RCS utilities that come bundled with it. Otherwise you can find RCS binaries at
+ViewCVS also requires that the CVSNT client (cvs.exe) OR the RCS tools (rlog.exe, rcsdiff.exe, and co.exe) be installed on your computer. CVSNT is available from
+
+  http://www.cvsnt.org/
+  
+and RCS can be obtained from:
 
   http://www.cs.purdue.edu/homes/trinkle/RCS/
 
-Once you've got Python and RCS installed, you can test out ViewCVS before you install it by running:
+Once you've got Python and CVSNT or RCS installed, you can test out ViewCVS before you install it by running:
 
   python standalone.py -r <PATH_TO_REPOSITORY>
 
@@ -152,7 +156,7 @@ The default templates supplied with ViewCVS rely on icons that come with apache.
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 TROUBLESHOOTING
 
-- By far the most common cause of errors in ViewCVS is failure to successfully execute the programs it depends on (rlog, rcsdiff, co, enscript, sed, and cvsgraph). To help deal with this problem, ViewCVS includes a special debugging mode that displays output from the programs it executes on every web page. This allows you to see error messages and other information that isn't normally visible. To enable the debugging mode, change line 23 of <VIEWCVS_INSTALL_DIR>\lib\debug.py from:
+- By far the most common cause of errors in ViewCVS is failure to successfully execute the programs it depends on (cvs, rlog, rcsdiff, co, enscript, sed, and cvsgraph). To help deal with this problem, ViewCVS includes a special debugging mode that displays output from the programs it executes on every web page. This allows you to see error messages and other information that isn't normally visible. To enable the debugging mode, change line 23 of <VIEWCVS_INSTALL_DIR>\lib\debug.py from:
 
     SHOW_CHILD_PROCESSES = 0
 
@@ -162,7 +166,7 @@ TROUBLESHOOTING
 
   Important: You may need to restart your web server before this option takes effect. See "Changes made to..." later in this section.
 
-- A common cause of server errors under IIS is permissions problems. You need to make sure that the virtual directory containing the CGI or ASP files has script execution enabled. You also need to make sure that the web server user accounts (IUSR_machine_name and IWAM_machine_name, where machine_name is your computer name) have read and execute access to the .asp or .cgi stub scripts, the ViewCVS lib/ folder, the paths where external tools like rcs, enscript, sed, and cvsgraph live, and the CVS repositories. NTFS auditing makes it very easy to track down permissions problems. Also look for IIS messages in the event log.
+- A common cause of server errors under IIS is permissions problems. You need to make sure that the virtual directory containing the CGI or ASP files has script execution enabled. You also need to make sure that the web server user accounts (IUSR_machine_name and IWAM_machine_name, where machine_name is your computer name) have read and execute access to the .asp or .cgi stub scripts, the ViewCVS lib/ folder, the paths where external tools like cvs, rcs, enscript, sed, and cvsgraph live, and the CVS repositories. NTFS auditing makes it very easy to track down permissions problems. Also look for IIS messages in the event log.
 
 - Certain Apache configurations may hide some environment variables from the ViewCVS CGI scripts and the programs they launch. You can see whether an environment variable is visible from the CGI environment by enabling the SHOW_CHILD_PROCESSES debug mode described above. You can force Apache to let variables through with the PassEnv directive (http://httpd.apache.org/docs/mod/mod_env.html#passenv).
 
