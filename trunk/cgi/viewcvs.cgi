@@ -953,8 +953,8 @@ def get_logs(full_name, files, view_tag):
 
   fileinfo = { }
   alltags = {		# all the tags seen in the files of this dir
-    'MAIN' : 1,
-    'HEAD' : 1,
+    'MAIN' : '1',
+    'HEAD' : '1',
     }
 
   chunk_size = 100
@@ -990,7 +990,7 @@ def get_logs(full_name, files, view_tag):
     if status:
       raise 'error during rlog: '+hex(status)
 
-  return fileinfo, alltags.keys()
+  return fileinfo, alltags
 
 def revcmp(rev1, rev2):
   rev1 = map(int, string.split(rev1, '.'))
@@ -1314,15 +1314,29 @@ def view_directory(request):
          varname != 'only_with_tag':
         print '<input type=hidden name="%s" value="%s">' % \
               (varname, query_dict[varname])
+
+    alltagnames = alltags.keys()
+    alltagnames.sort(lambda t1, t2: cmp(string.lower(t1), string.lower(t2)))
+    alltagnames.reverse()
+    branchtags = []
+    nonbranchtags = []
+    for tag in alltagnames:
+      rev = alltags[tag]
+      if string.find(rev, '.0.') == -1:
+        nonbranchtags.append(tag)
+      else:
+        branchtags.append(tag)
+
     print 'Show only files with tag:'
     print '<select name=only_with_tag'
     if cfg.options.use_java_script:
       print ' onchange="submit()"'
     print '>'
-    print '<option value="">All tags / default branch</option>'
-    alltags.sort(lambda t1, t2: cmp(string.lower(t1), string.lower(t2)))
-    alltags.reverse()
-    for tag in alltags:
+    print '<option value="">- Branches -</option>'
+    for tag in branchtags:
+      html_option(tag, view_tag)
+    print '<option value="">- Non-branch tags -</option>'
+    for tag in nonbranchtags:
       html_option(tag, view_tag)
     print '</select><input type=submit value="Go"></form>'
 
