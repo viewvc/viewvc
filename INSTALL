@@ -1,8 +1,8 @@
 INSTALLING VIEWCVS
 ------------------
 
-1) To get viewcvs.cgi to work, make sure that you have Python 1.5.2
-   installed and a webserver which is capable to execute cgi-scripts
+1) To get viewcvs.cgi to work, make sure that you have Python 1.5
+   installed and a webserver which is capable of executing cgi-scripts
    (either based on the .cgi extension, or by placing the script
    within a specific directory).
 
@@ -13,21 +13,29 @@ INSTALLING VIEWCVS
    access to the repository (or a copy of it).  Therefore, rsh/ssh or
    pserver access doesn't work yet.
 
-2) Copy viewcvs.cgi to the cgi-script location of your web
-   server. Edit the file for your specific configuration. In
-   particular, examine the following configuration variables:
+2) Copy viewcvs.cgi to the cgi-script location of your web server.
+
+   If Python is not located in /usr/local/bin, then you'll need to
+   edit the first line of viewcvs.cgi.
+
+3) Copy viewcvs.conf.dist to the same directory and RENAME it to
+   viewcvs.conf
+
+4) Edit viewcvs.conf for your specific configuration. In particular,
+   examine the following configuration options:
 
       cvs_roots
       default_root
       rcs_path
       mime_types_file
 
-   If Python is not located in /usr/local/bin, then you'll need to
-   edit the first line of the file.
+   There are some other options that are usually nice to change. See
+   viewcvs.conf for more information.
 
-   ViewCVS has not been tested on the Win32 platform.
+5) That's it. Try it out.
 
-3) That's it. Try it out.
+   Warning: ViewCVS has not been tested on web servers operating on the
+            Win32 platform.
 
 
 
@@ -62,3 +70,19 @@ If you've trouble to make viewcvs.cgi work:
    or 'httpd' ..
 
  o does viewcvs find your RCS utililties? (edit rcs_path)
+
+=== If something else happens or you can't get it to work:
+
+ o check the ViewCVS home page:
+
+     http://www.lyra.org/greg/python/viewcvs/
+
+ o review the ViewCVS mailing list archive to see if somebody else had
+   the same problem, and it was solved:
+
+     http://mailman.lyra.org/pipermail/viewcvs/
+
+ o send mail to the ViewCVS mailing list: viewcvs@lyra.org
+
+   NOTE: make sure you provide an accurate description of the problem
+         and any relevant tracebacks or error logs.
