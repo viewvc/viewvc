@@ -25,7 +25,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
   [if-any roots]
     <h3>Project Root</h3>
     <form method=GET action="[request.script_name]/[if-any where][where]/[end]">
-      <select name=cvsroot onchange="submit()">
+      <select name=root onchange="submit()">
       [for roots]
         [is roots current_root]
           <option selected>[roots]</option>
@@ -332,7 +332,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
       [if-any view_tag]
         <td valign=bottom>
           <form method=GET action="[request.script_name]/[if-any where][where]/[end]">
-            <input type="hidden" name="cvsroot" value="[current_root]">
+            <input type="hidden" name="root" value="[current_root]">
             <input type="submit" value="Show all files">
           </form>
         </td>
