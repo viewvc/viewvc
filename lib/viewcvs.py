@@ -227,7 +227,7 @@ class Request:
 
     # Create the repository object
     if cfg.general.cvs_roots.has_key(self.rootname):
-      self.rootpath = cfg.general.cvs_roots[self.rootname]
+      self.rootpath = os.path.normpath(cfg.general.cvs_roots[self.rootname])
       try:
         if cfg.general.use_rcsparse:
           import vclib.ccvs
@@ -255,6 +255,7 @@ class Request:
           import vclib.svn_ra
           vclib.svn = vclib.svn_ra
         else:
+          self.rootpath = os.path.normpath(self.rootpath)
           import vclib.svn
         rev = None
         if self.query_dict.has_key('rev') \
