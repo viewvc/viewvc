@@ -446,15 +446,14 @@ def _parse_co_header(fp):
   if not match:
     raise vclib.Error(
       'First line of co output is not the filename.<br>'
-      'Line was: %s<br>'
-      'fname="%s"' % (line, full_name))
+      'Line was: %s' % (line))
   filename = match.group(1)
 
   line = fp.readline()
   if not line:
     raise vclib.Error(
       'Missing second line of output from co.<br>'
-      'fname="%s". url="%s"' % (filename, where))
+      'fname="%s".' % (filename))
   match = _re_co_revision.match(line)
   if not match:
     match = _re_co_warning.match(line)
@@ -462,20 +461,20 @@ def _parse_co_header(fp):
       raise vclib.Error(
         'Second line of co output is not the revision.<br>'
         'Line was: %s<br>'
-        'fname="%s". url="%s"' % (line, filename, where))
+        'fname="%s".' % (line, filename))
 
     # second line was a warning. ignore it and move along.
     line = fp.readline()
     if not line:
       raise vclib.Error(
         'Missing third line of output from co (after a warning).<br>'
-        'fname="%s". url="%s"' % (filename, where))
+        'fname="%s".' % (filename))
     match = _re_co_revision.match(line)
     if not match:
       raise vclib.Error(
         'Third line of co output is not the revision.<br>'
         'Line was: %s<br>'
-        'fname="%s". url="%s"' % (line, filename, where))
+        'fname="%s".' % (line, filename))
 
   # one of the above cases matches the revision. grab it.
   revision = match.group(1)
