@@ -254,7 +254,7 @@ href="[docroot]/help_[if-any where]dir[else]root[end]view.html">ViewCVS and CVS 
 
    <a href="{rows.rev_href}" target="cvs_checkout"
       onclick="window.open('{rows.rev_href}', 'cvs_checkout',
-                           'resizeable=1,scrollbars=1');return false"><b>{rows.rev}</b></a>
+                           'resizable=1,scrollbars=1');return false"><b>{rows.rev}</b></a>
 
    (substitute brackets for the braces)
 ]
