@@ -1266,7 +1266,7 @@ def view_directory(request):
   for file in file_data:
     row = _item(href=None, graph_href=None,
                 author=None, log=None, log_file=None, log_rev=None,
-                show_log=None, state=None, size=None)
+                show_log=None, state=None, size=None, mime_type=None)
 
     if file.log_error:
       row.state = 'error'
@@ -1341,6 +1341,12 @@ def view_directory(request):
         row.size = file.size
         file_where = where_prefix + file.name
 
+      ### for Subversion, we should first try to get this from the properties
+      mime_type, encoding = mimetypes.guess_type(file.name)
+      if not mime_type:
+        mime_type = 'text/plain'
+      row.mime_type = mime_type
+      
       row.href = request.get_url(view_func=view_log,
                                  where=file_where,
                                  pathtype=vclib.FILE,
