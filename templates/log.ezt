@@ -1,6 +1,5 @@
 [# setup page definitions]
-  [define location][rootname][if-any where]: [where][end][end]
-  [define page_title][cfg.general.main_title] - log - [location][end]
+  [define page_title]Log of /[where][end]
   [define help_href][docroot]/help_log.html[end]
 [# end]
 

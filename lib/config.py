@@ -159,7 +159,6 @@ class Config:
     self.general.use_rcsparse = 0
     self.general.mime_types_file = ''
     self.general.address = '<a href="mailto:user@insert.your.domain.here">No admin address has been configured</a>'
-    self.general.main_title = 'Repository'
     self.general.forbidden = ()
     self.general.kv_files = [ ]
     self.general.languages = ['en-us']

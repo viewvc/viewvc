@@ -1,14 +1,11 @@
 [# setup page definitions]
-  [define location][rootname][if-any where]: [where][end][end]
-  [define page_title][cfg.general.main_title] - graph - [location][end]
+  [define page_title]Graph of /[where][end]
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
 [include "include/header.ezt" "graph"]
 
 <center>
-<h1>Revision graph of [path]</h1>
-
 [imagemap]
 <img border="0" usemap="#MyMapName"
   src="[imagesrc]" 

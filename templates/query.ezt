@@ -5,7 +5,7 @@
 
 <html>
 <head>
-  <title>[cfg.general.main_title] - query</title>
+  <title>Checkin Database Query</title>
   <link rel="stylesheet" href="[docroot]/styles.css" type="text/css">
 </head>
 

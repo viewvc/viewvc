@@ -23,7 +23,6 @@
 # It is usually desirable to change the following variables:
 #
 #    address
-#    main_title
 #    forbidden
 #
 #    use_enscript
@@ -135,9 +134,6 @@ use_rcsparse = 0
 # This address is shown in the footer of the generated pages. 
 # It must be replaced with the address of the local repository maintainer.
 address = <a href="mailto:cvs-admin@insert.your.domain.here">No admin address has been configured</a>
-
-# this title is used on the main entry page
-main_title = Repository
 
 #
 # This should contain a list of modules in the repository that should not be
