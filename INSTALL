@@ -236,8 +236,8 @@ SQL CHECKIN DATABASE
 --------------------
 
 This feature is a clone of the Mozilla Project's Bonsai database.  It
-catalogs every commit in the CVS repository into a SQL database.  In fact,
-the databases are 100% compatible.
+catalogs every commit in the CVS or Subversion repository into a SQL
+database.  In fact, the databases are 100% compatible.
 
 Various queries can be performed on the database.  After installing ViewCVS,
 there are some additional steps required to get the database working.
@@ -269,14 +269,15 @@ there are some additional steps required to get the database working.
                          # safe to use the read/write user here
       readonly_passwd =  # password for the readonly user
 
-5) Two programs are provided for updating the checkin database, 
-   cvsdbadmin and loginfo-handler.  They serve two different purposes.
-   The cvsdbadmin program walks through your CVS repository and adds
-   every commit in every file.  This is commonly used for initializing
-   the database from a repository which has been in use.  The 
-   loginfo-handler script is executed by the CVS server's CVSROOT/loginfo 
-   system upon each commit.  It makes real-time updates to the checkin
-   database as commits are made to the repository.
+5) Two programs are provided for updating the checkin database from a
+   CVS repository, cvsdbadmin and loginfo-handler.  They serve two
+   different purposes.  The cvsdbadmin program walks through your CVS
+   repository and adds every commit in every file.  This is commonly
+   used for initializing the database from a repository which has been
+   in use.  The loginfo-handler script is executed by the CVS server's
+   CVSROOT/loginfo system upon each commit.  It makes real-time
+   updates to the checkin database as commits are made to the
+   repository.
 
    To build a database of all the commits in the CVS repository /home/cvs,
    invoke: "./cvsdbadmin rebuild /home/cvs".  If you want to update
@@ -301,7 +302,31 @@ there are some additional steps required to get the database working.
      
    The extra 'cvsnt' parameter tells the handler script to parse the 
    commit information in a different way. 
-   
+
+   For Subversion repositories, there is a single script called
+   svndbadmin that performs both of the above tasks.
+
+   To build a database of all the commits in the Subversion repository
+   /home/svn, invoke: "./svndbadmin rebuild /home/svn".  If you want
+   to update the checkin database, invoke: "./svndbadmin update
+   /home/svn".
+
+   To get real time updates, you will need to add a post-commit hook
+   (for the repository example above, the script should go in
+   /home/svn/hooks/post-commit).  The script should look something
+   like this:
+
+     #!/bin/sh
+     REPOS="$1"
+     REV="$2"
+     <VIEWCVS_INSTALLATION_DIRECTORY>/svndbadmin rebuild "$REPOS" "$REV"
+
+   If you allow revision property changes in your repository, create a
+   post-revprop-change hook script containing the same commands as the
+   post-commit one.  This will make sure that the checkin database
+   stays consistent when you change the svn:log, svn:author or
+   svn:date revision properties.
+
 6) You may want to modify the HTML template file:
 
       <VIEWCVS_INSTALLATION_DIRECTORY>/templates/query.ezt
