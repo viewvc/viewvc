@@ -318,12 +318,6 @@ class CheckinDatabase:
         tableList = [("checkins", None)]
         condList = []
 
-        ## XXX: this is to exclude .ver files -- RN specific hack --JMP
-        tableList.append(("files", "(checkins.fileid=files.id)"))
-        temp = "(files.file NOT LIKE \"%.ver\")"
-        condList.append(temp)
-        ## XXX
-
         if len(query.repository_list):
             tableList.append(("repositories",
                               "(checkins.repositoryid=repositories.id)"))
@@ -382,6 +376,7 @@ class CheckinDatabase:
 
         tables = string.join(tables, ",")
         conditions = string.join(joinConds + condList, " AND ")
+        conditions = conditions and "WHERE %s" % conditions
 
         ## limit the number of rows requested or we could really slam
         ## a server with a large database
@@ -389,7 +384,7 @@ class CheckinDatabase:
         if cfg.cvsdb.row_limit:
             limit = "LIMIT %s" % (str(cfg.cvsdb.row_limit))
 
-        sql = "SELECT checkins.* FROM %s WHERE %s %s %s" % (
+        sql = "SELECT checkins.* FROM %s %s %s %s" % (
             tables, conditions, order_by, limit)
 
         return sql
