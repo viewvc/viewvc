@@ -23,7 +23,7 @@ import os.path
 import string
 
 # Subversion swig libs
-from svn import fs, repos, util
+from svn import fs, repos, core
 
 # Subversion filesystem paths are '/'-delimited, regardless of OS.
 def fs_path_join(base, relative):
@@ -33,13 +33,13 @@ def fs_path_join(base, relative):
 
   
 def _datestr_to_date(datestr, pool):
-  return util.svn_time_from_cstring(datestr, pool) / 1000000
+  return core.svn_time_from_cstring(datestr, pool) / 1000000
 
   
 def _fs_rev_props(fsptr, rev, pool):
-  author = fs.revision_prop(fsptr, rev, util.SVN_PROP_REVISION_AUTHOR, pool)
-  msg = fs.revision_prop(fsptr, rev, util.SVN_PROP_REVISION_LOG, pool)
-  date = fs.revision_prop(fsptr, rev, util.SVN_PROP_REVISION_DATE, pool)
+  author = fs.revision_prop(fsptr, rev, core.SVN_PROP_REVISION_AUTHOR, pool)
+  msg = fs.revision_prop(fsptr, rev, core.SVN_PROP_REVISION_LOG, pool)
+  date = fs.revision_prop(fsptr, rev, core.SVN_PROP_REVISION_DATE, pool)
   return date, author, msg
 
 
@@ -47,7 +47,7 @@ def date_from_rev(svnrepos, rev):
   if (rev < 0) or (rev > fs.youngest_rev(svnrepos.fs_ptr, svnrepos.pool)):
     raise vclib.InvalidRevision(rev);
   datestr = fs.revision_prop(svnrepos.fs_ptr, rev,
-                             util.SVN_PROP_REVISION_DATE, svnrepos.pool)
+                             core.SVN_PROP_REVISION_DATE, svnrepos.pool)
   return _datestr_to_date(datestr, svnrepos.pool)
   
 
@@ -122,19 +122,19 @@ class StreamPipe:
     self._eof = 0
     
   def read(self, len):
-    chunk = util.svn_stream_read(self._stream, len)
+    chunk = core.svn_stream_read(self._stream, len)
     if not chunk:
       self._eof = 1
     return chunk
   
   def readline(self):
-    chunk = util.svn_stream_readline(self._stream)
+    chunk = core.svn_stream_readline(self._stream)
     if not chunk:
       self._eof = 1
     return chunk
 
   def close(self):
-    return util.svn_stream_close(self._stream)
+    return core.svn_stream_close(self._stream)
 
   def eof(self):
     return self._eof
@@ -149,8 +149,8 @@ class SubversionRepository(vclib.Repository):
   def __init__(self, name, rootpath, rev=None):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
-    util.apr_initialize()
-    self.pool = util.svn_pool_create(None)
+    core.apr_initialize()
+    self.pool = core.svn_pool_create(None)
     self.repos = repos.svn_repos_open(rootpath, self.pool)
     self.name = name
     self.rootpath = rootpath
@@ -164,8 +164,8 @@ class SubversionRepository(vclib.Repository):
     self.fsroot = fs.revision_root(self.fs_ptr, self.rev, self.pool)
 
   def __del__(self):
-    util.svn_pool_destroy(self.pool)
-    util.apr_terminate()
+    core.svn_pool_destroy(self.pool)
+    core.apr_terminate()
     
   def getitem(self, path_parts):
     basepath = self._getpath(path_parts)
@@ -178,9 +178,9 @@ class SubversionRepository(vclib.Repository):
   def itemtype(self, path_parts):
     basepath = self._getpath(path_parts)
     kind = fs.check_path(self.fsroot, basepath, self.pool)
-    if kind == util.svn_node_dir:
+    if kind == core.svn_node_dir:
       return vclib.DIR
-    if kind == util.svn_node_file:
+    if kind == core.svn_node_file:
       return vclib.FILE
     raise vclib.ItemNotFound(path_parts)
 
@@ -192,13 +192,13 @@ class SubversionRepository(vclib.Repository):
     subdirs = { }
     names = entries.keys()
     names.sort()
-    subpool = util.svn_pool_create(self.pool)
+    subpool = core.svn_pool_create(self.pool)
     for name in names:
       child = fs_path_join(basepath, name)
       if fs.is_dir(self.fsroot, child, subpool):
         subdirs[name] = vclib.Versdir(self, child)
-      util.svn_pool_clear(subpool)
-    util.svn_pool_destroy(subpool)
+      core.svn_pool_clear(subpool)
+    core.svn_pool_destroy(subpool)
     return subdirs
     
   def _getvf_files(self, basepath):
@@ -206,13 +206,13 @@ class SubversionRepository(vclib.Repository):
     files = { }
     names = entries.keys()
     names.sort()
-    subpool = util.svn_pool_create(self.pool)
+    subpool = core.svn_pool_create(self.pool)
     for name in names:
       child = fs_path_join(basepath, name)
       if fs.is_file(self.fsroot, child, subpool):
         files[name] = vclib.Versfile(self, child)
-      util.svn_pool_clear(subpool)
-    util.svn_pool_destroy(subpool)
+      core.svn_pool_clear(subpool)
+    core.svn_pool_destroy(subpool)
     return files
   
   def _getvf_info(self, target, basepath):
