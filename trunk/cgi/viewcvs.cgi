@@ -1799,7 +1799,9 @@ def view_log(request):
 
   html_footer()
 
+### suck up other warnings in _re_co_warning?
 _re_co_filename = re.compile(r'^(.*),v\s+-->\s+standard output\s*\n$')
+_re_co_warning = re.compile(r'^.*co: .*,v: warning: Unknown phrases like .*\n$')
 _re_co_revision = re.compile(r'^revision\s+([\d\.]+)\s*\n$')
 def view_checkout(request):
   full_name = request.full_name
@@ -1825,30 +1827,57 @@ def view_checkout(request):
   fp = popen.popen(cfg.general.rcs_path + 'co', (rev_flag, full_name), 'r')
 
   # header from co:
-
+  #
   #/home/cvsroot/mod_dav/dav_shared_stub.c,v  -->  standard output
   #revision 1.1
+  #
+  # Sometimes, the following line might occur at line 2:
+  #co: INSTALL,v: warning: Unknown phrases like `permissions ...;' are present.
 
   # parse the output header
   filename = revision = None
-  header = ''
+
   line = fp.readline()
-  if line:
-    match = _re_co_filename.match(line)
-    if match:
-      filename = match.group(1)
-      header = line
+  if not line:
+    error('Missing output from co.<br>'
+          'fname="%s". url="%s"' % (filename, where))
 
-      line = fp.readline()
-      if line:
-        match = _re_co_revision.match(line)
-        if match:
-          revision = match.group(1)
-          header = header + line
+  match = _re_co_filename.match(line)
+  if not match:
+    error('First line of co output is not the filename.<br>'
+          'Line was: %s<br>'
+          'fname="%s". url="%s"' % (line, filename, where))
+  filename = match.group(1)
 
-  if filename != full_name or not revision:
-    error('Unexpected output from co: %s<p>%s<p>%s' %
-          (header, filename, where))
+  line = fp.readline()
+  if not line:
+    error('Missing second line of output from co.<br>'
+          'fname="%s". url="%s"' % (filename, where))
+  match = _re_co_revision.match(line)
+  if not match:
+    match = _re_co_warning.match(line)
+    if not match:
+      error('Second line of co output is not the revision.<br>'
+            'Line was: %s<br>'
+            'fname="%s". url="%s"' % (line, filename, where))
+
+    # second line was a warning. ignore it and move along.
+    line = fp.readline()
+    if not line:
+      error('Missing third line of output from co (after a warning).<br>'
+            'fname="%s". url="%s"' % (filename, where))
+    match = _re_co_revision.match(line)
+    if not match:
+      error('Third line of co output is not the revision.<br>'
+            'Line was: %s<br>'
+            'fname="%s". url="%s"' % (line, filename, where))
+
+  # one of the above cases matches the revision. grab it.
+  revision = match.group(1)
+
+  if filename != full_name:
+    error('The filename from co did not match. Found "%s". Wanted "%s"<br>'
+          'url="%s"' % (filename, full_name, where))
 
   if mime_type == viewcvs_mime_type:
     # use the "real" MIME type
