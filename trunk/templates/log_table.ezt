@@ -161,7 +161,7 @@
 
     [# Time column]
     <td>
-      [entries.ago] ago
+      [entries.ago] ago<br><i>[entries.utc_date]</i>
     </td>
 
     [# Author column]
