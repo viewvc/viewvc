@@ -128,6 +128,15 @@
         <dd>Deemed unnecessary.</dd>
       </dl>
       <dl>
+        <dt>
+          <code>directory.ezt</code>, <code>dir_alternate.ezt</code>,
+          <code>log.ezt</code>, and <code>log_table.ezt</code>:
+          <var>current_root</var>
+        </dt>
+        <dd>Replaced by <var>rootname</var>, which is now available to
+            all templates.</dd>
+      </dl>
+      <dl>
         <dt><code>graph.ezt</code>: <var>request.url</var></dt>
         <dd>Replaced with new <var>imagesrc</var> variable.</dd>
       </dl>
@@ -170,10 +179,10 @@
     <h3>New Template Variables</h3>
     <blockquote>
       <dl>
-        <dt>All files: <var>roottype</var></dt>
+        <dt>All files: <var>roottype</var>, and <var>rootname</var></dt>
         <dd>
-          String denoting the type of the current repository. Either
-          "cvs" or "svn".
+          Strings denoting the type ("cvs" or "svn") and name current
+          repository. 
         </dd>
       </dl>
       <dl>
@@ -207,6 +216,14 @@
           <var>download_href</var> and <var>download_text_href</var>
         </dt>
         <dd>New variables for links.</dd>
+      </dl>
+      <dl>
+        <dt>
+          <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
+          <var>tree_rev</var>, <var>tree_rev_href</var>,
+          and <var>jump_rev</var>
+        </dt>
+        <dd>New Subversion-only directory revision items.</dd>
       </dl>
       <dl>
         <dt>

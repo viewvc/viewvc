@@ -1,26 +1,10 @@
-<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
- "http://www.w3.org/TR/REC-html40/loose.dtd">
-<html><head>
-<!-- ViewCVS       -- http://viewcvs.sourceforge.net/
-     by Greg Stein -- mailto:gstein@lyra.org
-  -->
-<title>Subversion revision - [rev]</title>
-</head>
-<body text="#000000" bgcolor="#ffffff">
-<table width="100%" border=0 cellspacing=0 cellpadding=0>
-  <tr>
-    <td rowspan=2>
-      <h1>Subversion Revision Info</h1>
-      <h2>[if-any prev_href]<a href="[prev_href]"><img src="[icons]/back.gif" border=0></a> - [end]Revision [rev][if-any next_href] - <a href="[next_href]"><img src="[icons]/forward.gif" border=0></a>[end]</h2>
-    </td>
-    <td align=right><img src="[icons]/apache_pb.gif" alt="(logo)" border=0
-			width=259 height=32></td>
-  </tr>
-  <tr>
-    <td align=right><h3><b><a target="_blank"
-     href="[docroot]/help_log.html">ViewCVS and CVS Help</a></b></h3></td>
-  </tr>
-</table>
+[# setup page definitions]
+  [define location][rootname][if-any where]: [where][end][end]
+  [define page_title][cfg.general.main_title] - revision - [location][end]
+  [define help_href][docroot]/help_root.html[end]
+[# end]
+
+[include "include/header.ezt" "revision"]
 
 <hr noshade>
 
@@ -95,5 +79,4 @@
   [end]
 </table>
 
-</body>
-</html>
+[include "include/footer.ezt"]
