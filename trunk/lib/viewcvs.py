@@ -1891,9 +1891,13 @@ def view_log_svn(request):
     'branch_names' : [ ],
     }
 
-  data['tr1'] = show_revs[-1]
-  data['tr2'] = show_revs[0]
-
+  if len(show_revs):
+    data['tr1'] = show_revs[-1]
+    data['tr2'] = show_revs[0]
+  else:
+    data['tr1'] = None
+    data['tr2'] = None
+    
   ### would be nice to find a way to use [query] or somesuch instead
   data['hidden_values'] = prepare_hidden_values(request, 
                                                 _sticky_vars, 
@@ -2591,7 +2595,6 @@ class DiffSource:
 class DiffSequencingError(Exception):
   pass
 
-
 def view_diff(request):
   query_dict = request.query_dict
 
@@ -2600,7 +2603,10 @@ def view_diff(request):
   sym1 = sym2 = None
 
   if r1 == 'text':
-    rev1 = query_dict['tr1']
+    rev1 = query_dict.get('tr1', None)
+    if not rev1:
+      raise debug.ViewcvsException('Missing revision from the diff '
+                                   'form text field')
   else:
     idx = string.find(r1, ':')
     if idx == -1:
@@ -2610,7 +2616,10 @@ def view_diff(request):
       sym1 = r1[idx+1:]
       
   if r2 == 'text':
-    rev2 = query_dict['tr2']
+    rev2 = query_dict.get('tr2', None)
+    if not rev2:
+      raise debug.ViewcvsException('Missing revision from the diff '
+                                   'form text field')
     sym2 = ''
   else:
     idx = string.find(r2, ':')
@@ -2619,11 +2628,14 @@ def view_diff(request):
     else:
       rev2 = r2[:idx]
       sym2 = r2[idx+1:]
-  
-  if revcmp(rev1, rev2) > 0:
-    rev1, rev2 = rev2, rev1
-    sym1, sym2 = sym2, sym1
 
+  try:
+    if revcmp(rev1, rev2) > 0:
+      rev1, rev2 = rev2, rev1
+      sym1, sym2 = sym2, sym1
+  except ValueError:
+    raise debug.ViewcvsException('Invalid revision(s) passed to diff')
+    
   human_readable = 0
   unified = 0
   args = [ ]
