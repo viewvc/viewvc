@@ -2037,7 +2037,6 @@ def view_annotate(request):
                                  '403 Forbidden')
 
   rev = request.query_dict.get('annotate')
-  data = nav_header_data(request, rev)
 
   ### be nice to hook this into the template...
   import blame
@@ -2049,8 +2048,11 @@ def view_annotate(request):
   include_url = request.get_url(view_func=view_log, where='/WHERE/',
                                 pathtype=vclib.FILE, params={}, escape=1)
 
-  data['lines'] = blame.BlameSource(request.repos, request.path_parts,
-                                    diff_url, include_url, rev)
+  source = blame.BlameSource(request.repos, request.path_parts,
+                             diff_url, include_url, rev)
+
+  data = nav_header_data(request, source.revision)
+  data['lines'] = source
 
   request.server.header()
   generate_page(request, cfg.templates.annotate, data)
