@@ -52,6 +52,27 @@ with the output fileobject to the templates generate method:
     </body>
     </html>
 
+Template syntax error reporting should be improved.  Currently it is 
+very sparse (template line numbers would be nice):
+
+    >>> Template().parse("[if-any where] foo [else] bar [end unexpected args]")
+    Traceback (innermost last):
+      File "<stdin>", line 1, in ?
+      File "ezt.py", line 220, in parse
+        self.program = self._parse(text)
+      File "ezt.py", line 275, in _parse
+        raise ArgCountSyntaxError(str(args[1:]))
+    ArgCountSyntaxError: ['unexpected', 'args']
+    >>> Template().parse("[if unmatched_end]foo[end]")
+    Traceback (innermost last):
+      File "<stdin>", line 1, in ?
+      File "ezt.py", line 206, in parse
+        self.program = self._parse(text)
+      File "ezt.py", line 266, in _parse
+        raise UnmatchedEndError()
+    UnmatchedEndError
+
+
 Directives
 ==========
 
@@ -250,7 +271,7 @@ class Template:
         cmd = args[0]
         if cmd == 'else':
           if len(args) > 1:
-            raise ArgCountSyntaxError()
+            raise ArgCountSyntaxError(str(args[1:]))
           ### check: don't allow for 'for' cmd
           idx = stack[-1][1]
           true_section = program[idx:]
@@ -258,9 +279,12 @@ class Template:
           stack[-1][3] = true_section
         elif cmd == 'end':
           if len(args) > 1:
-            raise ArgCountSyntaxError()
+            raise ArgCountSyntaxError(str(args[1:]))
           # note: true-section may be None
-          cmd, idx, args, true_section = stack.pop()
+          try:
+            cmd, idx, args, true_section = stack.pop()
+          except IndexError:
+            raise UnmatchedEndError()
           else_section = program[idx:]
           func = getattr(self, '_cmd_' + re.sub('-', '_', cmd))
           program[idx:] = [ (func, (args, true_section, else_section)) ]
@@ -268,7 +292,7 @@ class Template:
             for_names.pop()
         elif cmd in _block_cmds:
           if len(args) > _block_cmd_specs[cmd] + 1:
-            raise ArgCountSyntaxError()
+            raise ArgCountSyntaxError(str(args[1:]))
           ### this assumes arg1 is always a ref
           args[1] = _prepare_ref(args[1], for_names, file_args)
 
@@ -292,7 +316,7 @@ class Template:
                                             f_args))
           else:
             if len(args) != 2:
-              raise ArgCountSyntaxError()
+              raise ArgCountSyntaxError(str(args))
             program.append((self._cmd_include,
                             (_prepare_ref(args[1], for_names, file_args),
                              base)))
@@ -487,16 +511,19 @@ class _context:
   """A container for the execution context"""
 
 class ArgCountSyntaxError(Exception):
-  pass
+  """A bracket directive got the wrong number of arguments"""
 
 class UnknownReference(Exception):
-  pass
+  """The template references an object not contained in the data dictionary"""
 
 class NeedSequenceError(Exception):
-  pass
+  """The object dereferenced by the template is no sequence (tuple or list)"""
 
 class UnclosedBlocksError(Exception):
-  pass
+  """This error may be simply a missing [end]"""
+
+class UnmatchedEndError(Exception):
+  """This error may be caused by a misspelled if directive"""
 
 # --- standard test environment ---
 def test_parse():
