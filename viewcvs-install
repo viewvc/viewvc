@@ -86,6 +86,7 @@ went into the new files in subdirectory templates.""", 0),
     ("lib/viewcvs.py", "lib/viewcvs.py", 0644, 1, 0, 1),
     ("lib/ezt.py", "lib/ezt.py", 0644, 0, 0, 1),
     ("lib/apache_icons.py", "lib/apache_icons.py", 0644, 0, 0, 1),
+    ("lib/accept.py", "lib/accept.py", 0644, 0, 0, 1),
     
     ("templates/annotate.ezt", "templates/annotate.ezt", 0644, 0, 1, 0),
     ("templates/diff.ezt", "templates/diff.ezt", 0644, 0, 1, 0),
