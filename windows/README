@@ -183,6 +183,12 @@ TROUBLESHOOTING
 
   Important: You may need to restart your web server before this change takes effect. See "Changes made to..." later in this section.
 
+- If you see the following error:
+
+    error: (2, 'CreateProcess', The system cannot find the file specified.')
+
+  it means that a program ViewCVS has tried to execute could not be found by Windows. The fix to this is usually to install the program if it isn't already installed or to update the path to the program in viewcvs.conf. Enabling the SHOW_CHILD_PROCESSES mode as described above can provide helpful diagnostic information such as the command line ViewCVS is using to invoke the program and the value of the PATH environment variable in the environment ViewCVS is running under.
+
 - A common cause of server errors under IIS is permissions problems. You need to make sure that the virtual directory containing the CGI or ASP files has script execution enabled. You also need to make sure that the web server user accounts (IUSR_machine_name and IWAM_machine_name, where machine_name is your computer name) have read and execute access to the .asp or .cgi stub scripts, the ViewCVS lib/ folder, the paths where external tools like cvs, rcs, enscript, sed, and cvsgraph live, and the CVS repositories. NTFS auditing makes it very easy to track down permissions problems. Also look for IIS messages in the event log.
 
 - Certain Apache configurations may hide some environment variables from the ViewCVS CGI scripts and the programs they launch. You can see whether an environment variable is visible from the CGI environment by enabling the SHOW_CHILD_PROCESSES debug mode described above. You can force Apache to let variables through with the PassEnv directive (http://httpd.apache.org/docs/mod/mod_env.html#passenv).
@@ -229,12 +235,6 @@ TROUBLESHOOTING
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 KNOWN ISSUES
 
-- If you see ViewCVS errors like 
-
-    Error parsing rlog output. Expected RCS file "c:\cvsroot\dir\file,v", found "file,v"
-
-  it's because you are using an old version of CVSNT. Upgrade to version 2.0.12 or later and this problem will go away.
-
 - If you see ViewCVS errors like
 
     Error parsing rlog output. Expected RCS file "c:\cvsroot\dir\file,v", found "c:\cvsroot\dir\RCS/file,v"
@@ -245,7 +245,7 @@ KNOWN ISSUES
 
   Important: You may need to reboot your computer before the environment variable has an effect. See "Changes made to..." in the TROUBLESHOOTING section.
 
-- The GNU RCS utilities won't work with repository files that use CVSNT's unicode expansion mode (-ku). Files that use this mode will show up with the "CVS information is unreadable" error message in ViewCVS directory listings. To work around this, you can set up ViewCVS to use the CVSNT executable (cvs.exe) or CVSNT RCS tools (co.exe, rlog.exe, and rcsdiff.exe) instead of the GNU tools. 
+- The GNU RCS utilities won't work with repository files that use CVSNT's unicode expansion mode (-ku). Files that use this mode will show up with an "rlog error: unknown expand mode u" error message in ViewCVS directory listings. To work around this, you can set up ViewCVS to use the CVSNT executable (cvs.exe) or CVSNT RCS tools (co.exe, rlog.exe, and rcsdiff.exe) instead of the GNU tools. 
 
 - The standalone server will not run under Cygwin Python because it does not support threads. ASP pages can't be run with Cygwin Python because it does not support ActiveX. To use either of these features you should install a native Python interpreter.
 
@@ -259,6 +259,18 @@ KNOWN ISSUES
 - By default, ASP will set session cookies at each page load. ViewCVS does not use these cookies and they can be safely disabled. You can do this by opening the IIS properties dialog for the application directory containing the ViewCVS .asp files. Go to the [Home] | [Virtual] Directory tab and click the "Configuration" button under "Application Settings". On the dialog that comes up, uncheck "Enable Session State" under "App Options" -> "Application Configuration".
 
 - Python support for ASP can be a little flaky. If you get strange errors, it can sometimes help to uninstall and reinstall it with pyscript.py. A number of people have also encountered a problem in ActivePython 2.2 where the first loads of any Python ASP page would work, but subsequent loads of the same page would always return nothing (leaving the screen blank). There were a number of workarounds for this problem, but the fix is to download and install the latest python win32 extensions from http://starship.python.net/crew/mhammond/win32/Downloads.html
+
+- ViewCVS can't convert timestamps on diff pages to local time when it is used with CVSNT. This is caused by a CVSNT bug, which is described at http://www.cvsnt.org/mantis/bug_view_page.php?bug_id=0000110
+
+- Old versions of CVSNT (2.0.11 and earlier) have a bug in their rlog emulation which causes them to output truncated paths to RCS files. In ViewCVS, this causes errors like
+
+    Error parsing rlog output. Expected RCS file "c:\cvsroot\dir\file,v", found "file,v"
+
+- Old versions of CVSNT (2.0.11 and earlier) have a bug in their standalone RCS tools (rlog.exe, co.exe, and rcsdiff.exe) which causes them not to properly interpret arguments with spaces. This can result in ViewCVS errors in repositories that have spaces in file or directory names. This bug only occurs when ViewCVS is configured to use the standalone utilities, not when it uses cvs.exe directly as it does by default.
+
+- Old versions of CVSNT (1.11.1.3-76 and earlier) don't have any RCS emulation, so they can't be used as RCS parsers for ViewCVS.
+
+- Very old versions of CVSNT (1.11.1.3-57g and earlier) won't work reliably with our loginfo handler because they have a bug which makes them escape spaces and other special characters in filenames twice. This bug can result in loginfo errors or invalid data being inserted into the database.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 THANKS
