@@ -38,7 +38,7 @@ except AttributeError:
     keyvalue = [ ]
     for key, value in dict.items():
       keyvalue.append(quote(key) + '=' + quote(str(value)))
-    return '?' + string.join(keyvalue, '&')
+    return string.join(keyvalue, '&')
 
 #
 # time.strptime() is new to Python 1.5.2
