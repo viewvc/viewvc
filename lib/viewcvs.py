@@ -395,7 +395,8 @@ class Request:
     # if we are asking for the revision info view, we don't need any
     # path information
     if view_func is view_revision:
-      where = pathtype = None
+      where = ''
+      pathtype = vclib.DIR
     elif where is None:
       where = self.where
       pathtype = self.pathtype
