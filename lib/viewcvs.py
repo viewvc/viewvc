@@ -2140,6 +2140,7 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
 
   log_rev1 = log_rev2 = None
   date1 = date2 = ''
+  rcsdiff_eflag = 0
   while 1:
     line = fp.readline()
     if not line:
@@ -2161,6 +2162,20 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
         log_rev2 = match.group(2)
       break
 
+    # Didn't want to put this here, but had to.  The DiffSource class
+    # picks up fp after this loop has processed the header.  Previously
+    # error messages and the 'Binary rev ? and ? differ' where thrown out
+    # and DiffSource then showed no differences.
+    # Need to process the entire header before DiffSource is used.
+    if line[:3] == 'Bin':
+      rcsdiff_eflag = 1
+      break
+
+    if (string.find(line, 'not found') != -1 or 
+        string.find(line, 'illegal option') != -1):
+      rcsdiff_eflag = 2
+      break
+
   if (log_rev1 and log_rev1 != rev1) or (log_rev2 and log_rev2 != rev2):
     ### it would be nice to have an error.ezt for things like this
     print '<strong>ERROR:</strong> rcsdiff did not return the correct'
@@ -2178,6 +2193,19 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
                       '<input type=hidden name="%s" value="%s">' % \
                       (varname, cgi.escape(value))
 
+  # Process special line in the header.
+  rcs_diff = []
+  if rcsdiff_eflag == 1:
+    rcs_diff.append(_item(type='diff-info', 
+                          text='- Binary revisions differ -'))
+  else:
+    # This test should probably go in ./viewcvs-install
+    if rcsdiff_eflag == 2:
+      rcs_diff.append(_item(type='diff-info', 
+                            text='- For the creation of this page ViewCVS relies on rcsdiff, which relies on GNU diff.  The rcsdiff program is reporting an error that GNU diff cannot be found. -'))
+    else:
+      rcs_diff = DiffSource(fp)
+
   data.update({
     'cfg' : cfg,
     'vsn' : __version__,
@@ -2190,7 +2218,7 @@ def human_readable_diff(request, fp, rev1, rev2, sym1, sym2):
     'tag2' : sym2,
     'date1' : date1,
     'date2' : date2,
-    'changes' : DiffSource(fp),
+    'changes' : rcs_diff,
     'diff_format' : query_dict['diff_format'],
     'hidden_values' : hidden_values,
     })
@@ -2266,7 +2294,7 @@ class DiffSource:
     if not line:
       if self.state == 'no-changes':
         self.state = 'done'
-        return _item(type='no-changes')
+        return _item(type='diff-info', text='- No changes -')
 
       # see if there are lines to flush
       if self.left_col or self.right_col:
