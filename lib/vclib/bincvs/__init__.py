@@ -563,7 +563,7 @@ class BinCVSRepository(vclib.Repository):
     line = fp.readline()
     if not line:
       raise vclib.Error('Missing output from co.<br>'
-                        'fname="%s". url="%s"' % (filename, where))
+                        'fname="%s".' % full_name)
 
     match = _re_co_filename.match(line)
     if not match:
