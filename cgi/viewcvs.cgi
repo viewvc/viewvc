@@ -1093,6 +1093,18 @@ def revcmp(rev1, rev2):
   rev2 = map(int, string.split(rev2, '.'))
   return cmp(rev1, rev2)
 
+def print_roots(current_root):
+  if len(cvs_roots) < 2:
+    return
+  print '<h3>Project Root</h3>'
+  print '<form method=GET action="./">'
+  print '<select name=cvsroot onchange="submit()">'
+  names = cvs_roots.keys()
+  names.sort(lambda n1, n2: cmp(string.lower(n1), string.lower(n2)))
+  for name in names:
+    html_option(name, current_root)
+  print '</select><input type=submit value="Go"></form>'
+
 def view_directory(request):
   full_name = request.full_name
   where = request.where
@@ -1142,6 +1154,8 @@ def view_directory(request):
     print long_intro
     print doc_information
     print repository_info
+
+    print_roots(request.cvsrep)
   else:
     html_header(where)
     print short_instruction
