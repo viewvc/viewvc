@@ -1,7 +1,7 @@
 <p>[if-any branch]Default branch: [branch][else]No default branch[end]<br>
 Bookmark a link to HEAD:
 (<a href="[view_href]">view</a>)
-(<a href="[download_href]">download</a>)
+[if-any download_href](<a href="[download_href]">download</a>)[end]
 [if-any download_text_href](<a href="[download_text_href]">as text</a>)[end]
 </p>
 
