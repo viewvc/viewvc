@@ -587,6 +587,43 @@ def _repos_pathtype(repos, path_parts):
     pass
   return type
 
+def check_freshness(request, mtime=None, etag=None, weak=0):
+  request_etag = request_mtime = None
+  if etag is not None:
+    if weak:
+      etag = 'W/"%s"' % etag
+    else:
+      etag = '"%s"' % etag
+    request_etag = request.server.getenv('HTTP_IF_NONE_MATCH')
+  if mtime is not None:
+    try:
+      request_mtime = request.server.getenv('HTTP_IF_MODIFIED_SINCE')
+      request_mtime = rfc822.mktime_tz(rfc822.parsedate_tz(request_mtime))
+    except:
+      request_mtime = None
+
+  # if we have an etag, use that for freshness checking.
+  # if not available, then we use the last-modifed time.
+  # if not available, then the document isn't fresh.
+  if etag is not None:
+    isfresh = (request_etag == etag)
+  elif mtime is not None:
+    isfresh = (request_mtime >= mtime)
+  else:
+    isfresh = 0
+
+  ## require revalidation after 15 minutes ...
+  #request.server.addheader('Expires', rfc822.formatdate(time.time() + 900))
+
+  if isfresh:
+    request.server.header(status='304 Not Modified')
+  else:
+    if etag is not None:
+      request.server.addheader('ETag', etag)
+    if mtime is not None:
+      request.server.addheader('Last-Modified', rfc822.formatdate(mtime))
+  return isfresh
+
 def generate_page(request, tname, data):
   # allow per-language template selection
   if request:
@@ -807,6 +844,9 @@ class MarkupBuffer:
     self.buffer = self.buffer[reqlen:]
     self.size = self.size - reqlen
     return chunk
+  def close(self):
+    self.buffer = ''
+    self.size = 0
 
 class MarkupPipeWrapper:
   """A file-pointer-ish object from another filepointer, plus some optional
@@ -846,8 +886,13 @@ class MarkupPipeWrapper:
         self.which_fp = self.which_fp + 1
     return chunk
 
+  def close(self):
+    for pair in self.fps:
+      pair[0].close()
+    del self.fps[:]
+
   def __del__(self):
-    self.fp.close()
+    self.close()
 
 class MarkupEnscript:
   """A file-pointer-ish object for reading file contents slammed
@@ -857,6 +902,7 @@ class MarkupEnscript:
     ### Man, oh, man, had I any idea how to deal with bi-directional
     ### pipes, I would.  But I don't.
 
+    self._closed = 0
     self.temp_file = tempfile.mktemp()
     self.fp = None
     
@@ -883,11 +929,16 @@ class MarkupEnscript:
                           'rb', 0)
 
   def __del__(self):
-    # Cleanup the tempfile we made, and close the pipe.
-    os.remove(self.temp_file)
-    if self.fp:
-      self.fp.close()
-    
+    self.close()
+
+  def close(self):
+    if not self._closed:
+      # Cleanup the tempfile we made, and close the pipe.
+      os.remove(self.temp_file)
+      if self.fp:
+        self.fp.close()
+    self._closed = 1
+
   def read(self, len):
     if self.fp is None:
       return None
@@ -1079,6 +1130,12 @@ def view_markup(request):
   rev = request.query_dict.get('rev')
 
   fp, revision = request.repos.openfile(request.path_parts, rev)
+
+  # Since the templates could be changed by the user, we can't provide
+  # a strong validator for this page, so we mark the etag as weak.
+  if check_freshness(request, None, revision, weak=1):
+    fp.close()
+    return
 
   data = nav_header_data(request, revision)
   data.update({
@@ -1736,7 +1793,13 @@ def view_log(request):
 
 def view_checkout(request):
   rev = request.query_dict.get('rev')
-  fp = request.repos.openfile(request.path_parts, rev)[0]
+  fp, revision = request.repos.openfile(request.path_parts, rev)
+
+  # The revision number acts as a strong validator.
+  if check_freshness(request, None, revision):
+    fp.close()
+    return
+
   mime_type = request.query_dict.get('content-type', request.mime_type)
   request.server.header(mime_type)
   copy_stream(fp)
@@ -1886,19 +1949,25 @@ def view_doc(request):
     # aid testing from CVS working copy:
     doc_directory = os.path.join(g_install_dir, "website")
   filename = os.path.join(doc_directory, help_page)
+
+  try:
+    info = os.stat(filename)
+  except OSError, v:
+    raise debug.ViewcvsException('Help file "%s" not available\n(%s)'
+                                 % (help_page, str(v)), '404 Not Found')
+  content_length = str(info[stat.ST_SIZE])
+  last_modified = info[stat.ST_MTIME]
+  # content_length + mtime makes a pretty good etag
+  etag = "%s-%s" % (content_length, last_modified)
+  if check_freshness(request, last_modified, etag):
+    return
+  request.server.addheader('Content-Length', content_length)
+  
   try:
     fp = open(filename, "rb")
   except IOError, v:
     raise debug.ViewcvsException('Help file "%s" not available\n(%s)'
                                  % (help_page, str(v)), '404 Not Found')
-  try:
-    info = os.stat(filename)
-    content_length = str(info[stat.ST_SIZE])
-    last_modified = rfc822.formatdate(info[stat.ST_MTIME])
-    request.server.addheader('Content-Length', content_length)
-    request.server.addheader('Last-Modified', last_modified)
-  except IOError, v:
-    pass
   if help_page[-3:] == 'png':
     request.server.header('image/png')
   elif help_page[-3:] == 'jpg':
@@ -2195,7 +2264,12 @@ def view_diff(request):
   except ValueError:
     raise debug.ViewcvsException('Invalid revision(s) passed to diff',
                                  '400 Bad Request')
-    
+
+  # since templates are in use and subversion allows changes to the dates,
+  # we can't provide a strong etag
+  if check_freshness(request, None, '%s-%s' % (rev1, rev2), weak=1):
+    return
+
   human_readable = 0
   unified = 0
   args = [ ]
