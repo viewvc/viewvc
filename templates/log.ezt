@@ -50,7 +50,7 @@
     [for entries.branch_names]<a name="[entries.branch_names]"></a>
     [end]
 
-    Revision <b>[entries.rev]</b> - 
+    Revision [is roottype "svn"]<a href="[entries.revision_href]"><b>[entries.rev]</b></a>[else]<b>[entries.rev]</b>[end] - 
     [if-any is_text]
       <a href="[entries.href]"
       [if-any is_text]
@@ -135,9 +135,6 @@
     [if-any entries.copy_path]
     <br>Copied from: <a href="[entries.copy_href]#rev[entries.copy_rev]">[entries.copy_path]</a> revision [entries.copy_rev]
     [end]
-    
-    [for entries.other_paths][if-index entries.other_paths first]<br>Other changed files:[else],[end]
-      [is entries.other_paths.action "deleted"][entries.other_paths.filename][else]<a href="[entries.other_paths.href]#rev[entries.rev]">[entries.other_paths.filename]</a>[end] ([entries.other_paths.action])[end]
   [end]
 
   [is entries.state "dead"]

@@ -1872,10 +1872,6 @@ def view_log_svn(request, data, logsort):
                                         where=entry.copy_path,
                                         pathtype=vclib.FILE, params={})
 
-    for path in entry.other_paths:
-      path.href = request.get_url(view_func=view_log, where=path.filename, 
-                                  pathtype=vclib.FILE, params={})
-
     entry.tags = [ ]
     entry.branches = [ ]
     entry.branch_point = None
@@ -2763,6 +2759,60 @@ def download_tarball(request):
 
 def view_revision(request):
   data = common_template_data(request)
+  data.update({
+    'roottype' : request.roottype,
+  })
+
+  if request.roottype == "cvs":
+    raise ViewcvsException("Revision view not supported for CVS repositories "
+                           "at this time.", "400 Bad Request")
+  else:
+    view_revision_svn(request, data)
+
+def view_revision_svn(request, data):
+  query_dict = request.query_dict
+  date, author, msg, changes = vclib.svn.get_revision_info(request.repos)
+  date_str = make_time_string(date)
+  rev_str = str(request.repos.rev)
+
+  # add the hrefs, types, and prev info
+  for change in changes:
+    if change.pathtype is vclib.FILE:
+      change.type = 'file'
+      change.view_href = request.get_url(view_func=view_markup,
+                                         where=change.filename, 
+                                         pathtype=change.pathtype,
+                                         params={'rev' : rev_str})
+      change.diff_href = request.get_url(view_func=view_diff,
+                                         where=change.filename, 
+                                         pathtype=change.pathtype,
+                                         params={})
+    elif change.pathtype is vclib.DIR:
+      change.type = 'dir'
+      change.view_href = request.get_url(view_func=view_directory,
+                                         where=change.filename, 
+                                         pathtype=change.pathtype,
+                                         params={'rev' : rev_str})
+      change.diff_href = None
+    else:
+      change.view_href = change.diff_href = change.type = None
+
+    if (change.action == "added" and change.base_rev and change.base_path) \
+           or (change.action == "modified"):
+      change.prev_path = change.base_path
+      change.prev_rev = change.base_rev
+    else:
+      change.prev_path = change.prev_rev = None
+    
+  data.update({
+    'rev' : rev_str,
+    'author' : author,
+    'date_str' : date_str,
+    'log' : htmlify(msg),
+    'ago' : html_time(request, date, 1),
+    'changes' : changes,
+  })
+
   request.server.header()
   generate_page(request, cfg.templates.revision, data)
 

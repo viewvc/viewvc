@@ -23,7 +23,7 @@ import os.path
 import string
 
 # Subversion swig libs
-from svn import fs, repos, core
+from svn import fs, repos, core, delta
 
 # Subversion filesystem paths are '/'-delimited, regardless of OS.
 def fs_path_join(base, relative):
@@ -54,12 +54,11 @@ def date_from_rev(svnrepos, rev):
   datestr = fs.revision_prop(svnrepos.fs_ptr, rev,
                              core.SVN_PROP_REVISION_DATE, svnrepos.pool)
   return _datestr_to_date(datestr, svnrepos.pool)
-  
+
 
 class LogEntry:
   "Hold state for each revision's log entry."
-  def __init__(self, rev, date, author, msg, filename, other_paths,
-               copy_path, copy_rev):
+  def __init__(self, rev, date, author, msg, filename, copy_path, copy_rev):
     self.rev = rev
     self.date = date
     self.author = author
@@ -67,16 +66,10 @@ class LogEntry:
     self.changed = 0
     self.log = msg
     self.filename = filename
-    self.other_paths = other_paths
     self.copy_path = copy_path
     self.copy_rev = copy_rev
 
-class ChangedPathEntry:
-  def __init__(self, filename, action):
-    self.filename = filename
-    self.action = action
 
-    
 class NodeHistory:
   def __init__(self):
     self.histories = {}
@@ -111,33 +104,65 @@ def _unparse_action(change_kind):
     return None
   
 
+class ChangedPath:
+  def __init__(self, filename, pathtype, prop_mods, text_mods,
+               base_path, base_rev, action):
+    self.filename = filename
+    self.pathtype = pathtype
+    self.prop_mods = prop_mods
+    self.text_mods = text_mods
+    self.base_path = base_path
+    self.base_rev = base_rev
+    self.action = action
+
+
+def get_revision_info(svnrepos):
+  # Get the revision property info
+  date, author, msg = _fs_rev_props(svnrepos.fs_ptr, svnrepos.rev,
+                                    svnrepos.pool)
+  date = _datestr_to_date(date, svnrepos.pool)
+
+  # Now, get the changes for the revision
+  editor = repos.RevisionChangeCollector(svnrepos.fs_ptr, svnrepos.rev)
+  e_ptr, e_baton = delta.make_editor(editor, svnrepos.pool)
+  repos.svn_repos_replay(svnrepos.fsroot, e_ptr, e_baton, svnrepos.pool)
+
+  # get all the changes and sort by path
+  changelist = editor.changes.items()
+  changelist.sort()
+  changes = []
+  for path, change in changelist:
+    if not change.path:
+      action = 'deleted'
+    elif change.added:
+      if change.base_path and change.base_rev:
+        action = 'copied'
+      else:
+        action = 'added'
+    else:
+      action = 'modified'
+    if change.item_kind == core.svn_node_dir:
+      pathtype = vclib.DIR
+    elif change.item_kind == core.svn_node_file:
+      pathtype = vclib.FILE
+    else:
+      pathtype = None
+    changes.append(ChangedPath(path, pathtype, change.prop_changes,
+                               change.text_changed, change.base_path,
+                               change.base_rev, action))
+  return date, author, msg, changes
+
+
 def log_helper(svnrepos, rev, path, pool):
   rev_root = fs.revision_root(svnrepos.fs_ptr, rev, pool)
-  other_paths = []
-  changed_paths = fs.paths_changed(rev_root, pool)
 
-  copyfrom_rev = copyfrom_path = None
+  # Was this path@rev the target of a copy?
+  copyfrom_rev, copyfrom_path = fs.copied_from(rev_root, path, pool)
 
-  # Optionally skip revisions in which this path didn't change.
-  change = changed_paths.get(path)
-  if change:
-    
-    # Was this thing the target of a copy?
-    if (change.change_kind == fs.path_change_add) or \
-       (change.change_kind == fs.path_change_replace):
-      copyfrom_rev, copyfrom_path = fs.copied_from(rev_root, path, pool)
-
-  # Now, make ChangedPathEntry objects for all the other paths
-  for other_path in changed_paths.keys():
-    if other_path != path:
-      change = changed_paths.get(other_path)
-      other_paths.append(ChangedPathEntry(_trim_path(other_path),
-                                          _unparse_action(change.change_kind)))
-
-  # Finally, assemble our LogEntry.
+  # Assemble our LogEntry
   datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, pool)
   date = _datestr_to_date(datestr, pool)
-  entry = LogEntry(rev, date, author, msg, _trim_path(path), other_paths,
+  entry = LogEntry(rev, date, author, msg, _trim_path(path), 
                    copyfrom_path and _trim_path(copyfrom_path),
                    copyfrom_rev)
   if fs.is_file(rev_root, path, pool):
@@ -195,7 +220,7 @@ def get_logs(svnrepos, full_name, files):
     rev = get_last_history_rev(svnrepos, path, subpool)
     datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, subpool)
     date = _datestr_to_date(datestr, subpool)
-    new_entry = LogEntry(rev, date, author, msg, file, [], None, None)
+    new_entry = LogEntry(rev, date, author, msg, file, None, None)
     if fs.is_file(svnrepos.fsroot, path, subpool):
       new_entry.size = fs.file_length(svnrepos.fsroot, path, subpool)
     fileinfo[file] = new_entry
