@@ -293,6 +293,20 @@ def path_ends_in(path, ending):
     return 0
   return path[-le:] == ending and path[-le-1] == os.sep
 
+def _sort_tags(alltags):
+  alltagnames = alltags.keys()
+  alltagnames.sort(lambda t1, t2: cmp(string.lower(t1), string.lower(t2)))
+  alltagnames.reverse()
+  branch_tags = []
+  plain_tags = []
+  for tag in alltagnames:
+    rev = alltags[tag]
+    if TagInfo(rev).is_branch():
+      branch_tags.append(tag)
+    else:
+      plain_tags.append(tag)      
+  return branch_tags, plain_tags
+
 def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
   have_logs = 0
   alltags = {           # all the tags seen in the files of this dir
@@ -329,7 +343,8 @@ def get_logs(repos, path_parts, entries, view_tag, get_dirs=0):
       entry.rev = None
 
     if not chunk:
-      return have_logs, alltags
+      repos.branch_tags, repos.plain_tags = _sort_tags(alltags)
+      return
 
     args = []
     if not view_tag:

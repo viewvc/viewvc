@@ -1209,8 +1209,10 @@ def view_directory_cvs(request, data, sortby, sortdir):
 
   get_dirs = cfg.options.show_subdir_lastmod and cfg.options.show_logs
 
-  have_logs, alltags = bincvs.get_logs(request.repos, request.path_parts,
-                                       file_data, view_tag, get_dirs)
+  bincvs.get_logs(request.repos, request.path_parts,
+                  file_data, view_tag, get_dirs)
+
+  has_tags = view_tag or request.repos.branch_tags or request.repos.plain_tags
 
   # prepare the data that will be passed to the template
   data.update({
@@ -1218,10 +1220,11 @@ def view_directory_cvs(request, data, sortby, sortdir):
     'attic_showing' : ezt.boolean(not hideattic),
     'show_attic_href' : request.get_url(params={'hideattic': 0}),
     'hide_attic_href' : request.get_url(params={'hideattic': 1}),
-    'has_tags' : ezt.boolean(alltags or view_tag),
+    'has_tags' : ezt.boolean(has_tags),
     ### one day, if EZT has "or" capability, we can lose this
-    'selection_form' : ezt.boolean(alltags or view_tag
-                                   or cfg.options.use_re_search),
+    'selection_form' : ezt.boolean(has_tags or cfg.options.use_re_search),
+    'branch_tags': request.repos.branch_tags,
+    'plain_tags': request.repos.plain_tags,
   })
 
   if search_re:
@@ -1340,28 +1343,13 @@ def view_directory_cvs(request, data, sortby, sortdir):
     data['search_tag_action'] = urllib.quote(url, _URL_SAFE_CHARS)
     data['search_tag_hidden_values'] = prepare_hidden_values(params)
 
-  if alltags or view_tag:
-    alltagnames = alltags.keys()
-    alltagnames.sort(lambda t1, t2: cmp(string.lower(t1), string.lower(t2)))
-    alltagnames.reverse()
-    branchtags = []
-    nonbranchtags = []
-    for tag in alltagnames:
-      rev = alltags[tag]
-      if not bincvs.TagInfo(rev).is_branch():
-        nonbranchtags.append(tag)
-      else:
-        branchtags.append(tag)
-
-    data['branch_tags'] = branchtags
-    data['plain_tags'] = nonbranchtags
 
 def view_directory_svn(request, data, sortby, sortdir):
   query_dict = request.query_dict
   where = request.where
 
   file_data = request.repos.listdir(request.path_parts)
-  alltags = vclib.svn.get_logs(request.repos, where, file_data)
+  vclib.svn.get_logs(request.repos, where, file_data)
 
   data.update({
     'view_tag' : None,
