@@ -59,7 +59,7 @@ class Config:
       if parser.has_section(section):
         self._process_section(parser, section, section)
 
-    if vhost:
+    if vhost and parser.has_section('vhosts'):
       self._process_vhost(parser, vhost)
 
   def _process_section(self, parser, section, subcfg_name):
