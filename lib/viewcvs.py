@@ -960,13 +960,21 @@ def view_markup(request):
   data = nav_header_data(request, revision)
   data.update({
     'nav_file' : clickable_path(request, 1, 0),
-    'href' : request.get_url(view_func=view_checkout, params={}),
-    'text_href' : request.get_url(view_func=view_checkout, 
-                                  params={'content-type': 'text/plain'}),
     'mime_type' : request.mime_type,
     'log' : None,
     'tag' : None,
     })
+
+  data['download_href'] = request.get_url(view_func=view_checkout,
+                                          params={'rev': rev})
+  if request.mime_type != 'text/plain':
+    data['download_text_href'] = \
+      request.get_url(view_func=view_checkout,
+                      params={'content-type': 'text/plain',
+                              'rev': rev})
+  else:
+    data['download_text_href'] = None
+
 
   if cfg.options.show_log_in_markup:
     if request.roottype == 'cvs':
@@ -1503,13 +1511,18 @@ def view_log(request):
     entry.date_str = make_time_string(rev.date)
     entry.ago = html_time(request, rev.date, 1)
     entry.html_log = htmlify(rev.log or "")
-    entry.href = request.get_url(view_func=view_checkout, 
-                                 params={'rev': rev.string})
-    entry.view_href = request.get_url(view_func=view_markup, 
+
+    entry.view_href = request.get_url(view_func=view_markup,
                                       params={'rev': rev.string})
-    entry.text_href = request.get_url(view_func=view_checkout,
-                                      params={'content-type': 'text/plain',
-                                              'rev': rev.string})
+    entry.download_href = request.get_url(view_func=view_checkout,
+                                          params={'rev': rev.string})
+    if request.mime_type != 'text/plain':
+      entry.download_text_href = \
+        request.get_url(view_func=view_checkout,
+                        params={'content-type': 'text/plain',
+                                'rev': rev.string})
+    else:
+      entry.download_text_href = None
 
     if request.roottype == 'cvs':
       entry.annotate_href = request.get_url(view_func=view_annotate, 
@@ -1641,16 +1654,14 @@ def view_log(request):
     ### this formatting should be moved into the ezt template
     data['branch'] = string.join(branches, ', ')
 
-    ### I don't like this URL construction stuff. the value
-    ### for head_abs_href vs head_href is a bit bogus: why decide to
-    ### include/exclude the mime type from the URL? should just always be
-    ### the same, right?
-    if request.default_viewable:
-      data['head_href'] = request.get_url(view_func=view_markup, params={})
-      data['head_abs_href'] = request.get_url(view_func=view_checkout, 
-                                              params={})
+    data['view_href'] = request.get_url(view_func=view_markup, params={})
+    data['download_href'] = request.get_url(view_func=view_checkout, params={})
+    if request.mime_type != 'text/plain':
+      data['download_text_href'] = \
+        request.get_url(view_func=view_checkout,
+                        params={'content-type': 'text/plain'})
     else:
-      data['head_href'] = request.get_url(view_func=view_checkout, params={})
+      data['download_text_href'] = None
 
   tagitems = taginfo.items()
   tagitems.sort()

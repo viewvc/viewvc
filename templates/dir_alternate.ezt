@@ -225,14 +225,6 @@ href="[docroot]/help_[if-any where]dir[else]root[end]view.html">ViewCVS and CVS 
       [else]
         <td width="1%">&nbsp;<a href="[rows.href]"><b>[rows.rev]</b></a></td>
         <td><a name="[rows.anchor]" href="[rows.rev_href]">
-[# to display the revision in a separate window, you could use:
-
-   <a name="{rows.anchor}" href="{rows.rev_href}" target="cvs_checkout"
-      onclick="window.open('{rows.rev_href}', 'cvs_checkout',
-                           'resizable=1,scrollbars=1');return false"><b>{rows.rev}</b></a>
-
-   (substitute brackets for the braces)
-]
             <img src="[icons]/small/text.gif" alt="(file)" border=0
                  width=16 height=16>
             [rows.name]
