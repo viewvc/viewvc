@@ -115,7 +115,7 @@ class Request:
     parts = filter(None, string.split(where, '/'))
 
     # does it have the magic checkout prefix?
-    if parts[0] == checkout_magic_path:
+    if parts and parts[0] == checkout_magic_path:
       self.has_checkout_magic = 1
       del parts[0]
     else:
