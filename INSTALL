@@ -81,7 +81,7 @@ INSTALLING VIEWCVS
    side-by-side diffs.
 
    If you want to use cvsgraph, you have to obtain and install this
-   separately.  See below.  This was tested with cvsgraph-1.1.2.
+   separately.  See below.  This was tested with cvsgraph-1.5.1.
 
    For the checkin database to work, you will need MySQL >= 3.22, 
    and the Python DBAPI 2.0 module, MySQLdb.  This was tested with
@@ -148,7 +148,7 @@ APACHE CONFIGURATION
 Either METHOD A: 
 2) The ScriptAlias directive is very useful for pointing 
    directly to the viewcvs.cgi script.  Simply insert a line containing
-     ScriptAlias /viewcvs <VIEWCVS_INSTALLATION_DIRECTORY>/cgi/viewcvs.cgi
+     ScriptAlias /viewcvs <VIEWCVS_INSTALLATION_DIRECTORY>/www/cgi/viewcvs.cgi
    into your httpd.conf file.  Choose the location in httpd.conf where 
    also the other ScriptAlias lines reside.  Some examples:
 
