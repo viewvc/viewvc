@@ -424,8 +424,8 @@ def main(server, viewcvs_link):
       data['hours'] = 2
 
     template = ezt.Template()
-    template.parse_file(os.path.join(viewcvs.g_install_dir,
-                                     cfg.templates.query))
+    tname = viewcvs.get_view_template("query", "en")
+    template.parse_file(os.path.join(viewcvs.g_install_dir, tname))
 
     server.header()
 

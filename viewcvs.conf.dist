@@ -36,8 +36,10 @@
 #
 #    docroot
 #
-# Also, review the .ezt templates in the templates/ directory to adjust them
-# for your particular site.
+# To customize the display of ViewCVS for your site:
+#
+#    template_dir
+#    the [templates] override section
 #
 
 #
@@ -252,9 +254,16 @@ languages = en-us
 #---------------------------------------------------------------------------
 [templates]
 
-#
-# The templates are specified relative to the configuration file. Absolute
-# paths may be used, if you want to keep these elsewhere.
+# You can override the templates used by various ViewCVS views in this
+# section.  By default, ViewCVS will look for templates in the
+# directory specified by the "template_dir" configuration option (see
+# the documentation for that option for details).  But if you want to
+# use a different template for a particular view, simply uncomment the
+# appropriate option below and specify the currect location of the EZT
+# template file you wish to use for that view.
+# 
+# Templates are specified relative to the installation directory
+# (<VIEWCVS_INSTALL_DIRECTORY>), but absolute paths may also be used.
 #
 # If %lang% occurs in the pathname, then the selected language will be
 # substituted.
@@ -263,28 +272,20 @@ languages = en-us
 #       [general] section, and based on the request's Accept-Language
 #       header.
 #
-
-query = templates/query.ezt
-diff = templates/diff.ezt
-graph = templates/graph.ezt
-annotate = templates/annotate.ezt
-markup = templates/markup.ezt
-revision = templates/revision.ezt
-query_form = templates/query_form.ezt
-query_results = templates/query_results.ezt
-error = templates/error.ezt
-roots = templates/roots.ezt
-
-directory = templates/directory.ezt
-# For an alternate form, where the first column displays a revision number
-# and brings you to the log view (and the filename displays the HEAD), then
-# you may use this template:
-# directory = templates/dir_alternate.ezt
-
-log = templates/log.ezt
-# For a log view where the revisions are displayed in a table, you may
-# want to try this template:
-# log = templates/log_table.ezt
+#directory = templates/directory.ezt
+#directory = templates/dir_alternate.ezt   ### an alternative directory view
+#log = templates/log.ezt
+#log = templates/log_table.ezt  ### a table-based alternative log view
+#query = templates/query.ezt
+#diff = templates/diff.ezt
+#graph = templates/graph.ezt
+#annotate = templates/annotate.ezt
+#markup = templates/markup.ezt
+#revision = templates/revision.ezt
+#query_form = templates/query_form.ezt
+#query_results = templates/query_results.ezt
+#error = templates/error.ezt
+#roots = templates/roots.ezt
 
 #---------------------------------------------------------------------------
 [cvsdb]
@@ -390,11 +391,25 @@ allow_compress = 1
 # out files as if outside the repository.
 checkout_magic = 1
 
-# Web path to a directory that contains ViewCVS static files.  (The
-# ones installed in <VIEWCVS_INSTALL_DIRECTORY>/templates/docroot). If
-# set, static files will get downloaded from this location, otherwise
-# static files will be served by the ViewCVS script which is less
-# efficient
+# The directory which contains the EZT templates used by ViewCVS to
+# customize the display of the various output views.  ViewCVS looks in
+# this directory for files with names that match the name of the view
+# ("log", "directory", etc.) plus the ".ezt" extension.  If specified
+# as a relative path, it is relative to the ViewCVS installation
+# directory (<VIEWCVS_INSTALL_DIRECTORY>); absolute paths may be used
+# as well.
+#
+# If %lang% occurs in the pathname, then the selected language will be
+# substituted.
+#
+template_dir = templates
+
+# Web path to a directory that contains ViewCVS static files
+# (stylesheets, images, etc.)  If set, static files will get
+# downloaded directory from this location.  If unset, static files
+# will be served by the ViewCVS script (at a likely performance
+# penalty, and from the "docroot" subdirectory of the directory
+# specified by the "template_dir" option).
 #docroot = /docroot
 
 # Show last changelog message for sub directories
