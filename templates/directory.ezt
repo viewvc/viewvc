@@ -10,13 +10,13 @@
 <table width="100%" border=0 cellspacing=0 cellpadding=0>
   <tr>
     <td><h1>[if-any where][where][else][cfg.general.main_title][end]</h1></td>
-    <td align=right><img src="/icons/apache_pb.gif" alt="(logo)" border=0
+    <td align=right><img src="[request.icons]/apache_pb.gif" alt="(logo)" border=0
 			width=259 height=32></td>
   </tr>
   <tr>
     <td>[is roottype "svn"]<h2>(revision [tree_rev])</h2>[else]&nbsp;[end]</td>
     <td align=right><h3><b><a target="_blank"
-href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.html">ViewCVS and CVS Help</a></b></h3></td>
+href="[request.docroot]/help_[if-any where]dir[else]root[end]view.html">ViewCVS and CVS Help</a></b></h3></td>
   </tr>
 </table>
 
@@ -184,7 +184,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
     [is rows.type "dir"]
       <td [if-any have_logs][is cfg.options.use_cvsgraph "1"]colspan=2[end][end]>
         <a name="[rows.anchor]" href="[rows.href]">
-        <img src="/icons/small/dir.gif" alt="(dir)" border=0 width=16 height=16>
+        <img src="[request.icons]/small/dir.gif" alt="(dir)" border=0 width=16 height=16>
         [rows.name]
         </a>
         [is roottype "cvs"]
@@ -226,7 +226,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
         <td colspan=4><i>CVS information is unreadable</i></td>
       [else]
         <td><a name="[rows.anchor]" href="[rows.href]">
-            <img src="/icons/small/text.gif" alt="(file)" border=0
+            <img src="[request.icons]/small/text.gif" alt="(file)" border=0
                  width=16 height=16>
             [rows.name]
             </a>
@@ -237,7 +237,7 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
         </td>
         [if-any rows.graph_href]
           <td width="1%"><a href="[rows.graph_href]"><img
-            src="[request.script_name]/*docroot*/images/cvsgraph_16x16.png"
+            src="[request.docroot]/images/cvsgraph_16x16.png"
             alt="(graph)" width=16 height=16 border=0>
           </a></td>
         [end]
