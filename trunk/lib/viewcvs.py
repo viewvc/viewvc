@@ -178,9 +178,13 @@ class Request:
     try:
       self.cvsroot = cfg.general.cvs_roots[self.cvsrep]
     except KeyError:
-      print "To the administrator: Probably the settings of 'cvs_roots' and "
-      print "'default_root' are misconfigured in the viewcvs.conf file."
-      raise
+      if query_dict.has_key('cvsroot'):
+          error("Repository cvsroot %s not configured in viewcvs.conf" % 
+                self.cvsrep, "404 Repository not found")
+      else:
+          error("The settings of 'cvs_roots' and "
+                "default_root=%s are misconfigured in the viewcvs.conf file." %
+                self.cvsrep)
 
     self.full_name = self.cvsroot + '/' + where
 
