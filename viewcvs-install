@@ -36,7 +36,7 @@
 #
 # -----------------------------------------------------------------------
 
-import os, sys, string
+import os, sys, string, re
 
 
 
@@ -53,18 +53,68 @@ is okay.
 ROOT_DIR = "/usr/local/viewcvs"
 
 
-def GetInstallPath():
-    root_path = raw_input("Installation Path [%s]: " % (ROOT_DIR))
-    root_path = string.strip(root_path)
-    
-    if not len(root_path):
-        return
+## list of files for installation
+FILE_LIST = [
+    "cgi/viewcvs.cgi",
+    "cgi/queryform.cgi",
+    "cgi/query.cgi",
+    "cgi/granny.cgi",
 
-    global ROOT_DIR
-    ROOT_DIR = root_path
+    "lib/PyFontify.py",
+    "lib/cfg.py",
+    "lib/commit.py",
+    "lib/compat.py",
+    "lib/config.py",
+    "lib/cvsdbapi.py",
+    "lib/database.py",
+    "lib/py2html.py",
+    "lib/rlog.py",
+
+    "scripts/loginfo-handler",
+
+    "tools/cvsdbadmin",
+
+    "html-templates/queryformtemplate.html",
+    "html-templates/querytemplate.html",
+    ]
+
+## regular expressions used to find key lines the installer needs
+## to rewrite
+_re_library_dir = re.compile("^LIBRARY_DIR\s*=\s*.*$")
+_re_conf_pathname = re.compile("^CONF_PATHNAME\s*=\s*.*$")
+
+
+def SetLoadPaths(filename):
+    line_list = open(filename, "r").readlines()
+
+    for index in range(len(line_list)):
+        line = line_list[index]
+
+        if _re_library_dir.match(line):
+            temp = os.path.join(ROOT_DIR, "lib")
+            line_list[index] = "LIBRARY_DIR = \"%s\"" % (temp)
+            continue
+
+        if _re_conf_pathname.match(line):
+            temp = os.path.join(ROOT_DIR, "cgi", "viewcvs.conf")
+            line_list[index] = "LIBRARY_DIR = \"%s\"" % (temp)
+            continue
+
+    open(filename, "w").writelines(line_list)
 
 
 ## MAIN
 if __name__ == "__main__":
     print INFO_TEXT
-    GetInstallPath()
+    
+    ## get the install path
+    temp = raw_input("Installation Path [%s]: " % (ROOT_DIR))
+    temp = string.strip(temp)
+    if len(temp):
+        ROOT_DIR = temp
+
+    ## check to see if the path exists
+    if not os.path.isdir(ROOT_DIR):
+        print "Installation Path [%s] does not exist." % (ROOT_DIR)
+        
+
