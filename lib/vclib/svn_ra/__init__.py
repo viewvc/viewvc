@@ -90,7 +90,7 @@ def fetch_log(svnrepos, full_name):
 
   def _log_cb(paths, revision, author, date, message, pool,
               logs=logs, path=full_name):
-    date = core.svn_time_from_cstring(date, pool)
+    date = core.svn_time_from_cstring(date, pool) / 1000000
     entry = Revision(revision, date, author, message, None, path, None, None)
     logs.append(entry)
     
