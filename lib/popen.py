@@ -23,7 +23,7 @@
 
 import os
 
-def popen(cmd, args, mode):
+def popen(cmd, args, mode, capture_err=1):
   r, w = os.pipe()
   pid = os.fork()
   if pid:
@@ -44,15 +44,19 @@ def popen(cmd, args, mode):
   if mode == 'r':
     # hook stdout/stderr to the "write" channel
     os.dup2(w, 1)
-    os.dup2(w, 2)
     # "close" stdin; the child shouldn't use it
     os.dup2(null, 0)
+    # what to do with errors?
+    if capture_err:
+      os.dup2(w, 2)
+    else:
+      os.dup2(null, 2)
   else:
     # hook stdin to the "read" channel
     os.dup2(r, 0)
     # "close" stdout/stderr; the child shouldn't use them
-    os.dup2(r, 1)
-    os.dup2(r, 2)
+    os.dup2(null, 1)
+    os.dup2(null, 2)
 
   # don't need these FDs any more
   os.close(null)
