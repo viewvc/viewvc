@@ -47,7 +47,7 @@ except AttributeError:
 if hasattr(time, 'strptime'):
   def cvs_strptime(timestr):
     'Parse a CVS-style date/time value.'
-    return time.strptime(timestr + ' UTC', '%Y/%m/%d %H:%M:%S %Z')
+    return time.strptime(timestr, '%Y/%m/%d %H:%M:%S')[:-1] + (0,)
 else:
   _re_rev_date = re.compile('([0-9]{4})/([0-9][0-9])/([0-9][0-9]) '
                             '([0-9][0-9]):([0-9][0-9]):([0-9][0-9])')
