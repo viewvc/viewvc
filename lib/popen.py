@@ -34,8 +34,10 @@ if sys.platform == "win32":
 
 def popen(cmd, args, mode, capture_err=1):
   if sys.platform == "win32":
-    
     command = win32popen.CommandLine(cmd, args)
+
+    #sapi.server.header()
+    #debug.PrintStackTrace(command)
 
     if mode.find('r') >= 0:
       hStdIn = None        
@@ -72,7 +74,7 @@ def popen(cmd, args, mode, capture_err=1):
     phandle, pid, thandle, tid = win32popen.CreateProcess(command, hStdIn, hStdOut, hStdErr)
 
     if debug.SHOW_CHILD_PROCESSES:
-      sapi.server.processes.append(debug.Process(command, dbgIn, dbgOut, dbgErr))
+      debug.Process(command, dbgIn, dbgOut, dbgErr)
     
     return _pipe(win32popen.File2FileObject(handle, mode), phandle)
 
@@ -166,7 +168,7 @@ def pipe_cmds(cmds):
         command = win32popen.CommandLine(cmd[0], cmd[1:])
         phandle, pid, thandle, tid = win32popen.CreateProcess(command, hStdIn, hStdOut, None)
         if debug.SHOW_CHILD_PROCESSES:
-          sapi.server.processes.append(debug.Process(command, dbgIn, dbgOut, dbgErr))
+          debug.Process(command, dbgIn, dbgOut, dbgErr)
           
         dbgIn = dbgOut
         hStdIn = nextStdIn
