@@ -1,0 +1,39 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2001 The ViewCVS Group. All Rights Reserved.
+#
+# By using this file, you agree to the terms and conditions set forth in
+# the LICENSE.html file which can be found at the top level of the ViewCVS
+# distribution or at http://viewcvs.sourceforge.net/license-1.html.
+#
+# Contact information:
+#   Greg Stein, PO Box 760, Palo Alto, CA, 94302
+#   gstein@lyra.org, http://viewcvs.sourceforge.net/
+#
+# -----------------------------------------------------------------------
+#
+# make-release: internal tool for creating ViewCVS releases
+#
+# -----------------------------------------------------------------------
+#
+
+if [ "x$1" = "x" ]; then
+  echo "USAGE: $0 tagname target-directory"
+  exit 1
+fi
+
+if test -e $2; then
+  echo "ERROR: must remove $2 first."
+  exit 1
+fi
+
+# grab a copy of the CVS repository
+echo 'Checking out into:' $2
+cvs -d :pserver:anonymous@cvs.viewcvs.sourceforge.net:/cvsroot/viewcvs export -r $1 -d $2 viewcvs
+
+# various shifting, cleanup
+mv $2/website/license-1.html $2/LICENSE.html
+rm -r $2/website
+rm $2/tools/make-release
+
+echo 'Done.'
