@@ -1921,8 +1921,14 @@ def process_checkout(full_name, where, query_dict, default_mime_type):
           'url="%s"' % (filename, full_name, where))
 
   return fp, revision, mime_type
- 
+
 def view_checkout(request):
+  if request.roottype == 'svn':
+    contents = vclib.svn.get_file_contents(request.repos, request.where)
+    http_header(request.mime_type)
+    print contents
+    return
+  
   fp, revision, mime_type = process_checkout(request.full_name,
                                              request.where,
                                              request.query_dict,
@@ -2656,6 +2662,11 @@ def main():
 
   query_dict = request.query_dict
 
+  # do Subversion-y things here until more concepts mesh with CVS's
+  if request.roottype == 'svn':
+    view_checkout(request)
+    return
+  
   if os.path.isfile(full_name + ',v'):
     if query_dict.has_key('rev') or request.has_checkout_magic:
       view_checkout(request)

@@ -30,16 +30,39 @@ def fs_path_join(base, relative):
   joined_path = base + '/' + relative
   parts = filter(None, string.split(joined_path, '/'))
   return string.join(parts, '/')
+
   
+def _datestr_to_date(datestr, pool):
+  return util.svn_time_from_nts(datestr, pool) / 1000000
+
+  
+def _fs_rev_props(fsptr, rev, pool):
+  author = fs.revision_prop(fsptr, rev, util.SVN_PROP_REVISION_AUTHOR, pool)
+  msg = fs.revision_prop(fsptr, rev, util.SVN_PROP_REVISION_LOG, pool)
+  date = fs.revision_prop(fsptr, rev, util.SVN_PROP_REVISION_DATE, pool)
+  return date, author, msg
+
+
 class LogEntry:
-  "Hold state for each revision entry in an 'rlog' output."
-  def __init__(self, rev, date, author, log):
+  "Hold state for each revision's log entry."
+  def __init__(self, rev, date, author, msg):
     self.rev = rev
     self.date = date
     self.author = author
-    self.state = ''
+    self.state = '' # should we populate this?
     self.changed = 0
-    self.log = log
+    self.log = msg
+
+
+class LogReceiver:
+  "Handler for Subversion log message chunks"
+  def __init__(self):
+    self.logs = { }
+
+  def receive(self, revision, author, datestr, msg, pool):
+    date = _datestr_to_date(datestr, pool)
+    self.logs[revision] = LogEntry(revision, date, author, msg)
+
 
 def get_logs(repos, full_name, files):
   fileinfo = { }
@@ -50,24 +73,44 @@ def get_logs(repos, full_name, files):
   for file in files:
     path = fs_path_join(full_name, file)
     rev = fs.node_created_rev(repos.fsroot, path, repos.pool)
-    datestr = fs.revision_prop(repos.fs_ptr, rev, 'svn:date', repos.pool)
-    date = util.svn_time_from_nts(datestr, repos.pool) / 1000000
-    author = fs.revision_prop(repos.fs_ptr, rev, 'svn:author', repos.pool)
-    log = fs.revision_prop(repos.fs_ptr, rev, 'svn:log', repos.pool)
-    new_entry = LogEntry(rev, date, author, log)
+    datestr, author, msg = _fs_rev_props(repos.fs_ptr, rev, repos.pool)
+    date = _datestr_to_date(datestr, repos.pool)
+    new_entry = LogEntry(rev, date, author, msg)
     new_entry.filename = file
     fileinfo[file] = new_entry
   return fileinfo, alltags
 
+
+def fetch_log(repos, full_name, which_rev=None):
+  receiver = LogReceiver();
+  alltags = {           # all the tags seen in the files of this dir
+    'MAIN' : '1',
+    'HEAD' : '1',
+    }
+  if which_rev is not None:
+    datestr, author, msg = _fs_rev_props(repos.fs_ptr, which_rev, repos.pool)
+    receiver.receive(which_rev, author, datestr, msg, repos.pool)
+  else:
+    _repos.get_logs(repos.repos, [ full_name ], repos.rev, 0, 0, 1,
+                   receiver.receive, repos.pool)
+  return alltags, receiver.logs
+
+
+def get_file_contents(repos, path):
+  len = fs.file_length(repos.fsroot, path, repos.pool)
+  stream = fs.file_contents(repos.fsroot, path, repos.pool)
+  return util.svn_stream_read(stream, len)
+
+  
 class SubversionRepository(vclib.Repository):
   def __init__(self, name, rootpath, pool, rev=None):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
-    repos = _repos.svn_repos_open(rootpath, pool)
+    self.repos = _repos.svn_repos_open(rootpath, pool)
     self.pool = pool
     self.name = name
     self.rootpath = rootpath
-    self.fs_ptr = _repos.svn_repos_fs(repos)
+    self.fs_ptr = _repos.svn_repos_fs(self.repos)
     self.rev = rev
     if self.rev is None:
       self.rev = fs.youngest_rev(self.fs_ptr, pool)
