@@ -151,7 +151,11 @@ The CvsGraph home page is http://www.akhphd.au.dk/~bertho/cvsgraph/.
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 SUBVERSION SUPPORT
 
-To use ViewCVS with Subversion, you'll need to have the Subversion Python bindings installed. Binaries are available on the Subversion website and build instructions can be found here:
+To use ViewCVS with Subversion, you'll need to have the Subversion Python bindings installed. Binaries are available from the Subversion website at:
+
+  http://subversion.tigris.org/servlets/ProjectDocumentList?folderID=91
+
+Or to build from source you can use the instructions here:
 
   http://svn.collab.net/repos/svn/trunk/subversion/bindings/swig/INSTALL
 
@@ -235,16 +239,6 @@ KNOWN ISSUES
 
 - The GNU RCS utilities won't work with repository files that use CVSNT's unicode expansion mode (-ku). Files that use this mode will show up with the "CVS information is unreadable" error message in ViewCVS directory listings. To work around this, you can set up ViewCVS to use the CVSNT executable (cvs.exe) or CVSNT RCS tools (co.exe, rlog.exe, and rcsdiff.exe) instead of the GNU tools. 
 
-- CVSNT RCS emulation has a few quirks which affect ViewCVS. They've been reported as bugs in the CVSNT bugzilla database.
-
-  Bug 190 (http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=190) is the most serious. It causes exceptions when you try to view the HEAD revision of an Attic file.
-  
-  Bug 153 (http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=153) is a more minor issue. It causes timestamps on color coded diff pages to be displayed in UTC time even when the use_localtime option is enabled.
-  
-  Bug 188 (http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=188) isn't noticeable at all because ViewCVS works around it, but it'd still be nice to see it fixed so the workaround can be removed.
-
-  Bug 127 (http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=127) causes errors browsing repositories with spaces in file or directory names. This bug only occurs when ViewCVS is used with the rlog.exe, co.exe, and rcsdiff.exe provided with CVSNT. There are no problems with spaces when ViewCVS is configured to use cvs.exe directly (via the cvsnt_exe_path option), which is set by default on Windows.
-
 - The standalone server will not run under Cygwin Python because it does not support threads. ASP pages can't be run with Cygwin Python because it does not support ActiveX. To use either of these features you should install a native Python interpreter.
 
 - On Windows XP and Windows 2003 Server under IIS, enscript might give an error like:
@@ -252,7 +246,7 @@ KNOWN ISSUES
     enscript: couldn't open input filter "states -f "K:/gnuwin32/share/enscript/hl/enscript.st" -p "C://.enscript;K:/gnuwin32/share/enscript/hl" -shtml -Dcolor=1 -Dstyle=emacs -Dlanguage=html -Dnum_input_files=1 -Ddocument_title="Enscript Output" -Dtoc=0 -" for file "": No error
     no output generated
 
-  The solution is to give read & execute permissions on cmd.exe to the IUSR_computername and IWAM_computername user accounts. (Enscript uses cmd.exe internally to launch it's little helper program, states.exe).
+  The solution is to give read & execute permissions on cmd.exe to the IUSR_computername and IWAM_computername user accounts. (Enscript uses cmd.exe internally to launch its little helper program, states.exe).
 
 - By default, ASP will set session cookies at each page load. ViewCVS does not use these cookies and they can be safely disabled. You can do this by opening the IIS properties dialog for the application directory containing the ViewCVS .asp files. Go to the [Home] | [Virtual] Directory tab and click the "Configuration" button under "Application Settings". On the dialog that comes up, uncheck "Enable Session State" under "App Options" -> "Application Configuration".
 
