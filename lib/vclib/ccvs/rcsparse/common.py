@@ -104,9 +104,13 @@ class _Parser:
           raise RCSExpected(semi, ';')
       elif token == "branch":
         semi, branch = self.ts.mget(2)
-        self.sink.set_principal_branch(branch)
-        if semi != ';':
-          raise RCSExpected(semi, ';')
+        if semi == ';':
+          self.sink.set_principal_branch(branch)
+        else:
+          if branch == ';':
+            self.ts.unget(semi);
+          else:
+            raise RCSExpected(semi, ';')
       elif token == "symbols":
         while 1:
           tag = self.ts.get()

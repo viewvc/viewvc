@@ -169,12 +169,16 @@ int tparseParser::parse_rcs_admin()
     }
     if (strcmp(token, "branch") == 0)
     {
-      if (sink->set_principal_branch(tokenstream->get()))
+      char *branch = tokenstream->get();
+      if (branch != tokenstream->semicol)
       {
-        delstr(token);
-        return 1;
+        if (sink->set_principal_branch(branch))
+        {
+          delstr(token);
+          return 1;
+        }
+        tokenstream->matchsemicol();
       }
-      tokenstream->matchsemicol();
       delstr(token);
       continue;
     }
