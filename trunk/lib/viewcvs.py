@@ -4,11 +4,11 @@
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewCVS
-# distribution or at http://www.lyra.org/viewcvs/license-1.html.
+# distribution or at http://viewcvs.sourceforge.net/license-1.html.
 #
 # Contact information:
 #   Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://www.lyra.org/viewcvs/
+#   gstein@lyra.org, http://viewcvs.sourceforge.net/
 #
 # -----------------------------------------------------------------------
 #
@@ -84,7 +84,7 @@ _FILE_HAD_ERROR = 'could not read file'
 _UNREADABLE_MARKER = '//UNREADABLE-MARKER//'
 
 header_comment = '''\
-<!-- ViewCVS       -- http://www.lyra.org/viewcvs/
+<!-- ViewCVS       -- http://viewcvs.sourceforge.net/
      by Greg Stein -- mailto:gstein@lyra.org
   -->
 '''
@@ -243,8 +243,7 @@ def html_header(title):
 def html_footer():
   print '<hr noshade><table width="100&#37;" border=0 cellpadding=0 cellspacing=0><tr>'
   print '<td align=left><address>%s</address></td>' % cfg.general.address
-  print '<td align=right><a href="http://www.lyra.org/viewcvs/">ViewCVS %s</a><br>' % __version__
-  print 'by <a href="mailto:gstein@lyra.org">Greg Stein</a>'
+  print '<td align=right>Powered by<br><a href="http://viewcvs.sourceforge.net/">ViewCVS %s</a>' % __version__
   print '</td></tr></table>'
   print '</body></html>'
 

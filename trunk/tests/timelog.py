@@ -118,3 +118,22 @@ def profile_fetch(full_name, which_rev=None):
       apply(fetch_log2, args)
   p.runcall(many_calls, full_name, which_rev)
   p.print_stats()
+
+def varysize(full_name, which_rev=None):
+  def one_run(n, *args):
+    rcsparse._TokenStream.CHUNK_SIZE = n
+    t = time.time()
+    for i in xrange(5):
+      apply(fetch_log2, args)
+    print n, time.time() - t
+
+  #one_run(2020, full_name, which_rev)
+  #one_run(4070, full_name, which_rev)
+  #one_run(8170, full_name, which_rev)
+  #one_run(8192, full_name, which_rev)
+  #one_run(16384, full_name, which_rev)
+  one_run(32740, full_name, which_rev)
+  one_run(65500, full_name, which_rev)
+  one_run(100000, full_name, which_rev)
+  one_run(200000, full_name, which_rev)
+  one_run(500000, full_name, which_rev)
