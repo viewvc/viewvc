@@ -37,6 +37,10 @@
 [for entries]
   <hr size=1 noshade>
 
+  [is roottype "svn"]
+    [is entries.filename where][else]Filename: [entries.filename]<br>[end]
+  [end]
+
   [is entries.state "dead"]
     Revision <b>[entries.rev]</b>
   [else]
@@ -86,7 +90,18 @@
     <i>(vendor branch)</i>
   [end]
 
-  <br><i>[entries.date_str]</i> ([entries.ago] ago) by <i>[entries.author]</i>
+  <br>
+
+  [is roottype "svn"]
+    [if-any entries.action]
+      [is entries.action "M"]Modified[else]
+      [is entries.action "A"]Added[else]
+      [is entries.action "D"]Deleted[else]
+      [is entries.action "R"]Replaced[end][end][end][end]
+    [end]
+  [end]
+
+  <i>[entries.date_str]</i> ([entries.ago] ago) by <i>[entries.author]</i>
 
   [if-any entries.branches]
     <br>Branch:
@@ -121,6 +136,13 @@
     [if-any entries.size]
     <br>File length: [entries.size] byte(s)</b>
     [end]
+
+    [if-any entries.copy_path]
+    <br>Copied from: <a href="[entries.copy_href]#rev[entries.copy_rev]">[entries.copy_path]</a> revision [entries.copy_rev]
+    [end]
+    
+    [for entries.other_paths][if-index entries.other_paths first]<br>Other changed files:[else],[end]
+      <a href="[entries.other_paths.href]#rev[entries.rev]">[entries.other_paths.filename]</a>[end]
   [end]
 
   [is entries.state "dead"]
