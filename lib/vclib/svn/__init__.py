@@ -399,7 +399,7 @@ class SubversionRepository(vclib.Repository):
   def dirlogs(self, path_parts, entries, options):
     get_logs(self, self._getpath(path_parts), entries)
 
-  def filelog(self, path_parts, rev, options):
+  def itemlog(self, path_parts, rev, options):
     full_name = self._getpath(path_parts)
 
     if rev is not None:

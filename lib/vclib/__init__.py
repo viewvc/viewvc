@@ -80,8 +80,8 @@ class Repository:
     options is a dictionary of implementation specific options
     """
   
-  def filelog(self, path_parts, rev, options):
-    """Retrieve a file's log information
+  def itemlog(self, path_parts, rev, options):
+    """Retrieve an item's log information
 
     The result is a list of Revision objects
 
@@ -105,7 +105,17 @@ class DirEntry:
     self.errors = errors
 
 class Revision:
-  """Instances holds information about file revisions"""
+  """Instances holds information about revisions of versioned resources"""
+
+  """Create a new Revision() item:
+        NUMBER:  Revision in an integer-based, sortable format
+        STRING:  Revision as a string
+        DATE:  Seconds since Epoch (GMT) that this revision was created
+        AUTHOR:  Author of the revision
+        CHANGED:  Lines-changed (contextual diff) information
+        LOG:  Log message associated with the creation of this revision
+        SIZE:  Size (in bytes) of this revision's fulltext (files only)
+  """
   def __init__(self, number, string, date, author, changed, log, size):
     self.number = number
     self.string = string
