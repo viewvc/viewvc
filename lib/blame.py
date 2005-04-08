@@ -46,7 +46,7 @@ class CVSParser(rcsparse.Sink):
   # Precompiled regular expressions
   trunk_rev   = re.compile('^[0-9]+\\.[0-9]+$')
   last_branch = re.compile('(.*)\\.[0-9]+')
-  is_branch   = re.compile('(.*)\\.0\\.([0-9]+)')
+  is_branch   = re.compile('^(.*)\\.0\\.([0-9]+)$')
   d_command   = re.compile('^d(\d+)\\s(\\d+)')
   a_command   = re.compile('^a(\d+)\\s(\\d+)')
 
