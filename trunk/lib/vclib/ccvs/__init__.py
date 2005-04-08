@@ -82,8 +82,8 @@ class CCVSRepository(CVSRepository):
       else:
         tags.append(name)
 
-  def filelog(self, path_parts, rev, options):
-    """see vclib.Repository.filelog docstring
+  def itemlog(self, path_parts, rev, options):
+    """see vclib.Repository.itemlog docstring
 
     rev parameter can be a revision number, branch number or tag name
 
@@ -96,7 +96,7 @@ class CCVSRepository(CVSRepository):
     sink = TreeSink()
     rcsparse.Parser().parse(open(path, 'rb'), sink)
     filtered_revs = _file_log(sink.revs.values(), sink.tags,
-                                           sink.default_branch, rev)
+                              sink.default_branch, rev)
     for rev in filtered_revs:
       if rev.prev and len(rev.number) == 2:
         rev.changed = rev.prev.next_changed

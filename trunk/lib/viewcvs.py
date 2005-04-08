@@ -1319,7 +1319,7 @@ def view_markup(request):
 
   if cfg.options.show_log_in_markup:
     options = {}
-    revs = request.repos.filelog(request.path_parts, revision, options)
+    revs = request.repos.itemlog(request.path_parts, revision, options)
     entry = revs[-1]
 
     data.update({
@@ -1755,7 +1755,7 @@ def view_log(request):
   else:
     rev = None
 
-  show_revs = request.repos.filelog(request.path_parts, rev, options)
+  show_revs = request.repos.itemlog(request.path_parts, rev, options)
   if logsort == 'date':
     show_revs.sort(logsort_date_cmp)
   elif logsort == 'rev':

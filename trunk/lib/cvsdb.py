@@ -672,7 +672,7 @@ def GetCommitListFromRCSFile(repository, path_parts, revision=None):
     directory = string.join(path_parts[:-1], "/")
     file = path_parts[-1]
 
-    revs = repository.filelog(path_parts, revision, {"cvs_pass_rev": 1})
+    revs = repository.itemlog(path_parts, revision, {"cvs_pass_rev": 1})
     for rev in revs:
         commit = CreateCommit()
         commit.SetRepository(repository.rootpath)

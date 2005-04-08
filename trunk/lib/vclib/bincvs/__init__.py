@@ -189,8 +189,8 @@ class BinCVSRepository(CVSRepository):
       else:
         tags.append(name)
 
-  def filelog(self, path_parts, rev, options):
-    """see vclib.Repository.filelog docstring
+  def itemlog(self, path_parts, rev, options):
+    """see vclib.Repository.itemlog docstring
 
     rev parameter can be a revision number, branch number or tag name
 
