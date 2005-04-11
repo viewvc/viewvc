@@ -2671,6 +2671,8 @@ def view_diff(request):
   else:
     date1, date2, raw_diff_fp = raw_diff(request.repos.rootpath, fp,
                                          sym1, sym2, unified, parseheaders, 1)
+    raw_diff_fp = MarkupPipeWrapper(raw_diff_fp, htmlize=1)
+
   data.update({
     'date1' : date1 and rcsdiff_date_reformat(date1),
     'date2' : date2 and rcsdiff_date_reformat(date2),
