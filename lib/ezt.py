@@ -81,19 +81,49 @@ Directives
  or attributes of objects contained in the data dictionary given to the 
  .generate() method.
 
+ Qualified names
+ ---------------
+
+   Qualified names have two basic forms: a variable reference, or a string
+   constant. References are a name from the data dictionary with optional
+   dotted attributes (where each intermediary is an object with attributes,
+   of course).
+
+   Examples:
+
+     [varname]
+
+     [ob.attr]
+
+     ["string"]
+
  Simple directives
  -----------------
 
    [QUAL_NAME]
 
-   This directive is simply replaced by the value of identifier from the data 
-   dictionary.  QUAL_NAME might be a dotted qualified name refering to some
-   instance attribute of objects contained in the dats dictionary.
-   Numbers are converted to string though.
+   This directive is simply replaced by the value of the qualified name.
+   Numbers are converted to a string, and None becomes an empty string.
+
+   [QUAL_NAME QUAL_NAME ...]
+
+   The first value defines a substitution format, specifying constant
+   text and indices of the additional arguments. The arguments are then
+   substituted and the resulting is inserted into the output stream.
+
+   Example:
+     ["abc %0 def %1 ghi %0" foo bar.baz]
+
+   Note that the first value can be any type of qualified name -- a string
+   constant or a variable reference. Use %% to substitute a percent sign.
+   Argument indices are 0-based.
 
    [include "filename"]  or [include QUAL_NAME]
 
-   This directive is replaced by content of the named include file.
+   This directive is replaced by content of the named include file. Note
+   that a string constant is more efficient -- the target file is compiled
+   inline. In the variable form, the target file is compiled and executed
+   at runtime.
 
  Block directives
  ----------------
@@ -106,9 +136,9 @@ Directives
    identifiers now refers to the actual item indexed by this loop
    iteration.
 
-   [if-any QUAL_NAME] ... [else] ... [end]
+   [if-any QUAL_NAME [QUAL_NAME2 ...]] ... [else] ... [end]
 
-   Test if the value QUAL_NAME is not None or an empty string or list.
+   Test if any QUAL_NAME value is not None or an empty string or list.
    The [else] clause is optional.  CAUTION: Numeric values are
    converted to string, so if QUAL_NAME refers to a numeric value 0,
    the then-clause is substituted!
@@ -141,11 +171,12 @@ Directives
    expanded using the other template parsing and output generation
    rules, and then stored as a string value assigned to the variable
    VARIABLE.  The new (or changed) variable is then available for use
-   with other template mechanisms such as [is ...] or [if-any ...].
+   with other mechanisms such as [is ...] or [if-any ...], as long as
+   they appear later in the template.
  
 """
 #
-# Copyright (C) 2001-2002 Greg Stein. All Rights Reserved.
+# Copyright (C) 2001-2005 Greg Stein. All Rights Reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are 
@@ -172,21 +203,26 @@ Directives
 #
 #
 # This software is maintained by Greg and is available at:
-#    http://viewcvs.sourceforge.net/
-# it is also used by the following projects:
-#    http://edna.sourceforge.net/
+#    http://svn.webdav.org/repos/projects/ezt/trunk/
 #
 
 import string
 import re
 from types import StringType, IntType, FloatType, LongType
 import os
+import cgi
 try:
   import cStringIO
 except ImportError:
   import StringIO
   cStringIO = StringIO
 
+#
+# Formatting types
+#
+FORMAT_RAW = 'raw'
+FORMAT_HTML = 'html'
+FORMAT_XML = 'xml'
 
 #
 # This regular expression matches three alternatives:
@@ -209,7 +245,7 @@ _re_parse = re.compile(r'\[(%s(?: +%s)*)\]|(\[\[\])|\[#[^\]]*\]' % (_item, _item
 _re_args = re.compile(r'"(?:[^\\"]|\\.)*"|[-\w.]+')
 
 # block commands and their argument counts
-_block_cmd_specs = { 'if-any':1, 'if-index':2, 'for':1, 'is':2, 'define':1 }
+_block_cmd_specs = { 'if-index':2, 'for':1, 'is':2, 'define':1, 'format':1 }
 _block_cmds = _block_cmd_specs.keys()
 
 # two regular expresssions for compressing whitespace. the first is used to
@@ -226,37 +262,53 @@ _re_subst = re.compile('%(%|[0-9]+)')
 
 class Template:
 
-  def __init__(self, fname=None, compress_whitespace=1):
+  _printers = {
+    FORMAT_RAW  : '_cmd_print',
+    FORMAT_HTML : '_cmd_print_html',
+    FORMAT_XML  : '_cmd_print_xml',
+    }
+
+  def __init__(self, fname=None, compress_whitespace=1,
+               base_format=FORMAT_RAW):
     self.compress_whitespace = compress_whitespace
     if fname:
-      self.parse_file(fname)
+      self.parse_file(fname, base_format)
 
-  def parse_file(self, fname):
-    """fname -> a string object with pathname of file containg an EZT template.
+  def parse_file(self, fname, base_format=FORMAT_RAW):
+    "fname -> a string object with pathname of file containg an EZT template."
+
+    self.parse(_FileReader(fname), base_format)
+
+  def parse(self, text_or_reader, base_format=FORMAT_RAW):
+    """Parse the template specified by text_or_reader.
+
+    The argument should be a string containing the template, or it should
+    specify a subclass of ezt.Reader which can read templates. The base
+    format for printing values is given by base_format.
     """
-    self.program = self._parse_file(fname)
+    if not isinstance(text_or_reader, Reader):
+      # assume the argument is a plain text string
+      text_or_reader = _TextReader(text_or_reader)
 
-  def parse(self, text):
-    """text -> a string object containing the HTML template.
-
-    parse the template program into: (TEXT DIRECTIVE BRACKET)* TEXT
-    DIRECTIVE will be '[directive]' or None
-    BRACKET will be '[[]' or None
-    """
-    self.program = self._parse(text)
+    printer = getattr(self, self._printers[base_format])
+    self.program = self._parse(text_or_reader, base_printer=printer)
 
   def generate(self, fp, data):
+    if hasattr(data, '__getitem__') or callable(getattr(data, 'keys', None)):
+      # a dictionary-like object was passed. convert it to an
+      # attribute-based object.
+      class _data_ob:
+        def __init__(self, d):
+          vars(self).update(d)
+      data = _data_ob(data)
+
     ctx = _context()
     ctx.data = data
     ctx.for_index = { }
     ctx.defines = { }
     self._execute(self.program, fp, ctx)
 
-  def _parse_file(self, fname, for_names=None, file_args=()):
-    return self._parse(open(fname, "rt").read(), for_names, file_args,
-                       os.path.dirname(fname))
-
-  def _parse(self, text, for_names=None, file_args=(), base=None):
+  def _parse(self, reader, for_names=None, file_args=(), base_printer=None):
     """text -> string object containing the template.
 
     This is a private helper function doing the real work for method parse.
@@ -266,12 +318,18 @@ class Template:
     Note: comment directives [# ...] are automatically dropped by _re_parse.
     """
 
-    parts = _re_parse.split(text)
+    # parse the template program into: (TEXT DIRECTIVE BRACKET)* TEXT
+    parts = _re_parse.split(reader.text)
 
     program = [ ]
     stack = [ ]
     if not for_names:
-       for_names = [ ]
+      for_names = [ ]
+
+    if base_printer:
+      printers = [ base_printer ]
+    else:
+      printers = [ self._cmd_print ]
 
     for i in range(len(parts)):
       piece = parts[i]
@@ -307,10 +365,13 @@ class Template:
           except IndexError:
             raise UnmatchedEndError()
           else_section = program[idx:]
-          func = getattr(self, '_cmd_' + re.sub('-', '_', cmd))
-          program[idx:] = [ (func, (args, true_section, else_section)) ]
-          if cmd == 'for':
-            for_names.pop()
+          if cmd == 'format':
+            printers.pop()
+          else:
+            func = getattr(self, '_cmd_' + re.sub('-', '_', cmd))
+            program[idx:] = [ (func, (args, true_section, else_section)) ]
+            if cmd == 'for':
+              for_names.pop()
         elif cmd in _block_cmds:
           if len(args) > _block_cmd_specs[cmd] + 1:
             raise ArgCountSyntaxError(str(args[1:]))
@@ -322,35 +383,46 @@ class Template:
           if cmd == 'is':
             args[2] = _prepare_ref(args[2], for_names, file_args)
           elif cmd == 'for':
-            for_names.append(args[1][0])
+            for_names.append(args[1][0])  # append the refname
+          elif cmd == 'format':
+            if args[1][0]:
+              raise BadFormatConstantError(str(args[1:]))
+            funcname = self._printers.get(args[1][1])
+            if not funcname:
+              raise UnknownFormatConstantError(str(args[1:]))
+            printers.append(getattr(self, funcname))
 
           # remember the cmd, current pos, args, and a section placeholder
           stack.append([cmd, len(program), args[1:], None])
         elif cmd == 'include':
           if args[1][0] == '"':
             include_filename = args[1][1:-1]
-            if base:
-              include_filename = os.path.join(base, include_filename)
             f_args = [ ]
             for arg in args[2:]:
               f_args.append(_prepare_ref(arg, for_names, file_args))
-            program.extend(self._parse_file(include_filename, for_names,
-                                            f_args))
+            program.extend(self._parse(reader.read_other(include_filename),
+                                       for_names, f_args, printers[-1]))
           else:
             if len(args) != 2:
               raise ArgCountSyntaxError(str(args))
             program.append((self._cmd_include,
                             (_prepare_ref(args[1], for_names, file_args),
-                             base)))
+                             reader)))
+        elif cmd == 'if-any':
+          f_args = [ ]
+          for arg in args[1:]:
+            f_args.append(_prepare_ref(arg, for_names, file_args))
+          stack.append(['if-any', len(program), f_args, None])
         else:
           # implied PRINT command
           if len(args) > 1:
             f_args = [ ]
             for arg in args:
               f_args.append(_prepare_ref(arg, for_names, file_args))
-            program.append((self._cmd_format, (f_args[0], f_args[1:])))
+            ### this should obey the current format...
+            program.append((self._cmd_subst, (f_args[0], f_args[1:])))
           else:
-            program.append((self._cmd_print,
+            program.append((printers[-1],
                             _prepare_ref(args[0], for_names, file_args)))
 
     if stack:
@@ -370,19 +442,16 @@ class Template:
         step[0](step[1], fp, ctx)
 
   def _cmd_print(self, valref, fp, ctx):
-    value = _get_value(valref, ctx)
+    _write_value(fp.write, valref, ctx)
 
-    # if the value has a 'read' attribute, then it is a stream: copy it
-    if hasattr(value, 'read'):
-      while 1:
-        chunk = value.read(16384)
-        if not chunk:
-          break
-        fp.write(chunk)
-    else:
-      fp.write(value)
+  def _cmd_print_html(self, valref, fp, ctx):
+    _write_value(lambda s, w=fp.write: w(cgi.escape(s)), valref, ctx)
 
-  def _cmd_format(self, (valref, args), fp, ctx):
+  def _cmd_print_xml(self, valref, fp, ctx):
+    ### use the same quoting as HTML for now
+    self._cmd_print_html(valref, fp, ctx)
+
+  def _cmd_subst(self, (valref, args), fp, ctx):
     fmt = _get_value(valref, ctx)
     parts = _re_subst.split(fmt)
     for i in range(len(parts)):
@@ -395,18 +464,21 @@ class Template:
           piece = '<undef>'
       fp.write(piece)
 
-  def _cmd_include(self, (valref, base), fp, ctx):
+  def _cmd_include(self, (valref, reader), fp, ctx):
     fname = _get_value(valref, ctx)
-    if base:
-      fname = os.path.join(base, fname)
     ### note: we don't have the set of for_names to pass into this parse.
-    ### I don't think there is anything to do but document it.
-    self._execute(self._parse_file(fname), fp, ctx)
+    ### I don't think there is anything to do but document it. we also
+    ### don't have a current format (since that is a compile-time concept).
+    self._execute(self._parse(reader.read_other(fname)), fp, ctx)
 
   def _cmd_if_any(self, args, fp, ctx):
-    "If the value is a non-empty string or non-empty list, then T else F."
-    ((valref,), t_section, f_section) = args
-    value = _get_value(valref, ctx)
+    "If any value is a non-empty string or non-empty list, then T else F."
+    (valrefs, t_section, f_section) = args
+    value = 0
+    for valref in valrefs:
+      if _get_value(valref, ctx):
+        value = 1
+        break
     self._do_if(value, t_section, f_section, fp, ctx)
 
   def _cmd_if_index(self, args, fp, ctx):
@@ -452,6 +524,7 @@ class Template:
       self._execute(section, fp, ctx)
       idx[1] = idx[1] + 1
     del ctx.for_index[refname]
+
   def _cmd_define(self, args, fp, ctx):
     ((name,), unused, section) = args
     valfp = cStringIO.StringIO()
@@ -470,34 +543,48 @@ def _prepare_ref(refname, for_names, file_args):
   """refname -> a string containing a dotted identifier. example:"foo.bar.bang"
   for_names -> a list of active for sequences.
 
-  Returns a `value reference', a 3-Tupel made out of (refname, start, rest), 
+  Returns a `value reference', a 3-tuple made out of (refname, start, rest), 
   for fast access later.
   """
   # is the reference a string constant?
   if refname[0] == '"':
     return None, refname[1:-1], None
 
+  parts = string.split(refname, '.')
+  start = parts[0]
+  rest = parts[1:]
+
   # if this is an include-argument, then just return the prepared ref
-  if refname[:3] == 'arg':
+  if start[:3] == 'arg':
     try:
-      idx = int(refname[3:])
+      idx = int(start[3:])
     except ValueError:
       pass
     else:
       if idx < len(file_args):
-        return file_args[idx]
+        orig_refname, start, more_rest = file_args[idx]
+        if more_rest is None:
+          # the include-argument was a string constant
+          return None, start, None
 
-  parts = string.split(refname, '.')
-  start = parts[0]
-  rest = parts[1:]
-  while rest and (start in for_names):
-    # check if the next part is also a "for name"
-    name = start + '.' + rest[0]
-    if name in for_names:
-      start = name
-      del rest[0]
-    else:
-      break
+        # prepend the argument's "rest" for our further processing
+        rest[:0] = more_rest
+
+        # rewrite the refname to ensure that any potential 'for' processing
+        # has the correct name
+        ### this can make it hard for debugging include files since we lose
+        ### the 'argNNN' names
+        if not rest:
+          return start, start, [ ]
+        refname = start + '.' + string.join(rest, '.')
+
+  if for_names:
+    # From last to first part, check if this reference is part of a for loop
+    for i in range(len(parts), 0, -1):
+      name = string.join(parts[:i], '.')
+      if name in for_names:
+        return refname, name, parts[i:]
+
   return refname, start, rest
 
 def _get_value((refname, start, rest), ctx):
@@ -511,13 +598,15 @@ def _get_value((refname, start, rest), ctx):
   if rest is None:
     # it was a string constant
     return start
+
+  # get the starting object
   if ctx.for_index.has_key(start):
     list, idx = ctx.for_index[start]
     ob = list[idx]
   elif ctx.defines.has_key(start):
     ob = ctx.defines[start]
-  elif ctx.data.has_key(start):
-    ob = ctx.data[start]
+  elif hasattr(ctx.data, start):
+    ob = getattr(ctx.data, start)
   else:
     raise UnknownReference(refname)
 
@@ -539,23 +628,70 @@ def _get_value((refname, start, rest), ctx):
   # string or a sequence
   return ob
 
+def _write_value(func, valref, ctx):
+  value = _get_value(valref, ctx)
+
+  # if the value has a 'read' attribute, then it is a stream: copy it
+  if hasattr(value, 'read'):
+    while 1:
+      chunk = value.read(16384)
+      if not chunk:
+        break
+      func(chunk)
+  else:
+    func(value)
+
+
 class _context:
   """A container for the execution context"""
 
-class ArgCountSyntaxError(Exception):
-  """A bracket directive got the wrong number of arguments"""
 
-class UnknownReference(Exception):
-  """The template references an object not contained in the data dictionary"""
+class Reader:
+  "Abstract class which allows EZT to detect Reader objects."
 
-class NeedSequenceError(Exception):
-  """The object dereferenced by the template is no sequence (tuple or list)"""
+class _FileReader(Reader):
+  """Reads templates from the filesystem."""
+  def __init__(self, fname):
+    self.text = open(fname, 'rb').read()
+    self._dir = os.path.dirname(fname)
+  def read_other(self, relative):
+    return _FileReader(os.path.join(self._dir, relative))
 
-class UnclosedBlocksError(Exception):
-  """This error may be simply a missing [end]"""
+class _TextReader(Reader):
+  """'Reads' a template from provided text."""
+  def __init__(self, text):
+    self.text = text
+  def read_other(self, relative):
+    raise BaseUnavailableError()
 
-class UnmatchedEndError(Exception):
-  """This error may be caused by a misspelled if directive"""
+
+class EZTException(Exception):
+  """Parent class of all EZT exceptions."""
+
+class ArgCountSyntaxError(EZTException):
+  """A bracket directive got the wrong number of arguments."""
+
+class UnknownReference(EZTException):
+  """The template references an object not contained in the data dictionary."""
+
+class NeedSequenceError(EZTException):
+  """The object dereferenced by the template is no sequence (tuple or list)."""
+
+class UnclosedBlocksError(EZTException):
+  """This error may be simply a missing [end]."""
+
+class UnmatchedEndError(EZTException):
+  """This error may be caused by a misspelled if directive."""
+
+class BaseUnavailableError(EZTException):
+  """Base location is unavailable, which disables includes."""
+
+class BadFormatConstantError(EZTException):
+  """Format specifiers must be string constants."""
+
+class UnknownFormatConstantError(EZTException):
+  """The format specifier is an unknown value."""
+
 
 # --- standard test environment ---
 def test_parse():

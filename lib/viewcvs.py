@@ -2556,8 +2556,8 @@ def view_diff(request):
   ### Note: these options only really work out where rcsdiff (used by
   ### CVS) and regular diff (used by SVN) overlap.  If for some reason
   ### our use of the options for these starts to deviate too much,
-  ### this code may a re-org to just do different things for different
-  ### VC types.
+  ### this code may need a re-org to just do different things for
+  ### different VC types.
   
   format = query_dict.get('diff_format', cfg.options.diff_format)
   makepatch = int(request.query_dict.get('makepatch', 0))
