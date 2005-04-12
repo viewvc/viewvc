@@ -25,7 +25,7 @@ import re
 import tempfile
 import popen2
 
-from vclib.svn import Revision, _datestr_to_date
+from vclib.svn import Revision, ChangedPath, _datestr_to_date
 
 # Subversion swig libs
 from svn import core, delta, client, wc, ra
@@ -59,17 +59,6 @@ def created_rev(svnrepos, full_name):
     return int(props[core.SVN_PROP_ENTRY_COMMITTED_REV])
   return core.SVN_INVALID_REVNUM
 
-
-class ChangedPath:
-  def __init__(self, filename, pathtype, prop_mods, text_mods,
-               base_path, base_rev, action):
-    self.filename = filename
-    self.pathtype = pathtype
-    self.prop_mods = prop_mods
-    self.text_mods = text_mods
-    self.base_path = base_path
-    self.base_rev = base_rev
-    self.action = action
 
 class LastHistoryCollector:
   def __init__(self):
