@@ -25,7 +25,7 @@ import re
 import tempfile
 import popen2
 
-from vclib.svn import Revision
+from vclib.svn import Revision, _datestr_to_date
 
 # Subversion swig libs
 from svn import core, delta, client, wc, ra
@@ -123,12 +123,6 @@ def get_revision_info(svnrepos):
   rev, author, date, log, changes = \
        _get_rev_details(svnrepos, svnrepos.rev, svnrepos.pool)
   return _datestr_to_date(date, svnrepos.pool), author, log, changes
-
-
-def _datestr_to_date(datestr, pool):
-  if datestr is None:
-    return None
-  return core.svn_time_from_cstring(datestr, pool) / 1000000
 
 
 def _compare_paths(path1, path2):
