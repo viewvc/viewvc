@@ -2490,6 +2490,8 @@ def raw_diff(rootpath, fp, sym1, sym2, unified, parseheader, htmlize):
         if sym2:
           line = line[:-1] + ' %s\n' % sym2
         parsing = 0
+      if htmlize:
+        line = htmlify(line)
       header_lines.append(line)
 
   return date1, date2, MarkupPipeWrapper(fp, string.join(header_lines, ''),
@@ -2560,9 +2562,10 @@ def view_diff(request):
   format = query_dict.get('diff_format', cfg.options.diff_format)
   makepatch = int(request.query_dict.get('makepatch', 0))
 
-  # If 'makepatch' was specified with a colored diff, just fall back
-  # to straight unidiff (though, we could throw an error).
-  if makepatch and (format == 'h' or format == 'l'):
+  # If 'makepatch' was specified with any diff besides unidiff or
+  # context diff, just fall back to straight unidiff (though, we could
+  # throw an error).
+  if makepatch and format != 'u' and format != 'c':
     format = 'u'
   
   if format == 'c':
@@ -2594,11 +2597,12 @@ def view_diff(request):
       args.append('-w')
     if cfg.options.hr_ignore_keyword_subst and request.roottype == 'cvs':
       # -kk isn't a regular diff option.  it exists only for rcsdiff
-      # (as in "-ksubst") ,so 'svn' roottypes can't use it.
+      # (as in "-ksubst"), so 'svn' roottypes can't use it.
       args.append('-kk')
 
   file1 = None
   file2 = None
+  
   if request.roottype == 'cvs':
     rcsfile = request.repos.rcsfile(request.path_parts, 1)
     args[len(args):] = ['-r' + rev1, '-r' + rev2, rcsfile]
@@ -2671,7 +2675,6 @@ def view_diff(request):
   else:
     date1, date2, raw_diff_fp = raw_diff(request.repos.rootpath, fp,
                                          sym1, sym2, unified, parseheaders, 1)
-    raw_diff_fp = MarkupPipeWrapper(raw_diff_fp, htmlize=1)
 
   data.update({
     'date1' : date1 and rcsdiff_date_reformat(date1),
