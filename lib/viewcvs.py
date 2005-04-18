@@ -2462,27 +2462,33 @@ def raw_diff(rootpath, fp, sym1, sym2, unified, parseheader, htmlize):
   # the filepointer.
   if parseheader:
     if unified:
-      f1 = '--- ' + rootpath
-      f2 = '+++ ' + rootpath
+      f1 = '--- '
+      f2 = '+++ '
     else:
-      f1 = '*** ' + rootpath
-      f2 = '--- ' + rootpath
+      f1 = '*** '
+      f2 = '--- '
 
     parsing = 1
+    len_f1 = len(f1)
+    len_f2 = len(f2)
     while parsing:
       line = fp.readline()
       if not line:
         break
 
       if line[:len(f1)] == f1:
+        # Hide the rootpath, if present at the start of the path.
+        if string.find(line, rootpath) == len_f1:
+          line = line[:len_f1] + line[len_f1+len(rootpath):]
         match = _re_extract_rev.match(line)
         if match:
           date1 = match.group(1)
-        line = string.replace(line, rootpath + '/', '')
         if sym1:
           line = line[:-1] + ' %s\n' % sym1
       elif line[:len(f2)] == f2:
-        line = string.replace(line, rootpath + '/', '')
+        # Hide the rootpath, if present at the start of the path.
+        if string.find(line, rootpath) == len_f2:
+          line = line[:len_f2] + line[len_f2+len(rootpath):]
         match = _re_extract_rev.match(line)
         if match:
           date2 = match.group(1)
