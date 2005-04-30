@@ -87,6 +87,12 @@ void inittparse()
   PyDict_SetItemString(d, "__author__", PyString_FromString(__author__));
 }
 
+static
+PyObject *rcstoken_to_pystring(rcstoken *token)
+{
+  return PyString_FromStringAndSize(token->data, token->length);
+};
+
 class PythonSink : public Sink
 {
   public:
@@ -95,10 +101,10 @@ class PythonSink : public Sink
     {
       sink = mysink;
     };
-    int set_head_revision(char * revision)
+    int set_head_revision(rcstoken *revision)
     {
       PyObject *rv = PyObject_CallMethod(sink, "set_head_revision", "s",
-                                         revision);
+                                         revision->data);
       if (!rv) {
          if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
@@ -110,10 +116,10 @@ class PythonSink : public Sink
       }
       return 0;
     };
-    int set_principal_branch(char *branch_name)
+    int set_principal_branch(rcstoken *branch_name)
     {
       PyObject *rv = PyObject_CallMethod(sink, "set_principal_branch", "s",
-                                         branch_name);
+                                         branch_name->data);
       if (!rv) {
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
@@ -125,10 +131,10 @@ class PythonSink : public Sink
       }
       return 0;
     };
-    int define_tag(char *name, char *revision)
+    int define_tag(rcstoken *name, rcstoken *revision)
     {
       PyObject *rv = PyObject_CallMethod(sink, "define_tag", "ss",
-                                         name, revision);
+                                         name->data, revision->data);
       if (!rv) {
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
@@ -140,9 +146,10 @@ class PythonSink : public Sink
       }
       return 0;
     };
-    int set_comment(char *comment)
+    int set_comment(rcstoken *comment)
     {
-      PyObject *rv = PyObject_CallMethod(sink, "set_comment", "s", comment);
+      PyObject *rv = PyObject_CallMethod(sink, "set_comment", "s",
+                                         comment->data);
       if (!rv) {
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
@@ -154,10 +161,10 @@ class PythonSink : public Sink
       }
       return 0;
     };
-    int set_description(char *description)
+    int set_description(rcstoken *description)
     {
       PyObject *rv = PyObject_CallMethod(sink, "set_description", "s",
-                                         description);
+                                         description->data);
       if (!rv) {
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;
@@ -169,22 +176,23 @@ class PythonSink : public Sink
       }
       return 0;
     };
-    int define_revision(char *revision, long timestamp, char *author,
-                        char *state, Branche *branches, char *next)
+    int define_revision(rcstoken *revision, long timestamp, rcstoken *author,
+                        rcstoken *state, Branche *branches, rcstoken *next)
     {
       PyObject *pbranchs = PyList_New(0);
       Branche *move = branches;
       while (move != NULL)
       {
-        PyObject *str = PyString_FromString(move->name);
+        PyObject *str = rcstoken_to_pystring(move->name);
         PyList_Append(pbranchs, str );
         Py_DECREF(str);
         move = move->next;
       }
 
       PyObject *rv = PyObject_CallMethod(sink, "define_revision", "slssOs",
-                                         revision,timestamp,
-                                         author,state,pbranchs,next);
+                                         revision->data,timestamp,
+                                         author->data,state->data,pbranchs,
+                                         next ? next->data : NULL);
       if (!rv) {
         Py_DECREF(pbranchs);
         if (PyErr_ExceptionMatches(pyRCSStopParser))
@@ -198,10 +206,12 @@ class PythonSink : public Sink
       Py_DECREF(pbranchs);
       return 0;
     };
-    int set_revision_info(char *revision, char *log, char *text)
+    int set_revision_info(rcstoken *revision, rcstoken *log, rcstoken *text)
     {
-      PyObject *rv = PyObject_CallMethod(sink, "set_revision_info", "sss", 
-                                         revision,log,text);
+      PyObject *txt = rcstoken_to_pystring(text);
+      PyObject *rv = PyObject_CallMethod(sink, "set_revision_info", "ssS",
+                                         revision->data,log->data,txt);
+      Py_DECREF(txt);
       if (!rv) {
         if (PyErr_ExceptionMatches(pyRCSStopParser))
           return 1;

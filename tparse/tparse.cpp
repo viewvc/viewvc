@@ -42,16 +42,61 @@
                        c == '\r' || c == ';')
 #define isdigit(c) ((c-'0')<10)
 
-/*--------- Tokenparser class -----------*/
-char * TokenParser::get()
+
+
+void rcstoken::init(const char *mydata, size_t mylen)
 {
-  ostrstream ost;
+  size = DEFAULT_TOKEN_SIZE;
+  length = 0;
+  delta = DEFAULT_TOKEN_DELTA;
+  data = NULL;
+  if (mydata && mylen)
+    append(mydata, mylen);
+};
+
+void rcstoken::append(const char *b, size_t b_len)
+{
+  if (b || b_len)
+    {
+      grow(length + b_len + 1);
+      memcpy(&data[length], b, b_len);
+      length += b_len;
+      data[length] = 0;
+    }
+};
+
+void rcstoken::grow(size_t new_size)
+{
+  if ((! data) || (new_size > size))
+    {
+      while (new_size > size)
+        size += delta;
+
+      data = (char*) realloc(data, size);
+    };
+};
+
+rcstoken *rcstoken::copy_begin_end(size_t begin, size_t end)
+{
+  return new rcstoken(&data[begin], end - begin);
+};
+
+rcstoken *rcstoken::copy_begin_len(size_t begin, size_t len)
+{
+  return new rcstoken(&data[begin], len);
+};
+
+
+/*--------- Tokenparser class -----------*/
+rcstoken *TokenParser::get()
+{
+  rcstoken *token;
+
   if (backget)
   {
-    char *ret;
-    ret = backget;
+    token = backget;
     backget = NULL;
-    return ret;
+    return token;
   }
 
   while (1)
@@ -67,10 +112,13 @@ char * TokenParser::get()
       break;
     idx++;
   }
+
+  token = new rcstoken();
   if (buf[idx] == ';')
   {
     idx++;
-    return semicol;
+    (*token) = ';';
+    return token;
   }
 
   if (buf[idx] != '@')
@@ -80,12 +128,11 @@ char * TokenParser::get()
     {
       while ( (end < buflength) && !(Token_term(buf[end])) )
         end++;
-      ost.write(buf + idx, end - idx);
+      token->append(buf + idx, end - idx);
       if (end < buflength)
       {
         idx = end;
-        ost.put('\0');
-        return ost.str();
+        return token;
       }
       input->read(buf, CHUNK_SIZE);
       buflength = input->gcount();
@@ -110,13 +157,13 @@ char * TokenParser::get()
     if (i == buflength)
     {
       if ((buflength - idx) > 0)
-        ost.write(buf + idx, buflength - idx);
+        token->append(buf + idx, buflength - idx);
       idx = buflength;
       continue;
     }
     if ( i == buflength - 1)
     {
-      ost.write(buf + idx, i - idx);
+      token->append(buf + idx, i - idx);
       idx = 0;
       buf[0] = '@';
       input->read(buf + 1, CHUNK_SIZE - 1);
@@ -127,19 +174,19 @@ char * TokenParser::get()
     }
     if (buf[i + 1] == '@')
     {
-      ost.write(buf + idx, i - idx + 1);
+      token->append(buf + idx, i - idx + 1);
       idx = i + 2;
       continue;
     }
     if ((i - idx) > 0)
-      ost.write(buf + idx, i - idx);
+      token->append(buf + idx, i - idx);
     idx = i + 1;
-    ost.put('\0');
-    return ost.str();
+    return token;
   }
 };
 
-void TokenParser::unget(char *token)
+
+void TokenParser::unget(rcstoken *token)
 {
   if (backget)
   {
@@ -154,91 +201,101 @@ int tparseParser::parse_rcs_admin()
 {
   while (1)
   {
-    char *token = tokenstream->get();
-    if (isdigit(token[0]))
+    rcstoken *token = tokenstream->get();
+    if (isdigit((*token)[0]))
     {
       tokenstream->unget(token);
       return 0;
     }
-    if (strcmp(token, "head") == 0)
+    if (*token == "head")
     {
-      delstr(token);
+      delete token;
       if (sink->set_head_revision(token = tokenstream->get()))
       {
-        delstr(token);
+        delete token;
         return 1;
       }
       tokenstream->matchsemicol();
-      delstr(token);
+      delete token;
       continue;
     }
-    if (strcmp(token, "branch") == 0)
+    if (*token == "branch")
     {
-      char *branch = tokenstream->get();
-      if (branch != tokenstream->semicol)
+      rcstoken *branch = tokenstream->get();
+      if (*branch != ';')
       {
         if (sink->set_principal_branch(branch))
         {
-          delstr(branch);
-          delstr(token);
+          delete branch;
+          delete token;
           return 1;
         }
-        delstr(branch);
+        delete branch;
         tokenstream->matchsemicol();
       }
-      delstr(token);
+      delete token;
       continue;
     }
-    if (strcmp(token, "symbols") == 0)
+    if (*token == "symbols")
     {
       while (1)
       {
-        char *tag = tokenstream->get();
+        rcstoken *tag, *rev;
         char *second;
-        if (tag == tokenstream->semicol)
+        delete token;
+        token = tokenstream->get();
+        if (*token == ';')
           break;
-        second = index(tag, ':');
-        second[0] = '\0';
+
+        /*FIXME: this does not allow "<tag> : <rev>"
+          which the spec does allow */
+        second = index(token->data, ':');
+        tag = token->copy_begin_len(0, second - token->data);
         second++;
-        if (sink->define_tag(tag, second))
+        rev = new rcstoken(second);
+        if (sink->define_tag(tag, rev))
         {
-          delstr(tag);
-          delstr(token);
+          delete tag;
+          delete rev;
+          delete token;
           return 1;
         }
-        delstr(tag);
+        delete tag;
+        delete rev;
       }
-      delstr(token);
       continue;
     }
-    if (strcmp(token, "comment") == 0)
+    if (*token == "comment")
     {
-      delstr(token);
+      delete token;
       if (sink->set_comment(token = tokenstream->get()))
       {
-        delstr(token);
+        delete token;
         return 1;
       }
       tokenstream->matchsemicol();
-      delstr(token);
+      delete token;
       continue;
     }
-    if ((strcmp(token, "locks") == 0) ||
-        (strcmp(token, "strict") == 0) ||
-        (strcmp(token, "expand") == 0) ||
-        (strcmp(token, "access") == 0))
+    if (*token == "locks" ||
+        *token == "strict" ||
+        *token == "expand" ||
+        *token == "access")
     {
       while (1)
       {
-        char *tag = tokenstream->get();
-        if (tag == tokenstream->semicol)
-          break;
-        delstr(tag);
+        rcstoken *tag = tokenstream->get();
+        if (*tag == ';')
+          {
+            delete tag;
+            break;
+          }
+        delete tag;
       }
-      delstr(token);
+      delete token;
       continue;
     }
-    delstr(token);
+    delete token;
   }
 };
 
@@ -246,17 +303,16 @@ int tparseParser::parse_rcs_tree()
 {
   while (1)
   {
-    char *revision;
-    char *date;
+    rcstoken *revision;
+    rcstoken *date;
     long timestamp;
-    char *author;
-    ostrstream *state;
-    char *hstate;
-    char *next;
+    rcstoken *author;
+    rcstoken *hstate;
+    rcstoken *next;
     Branche *branches = NULL;
     struct tm tm;
     revision = tokenstream->get();
-    if (strcmp(revision, "desc") == 0)
+    if (*revision == "desc")
     {
       tokenstream->unget(revision);
       return 0;
@@ -266,45 +322,41 @@ int tparseParser::parse_rcs_tree()
     date = tokenstream->get();
     tokenstream->matchsemicol();
     memset ((void *) &tm, 0, sizeof(struct tm));
-    if (strptime(date, "%y.%m.%d.%H.%M.%S", &tm) == NULL)
-      strptime(date, "%Y.%m.%d.%H.%M.%S", &tm);
+    if (strptime(date->data, "%y.%m.%d.%H.%M.%S", &tm) == NULL)
+      strptime(date->data, "%Y.%m.%d.%H.%M.%S", &tm);
     timestamp = mktime(&tm);
-    delstr(date);
+    delete date;
     tokenstream->match("author");
     author = tokenstream->get();
     tokenstream->matchsemicol();
     tokenstream->match("state");
-    state = new ostrstream();
+    hstate = new rcstoken();
     while (1)
     {
-      char *token = tokenstream->get();
-      if (token == tokenstream->semicol)
+      rcstoken *token = tokenstream->get();
+      if (*token == ';')
       {
         break;
       }
-      if (state->pcount())
-        state->put(' ');
-      (*state) << token;
-      delstr(token);
+      if (hstate->length)
+        (*hstate) += ' ';
+      (*hstate) += *token;
+      delete token;
     }
-    state->put('\0');
-    hstate = state->str();
-    delete state;
-    state = NULL;
     tokenstream->match("branches");
     while (1)
     {
-      char *token = tokenstream->get();
-      if (token == tokenstream->semicol)
-      {
+      rcstoken *token = tokenstream->get();
+      if (*token == ';')
         break;
-      }
+
       branches = new Branche(token, branches);
     }
     tokenstream->match("next");
     next = tokenstream->get();
-    if (next == tokenstream->semicol)
-      next = NULL;
+    if (*next == ';')
+      /* generate null token */
+      next = new rcstoken();
     else
       tokenstream->matchsemicol();
     /*
@@ -318,55 +370,55 @@ int tparseParser::parse_rcs_tree()
 
     while (1)
     {
-      char *token = tokenstream->get();
-      if ( (strcmp(token, "desc") == 0) || isdigit(token[0]) )
+      rcstoken *token = tokenstream->get();
+      if (*token == "desc" || isdigit((*token)[0]))
       {
         tokenstream->unget(token);
         break;
       };
-      delstr(token);
-      while ( (token = tokenstream->get()) != tokenstream->semicol)
-        delstr(token);
+      delete token;
+      while ( (*(token = tokenstream->get())) == ';')
+        delete token;
     }
 
     if (sink->define_revision(revision, timestamp, author,
                               hstate, branches, next))
       {
-        delstr(revision);
-        delstr(author);
-        delstr(hstate);
+        delete revision;
+        delete author;
+        delete hstate;
         delete branches;
-        delstr(next);
+        delete next;
         return 1;
       }
-    delstr(revision);
-    delstr(author);
-    delstr(hstate);
+    delete revision;
+    delete author;
+    delete hstate;
     delete branches;
-    delstr(next);
+    delete next;
   }
   return 0;
 }
 
 int tparseParser::parse_rcs_description()
 {
-  char *token;
+  rcstoken *token;
   tokenstream->match("desc");
   if (sink->set_description(token = tokenstream->get()))
   {
-    delstr(token);
+    delete token;
     return 1;
   }
-  delstr(token);
+  delete token;
 
   return 0;
 }
 
 int tparseParser::parse_rcs_deltatext()
 {
-  char *revision;
-  char *log;
-  char *text;
+  rcstoken *revision;
+  rcstoken *log;
+  rcstoken *text;
   while (1)
   {
     revision = tokenstream->get();
@@ -378,14 +430,14 @@ int tparseParser::parse_rcs_deltatext()
     text = tokenstream->get();
     if (sink->set_revision_info(revision, log, text))
     {
-      delstr(revision);
-      delstr(log);
-      delstr(text);
+      delete revision;
+      delete log;
+      delete text;
       return 1;
     }
-    delstr(revision);
-    delstr(log);
-    delstr(text);
+    delete revision;
+    delete log;
+    delete text;
   }
   return 0;
 }
