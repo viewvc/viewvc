@@ -34,12 +34,13 @@
 #ifndef __PARSE_H
 #define __PARSE_H
 #include <iostream.h>
-#include <strstream>
 #include <stdio.h>
 #include <fstream.h>
 #include <string.h>
 #include <stdlib.h>
-#define delstr(a) if (a != NULL) { delete [] a; a=NULL; };
+
+#define DEFAULT_TOKEN_SIZE 512
+#define DEFAULT_TOKEN_DELTA 10240
 
 using namespace std;
 
@@ -77,20 +78,110 @@ class RCSExpected : public RCSParseError
     }
 };
 
+
+class rcstoken
+{
+ public:
+  size_t length, size, delta;
+  char *data;
+
+ public:
+  rcstoken(const char *mydata, size_t mylen)
+  {
+    init(mydata, mylen);
+  };
+  rcstoken(const char *mydata)
+    {
+      init(mydata, strlen(mydata));
+    };
+  rcstoken(size_t mysize = DEFAULT_TOKEN_SIZE,
+           size_t mydelta = DEFAULT_TOKEN_DELTA)
+    {
+      data = NULL;
+      size = mysize;
+      length = 0;
+      delta = mydelta;
+    };
+  ~rcstoken()
+    {
+      if (data)
+        free(data);
+      data = NULL;
+    };
+  void rcstoken::init(const char *mydata, size_t mylen);
+  int null_token()
+    {
+      return data == NULL;
+    };
+  rcstoken& operator=(const char b)
+    {
+      grow(2);
+      length = 1;
+      data[0] = b;
+      data[1] = 0;
+
+      return *this;
+    };
+  rcstoken& operator+=(const char b)
+    {
+      append(b);
+    };
+  rcstoken& operator+=(rcstoken& token)
+    {
+      append(token);
+    };
+  int operator==(const char *b)
+    {
+      size_t b_len;
+      return data && b && length == (b_len = strlen(b)) &&
+        memcmp(data, b, (b_len<length) ? b_len : length) == 0;
+    };
+  int operator!=(const char *b)
+    {
+      return (! (*this == b));
+    };
+  int operator==(const char b)
+    {
+      return (length == 1) && data && (*data == b);
+    };
+  int operator!=(const char b)
+    {
+      return (! (*this==b));
+    };
+  char operator[](size_t i)
+    {
+      return data[i];
+    };
+  void append(const char *b, size_t b_len);
+  void append(const char b)
+    {
+      grow(length+2);
+      data[length] = b;
+      data[length++] = 0;
+    };
+  void append(rcstoken& token)
+    {
+      append(token.data, token.length);
+    };
+  void grow(size_t new_size);
+  rcstoken *copy_begin_end(size_t begin, size_t end);
+  rcstoken *copy_begin_len(size_t begin, size_t len);
+};
+
 /* This class is used to store a list of the branches of a revision */
 class Branche
 {
   public:
-    char *name;
+    rcstoken *name;
     Branche *next;
-    Branche(char *myname, Branche *mynext)
+    Branche(rcstoken *myname, Branche *mynext)
     {
       name = myname;
       next = mynext;
     };
     ~Branche()
     {
-      delstr(name);
+      delete name;
       name = NULL;
       if (next != NULL)
         delete next;
@@ -104,15 +195,17 @@ class Sink
 {
   public:
     Sink() {};
-    virtual int set_head_revision(char * revision) = 0;
-    virtual int set_principal_branch(char *branch_name) = 0;
-    virtual int define_tag(char *name, char *revision) = 0;
-    virtual int set_comment(char *comment) = 0;
-    virtual int set_description(char *description) = 0;
-    virtual int define_revision(char *revision, long timestamp, 
-                                char *author, char *state, 
-                                Branche *branches, char *next) = 0;
-    virtual int set_revision_info(char *revision, char *log, char *text) = 0;
+    virtual int set_head_revision(rcstoken *revision) = 0;
+    virtual int set_principal_branch(rcstoken *branch_name) = 0;
+    virtual int define_tag(rcstoken *name, rcstoken *revision) = 0;
+    virtual int set_comment(rcstoken *comment) = 0;
+    virtual int set_description(rcstoken *description) = 0;
+    virtual int define_revision(rcstoken *revision, long timestamp, 
+                                rcstoken *author, rcstoken *state, 
+                                Branche *branches, rcstoken *next) = 0;
+    virtual int set_revision_info(rcstoken *revision,
+                                  rcstoken *log,
+                                  rcstoken *text) = 0;
     virtual int tree_completed() = 0;
     virtual int parse_completed() = 0;
 };
@@ -125,27 +218,28 @@ class TokenParser
     char buf[CHUNK_SIZE];
     int buflength;
     int idx;
-    char *backget;
+    rcstoken *backget;
   public:
     char *semicol;
-    char *get();
-    void unget(char *token);
+    rcstoken *get();
+    void unget(rcstoken *token);
     int eof()
     {
       return (input->gcount() == 0);
     };
     void matchsemicol()
     {
-      char *ptr = get();
-      if (ptr != semicol)
-        throw RCSExpected(ptr, semicol);
+      rcstoken *ptr = get();
+      if ((*ptr) != ';')
+        throw RCSExpected(ptr->data, semicol);
+      delete ptr;
     };
-    void match(char *token)
+    void match(const char *token)
     {
-      char *ptr;
-      if (strcmp(ptr = get(), token) != 0)
-        throw RCSExpected(ptr, token);
-      delstr( ptr);
+      rcstoken *ptr = get();
+      if (*ptr != token)
+        throw RCSExpected(ptr->data, token);
+      delete ptr;
     };
     TokenParser(istream *myinput)
     {
@@ -166,7 +260,7 @@ class TokenParser
       };
       if (backget != NULL)
       {
-        delstr(backget);
+        delete backget;
         backget = NULL;
       };
     };
