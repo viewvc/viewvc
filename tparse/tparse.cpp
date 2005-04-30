@@ -31,7 +31,9 @@
 */
 
 #include "tparse.h"
+#ifndef __USE_XOPEN
 #define __USE_XOPEN
+#endif
 #include <time.h>
 
 #define Whitespace(c) (c == ' ' || c == '\t' || c == '\014' || c == '\n' || \
