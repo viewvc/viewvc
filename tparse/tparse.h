@@ -48,9 +48,9 @@ using namespace std;
 class RCSParseError
 {
   public:
-    char *value;
+    const char *value;
     RCSParseError() {};
-    RCSParseError(char *myvalue)
+    RCSParseError(const char *myvalue)
     {
       value = myvalue;
     };
@@ -59,7 +59,7 @@ class RCSParseError
 class RCSIllegalCharacter : public RCSParseError
 {
   public:
-    RCSIllegalCharacter(char *myvalue)
+    RCSIllegalCharacter(const char *myvalue)
     {
       value = myvalue;
     };
@@ -68,9 +68,9 @@ class RCSIllegalCharacter : public RCSParseError
 class RCSExpected : public RCSParseError
 {
   public:
-    char *got;
-    char *wanted;
-    RCSExpected(char *mygot, char *mywanted)
+    const char *got;
+    const char *wanted;
+    RCSExpected(const char *mygot, const char *mywanted)
     {
       got = mygot;
       wanted = mywanted;
