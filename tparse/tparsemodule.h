@@ -29,6 +29,8 @@ extern "C"
 {
 #endif
 
+#include <Python.h>
+
   static char *__doc__ = \
     "This python extension module is a binding to the tparse library.\n" \
     "tparse is a C++ library that offers an API to a performance-oriented\n" \

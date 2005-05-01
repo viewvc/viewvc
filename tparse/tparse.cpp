@@ -31,10 +31,14 @@
 */
 
 #include "tparse.h"
+
 #ifndef __USE_XOPEN
 #define __USE_XOPEN
 #endif
-#include <time.h>
+#include <ctime>   /* for strptime */
+
+
+using namespace std;
 
 #define Whitespace(c) (c == ' ' || c == '\t' || c == '\014' || c == '\n' || \
                        c == '\r')
@@ -90,22 +94,25 @@ rcstoken *rcstoken::copy_begin_len(size_t begin, size_t len)
 /*--------- Tokenparser class -----------*/
 rcstoken *TokenParser::get()
 {
-  rcstoken *token;
+  auto_ptr<rcstoken> token;
 
   if (backget)
   {
-    token = backget;
+    token.reset(backget);
     backget = NULL;
-    return token;
+
+    return token.release();
   }
 
+  token.reset(new rcstoken());
   while (1)
   {
     if (idx == buflength)
     {
       input->read(buf, CHUNK_SIZE);
       if ( (buflength = input->gcount()) == 0 )
-        return NULL;
+          return token.release();
+
       idx = 0;
     }
     if (!Whitespace(buf[idx]))
@@ -113,17 +120,17 @@ rcstoken *TokenParser::get()
     idx++;
   }
 
-  token = new rcstoken();
   if (buf[idx] == ';')
   {
     idx++;
     (*token) = ';';
-    return token;
+    return token.release();
   }
 
   if (buf[idx] != '@')
   {
     int end = idx + 1;
+
     while (1)
     {
       while ( (end < buflength) && !(Token_term(buf[end])) )
@@ -132,7 +139,7 @@ rcstoken *TokenParser::get()
       if (end < buflength)
       {
         idx = end;
-        return token;
+        return token.release();
       }
       input->read(buf, CHUNK_SIZE);
       buflength = input->gcount();
@@ -141,9 +148,11 @@ rcstoken *TokenParser::get()
     }
   }
   idx++;
+
   while (1)
   {
     int i;
+
     if (idx == buflength)
     {
       idx = 0;
@@ -181,10 +190,9 @@ rcstoken *TokenParser::get()
     if ((i - idx) > 0)
       token->append(buf + idx, i - idx);
     idx = i + 1;
-    return token;
+    return token.release();
   }
 };
-
 
 void TokenParser::unget(rcstoken *token)
 {
@@ -197,84 +205,63 @@ void TokenParser::unget(rcstoken *token)
 }
 
 /*--------- tparseParser class -----------*/
-int tparseParser::parse_rcs_admin()
+void tparseParser::parse_rcs_admin()
 {
   while (1)
   {
-    rcstoken *token = tokenstream->get();
+    auto_ptr<rcstoken> token(tokenstream->get());
+
     if (isdigit((*token)[0]))
     {
-      tokenstream->unget(token);
-      return 0;
+      tokenstream->unget(token.release());
+      return;
     }
     if (*token == "head")
     {
-      delete token;
-      if (sink->set_head_revision(token = tokenstream->get()))
-      {
-        delete token;
-        return 1;
-      }
-      tokenstream->matchsemicol();
-      delete token;
+      token.reset(tokenstream->get());
+      sink->set_head_revision(*token);
+
+      tokenstream->match(';');
       continue;
     }
     if (*token == "branch")
     {
-      rcstoken *branch = tokenstream->get();
-      if (*branch != ';')
+      token.reset(tokenstream->get());
+      if (*token != ';')
       {
-        if (sink->set_principal_branch(branch))
-        {
-          delete branch;
-          delete token;
-          return 1;
-        }
-        delete branch;
-        tokenstream->matchsemicol();
+        sink->set_principal_branch(*token);
+
+        tokenstream->match(';');
       }
-      delete token;
       continue;
     }
     if (*token == "symbols")
     {
       while (1)
       {
-        rcstoken *tag, *rev;
+        auto_ptr<rcstoken> tag, rev;
         char *second;
-        delete token;
-        token = tokenstream->get();
+        //        delete token;
+        token.reset(tokenstream->get());
         if (*token == ';')
           break;
 
         /*FIXME: this does not allow "<tag> : <rev>"
           which the spec does allow */
         second = index(token->data, ':');
-        tag = token->copy_begin_len(0, second - token->data);
+        tag.reset(token->copy_begin_len(0, second - token->data));
         second++;
-        rev = new rcstoken(second);
-        if (sink->define_tag(tag, rev))
-        {
-          delete tag;
-          delete rev;
-          delete token;
-          return 1;
-        }
-        delete tag;
-        delete rev;
+        rev.reset(new rcstoken(second));
+        sink->define_tag(*tag, *rev);
       }
       continue;
     }
     if (*token == "comment")
     {
-      delete token;
-      if (sink->set_comment(token = tokenstream->get()))
-      {
-        delete token;
-        return 1;
-      }
-      tokenstream->matchsemicol();
-      delete token;
+      token.reset(tokenstream->get());
+      sink->set_comment((*token));
+
+      tokenstream->match(';');
       continue;
     }
     if (*token == "locks" ||
@@ -284,81 +271,79 @@ int tparseParser::parse_rcs_admin()
     {
       while (1)
       {
-        rcstoken *tag = tokenstream->get();
-        if (*tag == ';')
-          {
-            delete tag;
-            break;
-          }
-        delete tag;
+        token.reset(tokenstream->get());
+        if (*token == ';')
+          break;
       }
-      delete token;
       continue;
     }
-    delete token;
   }
 };
 
-int tparseParser::parse_rcs_tree()
+void tparseParser::parse_rcs_tree()
 {
   while (1)
   {
-    rcstoken *revision;
-    rcstoken *date;
+    auto_ptr<rcstoken> revision, date, author, hstate, next;
     long timestamp;
-    rcstoken *author;
-    rcstoken *hstate;
-    rcstoken *next;
-    Branche *branches = NULL;
+    tokenlist branches;
     struct tm tm;
-    revision = tokenstream->get();
+
+    revision.reset(tokenstream->get());
     if (*revision == "desc")
     {
-      tokenstream->unget(revision);
-      return 0;
+      tokenstream->unget(revision.release());
+      return;
     }
+
     // Parse date
     tokenstream->match("date");
-    date = tokenstream->get();
-    tokenstream->matchsemicol();
+    date.reset(tokenstream->get());
+    tokenstream->match(";");
+
     memset ((void *) &tm, 0, sizeof(struct tm));
-    if (strptime(date->data, "%y.%m.%d.%H.%M.%S", &tm) == NULL)
-      strptime(date->data, "%Y.%m.%d.%H.%M.%S", &tm);
+    if (strptime((*date).data, "%y.%m.%d.%H.%M.%S", &tm) == NULL)
+      strptime((*date).data, "%Y.%m.%d.%H.%M.%S", &tm);
     timestamp = mktime(&tm);
-    delete date;
+
+
     tokenstream->match("author");
-    author = tokenstream->get();
-    tokenstream->matchsemicol();
+    author.reset(tokenstream->get());
+    tokenstream->match(';');
+
     tokenstream->match("state");
-    hstate = new rcstoken();
+    hstate.reset(new rcstoken());
     while (1)
     {
-      rcstoken *token = tokenstream->get();
-      if (*token == ';')
-      {
-        break;
-      }
-      if (hstate->length)
-        (*hstate) += ' ';
-      (*hstate) += *token;
-      delete token;
-    }
-    tokenstream->match("branches");
-    while (1)
-    {
-      rcstoken *token = tokenstream->get();
+      auto_ptr<rcstoken> token;
+      token.reset(tokenstream->get());
       if (*token == ';')
         break;
 
-      branches = new Branche(token, branches);
+      if ((*hstate).length)
+        (*hstate) += ' ';
+      (*hstate) += *token;
     }
+
+    tokenstream->match("branches");
+    while (1)
+      {
+        auto_ptr<rcstoken> token;
+        token.reset(tokenstream->get());
+        if (*token == ';')
+          break;
+
+        branches.push_front((*token));
+      }
+
     tokenstream->match("next");
-    next = tokenstream->get();
+    next.reset(tokenstream->get());
     if (*next == ';')
       /* generate null token */
-      next = new rcstoken();
+      next.reset(new rcstoken());
     else
-      tokenstream->matchsemicol();
+      tokenstream->match(';');
+
     /*
      * 	there are some files with extra tags in them. for example:
      *	owner	640;
@@ -367,77 +352,53 @@ int tparseParser::parse_rcs_tree()
      *	hardlinks	@configure.in@;
      *	this is "newphrase" in RCSFILE(5). we just want to skip over these.
      */
-
     while (1)
-    {
-      rcstoken *token = tokenstream->get();
-      if (*token == "desc" || isdigit((*token)[0]))
       {
-        tokenstream->unget(token);
-        break;
-      };
-      delete token;
-      while ( (*(token = tokenstream->get())) == ';')
-        delete token;
-    }
+        auto_ptr<rcstoken> token;
+        token.reset(tokenstream->get());
 
-    if (sink->define_revision(revision, timestamp, author,
-                              hstate, branches, next))
-      {
-        delete revision;
-        delete author;
-        delete hstate;
-        delete branches;
-        delete next;
-        return 1;
+        if ((*token == "desc") || isdigit((*token)[0]) )
+          {
+            tokenstream->unget(token.release());
+            break;
+          };
+
+        while (*token != ";")
+          token.reset(tokenstream->get());
       }
-    delete revision;
-    delete author;
-    delete hstate;
-    delete branches;
-    delete next;
+
+    sink->define_revision(*revision, timestamp, *author,
+                          *hstate, branches, *next);
   }
-  return 0;
+  return;
 }
 
-int tparseParser::parse_rcs_description()
+void tparseParser::parse_rcs_description()
 {
-  rcstoken *token;
+  auto_ptr<rcstoken> token;
   tokenstream->match("desc");
-  if (sink->set_description(token = tokenstream->get()))
-  {
-    delete token;
-    return 1;
-  }
-  delete token;
 
-  return 0;
+  token.reset(tokenstream->get());
+  sink->set_description(*token);
 }
 
-int tparseParser::parse_rcs_deltatext()
+void tparseParser::parse_rcs_deltatext()
 {
-  rcstoken *revision;
-  rcstoken *log;
-  rcstoken *text;
+  auto_ptr<rcstoken> revision, log, text;
+
   while (1)
   {
-    revision = tokenstream->get();
-    if (revision == NULL)
+    revision.reset(tokenstream->get());
+    if ((*revision).null_token())
       break;
+
     tokenstream->match("log");
-    log = tokenstream->get();
+    log.reset(tokenstream->get());
+
     tokenstream->match("text");
-    text = tokenstream->get();
-    if (sink->set_revision_info(revision, log, text))
-    {
-      delete revision;
-      delete log;
-      delete text;
-      return 1;
-    }
-    delete revision;
-    delete log;
-    delete text;
+    text.reset(tokenstream->get());
+
+    sink->set_revision_info(*revision, *log, *text);
   }
-  return 0;
+  return;
 }

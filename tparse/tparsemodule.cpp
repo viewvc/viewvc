@@ -30,7 +30,9 @@
  
    Version: $Id$
 */
-#include <Python.h>
+
+#include <fstream>
+
 #include "tparsemodule.h"
 #include "tparse.cpp"
 
@@ -49,6 +51,49 @@ class PythonException
     PythonException() {};
 };
 
+
+class pyobject
+{
+  private:
+    PyObject *obj;
+  public:
+    pyobject(PyObject *myobj)
+    {
+      obj = myobj;
+    }
+    ~pyobject()
+    {
+      Py_XDECREF(obj);
+    };
+    PyObject *operator*()
+    {
+      return obj;
+    };
+};
+
+
+class pystring : public pyobject
+{
+public:
+  pystring(const char *s) :
+    pyobject(PyString_FromString(s))
+  {};
+  pystring(rcstoken& t) :
+    pyobject(PyString_FromStringAndSize(t.data, t.length))
+  {};
+};
+
+
+static
+void chkpy(PyObject *obj)
+{
+  Py_XDECREF(obj);
+  if (!obj)
+    throw PythonException();
+};
+
+
+
 static PyMethodDef tparseMethods[] = {
   {"parse", tparse, METH_VARARGS, tparse__doc__},
   {NULL, NULL}        /* Sentinel */
@@ -57,6 +102,9 @@ static PyMethodDef tparseMethods[] = {
 void inittparse()
 {
   PyObject *m, *d, *common, *commondict;
+  pystring ver(__version__),
+    dat(__date__),
+    aut(__author__);
   m = Py_InitModule3("tparse", tparseMethods, __doc__);
 
   common = PyImport_ImportModule("common");
@@ -82,16 +130,10 @@ void inittparse()
 
   d = PyModule_GetDict(m);
 
-  PyDict_SetItemString(d, "__version__", PyString_FromString(__version__));
-  PyDict_SetItemString(d, "__date__", PyString_FromString(__date__));
-  PyDict_SetItemString(d, "__author__", PyString_FromString(__author__));
+  PyDict_SetItemString(d, "__version__", *ver);
+  PyDict_SetItemString(d, "__date__", *dat);
+  PyDict_SetItemString(d, "__author__", *aut);
 }
-
-static
-PyObject *rcstoken_to_pystring(rcstoken *token)
-{
-  return PyString_FromStringAndSize(token->data, token->length);
-};
 
 class PythonSink : public Sink
 {
@@ -100,166 +142,79 @@ class PythonSink : public Sink
     PythonSink(PyObject *mysink)
     {
       sink = mysink;
+      Py_INCREF(sink);
     };
-    int set_head_revision(rcstoken *revision)
+    virtual ~PythonSink() throw ()
     {
-      PyObject *rv = PyObject_CallMethod(sink, "set_head_revision", "s",
-                                         revision->data);
-      if (!rv) {
-         if (PyErr_ExceptionMatches(pyRCSStopParser))
-          return 1;
-        else
-          throw PythonException();
-      }
-      else {
-        Py_DECREF(rv);
-      }
-      return 0;
+      Py_DECREF(sink);
     };
-    int set_principal_branch(rcstoken *branch_name)
+    virtual void set_head_revision(rcstoken &revision)
     {
-      PyObject *rv = PyObject_CallMethod(sink, "set_principal_branch", "s",
-                                         branch_name->data);
-      if (!rv) {
-        if (PyErr_ExceptionMatches(pyRCSStopParser))
-          return 1;
-        else
-          throw PythonException();
-      }
-      else {
-        Py_DECREF(rv);
-      }
-      return 0;
+      chkpy(PyObject_CallMethod(sink, "set_head_revision", "s",
+                                revision.data));
     };
-    int define_tag(rcstoken *name, rcstoken *revision)
+    virtual void set_principal_branch(rcstoken &branch_name)
     {
-      PyObject *rv = PyObject_CallMethod(sink, "define_tag", "ss",
-                                         name->data, revision->data);
-      if (!rv) {
-        if (PyErr_ExceptionMatches(pyRCSStopParser))
-          return 1;
-        else
-          throw PythonException();
-      }
-      else {
-        Py_DECREF(rv);
-      }
-      return 0;
+      chkpy(PyObject_CallMethod(sink, "set_principal_branch",
+                                "s", branch_name.data));
     };
-    int set_comment(rcstoken *comment)
+    virtual void define_tag(rcstoken &name, rcstoken &revision)
     {
-      PyObject *rv = PyObject_CallMethod(sink, "set_comment", "s",
-                                         comment->data);
-      if (!rv) {
-        if (PyErr_ExceptionMatches(pyRCSStopParser))
-          return 1;
-        else
-          throw PythonException();
-      }
-      else {
-        Py_DECREF(rv);
-      }
-      return 0;
+      chkpy(PyObject_CallMethod(sink, "define_tag", "ss",
+                                name.data, revision.data));
     };
-    int set_description(rcstoken *description)
+    virtual void set_comment(rcstoken &comment)
     {
-      PyObject *rv = PyObject_CallMethod(sink, "set_description", "s",
-                                         description->data);
-      if (!rv) {
-        if (PyErr_ExceptionMatches(pyRCSStopParser))
-          return 1;
-        else
-          throw PythonException();
-      }
-      else {
-        Py_DECREF(rv);
-      }
-      return 0;
+      pystring c(comment);
+      chkpy(PyObject_CallMethod(sink, "set_comment", "S", *c));
     };
-    int define_revision(rcstoken *revision, long timestamp, rcstoken *author,
-                        rcstoken *state, Branche *branches, rcstoken *next)
+    virtual void set_description(rcstoken &description)
     {
-      PyObject *pbranchs = PyList_New(0);
-      Branche *move = branches;
-      while (move != NULL)
-      {
-        PyObject *str = rcstoken_to_pystring(move->name);
-        PyList_Append(pbranchs, str );
-        Py_DECREF(str);
-        move = move->next;
-      }
+      pystring d(description);
+      chkpy(PyObject_CallMethod(sink, "set_description", "S", *d));
+    };
+    virtual void define_revision(rcstoken &revision, long timestamp,
+                                 rcstoken &author, rcstoken &state,
+                                 tokenlist &branches, rcstoken &next)
+    {
+      pyobject branchlist(PyList_New(0));
+      tokenlist_iter branch;
 
-      PyObject *rv = PyObject_CallMethod(sink, "define_revision", "slssOs",
-                                         revision->data,timestamp,
-                                         author->data,state->data,pbranchs,
-                                         next ? next->data : NULL);
-      if (!rv) {
-        Py_DECREF(pbranchs);
-        if (PyErr_ExceptionMatches(pyRCSStopParser))
-          return 1;
-        else
-          throw PythonException();
-      }
-      else {
-        Py_DECREF(rv);
-      }
-      Py_DECREF(pbranchs);
-      return 0;
-    };
-    int set_revision_info(rcstoken *revision, rcstoken *log, rcstoken *text)
-    {
-      PyObject *txt = rcstoken_to_pystring(text);
-      PyObject *rv = PyObject_CallMethod(sink, "set_revision_info", "ssS",
-                                         revision->data,log->data,txt);
-      Py_DECREF(txt);
-      if (!rv) {
-        if (PyErr_ExceptionMatches(pyRCSStopParser))
-          return 1;
-        else
-          throw PythonException();
-      }
-      else {
-        Py_DECREF(rv);
-      }
-      return 0;
-    };
-    int tree_completed()
-    {
-      PyObject *rv = PyObject_CallMethod(sink, "tree_completed", NULL);
-      if (!rv) {
-        if (PyErr_ExceptionMatches(pyRCSStopParser))
-          return 1;
-        else
-          throw PythonException();
-      }
-      else {
-        Py_DECREF(rv);
-      }
-      return 0;
-    };
-    int parse_completed()
-    {
-      PyObject *rv = PyObject_CallMethod(sink, "parse_completed", NULL);
-      if (!rv) {
-        if (PyErr_ExceptionMatches(pyRCSStopParser))
-          return 1;
-        else
-          throw PythonException();
-      }
-      else {
-        Py_DECREF(rv);
-      }
-      return 0;
+      for (branch = branches.begin(); branch != branches.end(); branch++)
+        {
+          pystring str(*branch);
+          PyList_Append(*branchlist, *str);
+        }
 
+      chkpy(PyObject_CallMethod(sink, "define_revision", "slssOs",
+                                revision.data,timestamp,
+                                author.data,state.data,*branchlist,
+                                next.data));
+    };
+    virtual void set_revision_info(rcstoken& revision,
+                                   rcstoken& log, rcstoken& text)
+    {
+      pystring l(log), txt(text);
+      chkpy(PyObject_CallMethod(sink, "set_revision_info", "sSS",
+                                revision.data, *l, *txt));
+    };
+    virtual void tree_completed()
+    {
+      chkpy(PyObject_CallMethod(sink, "tree_completed", NULL));
+    };
+    virtual void parse_completed()
+    {
+      chkpy(PyObject_CallMethod(sink, "parse_completed", NULL));
     };
 };
 
 static PyObject * tparse( PyObject *self, PyObject *args)
 {
   char *filename;
-  istream *input;
+  istream *input = NULL;
   PyObject *file = NULL;
   PyObject *hsink;
+  PyObject *rv = Py_None;
 #ifdef GNUC_STDIO_FILEBUF_AVAILABLE
   auto_ptr<streambuf> rdbuf;
 #endif
@@ -284,6 +239,8 @@ static PyObject * tparse( PyObject *self, PyObject *args)
   else
     return NULL;
 
+
+
   if (!PyObject_IsInstance(hsink, PySink))
   {
     PyErr_SetString(PyExc_TypeError,
@@ -298,31 +255,47 @@ static PyObject * tparse( PyObject *self, PyObject *args)
   }
   catch (RCSExpected e)
   {
-    PyObject *exp = PyInstance_New(pyRCSExpected,
-                                   Py_BuildValue("(ss)", e.got, e.wanted), 
-                                   NULL);
-    PyErr_SetObject(pyRCSExpected, exp);
-    return NULL;
+    const char *got = e.got.c_str();
+    const char *wanted = e.wanted.c_str();
+
+    pyobject arg(Py_BuildValue("(ss)", got, wanted)),
+      exp(PyInstance_New(pyRCSExpected, *arg, NULL));
+    PyErr_SetObject(pyRCSExpected, *exp);
+
+    delete [] got;
+    delete [] wanted;
+    rv = NULL;
   }
   catch (RCSIllegalCharacter e)
   {
-    PyObject *exp = PyInstance_New(pyRCSIllegalCharacter,
-                                   Py_BuildValue("(s)", e.value), NULL);
-    PyErr_SetObject(pyRCSIllegalCharacter, exp);
-    return NULL;
+    const char *value = e.value.c_str();
+
+    pyobject arg(Py_BuildValue("(s)", value)),
+      exp(PyInstance_New(pyRCSIllegalCharacter,*arg, NULL));
+    PyErr_SetObject(pyRCSIllegalCharacter, *exp);
+
+    delete [] value;
+    rv = NULL;
   }
   catch (RCSParseError e)
   {
-    PyObject *exp = PyInstance_New(pyRCSParseError,
-                                   Py_BuildValue("(s)", e.value), NULL);
-    PyErr_SetObject(pyRCSParseError, exp);
-    return NULL;
+    const char *value = e.value.c_str();
+
+    pyobject arg(Py_BuildValue("(s)", value)),
+      exp(PyInstance_New(pyRCSParseError, *arg, NULL));
+    PyErr_SetObject(pyRCSParseError, *exp);
+
+    delete [] value;
+    rv = NULL;
   }
   catch (PythonException e)
   {
-    return NULL;
+    if (! PyErr_ExceptionMatches(pyRCSStopParser))
+      rv = NULL;
+    else
+      PyErr_Clear();
   }
 
-  Py_INCREF(Py_None);
-  return Py_None;
+  Py_XINCREF(rv);
+  return rv;
 };
