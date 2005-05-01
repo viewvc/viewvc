@@ -45,6 +45,14 @@
 #define DEFAULT_TOKEN_SIZE 512
 #define DEFAULT_TOKEN_DELTA 10240
 
+#ifndef FALSE
+#define FALSE (0 != 0)
+#endif
+
+#ifndef TRUE
+#define TRUE (0 == 0)
+#endif
+
 using namespace std;
 
 /* This class represents a exception that occured during the parsing
@@ -219,7 +227,7 @@ class TokenParser
     int idx;
     rcstoken *backget;
   public:
-    rcstoken *get();
+    rcstoken *get(int allow_eof);
     void unget(rcstoken *token);
     int eof()
     {
@@ -227,13 +235,13 @@ class TokenParser
     };
     void match(const char *token)
     {
-      auto_ptr<rcstoken> ptr(get());
+      auto_ptr<rcstoken> ptr(get(FALSE));
       if (*ptr != token)
         throw RCSExpected(ptr->data, token);
     }
     void match(const char c)
     {
-      auto_ptr<rcstoken> token(get());
+      auto_ptr<rcstoken> token(get(FALSE));
 
       if ((*token) != c)
         throw RCSExpected(token->data, c);

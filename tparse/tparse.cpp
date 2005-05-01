@@ -92,7 +92,7 @@ rcstoken *rcstoken::copy_begin_len(size_t begin, size_t len)
 
 
 /*--------- Tokenparser class -----------*/
-rcstoken *TokenParser::get()
+rcstoken *TokenParser::get(int allow_eof)
 {
   auto_ptr<rcstoken> token;
 
@@ -111,7 +111,12 @@ rcstoken *TokenParser::get()
     {
       input->read(buf, CHUNK_SIZE);
       if ( (buflength = input->gcount()) == 0 )
+      {
+        if (allow_eof)
           return token.release();
+        else
+          throw RCSParseError("Unexpected end of file.");
+      };
 
       idx = 0;
     }
@@ -209,7 +214,7 @@ void tparseParser::parse_rcs_admin()
 {
   while (1)
   {
-    auto_ptr<rcstoken> token(tokenstream->get());
+    auto_ptr<rcstoken> token(tokenstream->get(FALSE));
 
     if (isdigit((*token)[0]))
     {
@@ -218,7 +223,7 @@ void tparseParser::parse_rcs_admin()
     }
     if (*token == "head")
     {
-      token.reset(tokenstream->get());
+      token.reset(tokenstream->get(FALSE));
       sink->set_head_revision(*token);
 
       tokenstream->match(';');
@@ -226,7 +231,7 @@ void tparseParser::parse_rcs_admin()
     }
     if (*token == "branch")
     {
-      token.reset(tokenstream->get());
+      token.reset(tokenstream->get(FALSE));
       if (*token != ';')
       {
         sink->set_principal_branch(*token);
@@ -242,7 +247,7 @@ void tparseParser::parse_rcs_admin()
         auto_ptr<rcstoken> tag, rev;
         char *second;
         //        delete token;
-        token.reset(tokenstream->get());
+        token.reset(tokenstream->get(FALSE));
         if (*token == ';')
           break;
 
@@ -257,7 +262,7 @@ void tparseParser::parse_rcs_admin()
         {
           tag = token;
           tokenstream->match(':');
-          rev.reset(tokenstream->get());
+          rev.reset(tokenstream->get(FALSE));
         };
         sink->define_tag(*tag, *rev);
       }
@@ -265,7 +270,7 @@ void tparseParser::parse_rcs_admin()
     }
     if (*token == "comment")
     {
-      token.reset(tokenstream->get());
+      token.reset(tokenstream->get(FALSE));
       sink->set_comment((*token));
 
       tokenstream->match(';');
@@ -278,7 +283,7 @@ void tparseParser::parse_rcs_admin()
     {
       while (1)
       {
-        token.reset(tokenstream->get());
+        token.reset(tokenstream->get(FALSE));
         if (*token == ';')
           break;
       }
@@ -296,7 +301,7 @@ void tparseParser::parse_rcs_tree()
     tokenlist branches;
     struct tm tm;
 
-    revision.reset(tokenstream->get());
+    revision.reset(tokenstream->get(FALSE));
     if (*revision == "desc")
     {
       tokenstream->unget(revision.release());
@@ -305,7 +310,7 @@ void tparseParser::parse_rcs_tree()
 
     // Parse date
     tokenstream->match("date");
-    date.reset(tokenstream->get());
+    date.reset(tokenstream->get(FALSE));
     tokenstream->match(";");
 
     memset ((void *) &tm, 0, sizeof(struct tm));
@@ -315,7 +320,7 @@ void tparseParser::parse_rcs_tree()
 
 
     tokenstream->match("author");
-    author.reset(tokenstream->get());
+    author.reset(tokenstream->get(FALSE));
     tokenstream->match(';');
 
     tokenstream->match("state");
@@ -323,7 +328,7 @@ void tparseParser::parse_rcs_tree()
     while (1)
     {
       auto_ptr<rcstoken> token;
-      token.reset(tokenstream->get());
+      token.reset(tokenstream->get(FALSE));
       if (*token == ';')
         break;
 
@@ -336,7 +341,7 @@ void tparseParser::parse_rcs_tree()
     while (1)
       {
         auto_ptr<rcstoken> token;
-        token.reset(tokenstream->get());
+        token.reset(tokenstream->get(FALSE));
         if (*token == ';')
           break;
 
@@ -344,7 +349,7 @@ void tparseParser::parse_rcs_tree()
       }
 
     tokenstream->match("next");
-    next.reset(tokenstream->get());
+    next.reset(tokenstream->get(FALSE));
     if (*next == ';')
       /* generate null token */
       next.reset(new rcstoken());
@@ -362,7 +367,7 @@ void tparseParser::parse_rcs_tree()
     while (1)
       {
         auto_ptr<rcstoken> token;
-        token.reset(tokenstream->get());
+        token.reset(tokenstream->get(FALSE));
 
         if ((*token == "desc") || isdigit((*token)[0]) )
           {
@@ -371,7 +376,7 @@ void tparseParser::parse_rcs_tree()
           };
 
         while (*token != ";")
-          token.reset(tokenstream->get());
+          token.reset(tokenstream->get(FALSE));
       }
 
     sink->define_revision(*revision, timestamp, *author,
@@ -385,7 +390,7 @@ void tparseParser::parse_rcs_description()
   auto_ptr<rcstoken> token;
   tokenstream->match("desc");
 
-  token.reset(tokenstream->get());
+  token.reset(tokenstream->get(FALSE));
   sink->set_description(*token);
 }
 
@@ -395,15 +400,15 @@ void tparseParser::parse_rcs_deltatext()
 
   while (1)
   {
-    revision.reset(tokenstream->get());
+    revision.reset(tokenstream->get(TRUE));
     if ((*revision).null_token())
       break;
 
     tokenstream->match("log");
-    log.reset(tokenstream->get());
+    log.reset(tokenstream->get(FALSE));
 
     tokenstream->match("text");
-    text.reset(tokenstream->get());
+    text.reset(tokenstream->get(FALSE));
 
     sink->set_revision_info(*revision, *log, *text);
   }
