@@ -246,12 +246,19 @@ void tparseParser::parse_rcs_admin()
         if (*token == ';')
           break;
 
-        /*FIXME: this does not allow "<tag> : <rev>"
-          which the spec does allow */
         second = index(token->data, ':');
-        tag.reset(token->copy_begin_len(0, second - token->data));
-        second++;
-        rev.reset(new rcstoken(second));
+        if (second)
+        {
+          tag.reset(token->copy_begin_len(0, second - token->data));
+          second++;
+          rev.reset(new rcstoken(second));
+        }
+        else
+        {
+          tag = token;
+          tokenstream->match(':');
+          rev.reset(tokenstream->get());
+        };
         sink->define_tag(*tag, *rev);
       }
       continue;
