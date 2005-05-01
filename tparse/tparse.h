@@ -136,10 +136,14 @@ class rcstoken
   rcstoken& operator+=(const char b)
     {
       append(b);
+
+      return *this;
     };
   rcstoken& operator+=(rcstoken& token)
     {
       append(token);
+
+      return *this;
     };
   int operator==(const char *b)
     {
