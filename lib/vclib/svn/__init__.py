@@ -330,7 +330,14 @@ class SubversionRepository(vclib.Repository):
     def _sigterm_handler(signum, frame, self=self):
       self._close()
       sys.exit(-1)
-    signal.signal(signal.SIGTERM, _sigterm_handler)
+    try:
+      signal.signal(signal.SIGTERM, _sigterm_handler)
+    except ValueError:
+      # This is probably "ValueError: signal only works in main
+      # thread", which will get thrown by the likes of mod_python
+      # when trying to install a signal handler from a thread that
+      # isn't the main one.  We'll just not care.
+      pass
 
     # Initialize APR and get our top-level pool.
     core.apr_initialize()
