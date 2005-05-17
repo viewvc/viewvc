@@ -248,9 +248,10 @@ def redirect(location):
   sys.exit(0)
 
 def error(msg, status='500 Internal Server Error'):
+  print 'Content-type: text/html'
   print 'Status:', status
   print
-  print msg
+  print cgi.escape(msg)
   sys.exit(0)
 
 def generate_page(request, tname, data):
@@ -1105,7 +1106,8 @@ def view_directory(request):
   view_tag = query_dict.get('only_with_tag')
   hideattic = int(query_dict.get('hideattic'))  ### watch for errors in int()?
   sortby = query_dict.get('sortby', 'file')
-
+  if not re.match('^[a-z]+$', sortby):
+    raise 'illegal value for sortby parameter'
   search_re = query_dict.get('search')
  
   # Search current directory
@@ -1841,8 +1843,8 @@ def process_checkout(full_name, where, query_dict, default_mime_type):
 
   mime_type = query_dict.get('content-type')
   if mime_type:
-    ### validate it?
-    pass
+    if not re.match('^[-_.a-zA-Z0-9/]+$', mime_type):
+      raise 'illegal value for content-type parameter'
   else:
     mime_type = default_mime_type
 
@@ -2451,6 +2453,9 @@ def generate_tarball(out, relative, directory, tag, stack=[]):
   rcs_files = [ ]
   for file, pathname, isdir in get_file_data(directory):
     if pathname == _UNREADABLE_MARKER:
+      continue
+    if (file == 'CVSROOT' and cfg.options.hide_cvsroot) \
+           or cfg.is_forbidden(file):
       continue
     if isdir:
       subdirs.append(file)
