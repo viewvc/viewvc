@@ -222,8 +222,8 @@ class Request:
 
     # If this is a forbidden path, stop now
     if path_parts and cfg.is_forbidden(path_parts[0]):
-      raise debug.ViewCVSException('Access to "%s" is forbidden.'
-                                   % path_parts[0], '403 Forbidden')
+      raise debug.ViewCVSException('%s: unknown location' % path_parts[0],
+                                   '404 Not Found')
 
     if self.rootname:
       # Create the repository object
@@ -2826,8 +2826,8 @@ def download_tarball(request):
   if len(rep_top):
     tar_top = rep_top[-1]
     if cfg.is_forbidden(tar_top):
-      raise debug.ViewCVSException('Access to "%s" is forbidden.'
-                                  % tar_top, '403 Forbidden')
+      raise debug.ViewCVSException('%s: unknown location' % tar_top,
+                                   '404 Not Found')
   else:
     tar_top = request.rootname
 
