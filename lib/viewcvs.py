@@ -2825,6 +2825,9 @@ def download_tarball(request):
   rep_top = request.path_parts
   if len(rep_top):
     tar_top = rep_top[-1]
+    if cfg.is_forbidden(tar_top):
+      raise debug.ViewCVSException('Access to "%s" is forbidden.'
+                                  % tar_top, '403 Forbidden')
   else:
     tar_top = request.rootname
 
