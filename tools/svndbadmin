@@ -65,32 +65,26 @@ import cvsdb
 
 class SvnRepo:
     """Class used to manage a connection to a SVN repository."""
-    pool = None
     def __init__(self, path, pool):
-        self.pool = pool
-        self.scratch_pool = svn.core.svn_pool_create(self.pool)
+        self.scratch_pool = svn.core.svn_pool_create(pool)
         self.path = path
-        self.repo = svn.repos.svn_repos_open(path, self.pool)
+        self.repo = svn.repos.svn_repos_open(path, pool)
         self.fs = svn.repos.svn_repos_fs(self.repo)
         # youngest revision of base of file system is highest revision number
-        self.rev_max = svn.fs.youngest_rev(self.fs, self.pool)
-    def __del__(self):
-        if self.pool:
-            svn.core.svn_pool_destroy(self.pool)
+        self.rev_max = svn.fs.youngest_rev(self.fs, pool)
     def __getitem__(self, rev):
         if rev is None:
             rev = self.rev_max
         elif rev < 0:
             rev = rev + self.rev_max + 1
         assert 0 <= rev <= self.rev_max
-
         rev = SvnRev(self, rev, self.scratch_pool)
         svn.core.svn_pool_clear(self.scratch_pool)
         return rev
 
 _re_diff_change_command = re.compile('(\d+)(?:,(\d+))?([acd])(\d+)(?:,(\d+))?')
 
-def _get_diff_counts(last_fsroot, fsroot, path1, path2, pool):
+def _get_diff_counts(diff_fp):
     """Calculate the plus/minus counts by parsing the output of a
     normal diff.  The reasons for choosing Normal diff format are:
       - the output is short, so should be quicker to parse.
@@ -99,12 +93,9 @@ def _get_diff_counts(last_fsroot, fsroot, path1, path2, pool):
         command.
     This code is based on the description of the format found in the
     GNU diff manual."""
-    diffobj = svn.fs.FileDiff(last_fsroot, path1,
-                              fsroot, path2, pool, [])
-    fp = diffobj.get_pipe()
 
     plus, minus = 0, 0
-    line = fp.readline()
+    line = diff_fp.readline()
     while line:
         match = re.match(_re_diff_change_command, line)
         if match:
@@ -131,8 +122,9 @@ def _get_diff_counts(last_fsroot, fsroot, path1, path2, pool):
                 # RdL - remove range R of file1, which would have been
                 #       at line L of file2
                 minus = minus + count1
-        line = fp.readline()
+        line = diff_fp.readline()
     return plus, minus
+
 
 class SvnRev:
     """Class used to hold information about a particular revision of
@@ -140,6 +132,10 @@ class SvnRev:
     def __init__(self, repo, rev, pool):
         self.repo = repo
         self.rev = rev
+        self.pool = pool
+        self.rev_roots = {} # cache of revision roots
+
+        subpool = svn.core.svn_pool_create(pool)
 
         # revision properties ...
         properties = svn.fs.revision_proplist(repo.fs, rev, pool)
@@ -150,11 +146,8 @@ class SvnRev:
         # convert the date string to seconds since epoch ...
         self.date = svn.core.secs_from_timestr(self.date, pool)
 
-        fsroot = svn.fs.revision_root(repo.fs, rev, pool)
-        if rev > 0:
-            last_fsroot = svn.fs.revision_root(repo.fs, rev-1, pool)
-        else:
-            last_fsroot = None
+        # get a root for the current revisions
+        fsroot = self._get_root_for_rev(rev)
         
         # find changes in the revision
         editor = svn.repos.RevisionChangeCollector(repo.fs, rev, pool)
@@ -163,18 +156,41 @@ class SvnRev:
 
         self.changes = []
         for path, change in editor.changes.items():
+
+            # clear the iteration subpool
+            svn.core.svn_pool_clear(subpool)
+
+            # skip non-file changes
             if change.item_kind != svn.core.svn_node_file: continue
 
-            # we handle 
+            # deal with the change types we handle
+            base_root = None
+            if change.base_path:
+                base_root = self._get_root_for_rev(change.base_rev)
+                
             if not change.path:
-                oldpath, newpath, action = path, None, 'remove'
+                action = 'remove'
             elif change.added:
-                oldpath, newpath, action = None, path, 'add'
+                action = 'add'
             else:
-                oldpath, newpath, action = path, path, 'change'
-            plus, minus = _get_diff_counts(last_fsroot, fsroot,
-                                           oldpath, newpath, pool)
+                action = 'change'
+
+            diffobj = svn.fs.FileDiff(base_root and base_root or None,
+                                      base_root and change.base_path or None,
+                                      change.path and fsroot or None,
+                                      change.path and change.path or None,
+                                      subpool, [])
+            diff_fp = diffobj.get_pipe()
+            plus, minus = _get_diff_counts(diff_fp)
             self.changes.append((path, action, plus, minus))
+
+    def _get_root_for_rev(self, rev):
+        """Fetch a revision root from a cache of such, or a fresh root
+        (which is then cached for later use."""
+        if not self.rev_roots.has_key(rev):
+            self.rev_roots[rev] = svn.fs.revision_root(self.repo.fs, rev,
+                                                       self.pool)
+        return self.rev_roots[rev]
 
 
 def handle_revision(db, command, repo, rev):
