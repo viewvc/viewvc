@@ -62,6 +62,10 @@ Version 1.0 (not yet released)
     (2003-Feb-09)
   * fix daylight saving time bugs in various parts of the code
 
+Version 0.9.4 (released 17-Aug-2005)
+
+  * security fix: omit forbidden/hidden modules from query results.
+
 Version 0.9.3 (released 17-May-2005)
 
   * security fix: disallow bad "content-type" input [CAN-2004-1062]
