@@ -29,7 +29,7 @@ fi
 
 # grab a copy of the CVS repository
 echo 'Checking out into:' $2
-cvs -d :pserver:anonymous@cvs.viewcvs.sourceforge.net:/cvsroot/viewcvs export -r $1 -d $2 viewcvs
+cvs -d :pserver:anonymous@cvs.sourceforge.net:/cvsroot/viewcvs export -r $1 -d $2 viewcvs
 
 # various shifting, cleanup.
 # documentation is now also distributed together with the release, 
