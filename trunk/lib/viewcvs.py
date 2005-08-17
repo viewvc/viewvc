@@ -220,11 +220,6 @@ class Request:
     self.where = _path_join(path_parts)
     self.path_parts = path_parts
 
-    # If this is a forbidden path, stop now
-    if path_parts and cfg.is_forbidden(path_parts[0]):
-      raise debug.ViewCVSException('%s: unknown location' % path_parts[0],
-                                   '404 Not Found')
-
     if self.rootname:
       # Create the repository object
       if cfg.general.cvs_roots.has_key(self.rootname):
@@ -309,6 +304,12 @@ class Request:
           self.path_parts = attic_parts
           self.where = _path_join(attic_parts)
           needs_redirect = 1
+
+    # If this is a forbidden directory, stop now
+    if self.path_parts and self.pathtype == vclib.DIR \
+           and cfg.is_forbidden(self.path_parts[0]):
+      raise debug.ViewCVSException('%s: unknown location' % path_parts[0],
+                                   '404 Not Found')
 
     # Try to figure out what to do based on view parameter
     self.view_func = _views.get(self.query_dict.get('view', None), 
@@ -1516,10 +1517,11 @@ def view_directory(request):
                (file.kind == vclib.DIR and 'dir')
     row.errors = file.errors
 
-    if (where == '') and (cfg.is_forbidden(file.name)):
-      continue
-                             
     if file.kind == vclib.DIR:
+
+      if (where == '') and (cfg.is_forbidden(file.name)):
+        continue
+
       if (request.roottype == 'cvs' and cfg.options.hide_cvsroot
           and where == '' and file.name == 'CVSROOT'):
         continue
@@ -3229,14 +3231,26 @@ def view_query(request):
       minus_count = minus_count + int(commit.GetMinusCount())
       # group commits with the same commit message ...
       desc = commit.GetDescription()
+      # skip files in forbidden or hidden modules
+      dir_parts = filter(None, string.split(commit.GetDirectory(), '/'))
+      if dir_parts \
+             and ((dir_parts[0] == 'CVSROOT' and cfg.options.hide_cvsroot) \
+                  or cfg.is_forbidden(dir_parts[0])):
+        continue
       if current_desc == desc:
         files.append(commit)
         continue
-      commits.append(build_commit(request, current_desc, files))
+      # if our current group has any allowed files, append a commit
+      # with those files.
+      if len(files):
+        commits.append(build_commit(request, current_desc, files))
 
       files = [ commit ]
       current_desc = desc
-    commits.append(build_commit(request, current_desc, files))
+    # we need to tack on our last commit grouping, but, again, only if
+    # it has allowed files.
+    if len(files):
+      commits.append(build_commit(request, current_desc, files))
 
   # only show the branch column if we are querying all branches
   # or doing a non-exact branch match on a CVS repository.
