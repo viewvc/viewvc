@@ -297,6 +297,12 @@ def build_commit(server, desc, files, cvsroots, viewcvs_link):
         ob.desc = '&nbsp;'
 
     for commit in files:
+        dir_parts = filter(None, string.split(commit.GetDirectory(), '/'))
+        if dir_parts \
+               and ((dir_parts[0] == 'CVSROOT' and cfg.options.hide_cvsroot) \
+                    or cfg.is_forbidden(dir_parts[0])):
+            continue
+
         ctime = commit.GetTime()
         if not ctime:
             ctime = "&nbsp;"
