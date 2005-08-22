@@ -38,7 +38,7 @@ def popen(cmd, args, mode, capture_err=1):
   if sys.platform == "win32":
     command = win32popen.CommandLine(cmd, args)
 
-    if mode.find('r') >= 0:
+    if string.find(mode, 'r') >= 0:
       hStdIn = None
 
       if debug.SHOW_CHILD_PROCESSES:

@@ -233,7 +233,7 @@ class BinCVSRepository(CVSRepository):
     if self.rcs_paths.cvsnt_exe_path:
       cmd = self.rcs_paths.cvsnt_exe_path
       args = ['rcsfile', rcs_cmd]
-      args.extend(rcs_args)
+      args.extend(list(rcs_args))
     else:
       cmd = os.path.join(self.rcs_paths.rcs_path, rcs_cmd)
       args = rcs_args

@@ -446,8 +446,11 @@ class Request:
 
       else:
         # add root to parameter list
-        rootname = params.setdefault('root', self.rootname)
-      
+        try:
+          rootname = params['root']
+        except KeyError:
+          rootname = params['root'] = self.rootname
+
         # no need to specify default root
         if rootname == cfg.general.default_root:
           del params['root']   
@@ -504,8 +507,8 @@ class Request:
     if sticky_vars:
       for name in _sticky_vars:
         value = self.query_dict.get(name)
-        if value is not None:
-          params.setdefault(name, value)
+        if value is not None and not params.has_key(name):
+          params[name] = value
 
     # remove null values from parameter list
     for name, value in params.items():
@@ -688,7 +691,7 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
 
   ## require revalidation after 15 minutes ...
   if cfg and cfg.options.http_expiration_time >= 0:
-    expiration = rfc822.formatdate(time.time() +
+    expiration = compat.formatdate(time.time() +
                                    cfg.options.http_expiration_time)
     request.server.addheader('Expires', expiration)
     request.server.addheader('Cache-Control',
@@ -700,7 +703,7 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
     if etag is not None:
       request.server.addheader('ETag', etag)
     if mtime is not None:
-      request.server.addheader('Last-Modified', rfc822.formatdate(mtime))
+      request.server.addheader('Last-Modified', compat.formatdate(mtime))
   return isfresh
 
 def get_view_template(view_name, language):
