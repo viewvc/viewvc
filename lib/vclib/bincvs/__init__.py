@@ -239,6 +239,24 @@ class BinCVSRepository(CVSRepository):
       args = rcs_args
     return popen.popen(cmd, args, mode, capture_err)
 
+  def rawdiff(self, path1, rev1, path2, rev2, type, options={}):
+    """see vclib.Repository.rawdiff docstring
+
+    Option values recognized by this implementation:
+
+      ignore_keyword_subst - boolean, ignore keyword substitution
+    """
+    args = vclib._diff_args(type, options)
+    if options.get('ignore_keyword_subst', 0):
+      args.append('-kk')
+
+    rcsfile = self.rcsfile(path1, 1)
+    if path1 != path2:
+      raise NotImplementedError, "cannot diff across paths in cvs"
+    args.extend(['-r' + rev1, '-r' + rev2, rcsfile])
+
+    return self.rcs_popen('rcsdiff', args, 'rt')
+
 class CVSDirEntry(vclib.DirEntry):
   def __init__(self, name, kind, errors, in_attic):
     vclib.DirEntry.__init__(self, name, kind, errors)

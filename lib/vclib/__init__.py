@@ -24,6 +24,10 @@ import string
 FILE = 'FILE'
 DIR = 'DIR'
 
+# diff types recognized by Repository.rawdiff().
+UNIFIED = 1
+CONTEXT = 2
+SIDE_BY_SIDE = 3
 
 # ======================================================================
 #
@@ -95,6 +99,22 @@ class Repository:
     options is a dictionary of implementation specific options
     """
 
+  def rawdiff(self, path1, rev1, path2, rev2, type, options={}):
+    """Return a diff of two file revisions
+
+    type is the requested diff type (UNIFIED, CONTEXT, etc)
+
+    options is a dictionary that can contain the following options plus
+    implementation-specific options
+
+      context - integer, number of context lines to include
+      funout - boolean, include C function names
+      ignore_white - boolean, ignore whitespace
+
+    Return value is a python file object
+    """
+
+
 # ======================================================================
 class DirEntry:
   "Instances represent items in a directory listing"
@@ -144,3 +164,34 @@ class InvalidRevision(Error):
     if revision is None:
       revision = "(None)"
     Error.__init__(self, "Invalid revision " + str(revision))
+
+# ======================================================================
+# Implementation code used by multiple vclib modules
+
+def _diff_args(type, options):
+  """generate argument list to pass to diff or rcsdiff"""
+  args = []
+  if type == CONTEXT:
+    if options.has_key('context'):
+      args.append('--context=%i' % options['context'])
+    else:
+      args.append('-c')
+  elif type == UNIFIED:
+    if options.has_key('context'):
+      args.append('--unified=%i' % options['context'])
+    else:
+      args.append('-u')
+  elif type == SIDE_BY_SIDE:
+    args.append('--side-by-side')
+    args.append('--width=164')
+  else:
+    raise NotImplementedError
+
+  if options.get('funout', 0):
+    args.append('-p')
+
+  if options.get('ignore_white', 0):
+    args.append('-w')
+
+  return args
+
