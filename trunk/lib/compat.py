@@ -23,6 +23,7 @@ import time
 import calendar
 import re
 import os
+import rfc822
 
 
 #
@@ -70,6 +71,23 @@ except AttributeError:
     if head and tail and not os.path.exists(head):
       makedirs(head, mode)
     os.mkdir(path, mode)
+
+#
+# rfc822.formatdate() is new to Python 1.6
+#
+try:
+  formatdate = rfc822.formatdate
+except AttributeError:
+  def formatdate(timeval):
+    if timeval is None:
+      timeval = time.time()
+    timeval = time.gmtime(timeval)
+    return "%s, %02d %s %04d %02d:%02d:%02d GMT" % (
+            ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][timeval[6]],
+            timeval[2],
+            ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][timeval[1]-1],
+                                timeval[0], timeval[3], timeval[4], timeval[5])
 
 # 
 # calendar.timegm() is new to Python 2.x and 

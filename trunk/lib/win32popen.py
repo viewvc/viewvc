@@ -19,7 +19,7 @@ def CommandLine(command, args):
 
   cmd = "\"" + string.replace(command, "\"", "\"\"") + "\""
   for arg in args:
-    cmd += " \"" + string.replace(arg, "\"", "\"\"") + "\""
+    cmd = cmd + " \"" + string.replace(arg, "\"", "\"\"") + "\""
   return cmd
 
 def CreateProcess(cmd, hStdInput, hStdOutput, hStdError):
@@ -86,13 +86,13 @@ def CreatePipe(readInheritable, writeInheritable):
 
 def File2FileObject(pipe, mode):
   """Make a C stdio file object out of a win32 file handle"""
-  if mode.find('r') >= 0:
+  if string.find(mode, 'r') >= 0:
     wmode = os.O_RDONLY
-  elif mode.find('w') >= 0:
+  elif string.find(mode, 'w') >= 0:
     wmode = os.O_WRONLY
-  if mode.find('b') >= 0:
+  if string.find(mode, 'b') >= 0:
     wmode = wmode | os.O_BINARY
-  if mode.find('t') >= 0:
+  if string.find(mode, 't') >= 0:
     wmode = wmode | os.O_TEXT
   return os.fdopen(msvcrt.open_osfhandle(pipe.Detach(),wmode),mode)
 
@@ -114,7 +114,7 @@ def MakePrivateHandle(handle, replace = 1):
 
   flags = win32con.DUPLICATE_SAME_ACCESS
   proc = win32api.GetCurrentProcess()
-  if replace: flags |= win32con.DUPLICATE_CLOSE_SOURCE
+  if replace: flags = flags | win32con.DUPLICATE_CLOSE_SOURCE
   newhandle = win32api.DuplicateHandle(proc,handle,proc,0,0,flags)
   if replace: handle.Detach() # handle was already deleted by the last call
   return newhandle
@@ -126,7 +126,7 @@ def MakeInheritedHandle(handle, replace = 1):
 
   flags = win32con.DUPLICATE_SAME_ACCESS
   proc = win32api.GetCurrentProcess()
-  if replace: flags |= win32con.DUPLICATE_CLOSE_SOURCE
+  if replace: flags = flags | win32con.DUPLICATE_CLOSE_SOURCE
   newhandle = win32api.DuplicateHandle(proc,handle,proc,0,1,flags)
   if replace: handle.Detach() # handle was deleted by the last call
   return newhandle
@@ -194,7 +194,8 @@ def SpoolWorker(srcHandle, destHandle, outFiles, doneEvent):
 
   except:
     info = sys.exc_info()
-    print >> SPOOL_ERROR, string.join(apply(traceback.format_exception, info), ''); SPOOL_ERROR.flush()
+    SPOOL_ERROR.writelines(apply(traceback.format_exception, info), '')
+    SPOOL_ERROR.flush()
     del info
 
 def NullFile(inheritable):
