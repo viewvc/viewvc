@@ -2752,42 +2752,39 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
 
   out.write(block)
 
-def generate_tarball(out, request, tar_top, rep_top,
-                     reldir, options, stack=[]):
-  cvs = request.roottype == 'cvs'
-  if cvs and (0 == len(rep_top) and 0 < len(reldir) and
-              reldir[0] == 'CVSROOT' and cfg.options.hide_cvsroot):
-    return
-  if 0 == len(rep_top) and 0 < len(reldir) and cfg.is_forbidden(reldir[0]):
-    return
-
-  rep_path = rep_top + reldir
-  tar_dir = _path_join(tar_top + reldir) + '/'
-
+def generate_tarball(out, request, options, reldir, stack):
+  # get directory info from repository
+  rep_path = request.path_parts + reldir
   entries = request.repos.listdir(rep_path, options)
-
-  subdirs = [ ]
-  for file in entries:
-    if not file.errors and file.kind == vclib.DIR:
-      subdirs.append(file.name)
-
-  stack.append(tar_dir)
-
   request.repos.dirlogs(rep_path, entries, options)
-
   entries.sort(lambda a, b: cmp(a.name, b.name))
+
+  # figure out corresponding path in tar file. everything gets put underneath
+  # a single top level directory named after the repository directory being
+  # tarred
+  if request.path_parts:
+    tar_dir = request.path_parts[-1] + '/'
+  else:
+    tar_dir = request.rootname + '/'
+  if reldir:
+    tar_dir = tar_dir + _path_join(reldir) + '/'
 
   # Subdirectory datestamps will be the youngest of the datestamps of
   # version items (files for CVS, files or dirs for Subversion) in
   # that subdirectory.
   latest_date = 0
+  cvs = request.roottype == 'cvs'
   for file in entries:
     # Skip dead or busted CVS files, and CVS subdirs.
     if (cvs and (file.kind != vclib.FILE or (file.rev is None or file.dead))):
       continue
     if file.date > latest_date:
       latest_date = file.date
-  
+
+  # push directory onto stack. it will only be included in the tarball if
+  # files are found underneath it
+  stack.append(tar_dir)
+
   for file in entries:
     if (file.kind != vclib.FILE or
         (cvs and (file.rev is None or file.dead))):
@@ -2795,7 +2792,7 @@ def generate_tarball(out, request, tar_top, rep_top,
 
     for dir in stack:
       generate_tarball_header(out, dir, mtime=latest_date)
-    del stack[0:]
+    del stack[:]
 
     if cvs:
       info = os.stat(file.path)
@@ -2805,8 +2802,8 @@ def generate_tarball(out, request, tar_top, rep_top,
       mode = 0644
       rev = None
 
-    fp = request.repos.openfile(rep_top + reldir + [file.name], rev)[0]
-
+    ### read the whole file into memory? bad... better to do 2 passes
+    fp = request.repos.openfile(rep_path + [file.name], rev)[0]
     contents = fp.read()
     fp.close()
 
@@ -2815,30 +2812,26 @@ def generate_tarball(out, request, tar_top, rep_top,
     out.write(contents)
     out.write('\0' * (511 - ((len(contents) + 511) % 512)))
 
-  subdirs.sort()
-  for subdir in subdirs:
-    generate_tarball(out, request, tar_top, rep_top,
-                     reldir + [subdir], options, stack)
+  # recurse into subdirectories
+  for file in entries:
+    if file.errors or file.kind != vclib.DIR:
+      continue
 
-  if len(stack):
-    del stack[-1:]
+    # skip forbidden/hidden directories (top-level only)
+    if not rep_path:
+      if (cfg.is_forbidden(file.name)
+          or (cvs and cfg.options.hide_cvsroot and file.name == 'CVSROOT')):
+        continue
+
+    generate_tarball(out, request, options, reldir + [file.name], stack)
+
+  # pop directory (if it's being pruned. otherwise stack is already empty)
+  del stack[-1:]
 
 def download_tarball(request):
   if not cfg.options.allow_tar:
     raise debug.ViewCVSException('Tarball generation is disabled',
                                  '403 Forbidden')
-
-  # If there is a repository directory name we can use for the
-  # top-most directory, use it.  Otherwise, use the configured root
-  # name.
-  rep_top = request.path_parts
-  if len(rep_top):
-    tar_top = rep_top[-1]
-    if cfg.is_forbidden(tar_top):
-      raise debug.ViewCVSException('%s: unknown location' % tar_top,
-                                   '404 Not Found')
-  else:
-    tar_top = request.rootname
 
   options = {}
   if request.roottype == 'cvs':
@@ -2851,7 +2844,7 @@ def download_tarball(request):
   sys.stdout.flush()
   fp = popen.pipe_cmds([('gzip', '-c', '-n')])
 
-  generate_tarball(fp, request, [tar_top], rep_top, [], options)
+  generate_tarball(fp, request, options, [], [])
 
   fp.write('\0' * 1024)
   fp.close()
