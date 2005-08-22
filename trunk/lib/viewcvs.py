@@ -186,7 +186,7 @@ class Request:
     # clean it up. this removes duplicate '/' characters and any that may
     # exist at the front or end of the path.
     ### we might want to redirect to the cleaned up URL
-    path_parts = filter(None, string.split(path_info, '/'))
+    path_parts = _path_parts(path_info)
 
     if path_parts:
       # handle magic path prefixes
@@ -516,6 +516,12 @@ class Request:
         del params[name]
 
     return url, params
+
+def _path_parts(path):
+  """Split up a repository path into a list of path components"""
+  # clean it up. this removes duplicate '/' characters and any that may
+  # exist at the front or end of the path.
+  return filter(None, string.split(path, '/'))
 
 def _normalize_path(path):
   """Collapse leading slashes in the script name
@@ -2518,9 +2524,12 @@ def view_diff(request):
 
   rev1 = r1 = query_dict['r1']
   rev2 = r2 = query_dict['r2']
-  p1 = query_dict.get('p1', request.where)
-  p2 = query_dict.get('p2', request.where)
   sym1 = sym2 = None
+  p1 = p2 = request.path_parts 
+  if query_dict.has_key('p1'):
+    p1 = _path_parts(query_dict['p1'])
+  if query_dict.has_key('p2'):
+    p2 = _path_parts(query_dict['p2'])
 
   if r1 == 'text':
     rev1 = query_dict.get('tr1', None)
@@ -2563,17 +2572,11 @@ def view_diff(request):
   if check_freshness(request, None, '%s-%s' % (rev1, rev2), weak=1):
     return
 
+  diff_type = None
+  diff_options = {}
   human_readable = 0
-  unified = 0
   parseheaders = 0
-  args = [ ]
 
-  ### Note: these options only really work out where rcsdiff (used by
-  ### CVS) and regular diff (used by SVN) overlap.  If for some reason
-  ### our use of the options for these starts to deviate too much,
-  ### this code may need a re-org to just do different things for
-  ### different VC types.
-  
   format = query_dict.get('diff_format', cfg.options.diff_format)
   makepatch = int(request.query_dict.get('makepatch', 0))
 
@@ -2584,84 +2587,43 @@ def view_diff(request):
     format = 'u'
   
   if format == 'c':
-    args.append('-c')
+    diff_type = vclib.CONTEXT
     parseheaders = 1
   elif format == 's':
-    args.append('--side-by-side')
-    args.append('--width=164')
+    diff_type = vclib.SIDE_BY_SIDE
   elif format == 'l':
-    args.append('--unified=15')
+    diff_type = vclib.UNIFIED
+    diff_options['context'] = 15
     human_readable = 1
     unified = 1
   elif format == 'h':
-    args.append('-u')
+    diff_type = vclib.UNIFIED
     human_readable = 1
-    unified = 1
   elif format == 'u':
-    args.append('-u')
-    unified = 1
+    diff_type = vclib.UNIFIED
     parseheaders = 1
   else:
     raise debug.ViewCVSException('Diff format %s not understood'
                                  % format, '400 Bad Request')
 
   if human_readable:
-    if cfg.options.hr_funout:
-      args.append('-p')
-    if cfg.options.hr_ignore_white:
-      args.append('-w')
-    if cfg.options.hr_ignore_keyword_subst and request.roottype == 'cvs':
-      # -kk isn't a regular diff option.  it exists only for rcsdiff
-      # (as in "-ksubst"), so 'svn' roottypes can't use it.
-      args.append('-kk')
+    diff_options['funout'] = cfg.options.hr_funout
+    diff_options['ignore_white'] = cfg.options.hr_ignore_white
+    diff_options['ignore_keyword_subst'] = cfg.options.hr_ignore_keyword_subst
 
-  file1 = None
-  file2 = None
-  
-  if request.roottype == 'cvs':
-    rcsfile = request.repos.rcsfile(request.path_parts, 1)
-    args[len(args):] = ['-r' + rev1, '-r' + rev2, rcsfile]
-    fp = request.repos.rcs_popen('rcsdiff', args, 'rt')
-  else:
-    try:
-      date1 = vclib.svn.date_from_rev(request.repos, int(rev1))
-      date2 = vclib.svn.date_from_rev(request.repos, int(rev2))
-    except vclib.InvalidRevision:
-      raise debug.ViewCVSException('Invalid revision(s) passed to diff',
-                                   '400 Bad Request')
-
-    if date1 is not None:
-      date1 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date1))
-    else:
-      date1 = ''
-    if date2 is not None:
-      date2 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date2))
-    else:
-      date2 = ''
-    args.append("-L")
-    args.append(p1 + "\t" + date1 + "\t" + rev1)
-    args.append("-L")
-    args.append(p2 + "\t" + date2 + "\t" + rev2)
-
-    # Need to keep a reference to the FileDiff object around long
-    # enough to use.  It destroys its underlying temporary files when
-    # the class is destroyed.
-    diffobj = vclib.svn.do_diff(request.repos, p1, int(rev1),
-                                p2, int(rev2), args)
-    
-    try:
-      fp = diffobj.get_pipe()
-    except vclib.svn.core.SubversionException, e:
-      if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
-        raise debug.ViewCVSException('Invalid path(s) or revision(s) passed '
-                                     'to diff', '400 Bad Request')
-      raise e
+  try:
+    fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options)
+  except vclib.InvalidRevision:
+    raise debug.ViewCVSException('Invalid path(s) or revision(s) passed '
+                                 'to diff', '400 Bad Request')
 
   # If we're bypassing the templates, just print the diff and get outta here.
   if makepatch:
     request.server.header('text/plain')
     date1, date2, raw_diff_fp = raw_diff(request.repos.rootpath, fp,
-                                         sym1, sym2, unified, parseheaders, 0)
+                                         sym1, sym2, 
+                                         diff_type == vclib.UNIFIED,
+                                         parseheaders, 0)
     copy_stream(raw_diff_fp)
     raw_diff_fp.close()
     return
@@ -2689,7 +2651,9 @@ def view_diff(request):
     date1, date2, changes = human_readable_diff(fp, rev1, rev2)
   else:
     date1, date2, raw_diff_fp = raw_diff(request.repos.rootpath, fp,
-                                         sym1, sym2, unified, parseheaders, 1)
+                                         sym1, sym2,
+                                         diff_type == vclib.UNIFIED,
+                                         parseheaders, 1)
 
   data.update({
     'date1' : date1 and rcsdiff_date_reformat(date1),
