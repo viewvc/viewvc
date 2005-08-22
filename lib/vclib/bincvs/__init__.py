@@ -344,7 +344,7 @@ def _match_revs_tags(revlist, taglist):
     rev.prev = rev.next = None
     if depth < len(history):
       prev = history[depth]
-      if depth == 0 or (prev and rev.number[:-1] == prev.number[:-1]):
+      if prev and (depth == 0 or rev.number[:-1] == prev.number[:-1]):
         rev.prev = prev
         prev.next = rev
 
@@ -399,7 +399,7 @@ def _match_revs_tags(revlist, taglist):
 def _add_tag(tag_name, revision):
   """Create a new tag object and associate it with a revision"""
   if revision:
-    tag = Tag(tag_name, revision and revision.string)
+    tag = Tag(tag_name, revision.string)
     tag.aliases = revision.tags
     revision.tags.append(tag)
   else:
