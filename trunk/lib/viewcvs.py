@@ -745,7 +745,7 @@ def nav_path(request):
 
   # set convenient "rev" and "is_dir" values
   rev = None
-  if request.roottype == "svn":
+  if request.roottype == "svn" and request.query_dict.get('rev'):
     rev = request.repos.rev
   is_dir = request.pathtype == vclib.DIR
 
@@ -936,21 +936,25 @@ def common_template_data(request):
   data['roots_href'] = request.get_url(view_func=view_roots,
                                        params={}, escape=1)
 
+  params = {}
+  if request.roottype == 'svn' and request.query_dict.has_key('rev'):
+    params['rev'] = request.query_dict['rev']
+
   if request.path_parts:
     dir = _path_join(request.path_parts[:-1])
     data['up_href'] = request.get_url(view_func=view_directory,
                                       where=dir, pathtype=vclib.DIR,
-                                      params={}, escape=1)
+                                      params=params, escape=1)
 
   if request.pathtype == vclib.FILE:
     if (request.view_func is not view_log):
-      data['log_href'] = request.get_url(view_func=view_log, params={},
-                                         escape=1)
+      data['log_href'] = request.get_url(view_func=view_log,
+                                         params=params, escape=1)
 
     if (request.roottype == 'cvs' and cfg.options.use_cvsgraph
         and request.view_func is not view_cvsgraph):
-      data['graph_href'] = request.get_url(view_func=view_cvsgraph, params={},
-                                           escape=1)
+      data['graph_href'] = request.get_url(view_func=view_cvsgraph,
+                                           params=params, escape=1)
 
   return data
 
