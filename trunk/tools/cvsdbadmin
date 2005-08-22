@@ -100,7 +100,7 @@ def usage():
 ## main
 if __name__ == '__main__':
     ## check that a command was given
-    if len(sys.argv) < 2:
+    if len(sys.argv) <= 2:
         usage()
 
     ## set the handler function for the command
