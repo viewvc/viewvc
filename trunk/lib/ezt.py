@@ -103,13 +103,22 @@ Directives
    [QUAL_NAME]
 
    This directive is simply replaced by the value of the qualified name.
-   Numbers are converted to a string, and None becomes an empty string.
+   If the value is a number it's converted to a string before being 
+   outputted. If it is None, nothing is outputted. If it is a python file
+   object (i.e. any object with a "read" method), it's contents are
+   outputted. If it is a callback function (any callable python object
+   is assumed to be a callback function), it is invoked and passed an EZT
+   printer function as an argument.
 
    [QUAL_NAME QUAL_NAME ...]
 
-   The first value defines a substitution format, specifying constant
-   text and indices of the additional arguments. The arguments are then
-   substituted and the resulting is inserted into the output stream.
+   If the first value is a callback function, it is invoked with the
+   output file pointer as a first argument, and the rest of the values as
+   additional arguments.
+
+   Otherwise, the first value defines a substitution format, specifying
+   constant text and indices of the additional arguments. The arguments
+   are substituted and the result is inserted into the output stream.
 
    Example:
      ["abc %0 def %1 ghi %0" foo bar.baz]
@@ -173,7 +182,16 @@ Directives
    VARIABLE.  The new (or changed) variable is then available for use
    with other mechanisms such as [is ...] or [if-any ...], as long as
    they appear later in the template.
- 
+
+   [format STRING] ... [end]
+
+   The format directive controls how the values substituted into
+   templates are escaped before they are put into the output stream. It
+   has no effect on the literal text of the templates, only the output
+   from [QUAL_NAME ...] directives. STRING can be one of "raw" "html" 
+   or "xml". The "raw" mode leaves the output unaltered. The "html" and
+   "xml" modes escape special characters using entity escapes (like
+   &quot; and &gt;)
 """
 #
 # Copyright (C) 2001-2005 Greg Stein. All Rights Reserved.
@@ -415,15 +433,10 @@ class Template:
           stack.append(['if-any', len(program), f_args, None])
         else:
           # implied PRINT command
-          if len(args) > 1:
-            f_args = [ ]
-            for arg in args:
-              f_args.append(_prepare_ref(arg, for_names, file_args))
-            ### this should obey the current format...
-            program.append((self._cmd_subst, (f_args[0], f_args[1:])))
-          else:
-            program.append((printers[-1],
-                            _prepare_ref(args[0], for_names, file_args)))
+          f_args = [ ]
+          for arg in args:
+            f_args.append(_prepare_ref(arg, for_names, file_args))
+          program.append((printers[-1], f_args))
 
     if stack:
       ### would be nice to say which blocks...
@@ -442,27 +455,14 @@ class Template:
         step[0](step[1], fp, ctx)
 
   def _cmd_print(self, valref, fp, ctx):
-    _write_value(fp.write, valref, ctx)
+    _write_value(valref, fp, ctx)
 
   def _cmd_print_html(self, valref, fp, ctx):
-    _write_value(lambda s, w=fp.write: w(cgi.escape(s)), valref, ctx)
+    _write_value(valref, fp, ctx, cgi.escape)
 
   def _cmd_print_xml(self, valref, fp, ctx):
     ### use the same quoting as HTML for now
     self._cmd_print_html(valref, fp, ctx)
-
-  def _cmd_subst(self, (valref, args), fp, ctx):
-    fmt = _get_value(valref, ctx)
-    parts = _re_subst.split(fmt)
-    for i in range(len(parts)):
-      piece = parts[i]
-      if i%2 == 1 and piece != '%':
-        idx = int(piece)
-        if idx < len(args):
-          piece = _get_value(args[idx], ctx)
-        else:
-          piece = '<undef>'
-      fp.write(piece)
 
   def _cmd_include(self, (valref, reader), fp, ctx):
     fname = _get_value(valref, ctx)
@@ -628,8 +628,9 @@ def _get_value((refname, start, rest), ctx):
   # string or a sequence
   return ob
 
-def _write_value(func, valref, ctx):
-  value = _get_value(valref, ctx)
+def _write_value(valrefs, fp, ctx, format=lambda s: s):
+  value = _get_value(valrefs[0], ctx)
+  args = map(lambda valref, ctx=ctx: _get_value(valref, ctx), valrefs[1:])
 
   # if the value has a 'read' attribute, then it is a stream: copy it
   if hasattr(value, 'read'):
@@ -637,9 +638,29 @@ def _write_value(func, valref, ctx):
       chunk = value.read(16384)
       if not chunk:
         break
-      func(chunk)
+      fp.write(format(chunk))
+
+  # value is a callback function: call with file pointer and extra args
+  elif callable(value):
+    apply(value, [fp] + args)
+
+  # value is a substitution pattern
+  elif args:
+    parts = _re_subst.split(value)
+    for i in range(len(parts)):
+      piece = parts[i]
+      if i%2 == 1 and piece != '%':
+        idx = int(piece)
+        if idx < len(args):
+          piece = args[idx]
+        else:
+          piece = '<undef>'
+      if format:
+        fp.write(format(piece))
+
+  # plain old value, write to output
   else:
-    func(value)
+    fp.write(format(value))
 
 
 class _context:
