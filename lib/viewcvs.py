@@ -1015,75 +1015,29 @@ def copy_stream(src, dst=None):
       break
     dst.write(chunk)
 
-class MarkupBuffer:
-  """A file-pointer-ish object from a string buffer"""
-  
-  def __init__(self, buffer):
-    self.buffer = buffer
-    self.size = len(buffer)
-    
-  def read(self, reqlen=None):
-    if not self.size > 0:
-      return None
-    if not reqlen:
-      reqlen = self.size
-    if not reqlen > 0:
-      return ''
-    if reqlen > self.size:
-      reqlen = self.size
-    chunk = self.buffer[0:reqlen]
-    self.buffer = self.buffer[reqlen:]
-    self.size = self.size - reqlen
-    return chunk
-  def close(self):
-    self.buffer = ''
-    self.size = 0
-
 class MarkupPipeWrapper:
-  """A file-pointer-ish object from another filepointer, plus some optional
-  pre- and post- text.  Closes and closes FP."""
-  
+  """An EZT callback that outputs a filepointer, plus some optional
+  pre- and post- text."""
+
   def __init__(self, fp, pretext=None, posttext=None, htmlize=1):
-    # Setup a list of fps to read from (actually, a list of tuples
-    # tracking the fp and whether or not to htmlize() the stuff read
-    # from that fp).  We read from a given fp only after exhausting
-    # all the ones prior to it in the list.
-    self.fps = []
-    if pretext:
-      self.fps.append([MarkupBuffer(pretext), 0])
-    if fp:
-      self.fps.append([fp, htmlize])
-    if posttext:
-      self.fps.append([MarkupBuffer(posttext), 0])
-    self.which_fp = 0
+    self.fp = fp
+    self.pretext = pretext
+    self.posttext = posttext
+    self.htmlize = htmlize
 
-  def read(self, reqlen):
-    if not self.which_fp < len(self.fps):
-      return None
-    if not reqlen > 0:
-      return ''
-    
-    chunk = None
-    while reqlen > 0 and self.which_fp < len(self.fps):
-      fp, htmlize = self.fps[self.which_fp]
-      readchunk = retry_read(fp, reqlen)
-      if readchunk:
-        if htmlize:
-          readchunk = htmlify(readchunk)
-        readlen = len(readchunk)
-        reqlen = reqlen - readlen
-        chunk = (chunk or '') + readchunk
-      else:
-        self.which_fp = self.which_fp + 1
-    return chunk
-
-  def close(self):
-    for pair in self.fps:
-      pair[0].close()
-    del self.fps[:]
-
-  def __del__(self):
-    self.close()
+  def __call__(self, out):
+    if self.pretext:
+      out.write(self.pretext)
+    while 1:
+      chunk = retry_read(self.fp)
+      if not chunk:
+        break
+      if self.htmlize:
+        chunk = htmlify(chunk)
+      out.write(chunk)
+    self.fp.close()
+    if self.posttext:
+      out.write(self.posttext)
 
 class MarkupEnscript:
   """A file-pointer-ish object for reading file contents slammed
@@ -1092,6 +1046,16 @@ class MarkupEnscript:
   def __init__(self, enscript_path, lang, fp):
     ### Man, oh, man, had I any idea how to deal with bi-directional
     ### pipes, I would.  But I don't.
+    ###  If we ever did decide to deal with them, we'd be forced to use
+    ###  nonblocking, asynchronous, or multi-threaded I/O on them, which
+    ###  are all pains to deal with portably. We could't use regular
+    ###  blocking, sequential reads and writes because there's no way of
+    ###  knowing how much data you need to write to a child process before
+    ###  you can read anything from it (and vice versa) and doing the wrong
+    ###  I/O at the wrong time causes deadlocks. It's probably worth
+    ###  looking into the "subprocess" module (PEP 324), which could handle
+    ###  this kind of stuff for us, and might make a good replacement for
+    ###  our crufty popen module anyway.
 
     self._closed = 0
     self.temp_file = tempfile.mktemp()
@@ -1187,7 +1151,7 @@ def markup_stream_python(fp):
   html = pp.fontify(html)
   html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
   html = re.sub(_re_rewrite_email, r'<a href="mailto:\1">\1</a>', html)
-  return MarkupBuffer(html)
+  return html
 
 def markup_stream_php(fp):
   if not cfg.options.use_php:
@@ -1372,7 +1336,7 @@ def view_markup(request):
     fp.close()
     url = request.get_url(view_func=view_checkout, params={'rev': rev},
                           escape=1)
-    markup_fp = MarkupBuffer('<img src="%s"><br>' % url)
+    markup_fp = '<img src="%s"><br>' % url
   else:
     basename, ext = os.path.splitext(request.path_parts[-1])
     streamer = markup_streamers.get(ext)
