@@ -2266,63 +2266,6 @@ def rcsdiff_date_reformat(date_str):
 
 _re_extract_rev = re.compile(r'^[-+]+ [^\t]+\t([^\t]+)\t((\d+\.)*\d+)$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
-def human_readable_diff(fp, rev1, rev2):
-  log_rev1 = log_rev2 = None
-  date1 = date2 = ''
-  rcsdiff_eflag = None
-  while 1:
-    line = fp.readline()
-    if not line:
-      break
-
-    # Use regex matching to extract the data and to ensure that we are
-    # extracting it from a properly formatted line. There are rcsdiff
-    # programs out there that don't supply the correct format; we'll be
-    # flexible in case we run into one of those.
-    if line[:4] == '--- ':
-      match = _re_extract_rev.match(line)
-      if match:
-        date1 = match.group(1)
-        log_rev1 = match.group(2)
-    elif line[:4] == '+++ ':
-      match = _re_extract_rev.match(line)
-      if match:
-        date2 = match.group(1)
-        log_rev2 = match.group(2)
-      break
-
-    # Didn't want to put this here, but had to.  The DiffSource class
-    # picks up fp after this loop has processed the header.  Previously
-    # error messages and the 'Binary rev ? and ? differ' where thrown out
-    # and DiffSource then showed no differences.
-    # Need to process the entire header before DiffSource is used.
-    if line[:3] == 'Bin':
-      rcsdiff_eflag = _RCSDIFF_IS_BINARY
-      break
-
-    if (string.find(line, 'not found') != -1 or 
-        string.find(line, 'illegal option') != -1):
-      rcsdiff_eflag = _RCSDIFF_ERROR
-      break
-
-  if (log_rev1 and log_rev1 != rev1):
-    raise debug.ViewCVSException('rcsdiff found revision %s, but expected '
-                                 'revision %s' % (log_rev1, rev1),
-                                 '500 Internal Server Error')
-  if (log_rev2 and log_rev2 != rev2):
-    raise debug.ViewCVSException('rcsdiff found revision %s, but expected '
-                                 'revision %s' % (log_rev2, rev2),
-                                 '500 Internal Server Error')
-
-
-  # Process any special lines in the header, or continue to
-  # get the differences from DiffSource.
-  if rcsdiff_eflag is not None:
-    changes = [ (_item(type=rcsdiff_eflag)) ]
-  else:
-    changes = DiffSource(fp)
-
-  return date1, date2, changes
 
 def spaced_html_text(text):
   text = string.expandtabs(string.rstrip(text))
@@ -2467,22 +2410,23 @@ class DiffSource:
 class DiffSequencingError(Exception):
   pass
 
-def raw_diff(rootpath, fp, sym1, sym2, unified, parseheader, htmlize):
-  date1 = date2 = None
+def diff_parse_headers(fp, diff_type, rev1, rev2,
+                       rootpath=None, sym1=None, sym2=None):
+  date1 = date2 = log_rev1 = log_rev2 = flag = None
   header_lines = []
+
+  if diff_type == vclib.UNIFIED:
+    f1 = '--- '
+    f2 = '+++ '
+  elif diff_type == vclib.CONTEXT:
+    f1 = '*** '
+    f2 = '--- '
+  else:
+    f1 = f2 = None
 
   # If we're parsing headers, then parse and tweak the diff headers,
   # collecting them in an array until we've read and handled them all.
-  # Then, use a MarkupPipeWrapper to wrap the collected headers and
-  # the filepointer.
-  if parseheader:
-    if unified:
-      f1 = '--- '
-      f2 = '+++ '
-    else:
-      f1 = '*** '
-      f2 = '--- '
-
+  if f1 and f2:
     parsing = 1
     len_f1 = len(f1)
     len_f2 = len(f2)
@@ -2498,6 +2442,7 @@ def raw_diff(rootpath, fp, sym1, sym2, unified, parseheader, htmlize):
         match = _re_extract_rev.match(line)
         if match:
           date1 = match.group(1)
+          log_rev1 = match.group(2)
         if sym1:
           line = line[:-1] + ' %s\n' % sym1
       elif line[:len(f2)] == f2:
@@ -2511,13 +2456,25 @@ def raw_diff(rootpath, fp, sym1, sym2, unified, parseheader, htmlize):
         if sym2:
           line = line[:-1] + ' %s\n' % sym2
         parsing = 0
-      if htmlize:
-        line = htmlify(line)
+      elif line[:3] == 'Bin':
+        flag = _RCSDIFF_IS_BINARY
+        parsing = 0
+      elif (string.find(line, 'not found') != -1 or 
+            string.find(line, 'illegal option') != -1):
+        flag = _RCSDIFF_ERROR
+        parsing = 0
       header_lines.append(line)
 
-  return date1, date2, MarkupPipeWrapper(fp, string.join(header_lines, ''),
-                                         None, htmlize)
+  if (log_rev1 and log_rev1 != rev1):
+    raise debug.ViewCVSException('rcsdiff found revision %s, but expected '
+                                 'revision %s' % (log_rev1, rev1),
+                                 '500 Internal Server Error')
+  if (log_rev2 and log_rev2 != rev2):
+    raise debug.ViewCVSException('rcsdiff found revision %s, but expected '
+                                 'revision %s' % (log_rev2, rev2),
+                                 '500 Internal Server Error')
 
+  return date1, date2, flag, string.join(header_lines, '')
 
 def view_diff(request):
   query_dict = request.query_dict
@@ -2575,7 +2532,6 @@ def view_diff(request):
   diff_type = None
   diff_options = {}
   human_readable = 0
-  parseheaders = 0
 
   format = query_dict.get('diff_format', cfg.options.diff_format)
   makepatch = int(request.query_dict.get('makepatch', 0))
@@ -2588,20 +2544,17 @@ def view_diff(request):
   
   if format == 'c':
     diff_type = vclib.CONTEXT
-    parseheaders = 1
   elif format == 's':
     diff_type = vclib.SIDE_BY_SIDE
   elif format == 'l':
     diff_type = vclib.UNIFIED
     diff_options['context'] = 15
     human_readable = 1
-    unified = 1
   elif format == 'h':
     diff_type = vclib.UNIFIED
     human_readable = 1
   elif format == 'u':
     diff_type = vclib.UNIFIED
-    parseheaders = 1
   else:
     raise debug.ViewCVSException('Diff format %s not understood'
                                  % format, '400 Bad Request')
@@ -2620,12 +2573,12 @@ def view_diff(request):
   # If we're bypassing the templates, just print the diff and get outta here.
   if makepatch:
     request.server.header('text/plain')
-    date1, date2, raw_diff_fp = raw_diff(request.repos.rootpath, fp,
-                                         sym1, sym2, 
-                                         diff_type == vclib.UNIFIED,
-                                         parseheaders, 0)
-    copy_stream(raw_diff_fp)
-    raw_diff_fp.close()
+    date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
+                                                     request.repos.rootpath,
+                                                     sym1, sym2)
+    sys.stdout.write(headers)
+    copy_stream(fp)
+    fp.close()
     return
 
   request.server.header()
@@ -2646,14 +2599,17 @@ def view_diff(request):
   data['diff_format_action'] = urllib.quote(url, _URL_SAFE_CHARS)
   data['diff_format_hidden_values'] = prepare_hidden_values(params)
 
-  date1 = date2 = raw_diff_fp = changes = None
+  date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
+                                                   request.repos.rootpath,
+                                                   sym1, sym2)
+  raw_diff_fp = changes = None
   if human_readable:
-    date1, date2, changes = human_readable_diff(fp, rev1, rev2)
+    if flag is not None:
+      changes = [ _item(type=flag) ]
+    else:
+      changes = DiffSource(fp)
   else:
-    date1, date2, raw_diff_fp = raw_diff(request.repos.rootpath, fp,
-                                         sym1, sym2,
-                                         diff_type == vclib.UNIFIED,
-                                         parseheaders, 1)
+    raw_diff_fp = MarkupPipeWrapper(fp, htmlify(headers), None, 1)
 
   data.update({
     'date1' : date1 and rcsdiff_date_reformat(date1),
