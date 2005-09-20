@@ -254,8 +254,25 @@ class BinCVSRepository(CVSRepository):
     if path1 != path2:
       raise NotImplementedError, "cannot diff across paths in cvs"
     args.extend(['-r' + rev1, '-r' + rev2, rcsfile])
+    
+    fp = self.rcs_popen('rcsdiff', args, 'rt')
 
-    return self.rcs_popen('rcsdiff', args, 'rt')
+    # Eat up (with error-checking) the first five (5) lines of
+    # non-GNU-diff-y headers.
+    headers = ['^={67}$',
+               '^RCS file:.*$',
+               '^retrieving revision (.*)$',
+               '^retrieving revision (.*)$',
+               '^diff .*$',
+               ]
+    for i in range(len(headers)):
+      line = fp.readline()
+      if not line:
+        raise vclib.Error("Error reading diff headers")
+      if not re.match(headers[i], string.lstrip(line)):
+        raise vclib.Error("Error parsing diff headers")
+    return fp
+  
 
 class CVSDirEntry(vclib.DirEntry):
   def __init__(self, name, kind, errors, in_attic):

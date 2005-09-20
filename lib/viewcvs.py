@@ -2374,8 +2374,7 @@ class DiffSource:
 class DiffSequencingError(Exception):
   pass
 
-def diff_parse_headers(fp, diff_type, rev1, rev2,
-                       rootpath=None, sym1=None, sym2=None):
+def diff_parse_headers(fp, diff_type, rev1, rev2, sym1=None, sym2=None):
   date1 = date2 = log_rev1 = log_rev2 = flag = None
   header_lines = []
 
@@ -2400,9 +2399,6 @@ def diff_parse_headers(fp, diff_type, rev1, rev2,
         break
 
       if line[:len(f1)] == f1:
-        # Hide the rootpath, if present at the start of the path.
-        if string.find(line, rootpath) == len_f1:
-          line = line[:len_f1] + line[len_f1+len(rootpath):]
         match = _re_extract_rev.match(line)
         if match:
           date1 = match.group(1)
@@ -2410,9 +2406,6 @@ def diff_parse_headers(fp, diff_type, rev1, rev2,
         if sym1:
           line = line[:-1] + ' %s\n' % sym1
       elif line[:len(f2)] == f2:
-        # Hide the rootpath, if present at the start of the path.
-        if string.find(line, rootpath) == len_f2:
-          line = line[:len_f2] + line[len_f2+len(rootpath):]
         match = _re_extract_rev.match(line)
         if match:
           date2 = match.group(1)
@@ -2538,7 +2531,6 @@ def view_diff(request):
   if makepatch:
     request.server.header('text/plain')
     date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
-                                                     request.repos.rootpath,
                                                      sym1, sym2)
     sys.stdout.write(headers)
     copy_stream(fp)
@@ -2564,7 +2556,6 @@ def view_diff(request):
   data['diff_format_hidden_values'] = prepare_hidden_values(params)
 
   date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
-                                                   request.repos.rootpath,
                                                    sym1, sym2)
   raw_diff_fp = changes = None
   if human_readable:

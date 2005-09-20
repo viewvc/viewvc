@@ -104,6 +104,12 @@ class CCVSRepository(CVSRepository):
 
     return filtered_revs
 
+  def rawdiff(self, path1, rev1, path2, rev2, type, options={}):
+    """see vclib.Repository.rawdiff docstring
+    """
+    raise NotImplementedError, \
+          "rcsparse module does not yet support diff operations"
+
   def openfile(self, path_parts, rev=None):
     path = self.rcsfile(path_parts, 1)
     sink = COSink(rev)

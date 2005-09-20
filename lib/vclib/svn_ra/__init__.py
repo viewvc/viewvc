@@ -24,6 +24,7 @@ import string
 import re
 import tempfile
 import popen2
+import time
 
 from vclib.svn import Revision, ChangedPath, _datestr_to_date
 
@@ -311,6 +312,23 @@ def get_youngest_revision(svnrepos):
 def do_diff(svnrepos, path1, rev1, path2, rev2, diffoptions):
   url1 = svnrepos.rootpath + (path1 and '/' + path1)
   url2 = svnrepos.rootpath + (path2 and '/' + path2)
+
+  date1 = date_from_rev(svnrepos, rev1)
+  date2 = date_from_rev(svnrepos, rev2)
+  if date1 is not None:
+    date1 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date1))
+  else:
+    date1 = ''
+  if date2 is not None:
+    date2 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date2))
+  else:
+    date2 = ''
+
+  diffoptions.append("-L")
+  diffoptions.append("%s\t%s\t%i" % (path1, date1, rev1))
+  diffoptions.append("-L")
+  diffoptions.append("%s\t%s\t%i" % (path2, date2, rev2))
+
   return FileDiff(rev1, url1, rev2, url2,
                   svnrepos.ctx, svnrepos.pool, diffoptions)
 
@@ -460,6 +478,29 @@ class SubversionRepository(vclib.Repository):
       prev = rev
 
     return revs
+
+  def rawdiff(self, path1, rev1, path2, rev2, type, options={}):
+    """see vclib.Repository.rawdiff docstring
+    
+    option values returned by this implementation
+      diffobj - reference to underlying FileDiff object
+    """
+    p1 = self._getpath(path1)
+    p2 = self._getpath(path2)
+    args = vclib._diff_args(type, options)
+
+    # Need to keep a reference to the FileDiff object around long
+    # enough to use.  It destroys its underlying temporary files when
+    # the class is destroyed.
+    diffobj = options['diffobj'] = \
+      do_diff(self, p1, int(rev1), p2, int(rev2), args)
+  
+    try:
+      return diffobj.get_pipe()
+    except vclib.svn.core.SubversionException, e:
+      if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
+        raise vclib.InvalidRevision
+      raise e
 
   def _getpath(self, path_parts):
     return string.join(path_parts, '/')
