@@ -100,7 +100,7 @@ class Repository:
     """
 
   def rawdiff(self, path1, rev1, path2, rev2, type, options={}):
-    """Return a diff of two file revisions
+    """Return a diff (in GNU diff format) of two file revisions
 
     type is the requested diff type (UNIFIED, CONTEXT, etc)
 
