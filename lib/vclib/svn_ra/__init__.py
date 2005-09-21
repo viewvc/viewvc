@@ -172,8 +172,8 @@ class LogCollector:
       change = paths[self.path]
       if change.copyfrom_path:
         this_path = change.copyfrom_path
-    else:
-      for changed_path in changed_paths:
+    for changed_path in changed_paths:
+      if changed_path != self.path:
         # If a parent of our path was copied, our "next previous"
         # (huh?) path will exist elsewhere (under the copy source).
         if (string.rfind(self.path, changed_path) == 0) and \
