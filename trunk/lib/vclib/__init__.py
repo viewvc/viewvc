@@ -160,10 +160,11 @@ class ItemNotFound(Error):
     # it was defined using URL separators
     Error.__init__(self, string.join(path_parts, '/'))
 class InvalidRevision(Error):
-  def __init__(self, revision):
+  def __init__(self, revision=None):
     if revision is None:
-      revision = "(None)"
-    Error.__init__(self, "Invalid revision " + str(revision))
+      Error.__init__(self, "Invalid revision")
+    else:
+      Error.__init__(self, "Invalid revision " + str(revision))
 
 # ======================================================================
 # Implementation code used by multiple vclib modules
