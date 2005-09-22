@@ -148,3 +148,17 @@ def for_standalone():
         request.close()
 
     SocketServer.TCPServer = TCPServer
+
+
+def compare_versions(expected, actual):
+  """Compare EXPECTED and ACTUAL as 3-tuples of (major, minor, patch)
+  version numbers, raising a RuntimeError if ACTUAL < EXPECTED."""
+  major1, minor1, patch1 = expected
+  major2, minor2, patch2 = actual
+  exp_int = (major1 << 16) + (minor1 << 8) + patch1
+  act_int = (major2 << 16) + (minor2 << 8) + patch2
+  if act_int < exp_int:
+    raise RuntimeError, "Version requirement not met"
+
+  
+  
