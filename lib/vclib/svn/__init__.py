@@ -503,6 +503,12 @@ class SubversionRepository(vclib.Repository):
     return revs
 
   def annotate(self, path_parts, rev=None):
+    ### Something's buggy, and the results are catastrophic for users
+    ### of Mozilla and Firefox.  I think the BlameSource 'fp' is
+    ### getting closed too soon or something.  At any rate,
+    ### temporarily re-disable this.
+    raise NotImplementedError, \
+          "No support for Subversion annotation yet"
     if not rev:
       rev = self.rev
     path = self._getpath(path_parts)
