@@ -14,28 +14,37 @@ TO THE IMPATIENT
 ----------------
 Congratulations on getting this far. :-)
 
-Prerequisites: Python 1.5 or later
-                 (http://www.python.org/)
-               RCS, Revision Control System
-                 (http://www.cs.purdue.edu/homes/trinkle/RCS/)
-               GNU-diff to replace diff implementations without the -u option
-                 (http://www.gnu.org/software/diffutils/diffutils.html)
-               read-only, physical access to a CVS repository
-                 (See http://www.cvshome.org/ for more information)
+  Required Software And Configuration Needed To Run ViewCVS:
 
-Optional:      a web server capable of running CGI programs
-                 (for example, Apache at http://httpd.apache.org/)
-               MySQL to create and query a commit database
-                 (http://www.mysql.com/)
-                 (http://sourceforge.net/projects/mysql-python)
-		 (and Python 1.5.2 or later)
-               Enscript to colorize code displayed from the CVS repository
-                 (http://people.ssh.com/mtr/genscript/)
-               CvsGraph for a graphical representation of the CVS revisions
-                 (http://www.akhphd.au.dk/~bertho/cvsgraph/)
-               Subversion, Version Control System
-                 (binary installation and Python bindings)
-                 (http://subversion.tigris.org/)
+    For CVS Support: 
+
+      * Python 1.5.2 or later
+          (http://www.python.org/)
+      * RCS, Revision Control System
+          (http://www.cs.purdue.edu/homes/trinkle/RCS/)
+      * GNU-diff to replace diff implementations without the -u option
+          (http://www.gnu.org/software/diffutils/diffutils.html)
+      * read-only, physical access to a CVS repository
+          (See http://www.cvshome.org/ for more information)
+
+    For Subversion Support:
+
+      * Python 2.0 or later
+          (http://www.python.org/)
+      * Subversion, Version Control System, 1.2.0 or later
+          (binary installation and Python bindings)
+          (http://subversion.tigris.org/)
+
+    Optional:
+      * a web server capable of running CGI programs
+          (for example, Apache at http://httpd.apache.org/)
+      * MySQL to create and query a commit database
+          (http://www.mysql.com/)
+          (http://sourceforge.net/projects/mysql-python)
+      * Enscript, code colorizer
+          (http://people.ssh.com/mtr/genscript/)
+      * CvsGraph, graphical CVS revision tree generator
+          (http://www.akhphd.au.dk/~bertho/cvsgraph/)
 
   GUI Operation:
 
