@@ -25,13 +25,15 @@ import re
 import tempfile
 import popen2
 import time
-
 from vclib.svn import Revision, ChangedPath, _datestr_to_date
-
-# Subversion swig libs
 from svn import core, delta, client, wc, ra
 
 
+### Require Subversion 1.3.0 or better. (for svn_ra_get_locations support)
+if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 3, 0):
+  raise Exception, "Version requirement not met (needs 1.3.0 or better)"
+
+  
 def _rev2optrev(rev):
   rt = core.svn_opt_revision_t()
   if rev is not None:
@@ -49,6 +51,15 @@ def date_from_rev(svnrepos, rev):
   datestr = ra.svn_ra_rev_prop(svnrepos.ra_session, rev,
                                'svn:date', svnrepos.pool)
   return _datestr_to_date(datestr, svnrepos.pool)
+
+
+def get_location(svnrepos, path, rev):
+  try:
+    results = ra.get_locations(svnrepos.ra_session, path, svnrepos.rev,
+                               [int(rev)], svnrepos.pool)
+    return results[int(rev)]
+  except:
+    raise vclib.ItemNotFound(filter(None, string.split(path, '/')))
 
 
 def created_rev(svnrepos, full_name):

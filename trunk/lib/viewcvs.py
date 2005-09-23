@@ -487,12 +487,6 @@ class Request:
     if view_func is view_annotate and params.has_key('annotate'):
       view_func = None
 
-    # For diffs on Subversion repositories, set rev to the value of r2
-    # otherwise, we get 404's on moved files
-    if view_func is view_diff and self.roottype == 'svn' \
-       and not params.has_key('rev'):
-      params['rev'] = params.get('r2')
-
     # no need to explicitly specify diff view when
     # there's r1 and r2 parameters
     if view_func is view_diff and params.has_key('r1') \
@@ -1776,10 +1770,6 @@ def view_log(request):
     entry.diff_to_main_href = None
         
     if request.roottype == 'cvs':
-      entry.annotate_href = request.get_url(view_func=view_annotate, 
-                                            params={'annotate': rev.string},
-                                            escape=1)
-
       prev = rev.prev or rev.parent
       entry.prev = prev and prev.string
       # no moves in CVS ...
@@ -1860,28 +1850,24 @@ def view_log(request):
                                         params={'rev': entry.rev},
                                         escape=1)
 
+    entry.annotate_href = request.get_url(view_func=view_annotate,
+                                          where=entry.filename,
+                                          pathtype=vclib.FILE,
+                                          params={'annotate': rev.string},
+                                          escape=1)
+
     # calculate diff links
     if selected_rev != entry.rev:
-      if entry.filename != request.where:
-        entry_path = entry.filename
-      else:
-        entry_path = None
       entry.sel_for_diff_href =\
           request.get_url(view_func=view_log,
                           params={'rev': request.query_dict.get('rev'),
-                                  'r1': entry.rev,
-                                  'p1': entry_path},
+                                  'r1': entry.rev},
                           escape=1)
     if entry.prev is not None:
-      if entry.filename != entry.prev_path:
-        other_path = entry.prev_path
-      else:
-        other_path = None
       entry.diff_to_prev_href = \
           request.get_url(view_func=view_diff,
                           where=entry.filename, pathtype=vclib.FILE,
                           params={'r1': entry.prev,
-                                  'p1': other_path,
                                   'r2': entry.rev,
                                   'diff_format': None},
                           escape=1)
@@ -1890,15 +1876,10 @@ def view_log(request):
            selected_rev != str(entry.prev) and \
            selected_rev != str(entry.branch_point) and \
            selected_rev != str(entry.next_main):
-      if entry.filename != selected_path:
-        other_path = selected_path
-      else:
-        other_path = None
       entry.diff_to_sel_href = \
           request.get_url(view_func=view_diff,
                           where=entry.filename, pathtype=vclib.FILE,
                           params={'r1': selected_rev,
-                                  'p1': other_path,
                                   'r2': entry.rev,
                                   'diff_format': None},
                           escape=1)
@@ -2433,18 +2414,33 @@ def diff_parse_headers(fp, diff_type, rev1, rev2, sym1=None, sym2=None):
 
   return date1, date2, flag, string.join(header_lines, '')
 
+
+def _get_diff_path_parts(request, query_key, rev):
+  if request.query_dict.has_key(query_key):
+    parts = _path_parts(request.query_dict[query_key])
+  elif request.roottype == 'svn':
+    try:
+      parts = _path_parts(vclib.svn.get_location(request.repos,
+                                                  request.where, rev))
+    except vclib.InvalidRevision:
+      raise debug.ViewCVSException('Invalid path(s) or revision(s) passed '
+                                   'to diff', '400 Bad Request')
+    except vclib.ItemNotFound:
+      raise debug.ViewCVSException('Invalid path(s) or revision(s) passed '
+                                   'to diff', '400 Bad Request')
+  else:
+    parts = request.path_parts
+  return parts
+
+
 def view_diff(request):
   query_dict = request.query_dict
 
   rev1 = r1 = query_dict['r1']
   rev2 = r2 = query_dict['r2']
   sym1 = sym2 = None
-  p1 = p2 = request.path_parts 
-  if query_dict.has_key('p1'):
-    p1 = _path_parts(query_dict['p1'])
-  if query_dict.has_key('p2'):
-    p2 = _path_parts(query_dict['p2'])
 
+  # hack on the diff revisions
   if r1 == 'text':
     rev1 = query_dict.get('tr1', None)
     if not rev1:
@@ -2471,6 +2467,9 @@ def view_diff(request):
     else:
       rev2 = r2[:idx]
       sym2 = r2[idx+1:]
+
+  p1 = _get_diff_path_parts(request, 'p1', rev1)
+  p2 = _get_diff_path_parts(request, 'p2', rev2)
 
   try:
     if revcmp(rev1, rev2) > 0:
