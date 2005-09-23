@@ -239,6 +239,11 @@ class BinCVSRepository(CVSRepository):
       args = rcs_args
     return popen.popen(cmd, args, mode, capture_err)
 
+  def annotate(self, path_parts, rev=None):
+    from vclib.ccvs import blame
+    source = blame.BlameSource(self.rcsfile(path_parts, 1), rev)
+    return source, source.revision
+
   def rawdiff(self, path1, rev1, path2, rev2, type, options={}):
     """see vclib.Repository.rawdiff docstring
 
