@@ -245,20 +245,25 @@ class Request:
       elif cfg.general.svn_roots.has_key(self.rootname):
         self.rootpath = cfg.general.svn_roots[self.rootname]
         try:
+          rev = None
+          if self.query_dict.has_key('rev') \
+            and self.query_dict['rev'] != 'HEAD':
+            rev = int(self.query_dict['rev'])
           if re.match(_re_rewrite_url, self.rootpath):
             # If the rootpath is a URL, we'll use the svn_ra module, but
             # lie about its name.
             import vclib.svn_ra
             vclib.svn = vclib.svn_ra
+            self.repos = vclib.svn.SubversionRepository(self.rootname,
+                                                        self.rootpath,
+                                                        rev)
           else:
             self.rootpath = os.path.normpath(self.rootpath)
             import vclib.svn
-          rev = None
-          if self.query_dict.has_key('rev') \
-            and self.query_dict['rev'] != 'HEAD':
-            rev = int(self.query_dict['rev'])
-          self.repos = vclib.svn.SubversionRepository(self.rootname,
-                                                      self.rootpath, rev)
+            self.repos = vclib.svn.SubversionRepository(self.rootname,
+                                                        self.rootpath,
+                                                        cfg.general.svn_path,
+                                                        rev)
           self.roottype = 'svn'
         except vclib.ReposNotFound:
           raise debug.ViewCVSException(
