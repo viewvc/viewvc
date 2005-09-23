@@ -46,7 +46,7 @@
         [if-any entries.download_text_href]<a href="[entries.download_text_href]"><b>As text</b></a><br>[end]
 
         [# if you don't want to allow annotation, then remove this line]
-        [is roottype "svn"][else]<a href="[entries.annotate_href]"><b>Annotate</b></a><br>[end]
+        <a href="[entries.annotate_href]"><b>Annotate</b></a><br>
       </td>
       <td>
       [is entries.state "dead"]

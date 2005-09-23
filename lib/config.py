@@ -157,6 +157,7 @@ class Config:
     else:
       self.general.cvsnt_exe_path = None
     self.general.use_rcsparse = 0
+    self.general.svn_path = ''
     self.general.mime_types_file = ''
     self.general.address = '<a href="mailto:user@insert.your.domain.here">No admin address has been configured</a>'
     self.general.forbidden = ()
