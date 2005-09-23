@@ -2033,10 +2033,10 @@ def view_annotate(request):
   include_url = request.get_url(view_func=view_log, where='/WHERE/',
                                 pathtype=vclib.FILE, params={}, escape=1)
 
-  source = blame.BlameSource(request.repos, request.path_parts,
-                             diff_url, include_url, rev)
+  source, revision = blame.blame(request.repos, request.path_parts,
+                                 diff_url, include_url, rev)
 
-  data = nav_header_data(request, source.revision)
+  data = nav_header_data(request, revision)
   data['lines'] = source
 
   request.server.header()

@@ -463,6 +463,10 @@ class SubversionRepository(vclib.Repository):
 
     return revs
 
+  def annotate(self, path_parts, rev=None):
+    raise NotImplementedError, \
+          "No support for Subversion annotation yet"
+    
   def rawdiff(self, path1, rev1, path2, rev2, type, options={}):
     """see vclib.Repository.rawdiff docstring
     

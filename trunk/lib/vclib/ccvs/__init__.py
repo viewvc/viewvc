@@ -27,6 +27,7 @@ import cStringIO
 
 import vclib
 import rcsparse
+import blame
 
 ### The functionality shared with bincvs should probably be moved to a
 ### separate module
@@ -109,6 +110,10 @@ class CCVSRepository(CVSRepository):
     """
     raise NotImplementedError, \
           "rcsparse module does not yet support diff operations"
+
+  def annotate(self, path_parts, rev=None):
+    source = blame.BlameSource(self.rcsfile(path_parts, 1), rev)
+    return source, source.revision
 
   def openfile(self, path_parts, rev=None):
     path = self.rcsfile(path_parts, 1)
