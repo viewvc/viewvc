@@ -114,6 +114,23 @@ class Repository:
     Return value is a python file object
     """
 
+  def annotate(self, path_parts, rev=None):
+    """Return a list of annotate file content lines and a revision.
+
+    The annotated lines are an collection of objects with the
+    following addressable members:
+
+       text        - raw text of a line of file contents
+       line_number - line number on which the line is found
+       rev         - revision in which the line was last modified
+       prev_rev    - revision prior to 'rev'
+       author      - author who last modified the line
+       date        - date on which the line was last modified, in seconds
+                     since the epoch, GMT
+
+    These object are sort by their line_number components.
+    """
+    
 
 # ======================================================================
 class DirEntry:
