@@ -24,6 +24,7 @@ import string
 import cStringIO
 import signal
 import time
+import popen
 from svn import fs, repos, core, delta
 
 
@@ -346,9 +347,46 @@ class FileContentsPipe:
   def eof(self):
     return self._eof
 
+
+class BlameSource:
+  def __init__(self, svn_client_path, rootpath, fs_path, rev):
+    self.idx = -1
+    self.line_number = 1
+    self.last = None
+
+    rootpath = os.path.abspath(rootpath)
+    url = 'file://' + string.join([rootpath, fs_path], "/")
+    self.fp = popen.popen(svn_client_path,
+                          ('blame', "%s@%d" % (url, int(rev))), 'rb', 1)
+    
+  def __getitem__(self, idx):
+    if idx == self.idx:
+      return self.last
+    if self.fp.eof():
+      raise IndexError("No more annotations")
+    if idx != self.idx + 1:
+      raise BlameSequencingError()
+    line = self.fp.readline()
+    if not line:
+      raise IndexError("No more annotations")
+    rev, author = line[:17].split(None, 1)
+    text = line[18:]
+    rev = int(rev)
+    if rev > 1:
+      prev_rev = rev - 1
+    item = _item(text=text, line_number=idx+1, rev=rev,
+                 prev_rev=prev_rev, author=author, date=None)
+    self.last = item
+    self.idx = idx
+    return item
+  
+
+class BlameSequencingError(Exception):
+  pass
+
   
 class SubversionRepository(vclib.Repository):
-  def __init__(self, name, rootpath, rev=None):
+  def __init__(self, name, rootpath, svn_path, rev=None):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
 
@@ -358,6 +396,7 @@ class SubversionRepository(vclib.Repository):
     self.rootpath = rootpath
     self.name = name
     self.rev = rev
+    self.svn_client_path = os.path.normpath(os.path.join(svn_path, 'svn'))
 
     # Register a handler for SIGTERM so we can have a chance to
     # cleanup.  If ViewCVS takes too long to start generating CGI
@@ -464,8 +503,12 @@ class SubversionRepository(vclib.Repository):
     return revs
 
   def annotate(self, path_parts, rev=None):
-    raise NotImplementedError, \
-          "No support for Subversion annotation yet"
+    if not rev:
+      rev = self.rev
+    path = self._getpath(path_parts)
+    revision = str(_get_last_history_rev(self, path, self.scratch_pool))
+    source = BlameSource(self.svn_client_path, self.rootpath, path, rev)
+    return source, revision
     
   def rawdiff(self, path1, rev1, path2, rev2, type, options={}):
     """see vclib.Repository.rawdiff docstring
@@ -493,3 +536,7 @@ class SubversionRepository(vclib.Repository):
   def _getpath(self, path_parts):
     return string.join(path_parts, '/')
 
+
+class _item:
+  def __init__(self, **kw):
+    vars(self).update(kw)

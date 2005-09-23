@@ -124,6 +124,9 @@ default_root = cvs
 # of invoking rcs utilities. this feature is experimental
 use_rcsparse = 0
 
+# uncomment if the svn command-line utilities are not on the standard path
+#svn_path = /usr/bin/
+
 #
 # This is a pathname to a MIME types file to help viewcvs to guess the
 # correct MIME type on checkout.

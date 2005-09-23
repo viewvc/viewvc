@@ -34,7 +34,7 @@
       (<a href="[entries.download_href]">download</a>)
       [if-any entries.download_text_href](<a href="[entries.download_text_href]">as text</a>)[end]
       [# if you don't want to allow annotation, then remove this line]
-      [is roottype "svn"][else](<a href="[entries.annotate_href]">annotate</a>)[end]
+      (<a href="[entries.annotate_href]">annotate</a>)
 
       [# if you don't want to allow select for diffs then remove this section]
       [is entries.rev rev_selected]
