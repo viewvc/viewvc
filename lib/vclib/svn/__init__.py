@@ -24,12 +24,21 @@ import string
 import cStringIO
 import signal
 import time
-
-# Subversion swig libs
 from svn import fs, repos, core, delta
 
-# Subversion filesystem paths are '/'-delimited, regardless of OS.
+
+### Require Subversion 1.1.0 or better.
+if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 1, 0):
+  raise Exception, "Version requirement not met (needs 1.1.0 or better)"
+
+  
+def _allow_all(root, path, pool):
+  """Generic authz_read_func that permits access to all paths"""
+  return 1
+
+
 def _fs_path_join(base, relative):
+  # Subversion filesystem paths are '/'-delimited, regardless of OS.
   joined_path = base + '/' + relative
   parts = filter(None, string.split(joined_path, '/'))
   return string.join(parts, '/')
@@ -60,6 +69,16 @@ def date_from_rev(svnrepos, rev):
                              core.SVN_PROP_REVISION_DATE, svnrepos.pool)
   return _datestr_to_date(datestr, svnrepos.pool)
 
+
+def get_location(svnrepos, path, rev):
+  try:
+    results = repos.svn_repos_trace_node_locations(svnrepos.fs_ptr, path,
+                                                   svnrepos.rev, [int(rev)],
+                                                   _allow_all, svnrepos.pool)
+    return results[int(rev)]
+  except:
+    raise vclib.ItemNotFound(filter(None, string.split(path, '/')))
+  
 
 def created_rev(svnrepos, full_name):
   return fs.node_created_rev(svnrepos.fsroot, full_name, svnrepos.pool)
