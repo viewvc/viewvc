@@ -372,6 +372,7 @@ class BlameSource:
     rev, author = line[:17].split(None, 1)
     text = line[18:]
     rev = int(rev)
+    prev_rev = None
     if rev > 1:
       prev_rev = rev - 1
     item = _item(text=text, line_number=idx+1, rev=rev,
