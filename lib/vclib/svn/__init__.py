@@ -380,6 +380,37 @@ class BlameSource:
     self.last = item
     self.idx = idx
     return item
+
+
+class BlameSourceKludge:
+  def __init__(self, svn_client_path, rootpath, fs_path, rev):
+    self.idx = -1
+    self.line_number = 1
+    self.last = None
+
+    rootpath = os.path.abspath(rootpath)
+    url = 'file://' + string.join([rootpath, fs_path], "/")
+    fp = popen.popen(svn_client_path,
+                     ('blame', "%s@%d" % (url, int(rev))), 'rb', 1)
+    self.lines = fp.readlines()
+    
+  def __getitem__(self, idx):
+    if idx == self.idx:
+      return self.last
+    if idx != self.idx + 1:
+      raise BlameSequencingError()
+    line = self.lines[idx]
+    rev, author = line[:17].split(None, 1)
+    text = line[18:]
+    rev = int(rev)
+    prev_rev = None
+    if rev > 1:
+      prev_rev = rev - 1
+    item = _item(text=text, line_number=idx+1, rev=rev,
+                 prev_rev=prev_rev, author=author, date=None)
+    self.last = item
+    self.idx = idx
+    return item
   
 
 class BlameSequencingError(Exception):
@@ -504,17 +535,19 @@ class SubversionRepository(vclib.Repository):
     return revs
 
   def annotate(self, path_parts, rev=None):
-    ### Something's buggy, and the results are catastrophic for users
-    ### of Mozilla and Firefox.  I think the BlameSource 'fp' is
-    ### getting closed too soon or something.  At any rate,
-    ### temporarily re-disable this.
-    raise NotImplementedError, \
-          "No support for Subversion annotation yet"
     if not rev:
       rev = self.rev
     path = self._getpath(path_parts)
     revision = str(_get_last_history_rev(self, path, self.scratch_pool))
-    source = BlameSource(self.svn_client_path, self.rootpath, path, rev)
+
+    ### Something's buggy in BlameSource, and the results are
+    ### catastrophic for users of Mozilla and Firefox (it seems that
+    ### invoking the error.ezt while in the middle of table as large
+    ### as annotate's is baaaaaad).  I think the BlameSource 'fp' is
+    ### getting closed too soon or something.  At any rate, use a
+    ### non-stream hack for now.
+    #source = BlameSource(self.svn_client_path, self.rootpath, path, rev)
+    source = BlameSourceKludge(self.svn_client_path, self.rootpath, path, rev)
     return source, revision
     
   def rawdiff(self, path1, rev1, path2, rev2, type, options={}):
