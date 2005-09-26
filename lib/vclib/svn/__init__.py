@@ -550,14 +550,14 @@ class SubversionRepository(vclib.Repository):
     source = BlameSourceKludge(self.svn_client_path, self.rootpath, path, rev)
     return source, revision
     
-  def rawdiff(self, path1, rev1, path2, rev2, type, options={}):
+  def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     """see vclib.Repository.rawdiff docstring
     
     option values returned by this implementation
       diffobj - reference to underlying FileDiff object
     """
-    p1 = self._getpath(path1)
-    p2 = self._getpath(path2)
+    p1 = self._getpath(path_parts1)
+    p2 = self._getpath(path_parts2)
     args = vclib._diff_args(type, options)
 
     # Need to keep a reference to the FileDiff object around long
