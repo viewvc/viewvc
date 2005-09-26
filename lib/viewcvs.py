@@ -3063,10 +3063,10 @@ def view_query(request):
   if dir:
     for subdir in string.split(dir, ','):
       path = _path_join(request.path_parts + [ string.strip(subdir) ])
-      query.SetDirectory('%s%%' % cvsdb.EscapeLike(path), 'like')
+      query.SetDirectory(path, 'exact')
   else:
     if request.path_parts: # if we are in a subdirectory ...
-      query.SetDirectory('%s%%' % cvsdb.EscapeLike(request.where), 'like')
+      query.SetDirectory(request.where, 'exact')
   if file:
     query.SetFile(file, file_match)
   if who:
