@@ -244,7 +244,7 @@ class BinCVSRepository(CVSRepository):
     source = blame.BlameSource(self.rcsfile(path_parts, 1), rev)
     return source, source.revision
 
-  def rawdiff(self, path1, rev1, path2, rev2, type, options={}):
+  def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     """see vclib.Repository.rawdiff docstring
 
     Option values recognized by this implementation:
@@ -255,8 +255,8 @@ class BinCVSRepository(CVSRepository):
     if options.get('ignore_keyword_subst', 0):
       args.append('-kk')
 
-    rcsfile = self.rcsfile(path1, 1)
-    if path1 != path2:
+    rcsfile = self.rcsfile(path_parts1, 1)
+    if path_parts1 != path_parts2:
       raise NotImplementedError, "cannot diff across paths in cvs"
     args.extend(['-r' + rev1, '-r' + rev2, rcsfile])
     

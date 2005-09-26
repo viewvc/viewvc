@@ -99,7 +99,7 @@ class Repository:
     options is a dictionary of implementation specific options
     """
 
-  def rawdiff(self, path1, rev1, path2, rev2, type, options={}):
+  def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     """Return a diff (in GNU diff format) of two file revisions
 
     type is the requested diff type (UNIFIED, CONTEXT, etc)

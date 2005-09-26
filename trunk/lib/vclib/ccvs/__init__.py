@@ -105,7 +105,7 @@ class CCVSRepository(CVSRepository):
 
     return filtered_revs
 
-  def rawdiff(self, path1, rev1, path2, rev2, type, options={}):
+  def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     """see vclib.Repository.rawdiff docstring
     """
     raise NotImplementedError, \
