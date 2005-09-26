@@ -491,8 +491,28 @@ class SubversionRepository(vclib.Repository):
     return revs
 
   def annotate(self, path_parts, rev=None):
-    raise NotImplementedError, \
-          "No support for Subversion annotation yet"
+    path = self._getpath(path_parts)
+    url = self.rootpath + (path and '/' + path)
+    if rev is None:
+      rev = self.rev
+    else:
+      rev = int(rev)
+
+    blame_data = []
+
+    def _blame_cb(line_no, revision, author, date,
+                  line, pool, blame_data=blame_data):
+      prev_rev = None
+      if revision > 1:
+        prev_rev = revision - 1
+      blame_data.append(_item(text=line, line_number=line_no+1,
+                              rev=revision, prev_rev=prev_rev,
+                              author=author, date=None))
+      
+    client.svn_client_blame(url, _rev2optrev(1), _rev2optrev(rev),
+                            _blame_cb, self.ctx, self.pool)
+
+    return blame_data, rev
     
   def rawdiff(self, path1, rev1, path2, rev2, type, options={}):
     """see vclib.Repository.rawdiff docstring
@@ -538,3 +558,6 @@ class SubversionRepository(vclib.Repository):
     return dirents
     
     
+class _item:
+  def __init__(self, **kw):
+    vars(self).update(kw)
