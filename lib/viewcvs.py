@@ -927,7 +927,7 @@ def common_template_data(request):
   # add in the roots for the selection
   roots = []
   allroots = list_roots(cfg)
-  if len(allroots) >= 2:
+  if len(allroots):
     rootnames = allroots.keys()
     rootnames.sort(icmp)
     for rootname in rootnames:
