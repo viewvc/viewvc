@@ -128,6 +128,7 @@
   <li>options/cross_copies</li>
   <li>options/use_php</li>
   <li>options/php_path</li>
+  <li>options/svn_path</li>
   <li>templates/error</li>
   <li>templates/query_form</li>
   <li>templates/query_results</li>
@@ -188,6 +189,15 @@
         </dt>
         <dd>
           Replaced by <var>rows.errors</var>
+        </dd>
+      </dl>
+      <dl>
+        <dt>
+          <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
+          <var>rows.href</var> and <var>rows.rev_href</var>
+        </dt>
+        <dd>
+          Replaced by <var>rows.log_href</var> and <var>rows.view_href</var>
         </dd>
       </dl>
       <dl>
@@ -386,6 +396,15 @@
           <var>rows.mime_type</var>
         </dt>
         <dd>New mime-type variable for file directory entries.</dd>
+      </dl>
+      <dl>
+        <dt>
+          <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
+          <var>rows.log_href</var> and <var>rows.view_href</var>
+        </dt>
+        <dd>New links for log and content displays, respectively.  A
+            directory's content is another directory view; a file's is
+            a markup or download view.</dd>
       </dl>
       <dl>
         <dt>
