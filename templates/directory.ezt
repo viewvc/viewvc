@@ -72,7 +72,11 @@
 [for rows]
   <tr class="vc_row_[if-index rows even]even[else]odd[end]">
     <td[if-any rows.graph_href][else] colspan=2[end]>
-      <a name="[rows.anchor]" href="[rows.href]" title="[if-any rows.viewable]View[else]Download[end] File">
+      [is rows.type "dir"]
+      <a name="[rows.anchor]" href="[rows.view_href]" title="View directory contents">
+      [else]
+      <a name="[rows.anchor]" href="[rows.log_href]" title="View file revision log">
+      [end]
       <img src="[docroot]/images/[is rows.type "dir"]dir[else][is rows.state "dead"]broken[else]text[end][end].png" alt="" border=0 width=16 height=16>
       [rows.name][is rows.type "dir"]/[end]</a>
       [is rows.state "dead"](dead)[end]
@@ -89,7 +93,11 @@
         [for rows.errors]<p><i>[rows.errors]</i></p>[end]
       </td>
     [else]
-      <td>&nbsp;[if-any rows.rev]<a href="[rows.rev_href]" title="View Revision Log"><b>[rows.rev]</b></a>[end]</td>
+      [is rows.type "dir"]
+      <td>&nbsp;[if-any rows.rev]<a href="[rows.log_href]" title="View directory revision log"><b>[rows.rev]</b></a>[end]</td>
+      [else]
+      <td>&nbsp;[if-any rows.rev]<a href="[rows.view_href]" title="View file contents"><b>[rows.rev]</b></a>[end]</td>
+      [end]
       <td>&nbsp;[rows.time]</td>
       <td>&nbsp;[rows.author]</td>
       [is cfg.options.show_logs "1"]

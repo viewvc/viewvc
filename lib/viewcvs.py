@@ -1502,11 +1502,11 @@ def view_directory(request):
           and where == '' and file.name == 'CVSROOT'):
         continue
     
-      row.href = request.get_url(view_func=view_directory,
-                                 where=where_prefix+file.name,
-                                 pathtype=vclib.DIR,
-                                 params=dir_params,
-                                 escape=1)
+      row.view_href = request.get_url(view_func=view_directory,
+                                      where=where_prefix+file.name,
+                                      pathtype=vclib.DIR,
+                                      params=dir_params,
+                                      escape=1)
 
       if request.roottype == 'cvs' and file.rev is not None:
         row.rev = None
@@ -1515,7 +1515,7 @@ def view_directory(request):
           row.log_rev = file.rev
 
       if request.roottype == 'svn':
-        row.rev_href = request.get_url(view_func=view_log,
+        row.log_href = request.get_url(view_func=view_log,
                                        where=where_prefix + file.name,
                                        pathtype=vclib.DIR,
                                        params={'rev': str(file.rev)},
@@ -1539,17 +1539,17 @@ def view_directory(request):
 
       view = row.viewable and view_markup or view_checkout
 
-      row.href = request.get_url(view_func=view_log,
-                                 where=file_where,
-                                 pathtype=vclib.FILE,
-                                 params={'rev': str(file.rev)},
-                                 escape=1)
-
-      row.rev_href = request.get_url(view_func=view,
+      row.log_href = request.get_url(view_func=view_log,
                                      where=file_where,
                                      pathtype=vclib.FILE,
                                      params={'rev': str(file.rev)},
                                      escape=1)
+
+      row.view_href = request.get_url(view_func=view,
+                                      where=file_where,
+                                      pathtype=vclib.FILE,
+                                      params={'rev': str(file.rev)},
+                                      escape=1)
 
       if cfg.options.use_cvsgraph and request.roottype == 'cvs':
          row.graph_href = request.get_url(view_func=view_cvsgraph,
