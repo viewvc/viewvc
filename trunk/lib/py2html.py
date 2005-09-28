@@ -20,7 +20,7 @@
      -header:file   use contents of file as header
      -footer:file   use contents of file as footer
      -URL           replace all occurances of 'URL: link' with
-                    '<A HREF="link">link</A>'; this is always enabled
+                    '<a href="link">link</a>'; this is always enabled
 		    in CGI mode
      -v             verbose
 
@@ -72,9 +72,9 @@ __copyright__ = """
 
 __version__ = '0.5'
 
-__cgifooter__ = ('\n<PRE># code highlighted using <A HREF='
-		 '"http://starship.skyport.net/~lemburg/">py2html.py</A> '
-		 'version %s</PRE>\n' % __version__)
+__cgifooter__ = ('\n<pre># code highlighted using <a href='
+		 '"http://starship.skyport.net/~lemburg/">py2html.py</a> '
+		 'version %s</pre>\n' % __version__)
 
 import sys,string,re
 
@@ -176,14 +176,14 @@ class PrettyPrint:
     def set_mode_html_color(self):
 
 	self.formats = {
-	    'all':('<PRE>','</PRE>'),
-	    'comment':('<FONT COLOR=#1111CC>','</FONT>'),
-	    'keyword':('<FONT COLOR=#3333CC><B>','</B></FONT>'),
-	    'parameter':('<FONT COLOR=#000066>','</FONT>'),
+	    'all':('<pre>','</pre>'),
+	    'comment':('<span style="color:#1111CC">','</span>'),
+	    'keyword':('<span style="color:#3333CC"><strong>','</strong></span>'),
+	    'parameter':('<span style="color:#000066>','</span>'),
 	    'identifier':( lambda x,strip=string.strip:
-                           '<A NAME="%s"><FONT COLOR=#CC0000><B>' % (strip(x)),
-	                   '</B></FONT></A>'),
-	    'string':('<FONT COLOR=#115511>','</FONT>')
+                           '<a name="%s"><span style="color:#CC0000"><strong>' % (strip(x)),
+	                   '</strong></span></a>'),
+	    'string':('<span style="color:#115511">','</span>')
 	    }
 
     set_mode_rawhtml_color = set_mode_html_color
@@ -191,13 +191,13 @@ class PrettyPrint:
     def set_mode_html_mono(self):
 
 	self.formats = {
-	    'all':('<PRE>','</PRE>'),
+	    'all':('<pre>','</pre>'),
 	    'comment':('',''),
-	    'keyword':( '<U>','</U>'),
+	    'keyword':( '<span style="text-decoration:underline">','</span>'),
 	    'parameter':('',''),
 	    'identifier':( lambda x,strip=string.strip:
-                           '<A NAME="%s"><B>' % (strip(x)),
-		           '</B>'),
+                           '<a name="%s"><strong>' % (strip(x)),
+		           '</strong>'),
 	    'string':('','')
 	    }
 
@@ -228,13 +228,13 @@ class PrettyPrint:
 	output = self.fontify(self.escape_html(text))
 	if self.replace_URLs: 
 	    output = re.sub('URL:([ \t]+)([^ \n\r<]+)',
-			    'URL:\\1<A HREF="\\2">\\2</A>',output)
-	html = """<HTML><HEAD><TITLE>%s</TITLE></HEAD>
-		  <BODY BGCOLOR=%s>
+			    'URL:\\1<a href="\\2">\\2</a>',output)
+	html = """<html><head><title>%s</title></head>
+		  <body style="background-color:%s">
 		  <!--header-->%s
 		  <!--script-->%s
 		  <!--footer-->%s
-		  </BODY>\n"""%(self.title,self.bgcolor,self.header,output,self.footer)
+		  </body>\n"""%(self.title,self.bgcolor,self.header,output,self.footer)
 	return html
 
     def filter_rawhtml(self,text):
@@ -242,7 +242,7 @@ class PrettyPrint:
 	output = self.fontify(self.escape_html(text))
 	if self.replace_URLs: 
 	    output = re.sub('URL:([ \t]+)([^ \n\r<]+)',
-			    'URL:\\1<A HREF="\\2">\\2</A>',output)
+			    'URL:\\1<a href="\\2">\\2</a>',output)
 	return self.header+output+self.footer
 
     def filter_ansi(self,text):
@@ -297,11 +297,11 @@ def addsplits(splits,text,formats,taglist):
 def write_html_error(titel,text):
 
     print """\
-<HTML><HEADER><TITLE>%s</TITLE></HEADER>
-<BODY>
-<H2>%s</H2>
+html><head><title>%s</title></head>
+<body>
+<h2>%s</h2>
 %s
-</BODY></HTML>
+</body></html>
 """ % (titel,titel,text)
 
 def redirect_to(url):
@@ -310,12 +310,12 @@ def redirect_to(url):
     sys.stdout.write('Status: 302\r\n')
     sys.stdout.write('Location: %s\r\n\r\n' % url)
     print """
-<HTML><HEAD>
-<TITLE>302 Moved Temporarily</TITLE>
-</HEAD><BODY>
-<H1>302 Moved Temporarily</H1>
-The document has moved to <A HREF="%s">%s</A>.<P>
-</BODY></HTML>
+<html><head>
+<title>302 Moved Temporarily</title>
+</head><body>
+<h1>302 Moved Temporarily</h1>
+<p>The document has moved to <a href="%s">%s</a>.</p>
+</body></html>
 """ % (url,url)
 
 def main(cmdline):

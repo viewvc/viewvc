@@ -1,31 +1,34 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
- "http://www.w3.org/TR/REC-html40/loose.dtd">
-<html><head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
   <title>ViewCVS Help: Query The Commit Database</title>
+  <link rel="stylesheet" href="help.css" type="text/css" />
 </head>
-
-<body background="images/chalk.jpg">
-<table width="100%" border=0 cellspacing=5 cellpadding=0>
+<body>
+<table>
+  <col class="menu" />
+  <col />
   <tr>
-    <td width="1%"><a href=".."><img border=0
-        src="images/logo.png"></a>
+    <td><a href=".."><img
+        src="images/logo.png" alt="ViewCVS logotype" /></a>
     </td>
     <td><h1>ViewCVS Help: Query The Commit Database</h1></td>
   </tr>
-  <tr><td width="1%" valign="top" bgcolor="#ffffff">
+  <tr><td>
      <h3>Other&nbsp;Help:</h3>
-     <a href="help_rootview.html">General</a><br>
-     <a href="help_dirview.html">Directory&nbsp;View</a><br>
-     <a href="help_log.html">Classic&nbsp;Log&nbsp;View</a><br>
-     <a href="help_logtable.html">Alternative&nbsp;Log&nbsp;View</a><br>
-     <b>Query&nbsp;Database</b>
+     <a href="help_rootview.html">General</a><br />
+     <a href="help_dirview.html">Directory&nbsp;View</a><br />
+     <a href="help_log.html">Classic&nbsp;Log&nbsp;View</a><br />
+     <a href="help_logtable.html">Alternative&nbsp;Log&nbsp;View</a><br />
+     <strong>Query&nbsp;Database</strong>
 
      <h3>Internet</h3>
-     <a href="http://viewcvs.sf.net/index.html">Home</a><br>
-     <a href="http://viewcvs.sf.net/upgrading.html">Upgrading</a><br>
-     <a href="http://viewcvs.sf.net/contributing.html">Contributing</a><br>
-     <a href="http://viewcvs.sf.net/license-1.html">License</a><br>
-  </td><td colspan=2>
+     <a href="http://viewcvs.sf.net/index.html">Home</a><br />
+     <a href="http://viewcvs.sf.net/upgrading.html">Upgrading</a><br />
+     <a href="http://viewcvs.sf.net/contributing.html">Contributing</a><br />
+     <a href="http://viewcvs.sf.net/license-1.html">License</a><br />
+  </td><td colspan="2">
 
   <p> 
     Select your parameters for querying the CVS commit database in the
@@ -37,8 +40,8 @@
   <p>
     Any of the text entry fields can take a comma-seperated list of
     search arguments.  For example, to search for all commits from
-    authors <i>jpaint</i> and <i>gstein</i>, just type: <code>jpaint,
-    gstein</code> in the <i>Author</i> input box.  If you are searching
+    authors <em>jpaint</em> and <em>gstein</em>, just type: <code>jpaint,
+    gstein</code> in the <em>Author</em> input box.  If you are searching
     for items containing spaces or quotes, you will need to quote your
     request.  For example, the same search above with quotes is:
     <code>"jpaint", "gstein"</code>.
@@ -52,8 +55,8 @@
     command character for regular expressions is <code>r</code>, and is
     passed directly to MySQL, so you'll need to refer to the MySQL
     manual for the exact regex syntax.  It is very similar to Perl.  A
-    wildard search for all files with a <i>.py</i> extention is:
-    <code>l"%.py"</code> in the <i>File</i> input box.  The same search done
+    wildard search for all files with a <em>.py</em> extention is:
+    <code>l"%.py"</code> in the <em>File</em> input box.  The same search done
     with a regular expression is: <code>r".*\.py"</code>.
   </p>
   <p>                  

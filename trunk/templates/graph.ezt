@@ -6,13 +6,13 @@
 [include "include/header.ezt" "graph"]
 [include "include/file_header.ezt"]
 
-<hr>
+<hr />
 
-<center>
+<div style="text-align:center;">
 [imagemap]
-<img border="0" usemap="#MyMapName"
+<img usemap="#MyMapName"
   src="[imagesrc]" 
-  alt="Revisions of [where]">
-</center>
+  alt="Revisions of [where]" />
+</div>
 
 [include "include/footer.ezt"]

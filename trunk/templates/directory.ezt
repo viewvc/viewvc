@@ -1,13 +1,13 @@
 [include "include/dir_header.ezt"]
 
-<table width="100%" border=0 cellspacing=1 cellpadding=2>
+<table cellspacing="1" cellpadding="2">
 <thead>
 <tr>
-  <th class="vc_header[is sortby "file"]_sort[end]" colspan=2>
+  <th class="vc_header[is sortby "file"]_sort[end]" colspan="2">
     <a href="[sortby_file_href]#dirlist">File
     [is sortby "file"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
-        width="13" height="13" border="0"
+        width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
     </a>
@@ -16,7 +16,7 @@
     <a href="[sortby_rev_href]#dirlist">Rev.
     [is sortby "rev"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
-        width="13" height="13" border="0"
+        width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
     </a>
@@ -25,7 +25,7 @@
     <a href="[sortby_date_href]#dirlist">Age
     [is sortby "date"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
-        width="13" height="13" border="0"
+        width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
     </a>
@@ -34,7 +34,7 @@
     <a href="[sortby_author_href]#dirlist">Author
     [is sortby "author"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
-        width="13" height="13" border="0"
+        width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
     </a>
@@ -44,7 +44,7 @@
     <a href="[sortby_log_href]#dirlist">Last log entry
     [is sortby "log"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
-        width="13" height="13" border="0"
+        width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
     </a>
@@ -56,10 +56,10 @@
 <tbody>
 [if-any up_href]
   <tr class="vc_row_odd">
-    <td colspan=2>
+    <td colspan="2">
       <a href="[up_href]">
-      <img src="[docroot]/images/back_small.png" alt="" width=16 height=16
-      border=0>&nbsp;Parent&nbsp;Directory</a>
+      <img src="[docroot]/images/back_small.png" alt="Parent Directory" width="16" height="16"
+      />&nbsp;Parent&nbsp;Directory</a>
     </td>
     <td>&nbsp;</td>
     <td>&nbsp;</td>
@@ -68,45 +68,45 @@
       <td>&nbsp;</td>
     [end]
   </tr>
-[end]
-[for rows]
-  <tr class="vc_row_[if-index rows even]even[else]odd[end]">
-    <td[if-any rows.graph_href][else] colspan=2[end]>
-      [is rows.type "dir"]
-      <a name="[rows.anchor]" href="[rows.view_href]" title="View directory contents">
-      [else]
-      <a name="[rows.anchor]" href="[rows.log_href]" title="View file revision log">
-      [end]
-      <img src="[docroot]/images/[is rows.type "dir"]dir[else][is rows.state "dead"]broken[else]text[end][end].png" alt="" border=0 width=16 height=16>
-      [rows.name][is rows.type "dir"]/[end]</a>
-      [is rows.state "dead"](dead)[end]
-    </td>
-    [if-any rows.graph_href]
-      <td width="1%"><a href="[rows.graph_href]"
-      title="View Revision Graph"><img
-      src="[docroot]/images/cvsgraph_16x16.png"
-      alt="(graph)" width=16 height=16 border=0>
-      </a></td>
-    [end]
-    [if-any rows.errors]
-      <td colspan=[is cfg.options.show_logs "1"]4[else]3[end]>
-        [for rows.errors]<p><i>[rows.errors]</i></p>[end]
-      </td>
-    [else]
-      [is rows.type "dir"]
-      <td>&nbsp;[if-any rows.rev]<a href="[rows.log_href]" title="View directory revision log"><b>[rows.rev]</b></a>[end]</td>
-      [else]
-      <td>&nbsp;[if-any rows.rev]<a href="[rows.view_href]" title="View file contents"><b>[rows.rev]</b></a>[end]</td>
-      [end]
-      <td>&nbsp;[rows.time]</td>
-      <td>&nbsp;[rows.author]</td>
-      [is cfg.options.show_logs "1"]
-        [if-any rows.show_log]
-          <td>&nbsp;[rows.log][is rows.type "dir"][is roottype "cvs"]
-            <i>(from [rows.log_file]/[rows.log_rev])</i>[end][end]</td>
-        [else]
-          <td>&nbsp;</td>
-        [end]
+ [end]
+ [for rows]
+   <tr class="vc_row_[if-index rows even]even[else]odd[end]">
+     <td[if-any rows.graph_href][else] colspan="2"[end]>
+       [is rows.type "dir"]
+       <a name="[rows.anchor]" href="[rows.view_href]" title="View directory contents">
+       [else]
+       <a name="[rows.anchor]" href="[rows.log_href]" title="View file revision log">
+       [end]
+       <img src="[docroot]/images/[is rows.type "dir"]dir[else][is rows.state "dead"]broken[else]text[end][end].png" alt="[if-any rows.viewable]View[else]Download[end] File" width="16" height="16" />
+       [rows.name][is rows.type "dir"]/[end]</a>
+       [is rows.state "dead"](dead)[end]
+     </td>
+     [if-any rows.graph_href]
+       <td style="width:1%"><a href="[rows.graph_href]"
+       title="View Revision Graph"><img
+       src="[docroot]/images/cvsgraph_16x16.png"
+       alt="View Revision Graph" width="16" height="16" />
+       </a></td>
+     [end]
+     [if-any rows.errors]
+       <td colspan=[is cfg.options.show_logs "1"]4[else]3[end]>
+         [for rows.errors]<p><em>[rows.errors]</em></p>[end]
+       </td>
+     [else]
+       [is rows.type "dir"]
+       <td>&nbsp;[if-any rows.rev]<a href="[rows.log_href]" title="View directory revision log"><strong>[rows.rev]</strong></a>[end]</td>
+       [else]
+       <td>&nbsp;[if-any rows.rev]<a href="[rows.view_href]" title="View file contents"><strong>[rows.rev]</strong></a>[end]</td>
+       [end]
+       <td>&nbsp;[rows.time]</td>
+       <td>&nbsp;[rows.author]</td>
+       [is cfg.options.show_logs "1"]
+         [if-any rows.show_log]
+           <td>&nbsp;[rows.log][is rows.type "dir"][is roottype "cvs"]
+             <em>(from [rows.log_file]/[rows.log_rev])</em>[end][end]</td>
+         [else]
+           <td>&nbsp;</td>
+         [end]
       [end]
     [end]
   </tr>

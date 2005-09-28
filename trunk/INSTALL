@@ -43,7 +43,7 @@ Congratulations on getting this far. :-)
           (http://sourceforge.net/projects/mysql-python)
       * Enscript, code colorizer
           (http://people.ssh.com/mtr/genscript/)
-      * CvsGraph, graphical CVS revision tree generator
+      * CvsGraph 1.4.0 or later, graphical CVS revision tree generator
           (http://www.akhphd.au.dk/~bertho/cvsgraph/)
 
   GUI Operation:

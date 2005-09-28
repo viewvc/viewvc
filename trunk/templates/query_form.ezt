@@ -5,19 +5,19 @@
 
 [include "include/header.ezt" "query"]
 
-<p><a href=[dir_href]>
-<img src="[docroot]/images/dir.png" width=16 height=16 border=0>
+<p><a href="[dir_href]">
+<img src="[docroot]/images/dir.png" width="16" height="16" alt="Directory" />
 Browse Directory</a></p>
 
 <form action="[query_action]" method="get">
-  [query_hidden_values]
 
 <div class="vc_query_form">
-<table border="0" cellspacing="0" cellpadding="5">
+  [query_hidden_values]
+<table cellspacing="0" cellpadding="5" class="auto">
   [is roottype "cvs"]
   [# For subversion, the branch field is not used ]
   <tr>
-    <th align="right" valign="top">Branch:</th>
+    <th style="text-align:right;vertical-align:top;">Branch:</th>
     <td>
       <input type="text" name="branch" value="[branch]" /><br />
       <label for="branch_match_exact">
@@ -44,14 +44,14 @@ Browse Directory</a></p>
   </tr>
   [end]
   <tr>
-    <th align="right" valign="top">Subdirectory:</th>
+    <th style="text-align:right;vertical-align:top;">Subdirectory:</th>
     <td>
       <input type="text" name="dir" value="[dir]" /><br />
       (you can list multiple directories separated by commas)
     </td>
   </tr>
   <tr>
-    <th align="right" valign="top">File:</th>
+    <th style="text-align:right;vertical-align:top;">File:</th>
     <td>
       <input type="text" name="file" value="[file]" /><br />
       <label for="file_match_exact">
@@ -77,7 +77,7 @@ Browse Directory</a></p>
     </td>
   </tr>
   <tr>
-    <th align="right" valign="top">Who</th>
+    <th style="text-align:right;vertical-align:top;">Who</th>
     <td>
       <input type="text" name="who" value="[who]" /><br />
       <label for="who_match_exact">
@@ -103,7 +103,7 @@ Browse Directory</a></p>
     </td>
   </tr>
   <tr>
-    <th align="right" valign="top">Sort By:</th>
+    <th style="text-align:right;vertical-align:top;">Sort By:</th>
     <td>
       <select name="querysort">
         <option value="date" [is querysort "date"]selected="selected"[end]>Date</option>
@@ -113,9 +113,9 @@ Browse Directory</a></p>
     </td>
   </tr>
   <tr>
-    <th align="right" valign="top">Date:</th>
+    <th style="text-align:right;vertical-align:top;">Date:</th>
     <td>
-      <table border="0" cellspacing="0" cellpadding="0">
+      <table cellspacing="0" cellpadding="0">
         <tr>
           <td><input type="radio" name="date" id="date_hours"
                  value="hours" [is date "hours"]checked="checked"[end] /></td>
@@ -154,7 +154,7 @@ Browse Directory</a></p>
             and
             <input type="text" name="maxdate" value="[maxdate]" size="20" />
             <br />
-            (use the form <b>yyyy-mm-dd hh:mm:ss</b>)
+            (use the form <strong>yyyy-mm-dd hh:mm:ss</strong>)
           </td>
         </tr>
       </table>

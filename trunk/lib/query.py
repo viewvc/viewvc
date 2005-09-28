@@ -292,7 +292,7 @@ def build_commit(server, desc, files, cvsroots, viewcvs_link):
     ob = _item(num_files=len(files), files=[])
     
     if desc:
-        ob.desc = string.replace(server.escape(desc), '\n', '<br>')
+        ob.desc = string.replace(server.escape(desc), '\n', '<br />')
     else:
         ob.desc = '&nbsp;'
 

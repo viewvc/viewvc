@@ -119,7 +119,7 @@ def make_html(root, rcs_path):
   inMark = 0
   rev_count = 0
 
-  open_table_tag = '<table border="0" cellpadding="0" cellspacing="0" width="100%">'
+  open_table_tag = '<table cellpadding="0" cellspacing="0">'
   startOfRow = '<tr><td colspan="3"%s><pre>'
   endOfRow = '</td></tr>'
 
@@ -136,7 +136,7 @@ def make_html(root, rcs_path):
 
     if old_revision != revision and line != 1:
       if row_color == '':
-        row_color = ' bgcolor="#e7e7e7"'
+        row_color = ' style="background-color:#e7e7e7"'
       else:
         row_color = ''
 
