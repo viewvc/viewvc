@@ -27,7 +27,7 @@ a EZT template string:
     ... <title>[title_string]</title></head>
     ... <body><h1>[title_string]</h1>
     ...    [for a_sequence] <p>[a_sequence]</p>
-    ...    [end] <hr>
+    ...    [end] <hr />
     ...    The [person] is [if-any state]in[else]out[end].
     ... </body>
     ... </html>
@@ -48,7 +48,7 @@ with the output fileobject to the templates generate method:
      <p>list item 1</p>
      <p>list item 2</p>
      <p>another element</p>
-     <hr>
+     <hr />
     The doctor is out.
     </body>
     </html>

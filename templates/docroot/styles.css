@@ -12,6 +12,16 @@ a:link    { color: #0000ff; }
 a:visited { color: #880088; }
 a:active  { color: #0000ff; }
 
+img { border: none; }
+table {
+  width: 100%;
+  margin: 0; 
+  border: none;
+}
+table.auto {
+  width: auto;
+}
+form { margin: 0; }
 
 /** Navigation Headers ***/
 .vc_navheader {
@@ -22,6 +32,7 @@ a:active  { color: #0000ff; }
 /*** Table Headers ***/
 .vc_header {
   text-align: left;
+  vertical-align: top;
   background-color: #cccccc;
 }
 .vc_header_sort {

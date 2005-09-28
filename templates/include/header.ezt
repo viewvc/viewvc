@@ -1,21 +1,21 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
- "http://www.w3.org/TR/REC-html40/loose.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <!-- ViewCVS       - http://viewcvs.sourceforge.net/
      by Greg Stein - mailto:gstein@lyra.org  -->
-
-<html>
 <head>
   <title>[if-any rootname][[][rootname]][else]ViewCVS[end] [page_title]</title>
-  <meta name="generator" content="ViewCVS [vsn]">
-  <link rel="stylesheet" href="[docroot]/styles.css" type="text/css">
+  <meta name="generator" content="ViewCVS [vsn]" />
+  <link rel="stylesheet" href="[docroot]/styles.css" type="text/css" />
 </head>
-
 <body>
-
 <div class="vc_navheader">
-<table width="100%" border="0" cellpadding="0" cellspacing="0">
+[if-any roots]
+  <form method="get" action="[change_root_action]">
+[end]
+<table style="padding:0.1em;">
 <tr>
-  <td align="left"><b>
+  <td><strong>
     [for nav_path]
       [if-any nav_path.href]<a href="[nav_path.href]">[end]
       [if-index nav_path first]
@@ -23,20 +23,19 @@
         [nav_path.name][end][if-any nav_path.href]</a>[end]
       [if-index nav_path last][else]/[end]
     [end]
-  </b></td>
-  <td align="right">
+  </strong></td>
+  <td style="text-align:right;">
   [if-any roots]
-    <form method=get action="[change_root_action]">
-      [change_root_hidden_values]
-      <b>Project Root:</b>
+    [change_root_hidden_values]
+      <strong>Project Root:</strong>
       <select name="root" onchange="submit()">
         [define cvs_root_options][end]
         [define svn_root_options][end]
-        <option value="*viewroots*"[is view "roots"] selected[else][end]>Repository Listing</option>
+        <option value="*viewroots*"[is view "roots"] selected="selected"[else][end]>Repository Listing</option>
         [for roots]
           [define root_option][end]
           [is roots.name rootname]
-            [define root_option]<option selected>[roots.name]</option>[end]
+            [define root_option]<option selected="selected">[roots.name]</option>[end]
           [else]
             [define root_option]<option>[roots.name]</option>[end]
           [end]
@@ -55,16 +54,18 @@
           <optgroup label="Subversion Repositories">[svn_root_options]</optgroup>
         [end]
       </select>
-      <input type=submit value="Go">
-    </form>
+      <input type="submit" value="Go" />
   [else]
     &nbsp;
   [end]
   </td>
 </tr>
 </table>
+[if-any roots]
+</form>
+[end]
 </div>
 
-<h1><img align=right src="[docroot]/images/logo.png" width=128 height=48>[page_title]</h1>
+<h1><img style="float:right;" src="[docroot]/images/logo.png" alt="ViewCVS logotype" width="128" height="48" />[page_title]</h1>
 
 

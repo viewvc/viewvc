@@ -6,70 +6,70 @@
 [include "include/header.ezt" "logtable"]
 [include "include/file_header.ezt"]
 
-<hr noshade>
+<hr />
 
 [include "include/branch.ezt"]
 [include "include/view_tag.ezt"]
 [include "include/paging.ezt"]
 
-<hr noshade>
-<table width="100%" border="0" cellspacing="1" cellpadding="2">
+<hr />
+<table cellspacing="1" cellpadding="2">
 <thead>
 <tr>
-  <th align="left" class="vc_header[is logsort "rev"]_sort[end]">Revision</th>
+  <th class="vc_header[is logsort "rev"]_sort[end]">Revision</th>
   [is pathtype "file"]
-  <th align="left" class="vc_header">Tasks</th>
-  <th align="left" class="vc_header">Diffs</th>
+  <th class="vc_header">Tasks</th>
+  <th class="vc_header">Diffs</th>
   [end]
   [is roottype "cvs"]
-  <th align="left" class="vc_header">Branches/<br>Tags</th>
+  <th class="vc_header">Branches/<br />Tags</th>
   [end]
-  <th align="left" class="vc_header[is logsort "date"]_sort[end]">Age</th>
-  <th align="left" class="vc_header">Author</th>
+  <th class="vc_header[is logsort "date"]_sort[end]">Age</th>
+  <th class="vc_header">Author</th>
 </tr>
 </thead>
 [for entries]
   <tbody>
-  <tr valign="top" class="vc_row_[if-index entries even]even[else]odd[end]">
+  <tr style="vertical-align: top;" class="vc_row_[if-index entries even]even[else]odd[end]">
 
     [# Revision column]
     <td rowspan="2">
-      [is roottype "svn"]<a href="[entries.revision_href]"><b>[entries.rev]</b></a>[else]<b>[entries.rev]</b>[end]
+      [is roottype "svn"]<a href="[entries.revision_href]"><strong>[entries.rev]</strong></a>[else]<strong>[entries.rev]</strong>[end]
       <a name="rev[entries.rev]"></a>
     </td>
 
     [is pathtype "file"]
       <td>
       [# Tasks column]
-        <a href="[entries.view_href]"><b>View</b></a><br>
-        <a href="[entries.download_href]"><b>Download</b></a><br>
-        [if-any entries.download_text_href]<a href="[entries.download_text_href]"><b>As text</b></a><br>[end]
+        <a href="[entries.view_href]"><strong>View</strong></a><br />
+        <a href="[entries.download_href]"><strong>Download</strong></a><br />
+        [if-any entries.download_text_href]<a href="[entries.download_text_href]"><strong>As text</strong></a><br />[end]
 
         [# if you don't want to allow annotation, then remove this line]
-        <a href="[entries.annotate_href]"><b>Annotate</b></a><br>
+        <a href="[entries.annotate_href]"><strong>Annotate</strong></a><br />
       </td>
       <td>
       [is entries.state "dead"]
-        <b><i>FILE REMOVED</i></b>
+        <strong><em>FILE REMOVED</em></strong>
       [else]
       [# if you don't want to allow select for diffs then remove this section]
       [is entries.rev rev_selected]
-        <b>[[]selected]</b><br>
+        <strong>[[]selected]</strong><br />
       [else]
-      <a href="[entries.sel_for_diff_href]"><b>[[]select&nbsp;for&nbsp;diffs]</b></a><br>
+      <a href="[entries.sel_for_diff_href]"><strong>[[]select&nbsp;for&nbsp;diffs]</strong></a><br />
       [end]
         [if-any entries.diff_to_sel_href]
-          <a href="[entries.diff_to_sel_href]"><b>Diff&nbsp;to&nbsp;selected&nbsp;[rev_selected]</b></a>
+          <a href="[entries.diff_to_sel_href]"><strong>Diff&nbsp;to&nbsp;selected&nbsp;[rev_selected]</strong></a>
           [if-any human_readable]
           [else]
-            (<a href="[entries.diff_to_sel_href]&amp;diff_format=h"><b>colored</b></a>)
+            (<a href="[entries.diff_to_sel_href]&amp;diff_format=h"><strong>colored</strong></a>)
           [end]<br />
         [end]
         [if-any entries.prev]
-          <a href="[entries.diff_to_prev_href]"><b>Diff&nbsp;to&nbsp;previous&nbsp;[entries.prev]</b></a>
+          <a href="[entries.diff_to_prev_href]"><strong>Diff&nbsp;to&nbsp;previous&nbsp;[entries.prev]</strong></a>
           [if-any human_readable]
           [else]
-            (<a href="[entries.diff_to_prev_href]&amp;diff_format=h"><b>colored</b></a>)
+            (<a href="[entries.diff_to_prev_href]&amp;diff_format=h"><strong>colored</strong></a>)
           [end]<br />
         [end]
       [end]  

@@ -5,41 +5,40 @@
 
 [include "include/header.ezt" "revision"]
 
-<hr noshade>
-
-<table border="0" cellspacing="1" cellpadding="2">
-  <tr align=left>
+<hr />
+<form method="get" action="[jump_rev_action]">
+<table cellspacing="1" cellpadding="2">
+  <tr align="left">
     <th>Jump to revision:</th>
     <td>
-      <form method=get action="[jump_rev_action]">
       [jump_rev_hidden_values]
-      <input type="text" name="rev" value="[jump_rev]">
-      <input type=submit value="Go">
+      <input type="text" name="rev" value="[jump_rev]" />
+      <input type="submit" value="Go" />
       [if-any prev_href]
-        <a href="[prev_href]"><img src="[docroot]/images/back.png" border="0" alt="Previous"></a>[end]
-      [if-any next_href] <a href="[next_href]"><img src="[docroot]/images/forward.png" border="0" alt="Next"></a>[end]
-      </form>
+        <a href="[prev_href]"><img src="[docroot]/images/back.png" alt="Previous" width="20" height="22" /></a>[end]
+      [if-any next_href] <a href="[next_href]"><img src="[docroot]/images/forward.png" width="20" height="22" alt="Next" /></a>[end]
     </td>
   </tr>
-  <tr align=left>
+  <tr align="left">
     <th>Author:</th>
     <td>[author]</td>
   </tr>
-  <tr align=left>
+  <tr align="left">
     <th>Date:</th>
-    <td>[date_str] <i>([ago] ago)</i></td>
+    <td>[date_str] <em>([ago] ago)</em></td>
   </tr>
 </table>
+</form>
 
-<p><b>Log Message:</b></p>
+<p><strong>Log Message:</strong></p>
    <pre class="vc_log">[log]</pre>
 
-<hr noshade>
+<hr />
 
-<p><b>Changed paths:</b></p>
-<table border="0" cellspacing="1" cellpadding="2">
+<p><strong>Changed paths:</strong></p>
+<table cellspacing="1" cellpadding="2">
   <thead>
-  <tr align=left>
+  <tr align="left">
     <th class="vc_header_sort">Path</th>
     <th class="vc_header">Action</th>
     <th class="vc_header">Text Changes</th>
@@ -53,9 +52,9 @@
       <tr class="vc_row_[if-index changes even]even[else]odd[end]">
       <td>
         [is changes.pathtype "dir"]
-          <img src="[docroot]/images/dir.png" alt="">
+          <img src="[docroot]/images/dir.png" width="16" height="16" alt="Directory" />
         [else]
-          <img src="[docroot]/images/text.png" alt="">
+          <img src="[docroot]/images/text.png" width="16" height="16" alt="File" />
         [end]
         [is changes.action "deleted"]
           [changes.filename]
@@ -63,18 +62,18 @@
           <a href="[changes.view_href]">[changes.filename]</a>
         [end]
       </td>
-      <td align=center>[changes.action]</td>
+      <td style="text-align:center;">[changes.action]</td>
       [is changes.action "deleted"]
-        <td align=center>&nbsp;</td>
-        <td align=center>&nbsp;</td>
+        <td style="text-align:center;">&nbsp;</td>
+        <td style="text-align:center;">&nbsp;</td>
       [else]
-        <td align=center>[if-any changes.text_mods]X[else]&nbsp;[end]</td>
-        <td align=center>[if-any changes.prop_mods]X[else]&nbsp;[end]</td>
+        <td style="text-align:center;">[if-any changes.text_mods]X[else]&nbsp;[end]</td>
+        <td style="text-align:center;">[if-any changes.prop_mods]X[else]&nbsp;[end]</td>
       [end]
         [if-any changes.diff_href]
-          <td align=center><a href="[changes.diff_href]&amp;r1=[rev]&amp;r2=[changes.prev_rev]&amp;p1=[changes.filename]&amp;p2=[changes.prev_path]">(diff to previous)</a></td>
+          <td style="text-align:center;"><a href="[changes.diff_href]&amp;r1=[rev]&amp;r2=[changes.prev_rev]&amp;p1=[changes.filename]&amp;p2=[changes.prev_path]">(diff to previous)</a></td>
         [else]
-          <td align=center>&nbsp;</td>
+          <td style="text-align:center;">&nbsp;</td>
         [end]
       </tr>
     [end]

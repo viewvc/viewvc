@@ -1,14 +1,15 @@
 [if-any selection_form]
-  <hr size=1 noshade>
+  <hr />
   [# this table holds the selectors on the left, and reset on the right ]
-  <table>
+  <table class="auto">
     [if-any has_tags]
       <tr>
         <td> Show files using tag: </td>
         <td>
-          <form method=get action="[search_tag_action]">
+          <form method="get" action="[search_tag_action]">
+          <div>
             [search_tag_hidden_values]
-            <select name=only_with_tag onchange="submit()">
+            <select name="only_with_tag" onchange="submit()">
             <option value="">Select Branch</option>
             [if-any branch_tags]
               <optgroup label="Branches">
@@ -31,7 +32,8 @@
             [end]
             </optgroup>
             </select>
-            <input type="submit" value="Show">
+            <input type="submit" value="Show" />
+            </div>
           </form>
         </td>
       </tr>
@@ -43,10 +45,12 @@
         <tr>
           <td>Show files containing the regular expression:</td>
           <td>
-            <form method=get action="[search_tag_action]">
-              [search_tag_hidden_values]
-              <input type="text" name="search" value="[search_re]">
-              <input type="submit" value="Show">
+            <form method="get" action="[search_tag_action]">
+              <div>
+                [search_tag_hidden_values]
+                <input type="text" name="search" value="[search_re]" />
+                <input type="submit" value="Show" />
+              </div>
             </form>
           </td>
         </tr>
@@ -56,9 +60,11 @@
       <tr>
         <td>&nbsp;</td>
         <td>
-          <form method=get action="[search_tag_action]">
-            [search_tag_hidden_values]
-            <input type="submit" value="Show all files">
+          <form method="get" action="[search_tag_action]">
+            <div>
+              [search_tag_hidden_values]
+              <input type="submit" value="Show all files" />
+            </div>
           </form>
         </td>
       </tr>
@@ -67,9 +73,11 @@
         <tr>
           <td>&nbsp;</td>
           <td>
-            <form method=get action="[search_tag_action]">
-              [search_tag_hidden_values]
-              <input type="submit" value="Show all files">
+            <form method="get" action="[search_tag_action]">
+              <div>
+                [search_tag_hidden_values]
+                <input type="submit" value="Show all files" />
+              </div>
             </form>
           </td>
         </tr>
@@ -80,7 +88,7 @@
 
 [# if you want to disable tarball generation remove the following: ]
 [if-any tarball_href]
-  <a href="[tarball_href]">Download tarball</a>
+  <p style="margin:0;"><a href="[tarball_href]">Download tarball</a></p>
 [end]
 
 [include "footer.ezt"]

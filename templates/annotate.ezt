@@ -1,18 +1,13 @@
-[# setup page definitions]
-  [define page_title]Annotation of /[where][end]
-  [define help_href][docroot]/help_rootview.html[end]
-[# end]
-
-[include "include/header.ezt" "annotate"]
+[# setup page definitions][define page_title]Annotation of /[where][end][define help_href][docroot]/help_rootview.html[end][# end][include "include/header.ezt" "annotate"]
 [include "include/file_header.ezt"]
 
-<hr noshade>
+<hr />
 
 <p>
-Revision: <b>[rev]</b> -
-(<a href="[view_href]"><b>view</b></a>)
-(<a href="[download_href]"><b>download</b></a>)
-[if-any download_text_href](<a href="[download_text_href]"><b>as text</b></a>)[end]
+Revision: <strong>[rev]</strong> -
+(<a href="[view_href]"><strong>view</strong></a>)
+(<a href="[download_href]"><strong>download</strong></a>)
+[if-any download_text_href](<a href="[download_text_href]"><strong>as text</strong></a>)[end]
 </p>
 
 
@@ -21,7 +16,7 @@ Revision: <b>[rev]</b> -
 [define last_rev]0[end]
 [define rowclass][class1][end]
 
-<table border="0" cellspacing="0" cellpadding="0" width="100%">
+<table cellspacing="0" cellpadding="0">
 [for lines]
   [is lines.rev last_rev]
   [else]

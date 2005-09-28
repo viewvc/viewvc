@@ -2,6 +2,7 @@ Version 1.0 (not yet released)
 
   * add support for viewing Subversion repositories
   * add support for running on MS Windows (2003-Feb-09)
+  * generate strict XHTML output (2005-Sep-08)
   * add support for caching by sending "Last-Modified", "Expires", 
     "ETag", and "Cache-Control" headers (2004-Jun-03)
   * add support for Mod_Python on Apache 2.x and ASP on IIS
