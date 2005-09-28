@@ -41,7 +41,7 @@ if SHOW_TIMES:
 
   def dump():
     for name, value in _times.items():
-      print '%s: %.6f<br>' % (name, value)
+      print '%s: %.6f<br />' % (name, value)
 
 else:
 
@@ -74,7 +74,7 @@ def PrintException(server, exc_data):
   if msg:
     s = '<p><pre>%s</pre></p>' % server.escape(msg)
   if status:
-    s = s + ('<h4>HTTP Response Status</h4>\n<p><pre>\n%s</pre></p><hr>\n'
+    s = s + ('<h4>HTTP Response Status</h4>\n<p><pre>\n%s</pre></p><hr />\n'
              % status)
   server.write(s)
 
@@ -140,15 +140,15 @@ if SHOW_CHILD_PROCESSES:
 
     for k in server.pageGlobals['processes']:
       i = i + 1
-      server.write("<table border=1>\n")
-      server.write("<tr><td colspan=2>Child Process%i</td></tr>" % i)
-      server.write("<tr>\n  <td valign=top>Command Line</td>  <td><pre>")
+      server.write("<table>\n")
+      server.write("<tr><td colspan=\"2\">Child Process%i</td></tr>" % i)
+      server.write("<tr>\n  <td style=\"vertical-align:top\">Command Line</td>  <td><pre>")
       server.write(server.escape(k.command))
       server.write("</pre></td>\n</tr>\n")
-      server.write("<tr>\n  <td valign=top>Standard In:</td>  <td>")
+      server.write("<tr>\n  <td style=\"vertical-align:top\">Standard In:</td>  <td>")
 
       if k.debugIn is lastOut and not lastOut is None:
-        server.write("<i>Output from process %i</i>" % (i - 1))
+        server.write("<em>Output from process %i</em>" % (i - 1))
       elif k.debugIn:
         server.write("<pre>")
         server.write(server.escape(k.debugIn.getvalue()))
@@ -157,17 +157,17 @@ if SHOW_CHILD_PROCESSES:
       server.write("</td>\n</tr>\n")
       
       if k.debugOut is k.debugErr:
-        server.write("<tr>\n  <td valign=top>Standard Out & Error:</td>  <td><pre>")
+        server.write("<tr>\n  <td style=\"vertical-align:top\">Standard Out & Error:</td>  <td><pre>")
         if k.debugOut:
           server.write(server.escape(k.debugOut.getvalue()))
         server.write("</pre></td>\n</tr>\n")
         
       else:
-        server.write("<tr>\n  <td valign=top>Standard Out:</td>  <td><pre>")
+        server.write("<tr>\n  <td style=\"vertical-align:top\">Standard Out:</td>  <td><pre>")
         if k.debugOut:
           server.write(server.escape(k.debugOut.getvalue()))
         server.write("</pre></td>\n</tr>\n")
-        server.write("<tr>\n  <td valign=top>Standard Error:</td>  <td><pre>")
+        server.write("<tr>\n  <td style=\"vertical-align:top\">Standard Error:</td>  <td><pre>")
         if k.debugErr:
           server.write(server.escape(k.debugErr.getvalue()))
         server.write("</pre></td>\n</tr>\n")
@@ -176,12 +176,12 @@ if SHOW_CHILD_PROCESSES:
       server.flush()
       lastOut = k.debugOut
 
-    server.write("<table border=1>\n")
-    server.write("<tr><td colspan=2>Environment Variables</td></tr>")
+    server.write("<table>\n")
+    server.write("<tr><td colspan=\"2\">Environment Variables</td></tr>")
     for k, v in os.environ.items():
-      server.write("<tr>\n  <td valign=top><pre>")
+      server.write("<tr>\n  <td style=\"vertical-align:top\"><pre>")
       server.write(server.escape(k))
-      server.write("</pre></td>\n  <td valign=top><pre>")
+      server.write("</pre></td>\n  <td style=\"vertical-align:top\"><pre>")
       server.write(server.escape(v))
       server.write("</pre></td>\n</tr>")
     server.write("</table>")

@@ -1,12 +1,11 @@
-<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
- "http://www.w3.org/TR/REC-html40/loose.dtd">
-<!-- ViewCVS       -- http://viewcvs.sourceforge.net/
-     by Greg Stein -- mailto:gstein@lyra.org  -->
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!-- ViewCVS       - http://viewcvs.sourceforge.net/
+     by Greg Stein - mailto:gstein@lyra.org  -->
 <head>
   <title>Checkin Database Query</title>
-  <link rel="stylesheet" href="[docroot]/styles.css" type="text/css">
+  <link rel="stylesheet" href="[docroot]/styles.css" type="text/css" />
 </head>
 
 <body>
@@ -24,119 +23,119 @@
   <p>
     Any of the text entry fields can take a comma-seperated list of
     search arguments.  For example, to search for all commits from
-    authors <i>jpaint</i> and <i>gstein</i>, just type: <b>jpaint,
-    gstein</b> in the <i>Author</i> input box.  If you are searching
+    authors <em>jpaint</em> and <em>gstein</em>, just type: <strong>jpaint,
+    gstein</strong> in the <em>Author</em> input box.  If you are searching
     for items containing spaces or quotes, you will need to quote your
     request.  For example, the same search above with quotes is:
-    <b>"jpaint", "gstein"</b>.
+    <strong>"jpaint", "gstein"</strong>.
   </p>
   <p>                           
 
     Wildcard and regular expression searches are entered in a similar
     way to the quoted requests.  You must quote any wildcard or
     regular expression request, and a command charactor preceeds the
-    first quote.  The command charactor <b>l</b> is for wildcard
-    searches, and the wildcard charactor is a percent (<b>%</b>).  The
-    command charactor for regular expressions is <b>r</b>, and is
+    first quote.  The command charactor <strong>l</strong> is for wildcard
+    searches, and the wildcard charactor is a percent (<strong>%</strong>).  The
+    command charactor for regular expressions is <strong>r</strong>, and is
     passed directly to MySQL, so you'll need to refer to the MySQL
     manual for the exact regex syntax.  It is very similar to Perl.  A
-    wildard search for all files with a <i>.py</i> extention is:
-    <b>l"%.py"</b> in the <i>File</i> input box.  The same search done
-    with a regular expression is: <b>r".*\.py"</b>.
+    wildard search for all files with a <em>.py</em> extention is:
+    <strong>l"%.py"</strong> in the <em>File</em> input box.  The same search done
+    with a regular expression is: <strong>r".*\.py"</strong>.
   </p>
   <p>                  
     All search types can be mixed, as long as they are seperated by
     commas.
   </p>                                                    
 
-<form method=get>
+<form method="get" action="">
 
 <div class="vc_query_form">
-<table border=0 cellspacing=0 cellpadding=2 width=100%>
+<table cellspacing="0" cellpadding="2" class="auto">
  <tr>
   <td>
    <table>
     <tr>
-     <td valign=top>
+     <td style="vertical-align:top;">
 
       <table>
        <tr>
-        <td align=right>CVS Repository:</td>
+        <td align="right">CVS Repository:</td>
         <td>
-         <input type=text name=repository size=40 value="[repository]">
+         <input type="text" name="repository" size="40" value="[repository]" />
         </td>
        </tr>
        <tr>
-        <td align=right>CVS Branch:</td>
+        <td align="right">CVS Branch:</td>
         <td>
-         <input type=text name=branch size=40 value="[branch]">
+         <input type="text" name="branch" size="40" value="[branch]" />
         </td>
        </tr>
        <tr>
-        <td align=right>Directory:</td>
+        <td align="right">Directory:</td>
         <td>
-         <input type=text name=directory size=40 value="[directory]">
+         <input type="text" name="directory" size="40" value="[directory]" />
         </td>
        </tr>
        <tr>
-        <td align=right>File:</td>
+        <td align="right">File:</td>
         <td>
-         <input type=text name=file size=40 value="[file]">
+         <input type="text" name="file" size="40" value="[file]" />
         </td>
        </tr>
        <tr>
-        <td align=right>Author:</td>
+        <td align="right">Author:</td>
         <td>
-         <input type=text name=who size=40 value="[who]">
+         <input type="text" name="who" size="40" value="[who]" />
         </td>
        </tr>
       </table>
 
      </td>
-     <td valign=top>
+     <td style="vertical-align:top;">
 
       <table>
        <tr>
-        <td align=left>Sort By:</td>
+        <td align="left">Sort By:</td>
         <td>
-         <select name=sortby>
-          <option value=date [is sortby "date"]selected[end]>Date</option>
-          <option value=author [is sortby "author"]selected[end]>Author</option>
-          <option value=file [is sortby "file"]selected[end]>File</option>
+         <select name="sortby">
+          <option value="date" [is sortby "date"]selected="selected"[end]>Date</option>
+          <option value="author" [is sortby "author"]selected="selected"[end]>Author</option>
+          <option value="file" [is sortby "file"]selected="selected"[end]>File</option>
          </select>
         </td>
        </tr>
        <tr>
-        <td colspan=2>
-         <table border=0 cellspacing=0 cellpadding=0>
+        <td colspan="2">
+         <table cellspacing="0" cellpadding="0">
           <tr>
            <td>Date:</td>
           </tr>
           <tr>
-           <td><input type=radio name=date value=hours
-		  [is date "hours"]checked[end]></td>
+           <td><input type="radio" name="date" value="hours"
+		  [is date "hours"]checked="checked"[end] /></td>
            <td>In the last
-             <input type=text name=hours value=[hours] size=4>hours
+             <input type="text" name="hours" value="[hours]" size="4" />hours
            </td>
           </tr>
           <tr>
-           <td><input type=radio name=date value=day
-		  [is date "day"]checked[end]></td>
+           <td><input type="radio" name="date" value="day"
+		  [is date "day"]checked="checked"[end] /></td>
            <td>In the last day</td>
           </tr>
           <tr>
-           <td><input type=radio name=date value=week
-		  [is date "week"]checked[end]></td>
+           <td><input type="radio" name="date" value="week"
+		  [is date "week"]checked="checked"[end] /></td>
            <td>In the last week</td>
           </tr>
           <tr>
-           <td><input type=radio name=date value=month
-		  [is date "month"]checked[end]></td>
+           <td><input type="radio" name="date" value="month"
+		  [is date "month"]checked="checked"[end] /></td>
            <td>In the last month</td>
           </tr>
           <tr>
-           <td><input type=radio name=date value=all
-		  [is date "all"]checked[end]></td>
+           <td><input type="radio" name="date" value="all"
+		  [is date "all"]checked="checked"[end] /></td>
            <td>Since the beginning of time</td>
           </tr>
          </table>
@@ -149,7 +148,7 @@
    </table>
   </td>
   <td>
-   <input type=submit value="Search">
+   <input type="submit" value="Search" />
   </td>
  </tr>
 </table>
@@ -159,20 +158,20 @@
 
 [is query "skipped"]
 [else]
-<p><b>[num_commits]</b> matches found.</p>
+<p><strong>[num_commits]</strong> matches found.</p>
 
 [if-any commits]
-<table width="100%" border=0 cellspacing=0 cellpadding=2>
+<table cellspacing="0" cellpadding="2">
  <thead>
  <tr class="vc_header">
-  <th align=left valign=top>Revision</th>
-  <th align=left valign=top>File</th>
-  <th align=left valign=top>Branch</th>
-  <th align=left valign=top>+/-</th>
-  <th align=left valign=top>Date</th>
-  <th align=left valign=top>Author</th>
+  <th>Revision</th>
+  <th>File</th>
+  <th>Branch</th>
+  <th>+/-</th>
+  <th>Date</th>
+  <th>Author</th>
 [# uncommment, if you want a separate Description column: (also see below)
-<th align=left valign=top>Description</th>
+<th>Description</th>
 ]
  </tr>
  </thead>
@@ -180,14 +179,14 @@
  <tbody>
   [for commits.files]
     <tr class="vc_row_[if-index commits even]even[else]odd[end]">
-      <td align=left valign=top>
+      <td style="vertical-align:top;">
 	[if-any commits.files.rev][commits.files.rev][else]&nbsp;[end]
       </td>
-      <td align=left valign=top>[commits.files.link]</td>
-      <td align=left valign=top>
+      <td style="vertical-align:top;">[commits.files.link]</td>
+      <td style="vertical-align:top;">
 	[if-any commits.files.branch][commits.files.branch][else]&nbsp;[end]
       </td>
-      <td align=left valign=top>
+      <td style="vertical-align:top;">
         [is commits.files.type "Add"]<ins>[end]
         [is commits.files.type "Change"]<a href="[commits.files.difflink]">[end]
         [is commits.files.type "Remove"]<del>[end]
@@ -196,16 +195,16 @@
         [is commits.files.type "Change"]</a>[end]
         [is commits.files.type "Remove"]</del>[end]
       </td>
-      <td align=left valign=top>
+      <td style="vertical-align:top;">
 	[if-any commits.files.date][commits.files.date][else]&nbsp;[end]
       </td>
-      <td align=left valign=top>
+      <td style="vertical-align:top;">
 	[if-any commits.files.author][commits.files.author][else]&nbsp;[end]
       </td>
 
 [# uncommment, if you want a separate Description column:
       {if-index commits.files first{
-        <td align=left valign=top rowspan={commits.num_files}>
+        <td style="vertical-align:top;" rowspan="{commits.num_files}">
           {commits.desc}
         </td>
       {end}
@@ -217,7 +216,7 @@
       [if-index commits.files last]
 	<tr class="vc_row_[if-index commits even]even[else]odd[end]">
 	  <td>&nbsp;</td>
-	  <td colspan=5><b>Log:</b><br>
+	  <td colspan="5"><strong>Log:</strong><br />
 	    <pre class="vc_log">[commits.desc]</pre></td>
 	</tr>
       [end]
@@ -227,18 +226,17 @@
 [end]
 
  <tr class="vc_header">
-  <th align=left valign=top>&nbsp;</th>
-  <th align=left valign=top>&nbsp;</th>
-  <th align=left valign=top>&nbsp;</th>
-  <th align=left valign=top>&nbsp;</th>
-  <th align=left valign=top>&nbsp;</th>
-  <th align=left valign=top>&nbsp;</th>
+  <th style="text-align:left;vertical-align:top;">&nbsp;</th>
+  <th style="text-align:left;vertical-align:top;">&nbsp;</th>
+  <th style="text-align:left;vertical-align:top;">&nbsp;</th>
+  <th style="text-align:left;vertical-align:top;">&nbsp;</th>
+  <th style="text-align:left;vertical-align:top;">&nbsp;</th>
+  <th style="text-align:left;vertical-align:top;">&nbsp;</th>
 [# uncommment, if you want a separate Description column:
-  <th align=left valign=top>&nbsp;</th>
+  <th style="text-align:left;vertical-align:top;">&nbsp;</th>
 ]
  </tr>
 </table>
 [end]
 [end]
-
 [include "include/footer.ezt"]

@@ -10,7 +10,7 @@
 
 [end]
 
-<table>
+<table class="auto">
 [is roottype "svn"]
 <tr>
   <td>Current revision:</td>
@@ -19,22 +19,22 @@
 <tr>
   <td>Jump to directory revision:</td>
   <td>
-    <form method=get action="[jump_rev_action]">
+    <form method="get" action="[jump_rev_action]">
     [jump_rev_hidden_values]
-    <input type="text" name="rev" value="[jump_rev]">
-    <input type=submit value="Go">
+    <input type="text" name="rev" value="[jump_rev]" />
+    <input type="submit" value="Go" />
     </form>
   </td>
 </tr>
 [end]
 [if-any view_tag]
-<tr><td>Current tag:</td><td><b>[view_tag]</b></td></tr>
+<tr><td>Current tag:</td><td><strong>[view_tag]</strong></td></tr>
 [end]
 [if-any search_re]
-<tr><td>Current search:</td><td><b>[search_re]</b></td></tr>
+<tr><td>Current search:</td><td><strong>[search_re]</strong></td></tr>
 [end]
 [if-any num_files]
-<tr><td>Files shown:</td><td><b>[files_shown]</b>
+<tr><td>Files shown:</td><td><strong>[files_shown]</strong>
 [is num_dead "0"]
 [else]
   [if-any attic_showing]
@@ -57,10 +57,10 @@
   [else]
     [is picklist_len "1"]
     [else]
-      <form method=get action="[dir_paging_action]">
+      <form method="get" action="[dir_paging_action]">
         [dir_paging_hidden_values]
-        <input type=submit value="Go to:">
-        <select name=dir_pagestart  onchange="submit()">
+        <input type="submit" value="Go to:" />
+        <select name="dir_pagestart"  onchange="submit()">
           [for picklist]
             <option [is picklist.count dir_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] to [picklist.end]</option>
           [end]
@@ -71,5 +71,5 @@
 
 <p><a name="dirlist"></a></p>
 
-<hr noshade>
+<hr />
 

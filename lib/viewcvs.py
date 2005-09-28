@@ -1335,7 +1335,7 @@ def view_markup(request):
     fp.close()
     url = request.get_url(view_func=view_checkout, params={'rev': rev},
                           escape=1)
-    markup_fp = '<img src="%s"><br>' % url
+    markup_fp = '<img src="%s" alt="" /><br />' % url
   else:
     basename, ext = os.path.splitext(request.path_parts[-1])
     streamer = markup_streamers.get(ext)
@@ -2086,6 +2086,7 @@ def view_cvsgraph(request):
                    ("-i",
                     "-c", cfg.options.cvsgraph_conf,
                     "-r", request.repos.rootpath,
+                    "-x", "x",
                     "-3", request.get_url(view_func=view_log, params={},
                                           escape=1),
                     "-4", request.get_url(view_func=view, 
@@ -2234,7 +2235,7 @@ def spaced_html_text(text):
     text = string.replace(text, ' ', '\x01nbsp;')
   text = htmlify(text)
   text = string.replace(text, '\x01', '&')
-  text = string.replace(text, '\x02', '<font color=red>\</font><br>')
+  text = string.replace(text, '\x02', '<span style="color:red">\</span><br />')
   return text
 
 class DiffSource:
@@ -2892,19 +2893,19 @@ def english_query(request):
       ret.append('subdirectories')
     else:
       ret.append('subdirectory')
-    ret.append(' <i>%s</i> ' % htmlify(dir))
+    ret.append(' <em>%s</em> ' % htmlify(dir))
   file = request.query_dict.get('file', '')
   if file:
     if len(ret) != 1: ret.append('and ')
-    ret.append('to file <i>%s</i> ' % htmlify(file))
+    ret.append('to file <em>%s</em> ' % htmlify(file))
   who = request.query_dict.get('who', '')
   branch = request.query_dict.get('branch', '')
   if branch:
-    ret.append('on branch <i>%s</i> ' % htmlify(branch))
+    ret.append('on branch <em>%s</em> ' % htmlify(branch))
   else:
     ret.append('on all branches ')
   if who:
-    ret.append('by <i>%s</i> ' % htmlify(who))
+    ret.append('by <em>%s</em> ' % htmlify(who))
   date = request.query_dict.get('date', 'hours')
   if date == 'hours':
     ret.append('in the last %s hours' % htmlify(request.query_dict.get('hours', '2')))
@@ -2925,10 +2926,10 @@ def english_query(request):
       w1, w2 = 'since', 'before'
     if mindate:
       mindate = make_time_string(parse_date(mindate))
-      ret.append('%s <i>%s</i> ' % (w1, mindate))
+      ret.append('%s <em>%s</em> ' % (w1, mindate))
     if maxdate:
       maxdate = make_time_string(parse_date(maxdate))
-      ret.append('%s <i>%s</i> ' % (w2, maxdate))
+      ret.append('%s <em>%s</em> ' % (w2, maxdate))
   return string.join(ret, '')
 
 def prev_rev(rev):

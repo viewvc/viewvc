@@ -1,16 +1,18 @@
 [if-any branch_names]
-  <hr noshade>
-  <a name=branch></a>
-  <form method=GET action="[branch_select_action]">
+<form method="get" action="[branch_select_action]">
+  <div>
+    <hr />
+    <a name="branch"></a>
     [branch_select_hidden_values]
     View only Branch:
     <select name="only_with_tag" onchange="submit()">
-      <option value="" [is view_tag ""]selected[end]>Show all branches</option>
+      <option value="" [is view_tag ""]selected="selected"[end]>Show all branches</option>
       [for branch_names]
         <option value="[branch_names]" [is branch_names view_tag]selected[end]>[branch_names]</option>
       [end]
     </select>
-    <input type=submit value="  View Branch  ">
-  </form>
+    <input type="submit" value="  View Branch  " />
+  </div>
+</form>
 [end]
 

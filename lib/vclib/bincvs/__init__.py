@@ -148,11 +148,11 @@ class BinCVSRepository(CVSRepository):
                           "revision preceding \"%s\"" % rev)
 
     if filename is None:
-      raise vclib.Error('Missing output from co.<br>fname="%s".' % full_name)
+      raise vclib.Error('Missing output from co.<br />fname="%s".' % full_name)
 
     if not _paths_eq(filename, full_name):
       raise vclib.Error(
-        'The filename from co did not match. Found "%s". Wanted "%s"<br>'
+        'The filename from co did not match. Found "%s". Wanted "%s"<br />'
         % (filename, full_name))
 
     return fp, revision
@@ -518,35 +518,35 @@ def _parse_co_header(fp):
   match = _re_co_filename.match(line)
   if not match:
     raise vclib.Error(
-      'First line of co output is not the filename.<br>'
+      'First line of co output is not the filename.<br />'
       'Line was: %s' % (line))
   filename = match.group(1)
 
   line = fp.readline()
   if not line:
     raise vclib.Error(
-      'Missing second line of output from co.<br>'
+      'Missing second line of output from co.<br />'
       'fname="%s".' % (filename))
   match = _re_co_revision.match(line)
   if not match:
     match = _re_co_warning.match(line)
     if not match:
       raise vclib.Error(
-        'Second line of co output is not the revision.<br>'
-        'Line was: %s<br>'
+        'Second line of co output is not the revision.<br />'
+        'Line was: %s<br />'
         'fname="%s".' % (line, filename))
 
     # second line was a warning. ignore it and move along.
     line = fp.readline()
     if not line:
       raise vclib.Error(
-        'Missing third line of output from co (after a warning).<br>'
+        'Missing third line of output from co (after a warning).<br />'
         'fname="%s".' % (filename))
     match = _re_co_revision.match(line)
     if not match:
       raise vclib.Error(
-        'Third line of co output is not the revision.<br>'
-        'Line was: %s<br>'
+        'Third line of co output is not the revision.<br />'
+        'Line was: %s<br />'
         'fname="%s".' % (line, filename))
 
   # one of the above cases matches the revision. grab it.
