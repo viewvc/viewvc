@@ -966,31 +966,24 @@ def common_template_data(request):
 def nav_header_data(request, rev):
   data = common_template_data(request)
   data.update({
-    'rev' : rev
+    'rev' : rev,
+    'download_text_href' : None,
   })
 
   data['view_href'] = request.get_url(view_func=view_markup,
                                       params={'rev': rev},
                                       escape=1)
-
   data['download_href'] = request.get_url(view_func=view_checkout,
                                           params={'rev': rev},
                                           escape=1)
-
+  data['annotate_href'] = request.get_url(view_func=view_annotate,
+                                          params={'annotate': rev},
+                                          escape=1)
   if not is_plain_text(request.mime_type):
     data['download_text_href'] = \
       request.get_url(view_func=view_checkout,
                       params={'content-type': 'text/plain', 'rev': rev},
                       escape=1)
-  else:
-    data['download_text_href'] = None
-
-  if request.roottype == 'cvs':
-    data['annotate_href'] = request.get_url(view_func=view_annotate,
-                                            params={'annotate': rev},
-                                            escape=1)
-  else:
-    data['annotate_href'] = None
 
   return data
 
@@ -1953,14 +1946,13 @@ def view_log(request):
                                         escape=1)
     data['download_href'] = request.get_url(view_func=view_checkout, params={},
                                             escape=1)
+    data['annotate_href'] = request.get_url(view_func=view_annotate, params={},
+                                            escape=1)
     if not is_plain_text(request.mime_type):
       data['download_text_href'] = \
           request.get_url(view_func=view_checkout,
                           params={'content-type': 'text/plain'},
                           escape=1)
-    if request.roottype == 'cvs':
-      data['annotate_href'] = request.get_url(view_func=view_annotate,
-                                              params={}, escape=1)
   else:
     data['view_href'] = request.get_url(view_func=view_directory, params={},
                                         escape=1)
