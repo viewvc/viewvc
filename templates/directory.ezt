@@ -77,7 +77,7 @@
        [else]
        <a name="[rows.anchor]" href="[rows.log_href]" title="View file revision log">
        [end]
-       <img src="[docroot]/images/[is rows.type "dir"]dir[else][is rows.state "dead"]broken[else]text[end][end].png" alt="[if-any rows.viewable]View[else]Download[end] File" width="16" height="16" />
+       <img src="[docroot]/images/[is rows.type "dir"]dir[else][is rows.state "dead"]broken[else]text[end][end].png" alt="" width="16" height="16" />
        [rows.name][is rows.type "dir"]/[end]</a>
        [is rows.state "dead"](dead)[end]
      </td>
@@ -96,7 +96,7 @@
        [is rows.type "dir"]
        <td>&nbsp;[if-any rows.rev]<a href="[rows.log_href]" title="View directory revision log"><strong>[rows.rev]</strong></a>[end]</td>
        [else]
-       <td>&nbsp;[if-any rows.rev]<a href="[rows.view_href]" title="View file contents"><strong>[rows.rev]</strong></a>[end]</td>
+       <td>&nbsp;[if-any rows.rev]<a href="[rows.view_href]" title="[if-any rows.viewable]View[else]Download[end] file contents"><strong>[rows.rev]</strong></a>[end]</td>
        [end]
        <td>&nbsp;[rows.time]</td>
        <td>&nbsp;[rows.author]</td>
