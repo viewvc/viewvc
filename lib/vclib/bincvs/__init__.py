@@ -723,6 +723,16 @@ def _parse_log_entry(fp):
 
   # parse out a time tuple for the local time
   tm = compat.cvs_strptime(match.group(1))
+
+  # rlog seems to assume that two-digit years are 1900-based (so, "04"
+  # comes out as "1904", not "2004").
+  EPOCH = 1970
+  if tm[0] < EPOCH:
+    tm = list(tm)
+    if (tm[0] - 1900) < 70:
+      tm[0] = tm[0] + 100
+    if tm[0] < EPOCH:
+      raise ValueError, 'invalid year'
   date = compat.timegm(tm)
 
   return Revision(rev, date,
