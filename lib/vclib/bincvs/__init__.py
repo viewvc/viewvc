@@ -109,50 +109,70 @@ class BinCVSRepository(CVSRepository):
     CVSRepository.__init__(self, name, rootpath)
     self.rcs_paths = rcs_paths
 
+  def _get_tip_revision(self, rcs_file, rev=None):
+    """Get the (basically) youngest revision (filtered by REV)."""
+    args = rcs_file,
+    fp = self.rcs_popen('rlog', args, 'rt', 0)
+    filename, default_branch, tags, msg, eof = _parse_log_header(fp)
+    revs = []
+    while not eof:
+      revision, eof = _parse_log_entry(fp)
+      if revision:
+        revs.append(revision)
+    revs = _file_log(revs, tags, default_branch, rev)
+    if revs:
+      return revs[-1]
+    return None
+
   def openfile(self, path_parts, rev=None):
     if not rev or rev == 'HEAD' or rev == 'MAIN':
       rev_flag = '-p'
     else:
       rev_flag = '-p' + rev
-
     full_name = self.rcsfile(path_parts, root=1, v=0)
 
-    fp = self.rcs_popen('co', (rev_flag, full_name), 'rb')
+    used_rlog = 0
+    tip_rev = None  # used only if we have to fallback to using rlog
 
-    filename, revision = _parse_co_header(fp)
+    fp = self.rcs_popen('co', (rev_flag, full_name), 'rb') 
+    try:
+      filename, revision = _parse_co_header(fp)
+    except COMissingRevision:
+      # We got a "revision X.Y.Z absent" error from co.  This could be
+      # because we were asked to find a tip of a branch, which co
+      # doesn't seem to handle.  So we do rlog-gy stuff to figure out
+      # which revision the tip of the branch currently maps to.
+      ### TODO: Only do this when 'rev' is a branch symbol name?
+      if not used_rlog:
+        tip_rev = self._get_tip_revision(full_name + ',v', rev)
+        used_rlog = 1
+      if not tip_rev:
+        raise vclib.Error("Unable to find valid revision")
+      fp = self.rcs_popen('co', ('-p' + tip_rev.string, full_name), 'rb') 
+      filename, revision = _parse_co_header(fp)
+      
     if filename is None:
       # CVSNT's co exits without any output if a dead revision is requested.
       # Bug at http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=190
       # As a workaround, we invoke rlog to find the first non-dead revision
-      # that precedes it and check out that revision instead
-      args = full_name + ',v',
-      fp = self.rcs_popen('rlog', args, 'rt', 0)
-      filename, default_branch, tags, msg, eof = _parse_log_header(fp)
-
-      # Retrieve revision objects
-      revs = []
-      while not eof:
-        revision, eof = _parse_log_entry(fp)
-        if revision:
-          revs.append(revision)
-
-      revs = _file_log(revs, tags, default_branch, rev)
-
-      # if we find a good revision, invoke co again, otherwise error out
-      if revs and revs[-1].undead:
-        rev_flag = '-p' + revs[-1].undead.string
-        fp = self.rcs_popen('co', (rev_flag, full_name), 'rb')
-        filename, revision = _parse_co_header(fp)
-      else:
-        raise vclib.Error("CVSNT co workaround could not find non-dead "
-                          "revision preceding \"%s\"" % rev)
+      # that precedes it and check out that revision instead.  Of course, 
+      # if we've already invoked rlog above, we just reuse its output.
+      if not used_rlog:
+        tip_rev = self._get_tip_revision(full_name + ',v', rev)
+        used_rlog = 1
+      if not (tip_rev and tip_rev.undead):
+        raise vclib.Error(
+          'Could not find non-dead revision preceding "%s"' % rev)
+      fp = self.rcs_popen('co', ('-p' + tip_rev.undead.string,
+                                 full_name), 'rb') 
+      filename, revision = _parse_co_header(fp)
 
     if filename is None:
-      raise vclib.Error('Missing output from co.<br />fname="%s".' % full_name)
+      raise vclib.Error('Missing output from co (filename = "%s")' % full_name)
 
     if not _paths_eq(filename, full_name):
       raise vclib.Error(
-        'The filename from co did not match. Found "%s". Wanted "%s"<br />'
+        'The filename from co ("%s") did not match (expected "%s")'
         % (filename, full_name))
 
     return fp, revision
@@ -487,9 +507,16 @@ def _dict_list_add(dict, idx, elem):
 # ======================================================================
 # Functions for parsing output from RCS utilities
 
+
+class COMalformedOutput(vclib.Error):
+  pass
+class COMissingRevision(vclib.Error):
+  pass
+
 ### suck up other warnings in _re_co_warning?
 _re_co_filename = re.compile(r'^(.*),v\s+-->\s+standard output\s*\n$')
 _re_co_warning = re.compile(r'^.*co: .*,v: warning: Unknown phrases like .*\n$')
+_re_co_missing_rev = re.compile(r'^.*co: .*,v: revision.*absent\n$')
 _re_co_revision = re.compile(r'^revision\s+([\d\.]+)\s*\n$')
 
 def _parse_co_header(fp):
@@ -509,50 +536,40 @@ def _parse_co_header(fp):
   #co: INSTALL,v: warning: Unknown phrases like `permissions ...;' are present.
 
   # parse the output header
-  filename = revision = None
+  filename = None
 
+  # look for a filename in the first line (if there is a first line).
   line = fp.readline()
   if not line:
     return None, None
-
   match = _re_co_filename.match(line)
   if not match:
-    raise vclib.Error(
-      'First line of co output is not the filename.<br />'
-      'Line was: %s' % (line))
+    raise COMalformedOutput, "Unable to find filename in co output stream"
   filename = match.group(1)
 
+  # look for a revision in the second line.
   line = fp.readline()
   if not line:
-    raise vclib.Error(
-      'Missing second line of output from co.<br />'
-      'fname="%s".' % (filename))
+    raise COMalformedOutput, "Missing second line from co output stream"
   match = _re_co_revision.match(line)
-  if not match:
-    match = _re_co_warning.match(line)
-    if not match:
-      raise vclib.Error(
-        'Second line of co output is not the revision.<br />'
-        'Line was: %s<br />'
-        'fname="%s".' % (line, filename))
-
-    # second line was a warning. ignore it and move along.
-    line = fp.readline()
-    if not line:
-      raise vclib.Error(
-        'Missing third line of output from co (after a warning).<br />'
-        'fname="%s".' % (filename))
-    match = _re_co_revision.match(line)
-    if not match:
-      raise vclib.Error(
-        'Third line of co output is not the revision.<br />'
-        'Line was: %s<br />'
-        'fname="%s".' % (line, filename))
-
-  # one of the above cases matches the revision. grab it.
-  revision = match.group(1)
-
-  return filename, revision
+  if match:
+    return filename, match.group(1)
+  elif _re_co_missing_rev.match(line):
+    raise COMissingRevision, "Got missing revision error from co output stream"
+  elif _re_co_warning.match(line):
+    pass
+  else:
+    raise COMalformedOutput, "Unable to find revision in co output stream"
+    
+  # if we get here, the second line wasn't a revision, but it was a
+  # warning we can ignore.  look for a revision in the third line.
+  line = fp.readline()
+  if not line:
+    raise COMalformedOutput, "Missing third line from co output stream"
+  match = _re_co_revision.match(line)
+  if match:
+    return filename, match.group(1)
+  raise COMalformedOutput, "Unable to find revision in co output stream"
 
 
 # if your rlog doesn't use 77 '=' characters, then this must change
