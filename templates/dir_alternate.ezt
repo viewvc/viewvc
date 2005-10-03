@@ -86,7 +86,7 @@
      [end]
      [if-any rows.errors]
        <td colspan=[is cfg.options.show_logs "1"]3[else]2[end]>
-         [for rows.errors]<p><em>[rows.errors]</em></p>[end]
+         [for rows.errors]<em>[rows.errors]</em>[end]
        </td>
      [else]
      <td>&nbsp;[rows.time]</td>
