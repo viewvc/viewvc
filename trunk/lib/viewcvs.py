@@ -1920,6 +1920,10 @@ def view_log(request):
     'download_href': None,
     'download_text_href': None,
     'annotate_href': None,
+    'tag_view_href' : None,
+    'tag_download_href': None,
+    'tag_download_text_href': None,
+    'tag_annotate_href': None,
   })
 
   if cfg.options.use_pagesize:
@@ -1953,6 +1957,22 @@ def view_log(request):
           request.get_url(view_func=view_checkout,
                           params={'content-type': 'text/plain'},
                           escape=1)
+    if view_tag and request.roottype == 'cvs':
+      data['tag_view_href'] = request.get_url(view_func=view_markup,
+                                          params={'rev': view_tag},
+                                          escape=1)
+      data['tag_download_href'] = request.get_url(view_func=view_checkout,
+                                              params={'rev': view_tag},
+                                              escape=1)
+      data['tag_annotate_href'] = request.get_url(view_func=view_annotate,
+                                              params={'rev': view_tag},
+                                              escape=1)
+      if not is_plain_text(request.mime_type):
+        data['tag_download_text_href'] = \
+            request.get_url(view_func=view_checkout,
+                            params={'content-type': 'text/plain',
+                                    'rev': view_tag},
+                            escape=1)
   else:
     data['view_href'] = request.get_url(view_func=view_directory, params={},
                                         escape=1)
