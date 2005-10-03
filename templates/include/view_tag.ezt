@@ -1,5 +1,11 @@
 [if-any view_tag]
-  <p style="margin:0;">Current tag: [view_tag]</p>
+<p>Current tag: [view_tag]<br />
+Bookmark a link to the tip of [view_tag]:
+(<a href="[tag_view_href]">view</a>)
+[if-any tag_download_href](<a href="[tag_download_href]">download</a>)[end]
+[if-any tag_download_text_href](<a href="[tag_download_text_href]">as text</a>)[end]
+[if-any tag_annotate_href](<a href="[tag_annotate_href]">annotate</a>)[end]
+</p>
 [end]
 
 
