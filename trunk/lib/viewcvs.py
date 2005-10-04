@@ -81,17 +81,20 @@ viewcvs_mime_type = 'text/vnd.viewcvs-markup'
 alt_mime_type = 'text/x-cvsweb-markup'
 view_roots_magic = '*viewroots*'
 
-# put here the variables we need in order to hold our state - they will be
-# added (with their current value) to any link/query string you construct
-_sticky_vars = (
-  'hideattic',
-  'sortby',
-  'sortdir',
-  'logsort',
-  'diff_format',
-  'only_with_tag',
-  'search',
-  )
+# Put here the variables we need in order to hold our state - they
+# will be added (with their current value) to (almost) any link/query
+# string you construct.  Variables with zero values in the table below
+# will not, however, be added to links that span repository roots.
+_sticky_vars = {
+  ### VARIABLE : SPAN-ROOTS ###
+  'hideattic' : 1,
+  'sortby' : 1,
+  'sortdir' : 1,
+  'logsort' : 1,
+  'diff_format' : 1,
+  'only_with_tag' : 0,
+  'search' : 1,
+  }
 
 # for reading/writing between a couple descriptors
 CHUNK_SIZE = 8192
@@ -435,6 +438,7 @@ class Request:
         url = url + '/' + checkout_magic_path
 
     # add root to url
+    rootname = None
     if view_func is not view_roots:
       if cfg.options.root_as_url_component:
         # remove root from parameter list if present
@@ -504,7 +508,10 @@ class Request:
 
     # add sticky values to parameter list
     if sticky_vars:
-      for name in _sticky_vars:
+      for name in _sticky_vars.keys():
+        span_roots = _sticky_vars[name]
+        if rootname != self.rootname and not span_roots:
+          continue
         value = self.query_dict.get(name)
         if value is not None and not params.has_key(name):
           params[name] = value
