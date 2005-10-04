@@ -1624,13 +1624,29 @@ def view_directory(request):
       'hide_attic_href' : request.get_url(params={'hideattic': 1}, escape=1),
       'main_href' : request.get_url(params={'only_with_tag': None}, escape=1),
       'has_tags' : ezt.boolean(has_tags),
-      ### one day, if EZT has "or" capability, we can lose this
-      'selection_form' : ezt.boolean(has_tags or cfg.options.use_re_search),
       'branch_tags': branch_tags,
       'plain_tags': plain_tags,
     })
 
-  # should we show the query link?
+  # set svn-specific fields
+  elif request.roottype == 'svn':
+    data['tree_rev'] = revision
+    data['tree_rev_href'] = request.get_url(view_func=view_revision,
+                                            params={'rev': data['tree_rev']},
+                                            escape=1)
+    data['youngest_rev'] = vclib.svn.get_youngest_revision(request.repos)
+    data['youngest_rev_href'] = request.get_url(view_func=view_revision,
+                                                params={},
+                                                escape=1)
+    if request.query_dict.has_key('rev'):
+      data['jump_rev'] = request.query_dict['rev']
+    else:
+      data['jump_rev'] = str(request.repos.rev)
+    url, params = request.get_link(params={'rev': None})
+    data['jump_rev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
+    data['jump_rev_hidden_values'] = prepare_hidden_values(params)
+
+
   if is_query_supported(request):
     params = {}
     if options.has_key('cvs_dir_tag'):
@@ -1648,23 +1664,10 @@ def view_directory(request):
     data['tarball_href'] = request.get_url(view_func=download_tarball, 
                                            params={},
                                            escape=1)
-  if request.roottype == 'svn':
-    data['tree_rev'] = revision
-    data['tree_rev_href'] = request.get_url(view_func=view_revision,
-                                            params={'rev': data['tree_rev']},
-                                            escape=1)
-    data['youngest_rev'] = vclib.svn.get_youngest_revision(request.repos)
-    data['youngest_rev_href'] = request.get_url(view_func=view_revision,
-                                                params={},
-                                                escape=1)
-    if request.query_dict.has_key('rev'):
-      data['jump_rev'] = request.query_dict['rev']
-    else:
-      data['jump_rev'] = str(request.repos.rev)
-    url, params = request.get_link(params={'rev': None})
-    data['jump_rev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-    data['jump_rev_hidden_values'] = prepare_hidden_values(params)
 
+  ### one day, if EZT has "or" capability, we can lose this
+  data['selection_form'] = ezt.boolean(data['has_tags']
+                                       or cfg.options.use_re_search)
   if data['selection_form']:
     url, params = request.get_link(params={'only_with_tag': None, 
                                            'search': None})

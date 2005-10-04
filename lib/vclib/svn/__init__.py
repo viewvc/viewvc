@@ -336,7 +336,8 @@ class FileContentsPipe:
   def readline(self):
     chunk = None
     if not self._eof:
-      chunk = core.svn_stream_readline(self._stream)
+      chunk, self._eof = core.svn_stream_readline(self._stream, '\n',
+                                                  self._pool)
     if not chunk:
       self._eof = 1
     return chunk
