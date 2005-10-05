@@ -290,10 +290,16 @@ class BinCVSRepository(CVSRepository):
                '^retrieving revision (.*)$',
                '^diff .*$',
                ]
+    _re_diff_warning = re.compile(
+      r'^.*rcsdiff: .*,v: warning: Unknown phrases like .*\n$')
     for i in range(len(headers)):
       line = fp.readline()
       if not line:
         raise vclib.Error("Error reading diff headers")
+      # Eat up any warning lines
+      while re.match(_re_diff_warning, line):
+        line = fp.readline()
+      # Make sure we get five good lines of output that match what we expect
       if not re.match(headers[i], string.lstrip(line)):
         raise vclib.Error("Error parsing diff headers")
     return fp
