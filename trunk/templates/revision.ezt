@@ -40,43 +40,27 @@
   <thead>
   <tr align="left">
     <th class="vc_header_sort">Path</th>
-    <th class="vc_header">Action</th>
-    <th class="vc_header">Text Changes</th>
-    <th class="vc_header">Prop Changes</th>
-    <th class="vc_header">Diff to Previous</th>
+    <th class="vc_header">Details</th>
   </tr>
   </thead>
   <tbody>
   [if-any changes]
-    [for changes]
-      <tr class="vc_row_[if-index changes even]even[else]odd[end]">
-      <td>
-        [is changes.pathtype "dir"]
-          <img src="[docroot]/images/dir.png" width="16" height="16" alt="Directory" />
-        [else]
-          <img src="[docroot]/images/text.png" width="16" height="16" alt="File" />
-        [end]
-        [is changes.action "deleted"]
-          [changes.filename]
-        [else]
-          <a href="[changes.view_href]">[changes.filename]</a>
-        [end]
-      </td>
-      <td style="text-align:center;">[changes.action]</td>
+   [for changes]
+    <tr class="vc_row_[if-index changes even]even[else]odd[end]">
+      <td><img src="[docroot]/images/[is changes.pathtype "dir"]dir[else]text[end].png" width="16" height="16" alt="Directory" />
       [is changes.action "deleted"]
-        <td style="text-align:center;">&nbsp;</td>
-        <td style="text-align:center;">&nbsp;</td>
+       [changes.filename]
       [else]
-        <td style="text-align:center;">[if-any changes.text_mods]X[else]&nbsp;[end]</td>
-        <td style="text-align:center;">[if-any changes.prop_mods]X[else]&nbsp;[end]</td>
+       <a href="[changes.view_href]">[changes.filename]</a>
       [end]
-        [if-any changes.diff_href]
-          <td style="text-align:center;"><a href="[changes.diff_href]&amp;r1=[rev]&amp;r2=[changes.prev_rev]&amp;p1=[changes.filename]&amp;p2=[changes.prev_path]">(diff to previous)</a></td>
-        [else]
-          <td style="text-align:center;">&nbsp;</td>
-        [end]
-      </tr>
-    [end]
+      [if-any changes.is_copy]<br /><em>(Copied from [changes.base_path], r[changes.base_rev])</em>[end]
+      </td>
+      <td>[if-any changes.log_href]<a href="[changes.log_href]">[end][changes.action][if-any changes.log_href]</a>[end]
+          [if-any changes.text_mods], [if-any changes.diff_href]<a href="[changes.diff_href]">[end]text changed[if-any changes.diff_href]</a>[end][end]
+          [if-any changes.prop_mods], props changed[end]
+      </td>
+    </tr>
+   [end]
   [else]
     <tr>
     <td colspan="5">No changed paths.</td>

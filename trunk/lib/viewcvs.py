@@ -967,6 +967,10 @@ def common_template_data(request):
         and request.view_func is not view_cvsgraph):
       data['graph_href'] = request.get_url(view_func=view_cvsgraph,
                                            params=params, escape=1)
+  elif request.pathtype == vclib.DIR:
+    if request.roottype == 'svn':
+      data['log_href'] = request.get_url(view_func=view_log,
+                                         params=params, escape=1)
 
   return data
 
@@ -2768,32 +2772,43 @@ def view_revision(request):
 
   # add the hrefs, types, and prev info
   for change in changes:
-    change.view_href = change.diff_href = change.type = None
-    change.prev_path = change.prev_rev = None
-    change.text_mods = ezt.boolean(change.text_mods)
-    change.prop_mods = ezt.boolean(change.prop_mods)
+    change.view_href = change.diff_href = change.type = change.log_href = None
+    change.type = (change.pathtype == vclib.FILE and 'file') or \
+                  (change.pathtype == vclib.DIR and 'dir')
+    if (change.action == 'added' or change.action == 'replaced') \
+           and not change.is_copy:
+      change.text_mods = 0
+      change.prop_mods = 0
     if change.pathtype is vclib.FILE:
-      change.type = 'file'
       change.view_href = request.get_url(view_func=view_markup,
                                          where=change.filename, 
                                          pathtype=change.pathtype,
                                          params={'rev' : str(rev)},
                                          escape=1)
-      if change.action == "copied" or change.action == "modified":
-        change.prev_path = change.base_path
-        change.prev_rev = change.base_rev
+      if change.text_mods:
+        params = {'rev' : str(rev),
+                  'r1' : str(rev),
+                  'r2' : str(change.base_rev),
+                  }
         change.diff_href = request.get_url(view_func=view_diff,
                                            where=change.filename, 
                                            pathtype=change.pathtype,
-                                           params={'rev' : str(rev)},
+                                           params=params,
                                            escape=1)
     elif change.pathtype is vclib.DIR:
-      change.type = 'dir'
       change.view_href = request.get_url(view_func=view_directory,
                                          where=change.filename, 
                                          pathtype=change.pathtype,
                                          params={'rev' : str(rev)},
                                          escape=1)
+    change.log_href = request.get_url(view_func=view_log,
+                                      where=change.filename,
+                                      pathtype=change.pathtype,
+                                      params={'rev': str(rev)},
+                                      escape=1)
+    change.text_mods = ezt.boolean(change.text_mods)
+    change.prop_mods = ezt.boolean(change.prop_mods)
+    change.is_copy = ezt.boolean(change.is_copy)
 
   prev_rev_href = next_rev_href = None
   if rev > 0:
@@ -2808,13 +2823,11 @@ def view_revision(request):
                                     pathtype=None,
                                     params={'rev': str(rev + 1)},
                                     escape=1)
-  if msg:
-    msg = htmlify(msg)
   data.update({
     'rev' : str(rev),
     'author' : author,
     'date_str' : date_str,
-    'log' : msg,
+    'log' : msg and htmlify(msg) or None,
     'ago' : None,
     'changes' : changes,
     'jump_rev' : str(rev),
