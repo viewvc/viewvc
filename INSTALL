@@ -36,6 +36,7 @@ Congratulations on getting this far. :-)
           (http://subversion.tigris.org/)
 
     Optional:
+
       * a web server capable of running CGI programs
           (for example, Apache at http://httpd.apache.org/)
       * MySQL to create and query a commit database

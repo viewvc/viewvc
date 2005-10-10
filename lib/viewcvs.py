@@ -2752,15 +2752,11 @@ def download_tarball(request):
   fp.close()
 
 def view_revision(request):
-  data = common_template_data(request)
-
   if request.roottype == "cvs":
     raise ViewCVSException("Revision view not supported for CVS repositories "
                            "at this time.", "400 Bad Request")
-  else:
-    view_revision_svn(request, data)
 
-def view_revision_svn(request, data):
+  data = common_template_data(request)
   query_dict = request.query_dict
   date, author, msg, changes = vclib.svn.get_revision_info(request.repos)
   date_str = make_time_string(date)
