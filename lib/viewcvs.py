@@ -2325,8 +2325,8 @@ class DiffSource:
       self.right_col = [ ]
 
       match = _re_extract_info.match(line)
-      return _item(type='header', line1=match.group(1), line2=match.group(2),
-                   extra=match.group(3))
+      return _item(type='header', line_info_left=match.group(1),
+                   line_info_right=match.group(2), extra=match.group(3))
 
     if line[0] == '\\':
       # \ No newline at end of file

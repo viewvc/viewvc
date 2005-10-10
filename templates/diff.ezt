@@ -29,15 +29,15 @@
         <td style="width:50%;">
           <table>
             <tr>
-              <td> <strong>Line [changes.line1]</strong>&nbsp;
+              <td> <strong>Line [changes.line_info_left]</strong>&nbsp;
               <span class="vc_diff_chunk_extra">[changes.extra]</span></td>
             </tr>
           </table>
         </td>
-       <td style="width:50%;">
+        <td style="width:50%;">
           <table>
             <tr>
-              <td> <strong>Line [changes.line2]</strong>&nbsp;
+              <td> <strong>Line [changes.line_info_right]</strong>&nbsp;
               <span class="vc_diff_chunk_extra">[changes.extra]</span></td>
             </tr>
           </table>
