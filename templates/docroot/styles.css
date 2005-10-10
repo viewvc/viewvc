@@ -21,6 +21,7 @@ table {
 table.auto {
   width: auto;
 }
+tr, td, th { vertical-align: top; }
 form { margin: 0; }
 
 /** Navigation Headers ***/

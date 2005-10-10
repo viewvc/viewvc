@@ -50,6 +50,43 @@ def _trim_path(path):
   return path[1:]
 
   
+def _compare_paths(path1, path2):
+  path1_len = len (path1);
+  path2_len = len (path2);
+  min_len = min(path1_len, path2_len)
+  i = 0
+
+  # Are the paths exactly the same?
+  if path1 == path2:
+    return 0
+  
+  # Skip past common prefix
+  while (i < min_len) and (path1[i] == path2[i]):
+    i = i + 1
+
+  # Children of paths are greater than their parents, but less than
+  # greater siblings of their parents
+  char1 = '\0'
+  char2 = '\0'
+  if (i < path1_len):
+    char1 = path1[i]
+  if (i < path2_len):
+    char2 = path2[i]
+    
+  if (char1 == '/') and (i == path2_len):
+    return 1
+  if (char2 == '/') and (i == path1_len):
+    return -1
+  if (i < path1_len) and (char1 == '/'):
+    return -1
+  if (i < path2_len) and (char2 == '/'):
+    return 1
+
+  # Common prefix was skipped above, next character is compared to
+  # determine order
+  return cmp(char1, char2)
+
+
 def _datestr_to_date(datestr, pool):
   if datestr is None:
     return None
@@ -156,7 +193,7 @@ def _get_history(svnrepos, full_name, options):
 
 class ChangedPath:
   def __init__(self, filename, pathtype, prop_mods, text_mods,
-               base_path, base_rev, action):
+               base_path, base_rev, action, is_copy):
     self.filename = filename
     self.pathtype = pathtype
     self.prop_mods = prop_mods
@@ -164,48 +201,60 @@ class ChangedPath:
     self.base_path = base_path
     self.base_rev = base_rev
     self.action = action
+    self.is_copy = is_copy
 
 
-def get_revision_info(svnrepos):
-  # Get the revision property info
-  date, author, msg = _fs_rev_props(svnrepos.fs_ptr, svnrepos.rev,
-                                    svnrepos.pool)
-  date = _datestr_to_date(date, svnrepos.pool)
+class ChangedPathSet:
+  def __init__(self):
+    self.changes = { }
 
-  ### TODO: Switch to the new repos.ChangeCollector interface (pass in
-  ### a root, get changes with editor.get_changes(), etc.)
-
-  # Now, get the changes for the revision
-  editor = repos.RevisionChangeCollector(svnrepos.fs_ptr,
-                                         svnrepos.rev,
-                                         svnrepos.pool)
-  e_ptr, e_baton = delta.make_editor(editor, svnrepos.pool)
-  repos.svn_repos_replay(svnrepos.fsroot, e_ptr, e_baton, svnrepos.pool)
-
-  # get all the changes and sort by path
-  changelist = editor.changes.items()
-  changelist.sort()
-  changes = []
-  for path, change in changelist:
+  def add_change(self, change):
+    path = change.path
+    action = 'modified'
+    is_copy = 0
     if not change.path:
       action = 'deleted'
+      path = change.base_path
     elif change.added:
+      action = 'added'
       if change.base_path and change.base_rev:
-        action = 'copied'
-      else:
-        action = 'added'
-    else:
-      action = 'modified'
+        is_copy = 1
+      if self.changes.has_key(path) and self.changes[path].action == 'deleted':
+        action = 'replaced'
     if change.item_kind == core.svn_node_dir:
       pathtype = vclib.DIR
     elif change.item_kind == core.svn_node_file:
       pathtype = vclib.FILE
     else:
       pathtype = None
-    changes.append(ChangedPath(path, pathtype, change.prop_changes,
-                               change.text_changed, change.base_path,
-                               change.base_rev, action))
-  return date, author, msg, changes
+    self.changes[path] = ChangedPath(path, pathtype, change.prop_changes,
+                                     change.text_changed, change.base_path,
+                                     change.base_rev, action, is_copy)
+
+  def get_changes(self):
+    changes = self.changes.values()
+    changes.sort(lambda a, b: _compare_paths(a.filename, b.filename))
+    return changes
+    
+  
+def get_revision_info(svnrepos):
+  fsroot = fs.revision_root(svnrepos.fs_ptr, svnrepos.rev, svnrepos.pool)
+
+  # Get the changes for the revision
+  cps = ChangedPathSet()
+  editor = repos.ChangeCollector(svnrepos.fs_ptr, fsroot,
+                                 svnrepos.pool, cps.add_change)
+  e_ptr, e_baton = delta.make_editor(editor, svnrepos.pool)
+  repos.svn_repos_replay(svnrepos.fsroot, e_ptr, e_baton, svnrepos.pool)
+
+  # Now get the revision property info
+  props = editor.get_root_props()
+  author = props.get(core.SVN_PROP_REVISION_AUTHOR, None)
+  msg = props.get(core.SVN_PROP_REVISION_LOG, None)
+  date = _datestr_to_date(props.get(core.SVN_PROP_REVISION_DATE, None),
+                          svnrepos.pool)
+
+  return date, author, msg, cps.get_changes()
 
 
 def _log_helper(svnrepos, rev, path, pool):
