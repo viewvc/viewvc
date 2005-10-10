@@ -25,7 +25,7 @@ import re
 import tempfile
 import popen2
 import time
-from vclib.svn import Revision, ChangedPath, _datestr_to_date
+from vclib.svn import Revision, ChangedPath, _datestr_to_date, _compare_paths
 from svn import core, delta, client, wc, ra
 
 
@@ -89,22 +89,22 @@ class LastHistoryCollector:
         return
       changed_paths = paths.keys()
       changed_paths.sort(lambda a, b: _compare_paths(a, b))
+      action_map = { 'D' : 'deleted',
+                     'A' : 'added',
+                     'R' : 'replaced',
+                     'M' : 'modified',
+                     }
       for changed_path in changed_paths:
         change = paths[changed_path]
-        if change.action == 'D':
-          action = 'deleted'
-        elif change.action == 'A' or change.action == 'R':
-          if change.copyfrom_path and change.copyfrom_rev:
-            action = 'copied'
-          else:
-            action = 'added'
-        else:
-          action = 'modified'
+        action = action_map.get(change.action, 'modified')
+        is_copy = 0
+        if change.copyfrom_path and change.copyfrom_rev:
+          is_copy = 1
         ### Wrong, diddily wrong wrong wrong.  Can you say,
         ### "Manufacturing data left and right because it hurts to
         ### figure out the right stuff?"
         self.changes.append(ChangedPath(changed_path[1:], None, 0, 0,
-                                        changed_path[1:], 0, action))
+                                        changed_path[1:], 0, action, is_copy))
 
   def get_history(self):
     if not self.has_history:
@@ -124,43 +124,6 @@ def get_revision_info(svnrepos):
   rev, author, date, log, changes = \
        _get_rev_details(svnrepos, svnrepos.rev, svnrepos.pool)
   return _datestr_to_date(date, svnrepos.pool), author, log, changes
-
-
-def _compare_paths(path1, path2):
-  path1_len = len (path1);
-  path2_len = len (path2);
-  min_len = min(path1_len, path2_len)
-  i = 0
-
-  # Are the paths exactly the same?
-  if path1 == path2:
-    return 0
-  
-  # Skip past common prefix
-  while (i < min_len) and (path1[i] == path2[i]):
-    i = i + 1
-
-  # Children of paths are greater than their parents, but less than
-  # greater siblings of their parents
-  char1 = '\0'
-  char2 = '\0'
-  if (i < path1_len):
-    char1 = path1[i]
-  if (i < path2_len):
-    char2 = path2[i]
-    
-  if (char1 == '/') and (i == path2_len):
-    return 1
-  if (char2 == '/') and (i == path1_len):
-    return -1
-  if (i < path1_len) and (char1 == '/'):
-    return -1
-  if (i < path2_len) and (char2 == '/'):
-    return 1
-
-  # Common prefix was skipped above, next character is compared to
-  # determine order
-  return cmp(char1, char2)
 
 
 class LogCollector:
