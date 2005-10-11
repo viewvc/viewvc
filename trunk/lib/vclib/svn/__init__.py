@@ -249,9 +249,9 @@ def get_revision_info(svnrepos):
 
   # Now get the revision property info
   props = editor.get_root_props()
-  author = props.get(core.SVN_PROP_REVISION_AUTHOR, None)
-  msg = props.get(core.SVN_PROP_REVISION_LOG, None)
-  date = _datestr_to_date(props.get(core.SVN_PROP_REVISION_DATE, None),
+  author = str(props.get(core.SVN_PROP_REVISION_AUTHOR, None))
+  msg = str(props.get(core.SVN_PROP_REVISION_LOG, None))
+  date = _datestr_to_date(str(props.get(core.SVN_PROP_REVISION_DATE, None)),
                           svnrepos.pool)
 
   return date, author, msg, cps.get_changes()
