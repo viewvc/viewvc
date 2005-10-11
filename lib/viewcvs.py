@@ -2779,12 +2779,10 @@ def view_revision(request):
            and not change.is_copy:
       change.text_mods = 0
       change.prop_mods = 0
+
+    view_func = None
     if change.pathtype is vclib.FILE:
-      change.view_href = request.get_url(view_func=view_markup,
-                                         where=change.filename, 
-                                         pathtype=change.pathtype,
-                                         params={'rev' : str(rev)},
-                                         escape=1)
+      view_func = view_markup
       if change.text_mods:
         params = {'rev' : str(rev),
                   'r1' : str(rev),
@@ -2796,16 +2794,23 @@ def view_revision(request):
                                            params=params,
                                            escape=1)
     elif change.pathtype is vclib.DIR:
-      change.view_href = request.get_url(view_func=view_directory,
+      view_func=view_directory
+
+    try:
+      change.view_href = request.get_url(view_func=view_func,
                                          where=change.filename, 
                                          pathtype=change.pathtype,
                                          params={'rev' : str(rev)},
                                          escape=1)
-    change.log_href = request.get_url(view_func=view_log,
-                                      where=change.filename,
-                                      pathtype=change.pathtype,
-                                      params={'rev': str(rev)},
-                                      escape=1)
+      change.log_href = request.get_url(view_func=view_log,
+                                        where=change.filename,
+                                        pathtype=change.pathtype,
+                                        params={'rev': str(rev)},
+                                        escape=1)
+    except AssertionError:
+      # The 'svn_ra' backend can't yet figure out path kinds.
+      pass
+    
     change.text_mods = ezt.boolean(change.text_mods)
     change.prop_mods = ezt.boolean(change.prop_mods)
     change.is_copy = ezt.boolean(change.is_copy)
