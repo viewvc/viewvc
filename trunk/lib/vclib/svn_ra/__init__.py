@@ -97,14 +97,16 @@ class LastHistoryCollector:
       for changed_path in changed_paths:
         change = paths[changed_path]
         action = action_map.get(change.action, 'modified')
-        is_copy = 0
-        if change.copyfrom_path and change.copyfrom_rev:
-          is_copy = 1
         ### Wrong, diddily wrong wrong wrong.  Can you say,
         ### "Manufacturing data left and right because it hurts to
         ### figure out the right stuff?"
-        self.changes.append(ChangedPath(changed_path[1:], None, 0, 0,
-                                        changed_path[1:], 0, action, is_copy))
+        if change.copyfrom_path and change.copyfrom_rev:
+          self.changes.append(ChangedPath(changed_path[1:], None, 0, 0,
+                                          change.copyfrom_path,
+                                          change.copyfrom_rev, action, 1))
+        else:
+          self.changes.append(ChangedPath(changed_path[1:], None, 0, 0,
+                                          changed_path[1:], 0, action, 0))
 
   def get_history(self):
     if not self.has_history:
