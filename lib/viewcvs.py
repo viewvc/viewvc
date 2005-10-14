@@ -918,13 +918,19 @@ def common_template_data(request):
     'where' : request.server.escape(request.where),
     'roottype' : request.roottype,
     'rootname' : request.server.escape(request.rootname),
-    'pathtype' : request.pathtype == vclib.DIR and 'dir' or 'file',
+    'pathtype' : None,
     'nav_path' : nav_path(request),
     'up_href'  : None,
     'log_href' : None,
     'graph_href': None,
     'view'     : _view_codes[request.view_func],
   }
+
+  if request.pathtype == vclib.DIR:
+    data['pathtype'] = 'dir'
+  elif request.pathtype == vclib.FILE:
+    data['pathtype'] = 'file'
+
   url, params = request.get_link(view_func=view_directory,
                                  where='',
                                  pathtype=vclib.DIR,
@@ -1591,12 +1597,21 @@ def view_directory(request):
     'num_files' :  num_files,
     'files_shown' : num_displayed,
     'num_dead' : num_dead,
+    'rev' : None,
     'youngest_rev' : None,
     'youngest_rev_href' : None,
     'view_tag' : None,
     'has_tags' : None,
     'selection_form' : None,
     'queryform_href' : None,
+    'view_tag' : None,
+    'attic_showing' : None,
+    'show_attic_href' : None,
+    'hide_attic_href' : None,
+    'main_href' : None,
+    'has_tags' : None,
+    'branch_tags': None,
+    'plain_tags': None,
   })
 
   # clicking on sort column reverses sort order
@@ -1643,9 +1658,9 @@ def view_directory(request):
                                                 params={},
                                                 escape=1)
     if request.query_dict.has_key('rev'):
-      data['jump_rev'] = request.query_dict['rev']
+      data['rev'] = request.query_dict['rev']
     else:
-      data['jump_rev'] = str(request.repos.rev)
+      data['rev'] = str(request.repos.rev)
     url, params = request.get_link(params={'rev': None})
     data['jump_rev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
     data['jump_rev_hidden_values'] = prepare_hidden_values(params)
@@ -2835,7 +2850,6 @@ def view_revision(request):
     'log' : msg and htmlify(msg) or None,
     'ago' : None,
     'changes' : changes,
-    'jump_rev' : str(rev),
     'prev_href' : prev_rev_href,
     'next_href' : next_rev_href,
   })

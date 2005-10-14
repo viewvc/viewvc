@@ -21,7 +21,7 @@
   <td>
     <form method="get" action="[jump_rev_action]">
     [jump_rev_hidden_values]
-    <input type="text" name="rev" value="[jump_rev]" />
+    <input type="text" name="rev" value="[if-any youngest_rev][youngest_rev][end]" />
     <input type="submit" value="Go" />
     </form>
   </td>
