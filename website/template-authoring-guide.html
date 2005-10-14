@@ -9,6 +9,8 @@ body {
 }
 table { margin-left: 1em; }
 td, th { padding: 0 2px; }
+th { vertical-align: bottom; }
+td { vertical-align: top; }
 th { background: rgb(60%,70%,90%); }
 .h2, .h3 {
   padding: 0.5em 1em;
@@ -88,103 +90,139 @@ th { background: rgb(60%,70%,90%); }
 <tbody>
 <tr class="varlevel1">
   <td class="varname">cfg</td>
-  <td></td>
-  <td></td>
+  <td>Object</td>
+  <td>Representation of the object used by ViewCVS for runtime
+      configuration parameters such as those parsed from
+      <tt>viewcvs.conf</tt>.  Dot-qualified children of this object
+      map to configuration sections and option keys.  For example,
+      <var>cfg.options.show_logs</var> contains the value of the
+      <var>show_logs</var> variable in the <var>options</var> section
+      of the configuration file.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">change_root_action</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Form action URL for the root selection form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">change_root_hidden_values</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Hidden value HTML markup for the root selection form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">docroot</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>URL of the static documents directory, generally used for
+      referencing stylesheets and images stored in and under that
+      directory (which is typically relative to the template 
+      location).</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">graph_href</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>URL of the ViewCVS revision graph view for the current 
+      resource.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">kv</td>
-  <td></td>
-  <td></td>
+  <td>Object</td>
+  <td>Representation of the object used by ViewCVS for user-defined
+      key/value mappings.  Dot-qualified children of this object map
+      to named key/value files and the sections and keys within
+      them.  For example, <var>kv.l10n.labels.directory</var>
+      maps to the value of the <var>directory</var> key under the
+      <var>labels</var> section of the key/value file whose configured
+      abstract name is <var>l10n</var>.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">log_href</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>URL of the ViewCVS revision log view for the current
+      resource.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">nav_path</td>
-  <td></td>
-  <td></td>
+  <td>List</td>
+  <td>Ordered list of path components from the repository root to the
+      current resource.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">nav_path.href</td>
+  <td>String</td>
+  <td>URL of the default ViewCVS view for the path component.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">nav_path.name</td>
+  <td>String</td>
+  <td>Name of the path component.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">pathtype</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Path kind of the current resource.  Valid values: <tt>file</tt>,
+      <tt>dir</tt>; may be empty.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">rootname</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Name of the current repository (root).</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">roots</td>
-  <td></td>
-  <td></td>
+  <td>List</td>
+  <td>Set of configured viewable repositories.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">roots.name</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Name of a configured repository.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">roots.type</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Version control type of a configured repository.  Valid
+      values: <tt>cvs</tt>, <tt>svn</tt>.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">roots.href</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>URL of root directory view for a configured repository.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">roots_href</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>URL of the ViewCVS root listing view.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">roottype</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Version control type of the current repository (root).
+      Valid values: <tt>cvs</tt>, <tt>svn</tt>.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">up_href</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Link to the current object's parent directory view.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">view</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Name of the current view.  Valid values: <tt>annotate</tt>,
+     <tt>co</tt>, <tt>diff</tt>, <tt>roots</tt>, <tt>dir</tt>,
+     <tt>graph</tt>, <tt>graphimg</tt>, <tt>log</tt>, <tt>markup</tt>,
+     <tt>query</tt>, <tt>queryform</tt>, <tt>rev</tt>,
+     <tt>tar</tt>.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">vsn</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>ViewCVS version identifier.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">where</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Path (relative to the current repository root) of the current
+      resource.</td>
 </tr>
 </tbody>
 </table>
