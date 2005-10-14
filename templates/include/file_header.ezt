@@ -6,4 +6,7 @@
 [if-any graph_href]
   | <a href="[graph_href]"><img src="[docroot]/images/cvsgraph_16x16.png" alt="View Revision Graph" /> Revision Graph</a>
 [end]
+[is view "diff"]
+  | <a href="[patch_href]"><img src="[docroot]/images/diff.png" alt="View Patch" /> Patch</a>
+[end]
 </p>

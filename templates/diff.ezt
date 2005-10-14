@@ -124,8 +124,6 @@
       <form method="get" action="[diff_format_action]">
         <div>
           [diff_format_hidden_values]
-          <input type="checkbox" name="makepatch" value="1" /> 
-          Generate output suitable for use with a patch program<br />
           <select name="diff_format" onchange="submit()">
             <option value="h" [is diff_format "h"]selected="selected"[end]>Colored Diff</option>
             <option value="l" [is diff_format "l"]selected="selected"[end]>Long Colored Diff</option>
