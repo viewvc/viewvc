@@ -2543,7 +2543,7 @@ def view_patch(request):
   # use the configured diff format, allowing 'c' to mean 'c' and
   # anything else to mean 'u'.
   format = query_dict.get('diff_format',
-                          cfg.options.diff_format and 'c' or 'u')
+                          cfg.options.diff_format == 'c' and 'c' or 'u')
   if format == 'c':
     diff_type = vclib.CONTEXT
   elif format == 'u':
