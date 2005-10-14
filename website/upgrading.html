@@ -304,11 +304,26 @@
         </dd>
       </dl>
       <dl>
-        <dt><code>diff.ezt</code>: <var>changes.line1</var> and
-        <var>changes.line2</var></dt>
+        <dt><code>diff.ezt</code>: 
+          <var>rev1</var>,
+          <var>rev2</var>,
+          <var>tag1</var>,
+          <var>tag2</var>,
+          <var>date1</var>,
+          <var>date2</var>,
+          <var>changes.line1</var>,
+          <var>changes.line2</var>, and
+          <var>changes.extra</var></dt>
         <dd>Replaced with new 
-            <var>changes.line_info_left</var> and 
-            <var>changes.line_info_right</var> variables.
+          <var>rev_left</var>,
+          <var>rev_right</var>,
+          <var>tag_left</var>,
+          <var>tag_right</var>,
+          <var>date_left</var>,
+          <var>date_right</var>,
+          <var>changes.line_info_left</var>,
+          <var>changes.line_info_right</var>, and
+          <var>changes.line_info_extra</var> variables.
         <dd>
       </dl>
 
@@ -455,8 +470,21 @@
           <code>diff.ezt</code>: 
           <var>changes.line_info_left</var>,
           <var>changes.line_info_right</var>
+          <var>changes.line_info_extra</var>
         </dt>
         <dd>New variables for diff hunk line information.</dd>
+      </dl>
+      <dl>
+        <dt>
+          <code>diff.ezt</code>: 
+          <var>rev_left</var>,
+          <var>rev_right</var>,
+          <var>tag_left</var>,
+          <var>tag_right</var>,
+          <var>date_left</var>,
+          <var>date_right</var>,
+        </dt>
+        <dd>New variables for diff metadata information.</dd>
       </dl>
       <dl>
         <dt>
@@ -660,6 +688,17 @@
       </li>
       <li>
         Log sort form moved into include/sort.ezt
+      </li>
+    </ul>
+
+<p>In <code>diff.ezt</code>:</p>
+
+    <ul>
+      <li>
+        <var>changes.have_left</var> and <var>changes.have_right</var>
+        are not EZT boolean values, and so should be tested with
+        <code>[if-any]</code> instead of and <code>[is "yes"]</code>
+        comparison.
       </li>
     </ul>
 
