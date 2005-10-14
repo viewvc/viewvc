@@ -14,12 +14,12 @@
 <table cellspacing="0" cellpadding="0">
   <tr class="vc_diff_header">
     <th style="width:50%;vertical-align:top;">
-      version [rev1], [date1]
-      [if-any tag1]<br />Tag: [tag1][end]
+      version [rev_left], [date_left]
+      [if-any tag_left]<br />Tag: [tag_left][end]
     </th>
     <th style="width:50%;vertical-align:top;">
-      version [rev2], [date2]
-      [if-any tag2]<br />Tag: [tag2][end]
+      version [rev_right], [date_right]
+      [if-any tag_right]<br />Tag: [tag_right][end]
     </th>
   </tr>
 
@@ -30,7 +30,7 @@
           <table>
             <tr>
               <td> <strong>Line [changes.line_info_left]</strong>&nbsp;
-              <span class="vc_diff_chunk_extra">[changes.extra]</span></td>
+              <span class="vc_diff_chunk_extra">[changes.line_info_extra]</span></td>
             </tr>
           </table>
         </td>
@@ -38,7 +38,7 @@
           <table>
             <tr>
               <td> <strong>Line [changes.line_info_right]</strong>&nbsp;
-              <span class="vc_diff_chunk_extra">[changes.extra]</span></td>
+              <span class="vc_diff_chunk_extra">[changes.line_info_extra]</span></td>
             </tr>
           </table>
         </td>
@@ -146,7 +146,7 @@
           <td>Legend:<br />
             <table cellspacing="0" cellpadding="1">
               <tr>
-                <td style="text-align:center;" class="vc_diff_remove">Removed from v.[rev1]</td>
+                <td style="text-align:center;" class="vc_diff_remove">Removed from v.[rev_left]</td>
                 <td class="vc_diff_empty">&nbsp;</td>
               </tr>
               <tr>
@@ -154,7 +154,7 @@
               </tr>
               <tr>
                 <td class="vc_diff_empty">&nbsp;</td>
-                <td style="text-align:center;" class="vc_diff_add">Added in v.[rev2]</td>
+                <td style="text-align:center;" class="vc_diff_add">Added in v.[rev_right]</td>
               </tr>
             </table>
           </td>

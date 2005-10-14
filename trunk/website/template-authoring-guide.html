@@ -159,8 +159,8 @@ th { background: rgb(60%,70%,90%); }
 <tr class="varlevel1">
   <td class="varname">pathtype</td>
   <td>String</td>
-  <td>Path kind of the current resource.  Valid values: <tt>file</tt>,
-      <tt>dir</tt>; may be empty.</td>
+  <td>Path kind of the current resource.  Valid values: <tt>file</tt>
+      (file), <tt>dir</tt> (directory); may be empty.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">rootname</td>
@@ -197,7 +197,7 @@ th { background: rgb(60%,70%,90%); }
   <td class="varname">roottype</td>
   <td>String</td>
   <td>Version control type of the current repository (root).
-      Valid values: <tt>cvs</tt>, <tt>svn</tt>.</td>
+      Valid values: <tt>cvs</tt> (CVS), <tt>svn</tt> (Subversion).</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">up_href</td>
@@ -207,11 +207,14 @@ th { background: rgb(60%,70%,90%); }
 <tr class="varlevel1">
   <td class="varname">view</td>
   <td>String</td>
-  <td>Name of the current view.  Valid values: <tt>annotate</tt>,
-     <tt>co</tt>, <tt>diff</tt>, <tt>roots</tt>, <tt>dir</tt>,
-     <tt>graph</tt>, <tt>graphimg</tt>, <tt>log</tt>, <tt>markup</tt>,
-     <tt>query</tt>, <tt>queryform</tt>, <tt>rev</tt>,
-     <tt>tar</tt>.</td>
+  <td>Name of the current view.  Valid values: <tt>annotate</tt>
+     (annotation view), <tt>diff</tt> (file difference view),
+     <tt>roots</tt> (root listing view), <tt>dir</tt> (directory
+     listing view), <tt>graph</tt> (revision graph view), <tt>log</tt>
+     (revision log view), <tt>markup</tt> (file contents view),
+     <tt>query</tt> (revision history query results view),
+     <tt>queryform</tt> (revision history query form view),
+     <tt>rev</tt> (revision/changeset view).</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">vsn</td>
@@ -289,43 +292,49 @@ th { background: rgb(60%,70%,90%); }
 </tr>
 <tr class="varlevel1">
   <td class="varname">lines</td>
-  <td></td>
-  <td></td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">lines.text</td>
-  <td></td>
-  <td></td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">lines.line_number</td>
-  <td></td>
-  <td></td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">lines.rev</td>
-  <td></td>
-  <td></td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">lines.prev_rev</td>
-  <td></td>
-  <td></td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">lines.diff_url</td>
-  <td></td>
-  <td></td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">lines.date</td>
-  <td></td>
-  <td></td>
+  <td>List</td>
+  <td>Set of objects containing information about the most recent
+      modification of a single line of file content in the current
+      resource, naturally ordered by the line numbers they represent.
+      Every line in the resource is represented in the set.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">lines.author</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Username of the most recent modifier of the line.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">lines.date</td>
+  <td>String</td>
+  <td>Date (in UTC if not otherwise configured) of the modification of
+      the line.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">lines.diff_url</td>
+  <td>String</td>
+  <td>URL of the ViewCVS file difference view which displays the
+      modification of the line.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">lines.line_number</td>
+  <td>String</td>
+  <td>Line number (1-based) of the line.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">lines.prev_rev</td>
+  <td>String</td>
+  <td>Youngest revision of the resource prior to the line's
+      modification.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">lines.rev</td>
+  <td>String</td>
+  <td>Revision in which the modification of the line occured.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">lines.text</td>
+  <td>String</td>
+  <td>Textual contents of the line.</td>
 </tr>
 </tbody>
 </table>
@@ -348,13 +357,15 @@ th { background: rgb(60%,70%,90%); }
 </tr>
 <tr class="varlevel1">
   <td class="varname">imagemap</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>HTML markup containing the image map associated with the
+      revision graph.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">imagesrc</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>URL of the ViewCVS revision graph image for the current
+      resource.</td>
 </tr>
 </tbody>
 </table>
@@ -377,98 +388,127 @@ th { background: rgb(60%,70%,90%); }
 </tr>
 <tr class="varlevel1">
   <td class="varname">changes</td>
-  <td></td>
-  <td></td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">changes.extra</td>
-  <td></td>
-  <td></td>
+  <td>List</td>
+  <td>Set of objects which contain information about a single line of
+      file difference data.  Valid only when <var>diff_format</var> is
+      <tt>h</tt> or <tt>l</tt>.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">changes.have_left</td>
-  <td></td>
-  <td></td>
+  <td>Boolean</td>
+  <td>Specifies whether the left file has a line of content relevant
+      to the difference data line.  Valid only when
+      <var>changes.type</var> is <tt>change</tt>.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">changes.have_right</td>
-  <td></td>
-  <td></td>
+  <td>Boolean</td>
+  <td>Specifies whether the right file has a line of content relevant
+      to the difference data line.  Valid only when
+      <var>changes.type</var> is <tt>change</tt>.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">changes.left</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Textual contents of the relevant line in the left file.  Valid
+      only when <var>changes.type</var> is <tt>change</tt>,
+      <tt>context</tt>, or <tt>remove</tt>.  When
+      <var>changes.type</var> is <tt>change</tt>, valid only when
+      <var>changes.have_left</var> is set (in order to delineate
+      between missing lines and empty lines, which EZT does not
+      support).</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">changes.right</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Textual contents of the relevant line in the right file.  Valid
+      only when <var>changes.type</var> is <tt>add</tt>, <tt>change</tt>, 
+      or <tt>context</tt>.  When
+      <var>changes.type</var> is <tt>change</tt>, valid only when
+      <var>changes.have_left</var> is set (in order to delineate
+      between missing lines and empty lines, which EZT does not
+      support).</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">changes.line_info_extra</td>
+  <td>String</td>
+  <td>Additional line information for the current difference hunk.
+      Valid only when <var>changes.type</var> is <tt>header</tt>.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">changes.line_info_left</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>First line number represented by the current hunk in the left
+      file.  Valid only when <var>changes.type</var> is <tt>header</tt>.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">changes.line_info_right</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>First line number represented by the current hunk in the right
+      file.  Valid only when <var>changes.type</var> is <tt>header</tt>.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">changes.type</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>The type of change.  Value values: <tt>add</tt>,
+      <tt>change</tt>, <tt>context</tt>, <tt>header</tt>,
+      <tt>no-changes</tt>, <tt>remove</tt>.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">date1</td>
-  <td></td>
-  <td></td>
+  <td class="varname">date_left</td>
+  <td>String</td>
+  <td>Date (in UTC if not otherwise configured) in which the left file
+      revision was created.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">date2</td>
-  <td></td>
-  <td></td>
+  <td class="varname">date_right</td>
+  <td>String</td>
+  <td>Date (in UTC if not otherwise configured) in which the right file
+      revision was created.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">diff_format</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Difference dislay format:  Valid values are <tt>c</tt>
+      (context), <tt>h</tt> (human-readable, or colored), <tt>l</tt> (long
+      human-readable), <tt>s</tt> (side-by-side), <tt>u</tt>
+      (unified).</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">diff_format_action</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Form action URL for the diff format selection form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">diff_format_hidden_values</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Hidden value HTML markup for the diff format selection form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">raw_diff</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Raw difference text.  Valid only when <var>diff_format</var> is
+  <tt>c</tt>, <tt>s</tt>, or <tt>u</tt>.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">rev1</td>
-  <td></td>
-  <td></td>
+  <td class="varname">rev_left</td>
+  <td>String</td>
+  <td>Revision of the left file.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">rev2</td>
-  <td></td>
-  <td></td>
+  <td class="varname">rev_right</td>
+  <td>String</td>
+  <td>Revision of the right file.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">tag1</td>
-  <td></td>
-  <td></td>
+  <td class="varname">tag_left</td>
+  <td>String</td>
+  <td>Tag of the left file.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">tag2</td>
-  <td></td>
-  <td></td>
+  <td class="varname">tag_right</td>
+  <td>String</td>
+  <td>Tag of the right file.</td>
 </tr>
 </tbody>
 </table>

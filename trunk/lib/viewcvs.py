@@ -2344,8 +2344,10 @@ class DiffSource:
       self.right_col = [ ]
 
       match = _re_extract_info.match(line)
-      return _item(type='header', line_info_left=match.group(1),
-                   line_info_right=match.group(2), extra=match.group(3))
+      return _item(type='header',
+                   line_info_left=match.group(1),
+                   line_info_right=match.group(2),
+                   line_info_extra=match.group(3))
 
     if line[0] == '\\':
       # \ No newline at end of file
@@ -2390,12 +2392,14 @@ class DiffSource:
       return _item(type='remove', left=self.left_col.pop(0))
 
     # state == flush-pre-change-add
-    item = _item(type='change', have_left=None, have_right=None)
+    item = _item(type='change',
+                 have_left=ezt.boolean(0),
+                 have_right=ezt.boolean(0))
     if self.left_col:
-      item.have_left = 'yes'
+      item.have_left = ezt.boolean(1)
       item.left = self.left_col.pop(0)
     if self.right_col:
-      item.have_right = 'yes'
+      item.have_right = ezt.boolean(1)
       item.right = self.right_col.pop(0)
     return item
 
@@ -2586,10 +2590,10 @@ def view_diff(request):
   request.server.header()
   data = nav_header_data(request, rev2)
   data.update({
-    'rev1' : rev1,
-    'rev2' : rev2,
-    'tag1' : sym1,
-    'tag2' : sym2,
+    'rev_left' : rev1,
+    'rev_right' : rev2,
+    'tag_left' : sym1,
+    'tag_right' : sym2,
     'diff_format' : request.query_dict.get('diff_format',
                                            cfg.options.diff_format),
     })
@@ -2613,8 +2617,8 @@ def view_diff(request):
     raw_diff_fp = MarkupPipeWrapper(fp, htmlify(headers), None, 1)
 
   data.update({
-    'date1' : date1 and rcsdiff_date_reformat(date1),
-    'date2' : date2 and rcsdiff_date_reformat(date2),
+    'date_left' : date1 and rcsdiff_date_reformat(date1),
+    'date_right' : date2 and rcsdiff_date_reformat(date2),
     'raw_diff' : raw_diff_fp,
     'changes' : changes,
     })
