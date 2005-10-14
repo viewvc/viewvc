@@ -408,7 +408,9 @@ class Request:
 
     if params is None:
       params = self.query_dict.copy()
-
+    else:
+      params = params.copy()
+      
     # must specify both where and pathtype or neither
     assert (where is None) == (pathtype is None)
 
@@ -616,7 +618,6 @@ _legal_params = {
   'dir_pagestart' : _re_validate_number,
   'log_pagestart' : _re_validate_number,
   'hidecvsroot'   : _re_validate_number,
-  'makepatch'     : _re_validate_number,
   'annotate'      : _re_validate_revnum,
   'graph'         : _re_validate_revnum,
   'makeimage'     : _re_validate_number,
@@ -2484,7 +2485,7 @@ def _get_diff_path_parts(request, query_key, rev):
   return parts
 
 
-def view_diff(request):
+def setup_diff(request):
   query_dict = request.query_dict
 
   rev1 = r1 = query_dict['r1']
@@ -2531,6 +2532,44 @@ def view_diff(request):
     raise debug.ViewCVSException('Invalid revision(s) passed to diff',
                                  '400 Bad Request')
 
+  return p1, p2, rev1, rev2, sym1, sym2
+
+
+def view_patch(request):
+  query_dict = request.query_dict
+  p1, p2, rev1, rev2, sym1, sym2 = setup_diff(request)
+
+  # In the absence of a format dictation in the CGI params, we'll let
+  # use the configured diff format, allowing 'c' to mean 'c' and
+  # anything else to mean 'u'.
+  format = query_dict.get('diff_format',
+                          cfg.options.diff_format and 'c' or 'u')
+  if format == 'c':
+    diff_type = vclib.CONTEXT
+  elif format == 'u':
+    diff_type = vclib.UNIFIED
+  else:
+    raise debug.ViewCVSException('Diff format %s not understood'
+                                 % format, '400 Bad Request')
+  
+  try:
+    fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type)
+  except vclib.InvalidRevision:
+    raise debug.ViewCVSException('Invalid path(s) or revision(s) passed '
+                                 'to diff', '400 Bad Request')
+
+  request.server.header('text/plain')
+  date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
+                                                   sym1, sym2)
+  sys.stdout.write(headers)
+  copy_stream(fp)
+  fp.close()
+
+
+def view_diff(request):
+  query_dict = request.query_dict
+  p1, p2, rev1, rev2, sym1, sym2 = setup_diff(request)
+  
   # since templates are in use and subversion allows changes to the dates,
   # we can't provide a strong etag
   if check_freshness(request, None, '%s-%s' % (rev1, rev2), weak=1):
@@ -2541,14 +2580,6 @@ def view_diff(request):
   human_readable = 0
 
   format = query_dict.get('diff_format', cfg.options.diff_format)
-  makepatch = int(request.query_dict.get('makepatch', 0))
-
-  # If 'makepatch' was specified with any diff besides unidiff or
-  # context diff, just fall back to straight unidiff (though, we could
-  # throw an error).
-  if makepatch and format != 'u' and format != 'c':
-    format = 'u'
-  
   if format == 'c':
     diff_type = vclib.CONTEXT
   elif format == 's':
@@ -2576,17 +2607,6 @@ def view_diff(request):
   except vclib.InvalidRevision:
     raise debug.ViewCVSException('Invalid path(s) or revision(s) passed '
                                  'to diff', '400 Bad Request')
-
-  # If we're bypassing the templates, just print the diff and get outta here.
-  if makepatch:
-    request.server.header('text/plain')
-    date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
-                                                     sym1, sym2)
-    sys.stdout.write(headers)
-    copy_stream(fp)
-    fp.close()
-    return
-
   request.server.header()
   data = nav_header_data(request, rev2)
   data.update({
@@ -2598,12 +2618,14 @@ def view_diff(request):
                                            cfg.options.diff_format),
     })
 
-  params = request.query_dict.copy()
-  params['diff_format'] = None
+  orig_params = request.query_dict.copy()
+  orig_params['diff_format'] = None
     
-  url, params = request.get_link(params=params)
+  url, params = request.get_link(params=orig_params)
   data['diff_format_action'] = urllib.quote(url, _URL_SAFE_CHARS)
   data['diff_format_hidden_values'] = prepare_hidden_values(params)
+  data['patch_href'] = request.get_url(view_func=view_patch,
+                                       params=orig_params)
 
   date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
                                                    sym1, sym2)
@@ -3227,19 +3249,20 @@ def view_query(request):
   generate_page(request, "query_results", data)
 
 _views = {
-  'annotate': view_annotate,
-  'co':       view_checkout,
-  'diff':     view_diff,
-  'roots':    view_roots,
-  'dir':      view_directory,
-  'graph':    view_cvsgraph,
-  'graphimg': view_cvsgraph_image,
-  'log':      view_log,
-  'markup':   view_markup,
-  'query':    view_query,
-  'queryform':view_queryform,
-  'rev':      view_revision,
-  'tar':      download_tarball,
+  'annotate':  view_annotate,
+  'co':        view_checkout,
+  'diff':      view_diff,
+  'dir':       view_directory,
+  'graph':     view_cvsgraph,
+  'graphimg':  view_cvsgraph_image,
+  'log':       view_log,
+  'markup':    view_markup,
+  'patch':     view_patch,
+  'query':     view_query,
+  'queryform': view_queryform,
+  'rev':       view_revision,
+  'roots':     view_roots,
+  'tar':       download_tarball,
 }
 
 _view_codes = {}

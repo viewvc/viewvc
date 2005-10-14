@@ -41,11 +41,6 @@
   </td>
   </tr>
   <tr>
-  <td><input type="checkbox" name="makepatch" id="makepatch" value="1" /></td>
-  <td><label for="makepatch">Generate output suitable for use with a patch
-  program</label></td>
-  </tr>
-  <tr>
   <td>&nbsp;</td>
   <td>
   Type of Diff should be a
