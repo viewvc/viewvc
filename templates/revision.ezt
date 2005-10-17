@@ -25,7 +25,7 @@
   </tr>
   <tr align="left">
     <th>Date:</th>
-    <td>[date_str] <em>([ago] ago)</em></td>
+    <td>[date] <em>([ago] ago)</em></td>
   </tr>
 </table>
 </form>

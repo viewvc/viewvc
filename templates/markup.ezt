@@ -13,7 +13,7 @@ Revision: <strong>[rev]</strong> -
 [if-any annotate_href](<a href="[annotate_href]"><strong>annotate</strong></a>)[end]
 
 [if-any vendor_branch] <em>(vendor branch)</em>[end]
-<br /><em>[date_str]</em> ([ago] ago) by <em>[author]</em>
+<br /><em>[date]</em> ([ago] ago) by <em>[author]</em>
 [if-any branches]
   <br />Branch: <strong>[branches]</strong>
 [end]

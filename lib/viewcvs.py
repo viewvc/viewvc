@@ -1311,7 +1311,7 @@ def view_markup(request):
     entry = revs[-1]
 
     data.update({
-        'date_str' : make_time_string(entry.date),
+        'date' : make_time_string(entry.date),
         'ago' : None,
         'author' : entry.author,
         'branches' : None,
@@ -1574,7 +1574,7 @@ def view_directory(request):
   # prepare the data that will be passed to the template
   data = common_template_data(request)
   data.update({
-    'rows' : rows,
+    'entries' : rows,
     'sortby' : sortby,
     'sortdir' : sortdir,
     'tarball_href' : None,
@@ -1610,7 +1610,6 @@ def view_directory(request):
     'show_attic_href' : None,
     'hide_attic_href' : None,
     'main_href' : None,
-    'has_tags' : None,
     'branch_tags': None,
     'plain_tags': None,
   })
@@ -1696,7 +1695,7 @@ def view_directory(request):
 
   if cfg.options.use_pagesize:
     data['dir_pagestart'] = int(request.query_dict.get('dir_pagestart',0))
-    data['rows'] = paging(data, 'rows', data['dir_pagestart'], 'name')
+    data['entries'] = paging(data, 'entries', data['dir_pagestart'], 'name')
 
   request.server.header()
   generate_page(request, "directory", data)
@@ -1778,7 +1777,7 @@ def view_log(request):
     entry.state = (cvs and rev.dead and 'dead')
     entry.author = rev.author
     entry.changed = rev.changed
-    entry.date_str = make_time_string(rev.date)
+    entry.date = make_time_string(rev.date)
     entry.ago = None
     if rev.date is not None:
       entry.ago = html_time(request, rev.date, 1)
@@ -2872,7 +2871,7 @@ def view_revision(request):
   data.update({
     'rev' : str(rev),
     'author' : author,
-    'date_str' : date_str,
+    'date' : date_str,
     'log' : msg and htmlify(msg) or None,
     'ago' : None,
     'changes' : changes,
