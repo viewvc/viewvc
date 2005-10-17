@@ -531,68 +531,77 @@ th { background: rgb(60%,70%,90%); }
 </tr>
 <tr class="varlevel1">
   <td class="varname">attic_showing</td>
-  <td></td>
-  <td></td>
+  <td>Boolean</td>
+  <td>Indicates whether or not the directory list include "dead" files
+      (files not available in, perhaps deleted from, the current
+      tag).  CVS only.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">branch_tags</td>
-  <td></td>
-  <td></td>
+  <td>List</td>
+  <td>Set of branch tag names in use by files in the current directory.
+      CVS only.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">dir_pagestart</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Item number (zero-based) of the first directory entry requested
+      to be shown on the page.  Corresponds to the
+      <var>dir_pagestart</var> CGI parameter.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">dir_paging_action</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Form action URL for the page selection form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">dir_paging_hidden_values</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Hidden value HTML markup for the page selection form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">files_shown</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Number of files displayed.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">has_tags</td>
-  <td></td>
-  <td></td>
+  <td>Boolean</td>
+  <td>Indicates whether or not there are any branches or tags present.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">hide_attic_href</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Link for the current display, but with "dead" files hidden.  CVS
+      only.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">jump_rev_action</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Form action URL for the directory revision selection form.
+      Subversion only.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">jump_rev_hidden_values</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Hidden value HTML markup for the directory revision selection
+      form.  Subversion only.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">main_href</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>URL of the ViewCVS directory listing view for the current
+      directory's default (or "main") development branch.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">num_dead</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Number of dead files in the current directory.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">num_files</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Number of files in the current directory.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">picklist</td>
@@ -626,106 +635,108 @@ th { background: rgb(60%,70%,90%); }
 </tr>
 <tr class="varlevel1">
   <td class="varname">plain_tags</td>
-  <td></td>
-  <td></td>
+  <td>List</td>
+  <td>Set of tag names in use by files in the current directory.
+      CVS only.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">queryform_href</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>URL of the ViewCVS revision history query form view for the
+      current directory.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">rows</td>
+  <td class="varname">entries</td>
+  <td>List</td>
+  <td>Set of objects which represent the entries of this directory.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">entries.author</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.author</td>
+  <td class="varname">entries.errors</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.errors</td>
+  <td class="varname">entries.graph_href</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.graph_href</td>
+  <td class="varname">entries.href</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.href</td>
+  <td class="varname">entries.log</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.log</td>
+  <td class="varname">entries.log_file</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.log_file</td>
+  <td class="varname">entries.log_href</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.log_href</td>
+  <td class="varname">entries.log_rev</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.log_rev</td>
+  <td class="varname">entries.mime_type</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.mime_type</td>
+  <td class="varname">entries.name</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.name</td>
+  <td class="varname">entries.rev</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.rev</td>
+  <td class="varname">entries.show_log</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.show_log</td>
+  <td class="varname">entries.size</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.size</td>
+  <td class="varname">entries.state</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.state</td>
+  <td class="varname">entries.time</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.time</td>
+  <td class="varname">entries.type</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.type</td>
+  <td class="varname">entries.view_href</td>
   <td></td>
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">rows.view_href</td>
-  <td></td>
-  <td></td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">rows.viewable</td>
+  <td class="varname">entries.viewable</td>
   <td></td>
   <td></td>
 </tr>
@@ -999,7 +1010,7 @@ th { background: rgb(60%,70%,90%); }
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">entries.date_str</td>
+  <td class="varname">entries.date</td>
   <td></td>
   <td></td>
 </tr>
@@ -1293,7 +1304,7 @@ th { background: rgb(60%,70%,90%); }
   <td></td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">date_str</td>
+  <td class="varname">date</td>
   <td></td>
   <td></td>
 </tr>
@@ -1680,7 +1691,7 @@ th { background: rgb(60%,70%,90%); }
   <td></td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">date_str</td>
+  <td class="varname">date</td>
   <td></td>
   <td></td>
 </tr>

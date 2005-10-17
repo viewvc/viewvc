@@ -56,7 +56,7 @@
     [if-index entries last]Added[else]Modified[end]
   [end]
 
-  <em>[entries.date_str]</em> ([entries.ago] ago) by <em>[entries.author]</em>
+  <em>[entries.date]</em> ([entries.ago] ago) by <em>[entries.author]</em>
 
   [if-any entries.branches]
     <br />Branch:
