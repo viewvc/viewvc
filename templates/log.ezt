@@ -12,7 +12,12 @@
 [include "include/view_tag.ezt"]
 [include "include/paging.ezt"]
 
+[define first_revision][end]
+[define last_revision][end]
+
 [for entries]
+[if-index entries first][define first_revision][entries.rev][end][end]
+[if-index entries last][define last_revision][entries.rev][end][end]
 <div>
   <hr />
 
