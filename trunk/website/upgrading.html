@@ -185,10 +185,19 @@
       <dl>
         <dt>
           <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
+          <var>rows</var>
+        </dt>
+        <dd>
+          Replaced with new <var>entries</var> variable.
+        </dd>
+      </dl>
+      <dl>
+        <dt>
+          <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
           <var>rows.cvs</var>
         </dt>
         <dd>
-          Replaced by <var>rows.errors</var>
+          Replaced by <var>entries.errors</var>
         </dd>
       </dl>
       <dl>
@@ -197,7 +206,7 @@
           <var>rows.href</var> and <var>rows.rev_href</var>
         </dt>
         <dd>
-          Replaced by <var>rows.log_href</var> and <var>rows.view_href</var>
+          Replaced by <var>entries.log_href</var> and <var>entries.view_href</var>
         </dd>
       </dl>
       <dl>
@@ -271,7 +280,7 @@
         <var>href</var>, <var>text_href</var>,
         and <var>nav_file</var></dt>
         <dd>
-          Replaced with new <var>date_str</var>, <var>download_href</var>,
+          Replaced with new <var>date</var>, <var>download_href</var>,
           <var>download_text_href</var>, and <var>nav_path</var>
           variables.
         </dd>
@@ -294,6 +303,13 @@
           <var>entries.download_href</var>,
           <var>entries.download_text_href</var>, and
           <var>entries.annotate_href</var> variables.
+        </dd>
+      </dl>
+      <dl>
+        <dt><code>log.ezt</code> and <code>log_table.ezt</code>:
+        <var>entries.date_str</var></dt>
+        <dd>
+          Replaced with new <var>entries.date</var> variable.
         </dd>
       </dl>
       <dl>
@@ -391,7 +407,7 @@
         </dd>
       </dl>
       <dl>
-        <dt><code>markup.ezt</code>: <var>date_str</var></dt>
+        <dt><code>markup.ezt</code>: <var>date</var></dt>
         <dd>String representing checkin date</dd>
       </dl>
       <dl>
@@ -415,14 +431,21 @@
       <dl>
         <dt>
           <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
-          <var>rows.mime_type</var>
+          <var>entries</var>
+        </dt>
+        <dd>New variable for file directory entries.</dd>
+      </dl>
+      <dl>
+        <dt>
+          <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
+          <var>entries.mime_type</var>
         </dt>
         <dd>New mime-type variable for file directory entries.</dd>
       </dl>
       <dl>
         <dt>
           <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
-          <var>rows.log_href</var> and <var>rows.view_href</var>
+          <var>entries.log_href</var> and <var>entries.view_href</var>
         </dt>
         <dd>New links for log and content displays, respectively.  A
             directory's content is another directory view; a file's is
@@ -431,14 +454,14 @@
       <dl>
         <dt>
           <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
-          <var>rows.size</var>
+          <var>entries.size</var>
         </dt>
         <dd>New filesize variable for file directory entries.</dd>
       </dl>
       <dl>
         <dt>
           <code>directory.ezt</code> and <code>dir_alternate.ezt</code>:
-          <var>rows.errors</var>
+          <var>entries.errors</var>
         </dt>
         <dd>List of error messages pertaining to an entry.</dd>
       </dl>
@@ -504,6 +527,13 @@
           and <var>entries.revision_href</var>
         </dt>
         <dd>New attributes for Subversion revisions.</dd>
+      </dl>
+      <dl>
+        <dt>
+          <code>log.ezt</code> and <code>log_table.ezt</code>:
+          <var>entries.date</var>
+        </dt>
+        <dd>New variable for file directory entry last checkin dates.</dd>
       </dl>
       <dl>
         <dt>
@@ -644,22 +674,22 @@
       </li>
       <li>
         A new form that controls paging is displayed when 
-        cfg.options.use_pagesize is not 0
+        <var>cfg.options.use_pagesize</var> is not 0.
       </li>
       <li>
         The sorting links and "hide attic" link are no longer 
-        prefixed with "<code>./</code>"
+        prefixed with "<code>./</code>".
       </li>
       <li>
         The revision number links no longer need 
         "<code>content-type=text/vnd.viewcvs-markup</code>" suffixes.
       </li>
       <li>
-        The link to Attic/ is only displayed for CVS roots
+        The link to Attic/ is only displayed for CVS roots.
       </li>
       <li>
-        Directory <var>rows.name</var> values no longer have
-        trailing slashes
+        Directory <var>rows.name</var> values (now
+        <var>entries.name</var>) no longer have trailing slashes.
       </li>
     </ul>
 

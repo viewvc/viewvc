@@ -69,32 +69,32 @@
     [end]
   </tr>
  [end]
- [for rows]
-   <tr class="vc_row_[if-index rows even]even[else]odd[end]">
-     <td>&nbsp;[if-any rows.rev]<a href="[rows.log_href]"><strong>[rows.rev]</strong></a>[end]</td>
-     <td[if-any rows.graph_href][else] colspan="2"[end]>
-       <a name="[rows.anchor]" href="[if-any rows.view_href][rows.view_href][end]">
-       <img src="[docroot]/images/[is rows.type "dir"]dir[else][is rows.state "dead"]broken[else]text[end][end].png" alt="" width="16" height="16" />
-       [rows.name][is rows.type "dir"]/[end]</a>
-       [is rows.state "dead"](dead)[end]
+ [for entries]
+   <tr class="vc_row_[if-index entries even]even[else]odd[end]">
+     <td>&nbsp;[if-any entries.rev]<a href="[entries.log_href]"><strong>[entries.rev]</strong></a>[end]</td>
+     <td[if-any entries.graph_href][else] colspan="2"[end]>
+       <a name="[entries.anchor]" href="[if-any entries.view_href][entries.view_href][end]">
+       <img src="[docroot]/images/[is entries.type "dir"]dir[else][is entries.state "dead"]broken[else]text[end][end].png" alt="" width="16" height="16" />
+       [entries.name][is entries.type "dir"]/[end]</a>
+       [is entries.state "dead"](dead)[end]
      </td>
-     [if-any rows.graph_href]
-       <td style="width:1%"><a href="[rows.graph_href]"><img
+     [if-any entries.graph_href]
+       <td style="width:1%"><a href="[entries.graph_href]"><img
        src="[docroot]/images/cvsgraph_16x16.png"
        alt="(graph)" width="16" height="16" />
        </a></td>
      [end]
-     [if-any rows.errors]
+     [if-any entries.errors]
        <td colspan=[is cfg.options.show_logs "1"]3[else]2[end]>
-         [for rows.errors]<em>[rows.errors]</em>[end]
+         [for entries.errors]<em>[entries.errors]</em>[end]
        </td>
      [else]
-     <td>&nbsp;[rows.time]</td>
-     <td>&nbsp;[rows.author]</td>
+     <td>&nbsp;[entries.time]</td>
+     <td>&nbsp;[entries.author]</td>
       [is cfg.options.show_logs "1"]
-        [if-any rows.show_log]
-          <td>&nbsp;[rows.log][is rows.type "dir"][is roottype "cvs"]
-            <em>(from [rows.log_file]/[rows.log_rev])</em>[end][end]</td>
+        [if-any entries.show_log]
+          <td>&nbsp;[entries.log][is entries.type "dir"][is roottype "cvs"]
+            <em>(from [entries.log_file]/[entries.log_rev])</em>[end][end]</td>
         [else]
           <td>&nbsp;</td>
         [end]
