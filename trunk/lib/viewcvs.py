@@ -2027,9 +2027,6 @@ def view_log(request):
     if rev.co_rev:
       tags.append(_item(rev=rev.co_rev.string, name=tag))
 
-  data['tr1'] = request.query_dict.get('r1') or show_revs[-1].string
-  data['tr2'] = request.query_dict.get('r2') or show_revs[0].string
-
   branch_names = []
   for tag in taginfo.values():
     if tag.is_branch:

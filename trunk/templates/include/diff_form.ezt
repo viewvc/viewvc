@@ -19,10 +19,12 @@
     <option value="[tags.rev]:[tags.name]">[tags.name]</option>
   [end]
   </select>
-  <input type="text" size="12" name="tr1" value="[tr1]"
-        onchange="document.diff_select.r1.selectedIndex=0" />
+  <input type="text" size="12" name="tr1" 
+         value="[if-any rev_selected][rev_selected][else][first_revision][end]"
+         onchange="document.diff_select.r1.selectedIndex=0" />
 [else]
-  <input type="text" size="12" name="r1" value="[tr1]" />
+  <input type="text" size="12" name="r1"
+         value="[if-any rev_selected][rev_selected][else][first_revision][end]" />
 [end]
 
   and
@@ -33,10 +35,11 @@
     <option value="[tags.rev]:[tags.name]">[tags.name]</option>
   [end]
   </select>
-  <input type="text" size="12" name="tr2" value="[tr2]"
-        onchange="document.diff_select.r1.selectedIndex=0" />
+  <input type="text" size="12" name="tr2" 
+         value="[last_revision]"
+         onchange="document.diff_select.r1.selectedIndex=0" />
 [else]
-  <input type="text" size="12" name="r2" value="[tr1]" />
+  <input type="text" size="12" name="r2" value="[last_revision]" />
 [end]
   </td>
   </tr>

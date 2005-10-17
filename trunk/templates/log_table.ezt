@@ -28,7 +28,13 @@
   <th class="vc_header">Author</th>
 </tr>
 </thead>
+
+[define first_revision][end]
+[define last_revision][end]
+
 [for entries]
+[if-index entries first][define first_revision][entries.rev][end][end]
+[if-index entries last][define last_revision][entries.rev][end][end]
   <tbody>
   <tr style="vertical-align: top;" class="vc_row_[if-index entries even]even[else]odd[end]">
 
