@@ -267,7 +267,8 @@ class ModPythonServer(ThreadedServer):
   def __init__(self, request):
     ThreadedServer.__init__(self)
     self.request = request
-
+    self.headerSent = 0
+    
     global cgi
     import cgi
 
@@ -279,6 +280,7 @@ class ModPythonServer(ThreadedServer):
       self.request.content_type = 'text/html'
     else:
       self.request.content_type = content_type
+    self.headerSent = 1
 
     if status is not None:
       m = _re_status.match(status)

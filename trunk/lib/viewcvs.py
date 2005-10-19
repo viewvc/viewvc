@@ -1016,13 +1016,15 @@ def retry_read(src, reqlen=CHUNK_SIZE):
         continue
     return chunk
   
-def copy_stream(src, dst=None):
+def copy_stream(src, dst=None, htmlize=0):
   if dst is None:
     dst = sys.stdout
   while 1:
     chunk = retry_read(src)
     if not chunk:
       break
+    if htmlize:
+      chunk = htmlify(chunk)
     dst.write(chunk)
 
 class MarkupPipeWrapper:
@@ -1038,13 +1040,7 @@ class MarkupPipeWrapper:
   def __call__(self, out):
     if self.pretext:
       out.write(self.pretext)
-    while 1:
-      chunk = retry_read(self.fp)
-      if not chunk:
-        break
-      if self.htmlize:
-        chunk = htmlify(chunk)
-      out.write(chunk)
+    copy_stream(self.fp, out, self.htmlize)
     self.fp.close()
     if self.posttext:
       out.write(self.posttext)
@@ -1938,8 +1934,8 @@ def view_log(request):
   data.update({
     'branch' : None,
     'mime_type' : request.mime_type,
-    'rev_selected' : request.query_dict.get('r1'), 
-    'path_selected' : request.query_dict.get('p1'), 
+    'rev_selected' : selected_rev,
+    'path_selected' : selected_path,
     'diff_format' : diff_format,
     'logsort' : logsort,
     'human_readable' : ezt.boolean(diff_format in ('h', 'l')),
@@ -2253,7 +2249,7 @@ def rcsdiff_date_reformat(date_str):
     return date_str
   return make_time_string(compat.timegm(date))
 
-_re_extract_rev = re.compile(r'^[-+]+ [^\t]+\t([^\t]+)\t((\d+\.)*\d+)$')
+_re_extract_rev = re.compile(r'^[-+*]{3} [^\t]+\t([^\t]+)\t((\d+\.)*\d+)$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
 
 def spaced_html_text(text):
@@ -2554,9 +2550,10 @@ def view_patch(request):
     raise debug.ViewCVSException('Invalid path(s) or revision(s) passed '
                                  'to diff', '400 Bad Request')
 
-  request.server.header('text/plain')
   date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
                                                    sym1, sym2)
+
+  request.server.header('text/plain')
   sys.stdout.write(headers)
   copy_stream(fp)
   fp.close()
@@ -2603,7 +2600,6 @@ def view_diff(request):
   except vclib.InvalidRevision:
     raise debug.ViewCVSException('Invalid path(s) or revision(s) passed '
                                  'to diff', '400 Bad Request')
-  request.server.header()
   data = nav_header_data(request, rev2)
   data.update({
     'rev_left' : rev1,
@@ -2621,7 +2617,8 @@ def view_diff(request):
   data['diff_format_action'] = urllib.quote(url, _URL_SAFE_CHARS)
   data['diff_format_hidden_values'] = prepare_hidden_values(params)
   data['patch_href'] = request.get_url(view_func=view_patch,
-                                       params=orig_params)
+                                       params=orig_params,
+                                       escape=1)
 
   date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
                                                    sym1, sym2)
@@ -2641,6 +2638,7 @@ def view_diff(request):
     'changes' : changes,
     })
 
+  request.server.header()
   generate_page(request, "diff", data)
 
 
@@ -3340,13 +3338,11 @@ def view_error(server):
   
   # use the configured error template if possible
   try:
-    if cfg:
+    if cfg and not server.headerSent:
       server.header(status=status)
       generate_page(None, "error", exc_dict)
       handled = 1
   except:
-    # get new exception data, more important than the first
-    #exc_dict = debug.GetExceptionData()
     pass
 
   # but fallback to the old exception printer if no configuration is
