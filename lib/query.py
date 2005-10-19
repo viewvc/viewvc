@@ -441,7 +441,9 @@ def main(server, viewcvs_link):
   except SystemExit, e:
     pass
   except:
-    debug.PrintException(server, debug.GetExceptionData())
+    exc_info = debug.GetExceptionData()
+    server.header(status=exc_info['status'])
+    debug.PrintException(server, exc_info) 
 
 class _item:
   def __init__(self, **kw):
