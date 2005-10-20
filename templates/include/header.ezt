@@ -15,7 +15,8 @@
 [end]
 <table style="padding:0.1em;">
 <tr>
-  <td><strong>
+  <td>
+  [if-any nav_path]<strong>
     [for nav_path]
       [if-any nav_path.href]<a href="[nav_path.href]">[end]
       [if-index nav_path first]
@@ -23,7 +24,9 @@
         [nav_path.name][end][if-any nav_path.href]</a>[end]
       [if-index nav_path last][else]/[end]
     [end]
-  </strong></td>
+    </strong>
+  [end]
+  </td>
   <td style="text-align:right;">
   [if-any roots]
     [change_root_hidden_values]
