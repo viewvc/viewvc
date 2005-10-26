@@ -579,13 +579,13 @@ th { background: rgb(60%,70%,90%); }
   <td class="varname">jump_rev_action</td>
   <td>String</td>
   <td>Form action URL for the directory revision selection form.
-      Subversion only.</td>
+      Valid only when <var>roottype</var> is <tt>svn</tt>.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">jump_rev_hidden_values</td>
   <td>String</td>
   <td>Hidden value HTML markup for the directory revision selection
-      form.  Subversion only.</td>
+      form.  Valid only when <var>roottype</var> is <tt>svn</tt>.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">main_href</td>
@@ -652,18 +652,19 @@ th { background: rgb(60%,70%,90%); }
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.ago</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Textual description of the time since <var>entries.date</var>.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.author</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Username of the last modifier of the directory entry.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.date</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Date (in UTC if not otherwise configured) of the last
+      modification of the directory entry.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.errors</td>
@@ -672,13 +673,9 @@ th { background: rgb(60%,70%,90%); }
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.graph_href</td>
-  <td></td>
-  <td></td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">entries.href</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>URL of the ViewCVS revision graph view for the directory
+      entry.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.log</td>
@@ -692,8 +689,9 @@ th { background: rgb(60%,70%,90%); }
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.log_href</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>URL of the ViewCVS revision log view for the directory
+      entry.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.log_rev</td>
@@ -707,13 +705,16 @@ th { background: rgb(60%,70%,90%); }
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.name</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Name of the directory entry.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.rev</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Revision of the directory entry.  For CVS repositories, this is
+      a revision at the tip of the selected tag or branch; for
+      Subversion, this is the youngest revision as of the revision of
+      the directory being viewed.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.show_log</td>
@@ -722,8 +723,10 @@ th { background: rgb(60%,70%,90%); }
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.size</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Size (in bytes) of the directory entry.  Valid only when
+      <var>roottype</var> is <tt>svn</tt> and
+      <var>entries.pathtype</var> is <tt>file</tt>.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.state</td>
@@ -731,7 +734,7 @@ th { background: rgb(60%,70%,90%); }
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">entries.type</td>
+  <td class="varname">entries.pathtype</td>
   <td></td>
   <td></td>
 </tr>
@@ -1666,7 +1669,7 @@ th { background: rgb(60%,70%,90%); }
   <td></td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">changes.type</td>
+  <td class="varname">changes.pathtype</td>
   <td></td>
   <td></td>
 </tr>
