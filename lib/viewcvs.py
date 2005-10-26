@@ -1480,10 +1480,10 @@ def view_directory(request):
 
   ### display a row for ".." ?
   for file in file_data:
-    row = _item(viewable=None, href=None, graph_href=None,
-                author=None, log=None, log_file=None, log_rev=None,
-                show_log=None, state=None, size=None, mime_type=None,
-                date=None, ago=None)
+    row = _item(viewable=None, graph_href=None, author=None, log=None,
+                log_file=None, log_rev=None, show_log=None,
+                state=None, size=None, mime_type=None, date=None,
+                ago=None)
 
     row.rev = file.rev
     row.author = file.author
@@ -1497,8 +1497,8 @@ def view_directory(request):
 
     row.anchor = request.server.escape(file.name)
     row.name = request.server.escape(file.name)
-    row.type = (file.kind == vclib.FILE and 'file') or \
-               (file.kind == vclib.DIR and 'dir')
+    row.pathtype = (file.kind == vclib.FILE and 'file') or \
+                   (file.kind == vclib.DIR and 'dir')
     row.errors = file.errors
 
     if file.kind == vclib.DIR:
@@ -2809,8 +2809,9 @@ def view_revision(request):
   # add the hrefs, types, and prev info
   for change in changes:
     change.view_href = change.diff_href = change.type = change.log_href = None
-    change.type = (change.pathtype == vclib.FILE and 'file') or \
-                  (change.pathtype == vclib.DIR and 'dir')
+    pathtype = (change.pathtype == vclib.FILE and 'file') \
+               or (change.pathtype == vclib.DIR and 'dir') \
+               or None
     if (change.action == 'added' or change.action == 'replaced') \
            and not change.is_copy:
       change.text_mods = 0
@@ -2850,7 +2851,8 @@ def view_revision(request):
     change.text_mods = ezt.boolean(change.text_mods)
     change.prop_mods = ezt.boolean(change.prop_mods)
     change.is_copy = ezt.boolean(change.is_copy)
-
+    change.pathtype = pathtype
+    
   prev_rev_href = next_rev_href = None
   if rev > 0:
     prev_rev_href = request.get_url(view_func=view_revision,
