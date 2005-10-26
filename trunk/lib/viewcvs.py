@@ -1482,14 +1482,15 @@ def view_directory(request):
   for file in file_data:
     row = _item(viewable=None, href=None, graph_href=None,
                 author=None, log=None, log_file=None, log_rev=None,
-                show_log=None, state=None, size=None, mime_type=None)
+                show_log=None, state=None, size=None, mime_type=None,
+                date=None, ago=None)
 
     row.rev = file.rev
     row.author = file.author
     row.state = (request.roottype == 'cvs' and file.dead) and 'dead' or ''
-    row.time = None
     if file.date is not None:
-      row.time = html_time(request, file.date)
+      row.date = file.date
+      row.ago = html_time(request, file.date)
     if cfg.options.show_logs and file.log is not None:
       row.show_log = 'yes'
       row.log = format_log(file.log)
@@ -3279,7 +3280,9 @@ def handle_config():
     cfg.set_defaults()
 
     # load in configuration information from the config file
-    pathname = CONF_PATHNAME or os.path.join(g_install_dir, 'viewcvs.conf')
+    pathname = os.environ.get('VIEWCVS_CONF_PATHNAME') \
+               or CONF_PATHNAME \
+               or os.path.join(g_install_dir, 'viewcvs.conf')
     if sapi.server:
       cfg.load_config(pathname, sapi.server.getenv('HTTP_HOST'))
     else:

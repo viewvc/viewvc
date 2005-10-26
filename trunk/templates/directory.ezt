@@ -98,7 +98,7 @@
        [else]
        <td>&nbsp;[if-any entries.rev]<a href="[entries.view_href]" title="[if-any entries.viewable]View[else]Download[end] file contents"><strong>[entries.rev]</strong></a>[end]</td>
        [end]
-       <td>&nbsp;[entries.time]</td>
+       <td>&nbsp;[entries.ago]</td>
        <td>&nbsp;[entries.author]</td>
        [is cfg.options.show_logs "1"]
          [if-any entries.show_log]
