@@ -89,7 +89,7 @@
          [for entries.errors]<em>[entries.errors]</em>[end]
        </td>
      [else]
-     <td>&nbsp;[entries.time]</td>
+     <td>&nbsp;[entries.ago]</td>
      <td>&nbsp;[entries.author]</td>
       [is cfg.options.show_logs "1"]
         [if-any entries.show_log]
