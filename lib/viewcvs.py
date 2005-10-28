@@ -1489,7 +1489,7 @@ def view_directory(request):
     row.author = file.author
     row.state = (request.roottype == 'cvs' and file.dead) and 'dead' or ''
     if file.date is not None:
-      row.date = file.date
+      row.date = make_time_string(file.date)
       row.ago = html_time(request, file.date)
     if cfg.options.show_logs and file.log is not None:
       row.show_log = 'yes'
