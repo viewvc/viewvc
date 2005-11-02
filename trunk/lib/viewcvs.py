@@ -396,8 +396,7 @@ class Request:
        result = self.server.escape(result)
     return result
 
-  def get_link(self, view_func = None, where = None, pathtype = None,
-               params = None):
+  def get_link(self, view_func=None, where=None, pathtype=None, params=None):
     """Constructs a link pointing to another ViewCVS page. All arguments
     correspond to members of the Request object. If they are set to 
     None they take values from the current page. Return value is a base
