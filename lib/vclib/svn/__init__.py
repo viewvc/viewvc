@@ -45,11 +45,11 @@ def _fs_path_join(base, relative):
   return string.join(parts, '/')
 
 
-def _trim_path(path):
-  assert path[0] == '/'
-  return path[1:]
-
+def _cleanup_path(path):
+  """Return a cleaned-up Subversion filesystem path"""
+  return string.join(filter(None, string.split(path, '/')), '/')
   
+
 def _compare_paths(path1, path2):
   path1_len = len (path1);
   path2_len = len (path2);
@@ -168,7 +168,7 @@ class NodeHistory:
         core.svn_pool_destroy(subpool)
         if not found:
           return
-    self.histories[revision] = _trim_path(path)
+    self.histories[revision] = _cleanup_path(path)
     
   
 def _get_history(svnrepos, full_name, options):
@@ -209,6 +209,10 @@ class ChangedPathSet:
     self.changes = { }
 
   def add_change(self, change):
+    if change.path:
+      change.path = _cleanup_path(change.path)
+    if change.base_path:
+      change.base_path = _cleanup_path(change.base_path)
     path = change.path
     action = 'modified'
     is_copy = 0
@@ -217,9 +221,12 @@ class ChangedPathSet:
       path = change.base_path
     elif change.added:
       action = 'added'
+      replace_check_path = path
       if change.base_path and change.base_rev:
         is_copy = 1
-      if self.changes.has_key(path) and self.changes[path].action == 'deleted':
+        replace_check_path = change.base_path
+      if self.changes.has_key(replace_check_path) \
+             and self.changes[replace_check_path].action == 'deleted':
         action = 'replaced'
     if change.item_kind == core.svn_node_dir:
       pathtype = vclib.DIR
@@ -271,7 +278,7 @@ def _log_helper(svnrepos, rev, path, pool):
   else:
     size = None
   entry = Revision(rev, date, author, msg, size, path,
-                   copyfrom_path and _trim_path(copyfrom_path),
+                   copyfrom_path and _cleanup_path(copyfrom_path),
                    copyfrom_rev)
   return entry
   
