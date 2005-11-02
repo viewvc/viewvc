@@ -2833,20 +2833,24 @@ def view_revision(request):
     elif change.pathtype is vclib.DIR:
       view_func=view_directory
 
-    try:
+    if change.pathtype:
+      if change.action == 'deleted':
+        link_rev = str(change.base_rev)
+        link_where = change.base_path
+      else:
+        link_rev = str(rev)
+        link_where = change.filename
+
       change.view_href = request.get_url(view_func=view_func,
-                                         where=change.filename, 
+                                         where=link_where,
                                          pathtype=change.pathtype,
-                                         params={'rev' : str(rev)},
+                                         params={'rev' : link_rev},
                                          escape=1)
       change.log_href = request.get_url(view_func=view_log,
-                                        where=change.filename,
+                                        where=link_where,
                                         pathtype=change.pathtype,
-                                        params={'rev': str(rev)},
+                                        params={'rev' : link_rev},
                                         escape=1)
-    except AssertionError:
-      # The 'svn_ra' backend can't yet figure out path kinds.
-      pass
     
     change.text_mods = ezt.boolean(change.text_mods)
     change.prop_mods = ezt.boolean(change.prop_mods)
