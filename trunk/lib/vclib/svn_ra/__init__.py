@@ -25,7 +25,7 @@ import re
 import tempfile
 import popen2
 import time
-from vclib.svn import Revision, ChangedPath, _datestr_to_date, _compare_paths
+from vclib.svn import Revision, ChangedPath, _datestr_to_date, _compare_paths, _cleanup_path
 from svn import core, delta, client, wc, ra
 
 
@@ -35,15 +35,10 @@ if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 3, 0):
 
   
 def _rev2optrev(rev):
+  assert type(rev) is int
   rt = core.svn_opt_revision_t()
-  if rev is not None:
-    if str(rev) == 'HEAD':
-      rt.kind = core.svn_opt_revision_head
-    else:
-      rt.kind = core.svn_opt_revision_number
-      rt.value.number = rev
-  else:
-    rt.kind = core.svn_opt_revision_unspecified
+  rt.kind = core.svn_opt_revision_number
+  rt.value.number = rev
   return rt
 
 
@@ -53,21 +48,29 @@ def date_from_rev(svnrepos, rev):
   return _datestr_to_date(datestr, svnrepos.pool)
 
 
-def get_location(svnrepos, path, rev):
+def get_location(svnrepos, path, rev, old_rev):
   try:
-    results = ra.get_locations(svnrepos.ra_session, path, svnrepos.rev,
-                               [int(rev)], svnrepos.pool)
-    return results[int(rev)]
-  except:
-    raise vclib.ItemNotFound(filter(None, string.split(path, '/')))
+    results = ra.get_locations(svnrepos.ra_session, path, rev,
+                               [old_rev], svnrepos.pool)
+  except core.SubversionException, e:
+    if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
+      raise vclib.ItemNotFound(path)
+    raise
+
+  try:
+    old_path = results[old_rev]
+  except KeyError:
+    raise vclib.ItemNotFound(path)
+
+  return _cleanup_path(old_path)
 
 
-def created_rev(svnrepos, full_name):
-  kind = ra.svn_ra_check_path(svnrepos.ra_session, full_name, svnrepos.rev,
+def created_rev(svnrepos, full_name, rev):
+  kind = ra.svn_ra_check_path(svnrepos.ra_session, full_name, rev,
                               svnrepos.pool)
   if kind == core.svn_node_dir:
     props = ra.svn_ra_get_dir(svnrepos.ra_session, full_name,
-                              svnrepos.rev, svnrepos.pool)
+                              rev, svnrepos.pool)
     return int(props[core.SVN_PROP_ENTRY_COMMITTED_REV])
   return core.SVN_INVALID_REVNUM
 
@@ -122,9 +125,9 @@ def _get_rev_details(svnrepos, rev, pool):
   return lhc.get_history()
 
   
-def get_revision_info(svnrepos):
+def get_revision_info(svnrepos, rev):
   rev, author, date, log, changes = \
-       _get_rev_details(svnrepos, svnrepos.rev, svnrepos.pool)
+       _get_rev_details(svnrepos, rev, svnrepos.pool)
   return _datestr_to_date(date, svnrepos.pool), author, log, changes
 
 
@@ -166,9 +169,8 @@ class LogCollector:
       self.path = this_path
     
 
-def get_logs(svnrepos, full_name, files):
-  parts = filter(None, string.split(full_name, '/'))
-  dirents = svnrepos.get_dirents(parts, svnrepos.rev)
+def get_logs(svnrepos, full_name, rev, files):
+  dirents = svnrepos._get_dirents(full_name, rev)
   subpool = core.svn_pool_create(svnrepos.pool)
   rev_info_cache = { }
   for file in files:
@@ -342,7 +344,7 @@ class SelfCleanFP:
 
 
 class SubversionRepository(vclib.Repository):
-  def __init__(self, name, rootpath, rev=None):
+  def __init__(self, name, rootpath):
     # Init the client app
     core.apr_initialize()
     pool = core.svn_pool_create(None)
@@ -370,22 +372,18 @@ class SubversionRepository(vclib.Repository):
     self.ra_session = ra.svn_ra_open(self.rootpath, ra_callbacks, None,
                                      ctx.config, pool)
     self.youngest = ra.svn_ra_get_latest_revnum(self.ra_session, pool)
-    if rev is not None:
-      self.rev = rev
-      if self.rev > self.youngest:
-        raise vclib.InvalidRevision(self.rev)
-    else:
-      self.rev = self.youngest
     self._dirent_cache = { }
 
   def __del__(self):
     core.svn_pool_destroy(self.pool)
     core.apr_terminate()
     
-  def itemtype(self, path_parts):
+  def itemtype(self, path_parts, rev):
+    path = self._getpath(path_parts[:-1])
+    rev = self._getrev(rev)
     if not len(path_parts):
       return vclib.DIR
-    dirents = self.get_dirents(path_parts[:-1], self.rev)
+    dirents = self._get_dirents(path, rev)
     try:
       entry = dirents[path_parts[-1]]
       if entry.kind == core.svn_node_dir:
@@ -395,11 +393,8 @@ class SubversionRepository(vclib.Repository):
     except KeyError:
       raise vclib.ItemNotFound(path_parts)
 
-  def openfile(self, path_parts, rev=None):
-    if rev is None:
-      rev = self.rev
-    else:
-      rev = int(rev)
+  def openfile(self, path_parts, rev):
+    rev = self._getrev(rev)
     url = self.rootpath
     if len(path_parts):
       url = self.rootpath + '/' + self._getpath(path_parts)
@@ -411,9 +406,11 @@ class SubversionRepository(vclib.Repository):
     core.svn_stream_close(stream)
     return SelfCleanFP(tmp_file), rev
 
-  def listdir(self, path_parts, options):
+  def listdir(self, path_parts, rev, options):
+    path = self._getpath(path_parts)
+    rev = self._getrev(rev)
     entries = [ ]
-    dirents = self.get_dirents(path_parts, self.rev)
+    dirents = self._get_dirents(path, rev)
     for name in dirents.keys():
       entry = dirents[name]
       if entry.kind == core.svn_node_dir:
@@ -423,17 +420,12 @@ class SubversionRepository(vclib.Repository):
       entries.append(vclib.DirEntry(name, kind))
     return entries
 
-  def dirlogs(self, path_parts, entries, options):
-    get_logs(self, self._getpath(path_parts), entries)
+  def dirlogs(self, path_parts, rev, entries, options):
+    get_logs(self, self._getpath(path_parts), self._getrev(rev), entries)
 
   def itemlog(self, path_parts, rev, options):
     full_name = self._getpath(path_parts)
-
-    if rev is not None:
-      try:
-        rev = int(rev)
-      except ValueError:
-        vclib.InvalidRevision(rev)
+    rev = self._getrev(rev)
 
     # It's okay if we're told to not show all logs on a file -- all
     # the revisions should match correctly anyway.
@@ -443,7 +435,7 @@ class SubversionRepository(vclib.Repository):
       dir_url = dir_url + '/' + full_name
 
     cross_copies = options.get('svn_cross_copies', 0)
-    client.svn_client_log([dir_url], _rev2optrev(self.rev), _rev2optrev(1),
+    client.svn_client_log([dir_url], _rev2optrev(rev), _rev2optrev(1),
                           1, not cross_copies, lc.add_log,
                           self.ctx, self.pool)
     revs = lc.logs
@@ -455,13 +447,10 @@ class SubversionRepository(vclib.Repository):
 
     return revs
 
-  def annotate(self, path_parts, rev=None):
+  def annotate(self, path_parts, rev):
     path = self._getpath(path_parts)
+    rev = self._getrev(rev)
     url = self.rootpath + (path and '/' + path)
-    if rev is None:
-      rev = self.rev
-    else:
-      rev = int(rev)
 
     blame_data = []
 
@@ -487,13 +476,15 @@ class SubversionRepository(vclib.Repository):
     """
     p1 = self._getpath(path_parts1)
     p2 = self._getpath(path_parts2)
+    r1 = self._getrev(rev1)
+    r2 = self._getrev(rev2)
     args = vclib._diff_args(type, options)
 
     # Need to keep a reference to the FileDiff object around long
     # enough to use.  It destroys its underlying temporary files when
     # the class is destroyed.
     diffobj = options['diffobj'] = \
-      do_diff(self, p1, int(rev1), p2, int(rev2), args)
+      do_diff(self, p1, r1, p2, r2, args)
   
     try:
       return diffobj.get_pipe()
@@ -505,13 +496,22 @@ class SubversionRepository(vclib.Repository):
   def _getpath(self, path_parts):
     return string.join(path_parts, '/')
 
-  def get_dirents(self, path_parts, rev):
-    if len(path_parts):
-      path = self._getpath(path_parts)
+  def _getrev(self, rev):
+    if rev is None or rev == 'HEAD':
+      return self.youngest
+    try:
+      rev = int(rev)
+    except ValueError:
+      raise vclib.InvalidRevision(rev)
+    if (rev < 0) or (rev > self.youngest):
+      raise vclib.InvalidRevision(rev)
+    return rev
+
+  def _get_dirents(self, path, rev):
+    if path:
       key = str(rev) + '/' + path
       dir_url = self.rootpath + '/' + path
     else:
-      path = None
       key = str(rev)
       dir_url = self.rootpath
     dirents = self._dirent_cache.get(key)

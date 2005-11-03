@@ -55,7 +55,7 @@ def link_includes(text, repos, path_parts, include_url):
       include_path = path_parts[:depth] + [incfile]
       try:
         # will throw if path doesn't exist
-        if repos.itemtype(include_path) == vclib.FILE: 
+        if repos.itemtype(include_path, None) == vclib.FILE:
           break
       except vclib.ItemNotFound:
         pass

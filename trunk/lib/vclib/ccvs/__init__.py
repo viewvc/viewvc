@@ -35,8 +35,11 @@ from vclib.bincvs import CVSRepository, Revision, Tag, \
                          _file_log, _log_path
 
 class CCVSRepository(CVSRepository):
-  def dirlogs(self, path_parts, entries, options):
+  def dirlogs(self, path_parts, rev, entries, options):
     """see vclib.Repository.dirlogs docstring
+
+    rev can be a tag name or None. if set only information from revisions
+    matching the tag will be retrieved
 
     Option values recognized by this implementation:
 
@@ -44,17 +47,12 @@ class CCVSRepository(CVSRepository):
         boolean. true to fetch logs of the most recently modified file in each
         subdirectory
 
-      cvs_dir_tag
-        string set to a tag name. if set only logs from revisions matching the
-        tag will be retrieved
-
     Option values returned by this implementation:
 
       cvs_tags, cvs_branches
         lists of tag and branch names encountered in the directory
     """
     subdirs = options.get('cvs_subdirs', 0)
-    tag = options.get('cvs_dir_tag')
 
     dirpath = self._getpath(path_parts)
     alltags = {           # all the tags seen in the files of this dir
@@ -67,7 +65,7 @@ class CCVSRepository(CVSRepository):
       path = _log_path(entry, dirpath, subdirs)
       if path:
         try:
-          rcsparse.Parser().parse(open(path, 'rb'), InfoSink(entry, tag, alltags))
+          rcsparse.Parser().parse(open(path, 'rb'), InfoSink(entry, rev, alltags))
         except IOError, e:
           entry.errors.append("rcsparse error: %s" % e)
         except RuntimeError, e:
@@ -86,7 +84,9 @@ class CCVSRepository(CVSRepository):
   def itemlog(self, path_parts, rev, options):
     """see vclib.Repository.itemlog docstring
 
-    rev parameter can be a revision number, branch number or tag name
+    rev parameter can be a revision number, a branch number, a tag name,
+    or None. If None, will return information about all revisions, otherwise,
+    will only return information about the specified revision or branch.
 
     Option values returned by this implementation:
 

@@ -248,25 +248,19 @@ class Request:
       elif cfg.general.svn_roots.has_key(self.rootname):
         self.rootpath = cfg.general.svn_roots[self.rootname]
         try:
-          rev = None
-          if self.query_dict.has_key('rev') \
-            and self.query_dict['rev'] != 'HEAD':
-            rev = int(self.query_dict['rev'])
           if re.match(_re_rewrite_url, self.rootpath):
             # If the rootpath is a URL, we'll use the svn_ra module, but
             # lie about its name.
             import vclib.svn_ra
             vclib.svn = vclib.svn_ra
             self.repos = vclib.svn.SubversionRepository(self.rootname,
-                                                        self.rootpath,
-                                                        rev)
+                                                        self.rootpath)
           else:
             self.rootpath = os.path.normpath(self.rootpath)
             import vclib.svn
             self.repos = vclib.svn.SubversionRepository(self.rootname,
                                                         self.rootpath,
-                                                        cfg.general.svn_path,
-                                                        rev)
+                                                        cfg.general.svn_path)
           self.roottype = 'svn'
         except vclib.ReposNotFound:
           raise debug.ViewCVSException(
@@ -283,18 +277,20 @@ class Request:
           % self.rootname, "404 Repository not found")
 
       # Make sure path exists
-      self.pathtype = _repos_pathtype(self.repos, self.path_parts)
+      rev = self.query_dict.get('rev')
+      self.pathtype = _repos_pathtype(self.repos, self.path_parts, rev)
 
       if self.pathtype is None:
         # path doesn't exist, try stripping known fake suffixes
-        result = _strip_suffix('.diff', self.where, self.path_parts,        \
-                               vclib.FILE, self.repos, view_diff) or        \
-                 _strip_suffix('.tar.gz', self.where, self.path_parts,      \
-                               vclib.DIR, self.repos, download_tarball) or  \
-                 _strip_suffix('root.tar.gz', self.where, self.path_parts,  \
-                               vclib.DIR, self.repos, download_tarball)
+        result = _strip_suffix('.diff', path_parts, rev, vclib.FILE,       \
+                               self.repos, view_diff) or                   \
+                 _strip_suffix('.tar.gz', path_parts, rev, vclib.DIR,      \
+                               self.repos, download_tarball) or            \
+                 _strip_suffix('root.tar.gz', path_parts, rev, vclib.DIR,  \
+                               self.repos, download_tarball)
         if result:
-          self.where, self.path_parts, self.pathtype, self.view_func = result
+          self.path_parts, self.pathtype, self.view_func = result
+          self.where = _path_join(path_parts)
         else:
           raise debug.ViewCVSException('%s: unknown location'
                                        % self.where, '404 Not Found')
@@ -647,30 +643,27 @@ _legal_params = {
 def _path_join(path_parts):
   return string.join(path_parts, '/')
 
-def _strip_suffix(suffix, where, path_parts, pathtype, repos, view_func):
+def _strip_suffix(suffix, path_parts, rev, pathtype, repos, view_func):
   """strip the suffix from a repository path if the resulting path
   is of the specified type, otherwise return None"""
   l = len(suffix)
-  if where[-l:] == suffix:
+  if path_parts[-1][-l:] == suffix:
     path_parts = path_parts[:]
     if len(path_parts[-1]) == l:
       del path_parts[-1]
     else:
       path_parts[-1] = path_parts[-1][:-l]
-    t = _repos_pathtype(repos, path_parts)
+    t = _repos_pathtype(repos, path_parts, rev)
     if pathtype == t:
-      return where[:-l], path_parts, t, view_func
+      return path_parts, t, view_func
   return None
 
-def _repos_pathtype(repos, path_parts):
-  """return the type of a repository path, or None if the path
-  does not exist"""
-  type = None
+def _repos_pathtype(repos, path_parts, rev):
+  """return the type of a repository path, or None if the path doesn't exist"""
   try:
-    type = repos.itemtype(path_parts)
+    return repos.itemtype(path_parts, rev)
   except vclib.ItemNotFound:
-    pass
-  return type
+    return None
 
 def check_freshness(request, mtime=None, etag=None, weak=0):
   # See if we are supposed to disable etags (for debugging, usually)
@@ -757,8 +750,8 @@ def nav_path(request):
 
   # set convenient "rev" and "is_dir" values
   rev = None
-  if request.roottype == "svn" and request.query_dict.get('rev'):
-    rev = request.repos.rev
+  if request.roottype == 'svn':
+    rev = request.query_dict.get('rev')
   is_dir = request.pathtype == vclib.DIR
 
   # add root item
@@ -1301,7 +1294,7 @@ def view_markup(request):
     })
 
   if cfg.options.show_log_in_markup:
-    options = {}
+    options = {'svn_latest_log': 1}
     revs = request.repos.itemlog(request.path_parts, revision, options)
     entry = revs[-1]
 
@@ -1429,34 +1422,38 @@ def view_roots(request):
   generate_page(request, "roots", data)
 
 def view_directory(request):
+  if request.roottype == 'svn':
+    rev = request.query_dict.get('rev')
+  elif request.roottype == 'cvs':
+    rev = view_tag = request.query_dict.get('only_with_tag')
+
   # For Subversion repositories, the revision acts as a weak validator for
   # the directory listing (to take into account template changes or
   # revision property changes).
   if request.roottype == 'svn':
-    revision = str(vclib.svn.created_rev(request.repos, request.where))
+    revision = str(vclib.svn.created_rev(request.repos, request.where,
+                                         request.repos._getrev(rev)))
     if check_freshness(request, None, revision, weak=1):
       return
 
   # List current directory
   options = {}
   if request.roottype == 'cvs':
-    view_tag = request.query_dict.get('only_with_tag')
     hideattic = int(request.query_dict.get('hideattic', 
                                            cfg.options.hide_attic))
     options["cvs_subdirs"] = (cfg.options.show_subdir_lastmod and
                               cfg.options.show_logs)
-    options["cvs_dir_tag"] = view_tag
 
-  file_data = request.repos.listdir(request.path_parts, options)
+  file_data = request.repos.listdir(request.path_parts, rev, options)
 
   # Filter file list if a regex is specified
   search_re = request.query_dict.get('search', '')
   if cfg.options.use_re_search and search_re:
-    file_data = search_files(request.repos, request.path_parts,
+    file_data = search_files(request.repos, request.path_parts, rev,
                              file_data, search_re)
 
   # Retrieve log messages, authors, revision numbers, timestamps
-  request.repos.dirlogs(request.path_parts, file_data, options)
+  request.repos.dirlogs(request.path_parts, rev, file_data, options)
 
   # sort with directories first, and using the "sortby" criteria
   sortby = request.query_dict.get('sortby', cfg.options.sort_by) or 'file'
@@ -1473,7 +1470,7 @@ def view_directory(request):
   where = request.where
   where_prefix = where and where + '/'
   if request.roottype == 'svn':
-    dir_params = {'rev': request.query_dict.get('rev')}    
+    dir_params = {'rev': rev}
   else:
     dir_params = {}
 
@@ -1653,10 +1650,7 @@ def view_directory(request):
     data['youngest_rev_href'] = request.get_url(view_func=view_revision,
                                                 params={},
                                                 escape=1)
-    if request.query_dict.has_key('rev'):
-      data['rev'] = request.query_dict['rev']
-    else:
-      data['rev'] = str(request.repos.rev)
+    data['rev'] = str(request.repos._getrev(rev))
     url, params = request.get_link(params={'rev': None})
     data['jump_rev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
     data['jump_rev_hidden_values'] = prepare_hidden_values(params)
@@ -1664,8 +1658,8 @@ def view_directory(request):
 
   if is_query_supported(request):
     params = {}
-    if options.has_key('cvs_dir_tag'):
-      params['branch'] = options['cvs_dir_tag']
+    if request.roottype == 'cvs' and view_tag:
+      params['branch'] = view_tag
     data['queryform_href'] = request.get_url(view_func=view_queryform,
                                              params=params,
                                              escape=1)
@@ -1749,7 +1743,7 @@ def view_log(request):
   if request.roottype == 'cvs':
     rev = view_tag
   else:
-    rev = None
+    rev = request.query_dict.get('rev')
 
   show_revs = request.repos.itemlog(request.path_parts, rev, options)
   if logsort == 'date':
@@ -1906,7 +1900,7 @@ def view_log(request):
                                   'r2': entry.rev,
                                   'diff_format': None},
                           escape=1)
-    # moves aren't handled here but they are only supported by CVS right now.
+
     if entry.next_main:
       entry.diff_to_main_href = \
           request.get_url(view_func=view_diff,
@@ -2144,7 +2138,7 @@ def view_cvsgraph(request):
   request.server.header()
   generate_page(request, "graph", data)
 
-def search_files(repos, path_parts, files, search_re):
+def search_files(repos, path_parts, rev, files, search_re):
   """ Search files in a directory for a regular expression.
 
   Does a check-out of each file in the directory.  Only checks for
@@ -2179,9 +2173,8 @@ def search_files(repos, path_parts, files, search_re):
 
     # Only text files at this point
 
-    # process_checkout will checkout the head version out of the repository
     # Assign contents of checked out file to fp.
-    fp = repos.openfile(path_parts + [file.name])[0]
+    fp = repos.openfile(path_parts + [file.name], rev)[0]
 
     # Read in each line, use re.search to search line.
     # If successful, add file to new_file_list and break.
@@ -2459,13 +2452,15 @@ def diff_parse_headers(fp, diff_type, rev1, rev2, sym1=None, sym2=None):
   return date1, date2, flag, string.join(header_lines, '')
 
 
-def _get_diff_path_parts(request, query_key, rev):
+def _get_diff_path_parts(request, query_key, rev, base_rev):
   if request.query_dict.has_key(query_key):
     parts = _path_parts(request.query_dict[query_key])
   elif request.roottype == 'svn':
     try:
-      parts = _path_parts(vclib.svn.get_location(request.repos,
-                                                  request.where, rev))
+      repos = request.repos
+      parts = _path_parts(vclib.svn.get_location(repos, request.where,
+                                                 repos._getrev(base_rev),
+                                                 repos._getrev(rev)))
     except vclib.InvalidRevision:
       raise debug.ViewCVSException('Invalid path(s) or revision(s) passed '
                                    'to diff', '400 Bad Request')
@@ -2482,6 +2477,7 @@ def setup_diff(request):
 
   rev1 = r1 = query_dict['r1']
   rev2 = r2 = query_dict['r2']
+  base_rev = query_dict.get('rev')
   sym1 = sym2 = None
 
   # hack on the diff revisions
@@ -2512,8 +2508,8 @@ def setup_diff(request):
       rev2 = r2[:idx]
       sym2 = r2[idx+1:]
 
-  p1 = _get_diff_path_parts(request, 'p1', rev1)
-  p2 = _get_diff_path_parts(request, 'p2', rev2)
+  p1 = _get_diff_path_parts(request, 'p1', rev1, base_rev)
+  p2 = _get_diff_path_parts(request, 'p2', rev2, base_rev)
 
   try:
     if revcmp(rev1, rev2) > 0:
@@ -2523,7 +2519,6 @@ def setup_diff(request):
   except ValueError:
     raise debug.ViewCVSException('Invalid revision(s) passed to diff',
                                  '400 Bad Request')
-
   return p1, p2, rev1, rev2, sym1, sym2
 
 
@@ -2693,11 +2688,11 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
 
   out.write(block)
 
-def generate_tarball(out, request, options, reldir, stack):
+def generate_tarball(out, request, rev, reldir, stack):
   # get directory info from repository
   rep_path = request.path_parts + reldir
-  entries = request.repos.listdir(rep_path, options)
-  request.repos.dirlogs(rep_path, entries, options)
+  entries = request.repos.listdir(rep_path, rev, {})
+  request.repos.dirlogs(rep_path, rev, entries, {})
   entries.sort(lambda a, b: cmp(a.name, b.name))
 
   # figure out corresponding path in tar file. everything gets put underneath
@@ -2764,7 +2759,7 @@ def generate_tarball(out, request, options, reldir, stack):
           or (cvs and cfg.options.hide_cvsroot and file.name == 'CVSROOT')):
         continue
 
-    generate_tarball(out, request, options, reldir + [file.name], stack)
+    generate_tarball(out, request, rev, reldir + [file.name], stack)
 
   # pop directory (if it's being pruned. otherwise stack is already empty)
   del stack[-1:]
@@ -2774,10 +2769,10 @@ def download_tarball(request):
     raise debug.ViewCVSException('Tarball generation is disabled',
                                  '403 Forbidden')
 
-  options = {}
-  if request.roottype == 'cvs':
-    tag = request.query_dict.get('only_with_tag')
-    options['cvs_dir_tag'] = tag
+  if request.roottype == 'svn':
+    rev = request.query_dict.get('rev')
+  elif request.roottype == 'cvs':
+    rev = request.query_dict.get('only_with_tag')
 
   ### look for GZIP binary
 
@@ -2785,7 +2780,7 @@ def download_tarball(request):
   sys.stdout.flush()
   fp = popen.pipe_cmds([('gzip', '-c', '-n')])
 
-  generate_tarball(fp, request, options, [], [])
+  generate_tarball(fp, request, rev, [], [])
 
   fp.write('\0' * 1024)
   fp.close()
@@ -2797,9 +2792,9 @@ def view_revision(request):
 
   data = common_template_data(request)
   query_dict = request.query_dict
-  date, author, msg, changes = vclib.svn.get_revision_info(request.repos)
+  rev = request.repos._getrev(query_dict.get('rev'))
+  date, author, msg, changes = vclib.svn.get_revision_info(request.repos, rev)
   date_str = make_time_string(date)
-  rev = request.repos.rev
 
   # The revision number acts as a weak validator.
   if check_freshness(request, None, str(rev), weak=1):

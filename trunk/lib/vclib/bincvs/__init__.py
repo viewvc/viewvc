@@ -38,7 +38,7 @@ class CVSRepository(vclib.Repository):
     self.name = name
     self.rootpath = rootpath
 
-  def itemtype(self, path_parts):
+  def itemtype(self, path_parts, rev):
     basepath = self._getpath(path_parts)
     if os.path.isdir(basepath):
       return vclib.DIR
@@ -49,7 +49,7 @@ class CVSRepository(vclib.Repository):
       return vclib.FILE
     raise vclib.ItemNotFound(path_parts)
 
-  def listdir(self, path_parts, options):
+  def listdir(self, path_parts, rev, options):
     # Only RCS files (*,v) and subdirs are returned.
     data = [ ]
 
@@ -124,7 +124,7 @@ class BinCVSRepository(CVSRepository):
       return revs[-1]
     return None
 
-  def openfile(self, path_parts, rev=None):
+  def openfile(self, path_parts, rev):
     if not rev or rev == 'HEAD' or rev == 'MAIN':
       rev_flag = '-p'
     else:
@@ -177,8 +177,11 @@ class BinCVSRepository(CVSRepository):
 
     return fp, revision
 
-  def dirlogs(self, path_parts, entries, options):
+  def dirlogs(self, path_parts, rev, entries, options):
     """see vclib.Repository.dirlogs docstring
+
+    rev can be a tag name or None. if set only information from revisions
+    matching the tag will be retrieved
 
     Option values recognized by this implementation:
 
@@ -186,20 +189,15 @@ class BinCVSRepository(CVSRepository):
         boolean. true to fetch logs of the most recently modified file in each
         subdirectory
 
-      cvs_dir_tag
-        string set to a tag name. if set only logs from revisions matching the
-        tag will be retrieved
-
     Option values returned by this implementation:
 
       cvs_tags, cvs_branches
         lists of tag and branch names encountered in the directory
     """
     subdirs = options.get('cvs_subdirs', 0)
-    tag = options.get('cvs_dir_tag')
 
     dirpath = self._getpath(path_parts)
-    alltags = _get_logs(self, dirpath, entries, tag, subdirs)
+    alltags = _get_logs(self, dirpath, entries, rev, subdirs)
 
     branches = options['cvs_branches'] = []
     tags = options['cvs_tags'] = []
@@ -212,7 +210,9 @@ class BinCVSRepository(CVSRepository):
   def itemlog(self, path_parts, rev, options):
     """see vclib.Repository.itemlog docstring
 
-    rev parameter can be a revision number, branch number or tag name
+    rev parameter can be a revision number, a branch number, a tag name,
+    or None. If None, will return information about all revisions, otherwise,
+    will only return information about the specified revision or branch.
 
     Option values recognized by this implementation:
 
