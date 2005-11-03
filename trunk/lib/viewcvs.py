@@ -83,18 +83,15 @@ view_roots_magic = '*viewroots*'
 
 # Put here the variables we need in order to hold our state - they
 # will be added (with their current value) to (almost) any link/query
-# string you construct.  Variables with zero values in the table below
-# will not, however, be added to links that span repository roots.
-_sticky_vars = {
-  ### VARIABLE : SPAN-ROOTS ###
-  'hideattic' : 1,
-  'sortby' : 1,
-  'sortdir' : 1,
-  'logsort' : 1,
-  'diff_format' : 1,
-  'only_with_tag' : 0,
-  'search' : 1,
-  }
+# string you construct.
+_sticky_vars = [
+  'hideattic',
+  'sortby',
+  'sortdir',
+  'logsort',
+  'diff_format',
+  'search',
+  ]
 
 # for reading/writing between a couple descriptors
 CHUNK_SIZE = 8192
@@ -163,6 +160,7 @@ class Request:
     self.where = None      # path to file or directory in current root
     self.query_dict = {}   # validated and cleaned up query options
     self.path_parts = None # for convenience, equals where.split('/')
+    self.pathrev = None    # current path revision or tag
 
     # redirect if we're loading from a valid but irregular URL
     # These redirects aren't neccessary to make ViewCVS work, it functions
@@ -175,6 +173,11 @@ class Request:
       # patch up old queries that use 'cvsroot' to look like they used 'root'
       if name == 'cvsroot':
         name = 'root'
+        needs_redirect = 1
+
+      # same for 'only_with_tag' and 'pathrev'
+      if name == 'only_with_tag':
+        name = 'pathrev'
         needs_redirect = 1
 
       # validate the parameter
@@ -277,16 +280,16 @@ class Request:
           % self.rootname, "404 Repository not found")
 
       # Make sure path exists
-      rev = self.query_dict.get('rev')
-      self.pathtype = _repos_pathtype(self.repos, self.path_parts, rev)
+      self.pathrev = pathrev = self.query_dict.get('pathrev')
+      self.pathtype = _repos_pathtype(self.repos, path_parts, pathrev)
 
       if self.pathtype is None:
         # path doesn't exist, try stripping known fake suffixes
-        result = _strip_suffix('.diff', path_parts, rev, vclib.FILE,       \
-                               self.repos, view_diff) or                   \
-                 _strip_suffix('.tar.gz', path_parts, rev, vclib.DIR,      \
-                               self.repos, download_tarball) or            \
-                 _strip_suffix('root.tar.gz', path_parts, rev, vclib.DIR,  \
+        result = _strip_suffix('.diff', path_parts, pathrev, vclib.FILE,      \
+                               self.repos, view_diff) or                      \
+                 _strip_suffix('.tar.gz', path_parts, pathrev, vclib.DIR,     \
+                               self.repos, download_tarball) or               \
+                 _strip_suffix('root.tar.gz', path_parts, pathrev, vclib.DIR, \
                                self.repos, download_tarball)
         if result:
           self.path_parts, self.pathtype, self.view_func = result
@@ -461,6 +464,13 @@ class Request:
         if rootname == cfg.general.default_root:
           del params['root']   
 
+    # add 'pathrev' value to parameter list
+    if (self.pathrev is not None
+        and not params.has_key('pathrev')
+        and view_func is not view_revision
+        and rootname == self.rootname):
+      params['pathrev'] = self.pathrev
+
     # add path
     if where:
       url = url + '/' + where
@@ -469,10 +479,6 @@ class Request:
     if view_func is download_tarball:
       if not where: url = url + '/root'
       url = url + '.tar.gz'
-
-      # add "only_with_tag" sticky variable manually
-      if not params.has_key('only_with_tag'):
-        params['only_with_tag'] = self.query_dict.get('only_with_tag')
 
     # add trailing slash for a directory
     elif pathtype == vclib.DIR:
@@ -505,10 +511,7 @@ class Request:
 
     # add sticky values to parameter list
     if sticky_vars:
-      for name in _sticky_vars.keys():
-        span_roots = _sticky_vars[name]
-        if rootname != self.rootname and not span_roots:
-          continue
+      for name in _sticky_vars:
         value = self.query_dict.get(name)
         if value is not None and not params.has_key(name):
           params[name] = value
@@ -609,7 +612,7 @@ _legal_params = {
   'sortdir'       : _re_validate_alpha,
   'logsort'       : _re_validate_alpha,
   'diff_format'   : _re_validate_alpha,
-  'only_with_tag' : _re_validate_revnum,
+  'pathrev'       : _re_validate_revnum,
   'dir_pagestart' : _re_validate_number,
   'log_pagestart' : _re_validate_number,
   'hidecvsroot'   : _re_validate_number,
@@ -664,6 +667,45 @@ def _repos_pathtype(repos, path_parts, rev):
     return repos.itemtype(path_parts, rev)
   except vclib.ItemNotFound:
     return None
+
+def _orig_path(request, rev_param='rev', path_param=None):
+  "Get original path of requested file at old revision before copies or moves"
+
+  # The 'pathrev' variable is interpreted by nearly all ViewCVS views to
+  # provide a browsable snapshot of a repository at some point in its history.
+  # 'pathrev' is a tag name for CVS repositories and a revision number for
+  # Subversion repositories. It's automatically propagated between pages by
+  # logic in the Request.get_link() function which adds it to links like a
+  # sticky variable. When 'pathrev' is set, directory listings only include
+  # entries that exist in the specified revision or tag. Similarly, log pages
+  # will only show revisions preceding the point in history specified by
+  # 'pathrev.' Markup, checkout, and annotate pages show the 'pathrev'
+  # revision of files by default when no other revision is specified.
+  #
+  # In Subversion repositories, paths are always considered to refer to the
+  # pathrev revision. For example, if there is a "circle.jpg" in revision 3,
+  # which is renamed and modified as "square.jpg" in revision 4, the original
+  # circle image is visible at the following URLs:
+  #
+  #     *checkout*/circle.jpg?pathrev=3
+  #     *checkout*/square.jpg?rev=3
+  #     *checkout*/square.jpg?rev=3&pathrev=4
+  # 
+  # Note that the following (which used to work in ViewCVS) yields a 404:
+  #
+  #     *checkout*/circle.jpg?rev=3
+  #
+  # Because pathrev is not specified and circle.jpg doesn't exist in the HEAD
+  # revision.
+  rev = request.query_dict.get(rev_param, request.pathrev)
+  path = request.query_dict.get(path_param, request.where)
+  
+  if rev is not None and hasattr(request.repos, '_getrev'):
+    pathrev = request.repos._getrev(request.pathrev)
+    rev = request.repos._getrev(rev)
+    return _path_parts(vclib.svn.get_location(request.repos, path, 
+                                              pathrev, rev)), rev
+  return _path_parts(path), rev
 
 def check_freshness(request, mtime=None, etag=None, weak=0):
   # See if we are supposed to disable etags (for debugging, usually)
@@ -748,10 +790,6 @@ def nav_path(request):
   if not request.repos:
     return []
 
-  # set convenient "rev" and "is_dir" values
-  rev = None
-  if request.roottype == 'svn':
-    rev = request.query_dict.get('rev')
   is_dir = request.pathtype == vclib.DIR
 
   # add root item
@@ -760,7 +798,7 @@ def nav_path(request):
   if request.path_parts or request.view_func is not view_directory:
     root_item.href = request.get_url(view_func=view_directory,
                                      where='', pathtype=vclib.DIR,
-                                     params={'rev' : rev}, escape=1)
+                                     params={}, escape=1)
   items.append(root_item)
 
   # add path part items
@@ -775,23 +813,23 @@ def nav_path(request):
       item.href = request.get_url(view_func=view_directory,
                                   where=_path_join(path_parts),
                                   pathtype=vclib.DIR,
-                                  params={'rev': rev}, escape=1)
+                                  params={}, escape=1)
     elif not is_dir and request.view_func is not view_log:
       item.href = request.get_url(view_func=view_log,
                                   where=_path_join(path_parts),
                                   pathtype=vclib.FILE,
-                                  params={'rev': rev}, escape=1)
+                                  params={}, escape=1)
     items.append(item)
 
   return items
 
 def prep_tags(request, tags):
-  url, params = request.get_link(params={'only_with_tag': None})
+  url, params = request.get_link(params={'pathrev': None})
   params = compat.urlencode(params)
   if params:
-    url = urllib.quote(url, _URL_SAFE_CHARS) + '?' + params + '&only_with_tag='
+    url = urllib.quote(url, _URL_SAFE_CHARS) + '?' + params + '&pathrev='
   else:
-    url = urllib.quote(url, _URL_SAFE_CHARS) + '?only_with_tag='
+    url = urllib.quote(url, _URL_SAFE_CHARS) + '?pathrev='
   url = request.server.escape(url)
 
   links = [ ]
@@ -944,40 +982,37 @@ def common_template_data(request):
                          type=allroots[rootname][1], href=href))
   data['roots'] = roots
 
-  data['roots_href'] = request.get_url(view_func=view_roots,
-                                       params={}, escape=1)
-
-  params = {}
-  if request.roottype == 'svn' and request.query_dict.has_key('rev'):
-    params['rev'] = request.query_dict['rev']
-
   if request.path_parts:
     dir = _path_join(request.path_parts[:-1])
     data['up_href'] = request.get_url(view_func=view_directory,
                                       where=dir, pathtype=vclib.DIR,
-                                      params=params, escape=1)
+                                      params={}, escape=1)
 
   if request.pathtype == vclib.FILE:
     if (request.view_func is not view_log):
       data['log_href'] = request.get_url(view_func=view_log,
-                                         params=params, escape=1)
+                                         params={}, escape=1)
 
     if (request.roottype == 'cvs' and cfg.options.use_cvsgraph
         and request.view_func is not view_cvsgraph):
       data['graph_href'] = request.get_url(view_func=view_cvsgraph,
-                                           params=params, escape=1)
+                                           params={}, escape=1)
   elif request.pathtype == vclib.DIR:
     if request.roottype == 'svn':
       data['log_href'] = request.get_url(view_func=view_log,
-                                         params=params, escape=1)
+                                         params={}, escape=1)
 
   return data
 
-def nav_header_data(request, rev):
+def nav_header_data(request, rev, orig_path):
   data = common_template_data(request)
   data.update({
     'rev' : rev,
+    'annotate_href': None,
     'download_text_href' : None,
+    'revision_href': None,
+    'orig_path': None,
+    'orig_href': None,
   })
 
   data['view_href'] = request.get_url(view_func=view_markup,
@@ -986,14 +1021,31 @@ def nav_header_data(request, rev):
   data['download_href'] = request.get_url(view_func=view_checkout,
                                           params={'rev': rev},
                                           escape=1)
-  data['annotate_href'] = request.get_url(view_func=view_annotate,
-                                          params={'annotate': rev},
-                                          escape=1)
+
   if not is_plain_text(request.mime_type):
     data['download_text_href'] = \
       request.get_url(view_func=view_checkout,
                       params={'content-type': 'text/plain', 'rev': rev},
                       escape=1)
+
+  if cfg.options.allow_annotate:
+    data['annotate_href'] = request.get_url(view_func=view_annotate,
+                                            params={'annotate': rev},
+                                            escape=1)
+
+  if request.roottype == 'svn':
+    data['revision_href'] = request.get_url(view_func=view_revision,
+                                            params={'rev': rev},
+                                            escape=1)
+
+  if orig_path != request.path_parts:
+    path = _path_join(orig_path)
+    data['orig_path'] = path
+    data['orig_href'] = request.get_url(view_func=view_log,
+                                        where=path,
+                                        pathtype=vclib.FILE,
+                                        params={'pathrev': rev},
+                                        escape=1)
 
   return data
 
@@ -1275,11 +1327,8 @@ def make_time_string(date):
     return time.asctime(time.gmtime(date)) + ' UTC'
 
 def view_markup(request):
-  where = request.where
-  query_dict = request.query_dict
-  rev = request.query_dict.get('rev')
-
-  fp, revision = request.repos.openfile(request.path_parts, rev)
+  path, rev = _orig_path(request)
+  fp, revision = request.repos.openfile(path, rev)
 
   # Since the templates could be changed by the user, we can't provide
   # a strong validator for this page, so we mark the etag as weak.
@@ -1287,7 +1336,7 @@ def view_markup(request):
     fp.close()
     return
 
-  data = nav_header_data(request, revision)
+  data = nav_header_data(request, revision, path)
   data.update({
     'mime_type' : request.mime_type,
     'log' : None,
@@ -1295,9 +1344,8 @@ def view_markup(request):
 
   if cfg.options.show_log_in_markup:
     options = {'svn_latest_log': 1}
-    revs = request.repos.itemlog(request.path_parts, revision, options)
+    revs = request.repos.itemlog(path, rev, options)
     entry = revs[-1]
-
     data.update({
         'date' : make_time_string(entry.date),
         'ago' : None,
@@ -1422,18 +1470,13 @@ def view_roots(request):
   generate_page(request, "roots", data)
 
 def view_directory(request):
-  if request.roottype == 'svn':
-    rev = request.query_dict.get('rev')
-  elif request.roottype == 'cvs':
-    rev = view_tag = request.query_dict.get('only_with_tag')
-
   # For Subversion repositories, the revision acts as a weak validator for
   # the directory listing (to take into account template changes or
   # revision property changes).
   if request.roottype == 'svn':
-    revision = str(vclib.svn.created_rev(request.repos, request.where,
-                                         request.repos._getrev(rev)))
-    if check_freshness(request, None, revision, weak=1):
+    rev = request.repos._getrev(request.pathrev)
+    tree_rev = vclib.svn.created_rev(request.repos, request.where, rev)
+    if check_freshness(request, None, str(tree_rev), weak=1):
       return
 
   # List current directory
@@ -1444,16 +1487,17 @@ def view_directory(request):
     options["cvs_subdirs"] = (cfg.options.show_subdir_lastmod and
                               cfg.options.show_logs)
 
-  file_data = request.repos.listdir(request.path_parts, rev, options)
+  file_data = request.repos.listdir(request.path_parts, request.pathrev,
+                                    options)
 
   # Filter file list if a regex is specified
   search_re = request.query_dict.get('search', '')
   if cfg.options.use_re_search and search_re:
-    file_data = search_files(request.repos, request.path_parts, rev,
+    file_data = search_files(request.repos, request.path_parts, request.pathrev,
                              file_data, search_re)
 
   # Retrieve log messages, authors, revision numbers, timestamps
-  request.repos.dirlogs(request.path_parts, rev, file_data, options)
+  request.repos.dirlogs(request.path_parts, request.pathrev, file_data, options)
 
   # sort with directories first, and using the "sortby" criteria
   sortby = request.query_dict.get('sortby', cfg.options.sort_by) or 'file'
@@ -1462,22 +1506,16 @@ def view_directory(request):
 
   # loop through entries creating rows and changing these values
   rows = [ ]
-  num_files = 0
   num_displayed = 0
   num_dead = 0
   
   # set some values to be used inside loop
   where = request.where
   where_prefix = where and where + '/'
-  if request.roottype == 'svn':
-    dir_params = {'rev': rev}
-  else:
-    dir_params = {}
 
-  ### display a row for ".." ?
   for file in file_data:
     row = _item(viewable=None, graph_href=None, author=None, log=None,
-                log_file=None, log_rev=None, show_log=None,
+                log_file=None, log_rev=None,
                 state=None, size=None, mime_type=None, date=None,
                 ago=None)
 
@@ -1488,7 +1526,6 @@ def view_directory(request):
       row.date = make_time_string(file.date)
       row.ago = html_time(request, file.date)
     if cfg.options.show_logs and file.log is not None:
-      row.show_log = 'yes'
       row.log = format_log(file.log)
 
     row.anchor = request.server.escape(file.name)
@@ -1509,7 +1546,7 @@ def view_directory(request):
       row.view_href = request.get_url(view_func=view_directory,
                                       where=where_prefix+file.name,
                                       pathtype=vclib.DIR,
-                                      params=dir_params,
+                                      params={},
                                       escape=1)
 
       if request.roottype == 'cvs' and file.rev is not None:
@@ -1522,11 +1559,10 @@ def view_directory(request):
         row.log_href = request.get_url(view_func=view_log,
                                        where=where_prefix + file.name,
                                        pathtype=vclib.DIR,
-                                       params={'rev': str(file.rev)},
+                                       params={},
                                        escape=1)
       
     elif file.kind == vclib.FILE:
-      num_files = num_files + 1
       if request.roottype == 'cvs' and file.dead:
         num_dead = num_dead + 1
         if hideattic:
@@ -1546,7 +1582,7 @@ def view_directory(request):
       row.log_href = request.get_url(view_func=view_log,
                                      where=file_where,
                                      pathtype=vclib.FILE,
-                                     params={'rev': str(file.rev)},
+                                     params={},
                                      escape=1)
 
       row.view_href = request.get_url(view_func=view,
@@ -1588,21 +1624,15 @@ def view_directory(request):
     'sortby_log_href' :    request.get_url(params={'sortby': 'log',
                                                    'sortdir': None},
                                            escape=1),
-    'num_files' :  num_files,
     'files_shown' : num_displayed,
     'num_dead' : num_dead,
-    'rev' : None,
     'youngest_rev' : None,
     'youngest_rev_href' : None,
-    'view_tag' : None,
-    'has_tags' : None,
     'selection_form' : None,
     'queryform_href' : None,
-    'view_tag' : None,
     'attic_showing' : None,
     'show_attic_href' : None,
     'hide_attic_href' : None,
-    'main_href' : None,
     'branch_tags': None,
     'plain_tags': None,
   })
@@ -1627,39 +1657,29 @@ def view_directory(request):
     branch_tags.sort(icmp)
     branch_tags.reverse()
 
-    has_tags = view_tag or branch_tags or plain_tags
-
     data.update({
-      'view_tag' : view_tag,    
       'attic_showing' : ezt.boolean(not hideattic),
       'show_attic_href' : request.get_url(params={'hideattic': 0}, escape=1),
       'hide_attic_href' : request.get_url(params={'hideattic': 1}, escape=1),
-      'main_href' : request.get_url(params={'only_with_tag': None}, escape=1),
-      'has_tags' : ezt.boolean(has_tags),
       'branch_tags': branch_tags,
       'plain_tags': plain_tags,
     })
 
   # set svn-specific fields
   elif request.roottype == 'svn':
-    data['tree_rev'] = revision
+    data['tree_rev'] = tree_rev
     data['tree_rev_href'] = request.get_url(view_func=view_revision,
-                                            params={'rev': data['tree_rev']},
+                                            params={'rev': tree_rev},
                                             escape=1)
     data['youngest_rev'] = vclib.svn.get_youngest_revision(request.repos)
     data['youngest_rev_href'] = request.get_url(view_func=view_revision,
                                                 params={},
                                                 escape=1)
-    data['rev'] = str(request.repos._getrev(rev))
-    url, params = request.get_link(params={'rev': None})
-    data['jump_rev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-    data['jump_rev_hidden_values'] = prepare_hidden_values(params)
-
 
   if is_query_supported(request):
     params = {}
-    if request.roottype == 'cvs' and view_tag:
-      params['branch'] = view_tag
+    if request.roottype == 'cvs' and request.pathrev:
+      params['branch'] = request.pathrev
     data['queryform_href'] = request.get_url(view_func=view_queryform,
                                              params=params,
                                              escape=1)
@@ -1674,12 +1694,16 @@ def view_directory(request):
                                            params={},
                                            escape=1)
 
+  data['pathrev'] = request.pathrev
+  url, params = request.get_link(params={'pathrev': None})
+  data['pathrev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
+  data['pathrev_hidden_values'] = prepare_hidden_values(params)
+
   ### one day, if EZT has "or" capability, we can lose this
-  data['selection_form'] = ezt.boolean(data['has_tags']
-                                       or cfg.options.use_re_search)
+  data['selection_form'] = ezt.boolean(cfg.options.use_re_search
+                                       and (num_displayed > 0 or search_re))
   if data['selection_form']:
-    url, params = request.get_link(params={'only_with_tag': None, 
-                                           'search': None})
+    url, params = request.get_link(params={'search': None})
     data['search_tag_action'] = urllib.quote(url, _URL_SAFE_CHARS)
     data['search_tag_hidden_values'] = prepare_hidden_values(params)
 
@@ -1729,7 +1753,6 @@ def logsort_rev_cmp(rev1, rev2):
 def view_log(request):
   diff_format = request.query_dict.get('diff_format', cfg.options.diff_format)
   logsort = request.query_dict.get('logsort', cfg.options.log_sort)
-  view_tag = request.query_dict.get('only_with_tag')
   pathtype = request.pathtype
 
   if pathtype is vclib.DIR and request.roottype == 'cvs':
@@ -1740,12 +1763,8 @@ def view_log(request):
   options['svn_show_all_dir_logs'] = 0 ### someday make this optional?
   options['svn_cross_copies'] = cfg.options.cross_copies
     
-  if request.roottype == 'cvs':
-    rev = view_tag
-  else:
-    rev = request.query_dict.get('rev')
-
-  show_revs = request.repos.itemlog(request.path_parts, rev, options)
+  show_revs = request.repos.itemlog(request.path_parts, request.pathrev,
+                                    options)
   if logsort == 'date':
     show_revs.sort(logsort_date_cmp)
   elif logsort == 'rev':
@@ -1756,7 +1775,6 @@ def view_log(request):
 
   # selected revision
   selected_rev = request.query_dict.get('r1')
-  selected_path = request.query_dict.get('p1') or request.where
 
   entries = [ ]
   name_printed = { }
@@ -1775,11 +1793,13 @@ def view_log(request):
     entry.size = rev.size
     entry.branch_point = None
     entry.next_main = None
+    entry.orig_path = None
     entry.copy_path = None
 
     entry.view_href = None
     entry.download_href = None
     entry.download_text_href = None
+    entry.annotate_href = None
     entry.sel_for_diff_href = None
     entry.diff_to_sel_href = None
     entry.diff_to_prev_href = None
@@ -1789,9 +1809,6 @@ def view_log(request):
     if request.roottype == 'cvs':
       prev = rev.prev or rev.parent
       entry.prev = prev and prev.string
-      # no moves in CVS ...
-      entry.filename = request.where
-      entry.prev_path = rev.prev and request.where
 
       branch = rev.branch_number
       entry.vendor_branch = ezt.boolean(branch and branch[2] % 2 == 1)
@@ -1820,58 +1837,59 @@ def view_log(request):
           entry.next_main = rev.parent.next.string
 
     elif request.roottype == 'svn':
+      entry.prev = rev.prev and rev.prev.string
+      entry.branches = entry.tags = entry.branch_points = [ ]
+      entry.tag_names = entry.branch_names = [ ]
+      entry.vendor_branch = None
+      if rev.filename != request.where:
+        entry.orig_path = rev.filename
+      entry.copy_path = rev.copy_path
+      entry.copy_rev = rev.copy_rev
+
       entry.revision_href = request.get_url(view_func=view_revision,
                                             params={'rev': rev.string},
                                             escape=1)
+
+      if entry.orig_path:
+        entry.orig_href = request.get_url(view_func=view_log,
+                                          where=entry.orig_path,
+                                          pathtype=vclib.FILE,
+                                          params={'pathrev': rev.string},
+                                          escape=1)
+
       if rev.copy_path:
         entry.copy_href = request.get_url(view_func=view_log,
                                           where=rev.copy_path,
                                           pathtype=vclib.FILE,
-                                          params={'rev': rev.copy_rev},
+                                          params={'pathrev': rev.copy_rev},
                                           escape=1)
 
-      entry.prev = rev.prev and rev.prev.string
-      entry.prev_path = rev.prev and rev.prev.filename
-      entry.branches = entry.tags = entry.branch_points = [ ]
-      entry.tag_names = entry.branch_names = [ ]
-      entry.vendor_branch = None
-
-      entry.copy_path = rev.copy_path
-      entry.copy_rev = rev.copy_rev
-      entry.filename = rev.filename
 
     # view/download links
     if pathtype is vclib.FILE:
       entry.view_href = request.get_url(view_func=view_markup,
-                                        where=entry.filename,
-                                        pathtype=vclib.FILE,
                                         params={'rev': rev.string},
                                         escape=1)
       entry.download_href = request.get_url(view_func=view_checkout,
-                                            where=entry.filename,
-                                            pathtype=vclib.FILE,
                                             params={'rev': rev.string},
                                             escape=1)
       if not is_plain_text(request.mime_type):
         entry.download_text_href = \
             request.get_url(view_func=view_checkout,
-                            where=entry.filename,
-                            pathtype=vclib.FILE,
                             params={'content-type': 'text/plain',
                                     'rev': rev.string},
                             escape=1)
+      if cfg.options.allow_annotate:
+        entry.annotate_href = request.get_url(view_func=view_annotate,
+                                              params={'annotate': rev.string},
+                                              escape=1)
+
     else:
       entry.view_href = request.get_url(view_func=view_directory,
-                                        where=entry.filename,
+                                        where=rev.filename,
                                         pathtype=vclib.DIR,
-                                        params={'rev': entry.rev},
+                                        params={'pathrev': rev.string},
                                         escape=1)
-
-    entry.annotate_href = request.get_url(view_func=view_annotate,
-                                          where=entry.filename,
-                                          pathtype=vclib.FILE,
-                                          params={'annotate': rev.string},
-                                          escape=1)
 
     # calculate diff links
     if selected_rev != entry.rev:
@@ -1883,7 +1901,6 @@ def view_log(request):
     if entry.prev is not None:
       entry.diff_to_prev_href = \
           request.get_url(view_func=view_diff,
-                          where=entry.filename, pathtype=vclib.FILE,
                           params={'r1': entry.prev,
                                   'r2': entry.rev,
                                   'diff_format': None},
@@ -1895,7 +1912,6 @@ def view_log(request):
            selected_rev != str(entry.next_main):
       entry.diff_to_sel_href = \
           request.get_url(view_func=view_diff,
-                          where=entry.filename, pathtype=vclib.FILE,
                           params={'r1': selected_rev,
                                   'r2': entry.rev,
                                   'diff_format': None},
@@ -1917,19 +1933,17 @@ def view_log(request):
                           escape=1)
 
     # Save our escaping until the end so stuff above works
-    entry.filename = request.server.escape(entry.filename)
+    if entry.orig_path:
+      entry.orig_path = request.server.escape(entry.orig_path)
     if entry.copy_path:
       entry.copy_path = request.server.escape(entry.copy_path)
-    if entry.prev_path:
-      entry.prev_path = request.server.escape(entry.prev_path)
     entries.append(entry)
 
   data = common_template_data(request)
   data.update({
-    'branch' : None,
+    'default_branch' : None,
     'mime_type' : request.mime_type,
     'rev_selected' : selected_rev,
-    'path_selected' : selected_path,
     'diff_format' : diff_format,
     'logsort' : logsort,
     'human_readable' : ezt.boolean(diff_format in ('h', 'l')),
@@ -1949,6 +1963,11 @@ def view_log(request):
     url, params = request.get_link(params={'log_pagestart': None})
     data['log_paging_action'] = urllib.quote(url, _URL_SAFE_CHARS)
     data['log_paging_hidden_values'] = prepare_hidden_values(params)
+    
+  data['pathrev'] = request.pathrev
+  url, params = request.get_link(params={'pathrev': None})
+  data['pathrev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
+  data['pathrev_hidden_values'] = prepare_hidden_values(params)
 
   url, params = request.get_link(view_func=view_diff,
                                  params={'r1': None, 'r2': None, 'tr1': None,
@@ -1960,41 +1979,42 @@ def view_log(request):
   data['logsort_action'] = urllib.quote(url, _URL_SAFE_CHARS)
   data['logsort_hidden_values'] = prepare_hidden_values(params)
 
-  data.update({
-    'view_tag' : view_tag,
-  })
-
   if pathtype is vclib.FILE:
-    data['view_href'] = request.get_url(view_func=view_markup, params={},
-                                        escape=1)
-    data['download_href'] = request.get_url(view_func=view_checkout, params={},
-                                            escape=1)
-    data['annotate_href'] = request.get_url(view_func=view_annotate, params={},
-                                            escape=1)
-    if not is_plain_text(request.mime_type):
-      data['download_text_href'] = \
-          request.get_url(view_func=view_checkout,
-                          params={'content-type': 'text/plain'},
-                          escape=1)
-    if view_tag and request.roottype == 'cvs':
-      data['tag_view_href'] = request.get_url(view_func=view_markup,
-                                          params={'rev': view_tag},
+    if not request.pathrev or request.roottype == 'cvs':
+      data['view_href'] = request.get_url(view_func=view_markup,
+                                          params={'pathrev': None}, 
                                           escape=1)
-      data['tag_download_href'] = request.get_url(view_func=view_checkout,
-                                              params={'rev': view_tag},
+      data['download_href'] = request.get_url(view_func=view_checkout, 
+                                              params={'pathrev': None}, 
                                               escape=1)
-      data['tag_annotate_href'] = request.get_url(view_func=view_annotate,
-                                              params={'rev': view_tag},
-                                              escape=1)
+      if not is_plain_text(request.mime_type):
+        data['download_text_href'] = \
+          request.get_url(view_func=view_checkout,
+                          params={'content-type': 'text/plain',
+                                  'pathrev': None},
+                          escape=1)
+      if cfg.options.allow_annotate:
+        data['annotate_href'] = request.get_url(view_func=view_annotate,
+                                                params={'pathrev': None},
+                                                escape=1)
+
+    if request.pathrev and request.roottype == 'cvs':
+      data['tag_view_href'] = request.get_url(view_func=view_markup,
+                                              params={}, escape=1)
+      data['tag_download_href'] = \
+          request.get_url(view_func=view_checkout, params={}, escape=1)
       if not is_plain_text(request.mime_type):
         data['tag_download_text_href'] = \
             request.get_url(view_func=view_checkout,
-                            params={'content-type': 'text/plain',
-                                    'rev': view_tag},
+                            params={'content-type': 'text/plain'},
                             escape=1)
+      if cfg.options.allow_annotate:
+        data['tag_annotate_href'] = \
+            request.get_url(view_func=view_annotate, params={}, escape=1)
   else:
-    data['view_href'] = request.get_url(view_func=view_directory, params={},
-                                        escape=1)
+    if not request.pathrev:
+      data['view_href'] = request.get_url(view_func=view_directory, 
+                                          params={}, escape=1)
 
   taginfo = options.get('cvs_tags', {})
   tagitems = taginfo.items()
@@ -2006,29 +2026,21 @@ def view_log(request):
     # Default branch may have multiple names so we list them
     branches = []
     for branch in main.aliases:
-      # Don't list MAIN unless there are no other names
-      if branch is not main or len(main.aliases) == 1:
+      # Don't list MAIN
+      if branch is not main:
         branches.append(branch.name)
-    ### this formatting should be moved into the ezt template
-    data['branch'] = string.join(branches, ', ')
+    data['default_branch'] = prep_tags(request, branches)
 
   data['tags'] = tags = [ ]
+  data['branch_tags'] = branch_tags = []
+  data['plain_tags'] = plain_tags = []
   for tag, rev in tagitems:
     if rev.co_rev:
       tags.append(_item(rev=rev.co_rev.string, name=tag))
-
-  branch_names = []
-  for tag in taginfo.values():
-    if tag.is_branch:
-      branch_names.append(tag.name)
-  branch_names.sort()
-  branch_names.reverse()
-  data['branch_names'] = branch_names
-
-  if branch_names:
-    url, params = request.get_link(params={'only_with_tag': None})
-    data['branch_select_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-    data['branch_select_hidden_values'] = prepare_hidden_values(params)
+    if rev.is_branch:
+      branch_tags.append(tag)
+    else:
+      plain_tags.append(tag)
 
   if cfg.options.use_pagesize:
     data['log_pagestart'] = int(request.query_dict.get('log_pagestart',0))
@@ -2038,8 +2050,8 @@ def view_log(request):
   generate_page(request, "log", data)
 
 def view_checkout(request):
-  rev = request.query_dict.get('rev')
-  fp, revision = request.repos.openfile(request.path_parts, rev)
+  path, rev = _orig_path(request)
+  fp, revision = request.repos.openfile(path, rev)
 
   # The revision number acts as a strong validator.
   if not check_freshness(request, None, revision):
@@ -2048,13 +2060,12 @@ def view_checkout(request):
     copy_stream(fp)
   fp.close()
 
-
 def view_annotate(request):
   if not cfg.options.allow_annotate:
     raise debug.ViewCVSException('Annotation view is disabled',
                                  '403 Forbidden')
 
-  rev = request.query_dict.get('annotate')
+  path, rev = _orig_path(request, 'annotate')
 
   ### be nice to hook this into the template...
   import blame
@@ -2066,10 +2077,10 @@ def view_annotate(request):
   include_url = request.get_url(view_func=view_log, where='/WHERE/',
                                 pathtype=vclib.FILE, params={}, escape=1)
 
-  source, revision = blame.blame(request.repos, request.path_parts,
+  source, revision = blame.blame(request.repos, path,
                                  diff_url, include_url, rev)
 
-  data = nav_header_data(request, revision)
+  data = nav_header_data(request, revision, path)
   data['lines'] = source
 
   request.server.header()
@@ -2097,7 +2108,7 @@ def view_cvsgraph(request):
   if not cfg.options.use_cvsgraph:
     raise debug.ViewCVSException('Graph view is disabled', '403 Forbidden')
 
-  data = nav_header_data(request, None)
+  data = common_template_data(request)
 
   # Required only if cvsgraph needs to find it's supporting libraries.
   # Uncomment and set accordingly if required.
@@ -2126,7 +2137,7 @@ def view_cvsgraph(request):
                     "-6", request.get_url(view_func=view_directory,
                                           where=up_where,
                                           pathtype=vclib.DIR,
-                                          params={"only_with_tag": None},
+                                          params={"pathrev": None},
                                           escape=1, partial=1),
                     rcsfile), 'rb', 0)
 
@@ -2477,7 +2488,6 @@ def setup_diff(request):
 
   rev1 = r1 = query_dict['r1']
   rev2 = r2 = query_dict['r2']
-  base_rev = query_dict.get('rev')
   sym1 = sym2 = None
 
   # hack on the diff revisions
@@ -2508,8 +2518,8 @@ def setup_diff(request):
       rev2 = r2[:idx]
       sym2 = r2[idx+1:]
 
-  p1 = _get_diff_path_parts(request, 'p1', rev1, base_rev)
-  p2 = _get_diff_path_parts(request, 'p2', rev2, base_rev)
+  p1 = _get_diff_path_parts(request, 'p1', rev1, request.pathrev)
+  p2 = _get_diff_path_parts(request, 'p2', rev2, request.pathrev)
 
   try:
     if revcmp(rev1, rev2) > 0:
@@ -2589,14 +2599,15 @@ def view_diff(request):
     diff_options['funout'] = cfg.options.hr_funout
     diff_options['ignore_white'] = cfg.options.hr_ignore_white
     diff_options['ignore_keyword_subst'] = cfg.options.hr_ignore_keyword_subst
-
   try:
     fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options)
   except vclib.InvalidRevision:
     raise debug.ViewCVSException('Invalid path(s) or revision(s) passed '
                                  'to diff', '400 Bad Request')
-  data = nav_header_data(request, rev2)
+  data = common_template_data(request)
   data.update({
+    'path_left': _path_join(p1),
+    'path_right': _path_join(p2),
     'rev_left' : rev1,
     'rev_right' : rev2,
     'tag_left' : sym1,
@@ -2688,11 +2699,11 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
 
   out.write(block)
 
-def generate_tarball(out, request, rev, reldir, stack):
+def generate_tarball(out, request, reldir, stack):
   # get directory info from repository
   rep_path = request.path_parts + reldir
-  entries = request.repos.listdir(rep_path, rev, {})
-  request.repos.dirlogs(rep_path, rev, entries, {})
+  entries = request.repos.listdir(rep_path, request.pathrev, {})
+  request.repos.dirlogs(rep_path, request.pathrev, entries, {})
   entries.sort(lambda a, b: cmp(a.name, b.name))
 
   # figure out corresponding path in tar file. everything gets put underneath
@@ -2733,13 +2744,11 @@ def generate_tarball(out, request, rev, reldir, stack):
     if cvs:
       info = os.stat(file.path)
       mode = (info[stat.ST_MODE] & 0555) | 0200
-      rev = file.rev
     else:
       mode = 0644
-      rev = None
 
     ### read the whole file into memory? bad... better to do 2 passes
-    fp = request.repos.openfile(rep_path + [file.name], rev)[0]
+    fp = request.repos.openfile(rep_path + [file.name], request.pathrev)[0]
     contents = fp.read()
     fp.close()
 
@@ -2759,7 +2768,7 @@ def generate_tarball(out, request, rev, reldir, stack):
           or (cvs and cfg.options.hide_cvsroot and file.name == 'CVSROOT')):
         continue
 
-    generate_tarball(out, request, rev, reldir + [file.name], stack)
+    generate_tarball(out, request, reldir + [file.name], stack)
 
   # pop directory (if it's being pruned. otherwise stack is already empty)
   del stack[-1:]
@@ -2769,18 +2778,13 @@ def download_tarball(request):
     raise debug.ViewCVSException('Tarball generation is disabled',
                                  '403 Forbidden')
 
-  if request.roottype == 'svn':
-    rev = request.query_dict.get('rev')
-  elif request.roottype == 'cvs':
-    rev = request.query_dict.get('only_with_tag')
-
   ### look for GZIP binary
 
   request.server.header('application/octet-stream')
   sys.stdout.flush()
   fp = popen.pipe_cmds([('gzip', '-c', '-n')])
 
-  generate_tarball(fp, request, rev, [], [])
+  generate_tarball(fp, request, [], [])
 
   fp.write('\0' * 1024)
   fp.close()
@@ -2815,7 +2819,7 @@ def view_revision(request):
     if change.pathtype is vclib.FILE:
       view_func = view_markup
       if change.text_mods:
-        params = {'rev' : str(rev),
+        params = {'pathrev' : str(rev),
                   'r1' : str(rev),
                   'r2' : str(change.base_rev),
                   }
@@ -2838,12 +2842,12 @@ def view_revision(request):
       change.view_href = request.get_url(view_func=view_func,
                                          where=link_where,
                                          pathtype=change.pathtype,
-                                         params={'rev' : link_rev},
+                                         params={'pathrev' : link_rev},
                                          escape=1)
       change.log_href = request.get_url(view_func=view_log,
                                         where=link_where,
                                         pathtype=change.pathtype,
-                                        params={'rev' : link_rev},
+                                        params={'pathrev' : link_rev},
                                         escape=1)
     
     change.text_mods = ezt.boolean(change.text_mods)
@@ -3027,7 +3031,7 @@ def build_commit(request, desc, files):
     dirname = string.replace(f.GetDirectory(), os.sep, '/')
 
     params = { 'rev': f.GetRevision() }
-    if f.GetBranch(): params['only_with_tag'] = f.GetBranch()
+    if f.GetBranch(): params['pathrev'] = f.GetBranch()
     dir_href = request.get_url(view_func=view_directory,
                                where=dirname, pathtype=vclib.DIR,
                                params=params,

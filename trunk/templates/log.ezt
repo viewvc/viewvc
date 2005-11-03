@@ -1,16 +1,4 @@
-[# setup page definitions]
-  [define page_title]Log of /[where][end]
-  [define help_href][docroot]/help_log.html[end]
-[# end]
-
-[include "include/header.ezt" "log"]
-[include "include/file_header.ezt"]
-
-<hr />
-
-[include "include/branch.ezt"]
-[include "include/view_tag.ezt"]
-[include "include/paging.ezt"]
+[include "include/log_header.ezt"]
 
 [define first_revision][end]
 [define last_revision][end]
@@ -21,10 +9,6 @@
 <div>
   <hr />
 
-  [is roottype "svn"]
-    [is entries.filename where][else]Filename: [entries.filename]<br />[end]
-  [end]
-
   [is entries.state "dead"]
     Revision <strong>[entries.rev]</strong>
   [else]
@@ -34,14 +18,13 @@
     [for entries.branch_names]<a name="[entries.branch_names]"></a>
     [end]
 
-    Revision [is roottype "svn"]<a href="[entries.revision_href]"><strong>[entries.rev]</strong></a>[else]<strong>[entries.rev]</strong>[end]
-    [is pathtype "file"] - 
-      (<a href="[entries.view_href]">view</a>)
-      (<a href="[entries.download_href]">download</a>)
-      [if-any entries.download_text_href](<a href="[entries.download_text_href]">as text</a>)[end]
-      [# if you don't want to allow annotation, then remove this line]
-      (<a href="[entries.annotate_href]">annotate</a>)
+    Revision [is roottype "svn"]<a href="[entries.revision_href]"><strong>[entries.rev]</strong></a>[else]<strong>[entries.rev]</strong>[end] -
+    (<a href="[entries.view_href]">view</a>)
+    [if-any entries.download_href](<a href="[entries.download_href]">download</a>)[end]
+    [if-any entries.download_text_href](<a href="[entries.download_text_href]">as text</a>)[end]
+    [if-any entries.annotate_href](<a href="[entries.annotate_href]">annotate</a>)[end]
 
+    [is pathtype "file"]
       [# if you don't want to allow select for diffs then remove this section]
       [is entries.rev rev_selected]
         - <strong>[[]selected]</strong>
@@ -62,6 +45,10 @@
   [end]
 
   <em>[entries.date]</em> ([entries.ago] ago) by <em>[entries.author]</em>
+
+  [if-any entries.orig_path]
+    <br />Original Path: <a href="[entries.orig_href]">[entries.orig_path]</a>
+  [end]
 
   [if-any entries.branches]
     <br />Branch:
@@ -146,14 +133,5 @@
 <pre class="vc_log">[entries.html_log]</pre>
 </div>
 [end]
-[include "include/paging.ezt"]
 
-[is pathtype "file"]
-  [include "include/diff_form.ezt"]
-[end]
-
-[include "include/branch_form.ezt"]
-
-[include "include/sort.ezt"]
-
-[include "include/footer.ezt"]
+[include "include/log_footer.ezt"]

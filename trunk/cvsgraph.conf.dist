@@ -44,7 +44,7 @@
 #       -3 link to current file's log page
 #       -4 link to current file's checkout page minus "rev" parameter
 #       -5 link to current file's diff page minus "r1" and "r2" parameters
-#       -6 link to current directory page minus "only_with_tag" parameter
+#       -6 link to current directory page minus "pathrev" parameter
 #
 # - Numbers may be entered as octal, decimal or
 #   hex as in 0117, 79 and 0x4f respectively.
@@ -376,7 +376,7 @@ image_interlace	= true;
 #	These are the href= and alt= attributes in the <area>
 #	tags of HTML. The strings are expanded (see above).
 map_name	= "MyMapName\" name=\"MyMapName";
-map_branch_href	= "href=\"%6only_with_tag=%(%t%)\"";
+map_branch_href	= "href=\"%6pathrev=%(%t%)\"";
 map_branch_alt	= "alt=\"%0 %(%t%) (%B)\"";
 # You might want to experiment with the following setting:
 # 1. The default setting will take you to a ViewCVS generated page displaying 
