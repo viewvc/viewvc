@@ -833,12 +833,24 @@ def _file_log(revs, taginfo, cur_branch, filter):
       except KeyError:
         raise vclib.Error('Invalid tag or revision number "%s"' % filter)
     filtered_revs = [ ]
+
+    # only include revisions on the tag branch or it's parent branches
     if view_tag.is_branch:
-      for rev in revs:
-        if rev.branch_number == view_tag.number or rev is view_tag.branch_rev:
-          filtered_revs.append(rev)
-    elif view_tag.co_rev:
-      filtered_revs.append(view_tag.co_rev)
+      branch = view_tag.number
+    elif len(view_tag.number) > 2:
+      branch = view_tag.number[:-1]
+    else:
+      branch = ()
+
+    # for a normal tag, include all tag revision and all preceding revisions.
+    # for a branch tag, include revisions on branch, branch point revision,
+    # and all preceding revisions
+    for rev in revs:
+      if (rev.number == view_tag.number
+          or rev.branch_number == view_tag.number
+          or (rev.number < view_tag.number
+              and rev.branch_number == branch[:len(rev.branch_number)])):
+        filtered_revs.append(rev)
 
     # get rid of the view_tag if it was only created for filtering
     if view_tag.name is None:

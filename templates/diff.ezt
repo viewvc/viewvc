@@ -14,11 +14,13 @@
 <table cellspacing="0" cellpadding="0">
   <tr class="vc_diff_header">
     <th style="width:50%;vertical-align:top;">
-      version [rev_left], [date_left]
+      [is path_left path_right][else][path_left][end]
+      revision [rev_left], [date_left]
       [if-any tag_left]<br />Tag: [tag_left][end]
     </th>
     <th style="width:50%;vertical-align:top;">
-      version [rev_right], [date_right]
+      [is path_left path_right][else][path_right][end]
+      revision [rev_right], [date_right]
       [if-any tag_right]<br />Tag: [tag_right][end]
     </th>
   </tr>

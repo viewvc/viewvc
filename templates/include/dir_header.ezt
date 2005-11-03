@@ -7,33 +7,9 @@
 
 [if-any where][else]
   <!-- you may insert repository access instructions here -->
-
 [end]
 
 <table class="auto">
-[is roottype "svn"]
-<tr>
-  <td>Current revision:</td>
-  <td><a href="[tree_rev_href]">[tree_rev]</a>[if-any youngest_rev] (of <a href="[youngest_rev_href]">[youngest_rev]</a>)[end]</td>
-</tr>
-<tr>
-  <td>Jump to directory revision:</td>
-  <td>
-    <form method="get" action="[jump_rev_action]">
-    [jump_rev_hidden_values]
-    <input type="text" name="rev" value="[if-any youngest_rev][youngest_rev][end]" />
-    <input type="submit" value="Go" />
-    </form>
-  </td>
-</tr>
-[end]
-[if-any view_tag]
-<tr><td>Current tag:</td><td><strong>[view_tag]</strong></td></tr>
-[end]
-[if-any search_re]
-<tr><td>Current search:</td><td><strong>[search_re]</strong></td></tr>
-[end]
-[if-any num_files]
 <tr><td>Files shown:</td><td><strong>[files_shown]</strong>
 [is num_dead "0"]
 [else]
@@ -44,6 +20,19 @@
   [end]
 [end]
 </td></tr>
+
+[is roottype "svn"]
+<tr>
+  <td>Directory revision:</td>
+  <td><a href="[tree_rev_href]">[tree_rev]</a>[if-any youngest_rev] (of <a href="[youngest_rev_href]">[youngest_rev]</a>)[end]</td>
+</tr>
+[end]
+<tr>
+  <td>Sticky [is roottype "cvs"]Tag[else]Revision[end]:</td>
+  <td>[include "pathrev_form.ezt"]</td>
+</tr>
+[if-any search_re]
+<tr><td>Current search:</td><td><strong>[search_re]</strong></td></tr>
 [end]
 
 [if-any queryform_href]
