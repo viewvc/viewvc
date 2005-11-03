@@ -52,6 +52,7 @@ th { background: rgb(60%,70%,90%); }
   <ul class="toc-list">
     <li><a href="#variables-common">Common Template Variable Set (COMMON)</a></li>
     <li><a href="#variables-navdata">File Navigation Variable Set (NAVDATA)</a></li>
+    <li><a href="#variables-pathrev">Path Revision Form Variable Set (PATHREV)</a></li>
     <li><a href="#variables-annotate">Annotation View (annotate.ezt)</a></li>
     <li><a href="#variables-graph">Revision Graph View (graph.ezt)</a></li>
     <li><a href="#variables-diff">File Difference View (diff.ezt)</a></li>
@@ -280,6 +281,51 @@ th { background: rgb(60%,70%,90%); }
   <td class="varname">orig_href</td>
   <td>String</td>
   <td>URL of a ViewCVS log view for <code>orig_path</code>.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="h3">
+<h3 id="variables-pathrev">Path Revision Form Variable Set (PATHREV)</h3>
+<table>
+<thead>
+<tr>
+  <th>Variable</th>
+  <th>Type</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="varlevel1">
+  <td class="varname">pathrev</td>
+  <td>String</td>
+  <td>Current sticky revision (Subversion) or sticky tag (CVS)</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">lastrev</td>
+  <td>String</td>
+  <td>If the current path is deleted in a future revision, last revision where the path is available. (Subversion only)</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">pathrev_action</td>
+  <td>String</td>
+  <td>Form action URL for the sticky revision/tag selection form.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">pathrev_hidden_values</td>
+  <td>String</td>
+  <td>Hidden value HTML markup for the revision/tag selection form.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">pathrev_clear_action</td>
+  <td>String</td>
+  <td>Form action URL for the path revision clear button.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">pathrev_clear_hidden_values</td>
+  <td>String</td>
+  <td>Hidden value HTML markup for the path revision clear button.</td>
 </tr>
 </tbody>
 </table>
@@ -537,7 +583,8 @@ th { background: rgb(60%,70%,90%); }
 <tbody>
 <tr class="include">
   <td colspan="3">Includes all variables from the 
-     <a href="#variables-common">COMMON</a> variable set</td>
+     <a href="#variables-common">COMMON</a> and 
+     <a href="#variables-pathrev">PATHREV</a> variable sets</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">attic_showing</td>
@@ -584,22 +631,6 @@ th { background: rgb(60%,70%,90%); }
   <td class="varname">num_dead</td>
   <td>String</td>
   <td>Number of dead files in the current directory.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">pathrev</td>
-  <td>String</td>
-  <td>Current sticky revision (Subversion) or sticky tag (CVS).</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">pathrev_action</td>
-  <td>String</td>
-  <td>Form action URL for the sticky revision/tag selection form.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">pathrev_hidden_values</td>
-  <td>String</td>
-  <td>Hidden value HTML markup for the path revision selection
-      form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">picklist</td>
@@ -873,7 +904,8 @@ th { background: rgb(60%,70%,90%); }
 <tbody>
 <tr class="include">
   <td colspan="3">Includes all variables from the 
-     <a href="#variables-common">COMMON</a> variable set</td>
+     <a href="#variables-common">COMMON</a> and
+     <a href="#variables-pathrev">PATHREV</a> variable sets</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">annotate_href</td>
@@ -1149,22 +1181,6 @@ th { background: rgb(60%,70%,90%); }
   <td class="varname">mime_type</td>
   <td></td>
   <td></td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">pathrev</td>
-  <td>String</td>
-  <td>Current sticky revision (Subversion) or sticky tag (CVS).</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">pathrev_action</td>
-  <td>String</td>
-  <td>Form action URL for the sticky revision/tag selection form.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">pathrev_hidden_values</td>
-  <td>String</td>
-  <td>Hidden value HTML markup for the path revision selection
-      form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">plain_tags</td>
