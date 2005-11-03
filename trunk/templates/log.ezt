@@ -19,7 +19,11 @@
     [end]
 
     Revision [is roottype "svn"]<a href="[entries.revision_href]"><strong>[entries.rev]</strong></a>[else]<strong>[entries.rev]</strong>[end] -
-    (<a href="[entries.view_href]">view</a>)
+    [is pathtype "file"]
+      (<a href="[entries.view_href]">view</a>)
+    [else]
+      (<a href="[entries.view_href]"><em>view</em></a>)
+    [end]
     [if-any entries.download_href](<a href="[entries.download_href]">download</a>)[end]
     [if-any entries.download_text_href](<a href="[entries.download_text_href]">as text</a>)[end]
     [if-any entries.annotate_href](<a href="[entries.annotate_href]">annotate</a>)[end]
@@ -47,7 +51,7 @@
   <em>[entries.date]</em> ([entries.ago] ago) by <em>[entries.author]</em>
 
   [if-any entries.orig_path]
-    <br />Original Path: <a href="[entries.orig_href]">[entries.orig_path]</a>
+    <br />Original Path: <a href="[entries.orig_href]"><em>[entries.orig_path]</em></a>
   [end]
 
   [if-any entries.branches]
@@ -85,7 +89,7 @@
     [end]
 
     [if-any entries.copy_path]
-    <br />Copied from: <a href="[entries.copy_href]">[entries.copy_path]</a> revision [entries.copy_rev]
+    <br />Copied from: <a href="[entries.copy_href]"><em>[entries.copy_path]</em></a> revision [entries.copy_rev]
     [end]
   [end]
 

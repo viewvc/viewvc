@@ -186,6 +186,10 @@ class Request:
       # if we're here, then the parameter is okay
       self.query_dict[name] = values[0]
 
+    # handle view parameter
+    self.view_func = _views.get(self.query_dict.get('view', None), 
+                                self.view_func)
+
     # Process PATH_INFO component of query string
     path_info = self.server.getenv('PATH_INFO', '')
 
@@ -279,6 +283,7 @@ class Request:
           'correct, then please double-check your configuration.'
           % self.rootname, "404 Repository not found")
 
+    if self.repos and self.view_func is not redirect_pathrev:
       # Make sure path exists
       self.pathrev = pathrev = self.query_dict.get('pathrev')
       self.pathtype = _repos_pathtype(self.repos, path_parts, pathrev)
@@ -318,10 +323,6 @@ class Request:
       raise debug.ViewCVSException('%s: unknown location' % path_parts[0],
                                    '404 Not Found')
 
-    # Try to figure out what to do based on view parameter
-    self.view_func = _views.get(self.query_dict.get('view', None), 
-                                self.view_func)
-
     if self.view_func is None:
       # view parameter is not set, try looking at pathtype and the 
       # other parameters
@@ -360,7 +361,8 @@ class Request:
     if (self.pathtype == vclib.DIR and path_info[-1:] != '/'
         and self.view_func is not view_revision
         and self.view_func is not view_roots
-        and self.view_func is not download_tarball):
+        and self.view_func is not download_tarball
+        and self.view_func is not redirect_pathrev):
       needs_redirect = 1
 
     # redirect now that we know the URL is valid
@@ -395,6 +397,17 @@ class Request:
        result = self.server.escape(result)
     return result
 
+  def get_form(self, **args):
+    """Constructs a link to another ViewCVS page just like the get_link
+    function except that it returns a base URL suitable for use as an HTML
+    form action and a string of HTML input type=hidden tags with the link
+    parameters."""
+
+    url, params = apply(self.get_link, (), args)
+    action = self.server.escape(urllib.quote(url, _URL_SAFE_CHARS))
+    hidden_values = prepare_hidden_values(params)
+    return action, hidden_values
+
   def get_link(self, view_func=None, where=None, pathtype=None, params=None):
     """Constructs a link pointing to another ViewCVS page. All arguments
     correspond to members of the Request object. If they are set to 
@@ -414,7 +427,8 @@ class Request:
 
     # if we are asking for the revision info view, we don't need any
     # path information
-    if view_func is view_revision or view_func is view_roots:
+    if (view_func is view_revision or view_func is view_roots
+        or view_func is redirect_pathrev):
       where = pathtype = None
     elif where is None:
       where = self.where
@@ -641,6 +655,12 @@ _legal_params = {
   'mindate'       : _re_validate_datetime,
   'maxdate'       : _re_validate_datetime,
   'format'        : _re_validate_alpha,
+
+  # for redirect_pathrev
+  'orig_path'     : None,
+  'orig_pathtype' : None,
+  'orig_pathrev'  : None,
+  'orig_view'     : None,
   }
 
 def _path_join(path_parts):
@@ -706,6 +726,33 @@ def _orig_path(request, rev_param='rev', path_param=None):
     return _path_parts(vclib.svn.get_location(request.repos, path, 
                                               pathrev, rev)), rev
   return _path_parts(path), rev
+
+def _last_rev(repos, path_parts, start, end):
+  """"Walk from start to end revisions, find last revision where path exists
+
+  Returns revision number and path at that revision. Assumes path does
+  actually exist at start revision."""
+
+  # The implementation doesn't actually walk, it does a binary search
+  ### It's be nice if this functionality were moved into subversion where
+  ### it could be implemented more efficiently. Or maybe it's already there
+  ### and I didn't look for it...
+
+  path = _path_join(path_parts)
+  start = repos._getrev(start)
+  end = repos._getrev(end)
+  
+  dir = start < end and 1 or -1
+  while start != end:
+    mid = (start+dir + end) / 2
+    try:    
+      path = vclib.svn.get_location(repos, path, start, mid)
+    except vclib.ItemNotFound:
+      end = mid - dir
+    else:
+      start = mid
+
+  return start, _path_parts(path)
 
 def check_freshness(request, mtime=None, etag=None, weak=0):
   # See if we are supposed to disable etags (for debugging, usually)
@@ -962,12 +1009,10 @@ def common_template_data(request):
   elif request.pathtype == vclib.FILE:
     data['pathtype'] = 'file'
 
-  url, params = request.get_link(view_func=view_directory,
-                                 where='',
-                                 pathtype=vclib.DIR,
-                                 params={'root': None})
-  data['change_root_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-  data['change_root_hidden_values'] = prepare_hidden_values(params)
+  data['change_root_action'], data['change_root_hidden_values'] = \
+    request.get_form(view_func=view_directory, where='', pathtype=vclib.DIR,
+                     params={'root': None})
+
   # add in the roots for the selection
   roots = []
   allroots = list_roots(cfg)
@@ -1685,27 +1730,22 @@ def view_directory(request):
                                              escape=1)
 
   if cfg.options.use_pagesize:
-    url, params = request.get_link(params={'dir_pagestart': None})
-    data['dir_paging_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-    data['dir_paging_hidden_values'] = prepare_hidden_values(params)
+    data['dir_paging_action'], data['dir_paging_hidden_values'] = \
+      request.get_form(params={'dir_pagestart': None})
 
   if cfg.options.allow_tar:
     data['tarball_href'] = request.get_url(view_func=download_tarball, 
                                            params={},
                                            escape=1)
 
-  data['pathrev'] = request.pathrev
-  url, params = request.get_link(params={'pathrev': None})
-  data['pathrev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-  data['pathrev_hidden_values'] = prepare_hidden_values(params)
+  pathrev_form(request, data)
 
   ### one day, if EZT has "or" capability, we can lose this
   data['selection_form'] = ezt.boolean(cfg.options.use_re_search
                                        and (num_displayed > 0 or search_re))
   if data['selection_form']:
-    url, params = request.get_link(params={'search': None})
-    data['search_tag_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-    data['search_tag_hidden_values'] = prepare_hidden_values(params)
+    data['search_tag_action'], data['search_tag_hidden_values'] = \
+      request.get_form(params={'search': None})
 
   if cfg.options.use_pagesize:
     data['dir_pagestart'] = int(request.query_dict.get('dir_pagestart',0))
@@ -1741,6 +1781,67 @@ def paging(data, key, pagestart, local_name):
   pageend = pagestart + cfg.options.use_pagesize
   # Slice
   return data[key][pagestart:pageend]
+
+def pathrev_form(request, data):
+  lastrev = None
+  
+  if request.roottype == 'svn':
+    data['pathrev_action'], data['pathrev_hidden_values'] = \
+      request.get_form(view_func=redirect_pathrev,
+                       params={'pathrev': None,
+                               'orig_path': request.where,
+                               'orig_pathtype': request.pathtype,
+                               'orig_pathrev': request.pathrev,
+                               'orig_view': _view_codes.get(request.view_func)})
+
+    if request.pathrev:
+      youngest = vclib.svn.get_youngest_revision(request.repos)
+      lastrev = _last_rev(request.repos, request.path_parts, 
+                             request.pathrev, youngest)[0]
+      if lastrev == youngest:
+         lastrev = None
+
+  data['pathrev'] = request.pathrev
+  data['lastrev'] = lastrev
+
+  action, hidden_values = request.get_form(params={'pathrev': lastrev})
+  if request.roottype != 'svn':
+    data['pathrev_action'] = action
+    data['pathrev_hidden_values'] = hidden_values
+  data['pathrev_clear_action'] = action
+  data['pathrev_clear_hidden_values'] = hidden_values
+ 
+def redirect_pathrev(request):
+  new_pathrev = request.query_dict.get('pathrev') or None
+  path_parts = _path_parts(request.query_dict.get('orig_path', ''))
+  pathtype = request.query_dict.get('orig_pathtype')
+  pathrev = request.query_dict.get('orig_pathrev') 
+  view = _views.get(request.query_dict.get('orig_view'))
+  
+  youngest = vclib.svn.get_youngest_revision(request.repos)
+
+  # go out of the way to allow revision numbers higher than youngest
+  try:
+    new_pathrev = int(new_pathrev)
+  except ValueError:
+    pass
+  except TypeError:
+    pass
+  else:
+    if new_pathrev > youngest:
+      new_pathrev = youngest
+  
+  pathrev, path_parts = _last_rev(request.repos, path_parts, pathrev,
+                                  new_pathrev)
+
+  # allow clearing sticky revision by submitting empty string
+  if new_pathrev is None and pathrev == youngest:
+    pathrev = None
+
+  request.server.redirect(request.get_url(view_func=view, 
+                                          where=_path_join(path_parts),
+                                          pathtype=pathtype,
+                                          params={'pathrev': pathrev}))
 
 def logsort_date_cmp(rev1, rev2):
   # sort on date; secondary on revision number
@@ -1959,28 +2060,22 @@ def view_log(request):
     'tag_annotate_href': None,
   })
 
+  pathrev_form(request, data)
+
   if cfg.options.use_pagesize:
-    url, params = request.get_link(params={'log_pagestart': None})
-    data['log_paging_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-    data['log_paging_hidden_values'] = prepare_hidden_values(params)
-    
-  data['pathrev'] = request.pathrev
-  url, params = request.get_link(params={'pathrev': None})
-  data['pathrev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-  data['pathrev_hidden_values'] = prepare_hidden_values(params)
+    data['log_paging_action'], data['log_paging_hidden_values'] = \
+      request.get_form(params={'log_pagestart': None})
+  
+  data['diff_select_action'], data['diff_select_hidden_values'] = \
+    request.get_form(view_func=view_diff,
+                     params={'r1': None, 'r2': None, 'tr1': None,
+                             'tr2': None, 'diff_format': None})
 
-  url, params = request.get_link(view_func=view_diff,
-                                 params={'r1': None, 'r2': None, 'tr1': None,
-                                         'tr2': None, 'diff_format': None})
-  data['diff_select_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-  data['diff_select_hidden_values'] = prepare_hidden_values(params)
-
-  url, params = request.get_link(params={'logsort': None})
-  data['logsort_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-  data['logsort_hidden_values'] = prepare_hidden_values(params)
+  data['logsort_action'], data['logsort_hidden_values'] = \
+    request.get_form(params={'logsort': None})
 
   if pathtype is vclib.FILE:
-    if not request.pathrev or request.roottype == 'cvs':
+    if not request.pathrev or not data['lastrev']:
       data['view_href'] = request.get_url(view_func=view_markup,
                                           params={'pathrev': None}, 
                                           escape=1)
@@ -2619,9 +2714,8 @@ def view_diff(request):
   orig_params = request.query_dict.copy()
   orig_params['diff_format'] = None
     
-  url, params = request.get_link(params=orig_params)
-  data['diff_format_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-  data['diff_format_hidden_values'] = prepare_hidden_values(params)
+  data['diff_format_action'], data['diff_format_hidden_values'] = \
+    request.get_form(params=orig_params)
   data['patch_href'] = request.get_url(view_func=view_patch,
                                        params=orig_params,
                                        escape=1)
@@ -2882,12 +2976,8 @@ def view_revision(request):
   if date is not None:
     data['ago'] = html_time(request, date, 1)
 
-  url, params = request.get_link(view_func=view_revision,
-                                 where=None,
-                                 pathtype=None,
-                                 params={'rev': None})
-  data['jump_rev_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-  data['jump_rev_hidden_values'] = prepare_hidden_values(params)
+  data['jump_rev_action'], data['jump_rev_hidden_values'] = \
+    request.get_form(params={'rev': None})
 
   request.server.header()
   generate_page(request, "revision", data)
@@ -2906,9 +2996,8 @@ def view_queryform(request):
 
   data = common_template_data(request)
 
-  url, params = request.get_link(view_func=view_query, params={})
-  data['query_action'] = urllib.quote(url, _URL_SAFE_CHARS)
-  data['query_hidden_values'] = prepare_hidden_values(params)
+  data['query_action'], data['query_hidden_values'] = \
+    request.get_form(view_func=view_query, params={})
 
   # default values ...
   data['branch'] = request.query_dict.get('branch', '')
@@ -3262,6 +3351,7 @@ _views = {
   'rev':       view_revision,
   'roots':     view_roots,
   'tar':       download_tarball,
+  'redirect_pathrev': redirect_pathrev,
 }
 
 _view_codes = {}
