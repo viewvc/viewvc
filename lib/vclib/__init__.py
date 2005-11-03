@@ -34,17 +34,19 @@ SIDE_BY_SIDE = 3
 class Repository:
   """Abstract class representing a repository."""
 
-  def itemtype(self, path_parts):
-    """Return the type of the item (file or dir) at the given path.
+  def itemtype(self, path_parts, rev):
+    """Return the type of the item (file or dir) at the given path and revision
 
     The result will be vclib.DIR or vclib.FILE
 
     The path is specified as a list of components, relative to the root
     of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+    rev is the revision of the item to check
     """
     pass
 
-  def openfile(self, path_parts, rev=None):
+  def openfile(self, path_parts, rev):
     """Open a file object to read file contents at a given path and revision.
 
     The return value is a 2-tuple of containg the file object and revision
@@ -53,10 +55,10 @@ class Repository:
     The path is specified as a list of components, relative to the root
     of the repository. e.g. ["subdir1", "subdir2", "filename"]
 
-    The revision number can be None to access a default revision.  
+    rev is the revision of the file to check out
     """
 
-  def listdir(self, path_parts, options):
+  def listdir(self, path_parts, rev, options):
     """Return list of files in a directory
 
     The result is a list of DirEntry objects
@@ -64,10 +66,12 @@ class Repository:
     The path is specified as a list of components, relative to the root
     of the repository. e.g. ["subdir1", "subdir2", "filename"]
 
+    rev is the revision of the directory to list
+
     options is a dictionary of implementation specific options
     """
 
-  def dirlogs(self, path_parts, entries, options):
+  def dirlogs(self, path_parts, rev, entries, options):
     """Augment directory entries with log information
 
     New properties will be set on all of the DirEntry objects in the entries
@@ -77,6 +81,9 @@ class Repository:
 
     The path is specified as a list of components, relative to the root
     of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+    rev is the revision of the directory listing and will effect which log
+    messages are returned
 
     entries is a list of DirEntry objects returned from a previous call to
     the listdir() method
@@ -92,9 +99,7 @@ class Repository:
     The path is specified as a list of components, relative to the root
     of the repository. e.g. ["subdir1", "subdir2", "filename"]
 
-    The rev parameter can be set to only retrieve log information for a
-    specified revision, or it can be None to return information on all
-    file revisions.
+    rev is the revision of the item to return information about
 
     options is a dictionary of implementation specific options
     """
@@ -114,7 +119,7 @@ class Repository:
     Return value is a python file object
     """
 
-  def annotate(self, path_parts, rev=None):
+  def annotate(self, path_parts, rev):
     """Return a list of annotate file content lines and a revision.
 
     The annotated lines are an collection of objects with the

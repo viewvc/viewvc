@@ -71,7 +71,7 @@ def UpdateFile(db, repository, path, update):
 
 
 def RecurseUpdate(db, repository, directory, update):
-    for entry in repository.listdir(directory, {}):
+    for entry in repository.listdir(directory, None, {}):
         path = directory + [entry.name]
 
         if entry.errors:
