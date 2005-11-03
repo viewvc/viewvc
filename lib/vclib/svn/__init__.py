@@ -108,18 +108,27 @@ def date_from_rev(svnrepos, rev):
   return _datestr_to_date(datestr, svnrepos.pool)
 
 
-def get_location(svnrepos, path, rev):
+def get_location(svnrepos, path, rev, old_rev):
   try:
     results = repos.svn_repos_trace_node_locations(svnrepos.fs_ptr, path,
-                                                   svnrepos.rev, [int(rev)],
+                                                   rev, [old_rev],
                                                    _allow_all, svnrepos.pool)
-    return results[int(rev)]
-  except:
-    raise vclib.ItemNotFound(filter(None, string.split(path, '/')))
-  
+  except core.SubversionException, e:
+    if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
+      raise vclib.ItemNotFound(path)
+    raise
 
-def created_rev(svnrepos, full_name):
-  return fs.node_created_rev(svnrepos.fsroot, full_name, svnrepos.pool)
+  try:
+    old_path = results[old_rev]
+  except KeyError:
+    raise vclib.ItemNotFound(path)
+
+  return _cleanup_path(old_path)
+
+
+def created_rev(svnrepos, full_name, rev):
+  fsroot = svnrepos._getroot(rev)
+  return fs.node_created_rev(fsroot, full_name, svnrepos.pool)
 
 
 class Revision(vclib.Revision):
@@ -171,11 +180,12 @@ class NodeHistory:
     self.histories[revision] = _cleanup_path(path)
     
   
-def _get_history(svnrepos, full_name, options):
+def _get_history(svnrepos, full_name, rev, options):
+  fsroot = svnrepos._getroot(rev)
   show_all_logs = options.get('svn_show_all_dir_logs', 0)
   if not show_all_logs:
     # See if the path is a file or directory.
-    kind = fs.check_path(svnrepos.fsroot, full_name, svnrepos.pool)
+    kind = fs.check_path(fsroot, full_name, svnrepos.pool)
     if kind is core.svn_node_file:
       show_all_logs = 1
       
@@ -187,7 +197,7 @@ def _get_history(svnrepos, full_name, options):
 
   # Get the history items for PATH.
   repos.svn_repos_history(svnrepos.fs_ptr, full_name, history.add_history,
-                          1, svnrepos.rev, cross_copies, svnrepos.pool)
+                          1, rev, cross_copies, svnrepos.pool)
   return history.histories
 
 
@@ -244,15 +254,15 @@ class ChangedPathSet:
     return changes
     
   
-def get_revision_info(svnrepos):
-  fsroot = fs.revision_root(svnrepos.fs_ptr, svnrepos.rev, svnrepos.pool)
+def get_revision_info(svnrepos, rev):
+  fsroot = svnrepos._getroot(rev)
 
   # Get the changes for the revision
   cps = ChangedPathSet()
   editor = repos.ChangeCollector(svnrepos.fs_ptr, fsroot,
                                  svnrepos.pool, cps.add_change)
   e_ptr, e_baton = delta.make_editor(editor, svnrepos.pool)
-  repos.svn_repos_replay(svnrepos.fsroot, e_ptr, e_baton, svnrepos.pool)
+  repos.svn_repos_replay(fsroot, e_ptr, e_baton, svnrepos.pool)
 
   # Now get the revision property info
   props = editor.get_root_props()
@@ -286,14 +296,12 @@ def _log_helper(svnrepos, rev, path, pool):
 def _fetch_log(svnrepos, full_name, which_rev, options, pool):
   revs = []
 
-  if which_rev is not None:
-    if (which_rev < 0) or (which_rev > svnrepos.youngest):
-      raise vclib.InvalidRevision(which_rev)
+  if options.get('svn_latest_log', 0):
     rev = _log_helper(svnrepos, which_rev, full_name, pool)
     if rev:
       revs.append(rev)
   else:
-    history_set = _get_history(svnrepos, full_name, options)
+    history_set = _get_history(svnrepos, full_name, which_rev, options)
     history_revs = history_set.keys()
     history_revs.sort()
     history_revs.reverse()
@@ -308,19 +316,20 @@ def _fetch_log(svnrepos, full_name, which_rev, options, pool):
   return revs
 
 
-def _get_last_history_rev(svnrepos, path, pool):
-  history = fs.node_history(svnrepos.fsroot, path, pool)
+def _get_last_history_rev(fsroot, path, pool):
+  history = fs.node_history(fsroot, path, pool)
   history = fs.history_prev(history, 0, pool)
   history_path, history_rev = fs.history_location(history, pool);
   return history_rev
   
   
-def get_logs(svnrepos, full_name, files):
+def get_logs(svnrepos, full_name, rev, files):
+  fsroot = svnrepos._getroot(rev)
   subpool = core.svn_pool_create(svnrepos.pool)
   for file in files:
     core.svn_pool_clear(subpool)
     path = _fs_path_join(full_name, file.name)
-    rev = _get_last_history_rev(svnrepos, path, subpool)
+    rev = _get_last_history_rev(fsroot, path, subpool)
     datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, subpool)
     date = _datestr_to_date(datestr, subpool)
     file.rev = str(rev)
@@ -328,7 +337,7 @@ def get_logs(svnrepos, full_name, files):
     file.author = author
     file.log = msg
     if file.kind == vclib.FILE:
-      file.size = fs.file_length(svnrepos.fsroot, path, subpool)
+      file.size = fs.file_length(fsroot, path, subpool)
   core.svn_pool_destroy(subpool)
 
 
@@ -337,8 +346,8 @@ def get_youngest_revision(svnrepos):
 
   
 def do_diff(svnrepos, path1, rev1, path2, rev2, diffoptions):
-  root1 = fs.revision_root(svnrepos.fs_ptr, rev1, svnrepos.pool)
-  root2 = fs.revision_root(svnrepos.fs_ptr, rev2, svnrepos.pool)
+  root1 = svnrepos._getroot(rev1)
+  root2 = svnrepos._getroot(rev2)
 
   date1 = date_from_rev(svnrepos, rev1)
   date2 = date_from_rev(svnrepos, rev2)
@@ -475,7 +484,7 @@ class BlameSequencingError(Exception):
 
   
 class SubversionRepository(vclib.Repository):
-  def __init__(self, name, rootpath, svn_path, rev=None):
+  def __init__(self, name, rootpath, svn_path):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
 
@@ -484,7 +493,6 @@ class SubversionRepository(vclib.Repository):
     self.apr_init = 0
     self.rootpath = rootpath
     self.name = name
-    self.rev = rev
     self.svn_client_path = os.path.normpath(os.path.join(svn_path, 'svn'))
 
     # Register a handler for SIGTERM so we can have a chance to
@@ -514,11 +522,7 @@ class SubversionRepository(vclib.Repository):
     self.repos = repos.svn_repos_open(rootpath, self.pool)
     self.fs_ptr = repos.svn_repos_fs(self.repos)
     self.youngest = fs.youngest_rev(self.fs_ptr, self.pool)
-    if self.rev is None:
-      self.rev = self.youngest
-    if (self.rev < 0) or (self.rev > self.youngest):
-      raise vclib.InvalidRevision(self.rev)
-    self.fsroot = fs.revision_root(self.fs_ptr, self.rev, self.pool)
+    self._fsroots = {}
 
   def __del__(self):
     self._close()
@@ -533,10 +537,11 @@ class SubversionRepository(vclib.Repository):
 
   def _scratch_clear(self):
     core.svn_pool_clear(self.scratch_pool)
-    
-  def itemtype(self, path_parts):
+
+  def itemtype(self, path_parts, rev):
+    rev = self._getrev(rev)
     basepath = self._getpath(path_parts)
-    kind = fs.check_path(self.fsroot, basepath, self.scratch_pool)
+    kind = fs.check_path(self._getroot(rev), basepath, self.scratch_pool)
     self._scratch_clear()
     if kind == core.svn_node_dir:
       return vclib.DIR
@@ -544,20 +549,23 @@ class SubversionRepository(vclib.Repository):
       return vclib.FILE
     raise vclib.ItemNotFound(path_parts)
 
-  def openfile(self, path_parts, rev=None):
-    assert rev is None or int(rev) == self.rev
+  def openfile(self, path_parts, rev):
     path = self._getpath(path_parts)
-    revision = str(_get_last_history_rev(self, path, self.scratch_pool))
+    rev = self._getrev(rev)
+    fsroot = self._getroot(rev)
+    revision = str(_get_last_history_rev(fsroot, path, self.scratch_pool))
     self._scratch_clear()
-    fp = FileContentsPipe(self.fsroot, path, self.pool)
+    fp = FileContentsPipe(fsroot, path, self.pool)
     return fp, revision
 
-  def listdir(self, path_parts, options):
+  def listdir(self, path_parts, rev, options):
     basepath = self._getpath(path_parts)
-    if self.itemtype(path_parts) != vclib.DIR:
+    if self.itemtype(path_parts, rev) != vclib.DIR:
       raise vclib.Error("Path '%s' is not a directory." % basepath)
 
-    dirents = fs.dir_entries(self.fsroot, basepath, self.scratch_pool)
+    rev = self._getrev(rev)
+    fsroot = self._getroot(rev)
+    dirents = fs.dir_entries(fsroot, basepath, self.scratch_pool)
     entries = [ ]
     for entry in dirents.values():
       if entry.kind == core.svn_node_dir:
@@ -568,19 +576,30 @@ class SubversionRepository(vclib.Repository):
     self._scratch_clear()
     return entries
 
-  def dirlogs(self, path_parts, entries, options):
-    get_logs(self, self._getpath(path_parts), entries)
+  def dirlogs(self, path_parts, rev, entries, options):
+    get_logs(self, self._getpath(path_parts), self._getrev(rev), entries)
 
   def itemlog(self, path_parts, rev, options):
-    full_name = self._getpath(path_parts)
+    """see vclib.Repository.itemlog docstring
 
-    if rev is not None:
-      try:
-        rev = int(rev)
-      except ValueError:
-        vclib.InvalidRevision(rev)
+    Option values recognized by this implementation
 
-    revs = _fetch_log(self, full_name, rev, options, self.scratch_pool)
+      svn_show_all_dir_logs
+        boolean, default false. if set for a directory path, will include
+        revisions where files underneath the directory have changed
+
+      svn_cross_copies
+        boolean, default false. if set for a path created by a copy, will
+        include revisions from before the copy
+
+      svn_latest_log
+        boolean, default false. if set will return only newest single log
+        entry
+    """
+    path = self._getpath(path_parts)
+    rev = self._getrev(rev)
+
+    revs = _fetch_log(self, path, rev, options, self.scratch_pool)
     self._scratch_clear()
     
     revs.sort()
@@ -591,11 +610,11 @@ class SubversionRepository(vclib.Repository):
 
     return revs
 
-  def annotate(self, path_parts, rev=None):
-    if not rev:
-      rev = self.rev
+  def annotate(self, path_parts, rev):
     path = self._getpath(path_parts)
-    revision = str(_get_last_history_rev(self, path, self.scratch_pool))
+    rev = self._getrev(rev)
+    fsroot = self._getroot(rev)
+    revision = str(_get_last_history_rev(fsroot, path, self.scratch_pool))
 
     ### Something's buggy in BlameSource, and the results are
     ### catastrophic for users of Mozilla and Firefox (it seems that
@@ -615,13 +634,15 @@ class SubversionRepository(vclib.Repository):
     """
     p1 = self._getpath(path_parts1)
     p2 = self._getpath(path_parts2)
+    r1 = self._getrev(rev1)
+    r2 = self._getrev(rev2)
     args = vclib._diff_args(type, options)
 
     # Need to keep a reference to the FileDiff object around long
     # enough to use.  It destroys its underlying temporary files when
     # the class is destroyed.
     diffobj = options['diffobj'] = \
-      do_diff(self, p1, int(rev1), p2, int(rev2), args)
+      do_diff(self, p1, r1, p2, r2, args)
   
     try:
       return diffobj.get_pipe()
@@ -633,6 +654,23 @@ class SubversionRepository(vclib.Repository):
   def _getpath(self, path_parts):
     return string.join(path_parts, '/')
 
+  def _getrev(self, rev):
+    if rev is None or rev == 'HEAD':
+      return self.youngest
+    try:
+      rev = int(rev)
+    except ValueError:
+      raise vclib.InvalidRevision(rev)
+    if (rev < 0) or (rev > self.youngest):
+      raise vclib.InvalidRevision(rev)
+    return rev
+
+  def _getroot(self, rev):
+    try:
+      return self._fsroots[rev]
+    except KeyError:
+      r = self._fsroots[rev] = fs.revision_root(self.fs_ptr, rev, self.pool)
+      return r
 
 class _item:
   def __init__(self, **kw):
