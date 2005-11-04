@@ -892,6 +892,45 @@ def is_viewable(mime_type):
     return 1
   return 0
 
+def get_file_view_info(request, where, rev=None, mime_type=None):
+  """Return common hrefs and a viewability flag used for various views
+  of FILENAME at revision REV whose MIME type is MIME_TYPE."""
+  rev = rev and str(rev) or None
+  mime_type = mime_type or request.mime_type
+    
+  download_text_href = annotate_href = revision_href = None
+  view_href = request.get_url(view_func=view_markup,
+                              where=where,
+                              pathtype=vclib.FILE,
+                              params={'rev': rev},
+                              escape=1)
+  download_href = request.get_url(view_func=view_checkout,
+                                  where=where,
+                                  pathtype=vclib.FILE,
+                                  params={'rev': rev},
+                                  escape=1)
+  if not is_plain_text(mime_type):
+    download_text_href = request.get_url(view_func=view_checkout,
+                                         where=where,
+                                         pathtype=vclib.FILE,
+                                         params={'content-type': 'text/plain',
+                                                 'rev': rev},
+                                         escape=1)
+  if cfg.options.allow_annotate:
+    annotate_href = request.get_url(view_func=view_annotate,
+                                    where=where,
+                                    pathtype=vclib.FILE,
+                                    params={'annotate': rev},
+                                    escape=1)
+  if request.roottype == 'svn':
+    revision_href = request.get_url(view_func=view_revision,
+                                    params={'rev': rev},
+                                    escape=1)
+  
+  return view_href, download_href, download_text_href, \
+         annotate_href, revision_href, ezt.boolean(is_viewable(mime_type))
+
+
 # Regular expressions for location text that looks like URLs and email
 # addresses.  Note that the regexps assume the text is already HTML-encoded.
 _re_rewrite_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)(://[-a-zA-Z0-9%.~:_/]+)((\?|\&amp;)([-a-zA-Z0-9%.~:_]+)=([-a-zA-Z0-9%.~:_])+)*(#([-a-zA-Z0-9%.~:_]+)?)?)')
@@ -1031,38 +1070,22 @@ def common_template_data(request):
   return data
 
 def nav_header_data(request, rev, orig_path):
+  view_href, download_href, download_text_href, annotate_href, \
+             revision_href, is_viewable \
+      = get_file_view_info(request, request.where, rev, request.mime_type)
+  
   data = common_template_data(request)
   data.update({
     'rev' : rev,
-    'annotate_href': None,
-    'download_text_href' : None,
-    'revision_href': None,
-    'orig_path': None,
-    'orig_href': None,
+    'view_href' : view_href,
+    'annotate_href' : annotate_href,
+    'download_href' : download_href,
+    'download_text_href' : download_text_href,
+    'revision_href' : revision_href,
+    'viewable' : is_viewable,
+    'orig_path' : None,
+    'orig_href' : None,
   })
-
-  data['view_href'] = request.get_url(view_func=view_markup,
-                                      params={'rev': rev},
-                                      escape=1)
-  data['download_href'] = request.get_url(view_func=view_checkout,
-                                          params={'rev': rev},
-                                          escape=1)
-
-  if not is_plain_text(request.mime_type):
-    data['download_text_href'] = \
-      request.get_url(view_func=view_checkout,
-                      params={'content-type': 'text/plain', 'rev': rev},
-                      escape=1)
-
-  if cfg.options.allow_annotate:
-    data['annotate_href'] = request.get_url(view_func=view_annotate,
-                                            params={'annotate': rev},
-                                            escape=1)
-
-  if request.roottype == 'svn':
-    data['revision_href'] = request.get_url(view_func=view_revision,
-                                            params={'rev': rev},
-                                            escape=1)
 
   if orig_path != request.path_parts:
     path = _path_join(orig_path)
@@ -1540,10 +1563,11 @@ def view_directory(request):
   where_prefix = where and where + '/'
 
   for file in file_data:
-    row = _item(viewable=None, graph_href=None, author=None, log=None,
-                log_file=None, log_rev=None,
-                state=None, size=None, mime_type=None, date=None,
-                ago=None)
+    row = _item(graph_href=None, author=None, log=None, log_file=None,
+                log_rev=None, state=None, size=None, mime_type=None,
+                date=None, ago=None, view_href=None, log_href=None,
+                revision_href=None, annotate_href=None, download_href=None,
+                download_text_href=None, viewable=ezt.boolean(0))
 
     row.rev = file.rev
     row.author = file.author
@@ -1601,22 +1625,14 @@ def view_directory(request):
 
       ### for Subversion, we should first try to get this from the properties
       row.mime_type = guess_mime(file.name)
-      row.viewable = ezt.boolean(is_viewable(row.mime_type))
-
-      view = row.viewable and view_markup or view_checkout
-
+      row.view_href, row.download_href, row.download_text_href, \
+                     row.annotate_href, row.revision_href, row.viewable \
+          = get_file_view_info(request, file_where, file.rev, row.mime_type)
       row.log_href = request.get_url(view_func=view_log,
                                      where=file_where,
                                      pathtype=vclib.FILE,
                                      params={},
                                      escape=1)
-
-      row.view_href = request.get_url(view_func=view,
-                                      where=file_where,
-                                      pathtype=vclib.FILE,
-                                      params={'rev': str(file.rev)},
-                                      escape=1)
-
       if cfg.options.use_cvsgraph and request.roottype == 'cvs':
          row.graph_href = request.get_url(view_func=view_cvsgraph,
                                           where=file_where,
@@ -1868,6 +1884,7 @@ def view_log(request):
     entry.download_href = None
     entry.download_text_href = None
     entry.annotate_href = None
+    entry.revision_href = None
     entry.sel_for_diff_href = None
     entry.diff_to_sel_href = None
     entry.diff_to_prev_href = None
@@ -1914,10 +1931,6 @@ def view_log(request):
       entry.copy_path = rev.copy_path
       entry.copy_rev = rev.copy_rev
 
-      entry.revision_href = request.get_url(view_func=view_revision,
-                                            params={'rev': rev.string},
-                                            escape=1)
-
       if entry.orig_path:
         entry.orig_href = request.get_url(view_func=view_log,
                                           where=entry.orig_path,
@@ -1935,24 +1948,14 @@ def view_log(request):
 
     # view/download links
     if pathtype is vclib.FILE:
-      entry.view_href = request.get_url(view_func=view_markup,
-                                        params={'rev': rev.string},
-                                        escape=1)
-      entry.download_href = request.get_url(view_func=view_checkout,
+      entry.view_href, entry.download_href, entry.download_text_href, \
+        entry.annotate_href, entry.revision_href, entry.viewable \
+        = get_file_view_info(request, request.where, rev.string,
+                             request.mime_type)
+    else:
+      entry.revision_href = request.get_url(view_func=view_revision,
                                             params={'rev': rev.string},
                                             escape=1)
-      if not is_plain_text(request.mime_type):
-        entry.download_text_href = \
-            request.get_url(view_func=view_checkout,
-                            params={'content-type': 'text/plain',
-                                    'rev': rev.string},
-                            escape=1)
-      if cfg.options.allow_annotate:
-        entry.annotate_href = request.get_url(view_func=view_annotate,
-                                              params={'annotate': rev.string},
-                                              escape=1)
-
-    else:
       entry.view_href = request.get_url(view_func=view_directory,
                                         where=rev.filename,
                                         pathtype=vclib.DIR,
@@ -2017,10 +2020,12 @@ def view_log(request):
     'human_readable' : ezt.boolean(diff_format in ('h', 'l')),
     'log_pagestart' : None,
     'entries': entries,
+    'viewable' : ezt.boolean(0),
     'view_href' : None,
     'download_href': None,
     'download_text_href': None,
     'annotate_href': None,
+    'tag_viewable' : ezt.boolean(0),
     'tag_view_href' : None,
     'tag_download_href': None,
     'tag_download_text_href': None,
@@ -2043,36 +2048,28 @@ def view_log(request):
 
   if pathtype is vclib.FILE:
     if not request.pathrev:
-      data['view_href'] = request.get_url(view_func=view_markup,
-                                          params={'pathrev': None}, 
-                                          escape=1)
-      data['download_href'] = request.get_url(view_func=view_checkout, 
-                                              params={'pathrev': None}, 
-                                              escape=1)
-      if not is_plain_text(request.mime_type):
-        data['download_text_href'] = \
-          request.get_url(view_func=view_checkout,
-                          params={'content-type': 'text/plain',
-                                  'pathrev': None},
-                          escape=1)
-      if cfg.options.allow_annotate:
-        data['annotate_href'] = request.get_url(view_func=view_annotate,
-                                                params={'pathrev': None},
-                                                escape=1)
+      view_href, download_href, download_text_href, \
+        annotate_href, revision_href, viewable \
+        = get_file_view_info(request, request.where, None, request.mime_type)
+      data.update({
+        'view_href': view_href,
+        'download_href': download_href,
+        'download_text_href': download_text_href,
+        'annotate_href': annotate_href,
+        'viewable': viewable,
+        })
 
     if request.pathrev and request.roottype == 'cvs':
-      data['tag_view_href'] = request.get_url(view_func=view_markup,
-                                              params={}, escape=1)
-      data['tag_download_href'] = \
-          request.get_url(view_func=view_checkout, params={}, escape=1)
-      if not is_plain_text(request.mime_type):
-        data['tag_download_text_href'] = \
-            request.get_url(view_func=view_checkout,
-                            params={'content-type': 'text/plain'},
-                            escape=1)
-      if cfg.options.allow_annotate:
-        data['tag_annotate_href'] = \
-            request.get_url(view_func=view_annotate, params={}, escape=1)
+      view_href, download_href, download_text_href, \
+        annotate_href, revision_href, viewable \
+        = get_file_view_info(request, request.where, None, request.mime_type)
+      data.update({
+        'tag_view_href': view_href,
+        'tag_download_href': download_href,
+        'tag_download_text_href': download_text_href,
+        'tag_annotate_href': annotate_href,
+        'tag_viewable': viewable,
+        })
   else:
     if not request.pathrev:
       data['view_href'] = request.get_url(view_func=view_directory, 
