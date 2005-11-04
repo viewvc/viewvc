@@ -365,6 +365,14 @@ class Request:
         and self.view_func is not redirect_pathrev):
       needs_redirect = 1
 
+    # If this is a directory view with just an old-style 'rev'
+    # parameter, redirect to use 'pathrev' instead.
+    if self.view_func == view_directory and self.query_dict.has_key('rev'):
+      if not self.pathrev:
+        self.query_dict['pathrev'] = self.query_dict['rev']
+      del self.query_dict['rev']
+      needs_redirect = 1
+
     # redirect now that we know the URL is valid
     if needs_redirect:
       self.server.redirect(self.get_url())
@@ -726,33 +734,6 @@ def _orig_path(request, rev_param='rev', path_param=None):
     return _path_parts(vclib.svn.get_location(request.repos, path, 
                                               pathrev, rev)), rev
   return _path_parts(path), rev
-
-def _last_rev(repos, path_parts, start, end):
-  """"Walk from start to end revisions, find last revision where path exists
-
-  Returns revision number and path at that revision. Assumes path does
-  actually exist at start revision."""
-
-  # The implementation doesn't actually walk, it does a binary search
-  ### It's be nice if this functionality were moved into subversion where
-  ### it could be implemented more efficiently. Or maybe it's already there
-  ### and I didn't look for it...
-
-  path = _path_join(path_parts)
-  start = repos._getrev(start)
-  end = repos._getrev(end)
-  
-  dir = start < end and 1 or -1
-  while start != end:
-    mid = (start+dir + end) / 2
-    try:    
-      path = vclib.svn.get_location(repos, path, start, mid)
-    except vclib.ItemNotFound:
-      end = mid - dir
-    else:
-      start = mid
-
-  return start, _path_parts(path)
 
 def check_freshness(request, mtime=None, etag=None, weak=0):
   # See if we are supposed to disable etags (for debugging, usually)
@@ -1783,8 +1764,6 @@ def paging(data, key, pagestart, local_name):
   return data[key][pagestart:pageend]
 
 def pathrev_form(request, data):
-  lastrev = None
-  
   if request.roottype == 'svn':
     data['pathrev_action'], data['pathrev_hidden_values'] = \
       request.get_form(view_func=redirect_pathrev,
@@ -1793,18 +1772,9 @@ def pathrev_form(request, data):
                                'orig_pathtype': request.pathtype,
                                'orig_pathrev': request.pathrev,
                                'orig_view': _view_codes.get(request.view_func)})
-
-    if request.pathrev:
-      youngest = vclib.svn.get_youngest_revision(request.repos)
-      lastrev = _last_rev(request.repos, request.path_parts, 
-                             request.pathrev, youngest)[0]
-      if lastrev == youngest:
-         lastrev = None
-
   data['pathrev'] = request.pathrev
-  data['lastrev'] = lastrev
 
-  action, hidden_values = request.get_form(params={'pathrev': lastrev})
+  action, hidden_values = request.get_form(params={'pathrev': None})
   if request.roottype != 'svn':
     data['pathrev_action'] = action
     data['pathrev_hidden_values'] = hidden_values
@@ -1830,18 +1800,15 @@ def redirect_pathrev(request):
   else:
     if new_pathrev > youngest:
       new_pathrev = youngest
-  
-  pathrev, path_parts = _last_rev(request.repos, path_parts, pathrev,
-                                  new_pathrev)
 
   # allow clearing sticky revision by submitting empty string
   if new_pathrev is None and pathrev == youngest:
     pathrev = None
-
+    
   request.server.redirect(request.get_url(view_func=view, 
                                           where=_path_join(path_parts),
                                           pathtype=pathtype,
-                                          params={'pathrev': pathrev}))
+                                          params={'pathrev': new_pathrev}))
 
 def logsort_date_cmp(rev1, rev2):
   # sort on date; secondary on revision number
@@ -2075,7 +2042,7 @@ def view_log(request):
     request.get_form(params={'logsort': None})
 
   if pathtype is vclib.FILE:
-    if not request.pathrev or not data['lastrev']:
+    if not request.pathrev:
       data['view_href'] = request.get_url(view_func=view_markup,
                                           params={'pathrev': None}, 
                                           escape=1)
