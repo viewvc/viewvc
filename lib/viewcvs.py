@@ -2123,7 +2123,7 @@ def view_log(request):
     for branch in main.aliases:
       # Don't list MAIN
       if branch is not main:
-        branches.append(branch.name)
+        branches.append(branch)
     data['default_branch'] = prep_tags(request, branches)
 
   data['tags'] = tags = [ ]
