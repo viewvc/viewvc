@@ -258,14 +258,20 @@ th { background: rgb(60%,70%,90%); }
   <td>ViewCVS file contents as-text download URL for the current resource.</td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">orig_path</td>
+  <td>String</td>
+  <td>When viewing an old file revision through a copy of the file,
+      this is the old file revision's original path.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">orig_href</td>
+  <td>String</td>
+  <td>URL of a ViewCVS log view for <code>orig_path</code>.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">rev</td>
   <td>String</td>
   <td>Revision of the current resource.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">view_href</td>
-  <td>String</td>
-  <td>URL of the ViewCVS file contents view for the current resource.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">revision_href</td>
@@ -273,14 +279,14 @@ th { background: rgb(60%,70%,90%); }
   <td>URL of the Subversion revision view for the current revision.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">orig_path</td>
-  <td>String</td>
-  <td>When viewing an old file revision through a copy of the file, this is the old file revision's original path.</td>
+  <td class="varname">viewable</td>
+  <td>Boolean</td>
+  <td>Whether or not the file's contents are considered human-readable.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">orig_href</td>
+  <td class="varname">view_href</td>
   <td>String</td>
-  <td>URL of a ViewCVS log view for <code>orig_path</code>.</td>
+  <td>URL of the ViewCVS file contents view for the current resource.</td>
 </tr>
 </tbody>
 </table>
@@ -680,6 +686,11 @@ th { background: rgb(60%,70%,90%); }
   <td>Textual description of the time since <var>entries.date</var>.</td>
 </tr>
 <tr class="varlevel2">
+  <td class="varname">entries.annotate_href</td>
+  <td></td>
+  <td></td>
+</tr>
+<tr class="varlevel2">
   <td class="varname">entries.author</td>
   <td>String</td>
   <td>Username of the last modifier of the directory entry.</td>
@@ -689,6 +700,16 @@ th { background: rgb(60%,70%,90%); }
   <td>String</td>
   <td>Date (in UTC if not otherwise configured) of the last
       modification of the directory entry.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">entries.download_href</td>
+  <td></td>
+  <td></td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">entries.download_text_href</td>
+  <td></td>
+  <td></td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.errors</td>
@@ -741,6 +762,13 @@ th { background: rgb(60%,70%,90%); }
       the directory being viewed.</td>
 </tr>
 <tr class="varlevel2">
+  <td class="varname">entries.revision_href</td>
+  <td>String</td>
+  <td>URL of the Subversion revision view for the directory entries
+      current revision.  Valid only when <var>roottype</var> is
+      <tt>svn</tt>.</td>
+</tr>
+<tr class="varlevel2">
   <td class="varname">entries.size</td>
   <td>String</td>
   <td>Size (in bytes) of the directory entry.  Valid only when
@@ -754,18 +782,21 @@ th { background: rgb(60%,70%,90%); }
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.pathtype</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Path kind of the directory entry.  Valid values: <tt>file</tt>
+      (file), <tt>dir</tt> (directory); may be empty.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.view_href</td>
   <td></td>
-  <td></td>
+  <td>URL of the ViewCVS file contents view for the directory entry.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.viewable</td>
-  <td></td>
-  <td></td>
+  <td>Boolean</td>
+  <td>Whether or not the directory entry's contents are considered
+      human-readable.  Valid only when <var>entries.pathtype</var> is
+      <tt>file</tt>.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">search_re</td>
@@ -1133,6 +1164,11 @@ th { background: rgb(60%,70%,90%); }
   <td></td>
 </tr>
 <tr class="varlevel2">
+  <td class="varname">entries.viewable</td>
+  <td></td>
+  <td></td>
+</tr>
+<tr class="varlevel2">
   <td class="varname">entries.view_href</td>
   <td></td>
   <td></td>
@@ -1238,6 +1274,11 @@ th { background: rgb(60%,70%,90%); }
   <td></td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">tag_viewable</td>
+  <td></td>
+  <td></td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">tags</td>
   <td></td>
   <td></td>
@@ -1249,6 +1290,11 @@ th { background: rgb(60%,70%,90%); }
 </tr>
 <tr class="varlevel2">
   <td class="varname">tags.name</td>
+  <td></td>
+  <td></td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">viewable</td>
   <td></td>
   <td></td>
 </tr>
