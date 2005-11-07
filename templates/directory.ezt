@@ -58,7 +58,7 @@
   <tr class="vc_row_odd">
     <td colspan="2">
       <a href="[up_href]">
-      <img src="[docroot]/images/back_small.png" alt="Parent Directory" width="16" height="16"
+      <img src="[docroot]/images/back_small.png" alt="" width="16" height="16"
       />&nbsp;Parent&nbsp;Directory</a>
     </td>
     <td>&nbsp;</td>
@@ -96,7 +96,7 @@
        [is entries.pathtype "dir"]
        <td>&nbsp;[if-any entries.rev]<a href="[entries.log_href]" title="View directory revision log"><strong>[entries.rev]</strong></a>[end]</td>
        [else]
-       <td>&nbsp;[if-any entries.rev]<a href="[entries.view_href]" title="[if-any entries.viewable]View[else]Download[end] file contents"><strong>[entries.rev]</strong></a>[end]</td>
+       <td>&nbsp;[if-any entries.rev]<a href="[if-any entries.viewable][entries.view_href][else][entries.download_href][end]" title="[if-any entries.viewable]View[else]Download[end] file contents"><strong>[entries.rev]</strong></a>[end]</td>
        [end]
        <td>&nbsp;[entries.ago]</td>
        <td>&nbsp;[entries.author]</td>
