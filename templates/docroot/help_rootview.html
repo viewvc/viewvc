@@ -2,7 +2,7 @@
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-  <title>ViewCVS Help: Toplevel Directory View</title>
+  <title>ViewCVS Help: General</title>
   <link rel="stylesheet" href="help.css" type="text/css" />
 </head>
 <body>
@@ -14,7 +14,7 @@
 	     src="images/logo.png" alt="ViewCVS logotype" /></a>
       </td>
       <td>
-	<h1>ViewCVS Help: Toplevel Directory View</h1>
+	<h1>ViewCVS Help: General</h1>
       </td>
     </tr>
     <tr><td>
@@ -23,7 +23,6 @@
        <a href="help_dirview.html">Directory&nbsp;View</a><br />
        <a href="help_log.html">Classic&nbsp;Log&nbsp;View</a><br />
        <a href="help_logtable.html">Alternative&nbsp;Log&nbsp;View</a><br />
-       <a href="help_query.html">Query&nbsp;Database</a><br />
 
        <h3>Internet</h3>
        <a href="http://viewcvs.sf.net/index.html">Home</a><br />
@@ -32,36 +31,77 @@
        <a href="http://viewcvs.sf.net/license-1.html">License</a><br />
     </td><td colspan="2">
   
-  <p><strong>ViewCVS</strong> is a WWW interface for CVS and Subversion repositories.
-    You can browse the
-    file hierarchy by picking directories (which have slashes after
-    them, <em>e.g.</em>, <strong>src/</strong>).  If you pick a file, you will see
-    the revision history for that file.  Selecting a revision number
-    will display that revision of the file.  There is a link at each
-    revision to display diffs between that revision and the previous
-    one, and a form at the bottom of the page that allows you to
-    display diffs between arbitrary revisions.
-  </p>
-  <h3>ViewCVS History and Credits</h3>
-  <p>
-    This program
-    (<a href="http://viewcvs.sourceforge.net/">ViewCVS</a>)
-    has been written by Greg Stein
-    &lt;<a href="mailto:gstein@lyra.org">gstein@lyra.org</a>&gt;
-    based on the
-    <a href="http://linux.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi">cvsweb</a>
-    script by Henner Zeller
-    &lt;<a href="mailto:zeller@think.de">zeller@think.de</a>&gt;;
-    it is covered by the
-    <a href="http://www.opensource.org/licenses/bsd-license.html">BSD-License</a>.
-    If you would like to use this CGI script on your own web server and
-    CVS tree, see Greg's
-    <a href="http://viewcvs.sourceforge.net/">ViewCVS&nbsp;distribution&nbsp;site</a>.
-    Please send any suggestions, comments, etc. to the
-    <a href="mailto:viewcvs-dev@lyra.org">ViewCVS&nbsp;Developers&nbsp;Mailinglist</a>.
-  </p>
+  <p><em>ViewCVS</em> is a WWW interface for CVS and Subversion
+  repositories. It allows you to browse the files and directories in a
+  repository while showing you metadata from the repository history: log
+  messages, modification dates, author names, revision numbers, copy
+  history, and so on. It provides several different views of repository
+  data to help you find the information you are looking for:</p>
 
-  <h3>Documentation about CVS</h3>
+  <ul>
+    <li><a href="help_dirview"><strong>Directory View</strong></a> - Shows
+    a list of files and subdirectories in a directory of the repository,
+    along with metadata like author names and log entries.</li>
+
+    <li><a href="help_log.html"><strong>Log View</strong></a> - Shows a 
+    revision by revision list of all the changes that have made to a
+    file or directory in the repository, with metadata and links to views
+    of each revision.</li>
+
+    <li><strong>File Contents View (Markup View)</strong> - Shows the 
+    contents of a file at a particular revision, with revision information
+    at the top of the page. File revisions which are GIF, PNG, or JPEG 
+    images are displayed inline on the page. Other file types are 
+    displayed as marked up text. The markup may be limited to turning URLs
+    and email addresses into links, or configured to show colorized source
+    code.</li>
+
+    <li><strong>File Download (Checkout View)</strong> - Retrieves the
+    unaltered contents of a file revision. Browsers may try to display
+    the file, or just save it to disk.</li>
+
+    <li><strong>File Annotate View</strong> - Shows the contents of a file
+    revision and breaks it down line by line, showing the revision number
+    where each one was last modified, along with links and other
+    information. <em>This view is disabled in some ViewCVS
+    configurations</em></li>
+
+    <li><strong>File Diff View</strong> - Shows the changes made between
+    two revisions of a file</li>
+
+    <li><strong>Directory Tarball View</strong> - Retrieves a gzipped tar
+    archive containing the contents of a directory.<em>This view is 
+    disabled in the default ViewCVS configuration.</em></li>
+    
+    <li><strong>Directory Query View</strong> - Shows information about
+    changes made to all subdirectories and files under a parent directory,
+    sorted and filtered by criteria you specify.<em>This view is 
+    disabled in the default ViewCVS configuration.</em></li>
+
+    <li><strong>Revision View</strong> - Shows information about a
+    revision including log message, author, and a list of changed paths.
+    <em>For Subversion repositories only.</em></li>
+
+    <li><strong>Graph View</strong> - Shows a graphical representation
+    of a file's revisions and branches complete with tag and author
+    names and links to markup and diff pages. <em>For CVS repositories
+    only, and disabled in the default configuration.</em></li>
+  </ul>
+
+  <h3>ViewCVS and Multiple Repositories</h3>
+
+  <p>A single installation of ViewCVS is often used to provide access to
+  more than one repository. In these installations, ViewCVS shows a
+  <em>Project Root</em> drop down box in the top right corner of every
+  generated page to allow for quick switching between repositories.</p>
+
+  <h3>More Information</h3>
+
+  <p>More information about <em>ViewCVS</em> is available from
+  <a href="http://viewcvs.sourceforge.net/">viewcvs.sourceforge.net</a>.
+  See the links below for guides to CVS and Subversion</p>
+
+  <h4>Documentation about CVS</h3>
   <blockquote>
     <p>
       <a href="http://cvsbook.red-bean.com/">Karl Fogel's CVS book</a><br />
@@ -73,7 +113,7 @@
     </p>
   </blockquote>
 
-  <h3>Documentation about Subversion</h3>
+  <h4>Documentation about Subversion</h3>
   <blockquote>
     <p>
       <a href="http://svnbook.red-bean.com/">Subversion: the Definitive Guide</a><br />
