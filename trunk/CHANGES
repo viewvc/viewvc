@@ -18,41 +18,70 @@ Version 1.0 (not yet released)
     (2002-Dec-12)
   * add new "use_localtime" option to display local times instead of
     UTC times (2002-May-06)
+  * add new "root_parents" option to make it possible to add and
+    remove repositories without modifying the ViewCVS configuration
+    (2004-Jul-16)
+  * add new "template_dir" option to facilitate switching between
+    sets of templates (2005-Feb-08)
+  * add new "sort_group_dirs" option to disable grouping of
+    directories in directory listings (2005-Mar-07)
+  * make "default_root" option optional. When no root is specified,
+    show a page listing all available repositories (2005-Feb-04)
+  * make "checkout_magic" obsolete (but still enabled by default for
+    URL compatibility with old versions of ViewCVS). When disabled,
+    bare file URLs (with no query parameters) will return checked
+    out file contents instead of log listings. That way, checkout
+    URLs no longer need magic /*checkout*/ strings in them for 
+    relative links and image paths in checked out HTML files to work
+    (2005-Feb-13)
   * hide CVS "Attic" directories and add simple toggle for showing
     dead files in directory listings (2004-Jul-31)
   * show Unified, Context and Side-by-side diffs in HTML instead of
     in bare text pages (2004-Jun-22)
   * make View/Download links work the same for all file types
     (2004-Jan-21)
+  * add links to tip of selected branch on log page (2005-Oct-03)
   * enable enscript highlighting for more file types
   * add sorting arrows for directory views (2004-Jul-21)
   * get rid of popup windows for checkout links (2004-Jan-21)
+  * obfuscate email addresses in html output by encoding @ symbol
+    with an HTML character reference (2004-Jul-29)
   * add page numbers to page pick lists (2002-Feb-01)
   * Improvements to templates
+    - add new template authoring guide
     - increase coverage, use templates to produce HTML for diff pages,
       markup pages, annotate pages, and error pages
     - move more common page elements into includes
-    - clean up HTML output using CSS for formatting, entities to
-      escape special characters, and content-oriented tags like
-      optgroup, thead, and tbody. Also fix tag nesting.
-  * add new "root_parents" option to make it possible to add and
-    remove repositories without modifying the ViewCVS configuration
-    (2004-Jul-16)
+    - add new template variables providing ViewCVS URLs for more 
+      links between related pages and less URL generation inside
+      templates
   * add new [define] EZT directive for assigning variables within
     templates (2004-Apr-21)
+  * add command line argument parsing to install script to allow 
+    non-interactive installs (2005-Jan-06)
   * add stricter parameter validation to lower likelihood of CSS
     vulnerabilities (2002-May-24)
   * add support for cvsweb's "mime_type=text/x-cvsweb-markup" URLs
     (2002-Oct-10)
   * fix incompatibility with enscript 1.6.3 (2002-Feb-05)
   * fix bug in parsing FreeBSD rlog output (2003-Jul-24)
+  * work around rlog assumption all two digit years in RCS files are
+    relative to the year 1900. (2005-Sep-30)
+  * change loginfo-handler to cope with spaces in filenames and
+    support a simpler command line invocation from CVS (2003-Feb-11)
   * show diff error when comparing two binary files (2002-Jan-23)
   * make regular expression search skip binary files (2002-Jan-17)
   * make regular expression search skip nonversioned files in CVS
     directories instead of choking on them (2002-Sep-27)
   * fix tarball generator so it doesn't include forbidden modules
     (2002-Feb-22)
+  * output "404 Not Found" errors instead of "403 Forbidden" errors
+    to not reveal whether forbidden paths exist (2005-May-17)
   * fix sorting bug in directory view (2002-Apr-18)
+  * reset log and directory page numbers when leaving those pages
+    (2005-Jan-29)
+  * reset sort direction in directory listing when clicking new
+    columns (2004-Jul-21)
   * fix "Accept-Language" handling for Netscape 4.x browsers
     (2002-May-23)
   * fix file descriptor leak in standalone server (2004-Jul-17)
