@@ -24,6 +24,7 @@ import os
 import string
 import re
 import cStringIO
+import tempfile
 
 import vclib
 import rcsparse
@@ -106,10 +107,20 @@ class CCVSRepository(CVSRepository):
     return filtered_revs
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
-    """see vclib.Repository.rawdiff docstring
-    """
-    raise NotImplementedError, \
-          "rcsparse module does not yet support diff operations"
+    temp1 = tempfile.mktemp()
+    open(temp1, 'wb').write(self.openfile(path_parts1, rev1)[0].getvalue())
+    temp2 = tempfile.mktemp()
+    open(temp2, 'wb').write(self.openfile(path_parts2, rev2)[0].getvalue())
+
+    r1 = self.itemlog(path_parts1, rev1, {})[-1]
+    r2 = self.itemlog(path_parts2, rev2, {})[-1]
+
+    info1 = (self.rcsfile(path_parts1, root=1, v=0), r1.date, r1.string)
+    info2 = (self.rcsfile(path_parts2, root=1, v=0), r2.date, r2.string)
+
+    diff_args = vclib._diff_args(type, options)
+
+    return vclib._diff_fp(temp1, temp2, info1, info2, diff_args)
 
   def annotate(self, path_parts, rev=None):
     source = blame.BlameSource(self.rcsfile(path_parts, 1), rev)
