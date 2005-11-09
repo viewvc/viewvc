@@ -191,6 +191,10 @@ class InvalidRevision(Error):
 # ======================================================================
 # Implementation code used by multiple vclib modules
 
+import popen
+import os
+import time
+
 def _diff_args(type, options):
   """generate argument list to pass to diff or rcsdiff"""
   args = []
@@ -218,3 +222,42 @@ def _diff_args(type, options):
 
   return args
 
+class _diff_fp:
+  """File object reading a diff between temporary files, cleaning up on close"""
+
+  def __init__(self, temp1, temp2, info1=None, info2=None, diff_opts=[]):
+    self.temp1 = temp1
+    self.temp2 = temp2
+    args = diff_opts[:]
+    if info1 and info2:
+      args.extend(["-L", self._label(info1), "-L", self._label(info2)])
+    args.extend([temp1, temp2])
+    self.fp = popen.popen("diff", args, "r")
+
+  def read(self, bytes):
+    return self.fp.read(bytes)
+
+  def readline(self):
+    return self.fp.readline()
+
+  def close():
+    try:
+      if self.fp:
+        self.fp.close()
+        self.fp = None
+    finally:
+      try:
+        if self.temp1:
+          os.remove(self.temp1)
+          self.temp1 = None
+      finally:
+        if self.temp2:
+          os.remove(self.temp2)
+          self.temp2 = None
+
+  def __del__(self):
+    self.close()
+
+  def _label(self, (path, date, rev)):
+    date = date and time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date))
+    return "%s\t%s\t%s" % (path, date, rev)

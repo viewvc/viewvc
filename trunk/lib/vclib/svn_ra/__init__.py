@@ -190,126 +190,18 @@ def get_logs(svnrepos, full_name, rev, files):
     file.size = entry.size
   core.svn_pool_destroy(subpool)    
 
-
-class FileDiff:
-  def __init__(self, rev1, url1, rev2, url2, ctx, pool, diffoptions=[]):
-    assert url1 or url2
-
-    self.tempfile1 = None
-    self.tempfile2 = None
-
-    self.rev1 = rev1
-    self.url1 = url1
-    self.rev2 = rev2
-    self.url2 = url2
-    self.diffoptions = diffoptions
-    self.ctx = ctx
-
-    # the caller can't manage this pool very well given our indirect use
-    # of it. so we'll create a subpool and clear it at "proper" times.
-    self.pool = core.svn_pool_create(pool)
-
-  def either_binary(self):
-    "Return true if either of the files are binary."
-    ### TODO: fix this.  if we use ra-getfile, we can grab props and a
-    ### stream for our tempfiles at the same time.  maybe do all this
-    ### stuff in __init__() and make either_binary() and get_files()
-    ### just hand back cached stuffs.
-    return 0
-
-  def get_files(self):
-    if self.tempfile1:
-      # no need to do more. we ran this already.
-      return self.tempfile1, self.tempfile2
-
-    self.tempfile1 = tempfile.mktemp()
-    stream = core.svn_stream_from_aprfile(self.tempfile1, self.pool)
-    client.svn_client_cat(core.Stream(stream), self.url1,
-                          _rev2optrev(self.rev1), self.ctx, self.pool)
-    core.svn_stream_close(stream)
-    self.tempfile2 = tempfile.mktemp()
-    stream = core.svn_stream_from_aprfile(self.tempfile2, self.pool)
-    client.svn_client_cat(core.Stream(stream), self.url2,
-                          _rev2optrev(self.rev2), self.ctx, self.pool)
-    core.svn_stream_close(stream)
-
-    # get rid of anything we put into our subpool
-    core.svn_pool_clear(self.pool)
-
-    return self.tempfile1, self.tempfile2
-
-  def get_pipe(self):
-    self.get_files()
-
-    # use an array for the command to avoid the shell and potential
-    # security exposures
-    cmd = ["diff"] \
-          + self.diffoptions \
-          + [self.tempfile1, self.tempfile2]
-          
-    # the windows implementation of popen2 requires a string
-    if sys.platform == "win32":
-      cmd = _escape_msvcrt_shell_command(cmd)
-
-    # open the pipe, forget the end for writing to the child (we won't),
-    # and then return the file object for reading from the child.
-    fromchild, tochild = popen2.popen2(cmd)
-    tochild.close()
-    return fromchild
-
-  def __del__(self):
-    # it seems that sometimes the files are deleted, so just ignore any
-    # failures trying to remove them
-    if self.tempfile1 is not None:
-      try:
-        os.remove(self.tempfile1)
-      except OSError:
-        pass
-    if self.tempfile2 is not None:
-      try:
-        os.remove(self.tempfile2)
-      except OSError:
-        pass
-
-
-def _escape_msvcrt_shell_command(argv):
-  return '"' + string.join(map(_escape_msvcrt_shell_arg, argv), " ") + '"'
-
-def _escape_msvcrt_shell_arg(arg):
-  arg = re.sub(_re_slashquote, r'\1\1\2', arg)
-  arg = '"' + string.replace(arg, '"', '"^""') + '"'
-  return arg
-
-_re_slashquote = re.compile(r'(\\+)(\"|$)')
-
-
 def get_youngest_revision(svnrepos):
   return svnrepos.youngest
 
-
-def do_diff(svnrepos, path1, rev1, path2, rev2, diffoptions):
-  url1 = svnrepos.rootpath + (path1 and '/' + path1)
-  url2 = svnrepos.rootpath + (path2 and '/' + path2)
-
-  date1 = date_from_rev(svnrepos, rev1)
-  date2 = date_from_rev(svnrepos, rev2)
-  if date1 is not None:
-    date1 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date1))
-  else:
-    date1 = ''
-  if date2 is not None:
-    date2 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date2))
-  else:
-    date2 = ''
-
-  diffoptions.append("-L")
-  diffoptions.append("%s\t%s\t%i" % (path1, date1, rev1))
-  diffoptions.append("-L")
-  diffoptions.append("%s\t%s\t%i" % (path2, date2, rev2))
-
-  return FileDiff(rev1, url1, rev2, url2,
-                  svnrepos.ctx, svnrepos.pool, diffoptions)
-
+def temp_checkout(svnrepos, path, rev, pool):
+  """Check out file revision to temporary file"""
+  temp = tempfile.mktemp()
+  stream = core.svn_stream_from_aprfile(temp, pool)
+  url = svnrepos.rootpath + (path and '/' + path)
+  client.svn_client_cat(core.Stream(stream), url, _rev2optrev(rev),
+                        svnrepos.ctx, pool)
+  core.svn_stream_close(stream)
+  return temp
 
 class SelfCleanFP:
   def __init__(self, path):
@@ -469,29 +361,22 @@ class SubversionRepository(vclib.Repository):
     return blame_data, rev
     
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
-    """see vclib.Repository.rawdiff docstring
-    
-    option values returned by this implementation
-      diffobj - reference to underlying FileDiff object
-    """
     p1 = self._getpath(path_parts1)
     p2 = self._getpath(path_parts2)
     r1 = self._getrev(rev1)
     r2 = self._getrev(rev2)
     args = vclib._diff_args(type, options)
 
-    # Need to keep a reference to the FileDiff object around long
-    # enough to use.  It destroys its underlying temporary files when
-    # the class is destroyed.
-    diffobj = options['diffobj'] = \
-      do_diff(self, p1, r1, p2, r2, args)
-  
     try:
-      return diffobj.get_pipe()
+      temp1 = temp_checkout(self, p1, r1, self.pool)
+      temp2 = temp_checkout(self, p2, r2, self.pool)
+      info1 = p1, date_from_rev(self, r1), r1
+      info2 = p2, date_from_rev(self, r2), r2
+      return vclib._diff_fp(temp1, temp2, info1, info2, args)
     except vclib.svn.core.SubversionException, e:
       if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
         raise vclib.InvalidRevision
-      raise e
+      raise
 
   def _getpath(self, path_parts):
     return string.join(path_parts, '/')
