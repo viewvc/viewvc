@@ -24,6 +24,7 @@ import string
 import cStringIO
 import signal
 import time
+import tempfile
 import popen
 from svn import fs, repos, core, delta
 
@@ -344,29 +345,24 @@ def get_logs(svnrepos, full_name, rev, files):
 def get_youngest_revision(svnrepos):
   return svnrepos.youngest
 
-  
-def do_diff(svnrepos, path1, rev1, path2, rev2, diffoptions):
-  root1 = svnrepos._getroot(rev1)
-  root2 = svnrepos._getroot(rev2)
-
-  date1 = date_from_rev(svnrepos, rev1)
-  date2 = date_from_rev(svnrepos, rev2)
-  if date1 is not None:
-    date1 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date1))
-  else:
-    date1 = ''
-  if date2 is not None:
-    date2 = time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date2))
-  else:
-    date2 = ''
-
-  diffoptions.append("-L")
-  diffoptions.append("%s\t%s\t%i" % (path1, date1, rev1))
-  diffoptions.append("-L")
-  diffoptions.append("%s\t%s\t%i" % (path2, date2, rev2))
-
-  return fs.FileDiff(root1, path1, root2, path2, svnrepos.pool, diffoptions)
-
+def temp_checkout(svnrepos, path, rev, pool):
+  """Check out file revision to temporary file"""
+  temp = tempfile.mktemp()
+  fp = open(temp, 'wb')
+  try:
+    root = svnrepos._getroot(rev)
+    stream = fs.file_contents(root, path, pool)
+    try:
+      while 1:
+        chunk = core.svn_stream_read(stream, core.SVN_STREAM_CHUNK_SIZE)
+        if not chunk:
+          break
+        fp.write(chunk)
+    finally:
+      core.svn_stream_close(stream)
+  finally:
+    fp.close()
+  return temp
 
 class FileContentsPipe:
   def __init__(self, root, path, pool):
@@ -627,29 +623,22 @@ class SubversionRepository(vclib.Repository):
     return source, revision
     
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
-    """see vclib.Repository.rawdiff docstring
-    
-    option values returned by this implementation
-      diffobj - reference to underlying FileDiff object
-    """
     p1 = self._getpath(path_parts1)
     p2 = self._getpath(path_parts2)
     r1 = self._getrev(rev1)
     r2 = self._getrev(rev2)
     args = vclib._diff_args(type, options)
 
-    # Need to keep a reference to the FileDiff object around long
-    # enough to use.  It destroys its underlying temporary files when
-    # the class is destroyed.
-    diffobj = options['diffobj'] = \
-      do_diff(self, p1, r1, p2, r2, args)
-  
     try:
-      return diffobj.get_pipe()
+      temp1 = temp_checkout(self, p1, r1, self.pool)
+      temp2 = temp_checkout(self, p2, r2, self.pool)
+      info1 = p1, date_from_rev(self, r1), r1
+      info2 = p2, date_from_rev(self, r2), r2
+      return vclib._diff_fp(temp1, temp2, info1, info2, args)
     except vclib.svn.core.SubversionException, e:
       if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
         raise vclib.InvalidRevision
-      raise e
+      raise
 
   def _getpath(self, path_parts):
     return string.join(path_parts, '/')
