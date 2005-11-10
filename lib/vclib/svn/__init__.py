@@ -265,12 +265,10 @@ def get_revision_info(svnrepos, rev):
   e_ptr, e_baton = delta.make_editor(editor, svnrepos.pool)
   repos.svn_repos_replay(fsroot, e_ptr, e_baton, svnrepos.pool)
 
-  # Now get the revision property info
-  props = editor.get_root_props()
-  author = str(props.get(core.SVN_PROP_REVISION_AUTHOR, None))
-  msg = str(props.get(core.SVN_PROP_REVISION_LOG, None))
-  date = _datestr_to_date(str(props.get(core.SVN_PROP_REVISION_DATE, None)),
-                          svnrepos.pool)
+  # Now get the revision property info.  Would use
+  # editor.get_root_props(), but something is broken there...
+  datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, svnrepos.pool)
+  date = _datestr_to_date(datestr, svnrepos.pool)
 
   return date, author, msg, cps.get_changes()
 
