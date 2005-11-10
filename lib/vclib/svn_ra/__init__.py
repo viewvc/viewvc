@@ -65,6 +65,42 @@ def get_location(svnrepos, path, rev, old_rev):
   return _cleanup_path(old_path)
 
 
+def last_rev(svnrepos, path, peg_revision, limit_revision=None):
+  """Given PATH, known to exist in PEG_REVISION, find the youngest
+  revision older than, or equal to, LIMIT_REVISION in which path
+  exists.  Return that revision, and the path at which PATH exists in
+  that revision."""
+  
+  # Here's the plan, man.  In the trivial case (where PEG_REVISION is
+  # the same as LIMIT_REVISION), this is a no-brainer.  If
+  # LIMIT_REVISION is older than PEG_REVISION, we can use Subversion's
+  # history tracing code to find the right location.  If, however,
+  # LIMIT_REVISION is younger than PEG_REVISION, we suffer from
+  # Subversion's lack of forward history searching.  Our workaround,
+  # ugly as it may be, involves a binary search through the revisions
+  # between PEG_REVISION and LIMIT_REVISION to find our last live
+  # revision.
+  peg_revision = svnrepos._getrev(peg_revision)
+  limit_revision = svnrepos._getrev(limit_revision)
+  if peg_revision == limit_revision:
+    return peg_revision, path
+  elif peg_revision > limit_revision:
+    path = get_location(svnrepos, path, peg_revision, limit_revision)
+    return limit_revision, path
+  else:
+    ### Warning: this is *not* an example of good pool usage.
+    direction = 1
+    while peg_revision != limit_revision:
+      mid = (peg_revision + 1 + limit_revision) / 2
+      try:
+        path = get_location(svnrepos, path, peg_revision, mid)
+      except vclib.ItemNotFound:
+        limit_revision = mid - 1
+      else:
+        peg_revision = mid
+    return peg_revision, path
+
+
 def created_rev(svnrepos, full_name, rev):
   kind = ra.svn_ra_check_path(svnrepos.ra_session, full_name, rev,
                               svnrepos.pool)
