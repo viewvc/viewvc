@@ -735,6 +735,29 @@ def _orig_path(request, rev_param='rev', path_param=None):
                                               pathrev, rev)), rev
   return _path_parts(path), rev
 
+def _last_rev(request, path_parts, start, end=None):
+  """Given PATH_PARTS, known to exist in REQUEST.repos in revision
+  START, find the youngest revision older than, or equal to, END in
+  which path exists.  Return that revision and the path at which
+  PATH_PARTS exists in that revision.  If END is not specified, and
+  the path still exists in HEAD of the repository, return None as the
+  revision."""
+  assert request.roottype == 'svn'
+  
+  if not hasattr(vclib.svn, 'last_rev'):
+    return NotImplemented, NotImplemented
+
+  start, path = vclib.svn.last_rev(request.repos, _path_join(path_parts),
+                                   start, end)
+  path_parts = _path_parts(path)
+
+  if end is None:
+    youngest = vclib.svn.get_youngest_revision(request.repos)
+    if start == youngest:
+      return None, path_parts
+
+  return start, path_parts
+
 def check_freshness(request, mtime=None, etag=None, weak=0):
   # See if we are supposed to disable etags (for debugging, usually)
   if not cfg.options.generate_etags:
@@ -1735,7 +1758,10 @@ def view_directory(request):
                                            params={},
                                            escape=1)
 
-  pathrev_form(request, data)
+  lastrev = None
+  if request.pathrev:
+    lastrev = _last_rev(request, request.path_parts, request.pathrev)[0]
+  pathrev_form(request, data, lastrev)
 
   ### one day, if EZT has "or" capability, we can lose this
   data['selection_form'] = ezt.boolean(cfg.options.use_re_search
@@ -1779,24 +1805,37 @@ def paging(data, key, pagestart, local_name):
   # Slice
   return data[key][pagestart:pageend]
 
-def pathrev_form(request, data):
+def pathrev_form(request, data, lastrev):
+  data['pathrev'] = request.pathrev
+  data['lastrev'] = lastrev is not NotImplemented and lastrev or None
+
   if request.roottype == 'svn':
-    data['pathrev_action'], data['pathrev_hidden_values'] = \
+    action, hidden_values = \
       request.get_form(view_func=redirect_pathrev,
                        params={'pathrev': None,
                                'orig_path': request.where,
                                'orig_pathtype': request.pathtype,
                                'orig_pathrev': request.pathrev,
                                'orig_view': _view_codes.get(request.view_func)})
-  data['pathrev'] = request.pathrev
-
-  action, hidden_values = request.get_form(params={'pathrev': None})
-  if request.roottype != 'svn':
     data['pathrev_action'] = action
     data['pathrev_hidden_values'] = hidden_values
-  data['pathrev_clear_action'] = action
-  data['pathrev_clear_hidden_values'] = hidden_values
- 
+
+    if lastrev is NotImplemented:
+      data['pathrev_clear_action'] = action
+      data['pathrev_clear_hidden_values'] = hidden_values
+    else:
+      action, hidden_values = request.get_form(params={'pathrev': lastrev})
+      data['pathrev_clear_action'] = action
+      data['pathrev_clear_hidden_values'] = hidden_values
+  else:    
+    action, hidden_values = request.get_form(params={'pathrev': None})
+    data['pathrev_action'] = action
+    data['pathrev_hidden_values'] = hidden_values
+    data['pathrev_clear_action'] = action
+    data['pathrev_clear_hidden_values'] = hidden_values
+
+  return lastrev
+
 def redirect_pathrev(request):
   new_pathrev = request.query_dict.get('pathrev') or None
   path_parts = _path_parts(request.query_dict.get('orig_path', ''))
@@ -1817,14 +1856,19 @@ def redirect_pathrev(request):
     if new_pathrev > youngest:
       new_pathrev = youngest
 
-  # allow clearing sticky revision by submitting empty string
-  if new_pathrev is None and pathrev == youngest:
-    pathrev = None
-    
+  if _repos_pathtype(request.repos, path_parts, new_pathrev):
+    pathrev = new_pathrev
+  else:
+    pathrev, path_parts = _last_rev(request, path_parts, pathrev, new_pathrev)
+
+    # allow clearing sticky revision by submitting empty string
+    if new_pathrev is None and pathrev == youngest:
+      pathrev = None
+
   request.server.redirect(request.get_url(view_func=view, 
                                           where=_path_join(path_parts),
                                           pathtype=pathtype,
-                                          params={'pathrev': new_pathrev}))
+                                          params={'pathrev': pathrev}))
 
 def logsort_date_cmp(rev1, rev2):
   # sort on date; secondary on revision number
@@ -2032,7 +2076,10 @@ def view_log(request):
     'tag_annotate_href': None,
   })
 
-  pathrev_form(request, data)
+  lastrev = None
+  if request.pathrev:
+    lastrev = _last_rev(request, request.path_parts, request.pathrev)[0]
+  pathrev_form(request, data, lastrev)
 
   if cfg.options.use_pagesize:
     data['log_paging_action'], data['log_paging_hidden_values'] = \
@@ -2047,7 +2094,7 @@ def view_log(request):
     request.get_form(params={'logsort': None})
 
   if pathtype is vclib.FILE:
-    if not request.pathrev:
+    if not request.pathrev or lastrev is None:
       view_href, download_href, download_text_href, \
         annotate_href, revision_href, viewable \
         = get_file_view_info(request, request.where, None, request.mime_type)

@@ -127,6 +127,58 @@ def get_location(svnrepos, path, rev, old_rev):
   return _cleanup_path(old_path)
 
 
+def last_rev(svnrepos, path, peg_revision, limit_revision=None):
+  """Given PATH, known to exist in PEG_REVISION, find the youngest
+  revision older than, or equal to, LIMIT_REVISION in which path
+  exists.  Return that revision, and the path at which PATH exists in
+  that revision."""
+  
+  # Here's the plan, man.  In the trivial case (where PEG_REVISION is
+  # the same as LIMIT_REVISION), this is a no-brainer.  If
+  # LIMIT_REVISION is older than PEG_REVISION, we can use Subversion's
+  # history tracing code to find the right location.  If, however,
+  # LIMIT_REVISION is younger than PEG_REVISION, we suffer from
+  # Subversion's lack of forward history searching.  Our workaround,
+  # ugly as it may be, involves a binary search through the revisions
+  # between PEG_REVISION and LIMIT_REVISION to find our last live
+  # revision.
+  peg_revision = svnrepos._getrev(peg_revision)
+  limit_revision = svnrepos._getrev(limit_revision)
+  try:
+    if peg_revision == limit_revision:
+      return peg_revision, path
+    elif peg_revision > limit_revision:
+      path = get_location(svnrepos, path, peg_revision, limit_revision)
+      return limit_revision, path
+    else:
+      ### Warning: this is *not* an example of good pool usage.
+      orig_id = fs.node_id(svnrepos._getroot(peg_revision), path,
+                           svnrepos.scratch_pool)
+      while peg_revision != limit_revision:
+        mid = (peg_revision + 1 + limit_revision) / 2
+        try:
+          mid_id = fs.node_id(svnrepos._getroot(mid), path,
+                              svnrepos.scratch_pool)
+        except core.SubversionException, e:
+          if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
+            cmp = -1
+          else:
+            raise
+        else:
+          ### Not quite right.  Need a comparison function that only returns
+          ### true when the two nodes are the same copy, not just related.
+          cmp = fs.compare_ids(orig_id, mid_id)
+
+        if cmp in (0, 1):
+          peg_revision = mid
+        else:
+          limit_revision = mid - 1
+
+      return peg_revision, path
+  finally:
+    svnrepos._scratch_clear()
+
+
 def created_rev(svnrepos, full_name, rev):
   fsroot = svnrepos._getroot(rev)
   return fs.node_created_rev(fsroot, full_name, svnrepos.pool)
