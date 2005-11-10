@@ -7,7 +7,7 @@
 
 <hr />
 <form method="get" action="[jump_rev_action]">
-<table cellspacing="1" cellpadding="2">
+<table cellspacing="1" cellpadding="2" style="width: auto;">
   <tr align="left">
     <th>Jump to revision:</th>
     <td>
@@ -27,11 +27,12 @@
     <th>Date:</th>
     <td>[date] <em>([ago] ago)</em></td>
   </tr>
+  <tr align="left">
+    <th>Log Message:</th>
+    <td><pre class="vc_log">[log]</pre></td>
+  </tr>
 </table>
 </form>
-
-<p><strong>Log Message:</strong></p>
-   <pre class="vc_log">[log]</pre>
 
 <hr />
 
