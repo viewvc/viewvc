@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
 <head>
-<title>ViewCVS: Upgrading</title>
+<title>ViewVC: Upgrading</title>
 <link rel="stylesheet" type="text/css" href="./styles.css"/>
 <style>
 .varname { font-family: monospace; }
@@ -17,12 +17,12 @@
 
 <div id="title">
 <a href="http://viewcvs.sourceforge.net/"><img 
-   src="./images/title.jpg" alt="ViewCVS: Repository Browsing"/></a>
+   src="./images/title.jpg" alt="ViewVC: Repository Browsing"/></a>
 </div>
 
 <div id="menu">
 <p><a href="./index.html">Home</a> |
-   <a href="http://sourceforge.net/projects/viewcvs/">Project Page</a> |
+   <a href="http://viewvc.tigris.org/">Project Page</a> |
    <a href="./download.html">Download</a> |
    <a href="./upgrading.html">Upgrading</a> |
    <a href="./contributing.html">Contributing</a> |
@@ -49,7 +49,7 @@
 <p align="center"><a href="http://sourceforge.net/"><img
    src="http://sourceforge.net/sflogo.php?group_id=18760&type=2"></a></p>
 
-<address><a href="mailto:viewcvs@lyra.org">ViewCVS Users Group</a></address>
+<address><a href="mailto:&#117&#115&#101&#114&#115&#64&#118&#105&#101&#119&#99&#118&#115&#46&#116&#105&#103&#114&#105&#115&#46&#111&#114&#103">ViewVC Users Group</a></address>
 
 </td>
 <td id="pagecolumn2">
@@ -59,10 +59,10 @@
 <h2 id="sec-upgrading">Upgrading Basics</h2>
 
 <p>This document describes some of the things that you will need to 
-   consider, change, or handle when upgrading an existing ViewCVS
+   consider, change, or handle when upgrading an existing ViewVC
    installation to a newer version.</p>
 
-<p>Upgrading from an ancient version of ViewCVS to the latest version
+<p>Upgrading from an ancient version of ViewVC to the latest version
    isn't necessarily a multi step process.  The instructions are only
    organized that way.  You can certainly upgrade in a single step.</p>
 
@@ -95,24 +95,25 @@
 
 <h3>Checkin Database</h3>
     
-<p>ViewCVS 1.0 reads and writes commit times in the MySQL database in
+<p>ViewVC 1.0 reads and writes commit times in the MySQL database in
    UTC time rather than local time. This can cause times displayed on
    the query page to be a few hours off if an old database is being
-   used with a new version of ViewCVS.  The best way to fix this is to
+   used with a new version of ViewVC.  The best way to fix this is to
    rebuild the database with the new version of cvsdbadmin, but it
    is also possible to enable a backwards compatibility mode by
    setting <code>utc_time = 0</code> at the top of lib/dbi.py</p>
 
 <h3>URL Compatibility</h3>
 
-<p>In it's default configuration ViewCVS 1.0 will continue to work with
-   bookmarks and links from old versions of ViewCVS and CVSWeb. But if
-   you change options that affect the URL scheme, this may no longer hold
-   true. In particular, if you enable the <var>root_as_url_component</var>
-   option, old viewcvs URLs that don't specify an explicit root with the
-   <var>root</var> parameter will not work. Likewise, if you disable
-   the <var>checkout_magic</var> option, old URLs that that pointed to
-   log pages and don't have explicit <var>view=log</var> parameters will
+<p>In it's default configuration ViewVC 1.0 will continue to work with
+   bookmarks and links from old versions of ViewVC, ViewCVS, and
+   CVSWeb. But if you change options that affect the URL scheme, this
+   may no longer hold true. In particular, if you enable the
+   <var>root_as_url_component</var> option, old viewcvs URLs that
+   don't specify an explicit root with the <var>root</var> parameter
+   will not work. Likewise, if you disable the
+   <var>checkout_magic</var> option, old URLs that that pointed to log
+   pages and don't have explicit <var>view=log</var> parameters will
    load checkout pages instead.
 </p>
 
@@ -153,13 +154,13 @@
 
 <h3>Templates</h3>
     
-<p>The templates have changed drastically in this version of ViewCVS.
+<p>The templates have changed drastically in this version of ViewVC.
    If you are using customized templates from 0.9 or earlier, you want
    to port your old customizations to the new template files instead of
-   trying to get the old template files to work with the new ViewCVS.</p>
+   trying to get the old template files to work with the new ViewVC.</p>
 
 <p>There is a new <a href="template-authoring-guide.html">Template
-   Authoring Guide</a> for ViewCVS 1.0 templates that can help you
+   Authoring Guide</a> for ViewVC 1.0 templates that can help you
    with your customizations. And the chart below lists all 0.9 
    template variables and shows what's become of them in 1.0.</p>
 
@@ -957,7 +958,7 @@
 
 <h4>Template Arrangement</h4>
     
-<p>The default templates have been rearranged a bit in ViewCVS 1.0.
+<p>The default templates have been rearranged a bit in ViewVC 1.0.
    Specifically, "header.ezt" and "footer.ezt" have moved into the
    "templates/include/" subdirectory.  Also, "directory.ezt" and
    "dir_alternate.ezt" now reference new template files
@@ -966,8 +967,8 @@
 
 <p>Notably, the "markup.ezt" and "annotate.ezt" templates are now
    fully self-contained.  That is, the markup and annotation data
-   generated by ViewCVS is now accessible in those templates just like
-   other template variables.  As a result, ViewCVS now has no more
+   generated by ViewVC is now accessible in those templates just like
+   other template variables.  As a result, ViewVC now has no more
    internal need for the <var>templates.footer</var> configuration
    variable, so that variable has been removed from the default
    configuration file.</p>
