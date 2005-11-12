@@ -59,8 +59,8 @@
    href="http://www.python.org">Python</a> and development tools like
    <code>diff</code> is required.  Your best bet is to start with a
    fresh source code snapshot, which you may obtain from our <a
-   href="http://sourceforge.net/cvs/?group_id=18760">CVS Repository</a>
-   at SourceForge.</p>
+   href="http://viewvc.tigris.org/servlets/ProjectSource">Subversion
+   repository</a>.</p>
 
 </div>
 <div class="section">
@@ -78,7 +78,7 @@
 <ul>
 
   <li>What version of ViewVC you are using (if you are using a source
-  snapshot, tell us the date of that snapshot).</li>
+      snapshot, tell us the date of that snapshot).</li>
 
   <li>What operating system your ViewVC is running on.</li>
 
@@ -124,14 +124,15 @@
    and drastically simplify code submission and review.</p>
 
 <p>Please use the <a
-   href="http://sourceforge.net/tracker/?func=add&group_id=18760&atid=318760">SourceForge
-   patch manager</a> to submit your patches.  Unified contextual diffs
+   href="http://viewvc.tigris.org/servlets/ProjectIssues">Issue
+   Tracker</a> to submit your patches.  Unified contextual diffs
    against the latest development snapshot are preferred.</p>
 
 <p>If you have commit access, then you should know what you're doing.
    Just make changes directly.  Subscribing to the <a
-   href="http://mailman.lyra.org/mailman/listinfo/viewcvs-dev">developer
-   mailing list</a> is recommended in any case.</p>
+   href="http://viewvc.tigris.org/servlets/ProjectMailingListList"
+   ><tt>dev@</tt> developer mailing list</a> is recommended in any
+   case.</p>
 
 </div>
 <div class="section">
@@ -179,8 +180,8 @@
 <p>There is a script, <code>tools/make-release</code>, which creates a
    release directory and the various archive files that we distribute.
    All other steps required to get a ViewVC release out of the door
-   require manual execution (currently by Greg Stein).  Those steps
-   are as follows:</p>
+   require manual execution (currently by C. Michael Pilato).  Those
+   steps are as follows:</p>
 
 <ol>
 
@@ -205,93 +206,38 @@
        permuting different <code>viewcvs.conf</code> settings&hellip;
        and pray.</li>
 
-   <li>Review any <a
-       href="http://sourceforge.net/tracker/?atid=118760&group_id=18760&func=browse">
-       bug reports, that are still marked open.</a></li>
+   <li>Review any open <a
+       href="http://viewvc.tigris.org/servlets/ProjectIssues">bug
+       reports.</a></li>
 
-   <li>Run <code>cvs tag V<i>X</i>_<i>Y</i></code>, where
+   <li>Use <code>svn cp</code> to tag the release to
+       <code>/tags/V<i>X</i>_<i>Y</i></code>, where
        <i>X</i> and <i>Y</i> should be replaced by the release number
        from above.  If a developer is willing to volunteer as a bug
        fix patch release manager, it is now possible to start here at
-       this point with a feature freezed branch using <code>cvs tag -b
-       V<i>X</i>_<i>Y</i>_maint</code></li>
+       this point with a feature-frozen branch using <code>svn
+       cp</code> to copy the tag to
+       <code>/branches/V<i>X</i>_<i>Y</i>_maint</code>.</li>
 
    <li>Go into an empty directory and run <code>tools/make-release
-       V<i>X_Y</i> viewcvs-<i>X.Y</i></code>.  This step requires
-       anonymous CVS access to repository at SourceForge.</li>
+       viewcvs-<i>X.Y</i> V<i>X_Y</i></code>.  This step requires
+       read access to the Subversion source code repository.</li>
 
-   <li>Pack the content of this <code>viewcvs-</code><i>X.Y</i>
-       directory into a tarball.</li>
-
-   <li>Upload the created tarball into the download files section of
-       the ViewVC project at SourceForge:</li>
-
-     <ul>
-       <li><code>scp viewcvs-X.Y.*
-           <var>USERNAME</var>@viewcvs.sourceforge.net:/home/groups/v/vi/viewcvs/htdocs</code></li>
-
-       <li>ssh to viewcvs.sourceforge.net, cd to the above directory,
-           and do a "<code>cvs update</code>" to pull down the latest
-           website files.</li>
-
-       <li>ftp to upload.sourceforge.net, cd to the
-           <code>/incoming</code> directory, and upload the .gz and the
-           .zip</li>
-
-       <li>go to the Admin pages for the ViewVC project, and go to
-           "Edit/Release Files"</li>
-
-       <li>select "Add Release" and fill in the new release name
-           (X.Y)</li>
-
-       <li>fill in the Change Log section with the relevant portion from
-           the <code>CHANGES</code> file and select the "Preserve my
-           pre-formatted text" option. (and Submit those changes)</li>
-
-       <li>the files uploaded to upload.sourceforge.net should appear in
-           the "Add Files To This Release" section. Select them, and add
-           them.</li>
-
-       <li>for each file: change the processor type to "Any", select
-           "Source .zip" or "Source .gz" as appropriate, and hit the
-           Update button. (note: you need to Update each file
-           separately)</li>
-
-       <li>after about 15-30 minutes, the files will appear on the Files
-           page of the project.</li>
-
-       <li>select the "I'm sure" button and hit the "Send Notice"
-           button.</li>
-
-       <li>NOTE: if you need to hide a prior release, then go back to
-           the admin page and follow the links for editing a
-           release. Change the "Status" drop-down to "Hidden" and
-           submit the change.</li>
-
-     </ul>
+   <li>Upload the created archive files (tar.gz and zip) into the
+       Files and Documents section of the Tigris.org project.</li>
 
    <li>Edit the file <code>lib/viewcvs.py</code> again and this time
        increment the <code>__version__</code> for the next release
        cycle, again append the <code>-dev</code> to the version and
-       again <code>cvs commit -m "new release cycle begins"
+       again <code>svn commit -m "Begin a new release cycle."
        lib/viewcvs.py</code>.</li>
 
    <li>Write an announcement explaining all the cool new features and
-       put it out to:</li>
-
-       <ul>
-
-         <li><a href="http://www.freshmeat.net">Freshmeat</a></li>
-
-         <li><a
-             href="http://www.vex.net/parnassus/apyllo.py?i=91022454">Vaults
-             of Parnassus</a></li>
-
-         <li><a href="news:comp.lang.python">comp.lang.python</a></li>
-
-         <li><i>Others?  Suggestions welcome.</i></li>
-
-       </ul>
+       post it <a
+       href="mailto:&#97&#110&#110&#111&#117&#110&#99&#101&#64&#118&#105&#101&#119&#118&#99&#46&#116&#105&#103&#114&#105&#115&#46&#111&#114&#103">&#97&#110&#110&#111&#117&#110&#99&#101&#64&#118&#105&#101&#119&#118&#99&#46&#116&#105&#103&#114&#105&#115&#46&#111&#114&#103</a>,
+       to the project's News area, and to other places interested in
+       this sort of stuff (such as <a
+       href="http://www.freshmeat.net">Freshmeat</a>).</p>
 
 </ol>
 

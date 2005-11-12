@@ -17,37 +17,50 @@
 # -----------------------------------------------------------------------
 #
 
-if test $# != 2; then
-  echo "USAGE: $0 tagname target-directory"
+### Validate input
+if test $# != 2 && test $# != 1; then
+  echo "Usage: $0 TARGET-DIRECTORY [TAGNAME]"
+  echo ""
+  echo "If TAGNAME is not provided, the release will be rolled from trunk."
   exit 1
 fi
 
-if test -e $2; then
-  echo "ERROR: must remove $2 first."
+TARGET=${1}
+if test $# == 1; then
+  ROOT=trunk
+else
+  ROOT=tags/${2}
+fi
+
+if test -e ${TARGET}; then
+  echo "ERROR: must remove ${TARGET} first."
   exit 1
 fi
 
-# grab a copy of the CVS repository
-echo 'Checking out into:' $2
-cvs -d :pserver:anonymous@cvs.sourceforge.net:/cvsroot/viewcvs export -r $1 -d $2 viewcvs
+### Grab an export from the Subversion repository.
+echo "Exporting into:" ${TARGET}
+svn export http://viewvc.tigris.org/svn/viewvc/${ROOT} ${TARGET}
 
-# various shifting, cleanup.
-# documentation is now also distributed together with the release, 
-# but we still copy the license file to its traditional place (it is small 
+### Various shifting, cleanup.  
+
+# Documentation is now also distributed together with the release, but
+# we still copy the license file to its traditional place (it is small
 # and many files still contain comments refering to this location):
-cp $2/website/license-1.html $2/LICENSE.html
-rm -r $2/website
-# remove some tools only useful for ViewCVS developers:
-rm $2/tools/make-release
-rm -f $2/tools/bin2inline_py.py
+
+cp ${TARGET}/viewcvs.sourceforge.net/license-1.html ${TARGET}/LICENSE.html
+rm -r ${TARGET}/viewcvs.sourceforge.net
+
+# Remove some tools only useful for ViewCVS developers:
+rm ${TARGET}/tools/make-release
 
 # Make sure, permissions are reasonable:
-find $2 -print | xargs chmod uoa+r
-find $2 -type d -print | xargs chmod uoa+x
+find ${TARGET} -print | xargs chmod uoa+r
+find ${TARGET} -type d -print | xargs chmod uoa+x
 
-# cut the tarball:
-tar cf - $2 | gzip -9 > $2.tar.gz
-# create also a ZIP file for those poor souls :-) still using Windows: 
-zip -qor9 $2.zip $2
+# Cut the tarball:
+tar cf - ${TARGET} | gzip -9 > ${TARGET}.tar.gz
+
+# Create also a ZIP file for those poor souls :-) still using Windows: 
+zip -qor9 ${TARGET}.zip ${TARGET}
 
 echo 'Done.'
