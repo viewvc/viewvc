@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
 <head>
-<title>ViewCVS: Contributing</title>
+<title>ViewVC: Contributing</title>
 <link rel="stylesheet" type="text/css" href="./styles.css"/>
 </head>
 
@@ -9,12 +9,12 @@
 
 <div id="title">
 <a href="http://viewcvs.sourceforge.net/"><img 
-   src="./images/title.jpg" alt="ViewCVS: Repository Browsing"/></a>
+   src="./images/title.jpg" alt="ViewVC: Repository Browsing"/></a>
 </div>
 
 <div id="menu">
 <p><a href="./index.html">Home</a> |
-   <a href="http://sourceforge.net/projects/viewcvs/">Project Page</a> |
+   <a href="http://viewvc.tigris.org/">Project Page</a> |
    <a href="./download.html">Download</a> |
    <a href="./upgrading.html">Upgrading</a> |
    <a href="./contributing.html">Contributing</a> |
@@ -46,7 +46,7 @@
 <p align="center"><a href="http://sourceforge.net/"><img
    src="http://sourceforge.net/sflogo.php?group_id=18760&type=2"></a></p>
 
-<address><a href="mailto:viewcvs@lyra.org">ViewCVS Users Group</a></address>
+<address><a href="mailto:&#117&#115&#101&#114&#115&#64&#118&#105&#101&#119&#99&#118&#115&#46&#116&#105&#103&#114&#105&#115&#46&#111&#114&#103">ViewVC Users Group</a></address>
 
 </td>
 <td id="pagecolumn2">
@@ -77,17 +77,17 @@
 
 <ul>
 
-  <li>What version of ViewCVS you are using (if you are using a source
+  <li>What version of ViewVC you are using (if you are using a source
   snapshot, tell us the date of that snapshot).</li>
 
-  <li>What operating system your ViewCVS is running on.</li>
+  <li>What operating system your ViewVC is running on.</li>
 
   <li>What version of Python you are using.</li>
 
-  <li>Whether you are running ViewCVS standalone, or as a CGI program
+  <li>Whether you are running ViewVC standalone, or as a CGI program
       under a web server (and if so, what web server).</li>
 
-  <li>The URL of your ViewCVS instantiation, if it is public.
+  <li>The URL of your ViewVC instantiation, if it is public.
       Sometimes, letting developers see the problem for themselves can
       save everyone alot of time.</li>
 
@@ -138,11 +138,11 @@
 
 <h2 id="sec-security">Security</h2>
 
-<p>Since ViewCVS is used on the Internet, security is a major concern.
+<p>Since ViewVC is used on the Internet, security is a major concern.
    If you need to pass data from the request into an external program,
    please don't use <code>os.system()</code> or
    <code>os.popen()</code>.  Please use the module
-   <code>lib/popen.py</code> that is included in the ViewCVS
+   <code>lib/popen.py</code> that is included in the ViewVC
    distribution instead.</p>
 
 </div>
@@ -168,7 +168,7 @@
 
 <p>The library module <code>ezt.py</code> contains a module docstring
    which describes the directives used in the HTML templates used by
-   ViewCVS.  The templates themselves can be found in the
+   ViewVC.  The templates themselves can be found in the
    <code>templates</code> subdirectory.</p>
 
 </div>
@@ -178,7 +178,7 @@
 
 <p>There is a script, <code>tools/make-release</code>, which creates a
    release directory and the various archive files that we distribute.
-   All other steps required to get a ViewCVS release out of the door
+   All other steps required to get a ViewVC release out of the door
    require manual execution (currently by Greg Stein).  Those steps
    are as follows:</p>
 
@@ -186,7 +186,7 @@
 
   <li>Add a new subsection to the file
       <code>website/upgrading.html</code> describing all user visible
-      changes for users of previous releases of ViewCVS.</li>
+      changes for users of previous releases of ViewVC.</li>
 
    <li>Update the <code>CHANGES</code> file</li>
 
@@ -224,7 +224,7 @@
        directory into a tarball.</li>
 
    <li>Upload the created tarball into the download files section of
-       the ViewCVS project at SourceForge:</li>
+       the ViewVC project at SourceForge:</li>
 
      <ul>
        <li><code>scp viewcvs-X.Y.*
@@ -238,7 +238,7 @@
            <code>/incoming</code> directory, and upload the .gz and the
            .zip</li>
 
-       <li>go to the Admin pages for the ViewCVS project, and go to
+       <li>go to the Admin pages for the ViewVC project, and go to
            "Edit/Release Files"</li>
 
        <li>select "Add Release" and fill in the new release name
