@@ -63,28 +63,28 @@ ROOT_DIR = None
 ##       
 
 FILE_INFO_LIST = [
-    ("www/cgi/viewcvs.cgi", "www/cgi/viewcvs.cgi", 0755, 1, 0, 0),
-    ("www/cgi/query.cgi", "www/cgi/query.cgi", 0755, 1, 0, 0),
-    ("www/mod_python/viewcvs.py", "www/mod_python/viewcvs.py", 0755, 1, 0, 0),
-    ("www/mod_python/query.py", "www/mod_python/query.py", 0755, 1, 0, 0),
-    ("www/mod_python/.htaccess", "www/mod_python/.htaccess", 0755, 1, 0, 0),
-    ("standalone.py", "standalone.py", 0755, 1, 0, 0),
+    ("bin/cgi/viewcvs.cgi", "bin/cgi/viewcvs.cgi", 0755, 1, 0, 0),
+    ("bin/cgi/query.cgi", "bin/cgi/query.cgi", 0755, 1, 0, 0),
+    ("bin/mod_python/viewcvs.py", "bin/mod_python/viewcvs.py", 0755, 1, 0, 0),
+    ("bin/mod_python/query.py", "bin/mod_python/query.py", 0755, 1, 0, 0),
+    ("bin/mod_python/.htaccess", "bin/mod_python/.htaccess", 0755, 1, 0, 0),
+    ("bin/standalone.py", "bin/standalone.py", 0755, 1, 0, 0),
     ("viewcvs.conf.dist", "viewcvs.conf", 0644, 1,
 	     """Note: If you are upgrading from viewcvs-0.7 or earlier: 
 The section [text] has been removed from viewcvs.conf.  The functionality
 went into the new files in subdirectory templates.""", 0),
     ("cvsgraph.conf.dist", "cvsgraph.conf", 0644, 0, 1, 0),
 
-    ("tools/loginfo-handler", "loginfo-handler", 0755, 1, 0, 0),
-    ("tools/cvsdbadmin", "cvsdbadmin", 0755, 1, 0, 0),
-    ("tools/svndbadmin", "svndbadmin", 0755, 1, 0, 0),
-    ("tools/make-database", "make-database", 0755, 1, 0, 0),
+    ("bin/loginfo-handler", "bin/loginfo-handler", 0755, 1, 0, 0),
+    ("bin/cvsdbadmin", "bin/cvsdbadmin", 0755, 1, 0, 0),
+    ("bin/svndbadmin", "bin/svndbadmin", 0755, 1, 0, 0),
+    ("bin/make-database", "bin/make-database", 0755, 1, 0, 0),
     ]
 
 if sys.platform == "win32":
   FILE_INFO_LIST.extend([
-    ("www/asp/viewcvs.asp", "www/asp/viewcvs.asp", 0755, 1, 0, 0),
-    ("www/asp/query.asp", "www/asp/query.asp", 0755, 1, 0, 0),
+    ("bin/asp/viewcvs.asp", "bin/asp/viewcvs.asp", 0755, 1, 0, 0),
+    ("bin/asp/query.asp", "bin/asp/query.asp", 0755, 1, 0, 0),
   ])
 
 TREE_LIST = [
@@ -344,5 +344,5 @@ Overview of remaining steps:
    %s.
 """ % (
     os.path.join(ROOT_DIR, 'viewcvs.conf'),
-    os.path.join(ROOT_DIR, 'www', 'cgi', 'viewcvs.cgi'),
+    os.path.join(ROOT_DIR, 'bin', 'cgi', 'viewcvs.cgi'),
     os.path.join(ROOT_DIR, 'standalone.py'))
