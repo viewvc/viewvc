@@ -95,8 +95,20 @@
       
 <h2 id="sec-coding-style">Coding Style</h2>
 
-<p>Maintain whatever style is present in the code being modified.  New
-   code can use anything sane (which generally means <a
+<p>Unlike its predecessor, CvsWeb, ViewVC is written in Python, so it
+   doesn't suffer from the "unmaintainable code effect" that hits most
+   Perl projects sooner or later:</p>
+
+<blockquote><em>&quot;[Perl] combines all the worst aspects of C and Lisp: a
+   billion different sublanguages in one monolithic executable.  It
+   combines the power of C with the readability of PostScript.&quot;</em>
+   &mdash;&nbsp;Jamie&nbsp;Zawinski
+</blockquote>
+
+<p>Of course, an symphony of insanity can be composed in any language,
+   so we do try to stick to some basic guiding principles.  Maintain
+   whatever style is present in the code being modified.  New code can
+   use anything sane (which generally means <a
    href="http://python.sourceforge.net/peps/pep-0008.html">PEP&nbsp;8</a>).
    Our only real peeve is if someone writes a function call as:
    <code>some_func&nbsp;(args)</code> &mdash; that space between the
