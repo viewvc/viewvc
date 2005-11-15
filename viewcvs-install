@@ -40,7 +40,7 @@ version = viewcvs.__version__
 
 
 ## installer text
-INFO_TEXT = """\
+INFO_TEXT = """
 
 This is the ViewCVS %s installer.
 
@@ -138,9 +138,11 @@ def SetPythonPaths(contents):
     if contents[:2] == '#!':
         shbang = '#!' + sys.executable
         contents = re.sub('^#![^\n]*', ReEscape(shbang), contents)
-    contents = re.sub("<VIEWCVS_INSTALL_DIRECTORY>", ReEscape(ROOT_DIR), contents)
+    contents = re.sub("<VIEWCVS_INSTALL_DIRECTORY>",
+                      ReEscape(ROOT_DIR), contents)
     apacheDir = ApacheEscape(os.path.join(ROOT_DIR, 'lib'))
-    contents = re.sub("<VIEWCVS_APACHE_LIBRARY_DIRECTORY>", ReEscape(apacheDir), contents)
+    contents = re.sub("<VIEWCVS_APACHE_LIBRARY_DIRECTORY>",
+                      ReEscape(apacheDir), contents)
     contents = SetOnePath(contents, 'LIBRARY_DIR', 'lib')
     contents = SetOnePath(contents, 'CONF_PATHNAME', 'viewcvs.conf')
     return contents
@@ -182,7 +184,12 @@ def InstallFile(src_path, dest_path, mode, set_python_paths, prompt_replace,
     if type(prompt_replace) == type(""):
       print prompt_replace
     while 1:
-      temp = raw_input("\n    File %s\n    exists and is different from source file.\n      DO YOU WANT TO,\n        overwrite [o]\n        do not overwrite [d]\n        view differences [v]: " % (DESTDIR + dest_path))
+      temp = raw_input("""
+    File %s exists and is different from source file.
+      DO YOU WANT TO,
+        overwrite [o]
+        do not overwrite [d]
+        view differences [v]: """ % (DESTDIR + dest_path))
       print
 
       temp = string.lower(temp[0])
@@ -195,16 +202,23 @@ def InstallFile(src_path, dest_path, mode, set_python_paths, prompt_replace,
           print 'Can not print differences between binary files'
         else:
           print total
-          print "\nLEGEND\n A leading '- ' indicates line to remove from installed file\n A leading '+ ' indicates line to add to installed file\n A leading '? ' shows intraline differences."
+          print """
+LEGEND
+ A leading '- ' indicates line to remove from installed file
+ A leading '+ ' indicates line to add to installed file
+ A leading '? ' shows intraline differences."""
 
       if temp == "o": 
-        ReplaceFile(src_path, dest_path, mode, set_python_paths, prompt_replace, compile_it)
+        ReplaceFile(src_path, dest_path, mode, set_python_paths,
+                    prompt_replace, compile_it)
         return
   else:
-    ReplaceFile(src_path, dest_path, mode, set_python_paths, prompt_replace, compile_it)
+    ReplaceFile(src_path, dest_path, mode, set_python_paths,
+                prompt_replace, compile_it)
   return
 
-def ReplaceFile(src_path, dest_path, mode, set_python_paths, prompt_replace, compile_it):
+def ReplaceFile(src_path, dest_path, mode, set_python_paths,
+                prompt_replace, compile_it):
   try:
     contents = open(src_path, "rb").read()
   except IOError, e:
@@ -228,7 +242,8 @@ def ReplaceFile(src_path, dest_path, mode, set_python_paths, prompt_replace, com
   os.chmod(DESTDIR + dest_path, mode)
   
   if compile_it:
-    py_compile.compile(DESTDIR + dest_path, DESTDIR + dest_path + "c" , dest_path)
+    py_compile.compile(DESTDIR + dest_path,
+                       DESTDIR + dest_path + "c" , dest_path)
   
   return
 
@@ -238,8 +253,9 @@ def install_tree(src_path, dst_path, prompt_replace):
   files.sort()
   for fname in files:
     # eliminate some items which appear in a development area
-    if fname == 'CVS' or fname[-4:] == '.pyc' or fname[-5:] == '.orig' \
-       or fname[-4:] == '.rej' or fname[0] == '.' or fname[-1] ==  '~':
+    if fname == 'CVS' or fname == '.svn' or fname[-4:] == '.pyc' \
+       or fname[-5:] == '.orig' or fname[-4:] == '.rej' \
+       or fname[0] == '.' or fname[-1] ==  '~':
       continue
 
     src = os.path.join(src_path, fname)
@@ -264,7 +280,11 @@ def install_tree(src_path, dst_path, prompt_replace):
       continue
     
     while 1:
-      temp = raw_input("\n    File %s does not belong in ViewCVS %s.\n      DO YOU WANT TO,\n        delete [d]\n        leave as is [l]: " % (os.path.join(dst_path, fname), version))
+      temp = raw_input("""
+    File %s does not belong in ViewCVS %s.
+    DO YOU WANT TO,
+        delete [d]
+        leave as is [l]: """ % (os.path.join(dst_path, fname), version))
       print
       
       temp = string.lower(temp[0])
@@ -339,7 +359,7 @@ Overview of remaining steps:
 
 2) Configure an existing web server to run (or copy to cgi-bin) 
    %s.
-     OR 
+      OR 
    Run the web server that comes with ViewCVS at 
    %s.
 """ % (
