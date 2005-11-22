@@ -282,26 +282,11 @@ class BinCVSRepository(CVSRepository):
     
     fp = self.rcs_popen('rcsdiff', args, 'rt')
 
-    # Eat up (with error-checking) the first five (5) lines of
-    # non-GNU-diff-y headers.
-    headers = ['^={67}$',
-               '^RCS file:.*$',
-               '^retrieving revision (.*)$',
-               '^retrieving revision (.*)$',
-               '^diff .*$',
-               ]
-    _re_diff_warning = re.compile(
-      r'^.*rcsdiff: .*,v: warning: Unknown phrases like .*\n$')
-    for i in range(len(headers)):
+    # Eat up the non-GNU-diff-y headers.
+    while 1:
       line = fp.readline()
-      if not line:
-        raise vclib.Error("Error reading diff headers")
-      # Eat up any warning lines
-      while re.match(_re_diff_warning, line):
-        line = fp.readline()
-      # Make sure we get five good lines of output that match what we expect
-      if not re.match(headers[i], string.lstrip(line)):
-        raise vclib.Error("Error parsing diff headers")
+      if not line or line[0:5] == 'diff ':
+        break
     return fp
   
 
