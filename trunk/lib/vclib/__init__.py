@@ -223,7 +223,8 @@ def _diff_args(type, options):
   return args
 
 class _diff_fp:
-  """File object reading a diff between temporary files, cleaning up on close"""
+  """File object reading a diff between temporary files, cleaning up
+  on close"""
 
   def __init__(self, temp1, temp2, info1=None, info2=None, diff_opts=[]):
     self.temp1 = temp1
@@ -240,7 +241,7 @@ class _diff_fp:
   def readline(self):
     return self.fp.readline()
 
-  def close():
+  def close(self):
     try:
       if self.fp:
         self.fp.close()
