@@ -1759,7 +1759,7 @@ def view_directory(request):
                                            escape=1)
 
   lastrev = None
-  if request.pathrev:
+  if request.pathrev and request.roottype == 'svn':
     lastrev = _last_rev(request, request.path_parts, request.pathrev)[0]
   pathrev_form(request, data, lastrev)
 
@@ -1858,7 +1858,7 @@ def redirect_pathrev(request):
 
   if _repos_pathtype(request.repos, path_parts, new_pathrev):
     pathrev = new_pathrev
-  else:
+  elif request.roottype == 'svn':
     pathrev, path_parts = _last_rev(request, path_parts, pathrev, new_pathrev)
 
     # allow clearing sticky revision by submitting empty string
@@ -2077,7 +2077,7 @@ def view_log(request):
   })
 
   lastrev = None
-  if request.pathrev:
+  if request.pathrev and request.roottype == 'svn':
     lastrev = _last_rev(request, request.path_parts, request.pathrev)[0]
   pathrev_form(request, data, lastrev)
 
@@ -2569,7 +2569,7 @@ def diff_parse_headers(fp, diff_type, rev1, rev2, sym1=None, sym2=None):
   return date1, date2, flag, string.join(header_lines, '')
 
 
-def _get_diff_path_parts(request, query_key, rev, base_rev):
+def _get_location(request, query_key, rev, base_rev):
   if request.query_dict.has_key(query_key):
     parts = _path_parts(request.query_dict[query_key])
   elif request.roottype == 'svn':
