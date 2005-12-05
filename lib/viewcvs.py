@@ -2569,7 +2569,7 @@ def diff_parse_headers(fp, diff_type, rev1, rev2, sym1=None, sym2=None):
   return date1, date2, flag, string.join(header_lines, '')
 
 
-def _get_location(request, query_key, rev, base_rev):
+def _get_diff_path_parts(request, query_key, rev, base_rev):
   if request.query_dict.has_key(query_key):
     parts = _path_parts(request.query_dict[query_key])
   elif request.roottype == 'svn':
