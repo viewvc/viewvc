@@ -15,12 +15,12 @@
 #
 # -----------------------------------------------------------------------
 #
-# query.cgi: View CVS commit database by web browser
+# query.asp: View CVS commit database by web browser
 #
 # -----------------------------------------------------------------------
 #
 # This is a teeny stub to launch the main ViewCVS app. It checks the load
-# average, then loads the (precompiled) viewcvs.py file and runs it.
+# average, then loads the (precompiled) query.py file and runs it.
 #
 # -----------------------------------------------------------------------
 #
@@ -34,6 +34,7 @@
 #
 
 LIBRARY_DIR = None
+CONF_PATHNAME = None
 
 #########################################################################
 #
@@ -45,17 +46,17 @@ import sys
 if LIBRARY_DIR:
   if not LIBRARY_DIR in sys.path:
     sys.path.insert(0, LIBRARY_DIR)
-else:
-  sys.path[:0] = ['../lib']	# any other places to look?
 
 #########################################################################
 
 import sapi
+import viewcvs
 import query
 
-s = sapi.AspServer(Server, Request, Response, Application)
+server = sapi.AspServer(Server, Request, Response, Application)
 try:
-  query.main(s, 'viewcvs.asp')
+  cfg = viewcvs.load_config(CONF_PATHNAME, server)
+  query.main(server, cfg, "viewcvs.asp")
 finally:
   s.close()
 

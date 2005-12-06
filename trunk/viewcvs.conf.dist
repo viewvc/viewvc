@@ -365,8 +365,7 @@ allow_compress = 1
 # this directory for files with names that match the name of the view
 # ("log", "directory", etc.) plus the ".ezt" extension.  If specified
 # as a relative path, it is relative to the ViewCVS installation
-# directory (<VIEWCVS_INSTALL_DIRECTORY>); absolute paths may be used
-# as well.
+# directory; absolute paths may be used as well.
 #
 # If %lang% occurs in the pathname, then the selected language will be
 # substituted.
@@ -470,7 +469,7 @@ cvsgraph_path =
 # Location of the customized cvsgraph configuration file.  
 # You will need an absolute pathname here:
 #
-cvsgraph_conf = <VIEWCVS_INSTALL_DIRECTORY>/cvsgraph.conf
+cvsgraph_conf = cvsgraph.conf
 
 #
 # Set to enable regular expression search of all files in a directory
@@ -517,8 +516,8 @@ use_pagesize = 0
 # appropriate option below and specify the currect location of the EZT
 # template file you wish to use for that view.
 # 
-# Templates are specified relative to the installation directory
-# (<VIEWCVS_INSTALL_DIRECTORY>), but absolute paths may also be used.
+# Templates are specified relative to the installation directory, but
+# absolute paths may also be used as well.
 #
 # If %lang% occurs in the pathname, then the selected language will be
 # substituted.

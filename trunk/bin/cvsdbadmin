@@ -32,24 +32,26 @@ CONF_PATHNAME = None
 
 # Adjust sys.path to include our library directory
 import sys
+import os
 
 if LIBRARY_DIR:
   sys.path.insert(0, LIBRARY_DIR)
 else:
-  sys.path[:0] = ['../lib']	# any other places to look?
+  sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
 
 #########################################################################
   
 import os
 import string
 import cvsdb
+import viewcvs
 import vclib.bincvs
 
 
 def UpdateFile(db, repository, path, update):
     try:
         if update:
-            commit_list = cvsdb.GetUnrecordedCommitList(repository, path)
+            commit_list = cvsdb.GetUnrecordedCommitList(repository, path, db)
         else:
             commit_list = cvsdb.GetCommitListFromRCSFile(repository, path)
     except cvsdb.error, e:
@@ -119,10 +121,10 @@ if __name__ == '__main__':
     ## run command
     try:
       ## connect to the database we are updating
-      db = cvsdb.ConnectDatabase()
+      cfg = viewcvs.load_config(CONF_PATHNAME)
+      db = cvsdb.ConnectDatabase(cfg)
 
-      repository = vclib.bincvs.BinCVSRepository \
-        (None, path, cvsdb.cfg.general)
+      repository = vclib.bincvs.BinCVSRepository(None, path, cfg.general)
 
       RecurseUpdate(db, repository, [], update)
 
