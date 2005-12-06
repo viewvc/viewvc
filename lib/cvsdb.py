@@ -13,18 +13,6 @@
 # -----------------------------------------------------------------------
 #
 
-#########################################################################
-#
-# INSTALL-TIME CONFIGURATION
-#
-# These values will be set during the installation process. During
-# development, they will remain None.
-#
-
-CONF_PATHNAME = None
-
-#########################################################################
-
 import os
 import sys
 import string
@@ -32,20 +20,8 @@ import time
 import fnmatch
 import re
 
-import config
 import dbi
 
-
-## load configuration file, the data is used globally here
-if CONF_PATHNAME:
-  _cfg_pathname = CONF_PATHNAME
-else:
-  # developer assistance: running from a CVS working copy
-  _cfg_pathname = os.path.join(os.path.dirname(__file__), os.pardir,
-                               'viewcvs.conf')
-cfg = config.Config()
-cfg.set_defaults()
-cfg.load_config(_cfg_pathname)
 
 ## error
 error = "cvsdb error"
@@ -61,11 +37,12 @@ gCheckinDatabaseReadOnly = None
 ## complient database interface
 
 class CheckinDatabase:
-    def __init__(self, host, user, passwd, database):
+    def __init__(self, host, user, passwd, database, row_limit):
         self._host = host
         self._user = user
         self._passwd = passwd
         self._database = database
+        self._row_limit = row_limit
 
         ## database lookup caches
         self._get_cache = {}
@@ -380,8 +357,8 @@ class CheckinDatabase:
         ## limit the number of rows requested or we could really slam
         ## a server with a large database
         limit = ""
-        if cfg.cvsdb.row_limit:
-            limit = "LIMIT %s" % (str(cfg.cvsdb.row_limit))
+        if self._row_limit:
+            limit = "LIMIT %s" % (str(self._row_limit))
 
         sql = "SELECT checkins.* FROM %s %s %s %s" % (
             tables, conditions, order_by, limit)
@@ -627,41 +604,40 @@ class CheckinDatabaseQuery:
 ##
 ## entrypoints
 ##
-def CreateCheckinDatabase(host, user, passwd, database):
-    return CheckinDatabase(host, user, passwd, database)
-  
 def CreateCommit():
     return Commit()
     
 def CreateCheckinQuery():
     return CheckinDatabaseQuery()
 
-def ConnectDatabaseReadOnly():
+def ConnectDatabaseReadOnly(cfg):
     global gCheckinDatabaseReadOnly
     
     if gCheckinDatabaseReadOnly:
         return gCheckinDatabaseReadOnly
     
-    gCheckinDatabaseReadOnly = CreateCheckinDatabase(
+    gCheckinDatabaseReadOnly = CheckinDatabase(
         cfg.cvsdb.host,
         cfg.cvsdb.readonly_user,
         cfg.cvsdb.readonly_passwd,
-        cfg.cvsdb.database_name)
+        cfg.cvsdb.database_name,
+        cfg.cvsdb.row_limit)
     
     gCheckinDatabaseReadOnly.Connect()
     return gCheckinDatabaseReadOnly
 
-def ConnectDatabase():
+def ConnectDatabase(cfg):
     global gCheckinDatabase
 
     if gCheckinDatabase:
         return gCheckinDatabase
 
-    gCheckinDatabase = CreateCheckinDatabase(
+    gCheckinDatabase = CheckinDatabase(
         cfg.cvsdb.host,
         cfg.cvsdb.user,
         cfg.cvsdb.passwd,
-        cfg.cvsdb.database_name)
+        cfg.cvsdb.database_name,
+        cfg.cvsdb.row_limit)
     
     gCheckinDatabase.Connect()
     return gCheckinDatabase
@@ -704,9 +680,8 @@ def GetCommitListFromRCSFile(repository, path_parts, revision=None):
 
     return commit_list
 
-def GetUnrecordedCommitList(repository, path_parts):
+def GetUnrecordedCommitList(repository, path_parts, db):
     commit_list = GetCommitListFromRCSFile(repository, path_parts)
-    db = ConnectDatabase()
 
     unrecorded_commit_list = []
     for commit in commit_list:

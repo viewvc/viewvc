@@ -32,6 +32,7 @@
 #
 
 LIBRARY_DIR = None
+CONF_PATHNAME = None
 
 #########################################################################
 #
@@ -39,15 +40,20 @@ LIBRARY_DIR = None
 #
 
 import sys
+import os
 
 if LIBRARY_DIR:
   sys.path.insert(0, LIBRARY_DIR)
 else:
-  sys.path[:0] = ['../../lib']	# any other places to look?
+  sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0],
+                                                  "../../../lib")))
 
 #########################################################################
 
 import sapi
+import viewcvs
 import query
 
-query.main(sapi.CgiServer(), 'viewcvs.cgi')
+server = sapi.CgiServer()
+cfg = viewcvs.load_config(CONF_PATHNAME, server)
+query.main(server, cfg, "viewcvs.cgi")

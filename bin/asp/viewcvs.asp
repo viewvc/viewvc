@@ -34,6 +34,7 @@
 #
 
 LIBRARY_DIR = None
+CONF_PATHNAME = None
 
 #########################################################################
 #
@@ -45,8 +46,6 @@ import sys
 if LIBRARY_DIR:
   if not LIBRARY_DIR in sys.path:
     sys.path.insert(0, LIBRARY_DIR)
-else:
-  sys.path[:0] = ['../lib']	# any other places to look?
 
 #########################################################################
 
@@ -58,9 +57,10 @@ else:
 import sapi
 import viewcvs
 
-s = sapi.AspServer(Server, Request, Response, Application)
+server = sapi.AspServer(Server, Request, Response, Application)
 try:
-  viewcvs.main(s)  
+  cfg = viewcvs.load_config(CONF_PATHNAME, server)
+  viewcvs.main(server, cfg)
 finally:
   s.close()
 

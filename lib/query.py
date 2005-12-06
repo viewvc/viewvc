@@ -21,18 +21,6 @@
 # -----------------------------------------------------------------------
 #
 
-#########################################################################
-#
-# INSTALL-TIME CONFIGURATION
-#
-# These values will be set during the installation process. During
-# development, they will remain None.
-#
-
-CONF_PATHNAME = None
-
-#########################################################################
-
 import os
 import sys
 import string
@@ -288,7 +276,7 @@ def prev_rev(rev):
         r = r[:-2]
     return string.join(r, '.')
 
-def build_commit(server, desc, files, cvsroots, viewcvs_link):
+def build_commit(server, cfg, desc, files, cvsroots, viewcvs_link):
     ob = _item(num_files=len(files), files=[])
     
     if desc:
@@ -348,9 +336,9 @@ def build_commit(server, desc, files, cvsroots, viewcvs_link):
 
     return ob
 
-def run_query(server, form_data, viewcvs_link):
+def run_query(server, cfg, form_data, viewcvs_link):
     query = form_to_cvsdb_query(form_data)
-    db = cvsdb.ConnectDatabaseReadOnly()
+    db = cvsdb.ConnectDatabaseReadOnly(cfg)
     db.RunQuery(query)
 
     if not query.commit_list:
@@ -371,30 +359,26 @@ def run_query(server, form_data, viewcvs_link):
             files.append(commit)
             continue
 
-        commits.append(build_commit(server, current_desc, files, cvsroots, viewcvs_link))
+        commits.append(build_commit(server, cfg, current_desc, files,
+                                    cvsroots, viewcvs_link))
 
         files = [ commit ]
         current_desc = desc
 
     ## add the last file group to the commit list
-    commits.append(build_commit(server, current_desc, files, cvsroots, viewcvs_link))
+    commits.append(build_commit(server, cfg, current_desc, files,
+                                cvsroots, viewcvs_link))
 
     return commits
 
-def handle_config():
-    viewcvs.handle_config()
-    global cfg
-    cfg = viewcvs.cfg
-
-def main(server, viewcvs_link):
+def main(server, cfg, viewcvs_link):
   try:
-    handle_config()
 
     form = server.FieldStorage()
     form_data = FormData(form)
 
     if form_data.valid:
-        commits = run_query(server, form_data, viewcvs_link)
+        commits = run_query(server, cfg, form_data, viewcvs_link)
         query = None
     else:
         commits = [ ]
@@ -429,13 +413,10 @@ def main(server, viewcvs_link):
     else:
       data['hours'] = 2
 
-    template = ezt.Template()
-    tname = viewcvs.get_view_template("query", "en")
-    template.parse_file(os.path.join(viewcvs.g_install_dir, tname))
-
     server.header()
 
     # generate the page
+    template = viewcvs.get_view_template(cfg, "query")
     template.generate(sys.stdout, data)
 
   except SystemExit, e:

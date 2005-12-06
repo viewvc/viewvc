@@ -34,11 +34,12 @@ Ka-Ping Yee, for the GUI code and the framework stolen from pydoc.py.
 
 # INSTALL-TIME CONFIGURATION
 #
-# This value will be set during the installation process. During
-# development, it will remain None.
+# These values will be set during the installation process. During
+# development, they will remain None.
 #
 
 LIBRARY_DIR = None
+CONF_PATHNAME = None
 
 import sys
 import os
@@ -51,17 +52,14 @@ import select
 import BaseHTTPServer
 
 if LIBRARY_DIR:
-    sys.path.insert(0, LIBRARY_DIR)
+  sys.path.insert(0, LIBRARY_DIR)
 else:
-    sys.path[:0] = ['lib']
+  sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
 
 import sapi
 import viewcvs
 import compat; compat.for_standalone()
 
-
-if viewcvs.CONF_PATHNAME is None:
-  viewcvs.g_install_dir = ''
 
 class Options:
     port = 7467 # default TCP/IP port used for the server
@@ -234,7 +232,7 @@ If this doesn't work, please click on the link above.
                     if sys.platform != "win32":
                       os.dup2(self.wfile.fileno(), 1)
                     sys.stdin = self.rfile
-                    viewcvs.main(StandaloneServer(self))
+                    viewcvs.main(StandaloneServer(self), cfg)
                 finally:
                     sys.argv = save_argv
                     sys.stdin = save_stdin
@@ -283,28 +281,27 @@ If this doesn't work, please click on the link above.
         # XXX Move this code out of this function.
         # Early loading of configuration here.  Used to
         # allow tinkering with some configuration settings:
-        viewcvs.handle_config()
+        handle_config()
         if options.repositories:
-            viewcvs.cfg.general.default_root = "Development"
-            viewcvs.cfg.general.cvs_roots.update(options.repositories)
-        elif viewcvs.cfg.general.cvs_roots.has_key("Development") and \
-             not os.path.isdir(viewcvs.cfg.general.cvs_roots["Development"]):
+            cfg.general.default_root = "Development"
+            cfg.general.cvs_roots.update(options.repositories)
+        elif cfg.general.cvs_roots.has_key("Development") and \
+             not os.path.isdir(cfg.general.cvs_roots["Development"]):
             sys.stderr.write("*** No repository found. Please use the -r option.\n")
             sys.stderr.write("   Use --help for more info.\n")
             raise KeyboardInterrupt # Hack!
         os.close(0) # To avoid problems with shell job control
 
         # always use default docroot location
-        viewcvs.cfg.options.docroot = None
+        cfg.options.docroot = None
 
         # if cvsnt isn't found, fall back to rcs
-        if (viewcvs.cfg.conf_path is None 
-            and viewcvs.cfg.general.cvsnt_exe_path):
+        if (cfg.conf_path is None
+            and cfg.general.cvsnt_exe_path):
           import popen
           cvsnt_works = 0
           try:
-            fp = popen.popen(viewcvs.cfg.general.cvsnt_exe_path, 
-                             ['--version'], 'rt')
+            fp = popen.popen(cfg.general.cvsnt_exe_path, ['--version'], 'rt')
             try:
               while 1:
                 line = fp.readline()
@@ -319,12 +316,16 @@ If this doesn't work, please click on the link above.
           except:
             pass
           if not cvsnt_works:
-            viewcvs.cfg.cvsnt_exe_path = None
+            cfg.cvsnt_exe_path = None
 
         ViewCVS_Server(host, port, callback).serve_until_quit()
     except (KeyboardInterrupt, select.error):
         pass
     print 'server stopped'
+
+def handle_config():
+  global cfg
+  cfg = viewcvs.load_config(CONF_PATHNAME)
 
 # --- graphical interface: --------------------------------------------------
 
@@ -365,15 +366,15 @@ def gui(host, port):
 
             # Early loading of configuration here.  Used to
             # allow tinkering with configuration settings through the gui:
-            viewcvs.handle_config()
+            handle_config()
             if not LIBRARY_DIR:
-                viewcvs.cfg.options.cvsgraph_conf = "../cgi/cvsgraph.conf.dist"
+                cfg.options.cvsgraph_conf = "../cgi/cvsgraph.conf.dist"
 
             self.options_frm = Tkinter.Frame(window)
 
             # cvsgraph toggle:
             self.cvsgraph_ivar = Tkinter.IntVar()
-            self.cvsgraph_ivar.set(viewcvs.cfg.options.use_cvsgraph)
+            self.cvsgraph_ivar.set(cfg.options.use_cvsgraph)
             self.cvsgraph_toggle = Tkinter.Checkbutton(self.options_frm,
                 text="enable cvsgraph (needs binary)", var=self.cvsgraph_ivar,
                 command=self.toggle_use_cvsgraph)
@@ -381,7 +382,7 @@ def gui(host, port):
 
             # enscript toggle:
             self.enscript_ivar = Tkinter.IntVar()
-            self.enscript_ivar.set(viewcvs.cfg.options.use_enscript)
+            self.enscript_ivar.set(cfg.options.use_enscript)
             self.enscript_toggle = Tkinter.Checkbutton(self.options_frm,
                 text="enable enscript (needs binary)", var=self.enscript_ivar,
                 command=self.toggle_use_enscript)
@@ -389,7 +390,7 @@ def gui(host, port):
 
             # show_subdir_lastmod toggle:
             self.subdirmod_ivar = Tkinter.IntVar()
-            self.subdirmod_ivar.set(viewcvs.cfg.options.show_subdir_lastmod)
+            self.subdirmod_ivar.set(cfg.options.show_subdir_lastmod)
             self.subdirmod_toggle = Tkinter.Checkbutton(self.options_frm,
                 text="show subdir last mod (dir view)", var=self.subdirmod_ivar,
                 command=self.toggle_subdirmod)
@@ -397,7 +398,7 @@ def gui(host, port):
 
             # use_re_search toggle:
             self.useresearch_ivar = Tkinter.IntVar()
-            self.useresearch_ivar.set(viewcvs.cfg.options.use_re_search)
+            self.useresearch_ivar.set(cfg.options.use_re_search)
             self.useresearch_toggle = Tkinter.Checkbutton(self.options_frm,
                 text="allow regular expr search", var=self.useresearch_ivar,
                 command=self.toggle_useresearch)
@@ -405,7 +406,7 @@ def gui(host, port):
 
             # use_localtime toggle:
             self.use_localtime_ivar = Tkinter.IntVar()
-            self.use_localtime_ivar.set(viewcvs.cfg.options.use_localtime)
+            self.use_localtime_ivar.set(cfg.options.use_localtime)
             self.use_localtime_toggle = Tkinter.Checkbutton(self.options_frm,
                 text="use localtime (instead of UTC)", 
                 var=self.use_localtime_ivar,
@@ -417,7 +418,7 @@ def gui(host, port):
                 text='Paging (number of items per page, 0 disables):')
             self.usepagesize_lbl.pack(side='top', anchor='w')
             self.use_pagesize_ivar = Tkinter.IntVar()
-            self.use_pagesize_ivar.set(viewcvs.cfg.options.use_pagesize)
+            self.use_pagesize_ivar.set(cfg.options.use_pagesize)
             self.use_pagesize_entry = Tkinter.Entry(self.options_frm,
                 width=10, textvariable=self.use_pagesize_ivar)
             self.use_pagesize_entry.bind('<Return>', self.set_use_pagesize)
@@ -428,7 +429,7 @@ def gui(host, port):
                 text='Chooose HTML Template for the Directory pages:')
             self.dirtemplate_lbl.pack(side='top', anchor='w')
             self.dirtemplate_svar = Tkinter.StringVar()
-            self.dirtemplate_svar.set(viewcvs.cfg.templates.directory)
+            self.dirtemplate_svar.set(cfg.templates.directory)
             self.dirtemplate_entry = Tkinter.Entry(self.options_frm,
                 width = 40, textvariable=self.dirtemplate_svar)
             self.dirtemplate_entry.bind('<Return>', self.set_templates_directory)
@@ -447,7 +448,7 @@ def gui(host, port):
                 text='Chooose HTML Template for the Log pages:')
             self.logtemplate_lbl.pack(side='top', anchor='w')
             self.logtemplate_svar = Tkinter.StringVar()
-            self.logtemplate_svar.set(viewcvs.cfg.templates.log)
+            self.logtemplate_svar.set(cfg.templates.log)
             self.logtemplate_entry = Tkinter.Entry(self.options_frm,
                 width = 40, textvariable=self.logtemplate_svar)
             self.logtemplate_entry.bind('<Return>', self.set_templates_log)
@@ -466,7 +467,7 @@ def gui(host, port):
                 text='Template for the database query page:')
             self.querytemplate_lbl.pack(side='top', anchor='w')
             self.querytemplate_svar = Tkinter.StringVar()
-            self.querytemplate_svar.set(viewcvs.cfg.templates.query)
+            self.querytemplate_svar.set(cfg.templates.query)
             self.querytemplate_entry = Tkinter.Entry(self.options_frm,
                 width = 40, textvariable=self.querytemplate_svar)
             self.querytemplate_entry.bind('<Return>', self.set_templates_query)
@@ -495,31 +496,31 @@ def gui(host, port):
                              args=(host, port, self.ready)).start()
 
         def toggle_use_cvsgraph(self, event=None):
-            viewcvs.cfg.options.use_cvsgraph = self.cvsgraph_ivar.get()
+            cfg.options.use_cvsgraph = self.cvsgraph_ivar.get()
 
         def toggle_use_enscript(self, event=None):
-            viewcvs.cfg.options.use_enscript = self.enscript_ivar.get()
+            cfg.options.use_enscript = self.enscript_ivar.get()
 
         def toggle_use_localtime(self, event=None):
-            viewcvs.cfg.options.use_localtime = self.use_localtime_ivar.get()
+            cfg.options.use_localtime = self.use_localtime_ivar.get()
 
         def toggle_subdirmod(self, event=None):
-            viewcvs.cfg.options.show_subdir_lastmod = self.subdirmod_ivar.get()
+            cfg.options.show_subdir_lastmod = self.subdirmod_ivar.get()
 
         def toggle_useresearch(self, event=None):
-            viewcvs.cfg.options.use_re_search = self.useresearch_ivar.get()
+            cfg.options.use_re_search = self.useresearch_ivar.get()
 
         def set_use_pagesize(self, event=None):
-            viewcvs.cfg.options.use_pagesize = self.use_pagesize_ivar.get()
+            cfg.options.use_pagesize = self.use_pagesize_ivar.get()
 
         def set_templates_log(self, event=None):
-            viewcvs.cfg.templates.log = self.logtemplate_svar.get()
+            cfg.templates.log = self.logtemplate_svar.get()
 
         def set_templates_directory(self, event=None):
-            viewcvs.cfg.templates.directory = self.dirtemplate_svar.get()
+            cfg.templates.directory = self.dirtemplate_svar.get()
 
         def set_templates_query(self, event=None):
-            viewcvs.cfg.templates.query = self.querytemplate_svar.get()
+            cfg.templates.query = self.querytemplate_svar.get()
 
         def ready(self, server):
             """used as callback parameter to the serve() function"""
