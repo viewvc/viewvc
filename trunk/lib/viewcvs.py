@@ -1487,8 +1487,16 @@ def prepare_hidden_values(params):
                          (name, value))
   return string.join(hidden_values, '')
 
-def sort_file_data(file_data, sortdir, sortby, group_dirs):
-  def file_sort_cmp(file1, file2, sortby=sortby, group_dirs=group_dirs):
+def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
+  # convert sortdir into a sign bit
+  s = sortdir == "down" and -1 or 1
+
+  # in cvs, revision numbers can't be compared meaningfully between
+  # files, so try to do the right thing and compare dates instead
+  if roottype == "cvs" and sortby == "rev":
+    sortby = "date"
+
+  def file_sort_cmp(file1, file2, sortby=sortby, group_dirs=group_dirs, s=s):
     # if we're grouping directories together, sorting is pretty
     # simple.  a directory sorts "higher" than a non-directory, and
     # two directories are sorted as normal.
@@ -1509,25 +1517,22 @@ def sort_file_data(file_data, sortdir, sortby, group_dirs):
     if file1.rev is not None and file2.rev is not None:
       # sort according to sortby
       if sortby == 'rev':
-        return revcmp(file1.rev, file2.rev)
+        return s * revcmp(file1.rev, file2.rev)
       elif sortby == 'date':
-        return cmp(file2.date, file1.date)        # latest date is first
+        return s * cmp(file2.date, file1.date)        # latest date is first
       elif sortby == 'log':
-        return cmp(file1.log, file2.log)
+        return s * cmp(file1.log, file2.log)
       elif sortby == 'author':
-        return cmp(file1.author, file2.author)
+        return s * cmp(file1.author, file2.author)
     elif file1.rev is not None:
       return -1
     elif file2.rev is not None:
       return 1
 
     # sort by file name
-    return cmp(file1.name, file2.name)
+    return s * cmp(file1.name, file2.name)
 
   file_data.sort(file_sort_cmp)
-
-  if sortdir == "down":
-    file_data.reverse()
 
 def icmp(x, y):
   """case insensitive comparison"""
@@ -1572,7 +1577,8 @@ def view_directory(request):
   # sort with directories first, and using the "sortby" criteria
   sortby = request.query_dict.get('sortby', cfg.options.sort_by) or 'file'
   sortdir = request.query_dict.get('sortdir', 'up')
-  sort_file_data(file_data, sortdir, sortby, cfg.options.sort_group_dirs)
+  sort_file_data(file_data, request.roottype, sortdir, sortby,
+                 cfg.options.sort_group_dirs)
 
   # loop through entries creating rows and changing these values
   rows = [ ]
@@ -1619,6 +1625,11 @@ def view_directory(request):
                                       pathtype=vclib.DIR,
                                       params={},
                                       escape=1)
+
+      if request.roottype == 'svn':
+        row.revision_href = request.get_url(view_func=view_revision,
+                                            params={'rev': file.rev},
+                                            escape=1)
 
       if request.roottype == 'cvs' and file.rev is not None:
         row.rev = None
