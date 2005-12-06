@@ -44,11 +44,12 @@ CONF_PATHNAME = None
 
 # Adjust sys.path to include our library directory
 import sys
+import os
 
 if LIBRARY_DIR:
   sys.path.insert(0, LIBRARY_DIR)
 else:
-  sys.path[:0] = ['../lib']     # any other places to look?
+  sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
 
 #########################################################################
 
@@ -62,6 +63,7 @@ import svn.fs
 import svn.delta
 
 import cvsdb
+import viewcvs
 
 class SvnRepo:
     """Class used to manage a connection to a SVN repository."""
@@ -226,7 +228,8 @@ def handle_revision(db, command, repo, rev):
     pass
 
 def main(pool, command, repository, rev=None):
-    db = cvsdb.ConnectDatabase()
+    cfg = viewcvs.load_config(CONF_PATHNAME)
+    db = cvsdb.ConnectDatabase(cfg)
 
     repo = SvnRepo(repository, pool)
     if rev:

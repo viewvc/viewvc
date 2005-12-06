@@ -67,9 +67,9 @@ FILE_INFO_LIST = [
     ("bin/cgi/query.cgi", "bin/cgi/query.cgi", 0755, 1, 0, 0),
     ("bin/mod_python/viewcvs.py", "bin/mod_python/viewcvs.py", 0755, 1, 0, 0),
     ("bin/mod_python/query.py", "bin/mod_python/query.py", 0755, 1, 0, 0),
-    ("bin/mod_python/.htaccess", "bin/mod_python/.htaccess", 0755, 1, 0, 0),
+    ("bin/mod_python/.htaccess", "bin/mod_python/.htaccess", 0755, 0, 0, 0),
     ("bin/standalone.py", "bin/standalone.py", 0755, 1, 0, 0),
-    ("viewcvs.conf.dist", "viewcvs.conf", 0644, 1,
+    ("viewcvs.conf.dist", "viewcvs.conf", 0644, 0,
 	     """Note: If you are upgrading from viewcvs-0.7 or earlier: 
 The section [text] has been removed from viewcvs.conf.  The functionality
 went into the new files in subdirectory templates.""", 0),
@@ -98,12 +98,6 @@ TREE_LIST = [
 # interpreted.
 def ReEscape(str):
   return string.replace(str, "\\", "\\\\")
-
-# Used to escape backslashes and quotes in apache options
-def ApacheEscape(str):
-  return re.sub(_re_apache, r"\\\g<0>", str)
-
-_re_apache = re.compile("[\\\\\"]")
 
 def Error(text, etype=None, evalue=None):
     print
@@ -138,11 +132,6 @@ def SetPythonPaths(contents):
     if contents[:2] == '#!':
         shbang = '#!' + sys.executable
         contents = re.sub('^#![^\n]*', ReEscape(shbang), contents)
-    contents = re.sub("<VIEWCVS_INSTALL_DIRECTORY>",
-                      ReEscape(ROOT_DIR), contents)
-    apacheDir = ApacheEscape(os.path.join(ROOT_DIR, 'lib'))
-    contents = re.sub("<VIEWCVS_APACHE_LIBRARY_DIRECTORY>",
-                      ReEscape(apacheDir), contents)
     contents = SetOnePath(contents, 'LIBRARY_DIR', 'lib')
     contents = SetOnePath(contents, 'CONF_PATHNAME', 'viewcvs.conf')
     return contents
@@ -264,11 +253,8 @@ def install_tree(src_path, dst_path, prompt_replace):
       install_tree(src, dst, prompt_replace)
     else:
       print " ", src
+      set_paths = 0
       compile_it = fname[-3:] == '.py'
-      # set the paths in all Python files -- it doesn't hurt to do a
-      # search/replace on these files even if they don't have the
-      # special symbols.
-      set_paths = compile_it
       InstallFile(src, dst, 0644, set_paths, prompt_replace, compile_it)
 
   # prompt to delete all .py and .pyc files that don't belong in installation

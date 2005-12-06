@@ -50,14 +50,7 @@ class Config:
     for section in self._sections:
       setattr(self, section, _sub_config())
 
-  def load_config(self, fname, vhost=None):
-    if hasattr(sys, 'argv'):
-      this_dir = os.path.dirname(sys.argv[0])
-    else:
-      this_dir = ''
-    pathname = os.path.join(this_dir, fname)
-    self.base = os.path.dirname(pathname)
-
+  def load_config(self, pathname, vhost=None):
     self.conf_path = os.path.isfile(pathname) and pathname or None
 
     parser = ConfigParser.ConfigParser()
@@ -216,7 +209,7 @@ class Config:
     self.options.allow_tar = 0
     self.options.use_cvsgraph = 0
     self.options.cvsgraph_path = ''
-    self.options.cvsgraph_conf = os.path.join(r"<VIEWCVS_INSTALL_DIRECTORY>", "cvsgraph.conf")
+    self.options.cvsgraph_conf = "cvsgraph.conf"
     self.options.use_re_search = 0
     self.options.use_pagesize = 0
     self.options.use_localtime = 0

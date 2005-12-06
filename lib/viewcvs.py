@@ -27,18 +27,6 @@
 
 __version__ = '1.0-dev'
 
-#########################################################################
-#
-# INSTALL-TIME CONFIGURATION
-#
-# These values will be set during the installation process. During
-# development, they will remain None.
-#
-
-CONF_PATHNAME = None
-
-#########################################################################
-
 # this comes from our library; measure the startup time
 import debug
 debug.t_start('startup')
@@ -100,23 +88,15 @@ CHUNK_SIZE = 8192
 _RCSDIFF_IS_BINARY = 'binary-diff'
 _RCSDIFF_ERROR = 'error'
 
-# global configuration:
-cfg = None # see below
-
 # special characters that don't need to be URL encoded
 _URL_SAFE_CHARS = "/*~"
 
-if CONF_PATHNAME:
-  # installed
-  g_install_dir = os.path.dirname(CONF_PATHNAME)
-else:
-  # development directories
-  g_install_dir = os.path.join(os.pardir, os.pardir) # typically, "../.."
-
 
 class Request:
-  def __init__(self, server):
+  def __init__(self, server, cfg):
     self.server = server
+    self.cfg = cfg
+
     self.script_name = _normalize_path(server.getenv('SCRIPT_NAME', ''))
     self.browser = server.getenv('HTTP_USER_AGENT', 'unknown')
 
@@ -144,7 +124,9 @@ class Request:
     self.kv = cfg.load_kv_files(self.language)
 
   def run_viewcvs(self):
-    
+
+    cfg = self.cfg
+
     # global needed because "import vclib.svn" causes the
     # interpreter to make vclib a local variable
     global vclib
@@ -421,6 +403,8 @@ class Request:
     correspond to members of the Request object. If they are set to 
     None they take values from the current page. Return value is a base
     URL and a dictionary of parameters"""
+
+    cfg = self.cfg
 
     if view_func is None:
       view_func = self.view_func
@@ -758,8 +742,19 @@ def _last_rev(request, path_parts, start, end=None):
 
   return start, path_parts
 
+def _install_path(path):
+  """Get usable path for a path relative to ViewCVS install directory"""
+  if os.path.isabs(path):
+    return path
+  return os.path.normpath(os.path.join(os.path.dirname(__file__),
+                                       os.pardir,
+                                       path))
+
 def check_freshness(request, mtime=None, etag=None, weak=0):
   # See if we are supposed to disable etags (for debugging, usually)
+
+  cfg = request.cfg
+
   if not cfg.options.generate_etags:
     return 0
   
@@ -804,7 +799,7 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
       request.server.addheader('Last-Modified', compat.formatdate(mtime))
   return isfresh
 
-def get_view_template(view_name, language):
+def get_view_template(cfg, view_name, language="en"):
   # see if the configuration specifies a template for this view
   tname = vars(cfg.templates).get(view_name)
 
@@ -814,21 +809,19 @@ def get_view_template(view_name, language):
     tname = os.path.join(cfg.options.template_dir, view_name + ".ezt")
 
   # allow per-language template selection
-  string.replace(tname, '%lang%', language)
+  tname = string.replace(tname, '%lang%', language)
 
   # finally, construct the whole template path.
-  return os.path.join(g_install_dir, tname)
-  
-def generate_page(request, view_name, data):
-  if request:
-    tname = get_view_template(view_name, request.language)
-  else:
-    tname = get_view_template(view_name, 'en')
+  tname = _install_path(tname)
 
   debug.t_start('ezt-parse')
   template = ezt.Template(tname)
   debug.t_end('ezt-parse')
-  
+
+  return template
+
+def generate_page(request, view_name, data):
+  template = get_view_template(request.cfg, view_name, request.language)
   template.generate(sys.stdout, data)
 
 def nav_path(request):
@@ -901,7 +894,7 @@ def is_text(mime_type):
 def is_plain_text(mime_type):
   return not mime_type or mime_type == 'text/plain'
 
-def is_viewable(mime_type):
+def default_view(mime_type, cfg):
   "Determine whether file should be viewed through markup page or sent raw"
   # If the mime type is text/anything or a supported image format we view
   # through the markup page. If the mime type is something else, we send
@@ -912,8 +905,8 @@ def is_viewable(mime_type):
   # the markup page since that's better than sending it text/plain.
   if (cfg.options.allow_markup and 
       (is_viewable_image(mime_type) or is_text(mime_type))):
-    return 1
-  return 0
+    return view_markup
+  return view_checkout
 
 def get_file_view_info(request, where, rev=None, mime_type=None):
   """Return common hrefs and a viewability flag used for various views
@@ -939,7 +932,7 @@ def get_file_view_info(request, where, rev=None, mime_type=None):
                                          params={'content-type': 'text/plain',
                                                  'rev': rev},
                                          escape=1)
-  if cfg.options.allow_annotate:
+  if request.cfg.options.allow_annotate:
     annotate_href = request.get_url(view_func=view_annotate,
                                     where=where,
                                     pathtype=vclib.FILE,
@@ -949,9 +942,11 @@ def get_file_view_info(request, where, rev=None, mime_type=None):
     revision_href = request.get_url(view_func=view_revision,
                                     params={'rev': rev},
                                     escape=1)
-  
+
+  viewable = default_view(mime_type, request.cfg) == view_markup
+
   return view_href, download_href, download_text_href, \
-         annotate_href, revision_href, ezt.boolean(is_viewable(mime_type))
+         annotate_href, revision_href, ezt.boolean(viewable)
 
 
 # Regular expressions for location text that looks like URLs and email
@@ -964,7 +959,7 @@ def htmlify(html):
   html = re.sub(_re_rewrite_email, r'<a href="mailto:\1&#64;\2">\1&#64;\2</a>', html)
   return html
 
-def format_log(log):
+def format_log(log, cfg):
   s = htmlify(log[:cfg.options.short_log_len])
   if len(log) > cfg.options.short_log_len:
     s = s + '...'
@@ -1029,6 +1024,7 @@ def html_time(request, secs, extended=0):
   return s
 
 def common_template_data(request):
+  cfg = request.cfg
   data = {
     'cfg' : cfg,
     'vsn' : __version__,
@@ -1186,7 +1182,7 @@ class MarkupEnscript:
     # I've tried to pass option '-C' to enscript to generate line numbers
     # Unfortunately this option doesn't work with HTML output in enscript
     # version 1.6.2.
-    enscript_cmd = [os.path.normpath(os.path.join(cfg.options.enscript_path,
+    enscript_cmd = [os.path.normpath(os.path.join(enscript_path,
                                                   'enscript')),
                     '--color', '--language=html', '--pretty-print=' + lang,
                     '-o', self.temp_file, '-']
@@ -1251,7 +1247,7 @@ class MarkupPHP:
       return None
     return retry_read(self.fp, len)
 
-def markup_stream_python(fp):
+def markup_stream_python(fp, cfg):
   ### Convert this code to use the recipe at:
   ###     http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52298
   ### Note that the cookbook states all the code is licensed according to
@@ -1275,7 +1271,7 @@ def markup_stream_python(fp):
   html = re.sub(_re_rewrite_email, r'<a href="mailto:\1">\1</a>', html)
   return html
 
-def markup_stream_php(fp):
+def markup_stream_php(fp, cfg):
   if not cfg.options.use_php:
     return None
 
@@ -1384,7 +1380,7 @@ enscript_filenames = {
   }
 
 
-def make_time_string(date):
+def make_time_string(date, cfg):
   """Returns formatted date string in either local time or UTC.
 
   The passed in 'date' variable is seconds since epoch.
@@ -1392,13 +1388,14 @@ def make_time_string(date):
   """
   if date is None:
     return 'Unknown date'
-  if (cfg.options.use_localtime):
+  if cfg.options.use_localtime:
     localtime = time.localtime(date)
     return time.asctime(localtime) + ' ' + time.tzname[localtime[8]]
   else:
     return time.asctime(time.gmtime(date)) + ' UTC'
 
 def view_markup(request):
+  cfg = request.cfg
   path, rev = _orig_path(request)
   fp, revision = request.repos.openfile(path, rev)
 
@@ -1419,7 +1416,7 @@ def view_markup(request):
     revs = request.repos.itemlog(path, rev, options)
     entry = revs[-1]
     data.update({
-        'date' : make_time_string(entry.date),
+        'date' : make_time_string(entry.date, cfg),
         'ago' : None,
         'author' : entry.author,
         'branches' : None,
@@ -1459,7 +1456,7 @@ def view_markup(request):
     basename, ext = os.path.splitext(request.path_parts[-1])
     streamer = markup_streamers.get(ext)
     if streamer:
-      markup_fp = streamer(fp)
+      markup_fp = streamer(fp, cfg)
     elif cfg.options.use_enscript:
       lang = enscript_extensions.get(ext)
       if not lang:
@@ -1490,12 +1487,12 @@ def prepare_hidden_values(params):
                          (name, value))
   return string.join(hidden_values, '')
 
-def sort_file_data(file_data, sortdir, sortby):
-  def file_sort_cmp(file1, file2, sortby=sortby):
+def sort_file_data(file_data, sortdir, sortby, group_dirs):
+  def file_sort_cmp(file1, file2, sortby=sortby, group_dirs=group_dirs):
     # if we're grouping directories together, sorting is pretty
     # simple.  a directory sorts "higher" than a non-directory, and
     # two directories are sorted as normal.
-    if cfg.options.sort_group_dirs:
+    if group_dirs:
       if file1.kind == vclib.DIR:
         if file2.kind == vclib.DIR:
           # two directories, no special handling.
@@ -1552,6 +1549,7 @@ def view_directory(request):
       return
 
   # List current directory
+  cfg = request.cfg
   options = {}
   if request.roottype == 'cvs':
     hideattic = int(request.query_dict.get('hideattic', 
@@ -1574,7 +1572,7 @@ def view_directory(request):
   # sort with directories first, and using the "sortby" criteria
   sortby = request.query_dict.get('sortby', cfg.options.sort_by) or 'file'
   sortdir = request.query_dict.get('sortdir', 'up')
-  sort_file_data(file_data, sortdir, sortby)
+  sort_file_data(file_data, sortdir, sortby, cfg.options.sort_group_dirs)
 
   # loop through entries creating rows and changing these values
   rows = [ ]
@@ -1596,10 +1594,10 @@ def view_directory(request):
     row.author = file.author
     row.state = (request.roottype == 'cvs' and file.dead) and 'dead' or ''
     if file.date is not None:
-      row.date = make_time_string(file.date)
+      row.date = make_time_string(file.date, cfg)
       row.ago = html_time(request, file.date)
     if cfg.options.show_logs and file.log is not None:
-      row.log = format_log(file.log)
+      row.log = format_log(file.log, cfg)
 
     row.anchor = request.server.escape(file.name)
     row.name = request.server.escape(file.name)
@@ -1772,22 +1770,23 @@ def view_directory(request):
 
   if cfg.options.use_pagesize:
     data['dir_pagestart'] = int(request.query_dict.get('dir_pagestart',0))
-    data['entries'] = paging(data, 'entries', data['dir_pagestart'], 'name')
+    data['entries'] = paging(data, 'entries', data['dir_pagestart'], 'name',
+                             cfg.options.use_pagesize)
 
   request.server.header()
   generate_page(request, "directory", data)
 
-def paging(data, key, pagestart, local_name):
+def paging(data, key, pagestart, local_name, pagesize):
   # Implement paging
   # Create the picklist
   picklist = data['picklist'] = []
-  for i in range(0, len(data[key]), cfg.options.use_pagesize):
+  for i in range(0, len(data[key]), pagesize):
     pick = _item(start=None, end=None, count=None)
     pick.start = getattr(data[key][i], local_name)
     pick.count = i
-    pick.page = (i / cfg.options.use_pagesize) + 1
+    pick.page = (i / pagesize) + 1
     try:
-      pick.end = getattr(data[key][i+cfg.options.use_pagesize-1], local_name)
+      pick.end = getattr(data[key][i+pagesize-1], local_name)
     except IndexError:
       pick.end = getattr(data[key][-1], local_name)
     picklist.append(pick)
@@ -1801,7 +1800,7 @@ def paging(data, key, pagestart, local_name):
   # selecting for tags or searching.
   if pagestart > len(data[key]):
     pagestart = 0
-  pageend = pagestart + cfg.options.use_pagesize
+  pageend = pagestart + pagesize
   # Slice
   return data[key][pagestart:pageend]
 
@@ -1879,6 +1878,7 @@ def logsort_rev_cmp(rev1, rev2):
   return -cmp(rev1.number, rev2.number)
 
 def view_log(request):
+  cfg = request.cfg
   diff_format = request.query_dict.get('diff_format', cfg.options.diff_format)
   logsort = request.query_dict.get('logsort', cfg.options.log_sort)
   pathtype = request.pathtype
@@ -1913,7 +1913,7 @@ def view_log(request):
     entry.state = (cvs and rev.dead and 'dead')
     entry.author = rev.author
     entry.changed = rev.changed
-    entry.date = make_time_string(rev.date)
+    entry.date = make_time_string(rev.date, cfg)
     entry.ago = None
     if rev.date is not None:
       entry.ago = html_time(request, rev.date, 1)
@@ -2150,7 +2150,8 @@ def view_log(request):
 
   if cfg.options.use_pagesize:
     data['log_pagestart'] = int(request.query_dict.get('log_pagestart',0))
-    data['entries'] = paging(data, 'entries', data['log_pagestart'], 'rev')
+    data['entries'] = paging(data, 'entries', data['log_pagestart'], 'rev',
+                             cfg.options.use_pagesize)
 
   request.server.header()
   generate_page(request, "log", data)
@@ -2167,7 +2168,7 @@ def view_checkout(request):
   fp.close()
 
 def view_annotate(request):
-  if not cfg.options.allow_annotate:
+  if not request.cfg.options.allow_annotate:
     raise debug.ViewCVSException('Annotation view is disabled',
                                  '403 Forbidden')
 
@@ -2196,6 +2197,8 @@ def view_cvsgraph_image(request):
   "output the image rendered by cvsgraph"
   # this function is derived from cgi/cvsgraphmkimg.cgi
 
+  cfg = request.cfg
+
   if not cfg.options.use_cvsgraph:
     raise debug.ViewCVSException('Graph view is disabled', '403 Forbidden')
   
@@ -2203,7 +2206,7 @@ def view_cvsgraph_image(request):
   rcsfile = request.repos.rcsfile(request.path_parts)
   fp = popen.popen(os.path.normpath(os.path.join(cfg.options.cvsgraph_path,
                                                  'cvsgraph')),
-                   ("-c", cfg.options.cvsgraph_conf,
+                   ("-c", _install_path(cfg.options.cvsgraph_conf),
                     "-r", request.repos.rootpath,
                     rcsfile), 'rb', 0)
   copy_stream(fp)
@@ -2211,6 +2214,9 @@ def view_cvsgraph_image(request):
 
 def view_cvsgraph(request):
   "output a page containing an image rendered by cvsgraph"
+
+  cfg = request.cfg
+
   if not cfg.options.use_cvsgraph:
     raise debug.ViewCVSException('Graph view is disabled', '403 Forbidden')
 
@@ -2222,14 +2228,14 @@ def view_cvsgraph(request):
 
   imagesrc = request.get_url(view_func=view_cvsgraph_image, escape=1)
 
-  view = is_viewable(request.mime_type) and view_markup or view_checkout
+  view = default_view(request.mime_type, cfg)
   up_where = _path_join(request.path_parts[:-1])
 
   # Create an image map
   rcsfile = request.repos.rcsfile(request.path_parts)
   fp = popen.popen(os.path.join(cfg.options.cvsgraph_path, 'cvsgraph'),
                    ("-i",
-                    "-c", cfg.options.cvsgraph_conf,
+                    "-c", _install_path(cfg.options.cvsgraph_conf),
                     "-r", request.repos.rootpath,
                     "-x", "x",
                     "-3", request.get_url(view_func=view_log, params={},
@@ -2314,9 +2320,8 @@ def view_doc(request):
   Using this avoids the need for modifying the setup of the web server.
   """
   document = request.where
-  doc_directory = os.path.join(g_install_dir, cfg.options.template_dir,
-                               "docroot")
-  filename = os.path.join(doc_directory, document)
+  filename = _install_path(os.path.join(request.cfg.options.template_dir,
+                                        "docroot", document))
 
   # Stat the file to get content length and last-modified date.
   try:
@@ -2352,17 +2357,17 @@ def view_doc(request):
   copy_stream(fp)
   fp.close()
 
-def rcsdiff_date_reformat(date_str):
+def rcsdiff_date_reformat(date_str, cfg):
   try:
     date = compat.cvs_strptime(date_str)
   except ValueError:
     return date_str
-  return make_time_string(compat.timegm(date))
+  return make_time_string(compat.timegm(date), cfg)
 
 _re_extract_rev = re.compile(r'^[-+*]{3} [^\t]+\t([^\t]+)\t((\d+\.)*\d+)$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
 
-def spaced_html_text(text):
+def spaced_html_text(text, cfg):
   text = string.expandtabs(string.rstrip(text))
   hr_breakable = cfg.options.hr_breakable
   
@@ -2383,8 +2388,9 @@ def spaced_html_text(text):
   return text
 
 class DiffSource:
-  def __init__(self, fp):
+  def __init__(self, fp, cfg):
     self.fp = fp
+    self.cfg = cfg
     self.save_line = None
 
     # keep track of where we are during an iteration
@@ -2461,7 +2467,7 @@ class DiffSource:
       return None
 
     diff_code = line[0]
-    output = spaced_html_text(line[1:])
+    output = spaced_html_text(line[1:], self.cfg)
 
     if diff_code == '+':
       if self.state == 'dump':
@@ -2639,6 +2645,7 @@ def setup_diff(request):
 
 
 def view_patch(request):
+  cfg = request.cfg
   query_dict = request.query_dict
   p1, p2, rev1, rev2, sym1, sym2 = setup_diff(request)
 
@@ -2671,6 +2678,7 @@ def view_patch(request):
 
 
 def view_diff(request):
+  cfg = request.cfg
   query_dict = request.query_dict
   p1, p2, rev1, rev2, sym1, sym2 = setup_diff(request)
   
@@ -2738,13 +2746,13 @@ def view_diff(request):
     if flag is not None:
       changes = [ _item(type=flag) ]
     else:
-      changes = DiffSource(fp)
+      changes = DiffSource(fp, cfg)
   else:
     raw_diff_fp = MarkupPipeWrapper(fp, htmlify(headers), None, 1)
 
   data.update({
-    'date_left' : date1 and rcsdiff_date_reformat(date1),
-    'date_right' : date2 and rcsdiff_date_reformat(date2),
+    'date_left' : rcsdiff_date_reformat(date1, cfg),
+    'date_right' : rcsdiff_date_reformat(date2, cfg),
     'raw_diff' : raw_diff_fp,
     'changes' : changes,
     })
@@ -2869,8 +2877,9 @@ def generate_tarball(out, request, reldir, stack):
 
     # skip forbidden/hidden directories (top-level only)
     if not rep_path:
-      if (cfg.is_forbidden(file.name)
-          or (cvs and cfg.options.hide_cvsroot and file.name == 'CVSROOT')):
+      if (request.cfg.is_forbidden(file.name)
+          or (cvs and request.cfg.options.hide_cvsroot
+              and file.name == 'CVSROOT')):
         continue
 
     generate_tarball(out, request, reldir + [file.name], stack)
@@ -2879,7 +2888,7 @@ def generate_tarball(out, request, reldir, stack):
   del stack[-1:]
 
 def download_tarball(request):
-  if not cfg.options.allow_tar:
+  if not request.cfg.options.allow_tar:
     raise debug.ViewCVSException('Tarball generation is disabled',
                                  '403 Forbidden')
 
@@ -2903,7 +2912,7 @@ def view_revision(request):
   query_dict = request.query_dict
   rev = request.repos._getrev(query_dict.get('rev'))
   date, author, msg, changes = vclib.svn.get_revision_info(request.repos, rev)
-  date_str = make_time_string(date)
+  date_str = make_time_string(date, request.cfg)
 
   # The revision number acts as a weak validator.
   if check_freshness(request, None, str(rev), weak=1):
@@ -2995,7 +3004,7 @@ def view_revision(request):
 
 def is_query_supported(request):
   """Returns true if querying is supported for the given path."""
-  return cfg.cvsdb.enabled \
+  return request.cfg.cvsdb.enabled \
          and request.pathtype == vclib.DIR \
          and request.roottype in ['cvs', 'svn']
 
@@ -3100,10 +3109,10 @@ def english_query(request):
     else:
       w1, w2 = 'since', 'before'
     if mindate:
-      mindate = make_time_string(parse_date(mindate))
+      mindate = make_time_string(parse_date(mindate), request.cfg)
       ret.append('%s <em>%s</em> ' % (w1, mindate))
     if maxdate:
-      maxdate = make_time_string(parse_date(maxdate))
+      maxdate = make_time_string(parse_date(maxdate), request.cfg)
       ret.append('%s <em>%s</em> ' % (w2, maxdate))
   return string.join(ret, '')
 
@@ -3123,7 +3132,7 @@ def build_commit(request, desc, files):
   for f in files:
     commit_time = f.GetTime()
     if commit_time:
-      commit_time = make_time_string(commit_time)
+      commit_time = make_time_string(commit_time, request.cfg)
     else:
       commit_time = '&nbsp;'
     filename = os.path.join(f.GetDirectory(), f.GetFile())
@@ -3140,7 +3149,7 @@ def build_commit(request, desc, files):
                                where=filename, pathtype=vclib.FILE,
                                params=params,
                                escape=1)
-    view = is_viewable(guess_mime(filename)) and view_markup or view_checkout
+    view = default_view(guess_mime(filename), request.cfg)
     rev_href = request.get_url(view_func=view,
                                where=filename, pathtype=vclib.FILE,
                                params={'rev': f.GetRevision() },
@@ -3225,8 +3234,8 @@ def view_query(request):
   mindate = parse_date(mindate)
   maxdate = parse_date(maxdate)
 
+  global cvsdb
   import cvsdb
-  cvsdb.cfg = cfg
 
   # create the database query from the form data
   query = cvsdb.CreateCheckinQuery()
@@ -3267,7 +3276,7 @@ def view_query(request):
       query.SetToDateObject(maxdate)
 
   # run the query
-  db = cvsdb.ConnectDatabaseReadOnly()
+  db = cvsdb.ConnectDatabaseReadOnly(request.cfg)
   db.RunQuery(query)
 
   sql = htmlify(db.CreateSQLQueryString(query))
@@ -3291,8 +3300,9 @@ def view_query(request):
       # skip files in forbidden or hidden modules
       dir_parts = filter(None, string.split(commit.GetDirectory(), '/'))
       if dir_parts \
-             and ((dir_parts[0] == 'CVSROOT' and cfg.options.hide_cvsroot) \
-                  or cfg.is_forbidden(dir_parts[0])):
+             and ((dir_parts[0] == 'CVSROOT'
+                   and request.cfg.options.hide_cvsroot) \
+                  or request.cfg.is_forbidden(dir_parts[0])):
         continue
       if current_desc == desc:
         files.append(commit)
@@ -3377,65 +3387,62 @@ def list_roots(cfg):
     allroots[root] = [cfg.general.svn_roots[root], 'svn']
   return allroots
   
-def handle_config():
+def load_config(pathname=None, server=None):
   debug.t_start('load-config')
-  global cfg
-  if cfg is None:
-    cfg = config.Config()
-    cfg.set_defaults()
 
-    # load in configuration information from the config file
-    pathname = os.environ.get('VIEWCVS_CONF_PATHNAME') \
-               or CONF_PATHNAME \
-               or os.path.join(g_install_dir, 'viewcvs.conf')
-    if sapi.server:
-      cfg.load_config(pathname, sapi.server.getenv('HTTP_HOST'))
-    else:
-      cfg.load_config(pathname, None)
+  if pathname is None:
+    pathname = (os.environ.get("VIEWCVS_CONF_PATHNAME")
+                or _install_path("viewcvs.conf"))
 
-    # load mime types file
-    if cfg.general.mime_types_file:
-      mimetypes.init([cfg.general.mime_types_file])
+  cfg = config.Config()
+  cfg.set_defaults()
+  cfg.load_config(pathname, server and server.getenv("HTTP_HOST"))
 
-    # special handling for root_parents.  Each item in root_parents is
-    # a "directory : repo_type" string.  For each item in
-    # root_parents, we get a list of the subdirectories.
-    #
-    # If repo_type is "cvs", and the subdirectory contains a child
-    # "CVSROOT/config", then it is added to cvs_roots.
-    #
-    # If repo_type is "svn", and the subdirectory contains a child
-    # "format", then it is added to svn_roots.
-    for pp in cfg.general.root_parents:
-      pos = string.rfind(pp, ':')
-      if pos < 0:
-        raise debug.ViewCVSException(
-          "The path '%s' in 'root_parents' does not include a "
-          "repository type." % pp)
+  # load mime types file
+  if cfg.general.mime_types_file:
+    mimetypes.init([cfg.general.mime_types_file])
 
-      repo_type = string.strip(pp[pos+1:])
-      pp = os.path.normpath(string.strip(pp[:pos]))
+  # special handling for root_parents.  Each item in root_parents is
+  # a "directory : repo_type" string.  For each item in
+  # root_parents, we get a list of the subdirectories.
+  #
+  # If repo_type is "cvs", and the subdirectory contains a child
+  # "CVSROOT/config", then it is added to cvs_roots.
+  #
+  # If repo_type is "svn", and the subdirectory contains a child
+  # "format", then it is added to svn_roots.
+  for pp in cfg.general.root_parents:
+    pos = string.rfind(pp, ':')
+    if pos < 0:
+      raise debug.ViewCVSException(
+        "The path '%s' in 'root_parents' does not include a "
+        "repository type." % pp)
 
-      try:
-        subpaths = os.listdir(pp)
-      except OSError:
-        raise debug.ViewCVSException(
-          "The path '%s' in 'root_parents' does not refer to "
-          "a valid directory." % pp)
+    repo_type = string.strip(pp[pos+1:])
+    pp = os.path.normpath(string.strip(pp[:pos]))
 
-      for subpath in subpaths:
-        if os.path.exists(os.path.join(pp, subpath)):
-          if repo_type == 'cvs' and \
-               os.path.exists(os.path.join(pp, subpath, "CVSROOT", "config")):
-            cfg.general.cvs_roots[subpath] = os.path.join(pp, subpath)
-          elif repo_type == 'svn' and \
-               os.path.exists(os.path.join(pp, subpath, "format")):
-            cfg.general.svn_roots[subpath] = os.path.join(pp, subpath)
+    try:
+      subpaths = os.listdir(pp)
+    except OSError:
+      raise debug.ViewCVSException(
+        "The path '%s' in 'root_parents' does not refer to "
+        "a valid directory." % pp)
+
+    for subpath in subpaths:
+      if os.path.exists(os.path.join(pp, subpath)):
+        if repo_type == 'cvs' and \
+             os.path.exists(os.path.join(pp, subpath, "CVSROOT", "config")):
+          cfg.general.cvs_roots[subpath] = os.path.join(pp, subpath)
+        elif repo_type == 'svn' and \
+             os.path.exists(os.path.join(pp, subpath, "format")):
+          cfg.general.svn_roots[subpath] = os.path.join(pp, subpath)
 
   debug.t_end('load-config')
 
+  return cfg
 
-def view_error(server):
+
+def view_error(server, cfg):
   exc_dict = debug.GetExceptionData()
   status = exc_dict['status']
   if exc_dict['msg']:
@@ -3448,7 +3455,8 @@ def view_error(server):
   try:
     if cfg and not server.headerSent:
       server.header(status=status)
-      generate_page(None, "error", exc_dict)
+      template = get_view_template(cfg, "error")
+      template.generate(sys.stdout, exc_dict)
       handled = 1
   except:
     pass
@@ -3458,20 +3466,17 @@ def view_error(server):
   if not handled:
     debug.PrintException(server, exc_dict)
 
-def main(server):
+def main(server, cfg):
   try:
     debug.t_start('main')
     try:
-      # handle the configuration stuff
-      handle_config()
-    
       # build a Request object, which contains info about the HTTP request
-      request = Request(server)    
+      request = Request(server, cfg)
       request.run_viewcvs()
     except SystemExit, e:
       return
     except:
-      view_error(server)
+      view_error(server, cfg)
 
   finally:
     debug.t_end('main')

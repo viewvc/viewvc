@@ -31,11 +31,12 @@ CONF_PATHNAME = None
 
 # Adjust sys.path to include our library directory
 import sys
+import os
 
 if LIBRARY_DIR:
   sys.path.insert(0, LIBRARY_DIR)
 else:
-  sys.path[:0] = ['../lib']	# any other places to look?
+  sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
 
 #########################################################################
 
@@ -44,7 +45,7 @@ import string
 import getopt
 import re
 import cvsdb
-import config
+import viewcvs
 import vclib.bincvs
 
 DEBUG_FLAG = 0
@@ -197,11 +198,9 @@ def NextFile(s, pos = 0):
   return ret or None, i
 
 def ProcessLoginfo(rootpath, directory, files):
-    ## XXX This is a somewhat dirty hack:
-    ## cvsdb already loads the configuration file and provides a cfg
-    ## instance.  Pick it from there in order to be able to pass it down
-    ## to rlog (see below).
-    repository = vclib.bincvs.BinCVSRepository(None, rootpath, cvsdb.cfg.general)
+    cfg = viewcvs.load_config(CONF_PATHNAME)
+    db = cvsdb.ConnectDatabase(cfg)
+    repository = vclib.bincvs.BinCVSRepository(None, rootpath, cfg.general)
 
     # split up the directory components
     dirpath = filter(None, string.split(os.path.normpath(directory), os.sep))
@@ -216,7 +215,7 @@ def ProcessLoginfo(rootpath, directory, files):
         ##      So instead, we rlog everything in the removed file, and
         ##      add any commits not already in the database
         if new_version == 'NONE':
-            commits = cvsdb.GetUnrecordedCommitList(repository, filepath)
+            commits = cvsdb.GetUnrecordedCommitList(repository, filepath, db)
         else:
             commits = cvsdb.GetCommitListFromRCSFile(repository, filepath,
                                                      new_version)
@@ -224,7 +223,6 @@ def ProcessLoginfo(rootpath, directory, files):
         commit_list.extend(commits)
 
     ## add to the database
-    db = cvsdb.ConnectDatabase()
     db.AddCommitList(commit_list)
 
 
