@@ -4,7 +4,7 @@
   a file. You may select a symbolic revision name using the selection
   box or you may type in a numeric name using the type-in text box.
   </p>
-  <form method="get" action="[diff_select_action]" id="diff_select">
+  <form method="get" action="[diff_select_action]" name="diff_select">
 
   <table cellpadding="2" cellspacing="0" class="auto">
   <tr>
