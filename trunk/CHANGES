@@ -46,7 +46,7 @@ Version 1.0 (not yet released)
   * get rid of popup windows for checkout links (2004-Jan-21)
   * obfuscate email addresses in html output by encoding @ symbol
     with an HTML character reference (2004-Jul-29)
-  * add page numbers to page pick lists (2002-Feb-01)
+  * add paging capability (2001-Dec-31)
   * Improvements to templates
     - add new template authoring guide
     - increase coverage, use templates to produce HTML for diff pages,

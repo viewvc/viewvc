@@ -430,10 +430,10 @@
   <td>log.ezt, log_table.ezt</td>
   <td>renamed to <code>entries.download_href</code></td>
 </tr>
-<tr class="unchanged">
+<tr class="renamed">
   <td class="varname">entries.html_log</td>
   <td>log.ezt, log_table.ezt</td>
-  <td>unchanged</td>
+  <td>renamed to <code>entries.log</code></td>
 </tr>
 <tr class="unchanged">
   <td class="varname">entries.next_main</td>
@@ -623,7 +623,7 @@
 <tr class="replaced">
   <td class="varname">params</td>
   <td>dir_alternate.ezt, directory.ezt</td>
-  <td>replaced by <code>search_tag_hidden_values</code></td>
+  <td>replaced by <code>search_re_hidden_values</code></td>
 </tr>
 <tr class="removed">
   <td class="varname">path</td>
@@ -805,10 +805,10 @@
   <td>dir_alternate.ezt, directory.ezt</td>
   <td>unchanged</td>
 </tr>
-<tr class="unchanged">
+<tr class="renamed">
   <td class="varname">selection_form</td>
   <td>dir_alternate.ezt, directory.ezt</td>
-  <td>unchanged</td>
+  <td>renamed to <code>search_re_form</code></td>
 </tr>
 <tr class="unchanged">
   <td class="varname">show_attic_href</td>
@@ -930,10 +930,10 @@
   <td>dir_alternate.ezt, directory.ezt, log.ezt, log_table.ezt</td>
   <td>renamed to <code>pathrev</code></td>
 </tr>
-<tr class="unchanged">
+<tr class="removed">
   <td class="varname">viewable</td>
   <td>log.ezt, log_table.ezt</td>
-  <td>unchanged</td>
+  <td>removed, used to be a boolean variable that was true when allow_markup was enabled and the mime type of the file began with "text/" or "image/" or could not be determined. It was used to determine whether "View" and "Download" links were shown and what would happen when they were clicked. Now we always show View and Download links and have them do the same thing when they are clicked, regardless of the mime type.</td>
 </tr>
 <tr class="unchanged">
   <td class="varname">vsn</td>
