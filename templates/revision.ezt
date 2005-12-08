@@ -48,8 +48,8 @@
   [if-any changes]
    [for changes]
     <tr class="vc_row_[if-index changes even]even[else]odd[end]">
-      <td>[if-any changes.view_href]<a href="[changes.view_href]">[end]<img src="[docroot]/images/[is changes.pathtype "dir"]dir[else]text[end].png" width="16" height="16" alt="Directory" />[changes.filename][is changes.pathtype "dir"]/[end][if-any changes.view_href]</a>[end]
-      [if-any changes.is_copy]<br /><em>(Copied from [changes.base_path], r[changes.base_rev])</em>[end]
+      <td>[if-any changes.view_href]<a href="[changes.view_href]">[end]<img src="[docroot]/images/[is changes.pathtype "dir"]dir[else]text[end].png" width="16" height="16" alt="Directory" />[changes.path][is changes.pathtype "dir"]/[end][if-any changes.view_href]</a>[end]
+      [if-any changes.is_copy]<br /><em>(Copied from [changes.copy_path], r[changes.copy_rev])</em>[end]
       </td>
       <td>[if-any changes.log_href]<a href="[changes.log_href]">[end][changes.action][if-any changes.log_href]</a>[end]
           [if-any changes.text_mods], [if-any changes.diff_href]<a href="[changes.diff_href]">[end]text changed[if-any changes.diff_href]</a>[end][end]

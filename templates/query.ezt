@@ -205,7 +205,7 @@
 [# uncommment, if you want a separate Description column:
       {if-index commits.files first{
         <td style="vertical-align:top;" rowspan="{commits.num_files}">
-          {commits.desc}
+          {commits.log}
         </td>
       {end}
 
@@ -217,7 +217,7 @@
 	<tr class="vc_row_[if-index commits even]even[else]odd[end]">
 	  <td>&nbsp;</td>
 	  <td colspan="5"><strong>Log:</strong><br />
-	    <pre class="vc_log">[commits.desc]</pre></td>
+	    <pre class="vc_log">[commits.log]</pre></td>
 	</tr>
       [end]
 [# ---]

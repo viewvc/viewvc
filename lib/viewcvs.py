@@ -943,10 +943,8 @@ def get_file_view_info(request, where, rev=None, mime_type=None):
                                     params={'rev': rev},
                                     escape=1)
 
-  viewable = default_view(mime_type, request.cfg) == view_markup
-
   return view_href, download_href, download_text_href, \
-         annotate_href, revision_href, ezt.boolean(viewable)
+         annotate_href, revision_href
 
 
 # Regular expressions for location text that looks like URLs and email
@@ -1090,7 +1088,7 @@ def common_template_data(request):
 
 def nav_header_data(request, rev, orig_path):
   view_href, download_href, download_text_href, annotate_href, \
-             revision_href, is_viewable \
+             revision_href \
       = get_file_view_info(request, request.where, rev, request.mime_type)
   
   data = common_template_data(request)
@@ -1101,7 +1099,6 @@ def nav_header_data(request, rev, orig_path):
     'download_href' : download_href,
     'download_text_href' : download_text_href,
     'revision_href' : revision_href,
-    'viewable' : is_viewable,
     'orig_path' : None,
     'orig_href' : None,
   })
@@ -1594,7 +1591,7 @@ def view_directory(request):
                 log_rev=None, state=None, size=None, mime_type=None,
                 date=None, ago=None, view_href=None, log_href=None,
                 revision_href=None, annotate_href=None, download_href=None,
-                download_text_href=None, viewable=ezt.boolean(0))
+                download_text_href=None, prefer_markup=ezt.boolean(0))
 
     row.rev = file.rev
     row.author = file.author
@@ -1658,8 +1655,11 @@ def view_directory(request):
       ### for Subversion, we should first try to get this from the properties
       row.mime_type = guess_mime(file.name)
       row.view_href, row.download_href, row.download_text_href, \
-                     row.annotate_href, row.revision_href, row.viewable \
+                     row.annotate_href, row.revision_href \
           = get_file_view_info(request, file_where, file.rev, row.mime_type)
+      row.prefer_markup = ezt.boolean(default_view(row.mime_type, request.cfg)
+                                      == view_markup)
+
       row.log_href = request.get_url(view_func=view_log,
                                      where=file_where,
                                      pathtype=vclib.FILE,
@@ -1773,10 +1773,10 @@ def view_directory(request):
   pathrev_form(request, data, lastrev)
 
   ### one day, if EZT has "or" capability, we can lose this
-  data['selection_form'] = ezt.boolean(cfg.options.use_re_search
+  data['search_re_form'] = ezt.boolean(cfg.options.use_re_search
                                        and (num_displayed > 0 or search_re))
-  if data['selection_form']:
-    data['search_tag_action'], data['search_tag_hidden_values'] = \
+  if data['search_re_form']:
+    data['search_re_action'], data['search_re_hidden_values'] = \
       request.get_form(params={'search': None})
 
   if cfg.options.use_pagesize:
@@ -1928,7 +1928,7 @@ def view_log(request):
     entry.ago = None
     if rev.date is not None:
       entry.ago = html_time(request, rev.date, 1)
-    entry.html_log = htmlify(rev.log or "")
+    entry.log = htmlify(rev.log or "")
     entry.size = rev.size
     entry.branch_point = None
     entry.next_main = None
@@ -1967,14 +1967,14 @@ def view_log(request):
       if rev.parent and rev.parent is not prev and not entry.vendor_branch:
         entry.branch_point = rev.parent.string
 
-      # if it's on a branch (and not a vendor branch), then diff against the
-      # next revision of the higher branch (e.g. change is committed and
+      # if it's the last revision on a branch then diff against the
+      # last revision on the higher branch (e.g. change is committed and
       # brought over to -stable)
-      if rev.parent and rev.parent.next and not entry.vendor_branch:
-        if not rev.next:
-          # this is the highest version on the branch; a lower one
-          # shouldn't have a diff against the "next main branch"
-          entry.next_main = rev.parent.next.string
+      if not rev.next and rev.parent and rev.parent.next:
+        r = rev.parent.next
+        while r.next:
+          r = r.next
+        entry.next_main = r.string
 
     elif request.roottype == 'svn':
       entry.prev = rev.prev and rev.prev.string
@@ -2004,7 +2004,7 @@ def view_log(request):
     # view/download links
     if pathtype is vclib.FILE:
       entry.view_href, entry.download_href, entry.download_text_href, \
-        entry.annotate_href, entry.revision_href, entry.viewable \
+        entry.annotate_href, entry.revision_href \
         = get_file_view_info(request, request.where, rev.string,
                              request.mime_type)
     else:
@@ -2075,12 +2075,10 @@ def view_log(request):
     'human_readable' : ezt.boolean(diff_format in ('h', 'l')),
     'log_pagestart' : None,
     'entries': entries,
-    'viewable' : ezt.boolean(0),
     'view_href' : None,
     'download_href': None,
     'download_text_href': None,
     'annotate_href': None,
-    'tag_viewable' : ezt.boolean(0),
     'tag_view_href' : None,
     'tag_download_href': None,
     'tag_download_text_href': None,
@@ -2107,26 +2105,24 @@ def view_log(request):
   if pathtype is vclib.FILE:
     if not request.pathrev or lastrev is None:
       view_href, download_href, download_text_href, \
-        annotate_href, revision_href, viewable \
+        annotate_href, revision_href \
         = get_file_view_info(request, request.where, None, request.mime_type)
       data.update({
         'view_href': view_href,
         'download_href': download_href,
         'download_text_href': download_text_href,
         'annotate_href': annotate_href,
-        'viewable': viewable,
         })
 
     if request.pathrev and request.roottype == 'cvs':
       view_href, download_href, download_text_href, \
-        annotate_href, revision_href, viewable \
+        annotate_href, revision_href \
         = get_file_view_info(request, request.where, None, request.mime_type)
       data.update({
         'tag_view_href': view_href,
         'tag_download_href': download_href,
         'tag_download_text_href': download_text_href,
         'tag_annotate_href': annotate_href,
-        'tag_viewable': viewable,
         })
   else:
     if not request.pathrev:
@@ -2979,7 +2975,15 @@ def view_revision(request):
     change.prop_mods = ezt.boolean(change.prop_mods)
     change.is_copy = ezt.boolean(change.is_copy)
     change.pathtype = pathtype
-    
+
+    # use same variable names as the log template
+    change.path = change.filename
+    change.copy_path = change.base_path
+    change.copy_rev = change.base_rev
+    del change.filename
+    del change.base_path
+    del change.base_rev
+
   prev_rev_href = next_rev_href = None
   if rev > 0:
     prev_rev_href = request.get_url(view_func=view_revision,
@@ -3139,7 +3143,7 @@ def prev_rev(rev):
 
 def build_commit(request, desc, files):
   commit = _item(num_files=len(files), files=[])
-  commit.desc = htmlify(desc)
+  commit.log = htmlify(desc)
   for f in files:
     commit_time = f.GetTime()
     if commit_time:
@@ -3160,11 +3164,14 @@ def build_commit(request, desc, files):
                                where=filename, pathtype=vclib.FILE,
                                params=params,
                                escape=1)
-    view = default_view(guess_mime(filename), request.cfg)
-    rev_href = request.get_url(view_func=view,
+    view_href = request.get_url(view_func=view_markup,
                                where=filename, pathtype=vclib.FILE,
                                params={'rev': f.GetRevision() },
                                escape=1)
+    download_href = request.get_url(view_func=view_checkout,
+                                    where=filename, pathtype=vclib.FILE,
+                                    params={'rev': f.GetRevision() },
+                                    escape=1)
     diff_href = request.get_url(view_func=view_diff,
                                 where=filename, pathtype=vclib.FILE,
                                 params={'r1': prev_rev(f.GetRevision()),
@@ -3183,7 +3190,11 @@ def build_commit(request, desc, files):
                               type=f.GetTypeString(),
                               dir_href=dir_href,
                               log_href=log_href,
-                              rev_href=rev_href,
+                              view_href=view_href,
+                              download_href=download_href,
+                              prefer_markup=ezt.boolean
+                              (default_view(guess_mime(filename), request.cfg)
+                               == view_markup),
                               diff_href=diff_href))
   return commit
 
