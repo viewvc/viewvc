@@ -943,8 +943,10 @@ def get_file_view_info(request, where, rev=None, mime_type=None):
                                     params={'rev': rev},
                                     escape=1)
 
+  prefer_markup = default_view(mime_type, request.cfg) == view_markup
+
   return view_href, download_href, download_text_href, \
-         annotate_href, revision_href
+         annotate_href, revision_href, ezt.boolean(prefer_markup)
 
 
 # Regular expressions for location text that looks like URLs and email
@@ -1088,7 +1090,7 @@ def common_template_data(request):
 
 def nav_header_data(request, rev, orig_path):
   view_href, download_href, download_text_href, annotate_href, \
-             revision_href \
+             revision_href, prefer_markup \
       = get_file_view_info(request, request.where, rev, request.mime_type)
   
   data = common_template_data(request)
@@ -1099,6 +1101,7 @@ def nav_header_data(request, rev, orig_path):
     'download_href' : download_href,
     'download_text_href' : download_text_href,
     'revision_href' : revision_href,
+    'prefer_markup' : prefer_markup,
     'orig_path' : None,
     'orig_href' : None,
   })
@@ -1655,11 +1658,9 @@ def view_directory(request):
       ### for Subversion, we should first try to get this from the properties
       row.mime_type = guess_mime(file.name)
       row.view_href, row.download_href, row.download_text_href, \
-                     row.annotate_href, row.revision_href \
+                     row.annotate_href, row.revision_href, \
+                     row.prefer_markup \
           = get_file_view_info(request, file_where, file.rev, row.mime_type)
-      row.prefer_markup = ezt.boolean(default_view(row.mime_type, request.cfg)
-                                      == view_markup)
-
       row.log_href = request.get_url(view_func=view_log,
                                      where=file_where,
                                      pathtype=vclib.FILE,
@@ -2004,7 +2005,7 @@ def view_log(request):
     # view/download links
     if pathtype is vclib.FILE:
       entry.view_href, entry.download_href, entry.download_text_href, \
-        entry.annotate_href, entry.revision_href \
+        entry.annotate_href, entry.revision_href, entry.prefer_markup \
         = get_file_view_info(request, request.where, rev.string,
                              request.mime_type)
     else:
@@ -2075,10 +2076,12 @@ def view_log(request):
     'human_readable' : ezt.boolean(diff_format in ('h', 'l')),
     'log_pagestart' : None,
     'entries': entries,
+    'prefer_markup' : ezt.boolean(0),
     'view_href' : None,
     'download_href': None,
     'download_text_href': None,
     'annotate_href': None,
+    'tag_prefer_markup' : ezt.boolean(0),
     'tag_view_href' : None,
     'tag_download_href': None,
     'tag_download_text_href': None,
@@ -2105,24 +2108,26 @@ def view_log(request):
   if pathtype is vclib.FILE:
     if not request.pathrev or lastrev is None:
       view_href, download_href, download_text_href, \
-        annotate_href, revision_href \
+        annotate_href, revision_href, prefer_markup \
         = get_file_view_info(request, request.where, None, request.mime_type)
       data.update({
         'view_href': view_href,
         'download_href': download_href,
         'download_text_href': download_text_href,
         'annotate_href': annotate_href,
+        'prefer_markup': prefer_markup,
         })
 
     if request.pathrev and request.roottype == 'cvs':
       view_href, download_href, download_text_href, \
-        annotate_href, revision_href \
+        annotate_href, revision_href, prefer_markup \
         = get_file_view_info(request, request.where, None, request.mime_type)
       data.update({
         'tag_view_href': view_href,
         'tag_download_href': download_href,
         'tag_download_text_href': download_text_href,
         'tag_annotate_href': annotate_href,
+        'tag_prefer_markup': prefer_markup,
         })
   else:
     if not request.pathrev:
