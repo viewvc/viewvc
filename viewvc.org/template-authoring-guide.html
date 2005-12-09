@@ -270,6 +270,12 @@ th { background: rgb(60%,70%,90%); }
   <td>URL of a ViewCVS log view for <code>orig_path</code>.</td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">prefer_markup</td>
+  <td>Boolean</td>
+  <td>Indicates whether to make the default file link a link to the markup
+      page instead of the checkout page.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">rev</td>
   <td>String</td>
   <td>Revision of the current resource.</td>
@@ -780,13 +786,8 @@ th { background: rgb(60%,70%,90%); }
   <td class="varname">entries.prefer_markup</td>
   <td>Boolean</td>
   <td>Indicates whether to make the default file link a link to the markup
-      page instead of the checkout page. It is true when markup view is
-      enabled and the file's MIME type is <tt>text/anything</tt>, 
-      <tt>image/jpeg</tt>, <tt>image/gif</tt>, <tt>image/png</tt>, or
-      unknown. For other types it is false. This way browsers can display
-      things like <tt>application/pdf</tt> or 
-      <tt>application/x-shockwave-flash</tt> files directly. Valid only
-      when <var>entries.pathtype</var> is <tt>file</tt>.</td>
+      page instead of the checkout page. Valid only when
+      <var>entries.pathtype</var> is <tt>file</tt>.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.view_href</td>
@@ -1167,6 +1168,12 @@ th { background: rgb(60%,70%,90%); }
       is the path it was originally located at. Subversion only.</td>
 </tr>
 <tr class="varlevel2">
+  <td class="varname">entries.prefer_markup</td>
+  <td>Boolean</td>
+  <td>Indicates whether to make the default file link a link to the markup
+      page instead of the checkout page.</td>
+</tr>
+<tr class="varlevel2">
   <td class="varname">entries.prev</td>
   <td>String</td>
   <td>Previous revision number.</td>
@@ -1281,6 +1288,12 @@ th { background: rgb(60%,70%,90%); }
   <td>Names of non-branch in the file. CVS only.</td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">prefer_markup</td>
+  <td>Boolean</td>
+  <td>Indicates whether to make the default file link a link to the markup
+      page instead of the checkout page.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">rev_selected</td>
   <td>String</td>
   <td>Revision number currently selected for diffs.</td>
@@ -1302,6 +1315,12 @@ th { background: rgb(60%,70%,90%); }
   <td>String</td>
   <td>URL to download the file as <tt>text/plain</tt> at the currently
       selected sticky tag. CVS only</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">tag_prefer_markup</td>
+  <td>Boolean</td>
+  <td>Indicates whether to make the default file link a link to the markup
+      page instead of the checkout page.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">tag_view_href</td>
