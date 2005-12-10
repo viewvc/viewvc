@@ -508,6 +508,7 @@ class COMissingRevision(vclib.Error):
 _re_co_filename = re.compile(r'^(.*),v\s+-->\s+standard output\s*\n$')
 _re_co_warning = re.compile(r'^.*co: .*,v: warning: Unknown phrases like .*\n$')
 _re_co_missing_rev = re.compile(r'^.*co: .*,v: revision.*absent\n$')
+_re_co_side_branches = re.compile(r'^.*co: .*,v: no side branches present for [\d\.]+\n$')
 _re_co_revision = re.compile(r'^revision\s+([\d\.]+)\s*\n$')
 
 def _parse_co_header(fp):
@@ -545,7 +546,7 @@ def _parse_co_header(fp):
   match = _re_co_revision.match(line)
   if match:
     return filename, match.group(1)
-  elif _re_co_missing_rev.match(line):
+  elif _re_co_missing_rev.match(line) or _re_co_side_branches.match(line):
     raise COMissingRevision, "Got missing revision error from co output stream"
   elif _re_co_warning.match(line):
     pass
