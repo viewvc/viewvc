@@ -148,8 +148,15 @@ def last_rev(svnrepos, path, peg_revision, limit_revision=None):
     if peg_revision == limit_revision:
       return peg_revision, path
     elif peg_revision > limit_revision:
-      path = get_location(svnrepos, path, peg_revision, limit_revision)
-      return limit_revision, path
+      fsroot = svnrepos._getroot(peg_revision)
+      history = fs.node_history(fsroot, path, svnrepos.scratch_pool)
+      while history:
+        path, peg_revision = fs.history_location(history,
+                                                 svnrepos.scratch_pool);
+        if peg_revision <= limit_revision:
+          return max(peg_revision, limit_revision), _cleanup_path(path)
+        history = fs.history_prev(history, 1, svnrepos.scratch_pool)
+      return peg_revision, _cleanup_path(path)
     else:
       ### Warning: this is *not* an example of good pool usage.
       orig_id = fs.node_id(svnrepos._getroot(peg_revision), path,
