@@ -719,29 +719,6 @@ def _orig_path(request, rev_param='rev', path_param=None):
                                               pathrev, rev)), rev
   return _path_parts(path), rev
 
-def _last_rev(request, path_parts, start, end=None):
-  """Given PATH_PARTS, known to exist in REQUEST.repos in revision
-  START, find the youngest revision older than, or equal to, END in
-  which path exists.  Return that revision and the path at which
-  PATH_PARTS exists in that revision.  If END is not specified, and
-  the path still exists in HEAD of the repository, return None as the
-  revision."""
-  assert request.roottype == 'svn'
-  
-  if not hasattr(vclib.svn, 'last_rev'):
-    return NotImplemented, NotImplemented
-
-  start, path = vclib.svn.last_rev(request.repos, _path_join(path_parts),
-                                   start, end)
-  path_parts = _path_parts(path)
-
-  if end is None:
-    youngest = vclib.svn.get_youngest_revision(request.repos)
-    if start == youngest:
-      return None, path_parts
-
-  return start, path_parts
-
 def _install_path(path):
   """Get usable path for a path relative to ViewCVS install directory"""
   if os.path.isabs(path):
@@ -1773,10 +1750,7 @@ def view_directory(request):
                                            params={},
                                            escape=1)
 
-  lastrev = None
-  if request.pathrev and request.roottype == 'svn':
-    lastrev = _last_rev(request, request.path_parts, request.pathrev)[0]
-  pathrev_form(request, data, lastrev)
+  pathrev_form(request, data)
 
   ### one day, if EZT has "or" capability, we can lose this
   data['search_re_form'] = ezt.boolean(cfg.options.use_re_search
@@ -1821,40 +1795,42 @@ def paging(data, key, pagestart, local_name, pagesize):
   # Slice
   return data[key][pagestart:pageend]
 
-def pathrev_form(request, data, lastrev):
-  data['pathrev'] = request.pathrev
-  data['lastrev'] = lastrev is not NotImplemented and lastrev or None
+def pathrev_form(request, data):
+  lastrev = None
 
   if request.roottype == 'svn':
-    action, hidden_values = \
+    data['pathrev_action'], data['pathrev_hidden_values'] = \
       request.get_form(view_func=redirect_pathrev,
                        params={'pathrev': None,
                                'orig_path': request.where,
                                'orig_pathtype': request.pathtype,
                                'orig_pathrev': request.pathrev,
                                'orig_view': _view_codes.get(request.view_func)})
-    data['pathrev_action'] = action
-    data['pathrev_hidden_values'] = hidden_values
 
-    if lastrev is NotImplemented:
-      data['pathrev_clear_action'] = action
-      data['pathrev_clear_hidden_values'] = hidden_values
-    else:
-      action, hidden_values = request.get_form(params={'pathrev': lastrev})
-      data['pathrev_clear_action'] = action
-      data['pathrev_clear_hidden_values'] = hidden_values
-  else:    
-    action, hidden_values = request.get_form(params={'pathrev': None})
+    if request.pathrev:
+      youngest = vclib.svn.get_youngest_revision(request.repos)
+      lastrev = vclib.svn.last_rev(request.repos, request.where,
+                                   request.pathrev, youngest)[0]
+
+      if lastrev == youngest:
+         lastrev = None
+
+  data['pathrev'] = request.pathrev
+  data['lastrev'] = lastrev
+
+  action, hidden_values = request.get_form(params={'pathrev': lastrev})
+  if request.roottype != 'svn':
     data['pathrev_action'] = action
     data['pathrev_hidden_values'] = hidden_values
-    data['pathrev_clear_action'] = action
-    data['pathrev_clear_hidden_values'] = hidden_values
+  data['pathrev_clear_action'] = action
+  data['pathrev_clear_hidden_values'] = hidden_values
 
   return lastrev
 
 def redirect_pathrev(request):
+  assert request.roottype == 'svn'
   new_pathrev = request.query_dict.get('pathrev') or None
-  path_parts = _path_parts(request.query_dict.get('orig_path', ''))
+  path = request.query_dict.get('orig_path', '')
   pathtype = request.query_dict.get('orig_pathtype')
   pathrev = request.query_dict.get('orig_pathrev') 
   view = _views.get(request.query_dict.get('orig_view'))
@@ -1872,17 +1848,17 @@ def redirect_pathrev(request):
     if new_pathrev > youngest:
       new_pathrev = youngest
 
-  if _repos_pathtype(request.repos, path_parts, new_pathrev):
+  if _repos_pathtype(request.repos, _path_parts(path), new_pathrev):
     pathrev = new_pathrev
-  elif request.roottype == 'svn':
-    pathrev, path_parts = _last_rev(request, path_parts, pathrev, new_pathrev)
-
+  else:
+    pathrev, path = vclib.svn.last_rev(request.repos, path, pathrev, 
+                                       new_pathrev)
     # allow clearing sticky revision by submitting empty string
     if new_pathrev is None and pathrev == youngest:
       pathrev = None
 
   request.server.redirect(request.get_url(view_func=view, 
-                                          where=_path_join(path_parts),
+                                          where=path,
                                           pathtype=pathtype,
                                           params={'pathrev': pathrev}))
 
@@ -2093,10 +2069,7 @@ def view_log(request):
     'tag_annotate_href': None,
   })
 
-  lastrev = None
-  if request.pathrev and request.roottype == 'svn':
-    lastrev = _last_rev(request, request.path_parts, request.pathrev)[0]
-  pathrev_form(request, data, lastrev)
+  lastrev = pathrev_form(request, data)
 
   if cfg.options.use_pagesize:
     data['log_paging_action'], data['log_paging_hidden_values'] = \
