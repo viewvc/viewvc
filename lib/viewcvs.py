@@ -502,13 +502,13 @@ class Request:
 
     # no need to explicitly specify annotate view when
     # there's an annotate parameter
-    if view_func is view_annotate and params.has_key('annotate'):
+    if view_func is view_annotate and params.get('annotate') is not None:
       view_func = None
 
     # no need to explicitly specify diff view when
     # there's r1 and r2 parameters
-    if view_func is view_diff and params.has_key('r1') \
-      and params.has_key('r2'):
+    if (view_func is view_diff and params.get('r1') is not None
+        and params.get('r2') is not None):
       view_func = None
 
     view_code = _view_codes.get(view_func)
@@ -908,35 +908,40 @@ def default_view(mime_type, cfg):
     return view_markup
   return view_checkout
 
-def get_file_view_info(request, where, rev=None, mime_type=None):
+def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
   """Return common hrefs and a viewability flag used for various views
   of FILENAME at revision REV whose MIME type is MIME_TYPE."""
   rev = rev and str(rev) or None
   mime_type = mime_type or request.mime_type
-    
+  if pathrev == -1: # cheesy default value, since we need to preserve None
+    pathrev = request.pathrev
   download_text_href = annotate_href = revision_href = None
   view_href = request.get_url(view_func=view_markup,
                               where=where,
                               pathtype=vclib.FILE,
-                              params={'rev': rev},
+                              params={'rev': rev,
+                                      'pathrev': pathrev},
                               escape=1)
   download_href = request.get_url(view_func=view_checkout,
                                   where=where,
                                   pathtype=vclib.FILE,
-                                  params={'rev': rev},
+                                  params={'rev': rev,
+                                          'pathrev': pathrev},
                                   escape=1)
   if not is_plain_text(mime_type):
     download_text_href = request.get_url(view_func=view_checkout,
                                          where=where,
                                          pathtype=vclib.FILE,
                                          params={'content-type': 'text/plain',
-                                                 'rev': rev},
+                                                 'rev': rev,
+                                                 'pathrev': rev},
                                          escape=1)
   if request.cfg.options.allow_annotate:
     annotate_href = request.get_url(view_func=view_annotate,
                                     where=where,
                                     pathtype=vclib.FILE,
-                                    params={'annotate': rev},
+                                    params={'annotate': rev,
+                                            'pathrev': pathrev},
                                     escape=1)
   if request.roottype == 'svn':
     revision_href = request.get_url(view_func=view_revision,
@@ -2109,7 +2114,8 @@ def view_log(request):
     if not request.pathrev or lastrev is None:
       view_href, download_href, download_text_href, \
         annotate_href, revision_href, prefer_markup \
-        = get_file_view_info(request, request.where, None, request.mime_type)
+        = get_file_view_info(request, request.where, None,
+                             request.mime_type, None)
       data.update({
         'view_href': view_href,
         'download_href': download_href,
