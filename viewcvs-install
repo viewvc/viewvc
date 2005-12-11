@@ -67,6 +67,7 @@ FILE_INFO_LIST = [
     ("bin/cgi/query.cgi", "bin/cgi/query.cgi", 0755, 1, 0, 0),
     ("bin/mod_python/viewcvs.py", "bin/mod_python/viewcvs.py", 0755, 1, 0, 0),
     ("bin/mod_python/query.py", "bin/mod_python/query.py", 0755, 1, 0, 0),
+    ("bin/mod_python/handler.py", "bin/mod_python/handler.py", 0755, 1, 0, 0),
     ("bin/mod_python/.htaccess", "bin/mod_python/.htaccess", 0755, 0, 0, 0),
     ("bin/standalone.py", "bin/standalone.py", 0755, 1, 0, 0),
     ("viewcvs.conf.dist", "viewcvs.conf", 0644, 0,
