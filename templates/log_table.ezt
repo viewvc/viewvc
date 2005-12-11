@@ -107,12 +107,12 @@
 
       [# Tags ]
       [if-any entries.tags]
-        <form method=get action="[stick_action]" >
-          [stick_hidden_values]
-          <select name="stick" onChange="submit()">
-          <option value="" [is stick ""]selected[end]>Show all tags</option>
+        <form method=get action="[pathrev_action]" >
+          [pathrev_hidden_values]
+          <select name="pathrev" onChange="submit()">
+          <option value="" [is pathrev ""]selected[end]>Show all tags</option>
           [for entries.tags]
-            <option [is stick entries.tags.name]selected[end]>[entries.tags.name]</option>
+            <option [is pathrev entries.tags.name]selected[end]>[entries.tags.name]</option>
           [end]
           </select>
         </form>
