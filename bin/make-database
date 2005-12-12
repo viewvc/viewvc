@@ -38,7 +38,7 @@ USE <dbname>;
 
 DROP TABLE IF EXISTS branches;
 CREATE TABLE branches (
-  id mediumint(9) DEFAULT '0' NOT NULL auto_increment,
+  id mediumint(9) NOT NULL auto_increment,
   branch varchar(64) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE branch (branch)
@@ -69,7 +69,7 @@ CREATE TABLE checkins (
 
 DROP TABLE IF EXISTS descs;
 CREATE TABLE descs (
-  id mediumint(9) DEFAULT '0' NOT NULL auto_increment,
+  id mediumint(9) NOT NULL auto_increment,
   description text,
   hash bigint(20) DEFAULT '0' NOT NULL,
   PRIMARY KEY (id),
@@ -78,7 +78,7 @@ CREATE TABLE descs (
 
 DROP TABLE IF EXISTS dirs;
 CREATE TABLE dirs (
-  id mediumint(9) DEFAULT '0' NOT NULL auto_increment,
+  id mediumint(9) NOT NULL auto_increment,
   dir varchar(255) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE dir (dir)
@@ -86,7 +86,7 @@ CREATE TABLE dirs (
 
 DROP TABLE IF EXISTS files;
 CREATE TABLE files (
-  id mediumint(9) DEFAULT '0' NOT NULL auto_increment,
+  id mediumint(9) NOT NULL auto_increment,
   file varchar(255) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE file (file)
@@ -94,7 +94,7 @@ CREATE TABLE files (
 
 DROP TABLE IF EXISTS people;
 CREATE TABLE people (
-  id mediumint(9) DEFAULT '0' NOT NULL auto_increment,
+  id mediumint(9) NOT NULL auto_increment,
   who varchar(32) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE who (who)
@@ -102,7 +102,7 @@ CREATE TABLE people (
 
 DROP TABLE IF EXISTS repositories;
 CREATE TABLE repositories (
-  id mediumint(9) DEFAULT '0' NOT NULL auto_increment,
+  id mediumint(9) NOT NULL auto_increment,
   repository varchar(64) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE repository (repository)
