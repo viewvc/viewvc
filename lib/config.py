@@ -52,6 +52,7 @@ class Config:
 
   def load_config(self, pathname, vhost=None):
     self.conf_path = os.path.isfile(pathname) and pathname or None
+    self.base = os.path.dirname(pathname)
 
     parser = ConfigParser.ConfigParser()
     parser.read(pathname)
