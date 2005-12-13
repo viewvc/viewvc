@@ -476,7 +476,7 @@ class BlameSource:
     rootpath = os.path.abspath(rootpath)
     url = 'file://' + string.join([rootpath, fs_path], "/")
     self.fp = popen.popen(svn_client_path,
-                          ('blame', "%s@%d" % (url, int(rev))), 'rb', 1)
+                          ('blame', "-r%d" % int(rev), "%s@%d" % (url, int(rev))), 'rb', 1)
     
   def __getitem__(self, idx):
     if idx == self.idx:
@@ -510,7 +510,7 @@ class BlameSourceKludge:
     rootpath = os.path.abspath(rootpath)
     url = 'file://' + string.join([rootpath, fs_path], "/")
     fp = popen.popen(svn_client_path,
-                     ('blame', "%s@%d" % (url, int(rev))), 'rb', 1)
+                     ('blame', "-r%d" % int(rev), "%s@%d" % (url, int(rev))), 'rb', 1)
     self.lines = fp.readlines()
     
   def __getitem__(self, idx):
