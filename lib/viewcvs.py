@@ -1881,7 +1881,7 @@ def view_log(request):
                                  'directory', '400 Bad Request')
 
   options = {}
-  options['svn_show_all_dir_logs'] = 0 ### someday make this optional?
+  options['svn_show_all_dir_logs'] = 1 ### someday make this optional?
   options['svn_cross_copies'] = cfg.options.cross_copies
     
   show_revs = request.repos.itemlog(request.path_parts, request.pathrev,
