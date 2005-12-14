@@ -1,0 +1,37 @@
+<html>
+<head>
+<title>ViewVC - Version Control Repository Browser</title>
+<style type="text/css"> /* <![CDATA[ */
+  @import "http://viewvc.tigris.org/branding/css/tigris.css";
+  @import "http://viewvc.tigris.org/branding/css/inst.css";
+  /* ]]> */</style>
+<link rel="stylesheet" type="text/css" media="print"
+      href="http://viewvc.tigris.org/branding/css/print.css"/>
+<script type="text/javascript" 
+        src="http://viewvc.tigris.org/branding/scripts/tigris.js"></script>
+</head>
+<body>
+<script language="javascript">
+// This code snippet exists to redirect the page to its fully
+// qualified location, the effect of which is that Tigris.org 
+// will not show that space-wasting project information table.
+href = window.location.href
+href_len = href.length
+if ((href_len > 9) 
+    && (href.substring(href_len - 10, href_len) != "index.html")) {
+    window.location = window.location + "index.html";
+}
+</script>
+
+<div class="app">
+
+<h1>ViewVC - Version Control Repository Browsing</h1>
+
+<div class="h2">
+<h2>Boo</h2>
+<p>Are you scared yet?</p>
+</div>
+
+</div>
+</body>
+</html>
