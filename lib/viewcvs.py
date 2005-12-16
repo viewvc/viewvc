@@ -3062,7 +3062,12 @@ def parse_date(s):
       second = 0
     # return a "seconds since epoch" value assuming date given in UTC
     tm = (year, month, day, hour, minute, second, 0, 0, 0)
-    return time.mktime(tm) - time.timezone
+    date = time.mktime(tm)
+    if time.daylight == 1: 
+      date = date - time.altzone 
+    else: 
+      date = date - time.timezone
+    return date
   else:
     return None
 
