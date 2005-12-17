@@ -14,7 +14,7 @@ TO THE IMPATIENT
 ----------------
 Congratulations on getting this far. :-)
 
-  Required Software And Configuration Needed To Run ViewCVS:
+  Required Software And Configuration Needed To Run ViewVC:
 
     For CVS Support: 
 
@@ -50,7 +50,7 @@ Congratulations on getting this far. :-)
   GUI Operation:
 
     If you just want to see what your CVS repository looks like with
-    ViewCVS, type "./standalone.py -g -r /PATH/TO/CVS/ROOT".  This
+    ViewVC, type "./standalone.py -g -r /PATH/TO/CVS/ROOT".  This
     will start a tiny webserver serving at http://localhost:7467/.
     PLEASE NOTE: This requires Python with thread support enabled and
     the Tkinter GUI.  If you don't have one of these, omit the '-g' option.
@@ -61,7 +61,7 @@ Congratulations on getting this far. :-)
     To start installing right away (on UNIX): type "./viewcvs-install"
     in the current directory and answer the prompts.  When it
     finishes, edit the file viewcvs.conf in the installation directory
-    to tell viewcvs the paths to your CVS repositories. Next,
+    to tell viewvc the paths to your CVS repositories. Next,
     configure your web server to run <INSTALL>/cgi/viewcvs.cgi, as
     appropriate for your web server.  The section `INSTALLING VIEWCVS'
     below is still recommended reading.
@@ -99,14 +99,14 @@ INSTALLING VIEWCVS
 
 2) Installation is handled by the ./viewcvs-install script.  Run this
    script and you will be prompted for a installation root path.
-   The default is /usr/local/viewcvs-VERSION, where VERSION is
-   the version of this ViewCVS release.  The installer sets the install 
-   path in some of the files, and ViewCVS cannot be moved to a 
+   The default is /usr/local/viewvc-VERSION, where VERSION is
+   the version of this ViewVC release.  The installer sets the install 
+   path in some of the files, and ViewVC cannot be moved to a 
    different path after the install.
 
-   Note: while 'root' is usually required to create /usr/local/viewcvs,
-   ViewCVS does not have to be installed as root, nor does it run as root.
-   It is just as valid to place ViewCVS in a home directory, too.
+   Note: while 'root' is usually required to create /usr/local/viewvc,
+   ViewVC does not have to be installed as root, nor does it run as root.
+   It is just as valid to place ViewVC in a home directory, too.
 
    Note: viewcvs-install will create directories if needed. It will
    prompt before overwriting files that may have been modified (such
@@ -123,8 +123,8 @@ INSTALLING VIEWCVS
       mime_types_file
 
    There are some other options that are usually nice to change. See
-   viewcvs.conf for more information.  ViewCVS provides a working,
-   default look. However, if you want to customize the look of ViewCVS
+   viewcvs.conf for more information.  ViewVC provides a working,
+   default look. However, if you want to customize the look of ViewVC
    then edit the files in <VIEWCVS_INSTALLATION_DIRECTORY>/templates.
    You need knowledge about HTML to edit the templates.
 
@@ -132,13 +132,13 @@ INSTALLING VIEWCVS
    symlink to this directory from somewhere in your published HTTP server 
    path if your webserver is configured to follow symbolic links.  You can 
    also copy the installed <VIEWCVS_INSTALLATION_DIRECTORY>/www/cgi/*.cgi scripts 
-   after the install (unlike the other files in ViewCVS, the scripts under www/
+   after the install (unlike the other files in ViewVC, the scripts under www/
    can be moved).
 
    If you are using Apache, then see below at the section 
    titled APACHE CONFIGURATION.
 
-   NOTE: for security reasons, it is not advisable to install ViewCVS
+   NOTE: for security reasons, it is not advisable to install ViewVC
    directly into your published HTTP directory tree (due to the MySQL
    passwords in viewcvs.conf).
 
@@ -236,7 +236,7 @@ UPGRADING VIEWCVS
 -----------------
 
 Please read the file upgrading.html in the website subdirectory or
-at <http://viewcvs.sourceforge.net/upgrading.html>.
+at <http://viewvc.org/upgrading.html>.
 
 
 SQL CHECKIN DATABASE
@@ -246,12 +246,12 @@ This feature is a clone of the Mozilla Project's Bonsai database.  It
 catalogs every commit in the CVS or Subversion repository into a SQL
 database.  In fact, the databases are 100% compatible.
 
-Various queries can be performed on the database.  After installing ViewCVS,
+Various queries can be performed on the database.  After installing ViewVC,
 there are some additional steps required to get the database working.
 
 1) You need MySQL >= 3.22, and the Python module MySQLdb 0.9.0 installed.
    Python 1.5.2 is REQUIRED by MySQLdb, therefore to use this part of
-   ViewCVS you must be using Python 1.5.2.
+   ViewVC you must be using Python 1.5.2.
 
 2) You need to create a MySQL user who has permission to create databases.
    Optionally, you can create a second user with read-only access to the
@@ -261,7 +261,7 @@ there are some additional steps required to get the database working.
    prompt you for your MySQL user, password, and the name of database you 
    want to create.  The database name defaults to "ViewCVS".  This script 
    creates the database and sets up the empty tables.  If you run this on a 
-   existing ViewCVS database, you will lose all your data!
+   existing ViewVC database, you will lose all your data!
 
 4) Edit your <VIEWCVS_INSTALLATION_DIRECTORY>/viewcvs.conf file.  
    There is a [cvsdb] section.  You will need to set:
@@ -418,8 +418,8 @@ a reasonable number of revisions and branches.
 SUBVERSION INTEGRATION
 ----------------------
 
-ViewCVS now supports browsing of Subversion repositories.  To use
-ViewCVS with Subversion, make sure you have both Subversion itself and
+ViewVC now supports browsing of Subversion repositories.  To use
+ViewVC with Subversion, make sure you have both Subversion itself and
 the Subversion Python bindings installed.  See Subversion's
 installation notes for more details on how to build and install these
 items.  
@@ -462,27 +462,27 @@ If you've trouble to make viewcvs.cgi work:
 
  o view the entries in the webserver's error.log
  
-=== If viewcvs seems to work but doesn't show the expected result
+=== If viewvc seems to work but doesn't show the expected result
     (Typical error: you can't see any files)
 
  o check whether the CGI-script has read-permissions to your
    CVS-Repository. The CGI-script often runs as the user 'nobody' 
    or 'httpd' ..
 
- o does viewcvs find your RCS utilities? (edit rcs_path)
+ o does viewvc find your RCS utilities? (edit rcs_path)
 
 === If something else happens or you can't get it to work:
 
- o check the ViewCVS home page:
+ o check the ViewVC home page:
 
-     http://viewcvs.sourceforge.net/
+     http://viewvc.org/
 
- o review the ViewCVS mailing list archive to see if somebody else had
+ o review the ViewVC mailing list archive to see if somebody else had
    the same problem, and it was solved:
 
-     http://mailman.lyra.org/pipermail/viewcvs/
+     http://viewvc.tigris.org/servlets/SummarizeList?listName=users
 
- o send mail to the ViewCVS mailing list: viewcvs@lyra.org
+ o send mail to the ViewVC mailing list: users@viewvc.tigris.org
 
    NOTE: make sure you provide an accurate description of the problem
          and any relevant tracebacks or error logs.

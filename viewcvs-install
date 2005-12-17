@@ -4,16 +4,16 @@
 # Copyright (C) 2000-2002 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
-# the LICENSE.html file which can be found at the top level of the ViewCVS
-# distribution or at http://viewcvs.sourceforge.net/license-1.html.
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
 #
 # Contact information:
 #   Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://viewcvs.sourceforge.net/
+#   gstein@lyra.org, http://viewvc.org/
 #
 # -----------------------------------------------------------------------
 #
-# install script for viewcvs -- temporary?
+# install script for viewvc -- temporary?
 #
 # ### this will eventually be replaced by autoconf plus tools. an
 # ### interactive front-end to ./configure may be provided.
@@ -42,9 +42,9 @@ version = viewcvs.__version__
 ## installer text
 INFO_TEXT = """
 
-This is the ViewCVS %s installer.
+This is the ViewVC %s installer.
 
-It will allow you to choose the install path for ViewCVS.  You will
+It will allow you to choose the install path for ViewVC.  You will
 now be asked some installation questions.
 
 Defaults are given in square brackets.  Just hit [Enter] if a default
@@ -268,7 +268,7 @@ def install_tree(src_path, dst_path, prompt_replace):
     
     while 1:
       temp = raw_input("""
-    File %s does not belong in ViewCVS %s.
+    File %s does not belong in ViewVC %s.
     DO YOU WANT TO,
         delete [d]
         leave as is [l]: """ % (os.path.join(dst_path, fname), version))
@@ -299,9 +299,9 @@ if __name__ == "__main__":
     if ROOT_DIR is None:
       if sys.platform == "win32":
         pf = os.getenv("ProgramFiles", "C:\\Program Files")
-        default = os.path.join(pf, "viewcvs-" + version)  
+        default = os.path.join(pf, "viewvc-" + version)  
       else:
-        default = "/usr/local/viewcvs-" + version
+        default = "/usr/local/viewvc-" + version
       temp = string.strip(raw_input("Installation Path [%s]: " % default))
       print
       if len(temp):
@@ -320,7 +320,7 @@ if __name__ == "__main__":
         DESTDIR = default
         
     ## install the files
-    print "Installing ViewCVS to:", ROOT_DIR,
+    print "Installing ViewVC to:", ROOT_DIR,
     if DESTDIR:
       print "(DESTDIR = %s)" % (DESTDIR)
     else:
@@ -335,10 +335,10 @@ if __name__ == "__main__":
 
     print """
 
-ViewCVS File Installation Complete
+ViewVC File Installation Complete
 
 Consult INSTALL for detailed information to finish the installation
-and configure ViewCVS for your system.
+and configure ViewVC for your system.
 
 Overview of remaining steps:
 
@@ -347,7 +347,7 @@ Overview of remaining steps:
 2) Configure an existing web server to run (or copy to cgi-bin) 
    %s.
       OR 
-   Run the web server that comes with ViewCVS at 
+   Run the web server that comes with ViewVC at 
    %s.
 """ % (
     os.path.join(ROOT_DIR, 'viewcvs.conf'),
