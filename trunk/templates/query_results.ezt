@@ -16,7 +16,7 @@
 <table cellspacing="1" cellpadding="2">
  <thead>
   <tr>
-   <thclass="vc_header">Revision</th>
+   <th class="vc_header">Revision</th>
    <th class="vc_header[is querysort "file"]_sort[end]">File</th>
 [if-any show_branch]
    <th class="vc_header">Branch</th>
