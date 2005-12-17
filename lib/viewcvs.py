@@ -3,16 +3,16 @@
 # Copyright (C) 1999-2002 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
-# the LICENSE.html file which can be found at the top level of the ViewCVS
-# distribution or at http://viewcvs.sourceforge.net/license-1.html.
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
 #
 # Contact information:
 #   Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://viewcvs.sourceforge.net/
+#   gstein@lyra.org, http://viewvc.org/
 #
 # -----------------------------------------------------------------------
 #
-# viewcvs: View CVS repositories via a web browser
+# viewvc: View CVS/SVN repositories via a web browser
 #
 # -----------------------------------------------------------------------
 #
@@ -145,7 +145,7 @@ class Request:
     self.pathrev = None    # current path revision or tag
 
     # redirect if we're loading from a valid but irregular URL
-    # These redirects aren't neccessary to make ViewCVS work, it functions
+    # These redirects aren't neccessary to make ViewVC work, it functions
     # just fine without them, but they make it easier for server admins to
     # implement access restrictions based on URL
     needs_redirect = 0
@@ -370,7 +370,7 @@ class Request:
     self.view_func(self)
 
   def get_url(self, escape=0, partial=0, **args):
-    """Constructs a link to another ViewCVS page just like the get_link
+    """Constructs a link to another ViewVC page just like the get_link
     function except that it returns a single URL instead of a URL
     split into components"""
 
@@ -388,7 +388,7 @@ class Request:
     return result
 
   def get_form(self, **args):
-    """Constructs a link to another ViewCVS page just like the get_link
+    """Constructs a link to another ViewVC page just like the get_link
     function except that it returns a base URL suitable for use as an HTML
     form action and a string of HTML input type=hidden tags with the link
     parameters."""
@@ -399,7 +399,7 @@ class Request:
     return action, hidden_values
 
   def get_link(self, view_func=None, where=None, pathtype=None, params=None):
-    """Constructs a link pointing to another ViewCVS page. All arguments
+    """Constructs a link pointing to another ViewVC page. All arguments
     correspond to members of the Request object. If they are set to 
     None they take values from the current page. Return value is a base
     URL and a dictionary of parameters"""
@@ -683,7 +683,7 @@ def _repos_pathtype(repos, path_parts, rev):
 def _orig_path(request, rev_param='rev', path_param=None):
   "Get original path of requested file at old revision before copies or moves"
 
-  # The 'pathrev' variable is interpreted by nearly all ViewCVS views to
+  # The 'pathrev' variable is interpreted by nearly all ViewVC views to
   # provide a browsable snapshot of a repository at some point in its history.
   # 'pathrev' is a tag name for CVS repositories and a revision number for
   # Subversion repositories. It's automatically propagated between pages by
@@ -720,7 +720,7 @@ def _orig_path(request, rev_param='rev', path_param=None):
   return _path_parts(path), rev
 
 def _install_path(path):
-  """Get usable path for a path relative to ViewCVS install directory"""
+  """Get usable path for a path relative to ViewVC install directory"""
   if os.path.isabs(path):
     return path
   return os.path.normpath(os.path.join(os.path.dirname(__file__),
@@ -1261,7 +1261,7 @@ def markup_stream_php(fp, cfg):
 
   # clearing the following environment variables prevents a 
   # "No input file specified" error from the php cgi executable
-  # when ViewCVS is running under a cgi environment. when the
+  # when ViewVC is running under a cgi environment. when the
   # php cli executable is used they can be left alone
   #
   #os.putenv("GATEWAY_INTERFACE", "")
@@ -2306,7 +2306,7 @@ def search_files(repos, path_parts, rev, files, search_re):
 
 
 def view_doc(request):
-  """Serve ViewCVS static content locally.
+  """Serve ViewVC static content locally.
 
   Using this avoids the need for modifying the setup of the web server.
   """

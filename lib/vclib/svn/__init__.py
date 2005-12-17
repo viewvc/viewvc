@@ -3,12 +3,12 @@
 # Copyright (C) 1999-2002 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
-# the LICENSE.html file which can be found at the top level of the ViewCVS
-# distribution or at http://viewcvs.sourceforge.net/license-1.html.
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
 #
 # Contact information:
 #   Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://viewcvs.sourceforge.net/
+#   gstein@lyra.org, http://viewvc.org/
 #
 # -----------------------------------------------------------------------
 
@@ -549,7 +549,7 @@ class SubversionRepository(vclib.Repository):
     self.svn_client_path = os.path.normpath(os.path.join(svn_path, 'svn'))
 
     # Register a handler for SIGTERM so we can have a chance to
-    # cleanup.  If ViewCVS takes too long to start generating CGI
+    # cleanup.  If ViewVC takes too long to start generating CGI
     # output, Apache will grow impatient and SIGTERM it.  While we
     # don't mind getting told to bail, we want to gracefully close the
     # repository before we bail.

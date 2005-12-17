@@ -1,11 +1,11 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<!-- ViewCVS       - http://viewcvs.sourceforge.net/
+<!-- ViewVC       - http://viewvc.org/
      by Greg Stein - mailto:gstein@lyra.org  -->
 <head>
-  <title>[if-any rootname][[][rootname]][else]ViewCVS[end] [page_title]</title>
-  <meta name="generator" content="ViewCVS [vsn]" />
+  <title>[if-any rootname][[][rootname]][else]ViewVC[end] [page_title]</title>
+  <meta name="generator" content="ViewVC [vsn]" />
   <link rel="stylesheet" href="[docroot]/styles.css" type="text/css" />
 </head>
 <body>
@@ -69,6 +69,6 @@
 [end]
 </div>
 
-<h1><img style="float:right;" src="[docroot]/images/logo.png" alt="ViewCVS logotype" width="128" height="48" />[page_title]</h1>
+<h1><img style="float:right;" src="[docroot]/images/logo.png" alt="ViewVC logotype" width="128" height="48" />[page_title]</h1>
 
 

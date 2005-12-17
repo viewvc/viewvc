@@ -4,11 +4,11 @@
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewCVS
-# distribution or at http://viewcvs.sourceforge.net/license-1.html.
+# distribution or at http://viewvc.org/license-1.html.
 #
 # Contact information:
 #   Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://viewcvs.sourceforge.net/
+#   gstein@lyra.org, http://viewvc.org/
 #
 # -----------------------------------------------------------------------
 #

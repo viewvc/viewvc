@@ -6,13 +6,13 @@
 # Copyright (C) 1999-2002 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
-# the LICENSE.html file which can be found at the top level of the ViewCVS
-# distribution or at http://viewcvs.sourceforge.net/license-1.html.
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
 #
 # Contact information:
 #   This file: Peter Funk, Oldenburger Str.86, 27777 Ganderkesee, Germany
-#   ViewCVS project: Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://viewcvs.sourceforge.net/
+#   ViewVC project: Greg Stein, PO Box 760, Palo Alto, CA, 94302
+#   gstein@lyra.org, http://viewvc.org/
 #
 # Note: this module is designed to deploy instantly and run under any
 # version of Python from 1.5 and up.  That's why some 2.0 features 
@@ -21,7 +21,7 @@
 # XXX Security issues?
 
 """Run "standalone.py -p <port>" to start an HTTP server on a given port 
-on the local machine to generate ViewCVS web pages.
+on the local machine to generate ViewVC web pages.
 """
 
 __author__ = "Peter Funk <pf@artcom-gmbh.de>"
@@ -142,8 +142,8 @@ def serve(host, port, callback=None):
 <meta http-equiv="refresh" content="1; URL=%s">
 </head>
 <body>
-<h1>Redirection to <a href="%s">ViewCVS</a></h1>
-Wait a second.   You will be automatically redirected to <b>ViewCVS</b>.
+<h1>Redirection to <a href="%s">ViewVC</a></h1>
+Wait a second.   You will be automatically redirected to <b>ViewVC</b>.
 If this doesn't work, please click on the link above.
 </body>
 </html>
@@ -243,9 +243,9 @@ If this doesn't work, please click on the link above.
                     sys.stdout = save_stdout
                     sys.stderr = save_stderr
             except SystemExit, status:
-                self.log_error("ViewCVS exit status %s", str(status))
+                self.log_error("ViewVC exit status %s", str(status))
             else:
-                self.log_error("ViewCVS exited ok")
+                self.log_error("ViewVC exited ok")
 
     class ViewCVS_Server(BaseHTTPServer.HTTPServer):
         def __init__(self, host, port, callback):
@@ -358,7 +358,7 @@ def gui(host, port):
                 text='quit serving', command=self.quit, state='disabled')
 
 
-            self.window.title('ViewCVS standalone')
+            self.window.title('ViewVC standalone')
             self.window.protocol('WM_DELETE_WINDOW', self.quit)
             self.title_lbl.pack(side='top', fill='x')
             self.open_btn.pack(side='left', fill='x', expand=1)
@@ -526,7 +526,7 @@ def gui(host, port):
             """used as callback parameter to the serve() function"""
             self.server = server
             self.title_lbl.config(
-                text='ViewCVS standalone server at\n' + server.url)
+                text='ViewVC standalone server at\n' + server.url)
             self.open_btn.config(state='normal')
             self.quit_btn.config(state='normal')
 
@@ -600,7 +600,7 @@ def cli(argv):
         cmd = sys.argv[0]
         port = options.port
         host = options.host
-        print """ViewCVS standalone - a simple standalone HTTP-Server
+        print """ViewVC standalone - a simple standalone HTTP-Server
 
 Usage: %(cmd)s [ <options> ]
 
@@ -622,7 +622,7 @@ Available Options:
     use this option or you have to install first and edit viewcvs.conf.
 
 -g or --gui
-    Pop up a graphical interface for serving and testing ViewCVS.
+    Pop up a graphical interface for serving and testing ViewVC.
     Note: This requires you start %(cmd)s with a valid X11 display
     connection on Unix/Linux systems.
 

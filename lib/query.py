@@ -4,19 +4,19 @@
 # Copyright (C) 2000 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
-# the LICENSE.html file which can be found at the top level of the ViewCVS
-# distribution or at http://www.lyra.org/viewcvs/license-1.html.
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
 #
 # Contact information:
 #   Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://www.lyra.org/viewcvs/
+#   gstein@lyra.org, http://viewvc.org
 #
 # -----------------------------------------------------------------------
 #
 # CGI script to process and display queries to CVSdb
 #
-# This script is part of the ViewCVS package. More information can be
-# found at http://www.lyra.org/viewcvs/.
+# This script is part of the ViewVC package. More information can be
+# found at http://viewvc.org
 #
 # -----------------------------------------------------------------------
 #

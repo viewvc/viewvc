@@ -4,20 +4,20 @@
 # Copyright (C) 1999-2002 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
-# the LICENSE.html file which can be found at the top level of the ViewCVS
-# distribution or at http://viewcvs.sourceforge.net/license-1.html.
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
 #
 # Contact information:
 #   Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://viewcvs.sourceforge.net/
+#   gstein@lyra.org, http://viewvc.org/
 #
 # -----------------------------------------------------------------------
 #
-# query.cgi: View CVS commit database by web browser
+# query.cgi: View CVS/SVN commit database by web browser
 #
 # -----------------------------------------------------------------------
 #
-# This is a teeny stub to launch the main ViewCVS app. It checks the load
+# This is a teeny stub to launch the main ViewVC app. It checks the load
 # average, then loads the (precompiled) viewcvs.py file and runs it.
 #
 # -----------------------------------------------------------------------
