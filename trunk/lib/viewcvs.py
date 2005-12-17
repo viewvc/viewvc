@@ -2349,6 +2349,8 @@ def view_doc(request):
   fp.close()
 
 def rcsdiff_date_reformat(date_str, cfg):
+  if date_str is None:
+    return None
   try:
     date = compat.cvs_strptime(date_str)
   except ValueError:
