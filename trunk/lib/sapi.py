@@ -130,7 +130,7 @@ class CgiServer(Server):
       for (name, value) in self.headers:
         extraheaders = extraheaders + '%s: %s\r\n' % (name, value)
 
-      # The only way ViewCVS pages and error messages are visible under 
+      # The only way ViewVC pages and error messages are visible under 
       # IIS is if a 200 error code is returned. Otherwise IIS instead
       # sends the static error page corresponding to the code number.
       if status is None or (status[:3] != '304' and self.iis):

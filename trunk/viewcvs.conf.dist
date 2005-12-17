@@ -1,9 +1,9 @@
 #---------------------------------------------------------------------------
 #
-# Configuration file for ViewCVS
+# Configuration file for ViewVC
 #
-# Information on ViewCVS is located at the following web site:
-#     http://viewcvs.sourceforge.net/
+# Information on ViewVC is located at the following web site:
+#     http://viewvc.org/
 #
 #---------------------------------------------------------------------------
 
@@ -32,11 +32,11 @@
 #
 #    py2html_path
 #
-# To optimize delivery of ViewCVS static files:
+# To optimize delivery of ViewVC static files:
 #
 #    docroot
 #
-# To customize the display of ViewCVS for your site:
+# To customize the display of ViewVC for your site:
 #
 #    template_dir
 #    the [templates] override section
@@ -82,9 +82,9 @@ cvs_roots = cvs: /home/cvsroot
 # The 'root_parents' setting specifies a list of directories in which
 # any number of repositories may reside.  Rather than force you to add
 # a new entry to 'cvs_roots' or 'svn_roots' each time you create a new
-# repository, ViewCVS rewards you for organising all your repositories
+# repository, ViewVC rewards you for organising all your repositories
 # under a few parent directories by allowing you to simply specifiy
-# just those parent directories.  ViewCVS will then notice each
+# just those parent directories.  ViewVC will then notice each
 # repository in that directory as a new root whose name is the
 # subdirectory of the parent path in which that repository lives.
 #
@@ -107,7 +107,7 @@ default_root = cvs
 # uncomment if the RCS binaries are not on the standard path
 #rcs_path = /usr/bin/
 
-# ViewCVS can use CVSNT (www.cvsnt.org) instead of the RCS 
+# ViewVC can use CVSNT (www.cvsnt.org) instead of the RCS 
 # utilities to retrieve information from CVS repositories.
 # To enable use of CVSNT, set the "cvsnt_exe_path" value
 # to the path of the CVSNT executable. (If CVSNT is on the
@@ -128,7 +128,7 @@ use_rcsparse = 0
 #svn_path = /usr/bin/
 
 #
-# This is a pathname to a MIME types file to help viewcvs to guess the
+# This is a pathname to a MIME types file to help viewvc to guess the
 # correct MIME type on checkout.
 #
 # If you are having problems with the default guess on the MIME type, then
@@ -229,7 +229,7 @@ kv_files =
 #
 
 #
-# The languages available to ViewCVS. There are several i18n mechanisms
+# The languages available to ViewVC. There are several i18n mechanisms
 # available:
 #
 #   1) using key/value extension system and reading KV files based on
@@ -260,25 +260,25 @@ languages = en-us
 
 # root_as_url_component: Interpret the first path component in the URL
 # after the script location as the root to use.  This is an
-# alternative to using the "root=" query key. If ViewCVS is configured
+# alternative to using the "root=" query key. If ViewVC is configured
 # with multiple repositories, this results in more natural looking
-# ViewCVS URLs and allows you to browse checked out HTML files with 
-# relative links to other repository files within ViewCVS.
+# ViewVC URLs and allows you to browse checked out HTML files with 
+# relative links to other repository files within ViewVC.
 # Note: Enabling this option will break backwards compatibility with
-# any old ViewCVS URL which doesn't have an explicit "root" parameter.
+# any old ViewVC URL which doesn't have an explicit "root" parameter.
 root_as_url_component = 0
 
 # checkout_magic: Generate checkout links with a magic *checkout* prefix.
 # This option is enabled for backwards compatibility with URLs used by old
-# versions of ViewCVS. If you disable it, old *checkout* URLs will continue
+# versions of ViewVC. If you disable it, old *checkout* URLs will continue
 # to work, but old log page urls which don't have explicit "view=log" 
 # parameters will load checkout pages instead. It is recommended that you
-# disable this option in a fresh viewcvs installation, or if you don't need
+# disable this option in a fresh viewvc installation, or if you don't need
 # to support old-style log URLs. 
 checkout_magic = 1
 
 # http_expiration_time: Expiration time (in seconds) for cacheable
-# pages served by ViewCVS.  Note that in most cases, a cache aware
+# pages served by ViewVC.  Note that in most cases, a cache aware
 # client will only revalidate the page after it expires (using the
 # If-Modified-Since and/or If-None-Match headers) and that browsers
 # will also revalidate the page when the reload button is pressed.
@@ -360,11 +360,11 @@ allow_markup = 1
 # [make sure to have gzip in the path]
 allow_compress = 1
 
-# The directory which contains the EZT templates used by ViewCVS to
-# customize the display of the various output views.  ViewCVS looks in
+# The directory which contains the EZT templates used by ViewVC to
+# customize the display of the various output views.  ViewVC looks in
 # this directory for files with names that match the name of the view
 # ("log", "directory", etc.) plus the ".ezt" extension.  If specified
-# as a relative path, it is relative to the ViewCVS installation
+# as a relative path, it is relative to the ViewVC installation
 # directory; absolute paths may be used as well.
 #
 # If %lang% occurs in the pathname, then the selected language will be
@@ -372,10 +372,10 @@ allow_compress = 1
 #
 template_dir = templates
 
-# Web path to a directory that contains ViewCVS static files
+# Web path to a directory that contains ViewVC static files
 # (stylesheets, images, etc.)  If set, static files will get
 # downloaded directory from this location.  If unset, static files
-# will be served by the ViewCVS script (at a likely performance
+# will be served by the ViewVC script (at a likely performance
 # penalty, and from the "docroot" subdirectory of the directory
 # specified by the "template_dir" option).
 #docroot = /docroot
@@ -439,7 +439,7 @@ php_exe_path = php
 # php_exe_path = C:\Program Files\php\cli\php.exe
 
 #
-# ViewCVS has its own set of mappings from filename extensions and filenames
+# ViewVC has its own set of mappings from filename extensions and filenames
 # to languages. If the language is not supported by enscript, then it can
 # be listed here to disable the use of enscript.
 #
@@ -447,7 +447,7 @@ disable_enscript_lang =
 # disable_enscript_lang = perl, cpp
 
 #
-# ViewCVS can generate tarball from a repository on the fly.
+# ViewVC can generate tarball from a repository on the fly.
 #
 allow_tar = 0
 # allow_tar = 1
@@ -498,7 +498,7 @@ use_re_search = 0
 
 #
 # Split directories and logs into pages.
-# Allows ViewCVS to present discrete pages to the users instead of the
+# Allows ViewVC to present discrete pages to the users instead of the
 # entire log or directory.
 # Set use_pagesize to the number of entries you want displayed on a page.
 #
@@ -508,8 +508,8 @@ use_pagesize = 0
 #---------------------------------------------------------------------------
 [templates]
 
-# You can override the templates used by various ViewCVS views in this
-# section.  By default, ViewCVS will look for templates in the
+# You can override the templates used by various ViewVC views in this
+# section.  By default, ViewVC will look for templates in the
 # directory specified by the "template_dir" configuration option (see
 # the documentation for that option for details).  But if you want to
 # use a different template for a particular view, simply uncomment the

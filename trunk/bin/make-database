@@ -4,12 +4,12 @@
 # Copyright (C) 2000-2002 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
-# the LICENSE.html file which can be found at the top level of the ViewCVS
-# distribution or at http://viewcvs.sourceforge.net/license-1.html.
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
 #
 # Contact information:
 #   Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://viewcvs.sourceforge.net/
+#   gstein@lyra.org, http://viewvc.org/
 #
 # -----------------------------------------------------------------------
 #
@@ -23,7 +23,7 @@ import os, sys, string
 import popen2
 
 INTRO_TEXT = """\
-This script creates the database and tables in MySQL used by the ViewCVS
+This script creates the database and tables in MySQL used by the ViewVC
 checkin database.  You will be prompted for: database user, database user
 password, and database name.  This script will use mysql to create the
 database for you.  You will then need to set the appropriate parameters
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     
     user = raw_input("MySQL User: ")
     passwd = raw_input("MySQL Password: ")
-    dbase = raw_input("ViewCVS Database Name [default: ViewCVS]: ")
+    dbase = raw_input("ViewVC Database Name [default: ViewCVS]: ")
     if not dbase:
         dbase = "ViewCVS"
 

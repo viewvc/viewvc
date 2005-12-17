@@ -1,10 +1,10 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<!-- ViewCVS       -- http://viewcvs.sourceforge.net/
+<!-- ViewVC       -- http://viewvc.tigris.org/
      by Greg Stein -- mailto:gstein@lyra.org  -->
 <head>
-<title>ViewCVS Exception</title>
+<title>ViewVC Exception</title>
 </head>
 <body>
 <h3>An Exception Has Occurred</h3>
