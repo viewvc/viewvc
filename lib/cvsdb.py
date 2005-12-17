@@ -286,7 +286,7 @@ class CheckinDatabase:
             elif query_entry.match == "notregex":
                 match = " NOT REGEXP "
 
-            sqlList.append("%s%s%s" % (field, match, self.db.escape(data)))
+            sqlList.append("%s%s%s" % (field, match, self.db.literal(data)))
 
         return "(%s)" % (string.join(sqlList, " OR "))
 
