@@ -69,6 +69,7 @@
 [end]
 </div>
 
-<h1><img style="float:right;" src="[docroot]/images/logo.png" alt="ViewVC logotype" width="128" height="48" />[page_title]</h1>
+<div style="float: right; padding: 5px;"><a href="http://www.viewvc.org/"><img src="[docroot]/images/logo.png" alt="ViewVC logotype" width="128" height="48" /></a></div>
+<h1>[page_title]</h1>
 
 
