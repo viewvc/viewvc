@@ -1192,6 +1192,39 @@ class MarkupPHP(MarkupShell):
     php_cmd = [php_exe_path, '-q', '-s', '-n']
     MarkupShell.__init__(self, fp, [php_cmd])
 
+class MarkupHighlight(MarkupShell):
+  def __init__(self, cfg, fp, filename):
+    try:
+      ext = filename[string.rindex(filename, ".") + 1:]
+    except ValueError:
+      ext = 'txt'
+
+    highlight_cmd = [os.path.normpath(os.path.join(cfg.options.highlight_path,
+                                                   'highlight')),
+                     '--syntax', ext, '--force',
+                     '--style', str(cfg.options.highlight_style),
+                     '--include-style', '--anchors']
+
+    if cfg.options.highlight_line_numbers:
+      ### there doesn't seem to be any way to get highlight to add line
+      ### numbers for .txt files, it just ignores these options
+      highlight_cmd.extend(['--linenumbers', '--line-number-start', '1'])
+
+    if cfg.options.highlight_convert_tabs:
+      highlight_cmd.extend(['--replace-tabs',
+                            str(cfg.options.highlight_convert_tabs)])
+
+    # Remove duplicate style definitions and other stuff not needed
+    sed_cmd = ['sed',
+               '-e', '/^body.*$/d', '-e', '/^pre.*$/d',
+               '-e', '/^\\.line.*$/d',
+               '-e', '/^<\\/*head>$/d', '-e', '/^<\\/*body[^>]*>$/d',
+               '-e', '/^<\\/*html.*>$/d',
+               '-e', '/[ \\t]*<title>.*<\\/title>$/d',
+               '-e', '/^<meta.*>$/d', '-e', '/^<!DOCTYPE.*>$/d']
+
+    MarkupShell.__init__(self, fp, [highlight_cmd, sed_cmd])
+
 def markup_stream_python(fp, cfg):
   ### Convert this code to use the recipe at:
   ###     http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52298
@@ -1408,6 +1441,8 @@ def view_markup(request):
         lang = enscript_filenames.get(basename)
       if lang and lang not in cfg.options.disable_enscript_lang:
         markup_fp = MarkupEnscript(cfg.options.enscript_path, lang, fp)
+    elif cfg.options.use_highlight:
+      markup_fp = MarkupHighlight(cfg, fp, request.path_parts[-1])
 
   # If no one has a suitable markup handler, we'll use the default.
   if not markup_fp:
