@@ -1139,95 +1139,58 @@ class MarkupPipeWrapper:
     if self.posttext:
       out.write(self.posttext)
 
-class MarkupEnscript:
-  """A file-pointer-ish object for reading file contents slammed
-  through the 'enscript' tool.  Consumes and closes FP."""
-  
-  def __init__(self, enscript_path, lang, fp):
-    ### Man, oh, man, had I any idea how to deal with bi-directional
-    ### pipes, I would.  But I don't.
-    ###  If we ever did decide to deal with them, we'd be forced to use
-    ###  nonblocking, asynchronous, or multi-threaded I/O on them, which
-    ###  are all pains to deal with portably. We could't use regular
-    ###  blocking, sequential reads and writes because there's no way of
-    ###  knowing how much data you need to write to a child process before
-    ###  you can read anything from it (and vice versa) and doing the wrong
-    ###  I/O at the wrong time causes deadlocks. It's probably worth
-    ###  looking into the "subprocess" module (PEP 324), which could handle
-    ###  this kind of stuff for us, and might make a good replacement for
-    ###  our crufty popen module anyway.
+class MarkupShell:
+  """A EZT callback object slamming file contents through shell tools."""
 
-    self._closed = 0
-    self.temp_file = tempfile.mktemp()
-    self.fp = None
+  def __init__(self, fp, cmds):
+    self.fp = fp
+    self.cmds = cmds
+
+  def __call__(self, out):
+    out.flush()
+    try:
+      ### need to change pipe_cmds() to accept the out parameter,
+      ### right now this just assumes out == sys.stdout
+      copy_stream(self.fp, popen.pipe_cmds(self.cmds))
+      self.fp.close()
+      self.fp = None
+    except IOError:
+      raise debug.ViewCVSException \
+        ('Error running external program. Command line was: "%s"'
+         % string.join(map(lambda args: string.join(args, ' '), self.cmds),
+                       ' | '))
+
+  def __del__(self):
+    self.close()
+
+  def close(self):
+    if self.fp:
+      self.fp.close()
+      self.fp = None
+
+class MarkupEnscript(MarkupShell):
+  def __init__(self, enscript_path, lang, fp):
     
     # I've tried to pass option '-C' to enscript to generate line numbers
     # Unfortunately this option doesn't work with HTML output in enscript
     # version 1.6.2.
     enscript_cmd = [os.path.normpath(os.path.join(enscript_path,
                                                   'enscript')),
-                    '--color', '--language=html', '--pretty-print=' + lang,
-                    '-o', self.temp_file, '-']
-    try:
-      copy_stream(fp, popen.pipe_cmds([enscript_cmd]))
-      fp.close()
-    except IOError:
-      raise debug.ViewCVSException('Error running external program. ' +
-                                   'Command line was: %s'
-                                   % string.join(enscript_cmd, ' '))
+                    '--color', '--language=html',
+                    '--pretty-print=' + lang, '-o',
+                    '-', '-']
 
     ### I started to use '1,/^<PRE>$/d;/<\\/PRE>/,$d;p' here to
     ### actually strip out the <PRE> and </PRE> tags, too, but I
     ### couldn't think of any good reason to do that.
-    self.fp = popen.popen('sed',
-                          ['-n', '/^<PRE>$/,/<\\/PRE>$/p', self.temp_file],
-                          'rb', 0)
+    sed_cmd = ['sed', '-n', '/^<PRE>$/,/<\\/PRE>$/p']
 
-  def __del__(self):
-    self.close()
+    MarkupShell.__init__(self, fp, [enscript_cmd, sed_cmd])
 
-  def close(self):
-    if not self._closed:
-      # Cleanup the tempfile we made, and close the pipe.
-      os.remove(self.temp_file)
-      if self.fp:
-        self.fp.close()
-    self._closed = 1
-
-  def read(self, len):
-    if self.fp is None:
-      return None
-    return retry_read(self.fp, len)
-
-class MarkupPHP:
-  """A file-pointer-ish object for reading file contents slammed
-  through the 'php' tool.  Consumes and closes FP."""
-  
+class MarkupPHP(MarkupShell):
   def __init__(self, php_exe_path, fp):
-    ### Man, oh, man, had I any idea how to deal with bi-directional
-    ### pipes, I would.  But I don't.
-
-    self.temp_file = tempfile.mktemp()
-    self.fp = None
-
-    # Dump the version resource contents to our tempfile
-    copy_stream(fp, open(self.temp_file, 'wb'))
-    fp.close()
-    
-    self.fp = popen.popen(php_exe_path,
-                          ['-q', '-s', '-n', '-f', self.temp_file],
-                          'rb', 0)
-
-  def __del__(self):
-    # Cleanup the tempfile we made, and close the pipe.
-    os.remove(self.temp_file)
-    if self.fp:
-      self.fp.close()
-    
-  def read(self, len):
-    if self.fp is None:
-      return None
-    return retry_read(self.fp, len)
+    php_cmd = [php_exe_path, '-q', '-s', '-n']
+    MarkupShell.__init__(self, fp, [php_cmd])
 
 def markup_stream_python(fp, cfg):
   ### Convert this code to use the recipe at:
