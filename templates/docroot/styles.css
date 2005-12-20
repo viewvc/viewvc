@@ -67,6 +67,18 @@ form { margin: 0; }
   background-color: #eeeeee;
 }
 
+/*** Line numbers outputted by highlight colorizer ***/
+.line {
+  border-right-width: 1px;
+  border-right-style: solid;
+  border-right-color: #505050;
+  padding: 1px;
+  background-color: #eeeeee;
+  color: #505050;
+  text-decoration: none;
+  font-weight: normal;
+  font-style: normal;
+}
 
 /*** Diff Styles ***/
 .vc_diff_header {

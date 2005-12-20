@@ -204,6 +204,11 @@ class Config:
     self.options.short_log_len = 80
     self.options.use_enscript = 0
     self.options.enscript_path = ''
+    self.options.use_highlight = 1
+    self.options.highlight_path = ''
+    self.options.highlight_style = 'emacs'
+    self.options.highlight_line_numbers = 1
+    self.options.highlight_convert_tabs = 2
     self.options.use_php = 0
     self.options.php_path = 'php'
     self.options.disable_enscript_lang = ()

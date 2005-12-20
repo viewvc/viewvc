@@ -430,6 +430,24 @@ use_enscript = 0
 enscript_path =
 # enscript_path = /usr/bin/
 
+# should we use 'highlight' for syntax coloring?
+# NOTE: use_enscript has to be 0 or escript will be used instead
+use_highlight = 1
+
+#
+# if the highlight program is not on the path, set this value
+#
+# highlight_path = /usr/bin
+
+# what coloring style should highlight use?
+highlight_style = emacs
+
+# should we add line numbers?
+highlight_line_numbers = 1
+
+# convert tabs to ## spaces (use 0 for no conversion)
+highlight_convert_tabs = 2
+
 # use php to colorize .php and .inc files?
 use_php = 0
 
