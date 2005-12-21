@@ -3295,6 +3295,7 @@ def view_query(request):
   if query.commit_list:
     files = []
     current_desc = query.commit_list[0].GetDescription()
+    current_rev = query.commit_list[0].GetRevision()
     for commit in query.commit_list:
       # base modification time on the newest commit ...
       if commit.GetTime() > mod_time: mod_time = commit.GetTime()
@@ -3310,9 +3311,17 @@ def view_query(request):
                    and request.cfg.options.hide_cvsroot) \
                   or request.cfg.is_forbidden(dir_parts[0])):
         continue
-      if current_desc == desc:
-        files.append(commit)
-        continue
+      # For CVS, group commits with the same commit message.
+      # For Subversion, group them only if they have the same revision number
+      if request.roottype == 'cvs':
+        if current_desc == desc:
+          files.append(commit)
+          continue
+      else:
+        if current_rev == commit.GetRevision():
+          files.append(commit)
+          continue
+          
       # if our current group has any allowed files, append a commit
       # with those files.
       if len(files):
@@ -3320,6 +3329,8 @@ def view_query(request):
 
       files = [ commit ]
       current_desc = desc
+      current_rev = commit.GetRevision()
+      
     # we need to tack on our last commit grouping, but, again, only if
     # it has allowed files.
     if len(files):
