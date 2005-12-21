@@ -1021,6 +1021,7 @@ def common_template_data(request):
     'nav_path' : nav_path(request),
     'up_href'  : None,
     'log_href' : None,
+    'log_href_rev': None,
     'graph_href': None,
     'view'     : _view_codes[request.view_func],
   }
@@ -1058,6 +1059,14 @@ def common_template_data(request):
     if (request.view_func is not view_log):
       data['log_href'] = request.get_url(view_func=view_log,
                                          params={}, escape=1)
+      if (request.view_func is view_diff):
+        data['log_href_rev'] = request.query_dict.get('r2')
+      elif (request.view_func is view_annotate):
+        # if user did "view=annotate" there may not be an annotate key
+        if request.query_dict.has_key('annotate'):
+          data['log_href_rev'] = request.query_dict.get('annotate')
+      elif request.query_dict.has_key('rev'):
+        data['log_href_rev'] = request.query_dict.get('rev')
 
     if (request.roottype == 'cvs' and cfg.options.use_cvsgraph
         and request.view_func is not view_cvsgraph):
