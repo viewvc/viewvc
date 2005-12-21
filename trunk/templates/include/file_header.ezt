@@ -1,7 +1,7 @@
 <p style="margin:0;">
 <a href="[up_href]"><img src="[docroot]/images/back_small.png" width="16" height="16" alt="Parent Directory" /> Parent Directory</a>
 [if-any log_href] 
-  | <a href="[log_href]"><img src="[docroot]/images/log.png" width="16" height="16" alt="Revision Log" /> Revision Log</a>
+  | <a href="[log_href][if-any log_href_rev]#rev[log_href_rev][end]"><img src="[docroot]/images/log.png" width="16" height="16" alt="Revision Log" /> Revision Log</a>
 [end]
 [if-any graph_href]
   | <a href="[graph_href]"><img src="[docroot]/images/cvsgraph_16x16.png" width="16" height="16" alt="View Revision Graph" /> Revision Graph</a>
