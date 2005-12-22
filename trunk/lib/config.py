@@ -179,6 +179,7 @@ class Config:
     self.cvsdb.readonly_user = ''
     self.cvsdb.readonly_passwd = '' 
     self.cvsdb.row_limit = 1000
+    self.cvsdb.rss_row_limit = 100
 
     self.options.root_as_url_component = 0
     self.options.sort_by = 'file'

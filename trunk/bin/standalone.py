@@ -183,6 +183,7 @@ If this doesn't work, please click on the link above.
             env['SCRIPT_NAME'] = scriptname
             if query:
                 env['QUERY_STRING'] = query
+            env['HTTP_HOST'] = self.server.address[0]
             host = self.address_string()
             if host != self.client_address[0]:
                 env['REMOTE_HOST'] = host

@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<rss version="2.0">
+<channel>
+    <title>CVS checkins</title>
+    <description>CVS checkins</description>
+	[for commits]<item>
+        <title>[commits.rev]: [[commits.author]] [commits.title]</title>
+		[if-any commits.url]<link>[commits.url]</link>[end]
+		<author>[commits.author]</author>
+		<pubDate>[commits.date]</pubDate>
+		<description>[commits.log]</description>
+    </item>[end]
+</channel>	
+</rss>

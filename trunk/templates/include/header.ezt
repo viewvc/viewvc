@@ -7,6 +7,7 @@
   <title>[if-any rootname][[][rootname]][else]ViewVC[end] [page_title]</title>
   <meta name="generator" content="ViewVC [vsn]" />
   <link rel="stylesheet" href="[docroot]/styles.css" type="text/css" />
+  <link rel="alternate" type="application/rss+xml" title="RSS [[][rootname]][where]" HREF="[rss_href]">
 </head>
 <body>
 <div class="vc_navheader">
