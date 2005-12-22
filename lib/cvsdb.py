@@ -37,8 +37,9 @@ gCheckinDatabaseReadOnly = None
 ## complient database interface
 
 class CheckinDatabase:
-    def __init__(self, host, user, passwd, database, row_limit):
+    def __init__(self, host, port, user, passwd, database, row_limit):
         self._host = host
+        self._port = port
         self._user = user
         self._passwd = passwd
         self._database = database
@@ -51,7 +52,7 @@ class CheckinDatabase:
 
     def Connect(self):
         self.db = dbi.connect(
-            self._host, self._user, self._passwd, self._database)
+            self._host, self._port, self._user, self._passwd, self._database)
 
     def sql_get_id(self, table, column, value, auto_set):
         sql = "SELECT id FROM %s WHERE %s=%%s" % (table, column)
@@ -618,6 +619,7 @@ def ConnectDatabaseReadOnly(cfg):
     
     gCheckinDatabaseReadOnly = CheckinDatabase(
         cfg.cvsdb.host,
+        cfg.cvsdb.port,
         cfg.cvsdb.readonly_user,
         cfg.cvsdb.readonly_passwd,
         cfg.cvsdb.database_name,
@@ -634,6 +636,7 @@ def ConnectDatabase(cfg):
 
     gCheckinDatabase = CheckinDatabase(
         cfg.cvsdb.host,
+        cfg.cvsdb.port,
         cfg.cvsdb.user,
         cfg.cvsdb.passwd,
         cfg.cvsdb.database_name,
