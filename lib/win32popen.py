@@ -2,7 +2,7 @@
 # Russ Yanofsky (rey4@columbia.edu)
 
 import os, sys, traceback, string, thread
-import win32process, win32security, win32pipe, win32con
+import win32process, win32pipe, win32con
 import win32event, win32file, win32api, winerror
 import pywintypes, msvcrt
 
