@@ -358,7 +358,9 @@ class CheckinDatabase:
         ## limit the number of rows requested or we could really slam
         ## a server with a large database
         limit = ""
-        if self._row_limit:
+        if query.limit:
+            limit = "LIMIT %s" % (str(query.limit))
+        elif self._row_limit:
             limit = "LIMIT %s" % (str(self._row_limit))
 
         sql = "SELECT checkins.* FROM %s %s %s %s" % (
@@ -555,6 +557,9 @@ class CheckinDatabaseQuery:
         self.from_date = None
         self.to_date = None
 
+        ## limit on number of rows to return
+        self.limit = None
+
         ## list of commits -- filled in by CVS query
         self.commit_list = []
 
@@ -597,6 +602,9 @@ class CheckinDatabaseQuery:
     def SetToDateDaysAgo(self, days_ago):
         ticks = time.time() - (86400 * days_ago)
         self.to_date = dbi.DateTimeFromTicks(ticks)
+
+    def SetLimit(self, limit):
+        self.limit = limit;
 
     def AddCommit(self, commit):
         self.commit_list.append(commit)

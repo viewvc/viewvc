@@ -647,6 +647,7 @@ _legal_params = {
   'mindate'       : _re_validate_datetime,
   'maxdate'       : _re_validate_datetime,
   'format'        : _re_validate_alpha,
+  'limit'         : _re_validate_number,
 
   # for redirect_pathrev
   'orig_path'     : None,
@@ -1023,6 +1024,7 @@ def common_template_data(request):
     'log_href' : None,
     'log_href_rev': None,
     'graph_href': None,
+    'rss_href' : None,
     'view'     : _view_codes[request.view_func],
   }
 
@@ -1077,6 +1079,10 @@ def common_template_data(request):
       data['log_href'] = request.get_url(view_func=view_log,
                                          params={}, escape=1)
 
+  data['rss_href'] = request.get_url(view_func=view_query,
+                                     params={'date': 'month',
+                                             'format': 'rss'},
+                                     escape=1)
   return data
 
 def nav_header_data(request, rev, orig_path):
@@ -1380,6 +1386,16 @@ def make_time_string(date, cfg):
     return time.asctime(localtime) + ' ' + time.tzname[localtime[8]]
   else:
     return time.asctime(time.gmtime(date)) + ' UTC'
+
+def make_rss_time_string(date, cfg):
+  """Returns formatted date string in UTC, formatted for RSS.
+
+  The passed in 'date' variable is seconds since epoch.
+
+  """
+  if date is None:
+    return 'Unknown date'
+  return time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(date)) + ' UTC'
 
 def view_markup(request):
   cfg = request.cfg
@@ -3137,6 +3153,21 @@ def prev_rev(rev):
 def build_commit(request, desc, files):
   commit = _item(num_files=len(files), files=[])
   commit.log = htmlify(desc)
+  if len(desc) > 50:
+    title = desc[:50] + '...'
+  else:
+    title = desc
+  commit.title = htmlify(title)
+  commit.rev = files[0].GetRevision()
+  commit.author = htmlify(files[0].GetAuthor())
+  commit.date = make_rss_time_string(files[0].GetTime(), request.cfg)
+  commit.url = None
+  if request.roottype == 'svn':
+    commit.url = request.get_url(view_func=view_revision,
+                                 params={'rev': commit.rev},
+                                 escape=1)
+    commit.url = 'http://' + request.server.getenv("HTTP_HOST") + \
+                 string.replace(commit.url, '&', '&amp;')
   for f in files:
     commit_time = f.GetTime()
     if commit_time:
@@ -3234,6 +3265,7 @@ def view_query(request):
   mindate = request.query_dict.get('mindate', '')
   maxdate = request.query_dict.get('maxdate', '')
   format = request.query_dict.get('format')
+  limit = request.query_dict.get('limit', '0')
 
   match_types = { 'exact':1, 'like':1, 'glob':1, 'regex':1, 'notregex':1 }
   sort_types = { 'date':1, 'author':1, 'file':1 }
@@ -3289,6 +3321,10 @@ def view_query(request):
       query.SetFromDateObject(mindate)
     if maxdate is not None:
       query.SetToDateObject(maxdate)
+  if limit is not '0':
+    query.SetLimit(limit)
+  elif format == 'rss':
+    query.SetLimit(request.cfg.cvsdb.rss_row_limit)
 
   # run the query
   db = cvsdb.ConnectDatabaseReadOnly(request.cfg)
@@ -3380,8 +3416,12 @@ def view_query(request):
     'commits': commits,
     })
 
-  request.server.header()
-  generate_page(request, "query_results", data)
+  if format == 'rss':
+    request.server.header("text/xml")
+    generate_page(request, "rss", data)
+  else:
+    request.server.header()
+    generate_page(request, "query_results", data)
 
 _views = {
   'annotate':  view_annotate,
