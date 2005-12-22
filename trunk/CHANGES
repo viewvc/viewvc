@@ -12,6 +12,7 @@ Version 1.0 (not yet released)
       before actually installing ViewCVS.
     - New GUI field to test paging.
   * add new, better-integrated query interface (2004-Jul-17)
+  * add integrated RSS feeds (2005-Dec-22)
   * add new "root_as_url_component" option to embed root names as
     path components in ViewCVS URLs for a more natural URL scheme
     in ViewCVS configurations with multiple repositories.
@@ -25,6 +26,8 @@ Version 1.0 (not yet released)
     sets of templates (2005-Feb-08)
   * add new "sort_group_dirs" option to disable grouping of
     directories in directory listings (2005-Mar-07)
+  * add new "port" option to connect to a MySQL database on a nonstandard
+    port (2005-Dec-22)
   * make "default_root" option optional. When no root is specified,
     show a page listing all available repositories (2005-Feb-04)
   * make "checkout_magic" obsolete (but still enabled by default for
@@ -41,7 +44,8 @@ Version 1.0 (not yet released)
   * make View/Download links work the same for all file types
     (2004-Jan-21)
   * add links to tip of selected branch on log page (2005-Oct-03)
-  * enable enscript highlighting for more file types
+  * allow use of "Highlight" program for colorizing (2005-Dec-20)
+  * enable enscript colorizing for more file types
   * add sorting arrows for directory views (2004-Jul-21)
   * get rid of popup windows for checkout links (2004-Jan-21)
   * obfuscate email addresses in html output by encoding @ symbol
