@@ -270,6 +270,7 @@ there are some additional steps required to get the database working.
      
       enabled = 1        # Whether to enable query support in viewcvs.cgi
       host =             # MySQL database server host
+      port =             # MySQL database server port (default is 3306)
       database_name =    # the name of the database you created with
                          # make-database
       user =             # the read/write database user

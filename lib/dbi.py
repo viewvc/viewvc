@@ -62,5 +62,5 @@ def TicksFromDateTime(datetime):
   else:
     return time.mktime(t[:8] + (-1,))
     
-def connect(host, user, passwd, db):
-    return MySQLdb.connect(host=host, user=user, passwd=passwd, db=db)
+def connect(host, port, user, passwd, db):
+    return MySQLdb.connect(host=host, port=port, user=user, passwd=passwd, db=db)

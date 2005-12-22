@@ -172,6 +172,7 @@ class Config:
 
     self.cvsdb.enabled = 0
     self.cvsdb.host = ''
+    self.cvsdb.port = 3306
     self.cvsdb.database_name = ''
     self.cvsdb.user = ''
     self.cvsdb.passwd = ''
