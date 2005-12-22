@@ -292,6 +292,11 @@ th { background: rgb(60%,70%,90%); }
   <td>URL of the Subversion revision view for the current revision.</td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">rss_href</td>
+  <td>String</td>
+  <td>URL of RSS feed for current location.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">view_href</td>
   <td>String</td>
   <td>URL of the ViewCVS file contents view for the current resource.</td>
@@ -1483,6 +1488,11 @@ th { background: rgb(60%,70%,90%); }
       the query criteria.</td>
 </tr>
 <tr class="varlevel2">
+  <td class="varname">commits.author</td>
+  <td>String</td>
+  <td>Author of the commit.</td>
+</tr>
+<tr class="varlevel2">
   <td class="varname">commits.files</td>
   <td>List</td>
   <td>List of files under the current directory affected by the
@@ -1559,6 +1569,26 @@ th { background: rgb(60%,70%,90%); }
   <td class="varname">commits.num_files</td>
   <td>String</td>
   <td>Number of files in the <var>commits.files</var> list.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">commits.rev</td>
+  <td>String</td>
+  <td>Commit revision number. Subversion only.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">commits.rss_date</td>
+  <td>String</td>
+  <td>Date of the commit formatted for RSS.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">commits.rss_url</td>
+  <td>String</td>
+  <td>Absolute URL of the revision page for the commit. Subversion only.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">commits.short_log</td>
+  <td>String</td>
+  <td>Truncated commit log message.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">english_query</td>

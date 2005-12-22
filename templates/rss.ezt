@@ -4,10 +4,10 @@
     <title>CVS checkins</title>
     <description>CVS checkins</description>
 	[for commits]<item>
-        <title>[commits.rev]: [[commits.author]] [commits.title]</title>
-		[if-any commits.url]<link>[commits.url]</link>[end]
+        <title>[if-any commits.rev][commits.rev]: [end][[commits.author]] [commits.short_log]</title>
+		[if-any commits.rss_url]<link>[commits.rss_url]</link>[end]
 		<author>[commits.author]</author>
-		<pubDate>[commits.date]</pubDate>
+		<pubDate>[commits.rss_date]</pubDate>
 		<description>[commits.log]</description>
     </item>[end]
 </channel>	

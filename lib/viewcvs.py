@@ -1079,10 +1079,11 @@ def common_template_data(request):
       data['log_href'] = request.get_url(view_func=view_log,
                                          params={}, escape=1)
 
-  data['rss_href'] = request.get_url(view_func=view_query,
-                                     params={'date': 'month',
-                                             'format': 'rss'},
-                                     escape=1)
+  if is_query_supported(request):
+    data['rss_href'] = request.get_url(view_func=view_query,
+                                       params={'date': 'month',
+                                               'format': 'rss'},
+                                       escape=1)
   return data
 
 def nav_header_data(request, rev, orig_path):
@@ -3153,21 +3154,20 @@ def prev_rev(rev):
 def build_commit(request, desc, files):
   commit = _item(num_files=len(files), files=[])
   commit.log = htmlify(desc)
-  if len(desc) > 50:
-    title = desc[:50] + '...'
-  else:
-    title = desc
-  commit.title = htmlify(title)
-  commit.rev = files[0].GetRevision()
+  commit.short_log = format_log(commit.log, request.cfg)
   commit.author = htmlify(files[0].GetAuthor())
-  commit.date = make_rss_time_string(files[0].GetTime(), request.cfg)
-  commit.url = None
+  commit.rss_date = make_rss_time_string(files[0].GetTime(), request.cfg)
   if request.roottype == 'svn':
-    commit.url = request.get_url(view_func=view_revision,
-                                 params={'rev': commit.rev},
-                                 escape=1)
-    commit.url = 'http://' + request.server.getenv("HTTP_HOST") + \
-                 string.replace(commit.url, '&', '&amp;')
+    commit.rev = files[0].GetRevision()
+    commit.rss_url = 'http://%s%s' % \
+      (request.server.getenv("HTTP_HOST"),
+       request.get_url(view_func=view_revision,
+                       params={'rev': commit.rev},
+                       escape=1))
+  else:
+    commit.rev = None
+    commit.rss_url = None
+
   for f in files:
     commit_time = f.GetTime()
     if commit_time:
