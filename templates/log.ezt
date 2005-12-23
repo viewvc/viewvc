@@ -22,7 +22,7 @@
     [is pathtype "file"]
       (<a href="[entries.view_href]">view</a>)
     [else]
-      (<a href="[entries.view_href]"><em>view</em></a>)
+      <a href="[entries.view_href]">Directory Listing</a>
     [end]
     [if-any entries.download_href](<a href="[entries.download_href]">download</a>)[end]
     [if-any entries.download_text_href](<a href="[entries.download_text_href]">as text</a>)[end]
