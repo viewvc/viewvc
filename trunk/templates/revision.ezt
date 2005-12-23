@@ -37,6 +37,18 @@
 <hr />
 
 <p><strong>Changed paths:</strong></p>
+
+[if-any more_changes]
+  <div>
+    Only [limit_changes] changes shown,
+    <a href="[more_changes_href]">display [more_changes] more changes...</a>
+  </div>
+[end]
+
+[if-any first_changes]
+  <div><a href="[first_changes_href]">Show only first [first_changes] changes...</div>
+[end]
+
 <table cellspacing="1" cellpadding="2">
   <thead>
   <tr align="left">

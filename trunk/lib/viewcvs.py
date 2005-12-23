@@ -79,6 +79,7 @@ _sticky_vars = [
   'logsort',
   'diff_format',
   'search',
+  'limit_changes',
   ]
 
 # for reading/writing between a couple descriptors
@@ -614,6 +615,7 @@ _legal_params = {
   'p2'            : None,
   
   'hideattic'     : _re_validate_number,
+  'limit_changes' : _re_validate_number,
   'sortby'        : _re_validate_alpha,
   'sortdir'       : _re_validate_alpha,
   'logsort'       : _re_validate_alpha,
@@ -2935,6 +2937,25 @@ def view_revision(request):
   if check_freshness(request, None, str(rev), weak=1):
     return
 
+  # Handle limit_changes parameter
+  cfg_limit_changes = request.cfg.options.limit_changes
+  limit_changes = int(query_dict.get('limit_changes', cfg_limit_changes))
+  more_changes = None
+  more_changes_href = None
+  first_changes = None
+  first_changes_href = None
+  if limit_changes and len(changes) > limit_changes:
+    more_changes = len(changes) - limit_changes
+    params = query_dict.copy()
+    params['limit_changes'] = 0
+    more_changes_href = request.get_url(params=params, escape=1)
+    changes = changes[:limit_changes]
+  elif cfg_limit_changes and len(changes) > cfg_limit_changes:
+    first_changes = cfg_limit_changes
+    params = query_dict.copy()
+    params['limit_changes'] = None
+    first_changes_href = request.get_url(params=params, escape=1)
+
   # add the hrefs, types, and prev info
   for change in changes:
     change.view_href = change.diff_href = change.type = change.log_href = None
@@ -3016,6 +3037,11 @@ def view_revision(request):
     'changes' : changes,
     'prev_href' : prev_rev_href,
     'next_href' : next_rev_href,
+    'limit_changes': limit_changes,
+    'more_changes': more_changes,
+    'more_changes_href': more_changes_href,
+    'first_changes': first_changes,
+    'first_changes_href': first_changes_href,
   })
 
   if date is not None:
@@ -3042,7 +3068,7 @@ def view_queryform(request):
   data = common_template_data(request)
 
   data['query_action'], data['query_hidden_values'] = \
-    request.get_form(view_func=view_query, params={})
+    request.get_form(view_func=view_query, params={'limit_changes': None})
 
   # default values ...
   data['branch'] = request.query_dict.get('branch', '')
@@ -3057,6 +3083,8 @@ def view_queryform(request):
   data['hours'] = request.query_dict.get('hours', '2')
   data['mindate'] = request.query_dict.get('mindate', '')
   data['maxdate'] = request.query_dict.get('maxdate', '')
+  data['limit_changes'] = int(request.query_dict.get('limit_changes',
+                                           request.cfg.options.limit_changes))
 
   data['dir_href'] = request.get_url(view_func=view_directory, params={},
                                      escape=1)
@@ -3151,10 +3179,12 @@ def prev_rev(rev):
     r = r[:-2]
   return string.join(r, '.')
 
-def build_commit(request, desc, files):
+def build_commit(request, files, limited_files):
   commit = _item(num_files=len(files), files=[])
+  commit.limited_files = ezt.boolean(limited_files)
+  desc = files[0].GetDescription()
   commit.log = htmlify(desc)
-  commit.short_log = format_log(commit.log, request.cfg)
+  commit.short_log = format_log(desc, request.cfg)
   commit.author = htmlify(files[0].GetAuthor())
   commit.rss_date = make_rss_time_string(files[0].GetTime(), request.cfg)
   if request.roottype == 'svn':
@@ -3202,6 +3232,14 @@ def build_commit(request, desc, files):
                                         'r2': f.GetRevision(),
                                         'diff_format': None},
                                 escape=1)
+
+    # skip files in forbidden or hidden modules
+    dir_parts = filter(None, string.split(f.GetDirectory(), '/'))
+    if dir_parts \
+           and ((dir_parts[0] == 'CVSROOT'
+                 and request.cfg.options.hide_cvsroot) \
+                or request.cfg.is_forbidden(dir_parts[0])):
+      continue
 
     commit.files.append(_item(date=commit_time,
                               dir=htmlify(f.GetDirectory()),
@@ -3265,7 +3303,9 @@ def view_query(request):
   mindate = request.query_dict.get('mindate', '')
   maxdate = request.query_dict.get('maxdate', '')
   format = request.query_dict.get('format')
-  limit = request.query_dict.get('limit', '0')
+  limit = int(request.query_dict.get('limit', 0))
+  limit_changes = int(request.query_dict.get('limit_changes',
+                                           request.cfg.options.limit_changes))
 
   match_types = { 'exact':1, 'like':1, 'glob':1, 'regex':1, 'notregex':1 }
   sort_types = { 'date':1, 'author':1, 'file':1 }
@@ -3321,7 +3361,7 @@ def view_query(request):
       query.SetFromDateObject(mindate)
     if maxdate is not None:
       query.SetToDateObject(maxdate)
-  if limit is not '0':
+  if limit:
     query.SetLimit(limit)
   elif format == 'rss':
     query.SetLimit(request.cfg.cvsdb.rss_row_limit)
@@ -3339,7 +3379,8 @@ def view_query(request):
   mod_time = -1
   if query.commit_list:
     files = []
-    current_desc = query.commit_list[0].GetDescription()
+    limited_files = 0
+    current_desc = query.commit_list[0].GetDescriptionID()
     current_rev = query.commit_list[0].GetRevision()
     for commit in query.commit_list:
       # base modification time on the newest commit ...
@@ -3348,38 +3389,38 @@ def view_query(request):
       plus_count = plus_count + int(commit.GetPlusCount())
       minus_count = minus_count + int(commit.GetMinusCount())
       # group commits with the same commit message ...
-      desc = commit.GetDescription()
-      # skip files in forbidden or hidden modules
-      dir_parts = filter(None, string.split(commit.GetDirectory(), '/'))
-      if dir_parts \
-             and ((dir_parts[0] == 'CVSROOT'
-                   and request.cfg.options.hide_cvsroot) \
-                  or request.cfg.is_forbidden(dir_parts[0])):
-        continue
+      desc = commit.GetDescriptionID()
       # For CVS, group commits with the same commit message.
       # For Subversion, group them only if they have the same revision number
       if request.roottype == 'cvs':
         if current_desc == desc:
-          files.append(commit)
+          if not limit_changes or len(files) < limit_changes:
+            files.append(commit)
+          else:
+            limited_files = 1
           continue
       else:
         if current_rev == commit.GetRevision():
-          files.append(commit)
+          if not limit_changes or len(files) < limit_changes:
+            files.append(commit)
+          else:
+            limited_files = 1
           continue
-          
+
       # if our current group has any allowed files, append a commit
       # with those files.
       if len(files):
-        commits.append(build_commit(request, current_desc, files))
+        commits.append(build_commit(request, files, limited_files))
 
       files = [ commit ]
+      limited_files = 0
       current_desc = desc
       current_rev = commit.GetRevision()
       
     # we need to tack on our last commit grouping, but, again, only if
     # it has allowed files.
     if len(files):
-      commits.append(build_commit(request, current_desc, files))
+      commits.append(build_commit(request, files, limited_files))
 
   # only show the branch column if we are querying all branches
   # or doing a non-exact branch match on a CVS repository.
@@ -3393,6 +3434,11 @@ def view_query(request):
   params['format'] = 'backout'
   backout_href = request.get_url(params=params,
                                  escape=1)
+
+  # link to zero limit_changes value
+  params = request.query_dict.copy()
+  params['limit_changes'] = 0
+  limit_changes_href = request.get_url(params=params, escape=1)
 
   # if we got any results, use the newest commit as the modification time
   if mod_time >= 0:
@@ -3414,6 +3460,8 @@ def view_query(request):
     'show_branch': show_branch,
     'querysort': querysort,
     'commits': commits,
+    'limit_changes': limit_changes,
+    'limit_changes_href': limit_changes_href,
     })
 
   if format == 'rss':

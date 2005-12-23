@@ -382,7 +382,7 @@ class CheckinDatabase:
              dbFileID, dbRevision, dbStickyTag, dbBranchID, dbAddedLines,
              dbRemovedLines, dbDescID) = row
 
-            commit = CreateCommit()
+            commit = LazyCommit(self)
             if dbType == 'Add':
               commit.SetTypeAdd()
             elif dbType == 'Remove':
@@ -390,15 +390,15 @@ class CheckinDatabase:
             else:
               commit.SetTypeChange()
             commit.SetTime(dbi.TicksFromDateTime(dbCI_When))
-            commit.SetFile(self.GetFile(dbFileID))
-            commit.SetDirectory(self.GetDirectory(dbDirID))
+            commit.SetFileID(dbFileID)
+            commit.SetDirectoryID(dbDirID)
             commit.SetRevision(dbRevision)
-            commit.SetRepository(self.GetRepository(dbRepositoryID))
-            commit.SetAuthor(self.GetAuthor(dbAuthorID))
-            commit.SetBranch(self.GetBranch(dbBranchID))
+            commit.SetRepositoryID(dbRepositoryID)
+            commit.SetAuthorID(dbAuthorID)
+            commit.SetBranchID(dbBranchID)
             commit.SetPlusCount(dbAddedLines)
             commit.SetMinusCount(dbRemovedLines)
-            commit.SetDescription(self.GetDescription(dbDescID))
+            commit.SetDescriptionID(dbDescID)
 
             query.AddCommit(commit)
 
@@ -531,6 +531,67 @@ class Commit:
             return 'Add'
         elif self.__type == Commit.REMOVE:
             return 'Remove'
+
+## LazyCommit overrides a few methods of Commit to only retrieve
+## it's properties as they are needed
+class LazyCommit(Commit):
+  def __init__(self, db):
+    Commit.__init__(self)
+    self.__db = db
+
+  def SetFileID(self, dbFileID):
+    self.__dbFileID = dbFileID
+
+  def GetFileID(self):
+    return self.__dbFileID
+
+  def GetFile(self):
+    return self.__db.GetFile(self.__dbFileID)
+
+  def SetDirectoryID(self, dbDirID):
+    self.__dbDirID = dbDirID
+
+  def GetDirectoryID(self):
+    return self.__dbDirID
+
+  def GetDirectory(self):
+    return self.__db.GetDirectory(self.__dbDirID)
+
+  def SetRepositoryID(self, dbRepositoryID):
+    self.__dbRepositoryID = dbRepositoryID
+
+  def GetRepositoryID(self):
+    return self.__dbRepositoryID
+
+  def GetRepository(self):
+    return self.__db.GetRepository(self.__dbRepositoryID)
+
+  def SetAuthorID(self, dbAuthorID):
+    self.__dbAuthorID = dbAuthorID
+
+  def GetAuthorID(self):
+    return self.__dbAuthorID
+
+  def GetAuthor(self):
+    return self.__db.GetAuthor(self.__dbAuthorID)
+
+  def SetBranchID(self, dbBranchID):
+    self.__dbBranchID = dbBranchID
+
+  def GetBranchID(self):
+    return self.__dbBranchID
+
+  def GetBranch(self):
+    return self.__db.GetBranch(self.__dbBranchID)
+
+  def SetDescriptionID(self, dbDescID):
+    self.__dbDescID = dbDescID
+
+  def GetDescriptionID(self):
+    return self.__dbDescID
+
+  def GetDescription(self):
+    return self.__db.GetDescription(self.__dbDescID)
 
 ## QueryEntry holds data on one match-type in the SQL database
 ## match is: "exact", "like", or "regex"

@@ -1566,6 +1566,11 @@ th { background: rgb(60%,70%,90%); }
   <td>Commit log message.</td>
 </tr>
 <tr class="varlevel2">
+  <td class="varname">commits.limited_files</td>
+  <td>Boolean</td>
+  <td>True if files list was cut short due to <tt>limit_changes</tt>.</td>
+</tr>
+<tr class="varlevel2">
   <td class="varname">commits.num_files</td>
   <td>String</td>
   <td>Number of files in the <var>commits.files</var> list.</td>
@@ -1594,6 +1599,17 @@ th { background: rgb(60%,70%,90%); }
   <td class="varname">english_query</td>
   <td>String</td>
   <td>Text description of the current query criteria.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">limit_changes</td>
+  <td>String</td>
+  <td>Current <tt>limit_changes</tt> value, maximum number of changed files
+      to show per commit.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">limit_changes_href</td>
+  <td>String</td>
+  <td>URL for the current view but with <tt>limit_changes</tt> disabled.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">minus_count</td>
@@ -1693,6 +1709,12 @@ th { background: rgb(60%,70%,90%); }
   <td>String</td>
   <td>If <var>date</var> is <tt>hours</tt>, number of hours back to
       include results from.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">limit_changes</td>
+  <td>String</td>
+  <td>Current <tt>limit_changes</tt> value, maximum number of changed files
+      to show per commit.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">maxdate</td>
@@ -1836,6 +1858,17 @@ th { background: rgb(60%,70%,90%); }
   <td>Revision date (in UTC if not otherwise configured).</td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">first_changes</td>
+  <td>String</td>
+  <td>Configured value for <tt>limit_changes</tt>.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">first_changes_href</td>
+  <td>String</td>
+  <td>URL for the current view but with <tt>limit_changes</tt> set to the
+      configured value.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">jump_rev_action</td>
   <td>String</td>
   <td>Form action URL for revision jump form.</td>
@@ -1846,9 +1879,25 @@ th { background: rgb(60%,70%,90%); }
   <td>Hidden value HTML markup for revision jump form.</td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">limit_changes</td>
+  <td>String</td>
+  <td>Current <tt>limit_changes</tt> value, maximum number of changed files
+      to show per commit.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">log</td>
   <td>String</td>
   <td>Revision log message.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">more_changes</td>
+  <td>String</td>
+  <td>Number of changes not being shown due to <tt>limit_changes</tt>.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">more_changes_href</td>
+  <td>String</td>
+  <td>URL for the current view but with <tt>limit_changes</tt> disabled.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">next_href</td>
