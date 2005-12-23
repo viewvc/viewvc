@@ -37,7 +37,7 @@
       [is pathtype "file"]
         <a href="[entries.view_href]"><strong>View</strong></a><br />
       [else]
-        <a href="[entries.view_href]"><strong><em>View</em></strong></a><br />
+        <a href="[entries.view_href]"><strong>Directory Listing</strong></a><br />
       [end]
       [if-any entries.download_href]<a href="[entries.download_href]"><strong>Download</strong></a><br />[end]
       [if-any entries.download_text_href]<a href="[entries.download_text_href]"><strong>As text</strong></a><br />[end]
