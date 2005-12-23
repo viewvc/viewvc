@@ -18,6 +18,7 @@
 </tr>
 [end]
 
+[is pathtype "file"]
 [if-any view_href]
 <tr>
   <td>Links to HEAD:</td>
@@ -40,6 +41,7 @@
     [if-any tag_annotate_href](<a href="[tag_annotate_href]">annotate</a>)[end]
   </td>
 </tr>
+[end]
 [end]
 
 <tr>

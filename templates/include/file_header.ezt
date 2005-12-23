@@ -1,4 +1,5 @@
 <p style="margin:0;">
+[is pathtype "file"]
 <a href="[up_href]"><img src="[docroot]/images/back_small.png" width="16" height="16" alt="Parent Directory" /> Parent Directory</a>
 [if-any log_href] 
   | <a href="[log_href][if-any log_href_rev]#rev[log_href_rev][end]"><img src="[docroot]/images/log.png" width="16" height="16" alt="Revision Log" /> Revision Log</a>
@@ -8,5 +9,8 @@
 [end]
 [is view "diff"]
   | <a href="[patch_href]"><img src="[docroot]/images/diff.png" width="16" height="16" alt="View Patch" /> Patch</a>
+[end]
+[else]
+<a href="[view_href]"><img src="[docroot]/images/dir.png" width="16" height="16" alt="View Directory Listing" /> Directory Listing</a>
 [end]
 </p>
