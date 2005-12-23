@@ -77,7 +77,7 @@ Browse Directory</a></p>
     </td>
   </tr>
   <tr>
-    <th style="text-align:right;vertical-align:top;">Who</th>
+    <th style="text-align:right;vertical-align:top;">Who:</th>
     <td>
       <input type="text" name="who" value="[who]" /><br />
       <label for="who_match_exact">
@@ -158,6 +158,15 @@ Browse Directory</a></p>
           </td>
         </tr>
       </table>
+    </td>
+  </tr>
+  <tr>
+    <th style="text-align:right;vertical-align:top;">Limit:</th>
+    <td>
+      Show at most
+      <input type="text" name="limit_changes" value="[limit_changes]" size="5" />
+      changed files per commit.<br />
+      (use 0 to show all files)
     </td>
   </tr>
   <tr>

@@ -63,6 +63,15 @@
       </td>
     </tr>
   [end]
+  [if-any commits.limited_files]
+    <tr class="vc_row_[if-index commits even]even[else]odd[end]">
+      <td>&nbsp;</td>
+      <td colspan="5">
+        <strong><em><small>Only first [commits.num_files] files shown.
+        <a href="[limit_changes_href]">Show all files</a> or
+        <a href="[queryform_href]">adjust limit</a>.</small></em></strong>
+    </tr>
+  [end]
   <tr class="vc_row_[if-index commits even]even[else]odd[end]">
     <td>&nbsp;</td>
     <td colspan="5"><strong>Log:</strong><br />

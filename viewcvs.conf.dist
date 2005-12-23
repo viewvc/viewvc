@@ -523,6 +523,14 @@ use_re_search = 0
 use_pagesize = 0
 # use_pagesize = 20
 
+# Limit number of changed paths shown per commit in the Subversion revision
+# view and in query results. This is not a hard limit (the UI provides
+# options to show all changed paths), but it prevents ViewVC from generating
+# enormous and hard to read pages by default when they happen to contain
+# import or merge commits affecting hundreds or thousands of files.
+# Set to 0 to disable the limit.
+limit_changes = 100
+
 #---------------------------------------------------------------------------
 [templates]
 

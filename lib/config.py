@@ -220,6 +220,7 @@ class Config:
     self.options.cvsgraph_conf = "cvsgraph.conf"
     self.options.use_re_search = 0
     self.options.use_pagesize = 0
+    self.options.limit_changes = 100
     self.options.use_localtime = 0
     self.options.http_expiration_time = 600
     self.options.generate_etags = 1
