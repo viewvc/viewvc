@@ -65,6 +65,7 @@ class CCVSRepository(CVSRepository):
       entry.rev = entry.date = entry.author = entry.dead = entry.log = None
       path = _log_path(entry, dirpath, subdirs)
       if path:
+        entry.path = path
         try:
           rcsparse.Parser().parse(open(path, 'rb'), InfoSink(entry, rev, alltags))
         except IOError, e:
