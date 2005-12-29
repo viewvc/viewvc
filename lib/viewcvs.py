@@ -1167,9 +1167,7 @@ class MarkupShell:
   def __call__(self, out):
     out.flush()
     try:
-      ### need to change pipe_cmds() to accept the out parameter,
-      ### right now this just assumes out == sys.stdout
-      copy_stream(self.fp, popen.pipe_cmds(self.cmds))
+      copy_stream(self.fp, popen.pipe_cmds(self.cmds, out))
       self.fp.close()
       self.fp = None
     except IOError:
