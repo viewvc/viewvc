@@ -133,17 +133,20 @@ def popen(cmd, args, mode, capture_err=1):
   # crap. shouldn't be here.
   sys.exit(127)
 
-def pipe_cmds(cmds):
+def pipe_cmds(cmds, out=None):
   """Executes a sequence of commands. The output of each command is directed to
   the input of the next command. A _pipe object is returned for writing to the
   first command's input. The output of the last command is directed to the
-  standard out. On windows, if sys.stdout is not an inheritable file handle
-  (i.e. it is not possible to direct the standard out of a child process to
-  it), then a separate thread will be spawned to spool output to
-  sys.stdout.write(). In all cases, the pipe_cmds() caller should refrain
-  from writing to the standard out until the last process has terminated.
-  """
+  "out" file object or the standard output if "out" is None. If "out" is not an
+  OS file descriptor, a separate thread will be spawned to send data to its
+  write() method."""
+
+  if out is None:
+    out = sys.stdout
+
   if sys.platform == "win32":
+    ### FIXME: windows implementation ignores "out" argument, always
+    ### writing last command's output to standard out
 
     if debug.SHOW_CHILD_PROCESSES:
       dbgIn = StringIO.StringIO()
@@ -250,8 +253,8 @@ def pipe_cmds(cmds):
   # no longer needed
   os.close(null)
 
-  # done with most of the commands. set up the last command to write to stdout
-  if not sapi.server.inheritableOut:
+  # done with most of the commands. set up the last command to write to "out"
+  if not hasattr(out, 'fileno'):
     r, w = os.pipe()
 
   pid = os.fork()
@@ -261,7 +264,14 @@ def pipe_cmds(cmds):
     # hook up stdin to the "read" channel
     os.dup2(prev_r, 0)
 
-    if not sapi.server.inheritableOut:
+    # hook up stdout to "out"
+    if hasattr(out, 'fileno'):
+      if out.fileno() != 1:
+        os.dup2(out.fileno(), 1)
+        out.close()
+
+    else:
+      # "out" can't be hooked up directly, so use a pipe and a thread
       os.dup2(w, 1)
       os.close(r)
       os.close(w)
@@ -281,9 +291,9 @@ def pipe_cmds(cmds):
   # not needed any more
   os.close(prev_r)
 
-  if not sapi.server.inheritableOut:
+  if not hasattr(out, 'fileno'):
     os.close(w)
-    thread = _copy(r, sapi.server.file())
+    thread = _copy(r, out)
     thread.start()
   else:
     thread = None
