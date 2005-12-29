@@ -29,12 +29,12 @@ and RCS can be obtained from:
 Once you've got Python and CVSNT or RCS installed, you can test out ViewVC
 before you install it by running:
 
-  python standalone.py -r <PATH_TO_REPOSITORY>
+  python bin\standalone.py -r <PATH_TO_REPOSITORY>
 
 The standalone server has a number of features (including a GUI interface)
 which you can find out about by running
 
-  python standalone.py --help
+  python bin\standalone.py --help
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 BASIC INSTALLATION
@@ -77,7 +77,7 @@ Mod_Python mode is faster than CGI mode.
 
 CGI Mode On IIS
 
-  1) Copy viewcvs.cgi and query.cgi from <VIEWCVS_INSTALL_DIR>\www\cgi to a
+  1) Copy viewcvs.cgi and query.cgi from <VIEWCVS_INSTALL_DIR>\bin\cgi to a
   folder that is accessible through your web server.
 
   2) Start up the IIS "Internet Services Manager" and right click a virtual
@@ -113,7 +113,7 @@ ASP Mode On IIS
   is at http://www.python.org/windows/win32com/ActiveXScripting.html)
 
   2) Copy the viewcvs.asp and query.asp files from
-  <VIEWCVS_INSTALL_DIR>\www\asp to a folder that is accessible through your web
+  <VIEWCVS_INSTALL_DIR>\bin\asp to a folder that is accessible through your web
   server.
 
   3) Start up the IIS "Internet Services Manager" and right click on the
@@ -146,8 +146,8 @@ Mod_Python Mode on Apache
 
      LoadModule python_module modules/mod_python.so
 
-  3) Copy viewcvs.py, query.py, and .htaccess from
-  <VIEWCVS_INSTALL_DIR>\www\mod_python to a folder being served by apache. Make
+  3) Copy viewcvs.py, query.py, handler.py, and .htaccess from
+  <VIEWCVS_INSTALL_DIR>\bin\mod_python to a folder being served by apache. Make
   sure overrides are allowed in this folder. The relevant parent directory in
   httpd.conf should have "AllowOverride All" set, or at least "AllowOverride
   FileInfo Options".
@@ -180,7 +180,7 @@ password, follow these instructions to set up ViewVC.
 1) Open a command prompt and type these commands:
 
    cd /d <VIEWCVS_INSTALL_DIR>
-   python make-database
+   python bin\make-database
 
 The script that comes up will prompt you for the MySQL username and password
 (you should have created these during the MySQL installation), and the name of
@@ -192,17 +192,17 @@ the <VIEWCVS_INSTALL_DIR>\viewcvs.conf file.
 
 3) At the command prompt run
 
-   python cvsdbadmin rebuild <repository>
+   python bin\cvsdbadmin rebuild <repository>
 
 where <repository> is the path to your CVS repository.
 
 4) If you want the checkin database to be dynamically updated with every
 checkin, add the following line to your CVSROOT/loginfo file:
 
-   ALL python "<VIEWCVS_INSTALL_DIR>\loginfo-handler" %{sVv}
+   ALL python "<VIEWCVS_INSTALL_DIR>\bin\loginfo-handler" %{sVv}
 
 If you decide not to enable dynamic updates, you can periodically refresh the
-database with "python cvsdbadmin update <repository>"
+database with "python bin\cvsdbadmin update <repository>"
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 CVSGRAPH
@@ -326,9 +326,9 @@ TROUBLESHOOTING
 
   Notes:
 
-  Under mod_python and ASP, changes made to the stub scripts inside the web
-  root do take effect immediately, you only need to take additional action when
-  you make changes to the main source files in <VIEWCVS_INSTALL_DIR>\lib
+  Under ASP, changes made to the stub scripts inside the web root do take
+  effect immediately, you only need to take additional action when you make
+  changes to the main source files in <VIEWCVS_INSTALL_DIR>\lib
 
   To "Unload ASP App", go to the IIS properties dialog for the application
   directory containing the ViewVC .asp files (in Internet Services Manager).
@@ -341,7 +341,7 @@ TROUBLESHOOTING
     import viewcvs
     reload (viewcvs)
 
-  then load the page one or more times in a web browser.
+  then load the page in a web browser.
 
 - If you have problems getting ViewVC to work with mod_python, you can first
   make sure mod_python works standalone with the testing instructions at
