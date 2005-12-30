@@ -505,7 +505,7 @@ class COMissingRevision(vclib.Error):
   pass
 
 ### suck up other warnings in _re_co_warning?
-_re_co_filename = re.compile(r'^(.*),v\s+-->\s+standard output\s*\n$')
+_re_co_filename = re.compile(r'^(.*),v\s+-->\s+(?:(?:standard output)|(?:stdout))\s*\n?$')
 _re_co_warning = re.compile(r'^.*co: .*,v: warning: Unknown phrases like .*\n$')
 _re_co_missing_rev = re.compile(r'^.*co: .*,v: revision.*absent\n$')
 _re_co_side_branches = re.compile(r'^.*co: .*,v: no side branches present for [\d\.]+\n$')
