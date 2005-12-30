@@ -457,14 +457,6 @@ php_exe_path = php
 # php_exe_path = C:\Program Files\php\cli\php.exe
 
 #
-# ViewVC has its own set of mappings from filename extensions and filenames
-# to languages. If the language is not supported by enscript, then it can
-# be listed here to disable the use of enscript.
-#
-disable_enscript_lang =
-# disable_enscript_lang = perl, cpp
-
-#
 # ViewVC can generate tarball from a repository on the fly.
 #
 allow_tar = 0
