@@ -24,7 +24,8 @@ import calendar
 import re
 import os
 import rfc822
-
+import tempfile
+import errno
 
 #
 # urllib.urlencode() is new to Python 1.5.2
@@ -121,6 +122,24 @@ except AttributeError:
     seconds = minutes*60 + second
     return seconds
 
+#
+# tempfile.mkdtemp() is new to Python 2.3
+#
+try:
+  mkdtemp = tempfile.mkdtemp
+except AttributeError:
+  def mkdtemp():
+    for i in range(10):
+      dir = tempfile.mktemp()
+      try:
+        os.mkdir(dir, 0700)
+        return dir
+      except OSError, e:
+        if e.errno == errno.EEXIST:
+          continue # try again
+        raise
+
+    raise IOError, (errno.EEXIST, "No usable temporary directory name found")
 
 # 
 # the following stuff is *ONLY* needed for standalone.py.

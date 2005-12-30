@@ -1167,9 +1167,14 @@ class MarkupShell:
   def __call__(self, out):
     out.flush()
     try:
-      copy_stream(self.fp, popen.pipe_cmds(self.cmds, out))
-      self.fp.close()
-      self.fp = None
+      pipe = popen.pipe_cmds(self.cmds, out)
+      try:
+        if self.fp:
+          copy_stream(self.fp, pipe)
+          self.fp.close()
+          self.fp = None
+      finally:
+        pipe.close()
     except IOError:
       raise debug.ViewCVSException \
         ('Error running external program. Command line was: "%s"'
@@ -1185,16 +1190,15 @@ class MarkupShell:
       self.fp = None
 
 class MarkupEnscript(MarkupShell):
-  def __init__(self, enscript_path, lang, fp):
+  def __init__(self, cfg, fp, filename):
     
     # I've tried to pass option '-C' to enscript to generate line numbers
     # Unfortunately this option doesn't work with HTML output in enscript
     # version 1.6.2.
-    enscript_cmd = [os.path.normpath(os.path.join(enscript_path,
+    enscript_cmd = [os.path.normpath(os.path.join(cfg.options.enscript_path,
                                                   'enscript')),
-                    '--color', '--language=html',
-                    '--pretty-print=' + lang, '-o',
-                    '-', '-']
+                    '--color', '--language=html', '--pretty-print',
+                    '-o', '-', '-']
 
     ### I started to use '1,/^<PRE>$/d;/<\\/PRE>/,$d;p' here to
     ### actually strip out the <PRE> and </PRE> tags, too, but I
@@ -1202,6 +1206,24 @@ class MarkupEnscript(MarkupShell):
     sed_cmd = ['sed', '-n', '/^<PRE>$/,/<\\/PRE>$/p']
 
     MarkupShell.__init__(self, fp, [enscript_cmd, sed_cmd])
+    self.filename = filename
+
+  def __call__(self, out):
+    # create a temporary file with the same name as the file in
+    # the repository so enscript can detect file type correctly
+    dir = compat.mkdtemp()
+    try:
+      file = os.path.join(dir, self.filename)
+      try:
+        copy_stream(self.fp, open(file, 'wb'))
+        self.fp.close()
+        self.fp = None
+        self.cmds[0][-1] = file
+        MarkupShell.__call__(self, out)
+      finally:
+        os.unlink(file)
+    finally:
+       os.rmdir(dir)
 
 class MarkupPHP(MarkupShell):
   def __init__(self, php_exe_path, fp):
@@ -1289,90 +1311,6 @@ markup_streamers = {
   '.php' : markup_stream_php,
   '.inc' : markup_stream_php,
   }
-
-### this sucks... we have to duplicate the extensions defined by enscript
-enscript_extensions = {
-  '.C' : 'cpp',
-  '.EPS' : 'postscript',
-  '.DEF' : 'modula_2',  # requires a patch for enscript 1.6.2, see INSTALL
-  '.F' : 'fortran',
-  '.H' : 'cpp',
-  '.MOD' : 'modula_2',  # requires a patch for enscript 1.6.2, see INSTALL
-  '.PS' : 'postscript',
-  '.S' : 'asm',
-  '.SH' : 'sh',
-  '.ada' : 'ada',
-  '.adb' : 'ada',
-  '.ads' : 'ada',
-  '.awk' : 'awk',
-  '.bas' : 'vba',
-  '.c' : 'c',
-  '.c++' : 'cpp',
-  '.cc' : 'cpp',
-  '.cls' : 'vba',
-  '.cpp' : 'cpp',
-  '.cs' : 'csharp',
-  '.csh' : 'csh',
-  '.cxx' : 'cpp',
-  '.diff' : 'diffu',
-  '.dpr' : 'delphi',
-  '.el' : 'elisp',
-  '.eps' : 'postscript',
-  '.f' : 'fortran',
-  '.f90' : 'fortran',
-  '.for': 'fortran',
-  '.gs' : 'haskell',
-  '.h' : 'c',
-  '.hpp' : 'cpp',
-  '.hs' : 'haskell',
-  '.htm' : 'html',
-  '.html' : 'html',
-  '.idl' : 'idl',
-  '.java' : 'java',
-  '.js' : 'javascript',
-  '.lgs' : 'haskell',
-  '.lhs' : 'haskell',
-  '.m' : 'objc',
-  '.m4' : 'm4',
-  '.man' : 'nroff',
-  '.nr' : 'nroff',
-  '.p' : 'pascal',
-  '.pas' : 'delphi', ### Might instead be 'pascal'.
-  '.patch' : 'diffu',
-  '.pkg' : 'sql', ### Oracle SQL, but might be something else.
-  '.pl' : 'perl',
-  '.pm' : 'perl',
-  '.pp' : 'pascal',
-  '.ps' : 'postscript',
-  '.py' : 'python',
-  '.s' : 'asm',
-  '.scheme' : 'scheme',
-  '.scm' : 'scheme',
-  '.scr' : 'synopsys',
-  '.sh' : 'sh',
-  '.shtml' : 'html',
-  '.sql' : 'sql',
-  '.st' : 'states',
-  '.syn' : 'synopsys',
-  '.synth' : 'synopsys',
-  '.tcl' : 'tcl',
-  '.tex' : 'tex',
-  '.texi' : 'tex',
-  '.texinfo' : 'tex',
-  '.v' : 'verilog',
-  '.vba' : 'vba',
-  '.vh' : 'verilog',
-  '.vhd' : 'vhdl',
-  '.vhdl' : 'vhdl',
-  }
-enscript_filenames = {
-  '.emacs' : 'elisp',
-  'GNUmakefile' : 'makefile',
-  'Makefile' : 'makefile',
-  'makefile' : 'makefile',
-  'ChangeLog' : 'changelog',
-  }
-
 
 def make_time_string(date, cfg):
   """Returns formatted date string in either local time or UTC.
@@ -1462,11 +1400,7 @@ def view_markup(request):
     if streamer:
       markup_fp = streamer(fp, cfg)
     elif cfg.options.use_enscript:
-      lang = enscript_extensions.get(ext)
-      if not lang:
-        lang = enscript_filenames.get(basename)
-      if lang and lang not in cfg.options.disable_enscript_lang:
-        markup_fp = MarkupEnscript(cfg.options.enscript_path, lang, fp)
+      markup_fp = MarkupEnscript(cfg, fp, request.path_parts[-1])
     elif cfg.options.use_highlight:
       markup_fp = MarkupHighlight(cfg, fp, request.path_parts[-1])
 
