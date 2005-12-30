@@ -42,7 +42,7 @@ import fnmatch
 
 class Config:
   _sections = ('general', 'options', 'cvsdb', 'templates')
-  _force_multi_value = ('cvs_roots', 'forbidden', 'disable_enscript_lang',
+  _force_multi_value = ('cvs_roots', 'forbidden',
                         'svn_roots', 'languages', 'kv_files',
                         'root_parents')
 
@@ -213,7 +213,6 @@ class Config:
     self.options.highlight_convert_tabs = 2
     self.options.use_php = 0
     self.options.php_path = 'php'
-    self.options.disable_enscript_lang = ()
     self.options.allow_tar = 0
     self.options.use_cvsgraph = 0
     self.options.cvsgraph_path = ''
