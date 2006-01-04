@@ -43,7 +43,7 @@ Congratulations on getting this far. :-)
           (http://www.mysql.com/)
           (http://sourceforge.net/projects/mysql-python)
       * Enscript, code colorizer
-          (http://people.ssh.com/mtr/genscript/)
+          (http://www.codento.com/people/mtr/genscript/)
       * Highlight, code colorizer, 2.4.2 or later
            http://www.andre-simon.de/
       * CvsGraph 1.5.0 or later, graphical CVS revision tree generator
@@ -356,7 +356,7 @@ Linux distributions like for example SuSE Linux from at least 7.0
 up to the recently released 7.3 already contain a precompiled and
 configured enscript 1.6.2 package.
 
-1) Download genscript from http://people.ssh.com/mtr/genscript/
+1) Download genscript from http://www.codento.com/people/mtr/genscript/
 
 2) Configure and compile per instructions with enscript.
    (I 've not done this, since I'm using the precompiled package
@@ -368,9 +368,8 @@ configured enscript 1.6.2 package.
 
 5) If you want to colorize exotic languages, you might have to 
    patch 'lib/viewcvs.py' and add a new highlighting file to enscript.
-   I've done this for Modula-2 and submitted the file to the 
-   enscript maintainer long ago.  If interested in this patch for
-   enscript mailto:pefu@sourceforge.net
+   For example, if you are interested in a patch for Modula-2 support,
+   send mail to pefu@sourceforge.net.
 
 
 CVSGRAPH CONFIGURATION
