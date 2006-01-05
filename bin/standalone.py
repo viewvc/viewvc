@@ -43,6 +43,7 @@ CONF_PATHNAME = None
 
 import sys
 import os
+import os.path
 import stat
 import string
 import urllib
@@ -69,6 +70,7 @@ class Options:
         host = '127.0.0.1' 
     else:
         host = 'localhost'
+    script_alias = 'viewvc'
 
 # --- web browser interface: ----------------------------------------------
 
@@ -122,20 +124,24 @@ def serve(host, port, callback=None):
             if self.is_viewcvs():
                 self.run_viewcvs()
             else:
-                self.send_error(501, "Can only POST to viewcvs")
+                self.send_error(501, "Can only POST to %s"
+                                % (options.script_alias))
 
         def is_viewcvs(self):
-            """Check whether self.path matches the hardcoded ScriptAlias
-            /viewcvs"""
-            if self.path[:8] == "/viewcvs":
+            """Check whether self.path is, or is a child of, the ScriptAlias"""
+            if self.path == '/' + options.script_alias:
+                return 1
+            if self.path[:len(options.script_alias)+2] == \
+                   '/' + options.script_alias + '/':
                 return 1
             return 0
 
         def redirect(self):
             """redirect the browser to the viewcvs URL"""
-            self.send_response(301, "moved (redirection follows)")
+            new_url = self.server.url + options.script_alias + '/'
+            self.send_response(301, "Moved (redirection follows)")
             self.send_header("Content-type", "text/html")
-            self.send_header("Location", self.server.url + 'viewcvs/')
+            self.send_header("Location", new_url)
             self.end_headers()
             self.wfile.write("""<html>
 <head>
@@ -147,14 +153,15 @@ Wait a second.   You will be automatically redirected to <b>ViewVC</b>.
 If this doesn't work, please click on the link above.
 </body>
 </html>
-""" % tuple([self.server.url + "viewcvs/"]*2))
+""" % tuple([new_url]*2))
 
         def run_viewcvs(self):
-            """This is a quick and dirty cut'n'rape from Pythons 
+            """This is a quick and dirty cut'n'rape from Python's 
             standard library module CGIHTTPServer."""
-            scriptname = "/viewcvs"
-            assert self.path[:8] == scriptname
-            viewcvs_url, rest = self.server.url[:-1]+scriptname, self.path[8:]
+            scriptname = '/' + options.script_alias
+            assert string.find(self.path, scriptname) == 0
+            viewcvs_url = self.server.url[:-1] + scriptname
+            rest = self.path[len(scriptname):]
             i = string.rfind(rest, '?')
             if i >= 0:
                 rest, query = rest[:i], rest[i+1:]
@@ -569,8 +576,8 @@ def cli(argv):
     class BadUsage(Exception): pass
 
     try:
-        opts, args = getopt.getopt(argv[1:], 'gp:r:h:', 
-            ['gui', 'port=', 'repository='])
+        opts, args = getopt.getopt(argv[1:], 'gp:r:h:s:', 
+            ['gui', 'port=', 'repository=', 'script-alias='])
         for opt, val in opts:
             if opt in ('-g', '--gui'):
                 options.start_gui = 1
@@ -588,45 +595,53 @@ def cli(argv):
                     raise BadUsage
             elif opt in ('-h', '--host'):
                 options.host = val
+            elif opt in ('-s', '--script-alias'):
+                options.script_alias = \
+                    string.join(filter(None, string.split(val, '/')), '/')
         if options.start_gui:
             gui(options.host, options.port)
             return
         elif options.port:
             def ready(server):
-                print 'server ready at %s' % server.url
+                print 'server ready at %s%s' % (server.url,
+                                                options.script_alias)
             serve(options.host, options.port, ready)
             return
         raise BadUsage
     except (getopt.error, BadUsage):
-        cmd = sys.argv[0]
+        cmd = os.path.basename(sys.argv[0])
         port = options.port
         host = options.host
+        script_alias = options.script_alias
         print """ViewVC standalone - a simple standalone HTTP-Server
 
-Usage: %(cmd)s [ <options> ]
+Usage: %(cmd)s [OPTIONS]
 
 Available Options:
 
--h <host> or --host=<host>
-    Start the HTTP server listening on <host>.
-    Defaults to %(host)s.  You need to provide the
-    hostname, if you want to access the standalone server
-    from remote.
+-h <host>, --host=<host>:
+    Start the HTTP server listening on <host>.  You need to provide
+    the hostname if you want to access the standalone server from a
+    remote machine.  [default: %(host)s]
 
--p <port> or --port=<port>
-    Start an HTTP server on the given port.
-    Default port is %(port)d.
+-p <port>, --port=<port>:
+    Start an HTTP server on the given port.  [default: %(port)d]
 
--r <path> or --repository=<path>
-    Specify path for a CVS repository.  May be used more than once.
-    If you don't have a CVS repository at /home/cvsroot you will need to
-    use this option or you have to install first and edit viewcvs.conf.
+-r <path>, --repository=<path>:
+    Specify a path for a CVS repository.  Repository definitions are
+    typically read from the viewcvs.conf file, if available.  This
+    option may be used more than once.
 
--g or --gui
+-s <path>, --script-alias=<path>:
+    Specify the ScriptAlias, the artificial path location that at
+    which ViewVC appears to be located.  For example, if your
+    ScriptAlias is "cgi-bin/viewvc", then ViewVC will appear to be
+    accessible at the URL "http://%(host)s:%(port)s/cgi-bin/viewvc".
+    [default: %(script_alias)s]
+    
+-g, --gui:
     Pop up a graphical interface for serving and testing ViewVC.
-    Note: This requires you start %(cmd)s with a valid X11 display
-    connection on Unix/Linux systems.
-
+    NOTE: this requires a valid X11 display connection.
 """ % locals()
 
 if __name__ == '__main__':
