@@ -431,8 +431,8 @@ enscript_path =
 # enscript_path = /usr/bin/
 
 # should we use 'highlight' for syntax coloring?
-# NOTE: use_enscript has to be 0 or escript will be used instead
-use_highlight = 1
+# NOTE: use_enscript has to be 0 or enscript will be used instead
+use_highlight = 0
 
 #
 # if the highlight program is not on the path, set this value
