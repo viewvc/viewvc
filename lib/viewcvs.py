@@ -802,7 +802,7 @@ def get_view_template(cfg, view_name, language="en"):
 
 def generate_page(request, view_name, data):
   template = get_view_template(request.cfg, view_name, request.language)
-  template.generate(sys.stdout, data)
+  template.generate(request.server.file(), data)
 
 def nav_path(request):
   """Return current path as list of items with "name" and "href" members
