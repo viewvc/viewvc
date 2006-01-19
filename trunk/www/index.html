@@ -1,22 +1,15 @@
 <html>
 <head>
 <title>ViewVC - Version Control Repository Browser</title>
+<!-- Custom stylations to hide the obnoxious project info -->
+<style type="text/css">
+#projecthome .axial { display: none; }
+#apphead h1 { display: none; }
+</style>
+<!-- End custom stylations -->
 </head>
 
 <body>
-<!-- ****************************************************************** -->
-<script language="javascript">
-// This code snippet exists to redirect the page to its fully
-// qualified location, the effect of which is that Tigris.org 
-// will not show that space-wasting project information table.
-href = window.location.href
-href_len = href.length
-if ((href_len > 9) 
-    && (href.substring(href_len - 10, href_len) != "index.html")) {
-    window.location = window.location + "index.html";
-}
-</script>
-<!-- ****************************************************************** -->
 
 <div class="app">
 
