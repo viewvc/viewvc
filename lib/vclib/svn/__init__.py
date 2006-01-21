@@ -240,7 +240,7 @@ class NodeHistory:
     self.histories[revision] = _cleanup_path(path)
     
   
-def _get_history(svnrepos, full_name, rev, options):
+def _get_history(svnrepos, full_name, rev, options={}):
   fsroot = svnrepos._getroot(rev)
   show_all_logs = options.get('svn_show_all_dir_logs', 0)
   if not show_all_logs:
@@ -472,11 +472,14 @@ class BlameSource:
     self.idx = -1
     self.line_number = 1
     self.last = None
-
+    self.first_rev = first_rev
+    
     rootpath = os.path.abspath(rootpath)
     url = 'file://' + string.join([rootpath, fs_path], "/")
-    self.fp = popen.popen(svn_client_path,
-                          ('blame', "-r%d" % int(rev), "%s@%d" % (url, int(rev))), 'rb', 1)
+    fp = popen.popen(svn_client_path,
+                     ('blame', "-r%d" % int(rev), "%s@%d" % (url, int(rev))),
+                     'rb', 1)
+    self.fp = fp
     
   def __getitem__(self, idx):
     if idx == self.idx:
@@ -492,7 +495,7 @@ class BlameSource:
     text = line[18:]
     rev = int(rev)
     prev_rev = None
-    if rev > 1:
+    if rev > self.first_rev:
       prev_rev = rev - 1
     item = _item(text=text, line_number=idx+1, rev=rev,
                  prev_rev=prev_rev, author=author, date=None)
@@ -502,15 +505,17 @@ class BlameSource:
 
 
 class BlameSourceKludge:
-  def __init__(self, svn_client_path, rootpath, fs_path, rev):
+  def __init__(self, svn_client_path, rootpath, fs_path, rev, first_rev):
     self.idx = -1
     self.line_number = 1
     self.last = None
+    self.first_rev = first_rev
 
     rootpath = os.path.abspath(rootpath)
     url = 'file://' + string.join([rootpath, fs_path], "/")
     fp = popen.popen(svn_client_path,
-                     ('blame', "-r%d" % int(rev), "%s@%d" % (url, int(rev))), 'rb', 1)
+                     ('blame', "-r%d" % int(rev), "%s@%d" % (url, int(rev))),
+                     'rb', 1)
     self.lines = fp.readlines()
     
   def __getitem__(self, idx):
@@ -523,7 +528,7 @@ class BlameSourceKludge:
     text = line[18:]
     rev = int(rev)
     prev_rev = None
-    if rev > 1:
+    if rev > self.first_rev:
       prev_rev = rev - 1
     item = _item(text=text, line_number=idx+1, rev=rev,
                  prev_rev=prev_rev, author=author, date=None)
@@ -667,7 +672,12 @@ class SubversionRepository(vclib.Repository):
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
     fsroot = self._getroot(rev)
-    revision = str(_get_last_history_rev(fsroot, path, self.scratch_pool))
+
+    history_set = _get_history(self, path, rev)
+    history_revs = history_set.keys()
+    history_revs.sort()
+    revision = history_revs[-1]
+    first_rev = history_revs[0]
 
     ### Something's buggy in BlameSource, and the results are
     ### catastrophic for users of Mozilla and Firefox (it seems that
@@ -675,8 +685,10 @@ class SubversionRepository(vclib.Repository):
     ### as annotate's is baaaaaad).  I think the BlameSource 'fp' is
     ### getting closed too soon or something.  At any rate, use a
     ### non-stream hack for now.
-    #source = BlameSource(self.svn_client_path, self.rootpath, path, rev)
-    source = BlameSourceKludge(self.svn_client_path, self.rootpath, path, rev)
+    #source = BlameSource(self.svn_client_path, self.rootpath,
+    #                     path, rev, first_rev)
+    source = BlameSourceKludge(self.svn_client_path, self.rootpath,
+                               path, rev, first_rev)
     return source, revision
     
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
