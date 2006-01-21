@@ -673,7 +673,7 @@ class SubversionRepository(vclib.Repository):
     rev = self._getrev(rev)
     fsroot = self._getroot(rev)
 
-    history_set = _get_history(self, path, rev)
+    history_set = _get_history(self, path, rev, {'svn_cross_copies': 1})
     history_revs = history_set.keys()
     history_revs.sort()
     revision = history_revs[-1]
