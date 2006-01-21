@@ -2343,14 +2343,13 @@ class DiffSource:
     self.fp = fp
     self.cfg = cfg
     self.save_line = None
-
+    self.line_number = None
+    
     # keep track of where we are during an iteration
     self.idx = -1
     self.last = None
 
     # these will be set once we start reading
-    self.left = None
-    self.right = None
     self.state = 'no-changes'
     self.left_col = [ ]
     self.right_col = [ ]
@@ -2362,8 +2361,8 @@ class DiffSource:
       raise DiffSequencingError()
 
     # keep calling _get_row until it gives us something. sometimes, it
-    # doesn't return a row immediately because it is accumulating changes
-    # when it is out of data, _get_row will raise IndexError
+    # doesn't return a row immediately because it is accumulating changes.
+    # when it is out of data, _get_row will raise IndexError.
     while 1:
       item = self._get_row()
       if item:
@@ -2404,11 +2403,12 @@ class DiffSource:
       self.right_col = [ ]
 
       match = _re_extract_info.match(line)
+      self.line_number = int(match.group(2)) - 1
       return _item(type='header',
                    line_info_left=match.group(1),
                    line_info_right=match.group(2),
                    line_info_extra=match.group(3))
-
+    
     if line[0] == '\\':
       # \ No newline at end of file
 
@@ -2419,10 +2419,11 @@ class DiffSource:
 
     diff_code = line[0]
     output = spaced_html_text(line[1:], self.cfg)
-
+    
     if diff_code == '+':
       if self.state == 'dump':
-        return _item(type='add', right=output)
+        self.line_number = self.line_number + 1
+        return _item(type='add', right=output, line_number=self.line_number)
 
       self.state = 'pre-change-add'
       self.right_col.append(output)
@@ -2431,17 +2432,18 @@ class DiffSource:
     if diff_code == '-':
       self.state = 'pre-change-remove'
       self.left_col.append(output)
-      return None
+      return None  # early exit to avoid line in
 
     if self.left_col or self.right_col:
-      # save the line for processing again later
+      # save the line for processing again later, and move into the
+      # flushing state
       self.save_line = line
-
-      # move into the flushing state
       self.state = 'flush-' + self.state
       return None
 
-    return _item(type='context', left=output, right=output)
+    self.line_number = self.line_number + 1
+    return _item(type='context', left=output, right=output,
+                 line_number=self.line_number)
 
   def _flush_row(self):
     if not self.left_col and not self.right_col:
@@ -2459,8 +2461,10 @@ class DiffSource:
       item.have_left = ezt.boolean(1)
       item.left = self.left_col.pop(0)
     if self.right_col:
+      self.line_number = self.line_number + 1
       item.have_right = ezt.boolean(1)
       item.right = self.right_col.pop(0)
+      item.line_number = self.line_number
     return item
 
 class DiffSequencingError(Exception):
