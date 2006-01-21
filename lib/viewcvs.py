@@ -2683,6 +2683,7 @@ def view_diff(request):
     'tag_right' : sym2,
     'diff_format' : request.query_dict.get('diff_format',
                                            cfg.options.diff_format),
+    'annotate_href' : None,
     })
 
   orig_params = request.query_dict.copy()
@@ -2693,6 +2694,12 @@ def view_diff(request):
   data['patch_href'] = request.get_url(view_func=view_patch,
                                        params=orig_params,
                                        escape=1)
+  if request.cfg.options.allow_annotate:
+    data['annotate_href'] = request.get_url(view_func=view_annotate,
+                                            where=_path_join(p2),
+                                            pathtype=vclib.FILE,
+                                            params={'annotate': rev2},
+                                            escape=1)
 
   date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
                                                    sym1, sym2)

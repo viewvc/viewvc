@@ -508,6 +508,11 @@ th { background: rgb(60%,70%,90%); }
      <a href="#variables-common">COMMON</a> variable set</td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">annotate_href</td>
+  <td>String</td>
+  <td>URL for the annotate view of the right-side file revision.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">changes</td>
   <td>List</td>
   <td>Set of objects which contain information about a single line of
@@ -567,6 +572,11 @@ th { background: rgb(60%,70%,90%); }
   <td>String</td>
   <td>First line number represented by the current hunk in the right
       file.  Valid only when <var>changes.type</var> is <tt>header</tt>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">changes.line_number</td>
+  <td>String</td>
+  <td>Line number (1-based) of the line.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">changes.type</td>
