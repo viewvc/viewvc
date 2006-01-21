@@ -13,12 +13,13 @@
 [else]
 <table cellspacing="0" cellpadding="0">
   <tr class="vc_diff_header">
-    <th style="width:50%;vertical-align:top;">
+    <th style="width:6%;"></th>
+    <th style="width:47%; vertical-align:top;">
       [is path_left path_right][else][path_left][end]
       revision [rev_left], [date_left]
       [if-any tag_left]<br />Tag: [tag_left][end]
     </th>
-    <th style="width:50%;vertical-align:top;">
+    <th style="width:47%; vertical-align:top;">
       [is path_left path_right][else][path_right][end]
       revision [rev_right], [date_right]
       [if-any tag_right]<br />Tag: [tag_right][end]
@@ -27,39 +28,39 @@
 
   [for changes]
     [is changes.type "header"]
-      <tr class="vc_diff_chunk_header">
-        <td style="width:50%;">
-          <table>
-            <tr>
-              <td> <strong>Line [changes.line_info_left]</strong>&nbsp;
-              <span class="vc_diff_chunk_extra">[changes.line_info_extra]</span></td>
-            </tr>
-          </table>
+      <tr class="vc_diff_chunk_header" id="[changes.line_info_right]">
+        <td style="width:6%;"><strong>#</strong></td>
+        <td style="width:47%;">
+          <strong>Line [changes.line_info_left]</strong>&nbsp;
+          <span class="vc_diff_chunk_extra">[changes.line_info_extra]</span>
         </td>
-        <td style="width:50%;">
-          <table>
-            <tr>
-              <td> <strong>Line [changes.line_info_right]</strong>&nbsp;
-              <span class="vc_diff_chunk_extra">[changes.line_info_extra]</span></td>
-            </tr>
-          </table>
+        <td style="width:47%;">
+          <strong>Line [changes.line_info_right]</strong>&nbsp;
+          <span class="vc_diff_chunk_extra">[changes.line_info_extra]</span>
         </td>
       </tr>
     [else]
       [is changes.type "add"]
         <tr>
+          <td id="[changes.line_number]">[changes.line_number]</td>
           <td class="vc_diff_empty">&nbsp;</td>
           <td class="vc_diff_add">&nbsp;[changes.right]</td>
         </tr>
       [else]
         [is changes.type "remove"]
           <tr>
+            <td></td>
             <td class="vc_diff_remove">&nbsp;[changes.left]</td>
             <td class="vc_diff_empty">&nbsp;</td>
           </tr>
         [else]
           [is changes.type "change"]
             <tr>
+              [if-any changes.have_right]
+                <td id="[changes.line_number]">[changes.line_number]</td>
+              [else]
+                <td></td>
+              [end]
               [if-any changes.have_left]
                 <td class="vc_diff_change">&nbsp;[changes.left]</td>
               [else]
@@ -74,28 +75,28 @@
           [else]
             [is changes.type "no-changes"]
               <tr>
-                <td colspan="2">&nbsp;</td>
+                <td colspan="3">&nbsp;</td>
               </tr>
               <tr class="vc_diff_empty">
-                <td colspan="2" style="text-align:center;"><br />
+                <td colspan="3" style="text-align:center;"><br />
                 <strong>- No changes -</strong><br />&nbsp; </td>
               </tr>
             [else]
               [is changes.type "binary-diff"]
                 <tr>
-                  <td colspan="2">&nbsp;</td>
+                  <td colspan="3">&nbsp;</td>
                 </tr>
                 <tr class="vc_diff_empty">
-                  <td colspan="2" style="text-align:center;"><br />
+                  <td colspan="3" style="text-align:center;"><br />
                   <strong>- Binary file revisions differ -</strong><br />&nbsp; </td>
                 </tr>
               [else]
                 [is changes.type "error"]
                   <tr>
-                    <td colspan="2">&nbsp;</td>
+                    <td colspan="3">&nbsp;</td>
                   </tr>
                   <tr class="vc_diff_empty">
-                    <td colspan="2" style="text-align:center;"> <br />
+                    <td colspan="3" style="text-align:center;"> <br />
                     <strong>- ViewVC depends on rcsdiff and GNU diff to create 
                     this page.  ViewVC cannot find GNU diff. Even if you 
                     have GNU diff installed, the rcsdiff program must be 
@@ -104,6 +105,7 @@
                   </tr>
                 [else]
                   <tr>
+                    <td id="[changes.line_number]">[changes.line_number]</td>
                     <td class="vc_diff_nochange">&nbsp;[changes.left]</td>
                     <td class="vc_diff_nochange">&nbsp;[changes.right]</td>
                   </tr>
