@@ -332,6 +332,8 @@ class _pipe:
       self.thread = thread
 
   def eof(self):
+    ### should be calling file.eof() here instead of file.close(), there
+    ### may be data in the pipe or buffer after the process exits
     if sys.platform == "win32":
       r = win32event.WaitForMultipleObjects(self.wait_for, 1, 0)
       if r == win32event.WAIT_OBJECT_0:
