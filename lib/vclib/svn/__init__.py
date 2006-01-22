@@ -26,6 +26,7 @@ import signal
 import time
 import tempfile
 import popen
+import re
 from svn import fs, repos, core, delta
 
 
@@ -467,8 +468,10 @@ class FileContentsPipe:
     return self._eof
 
 
+_re_blameinfo = re.compile(r"\s*(\d+)\s*(.*)")
+
 class BlameSource:
-  def __init__(self, svn_client_path, rootpath, fs_path, rev):
+  def __init__(self, svn_client_path, rootpath, fs_path, rev, first_rev):
     self.idx = -1
     self.line_number = 1
     self.last = None
@@ -484,14 +487,16 @@ class BlameSource:
   def __getitem__(self, idx):
     if idx == self.idx:
       return self.last
-    if self.fp.eof():
-      raise IndexError("No more annotations")
     if idx != self.idx + 1:
       raise BlameSequencingError()
     line = self.fp.readline()
     if not line:
       raise IndexError("No more annotations")
-    rev, author = line[:17].split(None, 1)
+    m = _re_blameinfo.match(line[:17])
+    if not m:
+      raise vclib.Error("Could not parse blame output at line %i\n%s"
+                        % (idx+1, line))
+    rev, author = m.groups()
     text = line[18:]
     rev = int(rev)
     prev_rev = None
@@ -524,7 +529,11 @@ class BlameSourceKludge:
     if idx != self.idx + 1:
       raise BlameSequencingError()
     line = self.lines[idx]
-    rev, author = line[:17].split(None, 1)
+    m = _re_blameinfo.match(line[:17])
+    if not m:
+      raise vclib.Error("Could not parse blame output at line %i\n%s"
+                        % (idx+1, "".join(self.lines[idx:])))
+    rev, author = m.groups()
     text = line[18:]
     rev = int(rev)
     prev_rev = None
