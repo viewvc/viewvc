@@ -212,7 +212,7 @@ class Config:
     self.options.highlight_line_numbers = 1
     self.options.highlight_convert_tabs = 2
     self.options.use_php = 0
-    self.options.php_path = 'php'
+    self.options.php_exe_path = 'php'
     self.options.allow_tar = 0
     self.options.use_cvsgraph = 0
     self.options.cvsgraph_path = ''
