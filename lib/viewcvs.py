@@ -3464,7 +3464,9 @@ def load_config(pathname=None, server=None):
   # root_parents, we get a list of the subdirectories.
   #
   # If repo_type is "cvs", and the subdirectory contains a child
-  # "CVSROOT/config", then it is added to cvs_roots.
+  # "CVSROOT/config", then it is added to cvs_roots. Or, if the
+  # root directory itself contains a child "CVSROOT/config" file,
+  # then all its subdirectories are added to cvs_roots.
   #
   # If repo_type is "svn", and the subdirectory contains a child
   # "format", then it is added to svn_roots.
@@ -3485,10 +3487,14 @@ def load_config(pathname=None, server=None):
         "The path '%s' in 'root_parents' does not refer to "
         "a valid directory." % pp)
 
+    cvsroot = os.path.exists(os.path.join(pp, "CVSROOT", "config"))
+
     for subpath in subpaths:
       if os.path.exists(os.path.join(pp, subpath)):
-        if repo_type == 'cvs' and \
-             os.path.exists(os.path.join(pp, subpath, "CVSROOT", "config")):
+        if (repo_type == 'cvs'
+            and (os.path.exists(os.path.join(pp, subpath, "CVSROOT", "config"))
+                 or (cvsroot and (subpath != 'CVSROOT'
+                                  or not cfg.options.hide_cvsroot)))):
           cfg.general.cvs_roots[subpath] = os.path.join(pp, subpath)
         elif repo_type == 'svn' and \
              os.path.exists(os.path.join(pp, subpath, "format")):
