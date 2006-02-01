@@ -31,7 +31,7 @@
   <td style="text-align:right;">
   [if-any roots]
     [change_root_hidden_values]
-      <strong>Project Root:</strong>
+      <strong>Repository:</strong>
       <select name="root" onchange="submit()">
         [define cvs_root_options][end]
         [define svn_root_options][end]
