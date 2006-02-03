@@ -99,7 +99,7 @@ __version__ = 1, 6, 1
 # is sent to stdout.  Or you can call main(args), passing what would
 # have been in sys.argv[1:] had the cmd-line form been used.
 
-from difflib import SequenceMatcher
+from compat_difflib import SequenceMatcher
 
 TRACE = 0
 
