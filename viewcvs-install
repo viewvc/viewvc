@@ -35,7 +35,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), 'lib'))
 
 import compat
 import viewcvs 
-import ndiff
+import compat_ndiff
 version = viewcvs.__version__
 
 
@@ -145,7 +145,7 @@ def InstallFile(src_path, dest_path, mode, set_python_paths, prompt_replace,
   if prompt_replace and os.path.exists(DESTDIR + dest_path):
     # Collect ndiff output from ndiff
     sys.stdout = StringIO.StringIO()
-    ndiff.main([DESTDIR + dest_path,src_path])
+    compat_ndiff.main([DESTDIR + dest_path,src_path])
     ndiff_output = sys.stdout.getvalue()
 
     # Return everything to normal
