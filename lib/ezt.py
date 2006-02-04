@@ -322,7 +322,7 @@ class Template:
 
     ctx = _context()
     ctx.data = data
-    ctx.for_index = { }
+    ctx.for_iterators = { }
     ctx.defines = { }
     self._execute(self.program, fp, ctx)
 
@@ -483,17 +483,17 @@ class Template:
 
   def _cmd_if_index(self, args, fp, ctx):
     ((valref, value), t_section, f_section) = args
-    list, idx = ctx.for_index[valref[0]]
+    iterator = ctx.for_iterators[valref[0]]
     if value == 'even':
-      value = idx % 2 == 0
+      value = iterator.index % 2 == 0
     elif value == 'odd':
-      value = idx % 2 == 1
+      value = iterator.index % 2 == 1
     elif value == 'first':
-      value = idx == 0
+      value = iterator.index == 0
     elif value == 'last':
-      value = idx == len(list)-1
+      value = iterator.is_last()
     else:
-      value = idx == int(value)
+      value = iterator.index == int(value)
     self._do_if(value, t_section, f_section, fp, ctx)
 
   def _cmd_is(self, args, fp, ctx):
@@ -519,11 +519,10 @@ class Template:
     if isinstance(list, StringType):
       raise NeedSequenceError()
     refname = valref[0]
-    ctx.for_index[refname] = idx = [ list, 0 ]
-    for item in list:
+    ctx.for_iterators[refname] = iterator = _iter(list)
+    for unused in iterator:
       self._execute(section, fp, ctx)
-      idx[1] = idx[1] + 1
-    del ctx.for_index[refname]
+    del ctx.for_iterators[refname]
 
   def _cmd_define(self, args, fp, ctx):
     ((name,), unused, section) = args
@@ -600,9 +599,8 @@ def _get_value((refname, start, rest), ctx):
     return start
 
   # get the starting object
-  if ctx.for_index.has_key(start):
-    list, idx = ctx.for_index[start]
-    ob = list[idx]
+  if ctx.for_iterators.has_key(start):
+    ob = ctx.for_iterators[start].last_item
   elif ctx.defines.has_key(start):
     ob = ctx.defines[start]
   elif hasattr(ctx.data, start):
@@ -685,6 +683,72 @@ class _TextReader(Reader):
   def read_other(self, relative):
     raise BaseUnavailableError()
 
+class _Iterator:
+  """Specialized iterator for EZT that counts items and can look ahead
+
+  Implements standard iterator interface and provides an is_last() method
+  and two public members:
+
+    index - integer index of the current item
+    last_item - last item returned by next()"""
+
+  def __init__(self, sequence):
+    self._iter = iter(sequence)
+
+  def next(self):
+    if hasattr(self, '_next_item'):
+      self.last_item = self._next_item
+      del self._next_item
+    else:
+      self.last_item = self._iter.next() # may raise StopIteration
+
+    if hasattr(self, 'index'):
+      self.index = self.index + 1
+    else:
+      self.index = 0
+
+    return self.last_item
+
+  def is_last(self):
+    """Return true if the current item is the last in the sequence"""
+    # the only way we can tell if the current item is last is to call next()
+    # and store the return value so it doesn't get lost
+    if not hasattr(self, '_next_item'):
+      try:
+        self._next_item = self._iter.next()
+      except StopIteration:
+        return 1
+    return 0
+
+  def __iter__(self):
+    return self
+
+class _OldIterator:
+  """Alternate implemention of _Iterator for old Pythons without iterators
+
+  This class implements the sequence protocol, instead of the iterator
+  interface, so it's really not an iterator at all. But it can be used in
+  python "for" loops as a drop-in replacement for _Iterator. It also provides
+  the is_last() method and "last_item" and "index" members described in the
+  _Iterator docstring."""
+
+  def __init__(self, sequence):
+    self._seq = sequence
+
+  def __getitem__(self, index):
+    self.last_item = self._seq[index] # may raise IndexError
+    self.index = index
+    return self.last_item
+
+  def is_last(self):
+    return self.index + 1 >= len(self._seq)
+
+try:
+  iter
+except NameError:
+  _iter = _OldIterator
+else:
+  _iter = _Iterator
 
 class EZTException(Exception):
   """Parent class of all EZT exceptions."""
