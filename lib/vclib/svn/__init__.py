@@ -457,9 +457,20 @@ class FileContentsPipe:
     if not self._eof:
       chunk, self._eof = core.svn_stream_readline(self._stream, '\n',
                                                   self._pool)
+      if not self._eof:
+        chunk = chunk + '\n'
     if not chunk:
       self._eof = 1
     return chunk
+
+  def readlines(self):
+    lines = []
+    while True:
+      line = self.readline()
+      if not line:
+        break
+      lines.append(line)
+    return lines
 
   def close(self):
     return core.svn_stream_close(self._stream)

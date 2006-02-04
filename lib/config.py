@@ -192,6 +192,7 @@ class Config:
     self.options.hr_funout = 1
     self.options.hr_ignore_white = 1
     self.options.hr_ignore_keyword_subst = 1
+    self.options.hr_intraline = 0
     self.options.allow_annotate = 1
     self.options.allow_markup = 1
     self.options.allow_compress = 1
