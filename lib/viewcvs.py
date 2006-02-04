@@ -491,6 +491,10 @@ class Request:
     elif pathtype == vclib.DIR:
       url = url + '/'
 
+    # normalize top level URLs for use in Location headers and A tags
+    elif not url:
+      url = '/'
+
     # no need to explicitly specify directory view for a directory
     if view_func is view_directory and pathtype == vclib.DIR:
       view_func = None
