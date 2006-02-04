@@ -56,6 +56,11 @@ import ezt
 import accept
 import vclib
 
+try:
+  import idiff
+except (SyntaxError, ImportError):
+  idiff = None
+
 debug.t_end('imports')
 
 #########################################################################
@@ -2673,7 +2678,25 @@ def view_diff(request):
     diff_options['ignore_white'] = cfg.options.hr_ignore_white
     diff_options['ignore_keyword_subst'] = cfg.options.hr_ignore_keyword_subst
   try:
-    fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options)
+    fp = sidebyside = None
+    if (cfg.options.hr_intraline and human_readable
+        and idiff and idiff.sidebyside):
+      f1 = request.repos.openfile(p1, rev1)[0]
+      try:
+        lines_left = f1.readlines()
+      finally:
+        f1.close()
+
+      f2 = request.repos.openfile(p2, rev2)[0]
+      try:
+        lines_right = f2.readlines()
+      finally:
+        f2.close()
+
+      sidebyside = idiff.sidebyside(lines_left, lines_right,
+                                    diff_options.get("context", 5))
+    else: 
+      fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options)
   except vclib.InvalidRevision:
     raise debug.ViewCVSException('Invalid path(s) or revision(s) passed '
                                  'to diff', '400 Bad Request')
@@ -2704,15 +2727,19 @@ def view_diff(request):
                                             pathtype=vclib.FILE,
                                             params={'annotate': rev2},
                                             escape=1)
+  if fp:
+    date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
+                                                     sym1, sym2)
+  else:
+    date1 = date2 = flag = headers = None
 
-  date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
-                                                   sym1, sym2)
   raw_diff_fp = changes = None
   if human_readable:
-    if flag is not None:
-      changes = [ _item(type=flag) ]
-    else:
-      changes = DiffSource(fp, cfg)
+    if fp:
+      if flag is not None:
+        changes = [ _item(type=flag) ]
+      else:
+        changes = DiffSource(fp, cfg)
   else:
     raw_diff_fp = MarkupPipeWrapper(fp, htmlify(headers), None, 1)
 
@@ -2721,6 +2748,7 @@ def view_diff(request):
     'date_right' : rcsdiff_date_reformat(date2, cfg),
     'raw_diff' : raw_diff_fp,
     'changes' : changes,
+    'sidebyside': sidebyside,
     })
 
   request.server.header()
