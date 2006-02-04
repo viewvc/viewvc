@@ -10,7 +10,9 @@
 
 [if-any raw_diff]
   <pre class="vc_raw_diff">[raw_diff]</pre>
-[else]
+[end]
+
+[if-any changes]
 <table cellspacing="0" cellpadding="0">
   <tr class="vc_diff_header">
     <th style="width:6%;"></th>
@@ -118,6 +120,40 @@
     [end]
   [end]
 </table>
+[end]
+
+[if-any sidebyside]
+  <table class="vc_idiff">
+    <colgroup><col /><col class="content" /></colgroup>
+    <colgroup><col /><col class="content" /></colgroup>
+    <thead>
+      <tr>
+        <th colspan="2">    
+          [is path_left path_right][else][path_left][end]
+          Revision [rev_left]
+        </th>
+        <th colspan="2">
+          [is path_left path_right][else][path_right][end]
+          Revision [rev_right]
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      [for sidebyside]
+        [if-any sidebyside.gap]
+          <tr>
+            <th>&hellip;</th><th></th>
+            <th>&hellip;</th><th></th>
+          </tr>
+        [end]
+        <tr>
+          [for sidebyside.columns]
+            <th>[sidebyside.columns.line_number]</th><td[if-any sidebyside.columns.line_number][else] class="vc_idiff_empty"[end]>[for sidebyside.columns.segments][if-any sidebyside.columns.segments.type]<span class="vc_idiff_[sidebyside.columns.segments.type]">[sidebyside.columns.segments.text]</span>[else][sidebyside.columns.segments.text][end][end]</td>
+          [end]
+        </tr>
+      [end]
+    </tbody>
+  </table>
 [end]
 
 <hr style="margin-top:1em;" />

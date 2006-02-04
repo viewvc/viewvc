@@ -124,6 +124,38 @@ form { margin: 0; }
   font-size: smaller;
 }
 
+/*** Intraline Diff Styles ***/
+
+.vc_idiff_add {
+  background-color: #aaffaa;
+}
+.vc_idiff_change {
+  background-color:#ffff77;
+}
+.vc_idiff_remove {
+  background-color:#ffaaaa;
+}
+.vc_idiff_empty {
+  background-color:#e0e0e0;
+}
+
+table.vc_idiff col.content { 
+  width: 50%;
+}
+table.vc_idiff tbody {
+  font-family: monospace; 
+  /* unfortunately, white-space: pre-wrap isn't widely supported ... */
+  white-space: -moz-pre-wrap; /* Mozilla based browsers */
+  white-space: -pre-wrap;     /* Opera 4 - 6 */
+  white-space: -o-pre-wrap;   /* Opera >= 7 */
+  white-space: pre-wrap;      /* CSS3 */
+  word-wrap: break-word;      /* IE 5.5+ */
+}
+table.vc_idiff tbody th {
+  background-color:#e0e0e0;
+  text-align:right;
+}
+
 /*** Annotate Styles ***/
 .vc_blame_line, .vc_blame_author, .vc_blame_rev {
   font-family: monospace;
