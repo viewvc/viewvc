@@ -349,6 +349,11 @@ hr_ignore_white = 1
 # ( '-kk' option to rcsdiff)
 hr_ignore_keyword_subst = 1
 
+# Enable highlighting of intraline changes in human readable diffs
+# this feature is experimental and currently requires python 2.4
+# 
+hr_intraline = 0
+
 # allow annotation of files.
 allow_annotate = 1
 
