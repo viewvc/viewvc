@@ -2678,9 +2678,10 @@ def view_diff(request):
     diff_options['ignore_white'] = cfg.options.hr_ignore_white
     diff_options['ignore_keyword_subst'] = cfg.options.hr_ignore_keyword_subst
   try:
-    fp = sidebyside = None
-    if (cfg.options.hr_intraline and human_readable
-        and idiff and idiff.sidebyside):
+    fp = sidebyside = unified = None
+    if (cfg.options.hr_intraline and idiff
+        and ((human_readable and idiff.sidebyside)
+             or (not human_readable and diff_type == vclib.UNIFIED))):
       f1 = request.repos.openfile(p1, rev1)[0]
       try:
         lines_left = f1.readlines()
@@ -2693,8 +2694,12 @@ def view_diff(request):
       finally:
         f2.close()
 
-      sidebyside = idiff.sidebyside(lines_left, lines_right,
-                                    diff_options.get("context", 5))
+      if human_readable:
+        sidebyside = idiff.sidebyside(lines_left, lines_right,
+                                      diff_options.get("context", 5))
+      else:
+        unified = idiff.unified(lines_left, lines_right,
+                                diff_options.get("context", 2))
     else: 
       fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options)
   except vclib.InvalidRevision:
@@ -2734,14 +2739,14 @@ def view_diff(request):
     date1 = date2 = flag = headers = None
 
   raw_diff_fp = changes = None
-  if human_readable:
-    if fp:
+  if fp:
+    if human_readable:
       if flag is not None:
         changes = [ _item(type=flag) ]
       else:
         changes = DiffSource(fp, cfg)
-  else:
-    raw_diff_fp = MarkupPipeWrapper(fp, htmlify(headers), None, 1)
+    else:
+      raw_diff_fp = MarkupPipeWrapper(fp, htmlify(headers), None, 1)
 
   data.update({
     'date_left' : rcsdiff_date_reformat(date1, cfg),
@@ -2749,6 +2754,7 @@ def view_diff(request):
     'raw_diff' : raw_diff_fp,
     'changes' : changes,
     'sidebyside': sidebyside,
+    'unified': unified,
     })
 
   request.server.header()
