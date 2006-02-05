@@ -156,6 +156,34 @@
   </table>
 [end]
 
+[if-any unified]
+  <table class="vc_idiff">
+    <thead>
+      <tr>
+        <th>r[rev_left]</th>
+        <th>r[rev_right]</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      [for unified]
+        [if-any unified.gap]
+          <tr>
+            <th>&hellip;</th>
+            <th>&hellip;</th>
+            <th></th>
+          </tr>
+        [end]
+        <tr>
+          <th>[unified.left_number]</th>
+          <th>[unified.right_number]</th>
+          <td class="vc_idiff_[unified.type]">[for unified.segments][if-any unified.segments.type]<span class="vc_idiff_[unified.segments.type]">[unified.segments.text]</span>[else][unified.segments.text][end][end]</td>
+        </tr>
+      [end]
+    </tbody>
+  </table>
+[end]
+
 <hr style="margin-top:1em;" />
 
 <table cellpadding="10" class="auto">
