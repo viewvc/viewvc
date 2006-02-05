@@ -30,7 +30,7 @@
 
   [for changes]
     [is changes.type "header"]
-      <tr class="vc_diff_chunk_header" id="[changes.line_info_right]">
+      <tr class="vc_diff_chunk_header" id="h[changes.line_info_right]">
         <td style="width:6%;"><strong>#</strong></td>
         <td style="width:47%;">
           <strong>Line [changes.line_info_left]</strong>&nbsp;
@@ -44,7 +44,7 @@
     [else]
       [is changes.type "add"]
         <tr>
-          <td id="[changes.line_number]">[if-any annotate_href]<a href="[annotate_href]#[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
+          <td id="l[changes.line_number]">[if-any annotate_href]<a href="[annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
           <td class="vc_diff_empty">&nbsp;</td>
           <td class="vc_diff_add">&nbsp;[changes.right]</td>
         </tr>
@@ -59,7 +59,7 @@
           [is changes.type "change"]
             <tr>
               [if-any changes.have_right]
-                <td id="[changes.line_number]">[if-any annotate_href]<a href="[annotate_href]#[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
+                <td id="l[changes.line_number]">[if-any annotate_href]<a href="[annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
               [else]
                 <td></td>
               [end]
@@ -107,7 +107,7 @@
                   </tr>
                 [else]
                   <tr>
-                    <td id="[changes.line_number]">[if-any annotate_href]<a href="[annotate_href]#[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
+                    <td id="l[changes.line_number]">[if-any annotate_href]<a href="[annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
                     <td class="vc_diff_nochange">&nbsp;[changes.left]</td>
                     <td class="vc_diff_nochange">&nbsp;[changes.right]</td>
                   </tr>
