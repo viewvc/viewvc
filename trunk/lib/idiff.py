@@ -168,11 +168,12 @@ def _differ_split(row, guide):
 
     for m in _re_differ.finditer(guide, pos):
       if m.start() > pos:
-        segments.append(_item(text=line[pos:m.start()], type=None))
-      segments.append(_item(text=line[m.start():m.end()], type="change"))
+        segments.append(_item(text=cgi.escape(line[pos:m.start()]), type=None))
+      segments.append(_item(text=cgi.escape(line[m.start():m.end()]),
+                            type="change"))
       pos = m.end()
 
-  segments.append(_item(text=line[pos:], type=None))
+  segments.append(_item(text=cgi.escape(line[pos:]), type=None))
 
   return _item(gap=ezt.boolean(gap), type=type, segments=segments,
                left_number=left_number, right_number=right_number)
