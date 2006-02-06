@@ -179,8 +179,8 @@ def _differ_split(row, guide):
                left_number=left_number, right_number=right_number)
 
 class _item:
-  def __init__(self, **kwargs):
-    vars(self).update(**kwargs)
+  def __init__(self, **kw):
+    vars(self).update(kw)
 
 try:
   ### Using difflib._mdiff function here was the easiest way of obtaining
