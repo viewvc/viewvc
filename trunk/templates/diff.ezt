@@ -177,7 +177,7 @@
         <tr>
           <th>[unified.left_number]</th>
           <th>[unified.right_number]</th>
-          <td class="vc_idiff_[unified.type]">[for unified.segments][if-any unified.segments.type]<span class="vc_idiff_[unified.segments.type]">[unified.segments.text]</span>[else][unified.segments.text][end][end]</td>
+          <td[if-any unified.type] class="vc_idiff_[unified.type]"[end]>[for unified.segments][if-any unified.segments.type]<span class="vc_idiff_[unified.segments.type]">[unified.segments.text]</span>[else][unified.segments.text][end][end]</td>
         </tr>
       [end]
     </tbody>
