@@ -520,43 +520,6 @@ class BlameSource:
     return item
 
 
-class BlameSourceKludge:
-  def __init__(self, svn_client_path, rootpath, fs_path, rev, first_rev):
-    self.idx = -1
-    self.line_number = 1
-    self.last = None
-    self.first_rev = first_rev
-
-    rootpath = os.path.abspath(rootpath)
-    url = 'file://' + string.join([rootpath, fs_path], "/")
-    fp = popen.popen(svn_client_path,
-                     ('blame', "-r%d" % int(rev), "%s@%d" % (url, int(rev))),
-                     'rb', 1)
-    self.lines = fp.readlines()
-    
-  def __getitem__(self, idx):
-    if idx == self.idx:
-      return self.last
-    if idx != self.idx + 1:
-      raise BlameSequencingError()
-    line = self.lines[idx]
-    m = _re_blameinfo.match(line[:17])
-    if not m:
-      raise vclib.Error("Could not parse blame output at line %i\n%s"
-                        % (idx+1, "".join(self.lines[idx:])))
-    rev, author = m.groups()
-    text = line[18:]
-    rev = int(rev)
-    prev_rev = None
-    if rev > self.first_rev:
-      prev_rev = rev - 1
-    item = _item(text=text, line_number=idx+1, rev=rev,
-                 prev_rev=prev_rev, author=author, date=None)
-    self.last = item
-    self.idx = idx
-    return item
-  
-
 class BlameSequencingError(Exception):
   pass
 
@@ -698,17 +661,8 @@ class SubversionRepository(vclib.Repository):
     history_revs.sort()
     revision = history_revs[-1]
     first_rev = history_revs[0]
-
-    ### Something's buggy in BlameSource, and the results are
-    ### catastrophic for users of Mozilla and Firefox (it seems that
-    ### invoking the error.ezt while in the middle of table as large
-    ### as annotate's is baaaaaad).  I think the BlameSource 'fp' is
-    ### getting closed too soon or something.  At any rate, use a
-    ### non-stream hack for now.
-    #source = BlameSource(self.svn_client_path, self.rootpath,
-    #                     path, rev, first_rev)
-    source = BlameSourceKludge(self.svn_client_path, self.rootpath,
-                               path, rev, first_rev)
+    source = BlameSource(self.svn_client_path, self.rootpath,
+                         path, rev, first_rev)
     return source, revision
     
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
