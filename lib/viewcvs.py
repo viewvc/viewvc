@@ -1158,13 +1158,13 @@ class MarkupPipeWrapper:
     self.posttext = posttext
     self.htmlize = htmlize
 
-  def __call__(self, out):
+  def __call__(self, ctx):
     if self.pretext:
-      out.write(self.pretext)
-    copy_stream(self.fp, out, self.htmlize)
+      ctx.fp.write(self.pretext)
+    copy_stream(self.fp, ctx.fp, self.htmlize)
     self.fp.close()
     if self.posttext:
-      out.write(self.posttext)
+      ctx.fp.write(self.posttext)
 
 class MarkupShell:
   """A EZT callback object slamming file contents through shell tools."""
@@ -1173,10 +1173,10 @@ class MarkupShell:
     self.fp = fp
     self.cmds = cmds
 
-  def __call__(self, out):
-    out.flush()
+  def __call__(self, ctx):
+    ctx.fp.flush()
     try:
-      pipe = popen.pipe_cmds(self.cmds, out)
+      pipe = popen.pipe_cmds(self.cmds, ctx.fp)
       try:
         if self.fp:
           copy_stream(self.fp, pipe)
@@ -1217,7 +1217,7 @@ class MarkupEnscript(MarkupShell):
     MarkupShell.__init__(self, fp, [enscript_cmd, sed_cmd])
     self.filename = filename
 
-  def __call__(self, out):
+  def __call__(self, ctx):
     # create a temporary file with the same name as the file in
     # the repository so enscript can detect file type correctly
     dir = compat.mkdtemp()
@@ -1228,7 +1228,7 @@ class MarkupEnscript(MarkupShell):
         self.fp.close()
         self.fp = None
         self.cmds[0][-1] = file
-        MarkupShell.__call__(self, out)
+        MarkupShell.__call__(self, ctx)
       finally:
         os.unlink(file)
     finally:

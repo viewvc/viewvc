@@ -108,12 +108,12 @@ Directives
    object (i.e. any object with a "read" method), it's contents are
    outputted. If it is a callback function (any callable python object
    is assumed to be a callback function), it is invoked and passed an EZT
-   printer function as an argument.
+   Context object as an argument.
 
    [QUAL_NAME QUAL_NAME ...]
 
-   If the first value is a callback function, it is invoked with the
-   output file pointer as a first argument, and the rest of the values as
+   If the first value is a callback function, it is invoked with an EZT
+   Context object as a first argument, and the rest of the values as
    additional arguments.
 
    Otherwise, the first value defines a substitution format, specifying
@@ -192,6 +192,12 @@ Directives
    or "xml". The "raw" mode leaves the output unaltered. The "html" and
    "xml" modes escape special characters using entity escapes (like
    &quot; and &gt;)
+
+   [format CALLBACK]
+ 
+   Python applications using EZT can provide custom formatters as callback
+   variables. "[format CALLBACK][QUAL_NAME][end]" is in most cases
+   equivalent to "[CALLBACK QUAL_NAME]"
 """
 #
 # Copyright (C) 2001-2005 Greg Stein. All Rights Reserved.
@@ -226,7 +232,7 @@ Directives
 
 import string
 import re
-from types import StringType, IntType, FloatType, LongType
+from types import StringType, IntType, FloatType, LongType, TupleType
 import os
 import cgi
 try:
@@ -280,12 +286,6 @@ _re_subst = re.compile('%(%|[0-9]+)')
 
 class Template:
 
-  _printers = {
-    FORMAT_RAW  : '_cmd_print',
-    FORMAT_HTML : '_cmd_print_html',
-    FORMAT_XML  : '_cmd_print_xml',
-    }
-
   def __init__(self, fname=None, compress_whitespace=1,
                base_format=FORMAT_RAW):
     self.compress_whitespace = compress_whitespace
@@ -308,8 +308,7 @@ class Template:
       # assume the argument is a plain text string
       text_or_reader = _TextReader(text_or_reader)
 
-    printer = getattr(self, self._printers[base_format])
-    self.program = self._parse(text_or_reader, base_printer=printer)
+    self.program = self._parse(text_or_reader, base_format=base_format)
 
   def generate(self, fp, data):
     if hasattr(data, '__getitem__') or callable(getattr(data, 'keys', None)):
@@ -320,13 +319,13 @@ class Template:
           vars(self).update(d)
       data = _data_ob(data)
 
-    ctx = _context()
+    ctx = Context(fp)
     ctx.data = data
     ctx.for_iterators = { }
     ctx.defines = { }
-    self._execute(self.program, fp, ctx)
+    self._execute(self.program, ctx)
 
-  def _parse(self, reader, for_names=None, file_args=(), base_printer=None):
+  def _parse(self, reader, for_names=None, file_args=(), base_format=None):
     """text -> string object containing the template.
 
     This is a private helper function doing the real work for method parse.
@@ -344,10 +343,8 @@ class Template:
     if not for_names:
       for_names = [ ]
 
-    if base_printer:
-      printers = [ base_printer ]
-    else:
-      printers = [ self._cmd_print ]
+    if base_format:
+      program.append((self._cmd_format, _printers[base_format]))
 
     for i in range(len(parts)):
       piece = parts[i]
@@ -384,7 +381,7 @@ class Template:
             raise UnmatchedEndError()
           else_section = program[idx:]
           if cmd == 'format':
-            printers.pop()
+            program.append((self._cmd_end_format, None))
           else:
             func = getattr(self, '_cmd_' + re.sub('-', '_', cmd))
             program[idx:] = [ (func, (args, true_section, else_section)) ]
@@ -404,11 +401,14 @@ class Template:
             for_names.append(args[1][0])  # append the refname
           elif cmd == 'format':
             if args[1][0]:
-              raise BadFormatConstantError(str(args[1:]))
-            funcname = self._printers.get(args[1][1])
-            if not funcname:
-              raise UnknownFormatConstantError(str(args[1:]))
-            printers.append(getattr(self, funcname))
+              # argument is a variable reference
+              printer = args[1]
+            else:
+              # argument is a string constant referring to built-in printer
+              printer = _printers.get(args[1][1])
+              if not printer:
+                raise UnknownFormatConstantError(str(args[1:]))
+            program.append((self._cmd_format, printer))
 
           # remember the cmd, current pos, args, and a section placeholder
           stack.append([cmd, len(program), args[1:], None])
@@ -419,7 +419,7 @@ class Template:
             for arg in args[2:]:
               f_args.append(_prepare_ref(arg, for_names, file_args))
             program.extend(self._parse(reader.read_other(include_filename),
-                                       for_names, f_args, printers[-1]))
+                                       for_names, f_args))
           else:
             if len(args) != 2:
               raise ArgCountSyntaxError(str(args))
@@ -436,42 +436,44 @@ class Template:
           f_args = [ ]
           for arg in args:
             f_args.append(_prepare_ref(arg, for_names, file_args))
-          program.append((printers[-1], f_args))
+          program.append((self._cmd_print, f_args))
 
     if stack:
       ### would be nice to say which blocks...
       raise UnclosedBlocksError()
     return program
 
-  def _execute(self, program, fp, ctx):
+  def _execute(self, program, ctx):
     """This private helper function takes a 'program' sequence as created
     by the method '_parse' and executes it step by step.  strings are written
     to the file object 'fp' and functions are called.
     """
     for step in program:
       if isinstance(step, StringType):
-        fp.write(step)
+        ctx.fp.write(step)
       else:
-        step[0](step[1], fp, ctx)
+        step[0](step[1], ctx)
 
-  def _cmd_print(self, valref, fp, ctx):
-    _write_value(valref, fp, ctx)
+  def _cmd_print(self, valrefs, ctx):
+    value = _get_value(valrefs[0], ctx)
+    args = map(lambda valref, ctx=ctx: _get_value(valref, ctx), valrefs[1:])
+    _write_value(value, args, ctx)
 
-  def _cmd_print_html(self, valref, fp, ctx):
-    _write_value(valref, fp, ctx, cgi.escape)
+  def _cmd_format(self, printer, ctx):
+    if type(printer) is TupleType:
+      printer = _get_value(printer, ctx)
+    ctx.printers.append(printer)
 
-  def _cmd_print_xml(self, valref, fp, ctx):
-    ### use the same quoting as HTML for now
-    self._cmd_print_html(valref, fp, ctx)
+  def _cmd_end_format(self, valref, ctx):
+    ctx.printers.pop()
 
-  def _cmd_include(self, (valref, reader), fp, ctx):
+  def _cmd_include(self, (valref, reader), ctx):
     fname = _get_value(valref, ctx)
     ### note: we don't have the set of for_names to pass into this parse.
-    ### I don't think there is anything to do but document it. we also
-    ### don't have a current format (since that is a compile-time concept).
-    self._execute(self._parse(reader.read_other(fname)), fp, ctx)
+    ### I don't think there is anything to do but document it.
+    self._execute(self._parse(reader.read_other(fname)), ctx)
 
-  def _cmd_if_any(self, args, fp, ctx):
+  def _cmd_if_any(self, args, ctx):
     "If any value is a non-empty string or non-empty list, then T else F."
     (valrefs, t_section, f_section) = args
     value = 0
@@ -479,9 +481,9 @@ class Template:
       if _get_value(valref, ctx):
         value = 1
         break
-    self._do_if(value, t_section, f_section, fp, ctx)
+    self._do_if(value, t_section, f_section, ctx)
 
-  def _cmd_if_index(self, args, fp, ctx):
+  def _cmd_if_index(self, args, ctx):
     ((valref, value), t_section, f_section) = args
     iterator = ctx.for_iterators[valref[0]]
     if value == 'even':
@@ -494,15 +496,15 @@ class Template:
       value = iterator.is_last()
     else:
       value = iterator.index == int(value)
-    self._do_if(value, t_section, f_section, fp, ctx)
+    self._do_if(value, t_section, f_section, ctx)
 
-  def _cmd_is(self, args, fp, ctx):
+  def _cmd_is(self, args, ctx):
     ((left_ref, right_ref), t_section, f_section) = args
     value = _get_value(right_ref, ctx)
     value = string.lower(_get_value(left_ref, ctx)) == string.lower(value)
-    self._do_if(value, t_section, f_section, fp, ctx)
+    self._do_if(value, t_section, f_section, ctx)
 
-  def _do_if(self, value, t_section, f_section, fp, ctx):
+  def _do_if(self, value, t_section, f_section, ctx):
     if t_section is None:
       t_section = f_section
       f_section = None
@@ -511,9 +513,9 @@ class Template:
     else:
       section = f_section
     if section is not None:
-      self._execute(section, fp, ctx)
+      self._execute(section, ctx)
 
-  def _cmd_for(self, args, fp, ctx):
+  def _cmd_for(self, args, ctx):
     ((valref,), unused, section) = args
     list = _get_value(valref, ctx)
     if isinstance(list, StringType):
@@ -521,15 +523,17 @@ class Template:
     refname = valref[0]
     ctx.for_iterators[refname] = iterator = _iter(list)
     for unused in iterator:
-      self._execute(section, fp, ctx)
+      self._execute(section, ctx)
     del ctx.for_iterators[refname]
 
-  def _cmd_define(self, args, fp, ctx):
+  def _cmd_define(self, args, ctx):
     ((name,), unused, section) = args
-    valfp = cStringIO.StringIO()
+    origfp = ctx.fp
+    ctx.fp = cStringIO.StringIO()
     if section is not None:
-      self._execute(section, valfp, ctx)
-    ctx.defines[name] = valfp.getvalue()
+      self._execute(section, ctx)
+    ctx.defines[name] = ctx.fp.getvalue()
+    ctx.fp = origfp
 
 def boolean(value):
   "Return a value suitable for [if-any bool_var] usage in a template."
@@ -626,44 +630,52 @@ def _get_value((refname, start, rest), ctx):
   # string or a sequence
   return ob
 
-def _write_value(valrefs, fp, ctx, format=lambda s: s):
-  value = _get_value(valrefs[0], ctx)
-  args = map(lambda valref, ctx=ctx: _get_value(valref, ctx), valrefs[1:])
+def _write_value(value, args, ctx):
+  # value is a callback function, generates its own output
+  if callable(value):
+    apply(value, [ctx] + list(args))
+    return
 
-  # if the value has a 'read' attribute, then it is a stream: copy it
-  if hasattr(value, 'read'):
-    while 1:
-      chunk = value.read(16384)
-      if not chunk:
-        break
-      fp.write(format(chunk))
+  # pop printer in case it recursively calls _write_value
+  printer = ctx.printers.pop()
 
-  # value is a callback function: call with file pointer and extra args
-  elif callable(value):
-    apply(value, [fp] + args)
+  try:
+    # if the value has a 'read' attribute, then it is a stream: copy it
+    if hasattr(value, 'read'):
+      while 1:
+        chunk = value.read(16384)
+        if not chunk:
+          break
+        printer(ctx, chunk)
 
-  # value is a substitution pattern
-  elif args:
-    parts = _re_subst.split(value)
-    for i in range(len(parts)):
-      piece = parts[i]
-      if i%2 == 1 and piece != '%':
-        idx = int(piece)
-        if idx < len(args):
-          piece = args[idx]
-        else:
-          piece = '<undef>'
-      if format:
-        fp.write(format(piece))
+    # value is a substitution pattern
+    elif args:
+      parts = _re_subst.split(value)
+      for i in range(len(parts)):
+        piece = parts[i]
+        if i%2 == 1 and piece != '%':
+          idx = int(piece)
+          if idx < len(args):
+            piece = args[idx]
+          else:
+            piece = '<undef>'
+          printer(ctx, piece)
 
-  # plain old value, write to output
-  else:
-    fp.write(format(value))
+    # plain old value, write to output
+    else:
+      printer(ctx, value)
+
+  finally:
+    ctx.printers.append(printer)
 
 
-class _context:
+class Context:
   """A container for the execution context"""
-
+  def __init__(self, fp):
+    self.fp = fp
+    self.printers = []
+  def write(self, value, args=()):
+    _write_value(value, args, self)
 
 class Reader:
   "Abstract class which allows EZT to detect Reader objects."
@@ -771,12 +783,20 @@ class UnmatchedEndError(EZTException):
 class BaseUnavailableError(EZTException):
   """Base location is unavailable, which disables includes."""
 
-class BadFormatConstantError(EZTException):
-  """Format specifiers must be string constants."""
-
 class UnknownFormatConstantError(EZTException):
   """The format specifier is an unknown value."""
 
+def _raw_printer(ctx, s):
+  ctx.fp.write(s)
+  
+def _html_printer(ctx, s):
+  ctx.fp.write(cgi.escape(s))
+
+_printers = {
+  FORMAT_RAW  : _raw_printer,
+  FORMAT_HTML : _html_printer,
+  FORMAT_XML  : _html_printer,
+}
 
 # --- standard test environment ---
 def test_parse():
