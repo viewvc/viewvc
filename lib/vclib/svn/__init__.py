@@ -30,9 +30,9 @@ import re
 from svn import fs, repos, core, delta
 
 
-### Require Subversion 1.1.0 or better.
-if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 1, 0):
-  raise Exception, "Version requirement not met (needs 1.1.0 or better)"
+### Require Subversion 1.2.0 or better.
+if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 2, 0):
+  raise Exception, "Version requirement not met (needs 1.2.0 or better)"
 
   
 def _allow_all(root, path, pool):
