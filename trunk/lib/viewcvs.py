@@ -2585,6 +2585,10 @@ def setup_diff(request):
       rev2 = r2[:idx]
       sym2 = r2[idx+1:]
 
+  if request.roottype == 'svn':
+    rev1 = str(request.repos._getrev(rev1))
+    rev2 = str(request.repos._getrev(rev2))
+    
   p1 = _get_diff_path_parts(request, 'p1', rev1, request.pathrev)
   p2 = _get_diff_path_parts(request, 'p2', rev2, request.pathrev)
 
