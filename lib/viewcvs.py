@@ -283,6 +283,9 @@ class Request:
                  _strip_suffix('.tar.gz', path_parts, pathrev, vclib.DIR,     \
                                self.repos, download_tarball) or               \
                  _strip_suffix('root.tar.gz', path_parts, pathrev, vclib.DIR, \
+                               self.repos, download_tarball) or               \
+                 _strip_suffix(self.rootname + '-root.tar.gz',                \
+                               path_parts, pathrev, vclib.DIR,                \
                                self.repos, download_tarball)
         if result:
           self.path_parts, self.pathtype, self.view_func = result
@@ -489,7 +492,8 @@ class Request:
 
     # add suffix for tarball
     if view_func is download_tarball:
-      if not where: url = url + '/root'
+      if not where: 
+        url = url + '/' + rootname + '-root'
       url = url + '.tar.gz'
 
     # add trailing slash for a directory
