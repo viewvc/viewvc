@@ -1355,7 +1355,7 @@ def view_markup(request):
 
   if cfg.options.show_log_in_markup:
     options = {'svn_latest_log': 1}
-    revs = request.repos.itemlog(path, rev, options)
+    revs = request.repos.itemlog(path, revision, options)
     entry = revs[-1]
     data.update({
         'date' : make_time_string(entry.date, cfg),
