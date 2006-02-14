@@ -77,17 +77,17 @@
     <td>
       [# Branches column]
       [if-any entries.vendor_branch]
-        <i>vendor branch</i><br>
+        <i>vendor branch</i><br />
       [end]
       [if-any entries.branches]
         [for entries.branches]
-          <a href="[entries.branches.href]"><b>[entries.branches.name]</b></a><br>
+          <a href="[entries.branches.href]"><b>[entries.branches.name]</b></a><br />
         [end]
       [end]
       [if-any entries.branch_points]
         Branch point for:
         [for entries.branch_points]
-          <a href="[entries.branch_points.href]"><b>[entries.branch_points.name]</b></a><br>
+          <a href="[entries.branch_points.href]"><b>[entries.branch_points.name]</b></a><br />
         [end]
       [end]
       [if-any entries.next_main]
@@ -126,11 +126,11 @@
       [is roottype "svn"]
         [if-index entries last]Added[else]Modified[end]
       [end]
-      [entries.ago] ago<br><i>[entries.date]</i>
+      [entries.ago] ago<br /><i>[entries.date]</i>
       [is roottype "cvs"]
         [if-any entries.prev]
           [if-any entries.changed]
-            <br>Changes since <b>[entries.prev]: [entries.changed] lines</b>
+            <br />Changes since <b>[entries.prev]: [entries.changed] lines</b>
           [end]
         [end]
       [end]
@@ -150,11 +150,11 @@
         [end]
 
         [if-any entries.size]
-          <b>File length: </b>[entries.size] byte(s)<br>
+          <b>File length: </b>[entries.size] byte(s)<br />
         [end]
 
         [if-any entries.copy_path]
-           <b>Copied from: </b><a href="[entries.copy_href]"><em>[entries.copy_path]</em></a> revision [entries.copy_rev]<br>
+           <b>Copied from: </b><a href="[entries.copy_href]"><em>[entries.copy_path]</em></a> revision [entries.copy_rev]<br />
         [end]
       [end]
 
