@@ -1,8 +1,13 @@
   <hr />
   <p><a name="diff"></a>
-  This form allows you to request diffs between any two revisions of
-  a file. You may select a symbolic revision name using the selection
-  box or you may type in a numeric name using the type-in text box.
+  This form allows you to request diffs between any two revisions of this file.
+  For each of the two "sides" of the diff,
+[if-any tags]
+  select a symbolic revision name using the selection box, or choose
+  'Use Text Field' and enter a numeric revision.
+[else]
+  enter a numeric revision.
+[end]
   </p>
   <form method="get" action="[diff_select_action]" name="diff_select">
 
