@@ -77,31 +77,31 @@
     <td>
       [# Branches column]
       [if-any entries.vendor_branch]
-        <i>vendor branch</i><br />
+        <em>vendor branch</em><br />
       [end]
       [if-any entries.branches]
         [for entries.branches]
-          <a href="[entries.branches.href]"><b>[entries.branches.name]</b></a><br />
+          <a href="[entries.branches.href]"><strong>[entries.branches.name]</strong></a><br />
         [end]
       [end]
       [if-any entries.branch_points]
         Branch point for:
         [for entries.branch_points]
-          <a href="[entries.branch_points.href]"><b>[entries.branch_points.name]</b></a><br />
+          <a href="[entries.branch_points.href]"><strong>[entries.branch_points.name]</strong></a><br />
         [end]
       [end]
       [if-any entries.next_main]
-        <a href="[entries.diff_to_main_href]"><b>Diff&nbsp;to&nbsp;next&nbsp;MAIN&nbsp;[entries.next_main]</b></a>
+        <a href="[entries.diff_to_main_href]"><strong>Diff&nbsp;to&nbsp;next&nbsp;MAIN&nbsp;[entries.next_main]</strong></a>
         [if-any human_readable]
         [else]
-          (<a href="[entries.diff_to_main_href]&amp;diff_format=h"><b>colored</b></a>)
+          (<a href="[entries.diff_to_main_href]&amp;diff_format=h"><strong>colored</strong></a>)
         [end]<br />
       [end]
       [if-any entries.branch_point]
-        <a href="[entries.diff_to_branch_href]"><b>Diff&nbsp;to&nbsp;branch&nbsp;point&nbsp;[entries.branch_point]</b></a>
+        <a href="[entries.diff_to_branch_href]"><strong>Diff&nbsp;to&nbsp;branch&nbsp;point&nbsp;[entries.branch_point]</strong></a>
         [if-any human_readable]
         [else]
-          (<a href="[entries.diff_to_branch_href]&amp;diff_format=h"><b>colored</b></a>)
+          (<a href="[entries.diff_to_branch_href]&amp;diff_format=h"><strong>colored</strong></a>)
         [end]<br />
       [end]
 
@@ -126,11 +126,11 @@
       [is roottype "svn"]
         [if-index entries last]Added[else]Modified[end]
       [end]
-      [entries.ago] ago<br /><i>[entries.date]</i>
+      [entries.ago] ago<br /><em>[entries.date]</em>
       [is roottype "cvs"]
         [if-any entries.prev]
           [if-any entries.changed]
-            <br />Changes since <b>[entries.prev]: [entries.changed] lines</b>
+            <br />Changes since <strong>[entries.prev]: [entries.changed] lines</strong>
           [end]
         [end]
       [end]
@@ -150,15 +150,15 @@
         [end]
 
         [if-any entries.size]
-          <b>File length: </b>[entries.size] byte(s)<br />
+          <strong>File length: </strong>[entries.size] byte(s)<br />
         [end]
 
         [if-any entries.copy_path]
-           <b>Copied from: </b><a href="[entries.copy_href]"><em>[entries.copy_path]</em></a> revision [entries.copy_rev]<br />
+           <strong>Copied from: </strong><a href="[entries.copy_href]"><em>[entries.copy_path]</em></a> revision [entries.copy_rev]<br />
         [end]
       [end]
 
-      <b>Log: </b><pre class="vc_log">[entries.log]</pre>
+      <strong>Log: </strong><pre class="vc_log">[entries.log]</pre>
     </td>
   </tr>
   </tbody>
