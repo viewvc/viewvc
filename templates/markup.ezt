@@ -43,6 +43,6 @@ Revision [if-any revision_href]<a href="[revision_href]"><strong>[rev]</strong><
 [end]
 </div>
 
-<div>[markup]</div>
+<div id="vc_markup"><pre>[markup]</pre></div>
 
 [include "include/footer.ezt"]

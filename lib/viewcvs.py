@@ -1208,11 +1208,7 @@ class MarkupEnscript(MarkupShell):
                                                   'enscript')),
                     '--color', '--language=html', '--pretty-print',
                     '-o', '-', '-']
-
-    ### I started to use '1,/^<PRE>$/d;/<\\/PRE>/,$d;p' here to
-    ### actually strip out the <PRE> and </PRE> tags, too, but I
-    ### couldn't think of any good reason to do that.
-    sed_cmd = ['sed', '-n', '/^<PRE>$/,/<\\/PRE>$/p']
+    sed_cmd = ['sed', '-n', '1,/^<PRE>$/d;/<\\/PRE>/,$d;p']
 
     MarkupShell.__init__(self, fp, [enscript_cmd, sed_cmd])
     self.filename = filename
@@ -1250,27 +1246,18 @@ class MarkupHighlight(MarkupShell):
                                                    'highlight')),
                      '--syntax', ext, '--force',
                      '--style', str(cfg.options.highlight_style),
-                     '--include-style', '--anchors']
+                     '--anchors', '--fragment', '--xhtml']
 
     if cfg.options.highlight_line_numbers:
       ### there doesn't seem to be any way to get highlight to add line
       ### numbers for .txt files, it just ignores these options
-      highlight_cmd.extend(['--linenumbers', '--line-number-start', '1'])
+      highlight_cmd.extend(['--linenumbers'])
 
     if cfg.options.highlight_convert_tabs:
       highlight_cmd.extend(['--replace-tabs',
                             str(cfg.options.highlight_convert_tabs)])
 
-    # Remove duplicate style definitions and other stuff not needed
-    sed_cmd = ['sed',
-               '-e', '/^body.*$/d', '-e', '/^pre.*$/d',
-               '-e', '/^\\.line.*$/d',
-               '-e', '/^<\\/*head>$/d', '-e', '/^<\\/*body[^>]*>$/d',
-               '-e', '/^<\\/*html.*>$/d',
-               '-e', '/[ \\t]*<title>.*<\\/title>$/d',
-               '-e', '/^<meta.*>$/d', '-e', '/^<!DOCTYPE.*>$/d']
-
-    MarkupShell.__init__(self, fp, [highlight_cmd, sed_cmd])
+    MarkupShell.__init__(self, fp, [highlight_cmd])
 
 def markup_stream_python(fp, cfg):
   ### Convert this code to use the recipe at:
@@ -1415,7 +1402,7 @@ def view_markup(request):
 
   # If no one has a suitable markup handler, we'll use the default.
   if not markup_fp:
-    markup_fp = MarkupPipeWrapper(fp, '<pre>', '</pre>')
+    markup_fp = MarkupPipeWrapper(fp)
     
   data['markup'] = markup_fp
   
