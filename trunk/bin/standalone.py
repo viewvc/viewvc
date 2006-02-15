@@ -134,6 +134,9 @@ def serve(host, port, callback=None):
             if self.path[:len(options.script_alias)+2] == \
                    '/' + options.script_alias + '/':
                 return 1
+            if self.path[:len(options.script_alias)+2] == \
+                   '/' + options.script_alias + '?':
+                return 1
             return 0
 
         def redirect(self):
