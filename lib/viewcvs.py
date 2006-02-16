@@ -1255,7 +1255,7 @@ class MarkupHighlight(MarkupShell):
     if cfg.options.highlight_line_numbers:
       ### there doesn't seem to be any way to get highlight to add line
       ### numbers for .txt files, it just ignores these options
-      highlight_cmd.extend(['--linenumbers'])
+      highlight_cmd.extend(['--linenumbers', '--line-number-start', '1'])
 
     if cfg.options.highlight_convert_tabs:
       highlight_cmd.extend(['--replace-tabs',
