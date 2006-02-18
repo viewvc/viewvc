@@ -280,9 +280,9 @@ def build_commit(server, cfg, desc, files, cvsroots, viewcvs_link):
     ob = _item(num_files=len(files), files=[])
     
     if desc:
-        ob.desc = string.replace(server.escape(desc), '\n', '<br />')
+        ob.log = string.replace(server.escape(desc), '\n', '<br />')
     else:
-        ob.desc = '&nbsp;'
+        ob.log = '&nbsp;'
 
     for commit in files:
         dir_parts = filter(None, string.split(commit.GetDirectory(), '/'))
