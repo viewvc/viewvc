@@ -769,5 +769,24 @@ def EscapeLike(literal):
   """Escape literal string for use in a MySQL LIKE pattern"""
   return re.sub(_re_likechars, r"\\\1", literal)
 
+def FindRepository(db, path):
+  """Find repository path in database given path to subdirectory
+  Returns normalized repository path and relative directory path"""
+  path = os.path.normpath(path)
+  dirs = []
+  while path:
+    rep = os.path.normcase(path)
+    if db.GetRepositoryID(rep, 0) is None:
+      path, pdir = os.path.split(path)
+      if not pdir:
+        return None, None
+      dirs.append(pdir)
+    else:
+      break
+  dirs.reverse()
+  return rep, dirs
+
 def CleanRepository(path):
+  """Return normalized top-level repository path"""
   return os.path.normcase(os.path.normpath(path))
+

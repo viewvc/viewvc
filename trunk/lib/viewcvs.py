@@ -3155,7 +3155,7 @@ def prev_rev(rev):
     r = r[:-2]
   return string.join(r, '.')
 
-def build_commit(request, files, limited_files):
+def build_commit(request, files, limited_files, dir_strip):
   commit = _item(num_files=len(files), files=[])
   commit.limited_files = ezt.boolean(limited_files)
   desc = files[0].GetDescription()
@@ -3174,15 +3174,21 @@ def build_commit(request, files, limited_files):
     commit.rev = None
     commit.rss_url = None
 
+  len_strip = len(dir_strip)
+
   for f in files:
     commit_time = f.GetTime()
     if commit_time:
       commit_time = make_time_string(commit_time, request.cfg)
     else:
       commit_time = '&nbsp;'
-    filename = os.path.join(f.GetDirectory(), f.GetFile())
-    filename = string.replace(filename, os.sep, '/')
-    dirname = string.replace(f.GetDirectory(), os.sep, '/')
+
+    dirname = f.GetDirectory()
+    filename = f.GetFile()
+    assert dirname[:len_strip] == dir_strip
+    assert len(dirname) == len_strip or dirname[len(dir_strip)] == '/'
+    dirname = dirname[len_strip+1:]
+    filename = dirname and ("%s/%s" % (dirname, filename)) or filename
 
     params = { 'rev': f.GetRevision() }
     if f.GetBranch(): params['pathrev'] = f.GetBranch()
@@ -3210,7 +3216,7 @@ def build_commit(request, files, limited_files):
                                 escape=1)
 
     # skip files in forbidden or hidden modules
-    dir_parts = filter(None, string.split(f.GetDirectory(), '/'))
+    dir_parts = filter(None, string.split(dirname, '/'))
     if dir_parts \
            and ((dir_parts[0] == 'CVSROOT'
                  and request.cfg.options.hide_cvsroot) \
@@ -3218,7 +3224,7 @@ def build_commit(request, files, limited_files):
       continue
 
     commit.files.append(_item(date=commit_time,
-                              dir=htmlify(f.GetDirectory()),
+                              dir=htmlify(dirname),
                               file=htmlify(f.GetFile()),
                               author=htmlify(f.GetAuthor()),
                               rev=f.GetRevision(),
@@ -3300,9 +3306,16 @@ def view_query(request):
   global cvsdb
   import cvsdb
 
+  db = cvsdb.ConnectDatabaseReadOnly(request.cfg)
+  repos_root, repos_dir = cvsdb.FindRepository(db, request.rootpath)
+  if not repos_root:
+    raise debug.ViewCVSException(
+      "The root '%s' was not found in the commit database "
+      % request.rootname)
+
   # create the database query from the form data
   query = cvsdb.CreateCheckinQuery()
-  query.SetRepository(cvsdb.CleanRepository(request.rootpath))
+  query.SetRepository(repos_root)
   # treat "HEAD" specially ...
   if branch_match == 'exact' and branch == 'HEAD':
     query.SetBranch('')
@@ -3310,13 +3323,15 @@ def view_query(request):
     query.SetBranch(branch, branch_match)
   if dir:
     for subdir in string.split(dir, ','):
-      path = _path_join(request.path_parts + [ string.strip(subdir) ])
+      path = (_path_join(repos_dir + request.path_parts
+                         + [ string.strip(subdir) ]))
       query.SetDirectory(path, 'exact')
       query.SetDirectory('%s/%%' % cvsdb.EscapeLike(path), 'like')
   else:
-    if request.path_parts: # if we are in a subdirectory ...
-      query.SetDirectory(request.where, 'exact')
-      query.SetDirectory('%s/%%' % cvsdb.EscapeLike(request.where), 'like')
+    where = _path_join(repos_dir + request.path_parts)
+    if where: # if we are in a subdirectory ...
+      query.SetDirectory(where, 'exact')
+      query.SetDirectory('%s/%%' % cvsdb.EscapeLike(where), 'like')
   if file:
     query.SetFile(file, file_match)
   if who:
@@ -3343,7 +3358,6 @@ def view_query(request):
     query.SetLimit(request.cfg.cvsdb.rss_row_limit)
 
   # run the query
-  db = cvsdb.ConnectDatabaseReadOnly(request.cfg)
   db.RunQuery(query)
 
   sql = htmlify(db.CreateSQLQueryString(query))
@@ -3358,6 +3372,7 @@ def view_query(request):
     limited_files = 0
     current_desc = query.commit_list[0].GetDescriptionID()
     current_rev = query.commit_list[0].GetRevision()
+    dir_strip = _path_join(repos_dir)
     for commit in query.commit_list:
       # base modification time on the newest commit ...
       if commit.GetTime() > mod_time: mod_time = commit.GetTime()
@@ -3386,7 +3401,7 @@ def view_query(request):
       # if our current group has any allowed files, append a commit
       # with those files.
       if len(files):
-        commits.append(build_commit(request, files, limited_files))
+        commits.append(build_commit(request, files, limited_files, dir_strip))
 
       files = [ commit ]
       limited_files = 0
@@ -3396,7 +3411,7 @@ def view_query(request):
     # we need to tack on our last commit grouping, but, again, only if
     # it has allowed files.
     if len(files):
-      commits.append(build_commit(request, files, limited_files))
+      commits.append(build_commit(request, files, limited_files, dir_strip))
 
   # only show the branch column if we are querying all branches
   # or doing a non-exact branch match on a CVS repository.
