@@ -3185,9 +3185,10 @@ def build_commit(request, files, limited_files, dir_strip):
 
     dirname = f.GetDirectory()
     filename = f.GetFile()
-    assert dirname[:len_strip] == dir_strip
-    assert len(dirname) == len_strip or dirname[len(dir_strip)] == '/'
-    dirname = dirname[len_strip+1:]
+    if dir_strip:
+      assert dirname[:len_strip] == dir_strip
+      assert len(dirname) == len_strip or dirname[len(dir_strip)] == '/'
+      dirname = dirname[len_strip+1:]
     filename = dirname and ("%s/%s" % (dirname, filename)) or filename
 
     params = { 'rev': f.GetRevision() }
