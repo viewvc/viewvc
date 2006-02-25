@@ -16,9 +16,9 @@ and the Python for Windows Extensions which are at
 
   http://starship.python.net/crew/mhammond/win32/
 
-ViewVC also requires that the CVSNT client (cvs.exe) OR the RCS tools
-(rlog.exe, rcsdiff.exe, and co.exe) be installed on your computer. CVSNT is
-available from
+For CVS support, ViewVC also requires that the CVSNT client (cvs.exe) OR the
+RCS tools (rlog.exe, rcsdiff.exe, and co.exe) be installed on your computer.
+CVSNT is available from
 
   http://www.cvsnt.org/wiki
 
@@ -26,8 +26,24 @@ and RCS can be obtained from:
 
   http://www.cs.purdue.edu/homes/trinkle/RCS/
 
-Once you've got Python and CVSNT or RCS installed, you can test out ViewVC
-before you install it by running:
+For Subversion support, you'll need to have the Subversion Python bindings
+installed. Binaries are available from the Subversion website at:
+
+  http://subversion.tigris.org/servlets/ProjectDocumentList?folderID=91
+
+Note that if you use binaries, you have to be running the same version of
+python as the binaries were built for. For example, you cannot use Subversion
+bindings built for Python 2.3 with Python 2.4. Instructions for building
+the binaries from source are available here:
+
+  http://svn.collab.net/repos/svn/trunk/subversion/bindings/swig/INSTALL
+
+The Subversion bindings also require you to have diff.exe installed in a
+directory on your system PATH. diff.exe is available as part of the GnuWin32
+project's DiffUtils package at http://gnuwin32.sf.net/.
+
+Once you've got Python and CVSNT or RCS or the Subversion bindings installed,
+you can test out ViewVC before you install it by running:
 
   python bin\standalone.py -r <PATH_TO_REPOSITORY>
 
@@ -211,25 +227,6 @@ To use CvsGraph with ViewVC, just put cvsgraph.exe in a directory on your
 system PATH and set the use_cvsgraph option to 1 in your viewcvs.conf file.
 
 The CvsGraph home page is http://www.akhphd.au.dk/~bertho/cvsgraph/.
-
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-SUBVERSION SUPPORT
-
-To use ViewVC with Subversion, you'll need to have the Subversion Python
-bindings installed. Binaries are available from the Subversion website at:
-
-  http://subversion.tigris.org/servlets/ProjectDocumentList?folderID=91
-
-Or to build from source you can use the instructions here:
-
-  http://svn.collab.net/repos/svn/trunk/subversion/bindings/swig/INSTALL
-
-You'll also need to have diff.exe installed in a directory on your system PATH.
-diff.exe is available as part of the GnuWin32 project's DiffUtils package at
-http://gnuwin32.sf.net/.
-
-Once the Python bindings and diff are installed, you just need to set the
-svn_roots option in viewcvs.conf to point to your repositories.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 DOCROOT OPTIMIZATION
