@@ -243,9 +243,10 @@ def install_tree(src_path, dst_path, prompt_replace):
   files.sort()
   for fname in files:
     # eliminate some items which appear in a development area
-    if fname == 'CVS' or fname == '.svn' or fname[-4:] == '.pyc' \
-       or fname[-5:] == '.orig' or fname[-4:] == '.rej' \
-       or fname[0] == '.' or fname[-1] ==  '~':
+    if fname == 'CVS' or fname == '.svn' or fname == '_svn' \
+       or fname[-4:] == '.pyc' or fname[-5:] == '.orig' \
+       or fname[-4:] == '.rej' or fname[0] == '.' \
+       or fname[-1] ==  '~':
       continue
 
     src = os.path.join(src_path, fname)
