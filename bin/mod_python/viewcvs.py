@@ -30,8 +30,8 @@
 # development, they will remain None.
 #
 
-LIBRARY_DIR = "/home/russ/devel/revision/viewvc/lib"
-CONF_PATHNAME = "/home/russ/devel/revision/viewvc/viewcvs.conf"
+LIBRARY_DIR = None
+CONF_PATHNAME = None
 
 #########################################################################
 #
