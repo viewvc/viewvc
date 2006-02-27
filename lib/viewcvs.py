@@ -1351,6 +1351,17 @@ def view_markup(request):
   data.update({
     'mime_type' : request.mime_type,
     'log' : None,
+    'date' : None,
+    'ago' : None,
+    'author' : None,
+    'branches' : None,
+    'tags' : None,
+    'branch_points' : None,
+    'changed' : None,
+    'size' : None,
+    'state' : None,
+    'vendor_branch' : None,
+    'prev' : None,
     })
 
   if cfg.options.show_log_in_markup:
@@ -1359,17 +1370,10 @@ def view_markup(request):
     entry = revs[-1]
     data.update({
         'date' : make_time_string(entry.date, cfg),
-        'ago' : None,
         'author' : entry.author,
-        'branches' : None,
-        'tags' : None,
-        'branch_points' : None,
         'changed' : entry.changed,
         'log' : htmlify(entry.log),
         'size' : entry.size,
-        'state' : None,
-        'vendor_branch' : None,
-        'prev' : None,
         })
 
     if entry.date is not None:
