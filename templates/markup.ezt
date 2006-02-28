@@ -13,7 +13,9 @@ Revision [if-any revision_href]<a href="[revision_href]"><strong>[rev]</strong><
 [if-any annotate_href](<a href="[annotate_href]"><strong>annotate</strong></a>)[end]
 
 [if-any vendor_branch] <em>(vendor branch)</em>[end]
-<br /><em>[date]</em> ([ago] ago) by <em>[author]</em>
+<br />[if-any date]<em>[date]</em>[end] 
+      [if-any ago]([ago] ago)[end]
+      [if-any author]by <em>[author]</em>[end]
 [if-any orig_path]
   <br />Original Path: <a href="[orig_href]"><em>[orig_path]</em></a>
 [end]
