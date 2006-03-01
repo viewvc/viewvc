@@ -47,10 +47,10 @@ import sapi
 import viewcvs
 reload(viewcvs) # need reload because initial import loads this stub file
 
-cfg = viewcvs.load_config(CONF_PATHNAME)
 
 def index(req):
   server = sapi.ModPythonServer(req)
+  cfg = viewcvs.load_config(CONF_PATHNAME, server)
   try:
     viewcvs.main(server, cfg)
   finally:
