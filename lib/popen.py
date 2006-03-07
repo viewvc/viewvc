@@ -211,6 +211,8 @@ def pipe_cmds(cmds, out=None):
 
   null = os.open('/dev/null', os.O_RDWR)
 
+  child_pids = []
+
   for cmd in cmds[:-1]:
     r, w = os.pipe()
     pid = os.fork()
@@ -242,6 +244,7 @@ def pipe_cmds(cmds, out=None):
       sys.exit(127)
 
     # in the parent
+    child_pids.append(pid)
 
     # we don't need these any more
     os.close(prev_r)
@@ -288,6 +291,7 @@ def pipe_cmds(cmds, out=None):
 
     sys.exit(127)
 
+  child_pids.append(pid)
   # not needed any more
   os.close(prev_r)
 
@@ -299,7 +303,7 @@ def pipe_cmds(cmds, out=None):
     thread = None
 
   # write into the first pipe, wait on the final process
-  return _pipe(os.fdopen(parent_w, 'w'), pid, thread=thread)
+  return _pipe(os.fdopen(parent_w, 'w'), child_pids, thread=thread)
 
 class _copy(threading.Thread):
   def __init__(self, srcfd, destfile):
@@ -362,7 +366,13 @@ class _pipe:
       else:
         if self.thread:
           self.thread.join()
-        return os.waitpid(self.child_pid, 0)[1]
+	if type(self.child_pid) == type([]):
+	    while len(self.child_pid) > 0:
+    		pid, exit = os.wait()
+		if pid in self.child_pid:
+		    self.child_pid.remove(pid)
+	else:
+            return os.waitpid(self.child_pid, 0)[1]
     return None
 
   def __getattr__(self, name):
