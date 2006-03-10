@@ -195,9 +195,17 @@ class SvnRev:
         return self.rev_roots[rev]
 
 
-def handle_revision(db, command, repo, rev):
+def handle_revision(db, command, repo, rev, verbose):
     """Adds a particular revision of the repository to the checkin database."""
     revision = repo[rev]
+    committed = 0
+
+    if verbose: print "Building commit info for revision %d..." % (rev),
+
+    if not revision.changes:
+        if verbose: print "skipped (no changes)."
+        return
+
     for (path, action, plus, minus) in revision.changes:
         directory, file = os.path.split(path)
         commit = cvsdb.CreateCommit()
@@ -221,38 +229,68 @@ def handle_revision(db, command, repo, rev):
 
         if command == 'update':
             result = db.CheckCommit(commit)
-            if result: continue # already recorded
+            if result:
+                continue # already recorded
 
         # commit to database
         db.AddCommit(commit)
-    pass
+        committed = 1
 
-def main(pool, command, repository, rev=None):
+    if verbose:
+        if committed:
+            print "done."
+        else:
+            print "skipped (already recorded)."
+
+def main(pool, command, repository, rev=None, verbose=0):
     cfg = viewcvs.load_config(CONF_PATHNAME)
     db = cvsdb.ConnectDatabase(cfg)
 
     repo = SvnRepo(repository, pool)
     if rev:
-        handle_revision(db, command, repo, rev)
+        handle_revision(db, command, repo, rev, verbose)
     else:
         for rev in range(repo.rev_max+1):
-            handle_revision(db, command, repo, rev)
+            handle_revision(db, command, repo, rev, verbose)
 
 def usage():
-    sys.stderr.write('Usage: %s {rebuild | update} <repository> [<revision>]\n'
-                     % os.path.basename(sys.argv[0]))
+    cmd = os.path.basename(sys.argv[0])
+    sys.stderr.write("""
+Usage: 1. %s [-v] rebuild REPOSITORY [REVISION]
+       2. %s [-v] update REPOSITORY [REVISION]
+
+1.  Rebuild the commit database information for REPOSITORY across all revisions
+    or, optionally, only for the specified REVISION.
+
+2.  Update the commit database information for REPOSITORY across all revisions
+    or, optionally, only for the specified REVISION.  This is just like
+    rebuilding, except that no commit information will be stored for
+    commits already present in the database.
+
+Use the -v flag to cause this script to give progress information as it works.
+""" % (cmd, cmd))
     sys.exit(1)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 3:
+    verbose = 0
+    
+    args = sys.argv
+    try:
+        index = args.index('-v')
+        verbose = 1
+        del args[index]
+    except ValueError:
+        pass
+        
+    if len(args) < 3:
         usage()
 
-    command = string.lower(sys.argv[1])
+    command = string.lower(args[1])
     if command not in ('rebuild', 'update'):
         sys.stderr.write('ERROR: unknown command %s\n' % command)
         usage()
 
-    repository = sys.argv[2]
+    repository = args[2]
     if not os.path.exists(repository):
         sys.stderr.write('ERROR: could not find repository %s\n' % repository)
         usage()
@@ -268,5 +306,4 @@ if __name__ == '__main__':
         rev = None
 
     repository = cvsdb.CleanRepository(os.path.abspath(repository))
-
-    svn.core.run_app(main, command, repository, rev)
+    svn.core.run_app(main, command, repository, rev, verbose)
