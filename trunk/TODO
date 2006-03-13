@@ -46,8 +46,8 @@ KNOWN BUGS
    is non existant.
 
 *) With old repositories containing many branches, tags or thousands
-   or revisions, the cvsgraph feature becomes unusable (see INSTALL).  
-   ViewCVS can't do much about this, but it might be possible to 
+   or revisions, the cvsgraph feature becomes unusable (see INSTALL).
+   ViewCVS can't do much about this, but it might be possible to
    investigate the number of branches, tags and revision in advance
    and disable the cvsgraph links, if the numbers exceed a certain
    treshold.
