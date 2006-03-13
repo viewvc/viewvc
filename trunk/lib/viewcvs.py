@@ -1282,6 +1282,7 @@ def markup_stream_python(fp, cfg):
   ### mailtos as well as we do.
   html = cgi.escape(fp.read())
   pp = py2html.PrettyPrint(PyFontify.fontify, "rawhtml", "color")
+  pp.set_mode_rawhtml_color()
   html = pp.fontify(html)
   html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
   html = re.sub(_re_rewrite_email, r'<a href="mailto:\1">\1</a>', html)
