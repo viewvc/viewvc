@@ -1212,7 +1212,12 @@ class MarkupEnscript(MarkupShell):
                                                   'enscript')),
                     '--color', '--language=html', '--pretty-print',
                     '-o', '-', '-']
-    sed_cmd = ['sed', '-n', '1,/^<PRE>$/d;/<\\/PRE>/,$d;p']
+
+    ### I'd like to also strip the <PRE> and </PRE> tags, too, but
+    ### can't come up with a suitable sed expression.  Using
+    ### '1,/^<PRE>$/d;/<\\/PRE>/,$d;p' gets me most of the way, but
+    ### will drop the last line of a non-newline-terminated filed.
+    sed_cmd = ['sed', '-n', '/^<PRE>$/,/<\\/PRE>$/p']
 
     MarkupShell.__init__(self, fp, [enscript_cmd, sed_cmd])
     self.filename = filename
