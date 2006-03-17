@@ -367,10 +367,9 @@ class _pipe:
         if self.thread:
           self.thread.join()
 	if type(self.child_pid) == type([]):
-	    while len(self.child_pid) > 0:
-    		pid, exit = os.wait()
-		if pid in self.child_pid:
-		    self.child_pid.remove(pid)
+          for pid in self.child_pid:
+            exit = os.waitpid(pid, 0)[1]
+          return exit
 	else:
             return os.waitpid(self.child_pid, 0)[1]
     return None
