@@ -18,6 +18,7 @@ such as CVS.
 """
 
 import string
+import types
 
 
 # item types returned by Repository.itemtype().
@@ -177,10 +178,12 @@ class Error(Exception):
 class ReposNotFound(Error):
   pass
 class ItemNotFound(Error):
-  def __init__(self, path_parts):
+  def __init__(self, path):
     # use '/' rather than os.sep because this is for user consumption, and
     # it was defined using URL separators
-    Error.__init__(self, string.join(path_parts, '/'))
+    if type(path) in (types.TupleType, types.ListType):
+      path = string.join(path, '/')
+    Error.__init__(self, path)
 class InvalidRevision(Error):
   def __init__(self, revision=None):
     if revision is None:
