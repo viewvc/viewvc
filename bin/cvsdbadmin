@@ -86,6 +86,30 @@ def RecurseUpdate(db, repository, directory, update):
         if entry.kind is vclib.FILE:
             UpdateFile(db, repository, path, update)
 
+def RootPath(path):
+    """Break os path into cvs root path and other parts"""
+    root = os.path.abspath(path)
+    path_parts = []
+
+    p = root
+    while 1:
+        if os.path.exists(os.path.join(p, 'CVSROOT')):
+            root = p
+            print "Using repository root `%s'" % root
+            break
+
+        p, pdir = os.path.split(p)
+        if not pdir:
+            del path_parts[:]
+            print "Using repository root `%s'" % root
+            print "Warning: CVSROOT directory not found."
+            break
+
+        path_parts.append(pdir)
+
+    root = cvsdb.CleanRepository(root)
+    path_parts.reverse()
+    return root, path_parts
 
 def usage():
     print 'Usage: %s <command> [arguments]' % (sys.argv[0])
@@ -116,7 +140,7 @@ if __name__ == '__main__':
         usage()
 
     # get repository path
-    path = cvsdb.CleanRepository(os.path.abspath(sys.argv[2]))
+    root, path_parts = RootPath(sys.argv[2])
 
     ## run command
     try:
@@ -124,9 +148,9 @@ if __name__ == '__main__':
       cfg = viewcvs.load_config(CONF_PATHNAME)
       db = cvsdb.ConnectDatabase(cfg)
 
-      repository = vclib.bincvs.BinCVSRepository(None, path, cfg.general)
+      repository = vclib.bincvs.BinCVSRepository(None, root, cfg.general)
 
-      RecurseUpdate(db, repository, [], update)
+      RecurseUpdate(db, repository, path_parts, update)
 
     except KeyboardInterrupt:
         print
