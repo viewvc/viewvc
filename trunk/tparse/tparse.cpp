@@ -1,28 +1,23 @@
 /*
-# Copyright (C) 2000-2002 The ViewCVS Group. All Rights Reserved.
-# This file has been rewritten in C++ from the rcsparse.py file by
-# Lucas Bruand <lucas.bruand@ecl2002.ec-lyon.fr>
+# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
-# distribution or at http://viewvc.sourceforge.net/license-1.html.
+# distribution or at http://viewvc.org/license-1.html.
 #
-# Contact information:
-#   Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://viewvc.org/
+# For more information, visit http://viewvc.org/
 #
 # -----------------------------------------------------------------------
 #
-# This software is being maintained as part of the ViewVC project.
-# Information is available at:
-#    http://viewvc.org/
+# This file has been rewritten in C++ from the rcsparse.py file by
+# Lucas Bruand <lucas.bruand@ecl2002.ec-lyon.fr>
 #
 # This file was originally based on portions of the blame.py script by
 # Curt Hagenlocher.
 #
 # -----------------------------------------------------------------------
-#
-*/ 
+*/
+
 /*
    This C++ library offers an API to a performance oriented RCSFILE parser.
    It does little syntax checking.

@@ -1,21 +1,18 @@
-# -*- Mode: python -*-
+# -*-python-*-
 #
-# Copyright (C) 2000-2002 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
 # distribution or at http://viewvc.org/license-1.html.
 #
-# Contact information:
-#   Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://viewvc.org/
+# For more information, visit http://viewvc.org/
 #
 # -----------------------------------------------------------------------
 #
 # compat.py: compatibility functions for operation across Python 1.5.x to 2.2.x
 #
 # -----------------------------------------------------------------------
-#
 
 import urllib
 import string
