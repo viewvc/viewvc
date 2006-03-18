@@ -63,7 +63,7 @@ import svn.fs
 import svn.delta
 
 import cvsdb
-import viewcvs
+import viewvc
 
 class SvnRepo:
     """Class used to manage a connection to a SVN repository."""
@@ -243,7 +243,7 @@ def handle_revision(db, command, repo, rev, verbose):
             print "skipped (already recorded)."
 
 def main(pool, command, repository, rev=None, verbose=0):
-    cfg = viewcvs.load_config(CONF_PATHNAME)
+    cfg = viewvc.load_config(CONF_PATHNAME)
     db = cvsdb.ConnectDatabase(cfg)
 
     repo = SvnRepo(repository, pool)

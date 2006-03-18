@@ -50,7 +50,7 @@ svn export http://viewvc.tigris.org/svn/viewvc/${ROOT} ${TARGET}
 cp ${TARGET}/viewvc.org/license-1.html ${TARGET}/LICENSE.html
 rm -r ${TARGET}/viewcvs.sourceforge.net
 
-# Remove some tools only useful for ViewCVS developers:
+# Remove some tools only useful for ViewVC developers:
 rm ${TARGET}/tools/make-release
 
 # Make sure, permissions are reasonable:

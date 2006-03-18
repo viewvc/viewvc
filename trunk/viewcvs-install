@@ -34,9 +34,9 @@ import StringIO
 sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), 'lib'))
 
 import compat
-import viewcvs 
+import viewvc
 import compat_ndiff
-version = viewcvs.__version__
+version = viewvc.__version__
 
 
 ## installer text
@@ -63,14 +63,14 @@ ROOT_DIR = None
 ##       
 
 FILE_INFO_LIST = [
-    ("bin/cgi/viewcvs.cgi", "bin/cgi/viewcvs.cgi", 0755, 1, 0, 0),
+    ("bin/cgi/viewvc.cgi", "bin/cgi/viewvc.cgi", 0755, 1, 0, 0),
     ("bin/cgi/query.cgi", "bin/cgi/query.cgi", 0755, 1, 0, 0),
-    ("bin/mod_python/viewcvs.py", "bin/mod_python/viewcvs.py", 0755, 1, 0, 0),
+    ("bin/mod_python/viewvc.py", "bin/mod_python/viewvc.py", 0755, 1, 0, 0),
     ("bin/mod_python/query.py", "bin/mod_python/query.py", 0755, 1, 0, 0),
     ("bin/mod_python/handler.py", "bin/mod_python/handler.py", 0755, 1, 0, 0),
     ("bin/mod_python/.htaccess", "bin/mod_python/.htaccess", 0755, 0, 0, 0),
     ("bin/standalone.py", "bin/standalone.py", 0755, 1, 0, 0),
-    ("viewcvs.conf.dist", "viewcvs.conf", 0644, 0,
+    ("viewvc.conf.dist", "viewvc.conf", 0644, 0,
 	     """Note: If you are upgrading from viewcvs-0.7 or earlier: 
 The section [text] has been removed from viewcvs.conf.  The functionality
 went into the new files in subdirectory templates.""", 0),
@@ -84,7 +84,7 @@ went into the new files in subdirectory templates.""", 0),
 
 if sys.platform == "win32":
   FILE_INFO_LIST.extend([
-    ("bin/asp/viewcvs.asp", "bin/asp/viewcvs.asp", 0755, 1, 0, 0),
+    ("bin/asp/viewvc.asp", "bin/asp/viewvc.asp", 0755, 1, 0, 0),
     ("bin/asp/query.asp", "bin/asp/query.asp", 0755, 1, 0, 0),
   ])
 
@@ -134,7 +134,7 @@ def SetPythonPaths(contents):
         shbang = '#!' + sys.executable
         contents = re.sub('^#![^\n]*', ReEscape(shbang), contents)
     contents = SetOnePath(contents, 'LIBRARY_DIR', 'lib')
-    contents = SetOnePath(contents, 'CONF_PATHNAME', 'viewcvs.conf')
+    contents = SetOnePath(contents, 'CONF_PATHNAME', 'viewvc.conf')
     return contents
 
 
@@ -353,6 +353,6 @@ Overview of remaining steps:
    Run the web server that comes with ViewVC at 
    %s.
 """ % (
-    os.path.join(ROOT_DIR, 'viewcvs.conf'),
-    os.path.join(ROOT_DIR, 'bin', 'cgi', 'viewcvs.cgi'),
+    os.path.join(ROOT_DIR, 'viewvc.conf'),
+    os.path.join(ROOT_DIR, 'bin', 'cgi', 'viewvc.cgi'),
     os.path.join(ROOT_DIR, 'standalone.py'))

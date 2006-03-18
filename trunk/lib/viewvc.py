@@ -67,7 +67,7 @@ debug.t_end('imports')
 
 checkout_magic_path = '*checkout*'
 # According to RFC 1738 the '~' character is unsafe in URLs.
-# But for compatibility with URLs bookmarked with older releases of ViewCVS:
+# But for compatibility with URLs bookmarked with old releases of ViewCVS:
 oldstyle_checkout_magic_path = '~checkout~'
 docroot_magic_path = '*docroot*'
 viewcvs_mime_type = 'text/vnd.viewcvs-markup'
@@ -129,7 +129,7 @@ class Request:
     # load the key/value files, given the selected language
     self.kv = cfg.load_kv_files(self.language)
 
-  def run_viewcvs(self):
+  def run_viewvc(self):
 
     cfg = self.cfg
 
@@ -141,7 +141,7 @@ class Request:
     # variables. Then it executes the request.
     self.view_func = None  # function to call to process the request
     self.repos = None      # object representing current repository
-    self.rootname = None   # name of current root (as used in viewcvs.conf)
+    self.rootname = None   # name of current root (as used in viewvc.conf)
     self.roottype = None   # current root type ('svn' or 'cvs')
     self.rootpath = None   # physical path to current root
     self.pathtype = None   # type of path, either vclib.FILE or vclib.DIR
@@ -233,7 +233,7 @@ class Request:
                                                        cfg.general)
           self.roottype = 'cvs'
         except vclib.ReposNotFound:
-          raise debug.ViewCVSException(
+          raise debug.ViewVCException(
             '%s not found!\nThe wrong path for this repository was '
             'configured, or the server on which the CVS tree lives may be '
             'down. Please try again in a few minutes.'
@@ -258,15 +258,15 @@ class Request:
                                                         cfg.general.svn_path)
           self.roottype = 'svn'
         except vclib.ReposNotFound:
-          raise debug.ViewCVSException(
+          raise debug.ViewVCException(
             '%s not found!\nThe wrong path for this repository was '
             'configured, or the server on which the Subversion tree lives may'
             'be down. Please try again in a few minutes.'
             % self.rootname)
         except vclib.InvalidRevision, ex:
-          raise debug.ViewCVSException(str(ex))
+          raise debug.ViewVCException(str(ex))
       else:
-        raise debug.ViewCVSException(
+        raise debug.ViewVCException(
           'The root "%s" is unknown. If you believe the value is '
           'correct, then please double-check your configuration.'
           % self.rootname, "404 Repository not found")
@@ -291,7 +291,7 @@ class Request:
           self.path_parts, self.pathtype, self.view_func = result
           self.where = _path_join(path_parts)
         else:
-          raise debug.ViewCVSException('%s: unknown location'
+          raise debug.ViewVCException('%s: unknown location'
                                        % self.where, '404 Not Found')
 
       # If we have an old ViewCVS Attic URL which is still valid, then redirect
@@ -311,7 +311,7 @@ class Request:
     # If this is a forbidden directory, stop now
     if self.path_parts and self.pathtype == vclib.DIR \
            and cfg.is_forbidden(self.path_parts[0]):
-      raise debug.ViewCVSException('%s: unknown location' % path_parts[0],
+      raise debug.ViewVCException('%s: unknown location' % path_parts[0],
                                    '404 Not Found')
 
     if self.view_func is None:
@@ -440,7 +440,7 @@ class Request:
                        or view_func is download_tarball)
 
     # The logic used to construct the URL is an inverse of the
-    # logic used to interpret URLs in Request.run_viewcvs
+    # logic used to interpret URLs in Request.run_viewvc
 
     url = self.script_name
 
@@ -553,9 +553,9 @@ def _normalize_path(path):
   """Collapse leading slashes in the script name
 
   You only get multiple slashes in the script name when users accidentally
-  type urls like http://abc.com//viewcvs.cgi/, but we correct for it
+  type urls like http://abc.com//viewvc.cgi/, but we correct for it
   because we output the script name in links and web browsers
-  interpret //viewcvs.cgi/ as http://viewcvs.cgi/
+  interpret //viewvc.cgi/ as http://viewvc.cgi/
   """
   
   i = 0
@@ -579,7 +579,7 @@ def _validate_param(name, value):
   try:
     validator = _legal_params[name]
   except KeyError:
-    raise debug.ViewCVSException(
+    raise debug.ViewVCException(
       'An illegal parameter name ("%s") was passed.' % name,
       '400 Bad Request')
 
@@ -589,7 +589,7 @@ def _validate_param(name, value):
   # is the validator a regex?
   if hasattr(validator, 'match'):
     if not validator.match(value):
-      raise debug.ViewCVSException(
+      raise debug.ViewVCException(
         'An illegal value ("%s") was passed as a parameter.' %
         value, '400 Bad Request')
     return
@@ -1189,7 +1189,7 @@ class MarkupShell:
       finally:
         pipe.close()
     except IOError:
-      raise debug.ViewCVSException \
+      raise debug.ViewVCException \
         ('Error running external program. Command line was: "%s"'
          % string.join(map(lambda args: string.join(args, ' '), self.cmds),
                        ' | '))
@@ -1845,7 +1845,7 @@ def view_log(request):
   pathtype = request.pathtype
 
   if pathtype is vclib.DIR and request.roottype == 'cvs':
-    raise debug.ViewCVSException('Unsupported feature: log view on CVS '
+    raise debug.ViewVCException('Unsupported feature: log view on CVS '
                                  'directory', '400 Bad Request')
 
   options = {}
@@ -2128,7 +2128,7 @@ def view_checkout(request):
 
 def view_annotate(request):
   if not request.cfg.options.allow_annotate:
-    raise debug.ViewCVSException('Annotation view is disabled',
+    raise debug.ViewVCException('Annotation view is disabled',
                                  '403 Forbidden')
 
   path, rev = _orig_path(request, 'annotate')
@@ -2159,7 +2159,7 @@ def view_cvsgraph_image(request):
   cfg = request.cfg
 
   if not cfg.options.use_cvsgraph:
-    raise debug.ViewCVSException('Graph view is disabled', '403 Forbidden')
+    raise debug.ViewVCException('Graph view is disabled', '403 Forbidden')
   
   request.server.header('image/png')
   rcsfile = request.repos.rcsfile(request.path_parts)
@@ -2177,7 +2177,7 @@ def view_cvsgraph(request):
   cfg = request.cfg
 
   if not cfg.options.use_cvsgraph:
-    raise debug.ViewCVSException('Graph view is disabled', '403 Forbidden')
+    raise debug.ViewVCException('Graph view is disabled', '403 Forbidden')
 
   data = common_template_data(request)
 
@@ -2286,7 +2286,7 @@ def view_doc(request):
   try:
     info = os.stat(filename)
   except OSError, v:
-    raise debug.ViewCVSException('Static file "%s" not available\n(%s)'
+    raise debug.ViewVCException('Static file "%s" not available\n(%s)'
                                  % (document, str(v)), '404 Not Found')
   content_length = str(info[stat.ST_SIZE])
   last_modified = info[stat.ST_MTIME]
@@ -2299,7 +2299,7 @@ def view_doc(request):
   try:
     fp = open(filename, "rb")
   except IOError, v:
-    raise debug.ViewCVSException('Static file "%s" not available\n(%s)'
+    raise debug.ViewVCException('Static file "%s" not available\n(%s)'
                                  % (document, str(v)), '404 Not Found')
 
   request.server.addheader('Content-Length', content_length)
@@ -2529,11 +2529,11 @@ def diff_parse_headers(fp, diff_type, rev1, rev2, sym1=None, sym2=None):
       header_lines.append(line)
 
   if (log_rev1 and log_rev1 != rev1):
-    raise debug.ViewCVSException('rcsdiff found revision %s, but expected '
+    raise debug.ViewVCException('rcsdiff found revision %s, but expected '
                                  'revision %s' % (log_rev1, rev1),
                                  '500 Internal Server Error')
   if (log_rev2 and log_rev2 != rev2):
-    raise debug.ViewCVSException('rcsdiff found revision %s, but expected '
+    raise debug.ViewVCException('rcsdiff found revision %s, but expected '
                                  'revision %s' % (log_rev2, rev2),
                                  '500 Internal Server Error')
 
@@ -2550,10 +2550,10 @@ def _get_diff_path_parts(request, query_key, rev, base_rev):
                                                  repos._getrev(base_rev),
                                                  repos._getrev(rev)))
     except vclib.InvalidRevision:
-      raise debug.ViewCVSException('Invalid path(s) or revision(s) passed '
+      raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                    'to diff', '400 Bad Request')
     except vclib.ItemNotFound:
-      raise debug.ViewCVSException('Invalid path(s) or revision(s) passed '
+      raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                    'to diff', '400 Bad Request')
   else:
     parts = request.path_parts
@@ -2571,7 +2571,7 @@ def setup_diff(request):
   if r1 == 'text':
     rev1 = query_dict.get('tr1', None)
     if not rev1:
-      raise debug.ViewCVSException('Missing revision from the diff '
+      raise debug.ViewVCException('Missing revision from the diff '
                                    'form text field', '400 Bad Request')
   else:
     idx = string.find(r1, ':')
@@ -2584,7 +2584,7 @@ def setup_diff(request):
   if r2 == 'text':
     rev2 = query_dict.get('tr2', None)
     if not rev2:
-      raise debug.ViewCVSException('Missing revision from the diff '
+      raise debug.ViewVCException('Missing revision from the diff '
                                    'form text field', '400 Bad Request')
     sym2 = ''
   else:
@@ -2608,7 +2608,7 @@ def setup_diff(request):
       sym1, sym2 = sym2, sym1
       p1, p2 = p2, p1
   except ValueError:
-    raise debug.ViewCVSException('Invalid revision(s) passed to diff',
+    raise debug.ViewVCException('Invalid revision(s) passed to diff',
                                  '400 Bad Request')
   return p1, p2, rev1, rev2, sym1, sym2
 
@@ -2628,13 +2628,13 @@ def view_patch(request):
   elif format == 'u':
     diff_type = vclib.UNIFIED
   else:
-    raise debug.ViewCVSException('Diff format %s not understood'
+    raise debug.ViewVCException('Diff format %s not understood'
                                  % format, '400 Bad Request')
   
   try:
     fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type)
   except vclib.InvalidRevision:
-    raise debug.ViewCVSException('Invalid path(s) or revision(s) passed '
+    raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                  'to diff', '400 Bad Request')
 
   date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
@@ -2675,7 +2675,7 @@ def view_diff(request):
   elif format == 'u':
     diff_type = vclib.UNIFIED
   else:
-    raise debug.ViewCVSException('Diff format %s not understood'
+    raise debug.ViewVCException('Diff format %s not understood'
                                  % format, '400 Bad Request')
 
   if human_readable:
@@ -2708,7 +2708,7 @@ def view_diff(request):
     else: 
       fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options)
   except vclib.InvalidRevision:
-    raise debug.ViewCVSException('Invalid path(s) or revision(s) passed '
+    raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                  'to diff', '400 Bad Request')
   data = common_template_data(request)
   data.update({
@@ -2768,7 +2768,7 @@ def view_diff(request):
 
 def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
                             uid=0, gid=0, typefrag=None, linkname='',
-                            uname='viewcvs', gname='viewcvs',
+                            uname='viewvc', gname='viewvc',
                             devmajor=1, devminor=0, prefix=None,
                             magic='ustar', version='', chksum=None):
   if not mode:
@@ -2894,7 +2894,7 @@ def generate_tarball(out, request, reldir, stack):
 
 def download_tarball(request):
   if not request.cfg.options.allow_tar:
-    raise debug.ViewCVSException('Tarball generation is disabled',
+    raise debug.ViewVCException('Tarball generation is disabled',
                                  '403 Forbidden')
 
   ### look for GZIP binary
@@ -2910,7 +2910,7 @@ def download_tarball(request):
 
 def view_revision(request):
   if request.roottype == "cvs":
-    raise ViewCVSException("Revision view not supported for CVS repositories "
+    raise ViewVCException("Revision view not supported for CVS repositories "
                            "at this time.", "400 Bad Request")
 
   data = common_template_data(request)
@@ -3047,7 +3047,7 @@ def is_query_supported(request):
 
 def view_queryform(request):
   if not is_query_supported(request):
-    raise debug.ViewCVSException('Can not query project root "%s" at "%s".'
+    raise debug.ViewVCException('Can not query project root "%s" at "%s".'
                                  % (request.rootname, request.where),
                                  '403 Forbidden')
 
@@ -3278,7 +3278,7 @@ def query_backout(request, commits):
 
 def view_query(request):
   if not is_query_supported(request):
-    raise debug.ViewCVSException('Can not query project root "%s" at "%s".'
+    raise debug.ViewVCException('Can not query project root "%s" at "%s".'
                                  % (request.rootname, request.where),
                                  '403 Forbidden')
 
@@ -3320,7 +3320,7 @@ def view_query(request):
   db = cvsdb.ConnectDatabaseReadOnly(request.cfg)
   repos_root, repos_dir = cvsdb.FindRepository(db, request.rootpath)
   if not repos_root:
-    raise debug.ViewCVSException(
+    raise debug.ViewVCException(
       "The root '%s' was not found in the commit database "
       % request.rootname)
 
@@ -3507,8 +3507,9 @@ def load_config(pathname=None, server=None):
   debug.t_start('load-config')
 
   if pathname is None:
-    pathname = (os.environ.get("VIEWCVS_CONF_PATHNAME")
-                or _install_path("viewcvs.conf"))
+    pathname = (os.environ.get("VIEWVC_CONF_PATHNAME")
+                or os.environ.get("VIEWCVS_CONF_PATHNAME")
+                or _install_path("viewvc.conf"))
 
   cfg = config.Config()
   cfg.set_defaults()
@@ -3532,7 +3533,7 @@ def load_config(pathname=None, server=None):
   for pp in cfg.general.root_parents:
     pos = string.rfind(pp, ':')
     if pos < 0:
-      raise debug.ViewCVSException(
+      raise debug.ViewVCException(
         "The path '%s' in 'root_parents' does not include a "
         "repository type." % pp)
 
@@ -3542,7 +3543,7 @@ def load_config(pathname=None, server=None):
     try:
       subpaths = os.listdir(pp)
     except OSError:
-      raise debug.ViewCVSException(
+      raise debug.ViewVCException(
         "The path '%s' in 'root_parents' does not refer to "
         "a valid directory." % pp)
 
@@ -3594,7 +3595,7 @@ def main(server, cfg):
     try:
       # build a Request object, which contains info about the HTTP request
       request = Request(server, cfg)
-      request.run_viewcvs()
+      request.run_viewvc()
     except SystemExit, e:
       return
     except:

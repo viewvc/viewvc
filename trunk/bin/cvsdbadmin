@@ -44,7 +44,7 @@ else:
 import os
 import string
 import cvsdb
-import viewcvs
+import viewvc
 import vclib.bincvs
 
 
@@ -145,7 +145,7 @@ if __name__ == '__main__':
     ## run command
     try:
       ## connect to the database we are updating
-      cfg = viewcvs.load_config(CONF_PATHNAME)
+      cfg = viewvc.load_config(CONF_PATHNAME)
       db = cvsdb.ConnectDatabase(cfg)
 
       repository = vclib.bincvs.BinCVSRepository(None, root, cfg.general)

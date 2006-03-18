@@ -4,7 +4,7 @@ import string
 import profile
 
 from vclib.ccvs import rcsparse
-import viewcvs
+import viewvc
 
 try:
   import tparse
@@ -61,7 +61,7 @@ class FetchSink(rcsparse.Sink):
 
   def set_revision_info(self, revision, log, text):
     timestamp, author, state = self.meta[revision]
-    entry = viewcvs.LogEntry(revision, int(timestamp) - time.timezone, author,
+    entry = viewvc.LogEntry(revision, int(timestamp) - time.timezone, author,
                              state, None, log)
 
     # .revs is "order seen" and .entries is for random access
@@ -113,7 +113,7 @@ def compare_data(d1, d2):
 def compare_fetch(full_name, which_rev=None):
   # d1 and d2 are:
   #   ( HEAD revision, branch name, TAGS { name : revision }, [ LogEntry ] )
-  d1 = viewcvs.fetch_log(full_name, which_rev)
+  d1 = viewvc.fetch_log(full_name, which_rev)
   d2 = fetch_log2(full_name, which_rev)
 
   print 'comparing external tools vs a parser module:'
@@ -144,7 +144,7 @@ def time_fetch(full_name, which_rev=None, n=1):
   times2 = [ None ] * n
   for i in range(n):
     t = time.time()
-    viewcvs.fetch_log(full_name, which_rev)
+    viewvc.fetch_log(full_name, which_rev)
     times1[i] = time.time() - t
   for i in range(n):
     t = time.time()

@@ -2,7 +2,7 @@
 	
 	Quick install
 	-------------
-  $ cd <viewcvsinstall>/tparse/	
+  $ cd <viewvcinstall>/tparse/	
   $ python Setup.py build_ext
 
 Normally, you can find a tparse.so dynamic library, in a directory called
@@ -10,8 +10,8 @@ build/lib.****/
 where **** depends on OS.
 cd into that directory.
 now move the tparse.so in here into your lib/vclib/ccvs/rcsparse directory:
-  $ mv tparse.so <viewcvsinstall>/lib/vclib/ccvs/rcsparse/
-  $ cd <viewcvsinstall>/lib/vclib/ccvs/rcsparse/
+  $ mv tparse.so <viewvcinstall>/lib/vclib/ccvs/rcsparse/
+  $ cd <viewvcinstall>/lib/vclib/ccvs/rcsparse/
 
   Check your install
   ------------------
