@@ -355,21 +355,21 @@ def fix_iis_url(server, url):
 
 def fix_iis_path_info(server, path_info):
   """Fix the PATH_INFO value in IIS"""
-  # If the viewcvs cgi's are in the /viewcvs/ folder on the web server and a
+  # If the viewvc cgi's are in the /viewvc/ folder on the web server and a
   # request looks like
   #
-  #      /viewcvs/viewcvs.cgi/myproject/?someoption
+  #      /viewvc/viewvc.cgi/myproject/?someoption
   #
   # The CGI environment variables on IIS will look like this:
   #
-  #      SCRIPT_NAME  =  /viewcvs/viewcvs.cgi
-  #      PATH_INFO    =  /viewcvs/viewcvs.cgi/myproject/
+  #      SCRIPT_NAME  =  /viewvc/viewvc.cgi
+  #      PATH_INFO    =  /viewvc/viewvc.cgi/myproject/
   #
   # Whereas on Apache they look like:
   #
-  #      SCRIPT_NAME  =  /viewcvs/viewcvs.cgi
+  #      SCRIPT_NAME  =  /viewvc/viewvc.cgi
   #      PATH_INFO    =  /myproject/
   #
   # This function converts the IIS PATH_INFO into the nonredundant form
-  # expected by ViewCVS
+  # expected by ViewVC
   return path_info[len(server.getenv('SCRIPT_NAME', '')):]

@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>ViewCVS 1.0 Template Authoring Guide</title>
+<title>ViewVC 1.0 Template Authoring Guide</title>
 <style>
 body {
   background-color: rgb(180,193,205);
@@ -34,7 +34,7 @@ th { background: rgb(60%,70%,90%); }
 </head>
 <body>
 
-<h1>ViewCVS 1.0 Template Authoring Guide</h1>
+<h1>ViewVC 1.0 Template Authoring Guide</h1>
 
 <div class="h2">
 <h2 id="introduction">Introduction</h2>
@@ -48,7 +48,7 @@ th { background: rgb(60%,70%,90%); }
 <ul class="toc-list">
   <li><a href="#introduction">Introduction</a></li>
   <li><a href="#ezt">Using EZT</a></li>
-  <li><a href="#variables">Variables Available to ViewCVS Templates</a></li>
+  <li><a href="#variables">Variables Available to ViewVC Templates</a></li>
   <ul class="toc-list">
     <li><a href="#variables-common">Common Template Variable Set (COMMON)</a></li>
     <li><a href="#variables-navdata">File Navigation Variable Set (NAVDATA)</a></li>
@@ -77,7 +77,7 @@ th { background: rgb(60%,70%,90%); }
 </div>
 
 <div class="h2">
-<h2 id="variables">Variables Available to ViewCVS Templates</h2>
+<h2 id="variables">Variables Available to ViewVC Templates</h2>
 
 <div class="h3">
 <h3 id="variables-common">Common Template Variable Set (COMMON)</h3>
@@ -93,9 +93,9 @@ th { background: rgb(60%,70%,90%); }
 <tr class="varlevel1">
   <td class="varname">cfg</td>
   <td>Object</td>
-  <td>Representation of the object used by ViewCVS for runtime
+  <td>Representation of the object used by ViewVC for runtime
       configuration parameters such as those parsed from
-      <tt>viewcvs.conf</tt>.  Dot-qualified children of this object
+      <tt>viewvc.conf</tt>.  Dot-qualified children of this object
       map to configuration sections and option keys.  For example,
       <var>cfg.options.show_logs</var> contains the value of the
       <var>show_logs</var> variable in the <var>options</var> section
@@ -122,13 +122,13 @@ th { background: rgb(60%,70%,90%); }
 <tr class="varlevel1">
   <td class="varname">graph_href</td>
   <td>String</td>
-  <td>URL of the ViewCVS revision graph view for the current 
+  <td>URL of the ViewVC revision graph view for the current 
       resource.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">kv</td>
   <td>Object</td>
-  <td>Representation of the object used by ViewCVS for user-defined
+  <td>Representation of the object used by ViewVC for user-defined
       key/value mappings.  Dot-qualified children of this object map
       to named key/value files and the sections and keys within
       them.  For example, <var>kv.l10n.labels.directory</var>
@@ -139,7 +139,7 @@ th { background: rgb(60%,70%,90%); }
 <tr class="varlevel1">
   <td class="varname">log_href</td>
   <td>String</td>
-  <td>URL of the ViewCVS revision log view for the current
+  <td>URL of the ViewVC revision log view for the current
       resource.</td>
 </tr>
 <tr class="varlevel1">
@@ -157,7 +157,7 @@ th { background: rgb(60%,70%,90%); }
 <tr class="varlevel2">
   <td class="varname">nav_path.href</td>
   <td>String</td>
-  <td>URL of the default ViewCVS view for the path component.</td>
+  <td>URL of the default ViewVC view for the path component.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">nav_path.name</td>
@@ -222,7 +222,7 @@ th { background: rgb(60%,70%,90%); }
 <tr class="varlevel1">
   <td class="varname">vsn</td>
   <td>String</td>
-  <td>ViewCVS version identifier.</td>
+  <td>ViewVC version identifier.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">where</td>
@@ -252,17 +252,17 @@ th { background: rgb(60%,70%,90%); }
 <tr class="varlevel1">
   <td class="varname">annotate_href</td>
   <td>String</td>
-  <td>URL of the ViewCVS annotation view for the current resource.</td>
+  <td>URL of the ViewVC annotation view for the current resource.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">download_href</td>
   <td>String</td>
-  <td>ViewCVS file contents download URL for the current resource.</td>
+  <td>ViewVC file contents download URL for the current resource.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">download_text_href</td>
   <td>String</td>
-  <td>ViewCVS file contents as-text download URL for the current resource.</td>
+  <td>ViewVC file contents as-text download URL for the current resource.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">orig_path</td>
@@ -273,7 +273,7 @@ th { background: rgb(60%,70%,90%); }
 <tr class="varlevel1">
   <td class="varname">orig_href</td>
   <td>String</td>
-  <td>URL of a ViewCVS log view for <code>orig_path</code>.</td>
+  <td>URL of a ViewVC log view for <code>orig_path</code>.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">prefer_markup</td>
@@ -299,7 +299,7 @@ th { background: rgb(60%,70%,90%); }
 <tr class="varlevel1">
   <td class="varname">view_href</td>
   <td>String</td>
-  <td>URL of the ViewCVS file contents view for the current resource.</td>
+  <td>URL of the ViewVC file contents view for the current resource.</td>
 </tr>
 </tbody>
 </table>
@@ -433,7 +433,7 @@ th { background: rgb(60%,70%,90%); }
 <tr class="varlevel2">
   <td class="varname">lines.diff_url</td>
   <td>String</td>
-  <td>URL of the ViewCVS file difference view which displays the
+  <td>URL of the ViewVC file difference view which displays the
       modification of the line.</td>
 </tr>
 <tr class="varlevel2">
@@ -485,7 +485,7 @@ th { background: rgb(60%,70%,90%); }
 <tr class="varlevel1">
   <td class="varname">imagesrc</td>
   <td>String</td>
-  <td>URL of the ViewCVS revision graph image for the current
+  <td>URL of the ViewVC revision graph image for the current
       resource.</td>
 </tr>
 </tbody>
@@ -736,7 +736,7 @@ th { background: rgb(60%,70%,90%); }
 <tr class="varlevel2">
   <td class="varname">entries.graph_href</td>
   <td>String</td>
-  <td>URL of the ViewCVS revision graph view for the directory
+  <td>URL of the ViewVC revision graph view for the directory
       entry.</td>
 </tr>
 <tr class="varlevel2">
@@ -752,7 +752,7 @@ th { background: rgb(60%,70%,90%); }
 <tr class="varlevel2">
   <td class="varname">entries.log_href</td>
   <td>String</td>
-  <td>URL of the ViewCVS revision log view for the directory
+  <td>URL of the ViewVC revision log view for the directory
       entry.</td>
 </tr>
 <tr class="varlevel2">

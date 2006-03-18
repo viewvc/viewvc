@@ -48,7 +48,7 @@ else:
   t_start = t_end = dump = lambda *args: None
 
 
-class ViewCVSException:
+class ViewVCException:
   def __init__(self, msg, status=None):
     self.msg = msg
     self.status = status
@@ -57,9 +57,6 @@ class ViewCVSException:
     if self.status:
       return '%s: %s' % (self.status, self.msg)
     return "ViewVC Unrecoverable Error: %s" % self.msg
-
-### backwards compat
-ViewcvsException = ViewCVSException
 
 
 def PrintException(server, exc_data):
@@ -96,7 +93,7 @@ def GetExceptionData():
   try:
     import traceback, string
 
-    if isinstance(exc, ViewCVSException):
+    if isinstance(exc, ViewVCException):
       exc_dict['msg'] = exc.msg
       exc_dict['status'] = exc.status
     

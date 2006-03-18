@@ -57,13 +57,13 @@ BASIC INSTALLATION
 
 Run the ViewVC install script with
 
-  python viewcvs-install
+  python viewvc-install
 
 The script will copy the source files into an installation directory that you
 specify, store some path information, and compile the ViewVC library files into
 Python bytecode.
 
-After the installation is finished you will need to edit the viewcvs.conf file
+After the installation is finished you will need to edit the viewvc.conf file
 in the folder you installed to. The comments in that file tell you exactly what
 to do.
 
@@ -72,7 +72,7 @@ and access your repository with a web browser.
 
 See the sections below for information on setting up optional features and
 troubleshooting. From here on <PYTHON_DIR> will stand for the Python root
-directory (usually something like C:\Python22) and <VIEWCVS_INSTALL_DIR> will
+directory (usually something like C:\Python22) and <VIEWVC_INSTALL_DIR> will
 represent the directory where ViewVC has been installed to (default is
 C:\Program Files\viewvc-1.0-dev).
 
@@ -93,7 +93,7 @@ Mod_Python mode is faster than CGI mode.
 
 CGI Mode On IIS
 
-  1) Copy viewcvs.cgi and query.cgi from <VIEWCVS_INSTALL_DIR>\bin\cgi to a
+  1) Copy viewvc.cgi and query.cgi from <VIEWVC_INSTALL_DIR>\bin\cgi to a
   folder that is accessible through your web server.
 
   2) Start up the IIS "Internet Services Manager" and right click a virtual
@@ -111,7 +111,7 @@ CGI Mode On IIS
               Script Engine:  checked
      Check that file exists:  unchecked
 
-  That is all. Assuming you've set up viewcvs.conf to point to your
+  That is all. Assuming you've set up viewvc.conf to point to your
   repositories, the CGI pages should run. See the Troubleshooting section below
   if there are any problems.
 
@@ -119,7 +119,7 @@ ASP Mode On IIS
 
   In order to run ViewVC with ASP, you will need to enable Python ActiveX
   scripting and to install the included Aspfool ISAPI filter on whatever
-  virtual server is being used to serve the viewcvs pages. Step by step
+  virtual server is being used to serve the viewvc pages. Step by step
   instructions follow below. Aspfool is located in the windows\aspfool folder.
 
   To set up ASP mode, follow these steps:
@@ -128,8 +128,8 @@ ASP Mode On IIS
   to register Python as an ASP scripting language. (More documentation on this
   is at http://www.python.org/windows/win32com/ActiveXScripting.html)
 
-  2) Copy the viewcvs.asp and query.asp files from
-  <VIEWCVS_INSTALL_DIR>\bin\asp to a folder that is accessible through your web
+  2) Copy the viewvc.asp and query.asp files from
+  <VIEWVC_INSTALL_DIR>\bin\asp to a folder that is accessible through your web
   server.
 
   3) Start up the IIS "Internet Services Manager" and right click on the
@@ -162,8 +162,8 @@ Mod_Python Mode on Apache
 
      LoadModule python_module modules/mod_python.so
 
-  3) Copy viewcvs.py, query.py, handler.py, and .htaccess from
-  <VIEWCVS_INSTALL_DIR>\bin\mod_python to a folder being served by apache. Make
+  3) Copy viewvc.py, query.py, handler.py, and .htaccess from
+  <VIEWVC_INSTALL_DIR>\bin\mod_python to a folder being served by apache. Make
   sure overrides are allowed in this folder. The relevant parent directory in
   httpd.conf should have "AllowOverride All" set, or at least "AllowOverride
   FileInfo Options".
@@ -195,16 +195,16 @@ password, follow these instructions to set up ViewVC.
 
 1) Open a command prompt and type these commands:
 
-   cd /d <VIEWCVS_INSTALL_DIR>
+   cd /d <VIEWVC_INSTALL_DIR>
    python bin\make-database
 
 The script that comes up will prompt you for the MySQL username and password
 (you should have created these during the MySQL installation), and the name of
-the database to create. The default database name "ViewCVS" should be fine
+the database to create. The default database name "ViewVC" should be fine
 unless for some reason a database with that name already exists.
 
 2) Enter the username, password, and database name into the [cvsdb] section of
-the <VIEWCVS_INSTALL_DIR>\viewcvs.conf file.
+the <VIEWVC_INSTALL_DIR>\viewvc.conf file.
 
 3) At the command prompt run
 
@@ -215,7 +215,7 @@ where <repository> is the path to your CVS repository.
 4) If you want the checkin database to be dynamically updated with every
 checkin, add the following line to your CVSROOT/loginfo file:
 
-   ALL python "<VIEWCVS_INSTALL_DIR>\bin\loginfo-handler" %{sVv}
+   ALL python "<VIEWVC_INSTALL_DIR>\bin\loginfo-handler" %{sVv}
 
 If you decide not to enable dynamic updates, you can periodically refresh the
 database with "python bin\cvsdbadmin update <repository>"
@@ -224,7 +224,7 @@ database with "python bin\cvsdbadmin update <repository>"
 CVSGRAPH
 
 To use CvsGraph with ViewVC, just put cvsgraph.exe in a directory on your
-system PATH and set the use_cvsgraph option to 1 in your viewcvs.conf file.
+system PATH and set the use_cvsgraph option to 1 in your viewvc.conf file.
 
 The CvsGraph home page is http://www.akhphd.au.dk/~bertho/cvsgraph/.
 
@@ -232,15 +232,15 @@ The CvsGraph home page is http://www.akhphd.au.dk/~bertho/cvsgraph/.
 DOCROOT OPTIMIZATION
 
 By default ViewVC serves up image and stylesheet files in
-<VIEWCVS_INSTALL_DIR>\templates\docroot\ on its own instead of relying on the
+<VIEWVC_INSTALL_DIR>\templates\docroot\ on its own instead of relying on the
 webserver to deliver them. This simplifies web server configuration, but is
 inefficient because it means the Python interpreter has to run each time one of
 these files is downloaded. This causes ViewVC pages to load more slowly,
 especially when ViewVC is running under CGI on Windows.
 
 To make things more efficient, you can make the
-<VIEWCVS_INSTALL_DIR>\templates\docroot directory available on your web server
-and then set the "docroot" value in viewcvs.conf to point to the web address of
+<VIEWVC_INSTALL_DIR>\templates\docroot directory available on your web server
+and then set the "docroot" value in viewvc.conf to point to the web address of
 the directory.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -252,7 +252,7 @@ TROUBLESHOOTING
   debugging mode that displays output from the programs it executes on every
   web page. This allows you to see error messages and other information that
   isn't normally visible. To enable the debugging mode, change line 23 of
-  <VIEWCVS_INSTALL_DIR>\lib\debug.py from:
+  <VIEWVC_INSTALL_DIR>\lib\debug.py from:
 
     SHOW_CHILD_PROCESSES = 0
 
@@ -269,7 +269,7 @@ TROUBLESHOOTING
 
   it means that a program ViewVC has tried to execute could not be found by
   Windows. The fix to this is usually to install the program if it isn't
-  already installed or to update the path to the program in viewcvs.conf.
+  already installed or to update the path to the program in viewvc.conf.
   Enabling the SHOW_CHILD_PROCESSES mode as described above can provide helpful
   diagnostic information such as the command line ViewVC is using to invoke the
   program and the value of the PATH environment variable in the environment
@@ -309,13 +309,13 @@ TROUBLESHOOTING
 +----------------+----------------+----------------+-------------------------+
 | mod_python or  | reboot         | restart Apache | restart Apache          |
 | under apache   | computer       |                | OR                      |
-|                |                |                | reload(viewcvs) in stub |
+|                |                |                | reload(viewvc) in stub  |
 +----------------+----------------+----------------+-------------------------+
 | asp mode under | reboot         | restart IIS    | restart IIS             |
 | IIS            | computer       | OR             | OR                      |
 |                |                | Unload ASP App | Unload ASP App          |
 |                |                |                | OR                      |
-|                |                |                | reload(viewcvs) in stub |
+|                |                |                | reload(viewvc) in stub  |
 +----------------+----------------+----------------+-------------------------+
   * If standalone.py was launched from a command prompt and you set the
   environment variable through the control panel, you'll need to open a new
@@ -325,18 +325,18 @@ TROUBLESHOOTING
 
   Under ASP, changes made to the stub scripts inside the web root do take
   effect immediately, you only need to take additional action when you make
-  changes to the main source files in <VIEWCVS_INSTALL_DIR>\lib
+  changes to the main source files in <VIEWVC_INSTALL_DIR>\lib
 
   To "Unload ASP App", go to the IIS properties dialog for the application
   directory containing the ViewVC .asp files (in Internet Services Manager).
   Switch to the [Home] | [Virtual] Directory tab and click the "Unload" button
   under "Application Settings".
 
-  To "reload(viewcvs) in stub", put these lines in one of the ASP or Mod_Python
+  To "reload(viewvc) in stub", put these lines in one of the ASP or Mod_Python
   stub scripts:
 
-    import viewcvs
-    reload (viewcvs)
+    import viewvc
+    reload (viewvc)
 
   then load the page in a web browser.
 
@@ -442,7 +442,7 @@ THANKS
   sapi.AspFile.header() to my attention
 - Matt Bunch for finding a better way to address the ASP blank page problem,
   and Keith D. Zimmerman for finding another workaround.
-- Rüdiger Koch for reporting a bug in viewcvs PATH_INFO parsing code with
+- Rüdiger Koch for reporting a bug in viewvc PATH_INFO parsing code with
   Apache for Windows as well as Jelle Ouwerkerk and Steffen Yount for providing
   fixes.
 - Nick Minutello and Rüdiger Koch for providing workarounds for setting

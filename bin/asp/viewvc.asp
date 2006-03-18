@@ -20,7 +20,7 @@
 # -----------------------------------------------------------------------
 #
 # This is a teeny stub to launch the main ViewVC app. It checks the load
-# average, then loads the (precompiled) viewcvs.py file and runs it.
+# average, then loads the (precompiled) viewvc.py file and runs it.
 #
 # -----------------------------------------------------------------------
 #
@@ -55,12 +55,12 @@ if LIBRARY_DIR:
 
 # go do the work
 import sapi
-import viewcvs
+import viewvc
 
 server = sapi.AspServer(Server, Request, Response, Application)
 try:
-  cfg = viewcvs.load_config(CONF_PATHNAME, server)
-  viewcvs.main(server, cfg)
+  cfg = viewvc.load_config(CONF_PATHNAME, server)
+  viewvc.main(server, cfg)
 finally:
   s.close()
 

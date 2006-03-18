@@ -18,7 +18,7 @@
 # -----------------------------------------------------------------------
 #
 # This is a teeny stub to launch the main ViewVC app. It checks the load
-# average, then loads the (precompiled) viewcvs.py file and runs it.
+# average, then loads the (precompiled) viewvc.py file and runs it.
 #
 # -----------------------------------------------------------------------
 #
@@ -51,9 +51,9 @@ else:
 #########################################################################
 
 import sapi
-import viewcvs
+import viewvc
 import query
 
 server = sapi.CgiServer()
-cfg = viewcvs.load_config(CONF_PATHNAME, server)
-query.main(server, cfg, "viewcvs.cgi")
+cfg = viewvc.load_config(CONF_PATHNAME, server)
+query.main(server, cfg, "viewvc.cgi")

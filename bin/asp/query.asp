@@ -50,13 +50,13 @@ if LIBRARY_DIR:
 #########################################################################
 
 import sapi
-import viewcvs
+import viewvc
 import query
 
 server = sapi.AspServer(Server, Request, Response, Application)
 try:
-  cfg = viewcvs.load_config(CONF_PATHNAME, server)
-  query.main(server, cfg, "viewcvs.asp")
+  cfg = viewvc.load_config(CONF_PATHNAME, server)
+  query.main(server, cfg, "viewvc.asp")
 finally:
   s.close()
 

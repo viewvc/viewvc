@@ -20,7 +20,7 @@ import re
 import compat
 import MySQLdb
 
-# set to 1 to store commit times in UTC, or 0 to use the ViewCVS machine's
+# set to 1 to store commit times in UTC, or 0 to use the ViewVC machine's
 # local timezone. Using UTC is recommended because it ensures that the 
 # database will remain valid even if it is moved to another machine or the host
 # computer's time zone is changed. UTC also avoids the ambiguity associated

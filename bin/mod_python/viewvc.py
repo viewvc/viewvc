@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*-python-*-
 #
 # Copyright (C) 1999-2002 The ViewCVS Group. All Rights Reserved.
@@ -18,7 +17,7 @@
 # -----------------------------------------------------------------------
 #
 # This is a teeny stub to launch the main ViewVC app. It checks the load
-# average, then loads the (precompiled) viewcvs.py file and runs it.
+# average, then loads the (precompiled) viewvc.py file and runs it.
 #
 # -----------------------------------------------------------------------
 #
@@ -40,24 +39,19 @@ CONF_PATHNAME = None
 #
 
 import sys
-import os
 
 if LIBRARY_DIR:
   sys.path.insert(0, LIBRARY_DIR)
-else:
-  sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0],
-                                                  "../../../lib")))
 
-#########################################################################
-
-### add code for checking the load average
-
-#########################################################################
-
-# go do the work
 import sapi
-import viewcvs
+import viewvc
+reload(viewvc) # need reload because initial import loads this stub file
 
-server = sapi.CgiServer()
-cfg = viewcvs.load_config(CONF_PATHNAME, server)
-viewcvs.main(server, cfg)
+
+def index(req):
+  server = sapi.ModPythonServer(req)
+  cfg = viewvc.load_config(CONF_PATHNAME, server)
+  try:
+    viewvc.main(server, cfg)
+  finally:
+    server.close()

@@ -7,6 +7,6 @@ setup(name="tparse",
       description="A quick RCS file format parser",
       author="Lucas Bruand",
       author_email="lbruand@users.sourceforge.net",
-      url="http://viewcvs.sourceforge.net",
+      url="http://viewvc.org",
       ext_modules=[Extension("tparse", ["tparsemodule.cpp"],libraries=["stdc++"])]
      )
