@@ -11,7 +11,7 @@
 #
 # -----------------------------------------------------------------------
 #
-# This software is being maintained as part of the ViewCVS project.
+# This software is being maintained as part of the ViewVC project.
 # Information is available at:
 #    http://viewvc.org/
 #

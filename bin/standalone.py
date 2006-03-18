@@ -58,7 +58,7 @@ else:
   sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
 
 import sapi
-import viewcvs
+import viewvc
 import compat; compat.for_standalone()
 
 
@@ -104,15 +104,15 @@ def serve(host, port, callback=None):
     """start a HTTP server on the given port.  call 'callback' when the
     server is ready to serve"""
 
-    class ViewCVS_Handler(BaseHTTPServer.BaseHTTPRequestHandler):
+    class ViewVC_Handler(BaseHTTPServer.BaseHTTPRequestHandler):
          
         def do_GET(self):
             """Serve a GET request."""
             if not self.path or self.path == "/":
                 self.redirect()
-            elif self.is_viewcvs():
+            elif self.is_viewvc():
                 try:
-                    self.run_viewcvs()
+                    self.run_viewvc()
                 except IOError:
                     # ignore IOError: [Errno 32] Broken pipe
                     pass
@@ -121,13 +121,13 @@ def serve(host, port, callback=None):
 
         def do_POST(self):
             """Serve a POST request."""
-            if self.is_viewcvs():
-                self.run_viewcvs()
+            if self.is_viewvc():
+                self.run_viewvc()
             else:
                 self.send_error(501, "Can only POST to %s"
                                 % (options.script_alias))
 
-        def is_viewcvs(self):
+        def is_viewvc(self):
             """Check whether self.path is, or is a child of, the ScriptAlias"""
             if self.path == '/' + options.script_alias:
                 return 1
@@ -140,7 +140,7 @@ def serve(host, port, callback=None):
             return 0
 
         def redirect(self):
-            """redirect the browser to the viewcvs URL"""
+            """redirect the browser to the viewvc URL"""
             new_url = self.server.url + options.script_alias + '/'
             self.send_response(301, "Moved (redirection follows)")
             self.send_header("Content-type", "text/html")
@@ -158,12 +158,12 @@ If this doesn't work, please click on the link above.
 </html>
 """ % tuple([new_url]*2))
 
-        def run_viewcvs(self):
+        def run_viewvc(self):
             """This is a quick and dirty cut'n'rape from Python's 
             standard library module CGIHTTPServer."""
             scriptname = '/' + options.script_alias
             assert string.find(self.path, scriptname) == 0
-            viewcvs_url = self.server.url[:-1] + scriptname
+            viewvc_url = self.server.url[:-1] + scriptname
             rest = self.path[len(scriptname):]
             i = string.rfind(rest, '?')
             if i >= 0:
@@ -243,7 +243,7 @@ If this doesn't work, please click on the link above.
                     if sys.platform != "win32":
                       os.dup2(self.wfile.fileno(), 1)
                     sys.stdin = self.rfile
-                    viewcvs.main(StandaloneServer(self), cfg)
+                    viewvc.main(StandaloneServer(self), cfg)
                 finally:
                     sys.argv = save_argv
                     sys.stdin = save_stdin
@@ -258,7 +258,7 @@ If this doesn't work, please click on the link above.
             else:
                 self.log_error("ViewVC exited ok")
 
-    class ViewCVS_Server(BaseHTTPServer.HTTPServer):
+    class ViewVC_Server(BaseHTTPServer.HTTPServer):
         def __init__(self, host, port, callback):
             self.address = (host, port)
             self.url = 'http://%s:%d/' % (host, port)
@@ -286,7 +286,7 @@ If this doesn't work, please click on the link above.
                                        socket.SO_REUSEADDR, 1)
             BaseHTTPServer.HTTPServer.server_bind(self)
 
-    ViewCVS_Server.handler = ViewCVS_Handler
+    ViewVC_Server.handler = ViewVC_Handler
 
     try:
         # XXX Move this code out of this function.
@@ -329,14 +329,14 @@ If this doesn't work, please click on the link above.
           if not cvsnt_works:
             cfg.cvsnt_exe_path = None
 
-        ViewCVS_Server(host, port, callback).serve_until_quit()
+        ViewVC_Server(host, port, callback).serve_until_quit()
     except (KeyboardInterrupt, select.error):
         pass
     print 'server stopped'
 
 def handle_config():
   global cfg
-  cfg = viewcvs.load_config(CONF_PATHNAME)
+  cfg = viewvc.load_config(CONF_PATHNAME)
 
 # --- graphical interface: --------------------------------------------------
 
@@ -632,7 +632,7 @@ Available Options:
 
 -r <path>, --repository=<path>:
     Specify a path for a CVS repository.  Repository definitions are
-    typically read from the viewcvs.conf file, if available.  This
+    typically read from the viewvc.conf file, if available.  This
     option may be used more than once.
 
 -s <path>, --script-alias=<path>:

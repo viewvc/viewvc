@@ -26,7 +26,7 @@ import string
 import re
 import time
 
-# ViewCVS libs
+# ViewVC libs
 import compat
 import popen
 
@@ -772,7 +772,7 @@ def _paths_eq(path1, path2):
 def _file_log(revs, taginfo, cur_branch, filter):
   """Augment list of Revisions and a dictionary of Tags"""
 
-  # Add artificial ViewCVS tag MAIN. If the file has a default branch, then
+  # Add artificial ViewVC tag MAIN. If the file has a default branch, then
   # MAIN acts like a branch tag pointing to that branch. Otherwise MAIN acts
   # like a branch tag that points to the trunk. (Note: A default branch is
   # just a branch number specified in an RCS file that tells CVS and RCS
@@ -800,7 +800,7 @@ def _file_log(revs, taginfo, cur_branch, filter):
   # Match up tags and revisions
   _match_revs_tags(revs, tags)
 
-  # Add artificial ViewCVS tag HEAD, which acts like a non-branch tag pointing
+  # Add artificial ViewVC tag HEAD, which acts like a non-branch tag pointing
   # at the latest revision on the MAIN branch. The HEAD revision doesn't have
   # anything to do with the "head" revision number specified in the RCS file
   # and in rlog output. HEAD refers to the revision that the CVS and RCS co

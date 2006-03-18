@@ -27,7 +27,7 @@ import string
 import time
 
 import cvsdb
-import viewcvs
+import viewvc
 import ezt
 import debug
 import urllib
@@ -276,7 +276,7 @@ def prev_rev(rev):
         r = r[:-2]
     return string.join(r, '.')
 
-def build_commit(server, cfg, desc, files, cvsroots, viewcvs_link):
+def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
     ob = _item(num_files=len(files), files=[])
     
     if desc:
@@ -308,14 +308,14 @@ def build_commit(server, cfg, desc, files, cvsroots, viewcvs_link):
         cvsroot_name = cvsroots.get(repository)
 
         ## if we couldn't find the cvsroot path configured in the 
-        ## viewcvs.conf file, then don't make the link
+        ## viewvc.conf file, then don't make the link
         if cvsroot_name:
             flink = '[%s] <a href="%s/%s?root=%s">%s</a>' % (
-                    cvsroot_name, viewcvs_link, urllib.quote(file),
+                    cvsroot_name, viewvc_link, urllib.quote(file),
                     cvsroot_name, file)
             if commit.GetType() == commit.CHANGE:
                 dlink = '%s/%s?root=%s&amp;view=diff&amp;r1=%s&amp;r2=%s' % (
-                    viewcvs_link, urllib.quote(file), cvsroot_name,
+                    viewvc_link, urllib.quote(file), cvsroot_name,
                     prev_rev(commit.GetRevision()), commit.GetRevision())
             else:
                 dlink = None
@@ -336,7 +336,7 @@ def build_commit(server, cfg, desc, files, cvsroots, viewcvs_link):
 
     return ob
 
-def run_query(server, cfg, form_data, viewcvs_link):
+def run_query(server, cfg, form_data, viewvc_link):
     query = form_to_cvsdb_query(form_data)
     db = cvsdb.ConnectDatabaseReadOnly(cfg)
     db.RunQuery(query)
@@ -360,25 +360,25 @@ def run_query(server, cfg, form_data, viewcvs_link):
             continue
 
         commits.append(build_commit(server, cfg, current_desc, files,
-                                    cvsroots, viewcvs_link))
+                                    cvsroots, viewvc_link))
 
         files = [ commit ]
         current_desc = desc
 
     ## add the last file group to the commit list
     commits.append(build_commit(server, cfg, current_desc, files,
-                                cvsroots, viewcvs_link))
+                                cvsroots, viewvc_link))
 
     return commits
 
-def main(server, cfg, viewcvs_link):
+def main(server, cfg, viewvc_link):
   try:
 
     form = server.FieldStorage()
     form_data = FormData(form)
 
     if form_data.valid:
-        commits = run_query(server, cfg, form_data, viewcvs_link)
+        commits = run_query(server, cfg, form_data, viewvc_link)
         query = None
     else:
         commits = [ ]
@@ -389,7 +389,7 @@ def main(server, cfg, viewcvs_link):
     data = {
       'cfg' : cfg,
       'address' : cfg.general.address,
-      'vsn' : viewcvs.__version__,
+      'vsn' : viewvc.__version__,
 
       'repository' : server.escape(form_data.repository, 1),
       'branch' : server.escape(form_data.branch, 1),
@@ -397,7 +397,7 @@ def main(server, cfg, viewcvs_link):
       'file' : server.escape(form_data.file, 1),
       'who' : server.escape(form_data.who, 1),
       'docroot' : cfg.options.docroot is None \
-                  and viewcvs_link + '/' + viewcvs.docroot_magic_path \
+                  and viewvc_link + '/' + viewvc.docroot_magic_path \
                   or cfg.options.docroot,
 
       'sortby' : form_data.sortby,
@@ -416,7 +416,7 @@ def main(server, cfg, viewcvs_link):
     server.header()
 
     # generate the page
-    template = viewcvs.get_view_template(cfg, "query")
+    template = viewvc.get_view_template(cfg, "query")
     template.generate(sys.stdout, data)
 
   except SystemExit, e:

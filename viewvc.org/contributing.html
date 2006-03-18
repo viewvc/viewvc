@@ -167,14 +167,14 @@
 
 <p>If you need a new configuration option think carefully, into which
    section it belongs.  Try to keep the content of
-   <code>cgi/viewcvs.conf.dist</code> file and the library module
+   <code>cgi/viewvc.conf.dist</code> file and the library module
    <code>lib/config.py</code> in sync.</p>
 
 <p>The library subdirectory contains a module <code>debug.py</code>,
    which you may find useful for performance testing.</p>
 
 <p>If a new file or module is added, a new line in the installer
-   program <code>viewcvs-install</code> is required.</p>
+   program <code>viewvc-install</code> is required.</p>
 
 </div>
 <div class="section">
@@ -208,7 +208,7 @@
    <li>Update the <code>website/index.html</code> file to refer to the
        new X.Y files. (there are three links to update)</li>
 
-   <li>Edit the file <code>lib/viewcvs.py</code> and remove the
+   <li>Edit the file <code>lib/viewvc.py</code> and remove the
        <tt>"-dev"</tt> suffix from <code>__version__</code>.  The
        remainder should be of the form X.Y, where X is a positive
        number and Y is a single digit.</li>
@@ -217,7 +217,7 @@
 
    <li>Test, Test, Test!  At the time of this writing (1.0-dev) there
        is no automatic testsuite available.  So just run with
-       permuting different <code>viewcvs.conf</code> settings&hellip;
+       permuting different <code>viewvc.conf</code> settings&hellip;
        and pray.</li>
 
    <li>Review any open <a
@@ -234,17 +234,17 @@
        <code>/branches/V<i>X</i>_<i>Y</i>_maint</code>.</li>
 
    <li>Go into an empty directory and run <code>tools/make-release
-       viewcvs-<i>X.Y</i> V<i>X_Y</i></code>.  This step requires
+       viewvc-<i>X.Y</i> V<i>X_Y</i></code>.  This step requires
        read access to the Subversion source code repository.</li>
 
    <li>Upload the created archive files (tar.gz and zip) into the
        Files and Documents section of the Tigris.org project.</li>
 
-   <li>Edit the file <code>lib/viewcvs.py</code> again and this time
+   <li>Edit the file <code>lib/viewvc.py</code> again and this time
        increment the <code>__version__</code> for the next release
        cycle, again append the <code>-dev</code> to the version and
        again <code>svn commit -m "Begin a new release cycle."
-       lib/viewcvs.py</code>.</li>
+       lib/viewvc.py</code>.</li>
 
    <li>Write an announcement explaining all the cool new features and
        post it <a

@@ -30,12 +30,12 @@ import fnmatch
 #
 # There are three forms of configuration:
 #
-#       1) edit the viewcvs.conf created by the viewcvs-install(er)
-#       2) as (1), but delete all unchanged entries from viewcvs.conf
-#       3) do not use viewcvs.conf and just edit the defaults in this file
+#       1) edit the viewvc.conf created by the viewvc-install(er)
+#       2) as (1), but delete all unchanged entries from viewvc.conf
+#       3) do not use viewvc.conf and just edit the defaults in this file
 #
 # Most users will want to use (1), but there are slight speed advantages
-# to the other two options. Note that viewcvs.conf values are a bit easier
+# to the other two options. Note that viewvc.conf values are a bit easier
 # to work with since it is raw text, rather than python literal values.
 #
 #########################################################################

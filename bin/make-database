@@ -27,7 +27,7 @@ This script creates the database and tables in MySQL used by the ViewVC
 checkin database.  You will be prompted for: database user, database user
 password, and database name.  This script will use mysql to create the
 database for you.  You will then need to set the appropriate parameters
-in your viewcvs.conf file under the [cvsdb] section.
+in your viewvc.conf file under the [cvsdb] section.
 """
 
 DATABASE_SCRIPT="""\
@@ -128,9 +128,9 @@ if __name__ == "__main__":
     
     user = raw_input("MySQL User: ")
     passwd = raw_input("MySQL Password: ")
-    dbase = raw_input("ViewVC Database Name [default: ViewCVS]: ")
+    dbase = raw_input("ViewVC Database Name [default: ViewVC]: ")
     if not dbase:
-        dbase = "ViewCVS"
+        dbase = "ViewVC"
 
     dscript = string.replace(DATABASE_SCRIPT, "<dbname>", dbase)
 

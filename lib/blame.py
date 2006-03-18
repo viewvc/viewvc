@@ -5,7 +5,7 @@
 # Copyright (C) 2000 Curt Hagenlocher <curt@hagenlocher.org>
 #
 # By using this file, you agree to the terms and conditions set forth in
-# the LICENSE.html file which can be found at the top level of the ViewCVS
+# the LICENSE.html file which can be found at the top level of the ViewVC
 # distribution or at http://viewvc.org/license-1.html.
 #
 # Contact information:
@@ -19,7 +19,7 @@
 #
 # -----------------------------------------------------------------------
 #
-# This software is being maintained as part of the ViewCVS project.
+# This software is being maintained as part of the ViewVC project.
 # Information is available at:
 #    http://viewvc.org/
 #
