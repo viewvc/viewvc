@@ -1,24 +1,15 @@
 #!/usr/bin/env python
-# $Id$
-# vim:sw=4:ts=4:et:nowrap
-# [Emacs: -*- python -*-]
+# -*-python-*-
 #
-# Copyright (C) 1999-2002 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
 # distribution or at http://viewvc.org/license-1.html.
 #
-# Contact information:
-#   This file: Peter Funk, Oldenburger Str.86, 27777 Ganderkesee, Germany
-#   ViewVC project: Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://viewvc.org/
+# For more information, visit http://viewvc.org/
 #
-# Note: this module is designed to deploy instantly and run under any
-# version of Python from 1.5 and up.  That's why some 2.0 features 
-# (like string methods) are conspicuously avoided.
-
-# XXX Security issues?
+# -----------------------------------------------------------------------
 
 """Run "standalone.py -p <port>" to start an HTTP server on a given port 
 on the local machine to generate ViewVC web pages.

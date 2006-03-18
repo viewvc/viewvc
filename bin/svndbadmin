@@ -1,11 +1,13 @@
 #!/usr/bin/env python
-# -*- Mode: python -*-
+# -*-python-*-
 #
 # Copyright (C) 2004 James Henstridge
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
 # distribution or at http://viewvc.org/license-1.html.
+#
+# For more information, visit http://viewvc.org/
 #
 # -----------------------------------------------------------------------
 #

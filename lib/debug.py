@@ -1,16 +1,15 @@
-# -*- Mode: python -*-
+# -*-python-*-
 #
-# Copyright (C) 2000-2002 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
 # distribution or at http://viewvc.org/license-1.html.
 #
-# Contact information:
-#   Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://viewvc.org/
+# For more information, visit http://viewvc.org/
 #
 # -----------------------------------------------------------------------
+
 #
 # Note: a t_start/t_end pair consumes about 0.00005 seconds on a P3/700.
 #       the lambda form (when debugging is disabled) should be even faster.

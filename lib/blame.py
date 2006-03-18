@@ -1,16 +1,13 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 # -*-python-*-
 #
-# Copyright (C) 2000-2002 The ViewCVS Group. All Rights Reserved.
-# Copyright (C) 2000 Curt Hagenlocher <curt@hagenlocher.org>
+# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
 # distribution or at http://viewvc.org/license-1.html.
 #
-# Contact information:
-#   Greg Stein, PO Box 760, Palo Alto, CA, 94302
-#   gstein@lyra.org, http://viewvc.org/
+# For more information, visit http://viewvc.org/
 #
 # -----------------------------------------------------------------------
 #
@@ -18,10 +15,6 @@
 #           revision #, date, etc.
 #
 # -----------------------------------------------------------------------
-#
-# This software is being maintained as part of the ViewVC project.
-# Information is available at:
-#    http://viewvc.org/
 #
 # This file is based on the cvsblame.pl portion of the Bonsai CVS tool,
 # developed by Steve Lamm for Netscape Communications Corporation.  More
@@ -31,7 +24,6 @@
 # cvsblame.pl, in turn, was based on Scott Furman's cvsblame script
 #
 # -----------------------------------------------------------------------
-#
 
 import string
 import os
