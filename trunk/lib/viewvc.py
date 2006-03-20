@@ -13,14 +13,6 @@
 # viewvc: View CVS/SVN repositories via a web browser
 #
 # -----------------------------------------------------------------------
-#
-# This software is based on "cvsweb" by Henner Zeller (which is, in turn,
-# derived from software by Bill Fenner, with additional modifications by
-# Henrik Nordstrom and Ken Coar). The cvsweb distribution can be found
-# on Zeller's site:
-#   http://stud.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi/
-#
-# -----------------------------------------------------------------------
 
 __version__ = '1.0-dev'
 
