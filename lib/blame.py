@@ -2,6 +2,7 @@
 # -*-python-*-
 #
 # Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 2000 Curt Hagenlocher <curt@hagenlocher.org>
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
