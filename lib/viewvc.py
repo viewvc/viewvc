@@ -1243,13 +1243,10 @@ class MarkupHighlight(MarkupShell):
     highlight_cmd = [os.path.normpath(os.path.join(cfg.options.highlight_path,
                                                    'highlight')),
                      '--syntax', ext, '--force',
-                     '--style', str(cfg.options.highlight_style),
                      '--anchors', '--fragment', '--xhtml']
 
     if cfg.options.highlight_line_numbers:
-      ### there doesn't seem to be any way to get highlight to add line
-      ### numbers for .txt files, it just ignores these options
-      highlight_cmd.extend(['--linenumbers', '--line-number-start', '1'])
+      highlight_cmd.extend(['--linenumbers'])
 
     if cfg.options.highlight_convert_tabs:
       highlight_cmd.extend(['--replace-tabs',

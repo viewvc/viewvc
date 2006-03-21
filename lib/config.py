@@ -206,7 +206,6 @@ class Config:
     self.options.enscript_path = ''
     self.options.use_highlight = 0
     self.options.highlight_path = ''
-    self.options.highlight_style = 'emacs'
     self.options.highlight_line_numbers = 1
     self.options.highlight_convert_tabs = 2
     self.options.use_php = 0

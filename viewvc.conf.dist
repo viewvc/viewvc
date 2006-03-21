@@ -444,9 +444,6 @@ use_highlight = 0
 #
 # highlight_path = /usr/bin
 
-# what coloring style should highlight use?
-highlight_style = emacs
-
 # should we add line numbers?
 highlight_line_numbers = 1
 
