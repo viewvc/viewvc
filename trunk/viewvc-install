@@ -283,15 +283,19 @@ def install_tree(src_path, dst_path, prompt_replace):
 
 ## MAIN
 if __name__ == "__main__":
-    print INFO_TEXT
-
     # option parsing
-    optlist, args = getopt.getopt(sys.argv[1:], None, ['prefix=', 'destdir='])
+    try:
+      optlist, args = getopt.getopt(sys.argv[1:], "", ['prefix=', 'destdir='])
+    except getopt.GetoptError, e:
+      Error("Invalid option", getopt.GetoptError, e)
     for opt, arg in optlist:
       if opt == '--prefix':
         ROOT_DIR = arg
       if opt == '--destdir':
         DESTDIR = arg
+
+    ## print greeting
+    print INFO_TEXT
 
     ## prompt for ROOT_DIR if none provided
     if ROOT_DIR is None:
