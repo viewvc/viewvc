@@ -1,0 +1,848 @@
+<html>
+<head>
+<title>ViewVC 1.0 URL Reference</title>
+<style>
+
+body {
+  background-color: rgb(180,193,205);
+  color: black;
+  font-family: sans-serif;
+}
+
+table { margin-left: 1em; vertical-align: top; }
+
+code { font-size: 130% }
+
+th {
+  color: #ffffff; 
+  background: #7a5ada;
+  font-size: 0.8em;
+  font-weight: bold;
+  text-align: left;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  padding-bottom: 0em;
+  padding-top: 0em;
+}
+
+td {
+  background: #ddddff;
+  font-size: 0.8em;
+  font-weight: bold;
+  vertical-align: top;
+  padding-bottom: 0.1em; 
+  padding-top: 0.1em;
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
+.h2, .h3 {
+  padding: 0.5em 1em;
+  border-color: black;
+  border-style: solid;
+  margin-bottom: 1em;
+  background: white;
+}
+
+.h2 { border-width: 1px 2px 2px 1px; }
+.h3 { border-width: 1px 0 0 0; }
+.toc-list { font-size: 90%; }
+
+</style>
+</head>
+<body>
+
+<h1>ViewVC 1.0 URL Reference</h1>
+
+<div class="h2">
+<h2 id="introduction">Introduction</h2>
+
+<p>This document describes the format of URLs accepted by ViewVC 1.0 and is intended to be useful to users and outside software developers who want to create links to ViewVC pages. It should also be useful to ViewVC developers as a way of tracking and documenting the many quirks of ViewVC's URL handling logic.</p>
+</div>
+
+<div class="h2">
+<h2 id="toc">Table of Contents</h2>
+<ul class="toc-list">
+  <li><a href="#introduction">Introduction</a></li>
+  <li><a href="#components">URL Components</a></li>
+  <ul class="toc-list">
+    <li><a href="#script-component">ViewVC Script Location</a></li>
+    <li><a href="#path-component">Repository Path</a></li>
+    <li><a href="#query-component">Query Parameters</a></li>
+  </ul>
+  <li><a href="#syntax">URL Syntax</a></li>
+  <ul class="toc-list">
+    <li><a href="#annotate-view">Annotate View</a></li>
+    <li><a href="#checkout-view">Checkout View</a></li>
+    <li><a href="#diff-view">Diff View</a></li>
+    <li><a href="#directory-view">Directory Listing View</a></li>
+    <li><a href="#graph-view">Graph View</a></li>
+    <li><a href="#graphimg-view">Graph Image View</a></li>
+    <li><a href="#log-view">Log View</a></li>
+    <li><a href="#markup-view">Markup View</a></li>
+    <li><a href="#patch-view">Patch View</a></li>
+    <li><a href="#queryform-view">Query Form View</a></li>
+    <li><a href="#query-view">Query View</a></li>
+    <li><a href="#revision-view">Revision View</a></li>
+    <li><a href="#roots-view">Repository Listing</a></li>
+    <li><a href="#tarball-view">Tarball Download</a></li>
+  </ul>
+  <li><a href="#compat">Backwards Compatibility</a></li>
+</ul>
+</div>
+
+<div class="h2">
+<h2 id="components">URL Components</h2>
+<p>A ViewVC URL consists of 3 components: a <a href="#script-component">Script Location</a>, a <a href="#path-component">Repository Path</a>, and some optional <a href="#query-component">Query Parameters</a>. Some examples:</p>
+
+<table>
+<tr>
+  <th>ViewVC Script Location</th>
+  <th>Repository Path</th>
+  <th>Query Parameters</th>
+</tr>
+<tr>
+  <td><code>http://example.org/viewvc.cgi</code></td>
+  <td><code>/some/file</code></td>
+  <td><code>?view=log&amp;rev=1.34</code></td>
+</tr>
+<tr>
+  <td><code>http://example.org/viewvc.cgi</code></td>
+  <td><code>/*checkout/some/other/file</code></td>
+  <td><code>?rev=1.10.2.5</code></td>
+</tr>
+<tr>
+  <td><code>http://example.org/viewvc.cgi</code></td>
+  <td><code>/some/dir/</code></td>
+  <td><code>?pathrev=BRANCH_2_3</code></td>
+</tr>
+<tr>
+  <td><code>http://example.org/viewvc.cgi</code></td>
+  <td><code>/some/dir.tar.gz</code></td>
+  <td><code>?view=tar&amp;pathrev=BRANCH_2_3</code></td>
+</tr>
+<tr>
+  <td><code>http://example.org/viewvc.cgi</code></td>
+  <td><code>/yet/another/file</code></td>
+  <td><code>?view=diff?r1=1.12&amp;r2=1.14</code></td>
+</tr>
+</table>
+
+<h3 id="script-component">ViewVC Script Location</h3>
+<p>The script location is a common base for all ViewVC URL's pertaining to a particular installation. It's whatever location the web server is configured to serve ViewVC pages from.</p>
+
+<h3 id="path-component">Repository Path</h3>
+<p>Since ViewVC is essentially a file system browser for repositories, repository paths referring to the files and directories being browsed get their own section in ViewVC URLs immediately following the script location. Repository paths are always case sensitive and separated by forward slashes, regardless of the underlying filesystem.</p>
+
+<p>If the <code>root_as_url_component</code> configuration option is enabled, the first directory name in a repository path is taken to be a repository name from the ViewVC configuration rather than the name of an actual directory. Otherwise the repository name can be specified in a "root=" query parameter (see <a href="#root-param"><code>root</code> parameter</a> below).</p>
+
+<p>Repository paths can also be given certain "magic" prefixes and suffixes. For example, a "/*checkout*" prefix can be added to file views to force a checkout even without an explicit "view=co" query parameter. And a ".tar.gz" suffix is added to download tarball URLs so downloaded tarballs will be saved with sensible default names.</p>
+
+<h3 id="query-component">Query Parameters</h3>
+
+<p>Following the ViewVC and repository locations in URLs is an optional query string, a list of parameter/value pairs written like "?param1=value1&amp;param2=value2..." Some parameters, like "rev" "pathrev" and "root", augment repository path information, specifying revisions and repositories. Other parameters like "logsort" and "diff_format" control ViewVC display options. Some parameters are also "sticky" and get embedded into links inside the generated pages, sticking around for future page views.</p>
+
+<p>ViewVC provides a number of different views of repository data including a directory listing view, a log view, a file diff view, and others. (The views are listed and described in the <code>help_rootview.html</code> ViewVC help page). URLs for each of these views accept specific parameters described in the <a href="#url-syntax">URL Syntax</a> section, but some parameters are used by multiple views and they are described below:</p>
+
+<table>
+<thead>
+  <tr>
+    <th>Parameter</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td id="view-param"><code>view</code></td>
+    <td>The name of the view to display, does not need to be explicitly specified in most URLs. Possible values are shown in the <a href="#url-syntax">URL Syntax</a> section below.</td>
+  </tr>
+  <tr>
+    <td id="rev-param"><code>rev</code></td>
+    <td>The revision or tag to display information about, used by several different views.</td>
+  </tr>
+  <tr>
+    <td id="pathrev-param"><code>pathrev</code></td>
+    <td>The current sticky revision (Subversion) or sticky tag (CVS), as described in the <code>help_rootview.html</code> ViewVC help page. In Subversion, because path information is revision controlled, this value is also used to look up paths in the repository, providing a means of accessing paths that no longer exist in HEAD.</td>
+  </tr>
+  <tr>
+    <td id="root-param"><code>root</code></td>
+    <td>The name of the repository to display when the <code>root_as_url_component</code> configuration option is disabled. When the option is enabled, ViewVC URLs with <code>root</root> parameters redirect to locations with the root values embedded in the repository paths.</td>
+  </tr>
+</tbody>
+</table>
+</div>
+
+<div class="h2">
+<h2 id="syntax">URL Syntax</h2>
+<p>This section lists URL syntax for each ViewVC view. Optional elements of URLs are shown in [brackets]. Parts of URLs which may vary shown as variables in <var>UPPERCASE</var>.</p>
+
+<h3 id="annotate-view">Annotate View</h3>
+<table>
+<tr><th>Summary</th></tr>
+<tr><td><code>/<var>PATH</var>?view=annotate[&amp;rev=<var>REV</var>][&amp;pathrev=<var>PATHREV</var>][&amp;root=<var>ROOT</var>]</code></td></tr>
+</table>
+<br>
+<table>
+<thead>
+  <tr>
+    <th>Fragment</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code><var>/PATH</var></code></td>
+    <td>file path to annotate</td>
+  </tr>
+  <tr>
+    <td><code>?view=annotate</code></td>
+    <td><a href="#view-param"><code>view</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;rev=<var>REV</var>]</code></td>
+    <td><a href="#rev-param"><code>rev</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;pathrev=<var>PATHREV</var>]</code></td>
+    <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;root=<var>ROOT</var>]</code></td>
+    <td><a href="#root-param"><code>root</code> parameter</a></td>
+  </tr>
+</table>
+
+
+<h3 id="checkout-view">Checkout View</h3>
+<table>
+<tr><th>Summary</th></tr>
+<tr><td><code>[/*checkout*]/<var>PATH</var>?[view=co][&amp;content-type=TYPE][&amp;rev=<var>REV</var>][&amp;pathrev=<var>PATHREV</var>][&amp;root=<var>ROOT</var>]</code></td></tr>
+</table>
+<br>
+<table>
+<thead>
+  <tr>
+    <th>Fragment</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code>[/*checkout*]</code></td>
+    <td>optional magic prefix. If specified when the <code>checkout_magic</code> configuration option is disabled, ViewVC will redirect to a URL without the prefix.</td>
+  </tr>
+  <tr>
+    <td><code><var>/PATH</var></code></td>
+    <td>file path to check out</td>
+  </tr>
+  <tr>
+    <td><code>?[view=co]</code></td>
+    <td>optional <a href="#view-param"><code>view</code> parameter</a>, not needed if the <code>checkout_magic</code> configuration variable is disabled because that makes checkout view the default view for file paths. Also not needed if the magic prefix or the <code>rev</code> parameters are present.
+  </tr>
+  <tr>
+    <td><code>[&amp;content-type=<var>TYPE</var>]</code></td>
+    <td>MIME type to send with checked out file</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;rev=<var>REV</var>]</code></td>
+    <td><a href="#rev-param"><code>rev</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;pathrev=<var>PATHREV</var>]</code></td>
+    <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;root=<var>ROOT</var>]</code></td>
+    <td><a href="#root-param"><code>root</code> parameter</a></td>
+  </tr>
+</table>
+
+<h3 id="diff-view">Diff View</h3>
+<table>
+<tr><th>Summary</th></tr>
+<tr><td><code>/<var>PATH</var>?[view=diff]&amp;r1=<var>R1</var>&amp;r2=R2[&amp;tr1=TR1][&amp;tr2=TR2][&amp;p1=P1][&amp;p2=P2][&amp;diff_format=DIFF_FORMAT][&amp;pathrev=<var>PATHREV</var>][&amp;root=<var>ROOT</var>]</code></td></tr>
+</table>
+<br>
+<table>
+<thead>
+  <tr>
+    <th>Fragment</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code><var>/PATH</var></code></td>
+    <td>file path to display diff of</td>
+  </tr>
+  <tr>
+    <td><code>?[view=diff]</code></td>
+    <td>optional <a href="#view-param"><code>view</code> parameter</a>, not needed when <code>r1</code> and <code>r2</code> parameters are present</td>
+  <tr>
+    <td><code>[&amp;r1=<var>R1</var>]</code></td>
+    <td>optional starting revision or tag or the string "text" to indicate that <code><var>TR1</var></code> value (below) should override this one</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;r2=<var>R2</var>]</code></td>
+    <td>ending revision or tag or the string "text" to indicate that <code><var>TR2</var></code> value (below) should override this one</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;tr1=<var>TR1</var>]</code></td>
+    <td>starting revision or tag, only used if <var>r1</var> parameter is present and set to "text"</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;tr2=<var>TR2</var>]</code></td>
+    <td>ending revision or tag, only used if <var>r2</var> parameter is present and set to "text"</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;p1=<var>P1</var>]</code></td>
+    <td>optional starting file path that can override the <code><var>PATH</var></code> value to allow files at two different paths to be compared</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;p2=<var>P2</var>]</code></td>
+    <td>optional ending file path that can override the <code><var>PATH</var></code> value to allow files at two different paths to be compared</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;diff_format=<var>DIFF_FORMAT</var>]</code></td>
+    <td>value specifying the type of diff to display. Can be "u" for unified diff, "c" for context diff, "s" for side by side diff, "h" for human readable diff, "l" for long human readable diff. If no value is specified the default depends on the <code>diff_format</code> configuration option.
+    </td>
+  </tr>
+  <tr>
+    <td><code>[&amp;pathrev=<var>PATHREV</var>]</code></td>
+    <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;root=<var>ROOT</var>]</code></td>
+    <td><a href="#root-param"><code>root</code> parameter</a></td>
+  </tr>
+</table>
+
+<h3 id="directory-view">Directory Listing View</h3>
+<table>
+<tr><th>Summary</th></tr>
+<tr><td><code>/<var>PATH</var>?[view=dir][&amp;hideattic=HIDEATTIC][&amp;search=SEARCH][&amp;sortby=SORTBY][&amp;sortdir=SORTDIR][&amp;dir_pagestart=PAGE][&amp;pathrev=<var>PATHREV</var>][&amp;root=<var>ROOT</var>]</code></td></tr>
+</table>
+<br>
+<table>
+<thead>
+  <tr>
+    <th>Fragment</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code><var>/PATH</var></code></td>
+    <td>directory path to view</td>
+  </tr>
+  <tr>
+    <td><code>?[view=dir]</code></td>
+    <td>optional <a href="#view-param"><code>view</code> parameter</a>, never needs to be specified since the default view for directory paths is a directory listing</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;hideattic=<var>HIDEATTIC</var>]</code></td>
+    <td>"0" to show dead files in CVS directory listings or "1" to hide dead files. Default depends on the <code>hide_attic</code> configuration value.</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;search=<var>SEARCH</var>]</code></td>
+    <td>regular expression to search files in the directory with if <code>use_re_search</code> configuration option is enabled</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;sortby=<var>SORTBY</var>]</code></td>
+    <td>"file" "rev" "date" "author" or "log" to indicate how the directory listing should be sorted. Default depends on <code>sortby</code> configuration option.</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;sortdir=<var>SORTBY</var>]</code></td>
+    <td>"up" to sort directory in ascending order or "down" for descending order. Default is "up".</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;dir_pagestart=<var>PAGE</var>]</code></td>
+    <td>item number to start listing at if paging is enabled</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;pathrev=<var>PATHREV</var>]</code></td>
+    <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;root=<var>ROOT</var>]</code></td>
+    <td><a href="#root-param"><code>root</code> parameter</a></td>
+  </tr>
+</table>
+
+<h3 id="graph-view">Graph View</h3>
+<table>
+<tr><th>Summary</th></tr>
+<tr><td><code>/<var>PATH</var>?view=graph[&amp;root=<var>ROOT</var>]</code></td></tr>
+</table>
+<br>
+<table>
+<thead>
+  <tr>
+    <th>Fragment</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code><var>/PATH</var></code></td>
+    <td>file path to generate CvsGraph page for</td>
+  </tr>
+  <tr>
+    <td><code>?view=graph</code></td>
+    <td><a href="#view-param"><code>view</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;root=<var>ROOT</var>]</code></td>
+    <td><a href="#root-param"><code>root</code> parameter</a></td>
+  </tr>
+</table>
+
+<h3 id="graphimg-view">Graph Image View</h3>
+<table>
+<tr><th>Summary</th></tr>
+<tr><td><code>/<var>PATH</var>?view=graphimg[&amp;root=<var>ROOT</var>]</code></td></tr>
+</table>
+<br>
+<table>
+<thead>
+  <tr>
+    <th>Fragment</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code><var>/PATH</var></code></td>
+    <td>file path to generate CvsGraph image for</td>
+  </tr>
+  <tr>
+    <td><code>?view=graphimg</code></td>
+    <td><a href="#view-param"><code>view</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;root=<var>ROOT</var>]</code></td>
+    <td><a href="#root-param"><code>root</code> parameter</a></td>
+  </tr>
+</table>
+
+<h3 id="log-view">Log View</h3>
+<table>
+<tr><th>Summary</th></tr>
+<tr><td><code>/<var>PATH</var>?[view=log][&amp;logsort=SORT][&amp;log_pagestart=PAGE][&amp;r1=R1][&amp;diff_format=DIFF_FORMAT][&amp;pathrev=PATHREV][&amp;root=<var>ROOT</var>]</code></td></tr>
+</table>
+<br>
+<table>
+<thead>
+  <tr>
+    <th>Fragment</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code><var>/PATH</var></code></td>
+    <td>file or directory path to generate log for</td>
+  </tr>
+  <tr>
+    <td><code>?[view=log]</code></td>
+    <td><a href="#view-param"><code>view</code> parameter</a>, does not need to be specified for file paths when the <code>checkout_magic</code> configuration option is enabled</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;logsort=<var>SORT</var>]</code></td>
+    <td>"rev" to sort log entries by revision number or "date" to sort by date. Default depends on the <code>log_sort</code> configuration value.</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;log_pagestart=<var>PAGE</var>]</code></td>
+    <td>item number to start listing at if paging is enabled</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;r1=<var>R1</var>]</code></td>
+    <td>current revision selected for diffs</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;diff_format=<var>DIFF_FORMAT</var>]</code></td>
+    <td>currently selected diff format</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;pathrev=<var>PATHREV</var>]</code></td>
+    <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;root=<var>ROOT</var>]</code></td>
+    <td><a href="#root-param"><code>root</code> parameter</a></td>
+  </tr>
+</table>
+
+<h3 id="markup-view">Markup View</h3>
+<table>
+<tr><th>Summary</th></tr>
+<tr><td><code>/<var>PATH</var>?view=markup[&amp;rev=<var>REV</var>][&amp;pathrev=<var>PATHREV</var>][&amp;root=<var>ROOT</var>]</code></td></tr>
+</table>
+<br>
+<table>
+<thead>
+  <tr>
+    <th>Fragment</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code><var>/PATH</var></code></td>
+    <td>file path to mark up</td>
+  </tr>
+  <tr>
+    <td><code>?view=markup</code></td>
+    <td><a href="#view-param"><code>view</code> parameter</a></td>
+  <tr>
+    <td><code>[&amp;rev=<var>REV</var>]</code></td>
+    <td><a href="#rev-param"><code>rev</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;pathrev=<var>PATHREV</var>]</code></td>
+    <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;root=<var>ROOT</var>]</code></td>
+    <td><a href="#root-param"><code>root</code> parameter</a></td>
+  </tr>
+</table>
+
+<h3 id="patch-view">Patch View</h3>
+<table>
+<tr><th>Summary</th></tr>
+<tr><td><code>/<var>PATH</var>?[view=patch]&amp;r1=<var>R1</var>&amp;r2=R2[&amp;tr1=TR1][&amp;tr2=TR2][&amp;p1=P1][&amp;p2=P2][&amp;diff_format=DIFF_FORMAT][&amp;pathrev=<var>PATHREV</var>][&amp;root=<var>ROOT</var>]</code></td></tr>
+</table>
+<br>
+<table>
+<thead>
+  <tr>
+    <th>Fragment</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code><var>/PATH</var></code></td>
+    <td>file path to display patch of</td>
+  </tr>
+  <tr>
+    <td><code>?[view=patch]</code></td>
+    <td><a href="#view-param"><code>view</code> parameter</a></td>
+  <tr>
+    <td><code>[&amp;r1=<var>R1</var>]</code></td>
+    <td>optional starting revision or tag or the string "text" to indicate that <code><var>TR1</var></code> value (below) should override this one</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;r2=<var>R2</var>]</code></td>
+    <td>ending revision or tag or the string "text" to indicate that <code><var>TR2</var></code> value (below) should override this one</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;tr1=<var>TR1</var>]</code></td>
+    <td>starting revision or tag, only used if <var>r1</var> parameter is present and set to "text"</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;tr2=<var>TR2</var>]</code></td>
+    <td>ending revision or tag, only used if <var>r2</var> parameter is present and set to "text"</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;p1=<var>P1</var>]</code></td>
+    <td>optional starting file path that can override the <code><var>PATH</var></code> value to allow files at two different paths to be compared</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;p2=<var>P2</var>]</code></td>
+    <td>optional ending file path that can override the <code><var>PATH</var></code> value to allow files at two different paths to be compared</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;diff_format=<var>DIFF_FORMAT</var>]</code></td>
+    <td>value specifying the type of diff to display. Can be "u" for unified diff or "c" for context diff. If no value is specified the default depends on the <code>diff_format</code> configuration option.
+    </td>
+  </tr>
+  <tr>
+    <td><code>[&amp;pathrev=<var>PATHREV</var>]</code></td>
+    <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;root=<var>ROOT</var>]</code></td>
+    <td><a href="#root-param"><code>root</code> parameter</a></td>
+  </tr>
+</table>
+
+<h3 id="queryform-view">Query Form View</h3>
+<table>
+<tr><th>Summary</th></tr>
+<tr><td><code>/<var>PATH</var>?view=queryform[&amp;branch=<var>BRANCH</var>][&amp;branch_match=BRANCH_MATCH][&amp;dir=DIR][&amp;file=FILE][&amp;file_match=FILE_MATCH][&amp;who=WHO][&amp;who_match=WHO_MATCH][&amp;querysort=SORT][&amp;date=<var>DATE</var>][&amp;hours=HOURS][&amp;mindate=MINDATE][&amp;maxdate=MAXDATE][&amp;limit_changes=LIMIT_CHANGES][&amp;root=<var>ROOT</var>]</code></td></tr>
+</table>
+<br>
+<table>
+<thead>
+  <tr>
+    <th>Fragment</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code><var>/PATH</var></code></td>
+    <td>file path to display query results from</td>
+  </tr>
+  <tr>
+    <td><code>?view=queryform</code></td>
+    <td><a href="#view-param"><code>view</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;branch=<var>BRANCH</var>]</code></td>
+    <td>branch query string</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;branch_match=BRANCH_MATCH]</code></td>
+    <td>"exact" "like" "glob" "regex" or "notregex" determining type of branch match</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;dir=<var>DIR</var>]</code></td>
+    <td>directory query string</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;file=<var>FILE</var>]</code></td>
+    <td>file query string</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;file_match=FILE_MATCH]</code></td>
+    <td>"exact" "like" "glob" "regex" or "notregex" determining type of file match</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;who=<var>WHO</var>]</code></td>
+    <td>author query string</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;who_match=WHO_MATCH]</code></td>
+    <td>"exact" "like" "glob" "regex" or "notregex" determining type of file match</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;querysort=SORT]</code></td>
+    <td>"date" "author" or "file" determining order of query results</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;date=DATE]</code></td>
+    <td>"hours" "day" "week" "month" "all" or "explicit" to filter query results by date</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;hours=HOURS]</code></td>
+    <td>number of hours back to include results from when <code><var>DATE</var></code> is "hours"</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;mindate=MINDATE]</code></td>
+    <td>earliest date to include results from when <code><var>DATE</var></code> is "explicit"</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;maxdate=MAXDATE]</code></td>
+    <td>latest date to include results from when <code><var>DATE</var></code> is "explicit"</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;limit_changes=LIMIT_CHANGES]</code></td>
+    <td>maximum number of files to list per commit in query results. Default is value of <code>limit_changes</code> configuration option</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;root=<var>ROOT</var>]</code></td>
+    <td><a href="#root-param"><code>root</code> parameter</a></td>
+  </tr>
+</tbody>
+</table>
+
+
+<h3 id="query-view">Query View</h3>
+<table>
+<tr><th>Summary</th></tr>
+<tr><td><code>/<var>PATH</var>?[view=query][&amp;branch=<var>BRANCH</var>][&amp;branch_match=BRANCH_MATCH][&amp;dir=DIR][&amp;file=FILE][&amp;file_match=FILE_MATCH][&amp;who=WHO][&amp;who_match=WHO_MATCH][&amp;querysort=SORT][&amp;date=<var>DATE</var>][&amp;hours=HOURS][&amp;mindate=MINDATE][&amp;maxdate=MAXDATE][&amp;format=FORMAT][&amp;limit=LIMIT][&amp;limit_changes=LIMIT_CHANGES][&amp;root=<var>ROOT</var>]</code></td></tr>
+</table>
+<br>
+<table>
+<thead>
+  <tr>
+    <th>Fragment</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code><var>/PATH</var></code></td>
+    <td>file path to display query results from</td>
+  </tr>
+  <tr>
+    <td><code>?view=query</code></td>
+    <td><a href="#view-param"><code>view</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;branch=<var>BRANCH</var>]</code></td>
+    <td>branch query string</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;branch_match=BRANCH_MATCH]</code></td>
+    <td>"exact" "like" "glob" "regex" or "notregex" determining type of branch match</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;dir=<var>DIR</var>]</code></td>
+    <td>directory query string</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;file=<var>FILE</var>]</code></td>
+    <td>file query string</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;file_match=FILE_MATCH]</code></td>
+    <td>"exact" "like" "glob" "regex" or "notregex" determining type of file match</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;who=<var>WHO</var>]</code></td>
+    <td>author query string</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;who_match=WHO_MATCH]</code></td>
+    <td>"exact" "like" "glob" "regex" or "notregex" determining type of file match</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;querysort=SORT]</code></td>
+    <td>"date" "author" or "file" determining order of query results</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;date=DATE]</code></td>
+    <td>"hours" "day" "week" "month" "all" or "explicit" to filter query results by date</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;hours=HOURS]</code></td>
+    <td>number of hours back to include results from when <code><var>DATE</var></code> is "hours"</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;mindate=MINDATE]</code></td>
+    <td>earliest date to include results from when <code><var>DATE</var></code> is "explicit"</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;maxdate=MAXDATE]</code></td>
+    <td>latest date to include results from when <code><var>DATE</var></code> is "explicit"</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;format=FORMAT]</code></td>
+    <td>"rss" or "backout" values to generate an rss feed or list of commands to back out changes instead showing a normal query result page</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;limit=LIMIT]</code></td>
+    <td>maximum number of file-revisions to process during a query. Default is value of <code>row_limit</code> configuration option</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;limit_changes=LIMIT_CHANGES]</code></td>
+    <td>maximum number of files to list per commit in query results. Default is value of <code>limit_changes</code> configuration option</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;root=<var>ROOT</var>]</code></td>
+    <td><a href="#root-param"><code>root</code> parameter</a></td>
+  </tr>
+</tbody>
+</table>
+
+<h3 id="revision-view">Revision View</h3>
+<table>
+<tr><th>Summary</th></tr>
+<tr><td><code>/<var>PATH</var>?view=rev[&amp;rev=<var>REV</var>][&amp;limit_changes=LIMIT_CHANGES][&amp;root=<var>ROOT</var>]</code></td></tr>
+</table>
+<br>
+<table>
+<thead>
+  <tr>
+    <th>Fragment</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code><var>/PATH</var></code></td>
+    <td>file path to annotate</td>
+  </tr>
+  <tr>
+    <td><code>?view=rev</code></td>
+    <td><a href="#view-param"><code>view</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;rev=<var>REV</var>]</code></td>
+    <td><a href="#rev-param"><code>rev</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;limit_changes=LIMIT_CHANGES]</code></td>
+    <td>maximum number of files to list per commit. Default is value of <code>limit_changes</code> configuration option</td>
+  </tr>
+  <tr>
+    <td><code>[&amp;root=<var>ROOT</var>]</code></td>
+    <td><a href="#root-param"><code>root</code> parameter</a></td>
+  </tr>
+</table>
+
+<h3 id="roots-view">Repository Listing</h3>
+<table>
+<tr><th>Summary</th></tr>
+<tr><td><code>?view=roots</var></code></td></tr>
+</table>
+<br>
+<table>
+<thead>
+  <tr>
+    <th>Fragment</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code>?view=roots</code></td>
+    <td><a href="#view-param"><code>view</code> parameter</a></td>
+  </tr>
+</table>
+
+<h3 id="tarball-view">Tarball Download</h3>
+<table>
+<tr><th>Summary</th></tr>
+<tr><td><code>/<var>PATH</var>.tar.gz?view=tar[&amp;pathrev=<var>PATHREV</var>][&amp;root=<var>ROOT</var>]</code></td></tr>
+</table>
+<br>
+<table>
+<thead>
+  <tr>
+    <th>Fragment</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code><var>/PATH</var></code></td>
+    <td>directory path to download</td>
+  </tr>
+  <tr>
+    <td><code>.tar.gz</code></td>
+    <td>tarball suffix</td>
+  </tr>
+  <tr>
+    <td><code>?view=tar</code></td>
+    <td><a href="#view-param"><code>view</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;pathrev=<var>PATHREV</var>]</code></td>
+    <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;root=<var>ROOT</var>]</code></td>
+    <td><a href="#root-param"><code>root</code> parameter</a></td>
+  </tr>
+</table>
+</div>
+
+<div class="h2">
+<h2 id="compat">Backwards Compatibility</h2>
+<!--
+  cvsroot - root
+  only_with_tag - pathrev
+  ~checkout~ - *checkout*
+  tarball=1
+  missing .tar.gz suffix
+-->
+</div>
+
+
+</body>
+</html>
