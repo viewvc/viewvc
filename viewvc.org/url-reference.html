@@ -83,12 +83,12 @@ td {
 <tr>
   <td><code>http://example.org/viewvc.cgi</code></td>
   <td><code>/some/file</code></td>
-  <td><code>?view=log&amp;rev=1.34</code></td>
+  <td><code>?view=log&amp;revision=1.34</code></td>
 </tr>
 <tr>
   <td><code>http://example.org/viewvc.cgi</code></td>
   <td><code>/*checkout/some/other/file</code></td>
-  <td><code>?rev=1.10.2.5</code></td>
+  <td><code>?revision=1.10.2.5</code></td>
 </tr>
 <tr>
   <td><code>http://example.org/viewvc.cgi</code></td>
@@ -119,7 +119,7 @@ td {
 
 <h3 id="query-component">Query Parameters</h3>
 
-<p>Following the ViewVC and repository locations in URLs is an optional query string, a list of parameter/value pairs written like "?param1=value1&amp;param2=value2..." Some parameters, like "rev" "pathrev" and "root", augment repository path information, specifying revisions and repositories. Other parameters like "logsort" and "diff_format" control ViewVC display options. Some parameters are also "sticky" and get embedded into links inside the generated pages, sticking around for future page views.</p>
+<p>Following the ViewVC and repository locations in URLs is an optional query string, a list of parameter/value pairs written like "?param1=value1&amp;param2=value2..." Some parameters, like "revision", "pathrev", and "root", augment repository path information, specifying revisions and repositories. Other parameters like "logsort" and "diff_format" control ViewVC display options. Some parameters are also "sticky" and get embedded into links inside the generated pages, sticking around for future page views.</p>
 
 <p>ViewVC provides a number of different views of repository data including a directory listing view, a log view, a file diff view, and others. (The views are listed and described in the <code>help_rootview.html</code> ViewVC help page). URLs for each of these views accept specific parameters described in the <a href="#url-syntax">URL Syntax</a> section, but some parameters are used by multiple views and they are described below:</p>
 
@@ -136,7 +136,7 @@ td {
     <td>The name of the view to display, does not need to be explicitly specified in most URLs. Possible values are shown in the <a href="#url-syntax">URL Syntax</a> section below.</td>
   </tr>
   <tr>
-    <td id="rev-param"><code>rev</code></td>
+    <td id="revision-param"><code>revision</code></td>
     <td>The revision or tag to display information about, used by several different views.</td>
   </tr>
   <tr>
@@ -158,7 +158,7 @@ td {
 <h3 id="annotate-view">Annotate View</h3>
 <table>
 <tr><th>Summary</th></tr>
-<tr><td><code>/<var>PATH</var>?view=annotate[&amp;rev=<var>REV</var>][&amp;pathrev=<var>PATHREV</var>][&amp;root=<var>ROOT</var>]</code></td></tr>
+<tr><td><code>/<var>PATH</var>?view=annotate[&amp;revision=<var>REV</var>][&amp;pathrev=<var>PATHREV</var>][&amp;root=<var>ROOT</var>]</code></td></tr>
 </table>
 <br>
 <table>
@@ -178,7 +178,7 @@ td {
     <td><a href="#view-param"><code>view</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>[&amp;rev=<var>REV</var>]</code></td>
+    <td><code>[&amp;revision=<var>REV</var>]</code></td>
     <td><a href="#rev-param"><code>rev</code> parameter</a></td>
   </tr>
   <tr>
@@ -195,7 +195,7 @@ td {
 <h3 id="checkout-view">Checkout View</h3>
 <table>
 <tr><th>Summary</th></tr>
-<tr><td><code>[/*checkout*]/<var>PATH</var>?[view=co][&amp;content-type=TYPE][&amp;rev=<var>REV</var>][&amp;pathrev=<var>PATHREV</var>][&amp;root=<var>ROOT</var>]</code></td></tr>
+<tr><td><code>[/*checkout*]/<var>PATH</var>?[view=co][&amp;content-type=TYPE][&amp;revision=<var>REV</var>][&amp;pathrev=<var>PATHREV</var>][&amp;root=<var>ROOT</var>]</code></td></tr>
 </table>
 <br>
 <table>
@@ -223,7 +223,7 @@ td {
     <td>MIME type to send with checked out file</td>
   </tr>
   <tr>
-    <td><code>[&amp;rev=<var>REV</var>]</code></td>
+    <td><code>[&amp;revision=<var>REV</var>]</code></td>
     <td><a href="#rev-param"><code>rev</code> parameter</a></td>
   </tr>
   <tr>
@@ -455,7 +455,7 @@ td {
 <h3 id="markup-view">Markup View</h3>
 <table>
 <tr><th>Summary</th></tr>
-<tr><td><code>/<var>PATH</var>?view=markup[&amp;rev=<var>REV</var>][&amp;pathrev=<var>PATHREV</var>][&amp;root=<var>ROOT</var>]</code></td></tr>
+<tr><td><code>/<var>PATH</var>?view=markup[&amp;revision=<var>REV</var>][&amp;pathrev=<var>PATHREV</var>][&amp;root=<var>ROOT</var>]</code></td></tr>
 </table>
 <br>
 <table>
@@ -474,7 +474,7 @@ td {
     <td><code>?view=markup</code></td>
     <td><a href="#view-param"><code>view</code> parameter</a></td>
   <tr>
-    <td><code>[&amp;rev=<var>REV</var>]</code></td>
+    <td><code>[&amp;revision=<var>REV</var>]</code></td>
     <td><a href="#rev-param"><code>rev</code> parameter</a></td>
   </tr>
   <tr>
@@ -721,7 +721,7 @@ td {
 <h3 id="revision-view">Revision View</h3>
 <table>
 <tr><th>Summary</th></tr>
-<tr><td><code>/<var>PATH</var>?view=rev[&amp;rev=<var>REV</var>][&amp;limit_changes=LIMIT_CHANGES][&amp;root=<var>ROOT</var>]</code></td></tr>
+<tr><td><code>/<var>PATH</var>?view=rev[&amp;revision=<var>REV</var>][&amp;limit_changes=LIMIT_CHANGES][&amp;root=<var>ROOT</var>]</code></td></tr>
 </table>
 <br>
 <table>
@@ -741,7 +741,7 @@ td {
     <td><a href="#view-param"><code>view</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>[&amp;rev=<var>REV</var>]</code></td>
+    <td><code>[&amp;revision=<var>REV</var>]</code></td>
     <td><a href="#rev-param"><code>rev</code> parameter</a></td>
   </tr>
   <tr>
