@@ -181,7 +181,8 @@ class Request:
         # if this is just a simple hunk of doc, then serve it up
         self.where = _path_join(path_parts[1:])
         return view_doc(self)
-      elif path_parts[0] in (checkout_magic_path, oldstyle_checkout_magic_path):
+      elif path_parts[0] in (checkout_magic_path,
+                             oldstyle_checkout_magic_path):
         path_parts.pop(0)
         self.view_func = view_checkout
         if not cfg.options.checkout_magic:
@@ -214,7 +215,8 @@ class Request:
         try:
           if cfg.general.use_rcsparse:
             import vclib.ccvs
-            self.repos = vclib.ccvs.CCVSRepository(self.rootname, self.rootpath)
+            self.repos = vclib.ccvs.CCVSRepository(self.rootname,
+                                                   self.rootpath)
           else:
             import vclib.bincvs
             self.repos = vclib.bincvs.BinCVSRepository(self.rootname, 
@@ -324,7 +326,8 @@ class Request:
             self.view_func = view_cvsgraph
           else: 
             self.view_func = view_cvsgraph_image
-        elif self.query_dict.has_key('rev') or not cfg.options.checkout_magic:
+        elif self.query_dict.has_key('revision') \
+                 or not cfg.options.checkout_magic:
           # if checkout_magic is disabled the default view is view_checkout
           # so relative links inside checked out files will work
           if self.query_dict.get('content-type', None) in (viewcvs_mime_type,
@@ -345,12 +348,15 @@ class Request:
         and self.view_func is not redirect_pathrev):
       needs_redirect = 1
 
-    # If this is a directory view with just an old-style 'rev'
-    # parameter, redirect to use 'pathrev' instead.
-    if self.view_func == view_directory and self.query_dict.has_key('rev'):
-      if not self.pathrev:
+    # If this is using an old-style 'rev' parameter, redirect to new hotness.
+    # Subversion URLs will now use 'pathrev'; CVS ones use 'revision'.
+    if self.query_dict.has_key('rev'):
+      if self.roottype == 'svn':
         self.query_dict['pathrev'] = self.query_dict['rev']
-      del self.query_dict['rev']
+        del self.query_dict['rev']
+      else:
+        self.query_dict['revision'] = self.query_dict['rev']
+        del self.query_dict['rev']
       needs_redirect = 1
 
     # redirect now that we know the URL is valid
@@ -635,6 +641,7 @@ _legal_params = {
   'r2'            : _re_validate_revnum,
   'tr2'           : _re_validate_revnum,
   'rev'           : _re_validate_revnum,
+  'revision'      : _re_validate_revnum,
   'content-type'  : _re_validate_mimetype,
 
   # for query
@@ -685,7 +692,7 @@ def _repos_pathtype(repos, path_parts, rev):
   except vclib.ItemNotFound:
     return None
 
-def _orig_path(request, rev_param='rev', path_param=None):
+def _orig_path(request, rev_param='revision', path_param=None):
   "Get original path of requested file at old revision before copies or moves"
 
   # The 'pathrev' variable is interpreted by nearly all ViewVC views to
@@ -901,13 +908,13 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
   view_href = request.get_url(view_func=view_markup,
                               where=where,
                               pathtype=vclib.FILE,
-                              params={'rev': rev,
+                              params={'revision': rev,
                                       'pathrev': pathrev},
                               escape=1)
   download_href = request.get_url(view_func=view_checkout,
                                   where=where,
                                   pathtype=vclib.FILE,
-                                  params={'rev': rev,
+                                  params={'revision': rev,
                                           'pathrev': pathrev},
                                   escape=1)
   if not is_plain_text(mime_type):
@@ -915,7 +922,7 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
                                          where=where,
                                          pathtype=vclib.FILE,
                                          params={'content-type': 'text/plain',
-                                                 'rev': rev,
+                                                 'revision': rev,
                                                  'pathrev': rev},
                                          escape=1)
   if request.cfg.options.allow_annotate:
@@ -927,7 +934,7 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
                                     escape=1)
   if request.roottype == 'svn':
     revision_href = request.get_url(view_func=view_revision,
-                                    params={'rev': rev},
+                                    params={'revision': rev},
                                     escape=1)
 
   prefer_markup = default_view(mime_type, request.cfg) == view_markup
@@ -1071,8 +1078,8 @@ def common_template_data(request):
         # if user did "view=annotate" there may not be an annotate key
         if request.query_dict.has_key('annotate'):
           data['log_href_rev'] = request.query_dict.get('annotate')
-      elif request.query_dict.has_key('rev'):
-        data['log_href_rev'] = request.query_dict.get('rev')
+      elif request.query_dict.has_key('revision'):
+        data['log_href_rev'] = request.query_dict.get('revision')
 
     if (request.roottype == 'cvs' and cfg.options.use_cvsgraph
         and request.view_func is not view_cvsgraph):
@@ -1387,7 +1394,7 @@ def view_markup(request):
   markup_fp = None
   if is_viewable_image(request.mime_type):
     fp.close()
-    url = request.get_url(view_func=view_checkout, params={'rev': rev},
+    url = request.get_url(view_func=view_checkout, params={'revision': rev},
                           escape=1)
     markup_fp = '<img src="%s" alt="" /><br />' % url
   else:
@@ -1564,7 +1571,7 @@ def view_directory(request):
 
       if request.roottype == 'svn':
         row.revision_href = request.get_url(view_func=view_revision,
-                                            params={'rev': file.rev},
+                                            params={'revision': file.rev},
                                             escape=1)
 
       if request.roottype == 'cvs' and file.rev is not None:
@@ -1680,7 +1687,7 @@ def view_directory(request):
   elif request.roottype == 'svn':
     data['tree_rev'] = tree_rev
     data['tree_rev_href'] = request.get_url(view_func=view_revision,
-                                            params={'rev': tree_rev},
+                                            params={'revision': tree_rev},
                                             escape=1)
     data['youngest_rev'] = vclib.svn.get_youngest_revision(request.repos)
     data['youngest_rev_href'] = request.get_url(view_func=view_revision,
@@ -1945,7 +1952,7 @@ def view_log(request):
                              request.mime_type)
     else:
       entry.revision_href = request.get_url(view_func=view_revision,
-                                            params={'rev': rev.string},
+                                            params={'revision': rev.string},
                                             escape=1)
       entry.view_href = request.get_url(view_func=view_directory,
                                         where=rev.filename,
@@ -1955,44 +1962,44 @@ def view_log(request):
 
     # calculate diff links
     if selected_rev != entry.rev:
-      entry.sel_for_diff_href =\
-          request.get_url(view_func=view_log,
-                          params={'rev': request.query_dict.get('rev'),
-                                  'r1': entry.rev},
-                          escape=1)
+      entry.sel_for_diff_href = \
+        request.get_url(view_func=view_log,
+                        params={'revision': request.query_dict.get('revision'),
+                                'r1': entry.rev},
+                        escape=1)
     if entry.prev is not None:
       entry.diff_to_prev_href = \
-          request.get_url(view_func=view_diff,
-                          params={'r1': entry.prev,
-                                  'r2': entry.rev,
-                                  'diff_format': None},
-                          escape=1)
+        request.get_url(view_func=view_diff,
+                        params={'r1': entry.prev,
+                                'r2': entry.rev,
+                                'diff_format': None},
+                        escape=1)
     if selected_rev and \
            selected_rev != str(entry.rev) and \
            selected_rev != str(entry.prev) and \
            selected_rev != str(entry.branch_point) and \
            selected_rev != str(entry.next_main):
       entry.diff_to_sel_href = \
-          request.get_url(view_func=view_diff,
-                          params={'r1': selected_rev,
-                                  'r2': entry.rev,
-                                  'diff_format': None},
-                          escape=1)
+        request.get_url(view_func=view_diff,
+                        params={'r1': selected_rev,
+                                'r2': entry.rev,
+                                'diff_format': None},
+                        escape=1)
 
     if entry.next_main:
       entry.diff_to_main_href = \
-          request.get_url(view_func=view_diff,
-                          params={'r1': entry.next_main,
-                                  'r2': entry.rev,
-                                  'diff_format': None},
-                          escape=1)
+        request.get_url(view_func=view_diff,
+                        params={'r1': entry.next_main,
+                                'r2': entry.rev,
+                                'diff_format': None},
+                        escape=1)
     if entry.branch_point:
       entry.diff_to_branch_href = \
-          request.get_url(view_func=view_diff,
-                          params={'r1': entry.branch_point,
-                                  'r2': entry.rev,
-                                  'diff_format': None},
-                          escape=1)
+        request.get_url(view_func=view_diff,
+                        params={'r1': entry.branch_point,
+                                'r2': entry.rev,
+                                'diff_format': None},
+                        escape=1)
 
     # Save our escaping until the end so stuff above works
     if entry.orig_path:
@@ -2095,8 +2102,8 @@ def view_log(request):
 
   if cfg.options.use_pagesize:
     data['log_pagestart'] = int(request.query_dict.get('log_pagestart',0))
-    data['entries'] = paging(data, 'entries', data['log_pagestart'], 'rev',
-                             cfg.options.use_pagesize)
+    data['entries'] = paging(data, 'entries', data['log_pagestart'],
+                             'revision', cfg.options.use_pagesize)
 
   request.server.header()
   generate_page(request, "log", data)
@@ -2186,15 +2193,15 @@ def view_cvsgraph(request):
                     "-3", request.get_url(view_func=view_log, params={},
                                           escape=1),
                     "-4", request.get_url(view_func=view, 
-                                          params={"rev": None},
+                                          params={'revision': None},
                                           escape=1, partial=1),
                     "-5", request.get_url(view_func=view_diff,
-                                          params={"r1": None, "r2": None},
+                                          params={'r1': None, 'r2': None},
                                           escape=1, partial=1),
                     "-6", request.get_url(view_func=view_directory,
                                           where=up_where,
                                           pathtype=vclib.DIR,
-                                          params={"pathrev": None},
+                                          params={'pathrev': None},
                                           escape=1, partial=1),
                     rcsfile), 'rb', 0)
 
@@ -2901,7 +2908,7 @@ def view_revision(request):
 
   data = common_template_data(request)
   query_dict = request.query_dict
-  rev = request.repos._getrev(query_dict.get('rev'))
+  rev = request.repos._getrev(query_dict.get('revision'))
   date, author, msg, changes = vclib.svn.get_revision_info(request.repos, rev)
   date_str = make_time_string(date, request.cfg)
 
@@ -2992,13 +2999,13 @@ def view_revision(request):
     prev_rev_href = request.get_url(view_func=view_revision,
                                     where=None,
                                     pathtype=None,
-                                    params={'rev': str(rev - 1)},
+                                    params={'revision': str(rev - 1)},
                                     escape=1)
   if rev < request.repos.youngest:
     next_rev_href = request.get_url(view_func=view_revision,
                                     where=None,
                                     pathtype=None,
-                                    params={'rev': str(rev + 1)},
+                                    params={'revision': str(rev + 1)},
                                     escape=1)
   data.update({
     'rev' : str(rev),
@@ -3020,7 +3027,7 @@ def view_revision(request):
     data['ago'] = html_time(request, date, 1)
 
   data['jump_rev_action'], data['jump_rev_hidden_values'] = \
-    request.get_form(params={'rev': None})
+    request.get_form(params={'revision': None})
 
   request.server.header()
   generate_page(request, "revision", data)
@@ -3164,7 +3171,7 @@ def build_commit(request, files, limited_files, dir_strip):
     commit.rss_url = 'http://%s%s' % \
       (request.server.getenv("HTTP_HOST"),
        request.get_url(view_func=view_revision,
-                       params={'rev': commit.rev},
+                       params={'revision': commit.rev},
                        escape=1))
   else:
     commit.rev = None
@@ -3187,7 +3194,7 @@ def build_commit(request, files, limited_files, dir_strip):
       dirname = dirname[len_strip+1:]
     filename = dirname and ("%s/%s" % (dirname, filename)) or filename
 
-    params = { 'rev': f.GetRevision() }
+    params = { 'revision': f.GetRevision() }
     if f.GetBranch(): params['pathrev'] = f.GetBranch()
     dir_href = request.get_url(view_func=view_directory,
                                where=dirname, pathtype=vclib.DIR,
@@ -3199,11 +3206,11 @@ def build_commit(request, files, limited_files, dir_strip):
                                escape=1)
     view_href = request.get_url(view_func=view_markup,
                                where=filename, pathtype=vclib.FILE,
-                               params={'rev': f.GetRevision() },
+                               params={'revision': f.GetRevision() },
                                escape=1)
     download_href = request.get_url(view_func=view_checkout,
                                     where=filename, pathtype=vclib.FILE,
-                                    params={'rev': f.GetRevision() },
+                                    params={'revision': f.GetRevision() },
                                     escape=1)
     diff_href = request.get_url(view_func=view_diff,
                                 where=filename, pathtype=vclib.FILE,
