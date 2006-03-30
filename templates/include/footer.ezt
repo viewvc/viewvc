@@ -4,13 +4,12 @@
 
 <table>
 <tr>
-  <td>
-    <address>[cfg.general.address]</address><br />
-    Powered by <a href="http://viewvc.tigris.org/">ViewVC [vsn]</a>
-  </td>
-  <td style="text-align:right;">
-    <h3><a href="[help_href]">ViewVC Help</a></h3>
-  </td>
+  <td><address>[cfg.general.address]</address></td>
+  <td style="text-align: right;"><strong><a href="[help_href]">ViewVC Help</strong></td>
+</tr>
+<tr>
+  <td>Powered by <a href="http://viewvc.tigris.org/">ViewVC [vsn]</a></td>
+  <td style="text-align: right;">[if-any rss_href]<a href="[rss_href]" title="RSS 2.0 feed"><img src="[docroot]/images/rss.jpg"/>[else]&nbsp;[end]</td>
 </tr>
 </table>
 
