@@ -713,15 +713,18 @@ def _orig_path(request, rev_param='revision', path_param=None):
   # circle image is visible at the following URLs:
   #
   #     *checkout*/circle.jpg?pathrev=3
-  #     *checkout*/square.jpg?rev=3
-  #     *checkout*/square.jpg?rev=3&pathrev=4
+  #     *checkout*/square.jpg?revision=3
+  #     *checkout*/square.jpg?revision=3&pathrev=4
   # 
-  # Note that the following (which used to work in ViewCVS) yields a 404:
+  # Note that the following:
   #
   #     *checkout*/circle.jpg?rev=3
   #
-  # Because pathrev is not specified and circle.jpg doesn't exist in the HEAD
-  # revision.
+  # now gets redirected to one of the following URLs:
+  #
+  #     *checkout*/circle.jpg?pathrev=3  (for Subversion)
+  #     *checkout*/circle.jpg?revision=3  (for CVS)
+  #
   rev = request.query_dict.get(rev_param, request.pathrev)
   path = request.query_dict.get(path_param, request.where)
   
