@@ -262,7 +262,19 @@ class Request:
           'correct, then please double-check your configuration.'
           % self.rootname, "404 Repository not found")
 
-    if self.repos and self.view_func is not redirect_pathrev:
+    # If this is using an old-style 'rev' parameter, redirect to new hotness.
+    # Subversion URLs will now use 'pathrev'; CVS ones use 'revision'.
+    if self.repos and self.query_dict.has_key('rev'):
+      if self.roottype == 'svn':
+        self.query_dict['pathrev'] = self.query_dict['rev']
+        del self.query_dict['rev']
+      else:
+        self.query_dict['revision'] = self.query_dict['rev']
+        del self.query_dict['rev']
+      needs_redirect = 1
+
+    if self.repos and self.view_func is not redirect_pathrev \
+           and not needs_redirect:
       # Make sure path exists
       self.pathrev = pathrev = self.query_dict.get('pathrev')
       self.pathtype = _repos_pathtype(self.repos, path_parts, pathrev)
@@ -346,17 +358,6 @@ class Request:
         and self.view_func is not view_roots
         and self.view_func is not download_tarball
         and self.view_func is not redirect_pathrev):
-      needs_redirect = 1
-
-    # If this is using an old-style 'rev' parameter, redirect to new hotness.
-    # Subversion URLs will now use 'pathrev'; CVS ones use 'revision'.
-    if self.query_dict.has_key('rev'):
-      if self.roottype == 'svn':
-        self.query_dict['pathrev'] = self.query_dict['rev']
-        del self.query_dict['rev']
-      else:
-        self.query_dict['revision'] = self.query_dict['rev']
-        del self.query_dict['rev']
       needs_redirect = 1
 
     # redirect now that we know the URL is valid
