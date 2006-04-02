@@ -188,6 +188,13 @@ class Request:
         if not cfg.options.checkout_magic:
           needs_redirect = 1
 
+      # handle tarball magic suffixes
+      if self.view_func is download_tarball:
+        if (self.query_dict.get('parent')):
+	  del path_parts[-1]
+        elif path_parts[-1][-7:] == ".tar.gz":
+          path_parts[-1] = path_parts[-1][:-7]
+
     # Figure out root name
     self.rootname = self.query_dict.get('root')
     if self.rootname == view_roots_magic:
@@ -280,7 +287,8 @@ class Request:
       self.pathtype = _repos_pathtype(self.repos, path_parts, pathrev)
 
       if self.pathtype is None:
-        # path doesn't exist, try stripping known fake suffixes
+        # path doesn't exist, see if it could be an old-style ViewVC URL
+	# with a fake suffix
         result = _strip_suffix('.diff', path_parts, pathrev, vclib.FILE,      \
                                self.repos, view_diff) or                      \
                  _strip_suffix('.tar.gz', path_parts, pathrev, vclib.DIR,     \
@@ -289,10 +297,17 @@ class Request:
                                self.repos, download_tarball) or               \
                  _strip_suffix(self.rootname + '-root.tar.gz',                \
                                path_parts, pathrev, vclib.DIR,                \
+                               self.repos, download_tarball) or               \
+                 _strip_suffix('root',                                        \
+                               path_parts, pathrev, vclib.DIR,                \
+                               self.repos, download_tarball) or               \
+                 _strip_suffix(self.rootname + '-root',                       \
+                               path_parts, pathrev, vclib.DIR,                \
                                self.repos, download_tarball)
         if result:
           self.path_parts, self.pathtype, self.view_func = result
-          self.where = _path_join(path_parts)
+          self.where = _path_join(self.path_parts)
+	  needs_redirect = 1
         else:
           raise debug.ViewVCException('%s: unknown location'
                                        % self.where, '404 Not Found')
@@ -488,8 +503,9 @@ class Request:
 
     # add suffix for tarball
     if view_func is download_tarball:
-      if not where: 
+      if not where and not cfg.options.root_as_url_component:
         url = url + '/' + rootname + '-root'
+	params['parent'] = '1'
       url = url + '.tar.gz'
 
     # add trailing slash for a directory
@@ -637,6 +653,7 @@ _legal_params = {
   'graph'         : _re_validate_revnum,
   'makeimage'     : _re_validate_number,
   'tarball'       : _re_validate_number,
+  'parent'        : _re_validate_number,
   'r1'            : _re_validate_revnum,
   'tr1'           : _re_validate_revnum,
   'r2'            : _re_validate_revnum,
