@@ -1967,10 +1967,7 @@ def view_log(request):
     # calculate diff links
     if selected_rev != entry.rev:
       entry.sel_for_diff_href = \
-        request.get_url(view_func=view_log,
-                        params={'revision': request.query_dict.get('revision'),
-                                'r1': entry.rev},
-                        escape=1)
+        request.get_url(view_func=view_log, params={'r1': entry.rev}, escape=1)
     if entry.prev is not None:
       entry.diff_to_prev_href = \
         request.get_url(view_func=view_diff,
