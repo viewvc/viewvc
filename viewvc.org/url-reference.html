@@ -777,7 +777,7 @@ td {
 <h3 id="tarball-view">Tarball Download</h3>
 <table>
 <tr><th>Summary</th></tr>
-<tr><td><code>/<var>PATH</var>.tar.gz?view=tar[&amp;pathrev=<var>PATHREV</var>][&amp;root=<var>ROOT</var>]</code></td></tr>
+<tr><td><code>/<var>PATH</var>.tar.gz?view=tar[&amp;parent=1][&amp;pathrev=<var>PATHREV</var>][&amp;root=<var>ROOT</var>]</code></td></tr>
 </table>
 <br>
 <table>
@@ -799,6 +799,10 @@ td {
   <tr>
     <td><code>?view=tar</code></td>
     <td><a href="#view-param"><code>view</code> parameter</a></td>
+  </tr>
+  <tr>
+    <td><code>[&amp;parent=1]</code></td>
+    <td>If <code>parent</code> parameter is included, the last component of the PATH is discarded before it ever is looked up in the repository. This feature is used when the <code>root_as_url_component</code> configuration option is disabled to allow root tarball URLs to end with names like "ROOT-root.tar.gz" which will be used by web browsers saving the tarballs.</td>
   </tr>
   <tr>
     <td><code>[&amp;pathrev=<var>PATHREV</var>]</code></td>
