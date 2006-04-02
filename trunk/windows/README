@@ -432,6 +432,21 @@ KNOWN ISSUES
   spaces and other special characters in filenames twice. This bug can result
   in loginfo errors or invalid data being inserted into the database.
 
+- Old versions of Highlight (2.4.3 and earlier) will not show line numbers
+  for .txt files or files of unknown type even when the
+  "highlight_line_numbers" option is enabled.
+
+- Highlight versions 2.4.2 and 2.4.3 start line numbering for all file types
+  at 0 instead of 1 by default. A workaround is to make ViewVC pass an
+  explicit --line-number-start=1 option to Highlight
+
+- Highlight version 2.4.4 starts line numbering for .txt files at 0 instead of
+  1. It also misinterprets the --line-number-start option for those files,
+  starting numbering one number before whatever number is specified. Since this
+  behavior does not affect unknown file types, a simple workaround is just to
+  not pass a --syntax option to Highlight for plain text files (instead of
+  passing --syntax=txt).
+
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 THANKS
 
