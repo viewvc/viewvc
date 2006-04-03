@@ -27,6 +27,12 @@ td {
 }
 .toc-list { font-size: 90%; }
 
+th.caption {
+  background: rgb(180,193,205);
+  font-weight: normal;
+  font-style: italic;
+}
+
 </style>
 </head>
 <body>
@@ -159,7 +165,12 @@ td {
 <table>
 <thead>
   <tr>
-    <th>Fragment</th>
+    <th colspan="2" class="caption">
+      Path Components (in order of appearance in the URL)
+    </th>
+  </tr>
+  <tr>
+    <th>Component</th>
     <th>Description</th>
   </tr>
 </thead>
@@ -168,20 +179,33 @@ td {
     <td><code><var>/PATH</var></code></td>
     <td>file path to annotate</td>
   </tr>
+</table>
+<br />
+<table>
+<thead>
   <tr>
-    <td><code>?view=annotate</code></td>
+    <th colspan="2" class="caption">Query Parameters</th>
+  </tr>
+  <tr>
+    <th>Parameter</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code>view=annotate</code></td>
     <td><a href="#view-param"><code>view</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;revision=<var>REV</var></code></td>
+    <td><code>revision=<var>REV</var></code></td>
     <td><a href="#rev-param"><code>rev</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;pathrev=<var>PATHREV</var></code></td>
+    <td><code>pathrev=<var>PATHREV</var></code></td>
     <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;root=<var>ROOT</var></code></td>
+    <td><code>root=<var>ROOT</var></code></td>
     <td><a href="#root-param"><code>root</code> parameter</a></td>
   </tr>
 </table>
@@ -191,7 +215,12 @@ td {
 <table>
 <thead>
   <tr>
-    <th>Fragment</th>
+    <th colspan="2" class="caption">
+      Path Components (in order of appearance in the URL)
+    </th>
+  </tr>
+  <tr>
+    <th>Component</th>
     <th>Description</th>
   </tr>
 </thead>
@@ -204,24 +233,37 @@ td {
     <td><code><var>/PATH</var></code></td>
     <td>file path to check out</td>
   </tr>
+</table>
+<br />
+<table>
+<thead>
   <tr>
-    <td><code>?view=co</code></td>
+    <th colspan="2" class="caption">Query Parameters</th>
+  </tr>
+  <tr>
+    <th>Parameter</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code>view=co</code></td>
     <td>optional <a href="#view-param"><code>view</code> parameter</a>, not needed if the <code>checkout_magic</code> configuration variable is disabled because that makes checkout view the default view for file paths. Also not needed if the magic prefix or the <code>rev</code> parameters are present.
   </tr>
   <tr>
-    <td><code>&amp;content-type=<var>TYPE</var></code></td>
+    <td><code>content-type=<var>TYPE</var></code></td>
     <td>MIME type to send with checked out file</td>
   </tr>
   <tr>
-    <td><code>&amp;revision=<var>REV</var></code></td>
+    <td><code>revision=<var>REV</var></code></td>
     <td><a href="#rev-param"><code>rev</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;pathrev=<var>PATHREV</var></code></td>
+    <td><code>pathrev=<var>PATHREV</var></code></td>
     <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;root=<var>ROOT</var></code></td>
+    <td><code>root=<var>ROOT</var></code></td>
     <td><a href="#root-param"><code>root</code> parameter</a></td>
   </tr>
 </table>
@@ -230,7 +272,12 @@ td {
 <table>
 <thead>
   <tr>
-    <th>Fragment</th>
+    <th colspan="2" class="caption">
+      Path Components (in order of appearance in the URL)
+    </th>
+  </tr>
+  <tr>
+    <th>Component</th>
     <th>Description</th>
   </tr>
 </thead>
@@ -239,44 +286,57 @@ td {
     <td><code><var>/PATH</var></code></td>
     <td>file path to display diff of</td>
   </tr>
+</table>
+<br />
+<table>
+<thead>
   <tr>
-    <td><code>?view=diff</code></td>
+    <th colspan="2" class="caption">Query Parameters</th>
+  </tr>
+  <tr>
+    <th>Parameter</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code>view=diff</code></td>
     <td>optional <a href="#view-param"><code>view</code> parameter</a>, not needed when <code>r1</code> and <code>r2</code> parameters are present</td>
   <tr>
-    <td><code>&amp;r1=<var>R1</var></code></td>
+    <td><code>r1=<var>R1</var></code></td>
     <td>optional starting revision or tag or the string "text" to indicate that <code><var>TR1</var></code> value (below) should override this one</td>
   </tr>
   <tr>
-    <td><code>&amp;r2=<var>R2</var></code></td>
+    <td><code>r2=<var>R2</var></code></td>
     <td>ending revision or tag or the string "text" to indicate that <code><var>TR2</var></code> value (below) should override this one</td>
   </tr>
   <tr>
-    <td><code>&amp;tr1=<var>TR1</var></code></td>
+    <td><code>tr1=<var>TR1</var></code></td>
     <td>starting revision or tag, only used if <var>r1</var> parameter is present and set to "text"</td>
   </tr>
   <tr>
-    <td><code>&amp;tr2=<var>TR2</var></code></td>
+    <td><code>tr2=<var>TR2</var></code></td>
     <td>ending revision or tag, only used if <var>r2</var> parameter is present and set to "text"</td>
   </tr>
   <tr>
-    <td><code>&amp;p1=<var>P1</var></code></td>
+    <td><code>p1=<var>P1</var></code></td>
     <td>optional starting file path that can override the <code><var>PATH</var></code> value to allow files at two different paths to be compared</td>
   </tr>
   <tr>
-    <td><code>&amp;p2=<var>P2</var></code></td>
+    <td><code>p2=<var>P2</var></code></td>
     <td>optional ending file path that can override the <code><var>PATH</var></code> value to allow files at two different paths to be compared</td>
   </tr>
   <tr>
-    <td><code>&amp;diff_format=<var>DIFF_FORMAT</var></code></td>
+    <td><code>diff_format=<var>DIFF_FORMAT</var></code></td>
     <td>value specifying the type of diff to display. Can be "u" for unified diff, "c" for context diff, "s" for side by side diff, "h" for human readable diff, "l" for long human readable diff. If no value is specified the default depends on the <code>diff_format</code> configuration option.
     </td>
   </tr>
   <tr>
-    <td><code>&amp;pathrev=<var>PATHREV</var></code></td>
+    <td><code>pathrev=<var>PATHREV</var></code></td>
     <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;root=<var>ROOT</var></code></td>
+    <td><code>root=<var>ROOT</var></code></td>
     <td><a href="#root-param"><code>root</code> parameter</a></td>
   </tr>
 </table>
@@ -285,7 +345,12 @@ td {
 <table>
 <thead>
   <tr>
-    <th>Fragment</th>
+    <th colspan="2" class="caption">
+      Path Components (in order of appearance in the URL)
+    </th>
+  </tr>
+  <tr>
+    <th>Component</th>
     <th>Description</th>
   </tr>
 </thead>
@@ -294,45 +359,62 @@ td {
     <td><code><var>/PATH</var></code></td>
     <td>directory path to view</td>
   </tr>
+</table>
+<br />
+<table>
+<thead>
   <tr>
-    <td><code>?view=dir</code></td>
+    <th colspan="2" class="caption">Query Parameters</th>
+  </tr>
+  <tr>
+    <th>Parameter</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code>view=dir</code></td>
     <td>optional <a href="#view-param"><code>view</code> parameter</a>, never needs to be specified since the default view for directory paths is a directory listing</td>
   </tr>
   <tr>
-    <td><code>&amp;hideattic=<var>HIDEATTIC</var></code></td>
+    <td><code>hideattic=<var>HIDEATTIC</var></code></td>
     <td>"0" to show dead files in CVS directory listings or "1" to hide dead files. Default depends on the <code>hide_attic</code> configuration value.</td>
   </tr>
   <tr>
-    <td><code>&amp;search=<var>SEARCH</var></code></td>
+    <td><code>search=<var>SEARCH</var></code></td>
     <td>regular expression to search files in the directory with if <code>use_re_search</code> configuration option is enabled</td>
   </tr>
   <tr>
-    <td><code>&amp;sortby=<var>SORTBY</var></code></td>
+    <td><code>sortby=<var>SORTBY</var></code></td>
     <td>"file" "rev" "date" "author" or "log" to indicate how the directory listing should be sorted. Default depends on <code>sortby</code> configuration option.</td>
   </tr>
   <tr>
-    <td><code>&amp;sortdir=<var>SORTBY</var></code></td>
+    <td><code>sortdir=<var>SORTBY</var></code></td>
     <td>"up" to sort directory in ascending order or "down" for descending order. Default is "up".</td>
   </tr>
   <tr>
-    <td><code>&amp;dir_pagestart=<var>PAGE</var></code></td>
+    <td><code>dir_pagestart=<var>PAGE</var></code></td>
     <td>item number to start listing at if paging is enabled</td>
   </tr>
   <tr>
-    <td><code>&amp;pathrev=<var>PATHREV</var></code></td>
+    <td><code>pathrev=<var>PATHREV</var></code></td>
     <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;root=<var>ROOT</var></code></td>
+    <td><code>root=<var>ROOT</var></code></td>
     <td><a href="#root-param"><code>root</code> parameter</a></td>
   </tr>
 </table>
 
 <h3 id="graph-view">Graph View</h3>
 <table>
-<thead>
   <tr>
-    <th>Fragment</th>
+    <th colspan="2" class="caption">
+      Path Components (in order of appearance in the URL)
+    </th>
+  </tr>
+  <tr>
+    <th>Component</th>
     <th>Description</th>
   </tr>
 </thead>
@@ -341,12 +423,25 @@ td {
     <td><code><var>/PATH</var></code></td>
     <td>file path to generate CvsGraph page for</td>
   </tr>
+</table>
+<br />
+<table>
+<thead>
   <tr>
-    <td><code>?view=graph</code></td>
+    <th colspan="2" class="caption">Query Parameters</th>
+  </tr>
+  <tr>
+    <th>Parameter</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code>view=graph</code></td>
     <td><a href="#view-param"><code>view</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;root=<var>ROOT</var></code></td>
+    <td><code>root=<var>ROOT</var></code></td>
     <td><a href="#root-param"><code>root</code> parameter</a></td>
   </tr>
 </table>
@@ -355,7 +450,12 @@ td {
 <table>
 <thead>
   <tr>
-    <th>Fragment</th>
+    <th colspan="2" class="caption">
+      Path Components (in order of appearance in the URL)
+    </th>
+  </tr>
+  <tr>
+    <th>Component</th>
     <th>Description</th>
   </tr>
 </thead>
@@ -364,12 +464,25 @@ td {
     <td><code><var>/PATH</var></code></td>
     <td>file path to generate CvsGraph image for</td>
   </tr>
+</table>
+<br />
+<table>
+<thead>
   <tr>
-    <td><code>?view=graphimg</code></td>
+    <th colspan="2" class="caption">Query Parameters</th>
+  </tr>
+  <tr>
+    <th>Parameter</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code>view=graphimg</code></td>
     <td><a href="#view-param"><code>view</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;root=<var>ROOT</var></code></td>
+    <td><code>root=<var>ROOT</var></code></td>
     <td><a href="#root-param"><code>root</code> parameter</a></td>
   </tr>
 </table>
@@ -378,7 +491,12 @@ td {
 <table>
 <thead>
   <tr>
-    <th>Fragment</th>
+    <th colspan="2" class="caption">
+      Path Components (in order of appearance in the URL)
+    </th>
+  </tr>
+  <tr>
+    <th>Component</th>
     <th>Description</th>
   </tr>
 </thead>
@@ -387,32 +505,45 @@ td {
     <td><code><var>/PATH</var></code></td>
     <td>file or directory path to generate log for</td>
   </tr>
+</table>
+<br />
+<table>
+<thead>
   <tr>
-    <td><code>?view=log</code></td>
+    <th colspan="2" class="caption">Query Parameters</th>
+  </tr>
+  <tr>
+    <th>Parameter</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code>view=log</code></td>
     <td><a href="#view-param"><code>view</code> parameter</a>, does not need to be specified for file paths when the <code>checkout_magic</code> configuration option is enabled</td>
   </tr>
   <tr>
-    <td><code>&amp;logsort=<var>SORT</var></code></td>
+    <td><code>logsort=<var>SORT</var></code></td>
     <td>"rev" to sort log entries by revision number or "date" to sort by date. Default depends on the <code>log_sort</code> configuration value.</td>
   </tr>
   <tr>
-    <td><code>&amp;log_pagestart=<var>PAGE</var></code></td>
+    <td><code>log_pagestart=<var>PAGE</var></code></td>
     <td>item number to start listing at if paging is enabled</td>
   </tr>
   <tr>
-    <td><code>&amp;r1=<var>R1</var></code></td>
+    <td><code>r1=<var>R1</var></code></td>
     <td>current revision selected for diffs</td>
   </tr>
   <tr>
-    <td><code>&amp;diff_format=<var>DIFF_FORMAT</var></code></td>
+    <td><code>diff_format=<var>DIFF_FORMAT</var></code></td>
     <td>currently selected diff format</td>
   </tr>
   <tr>
-    <td><code>&amp;pathrev=<var>PATHREV</var></code></td>
+    <td><code>pathrev=<var>PATHREV</var></code></td>
     <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;root=<var>ROOT</var></code></td>
+    <td><code>root=<var>ROOT</var></code></td>
     <td><a href="#root-param"><code>root</code> parameter</a></td>
   </tr>
 </table>
@@ -421,7 +552,12 @@ td {
 <table>
 <thead>
   <tr>
-    <th>Fragment</th>
+    <th colspan="2" class="caption">
+      Path Components (in order of appearance in the URL)
+    </th>
+  </tr>
+  <tr>
+    <th>Component</th>
     <th>Description</th>
   </tr>
 </thead>
@@ -430,19 +566,32 @@ td {
     <td><code><var>/PATH</var></code></td>
     <td>file path to mark up</td>
   </tr>
+</table>
+<br />
+<table>
+<thead>
   <tr>
-    <td><code>?view=markup</code></td>
+    <th colspan="2" class="caption">Query Parameters</th>
+  </tr>
+  <tr>
+    <th>Parameter</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code>view=markup</code></td>
     <td><a href="#view-param"><code>view</code> parameter</a></td>
   <tr>
-    <td><code>&amp;revision=<var>REV</var></code></td>
+    <td><code>revision=<var>REV</var></code></td>
     <td><a href="#rev-param"><code>rev</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;pathrev=<var>PATHREV</var></code></td>
+    <td><code>pathrev=<var>PATHREV</var></code></td>
     <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;root=<var>ROOT</var></code></td>
+    <td><code>root=<var>ROOT</var></code></td>
     <td><a href="#root-param"><code>root</code> parameter</a></td>
   </tr>
 </table>
@@ -451,7 +600,12 @@ td {
 <table>
 <thead>
   <tr>
-    <th>Fragment</th>
+    <th colspan="2" class="caption">
+      Path Components (in order of appearance in the URL)
+    </th>
+  </tr>
+  <tr>
+    <th>Component</th>
     <th>Description</th>
   </tr>
 </thead>
@@ -460,44 +614,57 @@ td {
     <td><code><var>/PATH</var></code></td>
     <td>file path to display patch of</td>
   </tr>
+</table>
+<br />
+<table>
+<thead>
   <tr>
-    <td><code>?view=patch</code></td>
+    <th colspan="2" class="caption">Query Parameters</th>
+  </tr>
+  <tr>
+    <th>Parameter</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code>view=patch</code></td>
     <td><a href="#view-param"><code>view</code> parameter</a></td>
   <tr>
-    <td><code>&amp;r1=<var>R1</var></code></td>
+    <td><code>r1=<var>R1</var></code></td>
     <td>optional starting revision or tag or the string "text" to indicate that <code><var>TR1</var></code> value (below) should override this one</td>
   </tr>
   <tr>
-    <td><code>&amp;r2=<var>R2</var></code></td>
+    <td><code>r2=<var>R2</var></code></td>
     <td>ending revision or tag or the string "text" to indicate that <code><var>TR2</var></code> value (below) should override this one</td>
   </tr>
   <tr>
-    <td><code>&amp;tr1=<var>TR1</var></code></td>
+    <td><code>tr1=<var>TR1</var></code></td>
     <td>starting revision or tag, only used if <var>r1</var> parameter is present and set to "text"</td>
   </tr>
   <tr>
-    <td><code>&amp;tr2=<var>TR2</var></code></td>
+    <td><code>tr2=<var>TR2</var></code></td>
     <td>ending revision or tag, only used if <var>r2</var> parameter is present and set to "text"</td>
   </tr>
   <tr>
-    <td><code>&amp;p1=<var>P1</var></code></td>
+    <td><code>p1=<var>P1</var></code></td>
     <td>optional starting file path that can override the <code><var>PATH</var></code> value to allow files at two different paths to be compared</td>
   </tr>
   <tr>
-    <td><code>&amp;p2=<var>P2</var></code></td>
+    <td><code>p2=<var>P2</var></code></td>
     <td>optional ending file path that can override the <code><var>PATH</var></code> value to allow files at two different paths to be compared</td>
   </tr>
   <tr>
-    <td><code>&amp;diff_format=<var>DIFF_FORMAT</var></code></td>
+    <td><code>diff_format=<var>DIFF_FORMAT</var></code></td>
     <td>value specifying the type of diff to display. Can be "u" for unified diff or "c" for context diff. If no value is specified the default depends on the <code>diff_format</code> configuration option.
     </td>
   </tr>
   <tr>
-    <td><code>&amp;pathrev=<var>PATHREV</var></code></td>
+    <td><code>pathrev=<var>PATHREV</var></code></td>
     <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;root=<var>ROOT</var></code></td>
+    <td><code>root=<var>ROOT</var></code></td>
     <td><a href="#root-param"><code>root</code> parameter</a></td>
   </tr>
 </table>
@@ -506,7 +673,12 @@ td {
 <table>
 <thead>
   <tr>
-    <th>Fragment</th>
+    <th colspan="2" class="caption">
+      Path Components (in order of appearance in the URL)
+    </th>
+  </tr>
+  <tr>
+    <th>Component</th>
     <th>Description</th>
   </tr>
 </thead>
@@ -515,64 +687,77 @@ td {
     <td><code><var>/PATH</var></code></td>
     <td>file path to display query results from</td>
   </tr>
+</table>
+<br />
+<table>
+<thead>
   <tr>
-    <td><code>?view=queryform</code></td>
+    <th colspan="2" class="caption">Query Parameters</th>
+  </tr>
+  <tr>
+    <th>Parameter</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code>view=queryform</code></td>
     <td><a href="#view-param"><code>view</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;branch=<var>BRANCH</var></code></td>
+    <td><code>branch=<var>BRANCH</var></code></td>
     <td>branch query string</td>
   </tr>
   <tr>
-    <td><code>&amp;branch_match=BRANCH_MATCH</code></td>
+    <td><code>branch_match=BRANCH_MATCH</code></td>
     <td>"exact" "like" "glob" "regex" or "notregex" determining type of branch match</td>
   </tr>
   <tr>
-    <td><code>&amp;dir=<var>DIR</var></code></td>
+    <td><code>dir=<var>DIR</var></code></td>
     <td>directory query string</td>
   </tr>
   <tr>
-    <td><code>&amp;file=<var>FILE</var></code></td>
+    <td><code>file=<var>FILE</var></code></td>
     <td>file query string</td>
   </tr>
   <tr>
-    <td><code>&amp;file_match=FILE_MATCH</code></td>
+    <td><code>file_match=FILE_MATCH</code></td>
     <td>"exact" "like" "glob" "regex" or "notregex" determining type of file match</td>
   </tr>
   <tr>
-    <td><code>&amp;who=<var>WHO</var></code></td>
+    <td><code>who=<var>WHO</var></code></td>
     <td>author query string</td>
   </tr>
   <tr>
-    <td><code>&amp;who_match=WHO_MATCH</code></td>
+    <td><code>who_match=WHO_MATCH</code></td>
     <td>"exact" "like" "glob" "regex" or "notregex" determining type of file match</td>
   </tr>
   <tr>
-    <td><code>&amp;querysort=SORT</code></td>
+    <td><code>querysort=SORT</code></td>
     <td>"date" "author" or "file" determining order of query results</td>
   </tr>
   <tr>
-    <td><code>&amp;date=DATE</code></td>
+    <td><code>date=DATE</code></td>
     <td>"hours" "day" "week" "month" "all" or "explicit" to filter query results by date</td>
   </tr>
   <tr>
-    <td><code>&amp;hours=HOURS</code></td>
+    <td><code>hours=HOURS</code></td>
     <td>number of hours back to include results from when <code><var>DATE</var></code> is "hours"</td>
   </tr>
   <tr>
-    <td><code>&amp;mindate=MINDATE</code></td>
+    <td><code>mindate=MINDATE</code></td>
     <td>earliest date to include results from when <code><var>DATE</var></code> is "explicit"</td>
   </tr>
   <tr>
-    <td><code>&amp;maxdate=MAXDATE</code></td>
+    <td><code>maxdate=MAXDATE</code></td>
     <td>latest date to include results from when <code><var>DATE</var></code> is "explicit"</td>
   </tr>
   <tr>
-    <td><code>&amp;limit_changes=LIMIT_CHANGES</code></td>
+    <td><code>limit_changes=LIMIT_CHANGES</code></td>
     <td>maximum number of files to list per commit in query results. Default is value of <code>limit_changes</code> configuration option</td>
   </tr>
   <tr>
-    <td><code>&amp;root=<var>ROOT</var></code></td>
+    <td><code>root=<var>ROOT</var></code></td>
     <td><a href="#root-param"><code>root</code> parameter</a></td>
   </tr>
 </tbody>
@@ -583,7 +768,12 @@ td {
 <table>
 <thead>
   <tr>
-    <th>Fragment</th>
+    <th colspan="2" class="caption">
+      Path Components (in order of appearance in the URL)
+    </th>
+  </tr>
+  <tr>
+    <th>Component</th>
     <th>Description</th>
   </tr>
 </thead>
@@ -592,72 +782,85 @@ td {
     <td><code><var>/PATH</var></code></td>
     <td>file path to display query results from</td>
   </tr>
+</table>
+<br />
+<table>
+<thead>
   <tr>
-    <td><code>?view=query</code></td>
+    <th colspan="2" class="caption">Query Parameters</th>
+  </tr>
+  <tr>
+    <th>Parameter</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code>view=query</code></td>
     <td><a href="#view-param"><code>view</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;branch=<var>BRANCH</var></code></td>
+    <td><code>branch=<var>BRANCH</var></code></td>
     <td>branch query string</td>
   </tr>
   <tr>
-    <td><code>&amp;branch_match=BRANCH_MATCH</code></td>
+    <td><code>branch_match=BRANCH_MATCH</code></td>
     <td>"exact" "like" "glob" "regex" or "notregex" determining type of branch match</td>
   </tr>
   <tr>
-    <td><code>&amp;dir=<var>DIR</var></code></td>
+    <td><code>dir=<var>DIR</var></code></td>
     <td>directory query string</td>
   </tr>
   <tr>
-    <td><code>&amp;file=<var>FILE</var></code></td>
+    <td><code>file=<var>FILE</var></code></td>
     <td>file query string</td>
   </tr>
   <tr>
-    <td><code>&amp;file_match=FILE_MATCH</code></td>
+    <td><code>file_match=FILE_MATCH</code></td>
     <td>"exact" "like" "glob" "regex" or "notregex" determining type of file match</td>
   </tr>
   <tr>
-    <td><code>&amp;who=<var>WHO</var></code></td>
+    <td><code>who=<var>WHO</var></code></td>
     <td>author query string</td>
   </tr>
   <tr>
-    <td><code>&amp;who_match=WHO_MATCH</code></td>
+    <td><code>who_match=WHO_MATCH</code></td>
     <td>"exact" "like" "glob" "regex" or "notregex" determining type of file match</td>
   </tr>
   <tr>
-    <td><code>&amp;querysort=SORT</code></td>
+    <td><code>querysort=SORT</code></td>
     <td>"date" "author" or "file" determining order of query results</td>
   </tr>
   <tr>
-    <td><code>&amp;date=DATE</code></td>
+    <td><code>date=DATE</code></td>
     <td>"hours" "day" "week" "month" "all" or "explicit" to filter query results by date</td>
   </tr>
   <tr>
-    <td><code>&amp;hours=HOURS</code></td>
+    <td><code>hours=HOURS</code></td>
     <td>number of hours back to include results from when <code><var>DATE</var></code> is "hours"</td>
   </tr>
   <tr>
-    <td><code>&amp;mindate=MINDATE</code></td>
+    <td><code>mindate=MINDATE</code></td>
     <td>earliest date to include results from when <code><var>DATE</var></code> is "explicit"</td>
   </tr>
   <tr>
-    <td><code>&amp;maxdate=MAXDATE</code></td>
+    <td><code>maxdate=MAXDATE</code></td>
     <td>latest date to include results from when <code><var>DATE</var></code> is "explicit"</td>
   </tr>
   <tr>
-    <td><code>&amp;format=FORMAT</code></td>
+    <td><code>format=FORMAT</code></td>
     <td>"rss" or "backout" values to generate an rss feed or list of commands to back out changes instead showing a normal query result page</td>
   </tr>
   <tr>
-    <td><code>&amp;limit=LIMIT</code></td>
+    <td><code>limit=LIMIT</code></td>
     <td>maximum number of file-revisions to process during a query. Default is value of <code>row_limit</code> configuration option</td>
   </tr>
   <tr>
-    <td><code>&amp;limit_changes=LIMIT_CHANGES</code></td>
+    <td><code>limit_changes=LIMIT_CHANGES</code></td>
     <td>maximum number of files to list per commit in query results. Default is value of <code>limit_changes</code> configuration option</td>
   </tr>
   <tr>
-    <td><code>&amp;root=<var>ROOT</var></code></td>
+    <td><code>root=<var>ROOT</var></code></td>
     <td><a href="#root-param"><code>root</code> parameter</a></td>
   </tr>
 </tbody>
@@ -667,7 +870,12 @@ td {
 <table>
 <thead>
   <tr>
-    <th>Fragment</th>
+    <th colspan="2" class="caption">
+      Path Components (in order of appearance in the URL)
+    </th>
+  </tr>
+  <tr>
+    <th>Component</th>
     <th>Description</th>
   </tr>
 </thead>
@@ -676,20 +884,33 @@ td {
     <td><code><var>/PATH</var></code></td>
     <td>file path to annotate</td>
   </tr>
+</table>
+<br />
+<table>
+<thead>
   <tr>
-    <td><code>?view=rev</code></td>
+    <th colspan="2" class="caption">Query Parameters</th>
+  </tr>
+  <tr>
+    <th>Parameter</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code>view=rev</code></td>
     <td><a href="#view-param"><code>view</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;revision=<var>REV</var></code></td>
+    <td><code>revision=<var>REV</var></code></td>
     <td><a href="#rev-param"><code>rev</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;limit_changes=LIMIT_CHANGES</code></td>
+    <td><code>limit_changes=LIMIT_CHANGES</code></td>
     <td>maximum number of files to list per commit. Default is value of <code>limit_changes</code> configuration option</td>
   </tr>
   <tr>
-    <td><code>&amp;root=<var>ROOT</var></code></td>
+    <td><code>root=<var>ROOT</var></code></td>
     <td><a href="#root-param"><code>root</code> parameter</a></td>
   </tr>
 </table>
@@ -698,13 +919,31 @@ td {
 <table>
 <thead>
   <tr>
-    <th>Fragment</th>
+    <th colspan="2" class="caption">
+      Path Components (in order of appearance in the URL)
+    </th>
+  </tr>
+  <tr>
+    <th>Component</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+</table>
+<br />
+<table>
+<thead>
+  <tr>
+    <th colspan="2" class="caption">Query Parameters</th>
+  </tr>
+  <tr>
+    <th>Parameter</th>
     <th>Description</th>
   </tr>
 </thead>
 <tbody>
   <tr>
-    <td><code>?view=roots</code></td>
+    <td><code>view=roots</code></td>
     <td><a href="#view-param"><code>view</code> parameter</a></td>
   </tr>
 </table>
@@ -713,7 +952,12 @@ td {
 <table>
 <thead>
   <tr>
-    <th>Fragment</th>
+    <th colspan="2" class="caption">
+      Path Components (in order of appearance in the URL)
+    </th>
+  </tr>
+  <tr>
+    <th>Component</th>
     <th>Description</th>
   </tr>
 </thead>
@@ -726,20 +970,33 @@ td {
     <td><code>.tar.gz</code></td>
     <td>tarball suffix</td>
   </tr>
+</table>
+<br />
+<table>
+<thead>
   <tr>
-    <td><code>?view=tar</code></td>
+    <th colspan="2" class="caption">Query Parameters</th>
+  </tr>
+  <tr>
+    <th>Parameter</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code>view=tar</code></td>
     <td><a href="#view-param"><code>view</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;parent=1</code></td>
+    <td><code>parent=1</code></td>
     <td>If <code>parent</code> parameter is included, the last component of the PATH is discarded before it ever is looked up in the repository. This feature is used when the <code>root_as_url_component</code> configuration option is disabled to allow root tarball URLs to end with names like "ROOT-root.tar.gz" which will be used by web browsers saving the tarballs.</td>
   </tr>
   <tr>
-    <td><code>&amp;pathrev=<var>PATHREV</var></code></td>
+    <td><code>pathrev=<var>PATHREV</var></code></td>
     <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>&amp;root=<var>ROOT</var></code></td>
+    <td><code>root=<var>ROOT</var></code></td>
     <td><a href="#root-param"><code>root</code> parameter</a></td>
   </tr>
 </table>
