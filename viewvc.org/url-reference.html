@@ -60,6 +60,7 @@ th.caption {
     <li><a href="#annotate-view">Annotate View</a></li>
     <li><a href="#checkout-view">Checkout View</a></li>
     <li><a href="#diff-view">Diff View</a></li>
+    <li><a href="#docroot-view">Docroot View</a></li>
     <li><a href="#directory-view">Directory Listing View</a></li>
     <li><a href="#graph-view">Graph View</a></li>
     <li><a href="#graphimg-view">Graph Image View</a></li>
@@ -73,6 +74,22 @@ th.caption {
     <li><a href="#tarball-view">Tarball Download</a></li>
   </ul>
   <li><a href="#compat">Backwards Compatibility</a></li>
+  <ul>
+    <li><a href="#compat-cvsroot">'<code>cvsroot</code>' Parameter &rArr; '<code>root</code>'</a></li>
+    <li><a href="#compat-only_with_tag>'<code>only_with_tag</code>' Parameter &rArr; '<code>pathrev</code>'</a></li>
+    <li><a href="#compat-oldcheckout">'<code>~checkout~</code>' Magic Path Prefix &rArr; '<code>*checkout*</code>'</a></li>
+    <li><a href="#compat-checkout">'<code>*checkout*</code>' Magic Path Prefix &rArr; '<code>view=co</code>'</a></li>
+    <li><a href="#compat-root">'<code>root</code>' Parameter &rArr; Root Path Component</a></li>
+    <li><a href="#compat-rev">'<code>rev</code>' Parameter &rArr; '<code>revision</code>' and '<code>pathrev</code>'</a></li>
+    <li><a href="#compat-diff">'<code>.diff</code>' Suffix &rArr; Diff View</a></li>
+    <li><a href="#compat-tgz">'<code>.tar.gz</code>' Suffix &rArr; '<code>view=tar</code>'</a></li>
+    <li><a href="#compat-tarball">'<code>tarball=1</code>' Parameter &rArr; '<code>view=tar</code>'</a></li>
+    <li><a href="#compat-graph">'<code>graph=1</code>' Parameter &rArr; '<code>view=graph</code>'</a></li>
+    <li><a href="#compat-makeimage">'<code>graph=1&makeimage=1</code>' Parameters &rArr; '<code>view=graphimg</code>'</a></li>
+    <li><a href="#compat-content_type">'<code>content_type=text/vnd.viewcvs-markup</code>' and '<code>content_type=text/x-cvsweb-markup</code>' Parameters&rArr; '<code>view=markup</code>'
+    <li><a href="#compat-attic">'<code>Attic/FILE</code>' Paths &rArr; '<code>FILE</code>'</a></li>
+  </ul>
+</div>
 </ul>
 </div>
 
@@ -194,11 +211,11 @@ th.caption {
 <tbody>
   <tr>
     <td><code>view=annotate</code></td>
-    <td><a href="#view-param"><code>view</code> parameter</a></td>
+    <td><a href="#view-param"><code>view</code> parameter</a>. Not required when an <code>annotate</code> parameter is present</td>
   </tr>
   <tr>
-    <td><code>revision=<var>REVISION</var></code></td>
-    <td><a href="#revision-param"><code>revision</code> parameter</a></td>
+    <td><code>annotate=<var>REVISION</var></code></td>
+    <td>optional revision or tag to annotate.</td>
   </tr>
   <tr>
     <td><code>pathrev=<var>PATHREV</var></code></td>
@@ -252,7 +269,7 @@ th.caption {
   </tr>
   <tr>
     <td><code>content-type=<var>TYPE</var></code></td>
-    <td>MIME type to send with checked out file</td>
+    <td>MIME type to send with checked out file, default is a guess based on file extension</td>
   </tr>
   <tr>
     <td><code>revision=<var>REVISION</var></code></td>
@@ -356,8 +373,8 @@ th.caption {
 </thead>
 <tbody>
   <tr>
-    <td><code><var>/PATH</var></code></td>
-    <td>directory path to view</td>
+    <td><code><var>/PATH/</var></code></td>
+    <td>directory path to view. if the trailing slash is omited, ViewVC will redirect to a URL with trailing slash</td>
   </tr>
 </table>
 <br />
@@ -398,12 +415,49 @@ th.caption {
   </tr>
   <tr>
     <td><code>pathrev=<var>PATHREV</var></code></td>
-    <td><a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
+    <td>optional <a href="#pathrev-param"><code>pathrev</code> parameter</a></td>
   </tr>
   <tr>
     <td><code>root=<var>ROOT</var></code></td>
-    <td><a href="#root-param"><code>root</code> parameter</a></td>
+    <td>optional <a href="#root-param"><code>root</code> parameter</a></td>
   </tr>
+</table>
+
+<h3 id="docroot-view">Docroot View</h3>
+<table>
+<thead>
+  <tr>
+    <th colspan="2" class="caption">
+      Path Components (in order of appearance in the URL)
+    </th>
+  </tr>
+  <tr>
+    <th>Component</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><code>/*docroot*</code></td>
+    <td>magic prefix</td>
+  </tr>
+  <tr>
+    <td><code><var>/PATH</var></code></td>
+    <td>file path to retrieve. ViewVC will return the contents of the file located at <code>PATH</code>, relative to the <code>docroot</code> subdirectory of the directory specified in the <code>template_dir</code> configuration option.</td>
+  </tr>
+</table>
+<br />
+<table>
+<thead>
+  <tr>
+    <th colspan="2" class="caption">Query Parameters</th>
+  </tr>
+  <tr>
+    <th>Parameter</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
 </table>
 
 <h3 id="graph-view">Graph View</h3>
@@ -968,7 +1022,7 @@ th.caption {
   </tr>
   <tr>
     <td><code>.tar.gz</code></td>
-    <td>tarball suffix</td>
+    <td>fake tarball suffix, recommended but not required unless the actual <code>PATH</code> ends in <code>.tar.gz</code></td>
   </tr>
 </table>
 <br />
@@ -1004,15 +1058,60 @@ th.caption {
 
 <div class="h2">
 <h2 id="compat">Backwards Compatibility</h2>
-<!--
-  cvsroot - root
-  only_with_tag - pathrev
-  ~checkout~ - *checkout*
-  tarball=1
-  missing .tar.gz suffix
--->
+<p>ViewVC's URL format has changed a lot over time, but ViewVC goes out of its way to support URLs using older formats so there aren't broken links when an installation of ViewVC is upgraded. The various mechanisms ViewVC uses to support old URL's are described below. In most cases when any of these mechanisms is used, the result will be a redirect to a URL using the current format.</p>
+
+<h3 id="compat-cvsroot">'<code>cvsroot</code>' Parameter &rArr; '<code>root</code>'</h3>
+<p>URLs with a <code>cvsroot</code> parameter will automatically be redirected to URLs with a <code>root</code> parameter instead.</p>
+
+<h3 id="compat-only_with_tag">'<code>only_with_tag</code>' Parameter &rArr; '<code>pathrev</code>'</h3>
+<p>URLs with an <code>only_with_tag</code> parameter will automatically be redirected to URLs with a <code>pathrev</code> parameter instead.</p>
+
+<h3 id="compat-oldcheckout">'<code>~checkout~</code>' Magic Path Prefix &rArr; '<code>*checkout*</code>'</h3>
+<p>URLs with a <code>~checkout~</code> path prefix get interpreted just like URLs with a '*checkout*' prefix. There is currently no redirect, but there could be in the future.</p>
+
+<h3 id="compat-checkout">'<code>*checkout*</code>' Magic Path Prefix &rArr; '<code>view=co</code>'</h3>
+<p>When the <code>checkout_magic</code> configuration option is disabled, URLs with a <code>*checkout*</code> magic prefix will redirect to an equivalent URL that does not use the prefix.</p>
+
+<h3 id="compat-root">'<code>root</code>' Parameter &rArr; Root Path Component</h3>
+<p>When the <code>root_as_url_component</code> configuration option is enabled, URLs with a <code>root</code> parameter will redirect to an equivalent URL with the root name embedded in the path.</p>
+
+<h3 id="compat-rev">'<code>rev</code>' Parameter &rArr; '<code>revision</code>' and '<code>pathrev</code>'</h3>
+<p>CVS URLs with a <code>rev</code> parameter will redirect to URLs with a <code>revision</code> parameter instead. Subversion URLs with a <code>rev</code> parameter will redirect to URLs with a <code>pathrev</code> parameter, in order to account for the how the Subversion backend used to look up paths before <code>pathrev</code> was introduced.</p>
+
+<h3 id="compat-diff">'<code>.diff</code>' Suffix &rArr; Diff View</h3>
+<p>When ViewVC encounters a invalid repository path that ends in <code>.diff</code>, and stripping that ending yields a valid file path, it will redirect to a diff view of the file.</p>
+
+<h3 id="compat-tgz">'<code>.tar.gz</code>' Suffix &rArr; '<code>view=tar</code>'</h3>
+<p>When ViewVC encounters a invalid repository path that ends in <code>.tar.gz</code>, <code>/root.tar.gz</code>, or <code>/REPOS-root.tar.gz</code>, and stripping the ending yields a valid directory path, it will redirect to a URL to download a tarball of the directory.</p>
+
+<h3 id="compat-tarball">'<code>tarball=1</code>' Parameter &rArr; '<code>view=tar</code>'</h3>
+<p>A <code>tarball=1</code> parameter is treated pretty much like a <code>view=tar</code> parameter. There is no redirect when it is encountered, but there could be in the future.</p>
+
+<h3 id="compat-graph">'<code>graph=1</code>' Parameter &rArr; '<code>view=graph</code>'</h3>
+<p>A <code>graph=1</code> parameter is treated like a <code>view=graph</code> parameter. There is currently no redirect when it is encountered, but there could be one in the future.</p>
+
+<h3 id="compat-makeimage">'<code>graph=1&amp;makeimage=1</code>' Parameters &rArr; '<code>view=graphimg</code>'</h3>
+<p>A <code>graph=1&amp;makeimage=1</code> parameter is treated like a <code>view=graph</code> parameter. There is currently no redirect when it is encountered, but there could be one in the future.</p>
+
+<h3 id="compat-content_type">'<code>content_type=text/vnd.viewcvs-markup</code>' and '<code>content_type=text/x-cvsweb-markup</code>' Parameters&rArr; '<code>view=markup</code>'</h3>
+<p><code>content_type=text/vnd.viewcvs-markup</code> and <code>content_type=text/x-cvsweb-markup</code> parameters are treated like a <code>view=markup</code> parameter. There is currently no redirect when it is encountered, but there could be one in the future.</p>
+
+<h3 id="compat-attic">'<code>Attic/FILE</code>' Paths &rArr; '<code>FILE</code>'</h3>
+<p>When ViewVC encounters an invalid repository path whose last or second-to-last component is named <code>Attic</code>, and stripping the component yields a valid path, it will redirect to a URL with that path.</p>
 </div>
 
+<!--
+
+TODO:
+
+Maybe say something about *docroot* in the URL Components section
+since it is different than the other URLs types described there.
+
+Should we document "root=*viewroots*" and "view=redirect_pathrev"?
+These URLs are used internally to handle form submissions and are
+just redirects to normal URLs.
+
+-->
 
 </body>
 </html>
