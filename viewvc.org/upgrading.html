@@ -100,19 +100,19 @@
    is also possible to enable a backwards compatibility mode by
    setting <code>utc_time = 0</code> at the top of lib/dbi.py</p>
 
-<h3>URL Compatibility</h3>
+<h3>"checkout_magic" Option</h3>
 
-<p>In it's default configuration ViewVC 1.0 will continue to work with
-   bookmarks and links from old versions of ViewVC, ViewCVS, and
-   CVSWeb. But if you change options that affect the URL scheme, this
-   may no longer hold true. In particular, if you enable the
-   <var>root_as_url_component</var> option, old viewcvs URLs that
-   don't specify an explicit root with the <var>root</var> parameter
-   will not work. Likewise, if you disable the
-   <var>checkout_magic</var> option, old URLs that that pointed to log
-   pages and don't have explicit <var>view=log</var> parameters will
-   load checkout pages instead.
-</p>
+<p>In ViewVC 1.0, the <code>checkout_magic</code> option has been
+   disabled by default to provide a simpler URL scheme that works
+   safely with URL authorization. Most users will not notice any
+   difference in behavior, but users who had been using ViewCVS to
+   browse the contents of static HTML pages stored in a repository
+   may notice that links and images in those pages targetted at other
+   files in the repository no longer display correctly. The new
+   <code>default_file_view</code> option can be used to solve this
+   problem and, if neccessary, <code>checkout_magic</code> can also
+   be re-enabled. The <code>viewcvs.conf</code> file describes these
+   options in detail.</p>
 
 <h3>Configuration Options</h3>
 
@@ -128,6 +128,7 @@
   <li>options/http_expiration_time</li>
   <li>options/generate_etags</li>
   <li>options/root_as_url_component</li>
+  <li>options/default_file_view</li>
   <li>options/sort_group_dirs</li>
   <li>options/use_pagesize</li>
   <li>options/limit_changes</li>

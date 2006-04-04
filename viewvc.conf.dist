@@ -256,26 +256,31 @@ languages = en-us
 
 #---------------------------------------------------------------------------
 [options]
-### DOC
 
 # root_as_url_component: Interpret the first path component in the URL
 # after the script location as the root to use.  This is an
 # alternative to using the "root=" query key. If ViewVC is configured
 # with multiple repositories, this results in more natural looking
-# ViewVC URLs and allows you to browse checked out HTML files with 
-# relative links to other repository files within ViewVC.
+# ViewVC URLs.
 # Note: Enabling this option will break backwards compatibility with
-# any old ViewVC URL which doesn't have an explicit "root" parameter.
+# any old ViewCVS URL which doesn't have an explicit "root" parameter.
 root_as_url_component = 0
 
-# checkout_magic: Generate checkout links with a magic *checkout* prefix.
-# This option is enabled for backwards compatibility with URLs used by old
-# versions of ViewVC. If you disable it, old *checkout* URLs will continue
-# to work, but old log page urls which don't have explicit "view=log" 
-# parameters will load checkout pages instead. It is recommended that you
-# disable this option in a fresh viewvc installation, or if you don't need
-# to support old-style log URLs. 
-checkout_magic = 1
+# default_file_view: "log" or "co"
+# Controls whether the default view for file URLs is a checkout view or
+# a log view. "log" is the default for backwards compatibility with old
+# ViewCVS URLs, but "co" has the advantage that it allows ViewVC to serve
+# static HTML pages directly from a repository with working links
+# to other repository files
+# Note: Changing this option may cause old ViewCVS URLs that referred
+# to log pages to load checkout pages instead.
+default_file_view = log
+
+# checkout_magic: Use checkout links with magic /*checkout*/ prefixes so
+# checked out HTML pages can have working links to other repository files
+# Note: This option is DEPRECATED and should not be used in new ViewVC
+# installations. Setting "default_file_view = co" achieves the same effect
+checkout_magic = 0
 
 # http_expiration_time: Expiration time (in seconds) for cacheable
 # pages served by ViewVC.  Note that in most cases, a cache aware

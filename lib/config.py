@@ -179,6 +179,8 @@ class Config:
     self.cvsdb.rss_row_limit = 100
 
     self.options.root_as_url_component = 0
+    self.options.default_file_view = "log"
+    self.options.checkout_magic = 0
     self.options.sort_by = 'file'
     self.options.sort_group_dirs = 1
     self.options.hide_attic = 1
@@ -193,7 +195,6 @@ class Config:
     self.options.allow_annotate = 1
     self.options.allow_markup = 1
     self.options.allow_compress = 1
-    self.options.checkout_magic = 1
     self.options.template_dir = "templates"
     self.options.docroot = None
     self.options.show_subdir_lastmod = 0

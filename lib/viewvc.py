@@ -353,16 +353,13 @@ class Request:
           else: 
             self.view_func = view_cvsgraph_image
         elif self.query_dict.has_key('revision') \
-                 or not cfg.options.checkout_magic:
-          # if checkout_magic is disabled the default view is view_checkout
-          # so relative links inside checked out files will work
+                 or cfg.options.default_file_view != "log":
           if self.query_dict.get('content-type', None) in (viewcvs_mime_type,
                                                            alt_mime_type):
             self.view_func = view_markup
           else:
             self.view_func = view_checkout
         else:
-          # without checkout_magic, the default view for files is view_log
           self.view_func = view_log
 
     # if we have a directory and the request didn't end in "/", then redirect
@@ -454,13 +451,9 @@ class Request:
 
     url = self.script_name
 
-    # no need to explicitly specify checkout view for a file
-    if view_func is view_checkout and pathtype == vclib.FILE:
-      view_func = None
-
-      # add checkout magic if neccessary
-      if cfg.options.checkout_magic: 
-        url = url + '/' + checkout_magic_path
+    # add checkout magic if neccessary
+    if view_func is view_checkout and cfg.options.checkout_magic:
+      url = url + '/' + checkout_magic_path
 
     # add root to url
     rootname = None
@@ -535,6 +528,14 @@ class Request:
     if (view_func is view_diff and params.get('r1') is not None
         and params.get('r2') is not None):
       view_func = None
+
+    # no need to explicitly specify checkout view when it's the default
+    # view, when checkout_magic is enabled, or when "revision" is present
+    if view_func is view_checkout:
+      if ((cfg.options.default_file_view != "log" and pathtype == vclib.FILE)
+          or cfg.options.checkout_magic
+          or params.get('revision') is not None):
+        view_func = None
 
     view_code = _view_codes.get(view_func)
     if view_code and not (params.has_key('view') and params['view'] is None):
