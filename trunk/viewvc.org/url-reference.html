@@ -282,7 +282,7 @@ th.caption {
   <tr>
     <td><code>view=co</code></td>
     <td>depends</td>
-    <td><a href="#view-param"><code>view</code> parameter</a>, not needed if the <code>checkout_magic</code> configuration variable is disabled since that makes the checkout view the default view for file paths. Also not needed if the <code>/*checkout*</code> magic prefix or the <code>revision</code> parameter is present.
+    <td><a href="#view-param"><code>view</code> parameter</a>, not needed if the <code>default_file_view</code> configuration variable is set to <code>co</code>, since that makes the checkout view the default view for file paths. Also not needed if the <code>/*checkout*</code> magic prefix or the <code>revision</code> parameter is present.
   </tr>
   <tr>
     <td><code>content-type=<var>TYPE</var></code></td>
@@ -637,7 +637,7 @@ th.caption {
   <tr>
     <td><code>view=log</code></td>
     <td>depends</td>
-    <td><a href="#view-param"><code>view</code> parameter</a>, does not need to be specified for file paths when the <code>checkout_magic</code> configuration option is enabled</td>
+    <td><a href="#view-param"><code>view</code> parameter</a>, does not need to be specified for file paths when the <code>default_file_view</code> configuration option is set to <code>log</code>. However it is recommended that the parameter be passed anyway for consistency with directory log URLs and compatibility with ViewVC installations that set <code>default_file_view</code> to <code>co</code>.</td>
   </tr>
   <tr>
     <td><code>logsort=<var>SORT</var></code></td>

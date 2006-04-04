@@ -30,13 +30,10 @@ Version 1.0 (not yet released)
     port (2005-Dec-22)
   * make "default_root" option optional. When no root is specified,
     show a page listing all available repositories (2005-Feb-04)
-  * make "checkout_magic" obsolete (but still enabled by default for
-    URL compatibility with old versions of ViewCVS). When disabled,
-    bare file URLs (with no query parameters) will return checked
-    out file contents instead of log listings. That way, checkout
-    URLs no longer need magic /*checkout*/ strings in them for 
-    relative links and image paths in checked out HTML files to work
-    (2005-Feb-13)
+  * add "default_file_view" option to make it possible for relative
+    links and image paths in checked out HTML files to work without
+    the need for special /*checkout*/ prefixes in URLs. Deprecate
+    "checkout_magic" option and disable by default (2006-Apr-03)
   * hide CVS "Attic" directories and add simple toggle for showing
     dead files in directory listings (2004-Jul-31)
   * show Unified, Context and Side-by-side diffs in HTML instead of
