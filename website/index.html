@@ -1,0 +1,305 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>ViewCVS: Viewing CVS Repositories</title>
+  </head>
+<!-- Editors: Please keep all links to external sites in italics. -->
+<body background="images/chalk.jpg">
+  <table width="100&#37;" cellspacing=5>
+    <tr>
+      <td width="1%"><img border=0 src="images/logo.png"></td>
+      <td>
+	<h1>ViewCVS: Viewing CVS Repositories</h1>
+      </td>
+      <td align=center valign=top bgcolor="white" width="1%">
+	<b>Quickstart:</b>
+	<a href="viewcvs-0.9.4.tar.gz">download</a>
+      </td>
+      <td width="1%"><a href="http://sourceforge.net/"><img border=0
+	    src="http://sourceforge.net/sflogo.php?group_id=18760&type=1"></a><br><a href="http://sourceforge.net/projects/viewcvs/">ViewCVS&nbsp;project&nbsp;page</a>
+      </td>
+    </tr>
+    <tr><td width="1%" valign=top>
+     <h3>Links:</h3>
+      <a href="http://viewcvs.sourceforge.net">Home</a><br>
+      <a href="upgrading.html">Upgrading</a><br>
+      <a href="contributing.html">Contributing</a><br>
+      <a href="license-1.html">License</a><br>
+      <a href="who.html">Who</a><br>
+     <h3>Sections:</h3>
+      <a href="#Features">Features</a><br>
+      <a href="#History">History</a><br>
+      <a href="#Mail">Mailing Lists</a><br>
+      <a href="#Cvsweb">vs.&nbsp;cvsweb</a><br>
+      <a href="#Download">Download</a><br>
+      <a href="#Future">Future&nbsp;directions</a><br>
+      <a href="#Colorize">Colorization</a><br>
+    </td>
+    <td colspan=3>
+
+    <hr width="75&#37;">
+    <h2><a name="Features">Features</a></h2>
+    <p>
+      ViewCVS can browse directories, change logs, and specific
+      revisions of files. It can display diffs between versions and
+      show selections of files based on tags or branches. In addition,
+      ViewCVS has "annotation" or "blame" support, Bonsai-like query
+      facilities, template-based page generation, and support for
+      individually configuring virtual hosts.
+
+      It also includes support for
+      <a href="http://www.akhphd.au.dk/~bertho/cvsgraph/"><i>CvsGraph</i></a>
+      -- a program to display the tree of revisions and branches
+      graphically.
+    </p>
+    <p>
+      Currently, the functionality of ViewCVS surpasses that of cvsweb.
+      See <a href="#Cvsweb">below</a> for a list of additional features.
+    </p>
+
+    <hr width="75&#37;">
+    <h2><a name="History">History</a></h2>
+    <p>
+      The ViewCVS software was inspired by
+      <a href="http://stud.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi/"><i>cvsweb</i></a>
+      (originally written by Bill Fenner and then further developed by 
+      <a href="mailto:zeller@think.de">Henner Zeller</a>).
+      Greg Stein wanted to make some changes and updates, but cvsweb was
+      implemented in Perl. He wrote: 
+      <blockquote><i>While I can manage some Perl, cvsweb was
+	 rather unmaintainable for me. So I undertook the 
+	 task to convert the software to
+	 <a href="http://www.python.org/">Python</a>. As a result, 
+	 I've actually been able to go <em>way</em> beyond the simple
+	 changes that I had envisioned.
+      </i></blockquote>
+    </p>
+    <p>
+      ViewCVS started as a port of the cvsweb script, but has had
+      numerous cleanups and other modifications, based on some of
+      Python's strengths. There is still some minor "badness"
+      remaining from the Perl code, but Greg has been working on
+      flushing that out, while adding new features.
+    </p>
+    <p>
+      ViewCVS has been developed by the <a href="who.html">ViewCVS
+	Group</a> and is made available under a
+      <a href="license-1.html">BSD-type license</a>.
+    </p>
+
+    <p>
+      ViewCVS requires <strong>Python 1.5</strong> or later (Python
+      1.5 has been out for a couple years and is readily available for 
+      your favorite operating system). If you choose to use the SQL Checkin 
+      Database feature, then you must use <strong>Python 1.5.2</strong> 
+      or later and have the
+      <a href="http://sourceforge.net/projects/mysql-python"><i>MySQLdb
+	  module</i></a> installed which itself requires 
+      Marc-Andre Lemburgs 
+      <a href="http://www.lemburg.com/files/python/eGenix-mx-Extensions.html#Download-mxBASE"><i>mxDateTime extension</i></a>.
+    </p>
+
+    <hr width="75&#37;">
+    <h2><a name="Mail">Mailing Lists</a></h2>
+    <p>
+      If you have any comments, questions, or suggestions,
+      then please send them to the
+      <a href="http://mailman.lyra.org/mailman/listinfo/viewcvs"><i>ViewCVS
+	mailing list</i></a>, which is also 
+      <a href="http://mailman.lyra.org/pipermail/viewcvs/"><i>archived</i></a>. 
+    </p>
+    <p>
+      A <a href="http://mailman.lyra.org/mailman/listinfo/viewcvs-dev"><i>mailing
+	list for ViewCVS developers</i></a> is also available 
+      (<a href="http://mailman.lyra.org/pipermail/viewcvs-dev/"><i>Archive</i></a>). 
+    </p>
+    <p>
+      ViewCVS is an <a href="http://www.opensource.org/"><i>Open
+      Source</i></a> project, and all
+      <a href="contributing.html">contributions</a> are welcome.
+    </p>
+
+    <hr width="75&#37;">
+    <h2><a name="Cvsweb">Additional features over cvsweb</a></h2>
+
+    <ul>
+      <li>
+        Template support: you can now customize the look and feel of
+        ViewCVS by editing the provided EZT templates, which are used
+        to generate the pages.
+      </li>
+      <li>
+        Internationalization support: ViewCVS will parse and handle
+        the Accept-Language request header, and can select different
+        inputs for localized page generation.
+      </li>
+      <li>
+	Colorization for many file types via <code>enscript</code>.
+      </li>
+      <li>
+	Bonsai-like query features. (Requires MySQL and some other
+	prerequisites)
+      </li>
+      <li>
+	Annotation/blame viewing support against a <strong>read-only</strong>
+	repository.
+      </li>
+      <li>
+	Configuration on a per-virtual-host basis. This allows you
+	to share the configuration file and ViewCVS installation
+	across virtual hosts, yet still be able to fine-tune the
+	options when necessary.
+      </li>
+      <li>
+        Automatic generation of tarballs for the HEAD or a specified
+        tag.
+      </li>
+      <li>
+	Runs either as CGI script, called from an installed web server
+	(such as <a href="http://httpd.apache.org/"><i>Apache</i></a>),
+	or as a standalone server.
+      </li>
+      <li>
+        Searching files for matches for a regular expression.
+      </li>
+      <li>Better reporting for unreadable files.</li>
+      <li>
+	More robust when given varying <code>rcsdiff</code> or
+	<code>rlog</code> outputs.
+      </li>
+      <li>Hard breaks in human-readable diffs.</li>
+      <li>
+	The configuration file is optional (you can change the values
+	right in the CGI script and avoid the config file, if you so
+	choose). The config file syntax is also cleaner, since it is
+	human-manageable rather than source code.
+      </li>
+      <li>
+	Directories with a large number of files can be viewed.
+      </li>
+      <li>
+	<strong>Security</strong>: ViewCVS only requires read access
+	to the CVS repository (not read/write). With the correct
+	security partitioning, this means that even if ViewCVS were to 
+	be subverted, your source code is safe. Further, ViewCVS does
+	not use any <code>system()</code> or <code>popen()</code>
+	calls, which are very susceptible to abuse.
+	<br>
+	<small>(cvsweb had a hole due to a popen() call)</small>
+      </li>
+      <li>
+        Last but not least: it doesn't suffer from the "unmaintainable
+	code effect" that hits most Perl projects sooner or later:  
+	<blockquote><i>[Perl] combines all the worst aspects of C and Lisp: 
+	  a billion different sublanguages in one monolithic executable.  
+	  It combines the power of C with the readability of PostScript.</i>
+					       --&nbsp;Jamie&nbsp;Zawinski
+         </blockquote>
+       </li>
+    </ul>
+    
+    <p>
+      The changes present in each release are available in
+      <a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/viewcvs/viewcvs/CHANGES?rev=HEAD">ViewCVS's
+      CHANGES file</a>.
+    </p>
+
+    <hr width="75&#37;">
+    <h2><a name="Download">Download</a></h2>
+    <p>
+      The software is available for download:
+    </p>
+    <blockquote>
+      <a href="viewcvs-0.9.4.tar.gz">Version 0.9.4 of ViewCVS as a gzipped
+      tar</a>
+      <br>
+      <a href="viewcvs-0.9.4.zip">Version 0.9.4 of ViewCVS as a ZIP
+      file</a>
+    </blockquote>
+    <p>
+      Of course the current development version is also available 
+      through ViewCVS itself:
+    </p>
+    <blockquote>
+      <a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/viewcvs/">http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/viewcvs/</a>
+    </blockquote>
+
+    <p>
+      You can also
+      <a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/viewcvs/viewcvs/CHANGES?rev=HEAD">see
+      the changes</a> for this release.
+    </p>
+
+    <hr width="75&#37;">
+    <h2><a name="Future">Future features, directions</a></h2>
+    <p>
+    ViewCVS is a Open Source project.  So any future development depends
+    on the contributions that will be made by its user community.  
+    Certainly working patches have a greater chance to become realized 
+    quickly than feature requests.  <i>But don't hesitate to submit your
+	suggestions! Send mail to the
+	  <a href="mailto:viewcvs@lyra.org">viewcvs@lyra.org</a>
+	  mailing list or even better use the 
+	  <a href="http://sourceforge.net/tracker/?func=add&group_id=18760&atid=368760">SF&nbsp;tracker</a>.
+	</i>
+    </p>
+    <ul>
+      <li>See the feature requests already submitted through
+        the <a href="http://sourceforge.net/tracker/?atid=368760&group_id=18760&func=browse">SF feature request tracker</a>
+      </li>
+      <li>UI streamlining/simplification</li>
+      <li>Integration with CVS checkin auto-mail scripts</li>
+      <li>Tighter integration with the query features</li>
+     <p>
+    </ul>
+
+    <p>
+      And another longer term pet of Greg Stein:
+    </p>
+    <ul>
+      <li>Integration with an indexer such as LXR</li>
+    </ul>
+    </p>
+
+    <hr width="75&#37;">
+    <h2><a name="Colorize">Colorization of files</a></h2>
+    <p>
+      ViewCVS can make use of the <code>enscript</code> program to
+      colorize files in the CVS repository. If <code>enscript</code>
+      is present on your system, then set the
+      <code>use_enscript</code> option in the
+      <code>viewcvs.conf</code> configuration file to <code>1</code>. 
+      If necessary,
+      update the <code>enscript_path</code> option to point to your
+      installation directory. ... That's it! Now, as you view files
+      through ViewCVS, they will be colored.
+    </p>
+
+    <h3>Colorization of Python files</h3>
+    <p>
+      ViewCVS currently also comes with a builtin colorizer for Python
+      source files. This may go away in a future version, given the new
+      <code>enscript</code> support...
+    </p>
+    <p>
+      Christophe Pelte suggested this feature: colorize Python source
+      files using
+      <a href="http://starship.python.net/crew/lemburg/SoftwareDescriptions.html#py2html.py"><i>py2html</i></a>
+      (by Marc-Andrew Lemburg, based on
+      <a href="http://starship.python.net/crew/just/code/PyFontify.py"><i>PyFontify</i></a>
+      by Just van Rossum). I've added this feature to ViewCVS 0.3,
+      along with a generalized plugin mechanism for custom coloring other
+      types of files. See the instructions within the viewcvs.cgi for
+      setting the <code>py2html_path</code> configuration variable if
+      you want to use this feature.
+    </p>
+
+  </td></tr></table>
+  <hr>
+  <address><a href="mailto:viewcvs@lyra.org">ViewCVS Users Group</a></address>
+<!-- Created: Fri Dec  3 02:51:37 PST 1999 -->
+<!-- hhmts start -->
+Last modified: Tue Jan 15 01:51:03 PST 2002
+<!-- hhmts end -->
+  </body>
+</html>

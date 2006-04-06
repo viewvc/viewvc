@@ -1,33 +1,47 @@
-#!/usr/bin/env python
-# -*-python-*-
+#!/usr/bin/python
+# -*- Mode: python -*-
 #
-# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 2000 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
-# the LICENSE.html file which can be found at the top level of the ViewVC
-# distribution or at http://viewvc.org/license-1.html.
+# the LICENSE.html file which can be found at the top level of the ViewCVS
+# distribution or at http://www.lyra.org/viewcvs/license-1.html.
 #
-# For more information, visit http://viewvc.org/
+# Contact information:
+#   Greg Stein, PO Box 760, Palo Alto, CA, 94302
+#   gstein@lyra.org, http://www.lyra.org/viewcvs/
 #
 # -----------------------------------------------------------------------
 #
 # CGI script to process and display queries to CVSdb
 #
-# This script is part of the ViewVC package. More information can be
-# found at http://viewvc.org
+# This script is part of the ViewCVS package. More information can be
+# found at http://www.lyra.org/viewcvs/.
 #
 # -----------------------------------------------------------------------
+#
+
+#########################################################################
+#
+# INSTALL-TIME CONFIGURATION
+#
+# These values will be set during the installation process. During
+# development, they will remain None.
+#
+
+CONF_PATHNAME = None
+
+#########################################################################
 
 import os
 import sys
 import string
+import cgi
 import time
 
 import cvsdb
-import viewvc
+import viewcvs
 import ezt
-import debug
-import urllib
 
 class FormData:
     def __init__(self, form):
@@ -263,23 +277,22 @@ def form_to_cvsdb_query(form_data):
             
     return query
 
-def prev_rev(rev):
-    '''Returns a string representing the previous revision of the argument.'''
-    r = string.split(rev, '.')
-    # decrement final revision component
-    r[-1] = str(int(r[-1]) - 1)
-    # prune if we pass the beginning of the branch
-    if len(r) > 2 and r[-1] == '0':
-        r = r[:-2]
-    return string.join(r, '.')
+def cvsroot_name_from_path(cvsroot):
+    ## we need to resolve the cvsroot path from the database
+    ## to the name given to it in the viewcvs.conf file
+    for key, value in cfg.general.cvs_roots.items():
+        if value == cvsroot:
+            return key
 
-def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
+    return None
+
+def build_commit(desc, files):
     ob = _item(num_files=len(files), files=[])
     
     if desc:
-        ob.log = string.replace(server.escape(desc), '\n', '<br />')
+        ob.desc = string.replace(cgi.escape(desc), '\n', '<br>')
     else:
-        ob.log = '&nbsp;'
+        ob.desc = '&nbsp;'
 
     for commit in files:
         dir_parts = filter(None, string.split(commit.GetDirectory(), '/'))
@@ -287,38 +300,25 @@ def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
                and ((dir_parts[0] == 'CVSROOT' and cfg.options.hide_cvsroot) \
                     or cfg.is_forbidden(dir_parts[0])):
             continue
-
+        
         ctime = commit.GetTime()
         if not ctime:
-            ctime = "&nbsp;"
+            ctime = "&nbsp";
         else:
-          if (cfg.options.use_localtime):
-            ctime = time.strftime("%y/%m/%d %H:%M %Z", time.localtime(ctime))
-          else:
-            ctime = time.strftime("%y/%m/%d %H:%M", time.gmtime(ctime)) \
-                  + ' UTC'
-        
+            ctime = time.strftime("%y/%m/%d %H:%M", time.localtime(ctime))
+
         ## make the file link
-        repository = commit.GetRepository()
-        directory = commit.GetDirectory()
-        file = (directory and directory + "/") + commit.GetFile()
-        cvsroot_name = cvsroots.get(repository)
+        file = os.path.join(commit.GetDirectory(), commit.GetFile())
+        file_full_path = os.path.join(commit.GetRepository(), file)
 
         ## if we couldn't find the cvsroot path configured in the 
-        ## viewvc.conf file, then don't make the link
+        ## viewcvs.conf file, then don't make the link
+        cvsroot_name = cvsroot_name_from_path(commit.GetRepository())
         if cvsroot_name:
-            flink = '[%s] <a href="%s/%s?root=%s">%s</a>' % (
-                    cvsroot_name, viewvc_link, urllib.quote(file),
-                    cvsroot_name, file)
-            if commit.GetType() == commit.CHANGE:
-                dlink = '%s/%s?root=%s&amp;view=diff&amp;r1=%s&amp;r2=%s' % (
-                    viewvc_link, urllib.quote(file), cvsroot_name,
-                    prev_rev(commit.GetRevision()), commit.GetRevision())
-            else:
-                dlink = None
+            flink = '<a href="viewcvs.cgi/%s?cvsroot=%s">%s</a>' \
+                    % (file, cvsroot_name, file_full_path)
         else:
-            flink = '[%s] %s' % (repository, file)
-            dlink = None
+            flink = file_full_path
 
         ob.files.append(_item(date=ctime,
                               author=commit.GetAuthor(),
@@ -327,15 +327,13 @@ def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
                               branch=commit.GetBranch(),
                               plus=int(commit.GetPlusCount()),
                               minus=int(commit.GetMinusCount()),
-                              type=commit.GetTypeString(),
-                              difflink=dlink,
                               ))
 
     return ob
 
-def run_query(server, cfg, form_data, viewvc_link):
+def run_query(form_data):
     query = form_to_cvsdb_query(form_data)
-    db = cvsdb.ConnectDatabaseReadOnly(cfg)
+    db = cvsdb.ConnectDatabaseReadOnly()
     db.RunQuery(query)
 
     if not query.commit_list:
@@ -344,11 +342,6 @@ def run_query(server, cfg, form_data, viewvc_link):
     commits = [ ]
     files = [ ]
 
-    cvsroots = {}
-    rootitems = cfg.general.cvs_roots.items() + cfg.general.svn_roots.items()
-    for key, value in rootitems:
-        cvsroots[cvsdb.CleanRepository(value)] = key
-
     current_desc = query.commit_list[0].GetDescription()
     for commit in query.commit_list:
         desc = commit.GetDescription()
@@ -356,46 +349,44 @@ def run_query(server, cfg, form_data, viewvc_link):
             files.append(commit)
             continue
 
-        commits.append(build_commit(server, cfg, current_desc, files,
-                                    cvsroots, viewvc_link))
+        commits.append(build_commit(current_desc, files))
 
         files = [ commit ]
         current_desc = desc
 
     ## add the last file group to the commit list
-    commits.append(build_commit(server, cfg, current_desc, files,
-                                cvsroots, viewvc_link))
+    commits.append(build_commit(current_desc, files))
 
     return commits
 
-def main(server, cfg, viewvc_link):
-  try:
+def handle_config():
+    viewcvs.handle_config()
+    global cfg
+    cfg = viewcvs.cfg
 
-    form = server.FieldStorage()
+def main():
+    handle_config()
+    
+    form = cgi.FieldStorage()
     form_data = FormData(form)
 
     if form_data.valid:
-        commits = run_query(server, cfg, form_data, viewvc_link)
+        commits = run_query(form_data)
         query = None
     else:
         commits = [ ]
         query = 'skipped'
 
-    script_name = server.getenv('SCRIPT_NAME', '')
-
     data = {
       'cfg' : cfg,
       'address' : cfg.general.address,
-      'vsn' : viewvc.__version__,
+      'vsn' : viewcvs.__version__,
 
-      'repository' : server.escape(form_data.repository, 1),
-      'branch' : server.escape(form_data.branch, 1),
-      'directory' : server.escape(form_data.directory, 1),
-      'file' : server.escape(form_data.file, 1),
-      'who' : server.escape(form_data.who, 1),
-      'docroot' : cfg.options.docroot is None \
-                  and viewvc_link + '/' + viewvc.docroot_magic_path \
-                  or cfg.options.docroot,
+      'repository' : cgi.escape(form_data.repository, 1),
+      'branch' : cgi.escape(form_data.branch, 1),
+      'directory' : cgi.escape(form_data.directory, 1),
+      'file' : cgi.escape(form_data.file, 1),
+      'who' : cgi.escape(form_data.who, 1),
 
       'sortby' : form_data.sortby,
       'date' : form_data.date,
@@ -410,18 +401,36 @@ def main(server, cfg, viewvc_link):
     else:
       data['hours'] = 2
 
-    server.header()
+    template = ezt.Template()
+    template.parse_file(os.path.join(viewcvs.g_install_dir,
+                                     cfg.templates.query))
+
+    viewcvs.http_header()
 
     # generate the page
-    template = viewvc.get_view_template(cfg, "query")
     template.generate(sys.stdout, data)
 
+def run_cgi():
+
+  ### be nice to share all this logic with viewcvs.run_cgi
+
+  try:
+    main()
   except SystemExit, e:
-    pass
+    # don't catch SystemExit (caused by sys.exit()). propagate the exit code
+    sys.exit(e[0])
   except:
-    exc_info = debug.GetExceptionData()
-    server.header(status=exc_info['status'])
-    debug.PrintException(server, exc_info) 
+    info = sys.exc_info()
+    viewcvs.http_header()
+    print '<html><head><title>Python Exception Occurred</title></head>'
+    print '<body bgcolor=white><h1>Python Exception Occurred</h1>'
+    import traceback
+    lines = apply(traceback.format_exception, info)
+    print '<pre>'
+    print cgi.escape(string.join(lines, ''))
+    print '</pre>'
+    viewcvs.html_footer()
+
 
 class _item:
   def __init__(self, **kw):

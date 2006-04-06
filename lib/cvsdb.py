@@ -1,24 +1,50 @@
-# -*-python-*-
+# -*- Mode: python -*-
 #
-# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 2000 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
-# the LICENSE.html file which can be found at the top level of the ViewVC
-# distribution or at http://viewvc.org/license-1.html.
+# the LICENSE.html file which can be found at the top level of the ViewCVS
+# distribution or at http://www.lyra.org/viewcvs/license-1.html.
 #
-# For more information, visit http://viewvc.org/
+# Contact information:
+#   Greg Stein, PO Box 760, Palo Alto, CA, 94302
+#   gstein@lyra.org, http://www.lyra.org/viewcvs/
 #
 # -----------------------------------------------------------------------
+#
+
+#########################################################################
+#
+# INSTALL-TIME CONFIGURATION
+#
+# These values will be set during the installation process. During
+# development, they will remain None.
+#
+
+CONF_PATHNAME = None
+
+#########################################################################
 
 import os
 import sys
 import string
 import time
-import fnmatch
-import re
 
+import config
 import dbi
+import rlog
 
+
+## load configuration file, the data is used globally here
+if CONF_PATHNAME:
+  _cfg_pathname = CONF_PATHNAME
+else:
+  # developer assistance: running from a CVS working copy
+  _cfg_pathname = os.path.join(os.path.dirname(__file__), os.pardir, 'cgi',
+                               'viewcvs.conf')
+cfg = config.Config()
+cfg.set_defaults()
+cfg.load_config(_cfg_pathname)
 
 ## error
 error = "cvsdb error"
@@ -34,13 +60,11 @@ gCheckinDatabaseReadOnly = None
 ## complient database interface
 
 class CheckinDatabase:
-    def __init__(self, host, port, user, passwd, database, row_limit):
+    def __init__(self, host, user, passwd, database):
         self._host = host
-        self._port = port
         self._user = user
         self._passwd = passwd
         self._database = database
-        self._row_limit = row_limit
 
         ## database lookup caches
         self._get_cache = {}
@@ -49,7 +73,7 @@ class CheckinDatabase:
 
     def Connect(self):
         self.db = dbi.connect(
-            self._host, self._port, self._user, self._passwd, self._database)
+            self._host, self._user, self._passwd, self._database)
 
     def sql_get_id(self, table, column, value, auto_set):
         sql = "SELECT id FROM %s WHERE %s=%%s" % (table, column)
@@ -240,7 +264,14 @@ class CheckinDatabase:
             self.AddCommit(commit)
 
     def AddCommit(self, commit):
-        ci_when = dbi.DateTimeFromTicks(commit.GetTime())
+        ## MORE TIME HELL: the MySQLdb module doesn't construct times
+        ## correctly when created with TimestampFromTicks -- it doesn't
+        ## account for daylight savings time, so we use Python's time
+        ## module to do the conversion
+        temp = time.localtime(commit.GetTime())
+        ci_when = dbi.Timestamp(
+            temp[0], temp[1], temp[2], temp[3], temp[4], temp[5])
+
         ci_type = commit.GetTypeString()
         who_id = self.GetAuthorID(commit.GetAuthor())
         repository_id = self.GetRepositoryID(commit.GetRepository())
@@ -264,60 +295,67 @@ class CheckinDatabase:
         cursor = self.db.cursor()
         cursor.execute(sql, sql_args)
 
-    def SQLQueryListString(self, field, query_entry_list):
+    def SQLQueryListString(self, sqlString, query_entry_list):
         sqlList = []
 
         for query_entry in query_entry_list:
-            data = query_entry.data
             ## figure out the correct match type
             if query_entry.match == "exact":
                 match = "="
             elif query_entry.match == "like":
                 match = " LIKE "
-            elif query_entry.match == "glob":
-                match = " REGEXP "
-                # use fnmatch to translate the glob into a regexp
-                data = fnmatch.translate(data)
-                if data[0] != '^': data = '^' + data
             elif query_entry.match == "regex":
                 match = " REGEXP "
-            elif query_entry.match == "notregex":
-                match = " NOT REGEXP "
 
-            sqlList.append("%s%s%s" % (field, match, self.db.literal(data)))
+            sqlList.append(sqlString % (match, query_entry.data))
 
         return "(%s)" % (string.join(sqlList, " OR "))
 
     def CreateSQLQueryString(self, query):
-        tableList = [("checkins", None)]
+        tableList = ["checkins"]
         condList = []
 
+        ## XXX: this is to exclude .ver files -- RN specific hack --JMP
+        tableList.append("files")
+        temp = "(checkins.fileid=files.id AND files.file NOT LIKE \"%.ver\")"
+        condList.append(temp)
+        ## XXX
+
         if len(query.repository_list):
-            tableList.append(("repositories",
-                              "(checkins.repositoryid=repositories.id)"))
-            temp = self.SQLQueryListString("repositories.repository",
-                                           query.repository_list)
+            tableList.append("repositories")
+
+            sql = "(checkins.repositoryid=repositories.id AND "\
+                  "repositories.repository%s\"%s\")"
+            temp = self.SQLQueryListString(sql, query.repository_list)
             condList.append(temp)
 
         if len(query.branch_list):
-            tableList.append(("branches", "(checkins.branchid=branches.id)"))
-            temp = self.SQLQueryListString("branches.branch",
-                                           query.branch_list)
+            tableList.append("branches")
+
+            sql = "(checkins.branchid=branches.id AND "\
+                  "branches.branch%s\"%s\")"
+            temp = self.SQLQueryListString(sql, query.branch_list)
             condList.append(temp)
 
         if len(query.directory_list):
-            tableList.append(("dirs", "(checkins.dirid=dirs.id)"))
-            temp = self.SQLQueryListString("dirs.dir", query.directory_list)
+            tableList.append("dirs")
+
+            sql = "(checkins.dirid=dirs.id AND dirs.dir%s\"%s\")" 
+            temp = self.SQLQueryListString(sql, query.directory_list)
             condList.append(temp)
             
         if len(query.file_list):
-            tableList.append(("files", "(checkins.fileid=files.id)"))
-            temp = self.SQLQueryListString("files.file", query.file_list)
+            tableList.append("files")
+
+            sql = "(checkins.fileid=files.id AND files.file%s\"%s\")"
+            temp = self.SQLQueryListString(sql, query.file_list)
             condList.append(temp)
             
         if len(query.author_list):
-            tableList.append(("people", "(checkins.whoid=people.id)"))
-            temp = self.SQLQueryListString("people.who", query.author_list)
+            tableList.append("people")
+
+            sql = "(checkins.whoid=people.id AND people.who%s\"%s\")"
+            temp = self.SQLQueryListString(sql, query.author_list)
             condList.append(temp)
             
         if query.from_date:
@@ -329,38 +367,27 @@ class CheckinDatabase:
             condList.append(temp)
 
         if query.sort == "date":
-            order_by = "ORDER BY checkins.ci_when DESC,descid"
+            order_by = "ORDER BY checkins.ci_when DESC"
         elif query.sort == "author":
-            tableList.append(("people", "(checkins.whoid=people.id)"))
-            order_by = "ORDER BY people.who,descid"
+            order_by = "ORDER BY checkins.whoid"
         elif query.sort == "file":
-            tableList.append(("files", "(checkins.fileid=files.id)"))
-            order_by = "ORDER BY files.file,descid"
+            order_by = "ORDER BY checkins.fileid"
 
-        ## exclude duplicates from the table list, and split out join
-        ## conditions from table names.  In future, the join conditions
-        ## might be handled by INNER JOIN statements instead of WHERE
-        ## clauses, but MySQL 3.22 apparently doesn't support them well.
-        tables = []
-        joinConds = []
-        for (table, cond) in tableList:
-            if table not in tables:
-                tables.append(table)
-                if cond is not None: joinConds.append(cond)
+        ## exclude duplicates from the table list
+        for table in tableList[:]:
+            while tableList.count(table) > 1:
+                tableList.remove(table)
 
-        tables = string.join(tables, ",")
-        conditions = string.join(joinConds + condList, " AND ")
-        conditions = conditions and "WHERE %s" % conditions
+        tables = string.join(tableList, ",")
+        conditions = string.join(condList, " AND ")
 
         ## limit the number of rows requested or we could really slam
         ## a server with a large database
         limit = ""
-        if query.limit:
-            limit = "LIMIT %s" % (str(query.limit))
-        elif self._row_limit:
-            limit = "LIMIT %s" % (str(self._row_limit))
+        if cfg.cvsdb.row_limit:
+            limit = "LIMIT %s" % (str(cfg.cvsdb.row_limit))
 
-        sql = "SELECT checkins.* FROM %s %s %s %s" % (
+        sql = "SELECT checkins.* FROM %s WHERE %s %s %s" % (
             tables, conditions, order_by, limit)
 
         return sql
@@ -379,23 +406,28 @@ class CheckinDatabase:
              dbFileID, dbRevision, dbStickyTag, dbBranchID, dbAddedLines,
              dbRemovedLines, dbDescID) = row
 
-            commit = LazyCommit(self)
-            if dbType == 'Add':
-              commit.SetTypeAdd()
-            elif dbType == 'Remove':
-              commit.SetTypeRemove()
-            else:
-              commit.SetTypeChange()
-            commit.SetTime(dbi.TicksFromDateTime(dbCI_When))
-            commit.SetFileID(dbFileID)
-            commit.SetDirectoryID(dbDirID)
+            commit = CreateCommit()
+
+            ## TIME, TIME, TIME is all fucked up; dateobject.gmticks()
+            ## is broken, dateobject.ticks() returns somthing like
+            ## GMT ticks, except it forgets about daylight savings
+            ## time -- we handle it ourself in the following painful way
+            gmt_time = time.mktime(
+                (dbCI_When.year, dbCI_When.month, dbCI_When.day,
+                 dbCI_When.hour, dbCI_When.minute, dbCI_When.second,
+                 0, 0, dbCI_When.dst))
+    
+            commit.SetTime(gmt_time)
+            
+            commit.SetFile(self.GetFile(dbFileID))
+            commit.SetDirectory(self.GetDirectory(dbDirID))
             commit.SetRevision(dbRevision)
-            commit.SetRepositoryID(dbRepositoryID)
-            commit.SetAuthorID(dbAuthorID)
-            commit.SetBranchID(dbBranchID)
+            commit.SetRepository(self.GetRepository(dbRepositoryID))
+            commit.SetAuthor(self.GetAuthor(dbAuthorID))
+            commit.SetBranch(self.GetBranch(dbBranchID))
             commit.SetPlusCount(dbAddedLines)
             commit.SetMinusCount(dbRemovedLines)
-            commit.SetDescriptionID(dbDescID)
+            commit.SetDescription(self.GetDescription(dbDescID))
 
             query.AddCommit(commit)
 
@@ -450,18 +482,37 @@ class Commit:
         self.__type = Commit.CHANGE
 
     def SetRepository(self, repository):
+        ## clean up repository path; make sure it doesn't end with a
+        ## path seperator
+        while len(repository) and repository[-1] == os.sep:
+            repository = repository[:-1]
+
         self.__repository = repository
 
     def GetRepository(self):
         return self.__repository
         
     def SetDirectory(self, dir):
+        ## clean up directory path; make sure it doesn't begin
+        ## or end with a path seperator
+        while len(dir) and dir[0] == os.sep:
+            dir = dir[1:]
+        while len(dir) and dir[-1] == os.sep:
+            dir = dir[:-1]
+        
         self.__directory = dir
 
     def GetDirectory(self):
         return self.__directory
 
     def SetFile(self, file):
+        ## clean up filename; make sure it doesn't begin
+        ## or end with a path seperator
+        while len(file) and file[0] == os.sep:
+            file = file[1:]
+        while len(file) and file[-1] == os.sep:
+            file = file[:-1]
+        
         self.__file = file
 
     def GetFile(self):
@@ -486,7 +537,10 @@ class Commit:
         return self.__author
 
     def SetBranch(self, branch):
-        self.__branch = branch or ''
+        if not branch:
+            self.__branch = ''
+        else:
+            self.__branch = branch
 
     def GetBranch(self):
         return self.__branch
@@ -529,67 +583,6 @@ class Commit:
         elif self.__type == Commit.REMOVE:
             return 'Remove'
 
-## LazyCommit overrides a few methods of Commit to only retrieve
-## it's properties as they are needed
-class LazyCommit(Commit):
-  def __init__(self, db):
-    Commit.__init__(self)
-    self.__db = db
-
-  def SetFileID(self, dbFileID):
-    self.__dbFileID = dbFileID
-
-  def GetFileID(self):
-    return self.__dbFileID
-
-  def GetFile(self):
-    return self.__db.GetFile(self.__dbFileID)
-
-  def SetDirectoryID(self, dbDirID):
-    self.__dbDirID = dbDirID
-
-  def GetDirectoryID(self):
-    return self.__dbDirID
-
-  def GetDirectory(self):
-    return self.__db.GetDirectory(self.__dbDirID)
-
-  def SetRepositoryID(self, dbRepositoryID):
-    self.__dbRepositoryID = dbRepositoryID
-
-  def GetRepositoryID(self):
-    return self.__dbRepositoryID
-
-  def GetRepository(self):
-    return self.__db.GetRepository(self.__dbRepositoryID)
-
-  def SetAuthorID(self, dbAuthorID):
-    self.__dbAuthorID = dbAuthorID
-
-  def GetAuthorID(self):
-    return self.__dbAuthorID
-
-  def GetAuthor(self):
-    return self.__db.GetAuthor(self.__dbAuthorID)
-
-  def SetBranchID(self, dbBranchID):
-    self.__dbBranchID = dbBranchID
-
-  def GetBranchID(self):
-    return self.__dbBranchID
-
-  def GetBranch(self):
-    return self.__db.GetBranch(self.__dbBranchID)
-
-  def SetDescriptionID(self, dbDescID):
-    self.__dbDescID = dbDescID
-
-  def GetDescriptionID(self):
-    return self.__dbDescID
-
-  def GetDescription(self):
-    return self.__db.GetDescription(self.__dbDescID)
-
 ## QueryEntry holds data on one match-type in the SQL database
 ## match is: "exact", "like", or "regex"
 class QueryEntry:
@@ -614,9 +607,6 @@ class CheckinDatabaseQuery:
         ## date range in DBI 2.0 timedate objects
         self.from_date = None
         self.to_date = None
-
-        ## limit on number of rows to return
-        self.limit = None
 
         ## list of commits -- filled in by CVS query
         self.commit_list = []
@@ -644,113 +634,115 @@ class CheckinDatabaseQuery:
         self.sort = sort
 
     def SetFromDateObject(self, ticks):
-        self.from_date = dbi.DateTimeFromTicks(ticks)
+        self.from_date = dbi.TimestampFromTicks(ticks)
 
     def SetToDateObject(self, ticks):
-        self.to_date = dbi.DateTimeFromTicks(ticks)
+        self.to_date = dbi.TimestampFromTicks(ticks)
 
     def SetFromDateHoursAgo(self, hours_ago):
         ticks = time.time() - (3600 * hours_ago)
-        self.from_date = dbi.DateTimeFromTicks(ticks)
+        self.from_date = dbi.TimestampFromTicks(ticks)
         
     def SetFromDateDaysAgo(self, days_ago):
         ticks = time.time() - (86400 * days_ago)
-        self.from_date = dbi.DateTimeFromTicks(ticks)
+        self.from_date = dbi.TimestampFromTicks(ticks)
 
     def SetToDateDaysAgo(self, days_ago):
         ticks = time.time() - (86400 * days_ago)
-        self.to_date = dbi.DateTimeFromTicks(ticks)
-
-    def SetLimit(self, limit):
-        self.limit = limit;
+        self.to_date = dbi.TimestampFromTicks(ticks)
 
     def AddCommit(self, commit):
         self.commit_list.append(commit)
+        if self.commit_cb:
+            self.commit_cb(commit)
+        
+    def SetCommitCB(self, callback):
+        self.commit_cb = callback
 
 
 ##
 ## entrypoints
 ##
+def CreateCheckinDatabase(host, user, passwd, database):
+    return CheckinDatabase(host, user, passwd, database)
+  
 def CreateCommit():
     return Commit()
     
 def CreateCheckinQuery():
     return CheckinDatabaseQuery()
 
-def ConnectDatabaseReadOnly(cfg):
+def ConnectDatabaseReadOnly():
     global gCheckinDatabaseReadOnly
     
     if gCheckinDatabaseReadOnly:
         return gCheckinDatabaseReadOnly
     
-    gCheckinDatabaseReadOnly = CheckinDatabase(
+    gCheckinDatabaseReadOnly = CreateCheckinDatabase(
         cfg.cvsdb.host,
-        cfg.cvsdb.port,
         cfg.cvsdb.readonly_user,
         cfg.cvsdb.readonly_passwd,
-        cfg.cvsdb.database_name,
-        cfg.cvsdb.row_limit)
+        cfg.cvsdb.database_name)
     
     gCheckinDatabaseReadOnly.Connect()
     return gCheckinDatabaseReadOnly
 
-def ConnectDatabase(cfg):
+def ConnectDatabase():
     global gCheckinDatabase
-
-    if gCheckinDatabase:
-        return gCheckinDatabase
-
-    gCheckinDatabase = CheckinDatabase(
+    
+    gCheckinDatabase = CreateCheckinDatabase(
         cfg.cvsdb.host,
-        cfg.cvsdb.port,
         cfg.cvsdb.user,
         cfg.cvsdb.passwd,
-        cfg.cvsdb.database_name,
-        cfg.cvsdb.row_limit)
+        cfg.cvsdb.database_name)
     
     gCheckinDatabase.Connect()
     return gCheckinDatabase
 
-def GetCommitListFromRCSFile(repository, path_parts, revision=None):
+def RLogDataToCommitList(repository, rlog_data):
     commit_list = []
 
-    directory = string.join(path_parts[:-1], "/")
-    file = path_parts[-1]
+    ## the filename in rlog_data contains the entire path of the
+    ## repository; we strip that out here
+    temp = rlog_data.filename[len(repository):]
+    directory, file = os.path.split(temp)
 
-    revs = repository.itemlog(path_parts, revision, {"cvs_pass_rev": 1})
-    for rev in revs:
+    for rlog_entry in rlog_data.rlog_entry_list:
         commit = CreateCommit()
-        commit.SetRepository(repository.rootpath)
+        commit.SetRepository(repository)
         commit.SetDirectory(directory)
         commit.SetFile(file)
-        commit.SetRevision(rev.string)
-        commit.SetAuthor(rev.author)
-        commit.SetDescription(rev.log)
-        commit.SetTime(rev.date)
+        commit.SetRevision(rlog_entry.revision)
+        commit.SetAuthor(rlog_entry.author)
+        commit.SetDescription(rlog_entry.description)
+        commit.SetTime(rlog_entry.time)
+        commit.SetPlusCount(rlog_entry.pluscount)
+        commit.SetMinusCount(rlog_entry.minuscount)
+        commit.SetBranch(rlog_data.LookupBranch(rlog_entry))
 
-        if rev.changed:
-            # extract the plus/minus and drop the sign
-            plus, minus = string.split(rev.changed)
-            commit.SetPlusCount(plus[1:])
-            commit.SetMinusCount(minus[1:])
-
-            if rev.dead:
-                commit.SetTypeRemove()
-            else:
-                commit.SetTypeChange()
-        else:
+        if rlog_entry.type == rlog_entry.CHANGE:
+            commit.SetTypeChange()
+        elif rlog_entry.type == rlog_entry.ADD:
             commit.SetTypeAdd()
+        elif rlog_entry.type == rlog_entry.REMOVE:
+            commit.SetTypeRemove()
 
         commit_list.append(commit)
 
-        # if revision is on a branch which has at least one tag
-        if len(rev.number) > 2 and rev.branches:
-            commit.SetBranch(rev.branches[0].name)
-
     return commit_list
 
-def GetUnrecordedCommitList(repository, path_parts, db):
-    commit_list = GetCommitListFromRCSFile(repository, path_parts)
+def GetCommitListFromRCSFile(repository, filename):
+    try:
+        rlog_data = rlog.GetRLogData(cfg, filename)
+    except rlog.error, e:
+        raise error, e
+    
+    commit_list = RLogDataToCommitList(repository, rlog_data)
+    return commit_list
+
+def GetUnrecordedCommitList(repository, filename):
+    commit_list = GetCommitListFromRCSFile(repository, filename)
+    db = ConnectDatabase()
 
     unrecorded_commit_list = []
     for commit in commit_list:
@@ -759,31 +751,3 @@ def GetUnrecordedCommitList(repository, path_parts, db):
             unrecorded_commit_list.append(commit)
 
     return unrecorded_commit_list
-
-_re_likechars = re.compile(r"([_%\\])")
-
-def EscapeLike(literal):
-  """Escape literal string for use in a MySQL LIKE pattern"""
-  return re.sub(_re_likechars, r"\\\1", literal)
-
-def FindRepository(db, path):
-  """Find repository path in database given path to subdirectory
-  Returns normalized repository path and relative directory path"""
-  path = os.path.normpath(path)
-  dirs = []
-  while path:
-    rep = os.path.normcase(path)
-    if db.GetRepositoryID(rep, 0) is None:
-      path, pdir = os.path.split(path)
-      if not pdir:
-        return None, None
-      dirs.append(pdir)
-    else:
-      break
-  dirs.reverse()
-  return rep, dirs
-
-def CleanRepository(path):
-  """Return normalized top-level repository path"""
-  return os.path.normcase(os.path.normpath(path))
-
