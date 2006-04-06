@@ -1,9 +1,8 @@
 CONTENTS
 --------
   TO THE IMPATIENT
-  INSTALLING VIEWVC
-  APACHE CONFIGURATION
-  UPGRADING VIEWVC
+  INSTALLING VIEWCVS
+  UPGRADING VIEWCVS
   SQL CHECKIN DATABASE
   ENSCRIPT CONFIGURATION
   CVSGRAPH CONFIGURATION
@@ -14,77 +13,55 @@ TO THE IMPATIENT
 ----------------
 Congratulations on getting this far. :-)
 
-  Required Software And Configuration Needed To Run ViewVC:
+Prerequisites: Python 1.5 or later
+                 (http://www.python.org/)
+               RCS, Revision Control System
+                 (http://www.cs.purdue.edu/homes/trinkle/RCS/)
+               read-only, physical access to a CVS repository
+                 (See http://www.cvshome.org/ for more information)
 
-    For CVS Support: 
-
-      * Python 1.5.2 or later
-          (http://www.python.org/)
-      * RCS, Revision Control System
-          (http://www.cs.purdue.edu/homes/trinkle/RCS/)
-      * GNU-diff to replace diff implementations without the -u option
-          (http://www.gnu.org/software/diffutils/diffutils.html)
-      * read-only, physical access to a CVS repository
-          (See http://www.cvshome.org/ for more information)
-
-    For Subversion Support:
-
-      * Python 2.0 or later
-          (http://www.python.org/)
-      * Subversion, Version Control System, 1.2.0 or later
-          (binary installation and Python bindings)
-          (http://subversion.tigris.org/)
-
-    Optional:
-
-      * a web server capable of running CGI programs
-          (for example, Apache at http://httpd.apache.org/)
-      * MySQL to create and query a commit database
-          (http://www.mysql.com/)
-          (http://sourceforge.net/projects/mysql-python)
-      * Enscript, code colorizer
-          (http://www.codento.com/people/mtr/genscript/)
-      * Highlight, code colorizer, 2.2.10 or later required, 2.4.5 or
-        later recommended for reliable line numbering
-          (http://www.andre-simon.de/)
-      * CvsGraph 1.5.0 or later, graphical CVS revision tree generator
-          (http://www.akhphd.au.dk/~bertho/cvsgraph/)
+Optional:      a web server capable of running CGI programs
+                 (for example, Apache at http://httpd.apache.org/)
+               GNU-diff to replace broken diff implementations
+                 (http://www.gnu.org/software/diffutils/diffutils.html)
+               MySQL to create and query a commit database
+                 (http://www.mysql.com/)
+                 (http://sourceforge.net/projects/mysql-python)
+		 (and Python 1.5.2 or later)
+               Enscript to colorize code displayed from the CVS repository
+                 (http://people.ssh.com/mtr/genscript/)
+               CvsGraph for a graphical representation of the CVS revisions
+                 (http://www.akhphd.au.dk/~bertho/cvsgraph/)
 
   GUI Operation:
 
     If you just want to see what your CVS repository looks like with
-    ViewVC, type "./standalone.py -g -r /PATH/TO/CVS/ROOT".  This
+    ViewCVS, type "./standalone.py -g -r /PATH/TO/CVS/ROOT".  This
     will start a tiny webserver serving at http://localhost:7467/.
-    PLEASE NOTE: This requires Python with thread support enabled and
-    the Tkinter GUI.  If you don't have one of these, omit the '-g' option.
-
 
   Standard operation:
 
-    To start installing right away (on UNIX): type "./viewvc-install"
+    To start installing right away (on UNIX): type "./viewcvs-install"
     in the current directory and answer the prompts.  When it
-    finishes, edit the file viewvc.conf in the installation directory
-    to tell viewvc the paths to your CVS and Subversion repositories. Next,
-    configure your web server to run <INSTALL>/cgi/viewvc.cgi, as
-    appropriate for your web server.  The section `INSTALLING VIEWVC'
+    finishes, edit the file viewcvs.conf in the installation directory
+    to tell viewcvs the paths to your CVS repositories. Next,
+    configure your web server to run <INSTALL>/cgi/viewcvs.cgi, as
+    appropriate for your web server.  The section `INSTALLING VIEWCVS'
     below is still recommended reading.
 
 
-INSTALLING VIEWVC
+INSTALLING VIEWCVS
 ------------------
 
-1) To get viewvc.cgi to work, make sure that you have Python 1.5 or
+1) To get viewcvs.cgi to work, make sure that you have Python 1.5 or
    greater installed and a webserver which is capable of executing
    CGI scripts (either based on the .cgi extension, or by placing the
    script within a specific directory).
 
    You need to have RCS installed. Specifically, "rlog", "rcsdiff",
    and "co". This script was tested against RedHat's rcs-5.7-10.rpm
-   Someone running HP-UX reported problems, that rcs doesn'nt honour
-   the setting of $PATH to find the diff utility.  Please test, if
-   "rcsdiff -u" works.  If not you might have to recompile RCS.
 
-   Note, that the viewvc.cgi script needs to have READ-ONLY, physical
+   Note, that the viewcvs.cgi script needs to have READ-ONLY, physical
    access to the CVS repository (or a copy of it).  Therefore, rsh/ssh or
    pserver access to the repository will not work.
 
@@ -94,30 +71,30 @@ INSTALLING VIEWVC
    side-by-side diffs.
 
    If you want to use cvsgraph, you have to obtain and install this
-   separately.  See below.  This was tested with cvsgraph-1.5.1.
+   separately.  See below.  This was tested with cvsgraph-1.1.2.
 
    For the checkin database to work, you will need MySQL >= 3.22, 
    and the Python DBAPI 2.0 module, MySQLdb.  This was tested with
    MySQLdb 0.9.1.
 
-2) Installation is handled by the ./viewvc-install script.  Run this
+2) Installation is handled by the ./viewcvs-install script.  Run this
    script and you will be prompted for a installation root path.
-   The default is /usr/local/viewvc-VERSION, where VERSION is
-   the version of this ViewVC release.  The installer sets the install 
-   path in some of the files, and ViewVC cannot be moved to a 
+   The default is /usr/local/viewcvs-VERSION, where VERSION is
+   the version of this ViewCVS release.  The installer sets the install 
+   path in some of the files, and ViewCVS cannot be moved to a 
    different path after the install.
 
-   Note: while 'root' is usually required to create /usr/local/viewvc,
-   ViewVC does not have to be installed as root, nor does it run as root.
-   It is just as valid to place ViewVC in a home directory, too.
+   Note: while 'root' is usually required to create /usr/local/viewcvs,
+   ViewCVS does not have to be installed as root, nor does it run as root.
+   It is just as valid to place ViewCVS in a home directory, too.
 
-   Note: viewvc-install will create directories if needed. It will
+   Note: viewcvs-install will create directories if needed. It will
    prompt before overwriting files that may have been modified (such
-   as viewvc.conf), thus making it safe to install over the top of
+   as viewcvs.conf), thus making it safe to install over the top of
    a previous installation. It will always overwrite program files,
    however.
 
-3) Edit <VIEWVC_INSTALLATION_DIRECTORY>/viewvc.conf for your specific 
+3) Edit <VIEWCVS_INSTALLATION_DIRECTORY>/viewcvs.conf for your specific 
    configuration.  In particular, examine the following configuration options:
 
       cvs_roots
@@ -126,152 +103,70 @@ INSTALLING VIEWVC
       mime_types_file
 
    There are some other options that are usually nice to change. See
-   viewvc.conf for more information.  ViewVC provides a working,
-   default look. However, if you want to customize the look of ViewVC
-   then edit the files in <VIEWVC_INSTALLATION_DIRECTORY>/templates.
+   viewcvs.conf for more information.  ViewCVS provides a working,
+   default look. However, if you want to customize the look of ViewCVS
+   then edit the files in <VIEWCVS_INSTALLATION_DIRECTORY>/templates.
    You need knowledge about HTML to edit the templates.
 
-4) The CGI programs are in <VIEWVC_INSTALLATION_DIRECTORY>/www/cgi/.  You can 
+4) The CGI programs are in <VIEWCVS_INSTALLATION_DIRECTORY>/cgi/.  You can 
    symlink to this directory from somewhere in your published HTTP server 
    path if your webserver is configured to follow symbolic links.  You can 
-   also copy the installed <VIEWVC_INSTALLATION_DIRECTORY>/www/cgi/*.cgi 
-   scripts after the install (unlike the other files in ViewVC, the scripts 
-   under www/ can be moved).
+   also copy the installed <VIEWCVS_INSTALLATION_DIRECTORY>/cgi/*.cgi scripts 
+   after the install (unlike the other files in ViewCVS, the CGI scripts can 
+   be moved).
 
-   If you are using Apache, then see below at the section 
-   titled APACHE CONFIGURATION.
+   If you are using Apache, then the ScriptAlias directive is very
+   useful for pointing directly to the viwecvs.cgi script.
 
-   NOTE: for security reasons, it is not advisable to install ViewVC
+   NOTE: for security reasons, it is not advisable to install ViewCVS
    directly into your published HTTP directory tree (due to the MySQL
-   passwords in viewvc.conf).
+   passwords in viewcvs.conf).
 
 5) That's it for repository browsing.  Instructions for getting the
    SQL checkin database working are below.
 
 
-APACHE CONFIGURATION
---------------------
-
-1) Find out where the web server configuration file is kept.  On
-   SuSE Linux it is /etc/httpd/httpd.conf, On RedHat Linux 7.3 it
-   is /etc/httpd/conf/httpd.conf.  On other unices you may look
-   at /usr/local/etc or /etc/local.  Use the vendor documentation
-   or the find utility, if in doubt.
-
-Either METHOD A: 
-2) The ScriptAlias directive is very useful for pointing 
-   directly to the viewvc.cgi script.  Simply insert a line containing
-     ScriptAlias /viewvc <VIEWVC_INSTALLATION_DIRECTORY>/www/cgi/viewvc.cgi
-   into your httpd.conf file.  Choose the location in httpd.conf where 
-   also the other ScriptAlias lines reside.  Some examples:
-
-     ScriptAlias /viewvc /usr/local/viewvc-1.0/www/cgi/viewvc.cgi
-     ScriptAlias /query /usr/local/viewvc-1.0/www/cgi/query.cgi
-
-   continue with step 3).
-
-or alternatively METHOD B: 
-2) Copy the CGI scripts from 
-   <VIEWVC_INSTALLATION_DIRECTORY>/www/cgi/*.cgi
-   to the /cgi-bin/ directory configured in your httpd.conf file.
-
-   continue with step 3).
-   
-and then there's METHOD C:
-2) Copy the CGI scripts from 
-   <VIEWVC_INSTALLATION_DIRECTORY>/www/cgi/*.cgi
-   to the directory of your choosing in the Document Root adding the following
-   apache directives for the directory in httpd.conf or an .htaccess file:
-
-     Options +ExecCGI
-     AddHandler cgi-script .cgi
-     
-   (Note: For this to work mod_cgi has to be loaded. And for the .htaccess file
-   to be effective, "AllowOverride All" or "AllowOverride Options FileInfo"
-   need to have been specified for the directory.)
-   
-   continue with step 3).
-
-or if you've got Mod_Python installed you can use METHOD D:
-2) Copy the Python scripts and .htaccess file from 
-   <VIEWVC_INSTALLATION_DIRECTORY>/www/mod_python/
-   to a directory being served by apache.
-   
-   In httpd.conf, make sure that "AllowOverride All" or at least 
-   "AllowOverride FileInfo Options" are enabled for the directory
-   you copied the files to.
-   
-   Note: If you are using Mod_Python under Apache 1.3 the tarball generation
-   and enscript colorizing features may not work because they use
-   multithreading. They do work fine with Apache 2.
-   
-   continue with step 3).
-
-3) Restart apache.  On SuSE Linux this is done using the command
-   rcapache restart and on RedHat Linux this is done using the command
-   /sbin/service httpd restart
-
-4) Optional: adding access control:
-
-   In your httpd.conf you can control access to certain modules by adding 
-   directives like this:
-
-   <Location "<url to viewvc.cgi>/<modname_you_wish_to_access_ctl>">
-     AllowOverride None
-     AuthUserFile /path/to/passwd/file
-     AuthName "Client Access"
-     AuthType Basic
-     require valid-user
-   </Location>
-
-   This idea is courtesy to Nick Bauman from http://www.cortexity.com/
-
-   If you use access control, it is recommended that you disable the
-   checkout_magic option so people can't "sneak in" with URLs like
-
-   	http://<server_name>/viewvc/*checkout*/<module_name>
-   	http://<server_name>/viewvc/~checkout~/<module_name>
-
-   and get access to seeing the file contents. 
+WARNING: ViewCVS has not been tested on web servers operating on the
+         Win32 platform.
 
 
-UPGRADING VIEWVC
+UPGRADING VIEWCVS
 -----------------
 
 Please read the file upgrading.html in the website subdirectory or
-at <http://viewvc.org/upgrading.html>.
+at <http://viewcvs.sourceforge.net/upgrading.html>.
 
 
 SQL CHECKIN DATABASE
 --------------------
 
 This feature is a clone of the Mozilla Project's Bonsai database.  It
-catalogs every commit in the CVS or Subversion repository into a SQL
-database.  In fact, the databases are 100% compatible.
+catalogs every commit in the CVS repository into a SQL database.  In fact,
+the databases are 100% compatible.
 
-Various queries can be performed on the database.  After installing ViewVC,
+Various queries can be performed on the database.  After installing ViewCVS,
 there are some additional steps required to get the database working.
 
 1) You need MySQL >= 3.22, and the Python module MySQLdb 0.9.0 installed.
    Python 1.5.2 is REQUIRED by MySQLdb, therefore to use this part of
-   ViewVC you must be using Python 1.5.2.
+   ViewCVS you must be using Python 1.5.2.  Additionally you will need the
+   mxDateTime extension.  I've tested with version 1.3.0
 
 2) You need to create a MySQL user who has permission to create databases.
    Optionally, you can create a second user with read-only access to the
    database.
 
-3) Run the <VIEWVC_INSTALLATION_DIRECTORY>/make-database script.  It will 
+3) Run the <VIEWCVS_INSTALLATION_DIRECTORY>/make-database script.  It will 
    prompt you for your MySQL user, password, and the name of database you 
-   want to create.  The database name defaults to "ViewVC".  This script 
+   want to create.  The database name defaults to "ViewCVS".  This script 
    creates the database and sets up the empty tables.  If you run this on a 
-   existing ViewVC database, you will lose all your data!
+   existing ViewCVS database, you will lose all your data!
 
-4) Edit your <VIEWVC_INSTALLATION_DIRECTORY>/viewvc.conf file.  
+4) Edit your <VIEWCVS_INSTALLATION_DIRECTORY>/viewcvs.conf file.  
    There is a [cvsdb] section.  You will need to set:
      
-      enabled = 1        # Whether to enable query support in viewvc.cgi
+      
       host =             # MySQL database server host
-      port =             # MySQL database server port (default is 3306)
       database_name =    # the name of the database you created with
                          # make-database
       user =             # the read/write database user
@@ -280,15 +175,14 @@ there are some additional steps required to get the database working.
                          # safe to use the read/write user here
       readonly_passwd =  # password for the readonly user
 
-5) Two programs are provided for updating the checkin database from a
-   CVS repository, cvsdbadmin and loginfo-handler.  They serve two
-   different purposes.  The cvsdbadmin program walks through your CVS
-   repository and adds every commit in every file.  This is commonly
-   used for initializing the database from a repository which has been
-   in use.  The loginfo-handler script is executed by the CVS server's
-   CVSROOT/loginfo system upon each commit.  It makes real-time
-   updates to the checkin database as commits are made to the
-   repository.
+5) Two programs are provided for updating the checkin database, 
+   cvsdbadmin and loginfo-handler.  They serve two different purposes.
+   The cvsdbadmin program walks through your CVS repository and adds
+   every commit in every file.  This is commonly used for initializing
+   the database from a repository which has been in use.  The 
+   loginfo-handler script is executed by the CVS server's CVSROOT/loginfo 
+   system upon each commit.  It makes real-time updates to the checkin
+   database as commits are made to the repository.
 
    To build a database of all the commits in the CVS repository /home/cvs,
    invoke: "./cvsdbadmin rebuild /home/cvs".  If you want to update
@@ -299,48 +193,16 @@ there are some additional steps required to get the database working.
    To get real-time updates, you'll want to checkout the CVSROOT module
    from your CVS repository and edit CVSROOT/loginfo.  Add the line:
 
-     ALL <VIEWVC_INSTALLATION_DIRECTORY>/loginfo-handler %{sVv}
+     ALL (echo %{sVv}; cat) | <VIEWCVS_INSTALLATION_DIRECTORY>/loginfo-handler
 
    If you have other scripts invoked by CVSROOT/loginfo, you will want
    to make sure to change any running under the "DEFAULT" keyword to
    "ALL" like the loginfo handler, and probably carefully read the
    execution rules for CVSROOT/loginfo from the CVS manual.
 
-   If you are running the Unix port of CVS-NT, you'll need to use a 
-   slightly different command line:
-   
-     ALL <VIEWVC_INSTALLATION_DIRECTORY>/loginfo-handler %{sVv} cvsnt
-     
-   The extra 'cvsnt' parameter tells the handler script to parse the 
-   commit information in a different way. 
-
-   For Subversion repositories, there is a single script called
-   svndbadmin that performs both of the above tasks.
-
-   To build a database of all the commits in the Subversion repository
-   /home/svn, invoke: "./svndbadmin rebuild /home/svn".  If you want
-   to update the checkin database, invoke: "./svndbadmin update
-   /home/svn".
-
-   To get real time updates, you will need to add a post-commit hook
-   (for the repository example above, the script should go in
-   /home/svn/hooks/post-commit).  The script should look something
-   like this:
-
-     #!/bin/sh
-     REPOS="$1"
-     REV="$2"
-     <VIEWVC_INSTALLATION_DIRECTORY>/svndbadmin rebuild "$REPOS" "$REV"
-
-   If you allow revision property changes in your repository, create a
-   post-revprop-change hook script containing the same commands as the
-   post-commit one.  This will make sure that the checkin database
-   stays consistent when you change the svn:log, svn:author or
-   svn:date revision properties.
-
 6) You may want to modify the HTML template file:
 
-      <VIEWVC_INSTALLATION_DIRECTORY>/templates/query.ezt
+      <VIEWCVS_INSTALLATION_DIRECTORY>/templates/query.ezt
 
    This is used by the query.cgi script to generate part of its HTML output.  
    At some point the currently hardcoded table output will also vanish.
@@ -357,20 +219,21 @@ Linux distributions like for example SuSE Linux from at least 7.0
 up to the recently released 7.3 already contain a precompiled and
 configured enscript 1.6.2 package.
 
-1) Download genscript from http://www.codento.com/people/mtr/genscript/
+1) Download genscript from http://people.ssh.com/mtr/genscript/
 
 2) Configure and compile per instructions with enscript.
    (I 've not done this, since I'm using the precompiled package
    delivered with SuSE Linux)
 
-3) Set the 'use_enscript' option in viewvc.conf to 1.
+3) Set the 'use_enscript' option in viewcvs.conf to 1.
 
 4) That's it!
 
 5) If you want to colorize exotic languages, you might have to 
-   patch 'lib/viewvc.py' and add a new highlighting file to enscript.
-   For example, if you are interested in a patch for Modula-2 support,
-   send mail to pefu@sourceforge.net.
+   patch 'lib/viewcvs.py' and add a new highlighting file to enscript.
+   I've done this for Modula-2 and submitted the file to the 
+   enscript maintainer long ago.  If interested in this patch for
+   enscript mailto:pefu@sourceforge.net
 
 
 CVSGRAPH CONFIGURATION
@@ -388,9 +251,9 @@ So you have been warned!
 Nevertheless cvsgraph can be quite helpful on repositories with 
 a reasonable number of revisions and branches.
 
-1) Install viewvc according to instructions in 'INSTALLING
-   VIEWVC' section above.  The installation directory is where
-   the 'viewvc-install' script copied and configured the viewvc
+1) Install viewcvs according to instructions in 'INSTALLING
+   VIEWCVS' section above.  The installation directory is where
+   the 'viewcvs-install' script copied and configured the viewcvs
    programs.
 
 2) Download CvsGraph from http://www.akhphd.au.dk/~bertho/cvsgraph/
@@ -405,55 +268,23 @@ a reasonable number of revisions and branches.
    userid running the web server. (default is '/usr/local/bin' if
    you simply type 'make install' in the cvsgraph directory).
 
-5) Check the setting of the 'cvsgraph_path' option in viewvc.conf:
+5) Check the setting of the 'cvsgraph_path' option in viewcvs.conf:
    /usr/local/bin/ is most often NOT contained in $PATH of the
    webserver process (e.g. Apache), so you will have to edit this.  
-   Set the 'use_cvsgraph' option in viewvc.conf to 1.
+   Set the 'use_cvsgraph' option in viewcvs.conf to 1.
 
 6) That's it!
 
-7) There is a file <VIEWVC_INSTALLATION_DIRECTORY>/cvsgraph.conf that
+7) There is a file <VIEWCVS_INSTALLATION_DIRECTORY>/cvsgraph.conf that
    you may want to edit if desired to set color and font characteristics.
    See the cvsgraph.conf documentation.  No edits are required in
-   cvsgraph.conf for operation with viewvc.
-
-
-SUBVERSION INTEGRATION
-----------------------
-
-ViewVC now supports browsing of Subversion repositories.  To use
-ViewVC with Subversion, make sure you have both Subversion itself and
-the Subversion Python bindings installed.  See Subversion's
-installation notes for more details on how to build and install these
-items.  
-
-Generally speaking, you'll know when your installation of Subversion's
-bindings has been successful if you can import the 'svn.repos' module
-from within your Python interpreter:
-
-   % python
-   Python 2.2.2 (#1, Oct 29 2002, 02:47:30) 
-   [GCC 2.96 20000731 (Red Hat Linux 7.2 2.96-108.7.2)] on linux2
-   Type "help", "copyright", "credits" or "license" for more information.
-   >>> import svn.repos
-   >>> 
-
-Note that by default, Subversion installs its bindings in a location
-that is not in Python's default module search path (for example, on
-Linux systems the default is usually /usr/local/lib/svn-python).  You
-need to remedy this, either by adding this path to Python's module
-search path, or by relocation the bindings to some place in that
-search path.
-
-Configuration of the Subversion repositories happens in much the same
-way as with CVS repositories, only with the 'svn_roots' configuration
-variable instead of the 'cvs_roots' one.
+   cvsgraph.conf for operation with viewcvs.
 
 
 IF YOU HAVE PROBLEMS ...
 ------------------------
 
-If you've trouble to make viewvc.cgi work:
+If you've trouble to make viewcvs.cgi work:
 
 === If nothing seems to work:
 
@@ -465,27 +296,35 @@ If you've trouble to make viewvc.cgi work:
 
  o view the entries in the webserver's error.log
  
-=== If viewvc seems to work but doesn't show the expected result
+ o make sure there is a trailing slash on the URL. for example:
+ 
+     http://www.example.com/cgi-bin/viewcvs.cgi/
+     
+   (ViewCVS should perform a redirection to ensure this, but a report
+    has indicated that it doesn't always do this... please send more
+    of these bug reports if you run into this)
+
+=== If viewcvs seems to work but doesn't show the expected result
     (Typical error: you can't see any files)
 
  o check whether the CGI-script has read-permissions to your
    CVS-Repository. The CGI-script often runs as the user 'nobody' 
    or 'httpd' ..
 
- o does viewvc find your RCS utilities? (edit rcs_path)
+ o does viewcvs find your RCS utilities? (edit rcs_path)
 
 === If something else happens or you can't get it to work:
 
- o check the ViewVC home page:
+ o check the ViewCVS home page:
 
-     http://viewvc.org/
+     http://viewcvs.sourceforge.net/
 
- o review the ViewVC mailing list archive to see if somebody else had
+ o review the ViewCVS mailing list archive to see if somebody else had
    the same problem, and it was solved:
 
-     http://viewvc.tigris.org/servlets/SummarizeList?listName=users
+     http://mailman.lyra.org/pipermail/viewcvs/
 
- o send mail to the ViewVC mailing list: users@viewvc.tigris.org
+ o send mail to the ViewCVS mailing list: viewcvs@lyra.org
 
    NOTE: make sure you provide an accurate description of the problem
          and any relevant tracebacks or error logs.

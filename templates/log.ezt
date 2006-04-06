@@ -1,16 +1,64 @@
-[include "include/log_header.ezt"]
+<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN"
+ "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html><head>
+<!-- ViewCVS       -- http://viewcvs.sourceforge.net/
+     by Greg Stein -- mailto:gstein@lyra.org
+  -->
+<title>CVS log for [where]</title>
+</head>
+<body text="#000000" bgcolor="#ffffff">
+<table width="100%" border=0 cellspacing=0 cellpadding=0>
+  <tr>
+    <td rowspan=2><h1>CVS log for [where]</h1></td>
+    <td align=right><img src="/icons/apache_pb.gif" alt="(logo)" border=0
+			width=259 height=32></td>
+  </tr>
+  <tr>
+    <td align=right><h3><b><a target="_blank"
+     href="[request.script_name]/*docroot*/help_log.html">Help</a></b></h3></td>
+  </tr>
+</table>
 
-[define first_revision][end]
-[define last_revision][end]
+<a href="[back_url]"><img src="/icons/small/back.gif" alt="(back)" border=0
+			width=16 height=16></a>
+<b>Up to [nav_path]</b><p>
+<a href="#diff">Request diff between arbitrary revisions</a>
+[if-any graph_href]
+/ <a href="[graph_href]">Display revisions graphically</a>
+[end]
+<hr noshade>
+
+[if-any branch]
+  Default branch: [branch]
+  <br>
+  Bookmark a link to:
+  [if-any viewable]
+    <a href="[head_href]"><b>HEAD</b></a>
+    /
+    (<a href="[head_abs_href]" target="cvs_checkout"
+	onClick="window.open('about:blank', 'cvs_checkout',
+	'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]')"
+	><b>download</b></a>)
+  [else]
+    <a href="[head_href]" target="cvs_checkout"
+	onClick="window.open('about:blank', 'cvs_checkout',
+	'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]')"
+	><b>HEAD</b></a>
+  [end]
+[else]
+  No default branch
+[end]
+<br>
+
+[if-any view_tag]
+  Current tag: [view_tag] <br>
+[end]
 
 [for entries]
-[if-index entries first][define first_revision][entries.rev][end][end]
-[if-index entries last][define last_revision][entries.rev][end][end]
-<div>
-  <hr />
+  <hr size=1 noshade>
 
   [is entries.state "dead"]
-    Revision <strong>[entries.rev]</strong>
+    Revision <b>[entries.rev]</b>
   [else]
     <a name="rev[entries.rev]"></a>
     [for entries.tag_names]<a name="[entries.tag_names]"></a>
@@ -18,124 +66,181 @@
     [for entries.branch_names]<a name="[entries.branch_names]"></a>
     [end]
 
-    Revision [is roottype "svn"]<a href="[entries.revision_href]"><strong>[entries.rev]</strong></a>[else]<strong>[entries.rev]</strong>[end] -
-    [is pathtype "file"]
-      (<a href="[entries.view_href]">view</a>)
+    Revision
+    [if-any viewable]
+      <a href="[entries.href]" target="cvs_checkout"
+	onClick="window.open('about:blank', 'cvs_checkout',
+	'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]')"
+	><b>[entries.rev]</b></a>
     [else]
-      <a href="[entries.view_href]">Directory Listing</a>
+      <a href="[entries.view_href]"><b>[entries.rev]</b></a>
+      /
+      (<a href="[entries.href]" target="cvs_checkout"
+	onClick="window.open('about:blank', 'cvs_checkout',
+	'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]')"
+	><b>download</b></a>)
     [end]
-    [if-any entries.download_href](<a href="[entries.download_href]">download</a>)[end]
-    [if-any entries.download_text_href](<a href="[entries.download_text_href]">as text</a>)[end]
-    [if-any entries.annotate_href](<a href="[entries.annotate_href]">annotate</a>)[end]
+    [is mime_type "text/plain"]
+    [else]
+      /
+      (<a href="[entries.text_href]" target="cvs_checkout"
+	onClick="window.open('about:blank', 'cvs_checkout',
+	'resizeable=1,scrollbars=1')"><b>as text</b></a>)
+    [end]
+    [if-any viewable]
+      /
+      <a href="[entries.view_href]"><b>(view)</b></a>
+    [end]
 
-    [is pathtype "file"]
-      [# if you don't want to allow select for diffs then remove this section]
-      [is entries.rev rev_selected]
-        - <strong>[[]selected]</strong>
-      [else]
-        - <a href="[entries.sel_for_diff_href]">[[]select for diffs]</a>
-      [end]
+    [# if you don't want to allow annotation, then remove this line]
+    - <a href="[href]?annotate=[entries.rev][query]">annotate</a>
+
+    [# if you don't want to allow select for diffs then remove this section]
+    [is entries.rev rev_selected]
+      - <b>[[]selected]</b>
+    [else]
+      - <a href="[href]?r1=[entries.rev][query]">[[]select for diffs]</a>
     [end]
   [end]
 
   [if-any entries.vendor_branch]
-    <em>(vendor branch)</em>
+    <i>(vendor branch)</i>
   [end]
 
-  <br />
-
-  [is roottype "svn"]
-    [if-index entries last]Added[else]Modified[end]
-  [end]
-
-  <em>[entries.date]</em> ([entries.ago] ago) by <em>[entries.author]</em>
-
-  [if-any entries.orig_path]
-    <br />Original Path: <a href="[entries.orig_href]"><em>[entries.orig_path]</em></a>
-  [end]
+  , <i>[entries.utc_date] UTC</i> ([entries.ago] ago) by <i>[entries.author]</i>
 
   [if-any entries.branches]
-    <br />Branch:
+    <br>Branch:
     [for entries.branches]
-      <a href="[entries.branches.href]"><strong>[entries.branches.name]</strong></a>[if-index entries.branches last][else],[end]
+      <a href="[entries.branches.href]"><b>[entries.branches.name]</b></a>[if-index entries.branches last][else],[end]
     [end]
   [end]
 
   [if-any entries.tags]
-    <br />CVS Tags:
+    <br>CVS Tags:
     [for entries.tags]
-      <a href="[entries.tags.href]"><strong>[entries.tags.name]</strong></a>[if-index entries.tags last][else],[end]
+      <a href="[entries.tags.href]"><b>[entries.tags.name]</b></a>[if-index entries.tags last][else],[end]
     [end]
   [end]
 
   [if-any entries.branch_points]
-    <br />Branch point for:
+    <br>Branch point for:
     [for entries.branch_points]
-      <a href="[entries.branch_points.href]"><strong>[entries.branch_points.name]</strong></a>[if-index entries.branch_points last][else],[end]
+      <a href="[entries.branch_points.href]"><b>[entries.branch_points.name]</b></a>[if-index entries.branch_points last][else],[end]
     [end]
   [end]
 
   [if-any entries.prev]
     [if-any entries.changed]
-      [is roottype "cvs"]
-      <br />Changes since <strong>[entries.prev]: [entries.changed] lines</strong>
-      [end]
-    [end]
-  [end]
-
-  [is roottype "svn"]
-    [if-any entries.size]
-    <br />File length: [entries.size] byte(s)
-    [end]
-
-    [if-any entries.copy_path]
-    <br />Copied from: <a href="[entries.copy_href]"><em>[entries.copy_path]</em></a> revision [entries.copy_rev]
+      <br>Changes since <b>[entries.prev]: [entries.changed] lines</b>
     [end]
   [end]
 
   [is entries.state "dead"]
-    <br /><strong><em>FILE REMOVED</em></strong>
+    <br><b><i>FILE REMOVED</i></b>
   [else]
-   [is pathtype "file"]
     [if-any entries.prev]
-      <br />Diff to <a href="[entries.diff_to_prev_href]">previous [entries.prev]</a>
+      <br>Diff to <a href="[href].diff?r1=[entries.prev]&r2=[entries.rev][query]">previous [entries.prev]</a>
       [if-any human_readable]
       [else]
-        (<a href="[entries.diff_to_prev_href]&amp;diff_format=h">colored</a>)
+        (<a href="[href].diff?r1=[entries.prev]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
       [end]
     [end]
 
-    [is roottype "cvs"]
-      [if-any entries.branch_point]
-        , to <a href="[entries.diff_to_branch_href]">branch point [entries.branch_point]</a>
-        [if-any human_readable]
-        [else]
-           (<a href="[entries.diff_to_branch_href]&amp;diff_format=h">colored</a>)
-        [end]
-      [end]
-  
-      [if-any entries.next_main]
-        , to <a href="[entries.diff_to_main_href]">next main [entries.next_main]</a>
-        [if-any human_readable]
-        [else]
-           (<a href="[entries.diff_to_main_href]&amp;diff_format=h">colored</a>)
-        [end]
+    [if-any entries.branch_point]
+      to <a href="[href].diff?r1=[entries.branch_point]&r2=[entries.rev][query]">branch point [entries.branch_point]</a>
+      [if-any human_readable]
+      [else]
+        (<a href="[href].diff?r1=[entries.branch_point]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
       [end]
     [end]
 
-    [if-any entries.diff_to_sel_href]
-      [if-any entries.prev], [else]<br />Diff[end]
-        to <a href="[entries.diff_to_sel_href]">selected [rev_selected]</a>
+    [if-any entries.next_main]
+      to <a href="[href].diff?r1=[entries.next_main]&r2=[entries.rev][query]">next main [entries.next_main]</a>
       [if-any human_readable]
       [else]
-        (<a href="[entries.diff_to_sel_href]&amp;diff_format=h">colored</a>)
+        (<a href="[href].diff?r1=[entries.next_main]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
       [end]
     [end]
-   [end]
+
+    [if-any entries.to_selected]
+      [if-any entries.prev][else]<br>Diff[end]
+      to <a href="[href].diff?r1=[rev_selected]&r2=[entries.rev][query]">selected [rev_selected]</a>
+      [if-any human_readable]
+      [else]
+        (<a href="[href].diff?r1=[rev_selected]&r2=[entries.rev]&diff_format=h[query]">colored</a>)
+      [end]
+    [end]
   [end]
 
-<pre class="vc_log">[entries.log]</pre>
-</div>
+<pre>[entries.html_log]</pre>
 [end]
 
-[include "include/log_footer.ezt"]
+<a name=diff></a>
+<hr noshade>
+This form allows you to request diffs between any two revisions of
+a file. You may select a symbolic revision name using the selection
+box or you may type in a numeric name using the type-in text box.
+<p>
+<form method="GET" action="[href].diff[qquery]" name="diff_select">
+
+Diffs between
+<select name="r1">
+  <option value="text" selected>Use Text Field</option>
+[for tags]
+  <option value="[tags.rev]:[tags.name]">[tags.name]</option>
+[end]
+</select>
+<input type="TEXT" size="12" name="tr1" value="[tr1]"
+	onChange="document.diff_select.r1.selectedIndex=0">
+
+and
+<select name="r2">
+  <option value="text" selected>Use Text Field</option>
+[for tags]
+  <option value="[tags.rev]:[tags.name]">[tags.name]</option>
+[end]
+</select>
+<input type="TEXT" size="12" name="tr2" value="[tr2]"
+	onChange="document.diff_select.r1.selectedIndex=0">
+
+<br>Type of Diff should be a
+<select name="diff_format" onchange="submit()">
+<option value="h" [is diff_format "h"]selected[end]>Colored Diff</option>
+<option value="l" [is diff_format "l"]selected[end]>Long Colored Diff</option>
+<option value="u" [is diff_format "u"]selected[end]>Unidiff</option>
+<option value="c" [is diff_format "c"]selected[end]>Context Diff</option>
+<option value="s" [is diff_format "s"]selected[end]>Side by Side</option>
+</select>
+
+<input type=submit value="  Get Diffs  "></form>
+<hr noshade>
+
+[if-any branch_names]
+  <a name=branch></a>
+  <form method="GET" action="[href]">
+    [hidden_values]
+    View only Branch:
+    <select name="only_with_tag" onchange="submit()">
+      <option value="" [is view_tag ""]selected[end]>Show all branches</option>
+      [for branch_names]
+        <option value="[branch_names]" [is branch_names view_tag]selected[end]>[branch_names]</option>
+      [end]
+    </select>
+    <input type=submit value="  View Branch  ">
+  </form>
+[end]
+
+<a name=logsort></a>
+<form method="GET" action="[href]">
+  [hidden_values]
+  Sort log by:
+  <select name="logsort" onchange="submit()">
+    <option value="cvs" [is logsort "cvs"]selected[end]>Not sorted</option>
+    <option value="date" [is logsort "date"]selected[end]>Commit date</option>
+    <option value="rev" [is logsort "rev"]selected[end]>Revision</option>
+  </select>
+  <input type=submit value="  Sort  ">
+</form>
+
+[include "footer.ezt"]
