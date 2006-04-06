@@ -1,1 +1,0 @@
-RedirectMatch ^(.*)$ http://www.viewvc.org/$1

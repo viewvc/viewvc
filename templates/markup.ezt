@@ -1,50 +1,49 @@
-[# setup page definitions]
-  [define page_title]View of /[where][end]
-  [define help_href][docroot]/help_rootview.html[end]
-[# end]
+[include "header.ezt" "view"]
 
-[include "include/header.ezt" "markup"]
-[include "include/file_header.ezt"]
-<hr />
-<div class="vc_summary">
-Revision [if-any revision_href]<a href="[revision_href]"><strong>[rev]</strong></a>[else]<strong>[rev]</strong>[end] -
-(<a href="[download_href]"><strong>download</strong></a>)
-[if-any download_text_href](<a href="[download_text_href]"><strong>as text</strong></a>)[end]
-[if-any annotate_href](<a href="[annotate_href]"><strong>annotate</strong></a>)[end]
+<hr noshade>
+<table width="100%"><tr><td bgcolor="#ffffff">
+File: [nav_file]
 
-[if-any vendor_branch] <em>(vendor branch)</em>[end]
-<br />[if-any date]<em>[date]</em>[end] 
-      [if-any ago]([ago] ago)[end]
-      [if-any author]by <em>[author]</em>[end]
-[if-any orig_path]
-  <br />Original Path: <a href="[orig_href]"><em>[orig_path]</em></a>
+(<a href="[href]" target="cvs_checkout"
+  onClick="window.open('about:blank','cvs_checkout',
+  'resizeable=1,scrollbars=1[is mime_type "text/html"],status,toolbar[end]');"
+  ><b>download</b></a>)
+[is mime_type "text/plain"]
+[else]
+      /
+      (<a href="[text_href]" target="cvs_checkout"
+	onClick="window.open('about:blank', 'cvs_checkout',
+	'resizeable=1,scrollbars=1')"><b>as text</b></a>)
 [end]
+<br>
 
-[if-any branches]
-  <br />Branch: <strong>[branches]</strong>
-[end]
-[if-any tags]
-  <br />CVS Tags: <strong>[tags]</strong>
-[end]
-[if-any branch_points]
-  <br />Branch point for: <strong>[branch_points]</strong>
-[end]
-[is roottype "cvs"]
-  [if-any changed]
-    <br />Changes since <strong>[prev]: [changed] lines</strong>
+[if-any log]
+  Revision: <b>[rev]</b>[if-any vendor_branch] <i>(vendor branch)</i>[end],
+  <i>[utc_date] UTC</i> ([ago] ago) by <i>[author]</i>
+  
+  [if-any branches]
+    <br>Branch: <b>[branches]</b>
+  [end]
+  [if-any tags]
+    <br>CVS Tags: <b>[tags]</b>
+  [end]
+  [if-any branch_points]
+    <br>Branch point for: <b>[branch_points]</b>
+  [end]
+  [if-any prev]
+    [if-any changed]
+      <br>Changes since <b>[prev]: [changed] lines</b>
+    [end]
+  [end]
+  [is state "dead"]
+    <br><b><i>FILE REMOVED</i></b>
+  [end]
+  <pre>[log]</pre>
+[else]
+  Revision: <b>[rev]</b><br>
+  [if-any tag]
+    Tag: <b>[tag]</b><br>
   [end]
 [end]
-[is roottype "svn"][if-any size]
-  <br />File size: [size] byte(s)
-[end][end]
-[is state "dead"]
-  <br /><strong><em>FILE REMOVED</em></strong>
-[end]
-[if-any log]
-  <pre class="vc_log">[log]</pre>
-[end]
-</div>
-
-<div id="vc_markup"><pre>[markup]</pre></div>
-
-[include "include/footer.ezt"]
+</td></tr></table>
+<hr noshade>
