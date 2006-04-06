@@ -1,0 +1,394 @@
+# CvsGraph configuration
+#
+# - Empty lines and whitespace are ignored.
+#
+# - Comments start with '#' and everything until
+#   end of line is ignored.
+#
+# - Strings are C-style strings in which characters
+#   may be escaped with '\' and written in octal
+#   and hex escapes. Note that '\' must be escaped
+#   if it is to be entered as a character.
+#
+# - Some strings are expanded with printf like
+#   conversions which start with '%'. Not all
+#   are applicable at all times, in which case they
+#   will expand to nothing.
+#	%c = cvsroot (with trailing '/')
+#	%C = cvsroot (*without* trailing '/')
+#	%m = module (with trailing '/')
+#	%M = module (*without* trailing '/')
+#	%f = filename without path
+#	%F = filename without path and with ",v" stripped
+#	%p = path part of filename (with trailing '/')
+#	%r = number of revisions
+#	%b = number of branches
+#	%% = '%'
+#	%R = the revision number (e.g. '1.2.4.4')
+#	%P = previous revision number
+#	%B = the branch number (e.g. '1.2.4')
+#	%d = date of revision
+#	%a = author of revision
+#	%s = state of revision
+#	%t = current tag of branch or revision
+#	%0..%9 = command-line argument -0 .. -9
+#	%l = HTMLized log entry of the revision
+#		NOTE: %l is obsolete. See %(%) and cvsgraph.conf(5) for
+#		more details.
+#	%L = log entry of revision
+#		The log entry expansion takes an optional argument to
+#		specify maximum length of the expansion like %L[25].
+#	%(...%) = HTMLize the string within the parenthesis.
+#   ViewVC currently uses the following four command-line arguments to
+#   pass URL information to cvsgraph:
+#       -3 link to current file's log page
+#       -4 link to current file's checkout page minus "rev" parameter
+#       -5 link to current file's diff page minus "r1" and "r2" parameters
+#       -6 link to current directory page minus "pathrev" parameter
+#
+# - Numbers may be entered as octal, decimal or
+#   hex as in 0117, 79 and 0x4f respectively.
+#
+# - Fonts are numbered 0..4 (defined as in libgd)
+#	0 = tiny
+#	1 = small
+#	2 = medium (bold)
+#	3 = large
+#	4 = giant
+#
+# - Colors are a string like HTML type colors in
+#   the form "#rrggbb" with parts written in hex
+#	rr = red (00..ff)
+#	gg = green (00-ff)
+#	bb = blue (00-ff)
+#
+# - There are several reserved words besides of the
+#   feature-keywords. These additional reserved words
+#   expand to numerical values:
+#	* false	 = 0
+#	* true	 = 1
+#	* not	 = -1
+#	* left	 = 0
+#	* center = 1
+#	* right	 = 2
+#	* gif	 = 0
+#	* png	 = 1
+#	* jpeg	 = 2
+#	* tiny	 = 0
+#	* small	 = 1
+#	* medium = 2
+#	* large	 = 3
+#	* giant	 = 4
+#
+# - Booleans have three possible arguments: true, false
+#   and not. `Not' means inverse of what it was (logical
+#   negation) and is represented by the value -1.
+#   For the configuration file that means that the default
+#   value is negated.
+#
+
+# cvsroot <string>
+#	The *absolute* base directory where the
+#	CVS/RCS repository can be found
+# cvsmodule <string>
+#
+cvsroot		= "--unused--"; # unused with ViewVC, will be overridden
+cvsmodule	= "";  # unused with ViewVC -- please leave it blank
+
+# color_bg <color>
+#	The background color of the image
+# transparent_bg <boolean>
+#	Make color_bg the transparent color (only useful with PNG)
+color_bg	= "#ffffff";
+transparent_bg	= false;
+
+# date_format <string>
+#	The strftime(3) format string for date and time
+date_format	= "%d-%b-%Y %H:%M:%S";
+
+# box_shadow <boolean>
+#	Add a shadow around the boxes
+# upside_down <boolean>
+#	Reverse the order of the revisions
+# left_right <boolean>
+#	Draw the image left to right instead of top down,
+#	or right to left is upside_down is set simultaneously.
+# strip_untagged <boolean>
+#	Remove all untagged revisions except the first, last and tagged ones
+# strip_first_rev <boolean>
+#	Also remove the first revision if untagged
+# auto_stretch <boolean>
+#	Try to reformat the tree to minimize image size
+# use_ttf <boolean>
+#	Use TrueType fonts for text
+# anti_alias <boolean>
+#	Enable pretty TrueType anti-alias drawing
+# thick_lines <number>
+#	Draw all connector lines thicker (range: 1..11)
+box_shadow	= true;
+upside_down	= false;
+left_right	= false;
+strip_untagged	= false;
+strip_first_rev	= false;
+#auto_stretch	= true;		# not yet stable.
+use_ttf		= false;
+anti_alias	= true;
+thick_lines	= 1;
+
+# msg_color <color>
+#	Sets the error/warning message color
+# msg_font <number>
+# msg_ttfont <string>
+# msg_ttsize <float>
+#	Sets the error/warning message font
+msg_color	= "#800000";
+msg_font	= medium;
+msg_ttfont	= "/dos/windows/fonts/ariali.ttf";
+msg_ttsize	= 11.0;
+
+# parse_logs <boolean>
+#	Enable the parsing of the *entire* ,v file to read the
+#	log-entries between revisions. This is necessary for
+#	the %L expansion to work, but slows down parsing by
+#	a very large factor. You're warned.
+parse_logs	= false;
+
+# tag_font <number>
+#	The font of the tag text
+# tag_color <color>
+#	The color of the tag text
+# tag_ignore <string>
+#	A extended regular expression to exclude certain tags from view.
+#	See regex(7) for details on the format.
+#	Note 1: tags matched in merge_from/merge_to are always displayed unless
+#		tag_ignore_merge is set to true.
+#	Note 2: normal string rules apply and special characters must be
+#		escaped.
+# tag_ignore_merge <boolean>
+#	If set to true, allows tag_ignore to also hide merge_from and merge_to
+#	tags.
+# tag_nocase <boolean>
+#	Ignore the case is tag_ignore expressions
+# tag_negate <boolean>
+#	Negate the matching criteria of tag_ignore. When true, only matching
+#	tags will be shown.
+#	Note: tags matched with merge_from/merge_to will still be displayed.
+tag_font	= medium;
+#tag_ttfont	= "/dos/windows/fonts/ariali.ttf";
+#tag_ttsize	= 11.0;
+tag_color	= "#007000";
+#tag_ignore	= "(test|alpha)_release";
+#tag_ignore_merge = false;
+#tag_nocase	= false;
+#tag_negate	= false;
+
+# rev_hidenumber <boolean>
+#	If set to true no revision numbers will be printed in the graph.
+#rev_hidenumber = false;
+rev_font	= giant;
+#rev_ttfont	= "/dos/windows/fonts/arial.ttf";
+#rev_ttsize	= 12.0;
+rev_color	= "#000000";
+rev_bgcolor	= "#f0f0f0";
+rev_separator	= 1;
+rev_minline	= 15;
+rev_maxline	= 75;
+rev_lspace	= 5;
+rev_rspace	= 5;
+rev_tspace	= 3;
+rev_bspace	= 3;
+rev_text	= "%d";	# or "%d\n%a, %s" for author and state too
+rev_text_font	= tiny;
+#rev_text_ttfont	= "/dos/windows/fonts/times.ttf";
+#rev_text_ttsize	= 9.0;
+rev_text_color	= "#500020";
+rev_maxtags	= 25;
+
+# merge_color <color>
+#	The color of the line connecting merges
+# merge_front <boolean>
+#	If true, draw the merge-lines on top if the image
+# merge_nocase <boolean>
+#	Ignore case in regular expressions
+# merge_from <string>
+#	A regex describing a tag that is used as the merge source
+# merge_to <string>
+#	A regex describing a tag that is the target of the merge
+# merge_findall <boolean>
+#	Try to match all merge_to targets possible. This can result in
+#	multiple lines originating from one tag.
+# merge_arrows <boolean>
+#	Use arrows to point to the merge destination. Default is true.
+# merge_cvsnt <boolean>
+#	Use CVSNT's mergepoint registration for merges
+# merge_cvsnt_color <color>
+#	The color of the line connecting merges from/to registered
+#	mergepoints.
+# arrow_width <number>
+# arrow_length <number>
+#	Specify the size of the arrows. Default is 3 wide and 12 long.
+#
+# NOTE:
+# - The merge_from is an extended regular expression as described in
+#   regex(7) and POSIX 1003.2 (see also Single Unix Specification at
+#   http://www.opengroup.com).
+# - The merge_to is an extended regular expression with a twist. All
+#   subexpressions from the merge_from are expanded into merge_to
+#   using %[1-9] (in contrast to \[1-9] for backreferences). Care is
+#   taken to escape the constructed expression.
+# - A '$' at the end of the merge_to expression can be important to
+#   prevent 'near match' references. Normally, you want the destination
+#   to be a good representation of the source. However, this depends
+#   on how well you defined the tags in the first place.
+#
+# Example:
+#	merge_from = "^f_(.*)";
+#	merge_to = "^t_%1$";
+#	tags: f_foo, f_bar, f_foobar, t_foo, t_bar
+#	result:
+#		f_foo	-> "^t_foo$"	-> t_foo
+#		f_bar	-> "^t_bar$"	-> t_bar
+#		f_foobar-> "^t_foobar$"	-> <no match>
+#
+merge_color	= "#a000a0";
+merge_front	= false;
+merge_nocase	= false;
+merge_from	= "^f_(.*)";
+merge_to	= "^t_%1$";
+merge_findall	= false;
+
+#merge_arrows	= true;
+#arrow_width	= 3;
+#arrow_length	= 12;
+
+merge_cvsnt	= true;
+merge_cvsnt_color = "#606000";
+
+# branch_font <number>
+#	The font of the number and tags
+# branch_color <color>
+#	All branch element's color
+# branch_[lrtb]space <number>
+#	Interior spacing (margin)
+# branch_margin <number>
+#	Exterior spacing
+# branch_connect <number>
+#	Length of the vertical connector
+# branch_dupbox <boolean>
+#	Add the branch-tag also at the bottom/top of the trunk
+# branch_fold <boolean>
+#	Fold empty branches in one box to save space
+# branch_foldall <boolean>
+#	Put all empty branches in one box, even if they
+#	were interspaced with branches with revisions.
+# branch_resort <boolean>
+#	Resort the branches by the number of revisions to save space
+# branch_subtree <string>
+#	Only show the branch denoted or all branches that sprout
+#	from the denoted revision. The argument may be a symbolic
+#	tag. This option you would normally want to set from the
+#	command line with the -O option.
+branch_font	= medium;
+#branch_ttfont	= "/dos/windows/fonts/arialbd.ttf";
+#branch_ttsize	= 18.0;
+branch_tag_color= "#000080";
+branch_tag_font	= medium;
+#branch_tag_ttfont = "/dos/windows/fonts/arialbi.ttf";
+#branch_tag_ttsize = 14.0;
+branch_color	= "#0000c0";
+branch_bgcolor	= "#ffffc0";
+branch_lspace	= 5;
+branch_rspace	= 5;
+branch_tspace	= 3;
+branch_bspace	= 3;
+branch_margin	= 15;
+branch_connect	= 8;
+branch_dupbox	= false;
+branch_fold	= true;
+branch_foldall	= false;
+branch_resort	= false;
+#branch_subtree	= "1.2.4";
+
+# title <string>
+#	The title string is expanded (see above for details)
+# title_[xy] <number>
+#	Position of title
+# title_font <number>
+#	The font
+# title_align <number>
+#	0 = left
+#	1 = center
+#	2 = right
+# title_color <color>
+title		= "%c%p%f\nRevisions: %r, Branches: %b";
+title_x		= 10;
+title_y		= 5;
+title_font	= small;
+#title_ttfont	= "/dos/windows/fonts/times.ttf";
+#title_ttsize	= 10.0;
+title_align	= left;
+title_color	= "#800000";
+
+# Margins of the image
+# Note: the title is outside the margin
+margin_top	= 35;
+margin_bottom	= 10;
+margin_left	= 10;
+margin_right	= 10;
+
+# Image format(s)
+# image_type <number|{gif,jpeg,png}>
+#	gif  (0) = Create gif image
+#	png  (1) = Create png image
+#	jpeg (2) = Create jpeg image
+#	Image types are available if they can be found in
+#	the gd library. Newer versions of gd do not have
+#	gif anymore. CvsGraph will automatically generate
+#	png images instead.
+# image_quality <number>
+#	The quality of a jpeg image (1..100)
+# image_compress <number>
+#	Set the compression of a PNG image (gd version >= 2.0.12).
+#	Values range from -1 to 9 where:
+#	- -1	default compression (usually 3)
+#	-  0	no compression
+#	-  1	lowest level compression
+#	- ...	...
+#	-  9	highest level of compression
+# image_interlace <boolean>
+#	Write interlaces PNG/JPEG images for progressive loading.
+image_type	= png;
+image_quality	= 75;
+image_compress	= 3;
+image_interlace	= true;
+
+# HTML image map generation
+# map_name <string>
+#	The name= attribute in <map name="mapname">...</map>
+# map_branch_href <string>
+# map_branch_alt <string>
+# map_rev_href <string>
+# map_rev_alt <string>
+# map_diff_href <string>
+# map_diff_alt <string>
+# map_merge_href <string>
+# map_merge_alt <string>
+#	These are the href= and alt= attributes in the <area>
+#	tags of HTML. The strings are expanded (see above).
+map_name	= "MyMapName\" name=\"MyMapName";
+map_branch_href	= "href=\"%6pathrev=%(%t%)\"";
+map_branch_alt	= "alt=\"%0 %(%t%) (%B)\"";
+# You might want to experiment with the following setting:
+# 1. The default setting will take you to a ViewVC generated page displaying 
+#    that revision of the file, if you click into a revision box:
+map_rev_href	= "href=\"%4rev=%R\"";
+# 2. This alternative setting will take you to the anchor representing this
+#    revision on a ViewVC generated Log page for that file:
+# map_rev_href   = "href=\"%3#rev%R\"";
+#
+map_rev_alt	= "alt=\"%1 %(%t%) (%R)\"";
+map_diff_href	= "href=\"%5r1=%P&amp;r2=%R\"";
+map_diff_alt	= "alt=\"%2 %P &lt;-&gt; %R\"";
+map_merge_href	= "href=\"%5r1=%P&amp;r2=%R\"";
+map_merge_alt	= "alt=\"%2 %P &lt;-&gt; %R\"";
+
