@@ -1,0 +1,81 @@
+<html>
+<head><title>CVSdb Query Form</title></head>
+<body bgcolor="#ffffff">
+
+<h1>CVSdb Query Form for GNOME CVS Repository</h1>
+
+<form method=get action='query.cgi'>
+<table border cellpading=8 cellspacing=0>
+
+  <tr>
+    <td align=right>Repository:</td>
+    <td><input type=text name=repository size=25></td>
+  </tr>
+
+  <tr>
+    <td align=right>Branch:</td>
+    <td><input type=text name=branch size=25></td>
+  </tr>
+
+  <tr>
+    <td align=right>Directory:</td>
+    <td><input type=text name=directory value='' size=45></td>
+  </tr>
+
+  <tr>
+    <td align=right>File:</td>
+    <td><input type=text name=file value='' size=45></td>
+  </tr>
+
+  <tr>
+    <td align=right>Who:</td>
+    <td><input type=text name=who value='' size=45></td>
+  </tr>
+
+  <tr>
+    <td align=right>Sort By:</td>
+    <td>
+      <select name=sortby>
+        <option value="date">Date</option>
+        <option value="author">Author</option>
+        <option value="file">File</option>
+      </select>
+    </td>
+  </tr>
+
+  <tr>
+    <td align=right valign=top><br>Date:</td>
+    <td colspan=2>
+      <table BORDER=0 CELLSPACING=0 CELLPADDING=0>
+        <tr>
+          <td><input type=radio name=date checked value=hours></td>
+          <td>
+            In the last <input type=text name=hours value=2 size=4> hours
+          </td>
+        </tr>
+        <tr>
+          <td><input type=radio name=date value=day></td>
+          <td>In the last day</td>
+        </tr>
+        <tr>
+          <td><input type=radio name=date value=week></td>
+          <td>In the last week</td>
+        </tr>
+        <tr>
+          <td><input type=radio name=date value=month></td>
+          <td>In the last month</td>
+        </tr>
+        <tr>
+          <td><input type=radio name=date value=all></td>
+          <td>Since the beginning of time</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td colspan=2><input type=submit value='Run Query'></td>
+  </tr>
+</table>
+</form>
+
+</html>
