@@ -32,7 +32,7 @@ TODO ITEMS
 
 *) include a ConfigParser.py to help older Python installations
 
-*) add a check for the rcs programs/paths to viewvc-install. clarify the
+*) add a check for the rcs programs/paths to viewcvs-install. clarify the
    dependency on RCS in the docs.
 
 *) have a "check" mode that verifies binaries are available on rcs_path
@@ -46,8 +46,8 @@ KNOWN BUGS
    is non existant.
 
 *) With old repositories containing many branches, tags or thousands
-   or revisions, the cvsgraph feature becomes unusable (see INSTALL).
-   ViewVC can't do much about this, but it might be possible to
+   or revisions, the cvsgraph feature becomes unusable (see INSTALL).  
+   ViewCVS can't do much about this, but it might be possible to 
    investigate the number of branches, tags and revision in advance
    and disable the cvsgraph links, if the numbers exceed a certain
    treshold.
