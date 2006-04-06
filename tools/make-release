@@ -37,28 +37,38 @@ fi
 
 ### Grab an export from the Subversion repository.
 echo "Exporting into:" ${TARGET}
-svn export http://viewvc.tigris.org/svn/viewvc/${ROOT} ${TARGET}
 
-### Various shifting, cleanup.  
+for PLATFORM in unix windows; do
+  if test ${PLATFORM} = windows; then
+    EOL="--native-eol CRLF"
+  else
+    EOL="--native-eol LF"
+  fi
 
-# Documentation is now also distributed together with the release, but
-# we still copy the license file to its traditional place (it is small
-# and many files still contain comments refering to this location):
+  svn export ${EOL} http://viewvc.tigris.org/svn/viewvc/${ROOT} ${TARGET}
 
-cp ${TARGET}/viewvc.org/license-1.html ${TARGET}/LICENSE.html
-rm -r ${TARGET}/viewcvs.sourceforge.net
+  ### Various shifting, cleanup.  
 
-# Remove some tools only useful for ViewVC developers:
-rm ${TARGET}/tools/make-release
+  # Documentation is now also distributed together with the release, but
+  # we still copy the license file to its traditional place (it is small
+  # and many files still contain comments refering to this location):
 
-# Make sure, permissions are reasonable:
-find ${TARGET} -print | xargs chmod uoa+r
-find ${TARGET} -type d -print | xargs chmod uoa+x
+  # Remove some not useful directories
+  rm -r ${TARGET}/{elemx,tests,tools,tparse,viewcvs.sourceforge.net,www}
 
-# Cut the tarball:
-tar cf - ${TARGET} | gzip -9 > ${TARGET}.tar.gz
+  # Make sure permissions are reasonable:
+  find ${TARGET} -print | xargs chmod uoa+r
+  find ${TARGET} -type d -print | xargs chmod uoa+x
 
-# Create also a ZIP file for those poor souls :-) still using Windows: 
-zip -qor9 ${TARGET}.zip ${TARGET}
+  if test ${PLATFORM} = windows; then
+    # Create also a ZIP file for those poor souls :-) still using Windows: 
+    zip -qor9 ${TARGET}.zip ${TARGET}
+  else
+    # Cut the tarball:
+    tar cf - ${TARGET} | gzip -9 > ${TARGET}.tar.gz
+  fi
 
+  # remove target directory
+  rm -r ${TARGET}
+done
 echo 'Done.'
