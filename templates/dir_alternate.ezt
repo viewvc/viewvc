@@ -70,6 +70,12 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
 <table width="100%" border=0 cellspacing=1 cellpadding=2>
 <tr>
 [if-any have_logs]
+  [is sortby "rev"]
+    <th align=left bgcolor="#88ff88">Rev.</th>
+  [else]
+    <th align=left bgcolor="#cccccc"
+      ><a href="./[sortby_rev_href]"#dirlist>Rev.</a></th>
+  [end]
   [is sortby "file"]
     <th align=left bgcolor="#88ff88"
       [is cfg.options.use_cvsgraph "1"]colspan=2[end]
@@ -78,12 +84,6 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
     <th align=left bgcolor="#cccccc"
       [is cfg.options.use_cvsgraph "1"]colspan=2[end]
       ><a href="./[sortby_file_href]#dirlist">File</a></th>
-  [end]
-  [is sortby "rev"]
-    <th align=left bgcolor="#88ff88">Rev.</th>
-  [else]
-    <th align=left bgcolor="#cccccc"
-      ><a href="./[sortby_rev_href]"#dirlist>Rev.</a></th>
   [end]
   [is sortby "date"]
     <th align=left bgcolor="#88ff88">Age</th>
@@ -111,10 +111,13 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
 [for rows]
   <tr bgcolor="[if-index rows even]#ffffff[else]#ccccee[end]">
   [is rows.type "unreadable"]
+    [if-any have_logs]
+      <td>&nbsp;</td> [# revision ]
+    [end]
     <td><a name="[rows.anchor]">[rows.name]</a>
       [if-any have_logs]
         </td>
-        <td colspan=[is cfg.options.use_cvsgraph "1"]5[else]4[end]>
+        <td colspan=[is cfg.options.use_cvsgraph "1"]4[else]3[end]>
           <i>this entry is unreadable</i>
         </td>
       [else]
@@ -123,6 +126,9 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
     </td>
   [else]
     [is rows.type "dir"]
+      [if-any have_logs]
+        <td>&nbsp;</td> [# revision ]
+      [end]
       <td [if-any have_logs][is cfg.options.use_cvsgraph "1"]colspan=2[end][end]>
         <a name="[rows.anchor]" href="[rows.href]">
         <img src="/icons/small/dir.gif" alt="(dir)" border=0 width=16 height=16>
@@ -134,12 +140,11 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
       </td>
       [is rows.cvs "error"]
         [# for an error to occur, we must have some logs. always use colspan]
-        <td colspan=4>
+        <td colspan=3>
           <i>Last modification unavailable - could not read CVS information</i>
         </td>
       [else]
       [if-any have_logs]
-        <td>&nbsp;</td> [# revision ]
         [is rows.cvs "none"]
           <td>&nbsp;</td> [# age ]
           <td>&nbsp;</td> [# author ]
@@ -159,12 +164,22 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
           
     [else]
       [is rows.cvs "error"]
+        <td>&nbsp;</td>
         <td [is cfg.options.use_cvsgraph "1"]colspan=2[end]>
           <a name="[rows.anchor]">[rows.name]</a>
         </td>
-        <td colspan=4><i>CVS information is unreadable</i></td>
+        <td colspan=3><i>CVS information is unreadable</i></td>
       [else]
-        <td><a name="[rows.anchor]" href="[rows.href]">
+        <td>&nbsp;<a href="[rows.href]"><b>[rows.rev]</b></a></td>
+        <td width="1%"><a name="[rows.anchor]" href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
+[# to display the revision in a separate window, you could use:
+
+   <a name="{rows.anchor}" href="{rows.rev_href}" target="cvs_checkout"
+      onClick="window.open('{rows.rev_href}', 'cvs_checkout',
+                           'resizeable=1,scrollbars=1')"><b>{rows.rev}</b></a>
+
+   (substitute brackets for the braces)
+]
             <img src="/icons/small/text.gif" alt="(file)" border=0
                  width=16 height=16>
             [rows.name]
@@ -181,19 +196,6 @@ href="[request.script_name]/*docroot*/help_[if-any where]dir[else]root[end]view.
           </a></td>
         [end]
 
-        <td>&nbsp;
-          <a href="[rows.rev_href]&content-type=text/vnd.viewcvs-markup">
-            <b>[rows.rev]</b>
-          </a>
-[# to display the revision in a separate window, you could use:
-
-   <a href="{rows.rev_href}" target="cvs_checkout"
-      onClick="window.open('{rows.rev_href}', 'cvs_checkout',
-                           'resizeable=1,scrollbars=1')"><b>{rows.rev}</b></a>
-
-   (substitute brackets for the braces)
-]
-        </td>
         <td>&nbsp;[rows.time]</td>
         [if-any rows.author]
           <td>&nbsp;[rows.author]</td>

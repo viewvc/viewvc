@@ -1,0 +1,356 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Upgrading a ViewCVS Installation</title>
+  </head>
+
+<body background="images/chalk.jpg">
+  <table width="100&#37;" cellspacing=5>
+    <tr>
+      <td width="1%"><a href="index.html"><img border=0
+	     src="images/logo.png"></a>
+      </td>
+      <td>
+	<h1>Upgrading a ViewCVS Installation</h1>
+      </td>
+      <td width="1%"><a href="http://sourceforge.net/"><img border=0
+	    src="http://sourceforge.net/sflogo.php?group_id=18760&type=1"></a><br><a href="http://sourceforge.net/projects/viewcvs/">ViewCVS&nbsp;project&nbsp;page</a>
+      </td>
+    </tr>
+    <tr><td width="1%" valign=top>
+       <a href="index.html">Overview</a><br>
+       Upgrading<br>
+       <a href="contributing.html">Contributing</a><br>
+       <a href="license-1.html">License</a><br>
+       <a href="who.html">Who</a><br>
+    </td><td colspan=2>
+
+    <p>
+      This document describes some of the things that you will need to 
+      consider, change, or handle when upgrading an existing ViewCVS
+      installation to a newer version.
+    </p>
+    <p>
+      It is always recommended to install the new version in a fresh directory
+      and to carefully compare the configuration files.  A possible approach
+      is to name the directories <code>/usr/local/viewcvs-0.6</code>, 
+      <code>/usr/local/viewcvs-0.7</code> and so on and than create a 
+      symbolic link <code>viewcvs</code> pointing to the production 
+      version.  This way you can easily test several versions and switch
+      back, if your users start to complain.
+    </p>
+
+    <ul>
+      <li><a href="#from8">Upgrading from ViewCVS 0.8</a></li>
+      <li><a href="#from7">Upgrading from ViewCVS 0.7 or earlier</a></li>
+    </ul>
+
+    <hr>
+
+    <h2><a name="from8">Upgrading from ViewCVS 0.8</a></h2>
+    <p>
+      This section discusses how to upgrade ViewCVS 0.8 to version
+      0.9 or a later version of the software.
+    </p>
+
+    <h3>Configuration Options</h3>
+    <p>
+      More templates were introduced in version 0.8 of the software,
+      which made many of the configuration options obsolete. This
+      section covers which options were removed. If you made any
+      changes to these options, then you will need to make
+      corresponding changes in the templates.
+    </p>
+    <blockquote>
+      <dl>
+	<dt>
+	  Colors:
+	  <strong>diff_heading</strong>,
+	  <strong>diff_empty</strong>,
+	  <strong>diff_remove</strong>,
+	  <strong>diff_change</strong>,
+	  <strong>diff_add</strong>,
+	  and <strong>diff_dark_change</strong>
+	</dt>
+	<dd>
+	  These options have been incorporated into the
+	  <code>diff.ezt</code> template.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>markup_log</strong></dt>
+	<dd>
+	  This option has been incorporated into the
+	  <code>markup.ezt</code> template.
+
+	  <p></p>
+	</dd>
+
+        <dt>Colors: <strong>nav_header</strong>
+          and <strong>alt_background</strong></dt>
+	<dd>
+	  These options have been incorporated into the
+	  <code>header.ezt</code> template.
+
+	  <p></p>
+	</dd>
+
+        <dt>
+	  Images:
+          <strong>back_icon</strong>,
+          <strong>dir_icon</strong>,
+          and <strong>file_icon</strong>
+        </dt>
+	<dd>
+	  These options have been incorporated into the
+	  <code>directory.ezt</code>, <code>header.ezt</code>,
+	  <code>log.ezt</code>, <code>log_table.ezt</code>, and
+	  <code>query.ezt</code> templates.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>use_java_script</strong>
+          and <strong>open_extern_window</strong></dt>
+	<dd>
+	  The templates now use JavaScript in all applicable places,
+	  and open external windows for most downloading and viewing
+	  of files. If you wish to not use JavaScript and/or external
+	  windows, then remove the feature(s) from the templates.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>show_author</strong></dt>
+	<dd>
+          Changing this option would be quite strange and rare. If you
+          do not want to show the author for the revisions, then you
+          should remove it from the various templates.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>hide_non_readable</strong></dt>
+	<dd>
+          This option was never used, so it has been removed.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>flip_links_in_dirview</strong></dt>
+	<dd>
+          This option is no longer available. If you want the links in
+          your directory view flipped, then you may use the
+          <code>dir_alternate.ezt</code> template.
+
+	  <p></p>
+	</dd>
+
+      </dl>
+    </blockquote>
+
+    <h3>Template Variables</h3>
+    <p>
+      Some template variables that were available in 0.8 have been
+      removed in 0.9. If you have custom templates that refer to these
+      variables, then you will need to modify your templates.
+    </p>
+
+	  <blockquote>
+	    <dl>
+	      <dt><code>directory.ezt</code>: <var>headers</var></dt>
+	      <dd>
+		The headers are now listed explicitly in the template,
+		rather than made available through a list.
+		<p></p>
+	      </dd>
+
+	      <dt>
+		<code>directory.ezt</code>:
+		<var>rows.cols</var>,
+		and <var>rows.span</var>
+	      </dt>
+	      <dd>
+		These variables were used in conjunction with the
+		<var>headers</var> variable to control the column
+		displays. This is now controlled explicitly within the
+		templates.
+		<p></p>
+	      </dd>
+
+	      <dt><code>directory.ezt</code>:
+		<var>rev_in_front</var></dt>
+	      <dd>
+		This was used to indicate that revision links should
+		be used in the first column, rather than in their
+		standard place in the second column. Changing the
+		links should now be done in the template, rather than
+		according to this variable. You may want to look at
+		the <code>dir_alternate.ezt</code> template, which has
+		the revision in front.
+		<p></p>
+	      </dd>
+
+	      <dt><code>directory.ezt</code>:
+		<var>rows.attic</var>
+		and <var>rows.hide_attic_href</var></dt>
+	      <dd>
+		These variable were used to manage the hide and
+		showing of the contents of the <code>Attic/</code>
+		subdirectory. Several new variables were introduced
+		which can be used to replace this functionality:
+		<var>show_attic_href</var>,
+		<var>hide_attic_href</var>, and <var>rows.state</var>.
+		<p></p>
+	      </dd>
+	    </dl>
+	  </blockquote>
+    <hr>
+
+    <h2><a name="from7">Upgrading from ViewCVS 0.7 or earlier</a></h2>
+    <p>
+      This section discusses how to upgrade ViewCVS 0.7, or earlier,
+      to 0.8 or a later version of the software.
+    </p>
+    <p>
+      <strong>NOTE:</strong> these changes will bring you up to the
+      requirements of version 0.8. You must also follow the directions
+      for <a href="#from8">upgrading from 0.8</a>.
+    </p>
+
+    <h3>Configuration Options</h3>
+    <p>
+      The largest change from 0.7 to 0.8, that you will need to deal
+      with, is the introduction of templates. This shifted many
+      configuration file options into the templates, for more direct
+      editing of the output style, colors, and layout. Below is a list 
+      of options that no longer exist, and where you can find their
+      counterpart in the current version of ViewCVS.
+    </p>
+    <p>
+      The following options have all been removed in ViewCVS 0.8. If
+      you made local changes to your ViewCVS configuration, then you
+      will need to edit templates in the <code>templates/</code>
+      subdirectory.
+    </p>
+
+    <blockquote>
+      <dl>
+	<dt>
+	  The [text] section:
+	  <strong>short_intro</strong>,
+	  <strong>long_intro</strong>,
+	  and <strong>doc_info</strong>
+	</dt>
+	<dd>
+	  These options have been incorporated into the
+	  <code>doc/help_rootview.html</code> page and the
+	  <code>doc/help_dirview.html</code> page.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>repository_info</strong></dt>
+	<dd>
+	This option is now incorporated into the
+	<code>directory.ezt</code> template.
+
+	<p></p>
+	</dd>
+
+	<dt><strong>table_padding</strong></dt>
+	<dd>
+	  The table padding values can be changed in the
+	  <code>directory.ezt</code> template.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>table_border</strong></dt>
+	<dd>
+	  Edit <code>directory.ezt</code> to add a border around the
+	  directory table.
+
+	  <p></p>
+	</dd>
+
+	<dt>
+	  <strong>column_header_normal</strong> and
+	  <strong>column_header_sorted</strong>
+	</dt>
+	<dd>
+	  Edit <code>directory.ezt</code> to modify the colors of the
+	  column headers.
+
+	  <p></p>
+	</dd>
+
+	<dt>
+	  <strong>extern_window_width</strong> and
+	  <strong>extern_window_height</strong>
+	</dt>
+	<dd>
+	  These options were never used and have been removed.
+	  <p></p>
+	</dd>
+
+	<dt><strong>logo</strong></dt>
+	<dd>
+	  Edit the templates directly (<code>directory.ezt</code>,
+	  <code>log.ezt</code> or <code>log_table.ezt</code> and if
+	  needed <code>query.ezt</code>) to alter the URL and size of
+	  your logo.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>allow_version_select</strong></dt>
+	<dd>
+	  Edit the <code>log.ezt</code> template if you want to remove
+	  the link which allows the user to select a revision for a
+	  diff.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>input_text_size</strong></dt>
+	<dd>
+	  Edit the <code>log.ezt</code> template if you want to change
+	  the size of the entry box for revisions for performing
+	  diffs.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>even_odd</strong></dt>
+	<dd>
+	  Edit the <code>directory.ezt</code> and
+	  <code>query.ezt</code> templates if you want to change the
+	  colors of the rows in the directory and query result tables.
+
+          <p></p>
+	</dd>
+
+        <dt>Colors: <strong>text</strong>
+          and <strong>background</strong></dt>
+	<dd>
+	  These options have been incorporated into the
+	  <code>directory.ezt</code>, <code>log.ezt</code>, and
+	  <code>log_table.ezt</code> templates.
+
+	  <p></p>
+	</dd>
+
+      </dl>
+    </blockquote>
+
+  </td></tr></table>
+  <hr>
+  <address><a href="mailto:viewcvs@lyra.org">ViewCVS Users Group</a></address>
+<!-- Created: Mon Sep 24 04:23:53 PDT 2001 -->
+<!-- hhmts start -->
+Last modified: Sat Dec 22 20:05:14 PST 2001
+<!-- hhmts end -->
+</body>
+</html>

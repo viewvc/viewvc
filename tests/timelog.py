@@ -3,13 +3,8 @@ import time
 import string
 import profile
 
-from vclib.ccvs import rcsparse
-import viewvc
-
-try:
-  import tparse
-except ImportError:
-  tparse = None
+import rcsparse
+import viewcvs
 
 def lines_changed(delta):
   idx = 0
@@ -61,7 +56,7 @@ class FetchSink(rcsparse.Sink):
 
   def set_revision_info(self, revision, log, text):
     timestamp, author, state = self.meta[revision]
-    entry = viewvc.LogEntry(revision, int(timestamp) - time.timezone, author,
+    entry = viewcvs.LogEntry(revision, int(timestamp) - time.timezone, author,
                              state, None, log)
 
     # .revs is "order seen" and .entries is for random access
@@ -85,15 +80,12 @@ class FetchSink(rcsparse.Sink):
 
 def fetch_log2(full_name, which_rev=None):
   sink = FetchSink(which_rev)
-  rcsparse.parse(open(full_name, 'rb'), sink)
+  rcsparse.Parser().parse(open(full_name), sink)
   return sink.head, sink.branch, sink.tags, sink.revs
 
-def fetch_log3(full_name, which_rev=None):
-  sink = FetchSink(which_rev)
-  tparse.parse(full_name, sink)
-  return sink.head, sink.branch, sink.tags, sink.revs
-
-def compare_data(d1, d2):
+def compare_fetch(full_name, which_rev=None):
+  d1 = viewcvs.fetch_log(full_name, which_rev)
+  d2 = fetch_log2(full_name, which_rev)
   if d1[:3] != d2[:3]:
     print 'd1:', d1[:3]
     print 'd2:', d2[:3]
@@ -110,71 +102,38 @@ def compare_data(d1, d2):
     if vars(d1[3][i]) != vars(d2[3][i]):
       pprint.pprint((i, vars(d1[3][i]), vars(d2[3][i])))
 
-def compare_fetch(full_name, which_rev=None):
-  # d1 and d2 are:
-  #   ( HEAD revision, branch name, TAGS { name : revision }, [ LogEntry ] )
-  d1 = viewvc.fetch_log(full_name, which_rev)
-  d2 = fetch_log2(full_name, which_rev)
-
-  print 'comparing external tools vs a parser module:'
-  compare_data(d1, d2)
-
-  if tparse:
-    d2 = fetch_log3(full_name, which_rev)
-    print 'comparing external tools vs the tparse module:'
-    compare_data(d1, d2)
-
-def compare_many(files):
-  for file in files:
-    print file, '...'
-    compare_fetch(file)
-
-def time_stream(stream_class, filename, n=10):
-  d1 = d2 = d3 = d4 = 0
+def time_fetch(full_name, which_rev=None):
   t = time.time()
-  for i in range(n):
-    ts = stream_class(open(filename, 'rb'))
-    while ts.get() is not None:
-      pass
-  t = time.time() - t
-  print t/n
+  viewcvs.fetch_log(full_name, which_rev)
+  t1 = time.time() - t
+  t = time.time()
+  fetch_log2(full_name, which_rev)
+  t2 = time.time() - t
+  print t1, t2
 
-def time_fetch(full_name, which_rev=None, n=1):
-  times1 = [ None ] * n
-  times2 = [ None ] * n
-  for i in range(n):
-    t = time.time()
-    viewvc.fetch_log(full_name, which_rev)
-    times1[i] = time.time() - t
-  for i in range(n):
-    t = time.time()
-    fetch_log2(full_name, which_rev)
-    times2[i] = time.time() - t
-  times1.sort()
-  times2.sort()
-  i1 = int(n*.05)
-  i2 = int(n*.95)+1
-  times1 = times1[i1:i2]
-  times2 = times2[i1:i2]
-  t1 = reduce(lambda x,y: x+y, times1, 0) / len(times1)
-  t2 = reduce(lambda x,y: x+y, times2, 0) / len(times2)
-  print "t1=%.4f (%.4f .. %.4f)    t2=%.4f (%.4f .. %.4f)" % \
-        (t1, times1[0], times1[-1], t2, times2[0], times2[-1])
-
-def profile_stream(stream_class, filename, n=20):
+def profile_fetch(full_name, which_rev=None):
   p = profile.Profile()
-  def many_calls(filename, n):
-    for i in xrange(n):
-      ts = stream_class(open(filename, 'rb'))
-      while ts.get() is not None:
-        pass
-  p.runcall(many_calls, filename, n)
+  def many_calls(*args):
+    for i in xrange(10):
+      apply(fetch_log2, args)
+  p.runcall(many_calls, full_name, which_rev)
   p.print_stats()
 
-def profile_fetch(full_name, which_rev=None, n=10):
-  p = profile.Profile()
-  def many_calls(full_name, which_rev, n):
-    for i in xrange(n):
-      fetch_log2(full_name, which_rev)
-  p.runcall(many_calls, full_name, which_rev, n)
-  p.print_stats()
+def varysize(full_name, which_rev=None):
+  def one_run(n, *args):
+    rcsparse._TokenStream.CHUNK_SIZE = n
+    t = time.time()
+    for i in xrange(5):
+      apply(fetch_log2, args)
+    print n, time.time() - t
+
+  #one_run(2020, full_name, which_rev)
+  #one_run(4070, full_name, which_rev)
+  #one_run(8170, full_name, which_rev)
+  #one_run(8192, full_name, which_rev)
+  #one_run(16384, full_name, which_rev)
+  one_run(32740, full_name, which_rev)
+  one_run(65500, full_name, which_rev)
+  one_run(100000, full_name, which_rev)
+  one_run(200000, full_name, which_rev)
+  one_run(500000, full_name, which_rev)
