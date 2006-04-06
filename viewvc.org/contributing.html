@@ -222,8 +222,8 @@
 
    <li>Edit the file <code>lib/viewvc.py</code> and remove the
        <tt>"-dev"</tt> suffix from <code>__version__</code>.  The
-       remainder should be of the form X.Y, where X is a positive
-       number and Y is a single digit.</li>
+       remainder should be of the form X.Y.Z, where X, Y, and Z are
+       positive integers.</li>
 
    <li>Ensure all of the above changes have been committed.</li>
 
@@ -237,16 +237,16 @@
        reports.</a></li>
 
    <li>Use <code>svn cp</code> to tag the release to
-       <code>/tags/V<i>X</i>_<i>Y</i></code>, where
-       <i>X</i> and <i>Y</i> should be replaced by the release number
-       from above.  If a developer is willing to volunteer as a bug
-       fix patch release manager, it is now possible to start here at
-       this point with a feature-frozen branch using <code>svn
-       cp</code> to copy the tag to
-       <code>/branches/V<i>X</i>_<i>Y</i>_maint</code>.</li>
+       <code>/tags/<i>X</i>.<i>Y</i>.<i>Z</i></code>, where
+       <i>X</i>, <i>Y</i>, and <i>Z</i> should be replaced by the
+       release number from above.  If a developer is willing to
+       volunteer as a bug fix patch release manager, it is now
+       possible to start here at this point with a feature-frozen
+       branch using <code>svn cp</code> to copy the tag to
+       <code>/branches/<i>X</i>.<i>Y</i>.x</code>.</li>
 
    <li>Go into an empty directory and run <code>tools/make-release
-       viewvc-<i>X.Y</i> V<i>X_Y</i></code>.  This step requires
+       viewvc-<i>X.Y.Z</i> <i>X.Y.Z</i></code>.  This step requires
        read access to the Subversion source code repository.</li>
 
    <li>Upload the created archive files (tar.gz and zip) into the
