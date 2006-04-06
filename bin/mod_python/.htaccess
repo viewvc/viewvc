@@ -1,3 +1,0 @@
-AddHandler python-program .py
-PythonHandler handler
-PythonDebug On

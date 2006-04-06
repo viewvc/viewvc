@@ -1,13 +1,3 @@
-PREFACE
--------
-This file will go away soon after release 0.8.  Please use the SourceForge 
-tracker to resubmit any of the items listed below, if you think, it is 
-still an issue:  
-	http://sourceforge.net/tracker/?group_id=18760
-Before reporting please check, whether someone else has already done this.
-Working patches increase the chance to be included into the next release.
-                                                     -- PeFu / October 2001
-
 TODO ITEMS
 ----------
 *) add Tamminen Eero's comments on how to make Linux directly execute
@@ -24,30 +14,29 @@ TODO ITEMS
 *) committing with a specific revision number:
    http://mailman.lyra.org/pipermail/viewcvs/2000q1/000008.html
 
+*) add an "allowed" modules. process the forbidden modules first. any
+   match will throw it out immediately. if an allowed is present, then
+   disallow any module unless it is present in the allowed list.
+
+*) provide a virtual host capability. consider multiple hosts which
+   map a particular Location to the same directory (i.e. the same
+   ViewCVS script and config file). provide for a way to have global
+   options plus vhost-specific options.
+
 *) add capability similar to cvs2cl.pl:
      http://mailman.lyra.org/pipermail/viewcvs/2000q2/000050.html
    suggestion from Chris Meyer <cmeyer@gatan.com>.
 
-*) add a tree view of the directory structure (and files?)
-
-*) include a ConfigParser.py to help older Python installations
-
-*) add a check for the rcs programs/paths to viewvc-install. clarify the
-   dependency on RCS in the docs.
-
-*) have a "check" mode that verifies binaries are available on rcs_path
-
-   -> alternately (probably?): use rcsparse rather than external tools
 
 KNOWN BUGS
 ----------
-*) time.timezone seems to not be available on some 1.5.2 installs.
-   I was unable to verify this.  On RedHat and SuSE Linux this bug
-   is non existant.
+*) from Harri Pasanen, Feb 7: when hideattic is set, files added in a
+   branch are not visible.
 
-*) With old repositories containing many branches, tags or thousands
-   or revisions, the cvsgraph feature becomes unusable (see INSTALL).
-   ViewVC can't do much about this, but it might be possible to
-   investigate the number of branches, tags and revision in advance
-   and disable the cvsgraph links, if the numbers exceed a certain
-   treshold.
+*) from Dieter Deyke, Jan 12: if the CVS revisions differ by just a
+   keyword, then the diff output chokes.
+
+*) no scroll bar in Netscape browser when you click "as text" on an
+   HTML document.
+
+*) time.timezone seems to not be available on some 1.5.2 installs
