@@ -1,18 +1,12 @@
-[# setup page definitions]
-  [define page_title]Graph of /[where][end]
-  [define help_href][docroot]/help_rootview.html[end]
-[# end]
+[include "header.ezt" "graph"]
 
-[include "include/header.ezt" "graph"]
-[include "include/file_header.ezt"]
+<center>
+<h1>Revision graph of [request.where]</h1>
 
-<hr />
-
-<div style="text-align:center;">
 [imagemap]
-<img usemap="#MyMapName"
-  src="[imagesrc]" 
-  alt="Revisions of [where]" />
-</div>
+<img border="0" usemap="#MyMapName"
+  src="[request.url]?graph=[rev]&makeimage=1[request.amp_query]" 
+  alt="Revisions of [request.where]">
+</center>
 
-[include "include/footer.ezt"]
+[include "footer.ezt"]
