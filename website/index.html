@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>ViewCVS: Viewing CVS Repositories</title>
+  </head>
+
+  <body background="/images/chalk.jpg">
+    <h1>ViewCVS: Viewing CVS Repositories</h1>
+
+    <p>
+      The ViewCVS software was inspired by
+      <a href="http://linux.fh-heilbronn.de/~zeller/cgi/cvsweb.cgi"><i>cvsweb</i></a>
+      (by <a href="mailto:zeller@think.de">Henner Zeller</a>).
+      I wanted to make some changes and updates, but cvsweb was
+      implemented in Perl (and rather poorly, IMO). So I undertook the 
+      task to convert the software to Python.
+    </p>
+    <p>
+      ViewCVS can browse directories, change logs, and specific
+      revisions of files. It can display diffs between versions and
+      show selections of files based on tags or branches.
+    </p>
+    <p>
+      ViewCVS is currently at version 0.2. It is almost a straight
+      port of the cvsweb script, but has had numerous cleanups and other
+      modifications, based on some of Python's strengths. There is
+      still some "badness" in there, but I've been working on flushing 
+      that out, along with my work to start adding features. The
+      functionality of ViewCVS is equal to that of cvsweb, minus the
+      "annotation" support. Annotation requires read/write access to
+      the CVS repository (at this time), and I believe that is a 
+      Bad Thing to do. One of my tasks will be eliminating the
+      read/write requirement.
+    </p>
+    <p>
+      The software is available for download:
+    </p>
+    <blockquote>
+      <a href="viewcvs-0.2.tar.gz">Version 0.2 of ViewCVS</a>
+    </blockquote>
+    <p>
+      Of course, it is also available through ViewCVS itself:
+    </p>
+    <blockquote>
+      <a href="/cgi-bin/viewcvs.cgi/gjspy/viewcvs/">http://www.lyra.org/cgi-bin/viewcvs.cgi/gjspy/viewcvs/</a>
+    </blockquote>
+
+    <p>
+      ViewCVS <font color=red>requires <strong>Python
+	1.5.2</strong></font>.
+    </p>
+
+    <p>
+      If you have any comments, questions, or suggestions, then please 
+      email me at
+      <a href="mailto:gstein@lyra.org">gstein@lyra.org</a>. 
+    </p>
+
+    <p>
+      [ <a href="../">up to Python software</a> ]
+      [ <a href="../../">up to Greg's page</a> ]
+    </p>
+
+    <hr width="75&#37;">
+    <h2>FAQ</h2>
+
+    <dl>
+      <!-- one of (dd dt) -->
+      <dt><strong>I got an <code>AttributeError: urlencode</code></strong></dt>
+      <dd>
+	If you see the following traceback in your browser:
+	<blockquote>
+	  <pre>
+Traceback (innermost last):
+  File "/home/httpd/cgi-bin/viewcvs.cgi", line 2205, in ?
+    main()
+  File "/home/httpd/cgi-bin/viewcvs.cgi", line 2123, in main
+    query_string = sticky_query(query_dict)
+  File "/home/httpd/cgi-bin/viewcvs.cgi", line 444, in sticky_query
+    bare_query = urllib.urlencode(sticky_dict)
+AttributeError: urlencode
+</pre>
+	</blockquote>
+	This is indicative of using an earlier version of
+	Python. <code>urllib.urlencode()</code> was introduced in
+	Python 1.5.2.
+      </dd>
+    </dl>
+
+    <hr>
+    <address><a href="mailto:gstein@lyra.org">Greg Stein</a></address>
+<!-- Created: Fri Dec  3 02:51:37 PST 1999 -->
+<!-- hhmts start -->
+Last modified: Wed Jan 12 03:12:22 PST 2000
+<!-- hhmts end -->
+  </body>
+</html>
