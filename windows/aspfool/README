@@ -12,7 +12,7 @@ Aspfool does not currently distinguish between scripts and other types of files.
  
 will return actual files, instead of 404 not found errors.
 
-Aspfool compiles with Visual C++ 6.0, GCC 2.95 (mingw), and Metrowerks Codewarrior 6 for Windows. Makefiles and project files are included.
+Aspfool is known to compile with Visual C++ 6.0 and GCC 2.95 (mingw). Makefiles and project files are included.
 
 Russ Yanofsky
 rey4@columbia.edu
