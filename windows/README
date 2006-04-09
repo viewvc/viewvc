@@ -74,7 +74,7 @@ See the sections below for information on setting up optional features and
 troubleshooting. From here on <PYTHON_DIR> will stand for the Python root
 directory (usually something like C:\Python22) and <VIEWVC_INSTALL_DIR> will
 represent the directory where ViewVC has been installed to (default is
-C:\Program Files\viewvc-1.0-dev).
+C:\Program Files\viewvc-VERSION).
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 SERVER CONFIGURATION

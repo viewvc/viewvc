@@ -34,6 +34,9 @@ Version 1.0 (not yet released)
     links and image paths in checked out HTML files to work without
     the need for special /*checkout*/ prefixes in URLs. Deprecate
     "checkout_magic" option and disable by default (2006-Apr-03)
+  * add "limit_changes" option to limit number of changed files shown
+    per commit by default in query results and in the Subversion revision
+    view (2005-Dec-23)
   * hide CVS "Attic" directories and add simple toggle for showing
     dead files in directory listings (2004-Jul-31)
   * show Unified, Context and Side-by-side diffs in HTML instead of
@@ -70,6 +73,8 @@ Version 1.0 (not yet released)
     relative to the year 1900. (2005-Sep-30)
   * change loginfo-handler to cope with spaces in filenames and
     support a simpler command line invocation from CVS (2003-Feb-11)
+  * make cvsdbadmin work properly when invoked on CVS subdirectory
+    paths instead of top-level CVS root paths (2006-Mar-17)
   * show diff error when comparing two binary files (2002-Jan-23)
   * make regular expression search skip binary files (2002-Jan-17)
   * make regular expression search skip nonversioned files in CVS
