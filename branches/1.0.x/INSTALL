@@ -5,7 +5,7 @@ CONTENTS
   APACHE CONFIGURATION
   UPGRADING VIEWVC
   SQL CHECKIN DATABASE
-  ENSCRIPT CONFIGURATION
+  ENSCRIPT AND HIGHLIGHT CONFIGURATION
   CVSGRAPH CONFIGURATION
   IF YOU HAVE PROBLEMS...
 
@@ -39,7 +39,7 @@ Congratulations on getting this far. :-)
 
       * a web server capable of running CGI programs
           (for example, Apache at http://httpd.apache.org/)
-      * MySQL to create and query a commit database
+      * MySQL 3.22 and MySQLdb 0.9.0 or later to create a commit database
           (http://www.mysql.com/)
           (http://sourceforge.net/projects/mysql-python)
       * Enscript, code colorizer
@@ -53,7 +53,7 @@ Congratulations on getting this far. :-)
   GUI Operation:
 
     If you just want to see what your CVS repository looks like with
-    ViewVC, type "./standalone.py -g -r /PATH/TO/CVS/ROOT".  This
+    ViewVC, type "bin/standalone.py -g -r /PATH/TO/CVS/ROOT".  This
     will start a tiny webserver serving at http://localhost:7467/.
     PLEASE NOTE: This requires Python with thread support enabled and
     the Tkinter GUI.  If you don't have one of these, omit the '-g' option.
@@ -73,32 +73,19 @@ Congratulations on getting this far. :-)
 INSTALLING VIEWVC
 ------------------
 
-1) To get viewvc.cgi to work, make sure that you have Python 1.5 or
-   greater installed and a webserver which is capable of executing
-   CGI scripts (either based on the .cgi extension, or by placing the
-   script within a specific directory).
+NOTE: Windows users can refer to windows/README for Windows-specific
+installation instructions.
 
-   You need to have RCS installed. Specifically, "rlog", "rcsdiff",
-   and "co". This script was tested against RedHat's rcs-5.7-10.rpm
-   Someone running HP-UX reported problems, that rcs doesn'nt honour
-   the setting of $PATH to find the diff utility.  Please test, if
-   "rcsdiff -u" works.  If not you might have to recompile RCS.
+1) To get viewvc.cgi to work, make sure that you have Python installed
+   and a webserver which is capable of executing CGI scripts (either
+   based on the .cgi extension, or by placing the script within a specific
+   directory).
 
-   Note, that the viewvc.cgi script needs to have READ-ONLY, physical
-   access to the CVS repository (or a copy of it).  Therefore, rsh/ssh or
-   pserver access to the repository will not work.
-
-   For the more human readable diff formats you need a modern diff utility.
-   If you are using Linux, this is no problem.  But on commercial unices
-   you might want to install GNU-diff to be able to use unified or 
-   side-by-side diffs.
-
-   If you want to use cvsgraph, you have to obtain and install this
-   separately.  See below.  This was tested with cvsgraph-1.5.1.
-
-   For the checkin database to work, you will need MySQL >= 3.22, 
-   and the Python DBAPI 2.0 module, MySQLdb.  This was tested with
-   MySQLdb 0.9.1.
+   Note that to browse CVS repositories, the viewvc.cgi script needs to
+   have READ-ONLY, physical access to the repository (or a copy of it).
+   Therefore, rsh/ssh or pserver access to the repository will not work.
+   And you need to have the RCS utilities installed, specifically "rlog",
+   "rcsdiff", and "co".
 
 2) Installation is handled by the ./viewvc-install script.  Run this
    script and you will be prompted for a installation root path.
@@ -152,16 +139,18 @@ INSTALLING VIEWVC
 APACHE CONFIGURATION
 --------------------
 
-1) Find out where the web server configuration file is kept.  On
-   SuSE Linux it is /etc/httpd/httpd.conf, On RedHat Linux 7.3 it
-   is /etc/httpd/conf/httpd.conf.  On other unices you may look
-   at /usr/local/etc or /etc/local.  Use the vendor documentation
-   or the find utility, if in doubt.
+1) Find out where the web server configuration file is kept. Typical
+   locations are /etc/httpd/httpd.conf, /etc/httpd/conf/httpd.conf,
+   and /etc/apache/httpd.conf. Depending on how apache was installed,
+   you may also look under /usr/local/etc or /etc/local. Use the vendor
+   documentation or the find utility if in doubt.
 
 Either METHOD A: 
 2) The ScriptAlias directive is very useful for pointing 
    directly to the viewvc.cgi script.  Simply insert a line containing
+
      ScriptAlias /viewvc <VIEWVC_INSTALLATION_DIRECTORY>/www/cgi/viewvc.cgi
+
    into your httpd.conf file.  Choose the location in httpd.conf where 
    also the other ScriptAlias lines reside.  Some examples:
 
@@ -207,11 +196,12 @@ or if you've got Mod_Python installed you can use METHOD D:
    
    continue with step 3).
 
-3) Restart apache.  On SuSE Linux this is done using the command
-   rcapache restart and on RedHat Linux this is done using the command
-   /sbin/service httpd restart
+3) Restart apache.  The commands to do this vary.  "httpd -k restart" and 
+   "apache -k restart" are two common variants.  On RedHat Linux it is
+   done using the command "/sbin/service httpd restart" and on SuSE Linux
+   it is done with "rcapache restart" 
 
-4) Optional: adding access control:
+4) Optional: Add access control.
 
    In your httpd.conf you can control access to certain modules by adding 
    directives like this:
@@ -224,21 +214,19 @@ or if you've got Mod_Python installed you can use METHOD D:
      require valid-user
    </Location>
 
-   This idea is courtesy to Nick Bauman from http://www.cortexity.com/
-
-   If you use access control, it is recommended that you disable the
-   checkout_magic option so people can't "sneak in" with URLs like
+   WARNING: If you enable the "checkout_magic" or "allow_tar" options, you
+   will need to add additional location directives to prevent people
+   from sneaking in with URLs like:
 
    	http://<server_name>/viewvc/*checkout*/<module_name>
    	http://<server_name>/viewvc/~checkout~/<module_name>
-
-   and get access to seeing the file contents. 
+   	http://<server_name>/viewvc/<module_name>.tar.gz?view=tar
 
 
 UPGRADING VIEWVC
 -----------------
 
-Please read the file upgrading.html in the website subdirectory or
+Please read the file upgrading.html in the viewvc.org/ subdirectory or
 at <http://viewvc.org/upgrading.html>.
 
 
@@ -252,9 +240,7 @@ database.  In fact, the databases are 100% compatible.
 Various queries can be performed on the database.  After installing ViewVC,
 there are some additional steps required to get the database working.
 
-1) You need MySQL >= 3.22, and the Python module MySQLdb 0.9.0 installed.
-   Python 1.5.2 is REQUIRED by MySQLdb, therefore to use this part of
-   ViewVC you must be using Python 1.5.2.
+1) You need MySQL and MySQLdb (a Python DBAPI 2.0 module) installed.
 
 2) You need to create a MySQL user who has permission to create databases.
    Optionally, you can create a second user with read-only access to the
@@ -338,39 +324,25 @@ there are some additional steps required to get the database working.
    stays consistent when you change the svn:log, svn:author or
    svn:date revision properties.
 
-6) You may want to modify the HTML template file:
-
-      <VIEWVC_INSTALLATION_DIRECTORY>/templates/query.ezt
-
-   This is used by the query.cgi script to generate part of its HTML output.  
-   At some point the currently hardcoded table output will also vanish.
-
-7) You should be ready to go.  Load up the query.cgi script and give 
-   it a try.
+6) You should be ready to go.  Click one of the "Query revision history"
+   links in ViewVC directory listings and give it a try.
 
 
-ENSCRIPT CONFIGURATION
-----------------------
+ENSCRIPT AND HIGHLIGHT CONFIGURATION
+------------------------------------
 
-Enscript is program that can colorize sourcecode of a lot of languages.
-Linux distributions like for example SuSE Linux from at least 7.0
-up to the recently released 7.3 already contain a precompiled and
-configured enscript 1.6.2 package.
+Enscript and Highlight are programs that can colorize source code for
+a lot of languages. ViewVC can be configured to use either one.
 
-1) Download genscript from http://www.codento.com/people/mtr/genscript/
+1) Install Enscript or Highlight using your system's package manager
+   or downloading from the project home pages.
 
-2) Configure and compile per instructions with enscript.
-   (I 've not done this, since I'm using the precompiled package
-   delivered with SuSE Linux)
+2) Set the 'use_enscript' or 'use_highlight' options in viewvc.conf to 1.
 
-3) Set the 'use_enscript' option in viewvc.conf to 1.
+3) You may also need to set 'enscript_path' and 'highlight_path' options
+   if the executables are not located on the system PATH.
 
 4) That's it!
-
-5) If you want to colorize exotic languages, you might have to 
-   patch 'lib/viewvc.py' and add a new highlighting file to enscript.
-   For example, if you are interested in a patch for Modula-2 support,
-   send mail to pefu@sourceforge.net.
 
 
 CVSGRAPH CONFIGURATION
@@ -380,39 +352,23 @@ CvsGraph is a program that can display a clickable, graphical tree
 of files in a CVS repository.
 
 WARNING: Under certain circumstances (many revisions of a file
-or many branches or both) cvsgraph can generate very huge images.
+or many branches or both) CvsGraph can generate very huge images.
 Especially on thin clients these images may crash the Web-Browser.
-Currently there is no known way to avoid this behavior of cvsgraph.
+Currently there is no known way to avoid this behavior of CvsGraph.
 So you have been warned!  
 
-Nevertheless cvsgraph can be quite helpful on repositories with 
+Nevertheless, CvsGraph can be quite helpful on repositories with 
 a reasonable number of revisions and branches.
 
-1) Install viewvc according to instructions in 'INSTALLING
-   VIEWVC' section above.  The installation directory is where
-   the 'viewvc-install' script copied and configured the viewvc
-   programs.
+1) Install CvsGraph using your system's package manager or downloading
+   from the project home page.
 
-2) Download CvsGraph from http://www.akhphd.au.dk/~bertho/cvsgraph/
+2) Set the 'use_cvsgraph' options in viewvc.conf to 1.
 
-3) Configure and compile per instructions with CvsGraph.  I had
-   problems with 'configure' finding the gd library.  Had to create
-   a link from libgd.so to libgd.do.4.0.0.   On Solaris you might
-   want to edit the link command line and add the option -R if 
-   you have you libraries at non-standard location.
+3) You may also need to set the 'cvsgraph_path' option if the 
+   CvsGraph executable is not located on the system PATH.
 
-4) Place the 'cvsgraph' executable into a directory readable by the
-   userid running the web server. (default is '/usr/local/bin' if
-   you simply type 'make install' in the cvsgraph directory).
-
-5) Check the setting of the 'cvsgraph_path' option in viewvc.conf:
-   /usr/local/bin/ is most often NOT contained in $PATH of the
-   webserver process (e.g. Apache), so you will have to edit this.  
-   Set the 'use_cvsgraph' option in viewvc.conf to 1.
-
-6) That's it!
-
-7) There is a file <VIEWVC_INSTALLATION_DIRECTORY>/cvsgraph.conf that
+4) There is a file <VIEWVC_INSTALLATION_DIRECTORY>/cvsgraph.conf that
    you may want to edit if desired to set color and font characteristics.
    See the cvsgraph.conf documentation.  No edits are required in
    cvsgraph.conf for operation with viewvc.
@@ -421,8 +377,8 @@ a reasonable number of revisions and branches.
 SUBVERSION INTEGRATION
 ----------------------
 
-ViewVC now supports browsing of Subversion repositories.  To use
-ViewVC with Subversion, make sure you have both Subversion itself and
+ViewVC supports browsing of Subversion repositories.  To use ViewVC
+with Subversion, make sure you have both Subversion itself and
 the Subversion Python bindings installed.  See Subversion's
 installation notes for more details on how to build and install these
 items.  
