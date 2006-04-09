@@ -57,28 +57,27 @@
 
 <p>This document describes some of the things that you will need to 
    consider, change, or handle when upgrading an existing ViewVC
-   installation to a newer version.</p>
+   or ViewCVS installation to a newer version.</p>
 
-<p>Upgrading from an ancient version of ViewVC to the latest version
+<p>Upgrading from an ancient version to the latest version
    isn't necessarily a multi step process.  The instructions are only
    organized that way.  You can certainly upgrade in a single step.</p>
 
 <p>It is always recommended to install the new version in a fresh
    directory and to carefully compare the configuration files.  A
    possible approach is to name the directories
-   <code>/usr/local/viewcvs-0.6</code>,
-   <code>/usr/local/viewcvs-0.7</code> and so on and than create a
-   symbolic link <code>viewcvs</code> pointing to the production
+   <code>/usr/local/viewvc-1.0</code>,
+   <code>/usr/local/viewcvs-1.1</code> and so on and than create a
+   symbolic link <code>viewvc</code> pointing to the production
    version.  This way you can easily test several versions and switch
-   back, if your users start to complain.  </p>
+   back if your users start to complain.</p>
 
 </div>
 <div class="section">
 
-<h2 id="sec-from-0-9">Upgrading From 0.9</h2>
+<h2 id="sec-from-0-9">Upgrading From ViewCVS 0.9</h2>
 
-<p>This section discusses how to upgrade ViewCVS 0.9 to version 1.0 or
-   a later version of the software.</p>
+<p>This section discusses how to upgrade ViewCVS 0.9 to ViewVC 1.0.</p>
 
 <h3>CGI Stubs</h3>
     
@@ -161,7 +160,7 @@
 <h3>Templates</h3>
     
 <p>The templates have changed drastically in this version of ViewVC.
-   If you are using customized templates from 0.9 or earlier, you want
+   If you are using customized templates from 0.9 or earlier, you will want
    to port your old customizations to the new template files instead of
    trying to get the old template files to work with the new ViewVC.</p>
 
@@ -982,7 +981,7 @@
 </div>
 <div class="section">
 
-<h2 id="sec-from-0-8">Upgrading From 0.8</h2>
+<h2 id="sec-from-0-8">Upgrading From ViewCVS 0.8</h2>
 
     <p>
       This section discusses how to upgrade ViewCVS 0.8 to version
