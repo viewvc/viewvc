@@ -670,7 +670,8 @@ def _parse_log_header(fp):
 _re_log_info = re.compile(r'^date:\s+([^;]+);'
                           r'\s+author:\s+([^;]+);'
                           r'\s+state:\s+([^;]+);'
-                          r'(\s+lines:\s+([0-9\s+-]+))?\n$')
+                          r'(\s+lines:\s+([0-9\s+-]+);?)?'
+                          r'(\s+commitid:\s+([a-zA-Z0-9]+))?\n$')
 ### _re_rev should be updated to extract the "locked" flag
 _re_rev = re.compile(r'^revision\s+([0-9.]+).*')
 def _parse_log_entry(fp):
