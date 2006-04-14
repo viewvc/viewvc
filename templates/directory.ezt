@@ -101,8 +101,8 @@
        <td>&nbsp;[entries.ago]</td>
        <td>&nbsp;[entries.author]</td>
        [is cfg.options.show_logs "1"]
-         [if-any entries.log]
-           <td>&nbsp;[entries.log][is entries.pathtype "dir"][is roottype "cvs"]
+         [if-any entries.short_log]
+           <td>&nbsp;[entries.short_log][is entries.pathtype "dir"][is roottype "cvs"]
              <em>(from [entries.log_file]/[entries.log_rev])</em>[end][end]</td>
          [else]
            <td>&nbsp;</td>
