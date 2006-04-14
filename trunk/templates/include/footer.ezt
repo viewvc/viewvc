@@ -9,7 +9,7 @@
 </tr>
 <tr>
   <td>Powered by <a href="http://viewvc.tigris.org/">ViewVC [vsn]</a></td>
-  <td style="text-align: right;">[if-any rss_href]<a href="[rss_href]" title="RSS 2.0 feed"><img src="[docroot]/images/feed-icon-16x16.jpg"/>[else]&nbsp;[end]</td>
+  <td style="text-align: right;">[if-any rss_href]<a href="[rss_href]" title="RSS 2.0 feed"><img src="[docroot]/images/feed-icon-16x16.jpg" class="vc_icon" />[else]&nbsp;[end]</td>
 </tr>
 </table>
 
