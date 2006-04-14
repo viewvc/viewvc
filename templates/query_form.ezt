@@ -6,7 +6,7 @@
 [include "include/header.ezt" "query"]
 
 <p><a href="[dir_href]">
-<img src="[docroot]/images/dir.png" width="16" height="16" alt="Directory" />
+<img src="[docroot]/images/dir.png" class="vc_icon" alt="Directory" />
 Browse Directory</a></p>
 
 <form action="[query_action]" method="get">

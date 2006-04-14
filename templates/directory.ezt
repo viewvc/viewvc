@@ -58,7 +58,7 @@
   <tr class="vc_row_odd">
     <td colspan="2">
       <a href="[up_href]">
-      <img src="[docroot]/images/back_small.png" alt="" width="16" height="16"
+      <img src="[docroot]/images/back_small.png" alt="" class="vc_icon"
       />&nbsp;Parent&nbsp;Directory</a>
     </td>
     <td>&nbsp;</td>
@@ -77,7 +77,7 @@
        [else]
        <a name="[entries.anchor]" href="[entries.log_href]" title="View file revision log">
        [end]
-       <img src="[docroot]/images/[is entries.pathtype "dir"]dir[else][is entries.state "dead"]broken[else]text[end][end].png" alt="" width="16" height="16" />
+       <img src="[docroot]/images/[is entries.pathtype "dir"]dir[else][is entries.state "dead"]broken[else]text[end][end].png" alt="" class="vc_icon" />
        [entries.name][is entries.pathtype "dir"]/[end]</a>
        [is entries.state "dead"](dead)[end]
      </td>
@@ -85,7 +85,7 @@
        <td style="width:1%"><a href="[entries.graph_href]"
        title="View Revision Graph"><img
        src="[docroot]/images/cvsgraph_16x16.png"
-       alt="View Revision Graph" width="16" height="16" />
+       alt="View Revision Graph" class="vc_icon" />
        </a></td>
      [end]
      [if-any entries.errors]

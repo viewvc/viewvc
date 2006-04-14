@@ -24,7 +24,16 @@ table.auto {
 tr, td, th { vertical-align: top; }
 form { margin: 0; }
 
-/** Navigation Headers ***/
+/*** Icons ***/
+.vc_icon {
+  width: 16px;
+  height: 16px;
+  border: none;
+  padding: 0 1px;
+}
+
+
+/*** Navigation Headers ***/
 .vc_navheader {
   background-color: #cccccc;
 }
