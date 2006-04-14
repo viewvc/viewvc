@@ -1554,8 +1554,8 @@ def view_directory(request):
   where_prefix = where and where + '/'
 
   for file in file_data:
-    row = _item(graph_href=None, author=None, log=None, log_file=None,
-                log_rev=None, state=None, size=None, mime_type=None,
+    row = _item(author=None, log=None, short_log=None, state=None, size=None,
+                log_file=None, log_rev=None, graph_href=None, mime_type=None,
                 date=None, ago=None, view_href=None, log_href=None,
                 revision_href=None, annotate_href=None, download_href=None,
                 download_text_href=None, prefer_markup=ezt.boolean(0))
@@ -1567,7 +1567,8 @@ def view_directory(request):
       row.date = make_time_string(file.date, cfg)
       row.ago = html_time(request, file.date)
     if cfg.options.show_logs and file.log is not None:
-      row.log = format_log(file.log, cfg)
+      row.short_log = format_log(file.log, cfg)
+      row.log = htmlify(file.log)
 
     row.anchor = request.server.escape(file.name)
     row.name = request.server.escape(file.name)

@@ -747,8 +747,8 @@ td {
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.log</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>Log message of last modification to the directory entry.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.log_file</td>
@@ -790,6 +790,13 @@ td {
   <td>URL of the Subversion revision view for the directory entries
       current revision.  Valid only when <var>roottype</var> is
       <tt>svn</tt>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">entries.short_log</td>
+  <td>String</td>
+  <td>Log message of last modification to the directory entry,
+      truncated to contain no more than the number of characters
+      specified by the <code>short_log_len</code> configuration option.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.size</td>

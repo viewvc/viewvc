@@ -21,6 +21,15 @@ table {
 table.auto {
   width: auto;
 }
+table.fixed {
+  width: 100%;
+  table-layout: fixed;
+}
+table.fixed td {
+  overflow: hidden; 
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 tr, td, th { vertical-align: top; }
 form { margin: 0; }
 
