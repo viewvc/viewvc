@@ -12,7 +12,7 @@
     [end]
     </a>
   </th>
-  <th style="width: 96px; font-size: 0" class="vc_header">&nbsp;</th>
+  <th style="width: 96px" class="vc_header">&nbsp;</th>
   <th class="vc_header[is sortby "rev"]_sort[end]">
     <a href="[sortby_rev_href]#dirlist">Last Change
     [is sortby "rev"]
@@ -49,55 +49,64 @@
     [if-any entries.errors]
       <td colspan="2">[for entries.errors]<em>[entries.errors]</em>[end]</td>
     [else]
-      <td style="width: 96px; font-size: 0">
+      [define log_icon_link][if-any entries.log_href]<a 
+        href="[entries.log_href]"
+        title="View Log"><img
+          src="[docroot]/images/log.png"
+          alt="View Log" 
+          class="vc_icon" /></a>[end][end]
 
-        [# Icon column. We might want to add more icons like a tarball
-         # icon for directories or a diff to previous icon for files. ]
-
-        [if-any entries.log_href]
-        <a href="[entries.log_href]"><img
-        src="[docroot]/images/log.png"
-        alt="View Log" class="vc_icon" /></a>
+      [is entries.pathtype "dir"]
+        [is roottype "cvs"]
+          [# no point in showing icon when there's only one to choose from]
+          [define view_icon_link][end]
+        [else]
+          [define view_icon_link]<a 
+            href="[entries.view_href]"
+            title="View Directory Listing"><img
+              src="[docroot]/images/list.png"
+              alt="View Directory Listing" 
+              class="vc_icon" /></a>[end]
         [end]
+      [end]
 
-        [is entries.pathtype "dir"]
-          [is roottype "cvs"]
-            [# no point in showing icon when there's only one to choose from]
-          [else]
-            <a href="[entries.view_href]"><img
-            src="[docroot]/images/list.png"
-            alt="View Directory Listing" class="vc_icon" /></a>
-          [end]
-        [end]
+      [is entries.pathtype "file"]
+        [define view_icon_link][if-any entries.view_href]<a 
+          href="[entries.view_href]"
+          title="View File"><img
+            src="[docroot]/images/view.png"
+            alt="View File" 
+            class="vc_icon" /></a>[end][end]
 
-        [is entries.pathtype "file"]
-          [if-any entries.graph_href]
-          <a href="[entries.graph_href]"
+        [define graph_icon_link][if-any entries.graph_href]<a 
+          href="[entries.graph_href]"
           title="View Revision Graph"><img
-          src="[docroot]/images/cvsgraph_16x16.png"
-          alt="View Revision Graph" class="vc_icon" />
-          </a>
-          [end]
+            src="[docroot]/images/cvsgraph_16x16.png"
+            alt="View Revision Graph" 
+            class="vc_icon" /></a>[end][end]
 
-          [if-any entries.view_href]
-          <a href="[entries.view_href]"><img
-          src="[docroot]/images/view.png"
-          alt="View File" class="vc_icon" /></a>
-          [end]
+        [define download_icon_link][if-any entries.download_href]<a 
+          href="[entries.download_href]"
+          title="Download File"><img
+            src="[docroot]/images/download.png"
+            alt="Download File"
+            class="vc_icon" /></a>[end][end]
 
-          [if-any entries.download_href]
-          <a href="[entries.download_href]"><img
-          src="[docroot]/images/download.png"
-          alt="Download File" class="vc_icon" /></a>
-          [end]
+        [define annotate_icon_link][if-any entries.annotate_href]<a 
+          href="[entries.annotate_href]"
+          title="Annotate File"><img
+            src="[docroot]/images/annotate.png"
+            alt="Annotate File" 
+            class="vc_icon" /></a>[end][end]
+      [end]
 
-          [if-any entries.annotate_href]
-          <a href="[entries.annotate_href]"><img
-          src="[docroot]/images/annotate.png"
-          alt="Annotate File" class="vc_icon" /></a>
-          [end]
-        [end]
-      </td>
+      <td style="width: 96px"
+        >[# Icon column. We might want to add more icons like a tarball
+          # icon for directories or a diff to previous icon for files.
+          # Make sure this sucker has no whitespace in it, or the fixed
+          # widthness of will suffer for large font sizes
+         ][log_icon_link][view_icon_link][graph_icon_link][download_icon_link][annotate_icon_link]</td>
+
       <td>
         [if-any entries.rev]
           <strong>[if-any entries.revision_href]<a href="[entries.revision_href]">[entries.rev]</a>[else][entries.rev][end]</strong>
