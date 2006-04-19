@@ -3,7 +3,7 @@
 <table cellspacing="1" cellpadding="2" class="fixed">
 <thead>
 <tr>
-  <th style="width: 20%" class="vc_header[is sortby "file"]_sort[end]">
+  <th style="width: 200px" class="vc_header[is sortby "file"]_sort[end]">
     <a href="[sortby_file_href]#dirlist">File
     [is sortby "file"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
@@ -12,7 +12,7 @@
     [end]
     </a>
   </th>
-  <th style="width: 96px" class="vc_header">&nbsp;</th>
+  <th style="width: 96px" class="vc_header"></th>
   <th class="vc_header[is sortby "rev"]_sort[end]">
     <a href="[sortby_rev_href]#dirlist">Last Change
     [is sortby "rev"]
@@ -28,18 +28,18 @@
 <tbody>
 [if-any up_href]
   <tr class="vc_row_odd">
-    <td style="width: 20%">
+    <td style="width: 200px">
       <a href="[up_href]">
       <img src="[docroot]/images/back_small.png" alt="" class="vc_icon"
       />&nbsp;Parent&nbsp;Directory</a>
     </td>
-    <td style="width: 96px; font-size: 0;">&nbsp;</td>
+    <td style="width: 96px; font-size: 0;"></td>
     <td>&nbsp;</td>
   </tr>
  [end]
 [for entries]
   <tr class="vc_row_[if-index entries even]even[else]odd[end]">
-    <td style="width: 20%">
+    <td style="width: 200px">
     <a name="[entries.anchor]" href="[is entries.pathtype "dir"][entries.view_href][else][if-any entries.prefer_markup][entries.view_href][else][entries.download_href][end][end]" title="[is entries.pathtype "dir"]View Directory Contents[else][if-any entries.prefer_markup]View[else]Download[end] File Contents[end]">
        <img src="[docroot]/images/[is entries.pathtype "dir"]dir[else][is entries.state "dead"]broken[else]text[end][end].png" alt="" class="vc_icon" />
        [entries.name][is entries.pathtype "dir"]/[end]</a>
@@ -49,6 +49,10 @@
     [if-any entries.errors]
       <td colspan="2">[for entries.errors]<em>[entries.errors]</em>[end]</td>
     [else]
+      [define view_icon_link][end]
+      [define graph_icon_link][end]
+      [define download_icon_link][end]
+      [define annotate_icon_link][end]
       [define log_icon_link][if-any entries.log_href]<a 
         href="[entries.log_href]"
         title="View Log"><img
@@ -59,7 +63,6 @@
       [is entries.pathtype "dir"]
         [is roottype "cvs"]
           [# no point in showing icon when there's only one to choose from]
-          [define view_icon_link][end]
         [else]
           [define view_icon_link]<a 
             href="[entries.view_href]"
