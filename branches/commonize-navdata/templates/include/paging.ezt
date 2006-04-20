@@ -1,0 +1,18 @@
+  [is cfg.options.use_pagesize "0"]
+  [else]
+    [is picklist_len "1"]
+    [else]
+      <hr />
+      <form method="get" action="[log_paging_action]">
+        [log_paging_hidden_values]
+        <input type="submit" value="Go to:">
+        <select name="log_pagestart"  onchange="submit()">
+          [for picklist]
+            <option [is picklist.count log_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] - [picklist.end]</option>
+          [end]
+        </select>
+      </form>
+    [end]
+  [end]
+
+

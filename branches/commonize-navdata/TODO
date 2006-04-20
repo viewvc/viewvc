@@ -1,0 +1,53 @@
+PREFACE
+-------
+This file will go away soon after release 0.8.  Please use the SourceForge 
+tracker to resubmit any of the items listed below, if you think, it is 
+still an issue:  
+	http://sourceforge.net/tracker/?group_id=18760
+Before reporting please check, whether someone else has already done this.
+Working patches increase the chance to be included into the next release.
+                                                     -- PeFu / October 2001
+
+TODO ITEMS
+----------
+*) add Tamminen Eero's comments on how to make Linux directly execute
+   the Python script. From email on Feb 19.
+   [ add other examples, such as my /bin/sh hack or the teeny CGI stub 
+     importing the bulk hack ]
+
+*) insert rcs_path into PATH before calling "rcsdiff". rcsdiff might
+   use "co" and needs to find it on the path.
+
+*) show the "locked" flag (attach it to the LogEntry objects).
+   Idea from Russell Gordon <russell@hoopscotch.dhs.org>
+
+*) committing with a specific revision number:
+   http://mailman.lyra.org/pipermail/viewcvs/2000q1/000008.html
+
+*) add capability similar to cvs2cl.pl:
+     http://mailman.lyra.org/pipermail/viewcvs/2000q2/000050.html
+   suggestion from Chris Meyer <cmeyer@gatan.com>.
+
+*) add a tree view of the directory structure (and files?)
+
+*) include a ConfigParser.py to help older Python installations
+
+*) add a check for the rcs programs/paths to viewvc-install. clarify the
+   dependency on RCS in the docs.
+
+*) have a "check" mode that verifies binaries are available on rcs_path
+
+   -> alternately (probably?): use rcsparse rather than external tools
+
+KNOWN BUGS
+----------
+*) time.timezone seems to not be available on some 1.5.2 installs.
+   I was unable to verify this.  On RedHat and SuSE Linux this bug
+   is non existant.
+
+*) With old repositories containing many branches, tags or thousands
+   or revisions, the cvsgraph feature becomes unusable (see INSTALL).
+   ViewVC can't do much about this, but it might be possible to
+   investigate the number of branches, tags and revision in advance
+   and disable the cvsgraph links, if the numbers exceed a certain
+   treshold.
