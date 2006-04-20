@@ -97,6 +97,12 @@ td {
 </thead>
 <tbody>
 <tr class="varlevel1">
+  <td class="varname">annotate_href</td>
+  <td>String</td>
+  <td>URL of the ViewVC annotation view for the current resource.
+      Valid only when <var>pathtype</var> is <tt>file</tt>.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">cfg</td>
   <td>Object</td>
   <td>Representation of the object used by ViewVC for runtime
@@ -126,10 +132,22 @@ td {
       location).</td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">download_href</td>
+  <td>String</td>
+  <td>ViewVC file contents download URL for the current resource.
+      Valid only when <var>pathtype</var> is <tt>file</tt>.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">download_text_href</td>
+  <td>String</td>
+  <td>ViewVC file contents as-text download URL for the current resource.
+      Valid only when <var>pathtype</var> is <tt>file</tt>.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">graph_href</td>
   <td>String</td>
-  <td>URL of the ViewVC revision graph view for the current 
-      resource.</td>
+  <td>URL of the ViewVC revision graph view for the current resource.
+      Valid only when <var>pathtype</var> is <tt>file</tt>.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">kv</td>
@@ -146,7 +164,8 @@ td {
   <td class="varname">log_href</td>
   <td>String</td>
   <td>URL of the ViewVC revision log view for the current
-      resource.</td>
+      resource.  Valid only when <var>pathtype</var> is <tt>file</tt>
+      or (for Subversion roots) <tt>dir</tt>.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">log_rev_href</td>
@@ -175,6 +194,29 @@ td {
   <td>String</td>
   <td>Path kind of the current resource.  Valid values: <tt>file</tt>
       (file), <tt>dir</tt> (directory); may be empty.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">prefer_markup</td>
+  <td>Boolean</td>
+  <td>Indicates whether to make the default file link a link to the markup
+      page instead of the checkout page.  Valid only when
+      <var>pathtype</var> is <tt>file</tt>.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">queryform_href</td>
+  <td>String</td>
+  <td>URL for a query form returning results from this directory.
+      Valid only when <var>pathtype</var> is <tt>dir</tt>.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">rev</td>
+  <td>String</td>
+  <td>Revision of the current resource.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">revision_href</td>
+  <td>String</td>
+  <td>URL of the Subversion revision view for the current revision.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">rootname</td>
@@ -209,6 +251,11 @@ td {
       Valid values: <tt>cvs</tt> (CVS), <tt>svn</tt> (Subversion).</td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">rss_href</td>
+  <td>String</td>
+  <td>URL of RSS feed for current location.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">up_href</td>
   <td>String</td>
   <td>Link to the current object's parent directory view.</td>
@@ -225,6 +272,12 @@ td {
      <tt>queryform</tt> (revision history query form view),
      <tt>rev</tt> (revision/changeset view).</td>
 </tr>
+<tr class="varlevel1">
+  <td class="varname">view_href</td>
+  <td>String</td>
+  <td>URL of the ViewVC file contents view for the current resource.</td>
+      Valid only when <var>pathtype</var> is <tt>file</tt> or 
+      <tt>dir</tt>.</tr>
 <tr class="varlevel1">
   <td class="varname">vsn</td>
   <td>String</td>
@@ -256,21 +309,6 @@ td {
      <a href="#variables-common">COMMON</a> variable set</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">annotate_href</td>
-  <td>String</td>
-  <td>URL of the ViewVC annotation view for the current resource.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">download_href</td>
-  <td>String</td>
-  <td>ViewVC file contents download URL for the current resource.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">download_text_href</td>
-  <td>String</td>
-  <td>ViewVC file contents as-text download URL for the current resource.</td>
-</tr>
-<tr class="varlevel1">
   <td class="varname">orig_path</td>
   <td>String</td>
   <td>When viewing an old file revision through a copy of the file,
@@ -280,32 +318,6 @@ td {
   <td class="varname">orig_href</td>
   <td>String</td>
   <td>URL of a ViewVC log view for <code>orig_path</code>.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">prefer_markup</td>
-  <td>Boolean</td>
-  <td>Indicates whether to make the default file link a link to the markup
-      page instead of the checkout page.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">rev</td>
-  <td>String</td>
-  <td>Revision of the current resource.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">revision_href</td>
-  <td>String</td>
-  <td>URL of the Subversion revision view for the current revision.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">rss_href</td>
-  <td>String</td>
-  <td>URL of RSS feed for current location.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">view_href</td>
-  <td>String</td>
-  <td>URL of the ViewVC file contents view for the current resource.</td>
 </tr>
 </tbody>
 </table>
@@ -850,11 +862,6 @@ td {
   <td>List</td>
   <td>List of tag names in use by files in the current directory.
       CVS only.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">queryform_href</td>
-  <td>String</td>
-  <td>URL for a query form returning results from this directory.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">search_re</td>
@@ -1643,11 +1650,6 @@ td {
   <td class="varname">plus_count</td>
   <td>String</td>
   <td>Total number of lines added in the commit (over all files).</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">queryform_href</td>
-  <td>String</td>
-  <td>URL for form to edit query criteria.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">querysort</td>

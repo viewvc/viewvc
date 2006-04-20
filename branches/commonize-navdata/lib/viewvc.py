@@ -1054,14 +1054,25 @@ def common_template_data(request):
     'rootname' : request.server.escape(request.rootname),
     'pathtype' : None,
     'nav_path' : nav_path(request),
+    'view'     : _view_codes[request.view_func],
+    'rev'      : None,
+    'view_href' : None,
+    'annotate_href' : None,
+    'download_href' : None,
+    'download_text_href' : None,
+    'revision_href' : None,
+    'queryform_href' : None,
     'up_href'  : None,
     'log_href' : None,
     'log_href_rev': None,
     'graph_href': None,
     'rss_href' : None,
-    'view'     : _view_codes[request.view_func],
+    'prefer_markup' : ezt.boolean(0),
   }
 
+  rev = request.query_dict.get('revision')
+  data['rev'] = hasattr(request.repos, '_getrev') \
+                and request.repos._getrev(rev) or rev
   if request.pathtype == vclib.DIR:
     data['pathtype'] = 'dir'
   elif request.pathtype == vclib.FILE:
@@ -1092,28 +1103,32 @@ def common_template_data(request):
                                       params={}, escape=1)
 
   if request.pathtype == vclib.FILE:
-    if (request.view_func is not view_log):
-      data['log_href'] = request.get_url(view_func=view_log,
-                                         params={}, escape=1)
-      if (request.view_func is view_diff):
-        data['log_href_rev'] = request.query_dict.get('r2')
-      elif (request.view_func is view_annotate):
-        # if user did "view=annotate" there may not be an annotate key
-        if request.query_dict.has_key('annotate'):
-          data['log_href_rev'] = request.query_dict.get('annotate')
-      elif request.query_dict.has_key('revision'):
-        data['log_href_rev'] = request.query_dict.get('revision')
-
-    if (request.roottype == 'cvs' and cfg.options.use_cvsgraph
-        and request.view_func is not view_cvsgraph):
+    data['view_href'], data['download_href'], data['download_text_href'], \
+      data['annotate_href'], data['revision_href'], data['prefer_markup'] \
+        = get_file_view_info(request, request.where,
+                             data['rev'], request.mime_type)
+    data['log_href'] = request.get_url(view_func=view_log,
+                                       params={}, escape=1)
+    if request.roottype == 'cvs' and cfg.options.use_cvsgraph:
       data['graph_href'] = request.get_url(view_func=view_cvsgraph,
                                            params={}, escape=1)
   elif request.pathtype == vclib.DIR:
+    data['view_href'] = request.get_url(view_func=view_directory,
+                                       params={}, escape=1)
     if request.roottype == 'svn':
+      data['revision_href'] = request.get_url(view_func=view_revision,
+                                              params={}, escape=1)
+
       data['log_href'] = request.get_url(view_func=view_log,
                                          params={}, escape=1)
 
   if is_query_supported(request):
+    params = {}
+    if request.roottype == 'cvs' and request.pathrev:
+      params['branch'] = request.pathrev
+    data['queryform_href'] = request.get_url(view_func=view_queryform,
+                                             params=params,
+                                             escape=1)
     data['rss_href'] = request.get_url(view_func=view_query,
                                        params={'date': 'month',
                                                'format': 'rss'},
@@ -1121,19 +1136,8 @@ def common_template_data(request):
   return data
 
 def nav_header_data(request, rev, orig_path):
-  view_href, download_href, download_text_href, annotate_href, \
-             revision_href, prefer_markup \
-      = get_file_view_info(request, request.where, rev, request.mime_type)
-  
   data = common_template_data(request)
   data.update({
-    'rev' : rev,
-    'view_href' : view_href,
-    'annotate_href' : annotate_href,
-    'download_href' : download_href,
-    'download_text_href' : download_text_href,
-    'revision_href' : revision_href,
-    'prefer_markup' : prefer_markup,
     'orig_path' : None,
     'orig_href' : None,
   })
@@ -1671,7 +1675,6 @@ def view_directory(request):
     'youngest_rev' : None,
     'youngest_rev_href' : None,
     'selection_form' : None,
-    'queryform_href' : None,
     'attic_showing' : None,
     'show_attic_href' : None,
     'hide_attic_href' : None,
@@ -1717,14 +1720,6 @@ def view_directory(request):
     data['youngest_rev_href'] = request.get_url(view_func=view_revision,
                                                 params={},
                                                 escape=1)
-
-  if is_query_supported(request):
-    params = {}
-    if request.roottype == 'cvs' and request.pathrev:
-      params['branch'] = request.pathrev
-    data['queryform_href'] = request.get_url(view_func=view_queryform,
-                                             params=params,
-                                             escape=1)
 
   if cfg.options.use_pagesize:
     data['dir_paging_action'], data['dir_paging_hidden_values'] = \
@@ -2724,10 +2719,12 @@ def view_diff(request):
   except vclib.InvalidRevision:
     raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                  'to diff', '400 Bad Request')
-  data = common_template_data(request)
+  path_left = _path_join(p1)
+  path_right = _path_join(p2)
+  data = common_template_data(request, path_right, r2)
   data.update({
-    'path_left': _path_join(p1),
-    'path_right': _path_join(p2),
+    'path_left': path_left,
+    'path_right': path_right,
     'rev_left' : rev1,
     'rev_right' : rev2,
     'tag_left' : sym1,
@@ -3443,8 +3440,6 @@ def view_query(request):
   show_branch = ezt.boolean(request.roottype == 'cvs' and
                             (branch == '' or branch_match != 'exact'))
 
-  # a link to modify query
-  queryform_href = request.get_url(view_func=view_queryform, escape=1)
   # backout link
   params = request.query_dict.copy()
   params['format'] = 'backout'
@@ -3469,7 +3464,6 @@ def view_query(request):
   data.update({
     'sql': sql,
     'english_query': english_query(request),
-    'queryform_href': queryform_href,
     'backout_href': backout_href,
     'plus_count': plus_count,
     'minus_count': minus_count,
