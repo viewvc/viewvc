@@ -272,7 +272,9 @@ class Request:
     # If this is using an old-style 'rev' parameter, redirect to new hotness.
     # Subversion URLs will now use 'pathrev'; CVS ones use 'revision'.
     if self.repos and self.query_dict.has_key('rev'):
-      if self.roottype == 'svn' and not self.query_dict.has_key('pathrev'):
+      if self.roottype == 'svn' \
+             and not self.query_dict.has_key('pathrev') \
+             and not self.view_func == view_revision:
         self.query_dict['pathrev'] = self.query_dict['rev']
         del self.query_dict['rev']
       else: # elif not self.query_dict.has_key('revision'): ?
