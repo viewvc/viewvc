@@ -12,7 +12,7 @@
     <th>Jump to revision:</th>
     <td>
       [jump_rev_hidden_values]
-      <input type="text" name="rev" value="[rev]" />
+      <input type="text" name="revision" value="[rev]" />
       <input type="submit" value="Go" />
       [if-any prev_href]
         <a href="[prev_href]"><img src="[docroot]/images/back.png" alt="Previous" width="20" height="22" /></a>[end]
