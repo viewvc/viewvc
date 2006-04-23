@@ -2683,6 +2683,10 @@ def view_diff(request):
     diff_type = vclib.UNIFIED
     diff_options['context'] = 15
     human_readable = 1
+  elif format == 'f':
+    diff_type = vclib.UNIFIED
+    diff_options['context'] = None
+    human_readable = 1
   elif format == 'h':
     diff_type = vclib.UNIFIED
     human_readable = 1
