@@ -78,10 +78,12 @@ def HeuristicArgParse(s, repository):
   directory name by choosing the longest possible directory name that actually
   exists in the repository"""
 
-  if s[-16:] == ' - New directory':
+  if (s[-16:] == ' - New directory'
+      or s[:26] == ' - New directory,NONE,NONE'):
     return None, None
 
-  if s[-19:] == r' - Imported sources':
+  if (s[-19:] == ' - Imported sources'
+      or s[-29:] == ' - Imported sources,NONE,NONE'):
     return None, None
 
   file_data_list = []
