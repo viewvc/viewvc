@@ -24,7 +24,7 @@
 [is roottype "svn"]
 <tr>
   <td>Directory revision:</td>
-  <td><a href="[tree_rev_href]">[tree_rev]</a>[if-any youngest_rev] (of <a href="[youngest_rev_href]">[youngest_rev]</a>)[end]</td>
+  <td><a href="[tree_rev_href]" title="Revision [tree_rev]">[tree_rev]</a>[if-any youngest_rev] (of <a href="[youngest_rev_href]" title="Revision [youngest_rev]">[youngest_rev]</a>)[end]</td>
 </tr>
 [end]
 <tr>
