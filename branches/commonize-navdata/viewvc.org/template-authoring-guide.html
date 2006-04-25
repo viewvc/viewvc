@@ -57,7 +57,6 @@ td {
   <li><a href="#variables">Variables Available to ViewVC Templates</a></li>
   <ul class="toc-list">
     <li><a href="#variables-common">Common Template Variable Set (COMMON)</a></li>
-    <li><a href="#variables-navdata">File Navigation Variable Set (NAVDATA)</a></li>
     <li><a href="#variables-pathrev">Path Revision Form Variable Set (PATHREV)</a></li>
     <li><a href="#variables-paging">Paging Form Variable Set (PAGING)</a></li>
     <li><a href="#variables-annotate">Annotation View (annotate.ezt)</a></li>
@@ -275,9 +274,10 @@ td {
 <tr class="varlevel1">
   <td class="varname">view_href</td>
   <td>String</td>
-  <td>URL of the ViewVC file contents view for the current resource.</td>
+  <td>URL of the ViewVC file contents view for the current resource.
       Valid only when <var>pathtype</var> is <tt>file</tt> or 
-      <tt>dir</tt>.</tr>
+      <tt>dir</tt>.</td>
+</tr>
 <tr class="varlevel1">
   <td class="varname">vsn</td>
   <td>String</td>
@@ -288,36 +288,6 @@ td {
   <td>String</td>
   <td>Path (relative to the current repository root) of the current
       resource.</td>
-</tr>
-</tbody>
-</table>
-</div>
-
-<div class="h3">
-<h3 id="variables-navdata">File Navigation Variable Set (NAVDATA)</h3>
-<table>
-<thead>
-<tr>
-  <th>Variable</th>
-  <th>Type</th>
-  <th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="include">
-  <td colspan="3">Includes all variables from the 
-     <a href="#variables-common">COMMON</a> variable set</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">orig_path</td>
-  <td>String</td>
-  <td>When viewing an old file revision through a copy of the file,
-      this is the old file revision's original path.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">orig_href</td>
-  <td>String</td>
-  <td>URL of a ViewVC log view for <code>orig_path</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -427,7 +397,7 @@ td {
 <tbody>
 <tr class="include">
   <td colspan="3">Includes all variables from the 
-     <a href="#variables-navdata">NAVDATA</a> variable set</td>
+     <a href="#variables-common">COMMON</a> variable set</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">lines</td>
@@ -474,6 +444,17 @@ td {
   <td class="varname">lines.text</td>
   <td>String</td>
   <td>Textual contents of the line.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">orig_path</td>
+  <td>String</td>
+  <td>When viewing an old file revision through a copy of the file,
+      this is the old file revision's original path.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">orig_href</td>
+  <td>String</td>
+  <td>URL of a ViewVC log view for <code>orig_path</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -1407,7 +1388,7 @@ td {
 <tbody>
 <tr class="include">
   <td colspan="3">Includes all variables from the 
-     <a href="#variables-navdata">NAVDATA</a> variable set</td>
+     <a href="#variables-common">COMMON</a> variable set</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">ago</td>
@@ -1456,6 +1437,17 @@ td {
   <td class="varname">mime_type</td>
   <td>String</td>
   <td>MIME type of the current file.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">orig_path</td>
+  <td>String</td>
+  <td>When viewing an old file revision through a copy of the file,
+      this is the old file revision's original path.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">orig_href</td>
+  <td>String</td>
+  <td>URL of a ViewVC log view for <code>orig_path</code>.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">prev</td>

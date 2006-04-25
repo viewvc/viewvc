@@ -1135,24 +1135,6 @@ def common_template_data(request):
                                        escape=1)
   return data
 
-def nav_header_data(request, rev, orig_path):
-  data = common_template_data(request)
-  data.update({
-    'orig_path' : None,
-    'orig_href' : None,
-  })
-
-  if orig_path != request.path_parts:
-    path = _path_join(orig_path)
-    data['orig_path'] = path
-    data['orig_href'] = request.get_url(view_func=view_log,
-                                        where=path,
-                                        pathtype=vclib.FILE,
-                                        params={'pathrev': rev},
-                                        escape=1)
-
-  return data
-
 def retry_read(src, reqlen=CHUNK_SIZE):
   while 1:
     chunk = src.read(CHUNK_SIZE)
@@ -1373,7 +1355,7 @@ def view_markup(request):
     fp.close()
     return
 
-  data = nav_header_data(request, revision, path)
+  data = common_template_data(request)
   data.update({
     'mime_type' : request.mime_type,
     'log' : None,
@@ -1388,7 +1370,18 @@ def view_markup(request):
     'state' : None,
     'vendor_branch' : None,
     'prev' : None,
+    'orig_path' : None,
+    'orig_href' : None,
     })
+
+  if path != request.path_parts:
+    orig_path = _path_join(path)
+    data['orig_path'] = orig_path
+    data['orig_href'] = request.get_url(view_func=view_log,
+                                        where=orig_path,
+                                        pathtype=vclib.FILE,
+                                        params={'pathrev': revision},
+                                        escape=1)
 
   if cfg.options.show_log_in_markup:
     options = {'svn_latest_log': 1}
@@ -2155,8 +2148,21 @@ def view_annotate(request):
   source, revision = blame.blame(request.repos, path,
                                  diff_url, include_url, rev)
 
-  data = nav_header_data(request, revision, path)
-  data['lines'] = source
+  data = common_template_data(request)
+  data.update({
+    'lines': source,
+    'orig_path': None,
+    'orig_href': None,
+    })
+
+  if path != request.path_parts:
+    orig_path = _path_join(path)
+    data['orig_path'] = orig_path
+    data['orig_href'] = request.get_url(view_func=view_log,
+                                        where=orig_path,
+                                        pathtype=vclib.FILE,
+                                        params={'pathrev': revision},
+                                        escape=1)
 
   request.server.header()
   generate_page(request, "annotate", data)
