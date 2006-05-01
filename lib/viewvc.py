@@ -14,7 +14,7 @@
 #
 # -----------------------------------------------------------------------
 
-__version__ = '1.1-dev'
+__version__ = '1.0.0'
 
 # this comes from our library; measure the startup time
 import debug
@@ -1556,8 +1556,8 @@ def view_directory(request):
   where_prefix = where and where + '/'
 
   for file in file_data:
-    row = _item(author=None, log=None, short_log=None, state=None, size=None,
-                log_file=None, log_rev=None, graph_href=None, mime_type=None,
+    row = _item(graph_href=None, author=None, log=None, log_file=None,
+                log_rev=None, state=None, size=None, mime_type=None,
                 date=None, ago=None, view_href=None, log_href=None,
                 revision_href=None, annotate_href=None, download_href=None,
                 download_text_href=None, prefer_markup=ezt.boolean(0))
@@ -1569,8 +1569,7 @@ def view_directory(request):
       row.date = make_time_string(file.date, cfg)
       row.ago = html_time(request, file.date)
     if cfg.options.show_logs and file.log is not None:
-      row.short_log = format_log(file.log, cfg)
-      row.log = htmlify(file.log)
+      row.log = format_log(file.log, cfg)
 
     row.anchor = request.server.escape(file.name)
     row.name = request.server.escape(file.name)
@@ -2682,10 +2681,6 @@ def view_diff(request):
   elif format == 'l':
     diff_type = vclib.UNIFIED
     diff_options['context'] = 15
-    human_readable = 1
-  elif format == 'f':
-    diff_type = vclib.UNIFIED
-    diff_options['context'] = None
     human_readable = 1
   elif format == 'h':
     diff_type = vclib.UNIFIED
