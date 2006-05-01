@@ -1,0 +1,17 @@
+[# standard footer used by all ViewVC pages ]
+
+<hr />
+
+<table>
+<tr>
+  <td><address>[cfg.general.address]</address></td>
+  <td style="text-align: right;"><strong><a href="[help_href]">ViewVC Help</strong></td>
+</tr>
+<tr>
+  <td>Powered by <a href="http://viewvc.tigris.org/">ViewVC [vsn]</a></td>
+  <td style="text-align: right;">[if-any rss_href]<a href="[rss_href]" title="RSS 2.0 feed"><img src="[docroot]/images/feed-icon-16x16.jpg"/>[else]&nbsp;[end]</td>
+</tr>
+</table>
+
+</body>
+</html>

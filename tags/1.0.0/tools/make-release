@@ -1,0 +1,74 @@
+#!/bin/sh
+#
+# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
+#
+# By using this file, you agree to the terms and conditions set forth in
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
+#
+# For more information, visit http://viewvc.org/
+#
+# -----------------------------------------------------------------------
+#
+# make-release: internal tool for creating ViewVC releases
+#
+# -----------------------------------------------------------------------
+#
+
+### Validate input
+if test $# != 2 && test $# != 1; then
+  echo "Usage: $0 TARGET-DIRECTORY [TAGNAME]"
+  echo ""
+  echo "If TAGNAME is not provided, the release will be rolled from trunk."
+  exit 1
+fi
+
+TARGET=${1}
+if test $# == 1; then
+  ROOT=trunk
+else
+  ROOT=tags/${2}
+fi
+
+if test -e ${TARGET}; then
+  echo "ERROR: must remove ${TARGET} first."
+  exit 1
+fi
+
+### Grab an export from the Subversion repository.
+echo "Exporting into:" ${TARGET}
+
+for PLATFORM in unix windows; do
+  if test ${PLATFORM} = windows; then
+    EOL="--native-eol CRLF"
+  else
+    EOL="--native-eol LF"
+  fi
+
+  svn export ${EOL} http://viewvc.tigris.org/svn/viewvc/${ROOT} ${TARGET}
+
+  ### Various shifting, cleanup.  
+
+  # Documentation is now also distributed together with the release, but
+  # we still copy the license file to its traditional place (it is small
+  # and many files still contain comments refering to this location):
+
+  # Remove some not useful directories
+  rm -r ${TARGET}/{elemx,tests,tools,tparse,viewcvs.sourceforge.net,www}
+
+  # Make sure permissions are reasonable:
+  find ${TARGET} -print | xargs chmod uoa+r
+  find ${TARGET} -type d -print | xargs chmod uoa+x
+
+  if test ${PLATFORM} = windows; then
+    # Create also a ZIP file for those poor souls :-) still using Windows: 
+    zip -qor9 ${TARGET}.zip ${TARGET}
+  else
+    # Cut the tarball:
+    tar cf - ${TARGET} | gzip -9 > ${TARGET}.tar.gz
+  fi
+
+  # remove target directory
+  rm -r ${TARGET}
+done
+echo 'Done.'

@@ -1,0 +1,172 @@
+Version 1.0 (1-May-2006)
+
+  * add support for viewing Subversion repositories
+  * add support for running on MS Windows (2003-Feb-09)
+  * generate strict XHTML output (2005-Sep-08)
+  * add support for caching by sending "Last-Modified", "Expires", 
+    "ETag", and "Cache-Control" headers (2004-Jun-03)
+  * add support for Mod_Python on Apache 2.x and ASP on IIS
+  * Several changes to standalone.py:
+    - -h commandline option to specify hostname for non local use.
+    - -r commandline option may be repeated to use more than repository
+      before actually installing ViewCVS.
+    - New GUI field to test paging.
+  * add new, better-integrated query interface (2004-Jul-17)
+  * add integrated RSS feeds (2005-Dec-22)
+  * add new "root_as_url_component" option to embed root names as
+    path components in ViewCVS URLs for a more natural URL scheme
+    in ViewCVS configurations with multiple repositories.
+    (2002-Dec-12)
+  * add new "use_localtime" option to display local times instead of
+    UTC times (2002-May-06)
+  * add new "root_parents" option to make it possible to add and
+    remove repositories without modifying the ViewCVS configuration
+    (2004-Jul-16)
+  * add new "template_dir" option to facilitate switching between
+    sets of templates (2005-Feb-08)
+  * add new "sort_group_dirs" option to disable grouping of
+    directories in directory listings (2005-Mar-07)
+  * add new "port" option to connect to a MySQL database on a nonstandard
+    port (2005-Dec-22)
+  * make "default_root" option optional. When no root is specified,
+    show a page listing all available repositories (2005-Feb-04)
+  * add "default_file_view" option to make it possible for relative
+    links and image paths in checked out HTML files to work without
+    the need for special /*checkout*/ prefixes in URLs. Deprecate
+    "checkout_magic" option and disable by default (2006-Apr-03)
+  * add "limit_changes" option to limit number of changed files shown
+    per commit by default in query results and in the Subversion revision
+    view (2005-Dec-23)
+  * hide CVS "Attic" directories and add simple toggle for showing
+    dead files in directory listings (2004-Jul-31)
+  * show Unified, Context and Side-by-side diffs in HTML instead of
+    in bare text pages (2004-Jun-22)
+  * make View/Download links work the same for all file types
+    (2004-Jan-21)
+  * add links to tip of selected branch on log page (2005-Oct-03)
+  * allow use of "Highlight" program for colorizing (2005-Dec-20)
+  * enable enscript colorizing for more file types
+  * add sorting arrows for directory views (2004-Jul-21)
+  * get rid of popup windows for checkout links (2004-Jan-21)
+  * obfuscate email addresses in html output by encoding @ symbol
+    with an HTML character reference (2004-Jul-29)
+  * add paging capability (2001-Dec-31)
+  * Improvements to templates
+    - add new template authoring guide
+    - increase coverage, use templates to produce HTML for diff pages,
+      markup pages, annotate pages, and error pages
+    - move more common page elements into includes
+    - add new template variables providing ViewCVS URLs for more 
+      links between related pages and less URL generation inside
+      templates
+  * add new [define] EZT directive for assigning variables within
+    templates (2004-Apr-21)
+  * add command line argument parsing to install script to allow 
+    non-interactive installs (2005-Jan-06)
+  * add stricter parameter validation to lower likelihood of CSS
+    vulnerabilities (2002-May-24)
+  * add support for cvsweb's "mime_type=text/x-cvsweb-markup" URLs
+    (2002-Oct-10)
+  * fix incompatibility with enscript 1.6.3 (2002-Feb-05)
+  * fix bug in parsing FreeBSD rlog output (2003-Jul-24)
+  * work around rlog assumption all two digit years in RCS files are
+    relative to the year 1900. (2005-Sep-30)
+  * change loginfo-handler to cope with spaces in filenames and
+    support a simpler command line invocation from CVS (2003-Feb-11)
+  * make cvsdbadmin work properly when invoked on CVS subdirectory
+    paths instead of top-level CVS root paths (2006-Mar-17)
+  * show diff error when comparing two binary files (2002-Jan-23)
+  * make regular expression search skip binary files (2002-Jan-17)
+  * make regular expression search skip nonversioned files in CVS
+    directories instead of choking on them (2002-Sep-27)
+  * fix tarball generator so it doesn't include forbidden modules
+    (2002-Feb-22)
+  * output "404 Not Found" errors instead of "403 Forbidden" errors
+    to not reveal whether forbidden paths exist (2005-May-17)
+  * fix sorting bug in directory view (2002-Apr-18)
+  * reset log and directory page numbers when leaving those pages
+    (2005-Jan-29)
+  * reset sort direction in directory listing when clicking new
+    columns (2004-Jul-21)
+  * fix "Accept-Language" handling for Netscape 4.x browsers
+    (2002-May-23)
+  * fix file descriptor leak in standalone server (2004-Jul-17)
+  * clean up zombie processes from running enscript (2002-Jun-15)
+  * fix mysql "Too many connections" error in cvsdbadmin (2003-Jul-24)
+  * get rid of mxDateTime dependency for query database (2003-Feb-09)
+  * store query database times in UTC instead of local time
+    (2003-Feb-09)
+  * fix daylight saving time bugs in various parts of the code
+
+Version 0.9.4 (released 17-Aug-2005)
+
+  * security fix: omit forbidden/hidden modules from query results.
+
+Version 0.9.3 (released 17-May-2005)
+
+  * security fix: disallow bad "content-type" input [CAN-2004-1062]
+  * security fix: disallow bad "sortby" and "cvsroot" input [CAN-2002-0771]
+  * security fix: omit forbidden/hidden modules from tarballs [CAN-2004-0915]
+
+Version 0.9.2 (released 15-Jan-2002)
+
+  * fix redirects to Attic for diffs
+  * fix diffs that have no changes (causing an infinite loop)
+
+Version 0.9.1 (released 26-Dec-2001)
+
+  * fix a problem with some syntax in ndiff.py which isn't compatible
+    with Python 1.5.2 (causing problems at install time)
+  * remove a debug statement left in the code which continues to
+    append lines to /tmp/log
+
+Version 0.9 (released 23-Dec-2001)
+
+  * create templates for the rest of the pages: markup pages, graphs,
+    annotation, and diff.
+  * add multiple language support and dynamic selection based on the
+    Accept-Language request header
+  * add support for key/value files to provide a way for user-defined
+    variables within templates
+  * add optional regex searching for file contents
+  * add new templates for the navigation header and the footer
+  * EZT changes:
+    - add formatting into print directives
+    - add parameters to [include] directives
+    - relax what can go in double quotes
+    - [include] directives are now relative to the current template
+    - throw an exception for unclosed blocks
+  * changes to standalone.py: add flag for regex search
+  * add more help pages
+  * change installer to optionally show diffs
+  * fix to log.ezt and log_table.ezt to select "Side by Side" properly
+  * create dir_alternate.ezt for the flipped rev/name links
+  * various UI tweaks for the directory pages
+
+
+Version 0.8 (released 10-Dec-2001)
+
+  * add EZT templating mechanism for generating output pages
+  * big update of cvs commit database
+    - updated MySQL support
+    - new CGI
+    - better database caching
+    - switch from old templates to new EZT templates (and integration
+      of look-and-feel)
+  * optional usage of CVSGraph is now builtin
+  * standalone server (for testing) is now provided
+  * shifted some options from viewcvs.conf to the templates
+  * the help at the top of the pages has been shifted to separate help
+    pages, so experienced users don't have to keep seeing it
+  * paths in viewcvs.conf don't require trailing slashes any more
+  * tweak the colorizing for Pascal and Fortran files
+  * fix file readability problem where the user had access via the
+    group, but the process' group did not match that group
+  * some Daylight Savings Time fixes in the CVS commit database
+  * fix tarball generation (the file name) for the root dir
+  * changed default human-readable-diff colors to "stoplight" metaphor
+  * web site and doc revamps
+  * fix the mime types on the download, view, etc links
+  * improved error response when the cvs root is missing
+  * don't try to process vhosts if the config section is not present
+  * various bug fixes and UI tweaks
