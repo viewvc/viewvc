@@ -356,4 +356,4 @@ Overview of remaining steps:
 """ % (
     os.path.join(ROOT_DIR, 'viewvc.conf'),
     os.path.join(ROOT_DIR, 'bin', 'cgi', 'viewvc.cgi'),
-    os.path.join(ROOT_DIR, 'standalone.py'))
+    os.path.join(ROOT_DIR, 'bin', 'standalone.py'))
