@@ -2123,7 +2123,7 @@ def view_log(request):
   if cfg.options.use_pagesize:
     data['log_pagestart'] = int(request.query_dict.get('log_pagestart',0))
     data['entries'] = paging(data, 'entries', data['log_pagestart'],
-                             'revision', cfg.options.use_pagesize)
+                             'rev', cfg.options.use_pagesize)
 
   request.server.header()
   generate_page(request, "log", data)
