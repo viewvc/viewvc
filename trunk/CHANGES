@@ -1,56 +1,50 @@
-Version 1.0 (1-May-2006)
+Version 1.0 (released 01-May-2006)
 
   * add support for viewing Subversion repositories
-  * add support for running on MS Windows (2003-Feb-09)
-  * generate strict XHTML output (2005-Sep-08)
+  * add support for running on MS Windows
+  * generate strict XHTML output
   * add support for caching by sending "Last-Modified", "Expires", 
-    "ETag", and "Cache-Control" headers (2004-Jun-03)
+    "ETag", and "Cache-Control" headers
   * add support for Mod_Python on Apache 2.x and ASP on IIS
   * Several changes to standalone.py:
     - -h commandline option to specify hostname for non local use.
     - -r commandline option may be repeated to use more than repository
       before actually installing ViewCVS.
     - New GUI field to test paging.
-  * add new, better-integrated query interface (2004-Jul-17)
-  * add integrated RSS feeds (2005-Dec-22)
+  * add new, better-integrated query interface
+  * add integrated RSS feeds
   * add new "root_as_url_component" option to embed root names as
     path components in ViewCVS URLs for a more natural URL scheme
     in ViewCVS configurations with multiple repositories.
-    (2002-Dec-12)
-  * add new "use_localtime" option to display local times instead of
-    UTC times (2002-May-06)
+  * add new "use_localtime" option to display local times instead of UTC times
   * add new "root_parents" option to make it possible to add and
     remove repositories without modifying the ViewCVS configuration
-    (2004-Jul-16)
-  * add new "template_dir" option to facilitate switching between
-    sets of templates (2005-Feb-08)
+  * add new "template_dir" option to facilitate switching between sets of 
+    templates
   * add new "sort_group_dirs" option to disable grouping of
-    directories in directory listings (2005-Mar-07)
-  * add new "port" option to connect to a MySQL database on a nonstandard
-    port (2005-Dec-22)
+    directories in directory listings
+  * add new "port" option to connect to a MySQL database on a nonstandard port
   * make "default_root" option optional. When no root is specified,
-    show a page listing all available repositories (2005-Feb-04)
+    show a page listing all available repositories
   * add "default_file_view" option to make it possible for relative
     links and image paths in checked out HTML files to work without
     the need for special /*checkout*/ prefixes in URLs. Deprecate
-    "checkout_magic" option and disable by default (2006-Apr-03)
-  * add "limit_changes" option to limit number of changed files shown
-    per commit by default in query results and in the Subversion revision
-    view (2005-Dec-23)
+    "checkout_magic" option and disable by default
+  * add "limit_changes" option to limit number of changed files shown per
+    commit by default in query results and in the Subversion revision view
   * hide CVS "Attic" directories and add simple toggle for showing
-    dead files in directory listings (2004-Jul-31)
+    dead files in directory listings
   * show Unified, Context and Side-by-side diffs in HTML instead of
-    in bare text pages (2004-Jun-22)
+    in bare text pages
   * make View/Download links work the same for all file types
-    (2004-Jan-21)
-  * add links to tip of selected branch on log page (2005-Oct-03)
-  * allow use of "Highlight" program for colorizing (2005-Dec-20)
+  * add links to tip of selected branch on log page
+  * allow use of "Highlight" program for colorizing
   * enable enscript colorizing for more file types
-  * add sorting arrows for directory views (2004-Jul-21)
-  * get rid of popup windows for checkout links (2004-Jan-21)
+  * add sorting arrows for directory views
+  * get rid of popup windows for checkout links
   * obfuscate email addresses in html output by encoding @ symbol
-    with an HTML character reference (2004-Jul-29)
-  * add paging capability (2001-Dec-31)
+    with an HTML character reference
+  * add paging capability
   * Improvements to templates
     - add new template authoring guide
     - increase coverage, use templates to produce HTML for diff pages,
@@ -59,43 +53,36 @@ Version 1.0 (1-May-2006)
     - add new template variables providing ViewCVS URLs for more 
       links between related pages and less URL generation inside
       templates
-  * add new [define] EZT directive for assigning variables within
-    templates (2004-Apr-21)
+  * add new [define] EZT directive for assigning variables within templates
   * add command line argument parsing to install script to allow 
-    non-interactive installs (2005-Jan-06)
-  * add stricter parameter validation to lower likelihood of CSS
-    vulnerabilities (2002-May-24)
+    non-interactive installs
+  * add stricter parameter validation to lower likelihood of cross-site
+    scripting vulnerabilities
   * add support for cvsweb's "mime_type=text/x-cvsweb-markup" URLs
-    (2002-Oct-10)
-  * fix incompatibility with enscript 1.6.3 (2002-Feb-05)
-  * fix bug in parsing FreeBSD rlog output (2003-Jul-24)
+  * fix incompatibility with enscript 1.6.3
+  * fix bug in parsing FreeBSD rlog output
   * work around rlog assumption all two digit years in RCS files are
-    relative to the year 1900. (2005-Sep-30)
+    relative to the year 1900.
   * change loginfo-handler to cope with spaces in filenames and
-    support a simpler command line invocation from CVS (2003-Feb-11)
+    support a simpler command line invocation from CVS
   * make cvsdbadmin work properly when invoked on CVS subdirectory
-    paths instead of top-level CVS root paths (2006-Mar-17)
-  * show diff error when comparing two binary files (2002-Jan-23)
-  * make regular expression search skip binary files (2002-Jan-17)
+    paths instead of top-level CVS root paths
+  * show diff error when comparing two binary files
+  * make regular expression search skip binary files
   * make regular expression search skip nonversioned files in CVS
-    directories instead of choking on them (2002-Sep-27)
+    directories instead of choking on them
   * fix tarball generator so it doesn't include forbidden modules
-    (2002-Feb-22)
   * output "404 Not Found" errors instead of "403 Forbidden" errors
-    to not reveal whether forbidden paths exist (2005-May-17)
-  * fix sorting bug in directory view (2002-Apr-18)
+    to not reveal whether forbidden paths exist
+  * fix sorting bug in directory view
   * reset log and directory page numbers when leaving those pages
-    (2005-Jan-29)
-  * reset sort direction in directory listing when clicking new
-    columns (2004-Jul-21)
-  * fix "Accept-Language" handling for Netscape 4.x browsers
-    (2002-May-23)
-  * fix file descriptor leak in standalone server (2004-Jul-17)
-  * clean up zombie processes from running enscript (2002-Jun-15)
-  * fix mysql "Too many connections" error in cvsdbadmin (2003-Jul-24)
-  * get rid of mxDateTime dependency for query database (2003-Feb-09)
+  * reset sort direction in directory listing when clicking new columns
+  * fix "Accept-Language" handling for Netscape 4.x browsers   
+  * fix file descriptor leak in standalone server
+  * clean up zombie processes from running enscript
+  * fix mysql "Too many connections" error in cvsdbadmin
+  * get rid of mxDateTime dependency for query database
   * store query database times in UTC instead of local time
-    (2003-Feb-09)
   * fix daylight saving time bugs in various parts of the code
 
 Version 0.9.4 (released 17-Aug-2005)
