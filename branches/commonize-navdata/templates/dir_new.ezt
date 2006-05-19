@@ -112,7 +112,7 @@
 
       <td>
         [if-any entries.rev]
-          <strong>[if-any entries.revision_href]<a href="[entries.revision_href]">[entries.rev]</a>[else][entries.rev][end]</strong>
+          <strong>[if-any entries.revision_href]<a href="[entries.revision_href]" title="Revision [entries.rev]">[entries.rev]</a>[else][entries.rev][end]</strong>
           ([entries.ago] ago)
           by <em>[entries.author]</em>:
           [entries.log]

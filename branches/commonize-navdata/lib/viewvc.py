@@ -2112,7 +2112,7 @@ def view_log(request):
   if cfg.options.use_pagesize:
     data['log_pagestart'] = int(request.query_dict.get('log_pagestart',0))
     data['entries'] = paging(data, 'entries', data['log_pagestart'],
-                             'revision', cfg.options.use_pagesize)
+                             'rev', cfg.options.use_pagesize)
 
   request.server.header()
   generate_page(request, "log", data)
@@ -2683,6 +2683,10 @@ def view_diff(request):
   elif format == 'l':
     diff_type = vclib.UNIFIED
     diff_options['context'] = 15
+    human_readable = 1
+  elif format == 'f':
+    diff_type = vclib.UNIFIED
+    diff_options['context'] = None
     human_readable = 1
   elif format == 'h':
     diff_type = vclib.UNIFIED

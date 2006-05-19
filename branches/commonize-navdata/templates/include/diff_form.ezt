@@ -55,6 +55,7 @@
   <select name="diff_format" onchange="submit()">
     <option value="h" [is diff_format "h"]selected="selected"[end]>Colored Diff</option>
     <option value="l" [is diff_format "l"]selected="selected"[end]>Long Colored Diff</option>
+    <option value="f" [is diff_format "f"]selected="selected"[end]>Full Colored Diff</option>
     <option value="u" [is diff_format "u"]selected="selected"[end]>Unidiff</option>
     <option value="c" [is diff_format "c"]selected="selected"[end]>Context Diff</option>
     <option value="s" [is diff_format "s"]selected="selected"[end]>Side by Side</option>

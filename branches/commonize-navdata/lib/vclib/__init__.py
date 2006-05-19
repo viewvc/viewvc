@@ -200,12 +200,18 @@ def _diff_args(type, options):
   args = []
   if type == CONTEXT:
     if options.has_key('context'):
-      args.append('--context=%i' % options['context'])
+      if options['context'] is None:
+        args.append('--context=-1')
+      else:
+        args.append('--context=%i' % options['context'])
     else:
       args.append('-c')
   elif type == UNIFIED:
     if options.has_key('context'):
-      args.append('--unified=%i' % options['context'])
+      if options['context'] is None:
+        args.append('--unified=-1')
+      else:
+        args.append('--unified=%i' % options['context'])
     else:
       args.append('-u')
   elif type == SIDE_BY_SIDE:
