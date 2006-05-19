@@ -54,7 +54,11 @@ for PLATFORM in unix windows; do
   # and many files still contain comments refering to this location):
 
   # Remove some not useful directories
-  rm -r ${TARGET}/{elemx,tests,tools,tparse,viewcvs.sourceforge.net,www}
+  for JUNK in elemx tests tools tparse viewcvs.sourceforge.net www; do
+    if [ -e ${JUNK} ]; then
+      rm -f ${JUNK}
+    fi
+  done
 
   # Make sure permissions are reasonable:
   find ${TARGET} -print | xargs chmod uoa+r
