@@ -2369,6 +2369,7 @@ class DiffSource:
     self.cfg = cfg
     self.save_line = None
     self.line_number = None
+    self.prev_line_number = None
     
     # keep track of where we are during an iteration
     self.idx = -1
@@ -2429,6 +2430,7 @@ class DiffSource:
 
       match = _re_extract_info.match(line)
       self.line_number = int(match.group(2)) - 1
+      self.prev_line_number = int(match.group(1)) - 1
       return _item(type='header',
                    line_info_left=match.group(1),
                    line_info_right=match.group(2),
@@ -2467,6 +2469,7 @@ class DiffSource:
       return None
 
     self.line_number = self.line_number + 1
+    self.prev_line_number = self.prev_line_number + 1
     return _item(type='context', left=output, right=output,
                  line_number=self.line_number)
 
@@ -2476,15 +2479,19 @@ class DiffSource:
       return None
 
     if self.state == 'flush-pre-change-remove':
-      return _item(type='remove', left=self.left_col.pop(0))
+      self.prev_line_number = self.prev_line_number + 1
+      return _item(type='remove', left=self.left_col.pop(0),
+                   line_number=self.prev_line_number)
 
     # state == flush-pre-change-add
     item = _item(type='change',
                  have_left=ezt.boolean(0),
                  have_right=ezt.boolean(0))
     if self.left_col:
+      self.prev_line_number = self.prev_line_number + 1
       item.have_left = ezt.boolean(1)
       item.left = self.left_col.pop(0)
+      item.line_number = self.prev_line_number
     if self.right_col:
       self.line_number = self.line_number + 1
       item.have_right = ezt.boolean(1)
