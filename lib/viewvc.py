@@ -2731,7 +2731,7 @@ def view_diff(request):
                                  'to diff', '400 Bad Request')
   path_left = _path_join(p1)
   path_right = _path_join(p2)
-  data = common_template_data(request, path_right, r2)
+  data = common_template_data(request)
   data.update({
     'path_left': path_left,
     'path_right': path_right,
@@ -2754,7 +2754,7 @@ def view_diff(request):
                                        escape=1)
   if request.cfg.options.allow_annotate:
     data['annotate_href'] = request.get_url(view_func=view_annotate,
-                                            where=_path_join(p2),
+                                            where=path_right,
                                             pathtype=vclib.FILE,
                                             params={'annotate': rev2},
                                             escape=1)
