@@ -38,7 +38,7 @@ using namespace std;
 #define Whitespace(c) (c == ' ' || c == '\t' || c == '\014' || c == '\n' || \
                        c == '\r')
 #define Token_term(c) (c == ' ' || c == '\t' || c == '\014' || c == '\n' || \
-                       c == '\r' || c == ';')
+                       c == '\r' || c == ';' || c == ':')
 #define isdigit(c) ((c-'0')<10)
 
 
@@ -120,10 +120,10 @@ rcstoken *TokenParser::get(int allow_eof)
     idx++;
   }
 
-  if (buf[idx] == ';')
+  if (buf[idx] == ';' || buf[idx] == ':')
   {
     idx++;
-    (*token) = ';';
+    (*token) = buf[idx];
     return token.release();
   }
 
@@ -239,27 +239,14 @@ void tparseParser::parse_rcs_admin()
     {
       while (1)
       {
-        auto_ptr<rcstoken> tag, rev;
-        char *second;
-        //        delete token;
+        auto_ptr<rcstoken> rev;
         token.reset(tokenstream->get(FALSE));
         if (*token == ';')
           break;
 
-        second = index(token->data, ':');
-        if (second)
-        {
-          tag.reset(token->copy_begin_len(0, second - token->data));
-          second++;
-          rev.reset(new rcstoken(second));
-        }
-        else
-        {
-          tag = token;
-          tokenstream->match(':');
-          rev.reset(tokenstream->get(FALSE));
-        };
-        sink->define_tag(*tag, *rev);
+        tokenstream->match(':');
+        rev.reset(tokenstream->get(FALSE));
+        sink->define_tag(*token, *rev);
       }
       continue;
     }
