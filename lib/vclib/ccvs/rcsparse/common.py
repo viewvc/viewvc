@@ -128,7 +128,9 @@ class _Parser:
           tag = self.ts.get()
           if tag == ';':
             break
-          (locker, rev) = string.split(tag,':')
+          self.ts.match(':')
+          locker = tag
+          rev = self.ts.get()
           self.sink.set_locker(rev, locker)
 
         tag = self.ts.get()

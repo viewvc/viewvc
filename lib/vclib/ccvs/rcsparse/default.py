@@ -19,7 +19,7 @@ import string
 import common
 
 class _TokenStream:
-  token_term = string.whitespace + ';'
+  token_term = string.whitespace + ';:'
 
   # the algorithm is about the same speed for any CHUNK_SIZE chosen.
   # grab a good-sized chunk, but not too large to overwhelm memory.
@@ -60,10 +60,10 @@ class _TokenStream:
 
       idx = idx + 1
 
-    if buf[idx] == ';':
+    if buf[idx] == ';' or buf[idx] == ':':
       self.buf = buf
       self.idx = idx + 1
-      return ';'
+      return buf[idx]
 
     if buf[idx] != '@':
       end = idx + 1
@@ -166,75 +166,3 @@ class _TokenStream:
 
 class Parser(common._Parser):
   stream_class = _TokenStream
-
-  def parse_rcs_admin(self):
-    while 1:
-      # Read initial token at beginning of line
-      token = self.ts.get()
-
-      # We're done once we reach the description of the RCS tree
-      if token[0] in string.digits:
-        self.ts.unget(token)
-        return
-
-      if token == "head":
-        semi, rev = self.ts.mget(2)
-        self.sink.set_head_revision(rev)
-        if semi != ';':
-          raise common.RCSExpected(semi, ';')
-      elif token == "branch":
-        semi, branch = self.ts.mget(2)
-        if semi == ';':
-          self.sink.set_principal_branch(branch)
-        else:
-          if branch == ';':
-            self.ts.unget(semi);
-          else:
-            raise common.RCSExpected(semi, ';')
-      elif token == "symbols":
-        while 1:
-          tag = self.ts.get()
-          if tag == ';':
-            break
-          (tag_name, tag_rev) = string.split(tag, ':')
-          self.sink.define_tag(tag_name, tag_rev)
-      elif token == "comment":
-        semi, comment = self.ts.mget(2)
-        self.sink.set_comment(comment)
-        if semi != ';':
-          raise common.RCSExpected(semi, ';')
-      elif token == "expand":
-        semi, expand_mode = self.ts.mget(2)
-        self.sink.set_expansion(expand_mode)
-        if semi != ';':
-          raise RCSExpected(semi, ';')
-      elif token == "locks":
-        while 1:
-          tag = self.ts.get()
-          if tag == ';':
-            break
-          (locker, rev) = string.split(tag,':')
-          self.sink.set_locker(rev, locker)
-
-        tag = self.ts.get()
-        if tag == "strict":
-          self.sink.set_locking("strict")
-          self.ts.match(';')
-        else:
-          self.ts.unget(tag)
-      elif token == "access":
-        accessors = []
-        while 1:
-          tag = self.ts.get()
-          if tag == ';':
-            if accessors != []:
-              self.sink.set_access(accessors)
-            break
-          accessors = accessors + [ tag ]
-
-      # Chew up "newphrase".
-      else:
-        pass
-        # warn("Unexpected RCS token: $token\n")
-
-    raise RuntimeError, "Unexpected EOF"
