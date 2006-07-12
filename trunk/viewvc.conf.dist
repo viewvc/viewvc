@@ -7,6 +7,21 @@
 #
 #---------------------------------------------------------------------------
 
+# SOME TERMINOLOGY USED HEREIN
+#
+#    "root" - This is a CVS or Subversion repository.  For Subversion, the
+#        meaning is pretty clear, as the virtual, versioned directory tree
+#        stored inside a Subversion repository looks nothing like the actual
+#        tree visible with shell utilities that holds the repository.  For
+#        CVS, this is more confusing, because CVS's repository layout mimics
+#        (actually, defines) the layout of the stuff housed in the repository.
+#        But a CVS repository can be identified by the presence of a CVSROOT
+#        subdirectory in its root directory.
+#
+#    "module" - A module is a top-level subdirectory of a root, usually
+#        associated with the concept of a single "project" among many housed
+#        within a single repository.
+#
 #
 # BASIC CONFIGURATION
 #
@@ -161,6 +176,9 @@ address = <a href="mailto:cvs-admin@insert.your.domain.here">No admin address ha
 #      testing. This allows for more complex allow/deny patterns.
 #
 # Tests are case-sensitive.
+#
+# NOTE: Again, this is for the hiding of modules within repositories, *not* 
+# for the hiding of repositories (roots) themselves.
 #
 forbidden =
 
