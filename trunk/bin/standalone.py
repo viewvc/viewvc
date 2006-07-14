@@ -56,6 +56,7 @@ import compat; compat.for_standalone()
 class Options:
     port = 7467 # default TCP/IP port used for the server
     start_gui = 0 # No GUI unless requested.
+    daemon = 0 # stay in the foreground by default
     repositories = {} # use default repositories specified in config
     if sys.platform == 'mac':
         host = '127.0.0.1' 
@@ -570,8 +571,8 @@ def cli(argv):
     class BadUsage(Exception): pass
 
     try:
-        opts, args = getopt.getopt(argv[1:], 'gp:r:h:s:', 
-            ['gui', 'port=', 'repository=', 'script-alias='])
+        opts, args = getopt.getopt(argv[1:], 'gdp:r:h:s:', 
+            ['gui', 'daemon', 'port=', 'repository=', 'script-alias='])
         for opt, val in opts:
             if opt in ('-g', '--gui'):
                 options.start_gui = 1
@@ -582,16 +583,25 @@ def cli(argv):
                     options.repositories[symbolic_name] = val
                 else:
                     options.repositories["Development"] = val
+            elif opt in ('-d', '--daemon'):
+                options.daemon = 1
             elif opt in ('-p', '--port'):
                 try:
                     options.port = int(val)
                 except ValueError:
-                    raise BadUsage
+                    raise BadUsage, "Port '%s' is not a valid port number" \
+                          % (val)
             elif opt in ('-h', '--host'):
                 options.host = val
             elif opt in ('-s', '--script-alias'):
                 options.script_alias = \
                     string.join(filter(None, string.split(val, '/')), '/')
+        if not options.start_gui and not options.port:
+            raise BadUsage, "You must supply a valid port, or run in GUI mode."
+        if options.daemon:
+            pid = os.fork()
+            if pid != 0:
+                sys.exit()  
         if options.start_gui:
             gui(options.host, options.port)
             return
@@ -601,7 +611,6 @@ def cli(argv):
                                                 options.script_alias)
             serve(options.host, options.port, ready)
             return
-        raise BadUsage
     except (getopt.error, BadUsage), err:
         cmd = os.path.basename(sys.argv[0])
         port = options.port
@@ -616,6 +625,8 @@ requests.  ViewVC configuration is read from viewvc.conf file, if available.
 
 Options:
 
+  --daemon (-d)              Background the server process.
+  
   --host=HOST (-h)           Start the server listening on HOST.  You need
                              to provide the hostname if you want to
                              access the standalone server from a remote
