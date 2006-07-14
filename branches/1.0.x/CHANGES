@@ -3,6 +3,7 @@ Version 1.0.1 (?)
   * fix exception on log page when use_pagesize is enabled
   * fix an XHTML validation bug in the footer template (issue #239)
   * fix handling of single-component CVS revision numbers (issue #237)
+  * fix bug in download-as-text URL link generation (issue #241)
 
 Version 1.0 (released 01-May-2006)
 
