@@ -5,6 +5,7 @@ Version 1.0.1 (?)
   * fix handling of single-component CVS revision numbers (issue #237)
   * fix bug in download-as-text URL link generation (issue #241)
   * fix query.cgi bug, missing 'rss_href' template data item (issue #249)
+  * no longer omit empty Subversion directories from tarballs (issue #250)
 
 Version 1.0 (released 01-May-2006)
 
