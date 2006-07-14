@@ -429,7 +429,7 @@ def gui(host, port):
 
             # directory view template:
             self.dirtemplate_lbl = Tkinter.Label(self.options_frm,
-                text='Chooose HTML Template for the Directory pages:')
+                text='Choose HTML Template for the Directory pages:')
             self.dirtemplate_lbl.pack(side='top', anchor='w')
             self.dirtemplate_svar = Tkinter.StringVar()
             self.dirtemplate_svar.set(cfg.templates.directory)
@@ -448,7 +448,7 @@ def gui(host, port):
 
             # log view template:
             self.logtemplate_lbl = Tkinter.Label(self.options_frm,
-                text='Chooose HTML Template for the Log pages:')
+                text='Choose HTML Template for the Log pages:')
             self.logtemplate_lbl.pack(side='top', anchor='w')
             self.logtemplate_svar = Tkinter.StringVar()
             self.logtemplate_svar.set(cfg.templates.log)
