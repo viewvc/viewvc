@@ -2830,7 +2830,7 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
 
   out.write(block)
 
-def generate_tarball(out, request, reldir, stack):
+def generate_tarball(out, request, reldir, stack, dir_mtime=None):
   # get directory info from repository
   rep_path = request.path_parts + reldir
   entries = request.repos.listdir(rep_path, request.pathrev, {})
@@ -2847,30 +2847,43 @@ def generate_tarball(out, request, reldir, stack):
   if reldir:
     tar_dir = tar_dir + _path_join(reldir) + '/'
 
-  # Subdirectory datestamps will be the youngest of the datestamps of
-  # version items (files for CVS, files or dirs for Subversion) in
-  # that subdirectory.
-  latest_date = 0
   cvs = request.roottype == 'cvs'
-  for file in entries:
-    # Skip dead or busted CVS files, and CVS subdirs.
-    if (cvs and (file.kind != vclib.FILE or (file.rev is None or file.dead))):
-      continue
-    if file.date > latest_date:
-      latest_date = file.date
+  
+  # If our caller doesn't dictate a datestamp to use for the current
+  # directory, its datestamps will be the youngest of the datestamps
+  # of versioned items in that subdirectory.  We'll be ignoring dead
+  # or busted items and, in CVS, subdirs.
+  if dir_mtime is None:
+    dir_mtime = 0
+    for file in entries:
+      if cvs and (file.kind != vclib.FILE or file.rev is None or file.dead):
+        continue
+      if file.date > dir_mtime:
+        dir_mtime = file.date
 
-  # push directory onto stack. it will only be included in the tarball if
-  # files are found underneath it
+  # Push current directory onto the stack.
   stack.append(tar_dir)
 
+  # If this is Subversion, we generate a header for this directory
+  # regardless of its contents.  For CVS it will only get into the
+  # tarball if it has files underneath it, which we determine later.
+  if not cvs:
+    generate_tarball_header(out, tar_dir, mtime=dir_mtime)
+
+  # Run through the files in this directory, skipping busted ones.
   for file in entries:
-    if (file.kind != vclib.FILE or
-        (cvs and (file.rev is None or file.dead))):
+    if file.kind != vclib.FILE:
+      continue
+    if cvs and (file.rev is None or file.dead):
       continue
 
-    for dir in stack:
-      generate_tarball_header(out, dir, mtime=latest_date)
-    del stack[:]
+    # If we get here, we've seen at least one valid file in the
+    # current directory.  For CVS, we need to make sure there are
+    # directory parents to contain it, so we flush the stack.
+    if cvs:
+      for dir in stack:
+        generate_tarball_header(out, dir, mtime=dir_mtime)
+      del stack[:]
 
     if cvs:
       info = os.stat(file.path)
@@ -2878,7 +2891,8 @@ def generate_tarball(out, request, reldir, stack):
     else:
       mode = 0644
 
-    ### read the whole file into memory? bad... better to do 2 passes
+    ### FIXME: Read the whole file into memory?  Bad... better to do
+    ### 2 passes.
     fp = request.repos.openfile(rep_path + [file.name], request.pathrev)[0]
     contents = fp.read()
     fp.close()
@@ -2888,21 +2902,22 @@ def generate_tarball(out, request, reldir, stack):
     out.write(contents)
     out.write('\0' * (511 - ((len(contents) + 511) % 512)))
 
-  # recurse into subdirectories
+  # Recurse into subdirectories, skipping busted ones.
   for file in entries:
     if file.errors or file.kind != vclib.DIR:
       continue
 
-    # skip forbidden/hidden directories (top-level only)
+    # Skip forbidden/hidden directories (top-level only).
     if not rep_path:
       if (request.cfg.is_forbidden(file.name)
           or (cvs and request.cfg.options.hide_cvsroot
               and file.name == 'CVSROOT')):
         continue
 
-    generate_tarball(out, request, reldir + [file.name], stack)
+    mtime = request.roottype == 'svn' and file.date or None
+    generate_tarball(out, request, reldir + [file.name], stack, mtime)
 
-  # pop directory (if it's being pruned. otherwise stack is already empty)
+  # Pop the current directory from the stack.
   del stack[-1:]
 
 def download_tarball(request):
@@ -2916,6 +2931,8 @@ def download_tarball(request):
   sys.stdout.flush()
   fp = popen.pipe_cmds([('gzip', '-c', '-n')])
 
+  ### FIXME: For Subversion repositories, we can get the real mtime of the
+  ### top-level directory here.
   generate_tarball(fp, request, [], [])
 
   fp.write('\0' * 1024)
