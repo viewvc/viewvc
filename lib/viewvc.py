@@ -946,7 +946,7 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
                                          pathtype=vclib.FILE,
                                          params={'content-type': 'text/plain',
                                                  'revision': rev,
-                                                 'pathrev': rev},
+                                                 'pathrev': pathrev},
                                          escape=1)
   if request.cfg.options.allow_annotate:
     annotate_href = request.get_url(view_func=view_annotate,
