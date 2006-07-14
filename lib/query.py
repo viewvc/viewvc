@@ -403,6 +403,7 @@ def main(server, cfg, viewvc_link):
       'query' : query,
       'commits' : commits,
       'num_commits' : len(commits),
+      'rss_href' : None,
       }
 
     if form_data.hours:
