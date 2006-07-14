@@ -474,7 +474,7 @@ def _tag_tuple(revision_string):
     t = map(int, string.split(revision_string, '.'))
     l = len(t)
     if l == 1:
-      raise ValueError
+      return ()
     if l > 2 and t[-2] == 0 and l % 2 == 0:
       del t[-2]
     return tuple(t)
