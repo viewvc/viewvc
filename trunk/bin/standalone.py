@@ -602,41 +602,42 @@ def cli(argv):
             serve(options.host, options.port, ready)
             return
         raise BadUsage
-    except (getopt.error, BadUsage):
+    except (getopt.error, BadUsage), err:
         cmd = os.path.basename(sys.argv[0])
         port = options.port
         host = options.host
         script_alias = options.script_alias
-        print """ViewVC standalone - a simple standalone HTTP-Server
+        if str(err):
+            sys.stderr.write("ERROR: %s\n\n" % (str(err)))
+        sys.stderr.write("""Usage: %(cmd)s [OPTIONS]
 
-Usage: %(cmd)s [OPTIONS]
+Run a simple, standalone HTTP server configured to serve up ViewVC
+requests.  ViewVC configuration is read from viewvc.conf file, if available.
 
-Available Options:
+Options:
 
--h <host>, --host=<host>:
-    Start the HTTP server listening on <host>.  You need to provide
-    the hostname if you want to access the standalone server from a
-    remote machine.  [default: %(host)s]
+  --host=HOST (-h)           Start the server listening on HOST.  You need
+                             to provide the hostname if you want to
+                             access the standalone server from a remote
+                             machine.  [default: %(host)s]
 
--p <port>, --port=<port>:
-    Start an HTTP server on the given port.  [default: %(port)d]
+  --port=PORT (-p)           Start the server on the given PORT.
+                             [default: %(port)d]
 
--r <path>, --repository=<path>:
-    Specify a path for a CVS repository.  Repository definitions are
-    typically read from the viewvc.conf file, if available.  This
-    option may be used more than once.
+  --repository=PATH (-r)     Serve up the CVS repository located at PATH.
+                             This option may be used more than once.
 
--s <path>, --script-alias=<path>:
-    Specify the ScriptAlias, the artificial path location that at
-    which ViewVC appears to be located.  For example, if your
-    ScriptAlias is "cgi-bin/viewvc", then ViewVC will appear to be
-    accessible at the URL "http://%(host)s:%(port)s/cgi-bin/viewvc".
-    [default: %(script_alias)s]
-    
--g, --gui:
-    Pop up a graphical interface for serving and testing ViewVC.
-    NOTE: this requires a valid X11 display connection.
-""" % locals()
+  --script-alias=PATH (-s)   Specify the ScriptAlias, the artificial path
+                             location that at which ViewVC appears to be
+                             located.  For example, if your ScriptAlias is
+                             "cgi-bin/viewvc", then ViewVC will be accessible
+                             at "http://%(host)s:%(port)s/cgi-bin/viewvc".
+                             [default: %(script_alias)s]
+  
+  --gui (-g)                 Pop up a graphical interface for serving and
+                             testing ViewVC.  NOTE: this requires a valid
+                             X11 display connection.
+""" % locals())
 
 if __name__ == '__main__':
     options = Options()
