@@ -64,10 +64,10 @@ Congratulations on getting this far. :-)
     To start installing right away (on UNIX): type "./viewvc-install"
     in the current directory and answer the prompts.  When it
     finishes, edit the file viewvc.conf in the installation directory
-    to tell viewvc the paths to your CVS and Subversion repositories. Next,
-    configure your web server to run <INSTALL>/cgi/viewvc.cgi, as
-    appropriate for your web server.  The section `INSTALLING VIEWVC'
-    below is still recommended reading.
+    to tell viewvc the paths to your CVS and Subversion repositories. 
+    Next, configure your web server (in the way appropriate to that browser)
+    to run <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/viewvc.cgi.  The section
+    `INSTALLING VIEWVC' below is still recommended reading.
 
 
 INSTALLING VIEWVC
@@ -149,7 +149,7 @@ Either METHOD A:
 2) The ScriptAlias directive is very useful for pointing 
    directly to the viewvc.cgi script.  Simply insert a line containing
 
-     ScriptAlias /viewvc <VIEWVC_INSTALLATION_DIRECTORY>/www/cgi/viewvc.cgi
+     ScriptAlias /viewvc <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/viewvc.cgi
 
    into your httpd.conf file.  Choose the location in httpd.conf where 
    also the other ScriptAlias lines reside.  Some examples:
@@ -183,7 +183,7 @@ and then there's METHOD C:
 
 or if you've got Mod_Python installed you can use METHOD D:
 2) Copy the Python scripts and .htaccess file from 
-   <VIEWVC_INSTALLATION_DIRECTORY>/www/mod_python/
+   <VIEWVC_INSTALLATION_DIRECTORY>/bin/mod_python/
    to a directory being served by apache.
    
    In httpd.conf, make sure that "AllowOverride All" or at least 
@@ -246,7 +246,7 @@ there are some additional steps required to get the database working.
    Optionally, you can create a second user with read-only access to the
    database.
 
-3) Run the <VIEWVC_INSTALLATION_DIRECTORY>/make-database script.  It will 
+3) Run the <VIEWVC_INSTALLATION_DIRECTORY>/bin/make-database script.  It will 
    prompt you for your MySQL user, password, and the name of database you 
    want to create.  The database name defaults to "ViewVC".  This script 
    creates the database and sets up the empty tables.  If you run this on a 
@@ -285,7 +285,7 @@ there are some additional steps required to get the database working.
    To get real-time updates, you'll want to checkout the CVSROOT module
    from your CVS repository and edit CVSROOT/loginfo.  Add the line:
 
-     ALL <VIEWVC_INSTALLATION_DIRECTORY>/loginfo-handler %{sVv}
+     ALL <VIEWVC_INSTALLATION_DIRECTORY>/bin/loginfo-handler %{sVv}
 
    If you have other scripts invoked by CVSROOT/loginfo, you will want
    to make sure to change any running under the "DEFAULT" keyword to
@@ -295,7 +295,7 @@ there are some additional steps required to get the database working.
    If you are running the Unix port of CVS-NT, you'll need to use a 
    slightly different command line:
    
-     ALL <VIEWVC_INSTALLATION_DIRECTORY>/loginfo-handler %{sVv} cvsnt
+     ALL <VIEWVC_INSTALLATION_DIRECTORY>/bin/loginfo-handler %{sVv} cvsnt
      
    The extra 'cvsnt' parameter tells the handler script to parse the 
    commit information in a different way. 
@@ -316,7 +316,7 @@ there are some additional steps required to get the database working.
      #!/bin/sh
      REPOS="$1"
      REV="$2"
-     <VIEWVC_INSTALLATION_DIRECTORY>/svndbadmin rebuild "$REPOS" "$REV"
+     <VIEWVC_INSTALLATION_DIRECTORY>/bin/svndbadmin rebuild "$REPOS" "$REV"
 
    If you allow revision property changes in your repository, create a
    post-revprop-change hook script containing the same commands as the
