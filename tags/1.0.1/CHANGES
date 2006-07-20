@@ -1,4 +1,4 @@
-Version 1.0.1 (?)
+Version 1.0.1 (released 20-Jul-2006)
 
   * fix exception on log page when use_pagesize is enabled
   * fix an XHTML validation bug in the footer template (issue #239)
