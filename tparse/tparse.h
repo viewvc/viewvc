@@ -30,7 +30,7 @@
 #include <memory>     /* for auto_ptr */
 #include <algorithm>  /* for iterator */
 #include <exception>  /* for exception */
-#include <istream>    /* for istream */
+#include <iostream>   /* for istream */
 #include <list>       /* for list<> */
 #include <string>     /* for string */
 

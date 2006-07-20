@@ -56,7 +56,6 @@ import compat; compat.for_standalone()
 class Options:
     port = 7467 # default TCP/IP port used for the server
     start_gui = 0 # No GUI unless requested.
-    daemon = 0 # stay in the foreground by default
     repositories = {} # use default repositories specified in config
     if sys.platform == 'mac':
         host = '127.0.0.1' 
@@ -429,7 +428,7 @@ def gui(host, port):
 
             # directory view template:
             self.dirtemplate_lbl = Tkinter.Label(self.options_frm,
-                text='Choose HTML Template for the Directory pages:')
+                text='Chooose HTML Template for the Directory pages:')
             self.dirtemplate_lbl.pack(side='top', anchor='w')
             self.dirtemplate_svar = Tkinter.StringVar()
             self.dirtemplate_svar.set(cfg.templates.directory)
@@ -448,7 +447,7 @@ def gui(host, port):
 
             # log view template:
             self.logtemplate_lbl = Tkinter.Label(self.options_frm,
-                text='Choose HTML Template for the Log pages:')
+                text='Chooose HTML Template for the Log pages:')
             self.logtemplate_lbl.pack(side='top', anchor='w')
             self.logtemplate_svar = Tkinter.StringVar()
             self.logtemplate_svar.set(cfg.templates.log)
@@ -571,8 +570,8 @@ def cli(argv):
     class BadUsage(Exception): pass
 
     try:
-        opts, args = getopt.getopt(argv[1:], 'gdp:r:h:s:', 
-            ['gui', 'daemon', 'port=', 'repository=', 'script-alias='])
+        opts, args = getopt.getopt(argv[1:], 'gp:r:h:s:', 
+            ['gui', 'port=', 'repository=', 'script-alias='])
         for opt, val in opts:
             if opt in ('-g', '--gui'):
                 options.start_gui = 1
@@ -583,25 +582,16 @@ def cli(argv):
                     options.repositories[symbolic_name] = val
                 else:
                     options.repositories["Development"] = val
-            elif opt in ('-d', '--daemon'):
-                options.daemon = 1
             elif opt in ('-p', '--port'):
                 try:
                     options.port = int(val)
                 except ValueError:
-                    raise BadUsage, "Port '%s' is not a valid port number" \
-                          % (val)
+                    raise BadUsage
             elif opt in ('-h', '--host'):
                 options.host = val
             elif opt in ('-s', '--script-alias'):
                 options.script_alias = \
                     string.join(filter(None, string.split(val, '/')), '/')
-        if not options.start_gui and not options.port:
-            raise BadUsage, "You must supply a valid port, or run in GUI mode."
-        if options.daemon:
-            pid = os.fork()
-            if pid != 0:
-                sys.exit()  
         if options.start_gui:
             gui(options.host, options.port)
             return
@@ -611,44 +601,42 @@ def cli(argv):
                                                 options.script_alias)
             serve(options.host, options.port, ready)
             return
-    except (getopt.error, BadUsage), err:
+        raise BadUsage
+    except (getopt.error, BadUsage):
         cmd = os.path.basename(sys.argv[0])
         port = options.port
         host = options.host
         script_alias = options.script_alias
-        if str(err):
-            sys.stderr.write("ERROR: %s\n\n" % (str(err)))
-        sys.stderr.write("""Usage: %(cmd)s [OPTIONS]
+        print """ViewVC standalone - a simple standalone HTTP-Server
 
-Run a simple, standalone HTTP server configured to serve up ViewVC
-requests.  ViewVC configuration is read from viewvc.conf file, if available.
+Usage: %(cmd)s [OPTIONS]
 
-Options:
+Available Options:
 
-  --daemon (-d)              Background the server process.
-  
-  --host=HOST (-h)           Start the server listening on HOST.  You need
-                             to provide the hostname if you want to
-                             access the standalone server from a remote
-                             machine.  [default: %(host)s]
+-h <host>, --host=<host>:
+    Start the HTTP server listening on <host>.  You need to provide
+    the hostname if you want to access the standalone server from a
+    remote machine.  [default: %(host)s]
 
-  --port=PORT (-p)           Start the server on the given PORT.
-                             [default: %(port)d]
+-p <port>, --port=<port>:
+    Start an HTTP server on the given port.  [default: %(port)d]
 
-  --repository=PATH (-r)     Serve up the CVS repository located at PATH.
-                             This option may be used more than once.
+-r <path>, --repository=<path>:
+    Specify a path for a CVS repository.  Repository definitions are
+    typically read from the viewvc.conf file, if available.  This
+    option may be used more than once.
 
-  --script-alias=PATH (-s)   Specify the ScriptAlias, the artificial path
-                             location that at which ViewVC appears to be
-                             located.  For example, if your ScriptAlias is
-                             "cgi-bin/viewvc", then ViewVC will be accessible
-                             at "http://%(host)s:%(port)s/cgi-bin/viewvc".
-                             [default: %(script_alias)s]
-  
-  --gui (-g)                 Pop up a graphical interface for serving and
-                             testing ViewVC.  NOTE: this requires a valid
-                             X11 display connection.
-""" % locals())
+-s <path>, --script-alias=<path>:
+    Specify the ScriptAlias, the artificial path location that at
+    which ViewVC appears to be located.  For example, if your
+    ScriptAlias is "cgi-bin/viewvc", then ViewVC will appear to be
+    accessible at the URL "http://%(host)s:%(port)s/cgi-bin/viewvc".
+    [default: %(script_alias)s]
+    
+-g, --gui:
+    Pop up a graphical interface for serving and testing ViewVC.
+    NOTE: this requires a valid X11 display connection.
+""" % locals()
 
 if __name__ == '__main__':
     options = Options()

@@ -14,7 +14,7 @@
 #
 # -----------------------------------------------------------------------
 
-__version__ = '1.1-dev'
+__version__ = '1.0.1'
 
 # this comes from our library; measure the startup time
 import debug
@@ -1054,25 +1054,14 @@ def common_template_data(request):
     'rootname' : request.server.escape(request.rootname),
     'pathtype' : None,
     'nav_path' : nav_path(request),
-    'view'     : _view_codes[request.view_func],
-    'rev'      : None,
-    'view_href' : None,
-    'annotate_href' : None,
-    'download_href' : None,
-    'download_text_href' : None,
-    'revision_href' : None,
-    'queryform_href' : None,
     'up_href'  : None,
     'log_href' : None,
     'log_href_rev': None,
     'graph_href': None,
     'rss_href' : None,
-    'prefer_markup' : ezt.boolean(0),
+    'view'     : _view_codes[request.view_func],
   }
 
-  rev = request.query_dict.get('revision')
-  data['rev'] = hasattr(request.repos, '_getrev') \
-                and request.repos._getrev(rev) or rev
   if request.pathtype == vclib.DIR:
     data['pathtype'] = 'dir'
   elif request.pathtype == vclib.FILE:
@@ -1103,36 +1092,61 @@ def common_template_data(request):
                                       params={}, escape=1)
 
   if request.pathtype == vclib.FILE:
-    data['view_href'], data['download_href'], data['download_text_href'], \
-      data['annotate_href'], data['revision_href'], data['prefer_markup'] \
-        = get_file_view_info(request, request.where,
-                             data['rev'], request.mime_type)
-    data['log_href'] = request.get_url(view_func=view_log,
-                                       params={}, escape=1)
-    if request.roottype == 'cvs' and cfg.options.use_cvsgraph:
+    if (request.view_func is not view_log):
+      data['log_href'] = request.get_url(view_func=view_log,
+                                         params={}, escape=1)
+      if (request.view_func is view_diff):
+        data['log_href_rev'] = request.query_dict.get('r2')
+      elif (request.view_func is view_annotate):
+        # if user did "view=annotate" there may not be an annotate key
+        if request.query_dict.has_key('annotate'):
+          data['log_href_rev'] = request.query_dict.get('annotate')
+      elif request.query_dict.has_key('revision'):
+        data['log_href_rev'] = request.query_dict.get('revision')
+
+    if (request.roottype == 'cvs' and cfg.options.use_cvsgraph
+        and request.view_func is not view_cvsgraph):
       data['graph_href'] = request.get_url(view_func=view_cvsgraph,
                                            params={}, escape=1)
   elif request.pathtype == vclib.DIR:
-    data['view_href'] = request.get_url(view_func=view_directory,
-                                       params={}, escape=1)
     if request.roottype == 'svn':
-      data['revision_href'] = request.get_url(view_func=view_revision,
-                                              params={}, escape=1)
-
       data['log_href'] = request.get_url(view_func=view_log,
                                          params={}, escape=1)
 
   if is_query_supported(request):
-    params = {}
-    if request.roottype == 'cvs' and request.pathrev:
-      params['branch'] = request.pathrev
-    data['queryform_href'] = request.get_url(view_func=view_queryform,
-                                             params=params,
-                                             escape=1)
     data['rss_href'] = request.get_url(view_func=view_query,
                                        params={'date': 'month',
                                                'format': 'rss'},
                                        escape=1)
+  return data
+
+def nav_header_data(request, rev, orig_path):
+  view_href, download_href, download_text_href, annotate_href, \
+             revision_href, prefer_markup \
+      = get_file_view_info(request, request.where, rev, request.mime_type)
+  
+  data = common_template_data(request)
+  data.update({
+    'rev' : rev,
+    'view_href' : view_href,
+    'annotate_href' : annotate_href,
+    'download_href' : download_href,
+    'download_text_href' : download_text_href,
+    'revision_href' : revision_href,
+    'prefer_markup' : prefer_markup,
+    'orig_path' : None,
+    'orig_href' : None,
+  })
+
+  if orig_path != request.path_parts:
+    path = _path_join(orig_path)
+    data['orig_path'] = path
+    data['orig_href'] = request.get_url(view_func=view_log,
+                                        where=path,
+                                        pathtype=vclib.FILE,
+                                        params={'pathrev': rev},
+                                        escape=1)
+
   return data
 
 def retry_read(src, reqlen=CHUNK_SIZE):
@@ -1355,7 +1369,7 @@ def view_markup(request):
     fp.close()
     return
 
-  data = common_template_data(request)
+  data = nav_header_data(request, revision, path)
   data.update({
     'mime_type' : request.mime_type,
     'log' : None,
@@ -1370,18 +1384,7 @@ def view_markup(request):
     'state' : None,
     'vendor_branch' : None,
     'prev' : None,
-    'orig_path' : None,
-    'orig_href' : None,
     })
-
-  if path != request.path_parts:
-    orig_path = _path_join(path)
-    data['orig_path'] = orig_path
-    data['orig_href'] = request.get_url(view_func=view_log,
-                                        where=orig_path,
-                                        pathtype=vclib.FILE,
-                                        params={'pathrev': revision},
-                                        escape=1)
 
   if cfg.options.show_log_in_markup:
     options = {'svn_latest_log': 1}
@@ -1553,8 +1556,8 @@ def view_directory(request):
   where_prefix = where and where + '/'
 
   for file in file_data:
-    row = _item(author=None, log=None, short_log=None, state=None, size=None,
-                log_file=None, log_rev=None, graph_href=None, mime_type=None,
+    row = _item(graph_href=None, author=None, log=None, log_file=None,
+                log_rev=None, state=None, size=None, mime_type=None,
                 date=None, ago=None, view_href=None, log_href=None,
                 revision_href=None, annotate_href=None, download_href=None,
                 download_text_href=None, prefer_markup=ezt.boolean(0))
@@ -1566,8 +1569,7 @@ def view_directory(request):
       row.date = make_time_string(file.date, cfg)
       row.ago = html_time(request, file.date)
     if cfg.options.show_logs and file.log is not None:
-      row.short_log = format_log(file.log, cfg)
-      row.log = htmlify(file.log)
+      row.log = format_log(file.log, cfg)
 
     row.anchor = request.server.escape(file.name)
     row.name = request.server.escape(file.name)
@@ -1668,6 +1670,7 @@ def view_directory(request):
     'youngest_rev' : None,
     'youngest_rev_href' : None,
     'selection_form' : None,
+    'queryform_href' : None,
     'attic_showing' : None,
     'show_attic_href' : None,
     'hide_attic_href' : None,
@@ -1713,6 +1716,14 @@ def view_directory(request):
     data['youngest_rev_href'] = request.get_url(view_func=view_revision,
                                                 params={},
                                                 escape=1)
+
+  if is_query_supported(request):
+    params = {}
+    if request.roottype == 'cvs' and request.pathrev:
+      params['branch'] = request.pathrev
+    data['queryform_href'] = request.get_url(view_func=view_queryform,
+                                             params=params,
+                                             escape=1)
 
   if cfg.options.use_pagesize:
     data['dir_paging_action'], data['dir_paging_hidden_values'] = \
@@ -2148,21 +2159,8 @@ def view_annotate(request):
   source, revision = blame.blame(request.repos, path,
                                  diff_url, include_url, rev)
 
-  data = common_template_data(request)
-  data.update({
-    'lines': source,
-    'orig_path': None,
-    'orig_href': None,
-    })
-
-  if path != request.path_parts:
-    orig_path = _path_join(path)
-    data['orig_path'] = orig_path
-    data['orig_href'] = request.get_url(view_func=view_log,
-                                        where=orig_path,
-                                        pathtype=vclib.FILE,
-                                        params={'pathrev': revision},
-                                        escape=1)
+  data = nav_header_data(request, revision, path)
+  data['lines'] = source
 
   request.server.header()
   generate_page(request, "annotate", data)
@@ -2369,7 +2367,6 @@ class DiffSource:
     self.cfg = cfg
     self.save_line = None
     self.line_number = None
-    self.prev_line_number = None
     
     # keep track of where we are during an iteration
     self.idx = -1
@@ -2430,7 +2427,6 @@ class DiffSource:
 
       match = _re_extract_info.match(line)
       self.line_number = int(match.group(2)) - 1
-      self.prev_line_number = int(match.group(1)) - 1
       return _item(type='header',
                    line_info_left=match.group(1),
                    line_info_right=match.group(2),
@@ -2469,7 +2465,6 @@ class DiffSource:
       return None
 
     self.line_number = self.line_number + 1
-    self.prev_line_number = self.prev_line_number + 1
     return _item(type='context', left=output, right=output,
                  line_number=self.line_number)
 
@@ -2479,19 +2474,15 @@ class DiffSource:
       return None
 
     if self.state == 'flush-pre-change-remove':
-      self.prev_line_number = self.prev_line_number + 1
-      return _item(type='remove', left=self.left_col.pop(0),
-                   line_number=self.prev_line_number)
+      return _item(type='remove', left=self.left_col.pop(0))
 
     # state == flush-pre-change-add
     item = _item(type='change',
                  have_left=ezt.boolean(0),
                  have_right=ezt.boolean(0))
     if self.left_col:
-      self.prev_line_number = self.prev_line_number + 1
       item.have_left = ezt.boolean(1)
       item.left = self.left_col.pop(0)
-      item.line_number = self.prev_line_number
     if self.right_col:
       self.line_number = self.line_number + 1
       item.have_right = ezt.boolean(1)
@@ -2691,10 +2682,6 @@ def view_diff(request):
     diff_type = vclib.UNIFIED
     diff_options['context'] = 15
     human_readable = 1
-  elif format == 'f':
-    diff_type = vclib.UNIFIED
-    diff_options['context'] = None
-    human_readable = 1
   elif format == 'h':
     diff_type = vclib.UNIFIED
     human_readable = 1
@@ -2736,12 +2723,10 @@ def view_diff(request):
   except vclib.InvalidRevision:
     raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                  'to diff', '400 Bad Request')
-  path_left = _path_join(p1)
-  path_right = _path_join(p2)
   data = common_template_data(request)
   data.update({
-    'path_left': path_left,
-    'path_right': path_right,
+    'path_left': _path_join(p1),
+    'path_right': _path_join(p2),
     'rev_left' : rev1,
     'rev_right' : rev2,
     'tag_left' : sym1,
@@ -2761,7 +2746,7 @@ def view_diff(request):
                                        escape=1)
   if request.cfg.options.allow_annotate:
     data['annotate_href'] = request.get_url(view_func=view_annotate,
-                                            where=path_right,
+                                            where=_path_join(p2),
                                             pathtype=vclib.FILE,
                                             params={'annotate': rev2},
                                             escape=1)
@@ -3474,6 +3459,8 @@ def view_query(request):
   show_branch = ezt.boolean(request.roottype == 'cvs' and
                             (branch == '' or branch_match != 'exact'))
 
+  # a link to modify query
+  queryform_href = request.get_url(view_func=view_queryform, escape=1)
   # backout link
   params = request.query_dict.copy()
   params['format'] = 'backout'
@@ -3498,6 +3485,7 @@ def view_query(request):
   data.update({
     'sql': sql,
     'english_query': english_query(request),
+    'queryform_href': queryform_href,
     'backout_href': backout_href,
     'plus_count': plus_count,
     'minus_count': minus_count,
