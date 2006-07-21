@@ -483,7 +483,14 @@ class BlameSource:
     self.last = None
     self.first_rev = first_rev
     
+    # Do a little dance to get a URL that works in both Unix-y and
+    # Windows worlds.
     rootpath = os.path.abspath(rootpath)
+    if rootpath and rootpath[0] != '/':
+      rootpath = '/' + rootpath
+    if os.sep != '/':
+      rootpath = string.replace(rootpath, os.sep, '/')
+      
     url = 'file://' + string.join([rootpath, fs_path], "/")
     fp = popen.popen(svn_client_path,
                      ('blame', "-r%d" % int(rev), "%s@%d" % (url, int(rev))),
