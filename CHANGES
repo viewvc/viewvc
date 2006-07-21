@@ -1,3 +1,13 @@
+Version 1.0.1 (released 20-Jul-2006)
+
+  * fix exception on log page when use_pagesize is enabled
+  * fix an XHTML validation bug in the footer template (issue #239)
+  * fix handling of single-component CVS revision numbers (issue #237)
+  * fix bug in download-as-text URL link generation (issue #241)
+  * fix query.cgi bug, missing 'rss_href' template data item (issue #249)
+  * no longer omit empty Subversion directories from tarballs (issue #250)
+  * use actual modification time for Subversion directories in tarballs
+
 Version 1.0 (released 01-May-2006)
 
   * add support for viewing Subversion repositories
