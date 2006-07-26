@@ -54,7 +54,14 @@ for PLATFORM in unix windows; do
   # and many files still contain comments refering to this location):
 
   # Remove some not useful directories
-  for JUNK in elemx tests tools tparse viewcvs.sourceforge.net www; do
+  for JUNK in elemx \
+              notes \
+              tests \
+              tools \
+              tparse \
+              viewcvs.sourceforge.net \
+              viewvc.org \
+              www; do
     if [ -e ${JUNK} ]; then
       rm -f ${JUNK}
     fi
