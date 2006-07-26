@@ -2,8 +2,31 @@
 <html>
 <head>
 <title>ViewVC: Upgrading</title>
-<link rel="stylesheet" type="text/css" href="./styles.css"/>
 <style>
+body {
+  background-color: rgb(180,193,205);
+  color: black;
+  font-family: sans-serif;
+}
+table { margin-left: 1em; }
+td, th { padding: 0 0.5em; }
+th { 
+  vertical-align: bottom; 
+  background: rgb(60%,70%,90%);
+}
+td { 
+  vertical-align: top; 
+}
+.h2, .h3 {
+  padding: 0.5em 1em;
+  border-color: black;
+  border-style: solid;
+  margin-bottom: 1em;
+  background: white;
+}
+.h2 { border-width: 1px 2px 2px 1px; }
+.h3 { border-width: 1px 0 0 0; }
+.toc-list { font-size: 90%; }
 .varname { font-family: monospace; }
 .unchanged { background: rgb(50%,75%,50%); }
 .renamed { background: rgb(75%,100%,75%); }
@@ -15,45 +38,10 @@
 
 <body>
 
-<div id="title">
-<a href="http://www.viewvc.org/"><img 
-   src="./images/title.jpg" alt="ViewVC: Repository Browsing"/></a>
-</div>
+<h1>Upgrading ViewVC</h1>
 
-<div id="menu">
-<p><a href="./index.html">Home</a> |
-   <a href="http://viewvc.tigris.org/">Project Page</a> |
-   <a href="./download.html">Download</a> |
-   <a href="./upgrading.html">Upgrading</a> |
-   <a href="./contributing.html">Contributing</a> |
-   <a href="./license-1.html">License</a> |
-   <a href="./contact.html">Contact</a> |
-   <a href="./who.html">About</a>
-</p>
-</div>
-
-<table id="pagetable">
-<tr>
-<td id="pagecolumn1">
-
-<h4>On this page:</h4>
-
-<ul id="bookmarks">
-  <li><a href="#sec-upgrading">Upgrading Basics</a></li>
-  <li><a href="#sec-from-0-9">Upgrading from 0.9</a></li>
-  <li><a href="#sec-from-0-8">Upgrading from 0.8</a></li>
-</ul>
-
-<hr/>
-
-<address><a href="mailto:&#117&#115&#101&#114&#115&#64&#118&#105&#101&#119&#118&#99&#46&#116&#105&#103&#114&#105&#115&#46&#111&#114&#103">ViewVC Users Group</a></address>
-
-</td>
-<td id="pagecolumn2">
-
-<div class="section">
-
-<h2 id="sec-upgrading">Upgrading Basics</h2>
+<div class="h2">
+<h2 id="introduction">Introduction</h2>
 
 <p>This document describes some of the things that you will need to 
    consider, change, or handle when upgrading an existing ViewVC
@@ -73,12 +61,22 @@
    back if your users start to complain.</p>
 
 </div>
-<div class="section">
 
+<div class="h2">
+<h2 id="toc">Table of Contents</h2>
+<ul class="toc-list">
+  <li><a href="#introduction">Introduction</a></li>
+  <li><a href="#sec-from-0-9">Upgrading From ViewCVS 0.9</a></li>
+  <li><a href="#sec-from-0-8">Upgrading From ViewCVS 0.8</a></li>
+</ul>
+</div>
+
+<div class="h2">
 <h2 id="sec-from-0-9">Upgrading From ViewCVS 0.9</h2>
 
 <p>This section discusses how to upgrade ViewCVS 0.9 to ViewVC 1.0.</p>
 
+<div class="h3">
 <h3>CGI Stubs</h3>
     
 <p>The CGI stub scripts haved been moved from
@@ -113,6 +111,9 @@
    be re-enabled. The <code>viewcvs.conf</code> file describes these
    options in detail.</p>
 
+</div>
+
+<div class="h3">
 <h3>Configuration Options</h3>
 
 <p>The following options have been added:</p>
@@ -157,6 +158,9 @@
   <li>templates/footer</li>
 </ul>
 
+</div>
+
+<div class="h3">
 <h3>Templates</h3>
     
 <p>The templates have changed drastically in this version of ViewVC.
@@ -961,7 +965,10 @@
 </tbody>
 </table>
 
-<h4>Template Arrangement</h4>
+</div>
+
+<div class="h3">
+<h3>Template Arrangement</h3>
     
 <p>The default templates have been rearranged a bit in ViewVC 1.0.
    Specifically, "header.ezt" and "footer.ezt" have moved into the
@@ -979,29 +986,26 @@
    configuration file.</p>
 
 </div>
-<div class="section">
+</div>
 
+<div class="h2">
 <h2 id="sec-from-0-8">Upgrading From ViewCVS 0.8</h2>
 
-    <p>
-      This section discusses how to upgrade ViewCVS 0.8 to version
-      0.9 or a later version of the software.
-    </p>
+<p>This section discusses how to upgrade ViewCVS 0.8 to version
+   0.9 or a later version of the software.</p>
     
-    <p>
-      <strong>NOTE:</strong> these changes will bring you up to the
-      requirements of version 0.9. You must also follow the directions
-      for <a href="#from9">upgrading from 0.9</a>.
-    </p>
+<p><strong>NOTE:</strong> these changes will bring you up to the
+   requirements of version 0.9. You must also follow the directions
+   for <a href="#sec-from-0-9">upgrading from 0.9</a>.</p>
 
-    <h3>Configuration Options</h3>
-    <p>
-      More templates were introduced in version 0.8 of the software,
-      which made many of the configuration options obsolete. This
-      section covers which options were removed. If you made any
-      changes to these options, then you will need to make
-      corresponding changes in the templates.
-    </p>
+<div class="h3">
+<h3>Configuration Options</h3>
+
+<p>More templates were introduced in version 0.8 of the software,
+   which made many of the configuration options obsolete. This section
+   covers which options were removed. If you made any changes to these
+   options, then you will need to make corresponding changes in the
+   templates.</p>
 
       <dl>
 	<dt>
@@ -1090,12 +1094,14 @@
 
       </dl>
 
-    <h3>Template Variables</h3>
-    <p>
-      Some template variables that were available in 0.8 have been
-      removed in 0.9. If you have custom templates that refer to these
-      variables, then you will need to modify your templates.
-    </p>
+</div>
+
+<div class="h3">
+<h3>Template Variables</h3>
+
+<p>Some template variables that were available in 0.8 have been
+   removed in 0.9. If you have custom templates that refer to these
+   variables, then you will need to modify your templates.</p>
 
 	    <dl>
 	      <dt><code>directory.ezt</code>: <var>headers</var></dt>
@@ -1146,9 +1152,7 @@
 	    </dl>
 
 </div>
+</div>
 
-</td>
-</tr>
-</table>
 </body>
 </html>
