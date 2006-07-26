@@ -1,0 +1,5 @@
+RedirectPermanent /upgrading.html http://viewvc.tigris.org/nonav/source/browse/*checkout*/viewvc/trunk/docs/upgrading-howto.html
+RedirectPermanent /template-authoring-guide.html http://viewvc.tigris.org/nonav/source/browse/*checkout*/viewvc/trunk/docs/template-authoring-guide.html
+RedirectPermanent /url-reference.html http://viewvc.tigris.org/nonav/source/browse/*checkout*/viewvc/trunk/docs/url-reference.html
+
+
