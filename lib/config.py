@@ -38,7 +38,7 @@ import fnmatch
 #########################################################################
 
 class Config:
-  _sections = ('general', 'options', 'cvsdb', 'templates')
+  _sections = ('general', 'utilities', 'options', 'cvsdb', 'templates')
   _force_multi_value = ('cvs_roots', 'forbidden',
                         'svn_roots', 'languages', 'kv_files',
                         'root_parents')
@@ -142,18 +142,27 @@ class Config:
     self.general.svn_roots = { }
     self.general.root_parents = []
     self.general.default_root = ''
-    self.general.rcs_path = ''
-    if sys.platform == "win32":
-      self.general.cvsnt_exe_path = 'cvs'
-    else:
-      self.general.cvsnt_exe_path = None
     self.general.use_rcsparse = 0
-    self.general.svn_path = ''
     self.general.mime_types_file = ''
     self.general.address = '<a href="mailto:user@insert.your.domain.here">No admin address has been configured</a>'
     self.general.forbidden = ()
     self.general.kv_files = [ ]
     self.general.languages = ['en-us']
+
+    self.utilities.rcs_dir = ''
+    if sys.platform == "win32":
+      self.utilities.cvsnt = 'cvs'
+    else:
+      self.utilities.cvsnt = None
+    self.utilities.svn = ''
+    self.utilities.diff = ''
+    self.utilities.enscript = ''
+    self.utilities.highlight = ''
+    self.utilities.py2html_dir = '.'
+    self.utilities.php = 'php'
+    self.utilities.cvsgraph = ''
+    self.utilities.gzip = ''
+    self.utilities.sed = ''
 
     self.templates.directory = None
     self.templates.log = None
@@ -201,19 +210,15 @@ class Config:
     self.options.show_logs = 1
     self.options.show_log_in_markup = 1
     self.options.cross_copies = 0
-    self.options.py2html_path = '.'
     self.options.short_log_len = 80
     self.options.use_enscript = 0
-    self.options.enscript_path = ''
     self.options.use_highlight = 0
-    self.options.highlight_path = ''
     self.options.highlight_line_numbers = 1
     self.options.highlight_convert_tabs = 2
+    self.options.use_py2html = 0
     self.options.use_php = 0
-    self.options.php_exe_path = 'php'
     self.options.allow_tar = 0
     self.options.use_cvsgraph = 0
-    self.options.cvsgraph_path = ''
     self.options.cvsgraph_conf = "cvsgraph.conf"
     self.options.use_re_search = 0
     self.options.use_pagesize = 0

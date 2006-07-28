@@ -32,8 +32,8 @@
 #    svn_roots (for Subversion)
 #    root_parents (for CVS or Subversion)
 #    default_root
-#    rcs_path or cvsnt_exe_path
-#    mime_types_file 
+#    mime_types_file
+#    the many options in the [utilities] section
 #
 # It is usually desirable to change the following variables:
 #
@@ -42,10 +42,6 @@
 #
 #    use_enscript
 #    use_cvsgraph
-#
-# For Python source colorization:
-#
-#    py2html_path
 #
 # To optimize delivery of ViewVC static files:
 #
@@ -119,28 +115,9 @@ cvs_roots = cvs: /home/cvsroot
 # (ignored when root_as_url_component is turned on)
 default_root = cvs
 
-# uncomment if the RCS binaries are not on the standard path
-#rcs_path = /usr/bin/
-
-# ViewVC can use CVSNT (www.cvsnt.org) instead of the RCS 
-# utilities to retrieve information from CVS repositories.
-# To enable use of CVSNT, set the "cvsnt_exe_path" value
-# to the path of the CVSNT executable. (If CVSNT is on the
-# standard path, you can also set it to the name of the
-# CVSNT executable). By default "cvsnt_exe_path" is set to
-# "cvs" on Windows and is not set on other platforms.
-#
-#cvsnt_exe_path =
-#cvsnt_exe_path = cvs
-#cvsnt_exe_path = K:\Program Files\cvsnt\cvs.exe
-#cvsnt_exe_path = /usr/bin/cvs
-
 # use rcsparse python module to retrieve cvs repository information instead
 # of invoking rcs utilities. this feature is experimental
 use_rcsparse = 0
-
-# uncomment if the svn command-line utilities are not on the standard path
-#svn_path = /usr/bin/
 
 #
 # This is a pathname to a MIME types file to help viewvc to guess the
@@ -271,6 +248,74 @@ languages = en-us
 # languages = en-us, en-gb, de
 # languages = de, fr, en-us
 #
+
+#---------------------------------------------------------------------------
+[utilities]
+
+# ViewVC uses (sometimes optionally) various third-party programs to do some
+# of the heavy lifting.  Generally, it will attempt to execute those utility
+# programs in such a way that if they are found in ViewVC's executable
+# search path ($PATH, %PATH%, etc.) all is well.  But sometimes these tools
+# aren't installed in the executable search path, so here's where you can
+# tell ViewVC where to find them.
+#
+# NOTE:  Options with a "_dir" suffix are for configuring the directories
+# in which certain programs live; otherwise, the option value should
+# point to the actual program.
+
+# RCS utilities, used for viewing CVS repositories
+rcs_dir =
+# rcs_dir = /usr/bin/
+
+# ViewVC can use CVSNT (www.cvsnt.org) instead of the RCS utilities to
+# retrieve information from CVS repositories.  To enable use of CVSNT,
+# set the "cvsnt" value to the path of the CVSNT executable. (If CVSNT
+# is on the standard path, you can also set it to the name of the
+# CVSNT executable). By default "cvsnt" is set to "cvs" on Windows and
+# is not set on other platforms.
+cvsnt =
+# cvsnt =
+# cvsnt = cvs
+# cvsnt = K:\Program Files\cvsnt\cvs.exe
+# cvsnt = = /usr/bin/cvs
+
+# Subversion command-line client, used for viewing Subversion repositories
+svn =
+# svn_dir = /usr/bin/svn
+
+# GNU diff, used for showing file version differences
+diff = 
+# diff = /usr/bin/diff
+
+# GNU Enscript, a syntax highlighting program (see options.use_enscript)
+enscript =
+# enscript = /usr/bin/enscript
+
+# Highlight, a syntax highlighting program (see options.use_highlight)
+highlight =
+# highlight = /usr/bin/highlight
+
+# Marc-Andrew Lemburg's py2html, Python colorizer (see options.use_py2html)
+py2html_dir = .
+# py2html_dir = /usr/local/lib/python1.5/site-python
+
+# PHP, used to colorize PHP files (see options.use_php)
+php = php
+# php = /usr/local/bin/php
+# php = C:\Program Files\php\cli\php.exe
+
+# CvsGraph, a graphical CVS version graph generator (see options.use_cvsgraph)
+cvsgraph =
+# cvsgraph = /usr/local/bin/cvsgraph
+
+# Gzip, file compression utility (see options.allow_tar)
+gzip =
+# gzip = /usr/bin/gzip
+
+# Sed, stream editor
+sed =
+# sed = /usr/bin/sed
+
 
 #---------------------------------------------------------------------------
 [options]
@@ -435,15 +480,9 @@ use_localtime = 0
 # Defaults for configuration variables that shouldn't need
 # to be configured..
 
-#
-# If you want to use Marc-Andrew Lemburg's py2html (and Just van Rossum's
-# PyFontify) to colorize Python files, then you may need to change this
-# variable to point to their directory location.
-#
-# This directory AND the standard Python path will be searched.
-#
-py2html_path = .
-#py2html_path = /usr/local/lib/python1.5/site-python
+# should we use Marc-Andrew Lemburg's py2html (and Just van Rossum's
+# PyFontify) to colorize Python files?
+use_py2html = 0
 
 # the length to which the most recent log entry should be truncated when
 # shown in the directory view
@@ -452,20 +491,9 @@ short_log_len = 80
 # should we use 'enscript' for syntax coloring?
 use_enscript = 0
 
-#
-# if the enscript program is not on the path, set this value
-#
-enscript_path =
-# enscript_path = /usr/bin/
-
 # should we use 'highlight' for syntax coloring?
 # NOTE: use_enscript has to be 0 or enscript will be used instead
 use_highlight = 0
-
-#
-# if the highlight program is not on the path, set this value
-#
-# highlight_path = /usr/bin
 
 # should we add line numbers?
 highlight_line_numbers = 1
@@ -475,11 +503,6 @@ highlight_convert_tabs = 2
 
 # use php to colorize .php and .inc files?
 use_php = 0
-
-# path to php executable
-php_exe_path = php
-# php_exe_path = /usr/local/bin/php
-# php_exe_path = C:\Program Files\php\cli\php.exe
 
 #
 # ViewVC can generate tarball from a repository on the fly.
@@ -493,12 +516,6 @@ allow_tar = 0
 #
 use_cvsgraph = 0
 # use_cvsgraph = 1
-
-#
-# if the cvsgraph program is not on the path, set this value
-#
-cvsgraph_path =
-# cvsgraph_path = /usr/local/bin/
 
 #
 # Location of the customized cvsgraph configuration file.  

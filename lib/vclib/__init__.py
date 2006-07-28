@@ -232,14 +232,14 @@ class _diff_fp:
   """File object reading a diff between temporary files, cleaning up
   on close"""
 
-  def __init__(self, temp1, temp2, info1=None, info2=None, diff_opts=[]):
+  def __init__(self, temp1, temp2, info1=None, info2=None, diff_cmd='diff', diff_opts=[]):
     self.temp1 = temp1
     self.temp2 = temp2
     args = diff_opts[:]
     if info1 and info2:
       args.extend(["-L", self._label(info1), "-L", self._label(info2)])
     args.extend([temp1, temp2])
-    self.fp = popen.popen("diff", args, "r")
+    self.fp = popen.popen(diff_cmd, args, "r")
 
   def read(self, bytes):
     return self.fp.read(bytes)

@@ -115,7 +115,8 @@ class CCVSRepository(CVSRepository):
 
     diff_args = vclib._diff_args(type, options)
 
-    return vclib._diff_fp(temp1, temp2, info1, info2, diff_args)
+    return vclib._diff_fp(temp1, temp2, info1, info2,
+                          self.utilities.diff or 'diff', diff_args)
 
   def annotate(self, path_parts, rev=None):
     source = blame.BlameSource(self.rcsfile(path_parts, 1), rev)

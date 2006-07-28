@@ -26,12 +26,13 @@ import compat
 import popen
 
 class CVSRepository(vclib.Repository):
-  def __init__(self, name, rootpath):
+  def __init__(self, name, rootpath, utilities):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
 
     self.name = name
     self.rootpath = rootpath
+    self.utilities = utilities
 
   def itemtype(self, path_parts, rev):
     basepath = self._getpath(path_parts)
@@ -100,10 +101,6 @@ class CVSRepository(vclib.Repository):
     return ret
 
 class BinCVSRepository(CVSRepository):
-  def __init__(self, name, rootpath, rcs_paths):
-    CVSRepository.__init__(self, name, rootpath)
-    self.rcs_paths = rcs_paths
-
   def _get_tip_revision(self, rcs_file, rev=None):
     """Get the (basically) youngest revision (filtered by REV)."""
     args = rcs_file,
@@ -245,12 +242,12 @@ class BinCVSRepository(CVSRepository):
     return filtered_revs
 
   def rcs_popen(self, rcs_cmd, rcs_args, mode, capture_err=1):
-    if self.rcs_paths.cvsnt_exe_path:
-      cmd = self.rcs_paths.cvsnt_exe_path
+    if self.utilities.cvsnt:
+      cmd = self.utilities.cvsnt
       args = ['rcsfile', rcs_cmd]
       args.extend(list(rcs_args))
     else:
-      cmd = os.path.join(self.rcs_paths.rcs_path, rcs_cmd)
+      cmd = os.path.join(self.utilities.rcs_dir, rcs_cmd)
       args = rcs_args
     return popen.popen(cmd, args, mode, capture_err)
 
