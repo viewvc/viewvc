@@ -223,12 +223,13 @@ class Request:
           if cfg.general.use_rcsparse:
             import vclib.ccvs
             self.repos = vclib.ccvs.CCVSRepository(self.rootname,
-                                                   self.rootpath)
+                                                   self.rootpath,
+                                                   cfg.utilities)
           else:
             import vclib.bincvs
             self.repos = vclib.bincvs.BinCVSRepository(self.rootname, 
                                                        self.rootpath,
-                                                       cfg.general)
+                                                       cfg.utilities)
           self.roottype = 'cvs'
         except vclib.ReposNotFound:
           raise debug.ViewVCException(
@@ -246,14 +247,12 @@ class Request:
             # lie about its name.
             import vclib.svn_ra
             vclib.svn = vclib.svn_ra
-            self.repos = vclib.svn.SubversionRepository(self.rootname,
-                                                        self.rootpath)
           else:
             self.rootpath = os.path.normpath(self.rootpath)
             import vclib.svn
-            self.repos = vclib.svn.SubversionRepository(self.rootname,
-                                                        self.rootpath,
-                                                        cfg.general.svn_path)
+          self.repos = vclib.svn.SubversionRepository(self.rootname,
+                                                      self.rootpath,
+                                                      cfg.utilities)
           self.roottype = 'svn'
         except vclib.ReposNotFound:
           raise debug.ViewVCException(
@@ -1214,8 +1213,7 @@ class MarkupEnscript(MarkupShell):
     # I've tried to pass option '-C' to enscript to generate line numbers
     # Unfortunately this option doesn't work with HTML output in enscript
     # version 1.6.2.
-    enscript_cmd = [os.path.normpath(os.path.join(cfg.options.enscript_path,
-                                                  'enscript')),
+    enscript_cmd = [cfg.utilities.enscript or 'enscript',
                     '--color', '--language=html', '--pretty-print',
                     '-o', '-', '-']
 
@@ -1223,7 +1221,7 @@ class MarkupEnscript(MarkupShell):
     ### can't come up with a suitable sed expression.  Using
     ### '1,/^<PRE>$/d;/<\\/PRE>/,$d;p' gets me most of the way, but
     ### will drop the last line of a non-newline-terminated filed.
-    sed_cmd = ['sed', '-n', '/^<PRE>$/,/<\\/PRE>$/p']
+    sed_cmd = [cfg.utilities.sed or 'sed', '-n', '/^<PRE>$/,/<\\/PRE>$/p']
 
     MarkupShell.__init__(self, fp, [enscript_cmd, sed_cmd])
     self.filename = filename
@@ -1247,7 +1245,7 @@ class MarkupEnscript(MarkupShell):
 
 class MarkupPHP(MarkupShell):
   def __init__(self, php_exe_path, fp):
-    php_cmd = [php_exe_path, '-q', '-s', '-n']
+    php_cmd = [cfg.utilities.php or 'php', '-q', '-s', '-n']
     MarkupShell.__init__(self, fp, [php_cmd])
 
 class MarkupHighlight(MarkupShell):
@@ -1257,8 +1255,7 @@ class MarkupHighlight(MarkupShell):
     except ValueError:
       ext = 'txt'
 
-    highlight_cmd = [os.path.normpath(os.path.join(cfg.options.highlight_path,
-                                                   'highlight')),
+    highlight_cmd = [cfg.utilities.highlight or 'highlight',
                      '--syntax', ext, '--force',
                      '--anchors', '--fragment', '--xhtml']
 
@@ -1272,6 +1269,9 @@ class MarkupHighlight(MarkupShell):
     MarkupShell.__init__(self, fp, [highlight_cmd])
 
 def markup_stream_python(fp, cfg):
+  if not cfg.options.use_py2html:
+    return None
+  
   ### Convert this code to use the recipe at:
   ###     http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52298
   ### Note that the cookbook states all the code is licensed according to
@@ -1280,7 +1280,7 @@ def markup_stream_python(fp, cfg):
     # See if Marc-Andre Lemburg's py2html stuff is around.
     # http://www.egenix.com/files/python/SoftwareDescriptions.html#py2html.py
     ### maybe restrict the import to *only* this directory?
-    sys.path.insert(0, cfg.options.py2html_path)
+    sys.path.insert(0, cfg.utilities.py2html_dir)
     import py2html
     import PyFontify
   except ImportError:
@@ -1316,7 +1316,7 @@ def markup_stream_php(fp, cfg):
   return MarkupPHP(cfg.options.php_exe_path, fp)
 
 markup_streamers = {
-# '.py' : markup_stream_python,
+  '.py' : markup_stream_python,
   '.php' : markup_stream_php,
   '.inc' : markup_stream_php,
   }
@@ -2178,8 +2178,7 @@ def view_cvsgraph_image(request):
   
   request.server.header('image/png')
   rcsfile = request.repos.rcsfile(request.path_parts)
-  fp = popen.popen(os.path.normpath(os.path.join(cfg.options.cvsgraph_path,
-                                                 'cvsgraph')),
+  fp = popen.popen(cfg.utilities.cvsgraph or 'cvsgraph',
                    ("-c", _install_path(cfg.options.cvsgraph_conf),
                     "-r", request.repos.rootpath,
                     rcsfile), 'rb', 0)
@@ -2207,7 +2206,7 @@ def view_cvsgraph(request):
 
   # Create an image map
   rcsfile = request.repos.rcsfile(request.path_parts)
-  fp = popen.popen(os.path.join(cfg.options.cvsgraph_path, 'cvsgraph'),
+  fp = popen.popen(cfg.utilities.cvsgraph or 'cvsgraph',
                    ("-i",
                     "-c", _install_path(cfg.options.cvsgraph_conf),
                     "-r", request.repos.rootpath,
@@ -2944,7 +2943,7 @@ def download_tarball(request):
 
   request.server.header('application/octet-stream')
   sys.stdout.flush()
-  fp = popen.pipe_cmds([('gzip', '-c', '-n')])
+  fp = popen.pipe_cmds([(cfg.utilities.gzip or 'gzip', '-c', '-n')])
 
   ### FIXME: For Subversion repositories, we can get the real mtime of the
   ### top-level directory here.
