@@ -140,7 +140,6 @@ Version 0.9 (released 23-Dec-2001)
   * create dir_alternate.ezt for the flipped rev/name links
   * various UI tweaks for the directory pages
 
-
 Version 0.8 (released 10-Dec-2001)
 
   * add EZT templating mechanism for generating output pages
