@@ -28,8 +28,9 @@ td {
 .h3 { border-width: 1px 0 0 0; }
 .toc-list { font-size: 90%; }
 .varname { font-family: monospace; }
-.unchanged { background: rgb(50%,75%,50%); }
-.renamed { background: rgb(75%,100%,75%); }
+.added { background: rgb(50%,75%,25%); }
+.unchanged { background: rgb(75%,75%,75%); }
+.renamed { background: rgb(75%,50%,75%); }
 .changed { background: rgb(100%,100%,25%); }
 .replaced { background: rgb(100%,75%,0%); }
 .removed { background: rgb(100%,25%,25%); }
@@ -135,8 +136,32 @@ td {
 </tr>
 </thead>
 <tbody>
-<tr class="unchanged">
-  <td colspan="3">### NEED TO FIGURE THIS OUT ###</td>
+<tr class="added">
+  <td class="varname">queryform_href</td>
+  <td>annotate.ezt, diff.ezt, graph.ezt, log.ezt, log_table.ezt, markup.ezt, 
+      query_form.ezt, revision.ezt, roots.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">tarball_href</td>
+  <td>annotate.ezt, diff.ezt, graph.ezt, log.ezt, log_table.ezt, markup.ezt, 
+      query_form.ezt, query_results.ezt, revision.ezt, roots.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="changed">
+  <td class="varname">diff_type</td>
+  <td>diff.ezt</td>
+  <td>new value <code>f</code></td>
+</tr>
+<tr class="changed">
+  <td class="varname">entries.log</td>
+  <td>directory.ezt, dir_alternate.ezt</td>
+  <td>now always contains untruncated log message</td>
+</tr>
+<tr class="added">
+  <td class="varname">entries.short_log</td>
+  <td>directory.ezt, dir_alternate.ezt</td>
+  <td>added</td>
 </tr>
 </tbody>
 </table>
