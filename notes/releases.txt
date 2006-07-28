@@ -64,7 +64,11 @@ numbers, and not literal):
 
        svn ci -m "Begin a new release cycle."
 
-12. Write an announcement explaining all the cool new features and
+12. Edit the Issue Tracker configuration options, adding a new Version
+    for the just-release one, and a new Milestone for the next patch
+    (and possibly, minor or major) release.
+
+13. Write an announcement explaining all the cool new features and
     post it to the announce@ list, to the project's News area, and to
     other places interested in this sort of stuff, such as Freshmeat
     (http://www.freshmeat.net).
