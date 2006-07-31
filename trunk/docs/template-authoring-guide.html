@@ -709,8 +709,9 @@ td {
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.annotate_href</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>URL of the ViewVC annotation view for the directory entry.
+      Valid only when <var>entries.pathtype</var> is <tt>file</tt>.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.author</td>
@@ -725,18 +726,23 @@ td {
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.download_href</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>URL to download the HEAD revision of the directory entry.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.download_text_href</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>URL to download the HEAD revision of the directory entry as
+      <tt>text/plain</tt>.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.errors</td>
-  <td></td>
-  <td></td>
+  <td>List</td>
+  <td>List of strings containing error messages encountered by the
+      version control backend as it attempted to harvest information about
+      this directory entry.  At this time the strings are somewhat
+      freeform; in the future it would be nice to expose these as 
+      testable error code or somesuch.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.graph_href</td>
@@ -751,8 +757,12 @@ td {
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.log_file</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>ViewVC optionally calculates the log message of a CVS directory
+      as the log message associated with the most recently modified
+      file in that directory.  When that occurs, this is the name of
+      that file.  Valid only when <var>entries.pathtype</var> is
+      <tt>dir</tt>.  See also <var>entries.log_rev</var>.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.log_href</td>
@@ -762,18 +772,35 @@ td {
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.log_rev</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>ViewVC optionally calculates the log message of a CVS directory
+      as the log message associated with the most recently modified
+      file in that directory.  When that occurs, this is the revision of
+      that file.  Valid only when <var>entries.pathtype</var> is
+      <tt>dir</tt>.  See also <var>entries.log_file</var>.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.mime_type</td>
-  <td></td>
-  <td></td>
+  <td>String</td>
+  <td>MIME type of the directory entry.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.name</td>
   <td>String</td>
   <td>Name of the directory entry.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">entries.pathtype</td>
+  <td>String</td>
+  <td>Path kind of the directory entry.  Valid values: <tt>file</tt>
+      (file), <tt>dir</tt> (directory); may be empty.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">entries.prefer_markup</td>
+  <td>Boolean</td>
+  <td>Indicates whether to make the default file link a link to the markup
+      page instead of the checkout page. Valid only when
+      <var>entries.pathtype</var> is <tt>file</tt>.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.rev</td>
@@ -806,25 +833,15 @@ td {
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.state</td>
-  <td></td>
-  <td></td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">entries.pathtype</td>
   <td>String</td>
-  <td>Path kind of the directory entry.  Valid values: <tt>file</tt>
-      (file), <tt>dir</tt> (directory); may be empty.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">entries.prefer_markup</td>
-  <td>Boolean</td>
-  <td>Indicates whether to make the default file link a link to the markup
-      page instead of the checkout page. Valid only when
-      <var>entries.pathtype</var> is <tt>file</tt>.</td>
+  <td>State of the directory entry.  If the state is uninteresting
+      (a typical, versioned object), this field is empty.  Valid,
+      non-empty states include:  <tt>dead</tt> (the object is not
+      available on, or possible removed from, this branch; CVS only).</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.view_href</td>
-  <td></td>
+  <td>String</td>
   <td>This is a URL for the markup view if the entry is a file, and a
       URL for a directory listing if the entry is a directory.</td>
 </tr>
@@ -1339,7 +1356,7 @@ td {
   <td>URL to download the file as <tt>text/plain</tt> at the currently
       selected sticky tag. CVS only</td>
 </tr>
-<tr class="varlevel2">
+<tr class="varlevel1">
   <td class="varname">tag_prefer_markup</td>
   <td>Boolean</td>
   <td>Indicates whether to make the default file link a link to the markup
