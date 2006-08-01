@@ -493,7 +493,8 @@ class BlameSource:
       
     url = 'file://' + string.join([rootpath, fs_path], "/")
     fp = popen.popen(svn_client_path,
-                     ('blame', "-r%d" % int(rev), "%s@%d" % (url, int(rev))),
+                     ('blame', "-r%d" % int(rev), "--non-interactive",
+                      "%s@%d" % (url, int(rev))),
                      'rb', 1)
     self.fp = fp
     
