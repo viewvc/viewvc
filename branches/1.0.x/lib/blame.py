@@ -42,25 +42,28 @@ def link_includes(text, repos, path_parts, include_url):
   match = re_includes.match(text)
   if match:
     incfile = match.group(3)
+    include_path_parts = path_parts[:-1]
+    for part in filter(None, string.split(incfile, '/')):
+      if part == "..":
+        if not include_path_parts:
+          # nothing left to pop; don't bother marking up this include.
+          return text
+        include_path_parts.pop()
+      elif part and part != ".":
+        include_path_parts.append(part)
 
-    # check current directory and parent directory for file
-    for depth in (-1, -2):
-      include_path = path_parts[:depth] + [incfile]
-      try:
-        # will throw if path doesn't exist
-        if repos.itemtype(include_path, None) == vclib.FILE:
-          break
-      except vclib.ItemNotFound:
-        pass
-    else:
-      include_path = None
+    include_path = None
+    try:
+      if repos.itemtype(include_path_parts, None) == vclib.FILE:
+        include_path = string.join(include_path_parts, '/')
+    except vclib.ItemNotFound:
+      pass
 
     if include_path:
-        url = string.replace(include_url, '/WHERE/', 
-                             string.join(include_path, '/'))
-        return '#%sinclude%s<a href="%s">"%s"</a>' % \
-               (match.group(1), match.group(2), url, incfile)
-       
+      return '#%sinclude%s<a href="%s">"%s"</a>' % \
+             (match.group(1), match.group(2),
+              string.replace(include_url, '/WHERE/', include_path), incfile)
+    
   return text
 
 
