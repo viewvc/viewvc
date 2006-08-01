@@ -3205,8 +3205,9 @@ def build_commit(request, files, limited_files, dir_strip):
   commit.rss_date = make_rss_time_string(files[0].GetTime(), request.cfg)
   if request.roottype == 'svn':
     commit.rev = files[0].GetRevision()
-    commit.rss_url = 'http://%s%s' % \
-      (request.server.getenv("HTTP_HOST"),
+    commit.rss_url = '%s://%s%s' % \
+      (request.server.getenv("HTTPS") == "on" and "https" or "http",
+       request.server.getenv("HTTP_HOST"),
        request.get_url(view_func=view_revision,
                        params={'revision': commit.rev},
                        escape=1))
