@@ -1244,7 +1244,7 @@ class MarkupEnscript(MarkupShell):
        os.rmdir(dir)
 
 class MarkupPHP(MarkupShell):
-  def __init__(self, php_exe_path, fp):
+  def __init__(self, cfg, fp):
     php_cmd = [cfg.utilities.php or 'php', '-q', '-s', '-n']
     MarkupShell.__init__(self, fp, [php_cmd])
 
@@ -1313,7 +1313,7 @@ def markup_stream_php(fp, cfg):
   #os.putenv("SERVER_NAME", "")
   #os.putenv("SERVER_SOFTWARE", "")
 
-  return MarkupPHP(cfg.options.php_exe_path, fp)
+  return MarkupPHP(cfg, fp)
 
 markup_streamers = {
   '.py' : markup_stream_python,
@@ -2935,6 +2935,8 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
   del stack[-1:]
 
 def download_tarball(request):
+  cfg = request.cfg
+  
   if not request.cfg.options.allow_tar:
     raise debug.ViewVCException('Tarball generation is disabled',
                                  '403 Forbidden')
