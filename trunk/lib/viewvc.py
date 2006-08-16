@@ -1423,14 +1423,17 @@ def view_markup(request):
     streamer = markup_streamers.get(ext)
     if streamer:
       markup_fp = streamer(fp, cfg)
-    elif cfg.options.use_enscript:
-      markup_fp = MarkupEnscript(cfg, fp, request.path_parts[-1])
-    elif cfg.options.use_highlight:
-      markup_fp = MarkupHighlight(cfg, fp, request.path_parts[-1])
 
-  # If no one has a suitable markup handler, we'll use the default.
-  if not markup_fp:
-    markup_fp = MarkupPipeWrapper(fp)
+    # If there wasn't a custom streamer, or the streamer wasn't enabled, we'll
+    # try to use one of the configured syntax highlighting programs.
+    if not markup_fp:
+      if cfg.options.use_enscript:
+        markup_fp = MarkupEnscript(cfg, fp, request.path_parts[-1])
+      elif cfg.options.use_highlight:
+        markup_fp = MarkupHighlight(cfg, fp, request.path_parts[-1])
+      else:
+        # If no one has a suitable markup handler, we'll use the default.
+        markup_fp = MarkupPipeWrapper(fp)
     
   data['markup'] = markup_fp
   
