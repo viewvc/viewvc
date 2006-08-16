@@ -5,6 +5,7 @@ Version 1.0.2 (release ??)
   * fix annotate assertions on uncanonicalized #include paths (issue #208)
   * make RSS URL method match the method used to generate it (issue #245)
   * fix Subversion annotation to run non-interactively, preventing hangs
+  * fix bug in custom syntax highlighter fallback logic
 
 Version 1.0.1 (released 20-Jul-2006)
 
