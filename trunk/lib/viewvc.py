@@ -1229,7 +1229,7 @@ class MarkupEnscript(MarkupShell):
   def __call__(self, ctx):
     # create a temporary file with the same name as the file in
     # the repository so enscript can detect file type correctly
-    dir = compat.mkdtemp()
+    dir = compat.mkdtemp("", "viewvc")
     try:
       file = os.path.join(dir, self.filename)
       try:
@@ -1241,7 +1241,7 @@ class MarkupEnscript(MarkupShell):
       finally:
         os.unlink(file)
     finally:
-       os.rmdir(dir)
+      os.rmdir(dir)
 
 class MarkupPHP(MarkupShell):
   def __init__(self, cfg, fp):
