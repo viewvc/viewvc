@@ -1051,6 +1051,7 @@ def common_template_data(request):
     'where' : request.server.escape(request.where),
     'roottype' : request.roottype,
     'rootname' : request.server.escape(request.rootname),
+    'rootpath' : request.rootpath,
     'pathtype' : None,
     'nav_path' : nav_path(request),
     'view'     : _view_codes[request.view_func],
