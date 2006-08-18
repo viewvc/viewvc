@@ -516,8 +516,7 @@ class BlameSource:
     prev_rev = None
     if rev > self.first_rev:
       prev_rev = rev - 1
-    item = _item(text=text, line_number=idx+1, rev=rev,
-                 prev_rev=prev_rev, author=author, date=None)
+    item = vclib.Annotation(text, idx+1, rev, prev_rev, author, None)
     self.last = item
     self.idx = idx
     return item
@@ -707,7 +706,3 @@ class SubversionRepository(vclib.Repository):
     except KeyError:
       r = self._fsroots[rev] = fs.revision_root(self.fs_ptr, rev, self.pool)
       return r
-
-class _item:
-  def __init__(self, **kw):
-    vars(self).update(kw)

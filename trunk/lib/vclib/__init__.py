@@ -120,26 +120,22 @@ class Repository:
   def annotate(self, path_parts, rev):
     """Return a list of annotate file content lines and a revision.
 
-    The annotated lines are an collection of objects with the
-    following addressable members:
-
-       text        - raw text of a line of file contents
-       line_number - line number on which the line is found
-       rev         - revision in which the line was last modified
-       prev_rev    - revision prior to 'rev'
-       author      - author who last modified the line
-       date        - date on which the line was last modified, in seconds
-                     since the epoch, GMT
-
-    These object are sort by their line_number components.
+    The result is a list of Annotation objects, sorted by their
+    line_number components.
     """
     
 
 # ======================================================================
 class DirEntry:
-  "Instances represent items in a directory listing"
+  """Instances represent items in a directory listing"""
 
   def __init__(self, name, kind, errors=[]):
+    """Create a new DirEntry() item:
+          NAME:  The name of the directory entry
+          KIND:  The path kind of the entry (vclib.DIR, vclib.FILE)
+          ERRORS:  A list of error strings representing problems encountered
+                   while determining the other info about this entry
+    """
     self.name = name
     self.kind = kind
     self.errors = errors
@@ -147,16 +143,16 @@ class DirEntry:
 class Revision:
   """Instances holds information about revisions of versioned resources"""
 
-  """Create a new Revision() item:
-        NUMBER:  Revision in an integer-based, sortable format
-        STRING:  Revision as a string
-        DATE:  Seconds since Epoch (GMT) that this revision was created
-        AUTHOR:  Author of the revision
-        CHANGED:  Lines-changed (contextual diff) information
-        LOG:  Log message associated with the creation of this revision
-        SIZE:  Size (in bytes) of this revision's fulltext (files only)
-  """
   def __init__(self, number, string, date, author, changed, log, size):
+    """Create a new Revision() item:
+          NUMBER:  Revision in an integer-based, sortable format
+          STRING:  Revision as a string
+          DATE:  Seconds since Epoch (GMT) that this revision was created
+          AUTHOR:  Author of the revision
+          CHANGED:  Lines-changed (contextual diff) information
+          LOG:  Log message associated with the creation of this revision
+          SIZE:  Size (in bytes) of this revision's fulltext (files only)
+    """
     self.number = number
     self.string = string
     self.date = date
@@ -167,6 +163,27 @@ class Revision:
 
   def __cmp__(self, other):
     return cmp(self.number, other.number)
+
+class Annotation:
+  """Instances represent per-line file annotation information"""
+
+  def __init__(self, text, line_number, rev, prev_rev, author, date):
+    """Create a new Annotation() item:
+          TEXT:  Raw text of a line of file contents
+          LINE_NUMBER:  Line number on which the line is found
+          REV:  Revision in which the line was last modified
+          PREV_REV:  Revision prior to 'rev'
+          AUTHOR:  Author who last modified the line
+          DATE:  Date on which the line was last modified, in seconds since
+                 the epoch, GMT
+    """
+    self.text = text
+    self.line_number = line_number
+    self.rev = rev
+    self.prev_rev = prev_rev
+    self.author = author
+    self.date = date
+
 
 # ======================================================================
 

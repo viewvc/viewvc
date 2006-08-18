@@ -383,9 +383,8 @@ class SubversionRepository(vclib.Repository):
       prev_rev = None
       if revision > 1:
         prev_rev = revision - 1
-      blame_data.append(_item(text=line, line_number=line_no+1,
-                              rev=revision, prev_rev=prev_rev,
-                              author=author, date=None))
+      blame_data.append(vclib.Annotation(line, line_no+1, revision, prev_rev,
+                                         author, None))
       
     client.svn_client_blame(url, _rev2optrev(1), _rev2optrev(rev),
                             _blame_cb, self.ctx, self.pool)
@@ -438,8 +437,3 @@ class SubversionRepository(vclib.Repository):
                                    self.ctx, self.pool)
     self._dirent_cache[key] = dirents
     return dirents
-    
-    
-class _item:
-  def __init__(self, **kw):
-    vars(self).update(kw)
