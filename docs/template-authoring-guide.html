@@ -233,6 +233,14 @@ td {
   <td>Name of a configured repository.</td>
 </tr>
 <tr class="varlevel2">
+  <td class="varname">roots.path</td>
+  <td>String</td>
+  <td>Server-local location of a configured repository.  WARNING:  Revealing
+      information to untrusted guests about the details of your server
+      configuration can have negative security implications.  Use this
+      token at your own risk.</td>
+</tr>
+<tr class="varlevel2">
   <td class="varname">roots.type</td>
   <td>String</td>
   <td>Version control type of a configured repository.  Valid
@@ -246,7 +254,7 @@ td {
 <tr class="varlevel1">
   <td class="varname">rootpath</td>
   <td>String</td>
-  <td>Server-local location of the repository.  WARNING:  Revealing
+  <td>Server-local location of the current repository.  WARNING: Revealing
       information to untrusted guests about the details of your server
       configuration can have negative security implications.  Use this
       token at your own risk.</td>
