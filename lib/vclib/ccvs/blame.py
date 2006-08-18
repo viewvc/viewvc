@@ -31,6 +31,7 @@ import re
 import time
 import math
 import rcsparse
+import vclib
 
 class CVSParser(rcsparse.Sink):
   # Precompiled regular expressions
@@ -447,8 +448,7 @@ class BlameSource:
     author = self.parser.revision_author[rev]
     thisline = self.lines[idx]
     ### TODO:  Put a real date in here.
-    item = _item(text=thisline, line_number=line_number, rev=rev,
-                 prev_rev=prev_rev, author=author, date=None)
+    item = vclib.Annotation(thisline, line_number, rev, prev_rev, author, None)
     self.last = item
     self.idx = idx
     return item
@@ -456,9 +456,3 @@ class BlameSource:
 
 class BlameSequencingError(Exception):
   pass
-
-
-class _item:
-  def __init__(self, **kw):
-    vars(self).update(kw)
-
