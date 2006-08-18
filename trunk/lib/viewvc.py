@@ -1094,7 +1094,9 @@ def common_template_data(request):
                              where='', pathtype=vclib.DIR,
                              params={'root': rootname}, escape=1)
       roots.append(_item(name=request.server.escape(rootname),
-                         type=allroots[rootname][1], href=href))
+                         type=allroots[rootname][1],
+                         path=allroots[rootname][0],
+                         href=href))
   data['roots'] = roots
 
   if request.path_parts:
