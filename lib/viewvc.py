@@ -1303,18 +1303,15 @@ def markup_stream_php(fp, cfg):
   if not cfg.options.use_php:
     return None
 
-  sys.stdout.flush()
-
-  # clearing the following environment variables prevents a 
-  # "No input file specified" error from the php cgi executable
-  # when ViewVC is running under a cgi environment. when the
-  # php cli executable is used they can be left alone
-  #
-  #os.putenv("GATEWAY_INTERFACE", "")
-  #os.putenv("PATH_TRANSLATED", "")
-  #os.putenv("REQUEST_METHOD", "")
-  #os.putenv("SERVER_NAME", "")
-  #os.putenv("SERVER_SOFTWARE", "")
+  # The following HACK may be be used to allow a PHP CGI executable to be
+  # invoked instead of a CLI executable, on systems that do not have PHP's
+  # CLI (command line interface) installed. Just uncomment the following lines:
+  #os.unsetenv("SERVER_SOFTWARE")
+  #os.unsetenv("SERVER_NAME")
+  #os.unsetenv("GATEWAY_INTERFACE")
+  #os.unsetenv("REQUEST_METHOD")
+  #os.unsetenv("SCRIPT_FILENAME")
+  #os.unsetenv("PATH_TRANSLATED")
 
   return MarkupPHP(cfg, fp)
 
