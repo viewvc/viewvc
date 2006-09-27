@@ -300,6 +300,10 @@ py2html_dir = .
 # py2html_dir = /usr/local/lib/python1.5/site-python
 
 # PHP, used to colorize PHP files (see options.use_php)
+# (This should be set to the path of a PHP CLI executable, not the path
+# to a CGI executable. If you use a CGI executable, you may see "no input file
+# specified" or "force-cgi-redirect" errors instead of colorized source. The
+# output of "php -v" tells you whether an given executable is CLI or CGI.)
 php = php
 # php = /usr/local/bin/php
 # php = C:\Program Files\php\cli\php.exe
