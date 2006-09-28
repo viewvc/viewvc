@@ -7,6 +7,25 @@
 #
 #---------------------------------------------------------------------------
 
+# THE FORMAT OF THIS CONFIGURATION FILE
+#
+#    This file is delineated by sections, specified in [brackets].  Within 
+#    each section, are a number of configuration settings.  These settings
+#    take the form of: name = value.  Values may be continued on the
+#    following line by indenting the continued line.
+#
+#    WARNING:  Indentation *always* means continuation.  Name=value lines
+#    should always start in column zero.
+#
+#    Comments should always start in column zero, and are identified 
+#    with "#".
+#
+#    Certain configuration settings may have multiple values.  These should 
+#    be separated by a comma.  The settings where this is allowed are noted 
+#    below.  Any other setting that requires special syntax is noted at that
+#    setting.
+# 
+#
 # SOME TERMINOLOGY USED HEREIN
 #
 #    "root" - This is a CVS or Subversion repository.  For Subversion, the
@@ -23,54 +42,42 @@
 #        within a single repository.
 #
 #
-# BASIC CONFIGURATION
+# BASIC VIEWVC CONFIGURATION HINTS
 #
-# For correct operation, you will probably need to change the following
-# configuration variables:
+#    While ViewVC has quite a few configuration options, you generally
+#    only need to change a small subset of them to get your ViewVC
+#    installation working properly.  Here are some options that we
+#    recommend you pay attention to.  Of course, don't try to change the
+#    options here -- do so in the relevant section of the configuration
+#    file below.
+#    
+#    For correct operation, you will probably need to change the following
+#    configuration variables:
+#   
+#       cvs_roots (for CVS)
+#       svn_roots (for Subversion)
+#       root_parents (for CVS or Subversion)
+#       default_root
+#       mime_types_file
+#       the many options in the [utilities] section
+#   
+#    It is usually desirable to change the following variables:
+#   
+#       address
+#       forbidden
+#   
+#       use_enscript
+#       use_cvsgraph
+#   
+#    To optimize delivery of ViewVC static files:
+#   
+#       docroot
+#   
+#    To customize the display of ViewVC for your site:
+#   
+#       template_dir
+#       the [templates] override section
 #
-#    cvs_roots (for CVS)
-#    svn_roots (for Subversion)
-#    root_parents (for CVS or Subversion)
-#    default_root
-#    mime_types_file
-#    the many options in the [utilities] section
-#
-# It is usually desirable to change the following variables:
-#
-#    address
-#    forbidden
-#
-#    use_enscript
-#    use_cvsgraph
-#
-# To optimize delivery of ViewVC static files:
-#
-#    docroot
-#
-# To customize the display of ViewVC for your site:
-#
-#    template_dir
-#    the [templates] override section
-#
-
-#
-# FORMAT INFORMATION
-#
-# This file is delineated by sections, specified in [brackets]. Within each
-# section, are a number of configuration settings. These settings take the
-# form of: name = value. Values may be continued on the following line by
-# indenting the continued line.
-#
-# WARNING: indentation *always* means continuation. name=value lines should
-#          always start in column zero.
-#
-# Comments should always start in column zero, and are identified with "#".
-#
-# Certain configuration settings may have multiple values. These should be
-# separated by a comma. The settings where this is allowed are noted below.
-#
-# Any other setting that requires special syntax is noted at that setting.
-# 
 
 #---------------------------------------------------------------------------
 [general]
