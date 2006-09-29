@@ -42,12 +42,12 @@ numbers, and not literal):
 7.  Update your working copy to HEAD, and tag the release:
 
        svn update
-       svn cp -m "Tagging release X.Y.Z." . \
+       svn cp -m "Tag the X.Y.Z final release." . \
                  http://viewvc.tigris.org/svn/viewvc/tags/X.Y.Z
 
 8.  Go into an empty directory and run the 'make-release' script:
 
-       tools/make-release viewvc-X.Y.Z tags/X.Y.Z
+       tools/make-release viewvc-X.Y.Z X.Y.Z
 
 9.  Upload the created archive files (tar.gz and zip) into the Files
     and Documents section of the Tigris.org project, and modify the
