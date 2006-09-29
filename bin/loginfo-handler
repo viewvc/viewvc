@@ -78,12 +78,10 @@ def HeuristicArgParse(s, repository):
   directory name by choosing the longest possible directory name that actually
   exists in the repository"""
 
-  if (s[-16:] == ' - New directory'
-      or s[:26] == ' - New directory,NONE,NONE'):
+  if s[-16:] == ' - New directory':
     return None, None
 
-  if (s[-19:] == ' - Imported sources'
-      or s[-29:] == ' - Imported sources,NONE,NONE'):
+  if s[-19:] == r' - Imported sources':
     return None, None
 
   file_data_list = []
@@ -200,7 +198,7 @@ def NextFile(s, pos = 0):
 def ProcessLoginfo(rootpath, directory, files):
     cfg = viewvc.load_config(CONF_PATHNAME)
     db = cvsdb.ConnectDatabase(cfg)
-    repository = vclib.bincvs.BinCVSRepository(None, rootpath, cfg.utilities)
+    repository = vclib.bincvs.BinCVSRepository(None, rootpath, cfg.general)
 
     # split up the directory components
     dirpath = filter(None, string.split(os.path.normpath(directory), os.sep))

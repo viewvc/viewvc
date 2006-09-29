@@ -125,9 +125,9 @@ except AttributeError:
 try:
   mkdtemp = tempfile.mkdtemp
 except AttributeError:
-  def mkdtemp(suffix="", prefix="tmp", dir=None):
+  def mkdtemp():
     for i in range(10):
-      dir = tempfile.mktemp(suffix, prefix, dir)
+      dir = tempfile.mktemp()
       try:
         os.mkdir(dir, 0700)
         return dir

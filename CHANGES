@@ -1,3 +1,13 @@
+Version 1.0.2 (released 29-Sep-2006)
+
+  * minor documentation fixes
+  * fix Subversion annotate functionality on Windows (issue #18)
+  * fix annotate assertions on uncanonicalized #include paths (issue #208)
+  * make RSS URL method match the method used to generate it (issue #245)
+  * fix Subversion annotation to run non-interactively, preventing hangs
+  * fix bug in custom syntax highlighter fallback logic
+  * fix bug in PHP CGI hack to avoid force-cgi-redirect errors
+
 Version 1.0.1 (released 20-Jul-2006)
 
   * fix exception on log page when use_pagesize is enabled
@@ -139,6 +149,7 @@ Version 0.9 (released 23-Dec-2001)
   * fix to log.ezt and log_table.ezt to select "Side by Side" properly
   * create dir_alternate.ezt for the flipped rev/name links
   * various UI tweaks for the directory pages
+
 
 Version 0.8 (released 10-Dec-2001)
 

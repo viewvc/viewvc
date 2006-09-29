@@ -516,7 +516,8 @@ class BlameSource:
     prev_rev = None
     if rev > self.first_rev:
       prev_rev = rev - 1
-    item = vclib.Annotation(text, idx+1, rev, prev_rev, author, None)
+    item = _item(text=text, line_number=idx+1, rev=rev,
+                 prev_rev=prev_rev, author=author, date=None)
     self.last = item
     self.idx = idx
     return item
@@ -527,7 +528,7 @@ class BlameSequencingError(Exception):
 
   
 class SubversionRepository(vclib.Repository):
-  def __init__(self, name, rootpath, utilities):
+  def __init__(self, name, rootpath, svn_path):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
 
@@ -536,8 +537,7 @@ class SubversionRepository(vclib.Repository):
     self.apr_init = 0
     self.rootpath = rootpath
     self.name = name
-    self.svn_client_path = utilities.svn or 'svn'
-    self.diff_cmd = utilities.diff or 'diff'
+    self.svn_client_path = os.path.normpath(os.path.join(svn_path, 'svn'))
 
     # Register a handler for SIGTERM so we can have a chance to
     # cleanup.  If ViewVC takes too long to start generating CGI
@@ -680,7 +680,7 @@ class SubversionRepository(vclib.Repository):
       temp2 = temp_checkout(self, p2, r2, self.pool)
       info1 = p1, date_from_rev(self, r1), r1
       info2 = p2, date_from_rev(self, r2), r2
-      return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args)
+      return vclib._diff_fp(temp1, temp2, info1, info2, args)
     except vclib.svn.core.SubversionException, e:
       if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
         raise vclib.InvalidRevision
@@ -706,3 +706,7 @@ class SubversionRepository(vclib.Repository):
     except KeyError:
       r = self._fsroots[rev] = fs.revision_root(self.fs_ptr, rev, self.pool)
       return r
+
+class _item:
+  def __init__(self, **kw):
+    vars(self).update(kw)
