@@ -200,7 +200,7 @@ def NextFile(s, pos = 0):
 def ProcessLoginfo(rootpath, directory, files):
     cfg = viewvc.load_config(CONF_PATHNAME)
     db = cvsdb.ConnectDatabase(cfg)
-    repository = vclib.bincvs.BinCVSRepository(None, rootpath, cfg.general)
+    repository = vclib.bincvs.BinCVSRepository(None, rootpath, cfg.utilities)
 
     # split up the directory components
     dirpath = filter(None, string.split(os.path.normpath(directory), os.sep))

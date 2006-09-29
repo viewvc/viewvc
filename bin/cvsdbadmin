@@ -146,7 +146,7 @@ if __name__ == '__main__':
       cfg = viewvc.load_config(CONF_PATHNAME)
       db = cvsdb.ConnectDatabase(cfg)
 
-      repository = vclib.bincvs.BinCVSRepository(None, root, cfg.general)
+      repository = vclib.bincvs.BinCVSRepository(None, root, cfg.utilities)
 
       RecurseUpdate(db, repository, path_parts, update)
 
