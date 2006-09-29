@@ -1,3 +1,13 @@
+Version 1.0.2 (released 29-Sep-2006)
+
+  * minor documentation fixes
+  * fix Subversion annotate functionality on Windows (issue #18)
+  * fix annotate assertions on uncanonicalized #include paths (issue #208)
+  * make RSS URL method match the method used to generate it (issue #245)
+  * fix Subversion annotation to run non-interactively, preventing hangs
+  * fix bug in custom syntax highlighter fallback logic
+  * fix bug in PHP CGI hack to avoid force-cgi-redirect errors
+
 Version 1.0.1 (released 20-Jul-2006)
 
   * fix exception on log page when use_pagesize is enabled
