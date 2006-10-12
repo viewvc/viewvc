@@ -831,7 +831,11 @@ def get_view_template(cfg, view_name, language="en"):
 
   return template
 
-def generate_page(request, view_name, data):
+def generate_page(request, view_name, data, content_type=None):
+  if content_type:
+    request.server.header()
+  else:
+    request.server.header(content_type)
   template = get_view_template(request.cfg, view_name, request.language)
   template.generate(request.server.file(), data)
 
@@ -1436,8 +1440,6 @@ def view_markup(request):
         markup_fp = MarkupPipeWrapper(fp)
     
   data['markup'] = markup_fp
-  
-  request.server.header()
   generate_page(request, "markup", data)
 
 def revcmp(rev1, rev2):
@@ -1507,7 +1509,6 @@ def icmp(x, y):
 
 def view_roots(request):
   data = common_template_data(request)
-  request.server.header()
   generate_page(request, "roots", data)
 
 def view_directory(request):
@@ -1740,7 +1741,6 @@ def view_directory(request):
     data['entries'] = paging(data, 'entries', data['dir_pagestart'], 'name',
                              cfg.options.use_pagesize)
 
-  request.server.header()
   generate_page(request, "directory", data)
 
 def paging(data, key, pagestart, local_name, pagesize):
@@ -2117,7 +2117,6 @@ def view_log(request):
     data['entries'] = paging(data, 'entries', data['log_pagestart'],
                              'rev', cfg.options.use_pagesize)
 
-  request.server.header()
   generate_page(request, "log", data)
 
 def view_checkout(request):
@@ -2167,7 +2166,6 @@ def view_annotate(request):
                                         params={'pathrev': revision},
                                         escape=1)
 
-  request.server.header()
   generate_page(request, "annotate", data)
 
 def view_cvsgraph_image(request):
@@ -2234,7 +2232,6 @@ def view_cvsgraph(request):
     'imagesrc' : imagesrc,
     })
 
-  request.server.header()
   generate_page(request, "graph", data)
 
 def search_files(repos, path_parts, rev, files, search_re):
@@ -2792,7 +2789,6 @@ def view_diff(request):
     'unified': unified,
     })
 
-  request.server.header()
   generate_page(request, "diff", data)
 
 
@@ -3085,7 +3081,6 @@ def view_revision(request):
   data['jump_rev_action'], data['jump_rev_hidden_values'] = \
     request.get_form(params={'revision': None})
 
-  request.server.header()
   generate_page(request, "revision", data)
 
 def is_query_supported(request):
@@ -3124,7 +3119,6 @@ def view_queryform(request):
   data['dir_href'] = request.get_url(view_func=view_directory, params={},
                                      escape=1)
 
-  request.server.header()
   generate_page(request, "query_form", data)
 
 def parse_date(s):
@@ -3514,10 +3508,8 @@ def view_query(request):
     })
 
   if format == 'rss':
-    request.server.header("text/xml")
-    generate_page(request, "rss", data)
+    generate_page(request, "rss", data, "text/xml")
   else:
-    request.server.header()
     generate_page(request, "query_results", data)
 
 _views = {
