@@ -65,8 +65,9 @@ numbers, and not literal):
        svn ci -m "Begin a new release cycle."
 
 12. Edit the Issue Tracker configuration options, adding a new Version
-    for the just-release one, and a new Milestone for the next patch
-    (and possibly, minor or major) release.
+    for the just-released one, and a new Milestone for the next patch
+    (and possibly, minor or major) release.  (For the Milestone sort
+    key, use a packed integer XXYYZZ:  1.0.3 == 10003, 2.11.4 == 21104.)
 
 13. Write an announcement explaining all the cool new features and
     post it to the announce@ list, to the project's News area, and to
