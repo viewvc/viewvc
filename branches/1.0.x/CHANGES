@@ -1,3 +1,7 @@
+Version 1.0.3 (released ??-???-????)
+
+  * fix bug in path shown for Subversion deleted-under-copy items (issue #265)
+
 Version 1.0.2 (released 29-Sep-2006)
 
   * minor documentation fixes
