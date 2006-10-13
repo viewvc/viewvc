@@ -267,7 +267,7 @@ class SelfCleanFP:
 
 
 class SubversionRepository(vclib.Repository):
-  def __init__(self, name, rootpath, utilities):
+  def __init__(self, name, rootpath):
     # Init the client app
     core.apr_initialize()
     pool = core.svn_pool_create(None)
@@ -277,7 +277,6 @@ class SubversionRepository(vclib.Repository):
     self.pool = pool
     self.name = name
     self.rootpath = rootpath
-    self.diff_cmd = utilities.diff or 'diff'
 
     # Setup the client context baton, complete with non-prompting authstuffs.
     ctx = client.svn_client_ctx_t()
@@ -383,8 +382,9 @@ class SubversionRepository(vclib.Repository):
       prev_rev = None
       if revision > 1:
         prev_rev = revision - 1
-      blame_data.append(vclib.Annotation(line, line_no+1, revision, prev_rev,
-                                         author, None))
+      blame_data.append(_item(text=line, line_number=line_no+1,
+                              rev=revision, prev_rev=prev_rev,
+                              author=author, date=None))
       
     client.svn_client_blame(url, _rev2optrev(1), _rev2optrev(rev),
                             _blame_cb, self.ctx, self.pool)
@@ -403,7 +403,7 @@ class SubversionRepository(vclib.Repository):
       temp2 = temp_checkout(self, p2, r2, self.pool)
       info1 = p1, date_from_rev(self, r1), r1
       info2 = p2, date_from_rev(self, r2), r2
-      return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args)
+      return vclib._diff_fp(temp1, temp2, info1, info2, args)
     except vclib.svn.core.SubversionException, e:
       if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
         raise vclib.InvalidRevision
@@ -437,3 +437,8 @@ class SubversionRepository(vclib.Repository):
                                    self.ctx, self.pool)
     self._dirent_cache[key] = dirents
     return dirents
+    
+    
+class _item:
+  def __init__(self, **kw):
+    vars(self).update(kw)

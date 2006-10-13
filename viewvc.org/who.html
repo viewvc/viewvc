@@ -1,9 +1,7 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
 <head>
 <title>ViewVC: About</title>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 <link rel="stylesheet" type="text/css" href="./styles.css"/>
 </head>
 
@@ -18,6 +16,7 @@
 <p><a href="./index.html">Home</a> |
    <a href="http://viewvc.tigris.org/">Project Page</a> |
    <a href="./download.html">Download</a> |
+   <a href="./upgrading.html">Upgrading</a> |
    <a href="./contributing.html">Contributing</a> |
    <a href="./license-1.html">License</a> |
    <a href="./contact.html">Contact</a> |
@@ -37,10 +36,9 @@
   <li><a href="#sec-site-credits">About This Site</a></li>
 </ul>
 
-<p><a href="http://validator.w3.org/check?uri=referer"><img
-       src="http://www.w3.org/Icons/valid-xhtml10"
-       alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
-</p>
+<hr/>
+
+<address><a href="mailto:&#117&#115&#101&#114&#115&#64&#118&#105&#101&#119&#118&#99&#46&#116&#105&#103&#114&#105&#115&#46&#111&#114&#103">ViewVC Users Group</a></address>
 
 </td>
 <td id="pagecolumn2">
@@ -55,15 +53,11 @@
    wanted to make some changes and updates, but cvsweb was implemented
    in Perl.  He wrote:</p>
 
-<blockquote style="font-style: italic;">
-
-<p>&quot;While I can manage some Perl, cvsweb was rather
-   unmaintainable for me. So I undertook the task to convert the
-   software to Python. As a result, I've actually been able to go
-   <em>way</em> beyond the simple changes that I had envisioned.&quot;
-</p>
-
-</blockquote>
+<blockquote style="font-style: italic;">&quot;While I can manage some
+   Perl, cvsweb was rather unmaintainable for me. So I undertook the
+   task to convert the software to Python. As a result, I've actually
+   been able to go <em>way</em> beyond the simple changes that I had
+   envisioned.&quot;</blockquote>
 
 <p>So ViewVC started out as just a port of the cvsweb script,
    originally called ViewCVS.  Along the way, it has had numerous
@@ -76,26 +70,25 @@
    software collaboration environment.  There the project continued to
    mature, releasing several stable-yet-pre-1.0 versions.  In 2002,
    C. Michael Pilato began implementing support for Subversion in
-   ViewCVS, taking advantage of a version control abstraction layer
-   begun by Lucas Bruand.  Along the way, Russell Yanofsky delivered
-   large improvements to that abstraction, and to ViewCVS as whole.
-   ViewCVS was well on its way to releasing a 1.0 version.</p>
+   ViewCVS, building atop the beginnings of a version control
+   abstraction layer begun by Lucas Bruand.  Along the way, Russell
+   Yanofsky delivered large improvements to that abstraction, and to
+   ViewCVS as whole.  ViewCVS was well on its way to releasing a 1.0
+   version.</p>
 
 <p>Of course, now that ViewCVS could browse Subversion repositories as
    easily as CVS ones, the ViewCVS name seemed inappropriate.  Also,
-   the active ViewCVS developers at the time were growing frustrated
-   with SourceForge as a project hosting environment &mdash;
-   Subversion wasn't yet available as an option for version control,
-   the CVS service was always down at just the wrong moment, the bug
-   trackers were painful to use, and so on.  So in late 2005, the
-   decision was made to rename the project to ViewVC, to convert the
-   project's CVS data to Subversion, and to move the project and its
-   version controlled and open issue data to <a
+   SourceForge's lack of support for Subversion (which was already
+   well past its 1.0 release, and becoming hugely popular) in its
+   project version control offerings was annoying ViewCVS primary
+   developers.  So in late 2005, the decision was made to rename the
+   project to ViewVC, to convert the project's CVS data to Subversion,
+   and to move the project and its Subversion data to <a
    href="http://www.tigris.org">Tigris.org</a>.</p>
 
 <p>Today, ViewVC is being developed at <a
    href="http://viewvc.tigris.org">http://viewvc.tigris.org</a> by a
-   small community of folks.</p>
+   small community of folks</a>.</p>
 
 </div>
 <div class="section">
@@ -115,7 +108,8 @@
   <dd>CVSdb query engine</dd>
 
   <dt>Tanaka Akira</dt> 
-  <dd>enscript colorization and tarball generation</dd>
+  <dd>enscript colorization and tarball generation
+      </dd>
 
   <dt>Tim Cera</dt>
   <dd>CvsGraph support, log_table template, regular expression search,
@@ -126,6 +120,7 @@
       ViewVC's interfaces and documentation</dd>
 
   <dt>Lucas Bruand</dt>
+
   <dd>C++ RCS parser (tparse) and vclib module for supporting new
       version control systems</dd>
 

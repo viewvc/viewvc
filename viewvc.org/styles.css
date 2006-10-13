@@ -4,6 +4,7 @@ body {
     background-repeat: repeat-x;
     color: black;
     font-family: arial, sans-serif;
+    font-size: 90%;
     margin: 0;
 }
 
@@ -22,6 +23,7 @@ hr {
 }
 
 address {
+    text-align: center;
     font-size: 60%;
     font-style: normal;
 }
@@ -59,6 +61,10 @@ ul, ol {
     margin: 0 0 0 0.25in;
 }
 
+li {
+    font-size: 90%;
+}
+
 code {
     font-size: 105%;
     font-style: italic;
@@ -66,8 +72,9 @@ code {
 }
 
 blockquote {
-    text-align: justify;
+    padding: 0.5em;
     margin: 0 0.25in 0 0.25in;
+    font-size: 80%;
 }
 
 .section {
@@ -111,7 +118,7 @@ blockquote {
 
 #pagecolumn1 {
     width: 175px;
-    padding: 1em 0 0 0;
+    padding: 0;
 }
 
 #pagecolumn1 a, #pagecolumn1 a:visited {
@@ -124,7 +131,7 @@ blockquote {
 }
 
 #pagecolumn2 {
-    padding: 1em 2em;
+    padding: 0;
 }
 
 #pagecolumn2 a, #pagecolumn2 a:visited {

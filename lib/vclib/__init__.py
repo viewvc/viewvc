@@ -120,22 +120,26 @@ class Repository:
   def annotate(self, path_parts, rev):
     """Return a list of annotate file content lines and a revision.
 
-    The result is a list of Annotation objects, sorted by their
-    line_number components.
+    The annotated lines are an collection of objects with the
+    following addressable members:
+
+       text        - raw text of a line of file contents
+       line_number - line number on which the line is found
+       rev         - revision in which the line was last modified
+       prev_rev    - revision prior to 'rev'
+       author      - author who last modified the line
+       date        - date on which the line was last modified, in seconds
+                     since the epoch, GMT
+
+    These object are sort by their line_number components.
     """
     
 
 # ======================================================================
 class DirEntry:
-  """Instances represent items in a directory listing"""
+  "Instances represent items in a directory listing"
 
   def __init__(self, name, kind, errors=[]):
-    """Create a new DirEntry() item:
-          NAME:  The name of the directory entry
-          KIND:  The path kind of the entry (vclib.DIR, vclib.FILE)
-          ERRORS:  A list of error strings representing problems encountered
-                   while determining the other info about this entry
-    """
     self.name = name
     self.kind = kind
     self.errors = errors
@@ -143,16 +147,16 @@ class DirEntry:
 class Revision:
   """Instances holds information about revisions of versioned resources"""
 
+  """Create a new Revision() item:
+        NUMBER:  Revision in an integer-based, sortable format
+        STRING:  Revision as a string
+        DATE:  Seconds since Epoch (GMT) that this revision was created
+        AUTHOR:  Author of the revision
+        CHANGED:  Lines-changed (contextual diff) information
+        LOG:  Log message associated with the creation of this revision
+        SIZE:  Size (in bytes) of this revision's fulltext (files only)
+  """
   def __init__(self, number, string, date, author, changed, log, size):
-    """Create a new Revision() item:
-          NUMBER:  Revision in an integer-based, sortable format
-          STRING:  Revision as a string
-          DATE:  Seconds since Epoch (GMT) that this revision was created
-          AUTHOR:  Author of the revision
-          CHANGED:  Lines-changed (contextual diff) information
-          LOG:  Log message associated with the creation of this revision
-          SIZE:  Size (in bytes) of this revision's fulltext (files only)
-    """
     self.number = number
     self.string = string
     self.date = date
@@ -163,27 +167,6 @@ class Revision:
 
   def __cmp__(self, other):
     return cmp(self.number, other.number)
-
-class Annotation:
-  """Instances represent per-line file annotation information"""
-
-  def __init__(self, text, line_number, rev, prev_rev, author, date):
-    """Create a new Annotation() item:
-          TEXT:  Raw text of a line of file contents
-          LINE_NUMBER:  Line number on which the line is found
-          REV:  Revision in which the line was last modified
-          PREV_REV:  Revision prior to 'rev'
-          AUTHOR:  Author who last modified the line
-          DATE:  Date on which the line was last modified, in seconds since
-                 the epoch, GMT
-    """
-    self.text = text
-    self.line_number = line_number
-    self.rev = rev
-    self.prev_rev = prev_rev
-    self.author = author
-    self.date = date
-
 
 # ======================================================================
 
@@ -217,18 +200,12 @@ def _diff_args(type, options):
   args = []
   if type == CONTEXT:
     if options.has_key('context'):
-      if options['context'] is None:
-        args.append('--context=-1')
-      else:
-        args.append('--context=%i' % options['context'])
+      args.append('--context=%i' % options['context'])
     else:
       args.append('-c')
   elif type == UNIFIED:
     if options.has_key('context'):
-      if options['context'] is None:
-        args.append('--unified=-1')
-      else:
-        args.append('--unified=%i' % options['context'])
+      args.append('--unified=%i' % options['context'])
     else:
       args.append('-u')
   elif type == SIDE_BY_SIDE:
@@ -249,14 +226,14 @@ class _diff_fp:
   """File object reading a diff between temporary files, cleaning up
   on close"""
 
-  def __init__(self, temp1, temp2, info1=None, info2=None, diff_cmd='diff', diff_opts=[]):
+  def __init__(self, temp1, temp2, info1=None, info2=None, diff_opts=[]):
     self.temp1 = temp1
     self.temp2 = temp2
     args = diff_opts[:]
     if info1 and info2:
       args.extend(["-L", self._label(info1), "-L", self._label(info2)])
     args.extend([temp1, temp2])
-    self.fp = popen.popen(diff_cmd, args, "r")
+    self.fp = popen.popen("diff", args, "r")
 
   def read(self, bytes):
     return self.fp.read(bytes)
