@@ -289,7 +289,7 @@ def get_revision_info(svnrepos, rev):
     if change.base_path:
       change.base_path = _cleanup_path(change.base_path)
     is_copy = 0
-    if 1 or not hasattr(change, 'action'): # new to subversion 1.4.0
+    if not hasattr(change, 'action'): # new to subversion 1.4.0
       action = 'modified'
       if not change.path:
         action = 'deleted'
