@@ -135,7 +135,7 @@ class CgiServer(Server):
   def addheader(self, name, value):
     self.headers.append((name, value))
 
-  def header(self, content_type='text/html', status=None):
+  def header(self, content_type='text/html; charset=UTF-8', status=None):
     if not self.headerSent:
       self.headerSent = 1
 
@@ -209,7 +209,10 @@ class AspServer(ThreadedServer):
     if not self.headerSent:
       try:
         self.headerSent = 1
-        if content_type is not None: self.response.ContentType = content_type
+        if content_type is None:
+          self.response.ContentType = 'text/html; charset=UTF-8'
+        else:
+          self.response.ContentType = content_type
         if status is not None: self.response.Status = status
       except AttributeError:
         pass
@@ -290,7 +293,7 @@ class ModPythonServer(ThreadedServer):
 
   def header(self, content_type=None, status=None):
     if content_type is None: 
-      self.request.content_type = 'text/html'
+      self.request.content_type = 'text/html; charset=UTF-8'
     else:
       self.request.content_type = content_type
     self.headerSent = 1
