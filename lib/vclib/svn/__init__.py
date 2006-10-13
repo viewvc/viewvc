@@ -278,37 +278,54 @@ def get_revision_info(svnrepos, rev):
   e_ptr, e_baton = delta.make_editor(editor, svnrepos.pool)
   repos.svn_repos_replay(fsroot, e_ptr, e_baton, svnrepos.pool)
   changes = editor.get_changes()
-
-  # Convert these Subversion change items into a sorted list of ChangedPaths
+  changedpaths = {}
+  
+  # Copy the Subversion changes into a new hash, converting them into
+  # ChangedPath objects.
   for path in changes.keys():
     change = changes[path]
     if change.path:
       change.path = _cleanup_path(change.path)
     if change.base_path:
       change.base_path = _cleanup_path(change.base_path)
-    action = 'modified'
     is_copy = 0
-    if not change.path:
-      action = 'deleted'
-    elif change.added:
-      action = 'added'
-      replace_check_path = path
-      if change.base_path and change.base_rev:
-        is_copy = 1
-        replace_check_path = change.base_path
-      if changes.has_key(replace_check_path) \
-         and changes[replace_check_path].action == 'deleted':
+    if not hasattr(change, 'action'): # new to subversion 1.4.0
+      action = 'modified'
+      if not change.path:
+        action = 'deleted'
+      elif change.added:
+        action = 'added'
+        replace_check_path = path
+        if change.base_path and change.base_rev:
+          replace_check_path = change.base_path
+        if changedpaths.has_key(replace_check_path) \
+           and changedpaths[replace_check_path].action == 'deleted':
+          action = 'replaced'
+    else:
+      if change.action == repos.CHANGE_ACTION_ADD:
+        action = 'added'
+      elif change.action == repos.CHANGE_ACTION_DELETE:
+        action = 'deleted'
+      elif change.action == repos.CHANGE_ACTION_REPLACE:
         action = 'replaced'
+      else:
+        action = 'modified'
+    if (action == 'added' or action == 'replaced') \
+       and change.base_path \
+       and change.base_rev:
+      is_copy = 1
     if change.item_kind == core.svn_node_dir:
       pathtype = vclib.DIR
     elif change.item_kind == core.svn_node_file:
       pathtype = vclib.FILE
     else:
       pathtype = None
-    changes[path] = ChangedPath(path, pathtype, change.prop_changes,
-                                change.text_changed, change.base_path,
-                                change.base_rev, action, is_copy)
-  change_items = changes.values()
+    changedpaths[path] = ChangedPath(path, pathtype, change.prop_changes,
+                                     change.text_changed, change.base_path,
+                                     change.base_rev, action, is_copy)
+
+  # Actually, what we want is a sorted list of ChangedPath objects.
+  change_items = changedpaths.values()
   change_items.sort(lambda a, b: _compare_paths(a.filename, b.filename))
   
   # Now get the revision property info.  Would use
