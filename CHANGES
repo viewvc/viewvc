@@ -1,6 +1,10 @@
-Version 1.0.3 (released ??-???-????)
+Version 1.0.4 (released ??-???-????)
+
+
+Version 1.0.3 (released 13-Oct-2006)
 
   * fix bug in path shown for Subversion deleted-under-copy items (issue #265)
+  * security fix: declare charset for views to avoid IE UTF7 XSS attack
 
 Version 1.0.2 (released 29-Sep-2006)
 
