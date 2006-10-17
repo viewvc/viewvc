@@ -287,7 +287,13 @@ If this doesn't work, please click on the link above.
         handle_config()
         if options.repositories:
             cfg.general.default_root = "Development"
-            cfg.general.cvs_roots.update(options.repositories)
+            for repo_name in options.repositories.keys():
+                repo_path = os.path.normpath(options.repositories[repo_name])
+                if os.path.exists(os.path.join(repo_path, "CVSROOT",
+                                               "config")):
+                    cfg.general.cvs_roots[repo_name] = repo_path
+                elif os.path.exists(os.path.join(repo_path, "format")):
+                    cfg.general.svn_roots[repo_name] = repo_path
         elif cfg.general.cvs_roots.has_key("Development") and \
              not os.path.isdir(cfg.general.cvs_roots["Development"]):
             sys.stderr.write("*** No repository found. Please use the -r option.\n")
@@ -634,8 +640,8 @@ Options:
   --port=PORT (-p)           Start the server on the given PORT.
                              [default: %(port)d]
 
-  --repository=PATH (-r)     Serve up the CVS repository located at PATH.
-                             This option may be used more than once.
+  --repository=PATH (-r)     Serve up the Subversion or CVS repository located
+                             at PATH.  This option may be used more than once.
 
   --script-alias=PATH (-s)   Specify the ScriptAlias, the artificial path
                              location that at which ViewVC appears to be
