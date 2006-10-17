@@ -299,12 +299,11 @@ If this doesn't work, please click on the link above.
         cfg.options.docroot = None
 
         # if cvsnt isn't found, fall back to rcs
-        if (cfg.conf_path is None
-            and cfg.general.cvsnt_exe_path):
+        if (cfg.conf_path is None and cfg.utilities.cvsnt):
           import popen
           cvsnt_works = 0
           try:
-            fp = popen.popen(cfg.general.cvsnt_exe_path, ['--version'], 'rt')
+            fp = popen.popen(cfg.utilities.cvsnt, ['--version'], 'rt')
             try:
               while 1:
                 line = fp.readline()
@@ -319,7 +318,7 @@ If this doesn't work, please click on the link above.
           except:
             pass
           if not cvsnt_works:
-            cfg.cvsnt_exe_path = None
+            cfg.utilities.cvsnt = None
 
         ViewVC_Server(host, port, callback).serve_until_quit()
     except (KeyboardInterrupt, select.error):
