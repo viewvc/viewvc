@@ -3159,22 +3159,23 @@ def english_query(request):
       ret.append('subdirectories')
     else:
       ret.append('subdirectory')
-    ret.append(' <em>%s</em> ' % htmlify(dir))
+    ret.append(' <em>%s</em> ' % request.server.escape(dir))
   file = request.query_dict.get('file', '')
   if file:
     if len(ret) != 1: ret.append('and ')
-    ret.append('to file <em>%s</em> ' % htmlify(file))
+    ret.append('to file <em>%s</em> ' % request.server.escape(file))
   who = request.query_dict.get('who', '')
   branch = request.query_dict.get('branch', '')
   if branch:
-    ret.append('on branch <em>%s</em> ' % htmlify(branch))
+    ret.append('on branch <em>%s</em> ' % request.server.escape(branch))
   else:
     ret.append('on all branches ')
   if who:
-    ret.append('by <em>%s</em> ' % htmlify(who))
+    ret.append('by <em>%s</em> ' % request.server.escape(who))
   date = request.query_dict.get('date', 'hours')
   if date == 'hours':
-    ret.append('in the last %s hours' % htmlify(request.query_dict.get('hours', '2')))
+    ret.append('in the last %s hours' \
+               % request.server.escape(request.query_dict.get('hours', '2')))
   elif date == 'day':
     ret.append('in the last day')
   elif date == 'week':
@@ -3214,7 +3215,7 @@ def build_commit(request, files, limited_files, dir_strip):
   desc = files[0].GetDescription()
   commit.log = htmlify(desc)
   commit.short_log = format_log(desc, request.cfg)
-  commit.author = htmlify(files[0].GetAuthor())
+  commit.author = request.server.escape(files[0].GetAuthor())
   commit.rss_date = make_rss_time_string(files[0].GetTime(), request.cfg)
   if request.roottype == 'svn':
     commit.rev = files[0].GetRevision()
@@ -3279,9 +3280,9 @@ def build_commit(request, files, limited_files, dir_strip):
       continue
 
     commit.files.append(_item(date=commit_time,
-                              dir=htmlify(dirname),
-                              file=htmlify(f.GetFile()),
-                              author=htmlify(f.GetAuthor()),
+                              dir=request.server.escape(dirname),
+                              file=request.server.escape(f.GetFile()),
+                              author=request.server.escape(f.GetAuthor()),
                               rev=f.GetRevision(),
                               branch=f.GetBranch(),
                               plus=int(f.GetPlusCount()),
@@ -3415,7 +3416,7 @@ def view_query(request):
   # run the query
   db.RunQuery(query)
 
-  sql = htmlify(db.CreateSQLQueryString(query))
+  sql = request.server.escape(db.CreateSQLQueryString(query))
 
   # gather commits
   commits = []
