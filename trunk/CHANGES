@@ -1,3 +1,7 @@
+Version 1.1.0 (released ??-???-????)
+
+  * teach standalone.py to recognize Subversion repositories via -r option
+
 Version 1.0.3 (released 13-Oct-2006)
 
   * fix bug in path shown for Subversion deleted-under-copy items (issue #265)
