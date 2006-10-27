@@ -136,6 +136,7 @@ def install_file(src_path, dest_path, mode, subst_path_vars,
     files that differ from the to-be-installed version.  If COMPILE_IT
     is set, compile the file as a Python module."""
   
+    src_path = string.replace(src_path, '/', os.sep)
     dest_path = os.path.join(ROOT_DIR, dest_path)
     overwrite = None
     exists = os.path.exists(DESTDIR + dest_path)
@@ -270,6 +271,7 @@ def replace_file(src_path, dest_path, mode, subst_path_vars,
 
 
 def install_tree(src_path, dst_path, prompt_replace):
+    src_path = string.replace(src_path, '/', os.sep)
     dest_path = os.path.join(ROOT_DIR, dst_path)
 
     # Get a list of items in the directory.
