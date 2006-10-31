@@ -44,6 +44,7 @@ import popen
 import ezt
 import accept
 import vclib
+import vcauth
 
 try:
   import idiff
@@ -115,6 +116,9 @@ class Request:
     self.lang_selector = accept.language(hal)
     self.language = self.lang_selector.select_from(cfg.general.languages)
 
+    # check for an authenticated username
+    self.username = server.getenv('REMOTE_USER')
+
     # load the key/value files, given the selected language
     self.kv = cfg.load_kv_files(self.language)
 
@@ -138,7 +142,21 @@ class Request:
     self.query_dict = {}   # validated and cleaned up query options
     self.path_parts = None # for convenience, equals where.split('/')
     self.pathrev = None    # current path revision or tag
+    self.authorizer = None # authorizer module in use
 
+    # Get a real authorizer.
+    ### FIXME: At the very least, which plugin to use should be configurable.
+    ###        Even better would be having the ability to assign an auth
+    ###        plugin per each root.
+    import vcauth.test
+    self.authorizer = vcauth.test.ViewVCAuthorizer(self.username)
+
+    # Register the roots.
+    for key, value in cfg.general.cvs_roots.items():
+      self.authorizer.register_root(key, value)
+    for key, value in cfg.general.svn_roots.items():
+      self.authorizer.register_root(key, value)
+    
     # redirect if we're loading from a valid but irregular URL
     # These redirects aren't neccessary to make ViewVC work, it functions
     # just fine without them, but they make it easier for server admins to
@@ -268,6 +286,14 @@ class Request:
           'correct, then please double-check your configuration.'
           % self.rootname, "404 Repository not found")
 
+    # If we've selected a repository, we need to make sure the user is
+    # allowed to see it.
+    if self.repos:
+      if not self.authorizer.check_root_access(self.rootname):
+        raise debug.ViewVCException(
+          'User "%s" is not authorized to see root "%s".'
+          % (self.username, self.rootname), "501 Not Authorized")
+    
     # If this is using an old-style 'rev' parameter, redirect to new hotness.
     # Subversion URLs will now use 'pathrev'; CVS ones use 'revision'.
     if self.repos and self.query_dict.has_key('rev'):
@@ -332,6 +358,21 @@ class Request:
       raise debug.ViewVCException('%s: unknown location' % path_parts[0],
                                    '404 Not Found')
 
+    # Check authorization for files and directories.
+    if self.path_parts:
+      access = 1
+      if self.pathtype == vclib.DIR:
+        access = self.authorizer.check_directory_access(self.rootname,
+                                                        self.path_parts)
+      elif self.pathtype == vclib.FILE:
+        access = self.authorizer.check_file_access(self.rootname,
+                                                   self.path_parts)
+      if not access:
+        raise debug.ViewVCException(
+          'User "%s" is not authorized to see path "%s" in root "%s".'
+          % (self.username, _path_join(self.path_parts), self.rootname),
+          "501 Not Authorized")
+    
     if self.view_func is None:
       # view parameter is not set, try looking at pathtype and the 
       # other parameters
@@ -1097,10 +1138,13 @@ def common_template_data(request):
       href = request.get_url(view_func=view_directory,
                              where='', pathtype=vclib.DIR,
                              params={'root': rootname}, escape=1)
-      roots.append(_item(name=request.server.escape(rootname),
-                         type=allroots[rootname][1],
-                         path=allroots[rootname][0],
-                         href=href))
+
+      # Check root authorization.
+      if request.authorizer.check_root_access(rootname):
+        roots.append(_item(name=request.server.escape(rootname),
+                           type=allroots[rootname][1],
+                           path=allroots[rootname][0],
+                           href=href))
   data['roots'] = roots
 
   if request.path_parts:
@@ -1582,6 +1626,12 @@ def view_directory(request):
 
     if file.kind == vclib.DIR:
 
+      # Check authorization.
+      if not request.authorizer.check_directory_access(request.rootname,
+                                                       request.path_parts \
+                                                       + [file.name]):
+        continue
+
       if (where == '') and (cfg.is_forbidden(file.name)):
         continue
 
@@ -1614,6 +1664,13 @@ def view_directory(request):
                                        escape=1)
       
     elif file.kind == vclib.FILE:
+
+      # Check authorization.
+      if not request.authorizer.check_file_access(request.rootname,
+                                                  request.path_parts \
+                                                  + [file.name]):
+        continue
+      
       if request.roottype == 'cvs' and file.dead:
         num_dead = num_dead + 1
         if hideattic:
@@ -2574,6 +2631,9 @@ def _get_diff_path_parts(request, query_key, rev, base_rev):
       raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                    'to diff', '400 Bad Request')
     except vclib.ItemNotFound:
+      raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
+                                   'to diff', '400 Bad Request')
+    if not request.authorizer.check_file_access(request.rootname, parts):
       raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                    'to diff', '400 Bad Request')
   else:
