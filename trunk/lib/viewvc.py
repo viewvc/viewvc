@@ -2940,18 +2940,28 @@ def download_tarball(request):
     raise debug.ViewVCException('Tarball generation is disabled',
                                  '403 Forbidden')
 
-  ### look for GZIP binary
-
-  request.server.header('application/octet-stream')
-  sys.stdout.flush()
-  fp = popen.pipe_cmds([(cfg.utilities.gzip or 'gzip', '-c', '-n')])
-
+  if debug.TARFILE_PATH:
+    fp = open(debug.TARFILE_PATH, 'w')
+  else:
+    request.server.header('application/octet-stream')
+    sys.stdout.flush()
+    fp = popen.pipe_cmds([(cfg.utilities.gzip or 'gzip', '-c', '-n')])
+  
   ### FIXME: For Subversion repositories, we can get the real mtime of the
   ### top-level directory here.
   generate_tarball(fp, request, [], [])
 
   fp.write('\0' * 1024)
   fp.close()
+
+  if debug.TARFILE_PATH:
+    request.server.header('')
+    print """
+<html>
+<body>
+<p>Tarball '%s' successfully generated!</p>
+</body>
+</html>""" % (debug.TARFILE_PATH)
 
 def view_revision(request):
   if request.roottype == "cvs":
