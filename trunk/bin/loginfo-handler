@@ -296,7 +296,7 @@ if __name__ == '__main__':
 
     debug('Repository: %s' % (repository))
     debug('Directory: %s' % (directory))
-    debug('Files: %s' % (str(files))
+    debug('Files: %s' % (str(files)))
 
     if files is None:
         debug('Not a checkin, nothing to do')
