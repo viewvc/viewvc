@@ -1,5 +1,6 @@
 Version 1.1.0 (released ??-???-????)
 
+  * add support for full content diffs (issue #153)
   * make many more data dictionary items available to all views
   * various rcsparse and tparse module fixes
   * add daemon mode to standalone.py
