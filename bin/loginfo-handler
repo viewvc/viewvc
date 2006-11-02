@@ -32,9 +32,9 @@ import sys
 import os
 
 if LIBRARY_DIR:
-  sys.path.insert(0, LIBRARY_DIR)
+    sys.path.insert(0, LIBRARY_DIR)
 else:
-  sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
+    sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
 
 #########################################################################
 
@@ -61,9 +61,9 @@ def error(text):
     sys.exit(1)
 
 _re_revisions = re.compile(                            
-  r",(?P<old>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and first revision number
-  r",(?P<new>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and second revision number
-  r"(?:$| )"                                # space or end of string
+    r",(?P<old>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and first revision
+    r",(?P<new>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and second revision
+    r"(?:$| )"                                     # space or end of string
 )    
 
 def Cvs1Dot12ArgParse(args):
@@ -81,135 +81,137 @@ def Cvs1Dot12ArgParse(args):
         return directory, files
   
 def HeuristicArgParse(s, repository):
-  """Older versions of CVS (except for CVSNT) do not escape spaces in file
-  and directory names that are passed to the loginfo handler. Since the input
-  to loginfo is a space separated string, this can lead to ambiguities. This
-  function attempts to guess intelligently which spaces are separators and
-  which are part of file or directory names. It disambiguates spaces in
-  filenames from the separator spaces between files by assuming that every
-  space which is preceded by two well-formed revision numbers is in fact a 
-  separator. It disambiguates the first separator space from spaces in the 
-  directory name by choosing the longest possible directory name that actually
-  exists in the repository"""
+    """Older versions of CVS (except for CVSNT) do not escape spaces in file
+    and directory names that are passed to the loginfo handler. Since the input
+    to loginfo is a space separated string, this can lead to ambiguities. This
+    function attempts to guess intelligently which spaces are separators and
+    which are part of file or directory names. It disambiguates spaces in
+    filenames from the separator spaces between files by assuming that every
+    space which is preceded by two well-formed revision numbers is in fact a 
+    separator. It disambiguates the first separator space from spaces in the 
+    directory name by choosing the longest possible directory name that
+    actually exists in the repository"""
 
-  if (s[-16:] == ' - New directory'
-      or s[:26] == ' - New directory,NONE,NONE'):
-    return None, None
+    if (s[-16:] == ' - New directory'
+            or s[:26] == ' - New directory,NONE,NONE'):
+        return None, None
 
-  if (s[-19:] == ' - Imported sources'
-      or s[-29:] == ' - Imported sources,NONE,NONE'):
-    return None, None
+    if (s[-19:] == ' - Imported sources'
+            or s[-29:] == ' - Imported sources,NONE,NONE'):
+        return None, None
 
-  file_data_list = []
-  start = 0
+    file_data_list = []
+    start = 0
 
-  while 1:
-    m = _re_revisions.search(s, start)
+    while 1:
+        m = _re_revisions.search(s, start)
 
-    if start == 0:
-      if m is None: 
-        error('Argument "%s" does not contain any revision numbers' % s)
-    
-      directory, filename = FindLongestDirectory(s[:m.start()], repository)
-      if directory is None:
-        error('Argument "%s" does not start with a valid directory' % s)
+        if start == 0:
+            if m is None: 
+                error('Argument "%s" does not contain any revision numbers' \
+                      % s)
+        
+            directory, filename = FindLongestDirectory(s[:m.start()],
+                                                       repository)
+            if directory is None:
+                error('Argument "%s" does not start with a valid directory' \
+                      % s)
 
-      debug('Directory name is "%s"' % directory)
+            debug('Directory name is "%s"' % directory)
 
-    else:
-      if m is None:
-        warning('Failed to interpret past position %i in the loginfo argument, '
-          'leftover string is "%s"' % start, pos[start:])
-      
-      filename = s[start:m.start()]
-      
-    old_version, new_version = m.group('old', 'new')
+        else:
+            if m is None:
+                warning('Failed to interpret past position %i in the loginfo '
+                        'argument, leftover string is "%s"' \
+                        % start, pos[start:])
+            
+            filename = s[start:m.start()]
+            
+        old_version, new_version = m.group('old', 'new')
 
-    file_data_list.append((filename, old_version, new_version))
+        file_data_list.append((filename, old_version, new_version))
 
-    debug('File "%s", old revision %s, new revision %s' 
-      % (filename, old_version, new_version))
+        debug('File "%s", old revision %s, new revision %s' 
+            % (filename, old_version, new_version))
 
-    start = m.end()
-    
-    if start == len(s): break
+        start = m.end()
+        
+        if start == len(s): break
 
-  return directory, file_data_list
+    return directory, file_data_list
 
 def FindLongestDirectory(s, repository):
-  """Splits the first part of the argument string into a directory name
-  and a file name, either of which may contain spaces. Returns the longest
-  possible directory name that actually exists"""
+    """Splits the first part of the argument string into a directory name
+    and a file name, either of which may contain spaces. Returns the longest
+    possible directory name that actually exists"""
 
-  parts = string.split(s, " ")
-  
-  for i in range(len(parts)-1, 0, -1):
-    directory = string.join(parts[:i])
-    filename = string.join(parts[i:])
-    if os.path.isdir(os.path.join(repository, directory)):
-      return directory, filename
-  
-  return None, None
+    parts = string.split(s, " ")
+    
+    for i in range(len(parts)-1, 0, -1):
+        directory = string.join(parts[:i])
+        filename = string.join(parts[i:])
+        if os.path.isdir(os.path.join(repository, directory)):
+            return directory, filename
+    
+    return None, None
 
 _re_cvsnt_revisions = re.compile(                            
-  r"(?P<filename>.*)"                      # comma and first revision number
-  r",(?P<old>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and first revision number
-  r",(?P<new>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and second revision number
-  r"$"                                       # end of string
+    r"(?P<filename>.*)"                            # comma and first revision
+    r",(?P<old>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and first revision
+    r",(?P<new>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and second revision
+    r"$"                                           # end of string
 )
 
 def CvsNtArgParse(s, repository):
-  """CVSNT escapes all spaces in filenames and directory names with 
-  backslashes"""
+    """CVSNT escapes all spaces in filenames and directory names with 
+    backslashes"""
 
-  if s[-18:] == r' -\ New\ directory':
-    return None, None
+    if s[-18:] == r' -\ New\ directory':
+        return None, None
 
-  if s[-21:] == r' -\ Imported\ sources':
-    return None, None
+    if s[-21:] == r' -\ Imported\ sources':
+        return None, None
 
-  file_data_list = []
+    file_data_list = []
+    directory, pos = NextFile(s)
+    
+    debug('Directory name is "%s"' % directory)
 
-  directory, pos = NextFile(s)
-  
-  debug('Directory name is "%s"' % directory)
+    while 1:
+        fileinfo, pos = NextFile(s, pos)
+        if fileinfo is None:
+            break
 
-  while 1:
-    fileinfo, pos = NextFile(s, pos)
-    if fileinfo is None:
-      break
+        m = _re_cvsnt_revisions.match(fileinfo)
+        if m is None:
+            warning('Can\'t parse file information in "%s"' % fileinfo)
+            continue
 
-    m = _re_cvsnt_revisions.match(fileinfo)
-    if m is None:
-      warning('Can\'t parse file information in "%s"' % fileinfo)
-      continue
+        file_data = m.group('filename', 'old', 'new')
+        file_data_list.append(file_data)
 
-    file_data = m.group('filename', 'old', 'new')
+        debug('File "%s", old revision %s, new revision %s' % file_data)
 
-    debug('File "%s", old revision %s, new revision %s' % file_data)
-
-    file_data_list.append(file_data)
-
-  return directory, file_data_list
+    return directory, file_data_list
 
 def NextFile(s, pos = 0):
-  escaped = 0
-  ret = ''
-  i = pos
-  while i < len(s):
-    c = s[i]
-    if escaped:
-      ret += c
-      escaped = 0
-    elif c == '\\':
-      escaped = 1
-    elif c == ' ':
-      return ret, i + 1
-    else:
-      ret += c
-    i += 1
+    escaped = 0
+    ret = ''
+    i = pos
+    while i < len(s):
+        c = s[i]
+        if escaped:
+            ret += c
+            escaped = 0
+        elif c == '\\':
+            escaped = 1
+        elif c == ' ':
+            return ret, i + 1
+        else:
+            ret += c
+        i += 1
 
-  return ret or None, i
+    return ret or None, i
 
 def ProcessLoginfo(rootpath, directory, files):
     cfg = viewvc.load_config(CONF_PATHNAME)
