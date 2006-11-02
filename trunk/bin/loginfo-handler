@@ -66,8 +66,22 @@ _re_revisions = re.compile(
   r"(?:$| )"                                # space or end of string
 )    
 
+def Cvs1Dot12ArgParse(args):
+    """CVS 1.12 introduced a new loginfo format while provides the various
+    pieces of interesting version information to the handler script as
+    individual arguments instead of as a single string."""
+    if args[1] == '- New directory':
+        return None, None
+    else:
+        directory = args.pop(0)
+        files = []
+        while len(args) > 3:
+            files.append(args[0:3])
+            args = args[3:]
+        return directory, files
+  
 def HeuristicArgParse(s, repository):
-  """Current versions of CVS (except for CVSNT) do not escape spaces in file
+  """Older versions of CVS (except for CVSNT) do not escape spaces in file
   and directory names that are passed to the loginfo handler. Since the input
   to loginfo is a space separated string, this can lead to ambiguities. This
   function attempts to guess intelligently which spaces are separators and
@@ -237,41 +251,54 @@ if __name__ == '__main__':
     debug('Repository name is "%s"' % repository)
 
     ## parse arguments
-    if len(sys.argv) > 1:
-        # the first argument should contain file version information
-        arg = sys.argv[1]
-    else:
-        # if there are no arguments, read version information from first line
-        # of input like old versions of viewcvs
-        arg = string.rstrip(sys.stdin.readline())
 
-    if len(sys.argv) > 2:
-        # if there is a second argument it indicates which parser should be
-        # used to interpret the version information
-        if sys.argv[2] == 'cvs':
-          fun = HeuristicArgParse
-        elif sys.argv[2] == 'cvsnt':
-          fun = CvsNtArgParse
-        else:
-          error('Bad arguments')
-    else:
-        # if there is no second argument, guess which parser to use based
-        # on the operating system. Since CVSNT now runs on Windows and
-        # Linux, the guess isn't neccessarily correct
-        if sys.platform == "win32":
-          fun = CvsNtArgParse
-        else:
-          fun = HeuristicArgParse
+    argc = len(sys.argv)
+    debug('Got %d arguments: %s' % (argc, str(sys.argv)))
     
-    if len(sys.argv) > 3:
-        error('Bad arguments')
+    # if we have more than 3 arguments, we are likely using the
+    # newer loginfo format introduced in CVS 1.12:
+    # 
+    #    ALL <path>/bin/loginfo-handler %p %{sVv}
+    if argc > 3:
+        directory, files = Cvs1Dot12ArgParse(sys.argv[1:])
+    else:
+        if len(sys.argv) > 1:
+            # the first argument should contain file version information
+            arg = sys.argv[1]
+        else:
+            # if there are no arguments, read version information from
+            # first line of input like old versions of ViewCVS did
+            arg = string.rstrip(sys.stdin.readline())
+    
+        if len(sys.argv) > 2:
+            # if there is a second argument it indicates which parser
+            # should be used to interpret the version information
+            if sys.argv[2] == 'cvs':
+                fun = HeuristicArgParse
+            elif sys.argv[2] == 'cvsnt':
+                fun = CvsNtArgParse
+            else:
+                error('Bad arguments')
+        else:
+            # if there is no second argument, guess which parser to use based
+            # on the operating system. Since CVSNT now runs on Windows and
+            # Linux, the guess isn't necessarily correct
+            if sys.platform == "win32":
+                fun = CvsNtArgParse
+            else:
+                fun = HeuristicArgParse
+        
+        directory, files = fun(arg, repository)
 
     repository = cvsdb.CleanRepository(repository)
-    directory, files = fun(arg, repository)
+
+    debug('Repository: %s' % (repository))
+    debug('Directory: %s' % (directory))
+    debug('Files: %s' % (str(files))
 
     if files is None:
-      debug('Not a checkin, nothing to do')
+        debug('Not a checkin, nothing to do')
     else:
-      ProcessLoginfo(repository, directory, files)
+        ProcessLoginfo(repository, directory, files)
 
     sys.exit(0)
