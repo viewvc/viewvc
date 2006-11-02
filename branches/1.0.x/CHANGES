@@ -1,6 +1,7 @@
 Version 1.0.4 (released ??-???-????)
 
   * fix some markup bugs in query views (issue #266)
+  * fix loginfo-handler's support for CVS 1.12.9 (issues #151, #257)
 
 Version 1.0.3 (released 13-Oct-2006)
 
