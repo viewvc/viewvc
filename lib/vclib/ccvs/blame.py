@@ -268,7 +268,7 @@ class CVSParser(rcsparse.Sink):
       raise RuntimeError, ('error: %s appeared to be under CVS control, ' +
               'but the RCS file is inaccessible.') % rcs_pathname
 
-    rcsparse.Parser().parse(rcsfile, self)
+    rcsparse.parse(rcsfile, self)
     rcsfile.close()
 
     if opt_rev in [None, '', 'HEAD']:
