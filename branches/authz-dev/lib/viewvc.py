@@ -290,9 +290,8 @@ class Request:
     # allowed to see it.
     if self.repos:
       if not self.auth.check_root_access(self.rootname):
-        raise debug.ViewVCException(
-          'User "%s" is not authorized to see root "%s".'
-          % (self.username, self.rootname), "501 Not Authorized")
+        raise debug.ViewVCNotAuthorizedException(self.username,
+                                                 'root "%s"' % (self.rootname))
     
     # If this is using an old-style 'rev' parameter, redirect to new hotness.
     # Subversion URLs will now use 'pathrev'; CVS ones use 'revision'.
@@ -368,10 +367,9 @@ class Request:
         access = self.auth.check_file_access(self.rootname,
                                              self.path_parts)
       if not access:
-        raise debug.ViewVCException(
-          'User "%s" is not authorized to see path "%s" in root "%s".'
-          % (self.username, _path_join(self.path_parts), self.rootname),
-          "501 Not Authorized")
+        path = _path_join(self.path_parts)
+        raise debug.ViewVCNotAuthorizedException(self.username,
+                                                 'path "%s"' % (path))
     
     if self.view_func is None:
       # view parameter is not set, try looking at pathtype and the 
@@ -2624,13 +2622,21 @@ def diff_parse_headers(fp, diff_type, rev1, rev2, sym1=None, sym2=None):
 
 def _get_diff_path_parts(request, query_key, rev, base_rev):
   if request.query_dict.has_key(query_key):
-    parts = _path_parts(request.query_dict[query_key])
+    path = request.query_dict[query_key]
+    parts = _path_parts(path)
+    if not request.auth.check_file_access(request.rootname, parts):
+      raise debug.ViewVCNotAuthorizedException(self.username,
+                                               'file "%s"' % (path))
   elif request.roottype == 'svn':
     try:
       repos = request.repos
-      parts = _path_parts(vclib.svn.get_location(repos, request.where,
-                                                 repos._getrev(base_rev),
-                                                 repos._getrev(rev)))
+      path = vclib.svn.get_location(repos, request.where,
+                                    repos._getrev(base_rev),
+                                    repos._getrev(rev))
+      parts = _path_parts(path)      
+      if not request.auth.check_file_access(request.rootname, parts):
+        raise debug.ViewVCNotAuthorizedException(self.username,
+                                                 'file "%s"' % (path))
     except vclib.InvalidRevision:
       raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                    'to diff', '400 Bad Request')
@@ -2641,6 +2647,7 @@ def _get_diff_path_parts(request, query_key, rev, base_rev):
       raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                    'to diff', '400 Bad Request')
   else:
+    # NOTE: authorization already checked in run_viewvc()
     parts = request.path_parts
   return parts
 
@@ -3051,12 +3058,38 @@ def view_revision(request):
     params['limit_changes'] = None
     first_changes_href = request.get_url(params=params, escape=1)
 
+  # Filter the changes list based on what the user is permitted to see.
+  def _auth_filter(item):
+    full_path_parts = _path_parts(item.filename)
+    if item.pathtype == vclib.DIR:
+      return request.auth.check_directory_access(request.rootname,
+                                                 full_path_parts)
+    else:
+      return request.auth.check_file_access(request.rootname,
+                                            full_path_parts)
+  changes = filter(_auth_filter, changes)
+  
   # add the hrefs, types, and prev info
   for change in changes:
     change.view_href = change.diff_href = change.type = change.log_href = None
     pathtype = (change.pathtype == vclib.FILE and 'file') \
                or (change.pathtype == vclib.DIR and 'dir') \
                or None
+
+    # If this path was copied, and the user is permitted to see this
+    # path but not the path from which it was copied, then lie about
+    # this *not* being a copy.
+    if change.is_copy:
+      full_path_parts = _path_parts(change.base_path)
+      if pathtype is vclib.DIR:
+        access = request.auth.check_dir_access(request.rootname,
+                                               full_path_parts, rev)
+      else:
+        access = request.auth.check_file_access(request.rootname,
+                                                full_path_parts)
+      if not access:
+        change.is_copy = 0
+    
     if (change.action == 'added' or change.action == 'replaced') \
            and not change.is_copy:
       change.text_mods = 0
