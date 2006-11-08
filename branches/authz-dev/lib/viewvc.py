@@ -142,20 +142,20 @@ class Request:
     self.query_dict = {}   # validated and cleaned up query options
     self.path_parts = None # for convenience, equals where.split('/')
     self.pathrev = None    # current path revision or tag
-    self.authorizer = None # authorizer module in use
+    self.auth = None       # authorizer module in use
 
     # Get a real authorizer.
     ### FIXME: At the very least, which plugin to use should be configurable.
     ###        Even better would be having the ability to assign an auth
     ###        plugin per each root.
     import vcauth.test
-    self.authorizer = vcauth.test.ViewVCAuthorizer(self.username)
+    self.auth = vcauth.test.ViewVCAuthorizer(self.username)
 
     # Register the roots.
     for key, value in cfg.general.cvs_roots.items():
-      self.authorizer.register_root(key, value)
+      self.auth.register_root(key, value)
     for key, value in cfg.general.svn_roots.items():
-      self.authorizer.register_root(key, value)
+      self.auth.register_root(key, value)
     
     # redirect if we're loading from a valid but irregular URL
     # These redirects aren't neccessary to make ViewVC work, it functions
@@ -289,7 +289,7 @@ class Request:
     # If we've selected a repository, we need to make sure the user is
     # allowed to see it.
     if self.repos:
-      if not self.authorizer.check_root_access(self.rootname):
+      if not self.auth.check_root_access(self.rootname):
         raise debug.ViewVCException(
           'User "%s" is not authorized to see root "%s".'
           % (self.username, self.rootname), "501 Not Authorized")
@@ -362,11 +362,11 @@ class Request:
     if self.path_parts:
       access = 1
       if self.pathtype == vclib.DIR:
-        access = self.authorizer.check_directory_access(self.rootname,
-                                                        self.path_parts)
+        access = self.auth.check_directory_access(self.rootname,
+                                                  self.path_parts)
       elif self.pathtype == vclib.FILE:
-        access = self.authorizer.check_file_access(self.rootname,
-                                                   self.path_parts)
+        access = self.auth.check_file_access(self.rootname,
+                                             self.path_parts)
       if not access:
         raise debug.ViewVCException(
           'User "%s" is not authorized to see path "%s" in root "%s".'
@@ -1140,7 +1140,7 @@ def common_template_data(request):
                              params={'root': rootname}, escape=1)
 
       # Check root authorization.
-      if request.authorizer.check_root_access(rootname):
+      if request.auth.check_root_access(rootname):
         roots.append(_item(name=request.server.escape(rootname),
                            type=allroots[rootname][1],
                            path=allroots[rootname][0],
@@ -1580,11 +1580,27 @@ def view_directory(request):
   # Filter file list if a regex is specified
   search_re = request.query_dict.get('search', '')
   if cfg.options.use_re_search and search_re:
-    file_data = search_files(request.repos, request.path_parts, request.pathrev,
-                             file_data, search_re)
+    file_data = search_files(request.repos, request.path_parts,
+                             request.pathrev, file_data, search_re)
+
+  # Further filter the file list based on what the user is permitted
+  # to see.  We do this before called dirlogs because it'll save us
+  # some work there, but also so it won't harvest tag/branch names
+  # from unauthorized files.
+  def _auth_filter(item):
+    assert item.kind == vclib.DIR or item.kind == vclib.FILE
+    full_path_parts = request.path_parts + [item.name]
+    if item.kind == vclib.FILE:
+      return request.auth.check_file_access(request.rootname,
+                                            full_path_parts)
+    else:
+      return request.auth.check_directory_access(request.rootname,
+                                                 full_path_parts)
+  file_data = filter(_auth_filter, file_data)
 
   # Retrieve log messages, authors, revision numbers, timestamps
-  request.repos.dirlogs(request.path_parts, request.pathrev, file_data, options)
+  request.repos.dirlogs(request.path_parts, request.pathrev,
+                        file_data, options)
 
   # sort with directories first, and using the "sortby" criteria
   sortby = request.query_dict.get('sortby', cfg.options.sort_by) or 'file'
@@ -1626,12 +1642,6 @@ def view_directory(request):
 
     if file.kind == vclib.DIR:
 
-      # Check authorization.
-      if not request.authorizer.check_directory_access(request.rootname,
-                                                       request.path_parts \
-                                                       + [file.name]):
-        continue
-
       if (where == '') and (cfg.is_forbidden(file.name)):
         continue
 
@@ -1664,12 +1674,6 @@ def view_directory(request):
                                        escape=1)
       
     elif file.kind == vclib.FILE:
-
-      # Check authorization.
-      if not request.authorizer.check_file_access(request.rootname,
-                                                  request.path_parts \
-                                                  + [file.name]):
-        continue
       
       if request.roottype == 'cvs' and file.dead:
         num_dead = num_dead + 1
@@ -2633,7 +2637,7 @@ def _get_diff_path_parts(request, query_key, rev, base_rev):
     except vclib.ItemNotFound:
       raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                    'to diff', '400 Bad Request')
-    if not request.authorizer.check_file_access(request.rootname, parts):
+    if not request.auth.check_file_access(request.rootname, parts):
       raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                    'to diff', '400 Bad Request')
   else:
