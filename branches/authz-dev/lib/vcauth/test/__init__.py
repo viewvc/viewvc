@@ -16,8 +16,8 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   def __init__(self, username):
     self.roots = {}
     
-  def register_root(self, rootname, rootpath):
-    self.roots[rootname] = 1
+  def register_root(self, rootname, rootpath, roottype):
+    self.roots[rootname] = roottype
     
   def check_root_access(self, rootname):    
     if not self.roots.has_key(rootname):

@@ -25,10 +25,11 @@ class GenericViewVCAuthorizer:
     control repositories and the items in them."""
     pass
 
-  def register_root(self, rootname, rootpath):
+  def register_root(self, rootname, rootpath, roottype):
     """Register the repository name ROOTNAME as one associated with
-    the version control repository located at ROOTPATH.  Authorization
-    checks are done against root names."""
+    the version control repository located at ROOTPATH and for the
+    version control type ROOTTYPE.  Authorization checks are done
+    against root names."""
     pass
   
   def check_root_access(self, rootname):
@@ -59,13 +60,16 @@ class ViewVCAuthzUnknownRootError(Exception):
   pass
 
 
+
+##############################################################################
+
 class ViewVCAuthorizer(GenericViewVCAuthorizer):
   """The uber-permissive authorizer."""
   def __init__(self, username):
     self.roots = {}
     
-  def register_root(self, rootname, rootpath):
-    self.roots[rootname] = 1
+  def register_root(self, rootname, rootpath, roottype):
+    self.roots[rootname] = roottype
     
   def check_root_access(self, rootname):    
     if not self.roots.has_key(rootname):

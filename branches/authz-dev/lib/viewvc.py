@@ -153,9 +153,9 @@ class Request:
 
     # Register the roots.
     for key, value in cfg.general.cvs_roots.items():
-      self.auth.register_root(key, value)
+      self.auth.register_root(key, value, 'cvs')
     for key, value in cfg.general.svn_roots.items():
-      self.auth.register_root(key, value)
+      self.auth.register_root(key, value, 'svn')
     
     # redirect if we're loading from a valid but irregular URL
     # These redirects aren't neccessary to make ViewVC work, it functions
