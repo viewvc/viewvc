@@ -24,9 +24,9 @@ from vclib.svn import Revision, ChangedPath, _datestr_to_date, _compare_paths, _
 from svn import core, delta, client, wc, ra
 
 
-### Require Subversion 1.3.0 or better. (for svn_ra_get_locations support)
-if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 3, 0):
-  raise Exception, "Version requirement not met (needs 1.3.0 or better)"
+### Require Subversion 1.3.1 or better. (for svn_ra_get_locations support)
+if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 3, 1):
+  raise Exception, "Version requirement not met (needs 1.3.1 or better)"
 
   
 def _rev2optrev(rev):
