@@ -833,9 +833,9 @@ def get_view_template(cfg, view_name, language="en"):
 
 def generate_page(request, view_name, data, content_type=None):
   if content_type:
-    request.server.header()
-  else:
     request.server.header(content_type)
+  else:
+    request.server.header()
   template = get_view_template(request.cfg, view_name, request.language)
   template.generate(request.server.file(), data)
 
