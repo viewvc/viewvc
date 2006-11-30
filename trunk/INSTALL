@@ -384,15 +384,20 @@ installation notes for more details on how to build and install these
 items.  
 
 Generally speaking, you'll know when your installation of Subversion's
-bindings has been successful if you can import the 'svn.repos' module
-from within your Python interpreter:
+bindings has been successful if you can import the 'svn.core' module
+from within your Python interpreter.  Here's an example of doing so
+which doubles as a quick way to check what version of the Subversion
+Python binding you have:
 
    % python
    Python 2.2.2 (#1, Oct 29 2002, 02:47:30) 
    [GCC 2.96 20000731 (Red Hat Linux 7.2 2.96-108.7.2)] on linux2
    Type "help", "copyright", "credits" or "license" for more information.
-   >>> import svn.repos
-   >>> 
+   >>> from svn.core import *
+   >>> "%s.%s.%s" % (SVN_VER_MAJOR, SVN_VER_MINOR, SVN_VER_PATCH)
+   '1.3.1'
+   >>>
+
 
 Note that by default, Subversion installs its bindings in a location
 that is not in Python's default module search path (for example, on
