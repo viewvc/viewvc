@@ -1075,7 +1075,8 @@ def common_template_data(request):
     'prefer_markup' : ezt.boolean(0),
   }
 
-  rev = request.query_dict.get('revision')
+  rev = request.query_dict.get('annotate',
+                               request.query_dict.get('revision'))
   data['rev'] = hasattr(request.repos, '_getrev') \
                 and request.repos._getrev(rev) or rev
   if request.pathtype == vclib.DIR:
