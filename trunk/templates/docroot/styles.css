@@ -67,6 +67,9 @@ form { margin: 0; }
 .vc_row_odd {
   background-color: #ccccee;
 }
+.vc_row_special {
+  background-color: #ffff7f;
+}
 
 
 /*** Log messages ***/
