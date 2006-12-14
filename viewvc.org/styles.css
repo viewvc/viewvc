@@ -3,7 +3,7 @@ body {
     background-image: url('./images/bg-grad.jpg');
     background-repeat: repeat-x;
     color: black;
-    font-family: arial, sans-serif;
+    font-family: trebuchet ms, arial, sans-serif;
     margin: 0;
 }
 
@@ -73,10 +73,14 @@ blockquote {
 .section {
     background: white;
     border-color: rgb(24,24,24);
-    border-width: 1px 2px 2px 1px;
+    border-width: 1px;
     border-style: solid;
     padding: 0;
     margin-bottom: 0.5em;
+}
+
+.section p, .section dl, .section ul, .section ol { 
+    padding: 0.5em 2em;
 }
 
 #menu {
@@ -138,7 +142,7 @@ blockquote {
 }
 
 #bookmarks {
-    padding-left: 0.25in;
+    padding-left: 0.5em;
     font-size: 80%;
     white-space: nowrap;
 }
