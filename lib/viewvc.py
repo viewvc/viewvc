@@ -233,9 +233,9 @@ class Request:
           self.roottype = 'cvs'
         except vclib.ReposNotFound:
           raise debug.ViewVCException(
-            '%s not found!\nThe wrong path for this repository was '
-            'configured, or the server on which the CVS tree lives may be '
-            'down. Please try again in a few minutes.'
+            'Unable to locate CVS root "%s".  Possible causes include '
+            'having an incorrectly configured path for this root, or the '
+            'server on which the repository lives being inaccessible.' \
             % self.rootname)
         # required so that spawned rcs programs correctly expand $CVSHeader$
         os.environ['CVSROOT'] = self.rootpath
@@ -256,9 +256,9 @@ class Request:
           self.roottype = 'svn'
         except vclib.ReposNotFound:
           raise debug.ViewVCException(
-            '%s not found!\nThe wrong path for this repository was '
-            'configured, or the server on which the Subversion tree lives may'
-            'be down. Please try again in a few minutes.'
+            'Unable to locate Subversion root "%s".  Possible causes include '
+            'having an incorrectly configured path for this root, or the '
+            'server on which the repository lives being inaccessible.' \
             % self.rootname)
         except vclib.InvalidRevision, ex:
           raise debug.ViewVCException(str(ex))
@@ -2301,7 +2301,7 @@ def view_doc(request):
   try:
     info = os.stat(filename)
   except OSError, v:
-    raise debug.ViewVCException('Static file "%s" not available\n(%s)'
+    raise debug.ViewVCException('Static file "%s" not available (%s)'
                                  % (document, str(v)), '404 Not Found')
   content_length = str(info[stat.ST_SIZE])
   last_modified = info[stat.ST_MTIME]
@@ -2314,7 +2314,7 @@ def view_doc(request):
   try:
     fp = open(filename, "rb")
   except IOError, v:
-    raise debug.ViewVCException('Static file "%s" not available\n(%s)'
+    raise debug.ViewVCException('Static file "%s" not available (%s)'
                                  % (document, str(v)), '404 Not Found')
 
   request.server.addheader('Content-Length', content_length)
