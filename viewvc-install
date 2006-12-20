@@ -97,6 +97,13 @@ def _escape(str):
     return string.replace(str, "\\", "\\\\")
 
 
+def _actual_src_path(path):
+    """Return the real on-disk location of PATH, which is relative to
+    the ViewVC source directory."""
+    return os.path.join(os.path.dirname(sys.argv[0]),
+                        string.replace(path, '/', os.sep))
+                 
+    
 def error(text, etype=None, evalue=None):
     """Print error TEXT to stderr, pretty printing the optional
     exception type and value (ETYPE and EVALUE, respective), and then
@@ -125,23 +132,24 @@ def replace_paths(contents):
     return contents
 
 
-def install_file(src_path, dest_path, mode, subst_path_vars,
+def install_file(src_path, dst_path, mode, subst_path_vars,
                  prompt_replace, compile_it):
-    """Install a single file whose source is at SRC_PATH into the
-    location DEST_PATH (which is relative both to the global ROOT_DIR
-    and DESTDIR settings), and set the file's MODE.  If SUBST_PATH_VARS
-    is set, substitute path variables in the file's contents.  If
+    """Install a single file whose source is at SRC_PATH (which is
+    relative to the ViewVC source directory) into the location
+    DST_PATH (which is relative both to the global ROOT_DIR and
+    DESTDIR settings), and set the file's MODE.  If SUBST_PATH_VARS is
+    set, substitute path variables in the file's contents.  If
     PROMPT_REPLACE is set (and is not overridden by global setting
     CLEAN_MODE), prompt the user for how to deal with already existing
     files that differ from the to-be-installed version.  If COMPILE_IT
     is set, compile the file as a Python module."""
-  
-    src_path = string.replace(src_path, '/', os.sep)
-    dest_path = os.path.join(ROOT_DIR, string.replace(dest_path, '/', os.sep))
+    
+    src_path = _actual_src_path(src_path)
+    dst_path = os.path.join(ROOT_DIR, string.replace(dst_path, '/', os.sep))
+    destdir_path = DESTDIR + dst_path
+
     overwrite = None
-    exists = os.path.exists(DESTDIR + dest_path)
-  
-    if not (prompt_replace and exists):
+    if not (prompt_replace and os.path.exists(destdir_path)):
         # If the file doesn't already exist, or we've been instructed to
         # replace it without prompting, then drop in the new file and get
         # outta here.
@@ -152,7 +160,7 @@ def install_file(src_path, dest_path, mode, subst_path_vars,
   
         # Collect ndiff output from ndiff
         sys.stdout = StringIO.StringIO()
-        compat_ndiff.main([DESTDIR + dest_path, src_path])
+        compat_ndiff.main([destdir_path, src_path])
         ndiff_output = sys.stdout.getvalue()
 
         # Return everything to normal
@@ -183,7 +191,7 @@ def install_file(src_path, dest_path, mode, subst_path_vars,
                 overwrite = 0
             else:
                 print "File %s exists and is different from source file." \
-                      % (DESTDIR + dest_path)
+                      % (destdir_path)
                 while 1:
                     name, ext = os.path.splitext(src_path)
                     if ext in BINARY_FILE_EXTS:
@@ -213,16 +221,11 @@ LEGEND
                         break
 
     assert overwrite is not None
-    if overwrite:
-        replace_file(src_path, dest_path, mode, subst_path_vars,
-                     prompt_replace, compile_it)
-    else:
-        print "   preserved %s" % (dest_path)
+    if not overwrite:
+        print "   preserved %s" % (dst_path)
+        return
 
-
-def replace_file(src_path, dest_path, mode, subst_path_vars,
-                 prompt_replace, compile_it):
-    path, basename = os.path.split(DESTDIR + dest_path)
+    ### If we get here, we're creating or overwriting the existing file.
 
     # Read the source file's contents.
     try:
@@ -235,45 +238,53 @@ def replace_file(src_path, dest_path, mode, subst_path_vars,
         contents = replace_paths(contents)
 
     # Ensure the existence of the containing directories.
-    if not os.path.exists(path):
-        print "   created   %s/" % (path)
+    dst_parent = os.path.dirname(destdir_path)
+    if not os.path.exists(dst_parent):
         try:
-            compat.makedirs(path)
+            compat.makedirs(dst_parent)
+            print "   created   %s/" % (dst_parent)
         except os.error, e:
-            if e[0] == 17:
-                # EEXIST: file exists
+            if e[0] == 17: # EEXIST: file exists
                 return
-            if e[0] == 13:
-                # EACCES: permission denied
+            if e[0] == 13: # EACCES: permission denied
                 error("You do not have permission to create directory %s" \
-                      % (path))
-            error("Unknown error creating directory %s" % (path, OSError, e))
+                      % (dst_parent))
+            error("Unknown error creating directory %s" \
+                  % (dst_parent, OSError, e))
 
     # Now, write the file contents to their destination.
     try:
-        exists = os.path.exists(DESTDIR + dest_path)
-        open(DESTDIR + dest_path, "wb").write(contents)
+        exists = os.path.exists(destdir_path)
+        open(destdir_path, "wb").write(contents)
         print "   %s %s" \
-              % (exists and 'replaced ' or 'installed', dest_path)
+              % (exists and 'replaced ' or 'installed', dst_path)
     except IOError, e:
         if e[0] == 13:
             # EACCES: permission denied
-            error("You do not have permission to write file %s" % (dest_path))
-        error("Unknown error writing file %s" % (dest_path, IOError, e))
+            error("You do not have permission to write file %s" % (dst_path))
+        error("Unknown error writing file %s" % (dst_path, IOError, e))
 
     # Set the files's mode.
-    os.chmod(DESTDIR + dest_path, mode)
+    os.chmod(destdir_path, mode)
 
     # (Optionally) compile the file.
     if compile_it:
-        py_compile.compile(DESTDIR + dest_path,
-                           DESTDIR + dest_path + "c" , dest_path)
+        py_compile.compile(destdir_path, destdir_path + "c" , dst_path)
 
 
 def install_tree(src_path, dst_path, prompt_replace):
-    src_path = string.replace(src_path, '/', os.sep)
-    dst_path = string.replace(dst_path, '/', os.sep)
-    dest_path = os.path.join(ROOT_DIR, dst_path)
+    """Install a tree whose source is at SRC_PATH (which is relative
+    to the ViewVC source directory) into the location DST_PATH (which
+    is relative both to the global ROOT_DIR and DESTDIR settings).  If
+    PROMPT_REPLACE is set (and is not overridden by global setting
+    CLEAN_MODE), prompt the user for how to deal with already existing
+    files that differ from the to-be-installed version."""
+
+    orig_src_path = src_path
+    orig_dst_path = dst_path
+    src_path = _actual_src_path(src_path)
+    dst_path = os.path.join(ROOT_DIR, string.replace(dst_path, '/', os.sep))
+    destdir_path = os.path.join(DESTDIR + dst_path)
 
     # Get a list of items in the directory.
     files = os.listdir(src_path)
@@ -287,21 +298,21 @@ def install_tree(src_path, dst_path, prompt_replace):
              or fname[-1] ==    '~':
             continue
 
-        src = os.path.join(src_path, fname)
-        dst = os.path.join(dst_path, fname)
+        orig_src_child = orig_src_path + '/' + fname
+        orig_dst_child = orig_dst_path + '/' + fname
 
         # If the item is a subdirectory, recurse.  Otherwise, install the file.
-        if os.path.isdir(src):
-            install_tree(src, dst, prompt_replace)
+        if os.path.isdir(os.path.join(src_path, fname)):
+            install_tree(orig_src_child, orig_dst_child, prompt_replace)
         else:
             set_paths = 0
             compile_it = fname[-3:] == '.py'
-            install_file(src, dst, 0644, set_paths, prompt_replace, compile_it)
+            install_file(orig_src_child, orig_dst_child, 0644,
+                         set_paths, prompt_replace, compile_it)
 
     # Check for .py and .pyc files that don't belong in installation.
-    full_dst_path = os.path.join(DESTDIR + dest_path)
-    for fname in os.listdir(full_dst_path):
-        if not os.path.isfile(os.path.join(full_dst_path, fname)) or \
+    for fname in os.listdir(destdir_path):
+        if not os.path.isfile(os.path.join(destdir_path, fname)) or \
              not ((fname[-3:] == '.py' and fname not in files) or
                         (fname[-4:] == '.pyc' and fname[:-1] not in files)):
             continue
@@ -314,7 +325,7 @@ def install_tree(src_path, dst_path, prompt_replace):
             delete = 0
         else:
             print "File %s does not belong in ViewVC %s." \
-                  % (dest_path, version)
+                  % (dst_path, version)
             while 1:
                 temp = raw_input("Do you want to [D]elete it, or [L]eave "
                                  "it as is? ")
@@ -329,10 +340,10 @@ def install_tree(src_path, dst_path, prompt_replace):
 
         assert delete is not None
         if delete:
-            print "   deleted   %s" % (os.path.join(dest_path, fname))
-            os.unlink(os.path.join(full_dst_path, fname))
+            print "   deleted   %s" % (os.path.join(dst_path, fname))
+            os.unlink(os.path.join(destdir_path, fname))
         else:
-            print "   preserved %s" % (os.path.join(dest_path, fname))
+            print "   preserved %s" % (os.path.join(dst_path, fname))
       
 
 
