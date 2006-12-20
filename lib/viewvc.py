@@ -753,14 +753,6 @@ def _orig_path(request, rev_param='revision', path_param=None):
                                               pathrev, rev)), rev
   return _path_parts(path), rev
 
-def _install_path(path):
-  """Get usable path for a path relative to ViewVC install directory"""
-  if os.path.isabs(path):
-    return path
-  return os.path.normpath(os.path.join(os.path.dirname(__file__),
-                                       os.pardir,
-                                       path))
-
 def check_freshness(request, mtime=None, etag=None, weak=0):
   # See if we are supposed to disable etags (for debugging, usually)
 
@@ -823,7 +815,7 @@ def get_view_template(cfg, view_name, language="en"):
   tname = string.replace(tname, '%lang%', language)
 
   # finally, construct the whole template path.
-  tname = _install_path(tname)
+  tname = cfg.path(tname)
 
   debug.t_start('ezt-parse')
   template = ezt.Template(tname)
@@ -2181,7 +2173,7 @@ def view_cvsgraph_image(request):
   request.server.header('image/png')
   rcsfile = request.repos.rcsfile(request.path_parts)
   fp = popen.popen(cfg.utilities.cvsgraph or 'cvsgraph',
-                   ("-c", _install_path(cfg.options.cvsgraph_conf),
+                   ("-c", cfg.path(cfg.options.cvsgraph_conf),
                     "-r", request.repos.rootpath,
                     rcsfile), 'rb', 0)
   copy_stream(fp)
@@ -2210,7 +2202,7 @@ def view_cvsgraph(request):
   rcsfile = request.repos.rcsfile(request.path_parts)
   fp = popen.popen(cfg.utilities.cvsgraph or 'cvsgraph',
                    ("-i",
-                    "-c", _install_path(cfg.options.cvsgraph_conf),
+                    "-c", cfg.path(cfg.options.cvsgraph_conf),
                     "-r", request.repos.rootpath,
                     "-x", "x",
                     "-3", request.get_url(view_func=view_log, params={},
@@ -2294,8 +2286,8 @@ def view_doc(request):
   Using this avoids the need for modifying the setup of the web server.
   """
   document = request.where
-  filename = _install_path(os.path.join(request.cfg.options.template_dir,
-                                        "docroot", document))
+  filename = request.cfg.path(os.path.join(request.cfg.options.template_dir,
+                                           "docroot", document))
 
   # Stat the file to get content length and last-modified date.
   try:
@@ -3560,7 +3552,8 @@ def load_config(pathname=None, server=None):
   if pathname is None:
     pathname = (os.environ.get("VIEWVC_CONF_PATHNAME")
                 or os.environ.get("VIEWCVS_CONF_PATHNAME")
-                or _install_path("viewvc.conf"))
+                or os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                                "viewvc.conf"))
 
   cfg = config.Config()
   cfg.set_defaults()
