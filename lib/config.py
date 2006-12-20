@@ -90,6 +90,10 @@ class Config:
 
     return kv
 
+  def path(self, path):
+    """Return path relative to the config file directory"""
+    return os.path.join(self.base, path)
+
   def _process_section(self, parser, section, subcfg_name):
     sc = getattr(self, subcfg_name)
 
