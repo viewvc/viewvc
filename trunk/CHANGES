@@ -6,6 +6,8 @@ Version 1.1.0 (released ??-???-????)
   * add daemon mode to standalone.py
   * rework and update helper application configuration options
   * teach standalone.py to recognize Subversion repositories via -r option
+  * open relative paths in "viewvc.conf" using the location of that file,
+    instead of the location of the ViewVC "lib" directory, as a base
 
 Version 1.0.3 (released 13-Oct-2006)
 

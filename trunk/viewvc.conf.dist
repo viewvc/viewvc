@@ -448,8 +448,8 @@ allow_compress = 1
 # customize the display of the various output views.  ViewVC looks in
 # this directory for files with names that match the name of the view
 # ("log", "directory", etc.) plus the ".ezt" extension.  If specified
-# as a relative path, it is relative to the ViewVC installation
-# directory; absolute paths may be used as well.
+# as a relative path, it is relative to the directory where this config
+# file resides; absolute paths may be used as well.
 #
 # If %lang% occurs in the pathname, then the selected language will be
 # substituted.
@@ -530,7 +530,6 @@ use_cvsgraph = 0
 
 #
 # Location of the customized cvsgraph configuration file.  
-# You will need an absolute pathname here:
 #
 cvsgraph_conf = cvsgraph.conf
 
@@ -587,8 +586,8 @@ limit_changes = 100
 # appropriate option below and specify the currect location of the EZT
 # template file you wish to use for that view.
 # 
-# Templates are specified relative to the installation directory, but
-# absolute paths may also be used as well.
+# Templates are specified relative to the directory where this config
+# file resides, but absolute paths may also be used as well.
 #
 # If %lang% occurs in the pathname, then the selected language will be
 # substituted.
