@@ -3,8 +3,8 @@ Version 1.1.0 (released ??-???-????)
   * add support for full content diffs (issue #153)
   * make many more data dictionary items available to all views
   * various rcsparse and tparse module fixes
-  * add daemon mode to standalone.py
-  * rework and update helper application configuration options
+  * add daemon mode to standalone.py (issue #235)
+  * rework helper application configuration options (issues #229, #62)
   * teach standalone.py to recognize Subversion repositories via -r option
   * now interpret relative paths in "viewvc.conf" as relative to that file
   * add 'purge' subcommand to cvsdbadmin and svndbadmin (issue #271)
