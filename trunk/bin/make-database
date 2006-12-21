@@ -92,7 +92,7 @@ CREATE TABLE files (
 DROP TABLE IF EXISTS people;
 CREATE TABLE people (
   id mediumint(9) NOT NULL auto_increment,
-  who varchar(32) binary DEFAULT '' NOT NULL,
+  who varchar(128) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE who (who)
 );
