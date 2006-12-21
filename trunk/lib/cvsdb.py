@@ -427,6 +427,40 @@ class CheckinDatabase:
 
         return commit
 
+    def sql_delete(self, table, key, value):
+        sql = "DELETE FROM %s WHERE %s=%%s" % (table, key)
+        sql_args = (value, )
+        cursor = self.db.cursor()
+        cursor.execute(sql, sql_args)
+        
+    def PurgeRepository(self, repository):
+        rep_id = self.GetRepositoryID(repository)
+        if not rep_id:
+            raise Exception, "Unknown repository '%s'" % (repository)
+        
+        sql = "SELECT * FROM checkins WHERE repositoryid=%s"
+        sql_args = (rep_id, )
+        cursor = self.db.cursor()
+        cursor.execute(sql, sql_args)
+        checkins = []
+        while 1:
+            try:
+                (ci_type, ci_when, who_id, repository_id,
+                 dir_id, file_id, revision, sticky_tag, branch_id,
+                 plus_count, minus_count, description_id) = cursor.fetchone()
+            except TypeError:
+                break
+            checkins.append([file_id, dir_id, branch_id, description_id])
+
+        #self.sql_delete('repositories', 'id', rep_id)
+        self.sql_delete('checkins', 'repositoryid', rep_id)
+        for checkin in checkins:
+            self.sql_delete('files', 'id', checkin[0])
+            self.sql_delete('dirs', 'id', checkin[1])
+            self.sql_delete('branches', 'id', checkin[2])
+            self.sql_delete('descs', 'id', checkin[3])
+
+
 ## the Commit class holds data on one commit, the representation is as
 ## close as possible to how it should be committed and retrieved to the
 ## database engine

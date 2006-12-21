@@ -123,15 +123,18 @@ def usage():
     sys.stderr.write("""
 Usage: 1. %s [[-q] -q] rebuild REPOSITORY
        2. %s [[-q] -q] update REPOSITORY
+       3. %s [[-q] -q] purge REPOSITORY
 
 1.  Rebuild the commit database information for REPOSITORY.
 
 2.  Update the commit database information for all unrecorded commits
     in REPOSITORY.
 
+3.  Purge information specific to REPOSITORY from the database.
+
 Use the -q flag to cause this script to be less verbose; use it twice to
 invoke a peaceful state of noiselessness.
-""" % (cmd, cmd))
+""" % (cmd, cmd, cmd))
     sys.exit(1)
 
 
@@ -139,7 +142,7 @@ invoke a peaceful state of noiselessness.
 if __name__ == '__main__':
     args = sys.argv
 
-    ## check the quietness level (0 = verbose, 1 = new commits, 2 = silent)
+    # check the quietness level (0 = verbose, 1 = new commits, 2 = silent)
     quiet_level = 0
     while 1:
         try:
@@ -149,30 +152,30 @@ if __name__ == '__main__':
         except ValueError:
             break
 
-    ## check that a command was given
+    # validate the command
     if len(args) <= 2:
         usage()
-
-    ## set the handler function for the command
-    command = args[1]
-    if string.lower(command) == 'rebuild':
-        update = 0
-    elif string.lower(command) == 'update':
-        update = 1
-    else:
-        print 'ERROR: unknown command %s' % (command)
+    command = args[1].lower()
+    if command not in ('rebuild', 'update', 'purge'):
+        sys.stderr.write('ERROR: unknown command %s\n' % command)
         usage()
 
-    # get repository path
+    # get repository and path, and do the work
     root, path_parts = RootPath(args[2], quiet_level)
-
-    ## run command
     try:
-        ## connect to the database we are updating
         cfg = viewvc.load_config(CONF_PATHNAME)
         db = cvsdb.ConnectDatabase(cfg)
-        repository = vclib.bincvs.BinCVSRepository(None, root, cfg.utilities)
-        RecurseUpdate(db, repository, path_parts, update, quiet_level)
+
+        if command in ('rebuild', 'purge'):
+            if quiet_level < 2:
+                print "Purging existing data for repository root `%s'" % root
+            db.PurgeRepository(root)
+
+        if command in ('rebuild', 'update'):
+            repository = vclib.bincvs.BinCVSRepository(None, root,
+                                                       cfg.utilities)
+            RecurseUpdate(db, repository, path_parts,
+                          command == 'update', quiet_level)
     except KeyboardInterrupt:
         print
         print '** break **'
