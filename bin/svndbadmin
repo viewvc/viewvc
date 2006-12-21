@@ -49,9 +49,9 @@ import sys
 import os
 
 if LIBRARY_DIR:
-  sys.path.insert(0, LIBRARY_DIR)
+    sys.path.insert(0, LIBRARY_DIR)
 else:
-  sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
+    sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
 
 #########################################################################
 
@@ -197,7 +197,7 @@ class SvnRev:
         return self.rev_roots[rev]
 
 
-def handle_revision(db, command, repo, rev, verbose):
+def handle_revision(db, command, repo, rev, verbose, force=0):
     """Adds a particular revision of the repository to the checkin database."""
     revision = repo[rev]
     committed = 0
@@ -231,7 +231,7 @@ def handle_revision(db, command, repo, rev, verbose):
 
         if command == 'update':
             result = db.CheckCommit(commit)
-            if result:
+            if result and not force:
                 continue # already recorded
 
         # commit to database
@@ -244,42 +244,56 @@ def handle_revision(db, command, repo, rev, verbose):
         else:
             print "skipped (already recorded)."
 
-def main(pool, command, repository, rev=None, verbose=0):
+def main(pool, command, repository, rev=None, verbose=0, force=0):
     cfg = viewvc.load_config(CONF_PATHNAME)
     db = cvsdb.ConnectDatabase(cfg)
 
+    if command in ('rebuild', 'purge'):
+        if verbose:
+            print "Purging commit info for repository root `%s'" % repository
+        db.PurgeRepository(repository)
+
     repo = SvnRepo(repository, pool)
-    if rev:
-        handle_revision(db, command, repo, rev, verbose)
-    else:
+    if command == 'rebuild' or (command == 'update' and not rev):
         for rev in range(repo.rev_max+1):
             handle_revision(db, command, repo, rev, verbose)
+    elif command == 'update':
+        handle_revision(db, command, repo, rev, verbose, force)
 
 def usage():
     cmd = os.path.basename(sys.argv[0])
     sys.stderr.write("""
-Usage: 1. %s [-v] rebuild REPOSITORY [REVISION]
-       2. %s [-v] update REPOSITORY [REVISION]
+Usage: 1. %s [-v] rebuild REPOSITORY
+       2. %s [-v] update REPOSITORY [REVISION] [--force]
+       3. %s [-v] purge REPOSITORY
 
-1.  Rebuild the commit database information for REPOSITORY across all revisions
-    or, optionally, only for the specified REVISION.
+1.  Rebuild the commit database information for REPOSITORY across all
+    revisions.
 
 2.  Update the commit database information for REPOSITORY across all revisions
     or, optionally, only for the specified REVISION.  This is just like
-    rebuilding, except that no commit information will be stored for
-    commits already present in the database.
+    rebuilding, except that, unless --force is specified, no commit information
+    will be stored for commits already present in the database.
+
+3.  Purge information specific to REPOSITORY from the database.
 
 Use the -v flag to cause this script to give progress information as it works.
-""" % (cmd, cmd))
+""" % (cmd, cmd, cmd))
     sys.exit(1)
 
 if __name__ == '__main__':
     verbose = 0
-    
+    force = 0
     args = sys.argv
     try:
         index = args.index('-v')
         verbose = 1
+        del args[index]
+    except ValueError:
+        pass
+    try:
+        index = args.index('--force')
+        force = 1
         del args[index]
     except ValueError:
         pass
@@ -288,7 +302,7 @@ if __name__ == '__main__':
         usage()
 
     command = string.lower(args[1])
-    if command not in ('rebuild', 'update'):
+    if command not in ('rebuild', 'update', 'purge'):
         sys.stderr.write('ERROR: unknown command %s\n' % command)
         usage()
 
@@ -298,6 +312,12 @@ if __name__ == '__main__':
         usage()
 
     if len(sys.argv) > 3:
+        if command == 'rebuild':
+            sys.stderr.write('ERROR: rebuild no longer accepts a revision '
+                             'number argument.  Usage update --force.')
+            usage()
+        elif command != 'update':
+            usage()
         rev = sys.argv[3]
         try:
             rev = int(rev)
@@ -307,5 +327,10 @@ if __name__ == '__main__':
     else:
         rev = None
 
-    repository = cvsdb.CleanRepository(os.path.abspath(repository))
-    svn.core.run_app(main, command, repository, rev, verbose)
+    try:
+        repository = cvsdb.CleanRepository(os.path.abspath(repository))
+        svn.core.run_app(main, command, repository, rev, verbose, force)
+    except KeyboardInterrupt:
+        print
+        print '** break **'
+    sys.exit(0)
