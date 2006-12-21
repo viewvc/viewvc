@@ -1250,14 +1250,8 @@ class MarkupPHP(MarkupShell):
 
 class MarkupHighlight(MarkupShell):
   def __init__(self, cfg, fp, filename):
-    try:
-      ext = filename[string.rindex(filename, ".") + 1:]
-    except ValueError:
-      ext = 'txt'
-
     highlight_cmd = [cfg.utilities.highlight or 'highlight',
-                     '--syntax', ext, '--force',
-                     '--anchors', '--fragment', '--xhtml']
+                     '--force', '--anchors', '--fragment', '--xhtml']
 
     if cfg.options.highlight_line_numbers:
       highlight_cmd.extend(['--linenumbers'])
@@ -1266,7 +1260,26 @@ class MarkupHighlight(MarkupShell):
       highlight_cmd.extend(['--replace-tabs',
                             str(cfg.options.highlight_convert_tabs)])
 
+    highlight_cmd.extend(['-'])
     MarkupShell.__init__(self, fp, [highlight_cmd])
+    self.filename = filename
+
+  def __call__(self, ctx):
+    # create a temporary file with the same name as the file in
+    # the repository so highlight can detect file type correctly
+    dir = compat.mkdtemp("", "viewvc")
+    try:
+      file = os.path.join(dir, self.filename)
+      try:
+        copy_stream(self.fp, open(file, 'wb'))
+        self.fp.close()
+        self.fp = None
+        self.cmds[0][-1] = file
+        MarkupShell.__call__(self, ctx)
+      finally:
+        os.unlink(file)
+    finally:
+       os.rmdir(dir)
 
 def markup_stream_python(fp, cfg):
   if not cfg.options.use_py2html:
