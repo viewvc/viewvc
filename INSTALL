@@ -316,13 +316,22 @@ there are some additional steps required to get the database working.
      #!/bin/sh
      REPOS="$1"
      REV="$2"
-     <VIEWVC_INSTALLATION_DIRECTORY>/bin/svndbadmin rebuild "$REPOS" "$REV"
+     <VIEWVC_INSTALLATION_DIRECTORY>/bin/svndbadmin update \
+         "$REPOS" "$REV"
 
    If you allow revision property changes in your repository, create a
-   post-revprop-change hook script containing the same commands as the
-   post-commit one.  This will make sure that the checkin database
-   stays consistent when you change the svn:log, svn:author or
-   svn:date revision properties.
+   post-revprop-change hook script which uses the same 'svndbadmin update'
+   command as the post-commit script, except with the addition of the
+   --force option:
+
+     #!/bin/sh
+     REPOS="$1"
+     REV="$2"
+     <VIEWVC_INSTALLATION_DIRECTORY>/bin/svndbadmin update --force \
+         "$REPOS" "$REV"
+
+   This will make sure that the checkin database stays consistent when
+   you change the svn:log, svn:author or svn:date revision properties.
 
 6) You should be ready to go.  Click one of the "Query revision history"
    links in ViewVC directory listings and give it a try.
