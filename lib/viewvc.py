@@ -1279,7 +1279,7 @@ class MarkupHighlight(MarkupShell):
       finally:
         os.unlink(file)
     finally:
-       os.rmdir(dir)
+      os.rmdir(dir)
 
 def markup_stream_python(fp, cfg):
   if not cfg.options.use_py2html:
