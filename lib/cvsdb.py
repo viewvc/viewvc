@@ -262,7 +262,24 @@ class CheckinDatabase:
                     plus_count, minus_count, description_id)
 
         cursor = self.db.cursor()
-        cursor.execute(sql, sql_args)
+        try:
+            cursor.execute(sql, sql_args)
+        except Exception, e:
+            raise Exception("Error adding commit: '%s'\n"
+                            "Values were:\n"
+                            "\ttype         = %s"
+                            "\tci_when      = %s"
+                            "\twhoid        = %s"
+                            "\trepositoryid = %s"
+                            "\tdirid        = %s"
+                            "\tfileid       = %s"
+                            "\trevision     = %s"
+                            "\tstickytag    = %s"
+                            "\tbranchid     = %s"
+                            "\taddedlines   = %s"
+                            "\tremovedlines = %s"
+                            "\tdescid       = %s"
+                            "\n" % ((str(e), ) + sql_args))
 
     def SQLQueryListString(self, field, query_entry_list):
         sqlList = []
