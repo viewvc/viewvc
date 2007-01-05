@@ -249,8 +249,8 @@ class CheckinDatabase:
         revision = commit.GetRevision()
         sticky_tag = "NULL"
         branch_id = self.GetBranchID(commit.GetBranch())
-        plus_count = commit.GetPlusCount()
-        minus_count = commit.GetMinusCount()
+        plus_count = commit.GetPlusCount() or '0'
+        minus_count = commit.GetMinusCount() or '0'
         description_id = self.GetDescriptionID(commit.GetDescription())
 
         sql = "REPLACE INTO checkins"\
