@@ -267,19 +267,19 @@ class CheckinDatabase:
         except Exception, e:
             raise Exception("Error adding commit: '%s'\n"
                             "Values were:\n"
-                            "\ttype         = %s"
-                            "\tci_when      = %s"
-                            "\twhoid        = %s"
-                            "\trepositoryid = %s"
-                            "\tdirid        = %s"
-                            "\tfileid       = %s"
-                            "\trevision     = %s"
-                            "\tstickytag    = %s"
-                            "\tbranchid     = %s"
-                            "\taddedlines   = %s"
-                            "\tremovedlines = %s"
-                            "\tdescid       = %s"
-                            "\n" % ((str(e), ) + sql_args))
+                            "\ttype         = %s\n"
+                            "\tci_when      = %s\n"
+                            "\twhoid        = %s\n"
+                            "\trepositoryid = %s\n"
+                            "\tdirid        = %s\n"
+                            "\tfileid       = %s\n"
+                            "\trevision     = %s\n"
+                            "\tstickytag    = %s\n"
+                            "\tbranchid     = %s\n"
+                            "\taddedlines   = %s\n"
+                            "\tremovedlines = %s\n"
+                            "\tdescid       = %s\n"
+                            % ((str(e), ) + sql_args))
 
     def SQLQueryListString(self, field, query_entry_list):
         sqlList = []
