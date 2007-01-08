@@ -412,8 +412,17 @@ Note that by default, Subversion installs its bindings in a location
 that is not in Python's default module search path (for example, on
 Linux systems the default is usually /usr/local/lib/svn-python).  You
 need to remedy this, either by adding this path to Python's module
-search path, or by relocation the bindings to some place in that
-search path.
+search path, or by relocating the bindings to some place in that
+search path.  
+
+For example, you might want to create .pth file in your Python
+installation directory's site-packages area which tells Python where
+to find additional modules (in this case, you Subversion Python
+bindings).  You would do this as follows (and as root):
+
+   $ echo "/path/to/svn/bindings" > /path/to/python/site-packages/svn.pth
+
+(Though, obviously, with the correct paths specified.)
 
 Configuration of the Subversion repositories happens in much the same
 way as with CVS repositories, only with the 'svn_roots' configuration
