@@ -1542,17 +1542,40 @@ def view_directory(request):
   # Filter file list if a regex is specified
   search_re = request.query_dict.get('search', '')
   if cfg.options.use_re_search and search_re:
-    file_data = search_files(request.repos, request.path_parts, request.pathrev,
-                             file_data, search_re)
-
-  # Retrieve log messages, authors, revision numbers, timestamps
-  request.repos.dirlogs(request.path_parts, request.pathrev, file_data, options)
+    file_data = search_files(request.repos, request.path_parts,
+                             request.pathrev, file_data, search_re)
 
   # sort with directories first, and using the "sortby" criteria
   sortby = request.query_dict.get('sortby', cfg.options.sort_by) or 'file'
   sortdir = request.query_dict.get('sortdir', 'up')
-  sort_file_data(file_data, request.roottype, sortdir, sortby,
-                 cfg.options.sort_group_dirs)
+
+  # when paging and sorting by filename, we can greatly improve
+  # performance by "cheating" -- first, we sort (we already have the
+  # names), then we just fetch dirlogs for the needed entries.
+  # however, when sorting by other properties or not paging, we've no
+  # choice but to fetch dirlogs for everything.
+  debug.t_start("dirlogs")
+  if cfg.options.use_pagesize and sortby == 'file':
+    dirlogs_first = int(request.query_dict.get('dir_pagestart', 0))
+    if dirlogs_first > len(file_data):
+      dirlogs_first = 0
+    dirlogs_last = dirlogs_first + cfg.options.use_pagesize
+    for file in file_data:
+      file.rev = None
+      file.date = None
+      file.log = None
+      file.author = None
+    sort_file_data(file_data, request.roottype, sortdir, sortby,
+                   cfg.options.sort_group_dirs)
+    # request dirlogs only for the slice of files in "this page"
+    request.repos.dirlogs(request.path_parts, request.pathrev,
+                          file_data[dirlogs_first:dirlogs_last], options)
+  else:
+    request.repos.dirlogs(request.path_parts, request.pathrev,
+                          file_data, options)
+    sort_file_data(file_data, request.roottype, sortdir, sortby,
+                   cfg.options.sort_group_dirs)
+  debug.t_end("dirlogs")
 
   # loop through entries creating rows and changing these values
   rows = [ ]
