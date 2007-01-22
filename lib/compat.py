@@ -126,15 +126,29 @@ try:
   mkdtemp = tempfile.mkdtemp
 except AttributeError:
   def mkdtemp(suffix="", prefix="tmp", dir=None):
-    for i in range(10):
-      dir = tempfile.mktemp(suffix, prefix, dir)
-      try:
-        os.mkdir(dir, 0700)
-        return dir
-      except OSError, e:
-        if e.errno == errno.EEXIST:
-          continue # try again
-        raise
+    # mktemp() only took a single suffix argument until Python 2.3.
+    # We'll do the best we can.
+    oldtmpdir = os.environ.get('TMPDIR')
+    try:
+      for i in range(10):
+        if dir:
+          os.environ['TMPDIR'] = dir
+        dir = tempfile.mktemp(suffix)
+        if prefix:
+          parent, base = os.path.split(dir)
+          dir = os.path.join(parent, prefix + base)
+        try:
+          os.mkdir(dir, 0700)
+          return dir
+        except OSError, e:
+          if e.errno == errno.EEXIST:
+            continue # try again
+          raise
+    finally:
+      if oldtmpdir:
+        os.environ['TMPDIR'] = oldtmpdir
+      elif os.environ.has_key('TMPDIR'):
+        del(os.environ['TMPDIR'])
 
     raise IOError, (errno.EEXIST, "No usable temporary directory name found")
 
