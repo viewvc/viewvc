@@ -22,7 +22,7 @@ import time
 import tempfile
 import popen
 import re
-from svn import fs, repos, core, delta
+from svn import fs, repos, core, client, delta
 
 
 ### Require Subversion 1.3.1 or better.
@@ -90,6 +90,15 @@ def _rev2optrev(rev):
   rt.kind = core.svn_opt_revision_number
   rt.value.number = rev
   return rt
+
+
+def _rootpath2url(rootpath, path):
+  rootpath = os.path.abspath(rootpath)
+  if rootpath and rootpath[0] != '/':
+    rootpath = '/' + rootpath
+  if os.sep != '/':
+    rootpath = string.replace(rootpath, os.sep, '/')
+  return 'file://' + string.join([rootpath, path], "/")
 
 
 def _datestr_to_date(datestr):
@@ -465,52 +474,31 @@ class FileContentsPipe:
     return self._eof
 
 
-_re_blameinfo = re.compile(r"\s*(\d+)\s*(.*)")
-
 class BlameSource:
-  def __init__(self, svn_client_path, rootpath, fs_path, rev, first_rev):
+  def __init__(self, local_url, rev, first_rev):
     self.idx = -1
-    self.line_number = 1
-    self.last = None
     self.first_rev = first_rev
-    
-    # Do a little dance to get a URL that works in both Unix-y and
-    # Windows worlds.
-    rootpath = os.path.abspath(rootpath)
-    if rootpath and rootpath[0] != '/':
-      rootpath = '/' + rootpath
-    if os.sep != '/':
-      rootpath = string.replace(rootpath, os.sep, '/')
-      
-    url = 'file://' + string.join([rootpath, fs_path], "/")
-    fp = popen.popen(svn_client_path,
-                     ('blame', "-r%d" % int(rev), "--non-interactive",
-                      "%s@%d" % (url, int(rev))),
-                     'rb', 1)
-    self.fp = fp
-    
-  def __getitem__(self, idx):
-    if idx == self.idx:
-      return self.last
-    if idx != self.idx + 1:
-      raise BlameSequencingError()
-    line = self.fp.readline()
-    if not line:
-      raise IndexError("No more annotations")
-    m = _re_blameinfo.match(line[:17])
-    if not m:
-      raise vclib.Error("Could not parse blame output at line %i\n%s"
-                        % (idx+1, line))
-    rev, author = m.groups()
-    text = line[18:]
-    rev = int(rev)
+    self.blame_data = []
+
+    ctx = client.ctx_t()
+    core.svn_config_ensure(None)
+    ctx.config = core.svn_config_get_config(None)
+    ctx.auth_baton = core.svn_auth_open([])
+    client.blame2(local_url, _rev2optrev(rev), _rev2optrev(1),
+                  _rev2optrev(rev), self._blame_cb, ctx)
+
+  def _blame_cb(self, line_no, rev, author, date, text, pool):
     prev_rev = None
     if rev > self.first_rev:
       prev_rev = rev - 1
-    item = vclib.Annotation(text, idx+1, rev, prev_rev, author, None)
-    self.last = item
+    self.blame_data.append(vclib.Annotation(text, line_no, rev,
+                                            prev_rev, author, None))
+
+  def __getitem__(self, idx):
+    if idx != self.idx + 1:
+      raise BlameSequencingError()
     self.idx = idx
-    return item
+    return self.blame_data[idx]
 
 
 class BlameSequencingError(Exception):
@@ -627,8 +615,7 @@ class SubversionRepository(vclib.Repository):
     history_revs.sort()
     revision = history_revs[-1]
     first_rev = history_revs[0]
-    source = BlameSource(self.svn_client_path, self.rootpath,
-                         path, rev, first_rev)
+    source = BlameSource(_rootpath2url(self.rootpath, path), rev, first_rev)
     return source, revision
     
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
