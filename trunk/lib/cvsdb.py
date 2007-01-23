@@ -337,6 +337,12 @@ class CheckinDatabase:
             temp = self.SQLQueryListString("people.who", query.author_list)
             condList.append(temp)
             
+        if len(query.comment_list):
+            tableList.append(("descs", "(checkins.descid=descs.id)"))
+            temp = self.SQLQueryListString("descs.description",
+                                           query.comment_list)
+            condList.append(temp)
+            
         if query.from_date:
             temp = "(checkins.ci_when>=\"%s\")" % (str(query.from_date))
             condList.append(temp)
@@ -661,6 +667,7 @@ class CheckinDatabaseQuery:
         self.directory_list = []
         self.file_list = []
         self.author_list = []
+        self.comment_list = []
 
         ## date range in DBI 2.0 timedate objects
         self.from_date = None
@@ -690,6 +697,9 @@ class CheckinDatabaseQuery:
 
     def SetAuthor(self, author, match = "exact"):
         self.author_list.append(QueryEntry(author, match))
+
+    def SetComment(self, comment, match = "exact"):
+        self.comment_list.append(QueryEntry(comment, match))
 
     def SetSortMethod(self, sort):
         self.sort = sort
