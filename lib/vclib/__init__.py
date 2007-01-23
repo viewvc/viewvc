@@ -189,8 +189,10 @@ class Annotation:
 
 class Error(Exception):
   pass
+
 class ReposNotFound(Error):
   pass
+
 class ItemNotFound(Error):
   def __init__(self, path):
     # use '/' rather than os.sep because this is for user consumption, and
@@ -198,12 +200,16 @@ class ItemNotFound(Error):
     if type(path) in (types.TupleType, types.ListType):
       path = string.join(path, '/')
     Error.__init__(self, path)
+
 class InvalidRevision(Error):
   def __init__(self, revision=None):
     if revision is None:
       Error.__init__(self, "Invalid revision")
     else:
       Error.__init__(self, "Invalid revision " + str(revision))
+
+class NonTextualFileContents(Error):
+  pass
 
 # ======================================================================
 # Implementation code used by multiple vclib modules

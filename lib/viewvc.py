@@ -2179,8 +2179,13 @@ def view_annotate(request):
   include_url = request.get_url(view_func=view_log, where='/WHERE/',
                                 pathtype=vclib.FILE, params={}, escape=1)
 
-  source, revision = blame.blame(request.repos, path,
-                                 diff_url, include_url, rev)
+  try:
+    source, revision = blame.blame(request.repos, path,
+                                   diff_url, include_url, rev)
+  except vclib.NonTextualFileContents:
+    raise debug.ViewVCException('Unable to perform line-based annotation on '
+                                'non-textual file contents',
+                                '400 Bad Request')
 
   data = common_template_data(request)
   data.update({
