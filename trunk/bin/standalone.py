@@ -54,7 +54,7 @@ import compat; compat.for_standalone()
 
 
 class Options:
-    port = 7467 # default TCP/IP port used for the server
+    port = 49152 # default TCP/IP port used for the server
     start_gui = 0 # No GUI unless requested.
     daemon = 0 # stay in the foreground by default
     repositories = {} # use default repositories specified in config
