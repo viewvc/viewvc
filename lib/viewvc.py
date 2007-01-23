@@ -671,6 +671,8 @@ _legal_params = {
   'file_match'    : _re_validate_alpha,
   'who'           : _validate_regex,
   'who_match'     : _re_validate_alpha,
+  'comment'       : _validate_regex,
+  'comment_match' : _re_validate_alpha,
   'querysort'     : _re_validate_alpha,
   'date'          : _re_validate_alpha,
   'hours'         : _re_validate_number,
@@ -3154,6 +3156,8 @@ def view_queryform(request):
   data['file_match'] = request.query_dict.get('file_match', 'exact')
   data['who'] = request.query_dict.get('who', '')
   data['who_match'] = request.query_dict.get('who_match', 'exact')
+  data['comment'] = request.query_dict.get('comment', '')
+  data['comment_match'] = request.query_dict.get('comment_match', 'exact')
   data['querysort'] = request.query_dict.get('querysort', 'date')
   data['date'] = request.query_dict.get('date', 'hours')
   data['hours'] = request.query_dict.get('hours', '2')
@@ -3208,7 +3212,8 @@ def english_query(request):
     ret.append(' <em>%s</em> ' % request.server.escape(dir))
   file = request.query_dict.get('file', '')
   if file:
-    if len(ret) != 1: ret.append('and ')
+    if len(ret) != 1:
+      ret.append('and ')
     ret.append('to file <em>%s</em> ' % request.server.escape(file))
   who = request.query_dict.get('who', '')
   branch = request.query_dict.get('branch', '')
@@ -3216,6 +3221,9 @@ def english_query(request):
     ret.append('on branch <em>%s</em> ' % request.server.escape(branch))
   else:
     ret.append('on all branches ')
+  comment = request.query_dict.get('comment', '')
+  if comment:
+    ret.append('with comment <i>%s</i> ' % htmlify(comment))
   if who:
     ret.append('by <em>%s</em> ' % request.server.escape(who))
   date = request.query_dict.get('date', 'hours')
@@ -3381,6 +3389,8 @@ def view_query(request):
   file_match = request.query_dict.get('file_match', 'exact')
   who = request.query_dict.get('who', '')
   who_match = request.query_dict.get('who_match', 'exact')
+  comment = request.query_dict.get('comment', '')
+  comment_match = request.query_dict.get('comment_match', 'exact')
   querysort = request.query_dict.get('querysort', 'date')
   date = request.query_dict.get('date', 'hours')
   hours = request.query_dict.get('hours', '2')
@@ -3400,6 +3410,7 @@ def view_query(request):
   if not match_types.has_key(branch_match): branch_match = 'exact'
   if not match_types.has_key(file_match): file_match = 'exact'
   if not match_types.has_key(who_match): who_match = 'exact'
+  if not match_types.has_key(comment_match): comment_match = 'exact'
   if not sort_types.has_key(querysort): querysort = 'date'
   if not date_types.has_key(date): date = 'hours'
   mindate = parse_date(mindate)
@@ -3438,6 +3449,8 @@ def view_query(request):
     query.SetFile(file, file_match)
   if who:
     query.SetAuthor(who, who_match)
+  if comment:
+    query.SetComment(comment, comment_match)
   query.SetSortMethod(querysort)
   if date == 'hours':
     query.SetFromDateHoursAgo(int(hours))

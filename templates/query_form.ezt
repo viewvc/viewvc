@@ -103,6 +103,32 @@ Browse Directory</a></p>
     </td>
   </tr>
   <tr>
+    <th style="text-align:right;vertical-align:top;">Comment:</th>
+    <td>
+      <input type="text" name="comment" value="[comment]" /><br />
+      <label for="comment_match_exact">
+        <input type="radio" name="comment_match" id="comment_match_exact"
+           value="exact" [is comment_match "exact"]checked=""[end] />
+        Exact match
+      </label>
+      <label for="comment_match_glob">
+        <input type="radio" name="comment_match" id="comment_match_glob"
+           value="glob" [is comment_match "glob"]checked=""[end] />
+        Glob pattern match
+      </label>
+      <label for="comment_match_regex">
+        <input type="radio" name="comment_match" id="comment_match_regex"
+           value="regex" [is comment_match "regex"]checked=""[end] />
+        Regex match
+      </label>
+      <label for="comment_match_notregex">
+        <input type="radio" name="comment_match" id="comment_match_notregex"
+           value="notregex" [is comment_match "notregex"]checked=""[end] />
+        Regex doesn't match
+      </label>
+    </td>
+  </tr>
+  <tr>
     <th style="text-align:right;vertical-align:top;">Sort By:</th>
     <td>
       <select name="querysort">
