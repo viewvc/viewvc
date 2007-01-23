@@ -9,6 +9,7 @@ Version 1.1.0 (released ??-???-????)
   * now interpret relative paths in "viewvc.conf" as relative to that file
   * add 'purge' subcommand to cvsdbadmin and svndbadmin (issue #271)
   * fix orphaned data bug in cvsdbadmin/svndbadmin rebuild (issue #271)
+  * add support for query by log message (issues #22, #121)
 
 Version 1.0.3 (released 13-Oct-2006)
 
