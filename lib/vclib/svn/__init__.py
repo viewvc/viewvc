@@ -484,8 +484,13 @@ class BlameSource:
     core.svn_config_ensure(None)
     ctx.config = core.svn_config_get_config(None)
     ctx.auth_baton = core.svn_auth_open([])
-    client.blame2(local_url, _rev2optrev(rev), _rev2optrev(1),
-                  _rev2optrev(rev), self._blame_cb, ctx)
+    try:
+      client.blame2(local_url, _rev2optrev(rev), _rev2optrev(1),
+                    _rev2optrev(rev), self._blame_cb, ctx)
+    except vclib.svn.core.SubversionException, e:
+      if e.apr_err == vclib.svn.core.SVN_ERR_CLIENT_IS_BINARY_FILE:
+        raise vclib.NonTextualFileContents
+      raise
 
   def _blame_cb(self, line_no, rev, author, date, text, pool):
     prev_rev = None
