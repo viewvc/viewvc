@@ -49,9 +49,13 @@ import vclib.bincvs
 DEBUG_FLAG = 0
 
 ## output functions
-def debug(text):
+def debug(text):        
     if DEBUG_FLAG:
-        print 'DEBUG(viewvc-loginfo):', text
+        if type(text) != (type([])):
+            text = [text]
+        for line in text:
+            line = line.rstrip('\n\r')
+            print 'DEBUG(viewvc-loginfo):', line
 
 def warning(text):
     print 'WARNING(viewvc-loginfo):', text
@@ -256,7 +260,8 @@ if __name__ == '__main__':
     ## parse arguments
 
     argc = len(sys.argv)
-    debug('Got %d arguments: %s' % (argc, str(sys.argv)))
+    debug('Got %d arguments:' % (argc))
+    debug(map(lambda x: '   ' + x, sys.argv))
     
     # if we have more than 3 arguments, we are likely using the
     # newer loginfo format introduced in CVS 1.12:
@@ -292,6 +297,9 @@ if __name__ == '__main__':
                 fun = HeuristicArgParse
         
         directory, files = fun(arg, repository)
+    
+    debug('Discarded from stdin:')
+    debug(map(lambda x: '   ' + x, sys.stdin.readlines())) # consume stdin
 
     repository = cvsdb.CleanRepository(repository)
 
