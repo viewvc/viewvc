@@ -3562,6 +3562,7 @@ def view_query(request):
   data.update({
     'sql': sql,
     'english_query': english_query(request),
+    'queryform_href': request.get_url(view_func=view_queryform, escape=1),
     'backout_href': backout_href,
     'plus_count': plus_count,
     'minus_count': minus_count,
