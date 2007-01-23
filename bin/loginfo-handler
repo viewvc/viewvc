@@ -70,12 +70,13 @@ def Cvs1Dot12ArgParse(args):
     """CVS 1.12 introduced a new loginfo format while provides the various
     pieces of interesting version information to the handler script as
     individual arguments instead of as a single string."""
+
     if args[1] == '- New directory':
         return None, None
     else:
         directory = args.pop(0)
         files = []
-        while len(args) > 3:
+        while len(args) >= 3:
             files.append(args[0:3])
             args = args[3:]
         return directory, files
