@@ -2783,7 +2783,7 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
                             uid=0, gid=0, typefrag=None, linkname='',
                             uname='viewvc', gname='viewvc',
                             devmajor=1, devminor=0, prefix=None,
-                            magic='ustar', version='', chksum=None):
+                            magic='ustar', version='00', chksum=None):
   if not mode:
     if name[-1:] == '/':
       mode = 0755
@@ -2798,6 +2798,12 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
 
   if not prefix:
     prefix = ''
+
+  # generate a GNU tar extension header for long names.
+  if len(name) >= 100:
+    generate_tarball_header(out, '././@LongLink', len(name), 0644, 0, 0, 0, 'L')
+    out.write(name)
+    out.write('\0' * (511 - ((len(name) + 511) % 512)))
 
   block1 = struct.pack('100s 8s 8s 8s 12s 12s',
     name,
