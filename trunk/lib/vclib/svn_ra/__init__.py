@@ -20,7 +20,7 @@ import re
 import tempfile
 import popen2
 import time
-from vclib.svn import Revision, ChangedPath, _datestr_to_date, _compare_paths, _cleanup_path
+from vclib.svn import Revision, ChangedPath, _datestr_to_date, _compare_paths, _cleanup_path, _rev2optrev
 from svn import core, delta, client, wc, ra
 
 
@@ -29,14 +29,6 @@ if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 3, 1):
   raise Exception, "Version requirement not met (needs 1.3.1 or better)"
 
   
-def _rev2optrev(rev):
-  assert type(rev) is int
-  rt = core.svn_opt_revision_t()
-  rt.kind = core.svn_opt_revision_number
-  rt.value.number = rev
-  return rt
-
-
 def date_from_rev(svnrepos, rev):
   return _datestr_to_date(ra.svn_ra_rev_prop(svnrepos.ra_session, rev,
                                              core.SVN_PROP_REVISION_DATE))
@@ -257,7 +249,7 @@ class SelfCleanFP:
 
 class SubversionRepository(vclib.Repository):
   def __init__(self, name, rootpath, utilities):
-    core.svn_config_ensure(None, pool)
+    core.svn_config_ensure(None)
 
     # Start populating our members
     self.name = name
@@ -265,6 +257,7 @@ class SubversionRepository(vclib.Repository):
     self.diff_cmd = utilities.diff or 'diff'
 
     # Setup the client context baton, complete with non-prompting authstuffs.
+    # TODO: svn_cmdline_setup_auth_baton() is mo' better (when available)
     ctx = client.svn_client_ctx_t()
     providers = []
     providers.append(client.svn_client_get_simple_provider())
