@@ -84,6 +84,14 @@ def _compare_paths(path1, path2):
   return cmp(char1, char2)
 
 
+def _rev2optrev(rev):
+  assert type(rev) is int
+  rt = core.svn_opt_revision_t()
+  rt.kind = core.svn_opt_revision_number
+  rt.value.number = rev
+  return rt
+
+
 def _datestr_to_date(datestr):
   return datestr and core.svn_time_from_cstring(datestr) / 1000000 or None
 
