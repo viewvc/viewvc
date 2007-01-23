@@ -5,6 +5,7 @@ Version 1.0.4 (released ??-???-????)
   * make viewvc-install able to run from an arbitrary location
   * update viewvc-install's output for readability
   * fix bug writing commits to non-MyISAM databases (issue #262)
+  * allow long paths in generated tarballs (issue #12)
 
 Version 1.0.3 (released 13-Oct-2006)
 
