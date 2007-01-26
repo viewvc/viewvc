@@ -787,7 +787,7 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
   else:
     isfresh = 0
 
-  ## require revalidation after 15 minutes ...
+  # require revalidation after the configured amount of time
   if cfg and cfg.options.http_expiration_time >= 0:
     expiration = compat.formatdate(time.time() +
                                    cfg.options.http_expiration_time)
