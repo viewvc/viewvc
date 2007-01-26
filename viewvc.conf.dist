@@ -58,6 +58,8 @@
 #       svn_roots (for Subversion)
 #       root_parents (for CVS or Subversion)
 #       default_root
+#       root_as_url_component
+#       rcs_dir
 #       mime_types_file
 #       the many options in the [utilities] section
 #   
