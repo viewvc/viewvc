@@ -88,8 +88,13 @@ def last_rev(svnrepos, path, peg_revision, limit_revision=None):
 def created_rev(svnrepos, full_name, rev):
   kind = ra.svn_ra_check_path(svnrepos.ra_session, full_name, rev)
   if kind == core.svn_node_dir:
-    dirents, fetched_rev, props = ra.svn_ra_get_dir(svnrepos.ra_session,
-                                                    full_name, rev)
+    try:
+      dirents, fetched_rev, props = ra.svn_ra_get_dir(svnrepos.ra_session,
+                                                      full_name, rev)
+    except ValueError:
+      # older versions of the bindings didn't handle ra.svn_ra_get_dir()
+      # correctly.
+      props = ra.svn_ra_get_dir(svnrepos.ra_session, full_name, rev)
     return int(props[core.SVN_PROP_ENTRY_COMMITTED_REV])
   return core.SVN_INVALID_REVNUM
 
