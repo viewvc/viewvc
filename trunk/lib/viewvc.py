@@ -1288,13 +1288,21 @@ class MarkupSourceHighlight(MarkupShell):
     basename, ext = os.path.splitext(filename)
     if ext:
       ext = ext[1:]
+
+    ### Ideally, we'd use '--output xhtml-css', which would let us supply
+    ### supply our own style definitions.  Unfortunately, this appears to
+    ### be broken in source-highlight 2.3, 2.4, and 2.5 (at least).  :-(
     highlight_cmd = [cfg.utilities.source_highlight or 'source-highlight',
                      '--out-format', 'xhtml', '--output', 'STDOUT',
                      '-s', ext, '--failsafe']
     if cfg.options.source_highlight_line_numbers:
-      highlight_cmd.extend(['--line-number-ref'])
+      highlight_cmd.extend(['--line-number-ref=l_'])
 
-    MarkupShell.__init__(self, fp, [highlight_cmd])
+    sed_cmd = [cfg.utilities.sed or 'sed',
+               '-n',
+               '/^<pre><tt>/,/<\\/tt><\\/pre>$/p']
+
+    MarkupShell.__init__(self, fp, [highlight_cmd, sed_cmd])
 
 def markup_stream_python(fp, cfg):
   if not cfg.options.use_py2html:
