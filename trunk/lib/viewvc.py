@@ -1285,32 +1285,16 @@ class MarkupHighlight(MarkupShell):
 
 class MarkupSourceHighlight(MarkupShell):
   def __init__(self, cfg, fp, filename):
+    basename, ext = os.path.splitext(filename)
+    if ext:
+      ext = ext[1:]
     highlight_cmd = [cfg.utilities.source_highlight or 'source-highlight',
                      '--out-format', 'xhtml', '--output', 'STDOUT',
-                     '--css', '', '--no-doc']
+                     '-s', ext, '--failsafe']
     if cfg.options.source_highlight_line_numbers:
       highlight_cmd.extend(['--line-number-ref'])
 
-    highlight_cmd.extend(['-'])
     MarkupShell.__init__(self, fp, [highlight_cmd])
-    self.filename = filename
-
-  def __call__(self, ctx):
-    # create a temporary file with the same name as the file in
-    # the repository so highlight can detect file type correctly
-    dir = compat.mkdtemp("", "viewvc")
-    try:
-      file = os.path.join(dir, self.filename)
-      try:
-        copy_stream(self.fp, open(file, 'wb'))
-        self.fp.close()
-        self.fp = None
-        self.cmds[0][-1] = file
-        MarkupShell.__call__(self, ctx)
-      finally:
-        os.unlink(file)
-    finally:
-      os.rmdir(dir)
 
 def markup_stream_python(fp, cfg):
   if not cfg.options.use_py2html:
