@@ -307,7 +307,7 @@ highlight =
 # GNU source-highlight, a syntax highlighting program (see 
 # options.use_source_highlight)
 source_highlight = 
-# source-highlight = /usr/bin/highlight
+# source-highlight = /usr/bin/source-highlight
 
 # Marc-Andrew Lemburg's py2html, Python colorizer (see options.use_py2html)
 py2html_dir = .
