@@ -47,7 +47,7 @@ Congratulations on getting this far. :-)
               (http://www.codento.com/people/mtr/genscript/)
           - Highlight 2.2.10 or later (we recommend 2.4.5 or later)
               (http://www.andre-simon.de/)
-          - GNU source-highlight 2.3 or later (we recommend 2.5 or later)
+          - GNU source-highlight 2.5 or later
               (http://www.gnu.org/software/src-highlite/)
       * CvsGraph 1.5.0 or later, graphical CVS revision tree generator
           (http://www.akhphd.au.dk/~bertho/cvsgraph/)
