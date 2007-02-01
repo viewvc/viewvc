@@ -304,6 +304,11 @@ enscript =
 highlight =
 # highlight = /usr/bin/highlight
 
+# GNU source-highlight, a syntax highlighting program (see 
+# options.use_source_highlight)
+source_highlight = 
+# source-highlight = /usr/bin/highlight
+
 # Marc-Andrew Lemburg's py2html, Python colorizer (see options.use_py2html)
 py2html_dir = .
 # py2html_dir = /usr/local/lib/python1.5/site-python
@@ -513,6 +518,13 @@ highlight_line_numbers = 1
 
 # convert tabs to ## spaces (use 0 for no conversion)
 highlight_convert_tabs = 2
+
+# should we use 'source-highlight' for syntax coloring?
+# NOTE: use_enscript and use_highlight have to be 0
+use_source_highlight = 1
+
+# should we add line numbers?
+source_highlight_line_numbers = 1
 
 # use php to colorize .php and .inc files?
 use_php = 0
