@@ -968,12 +968,16 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
 _re_rewrite_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)(://[-a-zA-Z0-9%.~:_/]+)((\?|\&amp;)([-a-zA-Z0-9%.~:_]+)=([-a-zA-Z0-9%.~:_])+)*(#([-a-zA-Z0-9%.~:_]+)?)?)')
 _re_rewrite_email = re.compile('([-a-zA-Z0-9_.\+]+)@(([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
 def htmlify(html):
+  if not html:
+    return html
   html = cgi.escape(html)
   html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
   html = re.sub(_re_rewrite_email, r'<a href="mailto:\1&#64;\2">\1&#64;\2</a>', html)
   return html
 
 def format_log(log, cfg):
+  if not log:
+    return log
   s = htmlify(log[:cfg.options.short_log_len])
   if len(log) > cfg.options.short_log_len:
     s = s + '...'
@@ -1359,7 +1363,7 @@ def make_time_string(date, cfg):
 
   """
   if date is None:
-    return 'Unknown date'
+    return None
   if cfg.options.use_localtime:
     localtime = time.localtime(date)
     return time.asctime(localtime) + ' ' + time.tzname[localtime[8]]
@@ -1373,7 +1377,7 @@ def make_rss_time_string(date, cfg):
 
   """
   if date is None:
-    return 'Unknown date'
+    return None
   return time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(date)) + ' UTC'
 
 def view_markup(request):
@@ -1623,7 +1627,7 @@ def view_directory(request):
     if file.date is not None:
       row.date = make_time_string(file.date, cfg)
       row.ago = html_time(request, file.date)
-    if cfg.options.show_logs and file.log is not None:
+    if cfg.options.show_logs:
       row.short_log = format_log(file.log, cfg)
       row.log = htmlify(file.log)
 
@@ -3315,8 +3319,6 @@ def build_commit(request, files, limited_files, dir_strip):
     commit_time = f.GetTime()
     if commit_time:
       commit_time = make_time_string(commit_time, request.cfg)
-    else:
-      commit_time = '&nbsp;'
 
     dirname = f.GetDirectory()
     filename = f.GetFile()
@@ -3516,7 +3518,8 @@ def view_query(request):
     dir_strip = _path_join(repos_dir)
     for commit in query.commit_list:
       # base modification time on the newest commit ...
-      if commit.GetTime() > mod_time: mod_time = commit.GetTime()
+      if commit.GetTime() > mod_time:
+        mod_time = commit.GetTime()
       # form plus/minus totals
       plus_count = plus_count + int(commit.GetPlusCount())
       minus_count = minus_count + int(commit.GetMinusCount())
