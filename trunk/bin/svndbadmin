@@ -142,13 +142,16 @@ class SvnRev:
         subpool = svn.core.svn_pool_create(pool)
 
         # revision properties ...
-        properties = svn.fs.revision_proplist(repo.fs, rev, pool)
-        self.author = str(properties.get(svn.core.SVN_PROP_REVISION_AUTHOR,''))
-        self.date = str(properties.get(svn.core.SVN_PROP_REVISION_DATE, ''))
-        self.log = str(properties.get(svn.core.SVN_PROP_REVISION_LOG, ''))
+        revprops = svn.fs.revision_proplist(repo.fs, rev, pool)
+        self.author = str(revprops.get(svn.core.SVN_PROP_REVISION_AUTHOR,''))
+        self.date = str(revprops.get(svn.core.SVN_PROP_REVISION_DATE, ''))
+        self.log = str(revprops.get(svn.core.SVN_PROP_REVISION_LOG, ''))
 
         # convert the date string to seconds since epoch ...
-        self.date = svn.core.secs_from_timestr(self.date, pool)
+        try:
+            self.date = svn.core.secs_from_timestr(self.date, pool)
+        except:
+            self.date = None
 
         # get a root for the current revisions
         fsroot = self._get_root_for_rev(rev)
