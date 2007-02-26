@@ -240,7 +240,7 @@ class CheckinDatabase:
             self.AddCommit(commit)
 
     def AddCommit(self, commit):
-        ci_when = dbi.DateTimeFromTicks(commit.GetTime())
+        ci_when = dbi.DateTimeFromTicks(commit.GetTime() or 0.0)
         ci_type = commit.GetTypeString()
         who_id = self.GetAuthorID(commit.GetAuthor())
         repository_id = self.GetRepositoryID(commit.GetRepository())
@@ -531,10 +531,15 @@ class Commit:
         return self.__revision
 
     def SetTime(self, gmt_time):
-        self.__gmt_time = float(gmt_time)
+        if gmt_time is None:
+            ### We're just going to assume that a datestamp of The Epoch
+            ### ain't real.
+            self.__gmt_time = 0.0
+        else:
+            self.__gmt_time = float(gmt_time)
 
     def GetTime(self):
-        return self.__gmt_time
+        return self.__gmt_time and self.__gmt_time or None
 
     def SetAuthor(self, author):
         self.__author = author
