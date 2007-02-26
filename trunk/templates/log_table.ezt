@@ -126,7 +126,8 @@
       [is roottype "svn"]
         [if-index entries last]Added[else]Modified[end]
       [end]
-      [entries.ago] ago<br /><em>[entries.date]</em>
+      [if-any entries.ago][entries.ago] ago<br />[end]
+      [if-any entries.date]<em>[entries.date]</em>[end]
       [is roottype "cvs"]
         [if-any entries.prev]
           [if-any entries.changed]

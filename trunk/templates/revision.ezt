@@ -21,11 +21,12 @@
   </tr>
   <tr align="left">
     <th>Author:</th>
-    <td>[author]</td>
+    <td>[if-any author][author][else]<em>(unknown author)</em>[end]</td>
   </tr>
   <tr align="left">
     <th>Date:</th>
-    <td>[date] <em>([ago] ago)</em></td>
+    <td>[if-any date][date][else]<em>(unknown date)</em>[end]
+        [if-any ago]<em>([ago] ago)</em>[end]</td>
   </tr>
   <tr align="left">
     <th>Log Message:</th>

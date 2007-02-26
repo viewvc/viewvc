@@ -48,7 +48,9 @@
     [if-index entries last]Added[else]Modified[end]
   [end]
 
-  <em>[entries.date]</em> ([entries.ago] ago) by <em>[entries.author]</em>
+  <em>[if-any entries.date][entries.date][else](unknown date)[end]</em>
+  [if-any entries.ago]([entries.ago] ago)[end] 
+  by <em>[if-any entries.author][entries.author][else](unknown author)[end]</em>
 
   [if-any entries.orig_path]
     <br />Original Path: <a href="[entries.orig_href]"><em>[entries.orig_path]</em></a>
