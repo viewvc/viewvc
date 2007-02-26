@@ -102,7 +102,10 @@ def _rootpath2url(rootpath, path):
 
 
 def _datestr_to_date(datestr):
-  return datestr and core.svn_time_from_cstring(datestr) / 1000000 or None
+  try:
+    return core.svn_time_from_cstring(datestr) / 1000000
+  except:
+    return None
 
   
 def _fs_rev_props(fsptr, rev):
