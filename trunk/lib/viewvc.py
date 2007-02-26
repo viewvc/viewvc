@@ -1148,9 +1148,7 @@ def retry_read(src, reqlen=CHUNK_SIZE):
         continue
     return chunk
   
-def copy_stream(src, dst=None, htmlize=0):
-  if dst is None:
-    dst = sys.stdout
+def copy_stream(src, dst, htmlize=0):
   while 1:
     chunk = retry_read(src)
     if not chunk:
@@ -2182,7 +2180,7 @@ def view_checkout(request):
   if not check_freshness(request, None, revision):
     request.server.header(request.query_dict.get('content-type')
                           or request.mime_type or 'text/plain')
-    copy_stream(fp)
+    copy_stream(fp, request.server.file())
   fp.close()
 
 def view_annotate(request):
@@ -2243,7 +2241,7 @@ def view_cvsgraph_image(request):
                    ("-c", cfg.path(cfg.options.cvsgraph_conf),
                     "-r", request.repos.rootpath,
                     rcsfile), 'rb', 0)
-  copy_stream(fp)
+  copy_stream(fp, request.server.file())
   fp.close()
 
 def view_cvsgraph(request):
@@ -2387,7 +2385,7 @@ def view_doc(request):
     request.server.header('text/css')
   else: # assume HTML:
     request.server.header()
-  copy_stream(fp)
+  copy_stream(fp, request.server.file())
   fp.close()
 
 def rcsdiff_date_reformat(date_str, cfg):
@@ -2722,8 +2720,8 @@ def view_patch(request):
                                                    sym1, sym2)
 
   request.server.header('text/plain')
-  sys.stdout.write(headers)
-  copy_stream(fp)
+  request.server.file().write(headers)
+  copy_stream(fp, request.server.file())
   fp.close()
 
 
@@ -3010,7 +3008,7 @@ def download_tarball(request):
     fp = open(debug.TARFILE_PATH, 'w')
   else:
     request.server.header('application/octet-stream')
-    sys.stdout.flush()
+    request.server.flush()
     fp = popen.pipe_cmds([(cfg.utilities.gzip or 'gzip', '-c', '-n')])
   
   ### FIXME: For Subversion repositories, we can get the real mtime of the
@@ -3708,7 +3706,7 @@ def view_error(server, cfg):
     if cfg and not server.headerSent:
       server.header(status=status)
       template = get_view_template(cfg, "error")
-      template.generate(sys.stdout, exc_dict)
+      template.generate(server.file(), exc_dict)
       handled = 1
   except:
     pass

@@ -415,7 +415,7 @@ def main(server, cfg, viewvc_link):
 
     # generate the page
     template = viewvc.get_view_template(cfg, "query")
-    template.generate(sys.stdout, data)
+    template.generate(server.file(), data)
 
   except SystemExit, e:
     pass
