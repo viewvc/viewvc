@@ -49,8 +49,8 @@ CLEAN_MODE = None
 FILE_INFO_LIST = [
     ("bin/cgi/viewvc.cgi",        "bin/cgi/viewvc.cgi",        0755, 1, 0, 0),
     ("bin/cgi/query.cgi",         "bin/cgi/query.cgi",         0755, 1, 0, 0),
-    ("bin/mod_python/viewvc.py",  "bin/mod_python/viewvc.py",  0755, 1, 0, 0),
-    ("bin/mod_python/query.py",   "bin/mod_python/query.py",   0755, 1, 0, 0),
+    ("bin/mod_python/viewvc_mp.py",  "bin/mod_python/viewvc_mp.py", 0755, 1, 0, 0),
+    ("bin/mod_python/query_mp.py",   "bin/mod_python/query_mp.py",  0755, 1, 0, 0),
     ("bin/mod_python/handler.py", "bin/mod_python/handler.py", 0755, 1, 0, 0),
     ("bin/mod_python/.htaccess",  "bin/mod_python/.htaccess",  0755, 0, 0, 0),
     ("bin/standalone.py",         "bin/standalone.py",         0755, 1, 0, 0),
