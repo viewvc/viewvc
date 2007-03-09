@@ -44,14 +44,13 @@ if LIBRARY_DIR:
 import sapi
 import viewvc
 import query
-reload(query) # need reload because initial import loads this stub file
 
 cfg = viewvc.load_config(CONF_PATHNAME)
 
 def index(req):
   server = sapi.ModPythonServer(req)
   try:
-    query.main(server, cfg, "viewvc.py")
+    query.main(server, cfg, "viewvc_mp.py")
   finally:
     server.close()
 

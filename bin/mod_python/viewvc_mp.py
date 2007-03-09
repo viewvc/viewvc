@@ -43,8 +43,6 @@ if LIBRARY_DIR:
 
 import sapi
 import viewvc
-reload(viewvc) # need reload because initial import loads this stub file
-
 
 def index(req):
   server = sapi.ModPythonServer(req)
