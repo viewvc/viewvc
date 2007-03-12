@@ -749,8 +749,11 @@ def _orig_path(request, rev_param='revision', path_param=None):
   path = request.query_dict.get(path_param, request.where)
   
   if rev is not None and hasattr(request.repos, '_getrev'):
-    pathrev = request.repos._getrev(request.pathrev)
-    rev = request.repos._getrev(rev)
+    try:
+      pathrev = request.repos._getrev(request.pathrev)
+      rev = request.repos._getrev(rev)
+    except vclib.InvalidRevision:
+      raise debug.ViewVCException('Invalid revision', '404 Not Found')
     return _path_parts(vclib.svn.get_location(request.repos, path, 
                                               pathrev, rev)), rev
   return _path_parts(path), rev
@@ -1075,8 +1078,11 @@ def common_template_data(request):
 
   rev = request.query_dict.get('annotate',
                                request.query_dict.get('revision'))
-  data['rev'] = hasattr(request.repos, '_getrev') \
-                and request.repos._getrev(rev) or rev
+  try:
+    data['rev'] = hasattr(request.repos, '_getrev') \
+                  and request.repos._getrev(rev) or rev
+  except vclib.InvalidRevision:
+    raise debug.ViewVCException('Invalid revision', '404 Not Found')
   if request.pathtype == vclib.DIR:
     data['pathtype'] = 'dir'
   elif request.pathtype == vclib.FILE:
@@ -1549,7 +1555,10 @@ def view_directory(request):
   # the directory listing (to take into account template changes or
   # revision property changes).
   if request.roottype == 'svn':
-    rev = request.repos._getrev(request.pathrev)
+    try:
+      rev = request.repos._getrev(request.pathrev)
+    except vclib.InvalidRevision:
+      raise debug.ViewVCException('Invalid revision', '404 Not Found')
     tree_rev = vclib.svn.created_rev(request.repos, request.where, rev)
     if check_freshness(request, None, str(tree_rev), weak=1):
       return
@@ -2679,8 +2688,12 @@ def setup_diff(request):
       sym2 = r2[idx+1:]
 
   if request.roottype == 'svn':
-    rev1 = str(request.repos._getrev(rev1))
-    rev2 = str(request.repos._getrev(rev2))
+    try:
+      rev1 = str(request.repos._getrev(rev1))
+      rev2 = str(request.repos._getrev(rev2))
+    except vclib.InvalidRevision:
+      raise debug.ViewVCException('Invalid revision(s) passed to diff',
+                                  '400 Bad Request')
     
   p1 = _get_diff_path_parts(request, 'p1', rev1, request.pathrev)
   p2 = _get_diff_path_parts(request, 'p2', rev2, request.pathrev)
@@ -3038,7 +3051,11 @@ def view_revision(request):
 
   data = common_template_data(request)
   query_dict = request.query_dict
-  rev = request.repos._getrev(query_dict.get('revision'))
+  try:
+    rev = request.repos._getrev(query_dict.get('revision'))
+  except vclib.InvalidRevision:
+    raise debug.ViewVCException('Invalid revision', '404 Not Found')
+    
   date, author, msg, changes = vclib.svn.get_revision_info(request.repos, rev)
   date_str = make_time_string(date, request.cfg)
 
