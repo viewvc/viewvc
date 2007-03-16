@@ -659,7 +659,7 @@ def _write_value(value, args, ctx):
             piece = args[idx]
           else:
             piece = '<undef>'
-          printer(ctx, piece)
+        printer(ctx, piece)
 
     # plain old value, write to output
     else:

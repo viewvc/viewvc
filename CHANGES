@@ -6,6 +6,7 @@ Version 1.0.4 (released ??-???-????)
   * update viewvc-install's output for readability
   * fix bug writing commits to non-MyISAM databases (issue #262)
   * allow long paths in generated tarballs (issue #12)
+  * fix bug interpreting EZT substitute patterns
 
 Version 1.0.3 (released 13-Oct-2006)
 
