@@ -86,6 +86,7 @@ th.caption {
   </ul>
   <li><a href="#compat">Backwards Compatibility</a></li>
   <ul>
+    <li><a href="#compat-viewrev">'<code>view=rev</code>' Parameter &rArr; '<code>view=revision</code>'</a></li>
     <li><a href="#compat-cvsroot">'<code>cvsroot</code>' Parameter &rArr; '<code>root</code>'</a></li>
     <li><a href="#compat-only_with_tag>'<code>only_with_tag</code>' Parameter &rArr; '<code>pathrev</code>'</a></li>
     <li><a href="#compat-oldcheckout">'<code>~checkout~</code>' Magic Path Prefix &rArr; '<code>*checkout*</code>'</a></li>
@@ -1232,7 +1233,7 @@ th.caption {
 </thead>
 <tbody>
   <tr>
-    <td><code>view=rev</code></td>
+    <td><code>view=revision</code></td>
     <td>required</td>
     <td><a href="#view-param"><code>view</code> parameter</a></td>
   </tr>
@@ -1376,6 +1377,12 @@ th.caption {
    exceptions, mentioned below), ViewVC will issue a single redirect
    to the transformed URL. Descriptions of the transformations
    follow.</p>
+
+<h3 id="compat-viewrev">'<code>view=rev</code>' Parameter &rArr; '<code>view=revision</code>'</h3>
+
+<p>URLs with a <code>view=rev</code> parameter will automatically be
+   redirected to URLs with a <code>view=revision</code> parameter
+   instead.</p>
 
 <h3 id="compat-cvsroot">'<code>cvsroot</code>' Parameter &rArr; '<code>root</code>'</h3>
 
