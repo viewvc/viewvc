@@ -1359,6 +1359,10 @@ def make_rss_time_string(date, cfg):
   return time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(date)) + ' UTC'
 
 def view_markup(request):
+  if not request.cfg.options.allow_markup:
+    raise debug.ViewVCException('Markup view is disabled',
+                                 '403 Forbidden')
+
   cfg = request.cfg
   path, rev = _orig_path(request)
   fp, revision = request.repos.openfile(path, rev)
