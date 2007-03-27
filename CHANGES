@@ -13,6 +13,10 @@ Version 1.1.0 (released ??-???-????)
   * fix bug parsing 'svn blame' output with too-long author names (issue #221)
   * fix default standalone.py port to be within private IANA range (issue #234)
   * add support for integration with GNU source-highlight (issue #285)
+  * add unified configury of allowed views
+  * add support for disabling the checkout view (now the default state)
+  * fix broken markup view disablement
+  * add support for ranges of revisions to svndbadmin (issue #224)
 
 Version 1.0.3 (released 13-Oct-2006)
 
