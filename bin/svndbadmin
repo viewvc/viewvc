@@ -27,8 +27,8 @@
 #
 # If you allow changes to revision properties in your repository, you
 # might also want to set up something similar in the
-# post-revprop-change hook using "rebuild" instead of "update" to keep
-# the checkin database consistent with the repository.
+# post-revprop-change hook using "update" with the --force option to
+# keep the checkin database consistent with the repository.
 #
 # -----------------------------------------------------------------------
 #
@@ -236,7 +236,7 @@ def handle_revision(db, command, repo, rev, verbose, force=0):
         else:
             print "skipped (already recorded)."
 
-def main(command, repository, rev=None, verbose=0, force=0):
+def main(command, repository, revs=[], verbose=0, force=0):
     cfg = viewvc.load_config(CONF_PATHNAME)
     db = cvsdb.ConnectDatabase(cfg)
 
@@ -246,27 +246,46 @@ def main(command, repository, rev=None, verbose=0, force=0):
         db.PurgeRepository(repository)
 
     repo = SvnRepo(repository)
-    if command == 'rebuild' or (command == 'update' and not rev):
+    if command == 'rebuild' or (command == 'update' and not revs):
         for rev in range(repo.rev_max+1):
             handle_revision(db, command, repo, rev, verbose)
     elif command == 'update':
-        handle_revision(db, command, repo, rev, verbose, force)
+        if revs[0] is None:
+            revs[0] = repo.rev_max
+        if revs[1] is None:
+            revs[1] = repo.rev_max
+        revs.sort()
+        for rev in range(revs[0], revs[1]+1):
+            handle_revision(db, command, repo, rev, verbose, force)
+
+def _rev2int(r):
+    if r == 'HEAD':
+        r = None
+    else:
+        r = int(r)
+        if r < 0:
+            raise ValueError, "invalid revision '%d'" % (r)
+    return r
 
 def usage():
     cmd = os.path.basename(sys.argv[0])
     sys.stderr.write("""
 Usage: 1. %s [-v] rebuild REPOSITORY
-       2. %s [-v] update REPOSITORY [REVISION] [--force]
+       2. %s [-v] update REPOSITORY [REV:[REV2]] [--force]
        3. %s [-v] purge REPOSITORY
 
 1.  Rebuild the commit database information for REPOSITORY across all
     revisions.
 
-2.  Update the commit database information for REPOSITORY across all revisions
-    or, optionally, only for the specified REVISION.  This is just like
-    rebuilding, except that, unless --force is specified, no commit information
-    will be stored for commits already present in the database.
-
+2.  Update the commit database information for REPOSITORY across all
+    revisions or, optionally, only for the specified revision REV (or
+    revision range REV:REV2).  This is just like rebuilding, except
+    that, unless --force is specified, no commit information will be
+    stored for commits already present in the database.  If a range is
+    specified, the revisions will be processed in ascending order, and
+    you may specify "HEAD" to indicate "the youngest revision currently
+    in the repository".
+    
 3.  Purge information specific to REPOSITORY from the database.
 
 Use the -v flag to cause this script to give progress information as it works.
@@ -303,6 +322,7 @@ if __name__ == '__main__':
         sys.stderr.write('ERROR: could not find repository %s\n' % repository)
         usage()
 
+    revs = []
     if len(sys.argv) > 3:
         if command == 'rebuild':
             sys.stderr.write('ERROR: rebuild no longer accepts a revision '
@@ -310,18 +330,22 @@ if __name__ == '__main__':
             usage()
         elif command != 'update':
             usage()
-        rev = sys.argv[3]
         try:
-            rev = int(rev)
+            revs = map(lambda x: _rev2int(x), sys.argv[3].split(':'))
+            if len(revs) > 2:
+                raise ValueError, "too many revisions in range"
+            if len(revs) == 1:
+                revs.append(revs[0])
         except ValueError:
-            sys.stderr.write('ERROR: revision "%s" is not numeric\n' % rev)
+            sys.stderr.write('ERROR: invalid revision specification "%s"\n' \
+                             % sys.argv[3])
             usage()
     else:
         rev = None
 
     try:
         repository = cvsdb.CleanRepository(os.path.abspath(repository))
-        main(command, repository, rev, verbose, force)
+        main(command, repository, revs, verbose, force)
     except KeyboardInterrupt:
         print
         print '** break **'
