@@ -19,10 +19,12 @@
     [end]
 
     Revision [is roottype "svn"]<a href="[entries.revision_href]"><strong>[entries.rev]</strong></a>[else]<strong>[entries.rev]</strong>[end] -
-    [is pathtype "file"]
-      (<a href="[entries.view_href]">view</a>)
-    [else]
-      <a href="[entries.view_href]">Directory Listing</a>
+    [if-any entries.view_href]
+      [is pathtype "file"]
+        (<a href="[entries.view_href]">view</a>)
+      [else]
+        <a href="[entries.view_href]">Directory Listing</a>
+      [end]
     [end]
     [if-any entries.download_href](<a href="[entries.download_href]">download</a>)[end]
     [if-any entries.download_text_href](<a href="[entries.download_text_href]">as text</a>)[end]

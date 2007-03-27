@@ -918,7 +918,7 @@ def default_view(mime_type, cfg):
   # very useful marked up. If the mime type is totally unknown (happens when
   # we encounter an unrecognized file extension) we also view it through
   # the markup page since that's better than sending it text/plain.
-  if (cfg.options.allow_markup and 
+  if ('markup' in cfg.options.allowed_views and 
       (is_viewable_image(mime_type) or is_text(mime_type))):
     return view_markup
   return view_checkout
@@ -930,28 +930,31 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
   mime_type = mime_type or request.mime_type
   if pathrev == -1: # cheesy default value, since we need to preserve None
     pathrev = request.pathrev
-  download_text_href = annotate_href = revision_href = None
-  view_href = request.get_url(view_func=view_markup,
-                              where=where,
-                              pathtype=vclib.FILE,
-                              params={'revision': rev,
-                                      'pathrev': pathrev},
-                              escape=1)
-  download_href = request.get_url(view_func=view_checkout,
-                                  where=where,
-                                  pathtype=vclib.FILE,
-                                  params={'revision': rev,
-                                          'pathrev': pathrev},
-                                  escape=1)
-  if not is_plain_text(mime_type):
-    download_text_href = request.get_url(view_func=view_checkout,
-                                         where=where,
-                                         pathtype=vclib.FILE,
-                                         params={'content-type': 'text/plain',
-                                                 'revision': rev,
-                                                 'pathrev': pathrev},
-                                         escape=1)
-  if request.cfg.options.allow_annotate:
+  view_href = download_href = download_text_href = annotate_href = revision_href = None
+
+  if 'markup' in request.cfg.options.allowed_views:
+    view_href = request.get_url(view_func=view_markup,
+                                where=where,
+                                pathtype=vclib.FILE,
+                                params={'revision': rev,
+                                        'pathrev': pathrev},
+                                escape=1)
+  if 'co' in request.cfg.options.allowed_views:
+    download_href = request.get_url(view_func=view_checkout,
+                                    where=where,
+                                    pathtype=vclib.FILE,
+                                    params={'revision': rev,
+                                            'pathrev': pathrev},
+                                    escape=1)
+    if not is_plain_text(mime_type):
+      download_text_href = request.get_url(view_func=view_checkout,
+                                           where=where,
+                                           pathtype=vclib.FILE,
+                                           params={'content-type': 'text/plain',
+                                                   'revision': rev,
+                                                   'pathrev': pathrev},
+                                           escape=1)
+  if 'annotate' in request.cfg.options.allowed_views:
     annotate_href = request.get_url(view_func=view_annotate,
                                     where=where,
                                     pathtype=vclib.FILE,
@@ -1390,6 +1393,10 @@ def make_rss_time_string(date, cfg):
   return time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(date)) + ' UTC'
 
 def view_markup(request):
+  if 'markup' not in request.cfg.options.allowed_views:
+    raise debug.ViewVCException('Markup view is disabled',
+                                 '403 Forbidden')
+    
   cfg = request.cfg
   path, rev = _orig_path(request)
   fp, revision = request.repos.openfile(path, rev)
@@ -1457,7 +1464,8 @@ def view_markup(request):
         })
 
   markup_fp = None
-  if is_viewable_image(request.mime_type):
+  if is_viewable_image(request.mime_type) \
+     and 'co' in cfg.options.allowed_views:
     fp.close()
     url = request.get_url(view_func=view_checkout, params={'revision': rev},
                           escape=1)
@@ -1791,7 +1799,7 @@ def view_directory(request):
     data['dir_paging_action'], data['dir_paging_hidden_values'] = \
       request.get_form(params={'dir_pagestart': None})
 
-  if cfg.options.allow_tar:
+  if 'tar' in cfg.options.allowed_views:
     data['tarball_href'] = request.get_url(view_func=download_tarball, 
                                            params={},
                                            escape=1)
@@ -2189,6 +2197,10 @@ def view_log(request):
   generate_page(request, "log", data)
 
 def view_checkout(request):
+  if 'co' not in request.cfg.options.allowed_views:
+    raise debug.ViewVCException('Checkout view is disabled',
+                                 '403 Forbidden')
+  
   path, rev = _orig_path(request)
   fp, revision = request.repos.openfile(path, rev)
 
@@ -2200,7 +2212,7 @@ def view_checkout(request):
   fp.close()
 
 def view_annotate(request):
-  if not request.cfg.options.allow_annotate:
+  if 'annotate' not in request.cfg.options.allowed_views:
     raise debug.ViewVCException('Annotation view is disabled',
                                  '403 Forbidden')
 
@@ -2836,7 +2848,7 @@ def view_diff(request):
   data['patch_href'] = request.get_url(view_func=view_patch,
                                        params=orig_params,
                                        escape=1)
-  if request.cfg.options.allow_annotate:
+  if 'annotate' in request.cfg.options.allowed_views:
     data['annotate_href'] = request.get_url(view_func=view_annotate,
                                             where=path_right,
                                             pathtype=vclib.FILE,
@@ -3020,7 +3032,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
 def download_tarball(request):
   cfg = request.cfg
   
-  if not request.cfg.options.allow_tar:
+  if 'tar' not in request.cfg.options.allowed_views:
     raise debug.ViewVCException('Tarball generation is disabled',
                                  '403 Forbidden')
 
@@ -3120,11 +3132,13 @@ def view_revision(request):
         link_rev = str(rev)
         link_where = change.filename
 
-      change.view_href = request.get_url(view_func=view_func,
-                                         where=link_where,
-                                         pathtype=change.pathtype,
-                                         params={'pathrev' : link_rev},
-                                         escape=1)
+      if view_func != view_markup \
+         or 'markup' in request.cfg.options.allowed_views:
+        change.view_href = request.get_url(view_func=view_func,
+                                           where=link_where,
+                                           pathtype=change.pathtype,
+                                           params={'pathrev' : link_rev},
+                                           escape=1)
       change.log_href = request.get_url(view_func=view_log,
                                         where=link_where,
                                         pathtype=change.pathtype,
@@ -3358,20 +3372,24 @@ def build_commit(request, files, limited_files, dir_strip):
                                where=filename, pathtype=vclib.FILE,
                                params=params,
                                escape=1)
-    view_href = request.get_url(view_func=view_markup,
-                               where=filename, pathtype=vclib.FILE,
-                               params={'revision': f.GetRevision() },
-                               escape=1)
-    download_href = request.get_url(view_func=view_checkout,
-                                    where=filename, pathtype=vclib.FILE,
-                                    params={'revision': f.GetRevision() },
-                                    escape=1)
     diff_href = request.get_url(view_func=view_diff,
                                 where=filename, pathtype=vclib.FILE,
                                 params={'r1': prev_rev(f.GetRevision()),
                                         'r2': f.GetRevision(),
                                         'diff_format': None},
                                 escape=1)
+
+    view_href = download_href = None
+    if 'markup' in request.cfg.options.allowed_views:
+      view_href = request.get_url(view_func=view_markup,
+                                  where=filename, pathtype=vclib.FILE,
+                                  params={'revision': f.GetRevision() },
+                                  escape=1)
+    if 'co' in request.cfg.options.allowed_views:
+      download_href = request.get_url(view_func=view_checkout,
+                                      where=filename, pathtype=vclib.FILE,
+                                      params={'revision': f.GetRevision() },
+                                      escape=1)
 
     # skip files in forbidden or hidden modules
     dir_parts = filter(None, string.split(dirname, '/'))
