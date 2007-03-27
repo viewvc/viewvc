@@ -69,21 +69,18 @@ import viewvc
 
 class SvnRepo:
     """Class used to manage a connection to a SVN repository."""
-    def __init__(self, path, pool):
-        self.scratch_pool = svn.core.svn_pool_create(pool)
+    def __init__(self, path):
         self.path = path
-        self.repo = svn.repos.svn_repos_open(path, pool)
+        self.repo = svn.repos.svn_repos_open(path)
         self.fs = svn.repos.svn_repos_fs(self.repo)
-        # youngest revision of base of file system is highest revision number
-        self.rev_max = svn.fs.youngest_rev(self.fs, pool)
+        self.rev_max = svn.fs.youngest_rev(self.fs)
     def __getitem__(self, rev):
         if rev is None:
             rev = self.rev_max
         elif rev < 0:
             rev = rev + self.rev_max + 1
         assert 0 <= rev <= self.rev_max
-        rev = SvnRev(self, rev, self.scratch_pool)
-        svn.core.svn_pool_clear(self.scratch_pool)
+        rev = SvnRev(self, rev)
         return rev
 
 _re_diff_change_command = re.compile('(\d+)(?:,(\d+))?([acd])(\d+)(?:,(\d+))?')
@@ -133,23 +130,20 @@ def _get_diff_counts(diff_fp):
 class SvnRev:
     """Class used to hold information about a particular revision of
     the repository."""
-    def __init__(self, repo, rev, pool):
+    def __init__(self, repo, rev):
         self.repo = repo
         self.rev = rev
-        self.pool = pool
         self.rev_roots = {} # cache of revision roots
 
-        subpool = svn.core.svn_pool_create(pool)
-
         # revision properties ...
-        revprops = svn.fs.revision_proplist(repo.fs, rev, pool)
+        revprops = svn.fs.revision_proplist(repo.fs, rev)
         self.author = str(revprops.get(svn.core.SVN_PROP_REVISION_AUTHOR,''))
         self.date = str(revprops.get(svn.core.SVN_PROP_REVISION_DATE, ''))
         self.log = str(revprops.get(svn.core.SVN_PROP_REVISION_LOG, ''))
 
         # convert the date string to seconds since epoch ...
         try:
-            self.date = svn.core.secs_from_timestr(self.date, pool)
+            self.date = svn.core.secs_from_timestr(self.date)
         except:
             self.date = None
 
@@ -157,18 +151,15 @@ class SvnRev:
         fsroot = self._get_root_for_rev(rev)
         
         # find changes in the revision
-        editor = svn.repos.RevisionChangeCollector(repo.fs, rev, pool)
-        e_ptr, e_baton = svn.delta.make_editor(editor, pool)
-        svn.repos.svn_repos_replay(fsroot, e_ptr, e_baton, pool)
+        editor = svn.repos.RevisionChangeCollector(repo.fs, rev)
+        e_ptr, e_baton = svn.delta.make_editor(editor)
+        svn.repos.svn_repos_replay(fsroot, e_ptr, e_baton)
 
         self.changes = []
         for path, change in editor.changes.items():
-
-            # clear the iteration subpool
-            svn.core.svn_pool_clear(subpool)
-
             # skip non-file changes
-            if change.item_kind != svn.core.svn_node_file: continue
+            if change.item_kind != svn.core.svn_node_file:
+                continue
 
             # deal with the change types we handle
             base_root = None
@@ -185,8 +176,7 @@ class SvnRev:
             diffobj = svn.fs.FileDiff(base_root and base_root or None,
                                       base_root and change.base_path or None,
                                       change.path and fsroot or None,
-                                      change.path and change.path or None,
-                                      subpool, [])
+                                      change.path and change.path or None)
             diff_fp = diffobj.get_pipe()
             plus, minus = _get_diff_counts(diff_fp)
             self.changes.append((path, action, plus, minus))
@@ -195,8 +185,7 @@ class SvnRev:
         """Fetch a revision root from a cache of such, or a fresh root
         (which is then cached for later use."""
         if not self.rev_roots.has_key(rev):
-            self.rev_roots[rev] = svn.fs.revision_root(self.repo.fs, rev,
-                                                       self.pool)
+            self.rev_roots[rev] = svn.fs.revision_root(self.repo.fs, rev)
         return self.rev_roots[rev]
 
 
@@ -247,7 +236,7 @@ def handle_revision(db, command, repo, rev, verbose, force=0):
         else:
             print "skipped (already recorded)."
 
-def main(pool, command, repository, rev=None, verbose=0, force=0):
+def main(command, repository, rev=None, verbose=0, force=0):
     cfg = viewvc.load_config(CONF_PATHNAME)
     db = cvsdb.ConnectDatabase(cfg)
 
@@ -256,7 +245,7 @@ def main(pool, command, repository, rev=None, verbose=0, force=0):
             print "Purging commit info for repository root `%s'" % repository
         db.PurgeRepository(repository)
 
-    repo = SvnRepo(repository, pool)
+    repo = SvnRepo(repository)
     if command == 'rebuild' or (command == 'update' and not rev):
         for rev in range(repo.rev_max+1):
             handle_revision(db, command, repo, rev, verbose)
@@ -332,7 +321,7 @@ if __name__ == '__main__':
 
     try:
         repository = cvsdb.CleanRepository(os.path.abspath(repository))
-        svn.core.run_app(main, command, repository, rev, verbose, force)
+        main(command, repository, rev, verbose, force)
     except KeyboardInterrupt:
         print
         print '** break **'
