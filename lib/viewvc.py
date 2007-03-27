@@ -163,7 +163,10 @@ class Request:
       # if we're here, then the parameter is okay
       self.query_dict[name] = values[0]
 
-    # handle view parameter
+    # handle view parameter, redirecting old view=rev URLs to view=revision
+    if self.query_dict.get('view') == 'rev':
+      self.query_dict['view'] = 'revision'
+      needs_redirect = 1
     self.view_func = _views.get(self.query_dict.get('view', None), 
                                 self.view_func)
 
@@ -3631,7 +3634,7 @@ _views = {
   'patch':     view_patch,
   'query':     view_query,
   'queryform': view_queryform,
-  'rev':       view_revision,
+  'revision':  view_revision,
   'roots':     view_roots,
   'tar':       download_tarball,
   'redirect_pathrev': redirect_pathrev,
