@@ -347,6 +347,18 @@ sed =
 # any old ViewCVS URL which doesn't have an explicit "root" parameter.
 root_as_url_component = 0
 
+# checkout_magic: Use checkout links with magic /*checkout*/ prefixes so
+# checked out HTML pages can have working links to other repository files
+# Note: This option is DEPRECATED and should not be used in new ViewVC
+# installations. Setting "default_file_view = co" achieves the same effect
+checkout_magic = 0
+
+# allowed_views: List the ViewVC views which are enabled.  Views not
+# in this comma-delited list will not be served (or, will return an
+# error on attempted access).
+# Possible values: "tar", "annotate", "co", "markup"
+allowed_views = markup, annotate
+
 # default_file_view: "log" or "co"
 # Controls whether the default view for file URLs is a checkout view or
 # a log view. "log" is the default for backwards compatibility with old
@@ -355,13 +367,9 @@ root_as_url_component = 0
 # to other repository files
 # Note: Changing this option may cause old ViewCVS URLs that referred
 # to log pages to load checkout pages instead.
+# Also note: If you choose the "co" view, be sure to enable it (via
+# the allowed_views option)
 default_file_view = log
-
-# checkout_magic: Use checkout links with magic /*checkout*/ prefixes so
-# checked out HTML pages can have working links to other repository files
-# Note: This option is DEPRECATED and should not be used in new ViewVC
-# installations. Setting "default_file_view = co" achieves the same effect
-checkout_magic = 0
 
 # http_expiration_time: Expiration time (in seconds) for cacheable
 # pages served by ViewVC.  Note that in most cases, a cache aware
@@ -439,12 +447,6 @@ hr_ignore_keyword_subst = 1
 # this feature is experimental and currently requires python 2.4
 # 
 hr_intraline = 0
-
-# allow annotation of files.
-allow_annotate = 1
-
-# allow pretty-printed version of files
-allow_markup = 1
 
 # allow compression with gzip of output if the Browser accepts it
 # (HTTP_ACCEPT_ENCODING=gzip)
@@ -528,12 +530,6 @@ source_highlight_line_numbers = 1
 
 # use php to colorize .php and .inc files?
 use_php = 0
-
-#
-# ViewVC can generate tarball from a repository on the fly.
-#
-allow_tar = 0
-# allow_tar = 1
 
 #
 # Use CvsGraph. See http://www.akhphd.au.dk/~bertho/cvsgraph/ for

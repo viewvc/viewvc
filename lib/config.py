@@ -41,7 +41,7 @@ class Config:
   _sections = ('general', 'utilities', 'options', 'cvsdb', 'templates')
   _force_multi_value = ('cvs_roots', 'forbidden',
                         'svn_roots', 'languages', 'kv_files',
-                        'root_parents')
+                        'root_parents', 'allowed_views')
 
   def __init__(self):
     for section in self._sections:
@@ -195,6 +195,7 @@ class Config:
     self.options.root_as_url_component = 0
     self.options.default_file_view = "log"
     self.options.checkout_magic = 0
+    self.options.allowed_views = ['markup', 'annotate']
     self.options.sort_by = 'file'
     self.options.sort_group_dirs = 1
     self.options.hide_attic = 1
@@ -206,8 +207,6 @@ class Config:
     self.options.hr_ignore_white = 1
     self.options.hr_ignore_keyword_subst = 1
     self.options.hr_intraline = 0
-    self.options.allow_annotate = 1
-    self.options.allow_markup = 1
     self.options.allow_compress = 1
     self.options.template_dir = "templates"
     self.options.docroot = None
@@ -224,7 +223,6 @@ class Config:
     self.options.source_highlight_line_numbers = 1
     self.options.use_py2html = 0
     self.options.use_php = 0
-    self.options.allow_tar = 0
     self.options.use_cvsgraph = 0
     self.options.cvsgraph_conf = "cvsgraph.conf"
     self.options.use_re_search = 0
