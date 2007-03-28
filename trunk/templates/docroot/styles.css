@@ -120,6 +120,7 @@ form { margin: 0; }
   text-decoration: none;
   font-weight: normal;
   font-style: normal;
+  text-align: right;
 }
 
 /*** Diff Styles ***/
@@ -199,12 +200,24 @@ table.vc_idiff tbody th {
 }
 
 /*** Annotate Styles ***/
-.vc_blame_line, .vc_blame_author, .vc_blame_rev {
-  font-family: monospace;
-  font-size: smaller;
+#vc_blame td {
+  border-right-width: 1px;
+  border-right-style: solid;
+  border-right-color: #505050;
+  text-decoration: none;
+  font-weight: normal;
+  font-style: normal;
+}
+.vc_blame_line {
+  background-color: #eeeeee;
+  color: #505050;
+  padding: 1px 1px;
+}
+.vc_blame_author, .vc_blame_rev, .vc_blame_line {
   text-align: right;
-  white-space: nowrap;
-  padding-right: 1em;
+}
+.vc_blame_rev, .vc_blame_line {
+  padding: 1px 5px;
 }
 .vc_blame_text {
   font-family: monospace;
