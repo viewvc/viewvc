@@ -3503,7 +3503,7 @@ def view_query(request):
   if dir:
     for subdir in string.split(dir, ','):
       path = (_path_join(repos_dir + request.path_parts
-                         + [ string.strip(subdir) ]))
+                         + _path_parts(string.strip(subdir))))
       query.SetDirectory(path, 'exact')
       query.SetDirectory('%s/%%' % cvsdb.EscapeLike(path), 'like')
   else:
