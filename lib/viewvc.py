@@ -1426,15 +1426,6 @@ def view_markup(request):
     'orig_href' : None,
     })
 
-  if path != request.path_parts:
-    orig_path = _path_join(path)
-    data['orig_path'] = orig_path
-    data['orig_href'] = request.get_url(view_func=view_log,
-                                        where=orig_path,
-                                        pathtype=vclib.FILE,
-                                        params={'pathrev': revision},
-                                        escape=1)
-
   if cfg.options.show_log_in_markup:
     options = {'svn_latest_log': 1}
     revs = request.repos.itemlog(path, revision, options)
@@ -1449,7 +1440,7 @@ def view_markup(request):
 
     if entry.date is not None:
       data['ago'] = html_time(request, entry.date, 1)
-      
+
     if request.roottype == 'cvs':
       branch = entry.branch_number
       prev = entry.prev or entry.parent
@@ -1462,6 +1453,15 @@ def view_markup(request):
         'branch_points': string.join(map(lambda x: x.name,
                                          entry.branch_points), ', ')
         })
+
+  if path != request.path_parts:
+    orig_path = _path_join(path)
+    data['orig_path'] = orig_path
+    data['orig_href'] = request.get_url(view_func=view_log,
+                                        where=orig_path,
+                                        pathtype=vclib.FILE,
+                                        params={'pathrev': revision},
+                                        escape=1)
 
   markup_fp = None
   if is_viewable_image(request.mime_type) \
@@ -2216,6 +2216,7 @@ def view_annotate(request):
     raise debug.ViewVCException('Annotation view is disabled',
                                  '403 Forbidden')
 
+  cfg = request.cfg
   path, rev = _orig_path(request, 'annotate')
 
   ### be nice to hook this into the template...
@@ -2238,10 +2239,51 @@ def view_annotate(request):
 
   data = common_template_data(request)
   data.update({
+    'mime_type' : request.mime_type,
+    'log' : None,
+    'date' : None,
+    'ago' : None,
+    'author' : None,
+    'branches' : None,
+    'tags' : None,
+    'branch_points' : None,
+    'changed' : None,
+    'size' : None,
+    'state' : None,
+    'vendor_branch' : None,
+    'prev' : None,
     'lines': source,
     'orig_path': None,
     'orig_href': None,
     })
+
+  if cfg.options.show_log_in_markup:
+    options = {'svn_latest_log': 1}
+    revs = request.repos.itemlog(path, revision, options)
+    entry = revs[-1]
+    data.update({
+        'date' : make_time_string(entry.date, cfg),
+        'author' : entry.author,
+        'changed' : entry.changed,
+        'log' : htmlify(entry.log),
+        'size' : entry.size,
+        })
+
+    if entry.date is not None:
+      data['ago'] = html_time(request, entry.date, 1)
+      
+    if request.roottype == 'cvs':
+      branch = entry.branch_number
+      prev = entry.prev or entry.parent
+      data.update({
+        'state' : entry.dead and 'dead',
+        'prev' : prev and prev.string,
+        'vendor_branch' : ezt.boolean(branch and branch[2] % 2 == 1),
+        'branches' : string.join(map(lambda x: x.name, entry.branches), ', '),
+        'tags' : string.join(map(lambda x: x.name, entry.tags), ', '),
+        'branch_points': string.join(map(lambda x: x.name,
+                                         entry.branch_points), ', ')
+        })
 
   if path != request.path_parts:
     orig_path = _path_join(path)
