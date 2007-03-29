@@ -96,15 +96,9 @@ Visitors viewing those versioned controlled documents get the
 malicious code, too, which might not be what the original author
 intended.
 
-If you wish to disable ViewVC's "checkout" view which implements this
-feature, you can do so by editing lib/viewvc.py, and modifying the
-function view_checkout() like so, adding the lines indicated:
-
-      def view_checkout(request):
->>      raise debug.ViewVCException('Checkout view is disabled',
->>                                  '403 Forbidden')
-        path, rev = _orig_path(request)
-        fp, revision = request.repos.openfile(path, rev)
+For this reason, ViewVC's "checkout" view is disabled by default.  If
+you wish to enable it, simply add "co" to the list of views enabled in
+the allowed_views configuration option.
 
 
 INSTALLING VIEWVC
