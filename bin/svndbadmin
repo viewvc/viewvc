@@ -143,7 +143,7 @@ class SvnRev:
 
         # convert the date string to seconds since epoch ...
         try:
-            self.date = svn.core.secs_from_timestr(self.date)
+            self.date = svn.core.svn_time_from_cstring(self.date) / 1000000
         except:
             self.date = None
 
