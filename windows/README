@@ -14,7 +14,7 @@ ViewVC requires the Python interpreter which you can download from
 
 and the Python for Windows Extensions which are at
 
-  http://starship.python.net/crew/mhammond/win32/
+  http://sourceforge.net/projects/pywin32/
 
 For CVS support, ViewVC also requires that the CVSNT client (cvs.exe) OR the
 RCS tools (rlog.exe, rcsdiff.exe, and co.exe) be installed on your computer.
@@ -404,7 +404,7 @@ KNOWN ISSUES
   page would always return nothing (leaving the screen blank). There were a
   number of workarounds for this problem, but the fix is to download and
   install the latest python win32 extensions from
-  http://starship.python.net/crew/mhammond/win32/Downloads.html
+  http://sourceforge.net/projects/pywin32/
 
 - ViewVC can't convert timestamps on diff pages to local time when it is used
   with CVSNT. This is caused by a CVSNT bug, which is described at
