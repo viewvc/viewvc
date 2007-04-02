@@ -15,8 +15,18 @@
 # -----------------------------------------------------------------------
 
 import os, sys, traceback, string, thread
+try:
+  import win32api
+except ImportError, e:
+  raise ImportError, str(e) + """
+
+Did you install the Python for Windows Extensions?
+
+   http://sourceforge.net/projects/pywin32/
+"""
+
 import win32process, win32pipe, win32con
-import win32event, win32file, win32api, winerror
+import win32event, win32file, winerror
 import pywintypes, msvcrt
 
 # Buffer size for spooling
