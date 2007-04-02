@@ -242,7 +242,7 @@ LEGEND
     if not os.path.exists(dst_parent):
         try:
             compat.makedirs(dst_parent)
-            print "   created   %s/" % (dst_parent)
+            print "   created   %s%s" % (dst_parent, os.sep)
         except os.error, e:
             if e.errno == 17: # EEXIST: file exists
                 return
