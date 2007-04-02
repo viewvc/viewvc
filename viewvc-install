@@ -244,9 +244,9 @@ LEGEND
             compat.makedirs(dst_parent)
             print "   created   %s/" % (dst_parent)
         except os.error, e:
-            if e[0] == 17: # EEXIST: file exists
+            if e.errno == 17: # EEXIST: file exists
                 return
-            if e[0] == 13: # EACCES: permission denied
+            if e.errno == 13: # EACCES: permission denied
                 error("You do not have permission to create directory %s" \
                       % (dst_parent))
             error("Unknown error creating directory %s" \
@@ -259,7 +259,7 @@ LEGEND
         print "   %s %s" \
               % (exists and 'replaced ' or 'installed', dst_path)
     except IOError, e:
-        if e[0] == 13:
+        if e.errno == 13:
             # EACCES: permission denied
             error("You do not have permission to write file %s" % (dst_path))
         error("Unknown error writing file %s" % (dst_path, IOError, e))
