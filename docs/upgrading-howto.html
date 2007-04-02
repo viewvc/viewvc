@@ -79,6 +79,36 @@ td {
 <p>This section discusses how to upgrade ViewCVS 1.0.x to ViewVC 1.1.x.</p>
 
 <div class="h3">
+<h3>root_as_url_component Now Enabled by Default</h3>
+    
+<p>In ViewVC 1.1, the <code>root_as_url_component</code> configuration
+   option is now enabled by default.  This option causes ViewVC URLs
+   to be of the form
+   <code>&hellip;/root-name/path-in-root[?&hellip;]</code> instead of
+   <code>&hellip;/path-in-root/?root=root-name[&amp;&hellip;]</code>,
+   and makes for a much more intuitive user experience,
+   navigation-wise, when ViewVC is serving up multiple version control
+   repositories.  When in this mode, ViewVC will automatically perform
+   the obvious redirection for URLs which have a <code>root=</code>
+   CGI parameter.</p>
+
+<p>Unfortunately, there's a catch.  Older URLs for the default root
+   (specified by the <code>default_root</code> configuration option)
+   were optimized to <em>not</em> include the <code>root=</code> CGI
+   parameter.  This means they look unfortunately similar to the newer
+   root-in-the-path URL format, and ViewVC will not attempt to
+   redirect them.  But ViewVC won't be able to handle them, either.
+   So, old-style default-root URLs, when aimed at a ViewVC for which
+   the <code>root_as_url_component</code> option has been subsequently
+   enabled, will result in an error.  If you need to preserve the
+   functionality of those old URLs, you'll need to either disable
+   <code>root_as_url_component</code>, or use some other mechanism
+   (like server URL rewriting) to morph them into compliance with the
+   new URL format.</p>
+
+</div>
+
+<div class="h3">
 <h3>Mod_Python Stubs</h3>
     
 <p>The Mod_Python stub scripts haved been renamed from
@@ -93,7 +123,7 @@ td {
 <div class="h3">
 <h3>Configuration Options</h3>
 
-<p>In ViewVC 1.1.0, a new "utilities" section was added to the
+<p>In ViewVC 1.1, a new "utilities" section was added to the
    viewvc.conf file.  All the options used for configuring the
    locations of various helper applications that ViewVC uses which
    were previously scattered throughout the configuration file are now
