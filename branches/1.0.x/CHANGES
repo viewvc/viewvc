@@ -8,6 +8,7 @@ Version 1.0.4 (released ??-???-????)
   * allow long paths in generated tarballs (issue #12)
   * fix bug interpreting EZT substitute patterns
   * fix broken markup view disablement
+  * fix broken directory view link generation in directory log view
 
 Version 1.0.3 (released 13-Oct-2006)
 
