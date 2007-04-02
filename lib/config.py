@@ -192,7 +192,7 @@ class Config:
     self.cvsdb.row_limit = 1000
     self.cvsdb.rss_row_limit = 100
 
-    self.options.root_as_url_component = 0
+    self.options.root_as_url_component = 1
     self.options.default_file_view = "log"
     self.options.checkout_magic = 0
     self.options.allowed_views = ['markup', 'annotate']
