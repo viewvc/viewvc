@@ -120,8 +120,13 @@ cvs_roots = cvs: /home/cvsroot
 #root_parents = /home/svn-repositories : svn,
 #               /home/cvs-repositories : cvs
 
-# this is the name of the default root
-# (ignored when root_as_url_component is turned on)
+# This is the name of the default root.  Valid names include those
+# explicitly listed in the cvs_roots and svn_roots configuration
+# options, as well as those implicitly indicated by virtue of being
+# the basenames of repositories found in the root_parents option
+# locations.
+#
+# Note: This setting is ignored when root_as_url_component is enabled.
 default_root = cvs
 
 # use rcsparse python module to retrieve cvs repository information instead
@@ -345,7 +350,7 @@ sed =
 # ViewVC URLs.
 # Note: Enabling this option will break backwards compatibility with
 # any old ViewCVS URL which doesn't have an explicit "root" parameter.
-root_as_url_component = 0
+root_as_url_component = 1
 
 # checkout_magic: Use checkout links with magic /*checkout*/ prefixes so
 # checked out HTML pages can have working links to other repository files
