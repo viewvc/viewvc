@@ -2100,9 +2100,8 @@ def view_log(request):
         'tag_prefer_markup': prefer_markup,
         })
   else:
-    if not request.pathrev:
-      data['view_href'] = request.get_url(view_func=view_directory, 
-                                          params={}, escape=1)
+    data['view_href'] = request.get_url(view_func=view_directory, 
+                                        params={}, escape=1)
 
   taginfo = options.get('cvs_tags', {})
   tagitems = taginfo.items()
