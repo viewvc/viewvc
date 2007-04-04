@@ -1835,7 +1835,7 @@ def redirect_pathrev(request):
   try:
     new_pathrev = int(new_pathrev)
   except ValueError:
-    pass
+    new_pathrev = youngest
   except TypeError:
     pass
   else:
