@@ -3247,7 +3247,10 @@ def build_commit(request, files, limited_files, dir_strip):
       commit_time = make_time_string(commit_time, request.cfg)
     else:
       commit_time = '&nbsp;'
-
+    change_type = f.GetTypeString()
+    rev = f.GetRevision()
+    rev_prev = prev_rev(rev)
+    
     dirname = f.GetDirectory()
     filename = f.GetFile()
     if dir_strip:
@@ -3256,30 +3259,41 @@ def build_commit(request, files, limited_files, dir_strip):
       dirname = dirname[len_strip+1:]
     filename = dirname and ("%s/%s" % (dirname, filename)) or filename
 
-    params = { 'revision': f.GetRevision() }
-    if f.GetBranch(): params['pathrev'] = f.GetBranch()
+    # In CVS, we can actually look at deleted revisions; in Subversion
+    # we can't -- we'll look at the previous revision instead.
+    if request.roottype == 'svn':
+      if change_type == 'Remove':
+        params = { 'pathrev': rev_prev }
+      else:
+        params = { 'pathrev': rev }
+    else:
+      params = { 'revision': rev, 'pathrev': f.GetBranch() or None }
+        
     dir_href = request.get_url(view_func=view_directory,
                                where=dirname, pathtype=vclib.DIR,
-                               params=params,
-                               escape=1)
+                               params=params, escape=1)
     log_href = request.get_url(view_func=view_log,
                                where=filename, pathtype=vclib.FILE,
-                               params=params,
-                               escape=1)
+                               params=params, escape=1)
+    diff_href = view_href = download_href = None
     view_href = request.get_url(view_func=view_markup,
-                               where=filename, pathtype=vclib.FILE,
-                               params={'revision': f.GetRevision() },
-                               escape=1)
+                                where=filename, pathtype=vclib.FILE,
+                                params=params, escape=1)
     download_href = request.get_url(view_func=view_checkout,
                                     where=filename, pathtype=vclib.FILE,
-                                    params={'revision': f.GetRevision() },
-                                    escape=1)
-    diff_href = request.get_url(view_func=view_diff,
-                                where=filename, pathtype=vclib.FILE,
-                                params={'r1': prev_rev(f.GetRevision()),
-                                        'r2': f.GetRevision(),
-                                        'diff_format': None},
-                                escape=1)
+                                    params=params, escape=1)
+    if change_type == 'Change':
+      diff_href_params = params.copy()
+      diff_href_params.update({
+        'r1': rev_prev,
+        'r2': rev,
+        'diff_format': None
+        })
+      diff_href = request.get_url(view_func=view_diff,
+                                  where=filename, pathtype=vclib.FILE,
+                                  params=diff_href_params, escape=1)
+    prefer_markup = ezt.boolean(default_view(guess_mime(filename),
+                                             request.cfg) == view_markup)      
 
     # skip files in forbidden or hidden modules
     dir_parts = filter(None, string.split(dirname, '/'))
@@ -3293,18 +3307,16 @@ def build_commit(request, files, limited_files, dir_strip):
                               dir=request.server.escape(dirname),
                               file=request.server.escape(f.GetFile()),
                               author=request.server.escape(f.GetAuthor()),
-                              rev=f.GetRevision(),
+                              rev=rev,
                               branch=f.GetBranch(),
                               plus=int(f.GetPlusCount()),
                               minus=int(f.GetMinusCount()),
-                              type=f.GetTypeString(),
+                              type=change_type,
                               dir_href=dir_href,
                               log_href=log_href,
                               view_href=view_href,
                               download_href=download_href,
-                              prefer_markup=ezt.boolean
-                              (default_view(guess_mime(filename), request.cfg)
-                               == view_markup),
+                              prefer_markup=prefer_markup,
                               diff_href=diff_href))
   return commit
 

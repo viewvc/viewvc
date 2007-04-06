@@ -10,6 +10,7 @@ Version 1.0.4 (released ??-???-????)
   * fix broken markup view disablement
   * fix broken directory view link generation in directory log view
   * fix Windows-specific viewvc-install bugs
+  * fix broke query result links for Subversion deleted items (issue #296)
 
 Version 1.0.3 (released 13-Oct-2006)
 
