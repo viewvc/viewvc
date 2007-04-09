@@ -12,6 +12,7 @@ Version 1.0.4 (released ??-???-????)
   * fix Windows-specific viewvc-install bugs
   * fix broke query result links for Subversion deleted items (issue #296)
   * fix some output XHTML validation buglets
+  * fix database query cache staleness problems (issue #180)
 
 Version 1.0.3 (released 13-Oct-2006)
 
