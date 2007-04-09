@@ -23,11 +23,6 @@ import dbi
 ## error
 error = "cvsdb error"
 
-## cached (active) database connections
-gCheckinDatabase = None
-gCheckinDatabaseReadOnly = None
-
-
 ## CheckinDatabase provides all interfaces needed to the SQL database
 ## back-end; it needs to be subclassed, and have its "Connect" method
 ## defined to actually be complete; it should run well off of any DBI 2.0
@@ -743,39 +738,20 @@ def CreateCommit():
 def CreateCheckinQuery():
     return CheckinDatabaseQuery()
 
+def ConnectDatabase(cfg, readonly=0):
+    if readonly:
+        user = cfg.cvsdb.readonly_user
+        passwd = cfg.cvsdb.readonly_passwd
+    else:
+        user = cfg.cvsdb.user
+        passwd = cfg.cvsdb.passwd
+    db = CheckinDatabase(cfg.cvsdb.host, cfg.cvsdb.port, user, passwd,
+                         cfg.cvsdb.database_name, cfg.cvsdb.row_limit)
+    db.Connect()
+    return db
+
 def ConnectDatabaseReadOnly(cfg):
-    global gCheckinDatabaseReadOnly
-    
-    if gCheckinDatabaseReadOnly:
-        return gCheckinDatabaseReadOnly
-    
-    gCheckinDatabaseReadOnly = CheckinDatabase(
-        cfg.cvsdb.host,
-        cfg.cvsdb.port,
-        cfg.cvsdb.readonly_user,
-        cfg.cvsdb.readonly_passwd,
-        cfg.cvsdb.database_name,
-        cfg.cvsdb.row_limit)
-    
-    gCheckinDatabaseReadOnly.Connect()
-    return gCheckinDatabaseReadOnly
-
-def ConnectDatabase(cfg):
-    global gCheckinDatabase
-
-    if gCheckinDatabase:
-        return gCheckinDatabase
-
-    gCheckinDatabase = CheckinDatabase(
-        cfg.cvsdb.host,
-        cfg.cvsdb.port,
-        cfg.cvsdb.user,
-        cfg.cvsdb.passwd,
-        cfg.cvsdb.database_name,
-        cfg.cvsdb.row_limit)
-    
-    gCheckinDatabase.Connect()
-    return gCheckinDatabase
+    return ConnectDatabase(cfg, 1)
 
 def GetCommitListFromRCSFile(repository, path_parts, revision=None):
     commit_list = []
