@@ -7,79 +7,59 @@
 #
 #---------------------------------------------------------------------------
 
-# THE FORMAT OF THIS CONFIGURATION FILE
 #
-#    This file is delineated by sections, specified in [brackets].  Within 
-#    each section, are a number of configuration settings.  These settings
-#    take the form of: name = value.  Values may be continued on the
-#    following line by indenting the continued line.
+# BASIC CONFIGURATION
 #
-#    WARNING:  Indentation *always* means continuation.  Name=value lines
-#    should always start in column zero.
+# For correct operation, you will probably need to change the following
+# configuration variables:
 #
-#    Comments should always start in column zero, and are identified 
-#    with "#".
+#    cvs_roots (for CVS)
+#    svn_roots (for Subversion)
+#    root_parents (for CVS or Subversion)
+#    default_root
+#    rcs_path or cvsnt_exe_path
+#    mime_types_file 
 #
-#    Certain configuration settings may have multiple values.  These should 
-#    be separated by a comma.  The settings where this is allowed are noted 
-#    below.  Any other setting that requires special syntax is noted at that
-#    setting.
+# It is usually desirable to change the following variables:
+#
+#    address
+#    forbidden
+#
+#    use_enscript
+#    use_cvsgraph
+#
+# For Python source colorization:
+#
+#    py2html_path
+#
+# To optimize delivery of ViewVC static files:
+#
+#    docroot
+#
+# To customize the display of ViewVC for your site:
+#
+#    template_dir
+#    the [templates] override section
+#
+
+#
+# FORMAT INFORMATION
+#
+# This file is delineated by sections, specified in [brackets]. Within each
+# section, are a number of configuration settings. These settings take the
+# form of: name = value. Values may be continued on the following line by
+# indenting the continued line.
+#
+# WARNING: indentation *always* means continuation. name=value lines should
+#          always start in column zero.
+#
+# Comments should always start in column zero, and are identified with "#".
+#
+# Certain configuration settings may have multiple values. These should be
+# separated by a comma. The settings where this is allowed are noted below.
+#
+# Any other setting that requires special syntax is noted at that setting.
 # 
-#
-# SOME TERMINOLOGY USED HEREIN
-#
-#    "root" - This is a CVS or Subversion repository.  For Subversion, the
-#        meaning is pretty clear, as the virtual, versioned directory tree
-#        stored inside a Subversion repository looks nothing like the actual
-#        tree visible with shell utilities that holds the repository.  For
-#        CVS, this is more confusing, because CVS's repository layout mimics
-#        (actually, defines) the layout of the stuff housed in the repository.
-#        But a CVS repository can be identified by the presence of a CVSROOT
-#        subdirectory in its root directory.
-#
-#    "module" - A module is a top-level subdirectory of a root, usually
-#        associated with the concept of a single "project" among many housed
-#        within a single repository.
-#
-#
-# BASIC VIEWVC CONFIGURATION HINTS
-#
-#    While ViewVC has quite a few configuration options, you generally
-#    only need to change a small subset of them to get your ViewVC
-#    installation working properly.  Here are some options that we
-#    recommend you pay attention to.  Of course, don't try to change the
-#    options here -- do so in the relevant section of the configuration
-#    file below.
-#    
-#    For correct operation, you will probably need to change the following
-#    configuration variables:
-#   
-#       cvs_roots (for CVS)
-#       svn_roots (for Subversion)
-#       root_parents (for CVS or Subversion)
-#       default_root
-#       root_as_url_component
-#       rcs_dir
-#       mime_types_file
-#       the many options in the [utilities] section
-#   
-#    It is usually desirable to change the following variables:
-#   
-#       address
-#       forbidden
-#   
-#       use_enscript
-#       use_cvsgraph
-#   
-#    To optimize delivery of ViewVC static files:
-#   
-#       docroot
-#   
-#    To customize the display of ViewVC for your site:
-#   
-#       template_dir
-#       the [templates] override section
-#
 
 #---------------------------------------------------------------------------
 [general]
@@ -120,18 +100,32 @@ cvs_roots = cvs: /home/cvsroot
 #root_parents = /home/svn-repositories : svn,
 #               /home/cvs-repositories : cvs
 
-# This is the name of the default root.  Valid names include those
-# explicitly listed in the cvs_roots and svn_roots configuration
-# options, as well as those implicitly indicated by virtue of being
-# the basenames of repositories found in the root_parents option
-# locations.
-#
-# Note: This setting is ignored when root_as_url_component is enabled.
+# this is the name of the default root
+# (ignored when root_as_url_component is turned on)
 default_root = cvs
+
+# uncomment if the RCS binaries are not on the standard path
+#rcs_path = /usr/bin/
+
+# ViewVC can use CVSNT (www.cvsnt.org) instead of the RCS 
+# utilities to retrieve information from CVS repositories.
+# To enable use of CVSNT, set the "cvsnt_exe_path" value
+# to the path of the CVSNT executable. (If CVSNT is on the
+# standard path, you can also set it to the name of the
+# CVSNT executable). By default "cvsnt_exe_path" is set to
+# "cvs" on Windows and is not set on other platforms.
+#
+#cvsnt_exe_path =
+#cvsnt_exe_path = cvs
+#cvsnt_exe_path = K:\Program Files\cvsnt\cvs.exe
+#cvsnt_exe_path = /usr/bin/cvs
 
 # use rcsparse python module to retrieve cvs repository information instead
 # of invoking rcs utilities. this feature is experimental
 use_rcsparse = 0
+
+# uncomment if the svn command-line utilities are not on the standard path
+#svn_path = /usr/bin/
 
 #
 # This is a pathname to a MIME types file to help viewvc to guess the
@@ -167,9 +161,6 @@ address = <a href="mailto:cvs-admin@insert.your.domain.here">No admin address ha
 #      testing. This allows for more complex allow/deny patterns.
 #
 # Tests are case-sensitive.
-#
-# NOTE: Again, this is for the hiding of modules within repositories, *not* 
-# for the hiding of repositories (roots) themselves.
 #
 forbidden =
 
@@ -264,83 +255,6 @@ languages = en-us
 #
 
 #---------------------------------------------------------------------------
-[utilities]
-
-# ViewVC uses (sometimes optionally) various third-party programs to do some
-# of the heavy lifting.  Generally, it will attempt to execute those utility
-# programs in such a way that if they are found in ViewVC's executable
-# search path ($PATH, %PATH%, etc.) all is well.  But sometimes these tools
-# aren't installed in the executable search path, so here's where you can
-# tell ViewVC where to find them.
-#
-# NOTE:  Options with a "_dir" suffix are for configuring the directories
-# in which certain programs live; otherwise, the option value should
-# point to the actual program.
-
-# RCS utilities, used for viewing CVS repositories
-rcs_dir =
-# rcs_dir = /usr/bin/
-
-# ViewVC can use CVSNT (www.cvsnt.org) instead of the RCS utilities to
-# retrieve information from CVS repositories.  To enable use of CVSNT,
-# set the "cvsnt" value to the path of the CVSNT executable. (If CVSNT
-# is on the standard path, you can also set it to the name of the
-# CVSNT executable). By default "cvsnt" is set to "cvs" on Windows and
-# is not set on other platforms.
-cvsnt =
-# cvsnt =
-# cvsnt = cvs
-# cvsnt = K:\Program Files\cvsnt\cvs.exe
-# cvsnt = = /usr/bin/cvs
-
-# Subversion command-line client, used for viewing Subversion repositories
-svn =
-# svn_dir = /usr/bin/svn
-
-# GNU diff, used for showing file version differences
-diff = 
-# diff = /usr/bin/diff
-
-# GNU Enscript, a syntax highlighting program (see options.use_enscript)
-enscript =
-# enscript = /usr/bin/enscript
-
-# Highlight, a syntax highlighting program (see options.use_highlight)
-highlight =
-# highlight = /usr/bin/highlight
-
-# GNU source-highlight, a syntax highlighting program (see 
-# options.use_source_highlight)
-source_highlight = 
-# source-highlight = /usr/bin/source-highlight
-
-# Marc-Andrew Lemburg's py2html, Python colorizer (see options.use_py2html)
-py2html_dir = .
-# py2html_dir = /usr/local/lib/python1.5/site-python
-
-# PHP, used to colorize PHP files (see options.use_php)
-# (This should be set to the path of a PHP CLI executable, not the path
-# to a CGI executable. If you use a CGI executable, you may see "no input file
-# specified" or "force-cgi-redirect" errors instead of colorized source. The
-# output of "php -v" tells you whether an given executable is CLI or CGI.)
-php = php
-# php = /usr/local/bin/php
-# php = C:\Program Files\php\cli\php.exe
-
-# CvsGraph, a graphical CVS version graph generator (see options.use_cvsgraph)
-cvsgraph =
-# cvsgraph = /usr/local/bin/cvsgraph
-
-# Gzip, file compression utility (see options.allow_tar)
-gzip =
-# gzip = /usr/bin/gzip
-
-# Sed, stream editor
-sed =
-# sed = /usr/bin/sed
-
-
-#---------------------------------------------------------------------------
 [options]
 
 # root_as_url_component: Interpret the first path component in the URL
@@ -350,19 +264,7 @@ sed =
 # ViewVC URLs.
 # Note: Enabling this option will break backwards compatibility with
 # any old ViewCVS URL which doesn't have an explicit "root" parameter.
-root_as_url_component = 1
-
-# checkout_magic: Use checkout links with magic /*checkout*/ prefixes so
-# checked out HTML pages can have working links to other repository files
-# Note: This option is DEPRECATED and should not be used in new ViewVC
-# installations. Setting "default_file_view = co" achieves the same effect
-checkout_magic = 0
-
-# allowed_views: List the ViewVC views which are enabled.  Views not
-# in this comma-delited list will not be served (or, will return an
-# error on attempted access).
-# Possible values: "tar", "annotate", "co", "markup"
-allowed_views = markup, annotate
+root_as_url_component = 0
 
 # default_file_view: "log" or "co"
 # Controls whether the default view for file URLs is a checkout view or
@@ -372,9 +274,13 @@ allowed_views = markup, annotate
 # to other repository files
 # Note: Changing this option may cause old ViewCVS URLs that referred
 # to log pages to load checkout pages instead.
-# Also note: If you choose the "co" view, be sure to enable it (via
-# the allowed_views option)
 default_file_view = log
+
+# checkout_magic: Use checkout links with magic /*checkout*/ prefixes so
+# checked out HTML pages can have working links to other repository files
+# Note: This option is DEPRECATED and should not be used in new ViewVC
+# installations. Setting "default_file_view = co" achieves the same effect
+checkout_magic = 0
 
 # http_expiration_time: Expiration time (in seconds) for cacheable
 # pages served by ViewVC.  Note that in most cases, a cache aware
@@ -453,6 +359,15 @@ hr_ignore_keyword_subst = 1
 # 
 hr_intraline = 0
 
+# allow on-the-fly generation of repository tarballs
+allow_tar = 0
+
+# allow annotation of files.
+allow_annotate = 1
+
+# allow pretty-printed version of files
+allow_markup = 1
+
 # allow compression with gzip of output if the Browser accepts it
 # (HTTP_ACCEPT_ENCODING=gzip)
 # [make sure to have gzip in the path]
@@ -462,8 +377,8 @@ allow_compress = 1
 # customize the display of the various output views.  ViewVC looks in
 # this directory for files with names that match the name of the view
 # ("log", "directory", etc.) plus the ".ezt" extension.  If specified
-# as a relative path, it is relative to the directory where this config
-# file resides; absolute paths may be used as well.
+# as a relative path, it is relative to the ViewVC installation
+# directory; absolute paths may be used as well.
 #
 # If %lang% occurs in the pathname, then the selected language will be
 # substituted.
@@ -505,9 +420,15 @@ use_localtime = 0
 # Defaults for configuration variables that shouldn't need
 # to be configured..
 
-# should we use Marc-Andrew Lemburg's py2html (and Just van Rossum's
-# PyFontify) to colorize Python files?
-use_py2html = 0
+#
+# If you want to use Marc-Andrew Lemburg's py2html (and Just van Rossum's
+# PyFontify) to colorize Python files, then you may need to change this
+# variable to point to their directory location.
+#
+# This directory AND the standard Python path will be searched.
+#
+py2html_path = .
+#py2html_path = /usr/local/lib/python1.5/site-python
 
 # the length to which the most recent log entry should be truncated when
 # shown in the directory view
@@ -516,9 +437,20 @@ short_log_len = 80
 # should we use 'enscript' for syntax coloring?
 use_enscript = 0
 
+#
+# if the enscript program is not on the path, set this value
+#
+enscript_path =
+# enscript_path = /usr/bin/
+
 # should we use 'highlight' for syntax coloring?
 # NOTE: use_enscript has to be 0 or enscript will be used instead
 use_highlight = 0
+
+#
+# if the highlight program is not on the path, set this value
+#
+# highlight_path = /usr/bin
 
 # should we add line numbers?
 highlight_line_numbers = 1
@@ -526,15 +458,17 @@ highlight_line_numbers = 1
 # convert tabs to ## spaces (use 0 for no conversion)
 highlight_convert_tabs = 2
 
-# should we use 'source-highlight' for syntax coloring?
-# NOTE: use_enscript and use_highlight have to be 0
-use_source_highlight = 0
-
-# should we add line numbers?
-source_highlight_line_numbers = 1
-
 # use php to colorize .php and .inc files?
 use_php = 0
+
+# path to php executable
+# (This should be set to the path of a PHP CLI executable, not the path
+# to a CGI executable. If you use a CGI executable, you may see "no input file
+# specified" or "force-cgi-redirect" errors instead of colorized source. The
+# output of "php -v" tells you whether an given executable is CLI or CGI.)
+php_exe_path = php
+# php_exe_path = /usr/local/bin/php
+# php_exe_path = C:\Program Files\php\cli\php.exe
 
 #
 # Use CvsGraph. See http://www.akhphd.au.dk/~bertho/cvsgraph/ for
@@ -544,7 +478,14 @@ use_cvsgraph = 0
 # use_cvsgraph = 1
 
 #
+# if the cvsgraph program is not on the path, set this value
+#
+cvsgraph_path =
+# cvsgraph_path = /usr/local/bin/
+
+#
 # Location of the customized cvsgraph configuration file.  
+# You will need an absolute pathname here:
 #
 cvsgraph_conf = cvsgraph.conf
 
@@ -601,8 +542,8 @@ limit_changes = 100
 # appropriate option below and specify the currect location of the EZT
 # template file you wish to use for that view.
 # 
-# Templates are specified relative to the directory where this config
-# file resides, but absolute paths may also be used as well.
+# Templates are specified relative to the installation directory, but
+# absolute paths may also be used as well.
 #
 # If %lang% occurs in the pathname, then the selected language will be
 # substituted.

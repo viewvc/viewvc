@@ -10,7 +10,7 @@
 #
 # -----------------------------------------------------------------------
 #
-# ViewVC: View CVS/SVN repositories via a web browser
+# viewvc: View CVS/SVN repositories via a web browser
 #
 # -----------------------------------------------------------------------
 #
@@ -43,14 +43,13 @@ if LIBRARY_DIR:
 
 import sapi
 import viewvc
-import query
+reload(viewvc) # need reload because initial import loads this stub file
 
-cfg = viewvc.load_config(CONF_PATHNAME)
 
 def index(req):
   server = sapi.ModPythonServer(req)
+  cfg = viewvc.load_config(CONF_PATHNAME, server)
   try:
-    query.main(server, cfg, "viewvc_mp.py")
+    viewvc.main(server, cfg)
   finally:
     server.close()
-

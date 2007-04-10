@@ -9,7 +9,7 @@
         <title>[if-any commits.rev][commits.rev]: [end][[commits.author]] [commits.short_log]</title>
 		[if-any commits.rss_url]<link>[commits.rss_url]</link>[end]
 		<author>[commits.author]</author>
-		<pubDate>[if-any commits.rss_date][commits.rss_date][else](unknown date)[end]</pubDate>
+		<pubDate>[commits.rss_date]</pubDate>
 		<description>[commits.log]</description>
     </item>[end]
 </channel>	

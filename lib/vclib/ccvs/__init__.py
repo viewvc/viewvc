@@ -61,7 +61,7 @@ class CCVSRepository(CVSRepository):
       if path:
         entry.path = path
         try:
-          rcsparse.parse(open(path, 'rb'), InfoSink(entry, rev, alltags))
+          rcsparse.Parser().parse(open(path, 'rb'), InfoSink(entry, rev, alltags))
         except IOError, e:
           entry.errors.append("rcsparse error: %s" % e)
         except RuntimeError, e:
@@ -91,7 +91,7 @@ class CCVSRepository(CVSRepository):
     """
     path = self.rcsfile(path_parts, 1)
     sink = TreeSink()
-    rcsparse.parse(open(path, 'rb'), sink)
+    rcsparse.Parser().parse(open(path, 'rb'), sink)
     filtered_revs = _file_log(sink.revs.values(), sink.tags,
                               sink.default_branch, rev)
     for rev in filtered_revs:
@@ -115,8 +115,7 @@ class CCVSRepository(CVSRepository):
 
     diff_args = vclib._diff_args(type, options)
 
-    return vclib._diff_fp(temp1, temp2, info1, info2,
-                          self.utilities.diff or 'diff', diff_args)
+    return vclib._diff_fp(temp1, temp2, info1, info2, diff_args)
 
   def annotate(self, path_parts, rev=None):
     source = blame.BlameSource(self.rcsfile(path_parts, 1), rev)
@@ -125,7 +124,7 @@ class CCVSRepository(CVSRepository):
   def openfile(self, path_parts, rev=None):
     path = self.rcsfile(path_parts, 1)
     sink = COSink(rev)
-    rcsparse.parse(open(path, 'rb'), sink)
+    rcsparse.Parser().parse(open(path, 'rb'), sink)
     revision = sink.last and sink.last.string
     return cStringIO.StringIO(string.join(sink.sstext.text, "\n")), revision
 

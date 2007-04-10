@@ -22,12 +22,12 @@ import time
 import tempfile
 import popen
 import re
-from svn import fs, repos, core, client, delta
+from svn import fs, repos, core, delta
 
 
-### Require Subversion 1.3.1 or better.
-if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 3, 1):
-  raise Exception, "Version requirement not met (needs 1.3.1 or better)"
+### Require Subversion 1.2.0 or better.
+if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 2, 0):
+  raise Exception, "Version requirement not met (needs 1.2.0 or better)"
 
   
 def _allow_all(root, path, pool):
@@ -84,48 +84,32 @@ def _compare_paths(path1, path2):
   return cmp(char1, char2)
 
 
-def _rev2optrev(rev):
-  assert type(rev) is int
-  rt = core.svn_opt_revision_t()
-  rt.kind = core.svn_opt_revision_number
-  rt.value.number = rev
-  return rt
-
-
-def _rootpath2url(rootpath, path):
-  rootpath = os.path.abspath(rootpath)
-  if rootpath and rootpath[0] != '/':
-    rootpath = '/' + rootpath
-  if os.sep != '/':
-    rootpath = string.replace(rootpath, os.sep, '/')
-  return 'file://' + string.join([rootpath, path], "/")
-
-
-def _datestr_to_date(datestr):
-  try:
-    return core.svn_time_from_cstring(datestr) / 1000000
-  except:
+def _datestr_to_date(datestr, pool):
+  if datestr is None:
     return None
+  return core.svn_time_from_cstring(datestr, pool) / 1000000
 
   
-def _fs_rev_props(fsptr, rev):
-  author = fs.revision_prop(fsptr, rev, core.SVN_PROP_REVISION_AUTHOR)
-  msg = fs.revision_prop(fsptr, rev, core.SVN_PROP_REVISION_LOG)
-  date = fs.revision_prop(fsptr, rev, core.SVN_PROP_REVISION_DATE)
+def _fs_rev_props(fsptr, rev, pool):
+  author = fs.revision_prop(fsptr, rev, core.SVN_PROP_REVISION_AUTHOR, pool)
+  msg = fs.revision_prop(fsptr, rev, core.SVN_PROP_REVISION_LOG, pool)
+  date = fs.revision_prop(fsptr, rev, core.SVN_PROP_REVISION_DATE, pool)
   return date, author, msg
 
 
 def date_from_rev(svnrepos, rev):
   if (rev < 0) or (rev > svnrepos.youngest):
     raise vclib.InvalidRevision(rev)
-  return _datestr_to_date(fs.revision_prop(svnrepos.fs_ptr, rev,
-                                           core.SVN_PROP_REVISION_DATE))
+  datestr = fs.revision_prop(svnrepos.fs_ptr, rev,
+                             core.SVN_PROP_REVISION_DATE, svnrepos.pool)
+  return _datestr_to_date(datestr, svnrepos.pool)
 
 
 def get_location(svnrepos, path, rev, old_rev):
   try:
     results = repos.svn_repos_trace_node_locations(svnrepos.fs_ptr, path,
-                                                   rev, [old_rev], _allow_all)
+                                                   rev, [old_rev],
+                                                   _allow_all, svnrepos.pool)
   except core.SubversionException, e:
     if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
       raise vclib.ItemNotFound(path)
@@ -161,19 +145,23 @@ def last_rev(svnrepos, path, peg_revision, limit_revision=None):
       return peg_revision, path
     elif peg_revision > limit_revision:
       fsroot = svnrepos._getroot(peg_revision)
-      history = fs.node_history(fsroot, path)
+      history = fs.node_history(fsroot, path, svnrepos.scratch_pool)
       while history:
-        path, peg_revision = fs.history_location(history)
+        path, peg_revision = fs.history_location(history,
+                                                 svnrepos.scratch_pool);
         if peg_revision <= limit_revision:
           return max(peg_revision, limit_revision), _cleanup_path(path)
-        history = fs.history_prev(history, 1)
+        history = fs.history_prev(history, 1, svnrepos.scratch_pool)
       return peg_revision, _cleanup_path(path)
     else:
-      orig_id = fs.node_id(svnrepos._getroot(peg_revision), path)
+      ### Warning: this is *not* an example of good pool usage.
+      orig_id = fs.node_id(svnrepos._getroot(peg_revision), path,
+                           svnrepos.scratch_pool)
       while peg_revision != limit_revision:
         mid = (peg_revision + 1 + limit_revision) / 2
         try:
-          mid_id = fs.node_id(svnrepos._getroot(mid), path)
+          mid_id = fs.node_id(svnrepos._getroot(mid), path,
+                              svnrepos.scratch_pool)
         except core.SubversionException, e:
           if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
             cmp = -1
@@ -191,11 +179,12 @@ def last_rev(svnrepos, path, peg_revision, limit_revision=None):
 
       return peg_revision, path
   finally:
-    pass
+    svnrepos._scratch_clear()
 
 
 def created_rev(svnrepos, full_name, rev):
-  return fs.node_created_rev(svnrepos._getroot(rev), full_name)
+  fsroot = svnrepos._getroot(rev)
+  return fs.node_created_rev(fsroot, full_name, svnrepos.pool)
 
 
 class Revision(vclib.Revision):
@@ -221,23 +210,27 @@ class NodeHistory:
     # was copied).  This is useful for omitting bubble-up directory
     # changes.
     if not self.show_all_logs:
-      rev_root = fs.revision_root(self.fs_ptr, revision)
-      changed_paths = fs.paths_changed(rev_root)
+      rev_root = fs.revision_root(self.fs_ptr, revision, pool)
+      changed_paths = fs.paths_changed(rev_root, pool)
       paths = changed_paths.keys()
       if path not in paths:
         # Look for a copied parent
         test_path = path
         found = 0
+        subpool = core.svn_pool_create(pool)
         while 1:
+          core.svn_pool_clear(subpool)
           off = string.rfind(test_path, '/')
           if off < 0:
             break
           test_path = test_path[0:off]
           if test_path in paths:
-            copyfrom_rev, copyfrom_path = fs.copied_from(rev_root, test_path)
+            copyfrom_rev, copyfrom_path = \
+                          fs.copied_from(rev_root, test_path, subpool)
             if copyfrom_rev >= 0 and copyfrom_path:
               found = 1
               break
+        core.svn_pool_destroy(subpool)
         if not found:
           return
     self.histories[revision] = _cleanup_path(path)
@@ -248,7 +241,7 @@ def _get_history(svnrepos, full_name, rev, options={}):
   show_all_logs = options.get('svn_show_all_dir_logs', 0)
   if not show_all_logs:
     # See if the path is a file or directory.
-    kind = fs.check_path(fsroot, full_name)
+    kind = fs.check_path(fsroot, full_name, svnrepos.pool)
     if kind is core.svn_node_file:
       show_all_logs = 1
       
@@ -260,7 +253,7 @@ def _get_history(svnrepos, full_name, rev, options={}):
 
   # Get the history items for PATH.
   repos.svn_repos_history(svnrepos.fs_ptr, full_name, history.add_history,
-                          1, rev, cross_copies)
+                          1, rev, cross_copies, svnrepos.pool)
   return history.histories
 
 
@@ -281,9 +274,9 @@ def get_revision_info(svnrepos, rev):
   fsroot = svnrepos._getroot(rev)
 
   # Get the changes for the revision
-  editor = repos.ChangeCollector(svnrepos.fs_ptr, fsroot)
-  e_ptr, e_baton = delta.make_editor(editor)
-  repos.svn_repos_replay(fsroot, e_ptr, e_baton)
+  editor = repos.ChangeCollector(svnrepos.fs_ptr, fsroot, svnrepos.pool)
+  e_ptr, e_baton = delta.make_editor(editor, svnrepos.pool)
+  repos.svn_repos_replay(fsroot, e_ptr, e_baton, svnrepos.pool)
   changes = editor.get_changes()
   changedpaths = {}
   
@@ -337,23 +330,23 @@ def get_revision_info(svnrepos, rev):
   
   # Now get the revision property info.  Would use
   # editor.get_root_props(), but something is broken there...
-  datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev)
-  date = _datestr_to_date(datestr)
+  datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, svnrepos.pool)
+  date = _datestr_to_date(datestr, svnrepos.pool)
 
   return date, author, msg, change_items
 
 
-def _log_helper(svnrepos, rev, path):
-  rev_root = fs.revision_root(svnrepos.fs_ptr, rev)
+def _log_helper(svnrepos, rev, path, pool):
+  rev_root = fs.revision_root(svnrepos.fs_ptr, rev, pool)
 
   # Was this path@rev the target of a copy?
-  copyfrom_rev, copyfrom_path = fs.copied_from(rev_root, path)
+  copyfrom_rev, copyfrom_path = fs.copied_from(rev_root, path, pool)
 
   # Assemble our LogEntry
-  datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev)
-  date = _datestr_to_date(datestr)
-  if fs.is_file(rev_root, path):
-    size = fs.file_length(rev_root, path)
+  datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, pool)
+  date = _datestr_to_date(datestr, pool)
+  if fs.is_file(rev_root, path, pool):
+    size = fs.file_length(rev_root, path, pool)
   else:
     size = None
   entry = Revision(rev, date, author, msg, size, path,
@@ -362,11 +355,11 @@ def _log_helper(svnrepos, rev, path):
   return entry
   
 
-def _fetch_log(svnrepos, full_name, which_rev, options):
+def _fetch_log(svnrepos, full_name, which_rev, options, pool):
   revs = []
 
   if options.get('svn_latest_log', 0):
-    rev = _log_helper(svnrepos, which_rev, full_name)
+    rev = _log_helper(svnrepos, which_rev, full_name, pool)
     if rev:
       revs.append(rev)
   else:
@@ -374,45 +367,52 @@ def _fetch_log(svnrepos, full_name, which_rev, options):
     history_revs = history_set.keys()
     history_revs.sort()
     history_revs.reverse()
+    subpool = core.svn_pool_create(pool)
     for history_rev in history_revs:
-      rev = _log_helper(svnrepos, history_rev, history_set[history_rev])
+      core.svn_pool_clear(subpool)
+      rev = _log_helper(svnrepos, history_rev, history_set[history_rev],
+                        subpool)
       if rev:
         revs.append(rev)
+    core.svn_pool_destroy(subpool)
   return revs
 
 
-def _get_last_history_rev(fsroot, path):
-  history = fs.node_history(fsroot, path)
-  history = fs.history_prev(history, 0)
-  history_path, history_rev = fs.history_location(history)
+def _get_last_history_rev(fsroot, path, pool):
+  history = fs.node_history(fsroot, path, pool)
+  history = fs.history_prev(history, 0, pool)
+  history_path, history_rev = fs.history_location(history, pool);
   return history_rev
   
   
 def get_logs(svnrepos, full_name, rev, files):
   fsroot = svnrepos._getroot(rev)
+  subpool = core.svn_pool_create(svnrepos.pool)
   for file in files:
+    core.svn_pool_clear(subpool)
     path = _fs_path_join(full_name, file.name)
-    rev = _get_last_history_rev(fsroot, path)
-    datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev)
-    date = _datestr_to_date(datestr)
+    rev = _get_last_history_rev(fsroot, path, subpool)
+    datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev, subpool)
+    date = _datestr_to_date(datestr, subpool)
     file.rev = str(rev)
     file.date = date
     file.author = author
     file.log = msg
     if file.kind == vclib.FILE:
-      file.size = fs.file_length(fsroot, path)
+      file.size = fs.file_length(fsroot, path, subpool)
+  core.svn_pool_destroy(subpool)
 
 
 def get_youngest_revision(svnrepos):
   return svnrepos.youngest
 
-def temp_checkout(svnrepos, path, rev):
+def temp_checkout(svnrepos, path, rev, pool):
   """Check out file revision to temporary file"""
   temp = tempfile.mktemp()
   fp = open(temp, 'wb')
   try:
     root = svnrepos._getroot(rev)
-    stream = fs.file_contents(root, path)
+    stream = fs.file_contents(root, path, pool)
     try:
       while 1:
         chunk = core.svn_stream_read(stream, core.SVN_STREAM_CHUNK_SIZE)
@@ -426,10 +426,14 @@ def temp_checkout(svnrepos, path, rev):
   return temp
 
 class FileContentsPipe:
-  def __init__(self, root, path):
-    self._stream = fs.file_contents(root, path)
+  def __init__(self, root, path, pool):
+    self._pool = core.svn_pool_create(pool)
+    self._stream = fs.file_contents(root, path, self._pool)
     self._eof = 0
 
+  def __del__(self):
+    core.svn_pool_destroy(self._pool)
+    
   def read(self, len=None):
     chunk = None
     if not self._eof:
@@ -454,7 +458,8 @@ class FileContentsPipe:
   def readline(self):
     chunk = None
     if not self._eof:
-      chunk, self._eof = core.svn_stream_readline(self._stream, '\n')
+      chunk, self._eof = core.svn_stream_readline(self._stream, '\n',
+                                                  self._pool)
       if not self._eof:
         chunk = chunk + '\n'
     if not chunk:
@@ -477,36 +482,53 @@ class FileContentsPipe:
     return self._eof
 
 
+_re_blameinfo = re.compile(r"\s*(\d+)\s*(.*)")
+
 class BlameSource:
-  def __init__(self, local_url, rev, first_rev):
+  def __init__(self, svn_client_path, rootpath, fs_path, rev, first_rev):
     self.idx = -1
+    self.line_number = 1
+    self.last = None
     self.first_rev = first_rev
-    self.blame_data = []
-
-    ctx = client.ctx_t()
-    core.svn_config_ensure(None)
-    ctx.config = core.svn_config_get_config(None)
-    ctx.auth_baton = core.svn_auth_open([])
-    try:
-      client.blame2(local_url, _rev2optrev(rev), _rev2optrev(1),
-                    _rev2optrev(rev), self._blame_cb, ctx)
-    except vclib.svn.core.SubversionException, e:
-      if e.apr_err == vclib.svn.core.SVN_ERR_CLIENT_IS_BINARY_FILE:
-        raise vclib.NonTextualFileContents
-      raise
-
-  def _blame_cb(self, line_no, rev, author, date, text, pool):
+    
+    # Do a little dance to get a URL that works in both Unix-y and
+    # Windows worlds.
+    rootpath = os.path.abspath(rootpath)
+    if rootpath and rootpath[0] != '/':
+      rootpath = '/' + rootpath
+    if os.sep != '/':
+      rootpath = string.replace(rootpath, os.sep, '/')
+      
+    url = 'file://' + string.join([rootpath, fs_path], "/")
+    fp = popen.popen(svn_client_path,
+                     ('blame', "-r%d" % int(rev), "--non-interactive",
+                      "%s@%d" % (url, int(rev))),
+                     'rb', 1)
+    self.fp = fp
+    
+  def __getitem__(self, idx):
+    if idx == self.idx:
+      return self.last
+    if idx != self.idx + 1:
+      raise BlameSequencingError()
+    line = self.fp.readline()
+    if not line:
+      raise IndexError("No more annotations")
+    m = _re_blameinfo.match(line[:17])
+    if not m:
+      raise vclib.Error("Could not parse blame output at line %i\n%s"
+                        % (idx+1, line))
+    rev, author = m.groups()
+    text = line[18:]
+    rev = int(rev)
     prev_rev = None
     if rev > self.first_rev:
       prev_rev = rev - 1
-    self.blame_data.append(vclib.Annotation(text, line_no, rev,
-                                            prev_rev, author, None))
-
-  def __getitem__(self, idx):
-    if idx != self.idx + 1:
-      raise BlameSequencingError()
+    item = _item(text=text, line_number=idx+1, rev=rev,
+                 prev_rev=prev_rev, author=author, date=None)
+    self.last = item
     self.idx = idx
-    return self.blame_data[idx]
+    return item
 
 
 class BlameSequencingError(Exception):
@@ -514,15 +536,16 @@ class BlameSequencingError(Exception):
 
   
 class SubversionRepository(vclib.Repository):
-  def __init__(self, name, rootpath, utilities):
+  def __init__(self, name, rootpath, svn_path):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
 
     # Initialize some stuff.
+    self.pool = None
+    self.apr_init = 0
     self.rootpath = rootpath
     self.name = name
-    self.svn_client_path = utilities.svn or 'svn'
-    self.diff_cmd = utilities.diff or 'diff'
+    self.svn_client_path = os.path.normpath(os.path.join(svn_path, 'svn'))
 
     # Register a handler for SIGTERM so we can have a chance to
     # cleanup.  If ViewVC takes too long to start generating CGI
@@ -541,16 +564,37 @@ class SubversionRepository(vclib.Repository):
       # isn't the main one.  We'll just not care.
       pass
 
+    # Initialize APR and get our top-level pool.
+    core.apr_initialize()
+    self.apr_init = 1
+    self.pool = core.svn_pool_create(None)
+    self.scratch_pool = core.svn_pool_create(self.pool)
+    
     # Open the repository and init some other variables.
-    self.repos = repos.svn_repos_open(rootpath)
+    self.repos = repos.svn_repos_open(rootpath, self.pool)
     self.fs_ptr = repos.svn_repos_fs(self.repos)
-    self.youngest = fs.youngest_rev(self.fs_ptr)
+    self.youngest = fs.youngest_rev(self.fs_ptr, self.pool)
     self._fsroots = {}
+
+  def __del__(self):
+    self._close()
+    
+  def _close(self):
+    if self.pool:
+      core.svn_pool_destroy(self.pool)
+      self.pool = None
+    if self.apr_init:
+      core.apr_terminate()
+      self.apr_init = 0
+
+  def _scratch_clear(self):
+    core.svn_pool_clear(self.scratch_pool)
 
   def itemtype(self, path_parts, rev):
     rev = self._getrev(rev)
     basepath = self._getpath(path_parts)
-    kind = fs.check_path(self._getroot(rev), basepath)
+    kind = fs.check_path(self._getroot(rev), basepath, self.scratch_pool)
+    self._scratch_clear()
     if kind == core.svn_node_dir:
       return vclib.DIR
     if kind == core.svn_node_file:
@@ -561,8 +605,9 @@ class SubversionRepository(vclib.Repository):
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
     fsroot = self._getroot(rev)
-    revision = str(_get_last_history_rev(fsroot, path))
-    fp = FileContentsPipe(fsroot, path)
+    revision = str(_get_last_history_rev(fsroot, path, self.scratch_pool))
+    self._scratch_clear()
+    fp = FileContentsPipe(fsroot, path, self.pool)
     return fp, revision
 
   def listdir(self, path_parts, rev, options):
@@ -572,7 +617,7 @@ class SubversionRepository(vclib.Repository):
 
     rev = self._getrev(rev)
     fsroot = self._getroot(rev)
-    dirents = fs.dir_entries(fsroot, basepath)
+    dirents = fs.dir_entries(fsroot, basepath, self.scratch_pool)
     entries = [ ]
     for entry in dirents.values():
       if entry.kind == core.svn_node_dir:
@@ -580,6 +625,7 @@ class SubversionRepository(vclib.Repository):
       elif entry.kind == core.svn_node_file:
         kind = vclib.FILE              
       entries.append(vclib.DirEntry(entry.name, kind))
+    self._scratch_clear()
     return entries
 
   def dirlogs(self, path_parts, rev, entries, options):
@@ -605,12 +651,15 @@ class SubversionRepository(vclib.Repository):
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
 
-    revs = _fetch_log(self, path, rev, options)
+    revs = _fetch_log(self, path, rev, options, self.scratch_pool)
+    self._scratch_clear()
+    
     revs.sort()
     prev = None
     for rev in revs:
       rev.prev = prev
       prev = rev
+
     return revs
 
   def annotate(self, path_parts, rev):
@@ -623,7 +672,8 @@ class SubversionRepository(vclib.Repository):
     history_revs.sort()
     revision = history_revs[-1]
     first_rev = history_revs[0]
-    source = BlameSource(_rootpath2url(self.rootpath, path), rev, first_rev)
+    source = BlameSource(self.svn_client_path, self.rootpath,
+                         path, rev, first_rev)
     return source, revision
     
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
@@ -634,11 +684,11 @@ class SubversionRepository(vclib.Repository):
     args = vclib._diff_args(type, options)
 
     try:
-      temp1 = temp_checkout(self, p1, r1)
-      temp2 = temp_checkout(self, p2, r2)
+      temp1 = temp_checkout(self, p1, r1, self.pool)
+      temp2 = temp_checkout(self, p2, r2, self.pool)
       info1 = p1, date_from_rev(self, r1), r1
       info2 = p2, date_from_rev(self, r2), r2
-      return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args)
+      return vclib._diff_fp(temp1, temp2, info1, info2, args)
     except vclib.svn.core.SubversionException, e:
       if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
         raise vclib.InvalidRevision
@@ -662,5 +712,9 @@ class SubversionRepository(vclib.Repository):
     try:
       return self._fsroots[rev]
     except KeyError:
-      r = self._fsroots[rev] = fs.revision_root(self.fs_ptr, rev)
+      r = self._fsroots[rev] = fs.revision_root(self.fs_ptr, rev, self.pool)
       return r
+
+class _item:
+  def __init__(self, **kw):
+    vars(self).update(kw)

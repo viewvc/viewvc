@@ -21,28 +21,10 @@ table {
 table.auto {
   width: auto;
 }
-table.fixed {
-  width: 100%;
-  table-layout: fixed;
-}
-table.fixed td {
-  overflow: hidden; 
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 tr, td, th { vertical-align: top; }
 form { margin: 0; }
 
-/*** Icons ***/
-.vc_icon {
-  width: 16px;
-  height: 16px;
-  border: none;
-  padding: 0 1px;
-}
-
-
-/*** Navigation Headers ***/
+/** Navigation Headers ***/
 .vc_navheader {
   background-color: #cccccc;
 }
@@ -66,9 +48,6 @@ form { margin: 0; }
 }
 .vc_row_odd {
   background-color: #ccccee;
-}
-.vc_row_special {
-  background-color: #ffff7f;
 }
 
 
@@ -120,7 +99,6 @@ form { margin: 0; }
   text-decoration: none;
   font-weight: normal;
   font-style: normal;
-  text-align: right;
 }
 
 /*** Diff Styles ***/
@@ -200,24 +178,12 @@ table.vc_idiff tbody th {
 }
 
 /*** Annotate Styles ***/
-#vc_blame td {
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-right-color: #505050;
-  text-decoration: none;
-  font-weight: normal;
-  font-style: normal;
-}
-.vc_blame_line {
-  background-color: #eeeeee;
-  color: #505050;
-  padding: 1px 1px;
-}
-.vc_blame_author, .vc_blame_rev, .vc_blame_line {
+.vc_blame_line, .vc_blame_author, .vc_blame_rev {
+  font-family: monospace;
+  font-size: smaller;
   text-align: right;
-}
-.vc_blame_rev, .vc_blame_line {
-  padding: 1px 5px;
+  white-space: nowrap;
+  padding-right: 1em;
 }
 .vc_blame_text {
   font-family: monospace;
