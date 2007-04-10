@@ -18,6 +18,22 @@ Version 1.1.0 (released ??-???-????)
   * add support for ranges of revisions to svndbadmin (issue #224)
   * make the query handling more forgiving of malformatted subdirs (issue #244)
 
+Version 1.0.4 (released 10-Apr-2007)
+
+  * fix some markup bugs in query views (issue #266)
+  * fix loginfo-handler's support for CVS 1.12.9 (issues #151, #257)
+  * make viewvc-install able to run from an arbitrary location
+  * update viewvc-install's output for readability
+  * fix bug writing commits to non-MyISAM databases (issue #262)
+  * allow long paths in generated tarballs (issue #12)
+  * fix bug interpreting EZT substitute patterns
+  * fix broken markup view disablement
+  * fix broken directory view link generation in directory log view
+  * fix Windows-specific viewvc-install bugs
+  * fix broke query result links for Subversion deleted items (issue #296)
+  * fix some output XHTML validation buglets
+  * fix database query cache staleness problems (issue #180)
+
 Version 1.0.3 (released 13-Oct-2006)
 
   * fix bug in path shown for Subversion deleted-under-copy items (issue #265)
