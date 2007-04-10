@@ -9,7 +9,7 @@
   enter a numeric revision.
 [end]
   </p>
-  <form method="get" action="[diff_select_action]" name="diff_select">
+  <form method="get" action="[diff_select_action]" id="diff_select">
 
   <table cellpadding="2" cellspacing="0" class="auto">
   <tr>
@@ -26,7 +26,7 @@
   </select>
   <input type="text" size="12" name="tr1" 
          value="[if-any rev_selected][rev_selected][else][first_revision][end]"
-         onchange="document.diff_select.r1.selectedIndex=0" />
+         onchange="document.getElementById('diff_select').r1.selectedIndex=0" />
 [else]
   <input type="text" size="12" name="r1"
          value="[if-any rev_selected][rev_selected][else][first_revision][end]" />
@@ -42,7 +42,7 @@
   </select>
   <input type="text" size="12" name="tr2" 
          value="[last_revision]"
-         onchange="document.diff_select.r1.selectedIndex=0" />
+         onchange="document.getElementById('diff_select').r2.selectedIndex=0" />
 [else]
   <input type="text" size="12" name="r2" value="[last_revision]" />
 [end]
