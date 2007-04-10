@@ -52,12 +52,6 @@ for PLATFORM in unix windows; do
 
   ### Various shifting, cleanup.  
 
-  # Documentation is now also distributed together with the release, but
-  # we still copy the license file to its traditional place (it is small
-  # and many files still contain comments refering to this location):
-  echo "   Copying LICENSE.html into place..."
-  cp ${TARGET}/viewvc.org/license-1.html ${TARGET}/LICENSE.html
-
   # Remove some not useful directories
   for JUNK in elemx \
               notes \
