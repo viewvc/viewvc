@@ -1,4 +1,5 @@
 <form method="get" action="[pathrev_action]" style="display: inline">
+<div style="display: inline">
 [pathrev_hidden_values]
 [is roottype "cvs"]
   [define pathrev_selected][pathrev][end]
@@ -34,16 +35,19 @@
   <input type="text" name="pathrev" value="[pathrev]" size="6"/>
 [end]
 <input type="submit" value="Set" />
+</div>
 </form>
 
 [if-any pathrev]
 <form method="get" action="[pathrev_clear_action]" style="display: inline">
+<div style="display: inline">
 [pathrev_clear_hidden_values]
 [if-any lastrev]
-  [is pathrev lastrev][else]<input type="submit" value="Set to [lastrev]">[end]
+  [is pathrev lastrev][else]<input type="submit" value="Set to [lastrev]" />[end]
   (<i>Current path doesn't exist after revision <strong>[lastrev]</strong></i>)
 [else]
-  <input type="submit" value="Clear">
+  <input type="submit" value="Clear" />
 [end]
+</div>
 </form>
 [end]
