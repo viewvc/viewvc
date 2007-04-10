@@ -45,6 +45,8 @@ class CheckinDatabase:
     def Connect(self):
         self.db = dbi.connect(
             self._host, self._port, self._user, self._passwd, self._database)
+        cursor = self.db.cursor()
+        cursor.execute("SET AUTOCOMMIT=1")
 
     def sql_get_id(self, table, column, value, auto_set):
         sql = "SELECT id FROM %s WHERE %s=%%s" % (table, column)
