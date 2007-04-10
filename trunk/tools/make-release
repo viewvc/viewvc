@@ -45,7 +45,10 @@ for PLATFORM in unix windows; do
     EOL="--native-eol LF"
   fi
 
-  svn export ${EOL} http://viewvc.tigris.org/svn/viewvc/${ROOT} ${TARGET}
+  echo "Beginning build for ${PLATFORM}:"
+
+  echo "   Exporting source code..."
+  svn export --quiet ${EOL} http://viewvc.tigris.org/svn/viewvc/${ROOT} ${TARGET}
 
   ### Various shifting, cleanup.  
 
@@ -62,24 +65,28 @@ for PLATFORM in unix windows; do
               viewcvs.sourceforge.net \
               viewvc.org \
               www; do
-    if [ -e ${JUNK} ]; then
-      rm -f ${JUNK}
+    if [ -d ${TARGET}/${JUNK} ]; then
+      echo "   Removing ${TARGET}/${JUNK}..."
+      rm -r ${TARGET}/${JUNK}
     fi
   done
 
   # Make sure permissions are reasonable:
+  echo "   Normalizing permissions..."
   find ${TARGET} -print | xargs chmod uoa+r
   find ${TARGET} -type d -print | xargs chmod uoa+x
 
   if test ${PLATFORM} = windows; then
     # Create also a ZIP file for those poor souls :-) still using Windows: 
+    echo "   Creating ZIP archive..."
     zip -qor9 ${TARGET}.zip ${TARGET}
   else
     # Cut the tarball:
+    echo "   Creating tarball archive..."
     tar cf - ${TARGET} | gzip -9 > ${TARGET}.tar.gz
   fi
 
   # remove target directory
   rm -r ${TARGET}
 done
-echo 'Done.'
+echo "Done."
