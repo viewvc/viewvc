@@ -51,16 +51,12 @@ keywordsList = ["and", "assert", "break", "class", "continue", "def",
                 "return", "try", "while",
                 ]
 
-# First a little helper, since I don't like to repeat things. (Tismer speaking)
-def replace(where, what, with):
-    return string.join(string.split(where, what), with)
-
 # A regexp for matching Python comments.
 commentPat = "#.*"
 
 # A regexp for matching simple quoted strings.
 pat = "q[^q\\n]*(\\[\000-\377][^q\\n]*)*q"
-quotePat = replace(pat, "q", "'") + "|" + replace(pat, 'q', '"')
+quotePat = string.replace(pat, "q", "'") + "|" + string.replace(pat, 'q', '"')
 
 # A regexp for matching multi-line tripled-quoted strings.  (Way to go, Tim!)
 pat = """
@@ -82,7 +78,8 @@ pat = """
     qqq
 """
 pat = string.join(string.split(pat), '')   # get rid of whitespace
-tripleQuotePat = replace(pat, "q", "'") + "|" + replace(pat, 'q', '"')
+tripleQuotePat = string.replace(pat, "q", "'") + "|" \
+                 + string.replace(pat, 'q', '"')
 
 # A regexp which matches all and only Python keywords. This will let
 # us skip the uninteresting identifier references.
