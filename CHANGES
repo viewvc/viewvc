@@ -1,5 +1,6 @@
 Version 1.0.5 (released ??-???-????)
 
+  * fix root name conflict resolution inconsistencies (issue #287)
 
 Version 1.0.4 (released 10-Apr-2007)
 
