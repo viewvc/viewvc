@@ -3718,10 +3718,10 @@ for code, view in _views.items():
 
 def list_roots(cfg):
   allroots = { }
-  for root in cfg.general.cvs_roots.keys():
-    allroots[root] = [cfg.general.cvs_roots[root], 'cvs']
   for root in cfg.general.svn_roots.keys():
     allroots[root] = [cfg.general.svn_roots[root], 'svn']
+  for root in cfg.general.cvs_roots.keys():
+    allroots[root] = [cfg.general.cvs_roots[root], 'cvs']
   return allroots
   
 def load_config(pathname=None, server=None):
