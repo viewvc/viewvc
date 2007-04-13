@@ -127,41 +127,55 @@ td {
    viewvc.conf file.  All the options used for configuring the
    locations of various helper applications that ViewVC uses which
    were previously scattered throughout the configuration file are now
-   all centralized in this one new section.</p>
-
-<p>The following options have been added:</p>
+   all centralized in this one new section.  To accomplish this, the
+   following options were added:</p>
 
 <ul>
-  <li>utilities/rcs_dir</li>
-  <li>utilities/cvsnt</li>
-  <li>utilities/svn</li>
-  <li>utilities/enscript</li>
-  <li>utilities/highlight</li>
-  <li>utilities/py2html_dir</li>
-  <li>utilities/php</li>
-  <li>utilities/cvsgraph</li>
-  <li>utilities/diff</li>
-  <li>utilities/gzip</li>
-  <li>utilities/sed</li>
   <li>options/use_py2html</li>
+  <li>utilities/cvsgraph</li>
+  <li>utilities/cvsnt</li>
+  <li>utilities/diff</li>
+  <li>utilities/enscript</li>
+  <li>utilities/gzip</li>
+  <li>utilities/highlight</li>
+  <li>utilities/php</li>
+  <li>utilities/py2html_dir</li>
+  <li>utilities/rcs_dir</li>
+  <li>utilities/sed</li>
+  <li>utilities/svn</li>
+</ul>
+
+<p>And these were removed:</p>
+
+<ul>
+  <li>general/cvsnt_ext_path</li>
+  <li>general/rcs_path</li>
+  <li>general/svn_path</li>
+  <li>options/cvsgraph_path</li>
+  <li>options/enscript_path</li>
+  <li>options/highlight_path</li>
+  <li>options/php_exe</li>
+  <li>options/py2html_path</li>
+</ul>
+
+<p>Secondly, all the options which governed which ViewVC views were
+   enabled have been consolidated into a single new option.  This new
+   option:</p>
+
+<ul>
   <li>options/allowed_views</li>
 </ul>
 
-<p>The following options have been removed:</p>
+<p>Replaces these, which have been removed:</p>
 
 <ul>
-  <li>general/rcs_path</li>
-  <li>general/cvsnt_ext_path</li>
-  <li>general/svn_path</li>
-  <li>options/enscript_path</li>
-  <li>options/highlight_path</li>
-  <li>options/py2html_path</li>
-  <li>options/php_exe</li>
-  <li>options/cvsgraph_path</li>
   <li>options/allow_annotate</li>
   <li>options/allow_markup</li>
   <li>options/allow_tar</li>
 </ul>
+
+<p>The <code>use_rcsparse</code> option was moved from the "general"
+   section to the "options" section.</p>
 
 </div>
 

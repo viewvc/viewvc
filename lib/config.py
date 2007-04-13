@@ -146,7 +146,6 @@ class Config:
     self.general.svn_roots = { }
     self.general.root_parents = []
     self.general.default_root = ''
-    self.general.use_rcsparse = 0
     self.general.mime_types_file = ''
     self.general.address = '<a href="mailto:user@insert.your.domain.here">No admin address has been configured</a>'
     self.general.forbidden = ()
@@ -196,6 +195,7 @@ class Config:
     self.options.default_file_view = "log"
     self.options.checkout_magic = 0
     self.options.allowed_views = ['markup', 'annotate']
+    self.options.use_rcsparse = 0
     self.options.sort_by = 'file'
     self.options.sort_group_dirs = 1
     self.options.hide_attic = 1

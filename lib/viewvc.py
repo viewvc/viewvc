@@ -223,7 +223,7 @@ class Request:
       if cfg.general.cvs_roots.has_key(self.rootname):
         self.rootpath = os.path.normpath(cfg.general.cvs_roots[self.rootname])
         try:
-          if cfg.general.use_rcsparse:
+          if cfg.options.use_rcsparse:
             import vclib.ccvs
             self.repos = vclib.ccvs.CCVSRepository(self.rootname,
                                                    self.rootpath,
