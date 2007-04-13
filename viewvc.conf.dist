@@ -643,33 +643,59 @@ enabled = 0
 
 #---------------------------------------------------------------------------
 [vhosts]
-### DOC
 
-# vhost1 = glob1, glob2
-# vhost2 = glob3, glob4
-
-# [vhost1-section]
-# option = value
-# [vhost1-othersection]
-# option = value
-# [vhost2-section]
-# option = value
-
+# Virtual hosts are individual logical servers accessible via
+# different hostnames, but which are all really the same physical
+# computer.  For example, you might have your web server configured to
+# accept incoming traffic for both http://www.yourdomain.com/ and
+# http://viewvc.yourdomain.com/.  Users pointing their web browsers at
+# each of those two URLs might see entirely different content via one
+# URL versus the other, but all that content actually lives on the
+# same computer, is served up via the same web server, and so
+# on.  It just *looks* like its coming from multiple servers.
+#
+# ViewVC allows you to customize its configuration options for
+# individual virtual hosts.  You might, for example, wish to expose
+# all of your Subversion repositories at http://svn.yourdomain.com/viewvc/ 
+# and all your CVS ones at http://cvs.yourdomain.com/viewvc/, with no
+# cross-exposure.  Using ViewVC's virtual host (vhost) configuration
+# support, you can do this.  Simply create two vhost configurations
+# (one for each of your hostnames), then configure the cvs_roots
+# option only for the vhost associated with cvs.yourdomain.com, and
+# configure the svn_roots option only for the vhost associated with
+# svn.yourdomain.com.
+#
+# This section is a freeform configuration section, where you create
+# both the option names and their values.  The names of the options
+# are then treated as canonical names of virtual hosts, and their
+# values are defined to be comma-delimited lists of hostname globs
+# against which incoming ViewVC requests will be matched to figure out
+# which vhost they apply to.
+#
+# After you've named and defined your vhosts, you may then create new
+# configuration sections whose names are of the form
+# VHOSTNAME-CONFIGSECTION.  Inside those configuration sections, you
+# override the standard ViewVC options typically found in the
+# configuration section named CONFIGSECTION ("general", "option", etc.)
 #
 # Here is an example:
 #
 # [vhosts]
-# lyra = *lyra.org
+# svn-vhost = svn.yourdomain.*
+# cvs-vhost = cvs.yourdomain.*
 #
-# [lyra-general]
-# forbidden = hideme
+# [svn-vhost-general]
+# cvs_roots = 
+# svn_roots = svnroot: /var/svn/repos
+# default_root = svnroot
 #
-# [lyra-options]
-# show_logs = 0
+# [svn-vhost-options]
+# show_logs = 1
 #
-# Note that "lyra" is the "canonical" name for all hosts in the lyra.org
-# domain. This canonical name is then used within the additional, vhost-
-# specific sections to override specific values in the common sections.
+# [cvs-vhost-general]
+# cvs_roots = cvsroot: /var/cvs/cvsroot
+# svn_roots = 
+# default_root = cvsroot
 #
 
 #---------------------------------------------------------------------------
