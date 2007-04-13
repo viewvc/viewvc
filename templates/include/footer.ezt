@@ -4,7 +4,7 @@
 
 <table>
 <tr>
-  <td><address>[cfg.general.address]</address></td>
+  <td>[if-any cfg.general.address]<address><a href="mailto:[cfg.general.address]">[cfg.general.address]</a></address>[else]&nbsp;[end]</td>
   <td style="text-align: right;"><strong><a href="[help_href]">ViewVC Help</a></strong></td>
 </tr>
 <tr>

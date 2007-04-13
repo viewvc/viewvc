@@ -135,17 +135,18 @@ use_rcsparse = 0
 
 #
 # This is a pathname to a MIME types file to help viewvc to guess the
-# correct MIME type on checkout.
+# correct MIME type on checkout.  If you are having problems with the
+# default guess on the MIME type, then uncomment this option and point
+# it at a MIME type file.
 #
-# If you are having problems with the default guess on the MIME type, then
-# uncomment this option and point it at a MIME type file.
-#
-# For example, you can use the mime.types from apache here:
-#mime_types_file = /usr/local/apache/conf/mime.types
+# For example, you can use the mime.types provided by Apache here:
+#mime_types_file = /usr/local/apache2/conf/mime.types
 
-# This address is shown in the footer of the generated pages. 
-# It must be replaced with the address of the local repository maintainer.
-address = <a href="mailto:cvs-admin@insert.your.domain.here">No admin address has been configured</a>
+# The address of the local repository maintainer.  (This option is
+# provided only as a convenience for ViewVC installations which are
+# using the default template set, where the value of this option will
+# be displayed in the footer of every ViewVC page.)
+address = 
 
 #
 # This should contain a list of modules in the repository that should not be
@@ -171,53 +172,54 @@ address = <a href="mailto:cvs-admin@insert.your.domain.here">No admin address ha
 # NOTE: Again, this is for the hiding of modules within repositories, *not* 
 # for the hiding of repositories (roots) themselves.
 #
-forbidden =
-
 # Some examples:
 #
-# Disallow "example" but allow all others:
-#   forbidden = example
+#    Disallow "example" but allow all others:
+#       forbidden = example
 #
-# Disallow "example1" and "example2" but allow all others:
-#   forbidden = example1, example2
+#    Disallow "example1" and "example2" but allow all others:
+#       forbidden = example1, example2
 #
-# Allow *only* "example1" and "example2":
-#   forbidden = !example1, !example2
+#    Allow *only* "example1" and "example2":
+#       forbidden = !example1, !example2
 #
-# Forbid modules starting with "x":
-#   forbidden = x*
+#    Forbid modules starting with "x":
+#       forbidden = x*
 #
-# Allow modules starting with "x" but no others:
-#   forbidden = !x*
+#    Allow modules starting with "x" but no others:
+#       forbidden = !x*
 #
-# Allow "xml", forbid other modules starting with "x", and allow the rest:
-#   forbidden = !xml, x*, !*
+#    Allow "xml", forbid other modules starting with "x", and allow the rest:
+#       forbidden = !xml, x*, !*
 #
+forbidden =
 
 #
 # This option provides a mechanism for custom key/value pairs to be
-# available to templates. These are stored in key/value files (KV files).
+# available to templates.  These are stored in key/value (KV) files.
 #
-# Pathnames to the KV files are listed here, specified as absolute paths
-# or relative to this configuration file. The kV files follow the same
-# format as this configuration file. It may have multiple, user-defined
-# sections, and user-defined options in those sections. These are all
-# placed into a structure available to the templates as:
+# The paths of the KV files are listed here, specified either as
+# absolute paths or relative to this configuration file.  The files
+# use the same format as this configuration file, containing one or
+# more user-defined sections, and user-defined options in those
+# sections.  ViewVC makes these options available to template authors
+# as:
 #
 #    kv.SECTION.OPTION
 #
-# Note that an option name can be dotted. For example:
+# Note that an option name can be dotted.  For example:
 #
 #    [my_images]
 #    logos.small = /images/small-logo.png
 #    logos.big = /images/big-logo.png
 #
-# Templates can use these with a directive like: [kv.my_images.logos.small]
+# Templates can use these with a directive like:  [kv.my_images.logos.small]
 #
-# Note that sections across multiple files will be merged. If two files
-# have a [my_images] section, then the options will be merged together.
+# Note that section names which are common to multiple KV files will
+# be merged.  If two files have a [my_images] section, then the
+# options in those two like-named sections will be merged together.
 # If two files have the same option name in a section, then one will
-# overwrite the other (it is unspecified regarding which "wins").
+# overwrite the other (and which one "wins" is unspecified).
 #
 # To further categorize the KV files, and how the values are provided to
 # the templates, a KV file name may be annotated with an additional level
@@ -231,37 +233,27 @@ forbidden =
 # Lastly, it is possible to use %lang% in the filenames to specify a
 # substitution of the selected language-tag.
 #
-kv_files =
-
-# example:
+# Example:
 # kv_files = kv/file1.conf, kv/file2.conf, [i18n]kv/%lang%_data.conf
 #
+kv_files =
 
 #
-# The languages available to ViewVC. There are several i18n mechanisms
-# available:
+# This option is a comma-separated list of language-tag values
+# available to ViewVC.  The first language-tag listed is the default
+# language, and will be used if an Accept-Language header is not
+# present in the request, or none of the user's requested languages
+# are available.  If there are ties on the selection of a language,
+# then the first to appear in the list is chosen.
 #
-#   1) using key/value extension system and reading KV files based on
-#      the selected language
-#   2) GNU gettext to substitute text in the templates
-#   3) using different templates, based on the selected language
+# Some examples:
 #
-# ### NOTE: at the moment, the GNU gettext style is not implemented
-#
-# This option is a comma-separated list of language-tag values. The first
-# language-tag listed is the default language, and will be used if an
-# Accept-Language header is not present in the request, or none of the
-# user's requested languages are available. If there are ties on the
-# selection of a language, then the first to appear in the list is chosen.
+#    languages = en-us, de
+#    languages = en-us, en-gb, de
+#    languages = de, fr, en-us
 #
 languages = en-us
 
-# other examples:
-#
-# languages = en-us, de
-# languages = en-us, en-gb, de
-# languages = de, fr, en-us
-#
 
 #---------------------------------------------------------------------------
 [utilities]
