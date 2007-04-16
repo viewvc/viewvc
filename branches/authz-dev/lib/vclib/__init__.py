@@ -1,6 +1,6 @@
 # -*-python-*-
 #
-# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2007 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -189,8 +189,10 @@ class Annotation:
 
 class Error(Exception):
   pass
+
 class ReposNotFound(Error):
   pass
+
 class ItemNotFound(Error):
   def __init__(self, path):
     # use '/' rather than os.sep because this is for user consumption, and
@@ -198,12 +200,16 @@ class ItemNotFound(Error):
     if type(path) in (types.TupleType, types.ListType):
       path = string.join(path, '/')
     Error.__init__(self, path)
+
 class InvalidRevision(Error):
   def __init__(self, revision=None):
     if revision is None:
       Error.__init__(self, "Invalid revision")
     else:
       Error.__init__(self, "Invalid revision " + str(revision))
+
+class NonTextualFileContents(Error):
+  pass
 
 # ======================================================================
 # Implementation code used by multiple vclib modules

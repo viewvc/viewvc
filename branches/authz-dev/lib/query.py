@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-python-*-
 #
-# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2007 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -345,7 +345,7 @@ def run_query(server, cfg, form_data, viewvc_link):
     files = [ ]
 
     cvsroots = {}
-    rootitems = cfg.general.cvs_roots.items() + cfg.general.svn_roots.items()
+    rootitems = cfg.general.svn_roots.items() + cfg.general.cvs_roots.items()
     for key, value in rootitems:
         cvsroots[cvsdb.CleanRepository(value)] = key
 
@@ -415,7 +415,7 @@ def main(server, cfg, viewvc_link):
 
     # generate the page
     template = viewvc.get_view_template(cfg, "query")
-    template.generate(sys.stdout, data)
+    template.generate(server.file(), data)
 
   except SystemExit, e:
     pass

@@ -1,6 +1,6 @@
 # -*-python-*-
 #
-# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2007 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -41,18 +41,18 @@ class Config:
   _sections = ('general', 'utilities', 'options', 'cvsdb', 'templates')
   _force_multi_value = ('cvs_roots', 'forbidden',
                         'svn_roots', 'languages', 'kv_files',
-                        'root_parents')
+                        'root_parents', 'allowed_views')
 
   def __init__(self):
     for section in self._sections:
       setattr(self, section, _sub_config())
 
-  def load_config(self, pathname, vhost=None):
+  def load_config(self, pathname, vhost=None, rootname=None):
     self.conf_path = os.path.isfile(pathname) and pathname or None
     self.base = os.path.dirname(pathname)
-
+    
     parser = ConfigParser.ConfigParser()
-    parser.read(pathname)
+    parser.read(self.conf_path or [])
 
     for section in self._sections:
       if parser.has_section(section):
@@ -60,6 +60,9 @@ class Config:
 
     if vhost and parser.has_section('vhosts'):
       self._process_vhost(parser, vhost)
+
+    if rootname:
+      self._process_root_options(parser, rootname)
 
   def load_kv_files(self, language):
     kv = _sub_config()
@@ -90,6 +93,10 @@ class Config:
 
     return kv
 
+  def path(self, path):
+    """Return path relative to the config file directory"""
+    return os.path.join(self.base, path)
+
   def _process_section(self, parser, section, subcfg_name):
     sc = getattr(self, subcfg_name)
 
@@ -109,22 +116,23 @@ class Config:
       setattr(sc, opt, value)
 
   def _process_vhost(self, parser, vhost):
+    # find a vhost name for this vhost, if any (if not, we've nothing to do)
     canon_vhost = self._find_canon_vhost(parser, vhost)
     if not canon_vhost:
-      # none of the vhost sections matched
       return
 
-    cv = canon_vhost + '-'
+    # overlay any option sections associated with this vhost name
+    cv = 'vhost-%s-' % (canon_vhost)
     lcv = len(cv)
     for section in parser.sections():
       if section[:lcv] == cv:
-        self._process_section(parser, section, section[lcv:])
+        base_section = section[lcv:]
+        if base_section not in self._sections:
+          raise IllegalOverrideSection('vhost', section)
+        self._process_section(parser, section, base_section)
 
   def _find_canon_vhost(self, parser, vhost):
-    vhost = string.lower(vhost)
-    # Strip (ignore) port number:
-    vhost = string.split(vhost, ':')[0]
-
+    vhost = string.split(string.lower(vhost), ':')[0]  # lower-case, no port
     for canon_vhost in parser.options('vhosts'):
       value = parser.get('vhosts', canon_vhost)
       patterns = map(string.lower, map(string.strip,
@@ -135,6 +143,24 @@ class Config:
 
     return None
 
+  def _process_root_options(self, parser, rootname):
+    rn = 'root-%s-' % (rootname)
+    lrn = len(rn)
+    for section in parser.sections():
+      if section[:lrn] == rn:
+        base_section = section[lrn:]
+        if base_section not in self._sections or base_section == 'general':
+          raise IllegalOverrideSection('root', section)
+        self._process_section(parser, section, base_section)
+
+  def overlay_root_options(self, rootname):
+    "Overly per-root options atop the existing option set."
+    if not self.conf_path:
+      return
+    parser = ConfigParser.ConfigParser()
+    parser.read(self.conf_path or [])
+    self._process_root_options(parser, rootname)
+
   def set_defaults(self):
     "Set some default values in the configuration."
 
@@ -142,7 +168,6 @@ class Config:
     self.general.svn_roots = { }
     self.general.root_parents = []
     self.general.default_root = ''
-    self.general.use_rcsparse = 0
     self.general.mime_types_file = ''
     self.general.address = '<a href="mailto:user@insert.your.domain.here">No admin address has been configured</a>'
     self.general.forbidden = ()
@@ -158,6 +183,7 @@ class Config:
     self.utilities.diff = ''
     self.utilities.enscript = ''
     self.utilities.highlight = ''
+    self.utilities.source_highlight = ''
     self.utilities.py2html_dir = '.'
     self.utilities.php = 'php'
     self.utilities.cvsgraph = ''
@@ -187,9 +213,11 @@ class Config:
     self.cvsdb.row_limit = 1000
     self.cvsdb.rss_row_limit = 100
 
-    self.options.root_as_url_component = 0
+    self.options.root_as_url_component = 1
     self.options.default_file_view = "log"
     self.options.checkout_magic = 0
+    self.options.allowed_views = ['markup', 'annotate']
+    self.options.use_rcsparse = 0
     self.options.sort_by = 'file'
     self.options.sort_group_dirs = 1
     self.options.hide_attic = 1
@@ -201,8 +229,6 @@ class Config:
     self.options.hr_ignore_white = 1
     self.options.hr_ignore_keyword_subst = 1
     self.options.hr_intraline = 0
-    self.options.allow_annotate = 1
-    self.options.allow_markup = 1
     self.options.allow_compress = 1
     self.options.template_dir = "templates"
     self.options.docroot = None
@@ -215,9 +241,10 @@ class Config:
     self.options.use_highlight = 0
     self.options.highlight_line_numbers = 1
     self.options.highlight_convert_tabs = 2
+    self.options.use_source_highlight = 0
+    self.options.source_highlight_line_numbers = 1
     self.options.use_py2html = 0
     self.options.use_php = 0
-    self.options.allow_tar = 0
     self.options.use_cvsgraph = 0
     self.options.cvsgraph_conf = "cvsgraph.conf"
     self.options.use_re_search = 0
@@ -252,7 +279,18 @@ def _parse_roots(config_name, config_value):
   return roots
 
 
-class MalformedRoot(Exception):
+class ViewVCConfigurationError(Exception):
+  pass
+
+class IllegalOverrideSection(ViewVCConfigurationError):
+  def __init__(self, override_type, section_name):
+    self.section_name = section_name
+    self.override_type = override_type
+  def __str__(self):
+    return "malformed configuration: illegal %s override section: %s" \
+           % (self.override_type, self.section_name)
+  
+class MalformedRoot(ViewVCConfigurationError):
   def __init__(self, config_name, value_given):
     Exception.__init__(self, config_name, value_given)
     self.config_name = config_name

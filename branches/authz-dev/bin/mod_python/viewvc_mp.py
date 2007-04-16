@@ -1,6 +1,6 @@
 # -*-python-*-
 #
-# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2007 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -43,8 +43,6 @@ if LIBRARY_DIR:
 
 import sapi
 import viewvc
-reload(viewvc) # need reload because initial import loads this stub file
-
 
 def index(req):
   server = sapi.ModPythonServer(req)

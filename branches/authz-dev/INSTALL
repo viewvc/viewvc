@@ -1,11 +1,12 @@
 CONTENTS
 --------
   TO THE IMPATIENT
+  SECURITY INFORMATION
   INSTALLING VIEWVC
   APACHE CONFIGURATION
   UPGRADING VIEWVC
   SQL CHECKIN DATABASE
-  ENSCRIPT AND HIGHLIGHT CONFIGURATION
+  ENABLING SYNTAX COLORATION
   CVSGRAPH CONFIGURATION
   IF YOU HAVE PROBLEMS...
 
@@ -31,7 +32,7 @@ Congratulations on getting this far. :-)
 
       * Python 2.0 or later
           (http://www.python.org/)
-      * Subversion, Version Control System, 1.2.0 or later
+      * Subversion, Version Control System, 1.3.1 or later
           (binary installation and Python bindings)
           (http://subversion.tigris.org/)
 
@@ -42,32 +43,62 @@ Congratulations on getting this far. :-)
       * MySQL 3.22 and MySQLdb 0.9.0 or later to create a commit database
           (http://www.mysql.com/)
           (http://sourceforge.net/projects/mysql-python)
-      * Enscript, code colorizer
-          (http://www.codento.com/people/mtr/genscript/)
-      * Highlight, code colorizer, 2.2.10 or later required, 2.4.5 or
-        later recommended for reliable line numbering
-          (http://www.andre-simon.de/)
+      * one of the following syntax highlighting programs:
+          - GNU enscript
+              (http://www.codento.com/people/mtr/genscript/)
+          - Highlight 2.2.10 or later (we recommend 2.4.5 or later)
+              (http://www.andre-simon.de/)
+          - GNU source-highlight 2.5 or later
+              (http://www.gnu.org/software/src-highlite/)
       * CvsGraph 1.5.0 or later, graphical CVS revision tree generator
           (http://www.akhphd.au.dk/~bertho/cvsgraph/)
 
-  GUI Operation:
+  Quick sanity check:
 
-    If you just want to see what your CVS repository looks like with
-    ViewVC, type "bin/standalone.py -g -r /PATH/TO/CVS/ROOT".  This
-    will start a tiny webserver serving at http://localhost:7467/.
-    PLEASE NOTE: This requires Python with thread support enabled and
-    the Tkinter GUI.  If you don't have one of these, omit the '-g' option.
+    If you just want to see what your repository looks like when seen
+    through ViewVC, type:
 
+       $ bin/standalone.py -r /PATH/TO/REPOSITORY
+
+    This will start a tiny ViewVC server at http://localhost:49152/viewvc/,
+    to which you can connect with your browser.
 
   Standard operation:
 
     To start installing right away (on UNIX): type "./viewvc-install"
     in the current directory and answer the prompts.  When it
     finishes, edit the file viewvc.conf in the installation directory
-    to tell viewvc the paths to your CVS and Subversion repositories. 
+    to tell ViewVC the paths to your CVS and Subversion repositories. 
     Next, configure your web server (in the way appropriate to that browser)
     to run <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/viewvc.cgi.  The section
     `INSTALLING VIEWVC' below is still recommended reading.
+
+
+SECURITY INFORMATION
+--------------------
+
+ViewVC provides a feature which allows version controlled content to
+be served to web browsers just like static web server content.  So, if
+you have a directory full of interrelated HTML files that is housed in
+your version control repository, ViewVC can serve those files as HTML.
+You'll see in your web browser what you'd see if the files were part
+of your website, with working references to stylesheets and images and
+links to other pages.
+
+It is important to realize, however, that as useful as that feature
+is, there is some risk security-wise in its use.  Essentially, anyone
+with commit access to the CVS or Subversion repositories served by
+ViewVC has the ability to affect site content.  If a discontented or
+ignorant user commits malicious HTML to a version controlled file
+(perhaps just by way of documenting examples of such), that malicious
+HTML is effectively published and live on your ViewVC instance.
+Visitors viewing those versioned controlled documents get the
+malicious code, too, which might not be what the original author
+intended.
+
+For this reason, ViewVC's "checkout" view is disabled by default.  If
+you wish to enable it, simply add "co" to the list of views enabled in
+the allowed_views configuration option.
 
 
 INSTALLING VIEWVC
@@ -107,9 +138,12 @@ installation instructions.
 3) Edit <VIEWVC_INSTALLATION_DIRECTORY>/viewvc.conf for your specific 
    configuration.  In particular, examine the following configuration options:
 
-      cvs_roots
+      cvs_roots (for CVS)
+      svn_roots (for Subversion)
+      root_parents (for CVS or Subversion)
       default_root
-      rcs_path
+      root_as_url_component
+      rcs_dir
       mime_types_file
 
    There are some other options that are usually nice to change. See
@@ -125,15 +159,15 @@ installation instructions.
    scripts after the install (unlike the other files in ViewVC, the scripts 
    under bin/ can be moved).
 
-   If you are using Apache, then see below at the section 
-   titled APACHE CONFIGURATION.
+   If you are using Apache, then see below at the section titled
+   APACHE CONFIGURATION.
 
    NOTE: for security reasons, it is not advisable to install ViewVC
    directly into your published HTTP directory tree (due to the MySQL
    passwords in viewvc.conf).
 
-5) That's it for repository browsing.  Instructions for getting the
-   SQL checkin database working are below.
+That's it for repository browsing.  Instructions for getting the SQL
+checkin database working are below.
 
 
 APACHE CONFIGURATION
@@ -206,28 +240,27 @@ or if you've got Mod_Python installed you can use METHOD D:
    In your httpd.conf you can control access to certain modules by adding 
    directives like this:
 
-   <Location "<url to viewvc.cgi>/<modname_you_wish_to_access_ctl>">
-     AllowOverride None
-     AuthUserFile /path/to/passwd/file
-     AuthName "Client Access"
-     AuthType Basic
-     require valid-user
-   </Location>
+      <Location "<url to viewvc.cgi>/<modname_you_wish_to_access_ctl>">
+        AllowOverride None
+        AuthUserFile /path/to/passwd/file
+        AuthName "Client Access"
+        AuthType Basic
+        require valid-user
+      </Location>
 
    WARNING: If you enable the "checkout_magic" or "allow_tar" options, you
    will need to add additional location directives to prevent people
    from sneaking in with URLs like:
 
-   	http://<server_name>/viewvc/*checkout*/<module_name>
-   	http://<server_name>/viewvc/~checkout~/<module_name>
-   	http://<server_name>/viewvc/<module_name>.tar.gz?view=tar
+      http://<server_name>/viewvc/*checkout*/<module_name>
+      http://<server_name>/viewvc/~checkout~/<module_name>
+      http://<server_name>/viewvc/<module_name>.tar.gz?view=tar
 
 
 UPGRADING VIEWVC
 -----------------
 
-Please read the file upgrading.html in the viewvc.org/ subdirectory or
-at <http://viewvc.org/upgrading.html>.
+Please read the file upgrading-howto.html in the docs/ subdirectory.
 
 
 SQL CHECKIN DATABASE
@@ -258,91 +291,116 @@ there are some additional steps required to get the database working.
       enabled = 1        # Whether to enable query support in viewvc.cgi
       host =             # MySQL database server host
       port =             # MySQL database server port (default is 3306)
-      database_name =    # the name of the database you created with
-                         # make-database
-      user =             # the read/write database user
+      database_name =    # name of database you created with make-database
+      user =             # read/write database user
       passwd =           # password for read/write database user
-      readonly_user =    # the readonly database user -- it's pretty 
-                         # safe to use the read/write user here
-      readonly_passwd =  # password for the readonly user
+      readonly_user =    # read-only database user
+      readonly_passwd =  # password for the read-only user
 
-5) Two programs are provided for updating the checkin database from a
-   CVS repository, cvsdbadmin and loginfo-handler.  They serve two
-   different purposes.  The cvsdbadmin program walks through your CVS
-   repository and adds every commit in every file.  This is commonly
-   used for initializing the database from a repository which has been
-   in use.  The loginfo-handler script is executed by the CVS server's
-   CVSROOT/loginfo system upon each commit.  It makes real-time
-   updates to the checkin database as commits are made to the
-   repository.
+   Note that it's pretty safe in this instance for your read-only user
+   and your read-write user to be the same.
 
-   To build a database of all the commits in the CVS repository /home/cvs,
-   invoke: "./cvsdbadmin rebuild /home/cvs".  If you want to update
-   the checkin database, invoke: "./cvsdbadmin update /home/cvs".  The
-   update mode checks to see if a commit is already in the database,
-   and only adds it if it is absent.
+5) At this point, you need to tell your version control system(s) to 
+   publish their commit information to the database.  This is done
+   using utilities that ViewVC provides.
 
-   To get real-time updates, you'll want to checkout the CVSROOT module
-   from your CVS repository and edit CVSROOT/loginfo.  Add the line:
+   To publish CVS commits into the database:
 
-     ALL <VIEWVC_INSTALLATION_DIRECTORY>/bin/loginfo-handler %{sVv}
+      Two programs are provided for updating the checkin database from
+      a CVS repository, cvsdbadmin and loginfo-handler.  They serve
+      two different purposes.  The cvsdbadmin program walks through
+      your CVS repository and adds every commit in every file.  This
+      is commonly used for initializing the database from a repository
+      which has been in use.  The loginfo-handler script is executed
+      by the CVS server's CVSROOT/loginfo system upon each commit.  It
+      makes real-time updates to the checkin database as commits are
+      made to the repository.
 
-   If you have other scripts invoked by CVSROOT/loginfo, you will want
-   to make sure to change any running under the "DEFAULT" keyword to
-   "ALL" like the loginfo handler, and probably carefully read the
-   execution rules for CVSROOT/loginfo from the CVS manual.
+      To build a database of all the commits in the CVS repository
+      /home/cvs, invoke: "./cvsdbadmin rebuild /home/cvs".  If you
+      want to update the checkin database, invoke: "./cvsdbadmin
+      update /home/cvs".  The update mode checks to see if a commit is
+      already in the database, and only adds it if it is absent.
 
-   If you are running the Unix port of CVS-NT, you'll need to use a 
-   slightly different command line:
+      To get real-time updates, you'll want to checkout the CVSROOT
+      module from your CVS repository and edit CVSROOT/loginfo.  For
+      folks running CVS 1.12 or better, add this line:
+
+         ALL <VIEWVC_INSTALLATION_DIRECTORY>/bin/loginfo-handler %p %{sVv}
+
+      If you are running CVS 1.11 or earlier, you'll want a slightly
+      different command line in CVSROOT/loginfo:
+
+        ALL <VIEWVC_INSTALLATION_DIRECTORY>/bin/loginfo-handler %{sVv}
    
-     ALL <VIEWVC_INSTALLATION_DIRECTORY>/bin/loginfo-handler %{sVv} cvsnt
-     
-   The extra 'cvsnt' parameter tells the handler script to parse the 
-   commit information in a different way. 
+      If you have other scripts invoked by CVSROOT/loginfo, you will
+      want to make sure to change any running under the "DEFAULT"
+      keyword to "ALL" like the loginfo handler, and probably
+      carefully read the execution rules for CVSROOT/loginfo from the
+      CVS manual.
+   
+      If you are running the Unix port of CVS-NT, the handler script
+      need to know about it.  CVS-NT delivers commit information to
+      loginfo scripts differently than the way mainstream CVS does.
+      Your command line should look like this:
+      
+        ALL <VIEWVC_INSTALLATION_DIRECTORY>/bin/loginfo-handler %{sVv} cvsnt
 
-   For Subversion repositories, there is a single script called
-   svndbadmin that performs both of the above tasks.
+   To publish Subversion commits into the database:
+   
+      To build a database of all the commits in the Subversion
+      repository /home/svn, invoke: "./svndbadmin rebuild /home/svn".
+      If you want to update the checkin database, invoke:
+      "./svndbadmin update /home/svn".
+   
+      To get real time updates, you will need to add a post-commit
+      hook (for the repository example above, the script should go in
+      /home/svn/hooks/post-commit).  The script should look something
+      like this:
+   
+        #!/bin/sh
+        REPOS="$1"
+        REV="$2"
+        <VIEWVC_INSTALLATION_DIRECTORY>/bin/svndbadmin update \
+            "$REPOS" "$REV"
+   
+      If you allow revision property changes in your repository,
+      create a post-revprop-change hook script which uses the same
+      'svndbadmin update' command as the post-commit script, except
+      with the addition of the --force option:
+   
+        #!/bin/sh
+        REPOS="$1"
+        REV="$2"
+        <VIEWVC_INSTALLATION_DIRECTORY>/bin/svndbadmin update --force \
+            "$REPOS" "$REV"
+   
+      This will make sure that the checkin database stays consistent
+      when you change the svn:log, svn:author or svn:date revision
+      properties.
 
-   To build a database of all the commits in the Subversion repository
-   /home/svn, invoke: "./svndbadmin rebuild /home/svn".  If you want
-   to update the checkin database, invoke: "./svndbadmin update
-   /home/svn".
-
-   To get real time updates, you will need to add a post-commit hook
-   (for the repository example above, the script should go in
-   /home/svn/hooks/post-commit).  The script should look something
-   like this:
-
-     #!/bin/sh
-     REPOS="$1"
-     REV="$2"
-     <VIEWVC_INSTALLATION_DIRECTORY>/bin/svndbadmin rebuild "$REPOS" "$REV"
-
-   If you allow revision property changes in your repository, create a
-   post-revprop-change hook script containing the same commands as the
-   post-commit one.  This will make sure that the checkin database
-   stays consistent when you change the svn:log, svn:author or
-   svn:date revision properties.
-
-6) You should be ready to go.  Click one of the "Query revision history"
-   links in ViewVC directory listings and give it a try.
+You should be ready to go.  Click one of the "Query revision history"
+links in ViewVC directory listings and give it a try.
 
 
-ENSCRIPT AND HIGHLIGHT CONFIGURATION
-------------------------------------
+ENABLING SYNTAX COLORATION
+--------------------------
 
-Enscript and Highlight are programs that can colorize source code for
-a lot of languages. ViewVC can be configured to use either one.
+Enscript and Highlight are two programs that can colorize source code
+for a lot of languages.  ViewVC can be configured to use either one.
 
-1) Install Enscript or Highlight using your system's package manager
-   or downloading from the project home pages.
+1) Install Enscript, Highlight, or GNU Source Highlight using your
+   system's package manager, or by downloading from the project home pages.
 
-2) Set the 'use_enscript' or 'use_highlight' options in viewvc.conf to 1.
+2) Set either the 'use_enscript' or 'use_highlight' or 'use_source_highlight'
+   option in viewvc.conf to 1.
 
-3) You may also need to set 'enscript_path' and 'highlight_path' options
-   if the executables are not located on the system PATH.
+3) You may also need to set 'enscript', 'highlight', or 'source_highlight'
+   option in the [utilities] section if the executables are not located 
+   on the system PATH.
 
-4) That's it!
+That's it!  Now when you view the contents of recognized filetypes in
+ViewVC, you should see colorized syntax.
 
 
 CVSGRAPH CONFIGURATION
@@ -371,35 +429,49 @@ a reasonable number of revisions and branches.
 4) There is a file <VIEWVC_INSTALLATION_DIRECTORY>/cvsgraph.conf that
    you may want to edit if desired to set color and font characteristics.
    See the cvsgraph.conf documentation.  No edits are required in
-   cvsgraph.conf for operation with viewvc.
+   cvsgraph.conf for operation with ViewVC.
 
 
 SUBVERSION INTEGRATION
 ----------------------
 
-ViewVC supports browsing of Subversion repositories.  To use ViewVC
-with Subversion, make sure you have both Subversion itself and
-the Subversion Python bindings installed.  See Subversion's
-installation notes for more details on how to build and install these
-items.  
+Unlike the CVS integration, which simply wraps the RCS and CVS utility
+programs, the Subversion integration requires additional Python
+libraries.  To use ViewVC with Subversion, make sure you have both
+Subversion itself and the Subversion Python bindings installed.  See
+Subversion's installation notes for more details on how to build and
+install these items.
 
 Generally speaking, you'll know when your installation of Subversion's
-bindings has been successful if you can import the 'svn.repos' module
-from within your Python interpreter:
+bindings has been successful if you can import the 'svn.core' module
+from within your Python interpreter.  Here's an example of doing so
+which doubles as a quick way to check what version of the Subversion
+Python binding you have:
 
    % python
    Python 2.2.2 (#1, Oct 29 2002, 02:47:30) 
    [GCC 2.96 20000731 (Red Hat Linux 7.2 2.96-108.7.2)] on linux2
    Type "help", "copyright", "credits" or "license" for more information.
-   >>> import svn.repos
-   >>> 
+   >>> from svn.core import *
+   >>> "%s.%s.%s" % (SVN_VER_MAJOR, SVN_VER_MINOR, SVN_VER_PATCH)
+   '1.3.1'
+   >>>
 
 Note that by default, Subversion installs its bindings in a location
 that is not in Python's default module search path (for example, on
 Linux systems the default is usually /usr/local/lib/svn-python).  You
 need to remedy this, either by adding this path to Python's module
-search path, or by relocation the bindings to some place in that
-search path.
+search path, or by relocating the bindings to some place in that
+search path.  
+
+For example, you might want to create .pth file in your Python
+installation directory's site-packages area which tells Python where
+to find additional modules (in this case, you Subversion Python
+bindings).  You would do this as follows (and as root):
+
+   $ echo "/path/to/svn/bindings" > /path/to/python/site-packages/svn.pth
+
+(Though, obviously, with the correct paths specified.)
 
 Configuration of the Subversion repositories happens in much the same
 way as with CVS repositories, only with the 'svn_roots' configuration
@@ -409,39 +481,42 @@ variable instead of the 'cvs_roots' one.
 IF YOU HAVE PROBLEMS ...
 ------------------------
 
-If you've trouble to make viewvc.cgi work:
+If nothing seems to work:
 
-=== If nothing seems to work:
+  * Check if you can execute CGI-scripts (Apache needs to have an
+    ScriptAlias /cgi-bin or cgi-script Handler defined). Try to
+    execute a simple CGI-script that often comes with the distribution
+    of the webserver; locate the logfiles and try to find hints which
+    explain the malfunction
 
- o check if you can execute CGI-scripts (Apache needs to have an
-   ScriptAlias /cgi-bin or cgi-script Handler defined). Try to 
-   execute a simple CGI-script that often comes with the distribution
-   of the webserver; locate the logfiles and try to find hints
-   which explain the malfunction
-
- o view the entries in the webserver's error.log
+  * View the entries in the webserver's error.log
  
-=== If viewvc seems to work but doesn't show the expected result
-    (Typical error: you can't see any files)
+If ViewVC seems to work but doesn't show the expected result (Typical
+error: you can't see any files)
 
- o check whether the CGI-script has read-permissions to your
-   CVS-Repository. The CGI-script often runs as the user 'nobody' 
-   or 'httpd' ..
+  * Check whether the CGI-script has read-permissions to your
+    CVS-Repository. The CGI-script generally runs as the same user
+    that the web server does, often user 'nobody' or 'httpd'.
 
- o does viewvc find your RCS utilities? (edit rcs_path)
+  * Does ViewVC find your RCS utilities? (edit rcs_dir)
 
-=== If something else happens or you can't get it to work:
+If something else happens or you can't get it to work:
 
- o check the ViewVC home page:
+  * Check the ViewVC home page:
 
-     http://viewvc.org/
+       http://viewvc.org/
 
- o review the ViewVC mailing list archive to see if somebody else had
-   the same problem, and it was solved:
+  * Review the ViewVC mailing list archive to see if somebody else had
+    the same problem, and it was solved:
 
-     http://viewvc.tigris.org/servlets/SummarizeList?listName=users
+       http://viewvc.tigris.org/servlets/SummarizeList?listName=users
 
- o send mail to the ViewVC mailing list: users@viewvc.tigris.org
+  * Check the ViewVC issue database to see if the problem you are
+    seeing is the result of a known bug:
 
-   NOTE: make sure you provide an accurate description of the problem
-         and any relevant tracebacks or error logs.
+       http://viewvc.tigris.org/issues/query.cgi
+ 
+  * Send mail to the ViewVC mailing list, users@viewvc.tigris.org.
+    NOTE: make sure you provide an accurate description of the problem
+    -- including the version of ViewVC you are using -- and any
+    relevant tracebacks or error logs.

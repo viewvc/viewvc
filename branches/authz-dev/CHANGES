@@ -1,10 +1,38 @@
 Version 1.1.0 (released ??-???-????)
 
+  * add support for full content diffs (issue #153)
   * make many more data dictionary items available to all views
   * various rcsparse and tparse module fixes
-  * add daemon mode to standalone.py
-  * rework and update helper application configuration options
+  * add daemon mode to standalone.py (issue #235)
+  * rework helper application configuration options (issues #229, #62)
   * teach standalone.py to recognize Subversion repositories via -r option
+  * now interpret relative paths in "viewvc.conf" as relative to that file
+  * add 'purge' subcommand to cvsdbadmin and svndbadmin (issue #271)
+  * fix orphaned data bug in cvsdbadmin/svndbadmin rebuild (issue #271)
+  * add support for query by log message (issues #22, #121)
+  * fix bug parsing 'svn blame' output with too-long author names (issue #221)
+  * fix default standalone.py port to be within private IANA range (issue #234)
+  * add support for integration with GNU source-highlight (issue #285)
+  * add unified configury of allowed views
+  * add support for disabling the checkout view (now the default state)
+  * add support for ranges of revisions to svndbadmin (issue #224)
+  * make the query handling more forgiving of malformatted subdirs (issue #244)
+
+Version 1.0.4 (released 10-Apr-2007)
+
+  * fix some markup bugs in query views (issue #266)
+  * fix loginfo-handler's support for CVS 1.12.9 (issues #151, #257)
+  * make viewvc-install able to run from an arbitrary location
+  * update viewvc-install's output for readability
+  * fix bug writing commits to non-MyISAM databases (issue #262)
+  * allow long paths in generated tarballs (issue #12)
+  * fix bug interpreting EZT substitute patterns
+  * fix broken markup view disablement
+  * fix broken directory view link generation in directory log view
+  * fix Windows-specific viewvc-install bugs
+  * fix broke query result links for Subversion deleted items (issue #296)
+  * fix some output XHTML validation buglets
+  * fix database query cache staleness problems (issue #180)
 
 Version 1.0.3 (released 13-Oct-2006)
 

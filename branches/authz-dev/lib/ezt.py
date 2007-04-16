@@ -189,9 +189,10 @@ Directives
    templates are escaped before they are put into the output stream. It
    has no effect on the literal text of the templates, only the output
    from [QUAL_NAME ...] directives. STRING can be one of "raw" "html" 
-   or "xml". The "raw" mode leaves the output unaltered. The "html" and
-   "xml" modes escape special characters using entity escapes (like
-   &quot; and &gt;)
+   "xml" or "uri". The "raw" mode leaves the output unaltered; the "html"
+   and "xml" modes escape special characters using entity escapes (like
+   &quot; and &gt;); the "uri" mode escapes characters using hexadecimal
+   escape sequences (like %20 and %7e).
 
    [format CALLBACK]
  
@@ -200,7 +201,7 @@ Directives
    equivalent to "[CALLBACK QUAL_NAME]"
 """
 #
-# Copyright (C) 2001-2005 Greg Stein. All Rights Reserved.
+# Copyright (C) 2001-2007 Greg Stein. All Rights Reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are 
@@ -235,6 +236,7 @@ import re
 from types import StringType, IntType, FloatType, LongType, TupleType
 import os
 import cgi
+import urllib
 try:
   import cStringIO
 except ImportError:
@@ -247,6 +249,7 @@ except ImportError:
 FORMAT_RAW = 'raw'
 FORMAT_HTML = 'html'
 FORMAT_XML = 'xml'
+FORMAT_URI = 'uri'
 
 #
 # This regular expression matches three alternatives:
@@ -792,10 +795,14 @@ def _raw_printer(ctx, s):
 def _html_printer(ctx, s):
   ctx.fp.write(cgi.escape(s))
 
+def _uri_printer(ctx, s):
+  ctx.fp.write(urllib.quote(s))
+
 _printers = {
   FORMAT_RAW  : _raw_printer,
   FORMAT_HTML : _html_printer,
   FORMAT_XML  : _html_printer,
+  FORMAT_URI  : _uri_printer,
 }
 
 # --- standard test environment ---

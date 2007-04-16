@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-python-*-
 #
-# Copyright (C) 2004 James Henstridge
+# Copyright (C) 2004-2007 James Henstridge
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -27,8 +27,8 @@
 #
 # If you allow changes to revision properties in your repository, you
 # might also want to set up something similar in the
-# post-revprop-change hook using "rebuild" instead of "update" to keep
-# the checkin database consistent with the repository.
+# post-revprop-change hook using "update" with the --force option to
+# keep the checkin database consistent with the repository.
 #
 # -----------------------------------------------------------------------
 #
@@ -49,9 +49,9 @@ import sys
 import os
 
 if LIBRARY_DIR:
-  sys.path.insert(0, LIBRARY_DIR)
+    sys.path.insert(0, LIBRARY_DIR)
 else:
-  sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
+    sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
 
 #########################################################################
 
@@ -69,21 +69,18 @@ import viewvc
 
 class SvnRepo:
     """Class used to manage a connection to a SVN repository."""
-    def __init__(self, path, pool):
-        self.scratch_pool = svn.core.svn_pool_create(pool)
+    def __init__(self, path):
         self.path = path
-        self.repo = svn.repos.svn_repos_open(path, pool)
+        self.repo = svn.repos.svn_repos_open(path)
         self.fs = svn.repos.svn_repos_fs(self.repo)
-        # youngest revision of base of file system is highest revision number
-        self.rev_max = svn.fs.youngest_rev(self.fs, pool)
+        self.rev_max = svn.fs.youngest_rev(self.fs)
     def __getitem__(self, rev):
         if rev is None:
             rev = self.rev_max
         elif rev < 0:
             rev = rev + self.rev_max + 1
         assert 0 <= rev <= self.rev_max
-        rev = SvnRev(self, rev, self.scratch_pool)
-        svn.core.svn_pool_clear(self.scratch_pool)
+        rev = SvnRev(self, rev)
         return rev
 
 _re_diff_change_command = re.compile('(\d+)(?:,(\d+))?([acd])(\d+)(?:,(\d+))?')
@@ -133,39 +130,36 @@ def _get_diff_counts(diff_fp):
 class SvnRev:
     """Class used to hold information about a particular revision of
     the repository."""
-    def __init__(self, repo, rev, pool):
+    def __init__(self, repo, rev):
         self.repo = repo
         self.rev = rev
-        self.pool = pool
         self.rev_roots = {} # cache of revision roots
 
-        subpool = svn.core.svn_pool_create(pool)
-
         # revision properties ...
-        properties = svn.fs.revision_proplist(repo.fs, rev, pool)
-        self.author = str(properties.get(svn.core.SVN_PROP_REVISION_AUTHOR,''))
-        self.date = str(properties.get(svn.core.SVN_PROP_REVISION_DATE, ''))
-        self.log = str(properties.get(svn.core.SVN_PROP_REVISION_LOG, ''))
+        revprops = svn.fs.revision_proplist(repo.fs, rev)
+        self.author = str(revprops.get(svn.core.SVN_PROP_REVISION_AUTHOR,''))
+        self.date = str(revprops.get(svn.core.SVN_PROP_REVISION_DATE, ''))
+        self.log = str(revprops.get(svn.core.SVN_PROP_REVISION_LOG, ''))
 
         # convert the date string to seconds since epoch ...
-        self.date = svn.core.secs_from_timestr(self.date, pool)
+        try:
+            self.date = svn.core.svn_time_from_cstring(self.date) / 1000000
+        except:
+            self.date = None
 
         # get a root for the current revisions
         fsroot = self._get_root_for_rev(rev)
         
         # find changes in the revision
-        editor = svn.repos.RevisionChangeCollector(repo.fs, rev, pool)
-        e_ptr, e_baton = svn.delta.make_editor(editor, pool)
-        svn.repos.svn_repos_replay(fsroot, e_ptr, e_baton, pool)
+        editor = svn.repos.RevisionChangeCollector(repo.fs, rev)
+        e_ptr, e_baton = svn.delta.make_editor(editor)
+        svn.repos.svn_repos_replay(fsroot, e_ptr, e_baton)
 
         self.changes = []
         for path, change in editor.changes.items():
-
-            # clear the iteration subpool
-            svn.core.svn_pool_clear(subpool)
-
             # skip non-file changes
-            if change.item_kind != svn.core.svn_node_file: continue
+            if change.item_kind != svn.core.svn_node_file:
+                continue
 
             # deal with the change types we handle
             base_root = None
@@ -182,8 +176,7 @@ class SvnRev:
             diffobj = svn.fs.FileDiff(base_root and base_root or None,
                                       base_root and change.base_path or None,
                                       change.path and fsroot or None,
-                                      change.path and change.path or None,
-                                      subpool, [])
+                                      change.path and change.path or None)
             diff_fp = diffobj.get_pipe()
             plus, minus = _get_diff_counts(diff_fp)
             self.changes.append((path, action, plus, minus))
@@ -192,12 +185,11 @@ class SvnRev:
         """Fetch a revision root from a cache of such, or a fresh root
         (which is then cached for later use."""
         if not self.rev_roots.has_key(rev):
-            self.rev_roots[rev] = svn.fs.revision_root(self.repo.fs, rev,
-                                                       self.pool)
+            self.rev_roots[rev] = svn.fs.revision_root(self.repo.fs, rev)
         return self.rev_roots[rev]
 
 
-def handle_revision(db, command, repo, rev, verbose):
+def handle_revision(db, command, repo, rev, verbose, force=0):
     """Adds a particular revision of the repository to the checkin database."""
     revision = repo[rev]
     committed = 0
@@ -231,7 +223,7 @@ def handle_revision(db, command, repo, rev, verbose):
 
         if command == 'update':
             result = db.CheckCommit(commit)
-            if result:
+            if result and not force:
                 continue # already recorded
 
         # commit to database
@@ -244,42 +236,75 @@ def handle_revision(db, command, repo, rev, verbose):
         else:
             print "skipped (already recorded)."
 
-def main(pool, command, repository, rev=None, verbose=0):
+def main(command, repository, revs=[], verbose=0, force=0):
     cfg = viewvc.load_config(CONF_PATHNAME)
     db = cvsdb.ConnectDatabase(cfg)
 
-    repo = SvnRepo(repository, pool)
-    if rev:
-        handle_revision(db, command, repo, rev, verbose)
-    else:
+    if command in ('rebuild', 'purge'):
+        if verbose:
+            print "Purging commit info for repository root `%s'" % repository
+        db.PurgeRepository(repository)
+
+    repo = SvnRepo(repository)
+    if command == 'rebuild' or (command == 'update' and not revs):
         for rev in range(repo.rev_max+1):
             handle_revision(db, command, repo, rev, verbose)
+    elif command == 'update':
+        if revs[0] is None:
+            revs[0] = repo.rev_max
+        if revs[1] is None:
+            revs[1] = repo.rev_max
+        revs.sort()
+        for rev in range(revs[0], revs[1]+1):
+            handle_revision(db, command, repo, rev, verbose, force)
+
+def _rev2int(r):
+    if r == 'HEAD':
+        r = None
+    else:
+        r = int(r)
+        if r < 0:
+            raise ValueError, "invalid revision '%d'" % (r)
+    return r
 
 def usage():
     cmd = os.path.basename(sys.argv[0])
     sys.stderr.write("""
-Usage: 1. %s [-v] rebuild REPOSITORY [REVISION]
-       2. %s [-v] update REPOSITORY [REVISION]
+Usage: 1. %s [-v] rebuild REPOSITORY
+       2. %s [-v] update REPOSITORY [REV:[REV2]] [--force]
+       3. %s [-v] purge REPOSITORY
 
-1.  Rebuild the commit database information for REPOSITORY across all revisions
-    or, optionally, only for the specified REVISION.
+1.  Rebuild the commit database information for REPOSITORY across all
+    revisions.
 
-2.  Update the commit database information for REPOSITORY across all revisions
-    or, optionally, only for the specified REVISION.  This is just like
-    rebuilding, except that no commit information will be stored for
-    commits already present in the database.
+2.  Update the commit database information for REPOSITORY across all
+    revisions or, optionally, only for the specified revision REV (or
+    revision range REV:REV2).  This is just like rebuilding, except
+    that, unless --force is specified, no commit information will be
+    stored for commits already present in the database.  If a range is
+    specified, the revisions will be processed in ascending order, and
+    you may specify "HEAD" to indicate "the youngest revision currently
+    in the repository".
+    
+3.  Purge information specific to REPOSITORY from the database.
 
 Use the -v flag to cause this script to give progress information as it works.
-""" % (cmd, cmd))
+""" % (cmd, cmd, cmd))
     sys.exit(1)
 
 if __name__ == '__main__':
     verbose = 0
-    
+    force = 0
     args = sys.argv
     try:
         index = args.index('-v')
         verbose = 1
+        del args[index]
+    except ValueError:
+        pass
+    try:
+        index = args.index('--force')
+        force = 1
         del args[index]
     except ValueError:
         pass
@@ -288,7 +313,7 @@ if __name__ == '__main__':
         usage()
 
     command = string.lower(args[1])
-    if command not in ('rebuild', 'update'):
+    if command not in ('rebuild', 'update', 'purge'):
         sys.stderr.write('ERROR: unknown command %s\n' % command)
         usage()
 
@@ -297,15 +322,31 @@ if __name__ == '__main__':
         sys.stderr.write('ERROR: could not find repository %s\n' % repository)
         usage()
 
+    revs = []
     if len(sys.argv) > 3:
-        rev = sys.argv[3]
+        if command == 'rebuild':
+            sys.stderr.write('ERROR: rebuild no longer accepts a revision '
+                             'number argument.  Usage update --force.')
+            usage()
+        elif command != 'update':
+            usage()
         try:
-            rev = int(rev)
+            revs = map(lambda x: _rev2int(x), sys.argv[3].split(':'))
+            if len(revs) > 2:
+                raise ValueError, "too many revisions in range"
+            if len(revs) == 1:
+                revs.append(revs[0])
         except ValueError:
-            sys.stderr.write('ERROR: revision "%s" is not numeric\n' % rev)
+            sys.stderr.write('ERROR: invalid revision specification "%s"\n' \
+                             % sys.argv[3])
             usage()
     else:
         rev = None
 
-    repository = cvsdb.CleanRepository(os.path.abspath(repository))
-    svn.core.run_app(main, command, repository, rev, verbose)
+    try:
+        repository = cvsdb.CleanRepository(os.path.abspath(repository))
+        main(command, repository, revs, verbose, force)
+    except KeyboardInterrupt:
+        print
+        print '** break **'
+    sys.exit(0)

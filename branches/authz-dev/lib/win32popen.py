@@ -1,6 +1,6 @@
 # -*-python-*-
 #
-# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2007 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -15,8 +15,18 @@
 # -----------------------------------------------------------------------
 
 import os, sys, traceback, string, thread
+try:
+  import win32api
+except ImportError, e:
+  raise ImportError, str(e) + """
+
+Did you install the Python for Windows Extensions?
+
+   http://sourceforge.net/projects/pywin32/
+"""
+
 import win32process, win32pipe, win32con
-import win32event, win32file, win32api, winerror
+import win32event, win32file, winerror
 import pywintypes, msvcrt
 
 # Buffer size for spooling

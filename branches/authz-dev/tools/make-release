@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2007 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -45,13 +45,12 @@ for PLATFORM in unix windows; do
     EOL="--native-eol LF"
   fi
 
-  svn export ${EOL} http://viewvc.tigris.org/svn/viewvc/${ROOT} ${TARGET}
+  echo "Beginning build for ${PLATFORM}:"
+
+  echo "   Exporting source code..."
+  svn export --quiet ${EOL} http://viewvc.tigris.org/svn/viewvc/${ROOT} ${TARGET}
 
   ### Various shifting, cleanup.  
-
-  # Documentation is now also distributed together with the release, but
-  # we still copy the license file to its traditional place (it is small
-  # and many files still contain comments refering to this location):
 
   # Remove some not useful directories
   for JUNK in elemx \
@@ -62,24 +61,28 @@ for PLATFORM in unix windows; do
               viewcvs.sourceforge.net \
               viewvc.org \
               www; do
-    if [ -e ${JUNK} ]; then
-      rm -f ${JUNK}
+    if [ -d ${TARGET}/${JUNK} ]; then
+      echo "   Removing ${TARGET}/${JUNK}..."
+      rm -r ${TARGET}/${JUNK}
     fi
   done
 
   # Make sure permissions are reasonable:
+  echo "   Normalizing permissions..."
   find ${TARGET} -print | xargs chmod uoa+r
   find ${TARGET} -type d -print | xargs chmod uoa+x
 
   if test ${PLATFORM} = windows; then
     # Create also a ZIP file for those poor souls :-) still using Windows: 
+    echo "   Creating ZIP archive..."
     zip -qor9 ${TARGET}.zip ${TARGET}
   else
     # Cut the tarball:
+    echo "   Creating tarball archive..."
     tar cf - ${TARGET} | gzip -9 > ${TARGET}.tar.gz
   fi
 
   # remove target directory
   rm -r ${TARGET}
 done
-echo 'Done.'
+echo "Done."
