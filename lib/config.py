@@ -47,12 +47,12 @@ class Config:
     for section in self._sections:
       setattr(self, section, _sub_config())
 
-  def load_config(self, pathname, vhost=None):
+  def load_config(self, pathname, vhost=None, rootname=None):
     self.conf_path = os.path.isfile(pathname) and pathname or None
     self.base = os.path.dirname(pathname)
-
+    
     parser = ConfigParser.ConfigParser()
-    parser.read(pathname)
+    parser.read(self.conf_path or [])
 
     for section in self._sections:
       if parser.has_section(section):
@@ -60,6 +60,9 @@ class Config:
 
     if vhost and parser.has_section('vhosts'):
       self._process_vhost(parser, vhost)
+
+    if rootname:
+      self._process_root_options(parser, rootname)
 
   def load_kv_files(self, language):
     kv = _sub_config()
@@ -113,22 +116,23 @@ class Config:
       setattr(sc, opt, value)
 
   def _process_vhost(self, parser, vhost):
+    # find a vhost name for this vhost, if any (if not, we've nothing to do)
     canon_vhost = self._find_canon_vhost(parser, vhost)
     if not canon_vhost:
-      # none of the vhost sections matched
       return
 
-    cv = canon_vhost + '-'
+    # overlay any option sections associated with this vhost name
+    cv = 'vhost-%s-' % (canon_vhost)
     lcv = len(cv)
     for section in parser.sections():
       if section[:lcv] == cv:
-        self._process_section(parser, section, section[lcv:])
+        base_section = section[lcv:]
+        if base_section not in self._sections:
+          raise IllegalOverrideSection('vhost', section)
+        self._process_section(parser, section, base_section)
 
   def _find_canon_vhost(self, parser, vhost):
-    vhost = string.lower(vhost)
-    # Strip (ignore) port number:
-    vhost = string.split(vhost, ':')[0]
-
+    vhost = string.split(string.lower(vhost), ':')[0]  # lower-case, no port
     for canon_vhost in parser.options('vhosts'):
       value = parser.get('vhosts', canon_vhost)
       patterns = map(string.lower, map(string.strip,
@@ -138,6 +142,24 @@ class Config:
           return canon_vhost
 
     return None
+
+  def _process_root_options(self, parser, rootname):
+    rn = 'root-%s-' % (rootname)
+    lrn = len(rn)
+    for section in parser.sections():
+      if section[:lrn] == rn:
+        base_section = section[lrn:]
+        if base_section not in self._sections or base_section == 'general':
+          raise IllegalOverrideSection('root', section)
+        self._process_section(parser, section, base_section)
+
+  def overlay_root_options(self, rootname):
+    "Overly per-root options atop the existing option set."
+    if not self.conf_path:
+      return
+    parser = ConfigParser.ConfigParser()
+    parser.read(self.conf_path or [])
+    self._process_root_options(parser, rootname)
 
   def set_defaults(self):
     "Set some default values in the configuration."
@@ -257,7 +279,18 @@ def _parse_roots(config_name, config_value):
   return roots
 
 
-class MalformedRoot(Exception):
+class ViewVCConfigurationError(Exception):
+  pass
+
+class IllegalOverrideSection(ViewVCConfigurationError):
+  def __init__(self, override_type, section_name):
+    self.section_name = section_name
+    self.override_type = override_type
+  def __str__(self):
+    return "malformed configuration: illegal %s override section: %s" \
+           % (self.override_type, self.section_name)
+  
+class MalformedRoot(ViewVCConfigurationError):
   def __init__(self, config_name, value_given):
     Exception.__init__(self, config_name, value_given)
     self.config_name = config_name
