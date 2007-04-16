@@ -221,6 +221,7 @@ class Request:
     if self.rootname:
       # Create the repository object
       if cfg.general.cvs_roots.has_key(self.rootname):
+        cfg.overlay_root_options(self.rootname)
         self.rootpath = os.path.normpath(cfg.general.cvs_roots[self.rootname])
         try:
           if cfg.options.use_rcsparse:
@@ -243,6 +244,7 @@ class Request:
         # required so that spawned rcs programs correctly expand $CVSHeader$
         os.environ['CVSROOT'] = self.rootpath
       elif cfg.general.svn_roots.has_key(self.rootname):
+        cfg.overlay_root_options(self.rootname)
         self.rootpath = cfg.general.svn_roots[self.rootname]
         try:
           if re.match(_re_rewrite_url, self.rootpath):
