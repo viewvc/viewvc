@@ -666,25 +666,25 @@ enabled = 0
 #
 # After you've named and defined your vhosts, you may then create new
 # configuration sections whose names are of the form
-# VHOSTNAME-CONFIGSECTION.  Inside those configuration sections, you
-# override the standard ViewVC options typically found in the
+# vhost-VHOSTNAME-CONFIGSECTION.  Inside those configuration sections, you
+# override the standard ViewVC options typically found in the base
 # configuration section named CONFIGSECTION ("general", "option", etc.)
 #
 # Here is an example:
 #
 # [vhosts]
-# svn-vhost = svn.yourdomain.*
-# cvs-vhost = cvs.yourdomain.*
+# svn = svn.yourdomain.*, viewvc.*
+# cvs = cvs.yourdomain.*
 #
-# [svn-vhost-general]
+# [vhost-svn-general]
 # cvs_roots = 
 # svn_roots = svnroot: /var/svn/repos
 # default_root = svnroot
 #
-# [svn-vhost-options]
+# [vhost-svn-options]
 # show_logs = 1
 #
-# [cvs-vhost-general]
+# [vhost-cvs-general]
 # cvs_roots = cvsroot: /var/cvs/cvsroot
 # svn_roots = 
 # default_root = cvsroot

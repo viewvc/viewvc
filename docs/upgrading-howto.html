@@ -177,6 +177,29 @@ td {
 <p>The <code>use_rcsparse</code> option was moved from the "general"
    section to the "options" section.</p>
 
+<p>Custom sections which define per-virtual-host configuration option
+   overrides must now have their names prefixed with "vhost-".  For
+   example, the following configuration which was valid in ViewVC 1.0
+   is no longer valid:</p>
+
+<blockquote><pre>[vhosts]
+all = viewvc.*
+
+[all-options]
+allow_tar = 1
+</pre>
+</blockquote>
+
+<p>This now needs to be written like so:</p>
+
+<blockquote><pre>[vhosts]
+all = viewvc.*
+
+[vhost-all-options]
+allow_tar = 1
+</pre>
+</blockquote>
+
 </div>
 
 <div class="h3">
