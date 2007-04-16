@@ -122,7 +122,7 @@ class Config:
       return
 
     # overlay any option sections associated with this vhost name
-    cv = 'vhost-%s-' % (canon_vhost)
+    cv = 'vhost-%s/' % (canon_vhost)
     lcv = len(cv)
     for section in parser.sections():
       if section[:lcv] == cv:
@@ -144,7 +144,7 @@ class Config:
     return None
 
   def _process_root_options(self, parser, rootname):
-    rn = 'root-%s-' % (rootname)
+    rn = 'root-%s/' % (rootname)
     lrn = len(rn)
     for section in parser.sections():
       if section[:lrn] == rn:
