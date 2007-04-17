@@ -28,6 +28,7 @@ import viewvc
 import ezt
 import debug
 import urllib
+import vcauth
 
 class FormData:
     def __init__(self, form):
@@ -273,7 +274,7 @@ def prev_rev(rev):
         r = r[:-2]
     return string.join(r, '.')
 
-def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
+def build_commit(server, cfg, auth, desc, files, cvsroots, viewvc_link):
     ob = _item(num_files=len(files), files=[])
     
     if desc:
@@ -285,7 +286,7 @@ def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
         dir_parts = filter(None, string.split(commit.GetDirectory(), '/'))
         if dir_parts \
                and ((dir_parts[0] == 'CVSROOT' and cfg.options.hide_cvsroot) \
-                    or cfg.is_forbidden(dir_parts[0])):
+                    or auth.check_directory_access(dir_parts)):
             continue
 
         ctime = commit.GetTime()
@@ -334,6 +335,10 @@ def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
     return ob
 
 def run_query(server, cfg, form_data, viewvc_link):
+    auth_params = cfg.get_authorizer_params('forbidden')
+    auth = vcauth.forbidden.ViewVCAuthorizer(None, None, None, None,
+                                             auth_params)
+
     query = form_to_cvsdb_query(form_data)
     db = cvsdb.ConnectDatabaseReadOnly(cfg)
     db.RunQuery(query)
@@ -356,14 +361,14 @@ def run_query(server, cfg, form_data, viewvc_link):
             files.append(commit)
             continue
 
-        commits.append(build_commit(server, cfg, current_desc, files,
+        commits.append(build_commit(server, cfg, auth, current_desc, files,
                                     cvsroots, viewvc_link))
 
         files = [ commit ]
         current_desc = desc
 
     ## add the last file group to the commit list
-    commits.append(build_commit(server, cfg, current_desc, files,
+    commits.append(build_commit(server, cfg, auth, current_desc, files,
                                 cvsroots, viewvc_link))
 
     return commits

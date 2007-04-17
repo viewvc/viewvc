@@ -144,18 +144,8 @@ class Request:
     self.pathrev = None    # current path revision or tag
     self.auth = None       # authorizer module in use
 
-    # Get a real authorizer.
-    ### FIXME: At the very least, which plugin to use should be configurable.
-    ###        Even better would be having the ability to assign an auth
-    ###        plugin per each root.
-    import vcauth.test
-    self.auth = vcauth.test.ViewVCAuthorizer(self.username)
-
-    # Register the roots.
-    for key, value in cfg.general.cvs_roots.items():
-      self.auth.register_root(key, value, 'cvs')
-    for key, value in cfg.general.svn_roots.items():
-      self.auth.register_root(key, value, 'svn')
+    # setup the default authorizer (until we have a root)
+    self.auth = vcauth.ViewVCAuthorizer()
     
     # redirect if we're loading from a valid but irregular URL
     # These redirects aren't neccessary to make ViewVC work, it functions
@@ -291,13 +281,10 @@ class Request:
           'correct, then please double-check your configuration.'
           % self.rootname, "404 Repository not found")
 
-    # If we've selected a repository, we need to make sure the user is
-    # allowed to see it.
-    if self.repos:
-      if not self.auth.check_root_access(self.rootname):
-        raise debug.ViewVCNotAuthorizedException(self.username,
-                                                 'root "%s"' % (self.rootname))
-    
+    if self.rootname and cfg.options.authorizer:
+      self.auth = setup_authorizer(cfg, self.username, self.rootname,
+                                   self.rootpath, self.roottype)
+
     # If this is using an old-style 'rev' parameter, redirect to new hotness.
     # Subversion URLs will now use 'pathrev'; CVS ones use 'revision'.
     if self.repos and self.query_dict.has_key('rev'):
@@ -356,21 +343,13 @@ class Request:
           self.where = _path_join(attic_parts)
           needs_redirect = 1
 
-    # If this is a forbidden directory, stop now
-    if self.path_parts and self.pathtype == vclib.DIR \
-           and cfg.is_forbidden(self.path_parts[0]):
-      raise debug.ViewVCException('%s: unknown location' % path_parts[0],
-                                   '404 Not Found')
-
     # Check authorization for files and directories.
     if self.path_parts:
       access = 1
       if self.pathtype == vclib.DIR:
-        access = self.auth.check_directory_access(self.rootname,
-                                                  self.path_parts)
+        access = self.auth.check_directory_access(self.path_parts)
       elif self.pathtype == vclib.FILE:
-        access = self.auth.check_file_access(self.rootname,
-                                             self.path_parts)
+        access = self.auth.check_file_access(self.path_parts)
       if not access:
         path = _path_join(self.path_parts)
         raise debug.ViewVCNotAuthorizedException(self.username,
@@ -802,6 +781,23 @@ def _orig_path(request, rev_param='revision', path_param=None):
                                               pathrev, rev)), rev
   return _path_parts(path), rev
 
+def setup_authorizer(cfg, username, rootname,
+                     rootpath, roottype, params={}):
+  try:
+    exec('import vcauth.%s' % (cfg.options.authorizer))
+    exec('my_auth = vcauth.%s' % (cfg.options.authorizer))
+    params = cfg.get_authorizer_params(cfg.options.authorizer, rootname)
+    return my_auth.ViewVCAuthorizer(username, rootname, rootpath,
+                                    roottype, params)
+  except vcauth.ViewVCRootAccessNotAuthorized:
+    raise debug.ViewVCNotAuthorizedException(username,
+                                             'root "%s"' % (rootname))
+  except:
+    raise debug.ViewVCException(
+      'Invalid authorizer (%s) specified for root "%s"' \
+      % (cfg.options.authorizer, rootname),
+      '500 Internal Server Error')
+
 def check_freshness(request, mtime=None, etag=None, weak=0):
   # See if we are supposed to disable etags (for debugging, usually)
 
@@ -1153,12 +1149,11 @@ def common_template_data(request):
                              where='', pathtype=vclib.DIR,
                              params={'root': rootname}, escape=1)
 
-      # Check root authorization.
-      if request.auth.check_root_access(rootname):
-        roots.append(_item(name=request.server.escape(rootname),
-                           type=allroots[rootname][1],
-                           path=allroots[rootname][0],
-                           href=href))
+      ### TODO: Check root authorization.
+      roots.append(_item(name=request.server.escape(rootname),
+                         type=allroots[rootname][1],
+                         path=allroots[rootname][0],
+                         href=href))
   data['roots'] = roots
 
   if request.path_parts:
@@ -1647,11 +1642,9 @@ def view_directory(request):
     assert item.kind == vclib.DIR or item.kind == vclib.FILE
     full_path_parts = request.path_parts + [item.name]
     if item.kind == vclib.FILE:
-      return request.auth.check_file_access(request.rootname,
-                                            full_path_parts)
+      return request.auth.check_file_access(full_path_parts)
     else:
-      return request.auth.check_directory_access(request.rootname,
-                                                 full_path_parts)
+      return request.auth.check_directory_access(full_path_parts)
   file_data = filter(_auth_filter, file_data)
 
   # sort with directories first, and using the "sortby" criteria
@@ -1720,9 +1713,6 @@ def view_directory(request):
     row.errors = file.errors
 
     if file.kind == vclib.DIR:
-
-      if (where == '') and (cfg.is_forbidden(file.name)):
-        continue
 
       if (request.roottype == 'cvs' and cfg.options.hide_cvsroot
           and where == '' and file.name == 'CVSROOT'):
@@ -2755,7 +2745,7 @@ def _get_diff_path_parts(request, query_key, rev, base_rev):
   if request.query_dict.has_key(query_key):
     path = request.query_dict[query_key]
     parts = _path_parts(path)
-    if not request.auth.check_file_access(request.rootname, parts):
+    if not request.auth.check_file_access(parts):
       raise debug.ViewVCNotAuthorizedException(self.username,
                                                'file "%s"' % (path))
   elif request.roottype == 'svn':
@@ -2765,7 +2755,7 @@ def _get_diff_path_parts(request, query_key, rev, base_rev):
                                     repos._getrev(base_rev),
                                     repos._getrev(rev))
       parts = _path_parts(path)      
-      if not request.auth.check_file_access(request.rootname, parts):
+      if not request.auth.check_file_access(parts):
         raise debug.ViewVCNotAuthorizedException(self.username,
                                                  'file "%s"' % (path))
     except vclib.InvalidRevision:
@@ -2774,7 +2764,7 @@ def _get_diff_path_parts(request, query_key, rev, base_rev):
     except vclib.ItemNotFound:
       raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                    'to diff', '400 Bad Request')
-    if not request.auth.check_file_access(request.rootname, parts):
+    if not request.auth.check_file_access(parts):
       raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                    'to diff', '400 Bad Request')
   else:
@@ -3134,7 +3124,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
 
     # Skip forbidden/hidden directories (top-level only).
     if not rep_path:
-      if (request.cfg.is_forbidden(file.name)
+      if (not request.auth.check_directory_access(_path_parts(file.name))
           or (cvs and request.cfg.options.hide_cvsroot
               and file.name == 'CVSROOT')):
         continue
@@ -3217,11 +3207,9 @@ def view_revision(request):
   def _auth_filter(item):
     full_path_parts = _path_parts(item.filename)
     if item.pathtype == vclib.DIR:
-      return request.auth.check_directory_access(request.rootname,
-                                                 full_path_parts)
+      return request.auth.check_directory_access(full_path_parts)
     else:
-      return request.auth.check_file_access(request.rootname,
-                                            full_path_parts)
+      return request.auth.check_file_access(full_path_parts)
   changes = filter(_auth_filter, changes)
   
   # add the hrefs, types, and prev info
@@ -3237,11 +3225,9 @@ def view_revision(request):
     if change.is_copy:
       full_path_parts = _path_parts(change.base_path)
       if pathtype is vclib.DIR:
-        access = request.auth.check_dir_access(request.rootname,
-                                               full_path_parts, rev)
+        access = request.auth.check_directory_access(full_path_parts, rev)
       else:
-        access = request.auth.check_file_access(request.rootname,
-                                                full_path_parts)
+        access = request.auth.check_file_access(full_path_parts)
       if not access:
         change.is_copy = 0
     
@@ -3548,9 +3534,9 @@ def build_commit(request, files, limited_files, dir_strip):
     # skip files in forbidden or hidden modules
     dir_parts = filter(None, string.split(dirname, '/'))
     if dir_parts \
-           and ((dir_parts[0] == 'CVSROOT'
-                 and request.cfg.options.hide_cvsroot) \
-                or request.cfg.is_forbidden(dir_parts[0])):
+       and ((dir_parts[0] == 'CVSROOT'
+             and request.cfg.options.hide_cvsroot) \
+            or not request.auth.check_directory_access(dir_parts)):
       continue
 
     commit.files.append(_item(date=commit_time,

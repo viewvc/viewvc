@@ -19,45 +19,37 @@ import vclib
 class GenericViewVCAuthorizer:
   """Abstract class encapsulating version control authorization routines."""
   
-  def __init__(self, username):
+  def __init__(self, username, rootname, rootpath, roottype, params={}):
     """Create a GenericViewVCAuthorizer object which will be used to
     validate that USERNAME has the permissions needed to view version
-    control repositories and the items in them."""
+    control repository named ROOTNAME (of type ROOTTYPE, and located at
+    ROOTPATH).  PARAMS is a dictionary of custom parameters for the
+    authorizer.
+
+    Raise ViewVCRootAccessNotAuthorized error if USERNAME isn't
+    allowed to see this repository at all."""
     pass
 
-  def register_root(self, rootname, rootpath, roottype):
-    """Register the repository name ROOTNAME as one associated with
-    the version control repository located at ROOTPATH and for the
-    version control type ROOTTYPE.  Authorization checks are done
-    against root names."""
-    pass
-  
-  def check_root_access(self, rootname):
-    """Return 1 iff the associated username is permitted to read the
-    repository associated with ROOTNAME.
-
-    Raise ViewVCAuthzUnknownRootError if ROOTNAME isn't registered."""
-    pass
-  
-  def check_file_access(self, rootname, path_parts, rev=None):
-    """Return 1 iff the associated username is permitted to read the
-    file PATH_PARTS as it exists in revision REV in the repository
-    associated with ROOTNAME.
-
-    Raise ViewVCAuthzUnknownRootError if ROOTNAME isn't registered."""
+  def check_file_access(self, path_parts, rev=None):
+    """Return 1 iff the associated username is permitted to read
+    revision REV of the file PATH_PARTS in the repository associated
+    with this authorizer."""
     pass
         
-  def check_directory_access(self, rootname, path_parts, rev=None):
-    """Return 1 iff the associated username is permitted to read the
-    directory PATH_PARTS as it exists in revision REV in the repository
-    associated with ROOTNAME.
-
-    Raise ViewVCAuthzUnknownRootError if ROOTNAME isn't registered."""
+  def check_directory_access(self, path_parts, rev=None):
+    """Return 1 iff the associated username is permitted to read
+    revision REV of the directory PATH_PARTS in the repository associated
+    with this authorizer."""
     pass
 
 
-class ViewVCAuthzUnknownRootError(Exception):
-  pass
+class ViewVCRootAccessNotAuthorized(Exception):
+  def __init__(self, rootname, username):
+    self.rootname = rootname
+    self.username = username
+  def __str__(self):
+    return "Access to root '%s' by user '%s' is denied." \
+           % (self.rootname, self.username)
 
 
 
@@ -65,23 +57,11 @@ class ViewVCAuthzUnknownRootError(Exception):
 
 class ViewVCAuthorizer(GenericViewVCAuthorizer):
   """The uber-permissive authorizer."""
-  def __init__(self, username):
-    self.roots = {}
+  def __init__(self):
+    pass
     
-  def register_root(self, rootname, rootpath, roottype):
-    self.roots[rootname] = roottype
-    
-  def check_root_access(self, rootname):    
-    if not self.roots.has_key(rootname):
-      raise ViewVCAuthzUnknownRootError
+  def check_file_access(self, path_parts, rev=None):
     return 1
   
-  def check_file_access(self, rootname, path_parts, rev=None):
-    if not self.roots.has_key(rootname):
-      raise ViewVCAuthzUnknownRootError
-    return 1
-  
-  def check_directory_access(self, rootname, path_parts, rev=None):
-    if not self.roots.has_key(rootname):
-      raise ViewVCAuthzUnknownRootError
+  def check_directory_access(self, path_parts, rev=None):
     return 1

@@ -18,9 +18,9 @@ from ConfigParser import ConfigParser
 class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   """Subversion authz authorizer module"""
   
-  def __init__(self, username):
-    self.roots = {}      # rootname -> roottype
-    self.available = {}  # rootname -> [path1, path2, ...]
+  def __init__(self, username, rootname, rootpath, roottype, params={}):
+    self.params = params.copy()
+    self.available = []
 
     cp = ConfigParser()
     groups = []
@@ -49,34 +49,25 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
            or opt == username \
            or (opt[0:1] == "@" and opt[1:] in groups):
           root, path = section.split(':')
-          paths = self.available.get(root, [])
-          self.available[root] = paths + [path]
+          if root == rootname:
+            self.available.append(path)
 
-  def register_root(self, rootname, rootpath, roottype):
-    self.roots[rootname] = roottype
-    
-  def check_root_access(self, rootname):
-    if not self.roots.has_key(rootname):
-      raise vcauth.ViewVCAuthzUnknownRootError
-    if rootname in self.available.keys():
-      return 1
-  
-  def _check_path_access(self, rootname, path_parts):
+    # No available paths means no access.
+    if not self.available:
+      raise vcauth.ViewVCRootAccessNotAuthorized(rootname, username)
+
+  def _check_path_access(self, path_parts):
     # If access to ROOTNAME is authorized, and PATH_PARTS is, or is
     # the child of, any of the allowed paths under this root,
     # authorize the access.
-    if not self.roots.has_key(rootname):
-      raise vcauth.ViewVCAuthzUnknownRootError
-    if not self.check_root_access(rootname):
-      return 0
     path = '/' + path_parts.join('/')
-    for allowpath in self.available[rootname]:
+    for allowpath in self.available:
       if path == allowpath or path.find(allowpath + '/') == 0:
        return 1
     return 0
 
-  def check_file_access(self, rootname, path_parts, rev=None):
-    self._check_path_access(rootname, path_parts)
+  def check_file_access(self, path_parts, rev=None):
+    return self._check_path_access(path_parts)
     
-  def check_directory_access(self, rootname, path_parts, rev=None):
-    self._check_path_access(rootname, path_parts)
+  def check_directory_access(self, path_parts, rev=None):
+    return self._check_path_access(path_parts)
