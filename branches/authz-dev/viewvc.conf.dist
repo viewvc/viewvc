@@ -702,3 +702,12 @@ enabled = 0
 forbidden = 
 
 #---------------------------------------------------------------------------
+[authz-svnauthz]
+
+# The "svnauthz" authorizer uses a Subversion authz configuration file
+# to determine access to repository paths.  This option specifies the
+# location of that file using an absolute path.
+#
+authzfile =
+
+#---------------------------------------------------------------------------
