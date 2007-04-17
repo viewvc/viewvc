@@ -161,9 +161,9 @@ def make_html(root, rcs_path):
 
     # Close the highlighted section
     #if (defined $mark_cmd and mark_cmd != 'begin'):
-    #	chop($output)
-    #	output = output + endOfRow + (startOfRow % row_color)
-    #	inMark = 0
+    #  chop($output)
+    #  output = output + endOfRow + (startOfRow % row_color)
+    #  inMark = 0
 
     print output
   print endOfRow + '</table>'

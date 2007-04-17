@@ -25,7 +25,7 @@ _tt = TextTools
 _idchar_list = map(chr, range(33, 127)) + map(chr, range(160, 256))
 _idchar_list.remove('$')
 _idchar_list.remove(',')
-#_idchar_list.remove('.')	leave as part of 'num' symbol
+#_idchar_list.remove('.')   # leave as part of 'num' symbol
 _idchar_list.remove(':')
 _idchar_list.remove(';')
 _idchar_list.remove('@')
@@ -41,10 +41,10 @@ _T_STRING_START = 40
 _T_STRING_SPAN = 60
 _T_STRING_END = 70
 
-_E_COMPLETE = 100	# ended on a complete token
-_E_TOKEN = 110	# ended mid-token
-_E_STRING_SPAN = 130	# ended within a string
-_E_STRING_END = 140	# ended with string-end ('@') (could be mid-@@)
+_E_COMPLETE = 100       # ended on a complete token
+_E_TOKEN = 110          # ended mid-token
+_E_STRING_SPAN = 130    # ended within a string
+_E_STRING_END = 140     # ended with string-end ('@') (could be mid-@@)
 
 _SUCCESS = +100
 
@@ -65,7 +65,7 @@ class _mxTokenStream:
   # note: we use a multiple of a standard block size
   CHUNK_SIZE  = 192 * 512  # about 100k
 
-#  CHUNK_SIZE  = 5	# for debugging, make the function grind...
+# CHUNK_SIZE  = 5   # for debugging, make the function grind...
 
   def __init__(self, file):
     self.rcsfile = file
