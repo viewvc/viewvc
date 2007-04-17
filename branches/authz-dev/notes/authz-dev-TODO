@@ -1,19 +1,5 @@
 Here lie TODO items for the authz-dev branch:
 
-  * Need configuration code, mapping root -> vcauth provider name.
-    The idea here is that you need only give the name of the Python
-    module, ie. "test" or "svnauthz", and ViewVC will expect said
-    module to exist as vcauth.MODULENAME.  We'll also need a setting
-    for the default vcauth handler (probably per-roottype, actually).
-
-    NOTE: We might want to take this opportunity to rethink the way
-    root configuration works altogether.  Do we need a
-    viewvc-roots.conf file, complete with a [__defaults__] section and
-    then per-root sections, and the configury inside them?
-
-  * Lose the whole "forbidden" thing in favor of a VC-inspecific
-    module that denies access to the forbidden paths?
-
   * Subversion uses path privelege to determine visibility of revision
     metadata.  That logic is pretty Subversion-specific, so it feels like it
     belongs outside the vcauth library as just a helper function in viewvc.py
