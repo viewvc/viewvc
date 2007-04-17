@@ -74,7 +74,7 @@ class RCSStopParser(Exception):
 #
 
 class _Parser:
-  stream_class = None	# subclasses need to define this
+  stream_class = None   # subclasses need to define this
 
   def parse_rcs_admin(self):
     while 1:
@@ -194,7 +194,7 @@ class _Parser:
         if token == ';':
           break
         author = author + token + ' '
-      author = author[:-1]	# toss the trailing space
+      author = author[:-1]   # toss the trailing space
 
       # Parse state
       self.ts.match('state')
@@ -204,7 +204,7 @@ class _Parser:
         if token == ';':
           break
         state = state + token + ' '
-      state = state[:-1]	# toss the trailing space
+      state = state[:-1]   # toss the trailing space
 
       # Parse branches
       self.ts.match('branches')
