@@ -50,19 +50,18 @@ class Config:
   def load_config(self, pathname, vhost=None, rootname=None):
     self.conf_path = os.path.isfile(pathname) and pathname or None
     self.base = os.path.dirname(pathname)
-    
-    parser = ConfigParser.ConfigParser()
-    parser.read(self.conf_path or [])
+    self.parser = ConfigParser.ConfigParser()
+    self.parser.read(self.conf_path or [])
 
     for section in self._sections:
-      if parser.has_section(section):
-        self._process_section(parser, section, section)
+      if self.parser.has_section(section):
+        self._process_section(self.parser, section, section)
 
-    if vhost and parser.has_section('vhosts'):
-      self._process_vhost(parser, vhost)
+    if vhost and self.parser.has_section('vhosts'):
+      self._process_vhost(self.parser, vhost)
 
     if rootname:
-      self._process_root_options(parser, rootname)
+      self._process_root_options(self.parser, rootname)
 
   def load_kv_files(self, language):
     kv = _sub_config()
@@ -157,9 +156,7 @@ class Config:
     "Overly per-root options atop the existing option set."
     if not self.conf_path:
       return
-    parser = ConfigParser.ConfigParser()
-    parser.read(self.conf_path or [])
-    self._process_root_options(parser, rootname)
+    self._process_root_options(self.parser, rootname)
 
   def set_defaults(self):
     "Set some default values in the configuration."
