@@ -26,7 +26,7 @@ class _TokenStream:
   # note: we use a multiple of a standard block size
   CHUNK_SIZE  = 192 * 512  # about 100k
 
-#  CHUNK_SIZE  = 5	# for debugging, make the function grind...
+# CHUNK_SIZE  = 5   # for debugging, make the function grind...
 
   def __init__(self, file):
     self.rcsfile = file
@@ -51,7 +51,7 @@ class _TokenStream:
         buf = self.rcsfile.read(self.CHUNK_SIZE)
         if buf == '':
           # signal EOF by returning None as the token
-          del self.buf	# so we fail if get() is called again
+          del self.buf   # so we fail if get() is called again
           return None
         idx = 0
 

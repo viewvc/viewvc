@@ -194,7 +194,7 @@ class Request:
       # handle tarball magic suffixes
       if self.view_func is download_tarball:
         if (self.query_dict.get('parent')):
-	  del path_parts[-1]
+          del path_parts[-1]
         elif path_parts[-1][-7:] == ".tar.gz":
           path_parts[-1] = path_parts[-1][:-7]
 
@@ -293,7 +293,7 @@ class Request:
 
       if self.pathtype is None:
         # path doesn't exist, see if it could be an old-style ViewVC URL
-	# with a fake suffix
+        # with a fake suffix
         result = _strip_suffix('.diff', path_parts, pathrev, vclib.FILE,      \
                                self.repos, view_diff) or                      \
                  _strip_suffix('.tar.gz', path_parts, pathrev, vclib.DIR,     \
@@ -312,7 +312,7 @@ class Request:
         if result:
           self.path_parts, self.pathtype, self.view_func = result
           self.where = _path_join(self.path_parts)
-	  needs_redirect = 1
+          needs_redirect = 1
         else:
           raise debug.ViewVCException('%s: unknown location'
                                        % self.where, '404 Not Found')
@@ -344,7 +344,7 @@ class Request:
         self.view_func = view_roots
       elif self.pathtype == vclib.DIR:
         # ViewCVS 0.9.2 used to put ?tarball=1 at the end of tarball urls
-	if self.query_dict.has_key('tarball'):
+        if self.query_dict.has_key('tarball'):
           self.view_func = download_tarball
         else:
           self.view_func = view_directory
@@ -503,7 +503,7 @@ class Request:
     if view_func is download_tarball:
       if not where and not cfg.options.root_as_url_component:
         url = url + '/' + rootname + '-root'
-	params['parent'] = '1'
+        params['parent'] = '1'
       url = url + '.tar.gz'
 
     # add trailing slash for a directory
@@ -2228,7 +2228,7 @@ def view_annotate(request):
 
   diff_url = request.get_url(view_func=view_diff,
                              params={'r1': None, 'r2': None},
-			     escape=1, partial=1)
+                             escape=1, partial=1)
 
   include_url = request.get_url(view_func=view_log, where='/WHERE/',
                                 pathtype=vclib.FILE, params={}, escape=1)
