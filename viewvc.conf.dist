@@ -145,52 +145,6 @@ default_root = cvs
 address = 
 
 #
-# This should contain a list of modules in the repository that should not be
-# displayed (by default or by explicit path specification).
-#
-# This configuration can be a simple list of modules, or it can get quite
-# complex:
-#
-#   *) The "!" can be used before a module to explicitly state that it
-#      is NOT forbidden. Whenever this form is seen, then all modules will
-#      be forbidden unless one of the "!" modules match.
-#
-#   *) Shell-style "glob" expressions may be used. "*" will match any
-#      sequence of zero or more characters, "?" will match any single
-#      character, "[seq]" will match any character in seq, and "[!seq]"
-#      will match any character not in seq.
-#
-#   *) Tests are performed in sequence. The first match will terminate the
-#      testing. This allows for more complex allow/deny patterns.
-#
-# Tests are case-sensitive.
-#
-# NOTE: Again, this is for the hiding of modules within repositories, *not* 
-# for the hiding of repositories (roots) themselves.
-#
-# Some examples:
-#
-#    Disallow "example" but allow all others:
-#       forbidden = example
-#
-#    Disallow "example1" and "example2" but allow all others:
-#       forbidden = example1, example2
-#
-#    Allow *only* "example1" and "example2":
-#       forbidden = !example1, !example2
-#
-#    Forbid modules starting with "x":
-#       forbidden = x*
-#
-#    Allow modules starting with "x" but no others:
-#       forbidden = !x*
-#
-#    Allow "xml", forbid other modules starting with "x", and allow the rest:
-#       forbidden = !xml, x*, !*
-#
-forbidden =
-
-#
 # This option provides a mechanism for custom key/value pairs to be
 # available to templates.  These are stored in key/value (KV) files.
 #
@@ -351,6 +305,17 @@ checkout_magic = 0
 # error on attempted access).
 # Possible values: "tar", "annotate", "co", "markup"
 allowed_views = markup, annotate
+
+# authorizer: The name of the ViewVC authorizer plugin to use when
+# authorizing access to repository contents.  This value must be the
+# name of a Python module addressable as vcauth.MODULENAME (most
+# easily accomplished by placing it in ViewVC's lib/vcauth/ directory)
+# and which implements a ViewVCAuthorizer class (as a subclass of
+# vcauth.GenericViewVCAuthorizer).  You can provide custom parameters
+# to the authorizer module by defining configuration sections named
+# authz-MODULENAME and adding the parameter keys and values there.
+# ViewVC provides the following modules:  "svnauthz", "forbidden"
+authorizer = forbidden
 
 # default_file_view: "log" or "co"
 # Controls whether the default view for file URLs is a checkout view or
@@ -689,5 +654,60 @@ enabled = 0
 # svn_roots = 
 # default_root = cvsroot
 #
+
+#---------------------------------------------------------------------------
+[authz-forbidden]
+
+# The "forbidden" authorizer forbids access to repository modules,
+# defined to be top-level subdirectories in a repository.  You can use
+# a simple list of modules, or something more complex:
+#
+#   *) The "!" can be used before a module to explicitly state that it
+#      is NOT forbidden. Whenever this form is seen, then all modules will
+#      be forbidden unless one of the "!" modules match.
+#
+#   *) Shell-style "glob" expressions may be used. "*" will match any
+#      sequence of zero or more characters, "?" will match any single
+#      character, "[seq]" will match any character in seq, and "[!seq]"
+#      will match any character not in seq.
+#
+#   *) Tests are performed in sequence. The first match will terminate the
+#      testing. This allows for more complex allow/deny patterns.
+#
+# Tests are case-sensitive.
+#
+# NOTE: Again, this is for the hiding of modules within repositories, *not* 
+# for the hiding of repositories (roots) themselves.
+#
+# Some examples:
+#
+#    Disallow "example" but allow all others:
+#       forbidden = example
+#
+#    Disallow "example1" and "example2" but allow all others:
+#       forbidden = example1, example2
+#
+#    Allow *only* "example1" and "example2":
+#       forbidden = !example1, !example2
+#
+#    Forbid modules starting with "x":
+#       forbidden = x*
+#
+#    Allow modules starting with "x" but no others:
+#       forbidden = !x*
+#
+#    Allow "xml", forbid other modules starting with "x", and allow the rest:
+#       forbidden = !xml, x*, !*
+#
+forbidden = 
+
+#---------------------------------------------------------------------------
+[authz-svnauthz]
+
+# The "svnauthz" authorizer uses a Subversion authz configuration file
+# to determine access to repository paths.  This option specifies the
+# location of that file using an absolute path.
+#
+authzfile =
 
 #---------------------------------------------------------------------------

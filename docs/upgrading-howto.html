@@ -121,7 +121,36 @@ td {
 </div>
 
 <div class="h3">
+<h3>Forbidden Modules</h3>
+    
+<p>ViewVC 1.1 introduces a new pluggable authorization (authz)
+   subsystem which gives administrators greater control over the
+   accessibility of the information ViewVC displays in its output.
+   ViewVC provides a number of working authz modules and framework for
+   configuring them.  But of specific interest to folks upgrading from
+   ViewVC 1.0 is that one of these new modules has replaced the
+   handling of forbidden modules.  As such, the <code>forbidden</code>
+   configuration option now lives under the configuration section
+   specific to that authz module.</p>
+
+<p>Migrating your existing configuration of forbidden modules should
+   be fairly straightforward.  Simply ensure that that the new
+   <code>authorizer</code> option is set to "forbidden" (which is the
+   default), and in the new "authz-forbidden" section of viewvc.conf,
+   set the <code>forbidden</code> option to the same thing it was set
+   to when it lived in the "options" section.</p>
+
+<p>Of course, you might wish to take advantage of another of the
+   provided authz modules.  Or, you might wish to write a brand new
+   one for your purposes.  The flexibility is yours.</p>
+
+</div>
+
+<div class="h3">
 <h3>Configuration Options</h3>
+
+<p>This section covers changes to configuration options not already
+   discussed in other sections pertaining to this upgrade.</p>
 
 <p>In ViewVC 1.1, a new "utilities" section was added to the
    viewvc.conf file.  All the options used for configuring the
@@ -145,7 +174,7 @@ td {
   <li>utilities/svn</li>
 </ul>
 
-<p>And these were removed:</p>
+<p>&hellip;and these were removed:</p>
 
 <ul>
   <li>general/cvsnt_ext_path</li>
@@ -158,15 +187,14 @@ td {
   <li>options/py2html_path</li>
 </ul>
 
-<p>Secondly, all the options which governed which ViewVC views were
-   enabled have been consolidated into a single new option.  This new
-   option:</p>
+<p>All the options which governed which ViewVC views were enabled have
+   been consolidated into a single new option.  This new option:</p>
 
 <ul>
   <li>options/allowed_views</li>
 </ul>
 
-<p>Replaces these, which have been removed:</p>
+<p>&hellip;replaces these, which have been removed:</p>
 
 <ul>
   <li>options/allow_annotate</li>
