@@ -1,0 +1,20 @@
+ViewVC templates for subversion only (templates-viewsvn)
+
+Warning:
+Do not use this template set if you plan to view cvs repositories through ViewVC! 
+The templates are heavily trimmed for Subversion needs. Special CVS features are 
+untested, possibly disabled or broken.
+
+Do not forget to modify include/header.ezt to include your logo and favicon.
+
+Please report enhancemants back to me.
+jpeters7677@gmx.de
+
+
+Credits for images:
+TortoiseSVN project
+http://tortoisesvn.net/
+
+Credits for colors:
+Subversion Mailing List Archive
+http://svn.haxx.se/ 

@@ -1,0 +1,75 @@
+- Modify viewvc.conf to use templates-viewsvn as the templates directory:
+template_dir = templates-viewsvn
+
+- Leave the section [templates] as is, thus do not override any templates.
+
+- Do not forget to modify include/header.ezt to include your logo and favicon.
+
+
+- The following viewvc.conf setting were used to create the templates, do not copy these blindly,
+just check them if something seems wrong:
+
+[general]
+root_parents = [REPOSPATH] : svn
+use_rcsparse = 0
+mime_types_file = [PATHTO]\mime.types
+address = <a href="mailto:[ADRESS]">Admin</a>
+forbidden =
+kv_files =
+languages = en-us
+[options]
+root_as_url_component = 0
+default_file_view = log
+checkout_magic = 0
+http_expiration_time = 600
+generate_etags = 1
+sort_by = file
+sort_group_dirs = 1
+hide_attic = 1
+log_sort = date
+diff_format = h
+hide_cvsroot = 1
+hr_breakable = 1
+hr_funout = 0
+hr_ignore_white = 1
+hr_ignore_keyword_subst = 1
+hr_intraline = 0
+allow_annotate = 1
+allow_markup = 1
+allow_compress = 1
+template_dir = templates-viewsvn
+docroot = [PATHTO]/docroot
+show_subdir_lastmod = 0
+show_logs = 1
+show_log_in_markup = 1
+cross_copies = 1
+use_localtime = 1
+py2html_path = .
+short_log_len = 80
+use_enscript = 0
+enscript_path =
+use_highlight = 1
+highlight_path = [PATH]
+highlight_line_numbers = 1
+highlight_convert_tabs = 2
+use_php = 0
+php_exe_path = php
+allow_tar = 0
+use_cvsgraph = 0
+cvsgraph_path =
+cvsgraph_conf = cvsgraph.conf
+use_re_search = 0
+use_pagesize = 200
+limit_changes = 100
+[templates]
+[cvsdb]
+enabled = 1
+host = localhost
+port = 3306
+database_name = ViewVC
+user = [UID]
+passwd = [PWD]
+readonly_user = [UID] 
+readonly_passwd = [PWD] 
+#row_limit = 1000
+[vhosts]
