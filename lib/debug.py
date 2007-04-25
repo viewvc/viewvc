@@ -68,6 +68,12 @@ class ViewVCException:
     return "ViewVC Unrecoverable Error: %s" % self.msg
 
 
+class ViewVCNotAuthorizedException(ViewVCException):
+  def __init__(self, user, what):
+    msg = 'User "%s" is not authorized to see %s' % (user, what)
+    ViewVCException.__init__(self, msg, '501 Not Authorized')
+
+
 def PrintException(server, exc_data):
   status = exc_data['status']
   msg = exc_data['msg']

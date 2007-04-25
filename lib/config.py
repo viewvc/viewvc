@@ -148,16 +148,35 @@ class Config:
     for section in parser.sections():
       if section[:lrn] == rn:
         base_section = section[lrn:]
-        if base_section not in self._sections or base_section == 'general':
+        if base_section in self._sections:
+          if base_section == 'general':
+            raise IllegalOverrideSection('root', section)
+          self._process_section(parser, section, base_section)
+        elif _startswith(base_section, 'authz-'):
+          pass
+        else:
           raise IllegalOverrideSection('root', section)
-        self._process_section(parser, section, base_section)
-
+          
   def overlay_root_options(self, rootname):
     "Overly per-root options atop the existing option set."
     if not self.conf_path:
       return
     self._process_root_options(self.parser, rootname)
 
+  def get_authorizer_params(self, authorizer, rootname=None):
+    if not self.conf_path:
+      return {}
+    
+    params = {}
+    authz_section = 'authz-%s' % (authorizer)
+    if rootname:
+      root_authz_section = 'root-%s/authz-%s' % (rootname, authorizer)
+    for section in self.parser.sections():
+      if section == authz_section \
+         or (rootname and section == root_authz_section):
+        params.update(self.parser.items(section))
+    return params
+  
   def set_defaults(self):
     "Set some default values in the configuration."
 
@@ -214,6 +233,7 @@ class Config:
     self.options.default_file_view = "log"
     self.options.checkout_magic = 0
     self.options.allowed_views = ['markup', 'annotate']
+    self.options.authorizer = 'forbidden'
     self.options.use_rcsparse = 0
     self.options.sort_by = 'file'
     self.options.sort_group_dirs = 1
@@ -251,19 +271,8 @@ class Config:
     self.options.http_expiration_time = 600
     self.options.generate_etags = 1
 
-  def is_forbidden(self, module):
-    if not module:
-      return 0
-    default = 0
-    for pat in self.general.forbidden:
-      if pat[0] == '!':
-        default = 1
-        if fnmatch.fnmatchcase(module, pat[1:]):
-          return 0
-      elif fnmatch.fnmatchcase(module, pat):
-        return 1
-    return default
-
+def _startswith(somestr, substr):
+  return somestr[:len(substr)] == substr
 
 def _parse_roots(config_name, config_value):
   roots = { }
@@ -274,7 +283,6 @@ def _parse_roots(config_name, config_value):
     name, path = map(string.strip, (root[:pos], root[pos+1:]))
     roots[name] = path
   return roots
-
 
 class ViewVCConfigurationError(Exception):
   pass
