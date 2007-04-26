@@ -77,6 +77,8 @@ def Cvs1Dot12ArgParse(args):
 
     if args[1] == '- New directory':
         return None, None
+    elif args[1] == '- Imported sources':
+        return None, None
     else:
         directory = args.pop(0)
         files = []
