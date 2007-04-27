@@ -32,7 +32,15 @@
 
 [# if you want to disable tarball generation remove the following: ]
 [if-any tarball_href]
-  <p style="margin:0;"><a href="[tarball_href]">Download GNU tarball</a></p>
+  <table>
+    <tr>
+      <td style="text-align: right;">
+        <a href="[tarball_href]" title="Download GNU tarball">
+          <img src="[docroot]/images/download.png" alt="Download GNU tarball"/>
+        </a>
+      </td>
+    </tr>
+  </table>
 [end]
 
 [include "footer.ezt"]
