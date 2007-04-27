@@ -1,0 +1,8 @@
+Template Set:  tabbed
+Author(s):  C. Michael Pilato <cmpilato@red-bean.com>,
+            Russell Yanofsky <russ@yanofsky.org>
+Compatibility:  ViewVC 1.1
+
+The "tabbed" template set uses top navigation tabs to flip between
+various views of a file or directory.
+

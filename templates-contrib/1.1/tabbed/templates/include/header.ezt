@@ -1,0 +1,113 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<!-- ViewVC :: http://www.viewvc.org/ -->
+
+<head>
+  <title>[[]ViewVC] [page_title] [if-any rootname][rootname][if-any where]/[where][end][end]</title>
+  <meta name="generator" content="ViewVC [vsn]" />
+  <link rel="stylesheet" href="[docroot]/styles.css" type="text/css" />
+  [if-any rss_href]
+  <link rel="alternate" type="application/rss+xml" href="[rss_href]"
+        title="ViewVC RSS: [if-any rootname][rootname][if-any where]/[where][end][end]">
+  [end]
+</head>
+
+<body>
+
+<div style="float: right; padding: 0 5px;">
+<a href="http://www.viewvc.org/">
+<img src="[docroot]/images/viewvc-logo.png" alt="ViewVC logotype" 
+     width="150" height="60" /></a>
+</div>
+
+[if-any roots]
+  <form method="get" style="display: inline" action="[change_root_action]">
+    [change_root_hidden_values]
+      <strong>Repository:</strong>
+      <select name="root" onchange="submit()">
+        [define cvs_root_options][end]
+        [define svn_root_options][end]
+        <option value="*viewroots*"[is view "roots"] selected="selected"[else][end]>Repository Listing</option>
+        [for roots]
+          [define root_option][end]
+          [is roots.name rootname]
+            [define root_option]<option selected="selected">[roots.name]</option>[end]
+          [else]
+            [define root_option]<option>[roots.name]</option>[end]
+          [end]
+          [is roots.type "cvs"]
+            [define cvs_root_options][cvs_root_options][root_option][end]
+          [else]
+            [is roots.type "svn"]
+              [define svn_root_options][svn_root_options][root_option][end]
+            [end]
+          [end]
+        [end]
+        [is cvs_root_options ""][else]
+          <optgroup label="CVS Repositories">[cvs_root_options]</optgroup>
+        [end]
+        [is svn_root_options ""][else]
+          <optgroup label="Subversion Repositories">[svn_root_options]</optgroup>
+        [end]
+      </select>
+      <input type="submit" value="Go" />
+  </form>
+[end]
+
+<div id="vc_current_path">
+<strong>[page_title]</strong>
+[if-any nav_path]
+  [for nav_path]
+    [if-any nav_path.href]<a href="[nav_path.href]">[end]
+      [nav_path.name][if-any nav_path.href]</a>[end]
+    [if-index nav_path last][else]/[end]
+  [end]
+[end]
+</div>
+
+<div id="vc_view_selection_group">
+[is pathtype "dir"]
+  <div class="vc_view_link[is view "dir"]_this[end]">
+    <a href="[view_href]">View Directory</a>
+  </div>
+  [if-any revision_href]
+  <div class="vc_view_link[is view "log"]_this[end]">
+    <a href="[log_href]">Revision Log</a>
+  </div>
+  [end]
+  [if-any queryform_href]
+  <div class="vc_view_link[is view "queryform"]_this[end]">
+    <a href="[queryform_href]">Commit Query</a>
+  </div>
+  [end]
+  [if-any tarball_href]
+  <div class="vc_view_link">
+    <a href="[tarball_href]">Download Tarball</a>
+  </div>
+  [end]
+[end]
+
+[is pathtype "file"]
+  <div class="vc_view_link[is view "markup"]_this[end]">
+    <a href="[view_href]">View File</a>
+  </div>
+  <div class="vc_view_link[is view "log"]_this[end]">
+    <a href="[log_href]">Revision Log</a>
+  </div>
+  <div class="vc_view_link[is view "annotate"]_this[end]">
+    <a href="[annotate_href]">Show Annotations</a>
+  </div>
+  [if-any graph_href]
+  <div class="vc_view_link[is view "graph"]_this[end]">
+    <a href="[graph_href]">Revision Graph</a>
+  </div>
+  [end]
+  <div class="vc_view_link">
+    <a href="[download_href]">Download File</a>
+  </div>
+[end]
+</div>
+
+<div id="vc_main">
