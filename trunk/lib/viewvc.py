@@ -1175,6 +1175,10 @@ def common_template_data(request):
   elif request.pathtype == vclib.DIR:
     data['view_href'] = request.get_url(view_func=view_directory,
                                        params={}, escape=1)
+    if 'tar' in cfg.options.allowed_views:
+      data['tarball_href'] = request.get_url(view_func=download_tarball, 
+                                             params={},
+                                             escape=1)
     if request.roottype == 'svn':
       data['revision_href'] = request.get_url(view_func=view_revision,
                                               params={}, escape=1)
@@ -1851,11 +1855,6 @@ def view_directory(request):
   if cfg.options.use_pagesize:
     data['dir_paging_action'], data['dir_paging_hidden_values'] = \
       request.get_form(params={'dir_pagestart': None})
-
-  if 'tar' in cfg.options.allowed_views:
-    data['tarball_href'] = request.get_url(view_func=download_tarball, 
-                                           params={},
-                                           escape=1)
 
   pathrev_form(request, data)
 
