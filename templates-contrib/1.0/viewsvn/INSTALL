@@ -18,12 +18,12 @@ II.  TWEAKS
 
 1. Set your own favicon
 
-Modify include/header.ezt, line 8, to include your favicon.
+Modify include/header.ezt, line 9, to include your favicon.
 
 
 2. Let your own logo appear in the upper right area and link to your homepage. 
 
-Modify include/header.ezt, line 76, to include your link and logo.
+Modify include/header.ezt, line 78, to include your link and logo.
 
 
 3. Enable TortoiseSVN checkout links.
@@ -34,7 +34,7 @@ to use TortoiseSVN checkout links
 only work if all your repositories share the same base location, e.g. http://svn.server/svn/.
 This is mostly the case if you are using the mod_dav_svn SVNParentPath directive.
  
-Modify include/dir_footer.ezt, line 43. Enable this section and configure your subversion location. 
+Modify include/dir_footer.ezt, line 44. Enable this section and configure your subversion location. 
 
 
 
