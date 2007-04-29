@@ -5,7 +5,8 @@
 <head>
   <title>[if-any rootname][[][rootname]][else]Subversion[end] [page_title]</title>
   <meta name="generator" content="ViewVC [vsn]" />
-  <!-- set your favicon here
+  [# set your favicon here ]
+  <!--
   <link rel="shortcut icon" href="[docroot]/images/favicon-yourorganisation.ico" />
   -->
   <link rel="stylesheet" href="[docroot]/styles.css" type="text/css" />
@@ -73,7 +74,8 @@
 </div>
 
 <div style="float: right; padding: 5px;">
-  <!-- link to your organisation here 
+  [# insert your logo and link to your organisation here ]
+  <!--
   <a href="http://www.yourorganisation.com" title="yourorganisation"><img src="[docroot]/images/logo-yourorganisation.png" alt="yourorganisation" /></a>
   -->
 </div>
