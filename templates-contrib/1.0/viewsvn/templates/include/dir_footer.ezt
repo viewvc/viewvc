@@ -35,8 +35,19 @@
   <table>
     <tr>
       <td style="text-align: right;">
-        <a href="[tarball_href]" title="Download GNU tarball">
-          <img src="[docroot]/images/download.png" alt="Download GNU tarball"/>
+        <!-- 
+          Enable this section and replace protocoll://svnparentlocation with your SVN parent URL location
+          (e.g. https://server/svn) to enable direct TortoiseSVN checkouts. This works only if all your
+          repositories have the same location, e.g. if you use the SVNParentPath directive in mod_dav_svn
+        -->
+        <!--
+        <a href="tsvn:protocoll://svnparentlocation/[rootname]/[where]/" title="TortoiseSVN Checkout...">
+          <img src="[docroot]/images/tortoisesvn/checkout.png" alt="TortoiseSVN Checkout..."/>
+        </a>
+        &nbsp;
+        -->
+        <a href="[tarball_href]" title="Download as GNU tarball">
+          <img src="[docroot]/images/download.png" alt="Download as GNU tarball"/>
         </a>
       </td>
     </tr>
