@@ -1,12 +1,48 @@
-- Modify viewvc.conf to use templates-viewsvn as the templates directory:
+I.   BASIC INSTALLATION
+
+
+Let ViewVC use the viewsvn templates folder as templates. You can either delete the original
+templates folder in the ViewVC installation directory and copy the one from this archive to
+the ViewVC installation directory or copy the templates folder from this archive with a different 
+name to the ViewVC installation directory and change the template_dir option in viewvc.conf
+
 template_dir = templates-viewsvn
 
-- Leave the section [templates] as is, thus do not override any templates.
-
-- Do not forget to modify include/header.ezt to include your logo and favicon.
+Leave the section [templates] as is, thus do not override any templates. 
 
 
-- The following viewvc.conf setting were used to create the templates, do not copy these blindly,
+
+ 
+II.  TWEAKS
+
+
+1. Set your own favicon
+
+Modify include/header.ezt, line 8, to include your favicon.
+
+
+2. Let your own logo appear in the upper right area and link to your homepage. 
+
+Modify include/header.ezt, line 76, to include your link and logo.
+
+
+3. Enable TortoiseSVN checkout links.
+
+If you are certain that most of your guest use TortoiseSVN you can give them the ability
+to use TortoiseSVN checkout links 
+(see http://tortoisesvn.net/docs/release/TortoiseSVN_en/tsvn-repository-links.html). This wil
+only work if all your repositories share the same base location, e.g. http://svn.server/svn/.
+This is mostly the case if you are using the mod_dav_svn SVNParentPath directive.
+ 
+Modify include/dir_footer.ezt, line 43. Enable this section and configure your subversion location. 
+
+
+
+
+III. EXAMPLE VIEWVC.CONF
+
+
+The following viewvc.conf setting were used to create the templates, do not copy these blindly,
 just check them if something seems wrong:
 
 [general]
