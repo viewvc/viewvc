@@ -26,7 +26,7 @@
     [end]
     [if-any entries.download_href]<a href="[entries.download_href]" title="Download"><img src="[docroot]/images/download.png" alt="Download"/></a>[end]
 <!--    [if-any entries.download_text_href]<a href="[entries.download_text_href]">as text</a>[end]-->
-    [if-any entries.annotate_href]<a href="[entries.annotate_href]" title="Blame"><img src="[docroot]/images/blame.png" alt="Blame"/></a>[end]
+    [if-any entries.annotate_href]<a href="[entries.annotate_href]" title="Blame"><img src="[docroot]/images/tortoisesvn/blame.png" alt="Blame"/></a>[end]
 
 <!--    
     [is pathtype "file"]

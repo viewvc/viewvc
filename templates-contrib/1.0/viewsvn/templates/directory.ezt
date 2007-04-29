@@ -62,7 +62,7 @@
 [if-any up_href]
   <tr class="vc_row_odd">
     <td colspan="2">
-	  <a href="[up_href]" class="img"><img src="[docroot]/images/back_small.png" alt="" width="16" height="16"/></a>
+	  <a href="[up_href]" class="img"><img src="[docroot]/images/tortoisesvn/back_small.png" alt="" width="16" height="16"/></a>
 	  &nbsp;<a href="[up_href]">Parent&nbsp;Directory</a>
     </td>
     <td>&nbsp;</td>

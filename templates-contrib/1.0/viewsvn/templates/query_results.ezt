@@ -5,7 +5,7 @@
 
 [include "include/header.ezt"]
 
-<p><a href="[queryform_href]" title="Modify query" class="img"><img src="[docroot]/images/back.png" alt="Modify query" width="16" height="16" /></a>&nbsp;<a href="[queryform_href]">Modify query</a></p>
+<p><a href="[queryform_href]" title="Modify query" class="img"><img src="[docroot]/images/tortoisesvn/back.png" alt="Modify query" width="16" height="16" /></a>&nbsp;<a href="[queryform_href]">Modify query</a></p>
 <p><strong>[english_query]</strong></p>
 [# <!-- {sql} --> ]
 <!-- <p><a href="[backout_href]">Show commands which could be used to back out these changes</a></p> -->

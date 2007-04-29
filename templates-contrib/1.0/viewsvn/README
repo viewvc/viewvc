@@ -11,10 +11,11 @@ Please report enhancemants back to me.
 jpeters7677@gmx.de
 
 
-Credits for images:
-TortoiseSVN project
-http://tortoisesvn.net/
-
 Credits for colors:
 Subversion Mailing List Archive
 http://svn.haxx.se/ 
+
+All images in templates/docroot/images/tortoisesvn are licensed under the
+ToirtoiseSVN Icon license. See license.txt in this folder for more details.
+TortoiseSVN project
+http://tortoisesvn.net/
