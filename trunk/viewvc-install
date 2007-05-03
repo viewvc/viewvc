@@ -75,8 +75,9 @@ if sys.platform == "win32":
 ##          destination path,
 ##          boolean -- prompt before replacing?)
 TREE_LIST = [
-    ("lib",       "lib",       0),
-    ("templates", "templates", 1),
+    ("lib",                       "lib",                       0),
+    ("templates",                 "templates",                 1),
+    ("templates-contrib",         "templates-contrib",         1),
     ]
 
 
