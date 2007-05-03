@@ -1,4 +1,4 @@
-Here lie TODO items for the authz-dev branch:
+Here lie TODO items for the pluggable authz system:
 
   * Subversion uses path privelege to determine visibility of revision
     metadata.  That logic is pretty Subversion-specific, so it feels like it
