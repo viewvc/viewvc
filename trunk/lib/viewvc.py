@@ -1011,14 +1011,19 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
 
 # Regular expressions for location text that looks like URLs and email
 # addresses.  Note that the regexps assume the text is already HTML-encoded.
-_re_rewrite_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)(://[-a-zA-Z0-9%.~:_/]+)((\?|\&amp;)([-a-zA-Z0-9%.~:_]+)=([-a-zA-Z0-9%.~:_])+)*(#([-a-zA-Z0-9%.~:_]+)?)?)')
-_re_rewrite_email = re.compile('([-a-zA-Z0-9_.\+]+)@(([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
+_re_rewrite_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)'
+                             '(://[-a-zA-Z0-9%.~:_/]+)((\?|\&amp;)'
+                             '([-a-zA-Z0-9%.~:_]+)=([-a-zA-Z0-9%.~:_])+)*'
+                             '(#([-a-zA-Z0-9%.~:_]+)?)?)')
+_re_rewrite_email = re.compile('([-a-zA-Z0-9_.\+]+)@'
+                               '(([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
 def htmlify(html):
   if not html:
     return html
   html = cgi.escape(html)
   html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
-  html = re.sub(_re_rewrite_email, r'<a href="mailto:\1&#64;\2">\1&#64;\2</a>', html)
+  html = re.sub(_re_rewrite_email, r'<a href="mailto:\1&#64;\2">\1&#64;\2</a>',
+                html)
   return html
 
 def format_log(log, cfg):
