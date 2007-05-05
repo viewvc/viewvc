@@ -65,7 +65,7 @@
 
   <xsl:template match="updir">
     <div class="updir">
-	  <img src="/docroot/images/back.png" alt="" width="16" height="16"/>
+	  <img src="/docroot/images/tortoisesvn/back.png" alt="" width="16" height="16"/>
 	  <xsl:text> </xsl:text>
       <xsl:text>[</xsl:text>
       <xsl:element name="a">
