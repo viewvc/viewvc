@@ -4,6 +4,4 @@
   [include "diff_form.ezt"]
 [end]
 
-<!--[include "sort.ezt"]-->
-
 [include "footer.ezt"]

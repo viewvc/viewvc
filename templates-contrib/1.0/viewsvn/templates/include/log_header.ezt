@@ -25,7 +25,6 @@
   <td>
     <a href="[view_href]" title="View"><img src="[docroot]/images/text.png" alt="View"/></a>
     [if-any download_href]<a href="[download_href]" title="Download"><img src="[docroot]/images/download.png" alt="Download"/></a>[end]
-    <!--[if-any download_text_href]<a href="[download_text_href]">as text</a>[end]-->
     [if-any annotate_href]<a href="[annotate_href]" title="Blame"><img src="[docroot]/images/tortoisesvn/blame.png" alt="Blame"/></a>[end]
   </td>
 </tr>
@@ -37,7 +36,6 @@
   <td>
     <a href="[tag_view_href]" title="View"><img src="[docroot]/images/text.png" alt="View"/></a>
     [if-any tag_download_href]<a href="[tag_download_href]" title="Download"><img src="[docroot]/images/download.png" alt="Download"/></a>[end]
-    <!--[if-any tag_download_text_href]<a href="[tag_download_text_href]">as text</a>[end]-->
     [if-any tag_annotate_href]<a href="[tag_annotate_href]" title="Blame"><img src="[docroot]/images/tortoisesvn/blame.png" alt="Blame"/></a>[end]
   </td>
 </tr>

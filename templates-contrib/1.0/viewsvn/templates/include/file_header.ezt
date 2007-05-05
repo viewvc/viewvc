@@ -4,9 +4,6 @@
 [if-any log_href] 
     <a href="[log_href][if-any log_href_rev]#rev[log_href_rev][end]" title="Revision Log" class="img"><img src="[docroot]/images/tortoisesvn/log.png" width="16" height="16" alt="Revision Log" /></a>&nbsp;<a href="[log_href][if-any log_href_rev]#rev[log_href_rev][end]">Revision Log</a>
 [end]
-[if-any graph_href]
-    <a href="[graph_href]" title="View Revision Graph" class="img"><img src="[docroot]/images/cvsgraph_16x16.png" width="16" height="16" alt="View Revision Graph" /></a>&nbsp;<a href="[graph_href]">Revision Graph</a>
-[end]
 [is view "diff"]
     <a href="[patch_href]" title="View Patch" class="img"><img src="[docroot]/images/tortoisesvn/diff.png" width="16" height="16" alt="View Patch" /></a>&nbsp;<a href="[patch_href]">Patch</a>
 [end]
