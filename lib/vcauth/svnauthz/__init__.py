@@ -66,7 +66,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
         all_groups.append(groupname)
         group_member = 0
         groupname = groupname.strip()
-        entries = string.strip(cp.get('groups', groupname), ',')
+        entries = string.split(cp.get('groups', groupname), ',')
         for entry in entries:
           entry = string.strip(entry)
           if entry == username:
