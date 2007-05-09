@@ -120,11 +120,11 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
       # If we got an explicit access determination for this path and this
       # USERNAME, record it.
       if allow or deny:
-        if readable:
+        if allow:
           root_is_readable = 1
         if path != '/':
           path = '/' + string.join(filter(None, string.split(path, '/')), '/')
-        self.paths[path] = readable
+        self.paths[path] = allow
 
     # If USERNAME can't see this root at all, raise an error.
     if not root_is_readable:
