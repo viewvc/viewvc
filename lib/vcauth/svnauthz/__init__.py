@@ -102,16 +102,15 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
           continue
 
       # Figure if this path is explicitly allowed or denied to USERNAME.
-      allow = deny = readable = 0
+      allow = deny = 0
       for user in cp.options(section):
-        mode = string.strip(cp.get(section, user))
         user = string.strip(user)
-        readable = (mode == "r" or mode == "rw")
         if user == '*' \
            or user == username \
            or (user[0:1] == "@" and user[1:] in groups):
-          allow = readable
-          deny = not readable
+          mode = string.strip(cp.get(section, user))
+          allow = (mode == "r" or mode == "rw")
+          deny = not allow
           # The order of the entries is not relevant.  We'll use the most
           # permissive entry, meaning one 'allow' is all we need.
           if allow:
