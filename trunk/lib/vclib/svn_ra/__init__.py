@@ -282,6 +282,15 @@ class SubversionRepository(vclib.Repository):
     self.youngest = ra.svn_ra_get_latest_revnum(self.ra_session)
     self._dirent_cache = { }
 
+  def rootname(self):
+    return self.name
+
+  def rootpath(self):
+    return self.rootpath
+
+  def roottype(self):
+    return vclib.SVN
+
   def itemtype(self, path_parts, rev):
     path = self._getpath(path_parts[:-1])
     rev = self._getrev(rev)
