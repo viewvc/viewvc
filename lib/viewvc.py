@@ -291,8 +291,7 @@ class Request:
           "500 Internal Server Error")
       
     if self.rootname and cfg.options.authorizer:
-      self.auth = setup_authorizer(cfg, self.username, self.rootname,
-                                   self.rootpath, self.roottype)
+      self.auth = setup_authorizer(cfg, self.username, self.repos)
 
     # If this is using an old-style 'rev' parameter, redirect to new hotness.
     # Subversion URLs will now use 'pathrev'; CVS ones use 'revision'.
@@ -790,14 +789,13 @@ def _orig_path(request, rev_param='revision', path_param=None):
                                               pathrev, rev)), rev
   return _path_parts(path), rev
 
-def setup_authorizer(cfg, username, rootname,
-                     rootpath, roottype, params={}):
+def setup_authorizer(cfg, username, root, params={}):
+  rootname = root.rootname()
   try:
     exec('import vcauth.%s' % (cfg.options.authorizer))
     exec('my_auth = vcauth.%s' % (cfg.options.authorizer))
     params = cfg.get_authorizer_params(cfg.options.authorizer, rootname)
-    return my_auth.ViewVCAuthorizer(username, rootname, rootpath,
-                                    roottype, params)
+    return my_auth.ViewVCAuthorizer(username, root, params)
   except vcauth.ViewVCRootAccessNotAuthorized:
     raise debug.ViewVCNotAuthorizedException(username,
                                              'root "%s"' % (rootname))

@@ -19,12 +19,11 @@ import vclib
 class GenericViewVCAuthorizer:
   """Abstract class encapsulating version control authorization routines."""
   
-  def __init__(self, username, rootname, rootpath, roottype, params={}):
+  def __init__(self, username, root, params={}):
     """Create a GenericViewVCAuthorizer object which will be used to
     validate that USERNAME has the permissions needed to view version
-    control repository named ROOTNAME (of type ROOTTYPE, and located at
-    ROOTPATH).  PARAMS is a dictionary of custom parameters for the
-    authorizer.
+    control repository ROOT (in whole or in part).  PARAMS is a
+    dictionary of custom parameters for the authorizer.
 
     Raise ViewVCRootAccessNotAuthorized error if USERNAME isn't
     allowed to see this repository at all."""
