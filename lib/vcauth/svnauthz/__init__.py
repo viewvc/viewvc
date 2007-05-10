@@ -108,11 +108,12 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
         if user == '*' \
            or user == username \
            or (user[0:1] == "@" and user[1:] in groups):
-          mode = string.strip(cp.get(section, user))
-          allow = (mode == "r" or mode == "rw")
+          # See if the 'r' permission is among the ones granted to
+          # USER.  If so, we can stop looking.  (Entry order is not
+          # relevant -- we'll use the most permissive entry, meaning
+          # one 'allow' is all we need.)
+          allow = string.find(cp.get(section, user), 'r') != -1
           deny = not allow
-          # The order of the entries is not relevant.  We'll use the most
-          # permissive entry, meaning one 'allow' is all we need.
           if allow:
             break
           
