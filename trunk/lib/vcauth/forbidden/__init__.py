@@ -15,7 +15,7 @@ import string
 
 class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   """A simple top-level module authorizer."""
-  def __init__(self, username, rootname, rootpath, roottype, params={}):
+  def __init__(self, username, root, params={}):
     forbidden = params['forbidden']
     self.forbidden = map(string.strip,
                          filter(None, string.split(forbidden, ',')))

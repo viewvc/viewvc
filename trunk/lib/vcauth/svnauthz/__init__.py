@@ -21,8 +21,9 @@ from ConfigParser import ConfigParser
 class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   """Subversion authz authorizer module"""
   
-  def __init__(self, username, rootname, rootpath, roottype, params={}):
-    self.paths = {}    # paths in our root -> access boolean for USERNAME
+  def __init__(self, username, root, params={}):
+    rootname = root.rootname()
+    self.paths = {}   # paths-in-root -> access boolean for USERNAME
     
     # Get the authz file location from a passed-in parameter.
     authz_file = params.get('authzfile')
