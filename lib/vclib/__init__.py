@@ -27,11 +27,25 @@ UNIFIED = 1
 CONTEXT = 2
 SIDE_BY_SIDE = 3
 
+# root types returned by Repository.roottype().
+CVS = 'cvs'
+SVN = 'svn'
+
+
 # ======================================================================
 #
 class Repository:
   """Abstract class representing a repository."""
 
+  def rootname(self):
+    """Return the name of this repository."""
+
+  def roottype(self):
+    """Return the type of this repository (vclib.CVS, vclib.SVN, ...)."""
+
+  def rootpath(self):
+    """Return the location of this repository."""
+    
   def itemtype(self, path_parts, rev):
     """Return the type of the item (file or dir) at the given path and revision
 

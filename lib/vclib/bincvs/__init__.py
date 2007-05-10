@@ -34,6 +34,15 @@ class CVSRepository(vclib.Repository):
     self.rootpath = rootpath
     self.utilities = utilities
 
+  def rootname(self):
+    return self.name
+
+  def rootpath(self):
+    return self.rootpath
+
+  def roottype(self):
+    return vclib.CVS
+  
   def itemtype(self, path_parts, rev):
     basepath = self._getpath(path_parts)
     if os.path.isdir(basepath):
