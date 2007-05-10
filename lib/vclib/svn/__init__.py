@@ -547,6 +547,15 @@ class SubversionRepository(vclib.Repository):
     self.youngest = fs.youngest_rev(self.fs_ptr)
     self._fsroots = {}
 
+  def rootname(self):
+    return self.name
+
+  def rootpath(self):
+    return self.rootpath
+
+  def roottype(self):
+    return vclib.SVN
+
   def itemtype(self, path_parts, rev):
     rev = self._getrev(rev)
     basepath = self._getpath(path_parts)

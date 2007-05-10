@@ -242,7 +242,6 @@ class Request:
             self.repos = vclib.bincvs.BinCVSRepository(self.rootname, 
                                                        self.rootpath,
                                                        cfg.utilities)
-          self.roottype = 'cvs'
         except vclib.ReposNotFound:
           raise debug.ViewVCException(
             'Unable to locate CVS root "%s".  Possible causes include '
@@ -266,7 +265,6 @@ class Request:
           self.repos = vclib.svn.SubversionRepository(self.rootname,
                                                       self.rootpath,
                                                       cfg.utilities)
-          self.roottype = 'svn'
         except vclib.ReposNotFound:
           raise debug.ViewVCException(
             'Unable to locate Subversion root "%s".  Possible causes include '
@@ -281,6 +279,17 @@ class Request:
           'correct, then please double-check your configuration.'
           % self.rootname, "404 Repository not found")
 
+    if self.repos:
+      type = self.repos.roottype()
+      if type == vclib.SVN:
+        self.roottype = 'svn'
+      elif type == vclib.CVS:
+        self.roottype = 'cvs'
+      else:
+        raise debug.ViewVCException(
+          'The root "%s" has an unknown type (%s).' % (self.rootname, type),
+          "500 Internal Server Error")
+      
     if self.rootname and cfg.options.authorizer:
       self.auth = setup_authorizer(cfg, self.username, self.rootname,
                                    self.rootpath, self.roottype)
