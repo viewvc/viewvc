@@ -181,46 +181,8 @@ form { margin: 0; }
 .vc_diff_changes1 { background: rgb(100%,100%,70%); color: rgb(50%,50%,50%); text-decoration: line-through; }
 .vc_diff_changes2 { background: rgb(100%,100%,0%); }
 
-.vc_diff_header {
-  background-color: #ffffff;
-}
-.vc_diff_chunk_header {
-  background-color: #99cccc;
-}
-.vc_diff_chunk_extra {
-  font-size: smaller;
-}
-.vc_diff_empty {
-  background-color: #cccccc;
+.vc_diff_nochange, .vc_diff_binary, .vc_diff_error {
   font-family: sans-serif;
-  font-size: smaller;
-}
-.vc_diff_add {
-  background-color: #aaffaa;
-  font-family: sans-serif;
-  font-size: smaller;
-}
-.vc_diff_remove {
-  background-color: #ffaaaa;
-  font-family: sans-serif;
-  font-size: smaller;
-}
-.vc_diff_change {
-  background-color: #ffff77;
-  font-family: sans-serif;
-  font-size: smaller;
-}
-.vc_diff_change_empty {
-  background-color: #eeee77;
-  font-family: sans-serif;
-  font-size: smaller;
-}
-.vc_diff_nochange {
-  font-family: sans-serif;
-  font-size: smaller;
-}
-.vc_raw_diff {
-  background-color: #cccccc;
   font-size: smaller;
 }
 
