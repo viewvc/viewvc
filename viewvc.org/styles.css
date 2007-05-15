@@ -67,6 +67,7 @@ code {
 
 blockquote {
     text-align: justify;
+    font-style: italic;
     margin: 0 0.5in 0 0.5in;
     border: 1px dotted black;
 }
