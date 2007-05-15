@@ -131,7 +131,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     if not root_is_readable:
       raise vcauth.ViewVCRootAccessNotAuthorized(rootname, username)
 
-  def _check_path_access(self, path_parts):
+  def check_path_access(self, path_parts, rev=None):
     # Crawl upward from the path represented by PATH_PARTS toward to
     # the root of the repository, looking for an explicitly grant or
     # denial of access.
@@ -142,9 +142,3 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
         return self.paths[path]
       del parts[-1]
     return self.paths.get('/', 0)
-
-  def check_file_access(self, path_parts, rev=None):
-    return self._check_path_access(path_parts)
-    
-  def check_directory_access(self, path_parts, rev=None):
-    return self._check_path_access(path_parts)

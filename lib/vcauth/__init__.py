@@ -29,15 +29,9 @@ class GenericViewVCAuthorizer:
     allowed to see this repository at all."""
     pass
 
-  def check_file_access(self, path_parts, rev=None):
+  def check_path_access(self, path_parts, rev=None):
     """Return 1 iff the associated username is permitted to read
-    revision REV of the file PATH_PARTS in the repository associated
-    with this authorizer."""
-    pass
-        
-  def check_directory_access(self, path_parts, rev=None):
-    """Return 1 iff the associated username is permitted to read
-    revision REV of the directory PATH_PARTS in the repository associated
+    revision REV of the path PATH_PARTS in the repository associated
     with this authorizer."""
     pass
 
@@ -59,8 +53,5 @@ class ViewVCAuthorizer(GenericViewVCAuthorizer):
   def __init__(self):
     pass
     
-  def check_file_access(self, path_parts, rev=None):
-    return 1
-  
-  def check_directory_access(self, path_parts, rev=None):
+  def check_path_access(self, path_parts, rev=None):
     return 1

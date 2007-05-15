@@ -17,15 +17,23 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   """A simple top-level module authorizer."""
   def __init__(self, username, root, params={}):
     forbidden = params['forbidden']
+    self.root = root
     self.forbidden = map(string.strip,
                          filter(None, string.split(forbidden, ',')))
     
-  def check_file_access(self, path_parts, rev=None):
-    return 1
-  
-  def check_directory_access(self, path_parts, rev=None):
+  def check_path_access(self, path_parts, rev=None):
+    # No path?  No problem.
     if not path_parts:
       return 1
+
+    # If we have a single path part, we can't tell if this is a file
+    # or a directory.  So we ask our version control system.  If it's
+    # not a directory, we don't care about it.
+    if len(path_parts) == 1:
+      if self.root.itemtype(path_parts, rev) != vclib.DIR:
+        return 1
+
+    # At this point we're looking a path we believe to be a directory.
     module = path_parts[0]
     default = 1
     for pat in self.forbidden:
