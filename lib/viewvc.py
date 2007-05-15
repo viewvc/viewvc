@@ -353,12 +353,7 @@ class Request:
 
     # Check authorization for files and directories.
     if self.path_parts:
-      access = 1
-      if self.pathtype == vclib.DIR:
-        access = self.auth.check_directory_access(self.path_parts)
-      elif self.pathtype == vclib.FILE:
-        access = self.auth.check_file_access(self.path_parts)
-      if not access:
+      if not self.auth.check_path_access(self.path_parts):
         path = _path_join(self.path_parts)
         raise debug.ViewVCNotAuthorizedException(self.username,
                                                  'path "%s"' % (path))
@@ -1655,12 +1650,8 @@ def view_directory(request):
   # some work there, but also so it won't harvest tag/branch names
   # from unauthorized files.
   def _auth_filter(item):
-    assert item.kind == vclib.DIR or item.kind == vclib.FILE
-    full_path_parts = request.path_parts + [item.name]
-    if item.kind == vclib.FILE:
-      return request.auth.check_file_access(full_path_parts)
-    else:
-      return request.auth.check_directory_access(full_path_parts)
+    return request.auth.check_path_access(request.path_parts \
+                                          + [item.name])
   file_data = filter(_auth_filter, file_data)
 
   # sort with directories first, and using the "sortby" criteria
@@ -2756,7 +2747,7 @@ def _get_diff_path_parts(request, query_key, rev, base_rev):
   if request.query_dict.has_key(query_key):
     path = request.query_dict[query_key]
     parts = _path_parts(path)
-    if not request.auth.check_file_access(parts):
+    if not request.auth.check_path_access(parts):
       raise debug.ViewVCNotAuthorizedException(self.username,
                                                'file "%s"' % (path))
   elif request.roottype == 'svn':
@@ -2766,7 +2757,7 @@ def _get_diff_path_parts(request, query_key, rev, base_rev):
                                     repos._getrev(base_rev),
                                     repos._getrev(rev))
       parts = _path_parts(path)      
-      if not request.auth.check_file_access(parts):
+      if not request.auth.check_path_access(parts):
         raise debug.ViewVCNotAuthorizedException(self.username,
                                                  'file "%s"' % (path))
     except vclib.InvalidRevision:
@@ -2775,7 +2766,7 @@ def _get_diff_path_parts(request, query_key, rev, base_rev):
     except vclib.ItemNotFound:
       raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                    'to diff', '400 Bad Request')
-    if not request.auth.check_file_access(parts):
+    if not request.auth.check_path_access(parts):
       raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                    'to diff', '400 Bad Request')
   else:
@@ -3135,7 +3126,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
 
     # Skip forbidden/hidden directories (top-level only).
     if not rep_path:
-      if (not request.auth.check_directory_access(_path_parts(file.name))
+      if (not request.auth.check_path_access(_path_parts(file.name))
           or (cvs and request.cfg.options.hide_cvsroot
               and file.name == 'CVSROOT')):
         continue
@@ -3216,11 +3207,7 @@ def view_revision(request):
 
   # Filter the changes list based on what the user is permitted to see.
   def _auth_filter(item):
-    full_path_parts = _path_parts(item.filename)
-    if item.pathtype == vclib.DIR:
-      return request.auth.check_directory_access(full_path_parts)
-    else:
-      return request.auth.check_file_access(full_path_parts)
+    return request.auth.check_path_access(_path_parts(item.filename))
   changes = filter(_auth_filter, changes)
   
   # add the hrefs, types, and prev info
@@ -3234,12 +3221,7 @@ def view_revision(request):
     # path but not the path from which it was copied, then lie about
     # this *not* being a copy.
     if change.is_copy:
-      full_path_parts = _path_parts(change.base_path)
-      if pathtype is vclib.DIR:
-        access = request.auth.check_directory_access(full_path_parts, rev)
-      else:
-        access = request.auth.check_file_access(full_path_parts)
-      if not access:
+      if not request.auth.check_path_access(_path_parts(change.base_path)):
         change.is_copy = 0
     
     if (change.action == 'added' or change.action == 'replaced') \
@@ -3547,7 +3529,7 @@ def build_commit(request, files, limited_files, dir_strip):
     if dir_parts \
        and ((dir_parts[0] == 'CVSROOT'
              and request.cfg.options.hide_cvsroot) \
-            or not request.auth.check_directory_access(dir_parts)):
+            or not request.auth.check_path_access(dir_parts)):
       continue
 
     commit.files.append(_item(date=commit_time,

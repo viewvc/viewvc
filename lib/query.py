@@ -286,7 +286,7 @@ def build_commit(server, cfg, auth, desc, files, cvsroots, viewvc_link):
         dir_parts = filter(None, string.split(commit.GetDirectory(), '/'))
         if dir_parts \
                and ((dir_parts[0] == 'CVSROOT' and cfg.options.hide_cvsroot) \
-                    or auth.check_directory_access(dir_parts)):
+                    or auth.check_path_access(dir_parts)):
             continue
 
         ctime = commit.GetTime()
