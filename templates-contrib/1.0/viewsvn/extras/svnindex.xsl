@@ -10,8 +10,8 @@
   <xsl:template match="*"/>
 
   <xsl:template match="svn">
-	<xsl:text disable-output-escaping="yes"><![CDATA[<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">]]></xsl:text>
+    <xsl:text disable-output-escaping="yes"><![CDATA[<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">]]></xsl:text>
     <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
       <head>
         <title>
@@ -21,7 +21,7 @@
           </xsl:if>
           <xsl:value-of select="index/@path"/>
         </title>
-		<link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="stylesheet" type="text/css" href="/svnindex.css"/>
       </head>
       <body>
@@ -66,7 +66,7 @@
   <xsl:template match="updir">
     <div class="updir">
       <a href=".." class="img" title="Parent Directory"><img src="/docroot/images/tortoisesvn/back.png" alt="Parent Directory" width="16" height="16"/></a>
-	  <xsl:text> </xsl:text>
+      <xsl:text> </xsl:text>
       <xsl:text>[</xsl:text>
       <xsl:element name="a">
         <xsl:attribute name="href">..</xsl:attribute>
@@ -80,7 +80,7 @@
   <xsl:template match="dir">
     <div class="dir">
       <a href="{@href}" class="img" title="{@name}"><img src="/docroot/images/dir.png" alt="{@name}" width="16" height="16"/></a>
-	  <xsl:text> </xsl:text>
+      <xsl:text> </xsl:text>
       <xsl:element name="a">
         <xsl:attribute name="href">
           <xsl:value-of select="@href"/>
@@ -95,7 +95,7 @@
   <xsl:template match="file">
     <div class="file">
       <a href="{@href}" class="img" title="{@name}"><img src="/docroot/images/text.png" alt="{@name}" width="16" height="16"/></a>
-      <xsl:text> </xsl:text>	
+      <xsl:text> </xsl:text>
       <xsl:element name="a">
         <xsl:attribute name="href">
           <xsl:value-of select="@href"/>
