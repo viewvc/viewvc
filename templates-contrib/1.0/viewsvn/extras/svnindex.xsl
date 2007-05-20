@@ -65,7 +65,7 @@
 
   <xsl:template match="updir">
     <div class="updir">
-	  <img src="/docroot/images/tortoisesvn/back.png" alt="" width="16" height="16"/>
+      <a href=".." class="img" title="Parent Directory"><img src="/docroot/images/tortoisesvn/back.png" alt="Parent Directory" width="16" height="16"/></a>
 	  <xsl:text> </xsl:text>
       <xsl:text>[</xsl:text>
       <xsl:element name="a">
@@ -79,7 +79,7 @@
 
   <xsl:template match="dir">
     <div class="dir">
-	  <img src="/docroot/images/dir.png" alt="" width="16" height="16" />
+      <a href="{@href}" class="img" title="{@name}"><img src="/docroot/images/dir.png" alt="{@name}" width="16" height="16"/></a>
 	  <xsl:text> </xsl:text>
       <xsl:element name="a">
         <xsl:attribute name="href">
@@ -94,7 +94,7 @@
 
   <xsl:template match="file">
     <div class="file">
-	  <img src="/docroot/images/text.png" alt="" width="16" height="16" />
+      <a href="{@href}" class="img" title="{@name}"><img src="/docroot/images/text.png" alt="{@name}" width="16" height="16"/></a>
       <xsl:text> </xsl:text>	
       <xsl:element name="a">
         <xsl:attribute name="href">

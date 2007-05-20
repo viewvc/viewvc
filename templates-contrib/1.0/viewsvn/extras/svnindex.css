@@ -17,6 +17,11 @@ a:link    { color: #0000ff; }
 a:visited { color: #880088; }
 a:active  { color: #0000ff; }
 
+.img a:hover { text-decoration:none;}
+
+img { 
+  border: none; 
+}
 
 .footer {
   margin-top: 8em;
