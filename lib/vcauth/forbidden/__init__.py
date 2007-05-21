@@ -10,6 +10,7 @@
 #
 # -----------------------------------------------------------------------
 import vcauth
+import vclib
 import fnmatch
 import string
 
