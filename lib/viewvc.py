@@ -3087,11 +3087,14 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
   if not cvs:
     generate_tarball_header(out, tar_dir, mtime=dir_mtime)
 
-  # Run through the files in this directory, skipping busted ones.
+  # Run through the files in this directory, skipping busted and
+  # unauthorized ones.
   for file in entries:
     if file.kind != vclib.FILE:
       continue
     if cvs and (file.rev is None or file.dead):
+      continue
+    if not request.auth.check_path_access(rep_path + [file.name]):
       continue
 
     # If we get here, we've seen at least one valid file in the
@@ -3119,17 +3122,18 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     out.write(contents)
     out.write('\0' * (511 - ((len(contents) + 511) % 512)))
 
-  # Recurse into subdirectories, skipping busted ones.
+  # Recurse into subdirectories, skipping busted and unauthorized (or
+  # configured-to-be-hidden) ones.
   for file in entries:
     if file.errors or file.kind != vclib.DIR:
       continue
-
-    # Skip forbidden/hidden directories (top-level only).
-    if not rep_path:
-      if (not request.auth.check_path_access(_path_parts(file.name))
-          or (cvs and request.cfg.options.hide_cvsroot
-              and file.name == 'CVSROOT')):
+    if (not rep_path) \
+       and cvs \
+       and request.cfg.options.hide_cvsroot \
+       and file.name == 'CVSROOT':
         continue
+    if not request.auth.check_path_access(rep_path + [file.name]):
+      continue
 
     mtime = request.roottype == 'svn' and file.date or None
     generate_tarball(out, request, reldir + [file.name], stack, mtime)
