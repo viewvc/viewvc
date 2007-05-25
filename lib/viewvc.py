@@ -786,19 +786,26 @@ def _orig_path(request, rev_param='revision', path_param=None):
 
 def setup_authorizer(cfg, username, root, params={}):
   rootname = root.rootname()
+
+  # First, try to load a module with the configured name.
   try:
     exec('import vcauth.%s' % (cfg.options.authorizer))
-    exec('my_auth = vcauth.%s' % (cfg.options.authorizer))
-    params = cfg.get_authorizer_params(cfg.options.authorizer, rootname)
-    return my_auth.ViewVCAuthorizer(username, root, params)
-  except vcauth.ViewVCRootAccessNotAuthorized:
-    raise debug.ViewVCNotAuthorizedException(username,
-                                             'root "%s"' % (rootname))
-  except:
+  except ImportError:
     raise debug.ViewVCException(
       'Invalid authorizer (%s) specified for root "%s"' \
       % (cfg.options.authorizer, rootname),
       '500 Internal Server Error')
+
+  # Now we'll get custom parameters for our particular root.
+  exec('my_auth = vcauth.%s' % (cfg.options.authorizer))
+  params = cfg.get_authorizer_params(cfg.options.authorizer, rootname)
+
+  # Finally, instantiate our Authorizer.
+  try:
+    return my_auth.ViewVCAuthorizer(username, root, params)
+  except vcauth.ViewVCRootAccessNotAuthorized:
+    raise debug.ViewVCNotAuthorizedException(username,
+                                             'root "%s"' % (rootname))
 
 def check_freshness(request, mtime=None, etag=None, weak=0):
   # See if we are supposed to disable etags (for debugging, usually)
