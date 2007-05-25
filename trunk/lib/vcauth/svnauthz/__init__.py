@@ -28,10 +28,9 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     # Get the authz file location from a passed-in parameter.
     authz_file = params.get('authzfile')
     if not authz_file:
-      raise debug.ViewVCException("Missing authzfile configuration")
+      raise debug.ViewVCException("No authzfile configured")
     if not os.path.exists(authz_file):
-      raise debug.ViewVCException("svnauthz configuration file (%s) missing" \
-                                  % authz_file)
+      raise debug.ViewVCException("Configured authzfile file not found")
 
     # Parse the authz file.
     cp = ConfigParser()
