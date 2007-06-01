@@ -317,6 +317,11 @@ allowed_views = markup, annotate
 # ViewVC provides the following modules:  "svnauthz", "forbidden"
 authorizer = forbidden
 
+# mangle_email_addresses: Mangle email addresses in marked-up output.
+#   0      Markup un-mangled email addresses as hyperlinks
+#   1      Mangle (and don't markup as hyperlinks) email addresses
+mangle_email_addresses = 0
+
 # default_file_view: "log" or "co"
 # Controls whether the default view for file URLs is a checkout view or
 # a log view. "log" is the default for backwards compatibility with old
