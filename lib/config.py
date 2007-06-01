@@ -234,6 +234,7 @@ class Config:
     self.options.checkout_magic = 0
     self.options.allowed_views = ['markup', 'annotate']
     self.options.authorizer = 'forbidden'
+    self.options.mangle_email_addresses = 0
     self.options.use_rcsparse = 0
     self.options.sort_by = 'file'
     self.options.sort_group_dirs = 1

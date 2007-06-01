@@ -1026,19 +1026,28 @@ _re_rewrite_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)'
                              '(#([-a-zA-Z0-9%.~:_]+)?)?)')
 _re_rewrite_email = re.compile('([-a-zA-Z0-9_.\+]+)@'
                                '(([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
-def htmlify(html):
+def htmlify(html, cfg):
   if not html:
     return html
   html = cgi.escape(html)
   html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
-  html = re.sub(_re_rewrite_email, r'<a href="mailto:\1&#64;\2">\1&#64;\2</a>',
-                html)
+  if cfg.options.mangle_email_addresses:
+    ### FIXME: I'm sure email address mangling comes in a hundred
+    ### different flavors.  As a mechanism for defeating spam
+    ### harvesters, I suspect that merely obscuring the address only
+    ### works for a season (until the obscurity algorithm is added to
+    ### the spammers' databases of such things).  We have to actually
+    ### *lose* information here for it really matter.
+    html = re.sub(_re_rewrite_email, r'\1&#64;&hellip;', html)
+  else:
+    html = re.sub(_re_rewrite_email,
+                  r'<a href="mailto:\1&#64;\2">\1&#64;\2</a>', html)
   return html
 
 def format_log(log, cfg):
   if not log:
     return log
-  s = htmlify(log[:cfg.options.short_log_len])
+  s = htmlify(log[:cfg.options.short_log_len], cfg)
   if len(log) > cfg.options.short_log_len:
     s = s + '...'
   return s
@@ -1224,21 +1233,22 @@ def retry_read(src, reqlen=CHUNK_SIZE):
         continue
     return chunk
   
-def copy_stream(src, dst, htmlize=0):
+def copy_stream(src, dst, cfg, htmlize=0):
   while 1:
     chunk = retry_read(src)
     if not chunk:
       break
     if htmlize:
-      chunk = htmlify(chunk)
+      chunk = htmlify(chunk, cfg)
     dst.write(chunk)
 
 class MarkupPipeWrapper:
   """An EZT callback that outputs a filepointer, plus some optional
   pre- and post- text."""
 
-  def __init__(self, fp, pretext=None, posttext=None, htmlize=1):
+  def __init__(self, cfg, fp, pretext=None, posttext=None, htmlize=1):
     self.fp = fp
+    self.cfg = cfg
     self.pretext = pretext
     self.posttext = posttext
     self.htmlize = htmlize
@@ -1246,7 +1256,7 @@ class MarkupPipeWrapper:
   def __call__(self, ctx):
     if self.pretext:
       ctx.fp.write(self.pretext)
-    copy_stream(self.fp, ctx.fp, self.htmlize)
+    copy_stream(self.fp, ctx.fp, self.cfg, self.htmlize)
     self.fp.close()
     if self.posttext:
       ctx.fp.write(self.posttext)
@@ -1254,9 +1264,10 @@ class MarkupPipeWrapper:
 class MarkupShell:
   """A EZT callback object slamming file contents through shell tools."""
 
-  def __init__(self, fp, cmds):
+  def __init__(self, cfg, fp, cmds):
     self.fp = fp
     self.cmds = cmds
+    self.cfg = cfg
 
   def __call__(self, ctx):
     ctx.fp.flush()
@@ -1264,7 +1275,7 @@ class MarkupShell:
       pipe = popen.pipe_cmds(self.cmds, ctx.fp)
       try:
         if self.fp:
-          copy_stream(self.fp, pipe)
+          copy_stream(self.fp, pipe, self.cfg)
           self.fp.close()
           self.fp = None
       finally:
@@ -1299,8 +1310,9 @@ class MarkupEnscript(MarkupShell):
     ### will drop the last line of a non-newline-terminated filed.
     sed_cmd = [cfg.utilities.sed or 'sed', '-n', '/^<PRE>$/,/<\\/PRE>$/p']
 
-    MarkupShell.__init__(self, fp, [enscript_cmd, sed_cmd])
+    MarkupShell.__init__(self, cfg, fp, [enscript_cmd, sed_cmd])
     self.filename = filename
+    self.cfg = cfg
 
   def __call__(self, ctx):
     # create a temporary file with the same name as the file in
@@ -1309,7 +1321,7 @@ class MarkupEnscript(MarkupShell):
     try:
       file = os.path.join(dir, self.filename)
       try:
-        copy_stream(self.fp, open(file, 'wb'))
+        copy_stream(self.fp, open(file, 'wb'), self.cfg)
         self.fp.close()
         self.fp = None
         self.cmds[0][-1] = file
@@ -1322,7 +1334,7 @@ class MarkupEnscript(MarkupShell):
 class MarkupPHP(MarkupShell):
   def __init__(self, cfg, fp):
     php_cmd = [cfg.utilities.php or 'php', '-q', '-s', '-n']
-    MarkupShell.__init__(self, fp, [php_cmd])
+    MarkupShell.__init__(self, cfg, fp, [php_cmd])
 
 class MarkupHighlight(MarkupShell):
   def __init__(self, cfg, fp, filename):
@@ -1337,8 +1349,9 @@ class MarkupHighlight(MarkupShell):
                             str(cfg.options.highlight_convert_tabs)])
 
     highlight_cmd.extend(['-'])
-    MarkupShell.__init__(self, fp, [highlight_cmd])
+    MarkupShell.__init__(self, cfg, fp, [highlight_cmd])
     self.filename = filename
+    self.cfg = cfg
 
   def __call__(self, ctx):
     # create a temporary file with the same name as the file in
@@ -1347,7 +1360,7 @@ class MarkupHighlight(MarkupShell):
     try:
       file = os.path.join(dir, self.filename)
       try:
-        copy_stream(self.fp, open(file, 'wb'))
+        copy_stream(self.fp, open(file, 'wb'), self.cfg)
         self.fp.close()
         self.fp = None
         self.cmds[0][-1] = file
@@ -1376,7 +1389,7 @@ class MarkupSourceHighlight(MarkupShell):
                '-n',
                '/^<pre><tt>/,/<\\/tt><\\/pre>$/p']
 
-    MarkupShell.__init__(self, fp, [highlight_cmd, sed_cmd])
+    MarkupShell.__init__(self, cfg, fp, [highlight_cmd, sed_cmd])
 
 def markup_stream_python(fp, cfg):
   if not cfg.options.use_py2html:
@@ -1494,7 +1507,7 @@ def view_markup(request):
         'date' : make_time_string(entry.date, cfg),
         'author' : entry.author,
         'changed' : entry.changed,
-        'log' : htmlify(entry.log),
+        'log' : htmlify(entry.log, cfg),
         'size' : entry.size,
         })
 
@@ -1547,7 +1560,7 @@ def view_markup(request):
         markup_fp = MarkupSourceHighlight(cfg, fp, request.path_parts[-1])
       else:
         # If no one has a suitable markup handler, we'll use the default.
-        markup_fp = MarkupPipeWrapper(fp)
+        markup_fp = MarkupPipeWrapper(cfg, fp)
     
   data['markup'] = markup_fp
   generate_page(request, "markup", data)
@@ -1718,7 +1731,7 @@ def view_directory(request):
       row.ago = html_time(request, file.date)
     if cfg.options.show_logs:
       row.short_log = format_log(file.log, cfg)
-      row.log = htmlify(file.log)
+      row.log = htmlify(file.log, cfg)
 
     row.anchor = request.server.escape(file.name)
     row.name = request.server.escape(file.name)
@@ -1794,7 +1807,7 @@ def view_directory(request):
     'entries' : rows,
     'sortby' : sortby,
     'sortdir' : sortdir,
-    'search_re' : search_re and htmlify(search_re) or None,
+    'search_re' : search_re and htmlify(search_re, cfg) or None,
     'dir_pagestart' : None,
     'sortby_file_href' :   request.get_url(params={'sortby': 'file',
                                                    'sortdir': None},
@@ -2025,7 +2038,7 @@ def view_log(request):
     entry.ago = None
     if rev.date is not None:
       entry.ago = html_time(request, rev.date, 1)
-    entry.log = htmlify(rev.log or "")
+    entry.log = htmlify(rev.log or "", cfg)
     entry.size = rev.size
     entry.branch_point = None
     entry.next_main = None
@@ -2258,7 +2271,10 @@ def view_log(request):
   generate_page(request, "log", data)
 
 def view_checkout(request):
-  if 'co' not in request.cfg.options.allowed_views:
+
+  cfg = request.cfg
+  
+  if 'co' not in cfg.options.allowed_views:
     raise debug.ViewVCException('Checkout view is disabled',
                                  '403 Forbidden')
   
@@ -2269,7 +2285,7 @@ def view_checkout(request):
   if not check_freshness(request, None, revision):
     request.server.header(request.query_dict.get('content-type')
                           or request.mime_type or 'text/plain')
-    copy_stream(fp, request.server.file())
+    copy_stream(fp, request.server.file(), cfg)
   fp.close()
 
 def view_annotate(request):
@@ -2326,7 +2342,7 @@ def view_annotate(request):
         'date' : make_time_string(entry.date, cfg),
         'author' : entry.author,
         'changed' : entry.changed,
-        'log' : htmlify(entry.log),
+        'log' : htmlify(entry.log, cfg),
         'size' : entry.size,
         })
 
@@ -2372,7 +2388,7 @@ def view_cvsgraph_image(request):
                    ("-c", cfg.path(cfg.options.cvsgraph_conf),
                     "-r", request.repos.rootpath,
                     rcsfile), 'rb', 0)
-  copy_stream(fp, request.server.file())
+  copy_stream(fp, request.server.file(), cfg)
   fp.close()
 
 def view_cvsgraph(request):
@@ -2481,9 +2497,10 @@ def view_doc(request):
 
   Using this avoids the need for modifying the setup of the web server.
   """
+  cfg = request.cfg
   document = request.where
-  filename = request.cfg.path(os.path.join(request.cfg.options.template_dir,
-                                           "docroot", document))
+  filename = cfg.path(os.path.join(cfg.options.template_dir,
+                                   "docroot", document))
 
   # Stat the file to get content length and last-modified date.
   try:
@@ -2516,7 +2533,7 @@ def view_doc(request):
     request.server.header('text/css')
   else: # assume HTML:
     request.server.header()
-  copy_stream(fp, request.server.file())
+  copy_stream(fp, request.server.file(), cfg)
   fp.close()
 
 def rcsdiff_date_reformat(date_str, cfg):
@@ -2546,7 +2563,7 @@ def spaced_html_text(text, cfg):
     text = string.replace(text, '  ', ' \x01nbsp;')
   else:
     text = string.replace(text, ' ', '\x01nbsp;')
-  text = htmlify(text)
+  text = htmlify(text, cfg)
   text = string.replace(text, '\x01', '&')
   text = string.replace(text, '\x02', '<span style="color:red">\</span><br />')
   return text
@@ -2868,7 +2885,7 @@ def view_patch(request):
 
   request.server.header('text/plain')
   request.server.file().write(headers)
-  copy_stream(fp, request.server.file())
+  copy_stream(fp, request.server.file(), cfg)
   fp.close()
 
 
@@ -2983,7 +3000,7 @@ def view_diff(request):
       else:
         changes = DiffSource(fp, cfg)
     else:
-      raw_diff_fp = MarkupPipeWrapper(fp, htmlify(headers), None, 1)
+      raw_diff_fp = MarkupPipeWrapper(cfg, fp, htmlify(headers, cfg), None, 1)
 
   data.update({
     'date_left' : rcsdiff_date_reformat(date1, cfg),
@@ -3183,6 +3200,7 @@ def view_revision(request):
     raise ViewVCException("Revision view not supported for CVS repositories "
                            "at this time.", "400 Bad Request")
 
+  cfg = request.cfg
   data = common_template_data(request)
   query_dict = request.query_dict
   try:
@@ -3191,14 +3209,14 @@ def view_revision(request):
     raise debug.ViewVCException('Invalid revision', '404 Not Found')
     
   date, author, msg, changes = vclib.svn.get_revision_info(request.repos, rev)
-  date_str = make_time_string(date, request.cfg)
+  date_str = make_time_string(date, cfg)
 
   # The revision number acts as a weak validator.
   if check_freshness(request, None, str(rev), weak=1):
     return
 
   # Handle limit_changes parameter
-  cfg_limit_changes = request.cfg.options.limit_changes
+  cfg_limit_changes = cfg.options.limit_changes
   limit_changes = int(query_dict.get('limit_changes', cfg_limit_changes))
   more_changes = None
   more_changes_href = None
@@ -3265,7 +3283,7 @@ def view_revision(request):
         link_where = change.filename
 
       if view_func != view_markup \
-         or 'markup' in request.cfg.options.allowed_views:
+         or 'markup' in cfg.options.allowed_views:
         change.view_href = request.get_url(view_func=view_func,
                                            where=link_where,
                                            pathtype=change.pathtype,
@@ -3307,7 +3325,7 @@ def view_revision(request):
     'rev' : str(rev),
     'author' : author,
     'date' : date_str,
-    'log' : msg and htmlify(msg) or None,
+    'log' : msg and htmlify(msg, cfg) or None,
     'ago' : None,
     'changes' : changes,
     'prev_href' : prev_rev_href,
@@ -3396,7 +3414,8 @@ def parse_date(s):
     return None
 
 def english_query(request):
-  '''Generate a sentance describing the query.'''
+  """Generate a sentance describing the query."""
+  cfg = request.cfg
   ret = [ 'Checkins ' ]
   dir = request.query_dict.get('dir', '')
   if dir:
@@ -3419,7 +3438,7 @@ def english_query(request):
     ret.append('on all branches ')
   comment = request.query_dict.get('comment', '')
   if comment:
-    ret.append('with comment <i>%s</i> ' % htmlify(comment))
+    ret.append('with comment <i>%s</i> ' % htmlify(comment, cfg))
   if who:
     ret.append('by <em>%s</em> ' % request.server.escape(who))
   date = request.query_dict.get('date', 'hours')
@@ -3442,10 +3461,10 @@ def english_query(request):
     else:
       w1, w2 = 'since', 'before'
     if mindate:
-      mindate = make_time_string(parse_date(mindate), request.cfg)
+      mindate = make_time_string(parse_date(mindate), cfg)
       ret.append('%s <em>%s</em> ' % (w1, mindate))
     if maxdate:
-      maxdate = make_time_string(parse_date(maxdate), request.cfg)
+      maxdate = make_time_string(parse_date(maxdate), cfg)
       ret.append('%s <em>%s</em> ' % (w2, maxdate))
   return string.join(ret, '')
 
@@ -3460,13 +3479,14 @@ def prev_rev(rev):
   return string.join(r, '.')
 
 def build_commit(request, files, limited_files, dir_strip):
+  cfg = request.cfg
   commit = _item(num_files=len(files), files=[])
   commit.limited_files = ezt.boolean(limited_files)
   desc = files[0].GetDescription()
-  commit.log = htmlify(desc)
-  commit.short_log = format_log(desc, request.cfg)
+  commit.log = htmlify(desc, cfg)
+  commit.short_log = format_log(desc, cfg)
   commit.author = request.server.escape(files[0].GetAuthor())
-  commit.rss_date = make_rss_time_string(files[0].GetTime(), request.cfg)
+  commit.rss_date = make_rss_time_string(files[0].GetTime(), cfg)
   if request.roottype == 'svn':
     commit.rev = files[0].GetRevision()
     commit.rss_url = '%s://%s%s' % \
@@ -3484,7 +3504,7 @@ def build_commit(request, files, limited_files, dir_strip):
   for f in files:
     commit_time = f.GetTime()
     if commit_time:
-      commit_time = make_time_string(commit_time, request.cfg)
+      commit_time = make_time_string(commit_time, cfg)
     change_type = f.GetTypeString()
     rev = f.GetRevision()
     rev_prev = prev_rev(rev)
@@ -3514,11 +3534,11 @@ def build_commit(request, files, limited_files, dir_strip):
                                where=filename, pathtype=vclib.FILE,
                                params=params, escape=1)
     diff_href = view_href = download_href = None
-    if 'markup' in request.cfg.options.allowed_views:
+    if 'markup' in cfg.options.allowed_views:
       view_href = request.get_url(view_func=view_markup,
                                   where=filename, pathtype=vclib.FILE,
                                   params=params, escape=1)
-    if 'co' in request.cfg.options.allowed_views:
+    if 'co' in cfg.options.allowed_views:
       download_href = request.get_url(view_func=view_checkout,
                                       where=filename, pathtype=vclib.FILE,
                                       params=params, escape=1)
@@ -3533,13 +3553,13 @@ def build_commit(request, files, limited_files, dir_strip):
                                   where=filename, pathtype=vclib.FILE,
                                   params=diff_href_params, escape=1)
     prefer_markup = ezt.boolean(default_view(guess_mime(filename),
-                                             request.cfg) == view_markup)      
+                                             cfg) == view_markup)      
 
     # skip files in forbidden or hidden modules
     dir_parts = filter(None, string.split(dirname, '/'))
     if dir_parts \
        and ((dir_parts[0] == 'CVSROOT'
-             and request.cfg.options.hide_cvsroot) \
+             and cfg.options.hide_cvsroot) \
             or not request.auth.check_path_access(dir_parts)):
       continue
 
@@ -3589,6 +3609,8 @@ def view_query(request):
                                  % (request.rootname, request.where),
                                  '403 Forbidden')
 
+  cfg = request.cfg
+
   # get form data
   branch = request.query_dict.get('branch', '')
   branch_match = request.query_dict.get('branch_match', 'exact')
@@ -3607,7 +3629,7 @@ def view_query(request):
   format = request.query_dict.get('format')
   limit = int(request.query_dict.get('limit', 0))
   limit_changes = int(request.query_dict.get('limit_changes',
-                                           request.cfg.options.limit_changes))
+                                             cfg.options.limit_changes))
 
   match_types = { 'exact':1, 'like':1, 'glob':1, 'regex':1, 'notregex':1 }
   sort_types = { 'date':1, 'author':1, 'file':1 }
@@ -3627,7 +3649,7 @@ def view_query(request):
   global cvsdb
   import cvsdb
 
-  db = cvsdb.ConnectDatabaseReadOnly(request.cfg)
+  db = cvsdb.ConnectDatabaseReadOnly(cfg)
   repos_root, repos_dir = cvsdb.FindRepository(db, request.rootpath)
   if not repos_root:
     raise debug.ViewVCException(
@@ -3678,7 +3700,7 @@ def view_query(request):
   if limit:
     query.SetLimit(limit)
   elif format == 'rss':
-    query.SetLimit(request.cfg.cvsdb.rss_row_limit)
+    query.SetLimit(cfg.cvsdb.rss_row_limit)
 
   # run the query
   db.RunQuery(query)
@@ -3879,9 +3901,9 @@ def view_error(server, cfg):
   exc_dict = debug.GetExceptionData()
   status = exc_dict['status']
   if exc_dict['msg']:
-    exc_dict['msg'] = htmlify(exc_dict['msg'])
+    exc_dict['msg'] = htmlify(exc_dict['msg'], cfg)
   if exc_dict['stacktrace']:
-    exc_dict['stacktrace'] = htmlify(exc_dict['stacktrace'])
+    exc_dict['stacktrace'] = htmlify(exc_dict['stacktrace'], cfg)
   handled = 0
   
   # use the configured error template if possible
