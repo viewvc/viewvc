@@ -18,6 +18,7 @@ Version 1.1.0 (released ??-???-????)
   * add support for ranges of revisions to svndbadmin (issue #224)
   * make the query handling more forgiving of malformatted subdirs (issue #244)
   * add support for per-root configuration overrides
+  * add support for optional email address mangling (issue #290)
 
 Version 1.0.4 (released 10-Apr-2007)
 
