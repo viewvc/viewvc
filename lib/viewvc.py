@@ -1026,12 +1026,12 @@ _re_rewrite_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)'
                              '(#([-a-zA-Z0-9%.~:_]+)?)?)')
 _re_rewrite_email = re.compile('([-a-zA-Z0-9_.\+]+)@'
                                '(([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
-def htmlify(html, cfg):
+def htmlify(html, mangle_email_addrs=0):
   if not html:
     return html
   html = cgi.escape(html)
   html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
-  if cfg.options.mangle_email_addresses:
+  if mangle_email_addrs:
     ### FIXME: I'm sure email address mangling comes in a hundred
     ### different flavors.  As a mechanism for defeating spam
     ### harvesters, I suspect that merely obscuring the address only
@@ -1047,7 +1047,8 @@ def htmlify(html, cfg):
 def format_log(log, cfg):
   if not log:
     return log
-  s = htmlify(log[:cfg.options.short_log_len], cfg)
+  s = htmlify(log[:cfg.options.short_log_len],
+              cfg.options.mangle_email_addresses)
   if len(log) > cfg.options.short_log_len:
     s = s + '...'
   return s
@@ -1239,7 +1240,7 @@ def copy_stream(src, dst, cfg, htmlize=0):
     if not chunk:
       break
     if htmlize:
-      chunk = htmlify(chunk, cfg)
+      chunk = htmlify(chunk, mangle_email_addrs=0)
     dst.write(chunk)
 
 class MarkupPipeWrapper:
@@ -1507,7 +1508,7 @@ def view_markup(request):
         'date' : make_time_string(entry.date, cfg),
         'author' : entry.author,
         'changed' : entry.changed,
-        'log' : htmlify(entry.log, cfg),
+        'log' : htmlify(entry.log, cfg.options.mangle_email_addresses),
         'size' : entry.size,
         })
 
@@ -1731,7 +1732,7 @@ def view_directory(request):
       row.ago = html_time(request, file.date)
     if cfg.options.show_logs:
       row.short_log = format_log(file.log, cfg)
-      row.log = htmlify(file.log, cfg)
+      row.log = htmlify(file.log, cfg.options.mangle_email_addresses)
 
     row.anchor = request.server.escape(file.name)
     row.name = request.server.escape(file.name)
@@ -1807,7 +1808,9 @@ def view_directory(request):
     'entries' : rows,
     'sortby' : sortby,
     'sortdir' : sortdir,
-    'search_re' : search_re and htmlify(search_re, cfg) or None,
+    'search_re' : search_re \
+                  and htmlify(search_re, cfg.options.mangle_email_addresses) \
+                  or None,
     'dir_pagestart' : None,
     'sortby_file_href' :   request.get_url(params={'sortby': 'file',
                                                    'sortdir': None},
@@ -2038,7 +2041,7 @@ def view_log(request):
     entry.ago = None
     if rev.date is not None:
       entry.ago = html_time(request, rev.date, 1)
-    entry.log = htmlify(rev.log or "", cfg)
+    entry.log = htmlify(rev.log or "", cfg.options.mangle_email_addresses)
     entry.size = rev.size
     entry.branch_point = None
     entry.next_main = None
@@ -2342,7 +2345,7 @@ def view_annotate(request):
         'date' : make_time_string(entry.date, cfg),
         'author' : entry.author,
         'changed' : entry.changed,
-        'log' : htmlify(entry.log, cfg),
+        'log' : htmlify(entry.log, cfg.options.mangle_email_addresses),
         'size' : entry.size,
         })
 
@@ -2548,26 +2551,6 @@ def rcsdiff_date_reformat(date_str, cfg):
 _re_extract_rev = re.compile(r'^[-+*]{3} [^\t]+\t([^\t]+)\t((\d+\.)*\d+)$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
 
-def spaced_html_text(text, cfg):
-  text = string.expandtabs(string.rstrip(text))
-  hr_breakable = cfg.options.hr_breakable
-  
-  # in the code below, "\x01" will be our stand-in for "&". We don't want
-  # to insert "&" because it would get escaped by htmlify().  Similarly,
-  # we use "\x02" as a stand-in for "<br>"
-
-  if hr_breakable > 1 and len(text) > hr_breakable:
-    text = re.sub('(' + ('.' * hr_breakable) + ')', '\\1\x02', text)
-  if hr_breakable:
-    # make every other space "breakable"
-    text = string.replace(text, '  ', ' \x01nbsp;')
-  else:
-    text = string.replace(text, ' ', '\x01nbsp;')
-  text = htmlify(text, cfg)
-  text = string.replace(text, '\x01', '&')
-  text = string.replace(text, '\x02', '<span style="color:red">\</span><br />')
-  return text
-
 class DiffSource:
   def __init__(self, fp, cfg):
     self.fp = fp
@@ -2601,6 +2584,27 @@ class DiffSource:
         self.last = item
         return item
 
+  def _format_text(self, text):
+    text = string.expandtabs(string.rstrip(text))
+    hr_breakable = self.cfg.options.hr_breakable
+    
+    # in the code below, "\x01" will be our stand-in for "&". We don't want
+    # to insert "&" because it would get escaped by htmlify().  Similarly,
+    # we use "\x02" as a stand-in for "<br>"
+  
+    if hr_breakable > 1 and len(text) > hr_breakable:
+      text = re.sub('(' + ('.' * hr_breakable) + ')', '\\1\x02', text)
+    if hr_breakable:
+      # make every other space "breakable"
+      text = string.replace(text, '  ', ' \x01nbsp;')
+    else:
+      text = string.replace(text, ' ', '\x01nbsp;')
+    text = htmlify(text, mangle_email_addrs=0)
+    text = string.replace(text, '\x01', '&')
+    text = string.replace(text, '\x02',
+                          '<span style="color:red">\</span><br />')
+    return text
+    
   def _get_row(self):
     if self.state[:5] == 'flush':
       item = self._flush_row()
@@ -2650,7 +2654,7 @@ class DiffSource:
       return None
 
     diff_code = line[0]
-    output = spaced_html_text(line[1:], self.cfg)
+    output = self._format_text(line[1:])
     
     if diff_code == '+':
       if self.state == 'dump':
@@ -3000,7 +3004,9 @@ def view_diff(request):
       else:
         changes = DiffSource(fp, cfg)
     else:
-      raw_diff_fp = MarkupPipeWrapper(cfg, fp, htmlify(headers, cfg), None, 1)
+      raw_diff_fp = MarkupPipeWrapper(cfg, fp,
+                                      htmlify(headers, mangle_email_addrs=0),
+                                      None, 1)
 
   data.update({
     'date_left' : rcsdiff_date_reformat(date1, cfg),
@@ -3325,7 +3331,7 @@ def view_revision(request):
     'rev' : str(rev),
     'author' : author,
     'date' : date_str,
-    'log' : msg and htmlify(msg, cfg) or None,
+    'log' : msg and htmlify(msg, cfg.options.mangle_email_addresses) or None,
     'ago' : None,
     'changes' : changes,
     'prev_href' : prev_rev_href,
@@ -3438,7 +3444,8 @@ def english_query(request):
     ret.append('on all branches ')
   comment = request.query_dict.get('comment', '')
   if comment:
-    ret.append('with comment <i>%s</i> ' % htmlify(comment, cfg))
+    ret.append('with comment <i>%s</i> '
+               % htmlify(comment, mangle_email_addrs=0))
   if who:
     ret.append('by <em>%s</em> ' % request.server.escape(who))
   date = request.query_dict.get('date', 'hours')
@@ -3483,7 +3490,7 @@ def build_commit(request, files, limited_files, dir_strip):
   commit = _item(num_files=len(files), files=[])
   commit.limited_files = ezt.boolean(limited_files)
   desc = files[0].GetDescription()
-  commit.log = htmlify(desc, cfg)
+  commit.log = htmlify(desc, cfg.options.mangle_email_addresses)
   commit.short_log = format_log(desc, cfg)
   commit.author = request.server.escape(files[0].GetAuthor())
   commit.rss_date = make_rss_time_string(files[0].GetTime(), cfg)
@@ -3901,9 +3908,10 @@ def view_error(server, cfg):
   exc_dict = debug.GetExceptionData()
   status = exc_dict['status']
   if exc_dict['msg']:
-    exc_dict['msg'] = htmlify(exc_dict['msg'], cfg)
+    exc_dict['msg'] = htmlify(exc_dict['msg'], mangle_email_addrs=0)
   if exc_dict['stacktrace']:
-    exc_dict['stacktrace'] = htmlify(exc_dict['stacktrace'], cfg)
+    exc_dict['stacktrace'] = htmlify(exc_dict['stacktrace'],
+                                     mangle_email_addrs=0)
   handled = 0
   
   # use the configured error template if possible
