@@ -35,10 +35,10 @@ h2 {
 }
 
 h3 {
-    padding: 2px 0.5em 2px 0.5em;
     margin: 0;
     font-size: 100%;
     font-weight: bold;
+    border-bottom: dotted 1px rgb(180,193,205);
 }
 
 h4 {
@@ -48,13 +48,14 @@ h4 {
     font-weight: bold;
 }
 
-p, dl, ul, ol {
+p, dl {
     padding: 0.5em;
     margin: 0;
     font-size: 90%;
 }
 
 ul, ol {
+    font-size: 90%;
     padding: 0.5em;
     margin: 0 0 0 0.25in;
 }
@@ -69,6 +70,7 @@ blockquote {
     text-align: justify;
     font-style: italic;
     margin: 0 0.5in 0 0.5in;
+    padding: 5px;
     border: 1px dotted black;
 }
 
@@ -81,8 +83,12 @@ blockquote {
     margin-bottom: 0.5em;
 }
 
+.section-body {
+    padding: 0 1em;
+}
+
 .section p, .section dl, .section ul, .section ol { 
-    padding: 0.5em 2em;
+    padding: 0.5em 0;
 }
 
 #menu {
@@ -148,3 +154,14 @@ blockquote {
     font-size: 80%;
     white-space: nowrap;
 }
+
+.notice {
+    border: 1px solid black;
+    margin-bottom: 0.5em;
+    background: yellow;
+}
+
+.faq-atitle {
+    font-weight: bold;
+}
+
