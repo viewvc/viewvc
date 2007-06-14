@@ -2,7 +2,7 @@
                       "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 <head>
-<title>ViewVC: FAQ</title>
+<title>ViewVC: Frequently Asked Questions (FAQ)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 <link rel="stylesheet" type="text/css" href="./styles.css"/>
 </head>
@@ -11,7 +11,7 @@
 
 <div id="title">
 <a href="http://www.viewvc.org/"><img 
-   src="./images/title.jpg" alt="ViewVC: Repository Browsing"/></a>
+   src="./images/title.jpg" alt="ViewVC: Frequently Asked Questions (FAQ)"/></a>
 </div>
 
 <div id="menu">
@@ -19,6 +19,7 @@
    <a href="http://viewvc.tigris.org/">Project Page</a> |
    <a href="./download.html">Download</a> |
    <a href="./contributing.html">Contributing</a> |
+   <a href="./faq.html">FAQ</a> |
    <a href="http://viewvc.tigris.org/nonav/source/browse/*checkout*/viewvc/trunk/LICENSE.html">License</a> |
    <a href="./contact.html">Contact</a> |
    <a href="./who.html">About</a>
@@ -32,9 +33,8 @@
 <h4>On this page:</h4>
 
 <ul id="bookmarks">
-  <li><a href="#sec-what-is-viewvc">What Is ViewVC?</a></li>
-  <li><a href="#sec-requirements">Requirements</a></li>
-  <li><a href="#sec-future">Future Plans</a></li>
+  <li><a href="#faq-q">Questions</a></li>
+  <li><a href="#faq-a">Answers</a></li>
 </ul>
 
 <p><a href="http://validator.w3.org/check?uri=referer"><img
@@ -45,16 +45,29 @@
 </td>
 <td id="pagecolumn2">
 
+<div class="notice">
+<p>This FAQ is, shall we say, a work in progress.  At the moment, it's
+   pretty bare.  <em>Extremely</em> bare.  Please bare &mdash; er,
+   <strong>bear</strong> with us as we slowly populate this document.</p>
+</div>
+
 <div class="section">
 
+<!-- ###################################################################### -->
 <h2 id="faq-q">Questions</h2>
+<div class="section-body">
 
+<!-- #--------------------------------------------------------------------# -->
 <h3 id="faq-q-general">General Usage</h3>
 
 <ul>
-<li><a href="#">Error: OSError: [Errno 2] No such file or directory: '/tmp/tmpGc-Ztj'</a></li>
+
+<li><a href="#">Error: OSError: [Errno 2] No such file or directory:
+    '/tmp/tmpGc-Ztj'</a></li>
+
 </ul>
 
+<!-- #--------------------------------------------------------------------# -->
 <h3 id="faq-q-cvs">CVS Browsing</h3>
 
 <ul>
@@ -68,28 +81,107 @@
 
 </ul>
 
+<!-- #--------------------------------------------------------------------# -->
 <h3 id="faq-q-svn">Subversion Browsing</h3>
 
 <ul>
+
 <li><a href="#">Error: ImportError: No module named svn</a></li>
+
+<li><a href="#remote-svn-access">Can I use ViewVC with remote
+    Subversion repositories?</a></li>
+
 </ul>
 
+<!-- #--------------------------------------------------------------------# -->
+</div>
 </div>
 
 <div class="section">
 
+<!-- ###################################################################### -->
 <h2 id="faq-a">Answers</h2>
+<div class="section-body">
 
+<!-- #--------------------------------------------------------------------# -->
 <h3 id="faq-a-general">General Usage</h3>
 
+<div id="">
+<p class="faq-atitle">Error: OSError: [Errno 2] No such file or
+   directory: '/tmp/tmpGc-Ztj'</p>
+
+<p>### TODO ###</p>
+</div>
+
+<!-- #--------------------------------------------------------------------# -->
 <h3 id="faq-a-cvs">CVS Browsing</h3>
 
-<p id="rlog-output-ended-early"></p>
+<div id="rlog-output-ended-early">
+<p class="faq-atitle">Error: Rlog output ended early. Expected RCS file
+   "/opt/cvs/project/file,v"</p>
+<p>### TODO ###</p>
+</div>
 
+<div id="">
+<p class="faq-atitle">Error: error during rlog: 0x100</p>
+<p>### TODO ###</p>
+</div>
+
+<div id="">
+<p class="faq-atitle">My directories have no files in them</p>
+<p>### TODO ###</p>
+</div>
+
+<!-- #--------------------------------------------------------------------# -->
 <h3 id="faq-a-svn">Subversion Browsing</h3>
 
-
+<div id="">
+<p class="faq-atitle">Error: ImportError: No module named svn</p>
+<p>### TODO ###</p>
 </div>
+
+<div id="remote-svn-access">
+
+<p class="faq-atitle">Can I use ViewVC with remote Subversion
+   repositories?</p>
+
+<p>ViewVC prefers to have direct access to the repository (and in
+   fact, <em>must</em> have that for CVS repositories), but there does
+   exist experimental support for remote Subversion repositories.
+   Enabling this is a fairly simple &mdash; just use the URL of the
+   repository where you would use its path in the
+   <code>svn_roots</code> configuration options (sorry, you can't use
+   <code>root_parents</code> for remote repositories because
+   Subversion doesn't expose a repository-listing repository access
+   API).</p>
+
+<p>What you should expect:</p>
+
+<ul>
+  <li><p>Near parity with local-access Subversion in terms of
+         functionality.</p></li>
+
+  <li><p>Known shortcomings:</p>
+      <ul>
+        <li>file sizes aren't reported everywhere</li>
+        <li>the "revision" view lacks/botches some information</li>
+        <li>she ain't the fastest horse on the track&hellip;</li>
+      </ul>
+  </li>
+
+  <li><p>Lack of configury for dealing with the intricacies of remote
+         access.  If the auth credentials and such you need to access
+         the remote repository aren't cached in
+         <code>~VIEWVC_USER/.subversion</code> (where
+         <code>VIEWVC_USER</code> is the system user as whom ViewVC
+         runs), stuff won't work.</p>
+</ul>
+
+<!-- #--------------------------------------------------------------------# -->
+</div>
+</div>
+
+</div> <!-- section -->
 
 </td>
 </tr>
