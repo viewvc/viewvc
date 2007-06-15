@@ -2384,6 +2384,10 @@ def view_cvsgraph_image(request):
 
   if not cfg.options.use_cvsgraph:
     raise debug.ViewVCException('Graph view is disabled', '403 Forbidden')
+
+  # If cvsgraph can't find its supporting libraries, uncomment and set
+  # accordingly.  Do the same in view_cvsgraph().
+  #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib:/path/to/cvsgraph'
   
   request.server.header('image/png')
   rcsfile = request.repos.rcsfile(request.path_parts)
@@ -2404,9 +2408,9 @@ def view_cvsgraph(request):
 
   data = common_template_data(request)
 
-  # Required only if cvsgraph needs to find it's supporting libraries.
-  # Uncomment and set accordingly if required.
-  #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib'
+  # If cvsgraph can't find its supporting libraries, uncomment and set
+  # accordingly.  Do the same in view_cvsgraph_image().
+  #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib:/path/to/cvsgraph'
 
   imagesrc = request.get_url(view_func=view_cvsgraph_image, escape=1)
 
