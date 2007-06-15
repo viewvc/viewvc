@@ -117,9 +117,20 @@
 <h3 id="faq-a-cvs">CVS Browsing</h3>
 
 <div id="rlog-output-ended-early">
+
 <p class="faq-atitle">Error: Rlog output ended early. Expected RCS file
    "/opt/cvs/project/file,v"</p>
-<p>### TODO ###</p>
+
+<p>This error generally occurs when ViewVC is unable to locate the
+   rlog tool, one of several in the RCS toolchain.  If the system
+   doesn't have the RCS toolchain installed, you'll need to install
+   it.  If the RCS toolchain is installed, but ViewVC simply can't
+   locate the RCS programs, either ensure that the programs are
+   in the system <code>$PATH</code>, or specify their location in
+   the <code>viewvc.conf</code> file &mdash; the option is
+   <code>utilities/rcs_dir</code> as of ViewVC 1.1,
+   <code>general/rcs_path</code> in earlier versions.</p>
+
 </div>
 
 <div id="">
