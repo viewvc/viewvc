@@ -186,7 +186,6 @@ class Config:
     self.general.default_root = ''
     self.general.mime_types_file = ''
     self.general.address = '<a href="mailto:user@insert.your.domain.here">No admin address has been configured</a>'
-    self.general.forbidden = ()
     self.general.kv_files = [ ]
     self.general.languages = ['en-us']
 
@@ -206,35 +205,14 @@ class Config:
     self.utilities.gzip = ''
     self.utilities.sed = ''
 
-    self.templates.directory = None
-    self.templates.log = None
-    self.templates.query = None
-    self.templates.diff = None
-    self.templates.graph = None
-    self.templates.annotate = None
-    self.templates.markup = None
-    self.templates.error = None
-    self.templates.query_form = None
-    self.templates.query_results = None
-    self.templates.roots = None
-
-    self.cvsdb.enabled = 0
-    self.cvsdb.host = ''
-    self.cvsdb.port = 3306
-    self.cvsdb.database_name = ''
-    self.cvsdb.user = ''
-    self.cvsdb.passwd = ''
-    self.cvsdb.readonly_user = ''
-    self.cvsdb.readonly_passwd = '' 
-    self.cvsdb.row_limit = 1000
-    self.cvsdb.rss_row_limit = 100
-
     self.options.root_as_url_component = 1
-    self.options.default_file_view = "log"
     self.options.checkout_magic = 0
     self.options.allowed_views = ['markup', 'annotate']
     self.options.authorizer = 'forbidden'
     self.options.mangle_email_addresses = 0
+    self.options.default_file_view = "log"
+    self.options.http_expiration_time = 600
+    self.options.generate_etags = 1
     self.options.use_rcsparse = 0
     self.options.sort_by = 'file'
     self.options.sort_group_dirs = 1
@@ -254,23 +232,44 @@ class Config:
     self.options.show_logs = 1
     self.options.show_log_in_markup = 1
     self.options.cross_copies = 0
+    self.options.use_localtime = 0
     self.options.short_log_len = 80
+    self.options.use_py2html = 0
     self.options.use_enscript = 0
     self.options.use_highlight = 0
     self.options.highlight_line_numbers = 1
     self.options.highlight_convert_tabs = 2
     self.options.use_source_highlight = 0
     self.options.source_highlight_line_numbers = 1
-    self.options.use_py2html = 0
     self.options.use_php = 0
     self.options.use_cvsgraph = 0
     self.options.cvsgraph_conf = "cvsgraph.conf"
     self.options.use_re_search = 0
     self.options.use_pagesize = 0
     self.options.limit_changes = 100
-    self.options.use_localtime = 0
-    self.options.http_expiration_time = 600
-    self.options.generate_etags = 1
+
+    self.templates.annotate = None
+    self.templates.diff = None
+    self.templates.directory = None
+    self.templates.error = None
+    self.templates.graph = None
+    self.templates.log = None
+    self.templates.markup = None
+    self.templates.query = None
+    self.templates.query_form = None
+    self.templates.query_results = None
+    self.templates.roots = None
+
+    self.cvsdb.enabled = 0
+    self.cvsdb.host = ''
+    self.cvsdb.port = 3306
+    self.cvsdb.database_name = ''
+    self.cvsdb.user = ''
+    self.cvsdb.passwd = ''
+    self.cvsdb.readonly_user = ''
+    self.cvsdb.readonly_passwd = '' 
+    self.cvsdb.row_limit = 1000
+    self.cvsdb.rss_row_limit = 100
 
 def _startswith(somestr, substr):
   return somestr[:len(substr)] == substr
