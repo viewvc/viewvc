@@ -254,7 +254,7 @@ highlight =
 # GNU source-highlight, a syntax highlighting program (see 
 # options.use_source_highlight)
 source_highlight = 
-# source-highlight = /usr/bin/source-highlight
+# source_highlight = /usr/bin/source-highlight
 
 # Marc-Andrew Lemburg's py2html, Python colorizer (see options.use_py2html)
 py2html_dir = .
@@ -469,13 +469,13 @@ use_localtime = 0
 # Defaults for configuration variables that shouldn't need
 # to be configured..
 
-# should we use Marc-Andrew Lemburg's py2html (and Just van Rossum's
-# PyFontify) to colorize Python files?
-use_py2html = 0
-
 # the length to which the most recent log entry should be truncated when
 # shown in the directory view
 short_log_len = 80
+
+# should we use Marc-Andrew Lemburg's py2html (and Just van Rossum's
+# PyFontify) to colorize Python files?
+use_py2html = 0
 
 # should we use 'enscript' for syntax coloring?
 use_enscript = 0
@@ -575,35 +575,54 @@ limit_changes = 100
 #       [general] section, and based on the request's Accept-Language
 #       header.
 #
+#annotate = templates/annotate.ezt
+#diff = templates/diff.ezt
 #directory = templates/directory.ezt
 ### an alternative directory view
 #directory = templates/dir_new.ezt   
+#error = templates/error.ezt
+#graph = templates/graph.ezt
 #log = templates/log.ezt
 ### a table-based alternative log view
 #log = templates/log_table.ezt  
-#query = templates/query.ezt
-#diff = templates/diff.ezt
-#graph = templates/graph.ezt
-#annotate = templates/annotate.ezt
 #markup = templates/markup.ezt
-#revision = templates/revision.ezt
+#query = templates/query.ezt
 #query_form = templates/query_form.ezt
 #query_results = templates/query_results.ezt
-#error = templates/error.ezt
+#revision = templates/revision.ezt
 #roots = templates/roots.ezt
 
 #---------------------------------------------------------------------------
 [cvsdb]
 
+# Set to 1 to enable the database integration feature, 0 otherwise.
 enabled = 0
+
+# Database hostname and port.
 #host = localhost
 #port = 3306
+
+# ViewVC database name.
 #database_name = ViewVC
+
+# Username and password of user with read/write privileges to the ViewVC
+# database.
 #user = 
 #passwd = 
+
+# Username and password of user with read privileges to the ViewVC
+# database.
 #readonly_user = 
 #readonly_passwd = 
+
+# Limit the number of rows returned by a given query to this number.
 #row_limit = 1000
+
+# Limit the number of rows returned by a given query made as part an
+# RSS feed request to this number.  (Keeping in mind that RSS readers
+# tend to poll regularly for new data, you might want to keep this set
+# to a conservative number.)
+#rss_row_limit = 100
 
 #---------------------------------------------------------------------------
 [vhosts]
