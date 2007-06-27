@@ -190,25 +190,6 @@ class LogCollector:
     if this_path:
       self.path = this_path
     
-
-def get_logs(svnrepos, full_name, rev, files):
-  dirents = svnrepos._get_dirents(full_name, rev)
-  rev_info_cache = { }
-  for file in files:
-    entry = dirents[file.name]
-    if rev_info_cache.has_key(entry.created_rev):
-      rev, author, date, log = rev_info_cache[entry.created_rev]
-    else:
-      ### i think this needs some get_last_history action to be accurate
-      rev, author, date, log, changes = \
-           _get_rev_details(svnrepos, entry.created_rev)
-      rev_info_cache[entry.created_rev] = rev, author, date, log
-    file.rev = rev
-    file.author = author
-    file.date = _datestr_to_date(date)
-    file.log = log
-    file.size = entry.size
-
 def get_youngest_revision(svnrepos):
   return svnrepos.youngest
 
@@ -334,7 +315,22 @@ class SubversionRepository(vclib.Repository):
     return entries
 
   def dirlogs(self, path_parts, rev, entries, options):
-    get_logs(self, self._getpath(path_parts), self._getrev(rev), entries)
+    rev_info_cache = { }
+    dirents = self._get_dirents(self._getpath(path_parts), self._getrev(rev))
+    for entry in entries:
+      dirent = dirents[entry.name]
+      if rev_info_cache.has_key(dirent.created_rev):
+        rev, author, date, log = rev_info_cache[dirent.created_rev]
+      else:
+        ### i think this needs some get_last_history action to be accurate
+        rev, author, date, log, changes = \
+             _get_rev_details(self, dirent.created_rev)
+        rev_info_cache[dirent.created_rev] = rev, author, date, log
+      entry.rev = rev
+      entry.author = author
+      entry.date = _datestr_to_date(date)
+      entry.log = log
+      entry.size = dirent.size
 
   def itemlog(self, path_parts, rev, options):
     full_name = self._getpath(path_parts)
