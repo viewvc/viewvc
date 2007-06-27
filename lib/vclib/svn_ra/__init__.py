@@ -265,12 +265,13 @@ class SubversionRepository(vclib.Repository):
     # Setup the client context baton, complete with non-prompting authstuffs.
     # TODO: svn_cmdline_setup_auth_baton() is mo' better (when available)
     ctx = client.svn_client_ctx_t()
-    providers = []
-    providers.append(client.svn_client_get_simple_provider())
-    providers.append(client.svn_client_get_username_provider())
-    providers.append(client.svn_client_get_ssl_server_trust_file_provider())
-    providers.append(client.svn_client_get_ssl_client_cert_file_provider())
-    providers.append(client.svn_client_get_ssl_client_cert_pw_file_provider())
+    providers = [
+      client.svn_client_get_simple_provider(),
+      client.svn_client_get_username_provider(),
+      client.svn_client_get_ssl_server_trust_file_provider(),
+      client.svn_client_get_ssl_client_cert_file_provider(),
+      client.svn_client_get_ssl_client_cert_pw_file_provider(),
+    ]
     ctx.auth_baton = core.svn_auth_open(providers)
     ctx.config = core.svn_config_get_config(None)
     self.ctx = ctx
