@@ -31,6 +31,11 @@ SIDE_BY_SIDE = 3
 CVS = 'cvs'
 SVN = 'svn'
 
+# action kinds found in ChangedPath.action
+ADDED      = 'added'
+DELETED    = 'deleted'
+REPLACED   = 'replaced'
+MODIFIED   = 'modified'
 
 # ======================================================================
 #
@@ -137,7 +142,18 @@ class Repository:
     The result is a list of Annotation objects, sorted by their
     line_number components.
     """
+
+  def revinfo(self, rev):
+    """Return information about a global revision
+
+    rev is the revision of the item to return information about
     
+    Return value is a 4-tuple containing the date, author, log
+    message, and a list of ChangedPath items representing paths changed
+
+    Raise vclib.UnsupportedFeature if the version control system
+    doesn't support a global revision concept.
+    """
 
 # ======================================================================
 class DirEntry:
@@ -198,6 +214,32 @@ class Annotation:
     self.author = author
     self.date = date
 
+class ChangedPath:
+  """Instances represent changes to paths"""
+
+  def __init__(self, path_parts, rev, pathtype, base_path_parts,
+               base_rev, action, copied, text_changed, props_changed):
+    """Create a new ChangedPath() item:
+          PATH_PARTS:       Path that was changed
+          REV:              Revision represented by this change
+          PATHTYPE:         Type of this path (vclib.DIR, vclib.FILE, ...)
+          BASE_PATH_PARTS:  Previous path for this changed item
+          BASE_REV:         Previous revision for this changed item
+          ACTION:           Kind of change (vclib.ADDED, vclib.DELETED, ...)
+          COPIED:           Boolean -- was this path copied from elsewhere?
+          TEXT_CHANGED:     Boolean -- did the file's text change?
+          PROPS_CHANGED:    Boolean -- did the item's metadata change?
+    """
+    self.path_parts = path_parts
+    self.rev = rev
+    self.pathtype = pathtype
+    self.base_path_parts = base_path_parts
+    self.base_rev = base_rev
+    self.action = action
+    self.copied = copied
+    self.text_changed = text_changed
+    self.props_changed = props_changed
+
 
 # ======================================================================
 
@@ -205,6 +247,9 @@ class Error(Exception):
   pass
 
 class ReposNotFound(Error):
+  pass
+
+class UnsupportedFeature(Error):
   pass
 
 class ItemNotFound(Error):

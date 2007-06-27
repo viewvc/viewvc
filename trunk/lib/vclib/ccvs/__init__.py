@@ -122,6 +122,9 @@ class CCVSRepository(CVSRepository):
     source = blame.BlameSource(self.rcsfile(path_parts, 1), rev)
     return source, source.revision
 
+  def revinfo(self, rev):
+    raise vclib.UnsupportedFeature
+
   def openfile(self, path_parts, rev=None):
     path = self.rcsfile(path_parts, 1)
     sink = COSink(rev)
