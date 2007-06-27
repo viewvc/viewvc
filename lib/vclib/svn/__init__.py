@@ -380,29 +380,12 @@ def _fetch_log(svnrepos, full_name, which_rev, options):
         revs.append(rev)
   return revs
 
-
 def _get_last_history_rev(fsroot, path):
   history = fs.node_history(fsroot, path)
   history = fs.history_prev(history, 0)
   history_path, history_rev = fs.history_location(history)
   return history_rev
   
-  
-def get_logs(svnrepos, full_name, rev, files):
-  fsroot = svnrepos._getroot(rev)
-  for file in files:
-    path = _fs_path_join(full_name, file.name)
-    rev = _get_last_history_rev(fsroot, path)
-    datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev)
-    date = _datestr_to_date(datestr)
-    file.rev = str(rev)
-    file.date = date
-    file.author = author
-    file.log = msg
-    if file.kind == vclib.FILE:
-      file.size = fs.file_length(fsroot, path)
-
-
 def get_youngest_revision(svnrepos):
   return svnrepos.youngest
 
@@ -592,7 +575,18 @@ class SubversionRepository(vclib.Repository):
     return entries
 
   def dirlogs(self, path_parts, rev, entries, options):
-    get_logs(self, self._getpath(path_parts), self._getrev(rev), entries)
+    fsroot = self._getroot(self._getrev(rev))
+    for entry in entries:
+      path = self._getpath(path_parts + [entry.name])
+      rev = _get_last_history_rev(fsroot, path)
+      datestr, author, msg = _fs_rev_props(self.fs_ptr, rev)
+      date = _datestr_to_date(datestr)
+      entry.rev = str(rev)
+      entry.date = date
+      entry.author = author
+      entry.log = msg
+      if entry.kind == vclib.FILE:
+        entry.size = fs.file_length(fsroot, path)
 
   def itemlog(self, path_parts, rev, options):
     """see vclib.Repository.itemlog docstring
