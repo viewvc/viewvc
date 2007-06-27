@@ -265,6 +265,9 @@ class BinCVSRepository(CVSRepository):
     source = blame.BlameSource(self.rcsfile(path_parts, 1), rev)
     return source, source.revision
 
+  def revinfo(self, rev):
+    raise vclib.UnsupportedFeature
+  
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     """see vclib.Repository.rawdiff docstring
 

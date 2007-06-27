@@ -264,85 +264,6 @@ def _get_history(svnrepos, full_name, rev, options={}):
   return history.histories
 
 
-class ChangedPath:
-  def __init__(self, filename, pathtype, prop_mods, text_mods,
-               base_path, base_rev, action, is_copy):
-    self.filename = filename
-    self.pathtype = pathtype
-    self.prop_mods = prop_mods
-    self.text_mods = text_mods
-    self.base_path = base_path
-    self.base_rev = base_rev
-    self.action = action
-    self.is_copy = is_copy
-
-
-def get_revision_info(svnrepos, rev):
-  fsroot = svnrepos._getroot(rev)
-
-  # Get the changes for the revision
-  editor = repos.ChangeCollector(svnrepos.fs_ptr, fsroot)
-  e_ptr, e_baton = delta.make_editor(editor)
-  repos.svn_repos_replay(fsroot, e_ptr, e_baton)
-  changes = editor.get_changes()
-  changedpaths = {}
-  
-  # Copy the Subversion changes into a new hash, converting them into
-  # ChangedPath objects.
-  for path in changes.keys():
-    change = changes[path]
-    if change.path:
-      change.path = _cleanup_path(change.path)
-    if change.base_path:
-      change.base_path = _cleanup_path(change.base_path)
-    is_copy = 0
-    if not hasattr(change, 'action'): # new to subversion 1.4.0
-      action = 'modified'
-      if not change.path:
-        action = 'deleted'
-      elif change.added:
-        action = 'added'
-        replace_check_path = path
-        if change.base_path and change.base_rev:
-          replace_check_path = change.base_path
-        if changedpaths.has_key(replace_check_path) \
-           and changedpaths[replace_check_path].action == 'deleted':
-          action = 'replaced'
-    else:
-      if change.action == repos.CHANGE_ACTION_ADD:
-        action = 'added'
-      elif change.action == repos.CHANGE_ACTION_DELETE:
-        action = 'deleted'
-      elif change.action == repos.CHANGE_ACTION_REPLACE:
-        action = 'replaced'
-      else:
-        action = 'modified'
-    if (action == 'added' or action == 'replaced') \
-       and change.base_path \
-       and change.base_rev:
-      is_copy = 1
-    if change.item_kind == core.svn_node_dir:
-      pathtype = vclib.DIR
-    elif change.item_kind == core.svn_node_file:
-      pathtype = vclib.FILE
-    else:
-      pathtype = None
-    changedpaths[path] = ChangedPath(path, pathtype, change.prop_changes,
-                                     change.text_changed, change.base_path,
-                                     change.base_rev, action, is_copy)
-
-  # Actually, what we want is a sorted list of ChangedPath objects.
-  change_items = changedpaths.values()
-  change_items.sort(lambda a, b: _compare_paths(a.filename, b.filename))
-  
-  # Now get the revision property info.  Would use
-  # editor.get_root_props(), but something is broken there...
-  datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev)
-  date = _datestr_to_date(datestr)
-
-  return date, author, msg, change_items
-
-
 def _log_helper(svnrepos, rev, path):
   rev_root = fs.revision_root(svnrepos.fs_ptr, rev)
 
@@ -495,6 +416,18 @@ class BlameSource:
 class BlameSequencingError(Exception):
   pass
 
+
+class SVNChangedPath(vclib.ChangedPath):
+  """Wrapper around vclib.ChangedPath which handles path splitting."""
+  
+  def __init__(self, path, rev, pathtype, base_path, base_rev,
+               action, copied, text_changed, props_changed):
+    path_parts = filter(None, string.split(path or '', '/'))
+    base_path_parts = filter(None, string.split(base_path or '', '/'))
+    vclib.ChangedPath.__init__(self, path_parts, rev, pathtype,
+                               base_path_parts, base_rev, action,
+                               copied, text_changed, props_changed)
+
   
 class SubversionRepository(vclib.Repository):
   def __init__(self, name, rootpath, utilities):
@@ -628,7 +561,71 @@ class SubversionRepository(vclib.Repository):
     first_rev = history_revs[0]
     source = BlameSource(_rootpath2url(self.rootpath, path), rev, first_rev)
     return source, revision
+
+  def revinfo(self, rev):
+    fsroot = self._getroot(rev)
+
+    # Get the changes for the revision
+    editor = repos.ChangeCollector(self.fs_ptr, fsroot)
+    e_ptr, e_baton = delta.make_editor(editor)
+    repos.svn_repos_replay(fsroot, e_ptr, e_baton)
+    changes = editor.get_changes()
+    changedpaths = {}
     
+    # Now get the revision property info.  Would use
+    # editor.get_root_props(), but something is broken there...
+    datestr, author, msg = _fs_rev_props(self.fs_ptr, rev)
+
+    # Copy the Subversion changes into a new hash, converting them into
+    # ChangedPath objects.
+    for path in changes.keys():
+      change = changes[path]
+      if change.path:
+        change.path = _cleanup_path(change.path)
+      if change.base_path:
+        change.base_path = _cleanup_path(change.base_path)
+      is_copy = 0
+      if not hasattr(change, 'action'): # new to subversion 1.4.0
+        action = vclib.MODIFIED
+        if not change.path:
+          action = vclib.DELETED
+        elif change.added:
+          action = vclib.ADDED
+          replace_check_path = path
+          if change.base_path and change.base_rev:
+            replace_check_path = change.base_path
+          if changedpaths.has_key(replace_check_path) \
+             and changedpaths[replace_check_path].action == vclib.DELETED:
+            action = vclib.REPLACED
+      else:
+        if change.action == repos.CHANGE_ACTION_ADD:
+          action = vclib.ADDED
+        elif change.action == repos.CHANGE_ACTION_DELETE:
+          action = vclib.DELETED
+        elif change.action == repos.CHANGE_ACTION_REPLACE:
+          action = vclib.REPLACED
+        else:
+          action = vclib.MODIFIED
+      if (action == vclib.ADDED or action == vclib.REPLACED) \
+         and change.base_path \
+         and change.base_rev:
+        is_copy = 1
+      if change.item_kind == core.svn_node_dir:
+        pathtype = vclib.DIR
+      elif change.item_kind == core.svn_node_file:
+        pathtype = vclib.FILE
+      else:
+        pathtype = None
+      
+      changedpaths[path] = SVNChangedPath(path, rev, pathtype,
+                                          change.base_path,
+                                          change.base_rev, action,
+                                          is_copy, change.text_changed,
+                                          change.prop_changes)
+    
+    # Return our tuple: date, author, msg, changes
+    return _datestr_to_date(datestr), author, msg, changedpaths.values()
+
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     p1 = self._getpath(path_parts1)
     p2 = self._getpath(path_parts2)
