@@ -10,7 +10,7 @@
 		[if-any commits.rss_url]<link>[commits.rss_url]</link>[end]
 		<author>[commits.author]</author>
 		<pubDate>[if-any commits.rss_date][commits.rss_date][else](unknown date)[end]</pubDate>
-		<description>[commits.log]</description>
+		<description>&lt;pre&gt;[format "xml"][commits.log][end]&lt;/pre&gt;</description>
     </item>[end]
 </channel>	
 </rss>
