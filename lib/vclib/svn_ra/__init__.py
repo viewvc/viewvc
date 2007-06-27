@@ -20,7 +20,7 @@ import re
 import tempfile
 import popen2
 import time
-from vclib.svn import Revision, ChangedPath, _datestr_to_date, _compare_paths, _cleanup_path, _rev2optrev
+from vclib.svn import Revision, SVNChangedPath, _datestr_to_date, _compare_paths, _cleanup_path, _rev2optrev
 from svn import core, delta, client, wc, ra
 
 
@@ -116,24 +116,30 @@ class LastHistoryCollector:
         return
       changed_paths = paths.keys()
       changed_paths.sort(lambda a, b: _compare_paths(a, b))
-      action_map = { 'D' : 'deleted',
-                     'A' : 'added',
-                     'R' : 'replaced',
-                     'M' : 'modified',
+      action_map = { 'D' : vclib.DELETED,
+                     'A' : vclib.ADDED,
+                     'R' : vclib.REPLACED,
+                     'M' : vclib.MODIFIED,
                      }
       for changed_path in changed_paths:
+        pathtype = None
         change = paths[changed_path]
-        action = action_map.get(change.action, 'modified')
+        action = action_map.get(change.action, vclib.MODIFIED)
+        is_copy = 0
+        base_path = changed_path
+        base_rev = revision - 1
         ### Wrong, diddily wrong wrong wrong.  Can you say,
         ### "Manufacturing data left and right because it hurts to
         ### figure out the right stuff?"
         if change.copyfrom_path and change.copyfrom_rev:
-          self.changes.append(ChangedPath(changed_path[1:], None, 0, 0,
-                                          change.copyfrom_path,
-                                          change.copyfrom_rev, action, 1))
-        else:
-          self.changes.append(ChangedPath(changed_path[1:], None, 0, 0,
-                                          changed_path[1:], 0, action, 0))
+          is_copy = 1
+          base_path = change.copyfrom_path
+          base_rev = change.copyfrom_rev
+        elif action == vclib.ADDED or action == vclib.REPLACED:
+          base_path = base_rev = None
+        self.changes.append(SVNChangedPath(changed_path, revision, pathtype,
+                                           base_path, base_rev, action,
+                                           is_copy, 0, 0))
 
   def get_history(self):
     if not self.has_history:
@@ -149,11 +155,6 @@ def _get_rev_details(svnrepos, rev):
   return lhc.get_history()
 
   
-def get_revision_info(svnrepos, rev):
-  rev, author, date, log, changes = _get_rev_details(svnrepos, rev)
-  return _datestr_to_date(date), author, log, changes
-
-
 class LogCollector:
   def __init__(self, path, show_all_logs):
     # This class uses leading slashes for paths internally
@@ -374,6 +375,10 @@ class SubversionRepository(vclib.Repository):
                             _blame_cb, self.ctx)
 
     return blame_data, rev
+
+  def revinfo(self, rev):
+    rev, author, date, log, changes = _get_rev_details(self, rev)
+    return _datestr_to_date(date), author, log, changes
     
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     p1 = self._getpath(path_parts1)

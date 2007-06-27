@@ -3205,6 +3205,7 @@ def download_tarball(request):
 </body>
 </html>""" % (debug.TARFILE_PATH)
 
+
 def view_revision(request):
   if request.roottype == "cvs":
     raise ViewVCException("Revision view not supported for CVS repositories "
@@ -3218,12 +3219,23 @@ def view_revision(request):
   except vclib.InvalidRevision:
     raise debug.ViewVCException('Invalid revision', '404 Not Found')
     
-  date, author, msg, changes = vclib.svn.get_revision_info(request.repos, rev)
-  date_str = make_time_string(date, cfg)
-
   # The revision number acts as a weak validator.
   if check_freshness(request, None, str(rev), weak=1):
     return
+
+  # Fetch the revision information.
+  date, author, msg, changes = request.repos.revinfo(rev)
+  date_str = make_time_string(date, cfg)
+
+  # Filter the changes list based on what the user is permitted to see.
+  def _auth_filter(item):
+    return request.auth.check_path_access(item.path_parts)
+  changes = filter(_auth_filter, changes)
+
+  # Sort the changes list by path.
+  def changes_sort_by_path(a, b):
+    return cmp(a.path_parts, b.path_parts)
+  changes.sort(changes_sort_by_path)
 
   # Handle limit_changes parameter
   cfg_limit_changes = cfg.options.limit_changes
@@ -3244,79 +3256,80 @@ def view_revision(request):
     params['limit_changes'] = None
     first_changes_href = request.get_url(params=params, escape=1)
 
-  # Filter the changes list based on what the user is permitted to see.
-  def _auth_filter(item):
-    return request.auth.check_path_access(_path_parts(item.filename))
-  changes = filter(_auth_filter, changes)
-  
-  # add the hrefs, types, and prev info
+  # Add the hrefs, types, and prev info
   for change in changes:
     change.view_href = change.diff_href = change.type = change.log_href = None
-    pathtype = (change.pathtype == vclib.FILE and 'file') \
-               or (change.pathtype == vclib.DIR and 'dir') \
-               or None
 
     # If this path was copied, and the user is permitted to see this
     # path but not the path from which it was copied, then lie about
     # this *not* being a copy.
-    if change.is_copy:
-      if not request.auth.check_path_access(_path_parts(change.base_path)):
-        change.is_copy = 0
-    
-    if (change.action == 'added' or change.action == 'replaced') \
-           and not change.is_copy:
-      change.text_mods = 0
-      change.prop_mods = 0
+    if change.copied \
+       and not request.auth.check_path_access(change.base_path_parts):
+      change.copied = 0
 
-    view_func = None
-    if change.pathtype is vclib.FILE:
-      view_func = view_markup
-      if change.text_mods:
-        params = {'pathrev' : str(rev),
-                  'r1' : str(rev),
-                  'r2' : str(change.base_rev),
-                  }
-        change.diff_href = request.get_url(view_func=view_diff,
-                                           where=change.filename, 
-                                           pathtype=change.pathtype,
-                                           params=params,
-                                           escape=1)
-    elif change.pathtype is vclib.DIR:
-      view_func=view_directory
+    # If the path is newly added, don't claim text or property
+    # modifications.
+    if (change.action == vclib.ADDED or change.action == vclib.REPLACED) \
+       and not change.copied:
+      change.text_changed = 0
+      change.props_changed = 0
 
+    # Calculate the various view link URLs (for which we must have a pathtype).
     if change.pathtype:
-      if change.action == 'deleted':
+      view_func = None
+      if change.pathtype is vclib.FILE \
+         and 'markup' in cfg.options.allowed_views:
+        view_func = view_markup
+      elif change.pathtype is vclib.DIR:
+        view_func = view_directory
+
+      path = _path_join(change.path_parts)
+      base_path = _path_join(change.base_path_parts)
+      if change.action == vclib.DELETED:
         link_rev = str(change.base_rev)
-        link_where = change.base_path
+        link_where = base_path
       else:
         link_rev = str(rev)
-        link_where = change.filename
+        link_where = path
 
-      if view_func != view_markup \
-         or 'markup' in cfg.options.allowed_views:
-        change.view_href = request.get_url(view_func=view_func,
-                                           where=link_where,
-                                           pathtype=change.pathtype,
-                                           params={'pathrev' : link_rev},
-                                           escape=1)
+      change.view_href = request.get_url(view_func=view_func,
+                                         where=link_where,
+                                         pathtype=change.pathtype,
+                                         params={'pathrev' : link_rev},
+                                         escape=1)
       change.log_href = request.get_url(view_func=view_log,
                                         where=link_where,
                                         pathtype=change.pathtype,
                                         params={'pathrev' : link_rev},
                                         escape=1)
+
+      if change.pathtype is vclib.FILE and change.text_changed:
+        change.diff_href = request.get_url(view_func=view_diff,
+                                           where=path, 
+                                           pathtype=change.pathtype,
+                                           params={'pathrev' : str(rev),
+                                                   'r1' : str(rev),
+                                                   'r2' : str(change.base_rev),
+                                                   },
+                                           escape=1)
     
-    change.text_mods = ezt.boolean(change.text_mods)
-    change.prop_mods = ezt.boolean(change.prop_mods)
-    change.is_copy = ezt.boolean(change.is_copy)
-    change.pathtype = pathtype
 
     # use same variable names as the log template
-    change.path = change.filename
-    change.copy_path = change.base_path
+    change.path = _path_join(change.path_parts)
+    change.copy_path = _path_join(change.base_path_parts)
     change.copy_rev = change.base_rev
-    del change.filename
-    del change.base_path
+    change.text_mods = ezt.boolean(change.text_changed)
+    change.prop_mods = ezt.boolean(change.props_changed)
+    change.is_copy = ezt.boolean(change.copied)
+    change.pathtype = (change.pathtype == vclib.FILE and 'file') \
+                      or (change.pathtype == vclib.DIR and 'dir') \
+                      or None
+    del change.path_parts
+    del change.base_path_parts
     del change.base_rev
+    del change.text_changed
+    del change.props_changed
+    del change.copied
 
   prev_rev_href = next_rev_href = None
   if rev > 0:
