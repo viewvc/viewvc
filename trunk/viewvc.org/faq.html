@@ -94,7 +94,7 @@
 
 <ul>
 
-<li><a href="#">What causes "Error: ImportError: No module named
+<li><a href="#no-module-named-svn">What causes "Error: ImportError: No module named
     svn"?</a></li>
 
 <li><a href="#remote-svn-access">Can I use ViewVC with remote
@@ -180,11 +180,19 @@
 <h3 class="faq-section" id="faq-a-svn">Subversion Browsing</h3>
 <!-- #--------------------------------------------------------------------# -->
 
-<div id="">
+<div id="no-module-named-svn">
 <p class="faq-atitle">What causes "Error: ImportError: No module named
    svn"?</p>
 
-<p>### TODO ###</p>
+<p>ViewVC uses Subversion's Python bindings to interact with and pull
+   information out of your Subversion repositories.  These bindings
+   are not, however, generally provided as part of the ViewVC
+   distribution &mdash; you have to install them yourself some other
+   way.  (For more information, contact the <a
+   href="http://subversion.tigris.org">Subversion</a> community.)  The
+   error you see is Python being asked to import the Subversion Python
+   bindings and being unable to do so, typically because the bindings
+   modules aren't found in the Python library search path.</p>
 </div>
 
 <div id="remote-svn-access">
