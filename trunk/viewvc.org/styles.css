@@ -161,6 +161,10 @@ blockquote {
     background: yellow;
 }
 
+.faq-section {
+    margin-top: 1em;
+}
+
 .faq-atitle {
     font-weight: bold;
 }
