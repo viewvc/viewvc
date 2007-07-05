@@ -65,8 +65,8 @@
 
 <ul>
 
-<li><a href="#">Error: OSError: [Errno 2] No such file or directory:
-    '/tmp/tmpGc-Ztj'</a></li>
+<li><a href="#missing-tmpdir">Error: OSError: [Errno 2] No such file
+    or directory: '/tmp/tmpGc-Ztj'</a></li>
 
 </ul>
 
@@ -117,11 +117,18 @@
 <h3 class="faq-section" id="faq-a-general">General Usage</h3>
 <!-- #--------------------------------------------------------------------# -->
 
-<div id="">
+<div id="missing-tmpdir">
 <p class="faq-atitle">Error: OSError: [Errno 2] No such file or
    directory: '/tmp/tmpGc-Ztj'</p>
 
-<p>### TODO ###</p>
+<p>This is tracked in <a
+   href="http://viewvc.tigris.org/issues/show_bug.cgi?id=282">issue
+   #282</a>.  While we haven't figured out how to make the error
+   message more graceful or helpful, the basic problem seems to
+   generally boil down to a misconfiguration of ViewVC.  Make sure
+   your helper applications are in the program search path
+   (<code>$PATH</code>, <code>%PATH%</code>, etc.) on your ViewVC
+   server, or accurately specified in <code>viewvc.conf</code>.</p>
 </div>
 
 <!-- #--------------------------------------------------------------------# -->
