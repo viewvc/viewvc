@@ -68,6 +68,10 @@
 <li><a href="#missing-tmpdir">What causes "Error: OSError: [Errno 2] No such file
     or directory: '/tmp/tmpGc-Ztj'"?</a></li>
 
+<li><a href="#standalone-only">Why does <em>SOME-FEATURE</em>
+    work under standalone.py, but not under Apache (or IIS or
+    &hellip;)?</a></li>
+
 </ul>
 
 <!-- #--------------------------------------------------------------------# -->
@@ -128,8 +132,27 @@
    message more graceful or helpful, the basic problem seems to
    generally boil down to a misconfiguration of ViewVC.  Make sure
    your helper applications are in the program search path
-   (<code>$PATH</code>, <code>%PATH%</code>, etc.) on your ViewVC
-   server, or accurately specified in <code>viewvc.conf</code>.</p>
+   (<code>$PATH</code>, e.g.) on your ViewVC server, or accurately
+   specified in <code>viewvc.conf</code>.</p>
+</div>
+
+<div id="standalone-only">
+<p class="faq-atitle">Why does <em>SOME-FEATURE</em> work under
+    standalone.py, but not under Apache (or IIS or &hellip;)?</p>
+
+<p>Most of the time folks run standalone.py, they do so as a regular
+   system user, from a shell running with any and all the
+   environmental customizations present in their shell startup
+   scripts.  But most web server packages (like Apache) run as a
+   different, often underprivileged, user, whose environment is
+   stripped down to just the system-wide default state.  This can
+   cause problems for ViewVC's various helper applications, which
+   might reside in a location that's included as part of your (and
+   thus standalone.py's) <code>$PATH</code>, but not that of the user
+   as whom the web server package runs.  The solution might be as
+   simple explicitly configuring the paths of the helper applications
+   in <code>viewvc.conf</code>, or as complex as expanding the program
+   search path used by your web server software.</p>
 </div>
 
 <!-- #--------------------------------------------------------------------# -->
