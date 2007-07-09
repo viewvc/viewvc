@@ -3534,7 +3534,7 @@ def view_query(request):
     })
 
   if format == 'rss':
-    request.server.header("text/xml")
+    request.server.header("application/rss+xml")
     generate_page(request, "rss", data)
   else:
     request.server.header()
