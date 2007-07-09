@@ -3824,7 +3824,7 @@ def view_query(request):
     })
 
   if format == 'rss':
-    generate_page(request, "rss", data, "text/xml")
+    generate_page(request, "rss", data, "application/rss+xml")
   else:
     generate_page(request, "query_results", data)
 
