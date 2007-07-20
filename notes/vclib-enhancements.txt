@@ -29,17 +29,17 @@ in the vclib module.
       * Have a repo-method diff(file1, rev1, file2, rev2, args) that returns
         (date1, date2, fp).  Means human_readbale_diff and raw_diff does not
         have to parse dates.  Good for VCS that does not have the date in
-        the diff.
+        the diff.   [### DONE ###]
    
       * I'm not sure you should require GNU diff.  Some VCS may use own
         diff mechanisms (bzr uses difflib, _or_ GNU diff when needed.
-        Monotone uses its own, IIRC.) =20
+        Monotone uses its own, IIRC.)
    
     * Generalize view_revision ;
    
       * Have a method, revision_info(), which returns (date, author, msg,
         changes) much like vclib.svn.get_revision_info.  The CVS version
-        can raise a ViewCVSException.
+        can raise a ViewCVSException.  [### DONE ###]
    
       * Establish a convention for renamed/copied files; current should
         work good enough (change.base_path, change.base_rev) but action
