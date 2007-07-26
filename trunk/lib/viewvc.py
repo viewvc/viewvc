@@ -2973,33 +2973,6 @@ def view_diff(request):
                                  'to diff', '400 Bad Request')
   path_left = _path_join(p1)
   path_right = _path_join(p2)
-  data = common_template_data(request)
-  data.update({
-    'path_left': path_left,
-    'path_right': path_right,
-    'rev_left' : rev1,
-    'rev_right' : rev2,
-    'tag_left' : sym1,
-    'tag_right' : sym2,
-    'diff_format' : request.query_dict.get('diff_format',
-                                           cfg.options.diff_format),
-    'annotate_href' : None,
-    })
-
-  orig_params = request.query_dict.copy()
-  orig_params['diff_format'] = None
-    
-  data['diff_format_action'], data['diff_format_hidden_values'] = \
-    request.get_form(params=orig_params)
-  data['patch_href'] = request.get_url(view_func=view_patch,
-                                       params=orig_params,
-                                       escape=1)
-  if 'annotate' in request.cfg.options.allowed_views:
-    data['annotate_href'] = request.get_url(view_func=view_annotate,
-                                            where=path_right,
-                                            pathtype=vclib.FILE,
-                                            params={'annotate': rev2},
-                                            escape=1)
   if fp:
     date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
                                                      sym1, sym2)
@@ -3018,14 +2991,38 @@ def view_diff(request):
                                       htmlify(headers, mangle_email_addrs=0),
                                       None, 1)
 
+  no_format_params = request.query_dict.copy()
+  no_format_params['diff_format'] = None
+
+  left = _item(date=rcsdiff_date_reformat(date1, cfg),
+               path=path_left, rev=rev1, tag=sym1)
+  left.view_href, left.download_href, left.download_text_href, \
+    left.annotate_href, left.revision_href, left.prefer_markup \
+    = get_file_view_info(request, path_left, rev1)
+  
+  right = _item(date=rcsdiff_date_reformat(date2, cfg),
+                path=path_right, rev=rev2, tag=sym2)
+  right.view_href, right.download_href, right.download_text_href, \
+    right.annotate_href, right.revision_href, right.prefer_markup \
+    = get_file_view_info(request, path_right, rev2)
+      
+  data = common_template_data(request)
   data.update({
-    'date_left' : rcsdiff_date_reformat(date1, cfg),
-    'date_right' : rcsdiff_date_reformat(date2, cfg),
+    'left' : left,
+    'right' : right,
     'raw_diff' : raw_diff_fp,
     'changes' : changes,
     'sidebyside': sidebyside,
     'unified': unified,
+    'diff_format' : request.query_dict.get('diff_format',
+                                           cfg.options.diff_format),
+    'patch_href' : request.get_url(view_func=view_patch,
+                                   params=no_format_params,
+                                   escape=1),
     })
+
+  data['diff_format_action'], data['diff_format_hidden_values'] = \
+    request.get_form(params=no_format_params)
 
   generate_page(request, "diff", data)
 
