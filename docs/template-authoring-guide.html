@@ -599,11 +599,6 @@ td {
      <a href="#variables-common">COMMON</a> variable set</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">annotate_href</td>
-  <td>String</td>
-  <td>URL for the annotate view of the right-side file revision.</td>
-</tr>
-<tr class="varlevel1">
   <td class="varname">changes</td>
   <td>List</td>
   <td>Set of objects which contain information about a single line of
@@ -677,18 +672,6 @@ td {
       <tt>no-changes</tt>, <tt>remove</tt>.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">date_left</td>
-  <td>String</td>
-  <td>Date (in UTC if not otherwise configured) in which the left file
-      revision was created.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">date_right</td>
-  <td>String</td>
-  <td>Date (in UTC if not otherwise configured) in which the right file
-      revision was created.</td>
-</tr>
-<tr class="varlevel1">
   <td class="varname">diff_format</td>
   <td>String</td>
   <td>Difference dislay format:  Valid values are <tt>c</tt>
@@ -708,30 +691,132 @@ td {
   <td>Hidden value HTML markup for the diff format selection form.</td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">left</td>
+  <td>Container</td>
+  <td>Container object for grouping information about the left file.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">left.annotate_href</td>
+  <td>String</td>
+  <td>URL of the ViewVC annotation view for the left file.
+      Valid only when <var>entries.pathtype</var> is <tt>file</tt>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">left.date</td>
+  <td>String</td>
+  <td>Date (in UTC if not otherwise configured) in which the left file
+      revision was created.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">left.download_href</td>
+  <td>String</td>
+  <td>URL to download the HEAD revision of the left file.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">left.download_text_href</td>
+  <td>String</td>
+  <td>URL to download the HEAD revision of the left file as
+      <tt>text/plain</tt>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">left.path</td>
+  <td>String</td>
+  <td>Path of the left file.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">left.prefer_markup</td>
+  <td>Boolean</td>
+  <td>Indicates whether to make the default file link a link to the markup
+      page instead of the checkout page.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">left.rev</td>
+  <td>String</td>
+  <td>Revision of the left file.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">left.revision_href</td>
+  <td>String</td>
+  <td>URL of the Subversion revision view for the left file's
+      current revision.  Valid only when <var>roottype</var> is
+      <tt>svn</tt>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">left.tag</td>
+  <td>String</td>
+  <td>Tag of the left file.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">left.view_href</td>
+  <td>String</td>
+  <td>This is a URL for the markup view of the left file.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">raw_diff</td>
   <td>String</td>
   <td>Raw difference text.  Valid only when <var>diff_format</var> is
   <tt>c</tt>, <tt>s</tt>, or <tt>u</tt>.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">rev_left</td>
-  <td>String</td>
-  <td>Revision of the left file.</td>
+  <td class="varname">right</td>
+  <td>Container</td>
+  <td>Container object for grouping information about the right file.</td>
 </tr>
-<tr class="varlevel1">
-  <td class="varname">rev_right</td>
+<tr class="varlevel2">
+  <td class="varname">right.annotate_href</td>
+  <td>String</td>
+  <td>URL of the ViewVC annotation view for the right file.
+      Valid only when <var>entries.pathtype</var> is <tt>file</tt>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">right.date</td>
+  <td>String</td>
+  <td>Date (in UTC if not otherwise configured) in which the right file
+      revision was created.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">right.download_href</td>
+  <td>String</td>
+  <td>URL to download the HEAD revision of the right file.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">right.download_text_href</td>
+  <td>String</td>
+  <td>URL to download the HEAD revision of the right file as
+      <tt>text/plain</tt>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">right.path</td>
+  <td>String</td>
+  <td>Path of the right file.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">right.prefer_markup</td>
+  <td>Boolean</td>
+  <td>Indicates whether to make the default file link a link to the markup
+      page instead of the checkout page.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">right.rev</td>
   <td>String</td>
   <td>Revision of the right file.</td>
 </tr>
-<tr class="varlevel1">
-  <td class="varname">tag_left</td>
+<tr class="varlevel2">
+  <td class="varname">right.revision_href</td>
   <td>String</td>
-  <td>Tag of the left file.</td>
+  <td>URL of the Subversion revision view for the right file's
+      current revision.  Valid only when <var>roottype</var> is
+      <tt>svn</tt>.</td>
 </tr>
-<tr class="varlevel1">
-  <td class="varname">tag_right</td>
+<tr class="varlevel2">
+  <td class="varname">right.tag</td>
   <td>String</td>
   <td>Tag of the right file.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">right.view_href</td>
+  <td>String</td>
+  <td>This is a URL for the markup view of the right file.</td>
 </tr>
 </tbody>
 </table>
@@ -900,7 +985,7 @@ td {
 <tr class="varlevel2">
   <td class="varname">entries.revision_href</td>
   <td>String</td>
-  <td>URL of the Subversion revision view for the directory entries
+  <td>URL of the Subversion revision view for the directory entry's
       current revision.  Valid only when <var>roottype</var> is
       <tt>svn</tt>.</td>
 </tr>
@@ -1754,11 +1839,6 @@ td {
   <td>String</td>
   <td>Indicates how query results are being sorted. Possible values: 
       <tt>date</tt>, <tt>author</tt>, and <tt>file</tt>.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">rss_link_href</td>
-  <td>String</td>
-  <td>URL of query results view described by RSS feed.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">show_branch</td>
