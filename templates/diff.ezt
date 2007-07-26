@@ -12,19 +12,24 @@
   <pre class="vc_raw_diff">[raw_diff]</pre>
 [end]
 
+[define left_view_href][if-any left.prefer_markup][left.view_href][else][if-any left.download_href][left.download_href][end][end][end]
+[define right_view_href][if-any right.prefer_markup][right.view_href][else][if-any right.download_href][right.download_href][end][end][end]
+
 [if-any changes]
 <table cellspacing="0" cellpadding="0">
   <tr class="vc_diff_header">
     <th style="width:6%;"></th>
     <th style="width:47%; vertical-align:top;">
-      [is path_left path_right][else][path_left][end]
-      revision [rev_left], [date_left]
-      [if-any tag_left]<br />Tag: [tag_left][end]
+      [is left.path right.path][else][left.path][end]
+      revision [if-any left_view_href]<a href="[left_view_href]">[end][left.rev][if-any left_view_href]</a>[end],
+      [left.date]
+      [if-any left.tag]<br />Tag: [left.tag][end]
     </th>
     <th style="width:47%; vertical-align:top;">
-      [is path_left path_right][else][path_right][end]
-      revision [rev_right], [date_right]
-      [if-any tag_right]<br />Tag: [tag_right][end]
+      [is left.path right.path][else][right.path][end]
+      revision [if-any right_view_href]<a href="[right_view_href]">[end][right.rev][if-any right_view_href]</a>[end],
+      [right.date]
+      [if-any right.tag]<br />Tag: [right.tag][end]
     </th>
   </tr>
 
@@ -44,7 +49,7 @@
     [else]
       [is changes.type "add"]
         <tr>
-          <td id="l[changes.line_number]">[if-any annotate_href]<a href="[annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
+          <td id="l[changes.line_number]">[if-any right.annotate_href]<a href="[right.annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
           <td class="vc_diff_empty">&nbsp;</td>
           <td class="vc_diff_add">&nbsp;[changes.right]</td>
         </tr>
@@ -59,7 +64,7 @@
           [is changes.type "change"]
             <tr>
               [if-any changes.have_right]
-                <td id="l[changes.line_number]">[if-any annotate_href]<a href="[annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
+                <td id="l[changes.line_number]">[if-any right.annotate_href]<a href="[right.annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
               [else]
                 <td></td>
               [end]
@@ -107,7 +112,7 @@
                   </tr>
                 [else]
                   <tr>
-                    <td id="l[changes.line_number]">[if-any annotate_href]<a href="[annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
+                    <td id="l[changes.line_number]">[if-any right.annotate_href]<a href="[right.annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
                     <td class="vc_diff_nochange">&nbsp;[changes.left]</td>
                     <td class="vc_diff_nochange">&nbsp;[changes.right]</td>
                   </tr>
@@ -129,12 +134,12 @@
     <thead>
       <tr>
         <th colspan="2">    
-          [is path_left path_right][else][path_left][end]
-          Revision [rev_left]
+          [is left.path right.path][else][left.path][end]
+          Revision [left.rev]
         </th>
         <th colspan="2">
-          [is path_left path_right][else][path_right][end]
-          Revision [rev_right]
+          [is left.path right.path][else][right.path][end]
+          Revision [right.rev]
         </th>
       </tr>
     </thead>
@@ -160,8 +165,8 @@
   <table class="vc_idiff">
     <thead>
       <tr>
-        <th>r[rev_left]</th>
-        <th>r[rev_right]</th>
+        <th>r[left.rev]</th>
+        <th>r[right.rev]</th>
         <th></th>
       </tr>
     </thead>
@@ -213,7 +218,7 @@
           <td>Legend:<br />
             <table cellspacing="0" cellpadding="1">
               <tr>
-                <td style="text-align:center;" class="vc_diff_remove">Removed from v.[rev_left]</td>
+                <td style="text-align:center;" class="vc_diff_remove">Removed from v.[left.rev]</td>
                 <td class="vc_diff_empty">&nbsp;</td>
               </tr>
               <tr>
@@ -221,7 +226,7 @@
               </tr>
               <tr>
                 <td class="vc_diff_empty">&nbsp;</td>
-                <td style="text-align:center;" class="vc_diff_add">Added in v.[rev_right]</td>
+                <td style="text-align:center;" class="vc_diff_add">Added in v.[right.rev]</td>
               </tr>
             </table>
           </td>
