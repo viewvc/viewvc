@@ -412,10 +412,11 @@ class Request:
     
     self.view_func(self)
 
-  def get_url(self, escape=0, partial=0, **args):
+  def get_url(self, escape=0, partial=0, prefix=0, **args):
     """Constructs a link to another ViewVC page just like the get_link
     function except that it returns a single URL instead of a URL
-    split into components"""
+    split into components.  If PREFIX is set, include the protocol and
+    server name portions of the URL."""
 
     url, params = apply(self.get_link, (), args)
     qs = compat.urlencode(params)
@@ -427,7 +428,12 @@ class Request:
     if partial:
       result = result + (qs and '&' or '?')
     if escape:
-       result = self.server.escape(result)
+      result = self.server.escape(result)
+    if prefix:
+      result = '%s://%s%s' % \
+               (self.server.getenv("HTTPS") == "on" and "https" or "http",
+                self.server.getenv("HTTP_HOST"),
+                result)
     return result
 
   def get_form(self, **args):
@@ -3513,12 +3519,10 @@ def build_commit(request, files, limited_files, dir_strip):
   commit.rss_date = make_rss_time_string(files[0].GetTime(), cfg)
   if request.roottype == 'svn':
     commit.rev = files[0].GetRevision()
-    commit.rss_url = '%s://%s%s' % \
-      (request.server.getenv("HTTPS") == "on" and "https" or "http",
-       request.server.getenv("HTTP_HOST"),
-       request.get_url(view_func=view_revision,
-                       params={'revision': commit.rev},
-                       escape=1))
+    commit.rss_url = request.get_url(view_func=view_revision,
+                                     params={'revision': commit.rev},
+                                     escape=1,
+                                     prefix=1)
   else:
     commit.rev = None
     commit.rss_url = None
@@ -3821,6 +3825,10 @@ def view_query(request):
     'commits': commits,
     'limit_changes': limit_changes,
     'limit_changes_href': limit_changes_href,
+    'rss_link_href': request.get_url(view_func=view_query,
+                                     params={'date': 'month'},
+                                     escape=1,
+                                     prefix=1),
     })
 
   if format == 'rss':

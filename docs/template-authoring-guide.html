@@ -66,7 +66,7 @@ td {
     <li><a href="#variables-error">Error View (error.ezt)</a></li>
     <li><a href="#variables-log">Revision Log View (log.ezt)</a></li>
     <li><a href="#variables-markup">File Contents View (markup.ezt)</a></li>
-    <li><a href="#variables-query_results">Revision History Query Results View (query_results.ezt)</a></li>
+    <li><a href="#variables-query_results">Revision History Query Results View (query_results.ezt, rss.ezt)</a></li>
     <li><a href="#variables-query_form">Revision History Query Form View (query_form.ezt)</a></li>
     <li><a href="#variables-revision">Revision/ChangeSet View (revision.ezt)</a></li>
     <li><a href="#variables-roots">Root Listing View (roots.ezt)</a></li>
@@ -1587,7 +1587,8 @@ td {
 </div>
 
 <div class="h3">
-<h3 id="variables-query_results">Revision History Query Results View (query_results.ezt)</h3>
+<h3 id="variables-query_results">Revision History Query Results View
+(query_results.ezt, rss.ezt)</h3>
 <table>
 <thead>
 <tr>
@@ -1753,6 +1754,11 @@ td {
   <td>String</td>
   <td>Indicates how query results are being sorted. Possible values: 
       <tt>date</tt>, <tt>author</tt>, and <tt>file</tt>.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">rss_link_href</td>
+  <td>String</td>
+  <td>URL of query results view described by RSS feed.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">show_branch</td>
