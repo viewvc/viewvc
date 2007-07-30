@@ -47,8 +47,8 @@
 
 <div class="notice">
 <p>This FAQ is, shall we say, a work in progress.  At the moment, it's
-   pretty bare.  <em>Extremely</em> bare.  Please bare &mdash; er,
-   <strong>bear</strong> with us as we slowly populate this document.</p>
+   pretty bare.  Please bare &mdash; er, <strong>bear</strong> with us
+   as we slowly populate this document.</p>
 </div>
 
 <div class="section">
@@ -74,6 +74,9 @@
 <li><a href="#standalone-only">Why does <em>SOME-FEATURE</em>
     work under standalone.py, but not under Apache (or IIS or
     &hellip;)?</a></li>
+
+<li><a href="#rss-support">How do I enable ViewVC's RSS feed
+    capabilities?</a></li>
 
 </ul>
 
@@ -184,6 +187,17 @@
    simple explicitly configuring the paths of the helper applications
    in <code>viewvc.conf</code>, or as complex as expanding the program
    search path used by your web server software.</p>
+</div>
+
+<div id="rss-support">
+<p class="faq-atitle">How do I enable ViewVC's RSS feed capabilities?</p>
+
+<p>ViewVC generates its RSS feeds from repository data mirrored in a
+   database as part of its MySQL integration.  Follow the steps in
+   ViewVC's <code>INSTALL</code> file to setup and configure the MySQL
+   integration and begin mirroring your commit metadata in the
+   database &mdash; the RSS feed feature will then be enabled with no
+   additional configuration.</p>
 </div>
 
 <!-- #--------------------------------------------------------------------# -->
