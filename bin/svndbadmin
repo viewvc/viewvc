@@ -269,26 +269,31 @@ def _rev2int(r):
 
 def usage():
     cmd = os.path.basename(sys.argv[0])
-    sys.stderr.write("""
-Usage: 1. %s [-v] rebuild REPOSITORY
-       2. %s [-v] update REPOSITORY [REV:[REV2]] [--force]
-       3. %s [-v] purge REPOSITORY
+    sys.stderr.write(
+"""Administer the ViewVC checkins database data for the Subversion repository
+located at REPOS-PATH.
 
-1.  Rebuild the commit database information for REPOSITORY across all
-    revisions.
+Usage: 1. %s [-v] rebuild REPOS-PATH
+       2. %s [-v] update REPOS-PATH [REV:[REV2]] [--force]
+       3. %s [-v] purge REPOS-PATH
 
-2.  Update the commit database information for REPOSITORY across all
-    revisions or, optionally, only for the specified revision REV (or
-    revision range REV:REV2).  This is just like rebuilding, except
-    that, unless --force is specified, no commit information will be
-    stored for commits already present in the database.  If a range is
-    specified, the revisions will be processed in ascending order, and
-    you may specify "HEAD" to indicate "the youngest revision currently
-    in the repository".
+1.  Rebuild the commit database information for the repository located
+    at REPOS-PATH across all revisions.
+
+2.  Update the commit database information for the repository located
+    at REPOS-PATH across all revisions or, optionally, only for the
+    specified revision REV (or revision range REV:REV2).  This is just
+    like rebuilding, except that, unless --force is specified, no
+    commit information will be stored for commits already present in
+    the database.  If a range is specified, the revisions will be
+    processed in ascending order, and you may specify "HEAD" to
+    indicate "the youngest revision currently in the repository".
     
-3.  Purge information specific to REPOSITORY from the database.
+3.  Purge information specific to the repository located at REPOS-PATH
+    from the database.
 
 Use the -v flag to cause this script to give progress information as it works.
+
 """ % (cmd, cmd, cmd))
     sys.exit(1)
 
