@@ -48,7 +48,7 @@
  [else]
  [is changes.type "add"]
   <tr>
-    <td id="l[changes.line_number]">[if-any annotate_href]<a href="[annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
+    <td id="l[changes.line_number]">[if-any right.annotate_href]<a href="[right.annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
     <td class="vc_diff_plusminus"><strong style="color: green;">+</strong></td>
     <td class="vc_diff_add">[changes.right]</td>
   </tr>
@@ -71,7 +71,7 @@
   [define change_right][change_right]
   [if-any changes.have_right]
   <tr>
-    <td id="l[changes.line_number]">[if-any annotate_href]<a href="[annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
+    <td id="l[changes.line_number]">[if-any right.annotate_href]<a href="[right.annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
     <td class="vc_diff_plusminus"><strong style="color: yellow;">&gt;</strong></td>
     <td class="vc_diff_changes2">[changes.right]</td>
   </tr>[end]
@@ -90,7 +90,7 @@
       and compiled with the GNU diff location.  -</strong></td></tr>
  [else][# a line of context]
   <tr>
-    <td id="l[changes.line_number]">[if-any annotate_href]<a href="[annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
+    <td id="l[changes.line_number]">[if-any right.annotate_href]<a href="[right.annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
     <td class="vc_diff_plusminus">&nbsp;</td>
     <td style="font-family: monospace; white-space: pre;">[changes.right]</td>
   </tr>
