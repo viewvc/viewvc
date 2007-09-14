@@ -240,7 +240,7 @@ class SelfCleanFP:
     self._path = path
     self._eof = 0
     
-  def read(self, len):
+  def read(self, len=None):
     if len:
       chunk = self._fp.read(len)
     else:
