@@ -121,6 +121,34 @@ td {
 </div>
 
 <div class="h3">
+<h3>Checkin Database</h3>
+
+<p>In ViewVC 1.1, the <code>svndbadmin</code> program's "rebuild"
+   subcommand has had its purpose become more defined.  It no longer
+   accepts a revision argument, and therefore can now only be used to
+   completely rebuild the entirety of the checkin database information
+   for a Subversion repository (instead of being able to only update
+   the information related to single Subversion revision).  For
+   per-revision updating, use <code>svndbadmin update</code> and
+   provide a revision (or revision range).  And to get the previous
+   rebuild-a-revision effect, pass the new <code>--force</code>
+   option to <code>svndbadmin update</code>.</p>
+
+<p>In other words, where you once did this:</p>
+
+<blockquote><pre>$ svndbadmin rebuild /path/to/repository 1234
+</pre>
+</blockquote>
+
+<p>you now need to do this:</p>
+
+<blockquote><pre>$ svndbadmin update /path/to/repository 1234 --force
+</pre>
+</blockquote>
+
+</div>
+
+<div class="h3">
 <h3>Forbidden Modules</h3>
     
 <p>ViewVC 1.1 introduces a new pluggable authorization (authz)
