@@ -96,6 +96,10 @@
 
 <li><a href="#missing-files">Why do my directories have no files in them?</a></li>
 
+<li><a href="#none-match">ViewVC doesn't show files I'm looking for,
+    and instead displays the message "NOTE: There are N files, but
+    none match the current selection criteria".  How can I fix this?</a></li>
+
 </ul>
 
 <!-- #--------------------------------------------------------------------# -->
@@ -248,8 +252,23 @@
 <li>Some folks mistakenly point ViewVC's configuration bits to their
     CVS working copies.  But ViewVC isn't a working copy browser
     &mdash; it's a <em>repository</em> browser.</li>
+<li>&hellip; <!-- TODO --></li>
 </ul>
 </div>
+
+<div id="none-match">
+<p class="faq-atitle">ViewVC doesn't show files I'm looking for, and
+   instead displays the message "NOTE: There are N files, but none
+   match the current selection criteria".  How can I fix this?</p>
+
+<p>From time to time, CVS and CVSNT add support for new keywords to
+   the RCS backend used to house repository data.  If you're running a
+   version of ViewVC or ViewCVS that hasn't yet learned to handle
+   those new keywords, you might get the error you're seeing.  The
+   solution is to try to get versions of CVS/CVSNT and ViewVC which
+   are better aligned, which generally means upgrading ViewVC (which
+   is probably less disruptive than downgrading your version control
+   system).</p> </div>
 
 <!-- #--------------------------------------------------------------------# -->
 <h3 class="faq-section" id="faq-a-svn">Subversion Browsing</h3>
