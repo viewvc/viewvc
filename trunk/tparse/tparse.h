@@ -121,7 +121,7 @@ class rcstoken
         free(data);
       data = NULL;
     };
-  void rcstoken::init(const char *mydata, size_t mylen);
+  void init(const char *mydata, size_t mylen);
   int null_token()
     {
       return data == NULL;
