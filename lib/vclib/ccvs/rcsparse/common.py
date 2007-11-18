@@ -195,11 +195,9 @@ class _Parser:
 
   def _parse_rcs_tree_entry(self, revision):
     # Parse date
-    semi, date, sym = self.ts.mget(3)
-    if sym != 'date':
-      raise RCSExpected(sym, 'date')
-    if semi != ';':
-      raise RCSExpected(semi, ';')
+    self.ts.match('date')
+    date = self.ts.get()
+    self.ts.match(';')
 
     # Convert date into timestamp
     date_fields = string.split(date, '.') + ['0', '0', '0']
@@ -249,9 +247,8 @@ class _Parser:
       branches.append(token)
 
     # Parse revision of next delta in chain
-    next, sym = self.ts.mget(2)
-    if sym != 'next':
-      raise RCSExpected(sym, 'next')
+    self.ts.match('next')
+    next = self.ts.get()
     if next == ';':
       next = None
     else:
