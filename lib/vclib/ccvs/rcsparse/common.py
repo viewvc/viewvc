@@ -141,13 +141,9 @@ class _Parser:
           locker = tag
           rev = self.ts.get()
           self.sink.set_locker(rev, locker)
-
-        tag = self.ts.get()
-        if tag == "strict":
-          self.sink.set_locking("strict")
-          self.ts.match(';')
-        else:
-          self.ts.unget(tag)
+      elif token == "strict":
+        self.sink.set_locking("strict")
+        self.ts.match(';')
       elif token == "comment":
         semi, comment = self.ts.mget(2)
         self.sink.set_comment(comment)
