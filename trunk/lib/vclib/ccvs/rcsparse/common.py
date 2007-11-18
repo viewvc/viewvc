@@ -72,15 +72,25 @@ class Sink:
 
 class RCSParseError(Exception):
   pass
+
+
 class RCSIllegalCharacter(RCSParseError):
   pass
-### need more work on this one
+
+
 class RCSExpected(RCSParseError):
   def __init__(self, got, wanted):
-    RCSParseError.__init__(self, got, wanted)
+    RCSParseError.__init__(
+        self,
+        'Unexpected parsing error in RCS file.\n'
+        'Expected token: %s, but saw: %s'
+        % (wanted, got)
+        )
+
 
 class RCSStopParser(Exception):
   pass
+
 
 # --------------------------------------------------------------------------
 #
