@@ -90,75 +90,97 @@ class RCSStopParser(Exception):
 class _Parser:
   stream_class = None   # subclasses need to define this
 
+  def _parse_admin_head(self, token):
+    semi, rev = self.ts.mget(2)
+    self.sink.set_head_revision(rev)
+    if semi != ';':
+      raise RCSExpected(semi, ';')
+
+  def _parse_admin_branch(self, token):
+    semi, branch = self.ts.mget(2)
+    if semi == ';':
+      self.sink.set_principal_branch(branch)
+    else:
+      if branch == ';':
+        self.ts.unget(semi);
+      else:
+        raise RCSExpected(semi, ';')
+
+  def _parse_admin_access(self, token):
+    accessors = []
+    while 1:
+      tag = self.ts.get()
+      if tag == ';':
+        if accessors != []:
+          self.sink.set_access(accessors)
+        return
+      accessors = accessors + [ tag ]
+
+  def _parse_admin_symbols(self, token):
+    while 1:
+      tag = self.ts.get()
+      if tag == ';':
+        break
+      self.ts.match(':')
+      tag_name = tag
+      tag_rev = self.ts.get()
+      self.sink.define_tag(tag_name, tag_rev)
+
+  def _parse_admin_locks(self, token):
+    while 1:
+      tag = self.ts.get()
+      if tag == ';':
+        break
+      self.ts.match(':')
+      locker = tag
+      rev = self.ts.get()
+      self.sink.set_locker(rev, locker)
+
+  def _parse_admin_strict(self, token):
+    self.sink.set_locking("strict")
+    self.ts.match(';')
+
+  def _parse_admin_comment(self, token):
+    semi, comment = self.ts.mget(2)
+    self.sink.set_comment(comment)
+    if semi != ';':
+      raise RCSExpected(semi, ';')
+
+  def _parse_admin_expand(self, token):
+    semi, expand_mode = self.ts.mget(2)
+    self.sink.set_expansion(expand_mode)
+    if semi != ';':
+      raise RCSExpected(semi, ';')
+
+  admin_token_map = {
+      'head' : _parse_admin_head,
+      'branch' : _parse_admin_branch,
+      'access' : _parse_admin_access,
+      'symbols' : _parse_admin_symbols,
+      'locks' : _parse_admin_locks,
+      'strict' : _parse_admin_strict,
+      'comment' : _parse_admin_comment,
+      'expand' : _parse_admin_expand,
+      }
+
   def parse_rcs_admin(self):
     while 1:
       # Read initial token at beginning of line
       token = self.ts.get()
 
-      # We're done once we reach the description of the RCS tree
-      if token[0] in string.digits:
-        self.ts.unget(token)
-        return
-
-      if token == "head":
-        semi, rev = self.ts.mget(2)
-        self.sink.set_head_revision(rev)
-        if semi != ';':
-          raise RCSExpected(semi, ';')
-      elif token == "branch":
-        semi, branch = self.ts.mget(2)
-        if semi == ';':
-          self.sink.set_principal_branch(branch)
+      try:
+        f = self.admin_token_map[token]
+      except KeyError:
+        # We're done once we reach the description of the RCS tree
+        if token[0] in string.digits:
+          self.ts.unget(token)
+          return
         else:
-          if branch == ';':
-            self.ts.unget(semi);
-          else:
-            raise RCSExpected(semi, ';')
-      elif token == "access":
-        accessors = []
-        while 1:
-          tag = self.ts.get()
-          if tag == ';':
-            if accessors != []:
-              self.sink.set_access(accessors)
-            break
-          accessors = accessors + [ tag ]
-      elif token == "symbols":
-        while 1:
-          tag = self.ts.get()
-          if tag == ';':
-            break
-          self.ts.match(':')
-          tag_name = tag
-          tag_rev = self.ts.get()
-          self.sink.define_tag(tag_name, tag_rev)
-      elif token == "locks":
-        while 1:
-          tag = self.ts.get()
-          if tag == ';':
-            break
-          self.ts.match(':')
-          locker = tag
-          rev = self.ts.get()
-          self.sink.set_locker(rev, locker)
-      elif token == "strict":
-        self.sink.set_locking("strict")
-        self.ts.match(';')
-      elif token == "comment":
-        semi, comment = self.ts.mget(2)
-        self.sink.set_comment(comment)
-        if semi != ';':
-          raise RCSExpected(semi, ';')
-      elif token == "expand":
-        semi, expand_mode = self.ts.mget(2)
-        self.sink.set_expansion(expand_mode)
-        if semi != ';':
-          raise RCSExpected(semi, ';')
-
-      # Chew up "newphrase"
+          # Chew up "newphrase"
+          # warn("Unexpected RCS token: $token\n")
+          pass
       else:
-        pass
-        # warn("Unexpected RCS token: $token\n")
+        f(self, token)
 
     raise RuntimeError, "Unexpected EOF"
 
