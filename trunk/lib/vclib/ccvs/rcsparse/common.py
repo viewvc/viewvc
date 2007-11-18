@@ -100,6 +100,21 @@ class RCSStopParser(Exception):
 class _Parser:
   stream_class = None   # subclasses need to define this
 
+  def _read_until_semicolon(self):
+    """Read all tokens up to and including the next semicolon token.
+
+    Return the tokens (not including the semicolon) as a list."""
+
+    tokens = []
+
+    while 1:
+      token = self.ts.get()
+      if token == ';':
+        break
+      tokens.append(token)
+
+    return tokens
+
   def _parse_admin_head(self, token):
     rev = self.ts.get()
     if rev == ';':
@@ -117,13 +132,7 @@ class _Parser:
       self.ts.match(';')
 
   def _parse_admin_access(self, token):
-    accessors = []
-    while 1:
-      accessor = self.ts.get()
-      if accessor == ';':
-        break
-      accessors.append(accessor)
-
+    accessors = self._read_until_semicolon()
     if accessors:
       self.sink.set_access(accessors)
 
@@ -217,13 +226,7 @@ class _Parser:
     ### RCS specification.  We are making an allowance here because
     ### CVSNT is known to produce these sorts of authors.
     self.ts.match('author')
-    author = ''
-    while 1:
-      token = self.ts.get()
-      if token == ';':
-        break
-      author = author + token + ' '
-    author = author[:-1]   # toss the trailing space
+    author = ' '.join(self._read_until_semicolon())
 
     # Parse state
     self.ts.match('state')
@@ -237,12 +240,7 @@ class _Parser:
 
     # Parse branches
     self.ts.match('branches')
-    branches = [ ]
-    while 1:
-      token = self.ts.get()
-      if token == ';':
-        break
-      branches.append(token)
+    branches = self._read_until_semicolon()
 
     # Parse revision of next delta in chain
     self.ts.match('next')
@@ -264,8 +262,7 @@ class _Parser:
         self.ts.unget(token)
         break
       # consume everything up to the semicolon
-      while self.ts.get() != ';':
-        pass
+      self._read_until_semicolon()
 
     self.sink.define_revision(revision, timestamp, author, state, branches,
                               next)
