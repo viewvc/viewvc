@@ -108,19 +108,13 @@ class _Parser:
       pass
     else:
       self.sink.set_head_revision(rev)
-      semi = self.ts.get()
-      if semi != ';':
-        raise RCSExpected(semi, ';')
+      self.ts.match(';')
 
   def _parse_admin_branch(self, token):
-    semi, branch = self.ts.mget(2)
-    if semi == ';':
+    branch = self.ts.get()
+    if branch != ';':
       self.sink.set_principal_branch(branch)
-    else:
-      if branch == ';':
-        self.ts.unget(semi);
-      else:
-        raise RCSExpected(semi, ';')
+      self.ts.match(';')
 
   def _parse_admin_access(self, token):
     accessors = []
@@ -157,16 +151,13 @@ class _Parser:
     self.ts.match(';')
 
   def _parse_admin_comment(self, token):
-    semi, comment = self.ts.mget(2)
-    self.sink.set_comment(comment)
-    if semi != ';':
-      raise RCSExpected(semi, ';')
+    self.sink.set_comment(self.ts.get())
+    self.ts.match(';')
 
   def _parse_admin_expand(self, token):
-    semi, expand_mode = self.ts.mget(2)
+    expand_mode = self.ts.get()
     self.sink.set_expansion(expand_mode)
-    if semi != ';':
-      raise RCSExpected(semi, ';')
+    self.ts.match(';')
 
   admin_token_map = {
       'head' : _parse_admin_head,
