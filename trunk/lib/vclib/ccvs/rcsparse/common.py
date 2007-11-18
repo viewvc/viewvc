@@ -200,7 +200,7 @@ class _Parser:
     self.ts.match(';')
 
     # Convert date into timestamp
-    date_fields = string.split(date, '.') + ['0', '0', '0']
+    date_fields = string.split(date, '.')
     date_fields = map(string.atoi, date_fields)
     # need to make the date four digits for timegm
     EPOCH = 1970
@@ -212,7 +212,7 @@ class _Parser:
         if date_fields[0] < EPOCH:
             raise ValueError, 'invalid year'
 
-    timestamp = calendar.timegm(tuple(date_fields))
+    timestamp = calendar.timegm(tuple(date_fields) + (0, 0, 0,))
 
     # Parse author
     ### NOTE: authors containing whitespace are violations of the
