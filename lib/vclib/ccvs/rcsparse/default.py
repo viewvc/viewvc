@@ -134,8 +134,7 @@ class _TokenStream:
 
     token = self.get()
     if token != match:
-      raise RuntimeError, ('Unexpected parsing error in RCS file.\n' +
-                           'Expected token: %s, but saw: %s' % (match, token))
+      raise common.RCSExpected(token, match)
 
   def unget(self, token):
     "Put this token back, for the next get() to return."
