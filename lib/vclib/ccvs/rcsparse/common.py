@@ -182,8 +182,6 @@ class _Parser:
       else:
         f(self, token)
 
-    raise RuntimeError, "Unexpected EOF"
-
   def parse_rcs_tree(self):
     while 1:
       revision = self.ts.get()
