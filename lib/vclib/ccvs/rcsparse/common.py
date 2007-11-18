@@ -167,6 +167,7 @@ class _Parser:
       'strict' : _parse_admin_strict,
       'comment' : _parse_admin_comment,
       'expand' : _parse_admin_expand,
+      'desc' : None,
       }
 
   def parse_rcs_admin(self):
@@ -186,7 +187,11 @@ class _Parser:
           # warn("Unexpected RCS token: $token\n")
           pass
       else:
-        f(self, token)
+        if f is None:
+          self.ts.unget(token)
+          return
+        else:
+          f(self, token)
 
   def parse_rcs_tree(self):
     while 1:
