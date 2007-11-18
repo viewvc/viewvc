@@ -91,10 +91,16 @@ class _Parser:
   stream_class = None   # subclasses need to define this
 
   def _parse_admin_head(self, token):
-    semi, rev = self.ts.mget(2)
-    self.sink.set_head_revision(rev)
-    if semi != ';':
-      raise RCSExpected(semi, ';')
+    rev = self.ts.get()
+    if rev == ';':
+      # The head revision is not specified.  Just drop the semicolon
+      # on the floor.
+      pass
+    else:
+      self.sink.set_head_revision(rev)
+      semi = self.ts.get()
+      if semi != ';':
+        raise RCSExpected(semi, ';')
 
   def _parse_admin_branch(self, token):
     semi, branch = self.ts.mget(2)
