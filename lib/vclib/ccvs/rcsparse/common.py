@@ -121,10 +121,11 @@ class _Parser:
     while 1:
       accessor = self.ts.get()
       if accessor == ';':
-        if accessors != []:
-          self.sink.set_access(accessors)
-        return
-      accessors = accessors + [ accessor ]
+        break
+      accessors.append(accessor)
+
+    if accessors:
+      self.sink.set_access(accessors)
 
   def _parse_admin_symbols(self, token):
     while 1:
