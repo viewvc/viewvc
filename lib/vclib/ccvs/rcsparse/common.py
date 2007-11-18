@@ -201,17 +201,15 @@ class _Parser:
 
     # Convert date into timestamp
     date_fields = string.split(date, '.')
+    # According to rcsfile(5): the year "contains just the last two
+    # digits of the year for years from 1900 through 1999, and all the
+    # digits of years thereafter".
+    if len(date_fields[0]) == 2:
+      date_fields[0] = '19' + date_fields[0]
     date_fields = map(string.atoi, date_fields)
-    # need to make the date four digits for timegm
     EPOCH = 1970
     if date_fields[0] < EPOCH:
-        if date_fields[0] < 70:
-            date_fields[0] = date_fields[0] + 2000
-        else:
-            date_fields[0] = date_fields[0] + 1900
-        if date_fields[0] < EPOCH:
-            raise ValueError, 'invalid year'
-
+      raise ValueError, 'invalid year'
     timestamp = calendar.timegm(tuple(date_fields) + (0, 0, 0,))
 
     # Parse author
