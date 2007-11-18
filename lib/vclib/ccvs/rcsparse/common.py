@@ -119,30 +119,28 @@ class _Parser:
   def _parse_admin_access(self, token):
     accessors = []
     while 1:
-      tag = self.ts.get()
-      if tag == ';':
+      accessor = self.ts.get()
+      if accessor == ';':
         if accessors != []:
           self.sink.set_access(accessors)
         return
-      accessors = accessors + [ tag ]
+      accessors = accessors + [ accessor ]
 
   def _parse_admin_symbols(self, token):
     while 1:
-      tag = self.ts.get()
-      if tag == ';':
+      tag_name = self.ts.get()
+      if tag_name == ';':
         break
       self.ts.match(':')
-      tag_name = tag
       tag_rev = self.ts.get()
       self.sink.define_tag(tag_name, tag_rev)
 
   def _parse_admin_locks(self, token):
     while 1:
-      tag = self.ts.get()
-      if tag == ';':
+      locker = self.ts.get()
+      if locker == ';':
         break
       self.ts.match(':')
-      locker = tag
       rev = self.ts.get()
       self.sink.set_locker(rev, locker)
 
