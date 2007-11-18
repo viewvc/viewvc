@@ -323,16 +323,13 @@ class _mxTokenStream:
   def match(self, match):
     if self.tokens:
       token = self.tokens.pop()
-      if token != match:
-        raise RuntimeError, ('Unexpected parsing error in RCS file.\n'
-                             'Expected token: %s, but saw: %s'
-                             % (match, token))
     else:
       token = self.get()
-      if token != match:
-        raise RuntimeError, ('Unexpected parsing error in RCS file.\n'
-                             'Expected token: %s, but saw: %s'
-                             % (match, token))
+
+    if token != match:
+      raise RuntimeError, ('Unexpected parsing error in RCS file.\n'
+                           'Expected token: %s, but saw: %s'
+                           % (match, token))
 
   def unget(self, token):
     self.tokens.append(token)
