@@ -193,6 +193,88 @@ class _Parser:
         else:
           f(self, token)
 
+  def _parse_rcs_tree_entry(self, revision):
+    # Parse date
+    semi, date, sym = self.ts.mget(3)
+    if sym != 'date':
+      raise RCSExpected(sym, 'date')
+    if semi != ';':
+      raise RCSExpected(semi, ';')
+
+    # Convert date into timestamp
+    date_fields = string.split(date, '.') + ['0', '0', '0']
+    date_fields = map(string.atoi, date_fields)
+    # need to make the date four digits for timegm
+    EPOCH = 1970
+    if date_fields[0] < EPOCH:
+        if date_fields[0] < 70:
+            date_fields[0] = date_fields[0] + 2000
+        else:
+            date_fields[0] = date_fields[0] + 1900
+        if date_fields[0] < EPOCH:
+            raise ValueError, 'invalid year'
+
+    timestamp = calendar.timegm(tuple(date_fields))
+
+    # Parse author
+    ### NOTE: authors containing whitespace are violations of the
+    ### RCS specification.  We are making an allowance here because
+    ### CVSNT is known to produce these sorts of authors.
+    self.ts.match('author')
+    author = ''
+    while 1:
+      token = self.ts.get()
+      if token == ';':
+        break
+      author = author + token + ' '
+    author = author[:-1]   # toss the trailing space
+
+    # Parse state
+    self.ts.match('state')
+    state = ''
+    while 1:
+      token = self.ts.get()
+      if token == ';':
+        break
+      state = state + token + ' '
+    state = state[:-1]   # toss the trailing space
+
+    # Parse branches
+    self.ts.match('branches')
+    branches = [ ]
+    while 1:
+      token = self.ts.get()
+      if token == ';':
+        break
+      branches.append(token)
+
+    # Parse revision of next delta in chain
+    next, sym = self.ts.mget(2)
+    if sym != 'next':
+      raise RCSExpected(sym, 'next')
+    if next == ';':
+      next = None
+    else:
+      self.ts.match(';')
+
+    # there are some files with extra tags in them. for example:
+    #    owner	640;
+    #    group	15;
+    #    permissions	644;
+    #    hardlinks	@configure.in@;
+    # this is "newphrase" in RCSFILE(5). we just want to skip over these.
+    while 1:
+      token = self.ts.get()
+      if token == 'desc' or token[0] in string.digits:
+        self.ts.unget(token)
+        break
+      # consume everything up to the semicolon
+      while self.ts.get() != ';':
+        pass
+
+    self.sink.define_revision(revision, timestamp, author, state, branches,
+                              next)
+
   def parse_rcs_tree(self):
     while 1:
       revision = self.ts.get()
@@ -202,86 +284,7 @@ class _Parser:
         self.ts.unget(revision)
         return
 
-      # Parse date
-      semi, date, sym = self.ts.mget(3)
-      if sym != 'date':
-        raise RCSExpected(sym, 'date')
-      if semi != ';':
-        raise RCSExpected(semi, ';')
-
-      # Convert date into timestamp
-      date_fields = string.split(date, '.') + ['0', '0', '0']
-      date_fields = map(string.atoi, date_fields)
-      # need to make the date four digits for timegm
-      EPOCH = 1970
-      if date_fields[0] < EPOCH:
-          if date_fields[0] < 70:
-              date_fields[0] = date_fields[0] + 2000
-          else:
-              date_fields[0] = date_fields[0] + 1900
-          if date_fields[0] < EPOCH:
-              raise ValueError, 'invalid year'
-
-      timestamp = calendar.timegm(tuple(date_fields))
-
-      # Parse author
-      ### NOTE: authors containing whitespace are violations of the
-      ### RCS specification.  We are making an allowance here because
-      ### CVSNT is known to produce these sorts of authors.
-      self.ts.match('author')
-      author = ''
-      while 1:
-        token = self.ts.get()
-        if token == ';':
-          break
-        author = author + token + ' '
-      author = author[:-1]   # toss the trailing space
-
-      # Parse state
-      self.ts.match('state')
-      state = ''
-      while 1:
-        token = self.ts.get()
-        if token == ';':
-          break
-        state = state + token + ' '
-      state = state[:-1]   # toss the trailing space
-
-      # Parse branches
-      self.ts.match('branches')
-      branches = [ ]
-      while 1:
-        token = self.ts.get()
-        if token == ';':
-          break
-        branches.append(token)
-
-      # Parse revision of next delta in chain
-      next, sym = self.ts.mget(2)
-      if sym != 'next':
-        raise RCSExpected(sym, 'next')
-      if next == ';':
-        next = None
-      else:
-        self.ts.match(';')
-
-      # there are some files with extra tags in them. for example:
-      #    owner	640;
-      #    group	15;
-      #    permissions	644;
-      #    hardlinks	@configure.in@;
-      # this is "newphrase" in RCSFILE(5). we just want to skip over these.
-      while 1:
-        token = self.ts.get()
-        if token == 'desc' or token[0] in string.digits:
-          self.ts.unget(token)
-          break
-        # consume everything up to the semicolon
-        while self.ts.get() != ';':
-          pass
-
-      self.sink.define_revision(revision, timestamp, author, state, branches,
-                                next)
+      self._parse_rcs_tree_entry(revision)
 
   def parse_rcs_description(self):
     self.ts.match('desc')
