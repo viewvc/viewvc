@@ -24,11 +24,14 @@ import glob
 from cStringIO import StringIO
 from difflib import Differ
 
+# Since there is nontrivial logic in __init__.py, we have to import
+# parse() via that file.  First make sure that the directory
+# containing this script is in the path:
 script_dir = os.path.dirname(sys.argv[0])
-sys.path.insert(0, os.path.join(script_dir, '..'))
+sys.path.insert(0, script_dir)
 
-from rcsparse import parse
-from rcsparse.parse_rcs_file import LoggingSink
+from __init__ import parse
+from parse_rcs_file import LoggingSink
 
 
 test_dir = os.path.join(script_dir, 'test-data')
