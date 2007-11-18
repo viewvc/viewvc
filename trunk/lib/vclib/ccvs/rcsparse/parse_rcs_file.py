@@ -52,23 +52,22 @@ class LoggingSink:
 
 
 if __name__ == '__main__':
-  # Since there is nontrivial logic in __init__.py, we can't just
-  # import things directly out of this directory.  Therefore, we
-  # have to add the parent directory to the path, then import
-  # "rcsparse".
-  sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), '..'))
+  # Since there is nontrivial logic in __init__.py, we have to import
+  # parse() via that file.  First make sure that the directory
+  # containing this script is in the path:
+  sys.path.insert(0, os.path.dirname(sys.argv[0]))
 
-  import rcsparse
+  from __init__ import parse
 
   if sys.argv[1:]:
     for path in sys.argv[1:]:
       if os.path.isfile(path) and path.endswith(',v'):
-        rcsparse.parse(
+        parse(
             open(path, 'rb'), LoggingSink(sys.stdout)
             )
       else:
         sys.stderr.write('%r is being ignored.\n' % path)
   else:
-    rcsparse.parse(sys.stdin, LoggingSink(sys.stdout))
+    parse(sys.stdin, LoggingSink(sys.stdout))
 
 
