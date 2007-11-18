@@ -18,35 +18,49 @@ import string
 class Sink:
   def set_head_revision(self, revision):
     pass
+
   def set_principal_branch(self, branch_name):
     pass
-  def define_tag(self, name, revision):
-    pass
+
   def set_access(self, accessors):
     pass
-  def set_expansion(self, mode):
+
+  def define_tag(self, name, revision):
     pass
+
+  def set_locker(self, revision, locker):
+    pass
+
   def set_locking(self, mode):
     """Used to signal locking mode.
 
     Called with mode argument 'strict' if strict locking
     Not called when no locking used."""
+
     pass
-  def set_locker(self, revision, locker):
-    pass
+
   def set_comment(self, comment):
     pass
-  def set_description(self, description):
+
+  def set_expansion(self, mode):
     pass
+
+  def admin_completed(self):
+    pass
+
   def define_revision(self, revision, timestamp, author, state,
                       branches, next):
     pass
-  def set_revision_info(self, revision, log, text):
-    pass
-  def admin_completed(self):
-    pass
+
   def tree_completed(self):
     pass
+
+  def set_description(self, description):
+    pass
+
+  def set_revision_info(self, revision, log, text):
+    pass
+
   def parse_completed(self):
     pass
 
@@ -100,6 +114,15 @@ class _Parser:
             self.ts.unget(semi);
           else:
             raise RCSExpected(semi, ';')
+      elif token == "access":
+        accessors = []
+        while 1:
+          tag = self.ts.get()
+          if tag == ';':
+            if accessors != []:
+              self.sink.set_access(accessors)
+            break
+          accessors = accessors + [ tag ]
       elif token == "symbols":
         while 1:
           tag = self.ts.get()
@@ -109,16 +132,6 @@ class _Parser:
           tag_name = tag
           tag_rev = self.ts.get()
           self.sink.define_tag(tag_name, tag_rev)
-      elif token == "comment":
-        semi, comment = self.ts.mget(2)
-        self.sink.set_comment(comment)
-        if semi != ';':
-          raise RCSExpected(semi, ';')
-      elif token == "expand":
-        semi, expand_mode = self.ts.mget(2)
-        self.sink.set_expansion(expand_mode)
-        if semi != ';':
-          raise RCSExpected(semi, ';')
       elif token == "locks":
         while 1:
           tag = self.ts.get()
@@ -135,15 +148,16 @@ class _Parser:
           self.ts.match(';')
         else:
           self.ts.unget(tag)
-      elif token == "access":
-        accessors = []
-        while 1:
-          tag = self.ts.get()
-          if tag == ';':
-            if accessors != []:
-              self.sink.set_access(accessors)
-            break
-          accessors = accessors + [ tag ]
+      elif token == "comment":
+        semi, comment = self.ts.mget(2)
+        self.sink.set_comment(comment)
+        if semi != ';':
+          raise RCSExpected(semi, ';')
+      elif token == "expand":
+        semi, expand_mode = self.ts.mget(2)
+        self.sink.set_expansion(expand_mode)
+        if semi != ';':
+          raise RCSExpected(semi, ';')
 
       # Chew up "newphrase"
       else:
