@@ -25,7 +25,7 @@ import time
 import compat
 import popen
 
-class CVSRepository(vclib.Repository):
+class BaseCVSRepository(vclib.Repository):
   def __init__(self, name, rootpath, utilities):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
@@ -109,7 +109,7 @@ class CVSRepository(vclib.Repository):
 
     return ret
 
-class BinCVSRepository(CVSRepository):
+class BinCVSRepository(BaseCVSRepository):
   def _get_tip_revision(self, rcs_file, rev=None):
     """Get the (basically) youngest revision (filtered by REV)."""
     args = rcs_file,

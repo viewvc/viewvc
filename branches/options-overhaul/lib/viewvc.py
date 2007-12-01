@@ -232,16 +232,11 @@ class Request:
         cfg.overlay_root_options(self.rootname)
         self.rootpath = os.path.normpath(cfg.general.cvs_roots[self.rootname])
         try:
-          if cfg.options.use_rcsparse:
-            import vclib.ccvs
-            self.repos = vclib.ccvs.CCVSRepository(self.rootname,
-                                                   self.rootpath,
-                                                   cfg.utilities)
-          else:
-            import vclib.bincvs
-            self.repos = vclib.bincvs.BinCVSRepository(self.rootname, 
-                                                       self.rootpath,
-                                                       cfg.utilities)
+          import vclib.ccvs
+          self.repos = vclib.ccvs.CVSRepository(self.rootname,
+                                                self.rootpath,
+                                                cfg.utilities,
+                                                cfg.options.use_rcsparse)
         except vclib.ReposNotFound:
           raise debug.ViewVCException(
             'Unable to locate CVS root "%s".  Possible causes include '
