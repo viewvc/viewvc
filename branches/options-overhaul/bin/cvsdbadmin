@@ -43,7 +43,7 @@ import os
 import string
 import cvsdb
 import viewvc
-import vclib.bincvs
+import vclib.ccvs
 
 
 def UpdateFile(db, repository, path, update, quiet_level):
@@ -178,8 +178,7 @@ if __name__ == '__main__':
             db.PurgeRepository(root)
 
         if command in ('rebuild', 'update'):
-            repository = vclib.bincvs.BinCVSRepository(None, root,
-                                                       cfg.utilities)
+            repository = vclib.ccvs.CVSRepository(None, root, cfg.utilities, 0)
             RecurseUpdate(db, repository, path_parts,
                           command == 'update', quiet_level)
     except KeyboardInterrupt:
