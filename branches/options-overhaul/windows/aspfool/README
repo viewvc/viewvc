@@ -1,0 +1,18 @@
+Some script interpreters for IIS (like ASP and PHP) fail when they recieve requests like
+
+  /script.asp/extra
+  /script.php/fake/path
+  
+Aspfool is an ISAPI filter dll that intercepts requests with fake paths and maps them to valid local paths that the script interpreters should be able to handle more readily. The extended path information is still available to the actual scripts through the server variables, which are not altered.
+
+Aspfool does not currently distinguish between scripts and other types of files. As a result, requests like
+
+  /page.html/blah/blah
+  /image.jpg/ha ha ha
+ 
+will return actual files, instead of 404 not found errors.
+
+Aspfool is known to compile with Visual C++ 6.0 and GCC 2.95 (mingw). Makefiles and project files are included.
+
+Russ Yanofsky
+rey4@columbia.edu
