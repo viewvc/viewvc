@@ -232,16 +232,11 @@ class Request:
         cfg.overlay_root_options(self.rootname)
         self.rootpath = os.path.normpath(cfg.general.cvs_roots[self.rootname])
         try:
-          if cfg.options.use_rcsparse:
-            import vclib.ccvs
-            self.repos = vclib.ccvs.CCVSRepository(self.rootname,
-                                                   self.rootpath,
-                                                   cfg.utilities)
-          else:
-            import vclib.bincvs
-            self.repos = vclib.bincvs.BinCVSRepository(self.rootname, 
-                                                       self.rootpath,
-                                                       cfg.utilities)
+          import vclib.ccvs
+          self.repos = vclib.ccvs.CVSRepository(self.rootname,
+                                                self.rootpath,
+                                                cfg.utilities,
+                                                cfg.options.use_rcsparse)
         except vclib.ReposNotFound:
           raise debug.ViewVCException(
             'Unable to locate CVS root "%s".  Possible causes include '
@@ -254,14 +249,7 @@ class Request:
         cfg.overlay_root_options(self.rootname)
         self.rootpath = cfg.general.svn_roots[self.rootname]
         try:
-          if re.match(_re_rewrite_url, self.rootpath):
-            # If the rootpath is a URL, we'll use the svn_ra module, but
-            # lie about its name.
-            import vclib.svn_ra
-            vclib.svn = vclib.svn_ra
-          else:
-            self.rootpath = os.path.normpath(self.rootpath)
-            import vclib.svn
+          import vclib.svn
           self.repos = vclib.svn.SubversionRepository(self.rootname,
                                                       self.rootpath,
                                                       cfg.utilities)
@@ -786,8 +774,7 @@ def _orig_path(request, rev_param='revision', path_param=None):
       rev = request.repos._getrev(rev)
     except vclib.InvalidRevision:
       raise debug.ViewVCException('Invalid revision', '404 Not Found')
-    return _path_parts(vclib.svn.get_location(request.repos, path, 
-                                              pathrev, rev)), rev
+    return _path_parts(request.repos.get_location(path, pathrev, rev)), rev
   return _path_parts(path), rev
 
 def setup_authorizer(cfg, username, root, params={}):
@@ -1650,7 +1637,7 @@ def view_directory(request):
       rev = request.repos._getrev(request.pathrev)
     except vclib.InvalidRevision:
       raise debug.ViewVCException('Invalid revision', '404 Not Found')
-    tree_rev = vclib.svn.created_rev(request.repos, request.where, rev)
+    tree_rev = request.repos.created_rev(request.where, rev)
     if check_freshness(request, None, str(tree_rev), weak=1):
       return
 
@@ -1879,7 +1866,7 @@ def view_directory(request):
     data['tree_rev_href'] = request.get_url(view_func=view_revision,
                                             params={'revision': tree_rev},
                                             escape=1)
-    data['youngest_rev'] = vclib.svn.get_youngest_revision(request.repos)
+    data['youngest_rev'] = request.repos.get_youngest_revision()
     data['youngest_rev_href'] = request.get_url(view_func=view_revision,
                                                 params={},
                                                 escape=1)
@@ -1945,12 +1932,12 @@ def pathrev_form(request, data):
                                'orig_view': _view_codes.get(request.view_func)})
 
     if request.pathrev:
-      youngest = vclib.svn.get_youngest_revision(request.repos)
-      lastrev = vclib.svn.last_rev(request.repos, request.where,
-                                   request.pathrev, youngest)[0]
+      youngest = request.repos.get_youngest_revision()
+      lastrev = request.repos.last_rev(request.where, request.pathrev,
+                                       youngest)[0]
 
       if lastrev == youngest:
-         lastrev = None
+        lastrev = None
 
   data['pathrev'] = request.pathrev
   data['lastrev'] = lastrev
@@ -1972,7 +1959,7 @@ def redirect_pathrev(request):
   pathrev = request.query_dict.get('orig_pathrev') 
   view = _views.get(request.query_dict.get('orig_view'))
   
-  youngest = vclib.svn.get_youngest_revision(request.repos)
+  youngest = request.repos.get_youngest_revision()
 
   # go out of the way to allow revision numbers higher than youngest
   try:
@@ -1988,8 +1975,7 @@ def redirect_pathrev(request):
   if _repos_pathtype(request.repos, _path_parts(path), new_pathrev):
     pathrev = new_pathrev
   else:
-    pathrev, path = vclib.svn.last_rev(request.repos, path, pathrev, 
-                                       new_pathrev)
+    pathrev, path = request.repos.last_rev(path, pathrev, new_pathrev)
     # allow clearing sticky revision by submitting empty string
     if new_pathrev is None and pathrev == youngest:
       pathrev = None
@@ -2791,9 +2777,9 @@ def _get_diff_path_parts(request, query_key, rev, base_rev):
   elif request.roottype == 'svn':
     try:
       repos = request.repos
-      path = vclib.svn.get_location(repos, request.where,
-                                    repos._getrev(base_rev),
-                                    repos._getrev(rev))
+      path = repos.get_location(request.where,
+                                repos._getrev(base_rev),
+                                repos._getrev(rev))
       parts = _path_parts(path)      
       if not request.auth.check_path_access(parts):
         raise debug.ViewVCNotAuthorizedException(self.username,
