@@ -20,7 +20,7 @@ import re
 import tempfile
 import popen2
 import time
-from vclib.svn import Revision, SVNChangedPath, _datestr_to_date, _compare_paths, _cleanup_path, _rev2optrev
+from svn_repos import Revision, SVNChangedPath, _datestr_to_date, _compare_paths, _cleanup_path, _rev2optrev
 from svn import core, delta, client, wc, ra
 
 
@@ -32,71 +32,6 @@ if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 3, 1):
 def date_from_rev(svnrepos, rev):
   return _datestr_to_date(ra.svn_ra_rev_prop(svnrepos.ra_session, rev,
                                              core.SVN_PROP_REVISION_DATE))
-
-
-def get_location(svnrepos, path, rev, old_rev):
-  try:
-    results = ra.get_locations(svnrepos.ra_session, path, rev, [old_rev])
-  except core.SubversionException, e:
-    if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
-      raise vclib.ItemNotFound(path)
-    raise
-
-  try:
-    old_path = results[old_rev]
-  except KeyError:
-    raise vclib.ItemNotFound(path)
-
-  return _cleanup_path(old_path)
-
-
-def last_rev(svnrepos, path, peg_revision, limit_revision=None):
-  """Given PATH, known to exist in PEG_REVISION, find the youngest
-  revision older than, or equal to, LIMIT_REVISION in which path
-  exists.  Return that revision, and the path at which PATH exists in
-  that revision."""
-  
-  # Here's the plan, man.  In the trivial case (where PEG_REVISION is
-  # the same as LIMIT_REVISION), this is a no-brainer.  If
-  # LIMIT_REVISION is older than PEG_REVISION, we can use Subversion's
-  # history tracing code to find the right location.  If, however,
-  # LIMIT_REVISION is younger than PEG_REVISION, we suffer from
-  # Subversion's lack of forward history searching.  Our workaround,
-  # ugly as it may be, involves a binary search through the revisions
-  # between PEG_REVISION and LIMIT_REVISION to find our last live
-  # revision.
-  peg_revision = svnrepos._getrev(peg_revision)
-  limit_revision = svnrepos._getrev(limit_revision)
-  if peg_revision == limit_revision:
-    return peg_revision, path
-  elif peg_revision > limit_revision:
-    path = get_location(svnrepos, path, peg_revision, limit_revision)
-    return limit_revision, path
-  else:
-    direction = 1
-    while peg_revision != limit_revision:
-      mid = (peg_revision + 1 + limit_revision) / 2
-      try:
-        path = get_location(svnrepos, path, peg_revision, mid)
-      except vclib.ItemNotFound:
-        limit_revision = mid - 1
-      else:
-        peg_revision = mid
-    return peg_revision, path
-
-
-def created_rev(svnrepos, full_name, rev):
-  kind = ra.svn_ra_check_path(svnrepos.ra_session, full_name, rev)
-  if kind == core.svn_node_dir:
-    try:
-      dirents, fetched_rev, props = ra.svn_ra_get_dir(svnrepos.ra_session,
-                                                      full_name, rev)
-    except ValueError:
-      # older versions of the bindings didn't handle ra.svn_ra_get_dir()
-      # correctly.
-      props = ra.svn_ra_get_dir(svnrepos.ra_session, full_name, rev)
-    return int(props[core.SVN_PROP_ENTRY_COMMITTED_REV])
-  return core.SVN_INVALID_REVNUM
 
 
 class LastHistoryCollector:
@@ -191,9 +126,6 @@ class LogCollector:
     if this_path:
       self.path = this_path
     
-def get_youngest_revision(svnrepos):
-  return svnrepos.youngest
-
 def temp_checkout(svnrepos, path, rev):
   """Check out file revision to temporary file"""
   stream = core.svn_stream_from_aprfile(tempfile.mktemp())
@@ -235,7 +167,7 @@ class SelfCleanFP:
     return self._eof
 
 
-class SubversionRepository(vclib.Repository):
+class RemoteSubversionRepository(vclib.Repository):
   def __init__(self, name, rootpath, utilities):
     core.svn_config_ensure(None)
 
@@ -425,3 +357,69 @@ class SubversionRepository(vclib.Repository):
     dirents = client.svn_client_ls(dir_url, _rev2optrev(rev), 0, self.ctx)
     self._dirent_cache[key] = dirents
     return dirents
+
+  ##--- custom --##
+
+  def get_youngest_revision(self):
+    return self.youngest
+  
+  def get_location(self, path, rev, old_rev):
+    try:
+      results = ra.get_locations(self.ra_session, path, rev, [old_rev])
+    except core.SubversionException, e:
+      if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
+        raise vclib.ItemNotFound(path)
+      raise
+    try:
+      old_path = results[old_rev]
+    except KeyError:
+      raise vclib.ItemNotFound(path)
+  
+    return _cleanup_path(old_path)
+  
+  def created_rev(self, full_name, rev):
+    kind = ra.svn_ra_check_path(self.ra_session, full_name, rev)
+    if kind == core.svn_node_dir:
+      try:
+        dirents, fetched_rev, props = ra.svn_ra_get_dir(self.ra_session,
+                                                        full_name, rev)
+      except ValueError:
+        # older versions of the bindings didn't handle ra.svn_ra_get_dir()
+        # correctly.
+        props = ra.svn_ra_get_dir(self.ra_session, full_name, rev)
+      return int(props[core.SVN_PROP_ENTRY_COMMITTED_REV])
+    return core.SVN_INVALID_REVNUM
+
+  def last_rev(self, path, peg_revision, limit_revision=None):
+    """Given PATH, known to exist in PEG_REVISION, find the youngest
+    revision older than, or equal to, LIMIT_REVISION in which path
+    exists.  Return that revision, and the path at which PATH exists in
+    that revision."""
+    
+    # Here's the plan, man.  In the trivial case (where PEG_REVISION is
+    # the same as LIMIT_REVISION), this is a no-brainer.  If
+    # LIMIT_REVISION is older than PEG_REVISION, we can use Subversion's
+    # history tracing code to find the right location.  If, however,
+    # LIMIT_REVISION is younger than PEG_REVISION, we suffer from
+    # Subversion's lack of forward history searching.  Our workaround,
+    # ugly as it may be, involves a binary search through the revisions
+    # between PEG_REVISION and LIMIT_REVISION to find our last live
+    # revision.
+    peg_revision = self._getrev(peg_revision)
+    limit_revision = self._getrev(limit_revision)
+    if peg_revision == limit_revision:
+      return peg_revision, path
+    elif peg_revision > limit_revision:
+      path = self.get_location(path, peg_revision, limit_revision)
+      return limit_revision, path
+    else:
+      direction = 1
+      while peg_revision != limit_revision:
+        mid = (peg_revision + 1 + limit_revision) / 2
+        try:
+          path = self.get_location(path, peg_revision, mid)
+        except vclib.ItemNotFound:
+          limit_revision = mid - 1
+        else:
+          peg_revision = mid
+      return peg_revision, path
