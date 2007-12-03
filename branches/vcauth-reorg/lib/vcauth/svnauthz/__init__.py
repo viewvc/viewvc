@@ -90,24 +90,12 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
       for group in cp.options('groups'):
         _process_group(group)
 
-    # Read the other (non-"groups") sections, and figure out in which
-    # repositories USERNAME or his groups have read rights.
-    root_is_readable = 0
-    for section in cp.sections():
-
-      # Skip the "groups" section -- we handled that already.
-      if section == 'groups':
-        continue
-
-      # Skip sections not related to our rootname.  While we're at it,
-      # go ahead and figure out the repository path we're talking about.
-      if section.find(':') == -1:
-        path = section
-      else:
-        name, path = string.split(section, ':', 1)
-        if name != rootname:
-          continue
-
+    def _process_access_section(section):
+      """Inline function for determining user access in a single
+      config secction.  Return a two-tuple (ALLOW, DENY) containing
+      the access determination for USERNAME in a given authz file
+      SECTION (if any)."""
+  
       # Figure if this path is explicitly allowed or denied to USERNAME.
       allow = deny = 0
       for user in cp.options(section):
@@ -123,12 +111,55 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
           deny = not allow
           if allow:
             break
+      return allow, deny
+    
+    # Read the other (non-"groups") sections, and figure out in which
+    # repositories USERNAME or his groups have read rights.  We'll
+    # first check groups that have no specific repository designation,
+    # then superimpose that have a repository designation which
+    # matches the one we're asking about.
+    root_sections = []
+    for section in cp.sections():
+
+      # Skip the "groups" section -- we handled that already.
+      if section == 'groups':
+        continue
+
+      # Process root-agnostic access sections; skip (but remember)
+      # root-specific ones that match our root; ignore altogether
+      # root-specific ones that don't match our root.  While we're at
+      # it, go ahead and figure out the repository path we're talking
+      # about.
+      if section.find(':') == -1:
+        path = section
+      else:
+        name, path = string.split(section, ':', 1)
+        if name == rootname:
+          root_sections.append(section)
+        continue
+
+      # Check for a specific access determination.
+      allow, deny = _process_access_section(section)
           
       # If we got an explicit access determination for this path and this
       # USERNAME, record it.
       if allow or deny:
-        if allow:
-          root_is_readable = 1
+        if path != '/':
+          path = '/' + string.join(filter(None, string.split(path, '/')), '/')
+        paths_for_root[path] = allow
+
+    # Okay.  Superimpose those root-specific values now.
+    for section in root_sections:
+
+      # Get the path again.
+      name, path = string.split(section, ':', 1)
+      
+      # Check for a specific access determination.
+      allow, deny = _process_access_section(section)
+                
+      # If we got an explicit access determination for this path and this
+      # USERNAME, record it.
+      if allow or deny:
         if path != '/':
           path = '/' + string.join(filter(None, string.split(path, '/')), '/')
         paths_for_root[path] = allow
@@ -136,6 +167,11 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     # If the root isn't readable, there's no point in caring about all
     # the specific paths the user can't see.  Just point the rootname
     # to a None paths dictionary.
+    root_is_readable = 0
+    for path in paths_for_root.keys():
+      if paths_for_root[path]:
+        root_is_readable = 1
+        break
     if not root_is_readable:
       paths_for_root = None
       
