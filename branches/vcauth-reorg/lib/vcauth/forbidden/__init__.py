@@ -16,13 +16,12 @@ import string
 
 class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   """A simple top-level module authorizer."""
-  def __init__(self, username, root, params={}):
+  def __init__(self, username, params={}):
     forbidden = params.get('forbidden', '')
-    self.root = root
     self.forbidden = map(string.strip,
                          filter(None, string.split(forbidden, ',')))
     
-  def check_path_access(self, path_parts, rev=None):
+  def check_path_access(self, root, path_parts, rev=None):
     # No path?  No problem.
     if not path_parts:
       return 1
@@ -31,7 +30,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     # or a directory.  So we ask our version control system.  If it's
     # not a directory, we don't care about it.
     if len(path_parts) == 1:
-      if self.root.itemtype(path_parts, rev) != vclib.DIR:
+      if root.itemtype(path_parts, rev) != vclib.DIR:
         return 1
 
     # At this point we're looking a path we believe to be a directory.

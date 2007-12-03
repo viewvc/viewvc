@@ -168,12 +168,13 @@ class SelfCleanFP:
 
 
 class RemoteSubversionRepository(vclib.Repository):
-  def __init__(self, name, rootpath, utilities):
+  def __init__(self, name, rootpath, authorizer, utilities):
     core.svn_config_ensure(None)
 
     # Start populating our members
     self.name = name
     self.rootpath = rootpath
+    self.authorizer = authorizer
     self.diff_cmd = utilities.diff or 'diff'
 
     # Setup the client context baton, complete with non-prompting authstuffs.
@@ -196,6 +197,10 @@ class RemoteSubversionRepository(vclib.Repository):
                                      ctx.config)
     self.youngest = ra.svn_ra_get_latest_revnum(self.ra_session)
     self._dirent_cache = { }
+
+    if self.authorizer is not None \
+       and not self.authorizer.check_root_access(self):
+      raise vclib.ReposNotFound(name)
 
   def rootname(self):
     return self.name

@@ -21,20 +21,27 @@ from ConfigParser import ConfigParser
 class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   """Subversion authz authorizer module"""
   
-  def __init__(self, username, root, params={}):
-    rootname = root.rootname()
-    self.paths = {}   # paths-in-root -> access boolean for USERNAME
+  def __init__(self, username, params={}):
+    self.username = username
+    self.rootpaths = { }  # {root -> { paths -> access boolean for USERNAME }}
     
     # Get the authz file location from a passed-in parameter.
-    authz_file = params.get('authzfile')
-    if not authz_file:
+    self.authz_file = params.get('authzfile')
+    if not self.authz_file:
       raise debug.ViewVCException("No authzfile configured")
-    if not os.path.exists(authz_file):
+    if not os.path.exists(self.authz_file):
       raise debug.ViewVCException("Configured authzfile file not found")
 
+  def _get_paths_for_root(self, root):
+    rootname = root.rootname()
+    if self.rootpaths.has_key(rootname):
+      return self.rootpaths[rootname]
+
+    paths_for_root = { }
+    
     # Parse the authz file.
     cp = ConfigParser()
-    cp.read(authz_file)
+    cp.read(self.authz_file)
 
     # Figure out which groups USERNAME has a part of.
     groups = []
@@ -69,7 +76,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
         entries = string.split(cp.get('groups', groupname), ',')
         for entry in entries:
           entry = string.strip(entry)
-          if entry == username:
+          if entry == self.username:
             group_member = 1
             break
           elif entry[0:1] == "@" and _process_group(entry[1:]):
@@ -97,8 +104,8 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
       if section.find(':') == -1:
         path = section
       else:
-        root, path = string.split(section, ':', 1)
-        if root != rootname:
+        name, path = string.split(section, ':', 1)
+        if name != rootname:
           continue
 
       # Figure if this path is explicitly allowed or denied to USERNAME.
@@ -106,7 +113,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
       for user in cp.options(section):
         user = string.strip(user)
         if user == '*' \
-           or user == username \
+           or user == self.username \
            or (user[0:1] == "@" and user[1:] in groups):
           # See if the 'r' permission is among the ones granted to
           # USER.  If so, we can stop looking.  (Entry order is not
@@ -124,20 +131,32 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
           root_is_readable = 1
         if path != '/':
           path = '/' + string.join(filter(None, string.split(path, '/')), '/')
-        self.paths[path] = allow
+        paths_for_root[path] = allow
 
-    # If USERNAME can't see this root at all, raise an error.
+    # If the root isn't readable, there's no point in caring about all
+    # the specific paths the user can't see.  Just point the rootname
+    # to a None paths dictionary.
     if not root_is_readable:
-      raise vcauth.ViewVCRootAccessNotAuthorized(rootname, username)
+      paths_for_root = None
+      
+    self.rootpaths[rootname] = paths_for_root
+    return paths_for_root
 
-  def check_path_access(self, path_parts, rev=None):
+  def check_root_access(self, root):
+    paths = self._get_paths_for_root(root)
+    return (paths is not None) and 1 or 0
+  
+  def check_path_access(self, root, path_parts, rev=None):
     # Crawl upward from the path represented by PATH_PARTS toward to
     # the root of the repository, looking for an explicitly grant or
     # denial of access.
+    paths = self._get_paths_for_root(root)
+    if paths is None:
+      return 0
     parts = path_parts[:]
     while parts:
       path = '/' + string.join(parts, '/')
-      if self.paths.has_key(path):
-        return self.paths[path]
+      if paths.has_key(path):
+        return paths[path]
       del parts[-1]
-    return self.paths.get('/', 0)
+    return paths.get('/', 0)

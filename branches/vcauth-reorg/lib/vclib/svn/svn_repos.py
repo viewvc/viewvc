@@ -351,13 +351,14 @@ class SVNChangedPath(vclib.ChangedPath):
 
   
 class LocalSubversionRepository(vclib.Repository):
-  def __init__(self, name, rootpath, utilities):
+  def __init__(self, name, rootpath, authorizer, utilities):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
 
     # Initialize some stuff.
     self.rootpath = rootpath
     self.name = name
+    self.authorizer = authorizer
     self.svn_client_path = utilities.svn or 'svn'
     self.diff_cmd = utilities.diff or 'diff'
 
@@ -383,6 +384,10 @@ class LocalSubversionRepository(vclib.Repository):
     self.fs_ptr = repos.svn_repos_fs(self.repos)
     self.youngest = fs.youngest_rev(self.fs_ptr)
     self._fsroots = {}
+
+    if self.authorizer is not None \
+       and not self.authorizer.check_root_access(self):
+      raise vclib.ReposNotFound(name)
 
   def rootname(self):
     return self.name
