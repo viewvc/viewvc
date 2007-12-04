@@ -438,9 +438,12 @@ SUBVERSION INTEGRATION
 Unlike the CVS integration, which simply wraps the RCS and CVS utility
 programs, the Subversion integration requires additional Python
 libraries.  To use ViewVC with Subversion, make sure you have both
-Subversion itself and the Subversion Python bindings installed.  See
-Subversion's installation notes for more details on how to build and
-install these items.
+Subversion itself and the Subversion Python bindings installed.  These
+can be obtained through typical package distribution mechanisms, or
+may be build from source.  (See the files 'INSTALL' and
+'subversion/bindings/swig/INSTALL' in the Subversion source tree for
+more details on how to build and install Subversion and its Python
+bindings.)
 
 Generally speaking, you'll know when your installation of Subversion's
 bindings has been successful if you can import the 'svn.core' module
