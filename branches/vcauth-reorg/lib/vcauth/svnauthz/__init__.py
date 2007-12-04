@@ -32,8 +32,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     if not os.path.exists(self.authz_file):
       raise debug.ViewVCException("Configured authzfile file not found")
 
-  def _get_paths_for_root(self, root):
-    rootname = root.rootname()
+  def _get_paths_for_root(self, rootname):
     if self.rootpaths.has_key(rootname):
       return self.rootpaths[rootname]
 
@@ -178,15 +177,15 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     self.rootpaths[rootname] = paths_for_root
     return paths_for_root
 
-  def check_root_access(self, root):
-    paths = self._get_paths_for_root(root)
+  def check_root_access(self, rootname):
+    paths = self._get_paths_for_root(rootname)
     return (paths is not None) and 1 or 0
   
-  def check_path_access(self, root, path_parts, rev=None):
+  def check_path_access(self, rootname, path_parts, pathtype, rev=None):
     # Crawl upward from the path represented by PATH_PARTS toward to
     # the root of the repository, looking for an explicitly grant or
     # denial of access.
-    paths = self._get_paths_for_root(root)
+    paths = self._get_paths_for_root(rootname)
     if paths is None:
       return 0
     parts = path_parts[:]

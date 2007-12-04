@@ -48,32 +48,46 @@ class BaseCVSRepository(vclib.Repository):
   def roottype(self):
     return vclib.CVS
   
+  def _check_path_access(self, path_parts, rev=None, pathtype=None):
+    if not self.authorizer:
+      return 1
+    if not pathtype:
+      pathtype = self.itemtype(path_parts, rev)
+    return self.authorizer.check_path_access(self.name, path_parts,
+                                             pathtype, rev)
+      
   def itemtype(self, path_parts, rev):
     basepath = self._getpath(path_parts)
     if os.path.isdir(basepath):
-      return vclib.DIR
-    if os.path.isfile(basepath + ',v'):
-      return vclib.FILE
-    atticpath = self._getpath(self._atticpath(path_parts))
-    if os.path.isfile(atticpath + ',v'):
-      return vclib.FILE
-    raise vclib.ItemNotFound(path_parts)
+      kind = vclib.DIR
+    elif os.path.isfile(basepath + ',v'):
+      kind = vclib.FILE
+    else:
+      atticpath = self._getpath(self._atticpath(path_parts))
+      if os.path.isfile(atticpath + ',v'):
+        kind = vclib.FILE
+    if not (kind and self._check_path_access(path_parts, rev, kind)):
+      raise vclib.ItemNotFound(path_parts)
+    return kind
 
   def listdir(self, path_parts, rev, options):
+    if not self._check_path_access(path_parts, rev, vclib.DIR):
+      raise vclib.ItemNotFound(path_parts)
     # Only RCS files (*,v) and subdirs are returned.
     data = [ ]
-
     full_name = self._getpath(path_parts)
     for file in os.listdir(full_name):
       kind, errors = _check_path(os.path.join(full_name, file))
       if kind == vclib.FILE:
         if file[-2:] == ',v':
-          data.append(CVSDirEntry(file[:-2], kind, errors, 0))
+          name = file[:-2]
       elif kind == vclib.DIR:
         if file != 'Attic' and file != 'CVS': # CVS directory is for fileattr
-          data.append(CVSDirEntry(file, kind, errors, 0))
+          name = file
       else:
-        data.append(CVSDirEntry(file, kind, errors, 0))
+        name = file
+      if self._check_path_access(path_parts + [name], rev, kind):
+        data.append(CVSDirEntry(name, kind, errors, 0))      
 
     full_name = os.path.join(full_name, 'Attic')
     if os.path.isdir(full_name):
@@ -81,9 +95,11 @@ class BaseCVSRepository(vclib.Repository):
         kind, errors = _check_path(os.path.join(full_name, file))
         if kind == vclib.FILE:
           if file[-2:] == ',v':
-            data.append(CVSDirEntry(file[:-2], kind, errors, 1))
+            name = file[:-2]
         elif kind != vclib.DIR:
-          data.append(CVSDirEntry(file, kind, errors, 1))
+          name = file
+        if self._check_path_access(path_parts + [name], rev, kind):
+          data.append(CVSDirEntry(name, kind, errors, 1))      
 
     return data
     
@@ -280,6 +296,11 @@ class BinCVSRepository(BaseCVSRepository):
 
       ignore_keyword_subst - boolean, ignore keyword substitution
     """
+    if not self._check_path_access(path_parts1, rev1, vclib.FILE):
+      raise vclib.ItemNotFound(path_parts)
+    if not self._check_path_access(path_parts2, rev2, vclib.FILE):
+      raise vclib.ItemNotFound(path_parts)
+    
     args = vclib._diff_args(type, options)
     if options.get('ignore_keyword_subst', 0):
       args.append('-kk')

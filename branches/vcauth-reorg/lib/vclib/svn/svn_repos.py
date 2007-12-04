@@ -385,10 +385,17 @@ class LocalSubversionRepository(vclib.Repository):
     self.youngest = fs.youngest_rev(self.fs_ptr)
     self._fsroots = {}
 
-    if self.authorizer is not None \
-       and not self.authorizer.check_root_access(self):
+    if authorizer is not None and not authorizer.check_root_access(name):
       raise vclib.ReposNotFound(name)
 
+  def _check_path_access(self, path_parts, rev=None, pathtype=None):
+    if not self.authorizer:
+      return 1
+    if not pathtype:
+      pathtype = self.itemtype(path_parts, rev)
+    return self.authorizer.check_path_access(self.name, path_parts,
+                                             pathtype, rev)
+      
   def rootname(self):
     return self.name
 
@@ -402,26 +409,33 @@ class LocalSubversionRepository(vclib.Repository):
     rev = self._getrev(rev)
     basepath = self._getpath(path_parts)
     kind = fs.check_path(self._getroot(rev), basepath)
+    pathtype = None
     if kind == core.svn_node_dir:
-      return vclib.DIR
-    if kind == core.svn_node_file:
-      return vclib.FILE
-    raise vclib.ItemNotFound(path_parts)
+      pathtype = vclib.DIR
+    elif kind == core.svn_node_file:
+      pathtype = vclib.FILE
+    if not (pathtype and self._check_path_access(path_parts, rev, pathtype)):
+      raise vclib.ItemNotFound(path_parts)
+    return pathtype
 
   def openfile(self, path_parts, rev):
-    path = self._getpath(path_parts)
     rev = self._getrev(rev)
+    if not self._check_path_access(path_parts, rev, vclib.FILE):
+      raise vclib.ItemNotFound(path_parts)
+    path = self._getpath(path_parts)
     fsroot = self._getroot(rev)
     revision = str(_get_last_history_rev(fsroot, path))
     fp = FileContentsPipe(fsroot, path)
     return fp, revision
 
   def listdir(self, path_parts, rev, options):
+    rev = self._getrev(rev)
+    if not self._check_path_access(path_parts, rev, vclib.DIR):
+      raise vclib.ItemNotFound(path_parts)
     basepath = self._getpath(path_parts)
     if self.itemtype(path_parts, rev) != vclib.DIR:
       raise vclib.Error("Path '%s' is not a directory." % basepath)
 
-    rev = self._getrev(rev)
     fsroot = self._getroot(rev)
     dirents = fs.dir_entries(fsroot, basepath)
     entries = [ ]
@@ -429,8 +443,9 @@ class LocalSubversionRepository(vclib.Repository):
       if entry.kind == core.svn_node_dir:
         kind = vclib.DIR
       elif entry.kind == core.svn_node_file:
-        kind = vclib.FILE              
-      entries.append(vclib.DirEntry(entry.name, kind))
+        kind = vclib.FILE
+      if self._check_path_access(path_parts + [entry.name], rev, kind):
+        entries.append(vclib.DirEntry(entry.name, kind))
     return entries
 
   def dirlogs(self, path_parts, rev, entries, options):
@@ -504,6 +519,7 @@ class LocalSubversionRepository(vclib.Repository):
 
     # Copy the Subversion changes into a new hash, converting them into
     # ChangedPath objects.
+    found_readable = found_unreadable = 0
     for path in changes.keys():
       change = changes[path]
       if change.path:
@@ -542,14 +558,30 @@ class LocalSubversionRepository(vclib.Repository):
         pathtype = vclib.FILE
       else:
         pathtype = None
-      
-      changedpaths[path] = SVNChangedPath(path, rev, pathtype,
-                                          change.base_path,
-                                          change.base_rev, action,
-                                          is_copy, change.text_changed,
-                                          change.prop_changes)
-    
-    # Return our tuple: date, author, msg, changes
+
+      parts = filter(None, string.split(path, '/'))
+      if self._check_path_access(parts, rev, pathtype):
+        if is_copy and change.base_path and (change.base_path != path):
+          parts = filter(None, string.split(path, '/'))
+          if self._check_path_access(parts, change.base_rev, pathtype):
+            is_copy = 0
+            change.base_path = None
+            change.base_rev = None
+        changedpaths[path] = SVNChangedPath(path, rev, pathtype,
+                                            change.base_path,
+                                            change.base_rev, action,
+                                            is_copy, change.text_changed,
+                                            change.prop_changes)
+        found_readable = 1
+      else:
+        found_unreadable = 1
+
+    # Return our tuple, auth-filtered: date, author, msg, changes
+    if found_unreadable:
+      msg = None
+      if not found_readable:
+        author = None
+        datestr = None
     return _datestr_to_date(datestr), author, msg, changedpaths.values()
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
@@ -557,6 +589,11 @@ class LocalSubversionRepository(vclib.Repository):
     p2 = self._getpath(path_parts2)
     r1 = self._getrev(rev1)
     r2 = self._getrev(rev2)
+    if not self._check_path_access(path_parts1, rev1, vclib.FILE):
+      raise vclib.ItemNotFound(path_parts)
+    if not self._check_path_access(path_parts2, rev2, vclib.FILE):
+      raise vclib.ItemNotFound(path_parts)
+    
     args = vclib._diff_args(type, options)
 
     try:

@@ -22,18 +22,18 @@ class GenericViewVCAuthorizer:
   def __init__(self, username=None, params={}):
     """Create a GenericViewVCAuthorizer object which will be used to
     validate that USERNAME has the permissions needed to view version
-    control repository ROOT (in whole or in part).  PARAMS is a
+    control repositories (in whole or in part).  PARAMS is a
     dictionary of custom parameters for the authorizer."""
     pass
 
-  def check_root_access(self, root):
-    """Return 1 iff the associated username is permitted to read ROOT
-    (which is a vclib.Repository() object)."""
+  def check_root_access(self, rootname):
+    """Return 1 iff the associated username is permitted to read ROOTNAME."""
     pass
   
-  def check_path_access(self, root, path_parts, rev=None):
+  def check_path_access(self, rootname, path_parts, pathtype, rev=None):
     """Return 1 iff the associated username is permitted to read
-    revision REV of the path PATH_PARTS in repository ROOT."""
+    revision REV of the path PATH_PARTS (of type PATHTYPE) in
+    repository ROOTNAME."""
     pass
 
 
@@ -42,8 +42,8 @@ class GenericViewVCAuthorizer:
 
 class ViewVCAuthorizer(GenericViewVCAuthorizer):
   """The uber-permissive authorizer."""
-  def check_root_access(self, root):
+  def check_root_access(self, rootname):
     return 1
     
-  def check_path_access(self, root, path_parts, rev=None):
+  def check_path_access(self, rootname, path_parts, pathtype, rev=None):
     return 1

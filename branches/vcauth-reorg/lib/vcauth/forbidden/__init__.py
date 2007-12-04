@@ -21,19 +21,16 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     self.forbidden = map(string.strip,
                          filter(None, string.split(forbidden, ',')))
     
-  def check_path_access(self, root, path_parts, rev=None):
+  def check_path_access(self, rootname, path_parts, pathtype, rev=None):
     # No path?  No problem.
     if not path_parts:
       return 1
 
-    # If we have a single path part, we can't tell if this is a file
-    # or a directory.  So we ask our version control system.  If it's
-    # not a directory, we don't care about it.
-    if len(path_parts) == 1:
-      if root.itemtype(path_parts, rev) != vclib.DIR:
-        return 1
+    # Not a directory?  We aren't interested.
+    if pathtype != vclib.DIR:
+      return 1
 
-    # At this point we're looking a path we believe to be a directory.
+    # At this point we're looking at a directory path.
     module = path_parts[0]
     default = 1
     for pat in self.forbidden:

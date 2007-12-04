@@ -198,8 +198,7 @@ class RemoteSubversionRepository(vclib.Repository):
     self.youngest = ra.svn_ra_get_latest_revnum(self.ra_session)
     self._dirent_cache = { }
 
-    if self.authorizer is not None \
-       and not self.authorizer.check_root_access(self):
+    if authorizer is not None and not authorizer.check_root_access(name):
       raise vclib.ReposNotFound(name)
 
   def rootname(self):
