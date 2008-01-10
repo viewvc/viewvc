@@ -1133,9 +1133,14 @@ def common_template_data(request):
     'log_href_rev': None,
     'graph_href': None,
     'rss_href' : None,
+    'roots_href' : None,
     'prefer_markup' : ezt.boolean(0),
   }
 
+  if cfg.options.root_as_url_component:
+    data['roots_href'] = request.get_url(view_func=view_roots, escape=1,
+                                         params={})
+    
   rev = request.query_dict.get('annotate')
   if not rev:
     rev = request.query_dict.get('revision')
