@@ -17,6 +17,7 @@
 <tr>
   <td>
   [if-any nav_path]<strong>
+    [if-any roots_href]<a href="[roots_href]">/</a>[else]/[end]
     [for nav_path]
       [if-any nav_path.href]<a href="[nav_path.href]">[end]
       [if-index nav_path first]
