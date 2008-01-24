@@ -273,7 +273,8 @@ php = php
 cvsgraph =
 # cvsgraph = /usr/local/bin/cvsgraph
 
-# Gzip, file compression utility (see options.allow_tar)
+# Gzip, a file compression utility (used by the "tarball" view).  You can
+# leave this unset if your version of Python provides the 'gzip' module.
 gzip =
 # gzip = /usr/bin/gzip
 
