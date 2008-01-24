@@ -1375,12 +1375,9 @@ class MarkupSourceHighlight(MarkupShell):
     if ext:
       ext = ext[1:]
 
-    ### Ideally, we'd use '--output xhtml-css', which would let us supply
-    ### supply our own style definitions.  Unfortunately, this appears to
-    ### be broken in source-highlight 2.3, 2.4, and 2.5 (at least).  :-(
     highlight_cmd = [cfg.utilities.source_highlight or 'source-highlight',
-                     '--out-format', 'xhtml', '--output', 'STDOUT',
-                     '-s', ext, '--failsafe']
+                     '--out-format', 'xhtml-css', '--output', 'STDOUT',
+                     '-s', ext, '--quiet', '--failsafe']
     if cfg.options.source_highlight_line_numbers:
       highlight_cmd.extend(['--line-number-ref=l_'])
 
