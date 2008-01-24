@@ -3178,11 +3178,18 @@ def download_tarball(request):
 
   if debug.TARFILE_PATH:
     fp = open(debug.TARFILE_PATH, 'w')
-  else:
-    request.server.header('application/octet-stream')
+  else:    
+    # Try to use the Python gzip module, if available; otherwise,
+    # we'll use the configured 'gzip' binary.
+    request.server.header('application/x-gzip')
     request.server.flush()
-    fp = popen.pipe_cmds([(cfg.utilities.gzip or 'gzip', '-c', '-n')])
-  
+    try:
+      import gzip
+    except ImportError:
+      fp = popen.pipe_cmds([(cfg.utilities.gzip or 'gzip', '-c', '-n')])
+    else:
+      fp = gzip.GzipFile('', 'wb', 9, request.server.file())
+
   ### FIXME: For Subversion repositories, we can get the real mtime of the
   ### top-level directory here.
   generate_tarball(fp, request, [], [])
