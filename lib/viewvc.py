@@ -96,31 +96,15 @@ class Request:
     self.script_name = _normalize_path(server.getenv('SCRIPT_NAME', ''))
     self.browser = server.getenv('HTTP_USER_AGENT', 'unknown')
 
-    # in lynx, it it very annoying to have two links per file, so
-    # disable the link at the icon in this case:
-    self.no_file_links = string.find(self.browser, 'Lynx') != -1
-
-    # newer browsers accept gzip content encoding and state this in a
-    # header (netscape did always but didn't state it) It has been
-    # reported that these braindamaged MS-Internet Explorers claim
-    # that they accept gzip .. but don't in fact and display garbage
-    # then :-/
-    self.may_compress = (
-      ( string.find(server.getenv('HTTP_ACCEPT_ENCODING', ''), 'gzip') != -1
-        or string.find(self.browser, 'Mozilla/3') != -1)
-      and string.find(self.browser, 'MSIE') == -1
-      )
-
-    # process the Accept-Language: header
+    # process the Accept-Language: header, and load the key/value
+    # files, given the selected language
     hal = server.getenv('HTTP_ACCEPT_LANGUAGE','')
     self.lang_selector = accept.language(hal)
     self.language = self.lang_selector.select_from(cfg.general.languages)
+    self.kv = cfg.load_kv_files(self.language)
 
     # check for an authenticated username
     self.username = server.getenv('REMOTE_USER')
-
-    # load the key/value files, given the selected language
-    self.kv = cfg.load_kv_files(self.language)
 
   def run_viewvc(self):
 
