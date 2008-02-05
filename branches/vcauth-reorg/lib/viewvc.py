@@ -96,31 +96,15 @@ class Request:
     self.script_name = _normalize_path(server.getenv('SCRIPT_NAME', ''))
     self.browser = server.getenv('HTTP_USER_AGENT', 'unknown')
 
-    # in lynx, it it very annoying to have two links per file, so
-    # disable the link at the icon in this case:
-    self.no_file_links = string.find(self.browser, 'Lynx') != -1
-
-    # newer browsers accept gzip content encoding and state this in a
-    # header (netscape did always but didn't state it) It has been
-    # reported that these braindamaged MS-Internet Explorers claim
-    # that they accept gzip .. but don't in fact and display garbage
-    # then :-/
-    self.may_compress = (
-      ( string.find(server.getenv('HTTP_ACCEPT_ENCODING', ''), 'gzip') != -1
-        or string.find(self.browser, 'Mozilla/3') != -1)
-      and string.find(self.browser, 'MSIE') == -1
-      )
-
-    # process the Accept-Language: header
+    # process the Accept-Language: header, and load the key/value
+    # files, given the selected language
     hal = server.getenv('HTTP_ACCEPT_LANGUAGE','')
     self.lang_selector = accept.language(hal)
     self.language = self.lang_selector.select_from(cfg.general.languages)
+    self.kv = cfg.load_kv_files(self.language)
 
     # check for an authenticated username
     self.username = server.getenv('REMOTE_USER')
-
-    # load the key/value files, given the selected language
-    self.kv = cfg.load_kv_files(self.language)
 
   def run_viewvc(self):
 
@@ -306,20 +290,20 @@ class Request:
       if self.pathtype is None:
         # path doesn't exist, see if it could be an old-style ViewVC URL
         # with a fake suffix
-        result = _strip_suffix('.diff', path_parts, pathrev, vclib.FILE,      \
-                               self.repos, view_diff) or                      \
-                 _strip_suffix('.tar.gz', path_parts, pathrev, vclib.DIR,     \
-                               self.repos, download_tarball) or               \
-                 _strip_suffix('root.tar.gz', path_parts, pathrev, vclib.DIR, \
-                               self.repos, download_tarball) or               \
-                 _strip_suffix(self.rootname + '-root.tar.gz',                \
-                               path_parts, pathrev, vclib.DIR,                \
-                               self.repos, download_tarball) or               \
-                 _strip_suffix('root',                                        \
-                               path_parts, pathrev, vclib.DIR,                \
-                               self.repos, download_tarball) or               \
-                 _strip_suffix(self.rootname + '-root',                       \
-                               path_parts, pathrev, vclib.DIR,                \
+        result = _strip_suffix('.diff', path_parts, pathrev, vclib.FILE,     \
+                               self.repos, view_diff) or                     \
+                 _strip_suffix('.tar.gz', path_parts, pathrev, vclib.DIR,    \
+                               self.repos, download_tarball) or              \
+                 _strip_suffix('root.tar.gz', path_parts, pathrev, vclib.DIR,\
+                               self.repos, download_tarball) or              \
+                 _strip_suffix(self.rootname + '-root.tar.gz',               \
+                               path_parts, pathrev, vclib.DIR,               \
+                               self.repos, download_tarball) or              \
+                 _strip_suffix('root',                                       \
+                               path_parts, pathrev, vclib.DIR,               \
+                               self.repos, download_tarball) or              \
+                 _strip_suffix(self.rootname + '-root',                      \
+                               path_parts, pathrev, vclib.DIR,               \
                                self.repos, download_tarball)
         if result:
           self.path_parts, self.pathtype, self.view_func = result
@@ -329,7 +313,7 @@ class Request:
           raise debug.ViewVCException('%s: unknown location'
                                        % self.where, '404 Not Found')
 
-      # If we have an old ViewCVS Attic URL which is still valid, then redirect
+      # If we have an old ViewCVS Attic URL which is still valid, redirect
       if self.roottype == 'cvs':
         attic_parts = None
         if (self.pathtype == vclib.FILE and len(self.path_parts) > 1
@@ -647,7 +631,8 @@ _re_validate_revnum = re.compile('^[-_.a-zA-Z0-9:~\\[\\]/]*$')
 _re_validate_mimetype = re.compile('^[-_.a-zA-Z0-9/]+$')
 
 # date time values
-_re_validate_datetime = re.compile(r'^(\d\d\d\d-\d\d-\d\d(\s+\d\d:\d\d(:\d\d)?)?)?$')
+_re_validate_datetime = re.compile(r'^(\d\d\d\d-\d\d-\d\d(\s+\d\d:\d\d'
+                                   '(:\d\d)?)?)?$')
 
 # the legal query parameters and their validation functions
 _legal_params = {
@@ -724,7 +709,8 @@ def _strip_suffix(suffix, path_parts, rev, pathtype, repos, view_func):
   return None
 
 def _repos_pathtype(repos, path_parts, rev):
-  """return the type of a repository path, or None if the path doesn't exist"""
+  """Return the type of a repository path, or None if the path doesn't
+  exist"""
   try:
     return repos.itemtype(path_parts, rev)
   except vclib.ItemNotFound:
@@ -960,7 +946,12 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
   mime_type = mime_type or request.mime_type
   if pathrev == -1: # cheesy default value, since we need to preserve None
     pathrev = request.pathrev
-  view_href = download_href = download_text_href = annotate_href = revision_href = None
+
+  view_href = None
+  download_href = None
+  download_text_href = None
+  annotate_href = None
+  revision_href = None
 
   if 'markup' in request.cfg.options.allowed_views:
     view_href = request.get_url(view_func=view_markup,
@@ -1124,9 +1115,14 @@ def common_template_data(request):
     'log_href_rev': None,
     'graph_href': None,
     'rss_href' : None,
+    'roots_href' : None,
     'prefer_markup' : ezt.boolean(0),
   }
 
+  if cfg.options.root_as_url_component:
+    data['roots_href'] = request.get_url(view_func=view_roots, escape=1,
+                                         params={})
+    
   rev = request.query_dict.get('annotate')
   if not rev:
     rev = request.query_dict.get('revision')
@@ -1361,12 +1357,9 @@ class MarkupSourceHighlight(MarkupShell):
     if ext:
       ext = ext[1:]
 
-    ### Ideally, we'd use '--output xhtml-css', which would let us supply
-    ### supply our own style definitions.  Unfortunately, this appears to
-    ### be broken in source-highlight 2.3, 2.4, and 2.5 (at least).  :-(
     highlight_cmd = [cfg.utilities.source_highlight or 'source-highlight',
-                     '--out-format', 'xhtml', '--output', 'STDOUT',
-                     '-s', ext, '--failsafe']
+                     '--out-format', 'xhtml-css', '--output', 'STDOUT',
+                     '-s', ext, '--quiet', '--failsafe']
     if cfg.options.source_highlight_line_numbers:
       highlight_cmd.extend(['--line-number-ref=l_'])
 
@@ -1408,9 +1401,10 @@ def markup_stream_php(fp, cfg):
   if not cfg.options.use_php:
     return None
 
-  # The following HACK may be be used to allow a PHP CGI executable to be
-  # invoked instead of a CLI executable, on systems that do not have PHP's
-  # CLI (command line interface) installed. Just uncomment the following lines:
+  # The following HACK may be be used to allow a PHP CGI executable to
+  # be invoked instead of a CLI executable, on systems that do not
+  # have PHP's CLI (command line interface) installed. Just uncomment
+  # the following lines:
   #os.unsetenv("SERVER_SOFTWARE")
   #os.unsetenv("SERVER_NAME")
   #os.unsetenv("GATEWAY_INTERFACE")
@@ -2107,7 +2101,9 @@ def view_log(request):
     # calculate diff links
     if selected_rev != entry.rev:
       entry.sel_for_diff_href = \
-        request.get_url(view_func=view_log, params={'r1': entry.rev}, escape=1)
+        request.get_url(view_func=view_log,
+                        params={'r1': entry.rev},
+                        escape=1)
     if entry.prev is not None:
       entry.diff_to_prev_href = \
         request.get_url(view_func=view_diff,
@@ -2929,7 +2925,8 @@ def view_diff(request):
   path_left = _path_join(p1)
   path_right = _path_join(p2)
   if fp:
-    date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
+    date1, date2, flag, headers = diff_parse_headers(fp, diff_type,
+                                                     rev1, rev2,
                                                      sym1, sym2)
   else:
     date1 = date2 = flag = headers = None
@@ -3004,7 +3001,8 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
 
   # generate a GNU tar extension header for long names.
   if len(name) >= 100:
-    generate_tarball_header(out, '././@LongLink', len(name), 0644, 0, 0, 0, 'L')
+    generate_tarball_header(out, '././@LongLink', len(name),
+                            0644, 0, 0, 0, 'L')
     out.write(name)
     out.write('\0' * (511 - ((len(name) + 511) % 512)))
 
@@ -3138,11 +3136,18 @@ def download_tarball(request):
 
   if debug.TARFILE_PATH:
     fp = open(debug.TARFILE_PATH, 'w')
-  else:
-    request.server.header('application/octet-stream')
+  else:    
+    # Try to use the Python gzip module, if available; otherwise,
+    # we'll use the configured 'gzip' binary.
+    request.server.header('application/x-gzip')
     request.server.flush()
-    fp = popen.pipe_cmds([(cfg.utilities.gzip or 'gzip', '-c', '-n')])
-  
+    try:
+      import gzip
+    except ImportError:
+      fp = popen.pipe_cmds([(cfg.utilities.gzip or 'gzip', '-c', '-n')])
+    else:
+      fp = gzip.GzipFile('', 'wb', 9, request.server.file())
+
   ### FIXME: For Subversion repositories, we can get the real mtime of the
   ### top-level directory here.
   generate_tarball(fp, request, [], [])
@@ -3216,7 +3221,7 @@ def view_revision(request):
       change.text_changed = 0
       change.props_changed = 0
 
-    # Calculate the various view link URLs (for which we must have a pathtype).
+    # Calculate the view link URLs (for which we must have a pathtype).
     if change.pathtype:
       view_func = None
       if change.pathtype is vclib.FILE \
@@ -3350,9 +3355,11 @@ def view_queryform(request):
 
   generate_page(request, "query_form", data)
 
-def parse_date(s):
-  '''Parse a date string from the query form.'''
-  match = re.match(r'^(\d\d\d\d)-(\d\d)-(\d\d)(?:\ +(\d\d):(\d\d)(?::(\d\d))?)?$', s)
+def parse_date(datestr):
+  """Parse a date string from the query form."""
+  
+  match = re.match(r'^(\d\d\d\d)-(\d\d)-(\d\d)(?:\ +'
+                   '(\d\d):(\d\d)(?::(\d\d))?)?$', datestr)
   if match:
     year = int(match.group(1))
     month = int(match.group(2))
@@ -3435,7 +3442,7 @@ def english_query(request):
   return string.join(ret, '')
 
 def prev_rev(rev):
-  '''Returns a string representing the previous revision of the argument.'''
+  """Returns a string representing the previous revision of the argument."""
   r = string.split(rev, '.')
   # decrement final revision component
   r[-1] = str(int(r[-1]) - 1)
@@ -3852,7 +3859,8 @@ def load_config(pathname=None, server=None):
     for subpath in subpaths:
       if os.path.exists(os.path.join(pp, subpath)):
         if (repo_type == 'cvs'
-            and (os.path.exists(os.path.join(pp, subpath, "CVSROOT", "config"))
+            and (os.path.exists(os.path.join(pp, subpath,
+                                             "CVSROOT", "config"))
                  or (cvsroot and (subpath != 'CVSROOT'
                                   or not cfg.options.hide_cvsroot)))):
           cfg.general.cvs_roots[subpath] = os.path.join(pp, subpath)

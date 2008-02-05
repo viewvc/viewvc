@@ -103,14 +103,28 @@ form { margin: 0; }
 #vc_markup .kwc  { color: #0000ff; }
 #vc_markup .kwd  { color: #404040; }
 
+/*** Source-Highlight Markup Styles ***/
+#vc_markup .keyword     { color: #9c20ee; font-weight: bold; }
+#vc_markup .type        { color: #208920; }
+#vc_markup .string      { color: #bd8d8b; }
+#vc_markup .specialchar { color: #bd8d8b; }
+#vc_markup .comment     { color: #ac2020; font-style: italic; }
+#vc_markup .number      { color: #000000; }
+#vc_markup .preproc     { color: #0000ff; }
+#vc_markup .symbol      { color: #000000; }
+#vc_markup .function    { color: #404040; }
+#vc_markup .cbracket    { color: #000000; }
+#vc_markup .todo        { color: #000000; }
+#vc_markup .variable    { color: #00ac40; }
+
 /*** Py2html Markup Styles  ***/
 #vc_markup .PY_STRING     { color: #bd8d8b; }
 #vc_markup .PY_COMMENT    { color: #ac2020; font-style: italic; }
 #vc_markup .PY_KEYWORD    { color: #9c20ee; font-weight: bold; }
 #vc_markup .PY_IDENTIFIER { color: #404040; }
 
-/*** Line numbers outputted by highlight colorizer ***/
-.line {
+/*** Line numbers outputted by highlight and source-highlight colorizer ***/
+.line, .linenum {
   border-right-width: 1px;
   border-right-style: solid;
   border-right-color: #505050;
