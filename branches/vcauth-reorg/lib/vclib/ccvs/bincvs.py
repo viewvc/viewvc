@@ -29,15 +29,14 @@ import popen
 class BaseCVSRepository(vclib.Repository):
   def __init__(self, name, rootpath, authorizer, utilities):
     if not os.path.isdir(rootpath):
+      raise vclib.ReposNotFound(name) 
+    if authorizer is not None and not authorizer.check_root_access(name):
       raise vclib.ReposNotFound(name)
-    
+   
     self.name = name
     self.rootpath = rootpath
     self.authorizer = authorizer
     self.utilities = utilities
-
-    if authorizer is not None and not authorizer.check_root_access(self):
-      raise vclib.ReposNotFound(name)
 
   def rootname(self):
     return self.name

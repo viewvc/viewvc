@@ -20,7 +20,10 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     forbidden = params.get('forbidden', '')
     self.forbidden = map(string.strip,
                          filter(None, string.split(forbidden, ',')))
-    
+
+  def check_root_access(self, rootname):
+    return 1
+  
   def check_path_access(self, rootname, path_parts, pathtype, rev=None):
     # No path?  No problem.
     if not path_parts:

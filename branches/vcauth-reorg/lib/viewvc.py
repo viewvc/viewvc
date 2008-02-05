@@ -43,8 +43,10 @@ import config
 import popen
 import ezt
 import accept
-import vclib
 import vcauth
+import vclib
+import vclib.ccvs
+import vclib.svn
 
 try:
   import idiff
@@ -109,10 +111,6 @@ class Request:
   def run_viewvc(self):
 
     cfg = self.cfg
-
-    # global needed because "import vclib.svn" causes the
-    # interpreter to make vclib a local variable
-    global vclib
 
     # This function first parses the query string and sets the following
     # variables. Then it executes the request.
@@ -221,7 +219,6 @@ class Request:
         cfg.overlay_root_options(self.rootname)
         self.rootpath = os.path.normpath(cfg.general.cvs_roots[self.rootname])
         try:
-          import vclib.ccvs
           self.repos = vclib.ccvs.CVSRepository(self.rootname,
                                                 self.rootpath,
                                                 self.auth,
@@ -235,11 +232,11 @@ class Request:
             % self.rootname)
         # required so that spawned rcs programs correctly expand $CVSHeader$
         os.environ['CVSROOT'] = self.rootpath
+        self.repos.open()
       elif cfg.general.svn_roots.has_key(self.rootname):
         cfg.overlay_root_options(self.rootname)
         self.rootpath = cfg.general.svn_roots[self.rootname]
         try:
-          import vclib.svn
           self.repos = vclib.svn.SubversionRepository(self.rootname,
                                                       self.rootpath,
                                                       self.auth,
@@ -250,8 +247,7 @@ class Request:
             'having an incorrectly configured path for this root, or the '
             'server on which the repository lives being inaccessible.' \
             % self.rootname)
-        except vclib.InvalidRevision, ex:
-          raise debug.ViewVCException(str(ex))
+        self.repos.open()
       else:
         raise debug.ViewVCException(
           'The root "%s" is unknown. If you believe the value is '
@@ -760,7 +756,7 @@ def _orig_path(request, rev_param='revision', path_param=None):
     return _path_parts(request.repos.get_location(path, pathrev, rev)), rev
   return _path_parts(path), rev
 
-def setup_authorizer(cfg, username, rootname, params={}):
+def setup_authorizer(cfg, username, rootname):
   # First, try to load a module with the configured name.
   try:
     exec('import vcauth.%s' % (cfg.options.authorizer))
@@ -1144,7 +1140,7 @@ def common_template_data(request):
 
   # add in the roots for the selection
   roots = []
-  allroots = list_roots(cfg)
+  allroots = list_roots(request)
   if len(allroots):
     rootnames = allroots.keys()
     rootnames.sort(icmp)
@@ -3801,12 +3797,30 @@ _view_codes = {}
 for code, view in _views.items():
   _view_codes[view] = code
 
-def list_roots(cfg):
+def list_roots(request):
+  cfg = request.cfg
   allroots = { }
+  
+  # Add the viewable Subversion roots
   for root in cfg.general.svn_roots.keys():
+    auth = setup_authorizer(cfg, request.username, root)
+    try:
+      vclib.svn.SubversionRepository(root, cfg.general.svn_roots[root],
+                                     auth, cfg.utilities)
+    except vclib.ReposNotFound:
+      continue
     allroots[root] = [cfg.general.svn_roots[root], 'svn']
+
+  # Add the viewable CVS roots
   for root in cfg.general.cvs_roots.keys():
+    auth = setup_authorizer(cfg, request.username, root)
+    try:
+      vclib.ccvs.CVSRepository(root, cfg.general.cvs_roots[root], auth,
+                               cfg.utilities, cfg.options.use_rcsparse)
+    except vclib.ReposNotFound:
+      continue
     allroots[root] = [cfg.general.cvs_roots[root], 'cvs']
+    
   return allroots
   
 def load_config(pathname=None, server=None):

@@ -352,7 +352,12 @@ class SVNChangedPath(vclib.ChangedPath):
   
 class LocalSubversionRepository(vclib.Repository):
   def __init__(self, name, rootpath, authorizer, utilities):
-    if not os.path.isdir(rootpath):
+    if not (os.path.isdir(rootpath) \
+            and os.path.isfile(os.path.join(rootpath, 'format'))):
+      raise vclib.ReposNotFound(name)
+
+    # See if this repository is even viewable, authz-wise.
+    if authorizer is not None and not authorizer.check_root_access(name):
       raise vclib.ReposNotFound(name)
 
     # Initialize some stuff.
@@ -362,13 +367,13 @@ class LocalSubversionRepository(vclib.Repository):
     self.svn_client_path = utilities.svn or 'svn'
     self.diff_cmd = utilities.diff or 'diff'
 
+  def open(self):
     # Register a handler for SIGTERM so we can have a chance to
     # cleanup.  If ViewVC takes too long to start generating CGI
     # output, Apache will grow impatient and SIGTERM it.  While we
     # don't mind getting told to bail, we want to gracefully close the
     # repository before we bail.
     def _sigterm_handler(signum, frame, self=self):
-      self._close()
       sys.exit(-1)
     try:
       signal.signal(signal.SIGTERM, _sigterm_handler)
@@ -380,13 +385,10 @@ class LocalSubversionRepository(vclib.Repository):
       pass
 
     # Open the repository and init some other variables.
-    self.repos = repos.svn_repos_open(rootpath)
+    self.repos = repos.svn_repos_open(self.rootpath)
     self.fs_ptr = repos.svn_repos_fs(self.repos)
     self.youngest = fs.youngest_rev(self.fs_ptr)
     self._fsroots = {}
-
-    if authorizer is not None and not authorizer.check_root_access(name):
-      raise vclib.ReposNotFound(name)
 
   def _check_path_access(self, path_parts, rev=None, pathtype=None):
     if not self.authorizer:

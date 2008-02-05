@@ -50,6 +50,9 @@ class Repository:
 
   def rootpath(self):
     """Return the location of this repository."""
+
+  def open(self):
+    """Open a connection to the repository."""
     
   def itemtype(self, path_parts, rev):
     """Return the type of the item (file or dir) at the given path and revision
