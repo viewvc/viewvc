@@ -59,6 +59,7 @@
 <div id="vc_current_path">
 <strong>[page_title]</strong>
 [if-any nav_path]
+  [if-any roots_href]<a href="[roots_href]">/</a>[else]/[end]
   [for nav_path]
     [if-any nav_path.href]<a href="[nav_path.href]">[end]
       [nav_path.name][if-any nav_path.href]</a>[end]
