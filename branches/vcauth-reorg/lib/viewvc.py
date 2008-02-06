@@ -126,9 +126,6 @@ class Request:
     self.pathrev = None    # current path revision or tag
     self.auth = None       # authorizer module in use
 
-    # setup the default authorizer (until we have a root)
-    self.auth = vcauth.ViewVCAuthorizer()
-    
     # redirect if we're loading from a valid but irregular URL
     # These redirects aren't neccessary to make ViewVC work, it functions
     # just fine without them, but they make it easier for server admins to
@@ -208,53 +205,40 @@ class Request:
     self.where = _path_join(path_parts)
     self.path_parts = path_parts
 
-    self.auth = vcauth.ViewVCAuthorizer(None)
-    
     if self.rootname:
-      if cfg.options.authorizer:
-        self.auth = setup_authorizer(cfg, self.username, self.rootname)
+
+      # Setup an Authorizer for this rootname and username
+      self.auth = setup_authorizer(cfg, self.username, self.rootname)
 
       # Create the repository object
-      if cfg.general.cvs_roots.has_key(self.rootname):
-        cfg.overlay_root_options(self.rootname)
-        self.rootpath = os.path.normpath(cfg.general.cvs_roots[self.rootname])
-        try:
+      try:
+        if cfg.general.cvs_roots.has_key(self.rootname):
+          cfg.overlay_root_options(self.rootname)
+          self.rootpath = os.path.normpath(cfg.general.cvs_roots[self.rootname])
           self.repos = vclib.ccvs.CVSRepository(self.rootname,
                                                 self.rootpath,
                                                 self.auth,
                                                 cfg.utilities,
                                                 cfg.options.use_rcsparse)
-        except vclib.ReposNotFound:
-          raise debug.ViewVCException(
-            'Unable to locate CVS root "%s".  Possible causes include '
-            'having an incorrectly configured path for this root, or the '
-            'server on which the repository lives being inaccessible.' \
-            % self.rootname)
-        # required so that spawned rcs programs correctly expand $CVSHeader$
-        os.environ['CVSROOT'] = self.rootpath
-        self.repos.open()
-      elif cfg.general.svn_roots.has_key(self.rootname):
-        cfg.overlay_root_options(self.rootname)
-        self.rootpath = cfg.general.svn_roots[self.rootname]
-        try:
+          # required so that spawned rcs programs correctly expand $CVSHeader$
+          os.environ['CVSROOT'] = self.rootpath
+        elif cfg.general.svn_roots.has_key(self.rootname):
+          cfg.overlay_root_options(self.rootname)
+          self.rootpath = cfg.general.svn_roots[self.rootname]
           self.repos = vclib.svn.SubversionRepository(self.rootname,
                                                       self.rootpath,
                                                       self.auth,
                                                       cfg.utilities)
-        except vclib.ReposNotFound:
-          raise debug.ViewVCException(
-            'Unable to locate Subversion root "%s".  Possible causes include '
-            'having an incorrectly configured path for this root, or the '
-            'server on which the repository lives being inaccessible.' \
-            % self.rootname)
-        self.repos.open()
-      else:
+        else:
+          raise vclib.ReposNotFound()
+      except vclib.ReposNotFound:
         raise debug.ViewVCException(
           'The root "%s" is unknown. If you believe the value is '
           'correct, then please double-check your configuration.'
-          % self.rootname, "404 Repository not found")
+          % self.rootname, "404 Not Found")
 
     if self.repos:
+      self.repos.open()
       type = self.repos.roottype()
       if type == vclib.SVN:
         self.roottype = 'svn'
@@ -757,6 +741,10 @@ def _orig_path(request, rev_param='revision', path_param=None):
   return _path_parts(path), rev
 
 def setup_authorizer(cfg, username, rootname):
+  # No configured authorizer?  No problem.
+  if not cfg.options.authorizer:
+    return None
+
   # First, try to load a module with the configured name.
   try:
     exec('import vcauth.%s' % (cfg.options.authorizer))
