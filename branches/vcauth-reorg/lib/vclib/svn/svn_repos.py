@@ -108,18 +108,9 @@ def _datestr_to_date(datestr):
     return None
 
   
-def _fs_rev_props(fsptr, rev):
-  author = fs.revision_prop(fsptr, rev, core.SVN_PROP_REVISION_AUTHOR)
-  msg = fs.revision_prop(fsptr, rev, core.SVN_PROP_REVISION_LOG)
-  date = fs.revision_prop(fsptr, rev, core.SVN_PROP_REVISION_DATE)
-  return date, author, msg
-
-
 def date_from_rev(svnrepos, rev):
-  if (rev < 0) or (rev > svnrepos.youngest):
-    raise vclib.InvalidRevision(rev)
-  return _datestr_to_date(fs.revision_prop(svnrepos.fs_ptr, rev,
-                                           core.SVN_PROP_REVISION_DATE))
+  datestr, author, msg, changes = svnrepos.revinfo(entry_rev)
+  return _datestr_to_date(datestr)
 
 
 class Revision(vclib.Revision):
@@ -195,7 +186,7 @@ def _log_helper(svnrepos, rev, path):
   copyfrom_rev, copyfrom_path = fs.copied_from(rev_root, path)
 
   # Assemble our LogEntry
-  datestr, author, msg = _fs_rev_props(svnrepos.fs_ptr, rev)
+  datestr, author, msg, changes = svnrepos.revinfo(rev)
   date = _datestr_to_date(datestr)
   if fs.is_file(rev_root, path):
     size = fs.file_length(rev_root, path)
@@ -389,6 +380,7 @@ class LocalSubversionRepository(vclib.Repository):
     self.fs_ptr = repos.svn_repos_fs(self.repos)
     self.youngest = fs.youngest_rev(self.fs_ptr)
     self._fsroots = {}
+    self._revinfo_cache = {}
 
   def _check_path_access(self, path_parts, rev=None, pathtype=None):
     if not self.authorizer:
@@ -452,13 +444,19 @@ class LocalSubversionRepository(vclib.Repository):
 
   def dirlogs(self, path_parts, rev, entries, options):
     fsroot = self._getroot(self._getrev(rev))
+    rev = self._getrev(rev)
+    if not self._check_path_access(path_parts, rev, vclib.DIR):
+      raise vclib.ItemNotFound(path_parts)
+
     for entry in entries:
-      path = self._getpath(path_parts + [entry.name])
-      rev = _get_last_history_rev(fsroot, path)
-      datestr, author, msg = _fs_rev_props(self.fs_ptr, rev)
-      date = _datestr_to_date(datestr)
+      entry_path_parts = path_parts + [entry.name]
+      if not self._check_path_access(entry_path_parts, rev, entry.kind):
+        continue
+      path = self._getpath(entry_path_parts)
+      entry_rev = _get_last_history_rev(fsroot, path)
+      datestr, author, msg, changes = self.revinfo(entry_rev)
       entry.rev = str(rev)
-      entry.date = date
+      entry.date = _datestr_to_date(datestr)
       entry.author = author
       entry.log = msg
       if entry.kind == vclib.FILE:
@@ -481,9 +479,14 @@ class LocalSubversionRepository(vclib.Repository):
         boolean, default false. if set will return only newest single log
         entry
     """
+
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
 
+    if not self._check_path_access(path_parts, rev,
+                                   self.itemtype(path_parts, rev)):
+      raise vclib.ItemNotFound(path_parts)
+    
     revs = _fetch_log(self, path, rev, options)
     revs.sort()
     prev = None
@@ -497,6 +500,10 @@ class LocalSubversionRepository(vclib.Repository):
     rev = self._getrev(rev)
     fsroot = self._getroot(rev)
 
+    if not self._check_path_access(path_parts, rev,
+                                   self.itemtype(path_parts, rev)):
+      raise vclib.ItemNotFound(path_parts)
+    
     history_set = _get_history(self, path, rev, {'svn_cross_copies': 1})
     history_revs = history_set.keys()
     history_revs.sort()
@@ -505,7 +512,7 @@ class LocalSubversionRepository(vclib.Repository):
     source = BlameSource(_rootpath2url(self.rootpath, path), rev, first_rev)
     return source, revision
 
-  def revinfo(self, rev):
+  def _revinfo_raw(self, rev):
     fsroot = self._getroot(rev)
 
     # Get the changes for the revision
@@ -517,7 +524,9 @@ class LocalSubversionRepository(vclib.Repository):
     
     # Now get the revision property info.  Would use
     # editor.get_root_props(), but something is broken there...
-    datestr, author, msg = _fs_rev_props(self.fs_ptr, rev)
+    author = fs.revision_prop(self.fs_ptr, rev, core.SVN_PROP_REVISION_AUTHOR)
+    msg = fs.revision_prop(self.fs_ptr, rev, core.SVN_PROP_REVISION_LOG)
+    datestr = fs.revision_prop(self.fs_ptr, rev, core.SVN_PROP_REVISION_DATE)
 
     # Copy the Subversion changes into a new hash, converting them into
     # ChangedPath objects.
@@ -584,8 +593,17 @@ class LocalSubversionRepository(vclib.Repository):
       if not found_readable:
         author = None
         datestr = None
-    return _datestr_to_date(datestr), author, msg, changedpaths.values()
 
+    return datestr, author, msg, changedpaths.values()
+
+  def revinfo(self, rev):
+    rev = self._getrev(rev)
+    cached_info = self._revinfo_cache.get(rev)
+    if not cached_info:
+      cached_info = self._revinfo_raw(rev)
+      self._revinfo_cache[rev] = cached_info
+    return cached_info[0], cached_info[1], cached_info[2], cached_info[3]
+  
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     p1 = self._getpath(path_parts1)
     p2 = self._getpath(path_parts2)
