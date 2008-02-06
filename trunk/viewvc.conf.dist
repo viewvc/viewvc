@@ -315,7 +315,12 @@ allowed_views = markup, annotate
 # vcauth.GenericViewVCAuthorizer).  You can provide custom parameters
 # to the authorizer module by defining configuration sections named
 # authz-MODULENAME and adding the parameter keys and values there.
-# ViewVC provides the following modules:  "svnauthz", "forbidden"
+#
+# ViewVC provides the following modules:
+#   svnauthz   - based on Subversion authz files
+#   forbidden  - simple path glob matches against top-level root directories
+#   forbidden  - root and path matches against regular expressions
+#
 authorizer = forbidden
 
 # mangle_email_addresses: Mangle email addresses in marked-up output.
