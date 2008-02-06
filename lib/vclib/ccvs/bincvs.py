@@ -13,6 +13,7 @@
 "Version Control lib driver for locally accessible cvs-repositories."
 
 import vclib
+import vcauth
 import os
 import os.path
 import sys
@@ -26,13 +27,18 @@ import compat
 import popen
 
 class BaseCVSRepository(vclib.Repository):
-  def __init__(self, name, rootpath, utilities):
+  def __init__(self, name, rootpath, authorizer, utilities):
     if not os.path.isdir(rootpath):
-      raise vclib.ReposNotFound(name)
-
+      raise vclib.ReposNotFound(name) 
+   
     self.name = name
     self.rootpath = rootpath
+    self.auth = authorizer
     self.utilities = utilities
+
+    # See if this repository is even viewable, authz-wise.
+    if not vclib.check_root_access(self):
+      raise vclib.ReposNotFound(name)
 
   def rootname(self):
     return self.name
@@ -42,43 +48,62 @@ class BaseCVSRepository(vclib.Repository):
 
   def roottype(self):
     return vclib.CVS
+
+  def authorizer(self):
+    return self.auth
   
   def itemtype(self, path_parts, rev):
     basepath = self._getpath(path_parts)
     if os.path.isdir(basepath):
-      return vclib.DIR
-    if os.path.isfile(basepath + ',v'):
-      return vclib.FILE
-    atticpath = self._getpath(self._atticpath(path_parts))
-    if os.path.isfile(atticpath + ',v'):
-      return vclib.FILE
-    raise vclib.ItemNotFound(path_parts)
+      kind = vclib.DIR
+    elif os.path.isfile(basepath + ',v'):
+      kind = vclib.FILE
+    else:
+      atticpath = self._getpath(self._atticpath(path_parts))
+      if os.path.isfile(atticpath + ',v'):
+        kind = vclib.FILE
+    if not kind:
+      raise vclib.ItemNotFound(path_parts)
+    if not vclib.check_path_access(self, path_parts, kind, rev):
+      raise vclib.ItemNotFound(path_parts)
+    return kind
 
   def listdir(self, path_parts, rev, options):
+    if not vclib.check_path_access(self, path_parts, vclib.DIR, rev):
+      raise vclib.ItemNotFound(path_parts)
     # Only RCS files (*,v) and subdirs are returned.
     data = [ ]
-
     full_name = self._getpath(path_parts)
     for file in os.listdir(full_name):
+      name = None
       kind, errors = _check_path(os.path.join(full_name, file))
       if kind == vclib.FILE:
         if file[-2:] == ',v':
-          data.append(CVSDirEntry(file[:-2], kind, errors, 0))
+          name = file[:-2]
       elif kind == vclib.DIR:
         if file != 'Attic' and file != 'CVS': # CVS directory is for fileattr
-          data.append(CVSDirEntry(file, kind, errors, 0))
+          name = file
       else:
-        data.append(CVSDirEntry(file, kind, errors, 0))
+        name = file
+      if not name:
+        continue
+      if vclib.check_path_access(self, path_parts + [name], kind, rev):
+        data.append(CVSDirEntry(name, kind, errors, 0))
 
     full_name = os.path.join(full_name, 'Attic')
     if os.path.isdir(full_name):
       for file in os.listdir(full_name):
+        name = None
         kind, errors = _check_path(os.path.join(full_name, file))
         if kind == vclib.FILE:
           if file[-2:] == ',v':
-            data.append(CVSDirEntry(file[:-2], kind, errors, 1))
+            name = file[:-2]
         elif kind != vclib.DIR:
-          data.append(CVSDirEntry(file, kind, errors, 1))
+          name = file
+        if not name:
+          continue
+        if vclib.check_path_access(self, path_parts + [name], kind, rev):
+          data.append(CVSDirEntry(name, kind, errors, 1))
 
     return data
     
@@ -126,6 +151,8 @@ class BinCVSRepository(BaseCVSRepository):
     return None
 
   def openfile(self, path_parts, rev):
+    if not vclib.check_path_access(self, path_parts, vclib.FILE, rev):
+      raise vclib.ItemNotFound(path_parts)
     if not rev or rev == 'HEAD' or rev == 'MAIN':
       rev_flag = '-p'
     else:
@@ -195,10 +222,16 @@ class BinCVSRepository(BaseCVSRepository):
       cvs_tags, cvs_branches
         lists of tag and branch names encountered in the directory
     """
+    if not vclib.check_path_access(self, path_parts, vclib.DIR, rev):
+      raise vclib.ItemNotFound(path_parts)
     subdirs = options.get('cvs_subdirs', 0)
 
-    dirpath = self._getpath(path_parts)
-    alltags = _get_logs(self, dirpath, entries, rev, subdirs)
+    entries_to_fetch = []
+    for entry in entries:
+      if vclib.check_path_access(self, path_parts + [entry.name], None, rev):
+        entries_to_fetch.append(entry)
+      
+    alltags = _get_logs(self, path_parts, entries_to_fetch, rev, subdirs)
 
     branches = options['cvs_branches'] = []
     tags = options['cvs_tags'] = []
@@ -228,6 +261,9 @@ class BinCVSRepository(BaseCVSRepository):
         dictionary of Tag objects for all tags encountered
     """
 
+    if not vclib.check_path_access(self, path_parts, vclib.FILE, rev):
+      raise vclib.ItemNotFound(path_parts)
+    
     # Invoke rlog
     rcsfile = self.rcsfile(path_parts, 1)
     if rev and options.get('cvs_pass_rev', 0):
@@ -261,6 +297,8 @@ class BinCVSRepository(BaseCVSRepository):
     return popen.popen(cmd, args, mode, capture_err)
 
   def annotate(self, path_parts, rev=None):
+    if not vclib.check_path_access(self, path_parts, vclib.FILE, rev):
+      raise vclib.ItemNotFound(path_parts)
     from vclib.ccvs import blame
     source = blame.BlameSource(self.rcsfile(path_parts, 1), rev)
     return source, source.revision
@@ -275,6 +313,11 @@ class BinCVSRepository(BaseCVSRepository):
 
       ignore_keyword_subst - boolean, ignore keyword substitution
     """
+    if not vclib.check_path_access(self, path_parts1, vclib.FILE, rev1):
+      raise vclib.ItemNotFound(path_parts1)
+    if not vclib.check_path_access(self, path_parts2, vclib.FILE, rev2):
+      raise vclib.ItemNotFound(path_parts2)
+    
     args = vclib._diff_args(type, options)
     if options.get('ignore_keyword_subst', 0):
       args.append('-kk')
@@ -851,7 +894,7 @@ def _file_log(revs, taginfo, cur_branch, filter):
   
   return filtered_revs
 
-def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
+def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
   alltags = {           # all the tags seen in the files of this dir
     'MAIN' : '',
     'HEAD' : '1.1'
@@ -866,7 +909,7 @@ def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
 
     while len(chunk) < max_args and entries_idx < entries_len:
       entry = entries[entries_idx]
-      path = _log_path(entry, dirpath, get_dirs)
+      path = _log_path(entry, repos._getpath(dir_path_parts), get_dirs)
       if path:
         entry.path = path
         entry.idx = entries_idx
@@ -1099,6 +1142,8 @@ def _newest_file(dirpath):
   newest_file = None
   newest_time = 0
 
+  ### FIXME:  This sucker is leaking unauthorized paths! ###
+  
   for subfile in os.listdir(dirpath):
     ### filter CVS locks? stale NFS handles?
     if subfile[-2:] != ',v':

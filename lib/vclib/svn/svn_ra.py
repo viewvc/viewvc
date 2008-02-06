@@ -168,32 +168,34 @@ class SelfCleanFP:
 
 
 class RemoteSubversionRepository(vclib.Repository):
-  def __init__(self, name, rootpath, utilities):
-    core.svn_config_ensure(None)
-
-    # Start populating our members
+  def __init__(self, name, rootpath, authorizer, utilities):
     self.name = name
     self.rootpath = rootpath
+    self.auth = authorizer
     self.diff_cmd = utilities.diff or 'diff'
 
+    # See if this repository is even viewable, authz-wise.
+    if not vclib.check_root_access(self):
+      raise vclib.ReposNotFound(name)
+
+  def open(self):
     # Setup the client context baton, complete with non-prompting authstuffs.
     # TODO: svn_cmdline_setup_auth_baton() is mo' better (when available)
-    ctx = client.svn_client_ctx_t()
-    providers = [
+    core.svn_config_ensure(None)
+    self.ctx = client.svn_client_ctx_t()
+    self.ctx.auth_baton = core.svn_auth_open([
       client.svn_client_get_simple_provider(),
       client.svn_client_get_username_provider(),
       client.svn_client_get_ssl_server_trust_file_provider(),
       client.svn_client_get_ssl_client_cert_file_provider(),
       client.svn_client_get_ssl_client_cert_pw_file_provider(),
-    ]
-    ctx.auth_baton = core.svn_auth_open(providers)
-    ctx.config = core.svn_config_get_config(None)
-    self.ctx = ctx
+      ])
+    self.ctx.config = core.svn_config_get_config(None)
 
     ra_callbacks = ra.svn_ra_callbacks_t()
     ra_callbacks.auth_baton = ctx.auth_baton
     self.ra_session = ra.svn_ra_open(self.rootpath, ra_callbacks, None,
-                                     ctx.config)
+                                     self.ctx.config)
     self.youngest = ra.svn_ra_get_latest_revnum(self.ra_session)
     self._dirent_cache = { }
 
@@ -206,6 +208,9 @@ class RemoteSubversionRepository(vclib.Repository):
   def roottype(self):
     return vclib.SVN
 
+  def authorizer(self):
+    return self.auth
+  
   def itemtype(self, path_parts, rev):
     path = self._getpath(path_parts[:-1])
     rev = self._getrev(rev)
