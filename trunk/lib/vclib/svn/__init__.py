@@ -16,12 +16,14 @@ import os
 import os.path
 import re
 
-def SubversionRepository(name, rootpath, utilities):
+def SubversionRepository(name, rootpath, authorizer, utilities):
   re_url = re.compile('^(http|https|file|svn|svn\+[^:]+)://')
   if re.search(re_url, rootpath):
     import svn_ra
-    return svn_ra.RemoteSubversionRepository(name, rootpath, utilities)
+    return svn_ra.RemoteSubversionRepository(name, rootpath,
+                                             authorizer, utilities)
   else:
     import svn_repos
     rootpath = os.path.normpath(rootpath)
-    return svn_repos.LocalSubversionRepository(name, rootpath, utilities)
+    return svn_repos.LocalSubversionRepository(name, rootpath,
+                                               authorizer, utilities)

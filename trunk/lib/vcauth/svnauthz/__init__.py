@@ -21,20 +21,26 @@ from ConfigParser import ConfigParser
 class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   """Subversion authz authorizer module"""
   
-  def __init__(self, username, root, params={}):
-    rootname = root.rootname()
-    self.paths = {}   # paths-in-root -> access boolean for USERNAME
+  def __init__(self, username, params={}):
+    self.username = username
+    self.rootpaths = { }  # {root -> { paths -> access boolean for USERNAME }}
     
     # Get the authz file location from a passed-in parameter.
-    authz_file = params.get('authzfile')
-    if not authz_file:
+    self.authz_file = params.get('authzfile')
+    if not self.authz_file:
       raise debug.ViewVCException("No authzfile configured")
-    if not os.path.exists(authz_file):
+    if not os.path.exists(self.authz_file):
       raise debug.ViewVCException("Configured authzfile file not found")
 
+  def _get_paths_for_root(self, rootname):
+    if self.rootpaths.has_key(rootname):
+      return self.rootpaths[rootname]
+
+    paths_for_root = { }
+    
     # Parse the authz file.
     cp = ConfigParser()
-    cp.read(authz_file)
+    cp.read(self.authz_file)
 
     # Figure out which groups USERNAME has a part of.
     groups = []
@@ -69,7 +75,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
         entries = string.split(cp.get('groups', groupname), ',')
         for entry in entries:
           entry = string.strip(entry)
-          if entry == username:
+          if entry == self.username:
             group_member = 1
             break
           elif entry[0:1] == "@" and _process_group(entry[1:]):
@@ -83,30 +89,18 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
       for group in cp.options('groups'):
         _process_group(group)
 
-    # Read the other (non-"groups") sections, and figure out in which
-    # repositories USERNAME or his groups have read rights.
-    root_is_readable = 0
-    for section in cp.sections():
-
-      # Skip the "groups" section -- we handled that already.
-      if section == 'groups':
-        continue
-
-      # Skip sections not related to our rootname.  While we're at it,
-      # go ahead and figure out the repository path we're talking about.
-      if section.find(':') == -1:
-        path = section
-      else:
-        root, path = string.split(section, ':', 1)
-        if root != rootname:
-          continue
-
+    def _process_access_section(section):
+      """Inline function for determining user access in a single
+      config secction.  Return a two-tuple (ALLOW, DENY) containing
+      the access determination for USERNAME in a given authz file
+      SECTION (if any)."""
+  
       # Figure if this path is explicitly allowed or denied to USERNAME.
       allow = deny = 0
       for user in cp.options(section):
         user = string.strip(user)
         if user == '*' \
-           or user == username \
+           or user == self.username \
            or (user[0:1] == "@" and user[1:] in groups):
           # See if the 'r' permission is among the ones granted to
           # USER.  If so, we can stop looking.  (Entry order is not
@@ -116,28 +110,88 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
           deny = not allow
           if allow:
             break
+      return allow, deny
+    
+    # Read the other (non-"groups") sections, and figure out in which
+    # repositories USERNAME or his groups have read rights.  We'll
+    # first check groups that have no specific repository designation,
+    # then superimpose that have a repository designation which
+    # matches the one we're asking about.
+    root_sections = []
+    for section in cp.sections():
+
+      # Skip the "groups" section -- we handled that already.
+      if section == 'groups':
+        continue
+
+      # Process root-agnostic access sections; skip (but remember)
+      # root-specific ones that match our root; ignore altogether
+      # root-specific ones that don't match our root.  While we're at
+      # it, go ahead and figure out the repository path we're talking
+      # about.
+      if section.find(':') == -1:
+        path = section
+      else:
+        name, path = string.split(section, ':', 1)
+        if name == rootname:
+          root_sections.append(section)
+        continue
+
+      # Check for a specific access determination.
+      allow, deny = _process_access_section(section)
           
       # If we got an explicit access determination for this path and this
       # USERNAME, record it.
       if allow or deny:
-        if allow:
-          root_is_readable = 1
         if path != '/':
           path = '/' + string.join(filter(None, string.split(path, '/')), '/')
-        self.paths[path] = allow
+        paths_for_root[path] = allow
 
-    # If USERNAME can't see this root at all, raise an error.
+    # Okay.  Superimpose those root-specific values now.
+    for section in root_sections:
+
+      # Get the path again.
+      name, path = string.split(section, ':', 1)
+      
+      # Check for a specific access determination.
+      allow, deny = _process_access_section(section)
+                
+      # If we got an explicit access determination for this path and this
+      # USERNAME, record it.
+      if allow or deny:
+        if path != '/':
+          path = '/' + string.join(filter(None, string.split(path, '/')), '/')
+        paths_for_root[path] = allow
+
+    # If the root isn't readable, there's no point in caring about all
+    # the specific paths the user can't see.  Just point the rootname
+    # to a None paths dictionary.
+    root_is_readable = 0
+    for path in paths_for_root.keys():
+      if paths_for_root[path]:
+        root_is_readable = 1
+        break
     if not root_is_readable:
-      raise vcauth.ViewVCRootAccessNotAuthorized(rootname, username)
+      paths_for_root = None
+      
+    self.rootpaths[rootname] = paths_for_root
+    return paths_for_root
 
-  def check_path_access(self, path_parts, rev=None):
+  def check_root_access(self, rootname):
+    paths = self._get_paths_for_root(rootname)
+    return (paths is not None) and 1 or 0
+  
+  def check_path_access(self, rootname, path_parts, pathtype, rev=None):
     # Crawl upward from the path represented by PATH_PARTS toward to
     # the root of the repository, looking for an explicitly grant or
     # denial of access.
+    paths = self._get_paths_for_root(rootname)
+    if paths is None:
+      return 0
     parts = path_parts[:]
     while parts:
       path = '/' + string.join(parts, '/')
-      if self.paths.has_key(path):
-        return self.paths[path]
+      if paths.has_key(path):
+        return paths[path]
       del parts[-1]
-    return self.paths.get('/', 0)
+    return paths.get('/', 0)
