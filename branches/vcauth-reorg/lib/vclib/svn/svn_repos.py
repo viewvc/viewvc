@@ -347,16 +347,16 @@ class LocalSubversionRepository(vclib.Repository):
             and os.path.isfile(os.path.join(rootpath, 'format'))):
       raise vclib.ReposNotFound(name)
 
-    # See if this repository is even viewable, authz-wise.
-    if authorizer is not None and not authorizer.check_root_access(name):
-      raise vclib.ReposNotFound(name)
-
     # Initialize some stuff.
     self.rootpath = rootpath
     self.name = name
-    self.authorizer = authorizer
+    self.auth = authorizer
     self.svn_client_path = utilities.svn or 'svn'
     self.diff_cmd = utilities.diff or 'diff'
+
+    # See if this repository is even viewable, authz-wise.
+    if not vclib.check_root_access(self):
+      raise vclib.ReposNotFound(name)
 
   def open(self):
     # Register a handler for SIGTERM so we can have a chance to
@@ -382,14 +382,6 @@ class LocalSubversionRepository(vclib.Repository):
     self._fsroots = {}
     self._revinfo_cache = {}
 
-  def _check_path_access(self, path_parts, rev=None, pathtype=None):
-    if not self.authorizer:
-      return 1
-    if not pathtype:
-      pathtype = self.itemtype(path_parts, rev)
-    return self.authorizer.check_path_access(self.name, path_parts,
-                                             pathtype, rev)
-      
   def rootname(self):
     return self.name
 
@@ -399,6 +391,9 @@ class LocalSubversionRepository(vclib.Repository):
   def roottype(self):
     return vclib.SVN
 
+  def authorizer(self):
+    return self.auth
+  
   def itemtype(self, path_parts, rev):
     rev = self._getrev(rev)
     basepath = self._getpath(path_parts)
@@ -408,13 +403,15 @@ class LocalSubversionRepository(vclib.Repository):
       pathtype = vclib.DIR
     elif kind == core.svn_node_file:
       pathtype = vclib.FILE
-    if not (pathtype and self._check_path_access(path_parts, rev, pathtype)):
+    else:
+      raise vclib.ItemNotFound(path_parts)
+    if not vclib.check_path_access(self, path_parts, pathtype, rev):
       raise vclib.ItemNotFound(path_parts)
     return pathtype
 
   def openfile(self, path_parts, rev):
     rev = self._getrev(rev)
-    if not self._check_path_access(path_parts, rev, vclib.FILE):
+    if not vclib.check_path_access(self, path_parts, vclib.FILE, rev):
       raise vclib.ItemNotFound(path_parts)
     path = self._getpath(path_parts)
     fsroot = self._getroot(rev)
@@ -424,12 +421,11 @@ class LocalSubversionRepository(vclib.Repository):
 
   def listdir(self, path_parts, rev, options):
     rev = self._getrev(rev)
-    if not self._check_path_access(path_parts, rev, vclib.DIR):
+    if not vclib.check_path_access(self, path_parts, vclib.DIR, rev):
       raise vclib.ItemNotFound(path_parts)
     basepath = self._getpath(path_parts)
     if self.itemtype(path_parts, rev) != vclib.DIR:
       raise vclib.Error("Path '%s' is not a directory." % basepath)
-
     fsroot = self._getroot(rev)
     dirents = fs.dir_entries(fsroot, basepath)
     entries = [ ]
@@ -438,19 +434,19 @@ class LocalSubversionRepository(vclib.Repository):
         kind = vclib.DIR
       elif entry.kind == core.svn_node_file:
         kind = vclib.FILE
-      if self._check_path_access(path_parts + [entry.name], rev, kind):
+      if vclib.check_path_access(self, path_parts + [entry.name], kind, rev):
         entries.append(vclib.DirEntry(entry.name, kind))
     return entries
 
   def dirlogs(self, path_parts, rev, entries, options):
     fsroot = self._getroot(self._getrev(rev))
     rev = self._getrev(rev)
-    if not self._check_path_access(path_parts, rev, vclib.DIR):
+    if not vclib.check_path_access(self, path_parts, vclib.DIR, rev):
       raise vclib.ItemNotFound(path_parts)
 
     for entry in entries:
       entry_path_parts = path_parts + [entry.name]
-      if not self._check_path_access(entry_path_parts, rev, entry.kind):
+      if not vclib.check_path_access(self, entry_path_parts, entry.kind, rev):
         continue
       path = self._getpath(entry_path_parts)
       entry_rev = _get_last_history_rev(fsroot, path)
@@ -482,11 +478,8 @@ class LocalSubversionRepository(vclib.Repository):
 
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
-
-    if not self._check_path_access(path_parts, rev,
-                                   self.itemtype(path_parts, rev)):
+    if not vclib.check_path_access(self, path_parts, None, rev):
       raise vclib.ItemNotFound(path_parts)
-    
     revs = _fetch_log(self, path, rev, options)
     revs.sort()
     prev = None
@@ -499,11 +492,8 @@ class LocalSubversionRepository(vclib.Repository):
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
     fsroot = self._getroot(rev)
-
-    if not self._check_path_access(path_parts, rev,
-                                   self.itemtype(path_parts, rev)):
+    if not vclib.check_path_access(self, path_parts, vclib.FILE, rev):
       raise vclib.ItemNotFound(path_parts)
-    
     history_set = _get_history(self, path, rev, {'svn_cross_copies': 1})
     history_revs = history_set.keys()
     history_revs.sort()
@@ -571,10 +561,10 @@ class LocalSubversionRepository(vclib.Repository):
         pathtype = None
 
       parts = filter(None, string.split(path, '/'))
-      if self._check_path_access(parts, rev, pathtype):
+      if vclib.check_path_access(self, parts, pathtype, rev):
         if is_copy and change.base_path and (change.base_path != path):
           parts = filter(None, string.split(path, '/'))
-          if self._check_path_access(parts, change.base_rev, pathtype):
+          if vclib.check_path_access(self, parts, pathtype, change.base_rev):
             is_copy = 0
             change.base_path = None
             change.base_rev = None
@@ -609,10 +599,10 @@ class LocalSubversionRepository(vclib.Repository):
     p2 = self._getpath(path_parts2)
     r1 = self._getrev(rev1)
     r2 = self._getrev(rev2)
-    if not self._check_path_access(path_parts1, rev1, vclib.FILE):
-      raise vclib.ItemNotFound(path_parts)
-    if not self._check_path_access(path_parts2, rev2, vclib.FILE):
-      raise vclib.ItemNotFound(path_parts)
+    if not vclib.check_path_access(self, path_parts1, vclib.FILE, rev1):
+      raise vclib.ItemNotFound(path_parts1)
+    if not vclib.check_path_access(self, path_parts2, vclib.FILE, rev2):
+      raise vclib.ItemNotFound(path_parts2)
     
     args = vclib._diff_args(type, options)
 

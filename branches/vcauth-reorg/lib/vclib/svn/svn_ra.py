@@ -169,15 +169,14 @@ class SelfCleanFP:
 
 class RemoteSubversionRepository(vclib.Repository):
   def __init__(self, name, rootpath, authorizer, utilities):
-    # See if this repository is even viewable, authz-wise.
-    if authorizer is not None and not authorizer.check_root_access(name):
-      raise vclib.ReposNotFound(name)
-
-    # Start populating our members
     self.name = name
     self.rootpath = rootpath
-    self.authorizer = authorizer
+    self.auth = authorizer
     self.diff_cmd = utilities.diff or 'diff'
+
+    # See if this repository is even viewable, authz-wise.
+    if not vclib.check_root_access(self):
+      raise vclib.ReposNotFound(name)
 
   def open(self):
     # Setup the client context baton, complete with non-prompting authstuffs.
@@ -209,6 +208,9 @@ class RemoteSubversionRepository(vclib.Repository):
   def roottype(self):
     return vclib.SVN
 
+  def authorizer(self):
+    return self.auth
+  
   def itemtype(self, path_parts, rev):
     path = self._getpath(path_parts[:-1])
     rev = self._getrev(rev)

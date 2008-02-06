@@ -51,6 +51,10 @@ class Repository:
   def rootpath(self):
     """Return the location of this repository."""
 
+  def authorizer(self):
+    """Return the vcauth.Authorizer object associated with this
+    repository, or None if no such association has been made."""
+    
   def open(self):
     """Open a connection to the repository."""
     
@@ -353,3 +357,26 @@ class _diff_fp:
   def _label(self, (path, date, rev)):
     date = date and time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date))
     return "%s\t%s\t%s" % (path, date, rev)
+
+
+def check_root_access(repos):
+  """Return 1 iff the associated username is permitted to read REPOS,
+  as determined by consulting REPOS's Authorizer object (if any)."""
+
+  auth = repos.authorizer()
+  if not auth:
+    return 1
+  return auth.check_root_access(repos.rootname())
+  
+def check_path_access(repos, path_parts, pathtype=None, rev=None):
+  """Return 1 iff the associated username is permitted to read
+  revision REV of the path PATH_PARTS (of type PATHTYPE) in repository
+  REPOS, as determined by consulting REPOS's Authorizer object (if any)."""
+
+  auth = repos.authorizer()
+  if not auth:
+    return 1
+  if not pathtype:
+    pathtype = repos.itemtype(path_parts, rev)
+  return auth.check_path_access(repos.rootname(), path_parts, pathtype, rev)
+
