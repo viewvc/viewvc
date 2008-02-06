@@ -3791,24 +3791,22 @@ def list_roots(request):
   
   # Add the viewable Subversion roots
   for root in cfg.general.svn_roots.keys():
-    if request.username is not None:
-      auth = setup_authorizer(cfg, request.username, root)
-      try:
-        vclib.svn.SubversionRepository(root, cfg.general.svn_roots[root],
-                                       auth, cfg.utilities)
-      except vclib.ReposNotFound:
-        continue
+    auth = setup_authorizer(cfg, request.username, root)
+    try:
+      vclib.svn.SubversionRepository(root, cfg.general.svn_roots[root],
+                                     auth, cfg.utilities)
+    except vclib.ReposNotFound:
+      continue
     allroots[root] = [cfg.general.svn_roots[root], 'svn']
 
   # Add the viewable CVS roots
   for root in cfg.general.cvs_roots.keys():
-    if request.username is not None:
-      auth = setup_authorizer(cfg, request.username, root)
-      try:
-        vclib.ccvs.CVSRepository(root, cfg.general.cvs_roots[root], auth,
-                                 cfg.utilities, cfg.options.use_rcsparse)
-      except vclib.ReposNotFound:
-        continue
+    auth = setup_authorizer(cfg, request.username, root)
+    try:
+      vclib.ccvs.CVSRepository(root, cfg.general.cvs_roots[root], auth,
+                               cfg.utilities, cfg.options.use_rcsparse)
+    except vclib.ReposNotFound:
+      continue
     allroots[root] = [cfg.general.cvs_roots[root], 'cvs']
     
   return allroots
