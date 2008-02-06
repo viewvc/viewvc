@@ -451,6 +451,8 @@ template_dir = templates
 # and TAG based browsing essentially puts this out of order, unless
 # the last checkin was on the same tag as you are viewing.
 # Enable this if you like the feature, but don't rely on correct results.
+#
+# ** WARNING: Enabling this will currently leak unauthorized path names **
 show_subdir_lastmod = 0
 
 # show a portion of the most recent log entry in directory listings

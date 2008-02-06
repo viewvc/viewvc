@@ -43,8 +43,10 @@ import config
 import popen
 import ezt
 import accept
-import vclib
 import vcauth
+import vclib
+import vclib.ccvs
+import vclib.svn
 
 try:
   import idiff
@@ -110,10 +112,6 @@ class Request:
 
     cfg = self.cfg
 
-    # global needed because "import vclib.svn" causes the
-    # interpreter to make vclib a local variable
-    global vclib
-
     # This function first parses the query string and sets the following
     # variables. Then it executes the request.
     self.view_func = None  # function to call to process the request
@@ -128,9 +126,6 @@ class Request:
     self.pathrev = None    # current path revision or tag
     self.auth = None       # authorizer module in use
 
-    # setup the default authorizer (until we have a root)
-    self.auth = vcauth.ViewVCAuthorizer()
-    
     # redirect if we're loading from a valid but irregular URL
     # These redirects aren't neccessary to make ViewVC work, it functions
     # just fine without them, but they make it easier for server admins to
@@ -211,47 +206,39 @@ class Request:
     self.path_parts = path_parts
 
     if self.rootname:
+
+      # Setup an Authorizer for this rootname and username
+      self.auth = setup_authorizer(cfg, self.username, self.rootname)
+
       # Create the repository object
-      if cfg.general.cvs_roots.has_key(self.rootname):
-        cfg.overlay_root_options(self.rootname)
-        self.rootpath = os.path.normpath(cfg.general.cvs_roots[self.rootname])
-        try:
-          import vclib.ccvs
+      try:
+        if cfg.general.cvs_roots.has_key(self.rootname):
+          cfg.overlay_root_options(self.rootname)
+          self.rootpath = os.path.normpath(cfg.general.cvs_roots[self.rootname])
           self.repos = vclib.ccvs.CVSRepository(self.rootname,
                                                 self.rootpath,
+                                                self.auth,
                                                 cfg.utilities,
                                                 cfg.options.use_rcsparse)
-        except vclib.ReposNotFound:
-          raise debug.ViewVCException(
-            'Unable to locate CVS root "%s".  Possible causes include '
-            'having an incorrectly configured path for this root, or the '
-            'server on which the repository lives being inaccessible.' \
-            % self.rootname)
-        # required so that spawned rcs programs correctly expand $CVSHeader$
-        os.environ['CVSROOT'] = self.rootpath
-      elif cfg.general.svn_roots.has_key(self.rootname):
-        cfg.overlay_root_options(self.rootname)
-        self.rootpath = cfg.general.svn_roots[self.rootname]
-        try:
-          import vclib.svn
+          # required so that spawned rcs programs correctly expand $CVSHeader$
+          os.environ['CVSROOT'] = self.rootpath
+        elif cfg.general.svn_roots.has_key(self.rootname):
+          cfg.overlay_root_options(self.rootname)
+          self.rootpath = cfg.general.svn_roots[self.rootname]
           self.repos = vclib.svn.SubversionRepository(self.rootname,
                                                       self.rootpath,
+                                                      self.auth,
                                                       cfg.utilities)
-        except vclib.ReposNotFound:
-          raise debug.ViewVCException(
-            'Unable to locate Subversion root "%s".  Possible causes include '
-            'having an incorrectly configured path for this root, or the '
-            'server on which the repository lives being inaccessible.' \
-            % self.rootname)
-        except vclib.InvalidRevision, ex:
-          raise debug.ViewVCException(str(ex))
-      else:
+        else:
+          raise vclib.ReposNotFound()
+      except vclib.ReposNotFound:
         raise debug.ViewVCException(
           'The root "%s" is unknown. If you believe the value is '
           'correct, then please double-check your configuration.'
-          % self.rootname, "404 Repository not found")
+          % self.rootname, "404 Not Found")
 
     if self.repos:
+      self.repos.open()
       type = self.repos.roottype()
       if type == vclib.SVN:
         self.roottype = 'svn'
@@ -262,9 +249,6 @@ class Request:
           'The root "%s" has an unknown type (%s).' % (self.rootname, type),
           "500 Internal Server Error")
       
-    if self.rootname and cfg.options.authorizer:
-      self.auth = setup_authorizer(cfg, self.username, self.repos)
-
     # If this is using an old-style 'rev' parameter, redirect to new hotness.
     # Subversion URLs will now use 'pathrev'; CVS ones use 'revision'.
     if self.repos and self.query_dict.has_key('rev'):
@@ -323,13 +307,6 @@ class Request:
           self.where = _path_join(attic_parts)
           needs_redirect = 1
 
-    # Check authorization for files and directories.
-    if self.path_parts:
-      if not self.auth.check_path_access(self.path_parts):
-        path = _path_join(self.path_parts)
-        raise debug.ViewVCNotAuthorizedException(self.username,
-                                                 'path "%s"' % (path))
-    
     if self.view_func is None:
       # view parameter is not set, try looking at pathtype and the 
       # other parameters
@@ -763,8 +740,10 @@ def _orig_path(request, rev_param='revision', path_param=None):
     return _path_parts(request.repos.get_location(path, pathrev, rev)), rev
   return _path_parts(path), rev
 
-def setup_authorizer(cfg, username, root, params={}):
-  rootname = root.rootname()
+def setup_authorizer(cfg, username, rootname):
+  # No configured authorizer?  No problem.
+  if not cfg.options.authorizer:
+    return None
 
   # First, try to load a module with the configured name.
   try:
@@ -780,11 +759,7 @@ def setup_authorizer(cfg, username, root, params={}):
   params = cfg.get_authorizer_params(cfg.options.authorizer, rootname)
 
   # Finally, instantiate our Authorizer.
-  try:
-    return my_auth.ViewVCAuthorizer(username, root, params)
-  except vcauth.ViewVCRootAccessNotAuthorized:
-    raise debug.ViewVCNotAuthorizedException(username,
-                                             'root "%s"' % (rootname))
+  return my_auth.ViewVCAuthorizer(username, params)
 
 def check_freshness(request, mtime=None, etag=None, weak=0):
   # See if we are supposed to disable etags (for debugging, usually)
@@ -1153,7 +1128,7 @@ def common_template_data(request):
 
   # add in the roots for the selection
   roots = []
-  allroots = list_roots(cfg)
+  allroots = list_roots(request)
   if len(allroots):
     rootnames = allroots.keys()
     rootnames.sort(icmp)
@@ -1652,15 +1627,6 @@ def view_directory(request):
   if cfg.options.use_re_search and search_re:
     file_data = search_files(request.repos, request.path_parts,
                              request.pathrev, file_data, search_re)
-
-  # Further filter the file list based on what the user is permitted
-  # to see.  We do this before called dirlogs because it'll save us
-  # some work there, but also so it won't harvest tag/branch names
-  # from unauthorized files.
-  def _auth_filter(item):
-    return request.auth.check_path_access(request.path_parts \
-                                          + [item.name])
-  file_data = filter(_auth_filter, file_data)
 
   # sort with directories first, and using the "sortby" criteria
   sortby = request.query_dict.get('sortby', cfg.options.sort_by) or 'file'
@@ -2765,32 +2731,19 @@ def diff_parse_headers(fp, diff_type, rev1, rev2, sym1=None, sym2=None):
 
 def _get_diff_path_parts(request, query_key, rev, base_rev):
   if request.query_dict.has_key(query_key):
-    path = request.query_dict[query_key]
-    parts = _path_parts(path)
-    if not request.auth.check_path_access(parts):
-      raise debug.ViewVCNotAuthorizedException(self.username,
-                                               'file "%s"' % (path))
+    path = _path_parts(request.query_dict[query_key])
   elif request.roottype == 'svn':
     try:
-      repos = request.repos
-      path = repos.get_location(request.where,
-                                repos._getrev(base_rev),
-                                repos._getrev(rev))
-      parts = _path_parts(path)      
-      if not request.auth.check_path_access(parts):
-        raise debug.ViewVCNotAuthorizedException(self.username,
-                                                 'file "%s"' % (path))
+      _path_parts(repos.get_location(request.where,
+                                     request.repos._getrev(base_rev),
+                                     request.repos._getrev(rev)))
     except vclib.InvalidRevision:
       raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                    'to diff', '400 Bad Request')
     except vclib.ItemNotFound:
       raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                    'to diff', '400 Bad Request')
-    if not request.auth.check_path_access(parts):
-      raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
-                                   'to diff', '400 Bad Request')
   else:
-    # NOTE: authorization already checked in run_viewvc()
     parts = request.path_parts
   return parts
 
@@ -3115,8 +3068,6 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
       continue
     if cvs and (file.rev is None or file.dead):
       continue
-    if not request.auth.check_path_access(rep_path + [file.name]):
-      continue
 
     # If we get here, we've seen at least one valid file in the
     # current directory.  For CVS, we need to make sure there are
@@ -3153,8 +3104,6 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
        and request.cfg.options.hide_cvsroot \
        and file.name == 'CVSROOT':
         continue
-    if not request.auth.check_path_access(rep_path + [file.name]):
-      continue
 
     mtime = request.roottype == 'svn' and file.date or None
     generate_tarball(out, request, reldir + [file.name], stack, mtime)
@@ -3221,11 +3170,6 @@ def view_revision(request):
   date, author, msg, changes = request.repos.revinfo(rev)
   date_str = make_time_string(date, cfg)
 
-  # Filter the changes list based on what the user is permitted to see.
-  def _auth_filter(item):
-    return request.auth.check_path_access(item.path_parts)
-  changes = filter(_auth_filter, changes)
-
   # Sort the changes list by path.
   def changes_sort_by_path(a, b):
     return cmp(a.path_parts, b.path_parts)
@@ -3253,13 +3197,6 @@ def view_revision(request):
   # Add the hrefs, types, and prev info
   for change in changes:
     change.view_href = change.diff_href = change.type = change.log_href = None
-
-    # If this path was copied, and the user is permitted to see this
-    # path but not the path from which it was copied, then lie about
-    # this *not* being a copy.
-    if change.copied \
-       and not request.auth.check_path_access(change.base_path_parts):
-      change.copied = 0
 
     # If the path is newly added, don't claim text or property
     # modifications.
@@ -3575,12 +3512,12 @@ def build_commit(request, files, limited_files, dir_strip):
 
     # skip files in forbidden or hidden modules
     dir_parts = filter(None, string.split(dirname, '/'))
-    if dir_parts \
-       and ((dir_parts[0] == 'CVSROOT'
-             and cfg.options.hide_cvsroot) \
-            or not request.auth.check_path_access(dir_parts)):
-      continue
-
+    if dir_parts:
+      if (dir_parts[0] == 'CVSROOT' and cfg.options.hide_cvsroot):
+        continue
+      if _repos_pathtype(request.repos, dir_parts, rev) != vclib.DIR:
+        continue
+      
     commit.files.append(_item(date=commit_time,
                               dir=request.server.escape(dirname),
                               file=request.server.escape(f.GetFile()),
@@ -3848,12 +3785,30 @@ _view_codes = {}
 for code, view in _views.items():
   _view_codes[view] = code
 
-def list_roots(cfg):
+def list_roots(request):
+  cfg = request.cfg
   allroots = { }
+  
+  # Add the viewable Subversion roots
   for root in cfg.general.svn_roots.keys():
+    auth = setup_authorizer(cfg, request.username, root)
+    try:
+      vclib.svn.SubversionRepository(root, cfg.general.svn_roots[root],
+                                     auth, cfg.utilities)
+    except vclib.ReposNotFound:
+      continue
     allroots[root] = [cfg.general.svn_roots[root], 'svn']
+
+  # Add the viewable CVS roots
   for root in cfg.general.cvs_roots.keys():
+    auth = setup_authorizer(cfg, request.username, root)
+    try:
+      vclib.ccvs.CVSRepository(root, cfg.general.cvs_roots[root], auth,
+                               cfg.utilities, cfg.options.use_rcsparse)
+    except vclib.ReposNotFound:
+      continue
     allroots[root] = [cfg.general.cvs_roots[root], 'cvs']
+    
   return allroots
   
 def load_config(pathname=None, server=None):

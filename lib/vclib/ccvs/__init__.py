@@ -10,10 +10,10 @@
 #
 # -----------------------------------------------------------------------
 
-def CVSRepository(name, rootpath, utilities, use_rcsparse):
+def CVSRepository(name, rootpath, authorizer, utilities, use_rcsparse):
   if use_rcsparse:
     import ccvs
-    return ccvs.CCVSRepository(name, rootpath, utilities)
+    return ccvs.CCVSRepository(name, rootpath, authorizer, utilities)
   else:
     import bincvs
-    return bincvs.BinCVSRepository(name, rootpath, utilities)
+    return bincvs.BinCVSRepository(name, rootpath, authorizer, utilities)
