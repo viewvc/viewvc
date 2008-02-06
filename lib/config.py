@@ -185,7 +185,7 @@ class Config:
     self.general.root_parents = []
     self.general.default_root = ''
     self.general.mime_types_file = ''
-    self.general.address = '<a href="mailto:user@insert.your.domain.here">No admin address has been configured</a>'
+    self.general.address = ''
     self.general.kv_files = [ ]
     self.general.languages = ['en-us']
 
