@@ -193,7 +193,7 @@ class RemoteSubversionRepository(vclib.Repository):
     self.ctx.config = core.svn_config_get_config(None)
 
     ra_callbacks = ra.svn_ra_callbacks_t()
-    ra_callbacks.auth_baton = ctx.auth_baton
+    ra_callbacks.auth_baton = self.ctx.auth_baton
     self.ra_session = ra.svn_ra_open(self.rootpath, ra_callbacks, None,
                                      self.ctx.config)
     self.youngest = ra.svn_ra_get_latest_revnum(self.ra_session)
