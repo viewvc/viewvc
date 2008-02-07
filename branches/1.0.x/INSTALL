@@ -260,6 +260,16 @@ or if you've got Mod_Python installed you can use METHOD D:
       http://<server_name>/viewvc/~checkout~/<module_name>
       http://<server_name>/viewvc/<module_name>.tar.gz?view=tar
 
+5) Optional: Protect your ViewVC instance from server-whacking webcrawlers.
+
+   As ViewVC is a web-based application which each page containing various
+   links to other pages and views, you can expect your server's performance
+   to suffer if a webcrawler finds your ViewVC instance and begins
+   traversing those links.  We highly recommend that you add your ViewVC
+   location to a site-wide robots.txt file.  Visit the Wikipedia page
+   for Robots.txt (http://en.wikipedia.org/wiki/Robots.txt) for more
+   information.
+
 
 UPGRADING VIEWVC
 -----------------
