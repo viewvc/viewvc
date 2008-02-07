@@ -179,7 +179,7 @@ def _get_history(svnrepos, full_name, rev, options={}):
   return history.histories
 
 
-def _log_helper(svnrepos, rev, path):
+def _log_helper(svnrepos, rev, path, lockinfo):
   rev_root = fs.revision_root(svnrepos.fs_ptr, rev)
 
   # Was this path@rev the target of a copy?
@@ -195,14 +195,24 @@ def _log_helper(svnrepos, rev, path):
   entry = Revision(rev, date, author, msg, size, path,
                    copyfrom_path and _cleanup_path(copyfrom_path),
                    copyfrom_rev)
+  entry.lockinfo = lockinfo
   return entry
   
 
 def _fetch_log(svnrepos, full_name, which_rev, options):
   revs = []
+  lockinfo = None
+
+  # See is this path is locked.
+  try:
+    lock = fs.get_lock(svnrepos.fs_ptr, full_name)
+    if lock:
+      lockinfo = lock.owner
+  except NameError:
+    pass
 
   if options.get('svn_latest_log', 0):
-    rev = _log_helper(svnrepos, which_rev, full_name)
+    rev = _log_helper(svnrepos, which_rev, full_name, lockinfo)
     if rev:
       revs.append(rev)
   else:
@@ -211,7 +221,8 @@ def _fetch_log(svnrepos, full_name, which_rev, options):
     history_revs.sort()
     history_revs.reverse()
     for history_rev in history_revs:
-      rev = _log_helper(svnrepos, history_rev, history_set[history_rev])
+      rev = _log_helper(svnrepos, history_rev, history_set[history_rev],
+                        lockinfo)
       if rev:
         revs.append(rev)
   return revs

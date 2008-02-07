@@ -97,6 +97,10 @@
     [end]
   [end]
 
+  [if-any entries.lockinfo]
+    <br />Lock Status: [entries.lockinfo]
+  [end]
+
   [is entries.state "dead"]
     <br /><strong><em>FILE REMOVED</em></strong>
   [else]
