@@ -330,16 +330,16 @@ authorizer = forbidden
 # addresses that appear in version control metadata (e.g. log messages).
 mangle_email_addresses = 0
 
-# default_file_view: "log" or "co"
+# default_file_view: "log", "co", or "markup"
 # Controls whether the default view for file URLs is a checkout view or
 # a log view. "log" is the default for backwards compatibility with old
 # ViewCVS URLs, but "co" has the advantage that it allows ViewVC to serve
 # static HTML pages directly from a repository with working links
 # to other repository files
-# Note: Changing this option may cause old ViewCVS URLs that referred
-# to log pages to load checkout pages instead.
-# Also note: If you choose the "co" view, be sure to enable it (via
-# the allowed_views option)
+# Note: Changing this option may break compatibility with existing
+# bookmarked URLs.
+# Also note: If you choose one of the "co" or "markup" views, be sure
+# to enable it (via the allowed_views option)
 default_file_view = log
 
 # http_expiration_time: Expiration time (in seconds) for cacheable

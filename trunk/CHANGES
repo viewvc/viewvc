@@ -23,6 +23,7 @@ Version 1.1.0 (released ??-???-????)
     - Subversion authz files
     - regexp-based path hiding
     - file glob top-level directory hiding (for compat with 1.0.x)
+  * allow default file view to be "markup" (issue #305)
 
 Version 1.0.4 (released 10-Apr-2007)
 
