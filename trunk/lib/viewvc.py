@@ -1428,22 +1428,64 @@ def make_rss_time_string(date, cfg):
     return None
   return time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(date)) + ' UTC'
 
-def view_markup(request):
-  if 'markup' not in request.cfg.options.allowed_views:
-    raise debug.ViewVCException('Markup view is disabled',
-                                 '403 Forbidden')
-    
+def markup_or_annotate(request, is_annotate):
   cfg = request.cfg
-  path, rev = _orig_path(request)
-  fp, revision = request.repos.openfile(path, rev)
-
-  # Since the templates could be changed by the user, we can't provide
-  # a strong validator for this page, so we mark the etag as weak.
-  if check_freshness(request, None, revision, weak=1):
-    fp.close()
-    return
-
+  path, rev = _orig_path(request, is_annotate and 'annotate' or 'revision')
   data = common_template_data(request)
+
+  if is_annotate:
+    import blame
+    diff_url = request.get_url(view_func=view_diff,
+                               params={'r1': None, 'r2': None},
+                               escape=1, partial=1)
+    include_url = request.get_url(view_func=view_log, where='/WHERE/',
+                                  pathtype=vclib.FILE, params={}, escape=1)
+    try:
+      source, revision = blame.blame(request.repos, path,
+                                     diff_url, include_url, rev)
+    except vclib.NonTextualFileContents:
+      raise debug.ViewVCException('Unable to perform line-based annotation on '
+                                  'non-textual file contents',
+                                  '400 Bad Request')
+    data['lines'] = source
+    
+  else: # !is_annotate
+    fp, revision = request.repos.openfile(path, rev)
+
+    # Since the templates could be changed by the user, we can't provide
+    # a strong validator for this page, so we mark the etag as weak.
+    if check_freshness(request, None, revision, weak=1):
+      fp.close()
+      return
+
+    markup_fp = None
+    if is_viewable_image(request.mime_type) \
+       and 'co' in cfg.options.allowed_views:
+      fp.close()
+      url = request.get_url(view_func=view_checkout, params={'revision': rev},
+                            escape=1)
+      markup_fp = '<img src="%s" alt="" /><br />' % url
+    else:
+      basename, ext = os.path.splitext(request.path_parts[-1])
+      streamer = markup_streamers.get(ext)
+      if streamer:
+        markup_fp = streamer(fp, cfg)
+  
+      # If there wasn't a custom streamer, or the streamer wasn't
+      # enabled, we'll try to use one of the configured syntax
+      # highlighting programs.
+      if not markup_fp:
+        if cfg.options.use_enscript:
+          markup_fp = MarkupEnscript(cfg, fp, request.path_parts[-1])
+        elif cfg.options.use_highlight:
+          markup_fp = MarkupHighlight(cfg, fp, request.path_parts[-1])
+        elif cfg.options.use_source_highlight:
+          markup_fp = MarkupSourceHighlight(cfg, fp, request.path_parts[-1])
+        else:
+          # If no one has a suitable markup handler, we'll use the default.
+          markup_fp = MarkupPipeWrapper(cfg, fp)
+    data['markup'] = markup_fp
+          
   data.update({
     'mime_type' : request.mime_type,
     'log' : None,
@@ -1498,35 +1540,20 @@ def view_markup(request):
                                         pathtype=vclib.FILE,
                                         params={'pathrev': revision},
                                         escape=1)
-
-  markup_fp = None
-  if is_viewable_image(request.mime_type) \
-     and 'co' in cfg.options.allowed_views:
-    fp.close()
-    url = request.get_url(view_func=view_checkout, params={'revision': rev},
-                          escape=1)
-    markup_fp = '<img src="%s" alt="" /><br />' % url
-  else:
-    basename, ext = os.path.splitext(request.path_parts[-1])
-    streamer = markup_streamers.get(ext)
-    if streamer:
-      markup_fp = streamer(fp, cfg)
-
-    # If there wasn't a custom streamer, or the streamer wasn't enabled, we'll
-    # try to use one of the configured syntax highlighting programs.
-    if not markup_fp:
-      if cfg.options.use_enscript:
-        markup_fp = MarkupEnscript(cfg, fp, request.path_parts[-1])
-      elif cfg.options.use_highlight:
-        markup_fp = MarkupHighlight(cfg, fp, request.path_parts[-1])
-      elif cfg.options.use_source_highlight:
-        markup_fp = MarkupSourceHighlight(cfg, fp, request.path_parts[-1])
-      else:
-        # If no one has a suitable markup handler, we'll use the default.
-        markup_fp = MarkupPipeWrapper(cfg, fp)
     
-  data['markup'] = markup_fp
-  generate_page(request, "markup", data)
+  generate_page(request, is_annotate and "annotate" or "markup", data)
+  
+def view_markup(request):
+  if 'markup' not in request.cfg.options.allowed_views:
+    raise debug.ViewVCException('Markup view is disabled',
+                                '403 Forbidden')
+  markup_or_annotate(request, 0)
+
+def view_annotate(request):
+  if 'annotate' not in request.cfg.options.allowed_views:
+    raise debug.ViewVCException('Annotation view is disabled',
+                                 '403 Forbidden')
+  markup_or_annotate(request, 1)
 
 def revcmp(rev1, rev2):
   rev1 = map(int, string.split(rev1, '.'))
@@ -2244,91 +2271,6 @@ def view_checkout(request):
                           or request.mime_type or 'text/plain')
     copy_stream(fp, request.server.file(), cfg)
   fp.close()
-
-def view_annotate(request):
-  if 'annotate' not in request.cfg.options.allowed_views:
-    raise debug.ViewVCException('Annotation view is disabled',
-                                 '403 Forbidden')
-
-  cfg = request.cfg
-  path, rev = _orig_path(request, 'annotate')
-
-  ### be nice to hook this into the template...
-  import blame
-
-  diff_url = request.get_url(view_func=view_diff,
-                             params={'r1': None, 'r2': None},
-                             escape=1, partial=1)
-
-  include_url = request.get_url(view_func=view_log, where='/WHERE/',
-                                pathtype=vclib.FILE, params={}, escape=1)
-
-  try:
-    source, revision = blame.blame(request.repos, path,
-                                   diff_url, include_url, rev)
-  except vclib.NonTextualFileContents:
-    raise debug.ViewVCException('Unable to perform line-based annotation on '
-                                'non-textual file contents',
-                                '400 Bad Request')
-
-  data = common_template_data(request)
-  data.update({
-    'mime_type' : request.mime_type,
-    'log' : None,
-    'date' : None,
-    'ago' : None,
-    'author' : None,
-    'branches' : None,
-    'tags' : None,
-    'branch_points' : None,
-    'changed' : None,
-    'size' : None,
-    'state' : None,
-    'vendor_branch' : None,
-    'prev' : None,
-    'lines': source,
-    'orig_path': None,
-    'orig_href': None,
-    })
-
-  if cfg.options.show_log_in_markup:
-    options = {'svn_latest_log': 1}
-    revs = request.repos.itemlog(path, revision, options)
-    entry = revs[-1]
-    data.update({
-        'date' : make_time_string(entry.date, cfg),
-        'author' : entry.author,
-        'changed' : entry.changed,
-        'log' : htmlify(entry.log, cfg.options.mangle_email_addresses),
-        'size' : entry.size,
-        })
-
-    if entry.date is not None:
-      data['ago'] = html_time(request, entry.date, 1)
-      
-    if request.roottype == 'cvs':
-      branch = entry.branch_number
-      prev = entry.prev or entry.parent
-      data.update({
-        'state' : entry.dead and 'dead',
-        'prev' : prev and prev.string,
-        'vendor_branch' : ezt.boolean(branch and branch[2] % 2 == 1),
-        'branches' : string.join(map(lambda x: x.name, entry.branches), ', '),
-        'tags' : string.join(map(lambda x: x.name, entry.tags), ', '),
-        'branch_points': string.join(map(lambda x: x.name,
-                                         entry.branch_points), ', ')
-        })
-
-  if path != request.path_parts:
-    orig_path = _path_join(path)
-    data['orig_path'] = orig_path
-    data['orig_href'] = request.get_url(view_func=view_log,
-                                        where=orig_path,
-                                        pathtype=vclib.FILE,
-                                        params={'pathrev': revision},
-                                        escape=1)
-
-  generate_page(request, "annotate", data)
 
 def view_cvsgraph_image(request):
   "output the image rendered by cvsgraph"
