@@ -43,7 +43,7 @@ class LastHistoryCollector:
       self.has_history = 1
       self.revision = revision
       self.author = author
-      self.date = date
+      self.date = _datestr_to_date(date)
       self.message = message
       self.changes = []
 
@@ -128,7 +128,8 @@ class LogCollector:
     
 def temp_checkout(svnrepos, path, rev):
   """Check out file revision to temporary file"""
-  stream = core.svn_stream_from_aprfile(tempfile.mktemp())
+  temp = tempfile.mktemp()
+  stream = core.svn_stream_from_aprfile(temp)
   url = svnrepos.rootpath + (path and '/' + path)
   client.svn_client_cat(core.Stream(stream), url, _rev2optrev(rev),
                         svnrepos.ctx)
@@ -315,7 +316,7 @@ class RemoteSubversionRepository(vclib.Repository):
 
   def revinfo(self, rev):
     rev, author, date, log, changes = _get_rev_details(self, rev)
-    return _datestr_to_date(date), author, log, changes
+    return date, author, log, changes
     
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     p1 = self._getpath(path_parts1)
@@ -330,7 +331,7 @@ class RemoteSubversionRepository(vclib.Repository):
       info1 = p1, date_from_rev(self, r1), r1
       info2 = p2, date_from_rev(self, r2), r2
       return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args)
-    except vclib.svn.core.SubversionException, e:
+    except core.SubversionException, e:
       if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
         raise vclib.InvalidRevision
       raise
