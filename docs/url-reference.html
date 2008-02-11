@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>ViewVC 1.0 URL Reference</title>
+<title>ViewVC 1.1 URL Reference</title>
 <style>
 body {
   background-color: rgb(180,193,205);
@@ -88,7 +88,7 @@ th.caption {
   <ul>
     <li><a href="#compat-viewrev">'<code>view=rev</code>' Parameter &rArr; '<code>view=revision</code>'</a></li>
     <li><a href="#compat-cvsroot">'<code>cvsroot</code>' Parameter &rArr; '<code>root</code>'</a></li>
-    <li><a href="#compat-only_with_tag>'<code>only_with_tag</code>' Parameter &rArr; '<code>pathrev</code>'</a></li>
+    <li><a href="#compat-only_with_tag">'<code>only_with_tag</code>' Parameter &rArr; '<code>pathrev</code>'</a></li>
     <li><a href="#compat-oldcheckout">'<code>~checkout~</code>' Magic Path Prefix &rArr; '<code>*checkout*</code>'</a></li>
     <li><a href="#compat-checkout">'<code>*checkout*</code>' Magic Path Prefix &rArr; '<code>view=co</code>'</a></li>
     <li><a href="#compat-root">'<code>root</code>' Parameter &rArr; Root Path Component</a></li>
@@ -1011,6 +1011,17 @@ th.caption {
     <td>optional</td>
     <td>"exact" "like" "glob" "regex" or "notregex" determining type
         of author match</td>
+  </tr>
+  <tr>
+    <td><code>comment=<var>COMMENT</var></code></td>
+    <td>optional</td>
+    <td>log message query string</td>
+  </tr>
+  <tr>
+    <td><code>comment_match=<var>COMMENT_MATCH</var></code></td>
+    <td>optional</td>
+    <td>"exact" "like" "glob" "regex" or "notregex" determining type
+        of log message match</td>
   </tr>
   <tr>
     <td><code>querysort=SORT</code></td>
