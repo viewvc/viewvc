@@ -2730,13 +2730,14 @@ def diff_parse_headers(fp, diff_type, rev1, rev2, sym1=None, sym2=None):
 
 
 def _get_diff_path_parts(request, query_key, rev, base_rev):
+  repos = request.repos
   if request.query_dict.has_key(query_key):
     path = _path_parts(request.query_dict[query_key])
   elif request.roottype == 'svn':
     try:
-      _path_parts(repos.get_location(request.where,
-                                     request.repos._getrev(base_rev),
-                                     request.repos._getrev(rev)))
+      parts = _path_parts(repos.get_location(request.where,
+                                             repos._getrev(base_rev),
+                                             repos._getrev(rev)))
     except vclib.InvalidRevision:
       raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                    'to diff', '400 Bad Request')

@@ -108,11 +108,6 @@ def _datestr_to_date(datestr):
     return None
 
   
-def date_from_rev(svnrepos, rev):
-  datestr, author, msg, changes = svnrepos.revinfo(entry_rev)
-  return _datestr_to_date(datestr)
-
-
 class Revision(vclib.Revision):
   "Hold state for each revision's log entry."
   def __init__(self, rev, date, author, msg, size,
@@ -186,8 +181,7 @@ def _log_helper(svnrepos, rev, path):
   copyfrom_rev, copyfrom_path = fs.copied_from(rev_root, path)
 
   # Assemble our LogEntry
-  datestr, author, msg, changes = svnrepos.revinfo(rev)
-  date = _datestr_to_date(datestr)
+  date, author, msg, changes = svnrepos.revinfo(rev)
   if fs.is_file(rev_root, path):
     size = fs.file_length(rev_root, path)
   else:
@@ -306,7 +300,7 @@ class BlameSource:
     try:
       client.blame2(local_url, _rev2optrev(rev), _rev2optrev(1),
                     _rev2optrev(rev), self._blame_cb, ctx)
-    except vclib.svn.core.SubversionException, e:
+    except core.SubversionException, e:
       if e.apr_err == vclib.svn.core.SVN_ERR_CLIENT_IS_BINARY_FILE:
         raise vclib.NonTextualFileContents
       raise
@@ -450,9 +444,9 @@ class LocalSubversionRepository(vclib.Repository):
         continue
       path = self._getpath(entry_path_parts)
       entry_rev = _get_last_history_rev(fsroot, path)
-      datestr, author, msg, changes = self.revinfo(entry_rev)
+      date, author, msg, changes = self.revinfo(entry_rev)
       entry.rev = str(rev)
-      entry.date = _datestr_to_date(datestr)
+      entry.date = date
       entry.author = author
       entry.log = msg
       if entry.kind == vclib.FILE:
@@ -584,7 +578,8 @@ class LocalSubversionRepository(vclib.Repository):
         author = None
         datestr = None
 
-    return datestr, author, msg, changedpaths.values()
+    date = _datestr_to_date(datestr)
+    return date, author, msg, changedpaths.values()
 
   def revinfo(self, rev):
     rev = self._getrev(rev)
@@ -606,13 +601,17 @@ class LocalSubversionRepository(vclib.Repository):
     
     args = vclib._diff_args(type, options)
 
+    def _date_from_rev(rev):
+      date, author, msg, changes = self.revinfo(rev)
+      return date
+
     try:
       temp1 = temp_checkout(self, p1, r1)
       temp2 = temp_checkout(self, p2, r2)
-      info1 = p1, date_from_rev(self, r1), r1
-      info2 = p2, date_from_rev(self, r2), r2
+      info1 = p1, _date_from_rev(r1), r1
+      info2 = p2, _date_from_rev(r2), r2
       return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args)
-    except vclib.svn.core.SubversionException, e:
+    except core.SubversionException, e:
       if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
         raise vclib.InvalidRevision
       raise
