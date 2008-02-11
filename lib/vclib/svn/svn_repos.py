@@ -309,7 +309,7 @@ class BlameSource:
     prev_rev = None
     if rev > self.first_rev:
       prev_rev = rev - 1
-    self.blame_data.append(vclib.Annotation(text, line_no, rev,
+    self.blame_data.append(vclib.Annotation(text, line_no + 1, rev,
                                             prev_rev, author, None))
 
   def __getitem__(self, idx):
