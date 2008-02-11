@@ -19,6 +19,10 @@ Version 1.1.0 (released ??-???-????)
   * make the query handling more forgiving of malformatted subdirs (issue #244)
   * add support for per-root configuration overrides
   * add support for optional email address mangling (issue #290)
+  * extensible path-based authorization subsystem (issue #268), supporting:
+    - Subversion authz files
+    - regexp-based path hiding
+    - file glob top-level directory hiding (for compat with 1.0.x)
 
 Version 1.0.4 (released 10-Apr-2007)
 
