@@ -330,8 +330,9 @@ class Request:
             self.view_func = view_cvsgraph_image
         elif self.query_dict.has_key('revision') \
                  or cfg.options.default_file_view != "log":
-          if self.query_dict.get('content-type', None) in (viewcvs_mime_type,
-                                                           alt_mime_type):
+          if cfg.options.default_file_view == "markup" \
+             or self.query_dict.get('content-type', None) \
+                 in (viewcvs_mime_type, alt_mime_type):
             self.view_func = view_markup
           else:
             self.view_func = view_checkout
@@ -512,13 +513,19 @@ class Request:
       view_func = None
 
     # no need to explicitly specify checkout view when it's the default
-    # view, when checkout_magic is enabled, or when "revision" is present
+    # view or when checkout_magic is enabled
     if view_func is view_checkout:
-      if ((cfg.options.default_file_view != "log" and pathtype == vclib.FILE)
-          or cfg.options.checkout_magic
-          or params.get('revision') is not None):
+      if ((cfg.options.default_file_view == "co" and pathtype == vclib.FILE)
+          or cfg.options.checkout_magic):
         view_func = None
 
+    # no need to explicitly specify markup view when it's the default view
+    if view_func is view_markup:
+      if (cfg.options.default_file_view == "markup" \
+          and pathtype == vclib.FILE):
+        view_func = None
+
+    # set the view parameter
     view_code = _view_codes.get(view_func)
     if view_code and not (params.has_key('view') and params['view'] is None):
       params['view'] = view_code
