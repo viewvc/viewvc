@@ -979,8 +979,13 @@ def htmlify(html):
   html = re.sub(_re_rewrite_email, r'<a href="mailto:\1&#64;\2">\1&#64;\2</a>', html)
   return html
 
-def format_log(log, cfg):
-  s = htmlify(log[:cfg.options.short_log_len])
+def format_log(log, cfg, htmlize=1):
+  if not log:
+    return log
+  if htmlize:
+    s = htmlify(log[:cfg.options.short_log_len])
+  else:
+    s = cgi.escape(log[:cfg.options.short_log_len])
   if len(log) > cfg.options.short_log_len:
     s = s + '...'
   return s
@@ -3219,12 +3224,12 @@ def prev_rev(rev):
     r = r[:-2]
   return string.join(r, '.')
 
-def build_commit(request, files, limited_files, dir_strip):
+def build_commit(request, files, limited_files, dir_strip, format):
   commit = _item(num_files=len(files), files=[])
   commit.limited_files = ezt.boolean(limited_files)
   desc = files[0].GetDescription()
   commit.log = htmlify(desc)
-  commit.short_log = format_log(desc, request.cfg)
+  commit.short_log = format_log(desc, request.cfg, format != 'rss')
   commit.author = request.server.escape(files[0].GetAuthor())
   commit.rss_date = make_rss_time_string(files[0].GetTime(), request.cfg)
   if request.roottype == 'svn':
@@ -3479,7 +3484,8 @@ def view_query(request):
       # if our current group has any allowed files, append a commit
       # with those files.
       if len(files):
-        commits.append(build_commit(request, files, limited_files, dir_strip))
+        commits.append(build_commit(request, files, limited_files,
+                                    dir_strip, format))
 
       files = [ commit ]
       limited_files = 0
@@ -3489,7 +3495,8 @@ def view_query(request):
     # we need to tack on our last commit grouping, but, again, only if
     # it has allowed files.
     if len(files):
-      commits.append(build_commit(request, files, limited_files, dir_strip))
+      commits.append(build_commit(request, files, limited_files,
+                                  dir_strip, format))
 
   # only show the branch column if we are querying all branches
   # or doing a non-exact branch match on a CVS repository.
