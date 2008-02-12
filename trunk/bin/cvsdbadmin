@@ -178,7 +178,8 @@ if __name__ == '__main__':
             db.PurgeRepository(root)
 
         if command in ('rebuild', 'update'):
-            repository = vclib.ccvs.CVSRepository(None, root, cfg.utilities, 0)
+            repository = vclib.ccvs.CVSRepository(None, root, None,
+                                                  cfg.utilities, 0)
             RecurseUpdate(db, repository, path_parts,
                           command == 'update', quiet_level)
     except KeyboardInterrupt:
