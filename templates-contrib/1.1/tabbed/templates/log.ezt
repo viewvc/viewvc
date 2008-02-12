@@ -91,6 +91,10 @@
     [end]
   [end]
 
+  [if-any entries.lockinfo]
+    <br />Lock status: <img src="[docroot]/images/lock.png" alt="Locked" width="16" height="16" /> [entries.lockinfo]
+  [end]
+
   [is roottype "svn"]
     [if-any entries.size]
     <br />File length: [entries.size] byte(s)
