@@ -147,9 +147,14 @@
   </tr>
   <tr class="vc_row_[if-index entries even]even[else]odd[end]">
     <td colspan=5>
+
+      [if-any entries.lockinfo]
+        <strong>Lock status</strong>: <img src="[docroot]/images/lock.png" alt="Locked" width="16" height="16" /> [entries.lockinfo]<br />
+      [end]
+
       [is roottype "svn"]
         [if-any entries.orig_path]
-          Original Path: <a href="[entries.orig_href]"><em>[entries.orig_path]</em></a><br />
+          <strong>Original Path</strong>: <a href="[entries.orig_href]"><em>[entries.orig_path]</em></a><br />
         [end]
 
         [if-any entries.size]

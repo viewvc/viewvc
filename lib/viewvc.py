@@ -2034,6 +2034,7 @@ def view_log(request):
       entry.ago = html_time(request, rev.date, 1)
     entry.log = htmlify(rev.log or "", cfg.options.mangle_email_addresses)
     entry.size = rev.size
+    entry.lockinfo = rev.lockinfo
     entry.branch_point = None
     entry.next_main = None
     entry.orig_path = None

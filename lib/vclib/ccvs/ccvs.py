@@ -87,7 +87,7 @@ class CCVSRepository(BaseCVSRepository):
     path = self.rcsfile(path_parts, 1)
     sink = TreeSink()
     rcsparse.parse(open(path, 'rb'), sink)
-    filtered_revs = _file_log(sink.revs.values(), sink.tags,
+    filtered_revs = _file_log(sink.revs.values(), sink.tags, sink.lockinfo,
                               sink.default_branch, rev)
     for rev in filtered_revs:
       if rev.prev and len(rev.number) == 2:
@@ -214,13 +214,17 @@ class TreeSink(rcsparse.Sink):
     self.tags = { }
     self.head = None
     self.default_branch = None
-
+    self.lockinfo = { }
+    
   def set_head_revision(self, revision):
     self.head = revision
 
   def set_principal_branch(self, branch_number):
     self.default_branch = branch_number
 
+  def set_locker(self, rev, locker):
+    self.lockinfo[rev] = locker
+    
   def define_tag(self, name, revision):
     # check !tags.has_key(tag_name)
     self.tags[name] = revision

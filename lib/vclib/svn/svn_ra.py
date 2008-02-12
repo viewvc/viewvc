@@ -282,6 +282,12 @@ class RemoteSubversionRepository(vclib.Repository):
     if full_name:
       dir_url = dir_url + '/' + full_name
 
+    # Use ls3 to fetch the lock status for this item.
+    dirents, locks = client.svn_client_ls3(dir_url, _rev2optrev(rev),
+                                           _rev2optrev(rev), 0, self.ctx)
+    locker = locks.has_key(path_parts[-1]) \
+             and locks[path_parts[-1]].owner or ''
+
     cross_copies = options.get('svn_cross_copies', 0)
     client.svn_client_log([dir_url], _rev2optrev(rev), _rev2optrev(1),
                           1, not cross_copies, lc.add_log, self.ctx)
@@ -289,6 +295,7 @@ class RemoteSubversionRepository(vclib.Repository):
     revs.sort()
     prev = None
     for rev in revs:
+      rev.lockinfo = locker
       rev.prev = prev
       prev = rev
 
