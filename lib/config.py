@@ -166,15 +166,19 @@ class Config:
   def get_authorizer_params(self, authorizer, rootname=None):
     if not self.conf_path:
       return {}
-    
+
     params = {}
     authz_section = 'authz-%s' % (authorizer)
+    for section in self.parser.sections():
+      if section == authz_section:
+        for key, value in self.parser.items(section):
+          params[key] = value
     if rootname:
       root_authz_section = 'root-%s/authz-%s' % (rootname, authorizer)
-    for section in self.parser.sections():
-      if section == authz_section \
-         or (rootname and section == root_authz_section):
-        params.update(self.parser.items(section))
+      for section in self.parser.sections():
+        if section == root_authz_section:
+          for key, value in self.parser.items(section):
+            params[key] = value
     return params
   
   def set_defaults(self):
