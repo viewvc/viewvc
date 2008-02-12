@@ -110,9 +110,10 @@ def _datestr_to_date(datestr):
   
 class Revision(vclib.Revision):
   "Hold state for each revision's log entry."
-  def __init__(self, rev, date, author, msg, size,
+  def __init__(self, rev, date, author, msg, size, lockinfo,
                filename, copy_path, copy_rev):
-    vclib.Revision.__init__(self, rev, str(rev), date, author, None, msg, size)
+    vclib.Revision.__init__(self, rev, str(rev), date, author, None,
+                            msg, size, lockinfo)
     self.filename = filename
     self.copy_path = copy_path
     self.copy_rev = copy_rev
@@ -186,10 +187,9 @@ def _log_helper(svnrepos, rev, path, lockinfo):
     size = fs.file_length(rev_root, path)
   else:
     size = None
-  entry = Revision(rev, date, author, msg, size, path,
+  entry = Revision(rev, date, author, msg, size, lockinfo, path,
                    copyfrom_path and _cleanup_path(copyfrom_path),
                    copyfrom_rev)
-  entry.lockinfo = lockinfo
   return entry
   
 
@@ -462,6 +462,8 @@ class LocalSubversionRepository(vclib.Repository):
       entry.log = msg
       if entry.kind == vclib.FILE:
         entry.size = fs.file_length(fsroot, path)
+      lock = fs.get_lock(self.fs_ptr, path)
+      entry.lockinfo = lock and lock.owner or None
 
   def itemlog(self, path_parts, rev, options):
     """see vclib.Repository.itemlog docstring

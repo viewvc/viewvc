@@ -37,6 +37,9 @@ Revision [if-any revision_href]<a href="[revision_href]"><strong>[rev]</strong><
 [is roottype "svn"][if-any size]
   <br />File size: [size] byte(s)
 [end][end]
+[if-any lockinfo]
+  <br />Lock status: <img src="[docroot]/images/lock.png" alt="Locked" width="16" height="16" /> [lockinfo]
+[end]
 [is state "dead"]
   <br /><strong><em>FILE REMOVED</em></strong>
 [end]

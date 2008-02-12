@@ -1099,6 +1099,7 @@ def common_template_data(request):
     'nav_path' : nav_path(request),
     'view'     : _view_codes[request.view_func],
     'rev'      : None,
+    'lockinfo' : None,
     'view_href' : None,
     'annotate_href' : None,
     'download_href' : None,
@@ -1172,6 +1173,15 @@ def common_template_data(request):
     if request.roottype == 'cvs' and cfg.options.use_cvsgraph:
       data['graph_href'] = request.get_url(view_func=view_cvsgraph,
                                            params={}, escape=1)
+    file_data = request.repos.listdir(request.path_parts[:-1],
+                                      request.pathrev, {})
+    def _only_this_file(item):
+      return item.name == request.path_parts[-1]
+    entries = filter(_only_this_file, file_data)
+    if len(entries) == 1:
+      request.repos.dirlogs(request.path_parts[:-1], request.pathrev,
+                            entries, {})
+      data['lockinfo'] = entries[0].lockinfo
   elif request.pathtype == vclib.DIR:
     data['view_href'] = request.get_url(view_func=view_directory,
                                        params={}, escape=1)
@@ -1725,7 +1735,7 @@ def view_directory(request):
     if cfg.options.show_logs:
       row.short_log = format_log(file.log, cfg)
       row.log = htmlify(file.log, cfg.options.mangle_email_addresses)
-
+    row.lockinfo = file.lockinfo
     row.anchor = request.server.escape(file.name)
     row.name = request.server.escape(file.name)
     row.pathtype = (file.kind == vclib.FILE and 'file') or \
