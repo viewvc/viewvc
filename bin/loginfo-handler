@@ -223,7 +223,8 @@ def NextFile(s, pos = 0):
 def ProcessLoginfo(rootpath, directory, files):
     cfg = viewvc.load_config(CONF_PATHNAME)
     db = cvsdb.ConnectDatabase(cfg)
-    repository = vclib.ccvs.CVSRepository(None, rootpath, cfg.utilities, 0)
+    repository = vclib.ccvs.CVSRepository(None, rootpath, None,
+                                          cfg.utilities, 0)
 
     # split up the directory components
     dirpath = filter(None, string.split(os.path.normpath(directory), os.sep))
