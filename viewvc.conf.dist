@@ -317,9 +317,9 @@ allowed_views = markup, annotate
 # authz-MODULENAME and adding the parameter keys and values there.
 #
 # ViewVC provides the following modules:
-#   svnauthz   - based on Subversion authz files
-#   forbidden  - simple path glob matches against top-level root directories
-#   forbidden  - root and path matches against regular expressions
+#   svnauthz    - based on Subversion authz files
+#   forbidden   - simple path glob matches against top-level root directories
+#   forbiddenre - root and path matches against regular expressions
 #
 authorizer = forbidden
 
