@@ -97,7 +97,9 @@
        <td>&nbsp;[if-any entries.rev]<a href="[entries.log_href]" title="View directory revision log"><strong>[entries.rev]</strong></a>[end]</td>
        [else]
        [define rev_href][if-any entries.prefer_markup][entries.view_href][else][if-any entries.download_href][entries.download_href][end][end][end]
-       <td>&nbsp;[if-any entries.rev][if-any rev_href]<a href="[rev_href]" title="[if-any entries.prefer_markup]View[else]Download[end] file contents">[end]<strong>[entries.rev]</strong>[if-any rev_href]</a>[end][end]</td>
+       <td style="white-space: nowrap;">&nbsp;[if-any entries.rev][if-any rev_href]<a href="[rev_href]" title="[if-any entries.prefer_markup]View[else]Download[end] file contents">[end]<strong>[entries.rev]</strong>[if-any rev_href]</a>[end][end]
+       [if-any entries.lockinfo]<img src="[docroot]/images/lock.png" alt="locked" class="vc_icon" title="Locked by [entries.lockinfo]" />[end]
+       </td>
        [end]
        <td>&nbsp;[entries.ago]</td>
        <td>&nbsp;[entries.author]</td>

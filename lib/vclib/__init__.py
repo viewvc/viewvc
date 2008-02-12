@@ -101,7 +101,7 @@ class Repository:
     New properties will be set on all of the DirEntry objects in the entries
     list. At the very least, a "rev" property will be set to a revision
     number or None if the entry doesn't have a number. Other properties that
-    may be set include "date", "author", and "log".
+    may be set include "date", "author", "log", "size", and "lockinfo".
 
     The path is specified as a list of components, relative to the root
     of the repository. e.g. ["subdir1", "subdir2", "filename"]
@@ -180,7 +180,7 @@ class DirEntry:
 class Revision:
   """Instances holds information about revisions of versioned resources"""
 
-  def __init__(self, number, string, date, author, changed, log, size):
+  def __init__(self, number, string, date, author, changed, log, size, lockinfo):
     """Create a new Revision() item:
           NUMBER:  Revision in an integer-based, sortable format
           STRING:  Revision as a string
@@ -189,6 +189,7 @@ class Revision:
           CHANGED:  Lines-changed (contextual diff) information
           LOG:  Log message associated with the creation of this revision
           SIZE:  Size (in bytes) of this revision's fulltext (files only)
+          LOCKINFO:  Information about locks held on this revision
     """
     self.number = number
     self.string = string
@@ -197,6 +198,7 @@ class Revision:
     self.changed = changed
     self.log = log
     self.size = size
+    self.lockinfo = lockinfo
 
   def __cmp__(self, other):
     return cmp(self.number, other.number)

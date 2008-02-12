@@ -91,7 +91,7 @@ def _get_rev_details(svnrepos, rev):
 
   
 class LogCollector:
-  def __init__(self, path, show_all_logs):
+  def __init__(self, path, show_all_logs, lockinfo):
     # This class uses leading slashes for paths internally
     if not path:
       self.path = '/'
@@ -99,6 +99,7 @@ class LogCollector:
       self.path = path[0] == '/' and path or '/' + path
     self.logs = []
     self.show_all_logs = show_all_logs
+    self.lockinfo = lockinfo
     
   def add_log(self, paths, revision, author, date, message, pool):
     # Changed paths have leading slashes
@@ -121,7 +122,7 @@ class LogCollector:
             this_path = change.copyfrom_path + self.path[len(changed_path):]
     if self.show_all_logs or this_path:
       entry = Revision(revision, _datestr_to_date(date), author, message, None,
-                       self.path[1:], None, None)
+                       self.lockinfo, self.path[1:], None, None)
       self.logs.append(entry)
     if this_path:
       self.path = this_path
@@ -217,7 +218,7 @@ class RemoteSubversionRepository(vclib.Repository):
     rev = self._getrev(rev)
     if not len(path_parts):
       return vclib.DIR
-    dirents = self._get_dirents(path, rev)
+    dirents, locks = self._get_dirents(path, rev)
     try:
       entry = dirents[path_parts[-1]]
       if entry.kind == core.svn_node_dir:
@@ -243,7 +244,7 @@ class RemoteSubversionRepository(vclib.Repository):
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
     entries = [ ]
-    dirents = self._get_dirents(path, rev)
+    dirents, locks = self._get_dirents(path, rev)
     for name in dirents.keys():
       entry = dirents[name]
       if entry.kind == core.svn_node_dir:
@@ -255,7 +256,8 @@ class RemoteSubversionRepository(vclib.Repository):
 
   def dirlogs(self, path_parts, rev, entries, options):
     rev_info_cache = { }
-    dirents = self._get_dirents(self._getpath(path_parts), self._getrev(rev))
+    dirents, locks = self._get_dirents(self._getpath(path_parts),
+                                       self._getrev(rev))
     for entry in entries:
       dirent = dirents[entry.name]
       if rev_info_cache.has_key(dirent.created_rev):
@@ -270,23 +272,28 @@ class RemoteSubversionRepository(vclib.Repository):
       entry.date = _datestr_to_date(date)
       entry.log = log
       entry.size = dirent.size
+      entry.lockinfo = None
+      if locks.has_key(entry.name):
+        entry.lockinfo = locks[entry.name].owner
 
   def itemlog(self, path_parts, rev, options):
     full_name = self._getpath(path_parts)
     rev = self._getrev(rev)
-
-    # It's okay if we're told to not show all logs on a file -- all
-    # the revisions should match correctly anyway.
-    lc = LogCollector(full_name, options.get('svn_show_all_dir_logs', 0))
     dir_url = self.rootpath
     if full_name:
       dir_url = dir_url + '/' + full_name
 
     # Use ls3 to fetch the lock status for this item.
+    lockinfo = None
     dirents, locks = client.svn_client_ls3(dir_url, _rev2optrev(rev),
                                            _rev2optrev(rev), 0, self.ctx)
-    locker = locks.has_key(path_parts[-1]) \
-             and locks[path_parts[-1]].owner or ''
+    if locks.has_key(path_parts[-1]):
+      lockinfo = locks[path_parts[-1]].owner
+
+    # It's okay if we're told to not show all logs on a file -- all
+    # the revisions should match correctly anyway.
+    lc = LogCollector(full_name, options.get('svn_show_all_dir_logs', 0),
+                      lockinfo)
 
     cross_copies = options.get('svn_cross_copies', 0)
     client.svn_client_log([dir_url], _rev2optrev(rev), _rev2optrev(1),
@@ -295,7 +302,6 @@ class RemoteSubversionRepository(vclib.Repository):
     revs.sort()
     prev = None
     for rev in revs:
-      rev.lockinfo = locker
       rev.prev = prev
       prev = rev
 
@@ -358,18 +364,22 @@ class RemoteSubversionRepository(vclib.Repository):
     return rev
 
   def _get_dirents(self, path, rev):
+    """Return a 2-type of dirents and locks, possibly reading/writing
+    from a local cache of that information."""
+
     if path:
       key = str(rev) + '/' + path
       dir_url = self.rootpath + '/' + path
     else:
       key = str(rev)
       dir_url = self.rootpath
-    dirents = self._dirent_cache.get(key)
-    if dirents:
-      return dirents
-    dirents = client.svn_client_ls(dir_url, _rev2optrev(rev), 0, self.ctx)
-    self._dirent_cache[key] = dirents
-    return dirents
+    dirents_locks = self._dirent_cache.get(key)
+    if not dirents_locks:
+      dirents, locks = client.svn_client_ls3(dir_url, _rev2optrev(rev),
+                                             _rev2optrev(rev), 0, self.ctx)
+      dirents_locks = [dirents, locks]
+      self._dirent_cache[key] = dirents_locks
+    return dirents_locks[0], dirents_locks[1]
 
   ##--- custom --##
 

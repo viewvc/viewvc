@@ -346,7 +346,7 @@ class Revision(vclib.Revision):
   def __init__(self, revstr, date=None, author=None, dead=None,
                changed=None, log=None):
     vclib.Revision.__init__(self, _revision_tuple(revstr), revstr,
-                            date, author, changed, log, None)
+                            date, author, changed, log, None, None)
     self.dead = dead
 
 class Tag:
@@ -1042,6 +1042,7 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
         file.author = wanted_entry.author
         file.dead = file.kind == vclib.FILE and wanted_entry.dead
         file.log = wanted_entry.log
+        file.lockinfo = lockinfo.get(file.rev)
         # suppress rlog errors if we find a usable revision in the end
         del file.errors[:]
       elif file.kind == vclib.FILE:
