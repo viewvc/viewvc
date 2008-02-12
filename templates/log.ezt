@@ -6,6 +6,7 @@
 [for entries]
 [if-index entries first][define first_revision][entries.rev][end][end]
 [if-index entries last][define last_revision][entries.rev][end][end]
+
 <div>
   <hr />
 
@@ -95,6 +96,10 @@
     [if-any entries.copy_path]
     <br />Copied from: <a href="[entries.copy_href]"><em>[entries.copy_path]</em></a> revision [entries.copy_rev]
     [end]
+  [end]
+
+  [if-any entries.lockinfo]
+    <br />Lock status: <img src="[docroot]/images/lock.png" alt="Locked" width="16" height="16" /> [entries.lockinfo]
   [end]
 
   [is entries.state "dead"]

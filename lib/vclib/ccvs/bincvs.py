@@ -139,13 +139,13 @@ class BinCVSRepository(BaseCVSRepository):
     """Get the (basically) youngest revision (filtered by REV)."""
     args = rcs_file,
     fp = self.rcs_popen('rlog', args, 'rt', 0)
-    filename, default_branch, tags, msg, eof = _parse_log_header(fp)
+    filename, default_branch, tags, lockinfo, msg, eof = _parse_log_header(fp)
     revs = []
     while not eof:
       revision, eof = _parse_log_entry(fp)
       if revision:
         revs.append(revision)
-    revs = _file_log(revs, tags, default_branch, rev)
+    revs = _file_log(revs, tags, lockinfo, default_branch, rev)
     if revs:
       return revs[-1]
     return None
@@ -272,7 +272,7 @@ class BinCVSRepository(BaseCVSRepository):
       args = rcsfile,
 
     fp = self.rcs_popen('rlog', args, 'rt', 0)
-    filename, default_branch, tags, msg, eof = _parse_log_header(fp)
+    filename, default_branch, tags, lockinfo, msg, eof = _parse_log_header(fp)
 
     # Retrieve revision objects
     revs = []
@@ -281,7 +281,7 @@ class BinCVSRepository(BaseCVSRepository):
       if revision:
         revs.append(revision)
 
-    filtered_revs = _file_log(revs, tags, default_branch, rev)
+    filtered_revs = _file_log(revs, tags, lockinfo, default_branch, rev)
 
     options['cvs_tags'] = tags
     return filtered_revs
@@ -655,13 +655,14 @@ def _parse_log_header(fp):
   If there is no revision information (e.g. the "-h" switch was passed to
   rlog), then fp will consumed the file separator line on exit.
 
-  Returns: filename, default branch, tag dictionary, rlog error message, 
-  and eof flag
+  Returns: filename, default branch, tag dictionary, lock dictionary,
+  rlog error message, and eof flag
   """
+  
   filename = head = branch = msg = ""
-  taginfo = { }         # tag name => number
-
-  parsing_tags = 0
+  taginfo = { }   # tag name => number
+  lockinfo = { }  # revision => locker
+  state = 0       # 0 = base, 1 = parsing symbols, 2 = parsing locks
   eof = None
 
   while 1:
@@ -671,24 +672,35 @@ def _parse_log_header(fp):
       eof = _EOF_LOG
       break
 
-    if parsing_tags:
+    if state == 1:
       if line[0] == '\t':
         [ tag, rev ] = map(string.strip, string.split(line, ':'))
         taginfo[tag] = rev
       else:
         # oops. this line isn't tag info. stop parsing tags.
-        parsing_tags = 0
+        state = 0
 
-    if not parsing_tags:
+    if state == 2:
+      if line[0] == '\t':
+        [ locker, rev ] = map(string.strip, string.split(line, ':'))
+        lockinfo[rev] = locker
+      else:
+        # oops. this line isn't lock info. stop parsing tags.
+        state = 0
+      
+    if state == 0:
       if line[:9] == 'RCS file:':
         filename = line[10:-1]
       elif line[:5] == 'head:':
         head = line[6:-1]
       elif line[:7] == 'branch:':
         branch = line[8:-1]
+      elif line[:6] == 'locks:':
+        # start parsing the lock information
+        state = 2
       elif line[:14] == 'symbolic names':
         # start parsing the tag information
-        parsing_tags = 1
+        state = 1
       elif line == ENTRY_END_MARKER:
         # end of the headers
         break
@@ -717,7 +729,7 @@ def _parse_log_header(fp):
           eof = _EOF_ERROR
           break
 
-  return filename, branch, taginfo, msg, eof
+  return filename, branch, taginfo, lockinfo, msg, eof
 
 _re_log_info = re.compile(r'^date:\s+([^;]+);'
                           r'\s+author:\s+([^;]+);'
@@ -817,7 +829,7 @@ def _paths_eq(path1, path2):
 # ======================================================================
 # Functions for interpreting and manipulating log information
 
-def _file_log(revs, taginfo, cur_branch, filter):
+def _file_log(revs, taginfo, lockinfo, cur_branch, filter):
   """Augment list of Revisions and a dictionary of Tags"""
 
   # Add artificial ViewVC tag MAIN. If the file has a default branch, then
@@ -848,6 +860,10 @@ def _file_log(revs, taginfo, cur_branch, filter):
   # Match up tags and revisions
   _match_revs_tags(revs, tags)
 
+  # Match up lockinfo and revision
+  for rev in revs:
+    rev.lockinfo = lockinfo.get(rev.string)
+      
   # Add artificial ViewVC tag HEAD, which acts like a non-branch tag pointing
   # at the latest revision on the MAIN branch. The HEAD revision doesn't have
   # anything to do with the "head" revision number specified in the RCS file
@@ -936,7 +952,8 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
     chunk_idx = 0
     while chunk_idx < len(chunk):
       file = chunk[chunk_idx]
-      filename, default_branch, taginfo, msg, eof = _parse_log_header(rlog)
+      filename, default_branch, taginfo, lockinfo, msg, eof \
+        = _parse_log_header(rlog)
 
       if eof == _EOF_LOG:
         # the rlog output ended early. this can happen on errors that rlog 
