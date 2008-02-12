@@ -164,6 +164,7 @@ class InfoSink(MatchingSink):
     self.alltags = alltags
     self.matching_rev = None
     self.perfect_match = 0
+    self.lockinfo = { }
 
   def define_tag(self, name, revision):
     MatchingSink.define_tag(self, name, revision)
@@ -175,13 +176,17 @@ class InfoSink(MatchingSink):
       # tag we're looking for doesn't exist
       raise rcsparse.RCSStopParser
 
+  def set_locker(self, rev, locker):
+    self.lockinfo[rev] = locker
+    
   def define_revision(self, revision, date, author, state, branches, next):
     if self.perfect_match:
       return
 
     tag = self.find_tag
     rev = Revision(revision, date, author, state == "dead")
-
+    rev.lockinfo = self.lockinfo.get(revision)
+    
     # perfect match if revision number matches tag number or if revision is on
     # trunk and tag points to trunk. imperfect match if tag refers to a branch
     # and this revision is the highest revision so far found on that branch
@@ -200,6 +205,7 @@ class InfoSink(MatchingSink):
         self.entry.date = self.matching_rev.date
         self.entry.author = self.matching_rev.author
         self.entry.dead = self.matching_rev.dead
+        self.entry.lockinfo = self.matching_rev.lockinfo
         self.entry.log = log
         raise rcsparse.RCSStopParser
     else:
