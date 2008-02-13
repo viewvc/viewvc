@@ -456,7 +456,7 @@ class LocalSubversionRepository(vclib.Repository):
       path = self._getpath(entry_path_parts)
       entry_rev = _get_last_history_rev(fsroot, path)
       date, author, msg, changes = self.revinfo(entry_rev)
-      entry.rev = str(rev)
+      entry.rev = str(entry_rev)
       entry.date = date
       entry.author = author
       entry.log = msg
