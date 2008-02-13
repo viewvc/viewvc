@@ -65,7 +65,7 @@ form { margin: 0; }
   background-color: #ffffff;
 }
 .vc_row_odd {
-  background-color: #ccccee;
+  background-color: #f0f0f0;
 }
 .vc_row_special {
   background-color: #ffff7f;
@@ -89,53 +89,67 @@ form { margin: 0; }
 }
 
 /*** Highlight Markup Styles ***/
-#vc_markup .num  { color: #000000; }
-#vc_markup .esc  { color: #bd8d8b; }
-#vc_markup .str  { color: #bd8d8b; }
-#vc_markup .dstr { color: #bd8d8b; }
-#vc_markup .slc  { color: #ac2020; font-style: italic; }
-#vc_markup .com  { color: #ac2020; font-style: italic; }
-#vc_markup .dir  { color: #000000; }
-#vc_markup .sym  { color: #000000; }
-#vc_markup .line { color: #555555; }
-#vc_markup .kwa  { color: #9c20ee; font-weight: bold; }
-#vc_markup .kwb  { color: #208920; }
-#vc_markup .kwc  { color: #0000ff; }
-#vc_markup .kwd  { color: #404040; }
+#vc_blame .num  { color: #000000; }
+#vc_blame .esc  { color: #bd8d8b; }
+#vc_blame .str  { color: #bd8d8b; }
+#vc_blame .dstr { color: #bd8d8b; }
+#vc_blame .slc  { color: #ac2020; font-style: italic; }
+#vc_blame .com  { color: #ac2020; font-style: italic; }
+#vc_blame .dir  { color: #000000; }
+#vc_blame .sym  { color: #000000; }
+#vc_blame .line { color: #555555; }
+#vc_blame .kwa  { color: #9c20ee; font-weight: bold; }
+#vc_blame .kwb  { color: #208920; }
+#vc_blame .kwc  { color: #0000ff; }
+#vc_blame .kwd  { color: #404040; }
 
 /*** Source-Highlight Markup Styles ***/
-#vc_markup .keyword     { color: #9c20ee; font-weight: bold; }
-#vc_markup .type        { color: #208920; }
-#vc_markup .string      { color: #bd8d8b; }
-#vc_markup .specialchar { color: #bd8d8b; }
-#vc_markup .comment     { color: #ac2020; font-style: italic; }
-#vc_markup .number      { color: #000000; }
-#vc_markup .preproc     { color: #0000ff; }
-#vc_markup .symbol      { color: #000000; }
-#vc_markup .function    { color: #404040; }
-#vc_markup .cbracket    { color: #000000; }
-#vc_markup .todo        { color: #000000; }
-#vc_markup .variable    { color: #00ac40; }
+#vc_blame .keyword     { color: #9c20ee; font-weight: bold; }
+#vc_blame .type        { color: #208920; }
+#vc_blame .string      { color: #bd8d8b; }
+#vc_blame .specialchar { color: #bd8d8b; }
+#vc_blame .comment     { color: #ac2020; font-style: italic; }
+#vc_blame .number      { color: #000000; }
+#vc_blame .preproc     { color: #0000ff; }
+#vc_blame .symbol      { color: #000000; }
+#vc_blame .function    { color: #404040; }
+#vc_blame .cbracket    { color: #000000; }
+#vc_blame .todo        { color: #000000; }
+#vc_blame .variable    { color: #00ac40; }
 
 /*** Py2html Markup Styles  ***/
-#vc_markup .PY_STRING     { color: #bd8d8b; }
-#vc_markup .PY_COMMENT    { color: #ac2020; font-style: italic; }
-#vc_markup .PY_KEYWORD    { color: #9c20ee; font-weight: bold; }
-#vc_markup .PY_IDENTIFIER { color: #404040; }
+#vc_blame .PY_STRING     { color: #bd8d8b; }
+#vc_blame .PY_COMMENT    { color: #ac2020; font-style: italic; }
+#vc_blame .PY_KEYWORD    { color: #9c20ee; font-weight: bold; }
+#vc_blame .PY_IDENTIFIER { color: #404040; }
 
-/*** Line numbers outputted by highlight and source-highlight colorizer ***/
-.line, .linenum {
+/*** Annotate Styles ***/
+#vc_blame td {
   border-right-width: 1px;
   border-right-style: solid;
   border-right-color: #505050;
-  padding: 1px;
-  background-color: #eeeeee;
-  color: #505050;
   text-decoration: none;
   font-weight: normal;
   font-style: normal;
+}
+.vc_blame_line {
+  background-color: #eeeeee;
+  color: #505050;
+  padding: 1px 1px;
+}
+.vc_blame_author, .vc_blame_rev, .vc_blame_line {
   text-align: right;
 }
+.vc_blame_rev, .vc_blame_line {
+  padding: 1px 5px;
+}
+.vc_blame_text {
+  font-family: monospace;
+  text-align: left;
+  white-space: pre;
+  width: 100%;
+}
+
 
 /*** Diff Styles ***/
 .vc_diff_header {
@@ -211,34 +225,6 @@ table.vc_idiff tbody {
 table.vc_idiff tbody th {
   background-color:#e0e0e0;
   text-align:right;
-}
-
-/*** Annotate Styles ***/
-#vc_blame td {
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-right-color: #505050;
-  text-decoration: none;
-  font-weight: normal;
-  font-style: normal;
-}
-.vc_blame_line {
-  background-color: #eeeeee;
-  color: #505050;
-  padding: 1px 1px;
-}
-.vc_blame_author, .vc_blame_rev, .vc_blame_line {
-  text-align: right;
-}
-.vc_blame_rev, .vc_blame_line {
-  padding: 1px 5px;
-}
-.vc_blame_text {
-  font-family: monospace;
-  font-size: smaller;
-  text-align: left;
-  white-space: pre;
-  width: 100%;
 }
 
 /*** Query Form ***/

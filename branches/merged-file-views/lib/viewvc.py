@@ -1317,6 +1317,7 @@ class MarkupEnscript(MarkupShell):
         os.unlink(file)
     finally:
       os.rmdir(dir)
+      
 
 class MarkupPHP(MarkupShell):
   def __init__(self, cfg, fp):
@@ -1327,9 +1328,6 @@ class MarkupHighlight(MarkupShell):
   def __init__(self, cfg, fp, filename):
     highlight_cmd = [cfg.utilities.highlight or 'highlight',
                      '--force', '--anchors', '--fragment', '--xhtml']
-
-    if cfg.options.highlight_line_numbers:
-      highlight_cmd.extend(['--linenumbers'])
 
     if cfg.options.highlight_convert_tabs:
       highlight_cmd.extend(['--replace-tabs',
@@ -1450,64 +1448,215 @@ def make_rss_time_string(date, cfg):
     return None
   return time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(date)) + ' UTC'
 
+
+class IOInverter:
+  def __init__(self, fp):
+    self.is_open = 0
+    self.temp = tempfile.mktemp()
+    outfile = open(self.temp, 'wb')
+    if hasattr(fp, '__call__'):
+      ctx = _item()
+      ctx.fp = outfile
+      fp(ctx)
+    elif hasattr(fp, 'read'):
+      copy_stream(self.fp, outfile, None, 0)
+    else:
+      output.write(fp)
+    outfile.close()
+    self.fp = open(self.temp, 'rb')
+    self.is_open = 1
+
+  def readline(self):
+    return self.fp.readline()
+
+  def read(self, reqlen):
+    return self.fp.read(reqlen)
+
+  def close(self):
+    self.fp.close()
+    self.is_open = 0
+    
+  def __del__(self):
+    try:
+      if self.is_open:
+        self.fp.close()
+      os.unlink(self.temp)
+    except:
+      pass
+    
+    
+class BlameMarkupWrapper:
+  """A file-pointer-like object which merges a list of BLAME_DATA
+  (vclib.Annotation objects) with a readline()-able FP file pointer
+  containing tthe text associated with those lines.  The result is an
+  iterate-able object with vclib.Annotation objects that actually have
+  their .text members populated with marked-up text.  If BLAME_DATA is
+  None, mostly-empty vclib.Annotation objects will be the result."""
+  
+  def __init__(self, blame_data, fp):
+    self.blame_data = blame_data
+    self.fp = fp
+    self.idx = -1
+    
+  def __getitem__(self, idx):
+    self.idx = self.idx + 1
+    if idx != self.idx:
+      raise debug.ViewVCException("There was sequencing error in the "
+                                  "calculation of annotation data.",
+                                  "500 Internal Server Error")
+    try:
+      text = self.fp.readline()
+    except:
+      raise
+      raise debug.ViewVCException("There was sequencing error in the "
+                                  "syncronization of annotation data.",
+                                  "500 Internal Server Error")
+    if not text:
+      raise IndexError
+    
+    if self.blame_data:
+      item = self.blame_data[self.idx]
+      item.text = text
+    else:
+      item = _item(text=text, line_number=self.idx+1, rev=None, prev_rev=None,
+                   diff_url=None, date=None, author=None)
+    return item
+
+
+class BlameContents:
+  """A file-pointer-like object which wraps an iterable collection of
+  vclib.Annotation() items, and provides a .read() function for
+  pulling only the text out of those items, and a .get_blame_data()
+  function for getting the now text-less annotation data back again."""
+  
+  def __init__(self, request, source):
+    self.request = request
+    self.buf = ''
+    self.source = source
+    self.blame_data = []
+    self._eof = 0
+    self.idx = -1
+    
+  def get_blame_data(self):
+    if not self._eof:
+      raise debug.ViewVCException("Unable to query annotation data before "
+                                  "it is parsed.", "500 Internal Server Error")
+    return self.blame_data
+     
+  def eof(self):
+    return self._eof
+
+  def close(self):
+    pass
+  
+  def read(self, reqlen=CHUNK_SIZE):
+    if self._eof:
+      return None
+    if not reqlen:
+      return ''
+    chunk, self.buf, reqlen = self._read_from_buf(reqlen)
+    while reqlen:
+      try:
+        self.buf = self._next_source_line() + "\n"
+        buflen = len(self.buf)
+      except IndexError:
+        self._eof = 1
+        break
+      hunk, self.buf, reqlen = self._read_from_buf(reqlen)
+      chunk = chunk + hunk
+    return chunk
+    
+  def _next_source_line(self):
+    self.idx = self.idx + 1
+    blame_data = self.source[self.idx]
+    line = blame_data.text
+    blame_data.text = None
+    blame_data.diff_url = None
+    if blame_data.prev_rev:
+      blame_data.diff_url = \
+          self.request.get_url(view_func=view_diff,
+                               params={'r1': blame_data.prev_rev,
+                                       'r2': blame_data.rev,
+                                       'diff_format': None},
+                               escape=1)
+    self.blame_data.append(blame_data)
+    return line
+
+  def _read_from_buf(self, reqlen):
+    buflen = len(self.buf)
+    if not buflen:
+      return '', '', reqlen
+    if reqlen > buflen:
+      return self.buf, '', reqlen - buflen
+    else:
+      return self.buf[:reqlen], self.buf[reqlen:], 0
+
+    
 def markup_or_annotate(request, is_annotate):
   cfg = request.cfg
   path, rev = _orig_path(request, is_annotate and 'annotate' or 'revision')
   data = common_template_data(request)
+  lines = fp = blame_data = markup_fp = image_src_href = None
 
-  if is_annotate:
-    import blame
-    diff_url = request.get_url(view_func=view_diff,
-                               params={'r1': None, 'r2': None},
-                               escape=1, partial=1)
-    include_url = request.get_url(view_func=view_log, where='/WHERE/',
-                                  pathtype=vclib.FILE, params={}, escape=1)
-    try:
-      source, revision = blame.blame(request.repos, path,
-                                     diff_url, include_url, rev)
-    except vclib.NonTextualFileContents:
-      raise debug.ViewVCException('Unable to perform line-based annotation on '
-                                  'non-textual file contents',
-                                  '400 Bad Request')
-    data['lines'] = source
-    
-  else: # !is_annotate
+  # Is this a viewable image type?
+  if is_viewable_image(request.mime_type) \
+     and 'co' in cfg.options.allowed_views:
     fp, revision = request.repos.openfile(path, rev)
+    fp.close()
+    fp = None
+    image_src_href = request.get_url(view_func=view_checkout,
+                                     params={'revision': rev}, escape=1)
 
-    # Since the templates could be changed by the user, we can't provide
-    # a strong validator for this page, so we mark the etag as weak.
-    if check_freshness(request, None, revision, weak=1):
-      fp.close()
-      return
+  else: 
+    # Try to annotate this file, but don't croak if we fail.
+    try:
+      source, revision = request.repos.annotate(path, rev)
 
-    markup_fp = None
-    if is_viewable_image(request.mime_type) \
-       and 'co' in cfg.options.allowed_views:
-      fp.close()
-      url = request.get_url(view_func=view_checkout, params={'revision': rev},
-                            escape=1)
-      markup_fp = '<img src="%s" alt="" /><br />' % url
-    else:
-      basename, ext = os.path.splitext(request.path_parts[-1])
-      streamer = markup_streamers.get(ext)
-      if streamer:
-        markup_fp = streamer(fp, cfg)
+      # Since the templates could be changed by the user, we can't provide
+      # a strong validator for this page, so we mark the etag as weak.
+      if check_freshness(request, None, revision, weak=1):
+        return
+      
+      fp = BlameContents(request, source)
+    except vclib.NonTextualFileContents:
+      pass
+
+    # If we didn't produce a BlameContents() object, we'll just get a
+    # regular file pointer.
+    if not fp:
+      fp, revision = request.repos.openfile(path, rev)
+
+      # Since the templates could be changed by the user, we can't provide
+      # a strong validator for this page, so we mark the etag as weak.
+      if check_freshness(request, None, revision, weak=1):
+        fp.close()
+        return
+
+  if fp:
+    basename, ext = os.path.splitext(request.path_parts[-1])
+    streamer = markup_streamers.get(ext)
+    if streamer:
+      markup_fp = streamer(fp, cfg)
+
+    # If there wasn't a custom streamer, or the streamer wasn't
+    # enabled, we'll try to use one of the configured syntax
+    # highlighting programs.
+    if not markup_fp:
+      if cfg.options.use_enscript:
+        markup_fp = MarkupEnscript(cfg, fp, request.path_parts[-1])
+      elif cfg.options.use_highlight:
+        markup_fp = MarkupHighlight(cfg, fp, request.path_parts[-1])
+      elif cfg.options.use_source_highlight:
+        markup_fp = MarkupSourceHighlight(cfg, fp, request.path_parts[-1])
+      else:
+        # If no one has a suitable markup handler, we'll use the default.
+        markup_fp = MarkupPipeWrapper(cfg, fp)
+
+    markup_fp = IOInverter(markup_fp)
+    if hasattr(fp, 'blame_data'):
+      blame_data = fp.get_blame_data()
+    lines = BlameMarkupWrapper(blame_data, markup_fp)
   
-      # If there wasn't a custom streamer, or the streamer wasn't
-      # enabled, we'll try to use one of the configured syntax
-      # highlighting programs.
-      if not markup_fp:
-        if cfg.options.use_enscript:
-          markup_fp = MarkupEnscript(cfg, fp, request.path_parts[-1])
-        elif cfg.options.use_highlight:
-          markup_fp = MarkupHighlight(cfg, fp, request.path_parts[-1])
-        elif cfg.options.use_source_highlight:
-          markup_fp = MarkupSourceHighlight(cfg, fp, request.path_parts[-1])
-        else:
-          # If no one has a suitable markup handler, we'll use the default.
-          markup_fp = MarkupPipeWrapper(cfg, fp)
-    data['markup'] = markup_fp
-          
   data.update({
     'mime_type' : request.mime_type,
     'log' : None,
@@ -1524,6 +1673,8 @@ def markup_or_annotate(request, is_annotate):
     'prev' : None,
     'orig_path' : None,
     'orig_href' : None,
+    'image_src_href' : image_src_href,
+    'lines' : lines,
     })
 
   if cfg.options.show_log_in_markup:
@@ -1563,7 +1714,7 @@ def markup_or_annotate(request, is_annotate):
                                         params={'pathrev': revision},
                                         escape=1)
     
-  generate_page(request, is_annotate and "annotate" or "markup", data)
+  generate_page(request, "annotate", data)
   
 def view_markup(request):
   if 'markup' not in request.cfg.options.allowed_views:
