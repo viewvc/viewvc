@@ -312,7 +312,7 @@ class BlameSource:
       client.blame2(local_url, _rev2optrev(rev), _rev2optrev(1),
                     _rev2optrev(rev), self._blame_cb, ctx)
     except core.SubversionException, e:
-      if e.apr_err == vclib.svn.core.SVN_ERR_CLIENT_IS_BINARY_FILE:
+      if e.apr_err == core.SVN_ERR_CLIENT_IS_BINARY_FILE:
         raise vclib.NonTextualFileContents
       raise
 
@@ -625,7 +625,7 @@ class LocalSubversionRepository(vclib.Repository):
       info2 = p2, _date_from_rev(r2), r2
       return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args)
     except core.SubversionException, e:
-      if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
+      if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
         raise vclib.InvalidRevision
       raise
 
