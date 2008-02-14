@@ -3,19 +3,7 @@
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 [include "include/header.ezt" "annotate"]
-
-<table class="auto">
-<tr>
-<td>Revision:</td>
-<td><strong>[if-any revision_href]<a href="[revision_href]">[rev]</a>[else][rev][end]</strong></td>
-</tr>
-[if-any orig_path]
-<tr>
-<td>Original Path:</td>
-<td><strong><a href="[orig_href]"><em>[orig_path]</em></a></strong></td>
-</tr>
-[end]
-</table>
+[include "include/fileview.ezt"]
 
 <div id="vc_main_body">
 <!-- ************************************************************** -->
