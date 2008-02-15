@@ -1,5 +1,5 @@
 [# setup page definitions]
-  [define page_title]Query results on /[where][end]
+  [define page_title]Query results in:[end]
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
