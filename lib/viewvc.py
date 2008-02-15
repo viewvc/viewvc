@@ -290,8 +290,8 @@ class Request:
           self.where = _path_join(self.path_parts)
           needs_redirect = 1
         else:
-          raise debug.ViewVCException('%s: unknown location'
-                                       % self.where, '404 Not Found')
+          raise debug.ViewVCException("Unknown location: /%s" % self.where,
+                                      "404 Not Found")
 
       # If we have an old ViewCVS Attic URL which is still valid, redirect
       if self.roottype == 'cvs':
@@ -683,6 +683,8 @@ def _path_join(path_parts):
 def _strip_suffix(suffix, path_parts, rev, pathtype, repos, view_func):
   """strip the suffix from a repository path if the resulting path
   is of the specified type, otherwise return None"""
+  if not path_parts:
+    return None
   l = len(suffix)
   if path_parts[-1][-l:] == suffix:
     path_parts = path_parts[:]
