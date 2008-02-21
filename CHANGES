@@ -5,6 +5,8 @@ Version 1.0.5 (released ??-???-????)
   * fix RSS feed content type to be more specific (issue #306)
   * fix entity escaping problems in RSS feed data (issue #238)
   * fix bug tarball generation for remote Subversion repositories
+  * fix query interface file-count-limiting logic
+  * security fix: omit commits of all-forbidden files from query results
 
 Version 1.0.4 (released 10-Apr-2007)
 
