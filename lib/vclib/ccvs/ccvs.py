@@ -51,7 +51,8 @@ class CCVSRepository(BaseCVSRepository):
     }
 
     for entry in entries:
-      entry.rev = entry.date = entry.author = entry.dead = entry.log = None
+      entry.rev = entry.date = entry.author = None
+      entry.dead = entry.log = entry.lockinfo = None
       path = _log_path(entry, dirpath, subdirs)
       if path:
         entry.path = path
