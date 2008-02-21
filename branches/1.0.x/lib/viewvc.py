@@ -283,13 +283,19 @@ class Request:
       needs_redirect = 1
 
     if self.repos and self.view_func is not redirect_pathrev:
+      # If this is an intended-to-be-hidden CVSROOT path, complain.
+      if cfg.options.hide_cvsroot \
+         and is_cvsroot_path(self.roottype, path_parts):
+        raise debug.ViewVCException('%s: unknown location'
+                                    % self.where, '404 Not Found')
+
       # Make sure path exists
       self.pathrev = pathrev = self.query_dict.get('pathrev')
       self.pathtype = _repos_pathtype(self.repos, path_parts, pathrev)
 
       if self.pathtype is None:
-        # path doesn't exist, see if it could be an old-style ViewVC URL
-	# with a fake suffix
+        # Path doesn't exist, see if it could be an old-style ViewVC URL
+	# with a fake suffix.
         result = _strip_suffix('.diff', path_parts, pathrev, vclib.FILE,      \
                                self.repos, view_diff) or                      \
                  _strip_suffix('.tar.gz', path_parts, pathrev, vclib.DIR,     \
@@ -905,6 +911,9 @@ def is_viewable_image(mime_type):
 
 def is_text(mime_type):
   return not mime_type or mime_type[:5] == 'text/'
+
+def is_cvsroot_path(roottype, path_parts):
+  return roottype == 'cvs' and path_parts and path_parts[0] == 'CVSROOT'
 
 def is_plain_text(mime_type):
   return not mime_type or mime_type == 'text/plain'
@@ -1597,9 +1606,9 @@ def view_directory(request):
       continue
 
     if file.kind == vclib.DIR:
-
-      if (request.roottype == 'cvs' and cfg.options.hide_cvsroot
-          and where == '' and file.name == 'CVSROOT'):
+      if cfg.options.hide_cvsroot \
+         and is_cvsroot_path(request.roottype,
+                             request.path_parts + [file.name]):
         continue
     
       row.view_href = request.get_url(view_func=view_directory,
@@ -2938,9 +2947,9 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
       continue
 
     # Skip hidden directories (top-level only).
-    if not rep_path:
-      if (cvs and request.cfg.options.hide_cvsroot and file.name == 'CVSROOT'):
-        continue
+    if request.cfg.options.hide_cvsroot \
+       and is_cvsroot_path(request.roottype, rep_path + [file.name]):
+      continue
 
     # Skip forbidden subdirs.
     if request.cfg.is_forbidden(request.rootname, rep_path + [file.name],
@@ -3271,8 +3280,8 @@ def build_commit(request, files, max_files, dir_strip, format):
     path_parts = _path_parts(where)
     if request.cfg.is_forbidden(request.rootname, path_parts, vclib.FILE):
       continue
-    if path_parts and request.cfg.options.hide_cvsroot \
-       and request.roottype == 'cvs' and path_parts[0] == 'CVSROOT':
+    if request.cfg.options.hide_cvsroot \
+       and is_cvsroot_path(request.roottype, path_parts):
       continue
     
     # In CVS, we can actually look at deleted revisions; in Subversion
