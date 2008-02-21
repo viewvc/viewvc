@@ -3224,28 +3224,22 @@ def prev_rev(rev):
     r = r[:-2]
   return string.join(r, '.')
 
-def build_commit(request, files, limited_files, dir_strip, format):
-  commit = _item(num_files=len(files), files=[])
-  commit.limited_files = ezt.boolean(limited_files)
+def build_commit(request, files, max_files, dir_strip, format):
+  """Return a commit object build from the information in FILES, or
+  None if no allowed files are present in the set.  DIR_STRIP is the
+  path prefix to remove from the commit object's set of files.  If
+  MAX_FILES is non-zero, it is used to limit the number of files
+  returned in the commit object.  FORMAT is the requested output
+  format of the query request."""
+
+  author = files[0].GetAuthor()
+  date = files[0].GetTime()
   desc = files[0].GetDescription()
-  commit.log = htmlify(desc)
-  commit.short_log = format_log(desc, request.cfg, format != 'rss')
-  commit.author = request.server.escape(files[0].GetAuthor())
-  commit.rss_date = make_rss_time_string(files[0].GetTime(), request.cfg)
-  if request.roottype == 'svn':
-    commit.rev = files[0].GetRevision()
-    commit.rss_url = '%s://%s%s' % \
-      (request.server.getenv("HTTPS") == "on" and "https" or "http",
-       request.server.getenv("HTTP_HOST"),
-       request.get_url(view_func=view_revision,
-                       params={'revision': commit.rev},
-                       escape=1))
-  else:
-    commit.rev = None
-    commit.rss_url = None
-
+  commit_rev = files[0].GetRevision()
   len_strip = len(dir_strip)
-
+  commit_files = []
+  num_allowed = 0
+  
   for f in files:
     commit_time = f.GetTime()
     if commit_time:
@@ -3262,8 +3256,8 @@ def build_commit(request, files, limited_files, dir_strip, format):
       assert dirname[:len_strip] == dir_strip
       assert len(dirname) == len_strip or dirname[len(dir_strip)] == '/'
       dirname = dirname[len_strip+1:]
-    filename = dirname and ("%s/%s" % (dirname, filename)) or filename
-
+    where = dirname and ("%s/%s" % (dirname, filename)) or filename
+    
     # In CVS, we can actually look at deleted revisions; in Subversion
     # we can't -- we'll look at the previous revision instead.
     if request.roottype == 'svn':
@@ -3278,14 +3272,14 @@ def build_commit(request, files, limited_files, dir_strip, format):
                                where=dirname, pathtype=vclib.DIR,
                                params=params, escape=1)
     log_href = request.get_url(view_func=view_log,
-                               where=filename, pathtype=vclib.FILE,
+                               where=where, pathtype=vclib.FILE,
                                params=params, escape=1)
     diff_href = view_href = download_href = None
     view_href = request.get_url(view_func=view_markup,
-                                where=filename, pathtype=vclib.FILE,
+                                where=where, pathtype=vclib.FILE,
                                 params=params, escape=1)
     download_href = request.get_url(view_func=view_checkout,
-                                    where=filename, pathtype=vclib.FILE,
+                                    where=where, pathtype=vclib.FILE,
                                     params=params, escape=1)
     if change_type == 'Change':
       diff_href_params = params.copy()
@@ -3295,7 +3289,7 @@ def build_commit(request, files, limited_files, dir_strip, format):
         'diff_format': None
         })
       diff_href = request.get_url(view_func=view_diff,
-                                  where=filename, pathtype=vclib.FILE,
+                                  where=where, pathtype=vclib.FILE,
                                   params=diff_href_params, escape=1)
     prefer_markup = ezt.boolean(default_view(guess_mime(filename),
                                              request.cfg) == view_markup)      
@@ -3308,9 +3302,13 @@ def build_commit(request, files, limited_files, dir_strip, format):
                 or request.cfg.is_forbidden(dir_parts[0])):
       continue
 
-    commit.files.append(_item(date=commit_time,
+    num_allowed = num_allowed + 1
+    if max_files and num_allowed > max_files:
+      continue
+
+    commit_files.append(_item(date=commit_time,
                               dir=request.server.escape(dirname),
-                              file=request.server.escape(f.GetFile()),
+                              file=request.server.escape(filename),
                               author=request.server.escape(f.GetAuthor()),
                               rev=rev,
                               branch=f.GetBranch(),
@@ -3323,6 +3321,29 @@ def build_commit(request, files, limited_files, dir_strip, format):
                               download_href=download_href,
                               prefer_markup=prefer_markup,
                               diff_href=diff_href))
+
+  # No files survived forbiddenness checks?  Let's just pretend this
+  # little commit didn't happen, shall we?
+  if not len(commit_files):
+    return None
+
+  commit = _item(num_files=len(commit_files), files=commit_files)
+  commit.limited_files = ezt.boolean(num_allowed > len(commit_files))
+  commit.log = htmlify(desc)
+  commit.short_log = format_log(desc, request.cfg, format != 'rss')
+  commit.author = request.server.escape(author)
+  commit.rss_date = make_rss_time_string(date, request.cfg)
+  if request.roottype == 'svn':
+    commit.rev = commit_rev
+    commit.rss_url = '%s://%s%s' % \
+      (request.server.getenv("HTTPS") == "on" and "https" or "http",
+       request.server.getenv("HTTP_HOST"),
+       request.get_url(view_func=view_revision,
+                       params={'revision': commit.rev},
+                       escape=1))
+  else:
+    commit.rev = None
+    commit.rss_url = None
   return commit
 
 def query_backout(request, commits):
@@ -3370,7 +3391,7 @@ def view_query(request):
   format = request.query_dict.get('format')
   limit = int(request.query_dict.get('limit', 0))
   limit_changes = int(request.query_dict.get('limit_changes',
-                                           request.cfg.options.limit_changes))
+                                             request.cfg.options.limit_changes))
 
   match_types = { 'exact':1, 'like':1, 'glob':1, 'regex':1, 'notregex':1 }
   sort_types = { 'date':1, 'author':1, 'file':1 }
@@ -3456,48 +3477,47 @@ def view_query(request):
     current_desc = query.commit_list[0].GetDescriptionID()
     current_rev = query.commit_list[0].GetRevision()
     dir_strip = _path_join(repos_dir)
+
     for commit in query.commit_list:
-      # base modification time on the newest commit ...
-      if commit.GetTime() > mod_time: mod_time = commit.GetTime()
+      commit_desc = commit.GetDescriptionID()
+      commit_rev = commit.GetRevision()
+
+      # base modification time on the newest commit
+      if commit.GetTime() > mod_time:
+        mod_time = commit.GetTime()
+        
       # form plus/minus totals
       plus_count = plus_count + int(commit.GetPlusCount())
       minus_count = minus_count + int(commit.GetMinusCount())
-      # group commits with the same commit message ...
-      desc = commit.GetDescriptionID()
+      
       # For CVS, group commits with the same commit message.
       # For Subversion, group them only if they have the same revision number
       if request.roottype == 'cvs':
-        if current_desc == desc:
-          if not limit_changes or len(files) < limit_changes:
-            files.append(commit)
-          else:
-            limited_files = 1
+        if current_desc == commit_desc:
+          files.append(commit)
           continue
       else:
-        if current_rev == commit.GetRevision():
-          if not limit_changes or len(files) < limit_changes:
-            files.append(commit)
-          else:
-            limited_files = 1
+        if current_rev == commit_rev:
+          files.append(commit)
           continue
 
-      # if our current group has any allowed files, append a commit
-      # with those files.
-      if len(files):
-        commits.append(build_commit(request, files, limited_files,
-                                    dir_strip, format))
+      # append this grouping
+      commit_item = build_commit(request, files, limit_changes,
+                                 dir_strip, format)
+      if commit_item:
+        commits.append(commit_item)
 
       files = [ commit ]
       limited_files = 0
-      current_desc = desc
-      current_rev = commit.GetRevision()
+      current_desc = commit_desc
+      current_rev = commit_rev
       
-    # we need to tack on our last commit grouping, but, again, only if
-    # it has allowed files.
-    if len(files):
-      commits.append(build_commit(request, files, limited_files,
-                                  dir_strip, format))
-
+    # we need to tack on our last commit grouping, if any
+    commit_item = build_commit(request, files, limit_changes,
+                               dir_strip, format)
+    if commit_item:
+      commits.append(commit_item)
+  
   # only show the branch column if we are querying all branches
   # or doing a non-exact branch match on a CVS repository.
   show_branch = ezt.boolean(request.roottype == 'cvs' and
