@@ -8,6 +8,7 @@ Version 1.0.5 (released ??-???-????)
   * fix query interface file-count-limiting logic
   * security fix: omit commits of all-forbidden files from query results
   * new 'forbiddenre' regexp-based path authorization feature
+  * security fix: disallow direct URL navigation to hidden CVSROOT folder
 
 Version 1.0.4 (released 10-Apr-2007)
 
