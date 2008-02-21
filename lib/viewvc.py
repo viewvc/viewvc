@@ -327,11 +327,11 @@ class Request:
           self.where = _path_join(attic_parts)
           needs_redirect = 1
 
-    # If this is a forbidden directory, stop now
-    if self.path_parts and self.pathtype == vclib.DIR \
-           and cfg.is_forbidden(self.path_parts[0]):
-      raise debug.ViewVCException('%s: unknown location' % path_parts[0],
-                                   '404 Not Found')
+    # If this is a forbidden location, stop now
+    if cfg.is_forbidden(self.rootname, self.path_parts, self.pathtype):
+      raise debug.ViewVCException('%s: unknown location' \
+                                  % _path_join(self.path_parts),
+                                  '404 Not Found')
 
     if self.view_func is None:
       # view parameter is not set, try looking at pathtype and the 
@@ -1592,10 +1592,11 @@ def view_directory(request):
                    (file.kind == vclib.DIR and 'dir')
     row.errors = file.errors
 
-    if file.kind == vclib.DIR:
+    if cfg.is_forbidden(request.rootname, request.path_parts + [file.name],
+                        file.kind):
+      continue
 
-      if (where == '') and (cfg.is_forbidden(file.name)):
-        continue
+    if file.kind == vclib.DIR:
 
       if (request.roottype == 'cvs' and cfg.options.hide_cvsroot
           and where == '' and file.name == 'CVSROOT'):
@@ -2901,6 +2902,11 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     if cvs and (file.rev is None or file.dead):
       continue
 
+    # Skip forbidden files.
+    if request.cfg.is_forbidden(request.rootname, rep_path + [file.name],
+                                file.kind):
+      continue
+
     # If we get here, we've seen at least one valid file in the
     # current directory.  For CVS, we need to make sure there are
     # directory parents to contain it, so we flush the stack.
@@ -2931,13 +2937,16 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     if file.errors or file.kind != vclib.DIR:
       continue
 
-    # Skip forbidden/hidden directories (top-level only).
+    # Skip hidden directories (top-level only).
     if not rep_path:
-      if (request.cfg.is_forbidden(file.name)
-          or (cvs and request.cfg.options.hide_cvsroot
-              and file.name == 'CVSROOT')):
+      if (cvs and request.cfg.options.hide_cvsroot and file.name == 'CVSROOT'):
         continue
 
+    # Skip forbidden subdirs.
+    if request.cfg.is_forbidden(request.rootname, rep_path + [file.name],
+                                file.kind):
+      continue
+        
     mtime = request.roottype == 'svn' and file.date or None
     generate_tarball(out, request, reldir + [file.name], stack, mtime)
 
@@ -3257,6 +3266,14 @@ def build_commit(request, files, max_files, dir_strip, format):
       assert len(dirname) == len_strip or dirname[len(dir_strip)] == '/'
       dirname = dirname[len_strip+1:]
     where = dirname and ("%s/%s" % (dirname, filename)) or filename
+
+    # skip files in forbidden or hidden modules
+    path_parts = _path_parts(where)
+    if request.cfg.is_forbidden(request.rootname, path_parts, vclib.FILE):
+      continue
+    if path_parts and request.cfg.options.hide_cvsroot \
+       and request.roottype == 'cvs' and path_parts[0] == 'CVSROOT':
+      continue
     
     # In CVS, we can actually look at deleted revisions; in Subversion
     # we can't -- we'll look at the previous revision instead.
@@ -3293,14 +3310,6 @@ def build_commit(request, files, max_files, dir_strip, format):
                                   params=diff_href_params, escape=1)
     prefer_markup = ezt.boolean(default_view(guess_mime(filename),
                                              request.cfg) == view_markup)      
-
-    # skip files in forbidden or hidden modules
-    dir_parts = filter(None, string.split(dirname, '/'))
-    if dir_parts \
-           and ((dir_parts[0] == 'CVSROOT'
-                 and request.cfg.options.hide_cvsroot) \
-                or request.cfg.is_forbidden(dir_parts[0])):
-      continue
 
     num_allowed = num_allowed + 1
     if max_files and num_allowed > max_files:

@@ -19,6 +19,8 @@ import os
 import string
 import ConfigParser
 import fnmatch
+import re
+import vclib
 
 
 #########################################################################
@@ -39,7 +41,7 @@ import fnmatch
 
 class Config:
   _sections = ('general', 'options', 'cvsdb', 'templates')
-  _force_multi_value = ('cvs_roots', 'forbidden',
+  _force_multi_value = ('cvs_roots', 'forbidden', 'forbiddenre',
                         'svn_roots', 'languages', 'kv_files',
                         'root_parents')
 
@@ -151,8 +153,9 @@ class Config:
     self.general.svn_path = ''
     self.general.mime_types_file = ''
     self.general.address = '<a href="mailto:user@insert.your.domain.here">No admin address has been configured</a>'
-    self.general.forbidden = ()
-    self.general.kv_files = [ ]
+    self.general.forbidden = []
+    self.general.forbiddenre = []
+    self.general.kv_files = []
     self.general.languages = ['en-us']
 
     self.templates.directory = None
@@ -222,19 +225,63 @@ class Config:
     self.options.http_expiration_time = 600
     self.options.generate_etags = 1
 
-  def is_forbidden(self, module):
-    if not module:
+  def is_forbidden(self, root, path_parts, pathtype):
+    # If we don't have a root and path to check, get outta here.
+    if not (root and path_parts):
       return 0
-    default = 0
-    for pat in self.general.forbidden:
-      if pat[0] == '!':
-        default = 1
-        if fnmatch.fnmatchcase(module, pat[1:]):
-          return 0
-      elif fnmatch.fnmatchcase(module, pat):
-        return 1
-    return default
 
+    # Give precedence to the new 'forbiddenre' stuff first.
+    if self.general.forbiddenre:
+
+      # Join the root and path-parts together into one path-like thing.
+      root_and_path = string.join([root] + path_parts, "/")
+      
+      # If we still have a list of strings, replace those suckers with
+      # lists of (compiled_regex, negation_flag)
+      if type(self.general.forbiddenre[0]) == type(""):
+        for i in range(len(self.general.forbiddenre)):
+          pat = self.general.forbiddenre[i]
+          if pat[0] == '!':
+            self.general.forbiddenre[i] = (re.compile(pat[1:]), 1)
+          else:
+            self.general.forbiddenre[i] = (re.compile(pat), 0)
+
+      # Do the forbiddenness test.
+      default = 0
+      for (pat, negated) in self.general.forbiddenre:
+        match = pat.search(root_and_path)
+        if negated:
+          default = 1
+          if match:
+            return 0
+        elif match:
+          return 1
+      return default
+
+    # If no 'forbiddenre' is in use, we check 'forbidden', which only
+    # looks at the top-most directory.
+    elif self.general.forbidden:
+
+      # A root and a single non-directory path component?  That's not
+      # a module.
+      if len(path_parts) == 1 and pathtype != vclib.DIR:
+        return 0
+      
+      # Do the forbiddenness test.
+      module = path_parts[0]
+      default = 0
+      for pat in self.general.forbidden:
+        if pat[0] == '!':
+          default = 1
+          if fnmatch.fnmatchcase(module, pat[1:]):
+            return 0
+        elif fnmatch.fnmatchcase(module, pat):
+          return 1
+      return default
+
+    # No forbiddenness configuration?  Just allow it.
+    else:
+      return 0
 
 def _parse_roots(config_name, config_value):
   roots = { }
