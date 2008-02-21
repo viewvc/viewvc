@@ -390,6 +390,13 @@ def run_query(server, cfg, form_data, viewvc_link):
     commits.append(build_commit(server, cfg, current_desc, files,
                                 cvsroots, viewvc_link))
 
+    # Strip out commits that don't have any files attached to them.  The
+    # files probably aren't present because they've been blocked via
+    # forbiddenness.
+    def _only_with_files(commit):
+        return len(commit.files) > 0
+    commits = filter(_only_with_files, commits)
+  
     return commits
 
 def main(server, cfg, viewvc_link):
