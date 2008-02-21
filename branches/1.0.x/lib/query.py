@@ -282,10 +282,8 @@ def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
         ob.log = '&nbsp;'
 
     for commit in files:
-        dir_parts = filter(None, string.split(commit.GetDirectory(), '/'))
-        if dir_parts \
-               and ((dir_parts[0] == 'CVSROOT' and cfg.options.hide_cvsroot) \
-                    or cfg.is_forbidden(dir_parts[0])):
+        parts = filter(None, string.split(commit.GetDirectory(), '/'))
+        if parts and cfg.options.hide_cvsroot and parts[0] == 'CVSROOT':
             continue
 
         ctime = commit.GetTime()
@@ -303,6 +301,11 @@ def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
         directory = commit.GetDirectory()
         file = (directory and directory + "/") + commit.GetFile()
         cvsroot_name = cvsroots.get(repository)
+
+        ## skip forbidden files
+        if cfg.is_forbidden(cvsroot_name,
+                            filter(None, string.split(file, "/")), vclib.FILE):
+            continue
 
         ## if we couldn't find the cvsroot path configured in the 
         ## viewvc.conf file, then don't make the link
