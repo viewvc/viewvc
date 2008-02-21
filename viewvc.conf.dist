@@ -740,12 +740,12 @@ forbidden =
 #---------------------------------------------------------------------------
 [authz-forbiddenre]
 
-# The "forbiddenre" authorizer forbids access to repository paths by
-# comparing a list of regular expressions (separated by commas)
-# against paths consisting of the repository (or root) name plus the
-# path of the versioned file or directory to be tested.  For example,
-# to see if the user is authorized to see the path
-# "/trunk/www/index.html" in the repository whose root name is
+# The "forbiddenre" authorizer forbids access to repositories and
+# repository paths by comparing a list of regular expressions
+# (separated by commas) against paths consisting of the repository (or
+# root) name plus the path of the versioned file or directory to be
+# tested.  For example, to see if the user is authorized to see the
+# path "/trunk/www/index.html" in the repository whose root name is
 # "svnrepos", this authorizer will check the path
 # "svnrepos/trunk/www/index.html" against the list of forbidden
 # regular expressions.
@@ -759,8 +759,7 @@ forbidden =
 #   *) Tests are performed in sequence. The first match will terminate the
 #      testing. This allows for more complex allow/deny patterns.
 #
-# NOTE: Again, this is for the hiding of modules within repositories, *not* 
-# for the hiding of repositories (roots) themselves.
+# Unlike the "forbidden" authorizer, you can can use this to hide roots, too.
 #
 # Some examples:
 #
