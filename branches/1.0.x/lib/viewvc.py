@@ -1910,6 +1910,7 @@ def view_log(request):
   name_printed = { }
   cvs = request.roottype == 'cvs'
   for rev in show_revs:
+    last_one = 0
     entry = _item()
     entry.rev = rev.string
     entry.state = (cvs and rev.dead and 'dead')
@@ -1974,8 +1975,18 @@ def view_log(request):
       entry.vendor_branch = None
       if rev.filename != request.where:
         entry.orig_path = rev.filename
-      entry.copy_path = rev.copy_path
-      entry.copy_rev = rev.copy_rev
+
+      # If this path has been copied, check the copy source for
+      # forbiddenness.  If it's forbidden, we'll a) pretend this is a
+      # regular add (instead of a copy), and b) stop traversing history.
+      if rev.copy_path:
+        if cfg.is_forbidden(request.rootname, _path_parts(rev.copy_path),
+                            pathtype):
+          entry.prev = None
+          last_one = 1
+        else:
+          entry.copy_path = rev.copy_path
+          entry.copy_rev = rev.copy_rev
 
       if entry.orig_path:
         entry.orig_href = request.get_url(view_func=view_log,
@@ -2048,10 +2059,12 @@ def view_log(request):
 
     # Save our escaping until the end so stuff above works
     if entry.orig_path:
-      entry.orig_path = request.server.escape(entry.orig_path)
+      entry.orig_path = request.server.escape(entry.orig_path)     
     if entry.copy_path:
       entry.copy_path = request.server.escape(entry.copy_path)
     entries.append(entry)
+    if last_one:
+      break
 
   data = common_template_data(request)
   data.update({
@@ -2999,6 +3012,14 @@ def view_revision(request):
   if check_freshness(request, None, str(rev), weak=1):
     return
 
+  # Strip forbidden changed paths (we allow forbidden copyfrom-paths
+  # to leak through, though).
+  def _only_allowed(change):
+    return not request.cfg.is_forbidden(request.rootname,
+                                        _path_parts(change.filename),
+                                        change.pathtype)
+  changes = filter(_only_allowed, changes)
+
   # Handle limit_changes parameter
   cfg_limit_changes = request.cfg.options.limit_changes
   limit_changes = int(query_dict.get('limit_changes', cfg_limit_changes))
@@ -3024,10 +3045,24 @@ def view_revision(request):
     pathtype = (change.pathtype == vclib.FILE and 'file') \
                or (change.pathtype == vclib.DIR and 'dir') \
                or None
-    if (change.action == 'added' or change.action == 'replaced') \
-           and not change.is_copy:
-      change.text_mods = 0
-      change.prop_mods = 0
+
+    # If this is an add or a replacement, we'll verify that copyfrom
+    # paths are readable (if this is a copy), and if not claim this
+    # isn't a copy after all.  And if it ain't a copy (now or "after
+    # all"), we'll clear the text_mods and prop_mods flags.
+    if (change.action == 'added' or change.action == 'replaced'):
+      if change.is_copy \
+         and request.cfg.is_forbidden(request.rootname,
+                                      _path_parts(change.base_path),
+                                      change.pathtype):
+        change.is_copy = 0
+        if change.action == 'added':
+          change.base_path = None
+          change.base_rev = None
+
+      if not change.is_copy:
+        change.text_mods = 0
+        change.prop_mods = 0
 
     view_func = None
     if change.pathtype is vclib.FILE:
