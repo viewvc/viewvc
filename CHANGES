@@ -1,14 +1,16 @@
 Version 1.0.5 (released ??-???-????)
 
+  * security fix: omit commits of all-forbidden files from query results
+  * security fix: disallow direct URL navigation to hidden CVSROOT folder
+  * security fix: strip forbidden paths from revision view
+  * security fix: don't traverse log history thru forbidden locations
   * fix root name conflict resolution inconsistencies (issue #287)
   * fix an oversight in the CVS 1.12.9 loginfo-handler support
   * fix RSS feed content type to be more specific (issue #306)
   * fix entity escaping problems in RSS feed data (issue #238)
   * fix bug tarball generation for remote Subversion repositories
   * fix query interface file-count-limiting logic
-  * security fix: omit commits of all-forbidden files from query results
   * new 'forbiddenre' regexp-based path authorization feature
-  * security fix: disallow direct URL navigation to hidden CVSROOT folder
 
 Version 1.0.4 (released 10-Apr-2007)
 
