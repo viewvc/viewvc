@@ -4,6 +4,7 @@ Version 1.0.5 (released ??-???-????)
   * security fix: disallow direct URL navigation to hidden CVSROOT folder
   * security fix: strip forbidden paths from revision view
   * security fix: don't traverse log history thru forbidden locations
+  * security fix: honor forbiddenness via diff view path parameters
   * fix root name conflict resolution inconsistencies (issue #287)
   * fix an oversight in the CVS 1.12.9 loginfo-handler support
   * fix RSS feed content type to be more specific (issue #306)

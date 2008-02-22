@@ -2590,21 +2590,28 @@ def diff_parse_headers(fp, diff_type, rev1, rev2, sym1=None, sym2=None):
   return date1, date2, flag, string.join(header_lines, '')
 
 
+def _get_svn_location(request, base_rev, rev):
+  repos = request.repos
+  try:
+    parts = _path_parts(vclib.svn.get_location(repos, request.where,
+                                               repos._getrev(base_rev),
+                                               repos._getrev(rev)))
+  except vclib.InvalidRevision:
+    raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
+                                 'to diff', '400 Bad Request')
+  except vclib.ItemNotFound:
+    raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
+                                 'to diff', '400 Bad Request')
+  if request.cfg.is_forbidden(request.rootname, parts, vclib.FILE):
+    raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
+                                 'to diff', '400 Bad Request')
+
+
 def _get_diff_path_parts(request, query_key, rev, base_rev):
   if request.query_dict.has_key(query_key):
     parts = _path_parts(request.query_dict[query_key])
   elif request.roottype == 'svn':
-    try:
-      repos = request.repos
-      parts = _path_parts(vclib.svn.get_location(repos, request.where,
-                                                 repos._getrev(base_rev),
-                                                 repos._getrev(rev)))
-    except vclib.InvalidRevision:
-      raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
-                                   'to diff', '400 Bad Request')
-    except vclib.ItemNotFound:
-      raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
-                                   'to diff', '400 Bad Request')
+    parts = _get_svn_location(request, base_rev, rev)
   else:
     parts = request.path_parts
   return parts
