@@ -10,7 +10,7 @@ Version 1.0.5 (released ??-???-????)
   * fix an oversight in the CVS 1.12.9 loginfo-handler support
   * fix RSS feed content type to be more specific (issue #306)
   * fix entity escaping problems in RSS feed data (issue #238)
-  * fix bug tarball generation for remote Subversion repositories
+  * fix bug in tarball generation for remote Subversion repositories
   * fix query interface file-count-limiting logic
   * fix query results plus/minus count to ignore forbidden files
 
