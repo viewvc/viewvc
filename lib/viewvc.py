@@ -3299,6 +3299,8 @@ def build_commit(request, files, max_files, dir_strip, format):
   len_strip = len(dir_strip)
   commit_files = []
   num_allowed = 0
+  plus_count = 0
+  minus_count = 0
   
   for f in files:
     commit_time = f.GetTime()
@@ -3360,8 +3362,14 @@ def build_commit(request, files, max_files, dir_strip, format):
                                   where=where, pathtype=vclib.FILE,
                                   params=diff_href_params, escape=1)
     prefer_markup = ezt.boolean(default_view(guess_mime(filename),
-                                             request.cfg) == view_markup)      
+                                             request.cfg) == view_markup)
 
+    # Update plus/minus line change count.
+    plus = int(f.GetPlusCount())
+    minus = int(f.GetMinusCount())
+    plus_count = plus_count + plus
+    minus_count = minus_count + minus
+    
     num_allowed = num_allowed + 1
     if max_files and num_allowed > max_files:
       continue
@@ -3372,8 +3380,8 @@ def build_commit(request, files, max_files, dir_strip, format):
                               author=request.server.escape(f.GetAuthor()),
                               rev=rev,
                               branch=f.GetBranch(),
-                              plus=int(f.GetPlusCount()),
-                              minus=int(f.GetMinusCount()),
+                              plus=plus,
+                              minus=minus,
                               type=change_type,
                               dir_href=dir_href,
                               log_href=log_href,
@@ -3387,7 +3395,8 @@ def build_commit(request, files, max_files, dir_strip, format):
   if not len(commit_files):
     return None
 
-  commit = _item(num_files=len(commit_files), files=commit_files)
+  commit = _item(num_files=len(commit_files), files=commit_files,
+                 plus=plus_count, minus=minus_count)
   commit.limited_files = ezt.boolean(num_allowed > len(commit_files))
   commit.log = htmlify(desc)
   commit.short_log = format_log(desc, request.cfg, format != 'rss')
@@ -3546,10 +3555,6 @@ def view_query(request):
       if commit.GetTime() > mod_time:
         mod_time = commit.GetTime()
         
-      # form plus/minus totals
-      plus_count = plus_count + int(commit.GetPlusCount())
-      minus_count = minus_count + int(commit.GetMinusCount())
-      
       # For CVS, group commits with the same commit message.
       # For Subversion, group them only if they have the same revision number
       if request.roottype == 'cvs':
@@ -3565,6 +3570,9 @@ def view_query(request):
       commit_item = build_commit(request, files, limit_changes,
                                  dir_strip, format)
       if commit_item:
+        # update running plus/minus totals
+        plus_count = plus_count + commit_item.plus
+        minus_count = minus_count + commit_item.minus
         commits.append(commit_item)
 
       files = [ commit ]
@@ -3576,6 +3584,9 @@ def view_query(request):
     commit_item = build_commit(request, files, limit_changes,
                                dir_strip, format)
     if commit_item:
+      # update running plus/minus totals
+      plus_count = plus_count + commit_item.plus
+      minus_count = minus_count + commit_item.minus
       commits.append(commit_item)
   
   # only show the branch column if we are querying all branches

@@ -1587,9 +1587,19 @@ td {
   <td>True if files list was cut short due to <tt>limit_changes</tt>.</td>
 </tr>
 <tr class="varlevel2">
+  <td class="varname">commits.minus</td>
+  <td>String</td>
+  <td>Total number of lines removed from files in this commit.</td>
+</tr>
+<tr class="varlevel2">
   <td class="varname">commits.num_files</td>
   <td>String</td>
-  <td>Number of files in the <var>commits.files</var> list.</td>
+  <td>Total number of files in the <var>commits.files</var> list.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">commits.plus</td>
+  <td>String</td>
+  <td>Number of lines added to files in this commit.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">commits.rev</td>
@@ -1630,12 +1640,14 @@ td {
 <tr class="varlevel1">
   <td class="varname">minus_count</td>
   <td>String</td>
-  <td>Total number of lines removed in the commit (over all files).</td>
+  <td>Total number of lines removed from all files across all returned
+      commits.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">plus_count</td>
   <td>String</td>
-  <td>Total number of lines added in the commit (over all files).</td>
+  <td>Total number of lines added to all files across all returned
+      commits.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">queryform_href</td>

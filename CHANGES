@@ -5,13 +5,14 @@ Version 1.0.5 (released ??-???-????)
   * security fix: strip forbidden paths from revision view
   * security fix: don't traverse log history thru forbidden locations
   * security fix: honor forbiddenness via diff view path parameters
+  * new 'forbiddenre' regexp-based path authorization feature
   * fix root name conflict resolution inconsistencies (issue #287)
   * fix an oversight in the CVS 1.12.9 loginfo-handler support
   * fix RSS feed content type to be more specific (issue #306)
   * fix entity escaping problems in RSS feed data (issue #238)
   * fix bug tarball generation for remote Subversion repositories
   * fix query interface file-count-limiting logic
-  * new 'forbiddenre' regexp-based path authorization feature
+  * fix query results plus/minus count to ignore forbidden files
 
 Version 1.0.4 (released 10-Apr-2007)
 
