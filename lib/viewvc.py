@@ -3426,6 +3426,8 @@ def build_commit(request, files, max_files, dir_strip, format):
   len_strip = len(dir_strip)
   commit_files = []
   num_allowed = 0
+  plus_count = 0
+  minus_count = 0
   
   for f in files:
     commit_time = f.GetTime()
@@ -3481,15 +3483,24 @@ def build_commit(request, files, max_files, dir_strip, format):
     prefer_markup = ezt.boolean(default_view(guess_mime(filename),
                                              cfg) == view_markup)      
 
-    # skip files in forbidden or hidden modules
-    dir_parts = filter(None, string.split(dirname, '/'))
-    if dir_parts:
+    # Skip files in hidden modules.
+    path_parts = _path_parts(filename)
+    if path_parts:
       if cfg.options.hide_cvsroot \
-         and is_cvsroot_path(request.roottype, dir_parts):
+         and is_cvsroot_path(request.roottype, path_parts):
         continue
-      if _repos_pathtype(request.repos, dir_parts, rev) != vclib.DIR:
+      # We have to do a rare authz check here because this data comes
+      # from the CVSdb, not from the vclib providers.
+      if not vclib.check_path_access(request.repos, path_parts,
+                                     vclib.FILE, rev):
         continue
       
+    # Update plus/minus line change count.
+    plus = int(f.GetPlusCount())
+    minus = int(f.GetMinusCount())
+    plus_count = plus_count + plus
+    minus_count = minus_count + minus
+    
     num_allowed = num_allowed + 1
     if max_files and num_allowed > max_files:
       continue
@@ -3500,8 +3511,8 @@ def build_commit(request, files, max_files, dir_strip, format):
                               author=request.server.escape(f.GetAuthor()),
                               rev=rev,
                               branch=f.GetBranch(),
-                              plus=int(f.GetPlusCount()),
-                              minus=int(f.GetMinusCount()),
+                              plus=plus,
+                              minus=minus,
                               type=change_type,
                               dir_href=dir_href,
                               log_href=log_href,
@@ -3515,7 +3526,8 @@ def build_commit(request, files, max_files, dir_strip, format):
   if not len(commit_files):
     return None
 
-  commit = _item(num_files=len(commit_files), files=commit_files)
+  commit = _item(num_files=len(commit_files), files=commit_files,
+                 plus=plus_count, minus=minus_count)
   commit.limited_files = ezt.boolean(num_allowed > len(commit_files))
   commit.log = htmlify(desc)
   commit.short_log = format_log(desc, cfg, format != 'rss')
@@ -3681,10 +3693,6 @@ def view_query(request):
       if commit.GetTime() > mod_time:
         mod_time = commit.GetTime()
         
-      # form plus/minus totals
-      plus_count = plus_count + int(commit.GetPlusCount())
-      minus_count = minus_count + int(commit.GetMinusCount())
-      
       # For CVS, group commits with the same commit message.
       # For Subversion, group them only if they have the same revision number
       if request.roottype == 'cvs':
@@ -3700,6 +3708,9 @@ def view_query(request):
       commit_item = build_commit(request, files, limit_changes,
                                  dir_strip, format)
       if commit_item:
+        # update running plus/minus totals
+        plus_count = plus_count + commit_item.plus
+        minus_count = minus_count + commit_item.minus
         commits.append(commit_item)
 
       files = [ commit ]
@@ -3711,6 +3722,9 @@ def view_query(request):
     commit_item = build_commit(request, files, limit_changes,
                                dir_strip, format)
     if commit_item:
+      # update running plus/minus totals
+      plus_count = plus_count + commit_item.plus
+      minus_count = minus_count + commit_item.minus
       commits.append(commit_item)
   
   # only show the branch column if we are querying all branches
