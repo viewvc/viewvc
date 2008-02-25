@@ -201,7 +201,7 @@ forbidden =
 #      authorized to see the path "/trunk/www/index.html" in the repository
 #      whose root name is "svnrepos", this authorizer will test the path
 #      "svnrepos/trunk/www/index.html" against the list of forbidden regular
-#      expressions.
+#      expressions.  Directory paths will be terminated by a forward slash.
 #
 # NOTE: Use of this configuration option will *disable* any configuration of
 # the 'forbidden' option -- they cannot be used simultaneously.
@@ -215,6 +215,9 @@ forbidden =
 #    disallowing all others (which can be done in multiple ways):
 #       forbiddenre = !^example1(/|$), !^example2(/|$)/
 #       forbiddenre = !^example[12](/|$)
+#
+#    Only allow visibility of HTML files and the directories that hold them:
+#       forbiddenre = !^.*(/|\.html)$
 #
 forbiddenre = 
 
