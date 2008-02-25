@@ -235,6 +235,8 @@ class Config:
 
       # Join the root and path-parts together into one path-like thing.
       root_and_path = string.join([root] + path_parts, "/")
+      if pathtype == vclib.DIR:
+        root_and_path = root_and_path + '/'
       
       # If we still have a list of strings, replace those suckers with
       # lists of (compiled_regex, negation_flag)
