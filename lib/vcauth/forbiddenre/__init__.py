@@ -32,24 +32,27 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     self.forbidden = map(lambda x: _split_regexp(string.strip(x)),
                          filter(None, string.split(forbidden, ',')))
                          
-  def _check_root_path_access(self, rootname, path_parts):
-    path = rootname
-    if path_parts:
-      path = path + '/' + string.join(path_parts, '/')
-
+  def _check_root_path_access(self, root_path):
     default = 1
     for forbidden, negated in self.forbidden:
       if negated:
         default = 0
-        if forbidden.search(path):
+        if forbidden.search(root_path):
           return 1
-      elif forbidden.search(path):
+      elif forbidden.search(root_path):
         return 0
     return default
       
   def check_root_access(self, rootname):
-    return self._check_root_path_access(rootname, None)
+    return self._check_root_path_access(rootname)
   
   def check_path_access(self, rootname, path_parts, pathtype, rev=None):
-    return self._check_root_path_access(rootname, path_parts)
+    root_path = rootname
+    if path_parts:
+      root_path = root_path + '/' + string.join(path_parts, '/')
+      if pathtype == vclib.DIR:
+        root_path = root_path + '/'
+    else:
+      root_path = root_path + '/'
+    return self._check_root_path_access(root_path)
     
