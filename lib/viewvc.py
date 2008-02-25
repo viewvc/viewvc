@@ -1906,6 +1906,7 @@ def view_log(request):
   # selected revision
   selected_rev = request.query_dict.get('r1')
 
+  paths_forbidden = {}
   entries = [ ]
   name_printed = { }
   cvs = request.roottype == 'cvs'
@@ -1980,13 +1981,22 @@ def view_log(request):
       # forbiddenness.  If it's forbidden, we'll a) pretend this is a
       # regular add (instead of a copy), and b) stop traversing history.
       if rev.copy_path:
-        if cfg.is_forbidden(request.rootname, _path_parts(rev.copy_path),
-                            pathtype):
+        if not paths_forbidden.has_key(rev.copy_path):
+          paths_forbidden[rev.copy_path] = \
+              cfg.is_forbidden(request.rootname,
+                               _path_parts(rev.copy_path), pathtype)
+
+        if paths_forbidden[rev.copy_path]:
           entry.prev = None
           last_one = 1
         else:
           entry.copy_path = rev.copy_path
           entry.copy_rev = rev.copy_rev
+          entry.copy_href = request.get_url(view_func=view_log,
+                                            where=rev.copy_path,
+                                            pathtype=vclib.FILE,
+                                            params={'pathrev': rev.copy_rev},
+                                            escape=1)
 
       if entry.orig_path:
         entry.orig_href = request.get_url(view_func=view_log,
@@ -1994,14 +2004,6 @@ def view_log(request):
                                           pathtype=vclib.FILE,
                                           params={'pathrev': rev.string},
                                           escape=1)
-
-      if rev.copy_path:
-        entry.copy_href = request.get_url(view_func=view_log,
-                                          where=rev.copy_path,
-                                          pathtype=vclib.FILE,
-                                          params={'pathrev': rev.copy_rev},
-                                          escape=1)
-
 
     # view/download links
     if pathtype is vclib.FILE:

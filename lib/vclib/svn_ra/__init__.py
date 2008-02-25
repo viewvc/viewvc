@@ -100,8 +100,12 @@ def created_rev(svnrepos, full_name, rev):
   kind = ra.svn_ra_check_path(svnrepos.ra_session, full_name, rev,
                               svnrepos.pool)
   if kind == core.svn_node_dir:
-    props = ra.svn_ra_get_dir(svnrepos.ra_session, full_name,
-                              rev, svnrepos.pool)
+    retval = ra.svn_ra_get_dir(svnrepos.ra_session, full_name,
+                               rev, svnrepos.pool)
+    if type(retval) == type([]) and len(retval) == 3:
+      props = retval[2]
+    else: # compat with older (broken) bindings
+      props = retval
     return int(props[core.SVN_PROP_ENTRY_COMMITTED_REV])
   return core.SVN_INVALID_REVNUM
 
@@ -176,12 +180,14 @@ class LogCollector:
     # Changed paths have leading slashes
     changed_paths = paths.keys()
     changed_paths.sort(lambda a, b: _compare_paths(a, b))
-    this_path = None
+    copyfrom_path = copyfrom_rev = this_path = None
     if self.path in changed_paths:
       this_path = self.path
       change = paths[self.path]
       if change.copyfrom_path:
         this_path = change.copyfrom_path
+        copyfrom_path = change.copyfrom_path[1:]
+        copyfrom_rev = change.copyfrom_rev
     for changed_path in changed_paths:
       if changed_path != self.path:
         # If a parent of our path was copied, our "next previous"
@@ -194,7 +200,7 @@ class LogCollector:
     if self.show_all_logs or this_path:
       date = _datestr_to_date(date, pool)
       entry = Revision(revision, date, author, message, None,
-                       self.path[1:], None, None)
+                       self.path[1:], copyfrom_path, copyfrom_rev)
       self.logs.append(entry)
     if this_path:
       self.path = this_path
