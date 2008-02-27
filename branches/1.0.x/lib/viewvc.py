@@ -2607,6 +2607,7 @@ def _get_svn_location(request, base_rev, rev):
   if request.cfg.is_forbidden(request.rootname, parts, vclib.FILE):
     raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                  'to diff', '400 Bad Request')
+  return parts
 
 
 def _get_diff_path_parts(request, query_key, rev, base_rev):
