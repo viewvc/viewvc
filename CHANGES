@@ -13,6 +13,7 @@ Version 1.0.5 (released ??-???-????)
   * fix bug in tarball generation for remote Subversion repositories
   * fix query interface file-count-limiting logic
   * fix query results plus/minus count to ignore forbidden files
+  * fix blame error caused by 'svn' unable to create runtime config dir
 
 Version 1.0.4 (released 10-Apr-2007)
 

@@ -15,9 +15,11 @@
 import vclib
 import os
 import os.path
+import stat
 import string
 import cStringIO
 import signal
+import shutil
 import time
 import tempfile
 import popen
@@ -498,13 +500,36 @@ class BlameSource:
       rootpath = '/' + rootpath
     if os.sep != '/':
       rootpath = string.replace(rootpath, os.sep, '/')
-      
+
+    # Make a read-only temporary directory for Subversion to use as
+    # its runtime config dir.  (Read-only because that will prevent
+    # Subversion from fleshing out all the default runtime config
+    # contents.)
+    self.config_dir = self._mkdtemp()
+    os.chmod(self.config_dir, stat.S_IRUSR | stat.S_IXUSR)
+    
     url = 'file://' + string.join([rootpath, fs_path], "/")
     fp = popen.popen(svn_client_path,
-                     ('blame', "-r%d" % int(rev), "--non-interactive",
+                     ("blame",
+                      "-r%d" % int(rev),
+                      "--non-interactive",
+                      "--config-dir", self.config_dir,
                       "%s@%d" % (url, int(rev))),
                      'rb', 1)
     self.fp = fp
+
+  def _mkdtemp(self):
+    ### FIXME: When we require Python 2.3, this can go away.
+    for i in range(10):
+      dir = tempfile.mktemp()
+      try:
+        os.mkdir(dir, 0700)
+        return dir
+      except OSError, e:
+        if e.errno == errno.EEXIST:
+          continue # try again
+        raise
+    raise IOError, (errno.EEXIST, "No usable temporary directory name found")
     
   def __getitem__(self, idx):
     if idx == self.idx:
@@ -529,6 +554,13 @@ class BlameSource:
     self.last = item
     self.idx = idx
     return item
+  
+  def __del__(self):
+    try:
+      if self.config_dir:
+        shutil.rmtree(self.config_dir)
+    except:
+      pass
 
 
 class BlameSequencingError(Exception):
