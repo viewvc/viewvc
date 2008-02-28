@@ -1,0 +1,473 @@
+#!/usr/bin/env python
+# -*- Mode: python -*-
+#
+# Copyright (C) 1999-2007 The ViewCVS Group. All Rights Reserved.
+#
+# By using this file, you agree to the terms and conditions set forth in
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
+#
+# For more information, visit http://viewvc.org/
+#
+# -----------------------------------------------------------------------
+#
+# Install script for ViewVC
+#
+# -----------------------------------------------------------------------
+
+import os
+import sys
+import string
+import re
+import traceback
+import py_compile
+import getopt
+import StringIO
+
+# Get access to our library modules.
+sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), 'lib'))
+
+import compat
+import viewvc
+import compat_ndiff
+version = viewvc.__version__
+
+
+## Installer defaults.
+DESTDIR = None
+ROOT_DIR = None
+CLEAN_MODE = None
+
+
+## List of files for installation.
+##    tuple (source path,
+##           destination path,
+##           mode,
+##           boolean -- search-and-replace?
+##           boolean -- prompt before replacing?
+##           boolean -- compile?)
+FILE_INFO_LIST = [
+    ("bin/cgi/viewvc.cgi",        "bin/cgi/viewvc.cgi",        0755, 1, 0, 0),
+    ("bin/cgi/query.cgi",         "bin/cgi/query.cgi",         0755, 1, 0, 0),
+    ("bin/mod_python/viewvc.py",  "bin/mod_python/viewvc.py",  0755, 1, 0, 0),
+    ("bin/mod_python/query.py",   "bin/mod_python/query.py",   0755, 1, 0, 0),
+    ("bin/mod_python/handler.py", "bin/mod_python/handler.py", 0755, 1, 0, 0),
+    ("bin/mod_python/.htaccess",  "bin/mod_python/.htaccess",  0755, 0, 0, 0),
+    ("bin/standalone.py",         "bin/standalone.py",         0755, 1, 0, 0),
+    ("bin/loginfo-handler",       "bin/loginfo-handler",       0755, 1, 0, 0),
+    ("bin/cvsdbadmin",            "bin/cvsdbadmin",            0755, 1, 0, 0),
+    ("bin/svndbadmin",            "bin/svndbadmin",            0755, 1, 0, 0),
+    ("bin/make-database",         "bin/make-database",         0755, 1, 0, 0),
+    ("viewvc.conf.dist",          "viewvc.conf.dist",          0644, 0, 0, 0),
+    ("viewvc.conf.dist",          "viewvc.conf",               0644, 0, 1, 0),
+    ("cvsgraph.conf.dist",        "cvsgraph.conf.dist",        0644, 0, 0, 0),
+    ("cvsgraph.conf.dist",        "cvsgraph.conf",             0644, 0, 1, 0),
+    ]
+if sys.platform == "win32":
+  FILE_INFO_LIST.extend([
+    ("bin/asp/viewvc.asp",        "bin/asp/viewvc.asp",        0755, 1, 0, 0),
+    ("bin/asp/query.asp",         "bin/asp/query.asp",         0755, 1, 0, 0),
+  ])
+
+
+## List of directories for installation.
+##    type (source path,
+##          destination path,
+##          boolean -- prompt before replacing?)
+TREE_LIST = [
+    ("lib",                       "lib",                       0),
+    ("templates",                 "templates",                 1),
+    ("templates-contrib",         "templates-contrib",         1),
+    ]
+
+
+## List of file extensions we can't show diffs for.
+BINARY_FILE_EXTS = [
+    '.png',
+    '.gif',
+    '.jpg',
+    ]
+
+
+def _escape(str):
+    """Callback function for re.sub().
+
+    re.escape() is no good because it blindly puts backslashes in
+    front of anything that is not a number or letter regardless of
+    whether the resulting sequence will be interpreted."""
+    return string.replace(str, "\\", "\\\\")
+
+
+def _actual_src_path(path):
+    """Return the real on-disk location of PATH, which is relative to
+    the ViewVC source directory."""
+    return os.path.join(os.path.dirname(sys.argv[0]),
+                        string.replace(path, '/', os.sep))
+                 
+    
+def error(text, etype=None, evalue=None):
+    """Print error TEXT to stderr, pretty printing the optional
+    exception type and value (ETYPE and EVALUE, respective), and then
+    exit the program with an errorful code."""
+    sys.stderr.write("\n[ERROR] %s\n" % (text))
+    if etype:
+        traceback.print_exception(etype, evalue, None, file=sys.stderr)
+    sys.exit(1)
+    
+
+def replace_var(contents, var, value):
+    """Replace instances of the variable VAR as found in file CONTENTS
+    with VALUE."""
+    pattern = re.compile('^' + var + r'\s*=\s*.*$', re.MULTILINE)
+    repl = '%s = r"%s"' % (var, os.path.join(ROOT_DIR, value))
+    return re.sub(pattern, _escape(repl), contents)
+
+
+def replace_paths(contents):
+    """Replace all ViewVC path placeholders found in file CONTENTS."""
+    if contents[:2] == '#!':
+        shbang = '#!' + sys.executable
+        contents = re.sub('^#![^\n]*', _escape(shbang), contents)
+    contents = replace_var(contents, 'LIBRARY_DIR', 'lib')
+    contents = replace_var(contents, 'CONF_PATHNAME', 'viewvc.conf')
+    return contents
+
+
+def install_file(src_path, dst_path, mode, subst_path_vars,
+                 prompt_replace, compile_it):
+    """Install a single file whose source is at SRC_PATH (which is
+    relative to the ViewVC source directory) into the location
+    DST_PATH (which is relative both to the global ROOT_DIR and
+    DESTDIR settings), and set the file's MODE.  If SUBST_PATH_VARS is
+    set, substitute path variables in the file's contents.  If
+    PROMPT_REPLACE is set (and is not overridden by global setting
+    CLEAN_MODE), prompt the user for how to deal with already existing
+    files that differ from the to-be-installed version.  If COMPILE_IT
+    is set, compile the file as a Python module."""
+    
+    src_path = _actual_src_path(src_path)
+    dst_path = os.path.join(ROOT_DIR, string.replace(dst_path, '/', os.sep))
+    destdir_path = DESTDIR + dst_path
+
+    overwrite = None
+    if not (prompt_replace and os.path.exists(destdir_path)):
+        # If the file doesn't already exist, or we've been instructed to
+        # replace it without prompting, then drop in the new file and get
+        # outta here.
+        overwrite = 1
+    else:
+        # If we're here, then the file already exists, and we've possibly
+        # got to prompt the user for what to do about that.
+  
+        # Collect ndiff output from ndiff
+        sys.stdout = StringIO.StringIO()
+        compat_ndiff.main([destdir_path, src_path])
+        ndiff_output = sys.stdout.getvalue()
+
+        # Return everything to normal
+        sys.stdout = sys.__stdout__
+
+        # Collect the '+ ' and '- ' lines.
+        diff_lines = []
+        looking_at_diff_lines = 0
+        for line in string.split(ndiff_output, '\n'):
+            # Print line if it is a difference line
+            if line[:2] == "+ " or line[:2] == "- " or line[:2] == "? ":
+                diff_lines.append(line)
+                looking_at_diff_lines = 1
+            else:
+                # Compress lines that are the same to print one blank line
+                if looking_at_diff_lines:
+                    diff_lines.append("")
+                    looking_at_diff_lines = 0
+
+        # If there are no differences, we're done here.
+        if not diff_lines:
+            overwrite = 1
+        else:
+            # If we get here, there are differences.
+            if CLEAN_MODE == 'true':
+                overwrite = 1
+            elif CLEAN_MODE == 'false':
+                overwrite = 0
+            else:
+                print "File %s exists and is different from source file." \
+                      % (destdir_path)
+                while 1:
+                    name, ext = os.path.splitext(src_path)
+                    if ext in BINARY_FILE_EXTS:
+                        temp = raw_input("Do you want to [O]verwrite or "
+                                         "[D]o not overwrite? ")
+                    else:
+                        temp = raw_input("Do you want to [O]verwrite, [D]o "
+                                         "not overwrite, or [V]iew "
+                                         "differences? ")
+                    temp = string.lower(temp[0])
+                    if temp == "v" and ext not in BINARY_FILE_EXTS:
+                        print """
+---------------------------------------------------------------------------"""
+                        print string.join(diff_lines, '\n') + '\n'
+                        print """
+LEGEND
+   A leading '- ' indicates line to remove from installed file
+   A leading '+ ' indicates line to add to installed file
+   A leading '? ' shows intraline differences.
+---------------------------------------------------------------------------"""
+                    elif temp == "d":
+                        overwrite = 0
+                    elif temp == "o":
+                        overwrite = 1
+
+                    if overwrite is not None:
+                        break
+
+    assert overwrite is not None
+    if not overwrite:
+        print "   preserved %s" % (dst_path)
+        return
+
+    ### If we get here, we're creating or overwriting the existing file.
+
+    # Read the source file's contents.
+    try:
+        contents = open(src_path, "rb").read()
+    except IOError, e:
+        error(str(e))
+
+    # (Optionally) substitute ViewVC path variables.
+    if subst_path_vars:
+        contents = replace_paths(contents)
+
+    # Ensure the existence of the containing directories.
+    dst_parent = os.path.dirname(destdir_path)
+    if not os.path.exists(dst_parent):
+        try:
+            compat.makedirs(dst_parent)
+            print "   created   %s%s" % (dst_parent, os.sep)
+        except os.error, e:
+            if e.errno == 17: # EEXIST: file exists
+                return
+            if e.errno == 13: # EACCES: permission denied
+                error("You do not have permission to create directory %s" \
+                      % (dst_parent))
+            error("Unknown error creating directory %s" \
+                  % (dst_parent, OSError, e))
+
+    # Now, write the file contents to their destination.
+    try:
+        exists = os.path.exists(destdir_path)
+        open(destdir_path, "wb").write(contents)
+        print "   %s %s" \
+              % (exists and 'replaced ' or 'installed', dst_path)
+    except IOError, e:
+        if e.errno == 13:
+            # EACCES: permission denied
+            error("You do not have permission to write file %s" % (dst_path))
+        error("Unknown error writing file %s" % (dst_path, IOError, e))
+
+    # Set the files's mode.
+    os.chmod(destdir_path, mode)
+
+    # (Optionally) compile the file.
+    if compile_it:
+        py_compile.compile(destdir_path, destdir_path + "c" , dst_path)
+
+
+def install_tree(src_path, dst_path, prompt_replace):
+    """Install a tree whose source is at SRC_PATH (which is relative
+    to the ViewVC source directory) into the location DST_PATH (which
+    is relative both to the global ROOT_DIR and DESTDIR settings).  If
+    PROMPT_REPLACE is set (and is not overridden by global setting
+    CLEAN_MODE), prompt the user for how to deal with already existing
+    files that differ from the to-be-installed version."""
+
+    orig_src_path = src_path
+    orig_dst_path = dst_path
+    src_path = _actual_src_path(src_path)
+    dst_path = os.path.join(ROOT_DIR, string.replace(dst_path, '/', os.sep))
+    destdir_path = os.path.join(DESTDIR + dst_path)
+
+    # Get a list of items in the directory.
+    files = os.listdir(src_path)
+    files.sort()
+    for fname in files:
+        # Ignore some stuff found in development directories, but not
+        # intended for installation.
+        if fname == 'CVS' or fname == '.svn' or fname == '_svn' \
+             or fname[-4:] == '.pyc' or fname[-5:] == '.orig' \
+             or fname[-4:] == '.rej' or fname[0] == '.' \
+             or fname[-1] ==    '~':
+            continue
+
+        orig_src_child = orig_src_path + '/' + fname
+        orig_dst_child = orig_dst_path + '/' + fname
+
+        # If the item is a subdirectory, recurse.  Otherwise, install the file.
+        if os.path.isdir(os.path.join(src_path, fname)):
+            install_tree(orig_src_child, orig_dst_child, prompt_replace)
+        else:
+            set_paths = 0
+            compile_it = fname[-3:] == '.py'
+            install_file(orig_src_child, orig_dst_child, 0644,
+                         set_paths, prompt_replace, compile_it)
+
+    # Check for .py and .pyc files that don't belong in installation.
+    for fname in os.listdir(destdir_path):
+        if not os.path.isfile(os.path.join(destdir_path, fname)) or \
+             not ((fname[-3:] == '.py' and fname not in files) or
+                        (fname[-4:] == '.pyc' and fname[:-1] not in files)):
+            continue
+        
+        # If we get here, there's cruft.
+        delete = None
+        if CLEAN_MODE == 'true':
+            delete = 1
+        elif CLEAN_MODE == 'false':
+            delete = 0
+        else:
+            print "File %s does not belong in ViewVC %s." \
+                  % (dst_path, version)
+            while 1:
+                temp = raw_input("Do you want to [D]elete it, or [L]eave "
+                                 "it as is? ")
+                temp = string.lower(temp[0])
+                if temp == "l":
+                    delete = 0
+                elif temp == "d":
+                    delete = 1
+
+                if delete is not None:
+                    break
+
+        assert delete is not None
+        if delete:
+            print "   deleted   %s" % (os.path.join(dst_path, fname))
+            os.unlink(os.path.join(destdir_path, fname))
+        else:
+            print "   preserved %s" % (os.path.join(dst_path, fname))
+      
+
+
+def usage_and_exit(errstr=None):
+    stream = errstr and sys.stderr or sys.stdout
+    stream.write("""Usage: %s [OPTIONS]
+
+Installs the ViewVC web-based version control repository browser.
+
+Options:
+
+    --help, -h, -?    Show this usage message and exit.
+
+    --prefix=DIR      Install ViewVC into the directory DIR.  If not provided,
+                      the script will prompt for this information.
+
+    --destdir=DIR     Use DIR as the DESTDIR.  This is generally only used
+                      by package maintainers.  If not provided, the script will
+                      prompt for this information. 
+
+    --clean-mode=     If 'true', overwrite existing ViewVC configuration files
+                      found in the target directory, and purge Python modules
+                      from the target directory that aren't part of the ViewVC
+                      distribution.  If 'false', do not overwrite configuration
+                      files, and do not purge any files from the target
+                      directory.  If not specified, the script will prompt
+                      for the appropriate action on a per-file basis.
+
+""" % (os.path.basename(sys.argv[0])))
+    if errstr:
+        stream.write("ERROR: %s\n\n" % (errstr))
+        sys.exit(1)
+    else:
+        sys.exit(0)
+        
+
+if __name__ == "__main__":
+    # Option parsing.
+    try:
+        optlist, args = getopt.getopt(sys.argv[1:], "h?",
+                                      ['prefix=',
+                                       'destdir=',
+                                       'clean-mode=',
+                                       'help'])
+    except getopt.GetoptError, e:
+        usage_and_exit(str(e))
+    for opt, arg in optlist:
+        if opt == '--help' or opt == '-h' or opt == '-?':
+            usage_and_exit()
+        if opt == '--prefix':
+            ROOT_DIR = arg
+        if opt == '--destdir':
+            DESTDIR = arg
+        if opt == '--clean-mode':
+            arg = arg.lower()
+            if arg not in ('true', 'false'):
+                usage_and_exit("Invalid value for --overwrite parameter.")
+            CLEAN_MODE = arg
+
+    # Print the header greeting.
+    print """This is the ViewVC %s installer.
+
+It will allow you to choose the install path for ViewVC.  You will now
+be asked some installation questions.  Defaults are given in square brackets.
+Just hit [Enter] if a default is okay.
+""" % version
+
+    # Prompt for ROOT_DIR if none provided.
+    if ROOT_DIR is None:
+        if sys.platform == "win32":
+            pf = os.getenv("ProgramFiles", "C:\\Program Files")
+            default = os.path.join(pf, "viewvc-" + version)    
+        else:
+            default = "/usr/local/viewvc-" + version
+        temp = string.strip(raw_input("Installation path [%s]: " \
+                                      % default))
+        print
+        if len(temp):
+            ROOT_DIR = temp
+        else:
+            ROOT_DIR = default
+            
+    # Prompt for DESTDIR if none provided.
+    if DESTDIR is None:
+        default = ''
+        temp = string.strip(raw_input(
+            "DESTDIR path (generally only used by package "
+            "maintainers) [%s]: " \
+            % default))
+        print
+        if len(temp):
+            DESTDIR = temp
+        else:
+            DESTDIR = default
+                
+    # Install the files.
+    print "Installing ViewVC to %s%s:" \
+          % (ROOT_DIR, DESTDIR and " (DESTDIR = %s)" % (DESTDIR) or "")
+    for args in FILE_INFO_LIST:
+        apply(install_file, args)
+    for args in TREE_LIST:
+        apply(install_tree, args)
+        
+    # Print some final thoughts.
+    print """
+
+ViewVC file installation complete.
+
+Consult the INSTALL document for detailed information on completing the
+installation and configuration of ViewVC on your system.  Here's a brief
+overview of the remaining steps:
+
+  1) Edit the %s file.
+
+  2) Either configure an existing web server to run
+     %s.
+     
+     Or, copy %s to an
+     already-configured cgi-bin directory.
+     
+     Or, use the standalone server provided by this distribution at
+     %s.
+""" % (os.path.join(ROOT_DIR, 'viewvc.conf'),
+       os.path.join(ROOT_DIR, 'bin', 'cgi', 'viewvc.cgi'),
+       os.path.join(ROOT_DIR, 'bin', 'cgi', 'viewvc.cgi'),
+       os.path.join(ROOT_DIR, 'bin', 'standalone.py'))
