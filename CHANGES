@@ -1,4 +1,6 @@
-Version 1.0.5 (released ??-???-????)
+Version 1.0.6 (released ??-???-????)
+
+Version 1.0.5 (released 28-Feb-2008)
 
   * security fix: omit commits of all-forbidden files from query results
   * security fix: disallow direct URL navigation to hidden CVSROOT folder
