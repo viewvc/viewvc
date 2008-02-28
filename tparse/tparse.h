@@ -30,7 +30,7 @@
 #include <memory>     /* for auto_ptr */
 #include <algorithm>  /* for iterator */
 #include <exception>  /* for exception */
-#include <istream>    /* for istream */
+#include <iostream>   /* for istream */
 #include <list>       /* for list<> */
 #include <string>     /* for string */
 
@@ -121,7 +121,7 @@ class rcstoken
         free(data);
       data = NULL;
     };
-  void init(const char *mydata, size_t mylen);
+  void rcstoken::init(const char *mydata, size_t mylen);
   int null_token()
     {
       return data == NULL;

@@ -57,6 +57,7 @@ td {
   <li><a href="#variables">Variables Available to ViewVC Templates</a></li>
   <ul class="toc-list">
     <li><a href="#variables-common">Common Template Variable Set (COMMON)</a></li>
+    <li><a href="#variables-navdata">File Navigation Variable Set (NAVDATA)</a></li>
     <li><a href="#variables-pathrev">Path Revision Form Variable Set (PATHREV)</a></li>
     <li><a href="#variables-paging">Paging Form Variable Set (PAGING)</a></li>
     <li><a href="#variables-annotate">Annotation View (annotate.ezt)</a></li>
@@ -66,7 +67,7 @@ td {
     <li><a href="#variables-error">Error View (error.ezt)</a></li>
     <li><a href="#variables-log">Revision Log View (log.ezt)</a></li>
     <li><a href="#variables-markup">File Contents View (markup.ezt)</a></li>
-    <li><a href="#variables-query_results">Revision History Query Results View (query_results.ezt, rss.ezt)</a></li>
+    <li><a href="#variables-query_results">Revision History Query Results View (query_results.ezt)</a></li>
     <li><a href="#variables-query_form">Revision History Query Form View (query_form.ezt)</a></li>
     <li><a href="#variables-revision">Revision/ChangeSet View (revision.ezt)</a></li>
     <li><a href="#variables-roots">Root Listing View (roots.ezt)</a></li>
@@ -95,12 +96,6 @@ td {
 </tr>
 </thead>
 <tbody>
-<tr class="varlevel1">
-  <td class="varname">annotate_href</td>
-  <td>String</td>
-  <td>URL of the ViewVC annotation view for the current resource.
-      Valid only when <var>pathtype</var> is <tt>file</tt>.</td>
-</tr>
 <tr class="varlevel1">
   <td class="varname">cfg</td>
   <td>Object</td>
@@ -131,22 +126,10 @@ td {
       location).</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">download_href</td>
-  <td>String</td>
-  <td>ViewVC file contents download URL for the current resource.
-      Valid only when <var>pathtype</var> is <tt>file</tt>.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">download_text_href</td>
-  <td>String</td>
-  <td>ViewVC file contents as-text download URL for the current resource.
-      Valid only when <var>pathtype</var> is <tt>file</tt>.</td>
-</tr>
-<tr class="varlevel1">
   <td class="varname">graph_href</td>
   <td>String</td>
-  <td>URL of the ViewVC revision graph view for the current resource.
-      Valid only when <var>pathtype</var> is <tt>file</tt>.</td>
+  <td>URL of the ViewVC revision graph view for the current 
+      resource.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">kv</td>
@@ -160,16 +143,10 @@ td {
       abstract name is <var>l10n</var>.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">lockinfo</td>
-  <td>String</td>
-  <td>Information about the lock status of the current resource.</td>
-</tr>
-<tr class="varlevel1">
   <td class="varname">log_href</td>
   <td>String</td>
   <td>URL of the ViewVC revision log view for the current
-      resource.  Valid only when <var>pathtype</var> is <tt>file</tt>
-      or (for Subversion roots) <tt>dir</tt>.</td>
+      resource.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">log_rev_href</td>
@@ -200,29 +177,6 @@ td {
       (file), <tt>dir</tt> (directory); may be empty.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">prefer_markup</td>
-  <td>Boolean</td>
-  <td>Indicates whether to make the default file link a link to the markup
-      page instead of the checkout page.  Valid only when
-      <var>pathtype</var> is <tt>file</tt>.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">queryform_href</td>
-  <td>String</td>
-  <td>URL for a query form returning results from this directory.
-      Valid only when <var>pathtype</var> is <tt>dir</tt>.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">rev</td>
-  <td>String</td>
-  <td>Revision of the current resource.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">revision_href</td>
-  <td>String</td>
-  <td>URL of the Subversion revision view for the current revision.</td>
-</tr>
-<tr class="varlevel1">
   <td class="varname">rootname</td>
   <td>String</td>
   <td>Name of the current repository (root).</td>
@@ -238,14 +192,6 @@ td {
   <td>Name of a configured repository.</td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">roots.path</td>
-  <td>String</td>
-  <td>Server-local location of a configured repository.  WARNING:  Revealing
-      information to untrusted guests about the details of your server
-      configuration can have negative security implications.  Use this
-      token at your own risk.</td>
-</tr>
-<tr class="varlevel2">
   <td class="varname">roots.type</td>
   <td>String</td>
   <td>Version control type of a configured repository.  Valid
@@ -257,34 +203,10 @@ td {
   <td>URL of root directory view for a configured repository.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">roots_href</td>
-  <td>String</td>
-  <td>URL of ViewVC root listing view.  Valid only when ViewVC is
-      configured in roots-as-url-components mode.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">rootpath</td>
-  <td>String</td>
-  <td>Server-local location of the current repository.  WARNING: Revealing
-      information to untrusted guests about the details of your server
-      configuration can have negative security implications.  Use this
-      token at your own risk.</td>
-</tr>
-<tr class="varlevel1">
   <td class="varname">roottype</td>
   <td>String</td>
   <td>Version control type of the current repository (root).
       Valid values: <tt>cvs</tt> (CVS), <tt>svn</tt> (Subversion).</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">rss_href</td>
-  <td>String</td>
-  <td>URL of RSS feed for current location.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">tarball_href</td>
-  <td>String</td>
-  <td>URL to download tarball of the current directory.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">up_href</td>
@@ -304,13 +226,6 @@ td {
      <tt>rev</tt> (revision/changeset view).</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">view_href</td>
-  <td>String</td>
-  <td>URL of the ViewVC file contents view for the current resource.
-      Valid only when <var>pathtype</var> is <tt>file</tt> or 
-      <tt>dir</tt>.</td>
-</tr>
-<tr class="varlevel1">
   <td class="varname">vsn</td>
   <td>String</td>
   <td>ViewVC version identifier.</td>
@@ -320,6 +235,77 @@ td {
   <td>String</td>
   <td>Path (relative to the current repository root) of the current
       resource.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="h3">
+<h3 id="variables-navdata">File Navigation Variable Set (NAVDATA)</h3>
+<table>
+<thead>
+<tr>
+  <th>Variable</th>
+  <th>Type</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="include">
+  <td colspan="3">Includes all variables from the 
+     <a href="#variables-common">COMMON</a> variable set</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">annotate_href</td>
+  <td>String</td>
+  <td>URL of the ViewVC annotation view for the current resource.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">download_href</td>
+  <td>String</td>
+  <td>ViewVC file contents download URL for the current resource.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">download_text_href</td>
+  <td>String</td>
+  <td>ViewVC file contents as-text download URL for the current resource.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">orig_path</td>
+  <td>String</td>
+  <td>When viewing an old file revision through a copy of the file,
+      this is the old file revision's original path.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">orig_href</td>
+  <td>String</td>
+  <td>URL of a ViewVC log view for <code>orig_path</code>.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">prefer_markup</td>
+  <td>Boolean</td>
+  <td>Indicates whether to make the default file link a link to the markup
+      page instead of the checkout page.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">rev</td>
+  <td>String</td>
+  <td>Revision of the current resource.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">revision_href</td>
+  <td>String</td>
+  <td>URL of the Subversion revision view for the current revision.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">rss_href</td>
+  <td>String</td>
+  <td>URL of RSS feed for current location.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">view_href</td>
+  <td>String</td>
+  <td>URL of the ViewVC file contents view for the current resource.</td>
 </tr>
 </tbody>
 </table>
@@ -429,40 +415,7 @@ td {
 <tbody>
 <tr class="include">
   <td colspan="3">Includes all variables from the 
-     <a href="#variables-common">COMMON</a> variable set</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">ago</td>
-  <td>String</td>
-  <td>Text description of the time elapsed since <var>date</var>.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">author</td>
-  <td>String</td>
-  <td>Author of the revision being viewed.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">branch_points</td>
-  <td>String</td>
-  <td>List of branch tag names which branch off of the revision being
-      viewed (CVS only).</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">branches</td>
-  <td>List</td>
-  <td>If revision currently being viewed is on a branch, list of names
-      for the branch.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">changed</td>
-  <td>String</td>
-  <td>Numbers of lines added and removed since the previous revision.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">date</td>
-  <td>String</td>
-  <td>Date (in UTC if not otherwise configured) of the revision currently
-      being viewed.</td>
+     <a href="#variables-navdata">NAVDATA</a> variable set</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">lines</td>
@@ -509,55 +462,6 @@ td {
   <td class="varname">lines.text</td>
   <td>String</td>
   <td>Textual contents of the line.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">log</td>
-  <td>String</td>
-  <td>Log message of the revision currently being viewed.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">mime_type</td>
-  <td>String</td>
-  <td>MIME type of the current file.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">orig_path</td>
-  <td>String</td>
-  <td>When viewing an old file revision through a copy of the file,
-      this is the old file revision's original path.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">orig_href</td>
-  <td>String</td>
-  <td>URL of a ViewVC log view for <code>orig_path</code>.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">prev</td>
-  <td>String</td>
-  <td>Previous revision number.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">size</td>
-  <td>String</td>
-  <td>Size of the file revision, in bytes. Subversion only.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">state</td>
-  <td>String</td>
-  <td>State of the file revision. Possible values: <tt>dead</tt>, and
-      the empty string.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">tags</td>
-  <td>List</td>
-  <td>Names of tags that have been applied to the current file
-      revision.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">vendor_branch</td>
-  <td>Boolean</td>
-  <td>Indicates whether or not the current file revision is on a vendor
-      branch.</td>
 </tr>
 </tbody>
 </table>
@@ -608,6 +512,11 @@ td {
 <tr class="include">
   <td colspan="3">Includes all variables from the 
      <a href="#variables-common">COMMON</a> variable set</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">annotate_href</td>
+  <td>String</td>
+  <td>URL for the annotate view of the right-side file revision.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">changes</td>
@@ -683,11 +592,22 @@ td {
       <tt>no-changes</tt>, <tt>remove</tt>.</td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">date_left</td>
+  <td>String</td>
+  <td>Date (in UTC if not otherwise configured) in which the left file
+      revision was created.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">date_right</td>
+  <td>String</td>
+  <td>Date (in UTC if not otherwise configured) in which the right file
+      revision was created.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">diff_format</td>
   <td>String</td>
   <td>Difference dislay format:  Valid values are <tt>c</tt>
-      (context), <tt>f</tt> (full human-readable),
-      <tt>h</tt> (human-readable, or colored), <tt>l</tt> (long
+      (context), <tt>h</tt> (human-readable, or colored), <tt>l</tt> (long
       human-readable), <tt>s</tt> (side-by-side), <tt>u</tt>
       (unified).</td>
 </tr>
@@ -702,132 +622,30 @@ td {
   <td>Hidden value HTML markup for the diff format selection form.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">left</td>
-  <td>Container</td>
-  <td>Container object for grouping information about the left file.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">left.annotate_href</td>
-  <td>String</td>
-  <td>URL of the ViewVC annotation view for the left file.
-      Valid only when <var>entries.pathtype</var> is <tt>file</tt>.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">left.date</td>
-  <td>String</td>
-  <td>Date (in UTC if not otherwise configured) in which the left file
-      revision was created.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">left.download_href</td>
-  <td>String</td>
-  <td>URL to download the HEAD revision of the left file.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">left.download_text_href</td>
-  <td>String</td>
-  <td>URL to download the HEAD revision of the left file as
-      <tt>text/plain</tt>.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">left.path</td>
-  <td>String</td>
-  <td>Path of the left file.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">left.prefer_markup</td>
-  <td>Boolean</td>
-  <td>Indicates whether to make the default file link a link to the markup
-      page instead of the checkout page.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">left.rev</td>
-  <td>String</td>
-  <td>Revision of the left file.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">left.revision_href</td>
-  <td>String</td>
-  <td>URL of the Subversion revision view for the left file's
-      current revision.  Valid only when <var>roottype</var> is
-      <tt>svn</tt>.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">left.tag</td>
-  <td>String</td>
-  <td>Tag of the left file.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">left.view_href</td>
-  <td>String</td>
-  <td>This is a URL for the markup view of the left file.</td>
-</tr>
-<tr class="varlevel1">
   <td class="varname">raw_diff</td>
   <td>String</td>
   <td>Raw difference text.  Valid only when <var>diff_format</var> is
   <tt>c</tt>, <tt>s</tt>, or <tt>u</tt>.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">right</td>
-  <td>Container</td>
-  <td>Container object for grouping information about the right file.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">right.annotate_href</td>
+  <td class="varname">rev_left</td>
   <td>String</td>
-  <td>URL of the ViewVC annotation view for the right file.
-      Valid only when <var>entries.pathtype</var> is <tt>file</tt>.</td>
+  <td>Revision of the left file.</td>
 </tr>
-<tr class="varlevel2">
-  <td class="varname">right.date</td>
-  <td>String</td>
-  <td>Date (in UTC if not otherwise configured) in which the right file
-      revision was created.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">right.download_href</td>
-  <td>String</td>
-  <td>URL to download the HEAD revision of the right file.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">right.download_text_href</td>
-  <td>String</td>
-  <td>URL to download the HEAD revision of the right file as
-      <tt>text/plain</tt>.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">right.path</td>
-  <td>String</td>
-  <td>Path of the right file.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">right.prefer_markup</td>
-  <td>Boolean</td>
-  <td>Indicates whether to make the default file link a link to the markup
-      page instead of the checkout page.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">right.rev</td>
+<tr class="varlevel1">
+  <td class="varname">rev_right</td>
   <td>String</td>
   <td>Revision of the right file.</td>
 </tr>
-<tr class="varlevel2">
-  <td class="varname">right.revision_href</td>
+<tr class="varlevel1">
+  <td class="varname">tag_left</td>
   <td>String</td>
-  <td>URL of the Subversion revision view for the right file's
-      current revision.  Valid only when <var>roottype</var> is
-      <tt>svn</tt>.</td>
+  <td>Tag of the left file.</td>
 </tr>
-<tr class="varlevel2">
-  <td class="varname">right.tag</td>
+<tr class="varlevel1">
+  <td class="varname">tag_right</td>
   <td>String</td>
   <td>Tag of the right file.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">right.view_href</td>
-  <td>String</td>
-  <td>This is a URL for the markup view of the right file.</td>
 </tr>
 </tbody>
 </table>
@@ -892,9 +710,8 @@ td {
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.annotate_href</td>
-  <td>String</td>
-  <td>URL of the ViewVC annotation view for the directory entry.
-      Valid only when <var>entries.pathtype</var> is <tt>file</tt>.</td>
+  <td></td>
+  <td></td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.author</td>
@@ -909,23 +726,18 @@ td {
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.download_href</td>
-  <td>String</td>
-  <td>URL to download the HEAD revision of the directory entry.</td>
+  <td></td>
+  <td></td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.download_text_href</td>
-  <td>String</td>
-  <td>URL to download the HEAD revision of the directory entry as
-      <tt>text/plain</tt>.</td>
+  <td></td>
+  <td></td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.errors</td>
-  <td>List</td>
-  <td>List of strings containing error messages encountered by the
-      version control backend as it attempted to harvest information about
-      this directory entry.  At this time the strings are somewhat
-      freeform; in the future it would be nice to expose these as 
-      testable error code or somesuch.</td>
+  <td></td>
+  <td></td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.graph_href</td>
@@ -934,23 +746,14 @@ td {
       entry.</td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">entries.lockinfo</td>
-  <td>String</td>
-  <td>Information about the lock status of the directory entry.</td>
-</tr>
-<tr class="varlevel2">
   <td class="varname">entries.log</td>
-  <td>String</td>
-  <td>Log message of last modification to the directory entry.</td>
+  <td></td>
+  <td></td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.log_file</td>
-  <td>String</td>
-  <td>ViewVC optionally calculates the log message of a CVS directory
-      as the log message associated with the most recently modified
-      file in that directory.  When that occurs, this is the name of
-      that file.  Valid only when <var>entries.pathtype</var> is
-      <tt>dir</tt>.  See also <var>entries.log_rev</var>.</td>
+  <td></td>
+  <td></td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.log_href</td>
@@ -960,22 +763,45 @@ td {
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.log_rev</td>
-  <td>String</td>
-  <td>ViewVC optionally calculates the log message of a CVS directory
-      as the log message associated with the most recently modified
-      file in that directory.  When that occurs, this is the revision of
-      that file.  Valid only when <var>entries.pathtype</var> is
-      <tt>dir</tt>.  See also <var>entries.log_file</var>.</td>
+  <td></td>
+  <td></td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.mime_type</td>
-  <td>String</td>
-  <td>MIME type of the directory entry.</td>
+  <td></td>
+  <td></td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.name</td>
   <td>String</td>
   <td>Name of the directory entry.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">entries.rev</td>
+  <td>String</td>
+  <td>Revision of the directory entry.  For CVS repositories, this is
+      a revision at the tip of the selected tag or branch; for
+      Subversion, this is the youngest revision as of the revision of
+      the directory being viewed.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">entries.revision_href</td>
+  <td>String</td>
+  <td>URL of the Subversion revision view for the directory entries
+      current revision.  Valid only when <var>roottype</var> is
+      <tt>svn</tt>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">entries.size</td>
+  <td>String</td>
+  <td>Size (in bytes) of the directory entry.  Valid only when
+      <var>roottype</var> is <tt>svn</tt> and
+      <var>entries.pathtype</var> is <tt>file</tt>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">entries.state</td>
+  <td></td>
+  <td></td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.pathtype</td>
@@ -991,45 +817,8 @@ td {
       <var>entries.pathtype</var> is <tt>file</tt>.</td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">entries.rev</td>
-  <td>String</td>
-  <td>Revision of the directory entry.  For CVS repositories, this is
-      a revision at the tip of the selected tag or branch; for
-      Subversion, this is the youngest revision as of the revision of
-      the directory being viewed.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">entries.revision_href</td>
-  <td>String</td>
-  <td>URL of the Subversion revision view for the directory entry's
-      current revision.  Valid only when <var>roottype</var> is
-      <tt>svn</tt>.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">entries.short_log</td>
-  <td>String</td>
-  <td>Log message of last modification to the directory entry,
-      truncated to contain no more than the number of characters
-      specified by the <code>short_log_len</code> configuration option.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">entries.size</td>
-  <td>String</td>
-  <td>Size (in bytes) of the directory entry.  Valid only when
-      <var>roottype</var> is <tt>svn</tt> and
-      <var>entries.pathtype</var> is <tt>file</tt>.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">entries.state</td>
-  <td>String</td>
-  <td>State of the directory entry.  If the state is uninteresting
-      (a typical, versioned object), this field is empty.  Valid,
-      non-empty states include:  <tt>dead</tt> (the object is not
-      available on, or possible removed from, this branch; CVS only).</td>
-</tr>
-<tr class="varlevel2">
   <td class="varname">entries.view_href</td>
-  <td>String</td>
+  <td></td>
   <td>This is a URL for the markup view if the entry is a file, and a
       URL for a directory listing if the entry is a directory.</td>
 </tr>
@@ -1054,6 +843,11 @@ td {
   <td>List</td>
   <td>List of tag names in use by files in the current directory.
       CVS only.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">queryform_href</td>
+  <td>String</td>
+  <td>URL for a query form returning results from this directory.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">search_re</td>
@@ -1120,6 +914,11 @@ td {
   <td>String</td>
   <td>Current sorting mode. Valid values: <tt>up</tt> (ascending) and
       <tt>down</tt> (descending)</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">tarball_href</td>
+  <td>String</td>
+  <td>URL to download tarball of the current directory.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">tree_rev</td>
@@ -1373,11 +1172,6 @@ td {
   <td>URL to download the file revision as <tt>text/plain</tt>.</td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">entries.lockinfo</td>
-  <td>String</td>
-  <td>Information about the lock status of this revision.</td>
-</tr>
-<tr class="varlevel2">
   <td class="varname">entries.log</td>
   <td>String</td>
   <td>Revision log message.</td>
@@ -1549,7 +1343,7 @@ td {
   <td>URL to download the file as <tt>text/plain</tt> at the currently
       selected sticky tag. CVS only</td>
 </tr>
-<tr class="varlevel1">
+<tr class="varlevel2">
   <td class="varname">tag_prefer_markup</td>
   <td>Boolean</td>
   <td>Indicates whether to make the default file link a link to the markup
@@ -1599,7 +1393,7 @@ td {
 <tbody>
 <tr class="include">
   <td colspan="3">Includes all variables from the 
-     <a href="#variables-common">COMMON</a> variable set</td>
+     <a href="#variables-navdata">NAVDATA</a> variable set</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">ago</td>
@@ -1650,17 +1444,6 @@ td {
   <td>MIME type of the current file.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">orig_path</td>
-  <td>String</td>
-  <td>When viewing an old file revision through a copy of the file,
-      this is the old file revision's original path.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">orig_href</td>
-  <td>String</td>
-  <td>URL of a ViewVC log view for <code>orig_path</code>.</td>
-</tr>
-<tr class="varlevel1">
   <td class="varname">prev</td>
   <td>String</td>
   <td>Previous revision number.</td>
@@ -1693,8 +1476,7 @@ td {
 </div>
 
 <div class="h3">
-<h3 id="variables-query_results">Revision History Query Results View
-(query_results.ezt, rss.ezt)</h3>
+<h3 id="variables-query_results">Revision History Query Results View (query_results.ezt)</h3>
 <table>
 <thead>
 <tr>
@@ -1868,6 +1650,11 @@ td {
       commits.</td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">queryform_href</td>
+  <td>String</td>
+  <td>URL for form to edit query criteria.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">querysort</td>
   <td>String</td>
   <td>Indicates how query results are being sorted. Possible values: 
@@ -1914,18 +1701,6 @@ td {
   <td>String</td>
   <td>Type of match to perform with <var>branch</var> query string.
       Valid values: <tt>exact</tt>, <tt>like</tt>, <tt>glob</tt>,
-      <tt>regex</tt>, <tt>notregex</tt>.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">comment</td>
-  <td>String</td>
-  <td>Query string for filtering results by log message.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">comment_match</td>
-  <td>String</td>
-  <td>Type of match to perform with <var>comment</var> query string. Possible
-      values: <tt>exact</tt>, <tt>like</tt>, <tt>glob</tt>, 
       <tt>regex</tt>, <tt>notregex</tt>.</td>
 </tr>
 <tr class="varlevel1">

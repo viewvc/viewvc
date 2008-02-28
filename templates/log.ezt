@@ -6,7 +6,6 @@
 [for entries]
 [if-index entries first][define first_revision][entries.rev][end][end]
 [if-index entries last][define last_revision][entries.rev][end][end]
-
 <div>
   <hr />
 
@@ -20,12 +19,10 @@
     [end]
 
     Revision [is roottype "svn"]<a href="[entries.revision_href]"><strong>[entries.rev]</strong></a>[else]<strong>[entries.rev]</strong>[end] -
-    [if-any entries.view_href]
-      [is pathtype "file"]
-        (<a href="[entries.view_href]">view</a>)
-      [else]
-        <a href="[entries.view_href]">Directory Listing</a>
-      [end]
+    [is pathtype "file"]
+      (<a href="[entries.view_href]">view</a>)
+    [else]
+      <a href="[entries.view_href]">Directory Listing</a>
     [end]
     [if-any entries.download_href](<a href="[entries.download_href]">download</a>)[end]
     [if-any entries.download_text_href](<a href="[entries.download_text_href]">as text</a>)[end]
@@ -51,9 +48,7 @@
     [if-index entries last]Added[else]Modified[end]
   [end]
 
-  <em>[if-any entries.date][entries.date][else](unknown date)[end]</em>
-  [if-any entries.ago]([entries.ago] ago)[end] 
-  by <em>[if-any entries.author][entries.author][else](unknown author)[end]</em>
+  <em>[entries.date]</em> ([entries.ago] ago) by <em>[entries.author]</em>
 
   [if-any entries.orig_path]
     <br />Original Path: <a href="[entries.orig_href]"><em>[entries.orig_path]</em></a>
@@ -96,10 +91,6 @@
     [if-any entries.copy_path]
     <br />Copied from: <a href="[entries.copy_href]"><em>[entries.copy_path]</em></a> revision [entries.copy_rev]
     [end]
-  [end]
-
-  [if-any entries.lockinfo]
-    <br />Lock status: <img src="[docroot]/images/lock.png" alt="Locked" width="16" height="16" /> [entries.lockinfo]
   [end]
 
   [is entries.state "dead"]

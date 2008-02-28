@@ -17,19 +17,9 @@
 
 import sys
 
-# Set to non-zero to track and print processing times
+
 SHOW_TIMES = 0
-
-# Set to non-zero to display child process info
 SHOW_CHILD_PROCESSES = 0
-
-# Set to a server-side path to force the tarball view to generate the
-# tarball as a file on the server, instead of transmitting the data
-# back to the browser.  This enables easy display of error
-# considitions in the browser, as well as tarball inspection on the
-# server.  NOTE:  The file will be a TAR archive, *not* gzip-compressed.
-TARFILE_PATH = ''
-
 
 if SHOW_TIMES:
 
@@ -66,12 +56,6 @@ class ViewVCException:
     if self.status:
       return '%s: %s' % (self.status, self.msg)
     return "ViewVC Unrecoverable Error: %s" % self.msg
-
-
-class ViewVCNotAuthorizedException(ViewVCException):
-  def __init__(self, user, what):
-    msg = 'User "%s" is not authorized to see %s' % (user, what)
-    ViewVCException.__init__(self, msg, '501 Not Authorized')
 
 
 def PrintException(server, exc_data):

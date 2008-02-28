@@ -31,7 +31,6 @@ import re
 import time
 import math
 import rcsparse
-import vclib
 
 class CVSParser(rcsparse.Sink):
   # Precompiled regular expressions
@@ -268,7 +267,7 @@ class CVSParser(rcsparse.Sink):
       raise RuntimeError, ('error: %s appeared to be under CVS control, ' +
               'but the RCS file is inaccessible.') % rcs_pathname
 
-    rcsparse.parse(rcsfile, self)
+    rcsparse.Parser().parse(rcsfile, self)
     rcsfile.close()
 
     if opt_rev in [None, '', 'HEAD']:
@@ -347,7 +346,7 @@ class CVSParser(rcsparse.Sink):
       is_trunk_revision = self.trunk_rev.match(revision) is not None
 
       if is_trunk_revision:
-        diffs = self.deltatext_split(last_revision)
+	diffs = self.deltatext_split(last_revision)
 
         # Revisions on the trunk specify deltas that transform a
         # revision into an earlier revision, so invert the translation
@@ -380,7 +379,7 @@ class CVSParser(rcsparse.Sink):
         # the trunk.  They specify deltas that transform a revision
         # into a later revision.
         adjust = 0
-        diffs = self.deltatext_split(revision)
+	diffs = self.deltatext_split(revision)
         for command in diffs:
           if skip > 0:
             skip = skip - 1
@@ -448,7 +447,8 @@ class BlameSource:
     author = self.parser.revision_author[rev]
     thisline = self.lines[idx]
     ### TODO:  Put a real date in here.
-    item = vclib.Annotation(thisline, line_number, rev, prev_rev, author, None)
+    item = _item(text=thisline, line_number=line_number, rev=rev,
+                 prev_rev=prev_rev, author=author, date=None)
     self.last = item
     self.idx = idx
     return item
@@ -456,3 +456,9 @@ class BlameSource:
 
 class BlameSequencingError(Exception):
   pass
+
+
+class _item:
+  def __init__(self, **kw):
+    vars(self).update(kw)
+

@@ -237,7 +237,7 @@ class CheckinDatabase:
             self.AddCommit(commit)
 
     def AddCommit(self, commit):
-        ci_when = dbi.DateTimeFromTicks(commit.GetTime() or 0.0)
+        ci_when = dbi.DateTimeFromTicks(commit.GetTime())
         ci_type = commit.GetTypeString()
         who_id = self.GetAuthorID(commit.GetAuthor())
         repository_id = self.GetRepositoryID(commit.GetRepository())
@@ -259,24 +259,7 @@ class CheckinDatabase:
                     plus_count, minus_count, description_id)
 
         cursor = self.db.cursor()
-        try:
-            cursor.execute(sql, sql_args)
-        except Exception, e:
-            raise Exception("Error adding commit: '%s'\n"
-                            "Values were:\n"
-                            "\ttype         = %s\n"
-                            "\tci_when      = %s\n"
-                            "\twhoid        = %s\n"
-                            "\trepositoryid = %s\n"
-                            "\tdirid        = %s\n"
-                            "\tfileid       = %s\n"
-                            "\trevision     = %s\n"
-                            "\tstickytag    = %s\n"
-                            "\tbranchid     = %s\n"
-                            "\taddedlines   = %s\n"
-                            "\tremovedlines = %s\n"
-                            "\tdescid       = %s\n"
-                            % ((str(e), ) + sql_args))
+        cursor.execute(sql, sql_args)
 
     def SQLQueryListString(self, field, query_entry_list):
         sqlList = []
@@ -332,12 +315,6 @@ class CheckinDatabase:
         if len(query.author_list):
             tableList.append(("people", "(checkins.whoid=people.id)"))
             temp = self.SQLQueryListString("people.who", query.author_list)
-            condList.append(temp)
-            
-        if len(query.comment_list):
-            tableList.append(("descs", "(checkins.descid=descs.id)"))
-            temp = self.SQLQueryListString("descs.description",
-                                           query.comment_list)
             condList.append(temp)
             
         if query.from_date:
@@ -447,40 +424,6 @@ class CheckinDatabase:
 
         return commit
 
-    def sql_delete(self, table, key, value):
-        sql = "DELETE FROM %s WHERE %s=%%s" % (table, key)
-        sql_args = (value, )
-        cursor = self.db.cursor()
-        cursor.execute(sql, sql_args)
-        
-    def PurgeRepository(self, repository):
-        rep_id = self.GetRepositoryID(repository)
-        if not rep_id:
-            raise Exception, "Unknown repository '%s'" % (repository)
-        
-        sql = "SELECT * FROM checkins WHERE repositoryid=%s"
-        sql_args = (rep_id, )
-        cursor = self.db.cursor()
-        cursor.execute(sql, sql_args)
-        checkins = []
-        while 1:
-            try:
-                (ci_type, ci_when, who_id, repository_id,
-                 dir_id, file_id, revision, sticky_tag, branch_id,
-                 plus_count, minus_count, description_id) = cursor.fetchone()
-            except TypeError:
-                break
-            checkins.append([file_id, dir_id, branch_id, description_id])
-
-        #self.sql_delete('repositories', 'id', rep_id)
-        self.sql_delete('checkins', 'repositoryid', rep_id)
-        for checkin in checkins:
-            self.sql_delete('files', 'id', checkin[0])
-            self.sql_delete('dirs', 'id', checkin[1])
-            self.sql_delete('branches', 'id', checkin[2])
-            self.sql_delete('descs', 'id', checkin[3])
-
-
 ## the Commit class holds data on one commit, the representation is as
 ## close as possible to how it should be committed and retrieved to the
 ## database engine
@@ -528,15 +471,10 @@ class Commit:
         return self.__revision
 
     def SetTime(self, gmt_time):
-        if gmt_time is None:
-            ### We're just going to assume that a datestamp of The Epoch
-            ### ain't real.
-            self.__gmt_time = 0.0
-        else:
-            self.__gmt_time = float(gmt_time)
+        self.__gmt_time = float(gmt_time)
 
     def GetTime(self):
-        return self.__gmt_time and self.__gmt_time or None
+        return self.__gmt_time
 
     def SetAuthor(self, author):
         self.__author = author
@@ -669,7 +607,6 @@ class CheckinDatabaseQuery:
         self.directory_list = []
         self.file_list = []
         self.author_list = []
-        self.comment_list = []
 
         ## date range in DBI 2.0 timedate objects
         self.from_date = None
@@ -699,9 +636,6 @@ class CheckinDatabaseQuery:
 
     def SetAuthor(self, author, match = "exact"):
         self.author_list.append(QueryEntry(author, match))
-
-    def SetComment(self, comment, match = "exact"):
-        self.comment_list.append(QueryEntry(comment, match))
 
     def SetSortMethod(self, sort):
         self.sort = sort
