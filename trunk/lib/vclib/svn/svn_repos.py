@@ -122,10 +122,15 @@ class Revision(vclib.Revision):
 
 
 class NodeHistory:
+  """An iterable object that returns 2-tuples of (revision, path)
+  locations along a node's change history, ordered from youngest to
+  oldest."""
+  
   def __init__(self, fs_ptr, show_all_logs):
-    self.histories = {}
+    self.histories = []
     self.fs_ptr = fs_ptr
     self.show_all_logs = show_all_logs
+    self.oldest_rev = None
     
   def add_history(self, path, revision, pool):
     # If filtering, only add the path and revision to the histories
@@ -133,6 +138,11 @@ class NodeHistory:
     # change means the path itself was changed, or one of its parents
     # was copied).  This is useful for omitting bubble-up directory
     # changes.
+    if not self.oldest_rev:
+      self.oldest_rev = revision
+    else:
+      assert(revision < self.oldest_rev)
+      
     if not self.show_all_logs:
       rev_root = fs.revision_root(self.fs_ptr, revision)
       changed_paths = fs.paths_changed(rev_root)
@@ -153,7 +163,10 @@ class NodeHistory:
               break
         if not found:
           return
-    self.histories[revision] = _cleanup_path(path)
+    self.histories.append([revision, _cleanup_path(path)])
+
+  def __getitem__(self, idx):
+    return self.histories[idx]
     
   
 def _get_history(svnrepos, full_name, rev, options={}):
@@ -174,10 +187,10 @@ def _get_history(svnrepos, full_name, rev, options={}):
   # Get the history items for PATH.
   repos.svn_repos_history(svnrepos.fs_ptr, full_name, history.add_history,
                           1, rev, cross_copies)
-  return history.histories
+  return history
 
 
-def _log_helper(svnrepos, rev, path, lockinfo):
+def _log_helper(svnrepos, path, rev, lockinfo):
   rev_root = fs.revision_root(svnrepos.fs_ptr, rev)
 
   # Was this path@rev the target of a copy?
@@ -194,34 +207,6 @@ def _log_helper(svnrepos, rev, path, lockinfo):
                    copyfrom_rev)
   return entry
   
-
-def _fetch_log(svnrepos, full_name, which_rev, options):
-  revs = []
-  lockinfo = None
-
-  # See is this path is locked.
-  try:
-    lock = fs.get_lock(svnrepos.fs_ptr, full_name)
-    if lock:
-      lockinfo = lock.owner
-  except NameError:
-    pass
-
-  if options.get('svn_latest_log', 0):
-    rev = _log_helper(svnrepos, which_rev, full_name, lockinfo)
-    if rev:
-      revs.append(rev)
-  else:
-    history_set = _get_history(svnrepos, full_name, which_rev, options)
-    history_revs = history_set.keys()
-    history_revs.sort()
-    history_revs.reverse()
-    for history_rev in history_revs:
-      rev = _log_helper(svnrepos, history_rev, history_set[history_rev],
-                        lockinfo)
-      if rev:
-        revs.append(rev)
-  return revs
 
 def _get_last_history_rev(fsroot, path):
   history = fs.node_history(fsroot, path)
@@ -485,14 +470,37 @@ class LocalSubversionRepository(vclib.Repository):
 
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
-    if not vclib.check_path_access(self, path_parts, None, rev):
-      raise vclib.ItemNotFound(path_parts)
-    revs = _fetch_log(self, path, rev, options)
-    revs.sort()
-    prev = None
-    for rev in revs:
-      rev.prev = prev
-      prev = rev
+    path_type = self.itemtype(path_parts, rev)  # does auth-check
+    revs = []
+    lockinfo = None
+
+    # See if this path is locked.
+    try:
+      lock = fs.get_lock(self.fs_ptr, path)
+      if lock:
+        lockinfo = lock.owner
+    except NameError:
+      pass
+
+    # If our caller only wants the latest log, we'll invoke
+    # _log_helper for just the one revision.  Otherwise, we go off
+    # into history-fetching mode.  ### TODO: we could stand to have a
+    # 'limit' parameter here as numeric cut-off for the depth of our
+    # history search.
+    if options.get('svn_latest_log', 0):
+      revision = _log_helper(self, path, rev, lockinfo)
+      if revision:
+        revision.prev = None
+        revs.append(revision)
+    else:
+      history = _get_history(self, path, rev, options)
+      for hist_rev, hist_path in history:
+        revision = _log_helper(self, hist_path, hist_rev, lockinfo)
+        if revision:
+          revision.prev = None
+          if len(revs):
+            revs[-1].prev = revision
+          revs.append(revision)
     return revs
 
   def annotate(self, path_parts, rev):
@@ -502,13 +510,12 @@ class LocalSubversionRepository(vclib.Repository):
     path_type = self.itemtype(path_parts, rev)  # does auth-check
     if path_type != vclib.FILE:
       raise vclib.Error("Path '%s' is not a file." % path)
-    history_set = _get_history(self, path, rev, {'svn_cross_copies': 1})
-    history_revs = history_set.keys()
-    history_revs.sort()
-    revision = history_revs[-1]
-    first_rev = history_revs[0]
-    source = BlameSource(_rootpath2url(self.rootpath, path), rev, first_rev)
-    return source, revision
+    history = _get_history(self, path, rev, {'svn_cross_copies': 1})
+    youngest_rev, youngest_path = history[0]
+    oldest_rev, oldest_path = history[-1]
+    source = BlameSource(_rootpath2url(self.rootpath, path),
+                         youngest_rev, oldest_rev)
+    return source, youngest_rev
 
   def _revinfo_raw(self, rev):
     fsroot = self._getroot(rev)
