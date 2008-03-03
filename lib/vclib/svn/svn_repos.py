@@ -169,25 +169,30 @@ class NodeHistory:
     return self.histories[idx]
     
   
-def _get_history(svnrepos, full_name, rev, options={}):
+def _get_history(svnrepos, path, rev, path_type, options={}):
+  rev_paths = []
   fsroot = svnrepos._getroot(rev)
   show_all_logs = options.get('svn_show_all_dir_logs', 0)
   if not show_all_logs:
     # See if the path is a file or directory.
-    kind = fs.check_path(fsroot, full_name)
+    kind = fs.check_path(fsroot, path)
     if kind is core.svn_node_file:
       show_all_logs = 1
       
-  # Instantiate a NodeHistory collector object.
+  # Instantiate a NodeHistory collector object, and use it to collect
+  # history items for PATH@REV.
   history = NodeHistory(svnrepos.fs_ptr, show_all_logs)
+  repos.svn_repos_history(svnrepos.fs_ptr, path, history.add_history,
+                          1, rev, options.get('svn_cross_copies', 0))
 
-  # Do we want to cross copy history?
-  cross_copies = options.get('svn_cross_copies', 0)
-
-  # Get the history items for PATH.
-  repos.svn_repos_history(svnrepos.fs_ptr, full_name, history.add_history,
-                          1, rev, cross_copies)
-  return history
+  # Now, iterate over those history items, checking for changes of
+  # location, pruning as necessitated by authz rules.
+  for hist_rev, hist_path in history:
+    path_parts = filter(None, string.split(hist_path, '/'))
+    if not vclib.check_path_access(svnrepos, path_parts, path_type, hist_rev):
+      break
+    rev_paths.append([hist_rev, hist_path])
+  return rev_paths
 
 
 def _log_helper(svnrepos, path, rev, lockinfo):
@@ -296,7 +301,9 @@ class BlameSource:
     ctx.config = core.svn_config_get_config(None)
     ctx.auth_baton = core.svn_auth_open([])
     try:
-      client.blame2(local_url, _rev2optrev(rev), _rev2optrev(1),
+      ### TODO: Is this use of FIRST_REV always what we want?  Should we
+      ### pass 1 here instead and do filtering later?
+      client.blame2(local_url, _rev2optrev(rev), _rev2optrev(first_rev),
                     _rev2optrev(rev), self._blame_cb, ctx)
     except core.SubversionException, e:
       if e.apr_err == core.SVN_ERR_CLIENT_IS_BINARY_FILE:
@@ -493,10 +500,17 @@ class LocalSubversionRepository(vclib.Repository):
         revision.prev = None
         revs.append(revision)
     else:
-      history = _get_history(self, path, rev, options)
+      history = _get_history(self, path, rev, path_type, options)
       for hist_rev, hist_path in history:
         revision = _log_helper(self, hist_path, hist_rev, lockinfo)
         if revision:
+          # We need to see if this history dips into an unreadable
+          # location.  If so, we truncate it.
+          if revision.copy_path is not None:
+            cp_parts = filter(None, string.split(revision.copy_path, '/'))
+            if not vclib.check_path_access(self, cp_parts, path_type,
+                                           revision.copy_rev):
+              revision.copy_path = revision.copy_rev = None
           revision.prev = None
           if len(revs):
             revs[-1].prev = revision
@@ -510,7 +524,7 @@ class LocalSubversionRepository(vclib.Repository):
     path_type = self.itemtype(path_parts, rev)  # does auth-check
     if path_type != vclib.FILE:
       raise vclib.Error("Path '%s' is not a file." % path)
-    history = _get_history(self, path, rev, {'svn_cross_copies': 1})
+    history = _get_history(self, path, rev, path_type, {'svn_cross_copies': 1})
     youngest_rev, youngest_path = history[0]
     oldest_rev, oldest_path = history[-1]
     source = BlameSource(_rootpath2url(self.rootpath, path),
