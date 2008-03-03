@@ -418,8 +418,8 @@ class LocalSubversionRepository(vclib.Repository):
 
   def openfile(self, path_parts, rev):
     rev = self._getrev(rev)
-    if not vclib.check_path_access(self, path_parts, vclib.FILE, rev):
-      raise vclib.ItemNotFound(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file." % path)
     path = self._getpath(path_parts)
     fsroot = self._getroot(rev)
     revision = str(_get_last_history_rev(fsroot, path))
@@ -428,13 +428,11 @@ class LocalSubversionRepository(vclib.Repository):
 
   def listdir(self, path_parts, rev, options):
     rev = self._getrev(rev)
-    if not vclib.check_path_access(self, path_parts, vclib.DIR, rev):
-      raise vclib.ItemNotFound(path_parts)
-    basepath = self._getpath(path_parts)
-    if self.itemtype(path_parts, rev) != vclib.DIR:
-      raise vclib.Error("Path '%s' is not a directory." % basepath)
+    path = self._getpath(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
+      raise vclib.Error("Path '%s' is not a directory." % path)
     fsroot = self._getroot(rev)
-    dirents = fs.dir_entries(fsroot, basepath)
+    dirents = fs.dir_entries(fsroot, path)
     entries = [ ]
     for entry in dirents.values():
       if entry.kind == core.svn_node_dir:
@@ -448,8 +446,8 @@ class LocalSubversionRepository(vclib.Repository):
   def dirlogs(self, path_parts, rev, entries, options):
     fsroot = self._getroot(self._getrev(rev))
     rev = self._getrev(rev)
-    if not vclib.check_path_access(self, path_parts, vclib.DIR, rev):
-      raise vclib.ItemNotFound(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
+      raise vclib.Error("Path '%s' is not a directory." % path)
 
     for entry in entries:
       entry_path_parts = path_parts + [entry.name]
@@ -501,8 +499,9 @@ class LocalSubversionRepository(vclib.Repository):
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
     fsroot = self._getroot(rev)
-    if not vclib.check_path_access(self, path_parts, vclib.FILE, rev):
-      raise vclib.ItemNotFound(path_parts)
+    path_type = self.itemtype(path_parts, rev)  # does auth-check
+    if path_type != vclib.FILE:
+      raise vclib.Error("Path '%s' is not a file." % path)
     history_set = _get_history(self, path, rev, {'svn_cross_copies': 1})
     history_revs = history_set.keys()
     history_revs.sort()
