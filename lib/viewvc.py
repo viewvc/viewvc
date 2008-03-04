@@ -2200,11 +2200,11 @@ def view_log(request):
     'human_readable' : ezt.boolean(diff_format in ('h', 'l')),
     'log_pagestart' : None,
     'entries': entries,
-    'prefer_markup' : ezt.boolean(0),
-    'view_href' : None,
-    'download_href': None,
-    'download_text_href': None,
-    'annotate_href': None,
+    'head_prefer_markup' : ezt.boolean(0),
+    'head_view_href' : None,
+    'head_download_href': None,
+    'head_download_text_href': None,
+    'head_annotate_href': None,
     'tag_prefer_markup' : ezt.boolean(0),
     'tag_view_href' : None,
     'tag_download_href': None,
@@ -2233,11 +2233,11 @@ def view_log(request):
         = get_file_view_info(request, request.where, None,
                              request.mime_type, None)
       data.update({
-        'view_href': view_href,
-        'download_href': download_href,
-        'download_text_href': download_text_href,
-        'annotate_href': annotate_href,
-        'prefer_markup': prefer_markup,
+        'head_view_href': view_href,
+        'head_download_href': download_href,
+        'head_download_text_href': download_text_href,
+        'head_annotate_href': annotate_href,
+        'head_prefer_markup': prefer_markup,
         })
 
     if request.pathrev and request.roottype == 'cvs':
@@ -2252,8 +2252,8 @@ def view_log(request):
         'tag_prefer_markup': prefer_markup,
         })
   else:
-    data['view_href'] = request.get_url(view_func=view_directory, 
-                                        params={}, escape=1)
+    data['head_view_href'] = request.get_url(view_func=view_directory, 
+                                             params={}, escape=1)
 
   taginfo = options.get('cvs_tags', {})
   tagitems = taginfo.items()
