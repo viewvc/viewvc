@@ -54,6 +54,7 @@ class BaseCVSRepository(vclib.Repository):
   
   def itemtype(self, path_parts, rev):
     basepath = self._getpath(path_parts)
+    kind = None
     if os.path.isdir(basepath):
       kind = vclib.DIR
     elif os.path.isfile(basepath + ',v'):
