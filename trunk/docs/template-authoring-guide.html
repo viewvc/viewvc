@@ -1197,11 +1197,6 @@ td {
      <a href="#variables-paging">PAGING</a> variable sets</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">annotate_href</td>
-  <td>String</td>
-  <td>URL for annotate view of the HEAD revision of the file.</td>
-</tr>
-<tr class="varlevel1">
   <td class="varname">branch_tags</td>
   <td>List</td>
   <td>Names of branch tags in the file. CVS only.</td>
@@ -1228,17 +1223,6 @@ td {
   <td class="varname">diff_select_hidden_values</td>
   <td>String</td>
   <td>Hidden value HTML markup for the diff selection form.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">download_href</td>
-  <td>String</td>
-  <td>URL to download the HEAD revision of the file.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">download_text_href</td>
-  <td>String</td>
-  <td>URL to download the HEAD revision of the file as
-      <tt>text/plain</tt>.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">entries</td>
@@ -1472,6 +1456,33 @@ td {
       for a directory revision.</td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">head_annotate_href</td>
+  <td>String</td>
+  <td>URL for annotate view of the HEAD revision of the file.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">head_download_href</td>
+  <td>String</td>
+  <td>URL to download the HEAD revision of the file.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">head_download_text_href</td>
+  <td>String</td>
+  <td>URL to download the HEAD revision of the file as
+      <tt>text/plain</tt>.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">head_prefer_markup</td>
+  <td>Boolean</td>
+  <td>Indicates whether to make the default HEAD file link a link to the markup
+      page instead of the checkout page.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">head_view_href</td>
+  <td>String</td>
+  <td>URL for markup view of the HEAD revision of the file.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">human_readable</td>
   <td>Boolean</td>
   <td>Indicates whether or not currently selected diff format
@@ -1521,12 +1532,6 @@ td {
   <td>Names of non-branch in the file. CVS only.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">prefer_markup</td>
-  <td>Boolean</td>
-  <td>Indicates whether to make the default file link a link to the markup
-      page instead of the checkout page.</td>
-</tr>
-<tr class="varlevel1">
   <td class="varname">rev_selected</td>
   <td>String</td>
   <td>Revision number currently selected for diffs.</td>
@@ -1552,8 +1557,8 @@ td {
 <tr class="varlevel1">
   <td class="varname">tag_prefer_markup</td>
   <td>Boolean</td>
-  <td>Indicates whether to make the default file link a link to the markup
-      page instead of the checkout page.</td>
+  <td>Indicates whether to make the default sticky tag file link a
+      link to the markup page instead of the checkout page.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">tag_view_href</td>
@@ -1576,11 +1581,6 @@ td {
   <td class="varname">tags.name</td>
   <td>String</td>
   <td>Tag name</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">view_href</td>
-  <td>String</td>
-  <td>URL for markup view of the HEAD revision of the file.</td>
 </tr>
 </tbody>
 </table>
