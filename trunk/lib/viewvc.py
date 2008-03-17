@@ -482,15 +482,8 @@ class Request:
     if where:
       url = url + '/' + where
 
-    # add suffix for tarball
-    if view_func is download_tarball:
-      if not where and not cfg.options.root_as_url_component:
-        url = url + '/' + rootname + '-root'
-        params['parent'] = '1'
-      url = url + '.tar.gz'
-
     # add trailing slash for a directory
-    elif pathtype == vclib.DIR:
+    if pathtype == vclib.DIR:
       url = url + '/'
 
     # normalize top level URLs for use in Location headers and A tags
@@ -3096,10 +3089,16 @@ def download_tarball(request):
   if debug.TARFILE_PATH:
     fp = open(debug.TARFILE_PATH, 'w')
   else:    
-    # Try to use the Python gzip module, if available; otherwise,
-    # we'll use the configured 'gzip' binary.
+    tarfile = request.rootname
+    if request.path_parts:
+      tarfile = "%s-%s" % (tarfile, request.path_parts[-1])
+    request.server.addheader('Content-Disposition',
+                             'attachment; filename="%s.tar.gz"' % (tarfile))
     request.server.header('application/x-gzip')
     request.server.flush()
+    
+    # Try to use the Python gzip module, if available; otherwise,
+    # we'll use the configured 'gzip' binary.
     try:
       import gzip
     except ImportError:
