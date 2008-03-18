@@ -39,8 +39,7 @@ import fnmatch
 
 class Config:
   _sections = ('general', 'utilities', 'options', 'cvsdb', 'templates')
-  _force_multi_value = ('cvs_roots', 'forbidden',
-                        'svn_roots', 'languages', 'kv_files',
+  _force_multi_value = ('cvs_roots', 'svn_roots', 'languages', 'kv_files',
                         'root_parents', 'allowed_views')
 
   def __init__(self):
