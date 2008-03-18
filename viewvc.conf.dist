@@ -765,20 +765,20 @@ forbidden =
 # Some examples:
 #
 #    Disallow files named "PRIVATE", but allow all others:
-#       forbidden = /PRIVATE$
+#       forbiddenre = /PRIVATE$
 #
 #    Disallow the "hidden" repository, allowing all others:
-#       forbidden = ^hidden(/|$)
+#       forbiddenre = ^hidden(/|$)
 #
 #    Allow only the "example1" and "example2" roots and the paths inside them,
 #    disallowing all others (which can be done in multiple ways):
-#       forbidden = !^example1(/|$), !^example2(/|$)/
-#       forbidden = !^example[12](/|$)
+#       forbiddenre = !^example1(/|$), !^example2(/|$)/
+#       forbiddenre = !^example[12](/|$)
 #
 #    Only allow visibility of HTML files and the directories that hold them:
-#       forbidden = !^([^/]+|.*(/|\.html))$
+#       forbiddenre = !^([^/]+|.*(/|\.html))$
 #
-forbidden = 
+forbiddenre = 
 
 #---------------------------------------------------------------------------
 [authz-svnauthz]

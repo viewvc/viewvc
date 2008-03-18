@@ -162,11 +162,26 @@ td {
    specific to that authz module.</p>
 
 <p>Migrating your existing configuration of forbidden modules should
-   be fairly straightforward.  Simply ensure that that the new
-   <code>authorizer</code> option is set to "forbidden" (which is the
-   default), and in the new "authz-forbidden" section of viewvc.conf,
-   set the <code>forbidden</code> option to the same thing it was set
-   to when it lived in the "options" section.</p>
+   be fairly straightforward:</p>
+
+<ol>
+
+   <li>In the new "authz-forbidden" section of viewvc.conf, set the
+       <code>forbidden</code> option to the same value as the
+       <code>forbidden</code> option in your ViewVC 1.0.x
+       configuration's "general" section.</li>
+
+   <li>In the new "authz-forbiddenre" section of viewvc.conf, set the
+       <code>forbiddenre</code> option to the same value as the
+       <code>forbiddenre</code> option in your ViewVC 1.0.x
+       configuration's "general" section.</li>
+
+   <li>Finally, ensure that that the new <code>authorizer</code>
+       option is set to either "forbidden" (which is the default) or
+       "forbiddenre", depending on which of those you were using in
+       ViewVC 1.0.x.</li>
+
+</ol>
 
 <p>Of course, you might wish to take advantage of another of the
    provided authz modules.  Or, you might wish to write a brand new
