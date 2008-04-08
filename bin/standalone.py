@@ -63,6 +63,7 @@ class Options:
     else:
         host = 'localhost'
     script_alias = 'viewvc'
+    config_file = None
 
 # --- web browser interface: ----------------------------------------------
 
@@ -284,7 +285,7 @@ If this doesn't work, please click on the link above.
         # XXX Move this code out of this function.
         # Early loading of configuration here.  Used to
         # allow tinkering with some configuration settings:
-        handle_config()
+        handle_config(options.config_file)
         if options.repositories:
             cfg.general.default_root = "Development"
             for repo_name in options.repositories.keys():
@@ -331,9 +332,9 @@ If this doesn't work, please click on the link above.
         pass
     print 'server stopped'
 
-def handle_config():
+def handle_config(config_file):
   global cfg
-  cfg = viewvc.load_config(CONF_PATHNAME)
+  cfg = viewvc.load_config(config_file or CONF_PATHNAME)
 
 # --- graphical interface: --------------------------------------------------
 
@@ -576,8 +577,9 @@ def cli(argv):
     class BadUsage(Exception): pass
 
     try:
-        opts, args = getopt.getopt(argv[1:], 'gdp:r:h:s:', 
-            ['gui', 'daemon', 'port=', 'repository=', 'script-alias='])
+        opts, args = getopt.getopt(argv[1:], 'gdc:p:r:h:s:', 
+            ['gui', 'daemon', 'config-file=', 'port=', 'repository=',
+             'script-alias='])
         for opt, val in opts:
             if opt in ('-g', '--gui'):
                 options.start_gui = 1
@@ -601,6 +603,10 @@ def cli(argv):
             elif opt in ('-s', '--script-alias'):
                 options.script_alias = \
                     string.join(filter(None, string.split(val, '/')), '/')
+            elif opt in ('-c', '--config-file'):
+                options.config_file = val
+        if options.start_gui and options.config_file:
+            raise BadUsage, "--config-file option is not valid in GUI mode."
         if not options.start_gui and not options.port:
             raise BadUsage, "You must supply a valid port, or run in GUI mode."
         if options.daemon:
@@ -608,7 +614,7 @@ def cli(argv):
             if pid != 0:
                 sys.exit()  
         if options.start_gui:
-            gui(options.host, options.port)
+            gui(options.host, options.port, options.config_file)
             return
         elif options.port:
             def ready(server):
@@ -626,10 +632,16 @@ def cli(argv):
         sys.stderr.write("""Usage: %(cmd)s [OPTIONS]
 
 Run a simple, standalone HTTP server configured to serve up ViewVC
-requests.  ViewVC configuration is read from viewvc.conf file, if available.
+requests.
 
 Options:
 
+  --config-file=PATH (-c)    Use the file at PATH as the ViewVC configuration
+                             file.  If not specified, ViewVC will try to use
+                             the configuration file in its installation tree;
+                             otherwise, built-in default values are used.
+                             (Not valid in GUI mode.)
+                             
   --daemon (-d)              Background the server process.
   
   --host=HOST (-h)           Start the server listening on HOST.  You need
