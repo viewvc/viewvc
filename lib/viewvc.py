@@ -1454,6 +1454,29 @@ def make_rss_time_string(date, cfg):
     return None
   return time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(date)) + ' UTC'
 
+def get_itemprops(request, path_parts, rev):
+  itemprops = request.repos.itemprops(path_parts, rev)
+  propnames = itemprops.keys()
+  propnames.sort()
+  props = []
+  has_binary_props = 0
+  for name in propnames:
+    value = itemprops[name]
+    undisplayable = ezt.boolean(0)
+    # skip non-utf8 property names
+    try:
+      unicode(name, 'utf8')
+    except:
+      continue
+    # note non-utf8 property values
+    try:
+      unicode(value, 'utf8')
+    except:
+      value = None
+      undisplayable = ezt.boolean(1)
+    props.append(_item(name=name, value=value, undisplayable=undisplayable))
+  return props
+
 def markup_or_annotate(request, is_annotate):
   cfg = request.cfg
   path, rev = _orig_path(request, is_annotate and 'annotate' or 'revision')
@@ -1528,6 +1551,7 @@ def markup_or_annotate(request, is_annotate):
     'prev' : None,
     'orig_path' : None,
     'orig_href' : None,
+    'properties': get_itemprops(request, path, rev),
     })
 
   if cfg.options.show_log_in_markup:
@@ -1843,6 +1867,7 @@ def view_directory(request):
     'hide_attic_href' : None,
     'branch_tags': None,
     'plain_tags': None,
+    'properties': get_itemprops(request, request.path_parts, request.pathrev),
   })
 
   # clicking on sort column reverses sort order

@@ -517,6 +517,13 @@ class LocalSubversionRepository(vclib.Repository):
           revs.append(revision)
     return revs
 
+  def itemprops(self, path_parts, rev):
+    path = self._getpath(path_parts)
+    rev = self._getrev(rev)
+    fsroot = self._getroot(rev)
+    path_type = self.itemtype(path_parts, rev)  # does auth-check
+    return fs.node_proplist(fsroot, path)
+  
   def annotate(self, path_parts, rev):
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
@@ -543,9 +550,10 @@ class LocalSubversionRepository(vclib.Repository):
     
     # Now get the revision property info.  Would use
     # editor.get_root_props(), but something is broken there...
-    author = fs.revision_prop(self.fs_ptr, rev, core.SVN_PROP_REVISION_AUTHOR)
-    msg = fs.revision_prop(self.fs_ptr, rev, core.SVN_PROP_REVISION_LOG)
-    datestr = fs.revision_prop(self.fs_ptr, rev, core.SVN_PROP_REVISION_DATE)
+    revprops = fs.revision_proplist(self.fs_ptr, rev)
+    msg = revprops.get(core.SVN_PROP_REVISION_LOG)
+    author = revprops.get(core.SVN_PROP_REVISION_AUTHOR)
+    datestr = revprops.get(core.SVN_PROP_REVISION_DATE)
 
     # Copy the Subversion changes into a new hash, converting them into
     # ChangedPath objects.
