@@ -59,6 +59,7 @@ td {
     <li><a href="#variables-common">Common Template Variable Set (COMMON)</a></li>
     <li><a href="#variables-pathrev">Path Revision Form Variable Set (PATHREV)</a></li>
     <li><a href="#variables-paging">Paging Form Variable Set (PAGING)</a></li>
+    <li><a href="#variables-properties">Property Listing Variable Set (PROPERTIES)</a></li>
     <li><a href="#variables-annotate">Annotation View (annotate.ezt)</a></li>
     <li><a href="#variables-graph">Revision Graph View (graph.ezt)</a></li>
     <li><a href="#variables-diff">File Difference View (diff.ezt)</a></li>
@@ -417,6 +418,43 @@ td {
 </div>
 
 <div class="h3">
+<h3 id="variables-properties">Property Listing Variable Set (PROPERTIES)</h3>
+<table>
+<thead>
+<tr>
+  <th>Variable</th>
+  <th>Type</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="varlevel1">
+  <td class="varname">properties</td>
+  <td>List</td>
+  <td>List of item properties set on the current directory, minus
+      those with undisplayable names.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">properties.name</td>
+  <td>String</td>
+  <td>Name of an item property.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">properties.undisplayable</td>
+  <td>Boolean</td>
+  <td>Indicates whether or not the value of this property is
+      undisplayable (by virtue of not being UTF-8 text).</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">properties.value</td>
+  <td>String</td>
+  <td>Value of this property.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="h3">
 <h3 id="variables-annotate">Annotation View (annotate.ezt)</h3>
 <table>
 <thead>
@@ -429,7 +467,8 @@ td {
 <tbody>
 <tr class="include">
   <td colspan="3">Includes all variables from the 
-     <a href="#variables-common">COMMON</a> variable set</td>
+     <a href="#variables-common">COMMON</a> and
+     <a href="#variables-properties">PROPERTIES</a> variable sets</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">ago</td>
@@ -847,8 +886,9 @@ td {
 <tr class="include">
   <td colspan="3">Includes all variables from the 
      <a href="#variables-common">COMMON</a>,
-     <a href="#variables-pathrev">PATHREV</a>, and 
-     <a href="#variables-paging">PAGING</a> variable sets</td>
+     <a href="#variables-pathrev">PATHREV</a>,
+     <a href="#variables-paging">PAGING</a>, and
+     <a href="#variables-properties">PROPERTIES</a> variable sets</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">attic_showing</td>
@@ -1599,7 +1639,8 @@ td {
 <tbody>
 <tr class="include">
   <td colspan="3">Includes all variables from the 
-     <a href="#variables-common">COMMON</a> variable set</td>
+     <a href="#variables-common">COMMON</a> and
+     <a href="#variables-properties">PROPERTIES</a> variable sets</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">ago</td>

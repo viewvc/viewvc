@@ -69,6 +69,10 @@ class BaseCVSRepository(vclib.Repository):
       raise vclib.ItemNotFound(path_parts)
     return kind
 
+  def itemprops(self, path_parts, rev):
+    self.itemtype(path_parts, rev)  # does authz check
+    return {}  # CVS doesn't support properties
+  
   def listdir(self, path_parts, rev, options):
     if not vclib.check_path_access(self, path_parts, vclib.DIR, rev):
       raise vclib.ItemNotFound(path_parts)
