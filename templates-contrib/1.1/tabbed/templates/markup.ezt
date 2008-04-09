@@ -10,6 +10,8 @@
 
 <div id="vc_markup"><pre>[markup]</pre></div>
 
+[include "include/props.ezt"]
+
 <!-- ************************************************************** -->
 </div>
 
