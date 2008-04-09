@@ -2,10 +2,10 @@
 <hr/>
 <div class="vc_properties">
 <h2>Properties</h2>
-<table cellspacing="1" cellpadding="2" class="auto">
+<table cellspacing="1" cellpadding="2" class="fixed">
 <thead>
   <tr>
-    <th class="vc_header_sort">Name</th>
+    <th class="vc_header_sort" style="width: 20%;">Name</th>
     <th class="vc_header">Value</th>
   </tr>
 </thead>
