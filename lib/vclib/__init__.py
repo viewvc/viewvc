@@ -128,6 +128,16 @@ class Repository:
     options is a dictionary of implementation specific options
     """
 
+  def itemprops(self, path_parts, rev):
+    """Return a dictionary mapping property names to property values
+    for properties stored on an item.
+
+    The path is specified as a list of components, relative to the root
+    of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+    rev is the revision of the item to return information about.
+    """
+    
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     """Return a diff (in GNU diff format) of two file revisions
 

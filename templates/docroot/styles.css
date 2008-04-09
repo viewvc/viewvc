@@ -84,6 +84,15 @@ form { margin: 0; }
 }
 
 
+/*** Properties Listing ***/
+.vc_properties {
+  margin: 1em 0;
+}
+.vc_properties h2 {
+  font-size: 115%;
+}
+
+
 /*** Markup Summary Header ***/
 .vc_summary {
   background-color: #eeeeee;
