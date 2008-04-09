@@ -24,6 +24,7 @@ Version 1.1.0 (released ??-???-????)
     - regexp-based path hiding (for compat with 1.0.x)
     - file glob top-level directory hiding (for compat with 1.0.x)
   * allow default file view to be "markup" (issue #305)
+  * add support for displaying file/directory properties (issue #39)
 
 Version 1.0.5 (released 28-Feb-2008)
 
