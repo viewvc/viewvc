@@ -637,17 +637,13 @@ _legal_params = {
   'pathrev'       : _re_validate_revnum,
   'dir_pagestart' : _re_validate_number,
   'log_pagestart' : _re_validate_number,
-  'hidecvsroot'   : _re_validate_number,
   'annotate'      : _re_validate_revnum,
   'graph'         : _re_validate_revnum,
   'makeimage'     : _re_validate_number,
-  'tarball'       : _re_validate_number,
-  'parent'        : _re_validate_number,
   'r1'            : _re_validate_revnum,
   'tr1'           : _re_validate_revnum,
   'r2'            : _re_validate_revnum,
   'tr2'           : _re_validate_revnum,
-  'rev'           : _re_validate_revnum,
   'revision'      : _re_validate_revnum,
   'content-type'  : _re_validate_mimetype,
 
@@ -674,6 +670,12 @@ _legal_params = {
   'orig_pathtype' : None,
   'orig_pathrev'  : None,
   'orig_view'     : None,
+
+  # deprecated
+  'parent'        : _re_validate_number,
+  'rev'           : _re_validate_revnum,
+  'tarball'       : _re_validate_number,
+  'hidecvsroot'   : _re_validate_number,
   }
 
 def _path_join(path_parts):
