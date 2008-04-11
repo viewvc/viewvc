@@ -2057,6 +2057,7 @@ def view_log(request):
     else:
       sortby = vclib.SORTBY_DEFAULT
 
+  first = limit = 0
   show_revs = request.repos.itemlog(request.path_parts, request.pathrev,
                                     sortby, first, limit, options)
 
