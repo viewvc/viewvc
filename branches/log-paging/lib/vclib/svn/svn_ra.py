@@ -311,8 +311,7 @@ class RemoteSubversionRepository(vclib.Repository):
   def itemprops(self, path_parts, rev):
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
-    url = self.rootpath + (path and '/' + path)
-    stream, fetched_rev, props = ra.svn_ra_get_dir(self.ra_session, url, rev)
+    stream, fetched_rev, props = ra.svn_ra_get_dir(self.ra_session, path, rev)
     return props
   
   def annotate(self, path_parts, rev):
