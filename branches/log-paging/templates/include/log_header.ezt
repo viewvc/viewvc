@@ -1,0 +1,54 @@
+[# setup page definitions]
+  [define page_title]Log of /[where][end]
+  [define help_href][docroot]/help_log.html[end]
+[# end]
+
+[include "header.ezt" "log"]
+[include "file_header.ezt"]
+
+<hr />
+
+<table class="auto">
+
+[if-any default_branch]
+<tr>
+  <td>Default branch:</td>
+  <td>[for default_branch]<a href="[default_branch.href]">[default_branch.name]</a>[if-index default_branch last][else], [end]
+[end]</td>
+</tr>
+[end]
+
+[is pathtype "file"]
+[if-any head_view_href]
+<tr>
+  <td>Links to HEAD:</td>
+  <td>
+    (<a href="[head_view_href]">view</a>)
+    [if-any head_download_href](<a href="[head_download_href]">download</a>)[end]
+    [if-any head_download_text_href](<a href="[head_download_text_href]">as text</a>)[end]
+    [if-any head_annotate_href](<a href="[head_annotate_href]">annotate</a>)[end]
+  </td>
+</tr>
+[end]
+
+[if-any tag_view_href]
+<tr>
+  <td>Links to [pathrev]:</td>
+  <td>
+    (<a href="[tag_view_href]">view</a>)
+    [if-any tag_download_href](<a href="[tag_download_href]">download</a>)[end]
+    [if-any tag_download_text_href](<a href="[tag_download_text_href]">as text</a>)[end]
+    [if-any tag_annotate_href](<a href="[tag_annotate_href]">annotate</a>)[end]
+  </td>
+</tr>
+[end]
+[end]
+
+<tr>
+  <td>Sticky [is roottype "cvs"]Tag[else]Revision[end]:</td>
+  <td>[include "pathrev_form.ezt"]</td>
+</tr>
+
+</table>
+
+[include "paging.ezt"]

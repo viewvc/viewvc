@@ -1,0 +1,318 @@
+#!/usr/bin/env python
+# -*-python-*-
+#
+# Copyright (C) 1999-2008 The ViewCVS Group. All Rights Reserved.
+#
+# By using this file, you agree to the terms and conditions set forth in
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
+#
+# For more information, visit http://viewvc.org/
+#
+# -----------------------------------------------------------------------
+#
+# updates SQL database with new commit records
+#
+# -----------------------------------------------------------------------
+#
+
+#########################################################################
+#
+# INSTALL-TIME CONFIGURATION
+#
+# These values will be set during the installation process. During
+# development, they will remain None.
+#
+
+LIBRARY_DIR = None
+CONF_PATHNAME = None
+
+# Adjust sys.path to include our library directory
+import sys
+import os
+
+if LIBRARY_DIR:
+    sys.path.insert(0, LIBRARY_DIR)
+else:
+    sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
+
+#########################################################################
+
+import os
+import string
+import getopt
+import re
+import cvsdb
+import viewvc
+import vclib.ccvs
+
+DEBUG_FLAG = 0
+
+## output functions
+def debug(text):        
+    if DEBUG_FLAG:
+        if type(text) != (type([])):
+            text = [text]
+        for line in text:
+            line = line.rstrip('\n\r')
+            print 'DEBUG(viewvc-loginfo):', line
+
+def warning(text):
+    print 'WARNING(viewvc-loginfo):', text
+
+def error(text):
+    print 'ERROR(viewvc-loginfo):', text
+    sys.exit(1)
+
+_re_revisions = re.compile(                            
+    r",(?P<old>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and first revision
+    r",(?P<new>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and second revision
+    r"(?:$| )"                                     # space or end of string
+)    
+
+def Cvs1Dot12ArgParse(args):
+    """CVS 1.12 introduced a new loginfo format while provides the various
+    pieces of interesting version information to the handler script as
+    individual arguments instead of as a single string."""
+
+    if args[1] == '- New directory':
+        return None, None
+    elif args[1] == '- Imported sources':
+        return None, None
+    else:
+        directory = args.pop(0)
+        files = []
+        while len(args) >= 3:
+            files.append(args[0:3])
+            args = args[3:]
+        return directory, files
+  
+def HeuristicArgParse(s, repository):
+    """Older versions of CVS (except for CVSNT) do not escape spaces in file
+    and directory names that are passed to the loginfo handler. Since the input
+    to loginfo is a space separated string, this can lead to ambiguities. This
+    function attempts to guess intelligently which spaces are separators and
+    which are part of file or directory names. It disambiguates spaces in
+    filenames from the separator spaces between files by assuming that every
+    space which is preceded by two well-formed revision numbers is in fact a 
+    separator. It disambiguates the first separator space from spaces in the 
+    directory name by choosing the longest possible directory name that
+    actually exists in the repository"""
+
+    if (s[-16:] == ' - New directory'
+            or s[:26] == ' - New directory,NONE,NONE'):
+        return None, None
+
+    if (s[-19:] == ' - Imported sources'
+            or s[-29:] == ' - Imported sources,NONE,NONE'):
+        return None, None
+
+    file_data_list = []
+    start = 0
+
+    while 1:
+        m = _re_revisions.search(s, start)
+
+        if start == 0:
+            if m is None: 
+                error('Argument "%s" does not contain any revision numbers' \
+                      % s)
+        
+            directory, filename = FindLongestDirectory(s[:m.start()],
+                                                       repository)
+            if directory is None:
+                error('Argument "%s" does not start with a valid directory' \
+                      % s)
+
+            debug('Directory name is "%s"' % directory)
+
+        else:
+            if m is None:
+                warning('Failed to interpret past position %i in the loginfo '
+                        'argument, leftover string is "%s"' \
+                        % start, pos[start:])
+            
+            filename = s[start:m.start()]
+            
+        old_version, new_version = m.group('old', 'new')
+
+        file_data_list.append((filename, old_version, new_version))
+
+        debug('File "%s", old revision %s, new revision %s' 
+            % (filename, old_version, new_version))
+
+        start = m.end()
+        
+        if start == len(s): break
+
+    return directory, file_data_list
+
+def FindLongestDirectory(s, repository):
+    """Splits the first part of the argument string into a directory name
+    and a file name, either of which may contain spaces. Returns the longest
+    possible directory name that actually exists"""
+
+    parts = string.split(s, " ")
+    
+    for i in range(len(parts)-1, 0, -1):
+        directory = string.join(parts[:i])
+        filename = string.join(parts[i:])
+        if os.path.isdir(os.path.join(repository, directory)):
+            return directory, filename
+    
+    return None, None
+
+_re_cvsnt_revisions = re.compile(                            
+    r"(?P<filename>.*)"                            # comma and first revision
+    r",(?P<old>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and first revision
+    r",(?P<new>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and second revision
+    r"$"                                           # end of string
+)
+
+def CvsNtArgParse(s, repository):
+    """CVSNT escapes all spaces in filenames and directory names with 
+    backslashes"""
+
+    if s[-18:] == r' -\ New\ directory':
+        return None, None
+
+    if s[-21:] == r' -\ Imported\ sources':
+        return None, None
+
+    file_data_list = []
+    directory, pos = NextFile(s)
+    
+    debug('Directory name is "%s"' % directory)
+
+    while 1:
+        fileinfo, pos = NextFile(s, pos)
+        if fileinfo is None:
+            break
+
+        m = _re_cvsnt_revisions.match(fileinfo)
+        if m is None:
+            warning('Can\'t parse file information in "%s"' % fileinfo)
+            continue
+
+        file_data = m.group('filename', 'old', 'new')
+        file_data_list.append(file_data)
+
+        debug('File "%s", old revision %s, new revision %s' % file_data)
+
+    return directory, file_data_list
+
+def NextFile(s, pos = 0):
+    escaped = 0
+    ret = ''
+    i = pos
+    while i < len(s):
+        c = s[i]
+        if escaped:
+            ret += c
+            escaped = 0
+        elif c == '\\':
+            escaped = 1
+        elif c == ' ':
+            return ret, i + 1
+        else:
+            ret += c
+        i += 1
+
+    return ret or None, i
+
+def ProcessLoginfo(rootpath, directory, files):
+    cfg = viewvc.load_config(CONF_PATHNAME)
+    db = cvsdb.ConnectDatabase(cfg)
+    repository = vclib.ccvs.CVSRepository(None, rootpath, None,
+                                          cfg.utilities, 0)
+
+    # split up the directory components
+    dirpath = filter(None, string.split(os.path.normpath(directory), os.sep))
+
+    ## build a list of Commit objects
+    commit_list = []
+    for filename, old_version, new_version in files:
+        filepath = dirpath + [filename]
+
+        ## XXX: this is nasty: in the case of a removed file, we are not
+        ##      given enough information to find it in the rlog output!
+        ##      So instead, we rlog everything in the removed file, and
+        ##      add any commits not already in the database
+        if new_version == 'NONE':
+            commits = cvsdb.GetUnrecordedCommitList(repository, filepath, db)
+        else:
+            commits = cvsdb.GetCommitListFromRCSFile(repository, filepath,
+                                                     new_version)
+
+        commit_list.extend(commits)
+
+    ## add to the database
+    db.AddCommitList(commit_list)
+
+
+## MAIN
+if __name__ == '__main__':
+    ## get the repository from the environment
+    try:
+        repository = os.environ['CVSROOT']
+    except KeyError:
+        error('CVSROOT not in environment')
+
+    debug('Repository name is "%s"' % repository)
+
+    ## parse arguments
+
+    argc = len(sys.argv)
+    debug('Got %d arguments:' % (argc))
+    debug(map(lambda x: '   ' + x, sys.argv))
+    
+    # if we have more than 3 arguments, we are likely using the
+    # newer loginfo format introduced in CVS 1.12:
+    # 
+    #    ALL <path>/bin/loginfo-handler %p %{sVv}
+    if argc > 3:
+        directory, files = Cvs1Dot12ArgParse(sys.argv[1:])
+    else:
+        if len(sys.argv) > 1:
+            # the first argument should contain file version information
+            arg = sys.argv[1]
+        else:
+            # if there are no arguments, read version information from
+            # first line of input like old versions of ViewCVS did
+            arg = string.rstrip(sys.stdin.readline())
+    
+        if len(sys.argv) > 2:
+            # if there is a second argument it indicates which parser
+            # should be used to interpret the version information
+            if sys.argv[2] == 'cvs':
+                fun = HeuristicArgParse
+            elif sys.argv[2] == 'cvsnt':
+                fun = CvsNtArgParse
+            else:
+                error('Bad arguments')
+        else:
+            # if there is no second argument, guess which parser to use based
+            # on the operating system. Since CVSNT now runs on Windows and
+            # Linux, the guess isn't necessarily correct
+            if sys.platform == "win32":
+                fun = CvsNtArgParse
+            else:
+                fun = HeuristicArgParse
+        
+        directory, files = fun(arg, repository)
+    
+    debug('Discarded from stdin:')
+    debug(map(lambda x: '   ' + x, sys.stdin.readlines())) # consume stdin
+
+    repository = cvsdb.CleanRepository(repository)
+
+    debug('Repository: %s' % (repository))
+    debug('Directory: %s' % (directory))
+    debug('Files: %s' % (str(files)))
+
+    if files is None:
+        debug('Not a checkin, nothing to do')
+    else:
+        ProcessLoginfo(repository, directory, files)
+
+    sys.exit(0)

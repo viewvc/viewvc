@@ -1,0 +1,521 @@
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+DESCRIPTION
+
+This file contains special instructions for setting up ViewVC on
+Windows. It will take you through a basic installation and tell you
+how to set up optional features like code colorizing and the MySQL
+commit database.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+REQUIREMENTS
+
+ViewVC requires the Python interpreter which you can download from
+
+   http://python.org/
+
+and the Python for Windows Extensions which are at
+
+   http://sourceforge.net/projects/pywin32/
+
+For CVS support, ViewVC also requires that the CVSNT client (cvs.exe)
+OR the RCS tools (rlog.exe, rcsdiff.exe, and co.exe) be installed on
+your computer.  CVSNT is available from
+
+   http://www.cvsnt.org/wiki
+
+and RCS can be obtained from:
+
+   http://www.cs.purdue.edu/homes/trinkle/RCS/
+
+For Subversion support, you'll need to have the Subversion Python
+bindings installed. Binaries are available from the Subversion website
+at:
+
+   http://subversion.tigris.org/servlets/ProjectDocumentList?folderID=91
+
+Note that if you use binaries, you have to be running the same version
+of python as the binaries were built for. For example, you cannot use
+Subversion bindings built for Python 2.3 with Python 2.4. Instructions
+for building the binaries from source are available here:
+
+   http://svn.collab.net/repos/svn/trunk/subversion/bindings/swig/INSTALL
+
+The Subversion bindings also require you to have diff.exe installed in
+a directory on your system PATH. diff.exe is available as part of the
+GnuWin32 project's DiffUtils package at http://gnuwin32.sf.net/.
+
+Once you've got Python and CVSNT or RCS or the Subversion bindings
+installed, you can test out ViewVC before you install it by running:
+
+   python bin\standalone.py -r <PATH_TO_REPOSITORY>
+
+The standalone server has a number of features (including a GUI
+interface) which you can find out about by running
+
+   python bin\standalone.py --help
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+BASIC INSTALLATION
+
+Run the ViewVC install script with
+
+   python viewvc-install
+
+The script will copy the source files into an installation directory
+that you specify, store some path information, and compile the ViewVC
+library files into Python bytecode.
+
+After the installation is finished you will need to edit the
+viewvc.conf file in the folder you installed to. The comments in that
+file tell you exactly what to do.
+
+With the config file set up you should be able to double-click
+standalone.py and access your repository with a web browser.
+
+See the sections below for information on setting up optional features
+and troubleshooting. From here on <PY_DIR> will stand for the Python
+root directory (usually something like C:\Python22) and
+<VIEWVC_INSTALL_DIR> will represent the directory where ViewVC has
+been installed to (default is C:\Program Files\viewvc-VERSION).
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+SERVER CONFIGURATION
+
+If you want to make ViewVC available to a network (rather than using
+it on a standalone machine), you will need to configure a web server
+to host it. This section includes instructions for setting up ViewVC
+on two commonly used Windows web servers, IIS and Apache.
+
+With IIS, you can run ViewVC in CGI mode or ASP mode (or both
+modes). ASP mode gives better performance (faster page loads), but is
+harder to set up and may be less stable. CGI mode is stable and easy
+to set up but slower.
+
+On Apache, you can use CGI mode or Mod_Python mode or both modes at
+once.  Mod_Python mode is faster than CGI mode.
+
+CGI Mode On IIS
+
+   1) Copy viewvc.cgi and query.cgi from <VIEWVC_INSTALL_DIR>\bin\cgi to a
+      folder that is accessible through your web server.
+
+   2) Start up the IIS "Internet Services Manager" and right click a
+      virtual server or virtual directory that contains the files you
+      just copied. Choose "Properties" from the context menu that
+      appears.
+
+   3) On the properties dialog that appears, navigate to [Home |
+      Virtual] Directory -> Application Settings ->
+      Configuration. This will bring up another dialog box called
+      "Application Configuration".
+
+   4) On the "App Mappings" tab choose "Add". Fill in the following
+      information:
+
+                    Executable:  <PY_DIR>\python.exe "%s"
+                     Extension:  cgi
+                 Script Engine:  checked
+        Check that file exists:  unchecked
+
+   That is all. Assuming you've set up viewvc.conf to point to your
+   repositories, the CGI pages should run. See the Troubleshooting
+   section below if there are any problems.
+
+ASP Mode On IIS
+
+   In order to run ViewVC with ASP, you will need to enable Python
+   ActiveX scripting and to install the included Aspfool ISAPI filter
+   on whatever virtual server is being used to serve the viewvc
+   pages. Step by step instructions follow below. Aspfool is located
+   in the windows\aspfool folder.
+
+   To set up ASP mode, follow these steps:
+
+   1) Run <PY_DIR>\Lib\site-packages\win32comext\axscript\client\pyscript.py
+      to register Python as an ASP scripting language. (More
+      documentation on this is at
+      http://www.python.org/windows/win32com/ActiveXScripting.html)
+
+   2) Copy the viewvc.asp and query.asp files from
+      <VIEWVC_INSTALL_DIR>\bin\asp to a folder that is accessible
+      through your web server.
+
+   3) Start up the IIS "Internet Services Manager" and right click on
+      the virtual server that contains the files you just
+      copied. Choose "Properties" from the context menu that appears.
+
+   4) On the properties dialog that appears, click the "ISAPI Filters"
+      tab.  Click the "add" button and enter the following
+      information:
+
+         Filter Name:  aspfool
+          Executable:  aspfool.dll
+
+   After you save these changes, the ViewVC ASP pages should begin to
+   work.
+
+CGI Mode on Apache
+
+   Follow the instructions under "Apache Configuration" in the ViewVC
+   INSTALL file.
+
+Mod_Python Mode on Apache
+
+   There are probably ten thousand different ways to set up Apache,
+   mod_python, and ViewVC together. Here are some instructions that
+   work for me using Mod_Python 3.0.3 and Apache 2.0.46. If any Apache
+   gurus want to contribute better instructions, I'd be happy to
+   include them here.
+
+   1) Run the win32 mod_python installer from www.modpython.org.
+
+   2) Add the following line to the "Global Environment" section of
+      httpd.conf:
+
+         LoadModule python_module modules/mod_python.so
+
+   3) Copy viewvc.py, query.py, handler.py, and .htaccess from
+      <VIEWVC_INSTALL_DIR>\bin\mod_python to a folder being served by
+      apache. Make sure overrides are allowed in this folder. The
+      relevant parent directory in httpd.conf should have
+      "AllowOverride All" set, or at least "AllowOverride FileInfo
+      Options".
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ENSCRIPT HIGHLIGHTING
+
+To use enscript, you'll have to install the enscript, libintl,
+libiconv, and sed packages from the gnuwin32 project
+(http://gnuwin32.sourceforge.net/).  Detailed instructions are on
+their site, but here is the basic procedure.
+
+1) Extract all packages to a folder on your hard drive, for example
+   c:\gnuwin32
+
+2) Add "c:\gnuwin32\bin" to the system "PATH" environment variable. If
+   ViewVC is running as part of a system service like IIS you will
+   need to reboot the computer so it is able to see the value. See the
+   "Troubleshooting" section below for specific information on when a
+   reboot is neccessary.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+BONSAI-LIKE CHECKIN DATABASE
+
+To use the checkin database, you'll need to install MySQL and the
+MySQL-Python interface. MySQL can be downloaded from
+www.mysql.com. The MySql-Python adapter is available from
+http://sf.net/projects/mysql-python/. Make sure to grab the the latest
+version from the "Files" section. (The "Home Page" link takes you to
+an outdated page that only links to very old versions.) Both packages
+come with GUI installers. Once you have MySQL running and set up with
+a username and password, follow these instructions to set up ViewVC.
+
+1) Open a command prompt and type these commands:
+
+      cd /d <VIEWVC_INSTALL_DIR>
+      python bin\make-database
+
+   The script that comes up will prompt you for the MySQL username and
+   password (you should have created these during the MySQL
+   installation), and the name of the database to create. The default
+   database name "ViewVC" should be fine unless for some reason a
+   database with that name already exists.
+
+2) Enter the username, password, and database name into the [cvsdb]
+   section of the <VIEWVC_INSTALL_DIR>\viewvc.conf file.
+
+3) At the command prompt run
+
+      python bin\cvsdbadmin rebuild <REPOSITORY>
+
+   where <REPOSITORY> is the path to your CVS repository.
+
+4) If you want the checkin database to be dynamically updated with
+   every checkin, add the following line to your CVSROOT/loginfo file:
+
+      ALL python "<VIEWVC_INSTALL_DIR>\bin\loginfo-handler" %{sVv}
+
+   If you decide not to enable dynamic updates, you can periodically
+   refresh the database with "python bin\cvsdbadmin update <REPOSITORY>"
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+CVSGRAPH
+
+To use CvsGraph with ViewVC, just put cvsgraph.exe in a directory on
+your system PATH and set the use_cvsgraph option to 1 in your
+viewvc.conf file.
+
+The CvsGraph home page is http://www.akhphd.au.dk/~bertho/cvsgraph/.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+DOCROOT OPTIMIZATION
+
+By default ViewVC serves up image and stylesheet files in
+<VIEWVC_INSTALL_DIR>\templates\docroot\ on its own instead of relying
+on the webserver to deliver them. This simplifies web server
+configuration, but is inefficient because it means the Python
+interpreter has to run each time one of these files is
+downloaded. This causes ViewVC pages to load more slowly, especially
+when ViewVC is running under CGI on Windows.
+
+To make things more efficient, you can make the
+<VIEWVC_INSTALL_DIR>\templates\docroot directory available on your web
+server and then set the "docroot" value in viewvc.conf to point to the
+web address of the directory.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+TROUBLESHOOTING
+
+- By far the most common cause of errors in ViewVC is failure to
+  successfully execute the programs it depends on (cvs, rlog, rcsdiff,
+  co, enscript, sed, and cvsgraph). To help deal with this problem,
+  ViewVC includes a special debugging mode that displays output from
+  the programs it executes on every web page. This allows you to see
+  error messages and other information that isn't normally visible. To
+  enable the debugging mode, change line 23 of
+  <VIEWVC_INSTALL_DIR>\lib\debug.py from:
+
+     SHOW_CHILD_PROCESSES = 0
+
+  to:
+
+     SHOW_CHILD_PROCESSES = 1
+
+  Important: You may need to restart your web server before this
+  change takes effect. See "Changes made to..." later in this section.
+
+- If you see the following error:
+
+     error: (2, 'CreateProcess', The system cannot find the file specified.')
+
+  it means that a program ViewVC has tried to execute could not be
+  found by Windows. The fix to this is usually to install the program
+  if it isn't already installed or to update the path to the program
+  in viewvc.conf.  Enabling the SHOW_CHILD_PROCESSES mode as described
+  above can provide helpful diagnostic information such as the command
+  line ViewVC is using to invoke the program and the value of the PATH
+  environment variable in the environment ViewVC is running under.
+
+- A common cause of server errors under IIS is permissions
+  problems. You need to make sure that the virtual directory
+  containing the CGI or ASP files has script execution enabled. You
+  also need to make sure that the web server user accounts
+  (IUSR_machine_name and IWAM_machine_name, where machine_name is your
+  computer name) have read and execute access to the .asp or .cgi stub
+  scripts, the ViewVC lib/ folder, the paths where external tools like
+  cvs, rcs, enscript, sed, and cvsgraph live, and the CVS
+  repositories. NTFS auditing makes it very easy to track down
+  permissions problems. Also look for IIS messages in the event log.
+
+- Certain Apache configurations may hide some environment variables
+  from the ViewVC CGI scripts and the programs they launch. You can
+  see whether an environment variable is visible from the CGI
+  environment by enabling the SHOW_CHILD_PROCESSES debug mode
+  described above. You can force Apache to let variables through with
+  the PassEnv directive
+  (http://httpd.apache.org/docs/mod/mod_env.html#passenv).
+
+- Changes made to environment variables, ViewVC source files and the
+  ViewVC configuration file do not always take effect immediately. The
+  table below shows what actions you need to take after changing any
+  of these things before they will have an effect.
+
++----------------+----------------+----------------+-------------------------+
+|                | Environment    | ViewVC         | ViewVC                  |
+|                | Variables      | Source         | Configuration           |
++----------------+----------------+----------------+-------------------------+
+| Standalone     | restart        | restart        | restart                 |
+| Server         | standalone.py* | standalone.py  | standalone.py           |
++----------------+----------------+----------------+-------------------------+
+| CGI mode under | reboot         | nothing        | nothing                 |
+| apache or IIS  | computer       |                |                         |
++----------------+----------------+----------------+-------------------------+
+| mod_python or  | reboot         | restart Apache | restart Apache          |
+| under apache   | computer       |                | OR                      |
+|                |                |                | reload(viewvc) in stub  |
++----------------+----------------+----------------+-------------------------+
+| asp mode under | reboot         | restart IIS    | restart IIS             |
+| IIS            | computer       | OR             | OR                      |
+|                |                | Unload ASP App | Unload ASP App          |
+|                |                |                | OR                      |
+|                |                |                | reload(viewvc) in stub  |
++----------------+----------------+----------------+-------------------------+
+     * If standalone.py was launched from a command prompt and you set
+       the environment variable through the control panel, you'll need to
+       open a new command prompt.
+
+  Notes:
+
+  Under ASP, changes made to the stub scripts inside the web root do
+  take effect immediately, you only need to take additional action
+  when you make changes to the main source files in <VIEWVC_INSTALL_DIR>\lib
+
+  To "Unload ASP App", go to the IIS properties dialog for the
+  application directory containing the ViewVC .asp files (in Internet
+  Services Manager).  Switch to the [Home] | [Virtual] Directory tab
+  and click the "Unload" button under "Application Settings".
+
+  To "reload(viewvc) in stub", put these lines in one of the ASP or
+  Mod_Python stub scripts:
+
+     import viewvc
+     reload (viewvc)
+
+  then load the page in a web browser.
+
+- If you have problems getting ViewVC to work with mod_python, you can
+  first make sure mod_python works standalone with the testing
+  instructions at
+  http://www.modpython.org/live/current/doc-html/inst-testing.html.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+KNOWN ISSUES
+
+- If you see ViewVC errors like
+
+     Error parsing rlog output. Expected RCS file
+    "c:\cvsroot\dir\file,v", found "c:\cvsroot\dir\RCS/file,v"
+
+  it's because your RCS utilities don't recognize the RCS file suffix
+  and are treating all files specified on the command line like
+  working copies even when they end in ",v". You can fix this by
+  including the following string in your RCSINIT environment variable:
+
+    -x,v
+
+  Important: You may need to reboot your computer before the
+  environment variable has an effect. See "Changes made to..." in the
+  TROUBLESHOOTING section.
+
+- The GNU RCS utilities won't work with repository files that use
+  CVSNT's unicode expansion mode (-ku). Files that use this mode will
+  show up with an "rlog error: unknown expand mode u" error message in
+  ViewVC directory listings. To work around this, you can set up
+  ViewVC to use the CVSNT executable (cvs.exe) or CVSNT RCS tools
+  (co.exe, rlog.exe, and rcsdiff.exe) instead of the GNU tools.
+
+- The standalone server will not run under Cygwin Python because it
+  does not support threads. ASP pages can't be run with Cygwin Python
+  because it does not support ActiveX. To use either of these features
+  you should install a native Python interpreter.
+
+- On Windows XP and Windows 2003 Server under IIS, enscript might give
+  an error like:
+
+     enscript: couldn't open input filter "states -f
+     "K:/gnuwin32/share/enscript/hl/enscript.st" -p
+     "C://.enscript;K:/gnuwin32/share/enscript/hl" -shtml -Dcolor=1
+     -Dstyle=emacs -Dlanguage=html -Dnum_input_files=1
+     -Ddocument_title="Enscript Output" -Dtoc=0 -" for file "": No error
+     no output generated
+
+  The solution is to give read & execute permissions on cmd.exe to the
+  IUSR_computername and IWAM_computername user accounts. (Enscript
+  uses cmd.exe internally to launch its little helper program,
+  states.exe).
+
+- By default, ASP will set session cookies at each page load. ViewVC
+  does not use these cookies and they can be safely disabled. You can
+  do this by opening the IIS properties dialog for the application
+  directory containing the ViewVC .asp files. Go to the [Home] |
+  [Virtual] Directory tab and click the "Configuration" button under
+  "Application Settings". On the dialog that comes up, uncheck "Enable
+  Session State" under "App Options" -> "Application Configuration".
+
+- Python support for ASP can be a little flaky. If you get strange
+  errors, it can sometimes help to uninstall and reinstall it with
+  pyscript.py. A number of people have also encountered a problem in
+  ActivePython 2.2 where the first loads of any Python ASP page would
+  work, but subsequent loads of the same page would always return
+  nothing (leaving the screen blank). There were a number of
+  workarounds for this problem, but the fix is to download and install
+  the latest python win32 extensions from
+  http://sourceforge.net/projects/pywin32/
+
+- ViewVC can't convert timestamps on diff pages to local time when it
+  is used with CVSNT. This is caused by a CVSNT bug, which is
+  described at
+  http://www.cvsnt.org/mantis/bug_view_page.php?bug_id=0000110
+
+- Old versions of CVSNT (2.0.11 and earlier) have a bug in their rlog
+  emulation which causes them to output truncated paths to RCS
+  files. In ViewVC, this causes errors like
+
+     Error parsing rlog output. Expected RCS file
+    "c:\cvsroot\dir\file,v", found "file,v"
+
+- Old versions of CVSNT (2.0.11 and earlier) have a bug in their
+  standalone RCS tools (rlog.exe, co.exe, and rcsdiff.exe) which
+  causes them not to properly interpret arguments with spaces. This
+  can result in ViewVC errors in repositories that have spaces in file
+  or directory names. This bug only occurs when ViewVC is configured
+  to use the standalone utilities, not when it uses cvs.exe directly
+  as it does by default.
+
+- Old versions of CVSNT (1.11.1.3-76 and earlier) don't have any RCS
+  emulation, so they can't be used as RCS parsers for ViewVC.
+
+- Very old versions of CVSNT (1.11.1.3-57g and earlier) won't work
+  reliably with our loginfo handler because they have a bug which
+  makes them escape spaces and other special characters in filenames
+  twice. This bug can result in loginfo errors or invalid data being
+  inserted into the database.
+
+- Old versions of Highlight (2.4.3 and earlier) will not show line
+  numbers for .txt files or files of unknown type even when the
+  "highlight_line_numbers" option is enabled.
+
+- Highlight versions 2.4.2 and 2.4.3 start line numbering for all file
+  types at 0 instead of 1 by default. A workaround is to make ViewVC
+  pass an explicit --line-number-start=1 option to Highlight
+
+- Highlight version 2.4.4 starts line numbering for .txt files at 0
+  instead of 1. It also misinterprets the --line-number-start option
+  for those files, starting numbering one number before whatever
+  number is specified. Since this behavior does not affect unknown
+  file types, a simple workaround is just to not pass a --syntax
+  option to Highlight for plain text files (instead of passing
+  --syntax=txt).
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+THANKS
+
+- Bryan T. Vold for improving the original ViewCVS patch by adding
+  support for enscript and tarball generation.
+
+- David Resnick for tracking down the cause of re_search failures in
+  repositories with non-rcs files and for bringing a bug in
+  sapi.AspFile.header() to my attention
+
+- Matt Bunch for finding a better way to address the ASP blank page
+  problem, and Keith D. Zimmerman for finding another workaround.
+
+- Rüdiger Koch for reporting a bug in viewvc PATH_INFO parsing code
+  with Apache for Windows as well as Jelle Ouwerkerk and Steffen Yount
+  for providing fixes.
+
+- Nick Minutello and Rüdiger Koch for providing workarounds for
+  setting enscript_library environment variable with apache. David
+  Duminy for providing the first bug report on this.
+
+- Gyula Faller and Tony Cook for independently coming up with CVSNT
+  loginfo handlers that accept spaces and don't rely on unix-style
+  echo commands. Tony Cook's patch also eliminated the dependency on
+  cat.exe.
+
+- Mathieu Mazerolle for making the unix loginfo handler handle spaces
+  in filenames.
+
+- Paul Russell for analyzing problems with new fields in CVSNT RCS
+  files.  Terry.Ninnis@pgen.com for coming up with a partial solution
+
+- Bo Berglund for tracking down the cause of a case-sensitivity issue
+  that could lead to problems in the commit database and for patiently
+  working with me to finally fix the CVSNT RCS fields problem and
+  another problem with enscript.
+
+- Ivo Roessling for finding and fixing a bug in the query page's
+  commit grouping code.
+
+- Keith D. Zimmerman for experimenting with enscript and finding some
+  new ways to make it work.
