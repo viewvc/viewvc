@@ -1729,6 +1729,7 @@ def view_directory(request):
       file.author = None
       file.size = None
       file.lockinfo = None
+      file.dead = None
     sort_file_data(file_data, request.roottype, sortdir, sortby,
                    cfg.options.sort_group_dirs)
     # request dirlogs only for the slice of files in "this page"
