@@ -276,7 +276,8 @@ class RemoteSubversionRepository(vclib.Repository):
       if locks.has_key(entry.name):
         entry.lockinfo = locks[entry.name].owner
 
-  def itemlog(self, path_parts, rev, options):
+  def itemlog(self, path_parts, rev, sortby, first, limit, options):
+    assert sortby == vclib.SORTBY_DEFAULT or sortby == vclib.SORTBY_REV   
     full_name = self._getpath(path_parts)
     rev = self._getrev(rev)
     dir_url = self.rootpath

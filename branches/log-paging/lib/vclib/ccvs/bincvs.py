@@ -246,7 +246,7 @@ class BinCVSRepository(BaseCVSRepository):
       else:
         tags.append(name)
 
-  def itemlog(self, path_parts, rev, options):
+  def itemlog(self, path_parts, rev, sortby, first, limit, options):
     """see vclib.Repository.itemlog docstring
 
     rev parameter can be a revision number, a branch number, a tag name,
@@ -289,6 +289,10 @@ class BinCVSRepository(BaseCVSRepository):
     filtered_revs = _file_log(revs, tags, lockinfo, default_branch, rev)
 
     options['cvs_tags'] = tags
+    if sortby == vclib.SORTBY_DATE:
+      filtered_revs.sort(_logsort_date_cmp)
+    elif sortby == vclib.SORTBY_REV:
+      filtered_revs.sort(_logsort_rev_cmp)
     return filtered_revs
 
   def rcs_popen(self, rcs_cmd, rcs_args, mode, capture_err=1):
@@ -363,6 +367,14 @@ class Tag:
 
 # ======================================================================
 # Functions for dealing with Revision and Tag objects
+
+def _logsort_date_cmp(rev1, rev2):
+  # sort on date; secondary on revision number
+  return -cmp(rev1.date, rev2.date) or -cmp(rev1.number, rev2.number)
+
+def _logsort_rev_cmp(rev1, rev2):
+  # sort highest revision first
+  return -cmp(rev1.number, rev2.number)
 
 def _match_revs_tags(revlist, taglist):
   """Match up a list of Revision objects with a list of Tag objects

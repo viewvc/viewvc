@@ -457,7 +457,7 @@ class LocalSubversionRepository(vclib.Repository):
       lock = fs.get_lock(self.fs_ptr, path)
       entry.lockinfo = lock and lock.owner or None
 
-  def itemlog(self, path_parts, rev, options):
+  def itemlog(self, path_parts, rev, sortby, first, limit, options):
     """see vclib.Repository.itemlog docstring
 
     Option values recognized by this implementation
@@ -474,6 +474,7 @@ class LocalSubversionRepository(vclib.Repository):
         boolean, default false. if set will return only newest single log
         entry
     """
+    assert sortby == vclib.SORTBY_DEFAULT or sortby == vclib.SORTBY_REV   
 
     path = self._getpath(path_parts)
     rev = self._getrev(rev)

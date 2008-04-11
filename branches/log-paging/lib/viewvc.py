@@ -79,6 +79,10 @@ _sticky_vars = [
   'limit_changes',
   ]
 
+# number of extra pages of information on either side of the current
+# page to fetch (see use_pagesize configuration option)
+EXTRA_PAGES = 3
+
 # for reading/writing between a couple descriptors
 CHUNK_SIZE = 8192
 
@@ -1558,7 +1562,8 @@ def markup_or_annotate(request, is_annotate):
 
   if cfg.options.show_log_in_markup:
     options = {'svn_latest_log': 1}
-    revs = request.repos.itemlog(path, revision, options)
+    revs = request.repos.itemlog(path, revision, vclib.SORTBY_DEFAULT,
+                                 0, 1, options)
     entry = revs[-1]
     data.update({
         'date' : make_time_string(entry.date, cfg),
@@ -2027,18 +2032,9 @@ def redirect_pathrev(request):
                                           pathtype=pathtype,
                                           params={'pathrev': pathrev}))
 
-def logsort_date_cmp(rev1, rev2):
-  # sort on date; secondary on revision number
-  return -cmp(rev1.date, rev2.date) or -cmp(rev1.number, rev2.number)
-
-def logsort_rev_cmp(rev1, rev2):
-  # sort highest revision first
-  return -cmp(rev1.number, rev2.number)
-
 def view_log(request):
   cfg = request.cfg
   diff_format = request.query_dict.get('diff_format', cfg.options.diff_format)
-  logsort = request.query_dict.get('logsort', cfg.options.log_sort)
   pathtype = request.pathtype
 
   if pathtype is vclib.DIR and request.roottype == 'cvs':
@@ -2048,16 +2044,21 @@ def view_log(request):
   options = {}
   options['svn_show_all_dir_logs'] = 1 ### someday make this optional?
   options['svn_cross_copies'] = cfg.options.cross_copies
-    
-  show_revs = request.repos.itemlog(request.path_parts, request.pathrev,
-                                    options)
-  if logsort == 'date':
-    show_revs.sort(logsort_date_cmp)
-  elif logsort == 'rev':
-    show_revs.sort(logsort_rev_cmp)
+
+  logsort = request.query_dict.get('logsort', cfg.options.log_sort)
+  if request.roottype == "svn":
+    sortby = vclib.SORTBY_DEFAULT
+    logsort = None
   else:
-    # no sorting
-    pass
+    if logsort == 'date':
+      sortby = vclib.SORTBY_DATE
+    elif logsort == 'rev':
+      sortby = vclib.SORTBY_REV
+    else:
+      sortby = vclib.SORTBY_DEFAULT
+
+  show_revs = request.repos.itemlog(request.path_parts, request.pathrev,
+                                    sortby, first, limit, options)
 
   # selected revision
   selected_rev = request.query_dict.get('r1')
@@ -2236,10 +2237,6 @@ def view_log(request):
 
   lastrev = pathrev_form(request, data)
 
-  if cfg.options.use_pagesize:
-    data['log_paging_action'], data['log_paging_hidden_values'] = \
-      request.get_form(params={'log_pagestart': None})
-  
   data['diff_select_action'], data['diff_select_hidden_values'] = \
     request.get_form(view_func=view_diff,
                      params={'r1': None, 'r2': None, 'tr1': None,
@@ -2304,6 +2301,8 @@ def view_log(request):
       plain_tags.append(tag)
 
   if cfg.options.use_pagesize:
+    data['log_paging_action'], data['log_paging_hidden_values'] = \
+      request.get_form(params={'log_pagestart': None})
     data['log_pagestart'] = int(request.query_dict.get('log_pagestart',0))
     data['entries'] = paging(data, 'entries', data['log_pagestart'],
                              'rev', cfg.options.use_pagesize)
