@@ -297,15 +297,23 @@ class RemoteSubversionRepository(vclib.Repository):
                       lockinfo)
 
     cross_copies = options.get('svn_cross_copies', 0)
-    client.svn_client_log([dir_url], _rev2optrev(rev), _rev2optrev(1),
-                          1, not cross_copies, lc.add_log, self.ctx)
+    log_limit = 0
+    if limit:
+      log_limit = first + limit
+    client.svn_client_log2([dir_url], _rev2optrev(rev), _rev2optrev(1),
+                           log_limit, 1, not cross_copies, lc.add_log, self.ctx)
     revs = lc.logs
     revs.sort()
     prev = None
     for rev in revs:
       rev.prev = prev
       prev = rev
+    revs.reverse()
 
+    if len(revs) < first:
+      return []
+    if limit:
+      return revs[first:first+limit]
     return revs
 
   def itemprops(self, path_parts, rev):

@@ -99,6 +99,11 @@ class CCVSRepository(BaseCVSRepository):
       filtered_revs.sort(_logsort_date_cmp)
     elif sortby == vclib.SORTBY_REV:
       filtered_revs.sort(_logsort_rev_cmp)
+      
+    if len(filtered_revs) < first:
+      return []
+    if limit:
+      return filtered_revs[first:first+limit]
     return filtered_revs
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):

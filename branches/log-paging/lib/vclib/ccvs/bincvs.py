@@ -293,6 +293,11 @@ class BinCVSRepository(BaseCVSRepository):
       filtered_revs.sort(_logsort_date_cmp)
     elif sortby == vclib.SORTBY_REV:
       filtered_revs.sort(_logsort_rev_cmp)
+
+    if len(filtered_revs) < first:
+      return []
+    if limit:
+      return filtered_revs[first:first+limit]
     return filtered_revs
 
   def rcs_popen(self, rcs_cmd, rcs_args, mode, capture_err=1):

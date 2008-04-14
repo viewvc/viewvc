@@ -1561,7 +1561,7 @@ def markup_or_annotate(request, is_annotate):
     })
 
   if cfg.options.show_log_in_markup:
-    options = {'svn_latest_log': 1}
+    options = {'svn_latest_log': 1}  ### FIXME: No longer needed?
     revs = request.repos.itemlog(path, revision, vclib.SORTBY_DEFAULT,
                                  0, 1, options)
     entry = revs[-1]
@@ -1943,7 +1943,7 @@ def paging(data, key, pagestart, local_name, pagesize):
   # Create the picklist
   picklist = data['picklist'] = []
   for i in range(0, len(data[key]), pagesize):
-    pick = _item(start=None, end=None, count=None)
+    pick = _item(start=None, end=None, count=None, more=ezt.boolean(0))
     pick.start = getattr(data[key][i], local_name)
     pick.count = i
     pick.page = (i / pagesize) + 1
@@ -1960,6 +1960,37 @@ def paging(data, key, pagestart, local_name, pagesize):
   # time that it is needed.
   # Problem might go away if we don't hide non-matching files when
   # selecting for tags or searching.
+  if pagestart > len(data[key]):
+    pagestart = 0
+  pageend = pagestart + pagesize
+  # Slice
+  return data[key][pagestart:pageend]
+
+def paging_sws(data, key, pagestart, local_name, pagesize, offset):
+  """Implement sliding window-style paging."""
+  # Create the picklist
+  max_pages = (EXTRA_PAGES * 2) + 1
+  picklist = data['picklist'] = []
+  has_more = ezt.boolean(0)
+  for i in range(0, len(data[key]), pagesize):
+    pick = _item(start=None, end=None, count=None, more=ezt.boolean(0))
+    pick.start = getattr(data[key][i], local_name)
+    pick.count = offset + i
+    pick.page = (pick.count / pagesize) + 1
+    try:
+      pick.end = getattr(data[key][i+pagesize-1], local_name)
+    except IndexError:
+      pick.end = getattr(data[key][-1], local_name)   
+    picklist.append(pick)
+    if len(picklist) == max_pages:
+      pick.more = ezt.boolean(1)
+      break
+  data['picklist_len'] = len(picklist)
+  # FIXME: pagestart can be greater than the length of data[key] if
+  # you select a tag or search while on a page other than the first.
+  # Should reset to the first page, but this test won't do that every
+  # time that it is needed.  Problem might go away if we don't hide
+  # non-matching files when selecting for tags or searching.
   if pagestart > len(data[key]):
     pagestart = 0
   pageend = pagestart + pagesize
@@ -2057,9 +2088,14 @@ def view_log(request):
     else:
       sortby = vclib.SORTBY_DEFAULT
 
-  first = limit = 0
+  first = last = 0
+  if cfg.options.use_pagesize:
+    log_pagestart = int(request.query_dict.get('log_pagestart', 0))
+    first = log_pagestart - min(log_pagestart,
+                                (EXTRA_PAGES * cfg.options.use_pagesize))
+    last = log_pagestart + ((EXTRA_PAGES + 1) * cfg.options.use_pagesize) + 1
   show_revs = request.repos.itemlog(request.path_parts, request.pathrev,
-                                    sortby, first, limit, options)
+                                    sortby, first, last - first, options)
 
   # selected revision
   selected_rev = request.query_dict.get('r1')
@@ -2305,8 +2341,8 @@ def view_log(request):
     data['log_paging_action'], data['log_paging_hidden_values'] = \
       request.get_form(params={'log_pagestart': None})
     data['log_pagestart'] = int(request.query_dict.get('log_pagestart',0))
-    data['entries'] = paging(data, 'entries', data['log_pagestart'],
-                             'rev', cfg.options.use_pagesize)
+    data['entries'] = paging_sws(data, 'entries', data['log_pagestart'],
+                                 'rev', cfg.options.use_pagesize, first)
 
   generate_page(request, "log", data)
 
