@@ -1969,7 +1969,7 @@ def paging(data, key, pagestart, local_name, pagesize):
 def paging_sws(data, key, pagestart, local_name, pagesize, offset):
   """Implement sliding window-style paging."""
   # Create the picklist
-  max_pages = (EXTRA_PAGES * 2) + 1
+  last_requested = pagestart + (EXTRA_PAGES * pagesize)
   picklist = data['picklist'] = []
   has_more = ezt.boolean(0)
   for i in range(0, len(data[key]), pagesize):
@@ -1982,20 +1982,21 @@ def paging_sws(data, key, pagestart, local_name, pagesize, offset):
     except IndexError:
       pick.end = getattr(data[key][-1], local_name)   
     picklist.append(pick)
-    if len(picklist) == max_pages:
+    if pick.count >= last_requested:
       pick.more = ezt.boolean(1)
       break
   data['picklist_len'] = len(picklist)
-  # FIXME: pagestart can be greater than the length of data[key] if
+  first = pagestart - offset
+  # FIXME: first can be greater than the length of data[key] if
   # you select a tag or search while on a page other than the first.
   # Should reset to the first page, but this test won't do that every
   # time that it is needed.  Problem might go away if we don't hide
   # non-matching files when selecting for tags or searching.
-  if pagestart > len(data[key]):
+  if first > len(data[key]):
     pagestart = 0
-  pageend = pagestart + pagesize
+  pageend = first + pagesize
   # Slice
-  return data[key][pagestart:pageend]
+  return data[key][first:pageend]
 
 def pathrev_form(request, data):
   lastrev = None
