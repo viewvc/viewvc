@@ -79,6 +79,10 @@ _sticky_vars = [
   'limit_changes',
   ]
 
+# number of extra pages of information on either side of the current
+# page to fetch (see use_pagesize configuration option)
+EXTRA_PAGES = 3
+
 # for reading/writing between a couple descriptors
 CHUNK_SIZE = 8192
 
@@ -1557,8 +1561,9 @@ def markup_or_annotate(request, is_annotate):
     })
 
   if cfg.options.show_log_in_markup:
-    options = {'svn_latest_log': 1}
-    revs = request.repos.itemlog(path, revision, options)
+    options = {'svn_latest_log': 1}  ### FIXME: No longer needed?
+    revs = request.repos.itemlog(path, revision, vclib.SORTBY_DEFAULT,
+                                 0, 1, options)
     entry = revs[-1]
     data.update({
         'date' : make_time_string(entry.date, cfg),
@@ -1938,7 +1943,7 @@ def paging(data, key, pagestart, local_name, pagesize):
   # Create the picklist
   picklist = data['picklist'] = []
   for i in range(0, len(data[key]), pagesize):
-    pick = _item(start=None, end=None, count=None)
+    pick = _item(start=None, end=None, count=None, more=ezt.boolean(0))
     pick.start = getattr(data[key][i], local_name)
     pick.count = i
     pick.page = (i / pagesize) + 1
@@ -1960,6 +1965,38 @@ def paging(data, key, pagestart, local_name, pagesize):
   pageend = pagestart + pagesize
   # Slice
   return data[key][pagestart:pageend]
+
+def paging_sws(data, key, pagestart, local_name, pagesize, offset):
+  """Implement sliding window-style paging."""
+  # Create the picklist
+  last_requested = pagestart + (EXTRA_PAGES * pagesize)
+  picklist = data['picklist'] = []
+  has_more = ezt.boolean(0)
+  for i in range(0, len(data[key]), pagesize):
+    pick = _item(start=None, end=None, count=None, more=ezt.boolean(0))
+    pick.start = getattr(data[key][i], local_name)
+    pick.count = offset + i
+    pick.page = (pick.count / pagesize) + 1
+    try:
+      pick.end = getattr(data[key][i+pagesize-1], local_name)
+    except IndexError:
+      pick.end = getattr(data[key][-1], local_name)   
+    picklist.append(pick)
+    if pick.count >= last_requested:
+      pick.more = ezt.boolean(1)
+      break
+  data['picklist_len'] = len(picklist)
+  first = pagestart - offset
+  # FIXME: first can be greater than the length of data[key] if
+  # you select a tag or search while on a page other than the first.
+  # Should reset to the first page, but this test won't do that every
+  # time that it is needed.  Problem might go away if we don't hide
+  # non-matching files when selecting for tags or searching.
+  if first > len(data[key]):
+    pagestart = 0
+  pageend = first + pagesize
+  # Slice
+  return data[key][first:pageend]
 
 def pathrev_form(request, data):
   lastrev = None
@@ -2027,18 +2064,9 @@ def redirect_pathrev(request):
                                           pathtype=pathtype,
                                           params={'pathrev': pathrev}))
 
-def logsort_date_cmp(rev1, rev2):
-  # sort on date; secondary on revision number
-  return -cmp(rev1.date, rev2.date) or -cmp(rev1.number, rev2.number)
-
-def logsort_rev_cmp(rev1, rev2):
-  # sort highest revision first
-  return -cmp(rev1.number, rev2.number)
-
 def view_log(request):
   cfg = request.cfg
   diff_format = request.query_dict.get('diff_format', cfg.options.diff_format)
-  logsort = request.query_dict.get('logsort', cfg.options.log_sort)
   pathtype = request.pathtype
 
   if pathtype is vclib.DIR and request.roottype == 'cvs':
@@ -2048,16 +2076,27 @@ def view_log(request):
   options = {}
   options['svn_show_all_dir_logs'] = 1 ### someday make this optional?
   options['svn_cross_copies'] = cfg.options.cross_copies
-    
-  show_revs = request.repos.itemlog(request.path_parts, request.pathrev,
-                                    options)
-  if logsort == 'date':
-    show_revs.sort(logsort_date_cmp)
-  elif logsort == 'rev':
-    show_revs.sort(logsort_rev_cmp)
+
+  logsort = request.query_dict.get('logsort', cfg.options.log_sort)
+  if request.roottype == "svn":
+    sortby = vclib.SORTBY_DEFAULT
+    logsort = None
   else:
-    # no sorting
-    pass
+    if logsort == 'date':
+      sortby = vclib.SORTBY_DATE
+    elif logsort == 'rev':
+      sortby = vclib.SORTBY_REV
+    else:
+      sortby = vclib.SORTBY_DEFAULT
+
+  first = last = 0
+  if cfg.options.use_pagesize:
+    log_pagestart = int(request.query_dict.get('log_pagestart', 0))
+    first = log_pagestart - min(log_pagestart,
+                                (EXTRA_PAGES * cfg.options.use_pagesize))
+    last = log_pagestart + ((EXTRA_PAGES + 1) * cfg.options.use_pagesize) + 1
+  show_revs = request.repos.itemlog(request.path_parts, request.pathrev,
+                                    sortby, first, last - first, options)
 
   # selected revision
   selected_rev = request.query_dict.get('r1')
@@ -2236,10 +2275,6 @@ def view_log(request):
 
   lastrev = pathrev_form(request, data)
 
-  if cfg.options.use_pagesize:
-    data['log_paging_action'], data['log_paging_hidden_values'] = \
-      request.get_form(params={'log_pagestart': None})
-  
   data['diff_select_action'], data['diff_select_hidden_values'] = \
     request.get_form(view_func=view_diff,
                      params={'r1': None, 'r2': None, 'tr1': None,
@@ -2304,9 +2339,11 @@ def view_log(request):
       plain_tags.append(tag)
 
   if cfg.options.use_pagesize:
+    data['log_paging_action'], data['log_paging_hidden_values'] = \
+      request.get_form(params={'log_pagestart': None})
     data['log_pagestart'] = int(request.query_dict.get('log_pagestart',0))
-    data['entries'] = paging(data, 'entries', data['log_pagestart'],
-                             'rev', cfg.options.use_pagesize)
+    data['entries'] = paging_sws(data, 'entries', data['log_pagestart'],
+                                 'rev', cfg.options.use_pagesize, first)
 
   generate_page(request, "log", data)
 

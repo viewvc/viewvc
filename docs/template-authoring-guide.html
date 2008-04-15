@@ -389,9 +389,9 @@ td {
   <td>List of pages that make up the current directory or log view.</td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">picklist.start</td>
+  <td class="varname">picklist.count</td>
   <td>String</td>
-  <td>Name of first item on the page</td>
+  <td>Number of the first item on the page (indexed from 0)</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">picklist.end</td>
@@ -399,14 +399,21 @@ td {
   <td>Name of last item on the page</td>
 </tr>
 <tr class="varlevel2">
+  <td class="varname">picklist.more</td>
+  <td>Boolean</td>
+  <td>If set, indicates that this picklist item is a placeholder for
+      an unspecified number of additional pages.  In this case,
+      <code>picklist.end</code> is undefined.</td>
+</tr>
+<tr class="varlevel2">
   <td class="varname">picklist.page</td>
   <td>String</td>
   <td>Page number (indexed from 1)</td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">picklist.count</td>
+  <td class="varname">picklist.start</td>
   <td>String</td>
-  <td>Number of the first item on the page (indexed from 0)</td>
+  <td>Name of first item on the page</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">picklist_len</td>

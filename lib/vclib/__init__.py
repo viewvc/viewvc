@@ -37,6 +37,12 @@ DELETED    = 'deleted'
 REPLACED   = 'replaced'
 MODIFIED   = 'modified'
 
+# log sort keys
+SORTBY_DEFAULT = 0  # default/no sorting
+SORTBY_DATE    = 1  # sorted by date, youngest first
+SORTBY_REV     = 2  # sorted by revision, youngest first
+
+
 # ======================================================================
 #
 class Repository:
@@ -115,7 +121,7 @@ class Repository:
     options is a dictionary of implementation specific options
     """
   
-  def itemlog(self, path_parts, rev, options):
+  def itemlog(self, path_parts, rev, sortby, first, limit, options):
     """Retrieve an item's log information
 
     The result is a list of Revision objects
@@ -125,6 +131,15 @@ class Repository:
 
     rev is the revision of the item to return information about
 
+    sortby indicates the way in which the returned list should be
+    sorted (SORTBY_DEFAULT, SORTBY_DATE, SORTBY_REV)
+
+    first is the 0-based index of the first Revision returned (after
+    sorting, if any, has occured)
+
+    limit is the maximum number of returned Revisions, or 0 to return
+    all available data
+    
     options is a dictionary of implementation specific options
     """
 
