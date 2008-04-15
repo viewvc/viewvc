@@ -22,7 +22,7 @@ import blame
 
 ### The functionality shared with bincvs should probably be moved to a
 ### separate module
-from bincvs import BaseCVSRepository, Revision, Tag, _file_log, _log_path
+from bincvs import BaseCVSRepository, Revision, Tag, _file_log, _log_path, _logsort_date_cmp, _logsort_rev_cmp
 
 class CCVSRepository(BaseCVSRepository):
   def dirlogs(self, path_parts, rev, entries, options):
@@ -73,7 +73,7 @@ class CCVSRepository(BaseCVSRepository):
       else:
         tags.append(name)
 
-  def itemlog(self, path_parts, rev, options):
+  def itemlog(self, path_parts, rev, sortby, first, limit, options):
     """see vclib.Repository.itemlog docstring
 
     rev parameter can be a revision number, a branch number, a tag name,
@@ -95,6 +95,15 @@ class CCVSRepository(BaseCVSRepository):
         rev.changed = rev.prev.next_changed
     options['cvs_tags'] = sink.tags
 
+    if sortby == vclib.SORTBY_DATE:
+      filtered_revs.sort(_logsort_date_cmp)
+    elif sortby == vclib.SORTBY_REV:
+      filtered_revs.sort(_logsort_rev_cmp)
+      
+    if len(filtered_revs) < first:
+      return []
+    if limit:
+      return filtered_revs[first:first+limit]
     return filtered_revs
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):

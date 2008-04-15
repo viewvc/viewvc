@@ -1,3 +1,5 @@
+[is roottype "svn"]
+[else]
 <form method="get" action="[logsort_action]">
   <div>
     <hr />
@@ -12,3 +14,4 @@
       <input type="submit" value="  Sort  " />
   </div>
 </form>
+[end]
