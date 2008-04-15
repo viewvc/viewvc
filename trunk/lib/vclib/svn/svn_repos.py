@@ -126,11 +126,12 @@ class NodeHistory:
   locations along a node's change history, ordered from youngest to
   oldest."""
   
-  def __init__(self, fs_ptr, show_all_logs):
+  def __init__(self, fs_ptr, show_all_logs, limit=0):
     self.histories = []
     self.fs_ptr = fs_ptr
     self.show_all_logs = show_all_logs
     self.oldest_rev = None
+    self.limit = limit
     
   def add_history(self, path, revision, pool):
     # If filtering, only add the path and revision to the histories
@@ -164,12 +165,14 @@ class NodeHistory:
         if not found:
           return
     self.histories.append([revision, _cleanup_path(path)])
+    if self.limit and len(self.histories) == self.limit:
+      raise core.SubversionException("", core.SVN_ERR_CEASE_INVOCATION)
 
   def __getitem__(self, idx):
     return self.histories[idx]
-    
-  
-def _get_history(svnrepos, path, rev, path_type, options={}):
+
+
+def _get_history(svnrepos, path, rev, path_type, limit=0, options={}):
   rev_paths = []
   fsroot = svnrepos._getroot(rev)
   show_all_logs = options.get('svn_show_all_dir_logs', 0)
@@ -181,9 +184,13 @@ def _get_history(svnrepos, path, rev, path_type, options={}):
       
   # Instantiate a NodeHistory collector object, and use it to collect
   # history items for PATH@REV.
-  history = NodeHistory(svnrepos.fs_ptr, show_all_logs)
-  repos.svn_repos_history(svnrepos.fs_ptr, path, history.add_history,
-                          1, rev, options.get('svn_cross_copies', 0))
+  history = NodeHistory(svnrepos.fs_ptr, show_all_logs, limit)
+  try:
+    repos.svn_repos_history(svnrepos.fs_ptr, path, history.add_history,
+                            1, rev, options.get('svn_cross_copies', 0))
+  except core.SubversionException, e:
+    if e.apr_err != core.SVN_ERR_CEASE_INVOCATION:
+      raise
 
   # Now, iterate over those history items, checking for changes of
   # location, pruning as necessitated by authz rules.
@@ -457,7 +464,7 @@ class LocalSubversionRepository(vclib.Repository):
       lock = fs.get_lock(self.fs_ptr, path)
       entry.lockinfo = lock and lock.owner or None
 
-  def itemlog(self, path_parts, rev, options):
+  def itemlog(self, path_parts, rev, sortby, first, limit, options):
     """see vclib.Repository.itemlog docstring
 
     Option values recognized by this implementation
@@ -474,6 +481,7 @@ class LocalSubversionRepository(vclib.Repository):
         boolean, default false. if set will return only newest single log
         entry
     """
+    assert sortby == vclib.SORTBY_DEFAULT or sortby == vclib.SORTBY_REV   
 
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
@@ -500,12 +508,17 @@ class LocalSubversionRepository(vclib.Repository):
         revision.prev = None
         revs.append(revision)
     else:
-      history = _get_history(self, path, rev, path_type, options)
+      history = _get_history(self, path, rev, path_type,
+                             first + limit, options)
+      if len(history) < first:
+        history = []
+      if limit:
+        history = history[first:first+limit]
+
       for hist_rev, hist_path in history:
         revision = _log_helper(self, hist_path, hist_rev, lockinfo)
         if revision:
-          # We need to see if this history dips into an unreadable
-          # location.  If so, we truncate it.
+          # If we have unreadable copyfrom data, obscure it.
           if revision.copy_path is not None:
             cp_parts = filter(None, string.split(revision.copy_path, '/'))
             if not vclib.check_path_access(self, cp_parts, path_type,
@@ -531,7 +544,8 @@ class LocalSubversionRepository(vclib.Repository):
     path_type = self.itemtype(path_parts, rev)  # does auth-check
     if path_type != vclib.FILE:
       raise vclib.Error("Path '%s' is not a file." % path)
-    history = _get_history(self, path, rev, path_type, {'svn_cross_copies': 1})
+    history = _get_history(self, path, rev, path_type, 0,
+                           {'svn_cross_copies': 1})
     youngest_rev, youngest_path = history[0]
     oldest_rev, oldest_path = history[-1]
     source = BlameSource(_rootpath2url(self.rootpath, path),
