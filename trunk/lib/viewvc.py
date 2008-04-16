@@ -1159,8 +1159,6 @@ def common_template_data(request):
       href = request.get_url(view_func=view_directory,
                              where='', pathtype=vclib.DIR,
                              params={'root': rootname}, escape=1)
-
-      ### TODO: Check root authorization.
       roots.append(_item(name=request.server.escape(rootname),
                          type=allroots[rootname][1],
                          path=allroots[rootname][0],
