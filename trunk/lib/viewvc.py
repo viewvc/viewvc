@@ -210,32 +210,36 @@ class Request:
     self.path_parts = path_parts
 
     if self.rootname:
+      roottype, rootpath = locate_root(cfg, self.rootname)
+      if roottype:
+        # Setup an Authorizer for this rootname and username
+        self.auth = setup_authorizer(cfg, self.username, self.rootname)
 
-      # Setup an Authorizer for this rootname and username
-      self.auth = setup_authorizer(cfg, self.username, self.rootname)
-
-      # Create the repository object
-      try:
-        if cfg.general.cvs_roots.has_key(self.rootname):
-          cfg.overlay_root_options(self.rootname)
-          self.rootpath = os.path.normpath(cfg.general.cvs_roots[self.rootname])
-          self.repos = vclib.ccvs.CVSRepository(self.rootname,
-                                                self.rootpath,
-                                                self.auth,
-                                                cfg.utilities,
-                                                cfg.options.use_rcsparse)
-          # required so that spawned rcs programs correctly expand $CVSHeader$
-          os.environ['CVSROOT'] = self.rootpath
-        elif cfg.general.svn_roots.has_key(self.rootname):
-          cfg.overlay_root_options(self.rootname)
-          self.rootpath = cfg.general.svn_roots[self.rootname]
-          self.repos = vclib.svn.SubversionRepository(self.rootname,
-                                                      self.rootpath,
-                                                      self.auth,
-                                                      cfg.utilities)
-        else:
-          raise vclib.ReposNotFound()
-      except vclib.ReposNotFound:
+        # Create the repository object
+        try:
+          if roottype == 'cvs':
+            cfg.overlay_root_options(self.rootname)
+            self.rootpath = os.path.normpath(rootpath)
+            self.repos = vclib.ccvs.CVSRepository(self.rootname,
+                                                  self.rootpath,
+                                                  self.auth,
+                                                  cfg.utilities,
+                                                  cfg.options.use_rcsparse)
+            # required so that spawned rcs programs correctly expand
+            # $CVSHeader$
+            os.environ['CVSROOT'] = self.rootpath
+          elif roottype == 'svn':
+            cfg.overlay_root_options(self.rootname)
+            self.rootpath = rootpath
+            self.repos = vclib.svn.SubversionRepository(self.rootname,
+                                                        self.rootpath,
+                                                        self.auth,
+                                                        cfg.utilities)
+          else:
+            raise vclib.ReposNotFound()
+        except vclib.ReposNotFound:
+          pass
+      if self.repos is None:
         raise debug.ViewVCException(
           'The root "%s" is unknown. If you believe the value is '
           'correct, then please double-check your configuration.'
@@ -1146,22 +1150,6 @@ def common_template_data(request):
     request.get_form(view_func=view_directory, where='', pathtype=vclib.DIR,
                      params={'root': None})
 
-  # add in the roots for the selection
-  roots = []
-  allroots = list_roots(request)
-  if len(allroots):
-    rootnames = allroots.keys()
-    rootnames.sort(icmp)
-    for rootname in rootnames:
-      href = request.get_url(view_func=view_directory,
-                             where='', pathtype=vclib.DIR,
-                             params={'root': rootname}, escape=1)
-      roots.append(_item(name=request.server.escape(rootname),
-                         type=allroots[rootname][1],
-                         path=allroots[rootname][0],
-                         href=href))
-  data['roots'] = roots
-
   if request.path_parts:
     dir = _path_join(request.path_parts[:-1])
     data['up_href'] = request.get_url(view_func=view_directory,
@@ -1673,7 +1661,24 @@ def icmp(x, y):
   return cmp(string.lower(x), string.lower(y))
 
 def view_roots(request):
+  # add in the roots for the selection
+  roots = []
+  expand_root_parents(request.cfg)
+  allroots = list_roots(request)
+  if len(allroots):
+    rootnames = allroots.keys()
+    rootnames.sort(icmp)
+    for rootname in rootnames:
+      href = request.get_url(view_func=view_directory,
+                             where='', pathtype=vclib.DIR,
+                             params={'root': rootname}, escape=1)
+      roots.append(_item(name=request.server.escape(rootname),
+                         type=allroots[rootname][1],
+                         path=allroots[rootname][0],
+                         href=href))
+
   data = common_template_data(request)
+  data['roots'] = roots
   generate_page(request, "roots", data)
 
 def view_directory(request):
@@ -3926,6 +3931,44 @@ def expand_root_parents(cfg):
         elif repo_type == 'svn' and \
              os.path.exists(os.path.join(pp, subpath, "format")):
           cfg.general.svn_roots[subpath] = os.path.join(pp, subpath)
+
+def find_root_in_parents(cfg, rootname, roottype):
+  """Return the rootpath for configured ROOTNAME of ROOTTYPE."""
+  for pp in cfg.general.root_parents:
+    pos = string.rfind(pp, ':')
+    if pos < 0:
+      continue
+    repo_type = string.strip(pp[pos+1:])
+    if repo_type != roottype:
+      continue
+    pp = os.path.normpath(string.strip(pp[:pos]))
+    if not os.path.exists(os.path.join(pp, rootname)):
+      continue
+    if roottype == 'cvs':
+      if os.path.exists(os.path.join(pp, rootname, "CVSROOT", "config")) \
+         or (os.path.exists(os.path.join(pp, "CVSROOT", "config")) \
+             and (rootname != 'CVSROOT' or not cfg.options.hide_cvsroot)):
+        return os.path.join(pp, rootname)
+    elif repo_type == 'svn':
+      if os.path.exists(os.path.join(pp, rootname, "format")):
+        return os.path.join(pp, rootname)
+  return None
+
+def locate_root(cfg, rootname):
+  """Return a 2-type ROOTTYPE, ROOTPATH for configured ROOTNAME."""
+  if cfg.general.cvs_roots.has_key(rootname):
+    return 'cvs', cfg.general.cvs_roots[rootname]
+  path_in_parent = find_root_in_parents(cfg, rootname, 'cvs')
+  if path_in_parent:
+    cfg.general.cvs_roots[rootname] = path_in_parent
+    return 'cvs', path_in_parent
+  if cfg.general.svn_roots.has_key(rootname):
+    return 'svn', cfg.general.svn_roots[rootname]
+  path_in_parent = find_root_in_parents(cfg, rootname, 'svn')
+  if path_in_parent:
+    cfg.general.svn_roots[rootname] = path_in_parent
+    return 'svn', path_in_parent
+  return None, None
   
 def load_config(pathname=None, server=None):
   debug.t_start('load-config')
@@ -3943,9 +3986,6 @@ def load_config(pathname=None, server=None):
   # load mime types file
   if cfg.general.mime_types_file:
     mimetypes.init([cfg.general.mime_types_file])
-
-  # expand root parents into real cvs_roots and svn_roots.
-  expand_root_parents(cfg)
   
   debug.t_end('load-config')
   return cfg
