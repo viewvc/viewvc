@@ -229,35 +229,6 @@ td {
   <td>Name of the current repository (root).</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">roots</td>
-  <td>List</td>
-  <td>Set of configured viewable repositories.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">roots.name</td>
-  <td>String</td>
-  <td>Name of a configured repository.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">roots.path</td>
-  <td>String</td>
-  <td>Server-local location of a configured repository.  WARNING:  Revealing
-      information to untrusted guests about the details of your server
-      configuration can have negative security implications.  Use this
-      token at your own risk.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">roots.type</td>
-  <td>String</td>
-  <td>Version control type of a configured repository.  Valid
-      values: <tt>cvs</tt>, <tt>svn</tt>.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">roots.href</td>
-  <td>String</td>
-  <td>URL of root directory view for a configured repository.</td>
-</tr>
-<tr class="varlevel1">
   <td class="varname">roots_href</td>
   <td>String</td>
   <td>URL of ViewVC root listing view.  Valid only when ViewVC is
@@ -2233,6 +2204,35 @@ td {
 <tr class="include">
   <td colspan="3">Includes all variables from the 
      <a href="#variables-common">COMMON</a> variable set</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">roots</td>
+  <td>List</td>
+  <td>Set of configured viewable repositories.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">roots.name</td>
+  <td>String</td>
+  <td>Name of a configured repository.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">roots.path</td>
+  <td>String</td>
+  <td>Server-local location of a configured repository.  WARNING:  Revealing
+      information to untrusted guests about the details of your server
+      configuration can have negative security implications.  Use this
+      token at your own risk.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">roots.type</td>
+  <td>String</td>
+  <td>Version control type of a configured repository.  Valid
+      values: <tt>cvs</tt>, <tt>svn</tt>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">roots.href</td>
+  <td>String</td>
+  <td>URL of root directory view for a configured repository.</td>
 </tr>
 </tbody>
 </table>

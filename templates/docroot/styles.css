@@ -46,6 +46,7 @@ form { margin: 0; }
 /*** Navigation Headers ***/
 .vc_navheader {
   background-color: #cccccc;
+  padding: .25em;
 }
 
 
