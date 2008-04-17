@@ -22,40 +22,6 @@
      width="150" height="60" /></a>
 </div>
 
-[if-any roots]
-  <form method="get" style="display: inline" action="[change_root_action]">
-    [change_root_hidden_values]
-      <strong>Repository:</strong>
-      <select name="root" onchange="submit()">
-        [define cvs_root_options][end]
-        [define svn_root_options][end]
-        <option value="*viewroots*"[is view "roots"] selected="selected"[else][end]>Repository Listing</option>
-        [for roots]
-          [define root_option][end]
-          [is roots.name rootname]
-            [define root_option]<option selected="selected">[roots.name]</option>[end]
-          [else]
-            [define root_option]<option>[roots.name]</option>[end]
-          [end]
-          [is roots.type "cvs"]
-            [define cvs_root_options][cvs_root_options][root_option][end]
-          [else]
-            [is roots.type "svn"]
-              [define svn_root_options][svn_root_options][root_option][end]
-            [end]
-          [end]
-        [end]
-        [is cvs_root_options ""][else]
-          <optgroup label="CVS Repositories">[cvs_root_options]</optgroup>
-        [end]
-        [is svn_root_options ""][else]
-          <optgroup label="Subversion Repositories">[svn_root_options]</optgroup>
-        [end]
-      </select>
-      <input type="submit" value="Go" />
-  </form>
-[end]
-
 <div id="vc_current_path">
 <strong>[page_title]</strong>
 [if-any nav_path]

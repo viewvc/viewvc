@@ -40,22 +40,24 @@
   <td><a href="[queryform_href]">Query revision history</a></td>
 </tr>
 [end]
-</table>
-  [is cfg.options.use_pagesize "0"]
-  [else]
-    [is picklist_len "1"]
-    [else]
-      <form method="get" action="[dir_paging_action]">
+
+[is cfg.options.use_pagesize "0"][else][is picklist_len "1"][else]
+<tr>
+  <td>Jump to page:</td>
+  <td><form method="get" action="[dir_paging_action]">
         [dir_paging_hidden_values]
-        <input type="submit" value="Go to:" />
         <select name="dir_pagestart"  onchange="submit()">
           [for picklist]
             <option [is picklist.count dir_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] to [picklist.end]</option>
           [end]
         </select>
+        <input type="submit" value="Go" />
       </form>
-    [end]
-  [end]
+  </td>
+</tr>
+[end][end]
+
+</table>
 
 <div id="vc_main_body">
 <!-- ************************************************************** -->

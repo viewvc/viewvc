@@ -45,7 +45,42 @@
   <td>[include "pathrev_form.ezt"]</td>
 </tr>
 
-[include "paging.ezt"]
+[is cfg.options.use_pagesize "0"][else][is picklist_len "1"][else]    
+<tr>
+  <td>Jump to page:</td>
+  <td><form method="get" action="[log_paging_action]">
+        [log_paging_hidden_values]
+        <select name="log_pagestart"  onchange="submit()">
+          [for picklist]
+           [if-any picklist.more]
+            <option [is picklist.count log_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] ...</option>
+           [else]
+            <option [is picklist.count log_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] - [picklist.end]</option>
+           [end]
+          [end]
+        </select>
+        <input type="submit" value="Go" />
+      </form>
+  </td>
+</tr>
+[end][end]
+
+<tr>
+  <td>Sort logs by:</td>
+  <td><form method="get" action="[logsort_action]">
+      <div>
+        <a name="logsort"></a>
+          [logsort_hidden_values]
+          <select name="logsort" onchange="submit()">
+            <option value="cvs" [is logsort "cvs"]selected="selected"[end]>Not sorted</option>
+            <option value="date" [is logsort "date"]selected="selected"[end]>Commit date</option>
+            <option value="rev" [is logsort "rev"]selected="selected"[end]>Revision</option>
+          </select>
+          <input type="submit" value="  Sort  " />
+      </div>
+    </form>
+  </td>
+</tr>
 
 </table>
 
