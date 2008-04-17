@@ -3883,27 +3883,11 @@ def list_roots(request):
     allroots[root] = [cfg.general.cvs_roots[root], 'cvs']
     
   return allroots
-  
-def load_config(pathname=None, server=None):
-  debug.t_start('load-config')
 
-  if pathname is None:
-    pathname = (os.environ.get("VIEWVC_CONF_PATHNAME")
-                or os.environ.get("VIEWCVS_CONF_PATHNAME")
-                or os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                                "viewvc.conf"))
-
-  cfg = config.Config()
-  cfg.set_defaults()
-  cfg.load_config(pathname, server and server.getenv("HTTP_HOST"))
-
-  # load mime types file
-  if cfg.general.mime_types_file:
-    mimetypes.init([cfg.general.mime_types_file])
-
-  # special handling for root_parents.  Each item in root_parents is
-  # a "directory : repo_type" string.  For each item in
-  # root_parents, we get a list of the subdirectories.
+def expand_root_parents(cfg):
+  # Each item in root_parents is a "directory : repo_type" string.
+  # For each item in root_parents, we get a list of the
+  # subdirectories.
   #
   # If repo_type is "cvs", and the subdirectory contains a child
   # "CVSROOT/config", then it is added to cvs_roots. Or, if the
@@ -3942,9 +3926,28 @@ def load_config(pathname=None, server=None):
         elif repo_type == 'svn' and \
              os.path.exists(os.path.join(pp, subpath, "format")):
           cfg.general.svn_roots[subpath] = os.path.join(pp, subpath)
+  
+def load_config(pathname=None, server=None):
+  debug.t_start('load-config')
 
+  if pathname is None:
+    pathname = (os.environ.get("VIEWVC_CONF_PATHNAME")
+                or os.environ.get("VIEWCVS_CONF_PATHNAME")
+                or os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                                "viewvc.conf"))
+
+  cfg = config.Config()
+  cfg.set_defaults()
+  cfg.load_config(pathname, server and server.getenv("HTTP_HOST"))
+
+  # load mime types file
+  if cfg.general.mime_types_file:
+    mimetypes.init([cfg.general.mime_types_file])
+
+  # expand root parents into real cvs_roots and svn_roots.
+  expand_root_parents(cfg)
+  
   debug.t_end('load-config')
-
   return cfg
 
 
