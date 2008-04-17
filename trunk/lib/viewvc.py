@@ -201,7 +201,7 @@ class Request:
           self.rootname = path_parts.pop(0)
         else:
           self.rootname = ""
-      else:
+      elif self.view_func != view_roots:
         self.rootname = cfg.general.default_root
     elif cfg.options.root_as_url_component:
       needs_redirect = 1
@@ -1103,7 +1103,8 @@ def common_template_data(request):
                 or cfg.options.docroot,
     'where' : request.server.escape(request.where),
     'roottype' : request.roottype,
-    'rootname' : request.server.escape(request.rootname),
+    'rootname' : request.rootname \
+                 and request.server.escape(request.rootname) or None,
     'rootpath' : request.rootpath,
     'pathtype' : None,
     'nav_path' : nav_path(request),
@@ -1122,14 +1123,10 @@ def common_template_data(request):
     'log_href_rev': None,
     'graph_href': None,
     'rss_href' : None,
-    'roots_href' : None,
+    'roots_href' : request.get_url(view_func=view_roots, escape=1, params={}),
     'prefer_markup' : ezt.boolean(0),
   }
 
-  if cfg.options.root_as_url_component:
-    data['roots_href'] = request.get_url(view_func=view_roots, escape=1,
-                                         params={})
-    
   rev = request.query_dict.get('annotate')
   if not rev:
     rev = request.query_dict.get('revision')
