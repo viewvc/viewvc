@@ -112,8 +112,8 @@ class CCVSRepository(BaseCVSRepository):
     temp2 = tempfile.mktemp()
     open(temp2, 'wb').write(self.openfile(path_parts2, rev2)[0].getvalue())
 
-    r1 = self.itemlog(path_parts1, rev1, {})[-1]
-    r2 = self.itemlog(path_parts2, rev2, {})[-1]
+    r1 = self.itemlog(path_parts1, rev1, vclib.SORTBY_DEFAULT, 0, 0, {})[-1]
+    r2 = self.itemlog(path_parts2, rev2, vclib.SORTBY_DEFAULT, 0, 0, {})[-1]
 
     info1 = (self.rcsfile(path_parts1, root=1, v=0), r1.date, r1.string)
     info2 = (self.rcsfile(path_parts2, root=1, v=0), r2.date, r2.string)
