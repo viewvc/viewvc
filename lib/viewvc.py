@@ -3309,7 +3309,7 @@ def view_revision(request):
                                     pathtype=None,
                                     params={'revision': str(rev - 1)},
                                     escape=1)
-  if rev < request.repos.youngest:
+  if rev < request.repos.get_youngest_revision():
     next_rev_href = request.get_url(view_func=view_revision,
                                     where=None,
                                     pathtype=None,
