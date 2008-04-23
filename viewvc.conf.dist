@@ -273,11 +273,6 @@ php = php
 cvsgraph =
 # cvsgraph = /usr/local/bin/cvsgraph
 
-# Gzip, a file compression utility (used by the "tarball" view).  You can
-# leave this unset if your version of Python provides the 'gzip' module.
-gzip =
-# gzip = /usr/bin/gzip
-
 # Sed, stream editor
 sed =
 # sed = /usr/bin/sed
@@ -424,9 +419,8 @@ hr_ignore_keyword_subst = 1
 hr_intraline = 0
 
 # allow compression with gzip of output if the Browser accepts it
-# (HTTP_ACCEPT_ENCODING=gzip)
-# [make sure to have gzip in the path]
-allow_compress = 1
+# (HTTP_ACCEPT_ENCODING contains "gzip")
+#allow_compress = 1
 
 # The directory which contains the EZT templates used by ViewVC to
 # customize the display of the various output views.  ViewVC looks in

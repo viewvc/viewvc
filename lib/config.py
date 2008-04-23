@@ -205,7 +205,6 @@ class Config:
     self.utilities.py2html_dir = '.'
     self.utilities.php = 'php'
     self.utilities.cvsgraph = ''
-    self.utilities.gzip = ''
     self.utilities.sed = ''
 
     self.options.root_as_url_component = 1
@@ -228,7 +227,7 @@ class Config:
     self.options.hr_ignore_white = 1
     self.options.hr_ignore_keyword_subst = 1
     self.options.hr_intraline = 0
-    self.options.allow_compress = 1
+    self.options.allow_compress = 0
     self.options.template_dir = "templates"
     self.options.docroot = None
     self.options.show_subdir_lastmod = 0

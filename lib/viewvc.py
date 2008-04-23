@@ -24,25 +24,26 @@ debug.t_start('imports')
 # standard modules that we know are in the path or builtin
 import sys
 import os
-import sapi
 import cgi
-import string
-import urllib
+import gzip
 import mimetypes
-import time
 import re
 import rfc822
 import stat
+import string
 import struct
-import types
 import tempfile
+import time
+import types
+import urllib
 
-# these modules come from our library (the stub has set up the path)
+# These modules come from our library (the stub has set up the path)
+import accept
 import compat
 import config
-import popen
 import ezt
-import accept
+import popen
+import sapi
 import vcauth
 import vclib
 import vclib.ccvs
@@ -111,6 +112,15 @@ class Request:
 
     # check for an authenticated username
     self.username = server.getenv('REMOTE_USER')
+
+    # if we allow compressed output, see if the client does too
+    self.gzip_compress_level = 0
+    if cfg.options.allow_compress:
+      http_accept_encoding = os.environ.get("HTTP_ACCEPT_ENCODING", "")
+      if "gzip" in filter(None,
+                          map(lambda x: string.strip(x),
+                              string.split(http_accept_encoding, ","))):
+        self.gzip_compress_level = 9  # make this configurable?
 
   def run_viewvc(self):
 
@@ -849,13 +859,28 @@ def get_view_template(cfg, view_name, language="en"):
 
   return template
 
-def generate_page(request, view_name, data, content_type=None):
+def get_writeready_server_file(request, content_type=None):
+  """Return a file handle to a response body stream, after outputting
+  any queued special headers (on REQUEST.server) and (optionally) a
+  'Content-Type' header whose value is CONTENT_TYPE.  After this is
+  called, it is too late to add new headers to the response."""
+  if request.gzip_compress_level:
+    request.server.addheader('Content-Encoding', 'gzip')
   if content_type:
     request.server.header(content_type)
   else:
     request.server.header()
+  if request.gzip_compress_level:
+    fp = gzip.GzipFile('', 'wb', request.gzip_compress_level,
+                       request.server.file())
+  else:
+    fp = request.server.file()
+  return fp
+  
+def generate_page(request, view_name, data, content_type=None):
+  server_fp = get_writeready_server_file(request)
   template = get_view_template(request.cfg, view_name, request.language)
-  template.generate(request.server.file(), data)
+  template.generate(server_fp, data)
 
 def nav_path(request):
   """Return current path as list of items with "name" and "href" members
@@ -2360,9 +2385,10 @@ def view_checkout(request):
 
   # The revision number acts as a strong validator.
   if not check_freshness(request, None, revision):
-    request.server.header(request.query_dict.get('content-type')
-                          or request.mime_type or 'text/plain')
-    copy_stream(fp, request.server.file(), cfg)
+    mime_type = request.query_dict.get('content-type') \
+                or request.mime_type or 'text/plain'
+    server_fp = get_writeready_server_file(request, mime_type)
+    copy_stream(fp, server_fp, cfg)
   fp.close()
 
 def view_cvsgraph_image(request):
@@ -2377,14 +2403,14 @@ def view_cvsgraph_image(request):
   # If cvsgraph can't find its supporting libraries, uncomment and set
   # accordingly.  Do the same in view_cvsgraph().
   #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib:/path/to/cvsgraph'
-  
-  request.server.header('image/png')
+
   rcsfile = request.repos.rcsfile(request.path_parts)
   fp = popen.popen(cfg.utilities.cvsgraph or 'cvsgraph',
                    ("-c", cfg.path(cfg.options.cvsgraph_conf),
                     "-r", request.repos.rootpath,
                     rcsfile), 'rb', 0)
-  copy_stream(fp, request.server.file(), cfg)
+  
+  copy_stream(fp, get_writeready_server_file(request, 'image/png'), cfg)
   fp.close()
 
 def view_cvsgraph(request):
@@ -2520,16 +2546,16 @@ def view_doc(request):
 
   request.server.addheader('Content-Length', content_length)
   if document[-3:] == 'png':
-    request.server.header('image/png')
+    mime_type = 'image/png'
   elif document[-3:] == 'jpg':
-    request.server.header('image/jpeg')
+    mime_type = 'image/jpeg'
   elif document[-3:] == 'gif':
-    request.server.header('image/gif')
+    mime_type = 'image/gif'
   elif document[-3:] == 'css':
-    request.server.header('text/css')
+    mime_type = 'text/css'
   else: # assume HTML:
-    request.server.header()
-  copy_stream(fp, request.server.file(), cfg)
+    mime_type = None
+  copy_stream(fp, get_writeready_server_file(request, mime_type), cfg)
   fp.close()
 
 def rcsdiff_date_reformat(date_str, cfg):
@@ -2868,9 +2894,9 @@ def view_patch(request):
   date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
                                                    sym1, sym2)
 
-  request.server.header('text/plain')
-  request.server.file().write(headers)
-  copy_stream(fp, request.server.file(), cfg)
+  server_fp = get_writeready_server_file(request, 'text/plain')
+  server_fp.write(headers)
+  copy_stream(fp, server_fp, cfg)
   fp.close()
 
 
@@ -3160,17 +3186,12 @@ def download_tarball(request):
       tarfile = "%s-%s" % (tarfile, request.path_parts[-1])
     request.server.addheader('Content-Disposition',
                              'attachment; filename="%s.tar.gz"' % (tarfile))
-    request.server.header('application/x-gzip')
+    server_fp = get_writeready_server_file(request, 'application/x-gzip')
     request.server.flush()
     
     # Try to use the Python gzip module, if available; otherwise,
     # we'll use the configured 'gzip' binary.
-    try:
-      import gzip
-    except ImportError:
-      fp = popen.pipe_cmds([(cfg.utilities.gzip or 'gzip', '-c', '-n')])
-    else:
-      fp = gzip.GzipFile('', 'wb', 9, request.server.file())
+    fp = gzip.GzipFile('', 'wb', 9, server_fp)
 
   ### FIXME: For Subversion repositories, we can get the real mtime of the
   ### top-level directory here.
