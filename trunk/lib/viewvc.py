@@ -1031,22 +1031,31 @@ _re_rewrite_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)'
                              '(#([-a-zA-Z0-9%.~:_]+)?)?)')
 _re_rewrite_email = re.compile('([-a-zA-Z0-9_.\+]+)@'
                                '(([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
+
+def mangle_email_addresses(text, style=0):
+  # style=2:  truncation mangling
+  if style == 2: 
+    return re.sub(_re_rewrite_email, r'\1&#64;&hellip;', text)
+
+  # style=1:  entity-encoding and at-wrapping    
+  if style == 1: 
+    def _match_replace(matchobj):
+      return string.join(map(lambda x: '&#%d;' % (ord(x)),
+                             matchobj.group(1)), '') \
+             + ' {at} ' + \
+             string.join(map(lambda x: '&#%d;' % (ord(x)),
+                             matchobj.group(2)), '')
+    return re.sub(_re_rewrite_email, _match_replace, text)
+
+  # otherwise, no mangling
+  return text
+
 def htmlify(html, mangle_email_addrs=0):
   if not html:
     return html
   html = cgi.escape(html)
   html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
-  if mangle_email_addrs:
-    ### FIXME: I'm sure email address mangling comes in a hundred
-    ### different flavors.  As a mechanism for defeating spam
-    ### harvesters, I suspect that merely obscuring the address only
-    ### works for a season (until the obscurity algorithm is added to
-    ### the spammers' databases of such things).  We have to actually
-    ### *lose* information here for it really matter.
-    html = re.sub(_re_rewrite_email, r'\1&#64;&hellip;', html)
-  else:
-    html = re.sub(_re_rewrite_email,
-                  r'<a href="mailto:\1&#64;\2">\1&#64;\2</a>', html)
+  html = mangle_email_addresses(html, mangle_email_addrs)
   return html
 
 def format_log(log, cfg, htmlize=1):
@@ -1057,7 +1066,7 @@ def format_log(log, cfg, htmlize=1):
                 cfg.options.mangle_email_addresses)
   else:
     s = cgi.escape(log[:cfg.options.short_log_len])
-    if cfg.options.mangle_email_addresses:
+    if cfg.options.mangle_email_addresses == 2:
       s = re.sub(_re_rewrite_email, r'\1@...', s)
   if len(log) > cfg.options.short_log_len:
     s = s + '...'
