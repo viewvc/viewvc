@@ -316,6 +316,11 @@ allowed_views = markup, annotate
 #   forbidden   - simple path glob matches against top-level root directories
 #   forbiddenre - root and path matches against regular expressions
 #
+# NOTE: Only one authorizer may be in use for a given ViewVC request.
+# It doesn't matter if you configure the parameters of multiple
+# authorizer plugins -- only the authorizer whose name is configured
+# here (or effectively configured here via vhost configuration) will
+# be activated.
 authorizer = forbidden
 
 # mangle_email_addresses: Mangle email addresses in marked-up output.
