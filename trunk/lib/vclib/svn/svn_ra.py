@@ -20,6 +20,7 @@ import re
 import tempfile
 import popen2
 import time
+import urllib
 from svn_repos import Revision, SVNChangedPath, _datestr_to_date, _compare_paths, _cleanup_path, _rev2optrev
 from svn import core, delta, client, wc, ra
 
@@ -131,7 +132,7 @@ def temp_checkout(svnrepos, path, rev):
   """Check out file revision to temporary file"""
   temp = tempfile.mktemp()
   stream = core.svn_stream_from_aprfile(temp)
-  url = svnrepos.rootpath + (path and '/' + path)
+  url = svnrepos._geturl(path)
   client.svn_client_cat(core.Stream(stream), url, _rev2optrev(rev),
                         svnrepos.ctx)
   core.svn_stream_close(stream)
@@ -229,10 +230,10 @@ class RemoteSubversionRepository(vclib.Repository):
       raise vclib.ItemNotFound(path_parts)
 
   def openfile(self, path_parts, rev):
+    path = self._getpath(path_parts)
     rev = self._getrev(rev)
-    url = self.rootpath
-    if len(path_parts):
-      url = self.rootpath + '/' + self._getpath(path_parts)
+    url = self._geturl(path)
+    
     tmp_file = tempfile.mktemp()
     stream = core.svn_stream_from_aprfile(tmp_file)
     ### rev here should be the last history revision of the URL
@@ -278,29 +279,26 @@ class RemoteSubversionRepository(vclib.Repository):
 
   def itemlog(self, path_parts, rev, sortby, first, limit, options):
     assert sortby == vclib.SORTBY_DEFAULT or sortby == vclib.SORTBY_REV   
-    full_name = self._getpath(path_parts)
+    path = self._getpath(path_parts)
     rev = self._getrev(rev)
-    dir_url = self.rootpath
-    if full_name:
-      dir_url = dir_url + '/' + full_name
+    url = self._geturl(path)
 
     # Use ls3 to fetch the lock status for this item.
     lockinfo = None
-    dirents, locks = client.svn_client_ls3(dir_url, _rev2optrev(rev),
+    dirents, locks = client.svn_client_ls3(url, _rev2optrev(rev),
                                            _rev2optrev(rev), 0, self.ctx)
     if locks.has_key(path_parts[-1]):
       lockinfo = locks[path_parts[-1]].owner
 
     # It's okay if we're told to not show all logs on a file -- all
     # the revisions should match correctly anyway.
-    lc = LogCollector(full_name, options.get('svn_show_all_dir_logs', 0),
-                      lockinfo)
+    lc = LogCollector(path, options.get('svn_show_all_dir_logs', 0), lockinfo)
 
     cross_copies = options.get('svn_cross_copies', 0)
     log_limit = 0
     if limit:
       log_limit = first + limit
-    client.svn_client_log2([dir_url], _rev2optrev(rev), _rev2optrev(1),
+    client.svn_client_log2([url], _rev2optrev(rev), _rev2optrev(1),
                            log_limit, 1, not cross_copies, lc.add_log, self.ctx)
     revs = lc.logs
     revs.sort()
@@ -319,13 +317,19 @@ class RemoteSubversionRepository(vclib.Repository):
   def itemprops(self, path_parts, rev):
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
-    stream, fetched_rev, props = ra.svn_ra_get_dir(self.ra_session, path, rev)
+    try:
+      dirents, fetched_rev, props = ra.svn_ra_get_dir(self.ra_session,
+                                                      path, rev)
+    except ValueError:
+      # older versions of the bindings didn't handle ra.svn_ra_get_dir()
+      # correctly.
+      props = ra.svn_ra_get_dir(self.ra_session, path, rev)
     return props
   
   def annotate(self, path_parts, rev):
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
-    url = self.rootpath + (path and '/' + path)
+    url = self._geturl(path)
 
     blame_data = []
 
@@ -378,16 +382,20 @@ class RemoteSubversionRepository(vclib.Repository):
       raise vclib.InvalidRevision(rev)
     return rev
 
+  def _geturl(self, path=None):
+    if not path:
+      return self.rootpath
+    return self.rootpath + '/' + urllib.quote(path, "/*~")
+
   def _get_dirents(self, path, rev):
     """Return a 2-type of dirents and locks, possibly reading/writing
     from a local cache of that information."""
 
+    dir_url = self._geturl(path)
     if path:
       key = str(rev) + '/' + path
-      dir_url = self.rootpath + '/' + path
     else:
       key = str(rev)
-      dir_url = self.rootpath
     dirents_locks = self._dirent_cache.get(key)
     if not dirents_locks:
       dirents, locks = client.svn_client_ls3(dir_url, _rev2optrev(rev),
