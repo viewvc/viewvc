@@ -324,8 +324,10 @@ allowed_views = markup, annotate
 authorizer = forbidden
 
 # mangle_email_addresses: Mangle email addresses in marked-up output.
-#   0      Markup un-mangled email addresses as hyperlinks
-#   1      Mangle (and don't markup as hyperlinks) email addresses
+# There are various levels of mangling available:
+#   0 - No mangling; markup un-mangled email addresses as hyperlinks
+#   1 - Obfuscation (using entity encoding); no hyperlinking
+#   2 - Data-dropping address truncation; no hyperlinking
 # Note: this will not effect the display of versioned file contents, only
 # addresses that appear in version control metadata (e.g. log messages).
 mangle_email_addresses = 0
