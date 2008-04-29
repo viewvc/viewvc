@@ -413,7 +413,7 @@ hr_funout = 0
 # ignore whitespaces for human readable diffs
 # (indendation and stuff ..)
 # ( '-w' option to diff)
-hr_ignore_white = 1
+hr_ignore_white = 0
 
 # ignore diffs which are caused by
 # keyword-substitution like $Id - Stuff
