@@ -224,7 +224,7 @@ class Config:
     self.options.hide_cvsroot = 1
     self.options.hr_breakable = 1
     self.options.hr_funout = 1
-    self.options.hr_ignore_white = 1
+    self.options.hr_ignore_white = 0
     self.options.hr_ignore_keyword_subst = 1
     self.options.hr_intraline = 0
     self.options.allow_compress = 0
