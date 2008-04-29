@@ -27,6 +27,7 @@ Version 1.1.0 (released ??-???-????)
   * add support for displaying file/directory properties (issue #39)
   * pagination improvements
   * add gzip output encoding support for template-driven pages
+  * fix cache control bugs (issue #259)
 
 Version 1.0.5 (released 28-Feb-2008)
 
