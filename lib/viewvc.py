@@ -3231,9 +3231,11 @@ def view_revision(request):
     rev = request.repos._getrev(query_dict.get('revision'))
   except vclib.InvalidRevision:
     raise debug.ViewVCException('Invalid revision', '404 Not Found')
-    
-  # The revision number acts as a weak validator.
-  if check_freshness(request, None, str(rev), weak=1):
+  youngest_rev = request.repos.get_youngest_revision()
+  
+  # The revision number acts as a weak validator (but we tell browsers
+  # not to cache the youngest revision).
+  if rev != youngest_rev and check_freshness(request, None, str(rev), weak=1):
     return
 
   # Fetch the revision information.
@@ -3367,6 +3369,8 @@ def view_revision(request):
   data['jump_rev_action'], data['jump_rev_hidden_values'] = \
     request.get_form(params={'revision': None})
 
+  if rev == youngest_rev:
+    request.server.addheader("Cache-control", "no-store")
   generate_page(request, "revision", data)
 
 def is_query_supported(request):
