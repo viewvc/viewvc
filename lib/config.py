@@ -162,6 +162,16 @@ class Config:
       return
     self._process_root_options(self.parser, rootname)
 
+  def _get_parser_items(self, parser, section):
+    """Basically implement ConfigParser.items() for pre-Python-2.3 versions."""
+    try:
+      return self.parser.items(section)
+    except AttributeError:
+      d = {}
+      for option in parser.options(section):
+        d[option] = parser.get(section, option)
+      return d.items()
+    
   def get_authorizer_params(self, authorizer, rootname=None):
     if not self.conf_path:
       return {}
@@ -170,13 +180,13 @@ class Config:
     authz_section = 'authz-%s' % (authorizer)
     for section in self.parser.sections():
       if section == authz_section:
-        for key, value in self.parser.items(section):
+        for key, value in self._get_parser_items(self.parser, section):
           params[key] = value
     if rootname:
       root_authz_section = 'root-%s/authz-%s' % (rootname, authorizer)
       for section in self.parser.sections():
         if section == root_authz_section:
-          for key, value in self.parser.items(section):
+          for key, value in self._get_parser_items(self.parser, section):
             params[key] = value
     return params
   
