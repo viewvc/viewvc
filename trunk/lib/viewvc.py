@@ -1843,15 +1843,15 @@ def view_directory(request):
                                        escape=1)
       
     elif file.kind == vclib.FILE:
-      
+      if searchstr is not None:
+        if request.roottype == 'cvs' and (file.errors or file.dead):
+          continue
+        if not search_file(request.repos, request.path_parts + [file.name],
+                           request.pathrev, searchstr):
+          continue
       if request.roottype == 'cvs' and file.dead:
         num_dead = num_dead + 1
         if hideattic:
-          continue
-      if searchstr is not None \
-         and not (request.roottype == 'cvs' and (file.errors or file.dead)):
-        if not search_file(request.repos, request.path_parts + [file.name],
-                           request.pathrev, searchstr):
           continue
         
       num_displayed = num_displayed + 1
