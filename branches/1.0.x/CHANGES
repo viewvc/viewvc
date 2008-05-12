@@ -1,5 +1,7 @@
 Version 1.0.6 (released ??-???-????)
 
+  * fix bug in regexp search filter when used with sticky tag (issue #346)
+
 Version 1.0.5 (released 28-Feb-2008)
 
   * security fix: omit commits of all-forbidden files from query results
