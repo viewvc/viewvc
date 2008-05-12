@@ -1551,15 +1551,8 @@ def view_directory(request):
                                            cfg.options.hide_attic))
     options["cvs_subdirs"] = (cfg.options.show_subdir_lastmod and
                               cfg.options.show_logs)
-
   file_data = request.repos.listdir(request.path_parts, request.pathrev,
                                     options)
-
-  # Filter file list if a regex is specified
-  search_re = request.query_dict.get('search', '')
-  if cfg.options.use_re_search and search_re:
-    file_data = search_files(request.repos, request.path_parts, request.pathrev,
-                             file_data, search_re)
 
   # Retrieve log messages, authors, revision numbers, timestamps
   request.repos.dirlogs(request.path_parts, request.pathrev, file_data, options)
@@ -1569,6 +1562,12 @@ def view_directory(request):
   sortdir = request.query_dict.get('sortdir', 'up')
   sort_file_data(file_data, request.roottype, sortdir, sortby,
                  cfg.options.sort_group_dirs)
+
+  # If a regex is specified, build a compiled form thereof for filtering
+  searchstr = None
+  search_re = request.query_dict.get('search', '')
+  if cfg.options.use_re_search and search_re:
+    searchstr = re.compile(search_re)
 
   # loop through entries creating rows and changing these values
   rows = [ ]
@@ -1636,10 +1635,17 @@ def view_directory(request):
                                        escape=1)
       
     elif file.kind == vclib.FILE:
+      if searchstr is not None:
+        if request.roottype == 'cvs' and (file.errors or file.dead):
+          continue
+        if not search_file(request.repos, request.path_parts + [file.name],
+                           request.pathrev, searchstr):
+          continue
       if request.roottype == 'cvs' and file.dead:
         num_dead = num_dead + 1
         if hideattic:
           continue
+        
       num_displayed = num_displayed + 1
 
       file_where = where_prefix + file.name
@@ -2272,58 +2278,23 @@ def view_cvsgraph(request):
   request.server.header()
   generate_page(request, "graph", data)
 
-def search_files(repos, path_parts, rev, files, search_re):
-  """ Search files in a directory for a regular expression.
+def search_file(repos, path_parts, rev, search_re):
+  """Return 1 iff the contents of the file at PATH_PARTS in REPOS as
+  of revision REV matches regular expression SEARCH_RE."""
 
-  Does a check-out of each file in the directory.  Only checks for
-  the first match.  
-  """
-
-  # Pass in search regular expression. We check out
-  # each file and look for the regular expression. We then return the data
-  # for all files that match the regex.
-
-  # Compile to make sure we do this as fast as possible.
-  searchstr = re.compile(search_re)
-
-  # Will become list of files that have at least one match.
-  # new_file_list also includes directories.
-  new_file_list = [ ]
-
-  # Loop on every file (and directory)
-  for file in files:
-    # Is this a directory?  If so, append name to new_file_list
-    # and move to next file.
-    if file.kind != vclib.FILE:
-      new_file_list.append(file)
-      continue
-
-    # Only files at this point
-    
-    # Shouldn't search binary files, or should we?
-    # Should allow all text mime types to pass.
-    if not is_text(guess_mime(file.name)):
-      continue
-
-    # Only text files at this point
-
-    # Assign contents of checked out file to fp.
-    fp = repos.openfile(path_parts + [file.name], rev)[0]
-
-    # Read in each line, use re.search to search line.
-    # If successful, add file to new_file_list and break.
-    while 1:
-      line = fp.readline()
-      if not line:
-        break
-      if searchstr.search(line):
-        new_file_list.append(file)
-        # close down the pipe (and wait for the child to terminate)
-        fp.close()
-        break
-
-  return new_file_list
-
+  # Read in each line of a checked-out file, and then use re.search to
+  # search line.
+  fp = repos.openfile(path_parts, rev)[0]
+  matches = 0
+  while 1:
+    line = fp.readline()
+    if not line:
+      break
+    if search_re.search(line):
+      matches = 1
+      fp.close()
+      break
+  return matches
 
 def view_doc(request):
   """Serve ViewVC static content locally.
