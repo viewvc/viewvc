@@ -317,14 +317,10 @@ class RemoteSubversionRepository(vclib.Repository):
   def itemprops(self, path_parts, rev):
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
-    try:
-      dirents, fetched_rev, props = ra.svn_ra_get_dir(self.ra_session,
-                                                      path, rev)
-    except ValueError:
-      # older versions of the bindings didn't handle ra.svn_ra_get_dir()
-      # correctly.
-      props = ra.svn_ra_get_dir(self.ra_session, path, rev)
-    return props
+    url = self._geturl(path)
+    pairs = client.svn_client_proplist2(url, _rev2optrev(rev),
+                                        _rev2optrev(rev), 0, self.ctx)
+    return pairs and pairs[0][1] or {}
   
   def annotate(self, path_parts, rev):
     path = self._getpath(path_parts)
@@ -424,8 +420,14 @@ class RemoteSubversionRepository(vclib.Repository):
     return _cleanup_path(old_path)
   
   def created_rev(self, path, rev):
+    # NOTE: We can't use svn_client_propget here because the
+    # interfaces in that layer strip out the properties not meant for
+    # human consumption (such as svn:entry:committed-rev, which we are
+    # using here to get the created revision of PATH@REV).
     kind = ra.svn_ra_check_path(self.ra_session, path, rev)
-    if kind == core.svn_node_dir:
+    if kind == core.svn_node_none:
+      raise vclib.ItemNotFound(_path_parts(path))
+    elif kind == core.svn_node_dir:
       try:
         dirents, fetched_rev, props = ra.svn_ra_get_dir(self.ra_session,
                                                         path, rev)
@@ -433,8 +435,10 @@ class RemoteSubversionRepository(vclib.Repository):
         # older versions of the bindings didn't handle ra.svn_ra_get_dir()
         # correctly.
         props = ra.svn_ra_get_dir(self.ra_session, path, rev)
-      return int(props[core.SVN_PROP_ENTRY_COMMITTED_REV])
-    return core.SVN_INVALID_REVNUM
+    elif kind == core.svn_node_file:
+      fetched_rev, props = ra.svn_ra_get_file(self.ra_session, path, rev, None)
+    return int(props.get(core.SVN_PROP_ENTRY_COMMITTED_REV,
+                         core.SVN_INVALID_REVNUM))
 
   def last_rev(self, path, peg_revision, limit_revision=None):
     """Given PATH, known to exist in PEG_REVISION, find the youngest
