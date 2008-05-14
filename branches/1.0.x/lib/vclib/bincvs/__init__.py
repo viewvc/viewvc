@@ -534,30 +534,24 @@ def _parse_co_header(fp):
     raise COMalformedOutput, "Unable to find filename in co output stream"
   filename = match.group(1)
 
-  # look for a revision in the second line.
-  line = fp.readline()
-  if not line:
-    raise COMalformedOutput, "Missing second line from co output stream"
-  match = _re_co_revision.match(line)
-  if match:
-    return filename, match.group(1)
-  elif _re_co_missing_rev.match(line) or _re_co_side_branches.match(line):
-    raise COMissingRevision, "Got missing revision error from co output stream"
-  elif _re_co_warning.match(line):
-    pass
-  else:
-    raise COMalformedOutput, "Unable to find revision in co output stream"
+  # look through subsequent lines for a revision.  we might encounter
+  # some ignorable or problematic lines along the way.
+  while 1:
+    line = fp.readline()
+    if not line:
+      break
+    # look for a revision.
+    match = _re_co_revision.match(line)
+    if match:
+      return filename, match.group(1)
+    elif _re_co_missing_rev.match(line) or _re_co_side_branches.match(line):
+      raise COMissingRevision, "Got missing revision error from co output stream"
+    elif _re_co_warning.match(line):
+      pass
+    else:
+      break
     
-  # if we get here, the second line wasn't a revision, but it was a
-  # warning we can ignore.  look for a revision in the third line.
-  line = fp.readline()
-  if not line:
-    raise COMalformedOutput, "Missing third line from co output stream"
-  match = _re_co_revision.match(line)
-  if match:
-    return filename, match.group(1)
   raise COMalformedOutput, "Unable to find revision in co output stream"
-
 
 # if your rlog doesn't use 77 '=' characters, then this must change
 LOG_END_MARKER = '=' * 77 + '\n'
