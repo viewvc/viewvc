@@ -1139,6 +1139,7 @@ def common_template_data(request):
     'docroot' : cfg.options.docroot is None                        \
                 and request.script_name + '/' + docroot_magic_path \
                 or cfg.options.docroot,
+    'username' : request.username,
     'where' : request.server.escape(request.where),
     'roottype' : request.roottype,
     'rootname' : request.rootname \
