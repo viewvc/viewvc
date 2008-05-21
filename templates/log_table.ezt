@@ -110,7 +110,7 @@
       [# Tags ]
       [if-any entries.tags]
         <form method=get action="[pathrev_action]" >
-          [pathrev_hidden_values]
+          [for pathrev_hidden_values]<input type="hidden" name="[pathrev_hidden_values.name]" value="[pathrev_hidden_values.value]"/>[end]
           <select name="pathrev" onChange="submit()">
           <option value="" [is pathrev ""]selected[end]>Show all tags</option>
           [for entries.tags]

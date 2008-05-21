@@ -4,7 +4,7 @@
   <div>
     <hr />
     <a name="logsort"></a>
-      [logsort_hidden_values]
+      [for logsort_hidden_values]<input type="hidden" name="[logsort_hidden_values.name]" value="[logsort_hidden_values.value]"/>[end]
       Sort log by:
       <select name="logsort" onchange="submit()">
         <option value="cvs" [is logsort "cvs"]selected="selected"[end]>Not sorted</option>
