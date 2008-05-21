@@ -15,7 +15,7 @@
   <tr>
   <td>&nbsp;</td>
   <td>
-  [diff_select_hidden_values]
+  [for diff_select_hidden_values]<input type="hidden" name="[diff_select_hidden_values.name]" value="[diff_select_hidden_values.value]"/>[end]
   Diffs between
 [if-any tags]
   <select name="r1">

@@ -303,6 +303,16 @@ allow_tar = 1
   <td>added</td>
 </tr>
 <tr class="removed">
+  <td class="varname">change_root_action</td>
+  <td><em>all templates</em></td>
+  <td>removed</td>
+</tr>
+<tr class="removed">
+  <td class="varname">change_root_hidden_values</td>
+  <td><em>all templates</em></td>
+  <td>removed</td>
+</tr>
+<tr class="removed">
   <td class="varname">roots</td>
   <td><em>all templates</em> except roots.ezt</td>
   <td>removed</td>
@@ -410,24 +420,14 @@ allow_tar = 1
   <td>added</td>
 </tr>
 <tr class="changed">
+  <td class="varname">diff_format_hidden_values</td>
+  <td>diff.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
   <td class="varname">diff_type</td>
   <td>diff.ezt</td>
   <td>new value: <code>f</code></td>
-</tr>
-<tr class="changed">
-  <td class="varname">entries.log</td>
-  <td>directory.ezt, dir_alternate.ezt</td>
-  <td>now always contains untruncated log message</td>
-</tr>
-<tr class="added">
-  <td class="varname">entries.short_log</td>
-  <td>directory.ezt, dir_alternate.ezt</td>
-  <td>added</td>
-</tr>
-<tr class="added">
-  <td class="varname">rss_link_href</td>
-  <td>query.ezt, rss.ezt</td>
-  <td>added</td>
 </tr>
 <tr class="renamed">
   <td class="varname">date_left</td>
@@ -539,30 +539,95 @@ allow_tar = 1
   <td>diff.ezt</td>
   <td>added</td>
 </tr>
+<tr class="changed">
+  <td class="varname">dir_paging_hidden_values</td>
+  <td>directory.ezt, , dir_alternate.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">entries.log</td>
+  <td>directory.ezt, dir_alternate.ezt</td>
+  <td>now always contains untruncated log message</td>
+</tr>
+<tr class="added">
+  <td class="varname">entries.short_log</td>
+  <td>directory.ezt, dir_alternate.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="changed">
+  <td class="varname">search_re_hidden_values</td>
+  <td>directory.ezt, dir_alternate.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">search_tag_hidden_values</td>
+  <td>directory.ezt, dir_alternate.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">pathrev_clear_hidden_values</td>
+  <td>log.ezt, log_table.ezt, directory.ezt, dir_alternate.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">pathrev_hidden_values</td>
+  <td>log.ezt, log_table.ezt, directory.ezt, dir_alternate.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
 <tr class="renamed">
   <td class="varname">annotate_href</td>
-  <td>log.ezt</td>
+  <td>log.ezt, log_table.ezt</td>
   <td>renamed to <code>head_annotate_href</code></td>
+</tr>
+<tr class="changed">
+  <td class="varname">diff_form_hidden_values</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
 </tr>
 <tr class="renamed">
   <td class="varname">download_href</td>
-  <td>log.ezt</td>
+  <td>log.ezt, log_table.ezt</td>
   <td>renamed to <code>head_download_href</code></td>
 </tr>
 <tr class="renamed">
   <td class="varname">download_text_href</td>
-  <td>log.ezt</td>
+  <td>log.ezt, log_table.ezt</td>
   <td>renamed to <code>head_download_text_href</code></td>
+</tr>
+<tr class="changed">
+  <td class="varname">log_paging_hidden_values</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">logsort_hidden_values</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
 </tr>
 <tr class="renamed">
   <td class="varname">prefer_markup</td>
-  <td>log.ezt</td>
+  <td>log.ezt, log_table.ezt</td>
   <td>renamed to <code>head_prefer_markup</code></td>
 </tr>
 <tr class="renamed">
   <td class="varname">view_href</td>
-  <td>log.ezt</td>
+  <td>log.ezt, log_table.ezt</td>
   <td>renamed to <code>head_view_href</code></td>
+</tr>
+<tr class="added">
+  <td class="varname">rss_link_href</td>
+  <td>query.ezt, rss.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="changed">
+  <td class="varname">query_hidden_values</td>
+  <td>query_form.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">jump_rev_hidden_values</td>
+  <td>revision.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
 </tr>
 </tbody>
 </table>
