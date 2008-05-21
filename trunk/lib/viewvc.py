@@ -412,13 +412,16 @@ class Request:
 
   def get_form(self, **args):
     """Constructs a link to another ViewVC page just like the get_link
-    function except that it returns a base URL suitable for use as an HTML
-    form action and a string of HTML input type=hidden tags with the link
-    parameters."""
+    function except that it returns a base URL suitable for use as an
+    HTML form action, and an iterable object with .name and .value
+    attributes representing stuff that should be in <input
+    type=hidden> tags with the link parameters."""
 
     url, params = apply(self.get_link, (), args)
     action = self.server.escape(urllib.quote(url, _URL_SAFE_CHARS))
-    hidden_values = prepare_hidden_values(params)
+    hidden_values = []
+    for name, value in params.items():
+      hidden_values.append(_item(name=name, value=value))
     return action, hidden_values
 
   def get_link(self, view_func=None, where=None, pathtype=None, params=None):
@@ -1181,10 +1184,6 @@ def common_template_data(request):
   elif request.pathtype == vclib.FILE:
     data['pathtype'] = 'file'
 
-  data['change_root_action'], data['change_root_hidden_values'] = \
-    request.get_form(view_func=view_directory, where='', pathtype=vclib.DIR,
-                     params={'root': None})
-
   if request.path_parts:
     dir = _path_join(request.path_parts[:-1])
     data['up_href'] = request.get_url(view_func=view_directory,
@@ -1634,15 +1633,6 @@ def revcmp(rev1, rev2):
   rev1 = map(int, string.split(rev1, '.'))
   rev2 = map(int, string.split(rev2, '.'))
   return cmp(rev1, rev2)
-
-def prepare_hidden_values(params):
-  """returns variables from params encoded as a invisible HTML snippet.
-  """
-  hidden_values = []
-  for name, value in params.items():
-    hidden_values.append('<input type="hidden" name="%s" value="%s" />' %
-                         (name, value))
-  return string.join(hidden_values, '')
 
 def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
   # convert sortdir into a sign bit

@@ -12,7 +12,7 @@ Browse Directory</a></p>
 <form action="[query_action]" method="get">
 
 <div class="vc_query_form">
-  [query_hidden_values]
+  [for query_hidden_values]<input type="hidden" name="[query_hidden_values.name]" value="[query_hidden_values.value]"/>[end]
 <table cellspacing="0" cellpadding="5" class="auto">
   [is roottype "cvs"]
   [# For subversion, the branch field is not used ]

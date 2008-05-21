@@ -4,7 +4,7 @@
     [else]
       <hr />
       <form method="get" action="[log_paging_action]">
-        [log_paging_hidden_values]
+        [for log_paging_hidden_values]<input type="hidden" name="[log_paging_hidden_values.name]" value="[log_paging_hidden_values.value]"/>[end]
         <input type="submit" value="Go to:">
         <select name="log_pagestart"  onchange="submit()">
           [for picklist]
