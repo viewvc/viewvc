@@ -49,7 +49,7 @@
 <tr>
   <td>Jump to page:</td>
   <td><form method="get" action="[log_paging_action]">
-        [log_paging_hidden_values]
+        [for log_paging_hidden_values]<input type="hidden" name="[log_paging_hidden_values.name]" value="[log_paging_hidden_values.value]"/>[end]
         <select name="log_pagestart"  onchange="submit()">
           [for picklist]
            [if-any picklist.more]
@@ -70,7 +70,7 @@
   <td><form method="get" action="[logsort_action]">
       <div>
         <a name="logsort"></a>
-          [logsort_hidden_values]
+          [for logsort_hidden_values]<input type="hidden" name="[logsort_hidden_values.name]" value="[logsort_hidden_values.value]"/>[end]
           <select name="logsort" onchange="submit()">
             <option value="cvs" [is logsort "cvs"]selected="selected"[end]>Not sorted</option>
             <option value="date" [is logsort "date"]selected="selected"[end]>Commit date</option>
