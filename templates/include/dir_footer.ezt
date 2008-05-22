@@ -1,34 +1,24 @@
 [if-any search_re_form]
-  <hr />
-  [# this table holds the selectors on the left, and reset on the right ]
-  <table class="auto">
-        <tr>
-          <td>Show files containing the regular expression:</td>
-          <td>
-            <form method="get" action="[search_re_action]">
-              <div>
-                [for search_re_hidden_values]<input type="hidden" name="[search_re_hidden_values.name]" value="[search_re_hidden_values.value]"/>[end]
-                <input type="text" name="search" value="[search_re]" />
-                <input type="submit" value="Show" />
-              </div>
-            </form>
-          </td>
-        </tr>
-      [if-any search_re]
-        <tr>
-          <td>&nbsp;</td>
-          <td>
-            <form method="get" action="[search_tag_action]">
-              <div>
-                [for search_tag_hidden_values]<input type="hidden" name="[search_tag_hidden_values.name]" value="[search_tag_hidden_values.value]"/>[end]
-                <input type="submit" value="Show all files" />
-              </div>
-            </form>
-          </td>
-        </tr>
-    [end]
-  </table>
+<hr />
+<div>
+Show files containing the regular expression:
+<form method="get" action="[search_re_action]" style="display: inline;">
+  <div style="display: inline;">
+    [for search_re_hidden_values]<input type="hidden" name="[search_re_hidden_values.name]" value="[search_re_hidden_values.value]"/>[end]
+    <input type="text" name="search" value="[search_re]" />
+    <input type="submit" value="Show" />
+  </div>
+</form>
+[if-any search_re]
+<form method="get" action="[search_re_action]" style="display: inline;">
+  <div style="display: inline;">
+    [for search_re_hidden_values]<input type="hidden" name="[search_re_hidden_values.name]" value="[search_re_hidden_values.value]"/>[end]
+    <input type="submit" value="Show all files" />
+  </div>
+</form>
 [end]
+[end]
+</div>
 
 [# if you want to disable tarball generation remove the following: ]
 [if-any tarball_href]
