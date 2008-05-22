@@ -1230,10 +1230,24 @@ def common_template_data(request):
     data['queryform_href'] = request.get_url(view_func=view_queryform,
                                              params=params,
                                              escape=1)
-    data['rss_href'] = request.get_url(view_func=view_query,
-                                       params={'date': 'month',
-                                               'format': 'rss'},
-                                       escape=1)
+
+  if request.cfg.cvsdb.enabled and request.roottype in ['cvs', 'svn']:
+    if request.pathtype == vclib.DIR:
+      data['rss_href'] = request.get_url(view_func=view_query,
+                                         params={'date': 'month',
+                                                 'format': 'rss'},
+                                         escape=1)
+    elif request.pathtype == vclib.FILE:
+      parts = _path_parts(request.where)
+      where = _path_join(parts[:-1])
+      data['rss_href'] = request.get_url(view_func=view_query,
+                                         where=where,
+                                         pathtype=request.pathtype,
+                                         params={'date': 'month',
+                                                 'format': 'rss',
+                                                 'file': parts[-1],
+                                                 'file_match': 'exact'},
+                                         escape=1)
   return data
 
 def retry_read(src, reqlen=CHUNK_SIZE):

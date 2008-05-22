@@ -28,6 +28,7 @@ Version 1.1.0 (released ??-???-????)
   * pagination improvements
   * add gzip output encoding support for template-driven pages
   * fix cache control bugs (issue #259)
+  * add RSS feed URL generation for file history
 
 Version 1.0.5 (released 28-Feb-2008)
 
