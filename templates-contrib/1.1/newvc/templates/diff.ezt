@@ -1,0 +1,128 @@
+[# Setup page definitions]
+  [define page_title]Diff of:[end]
+  [define help_href][docroot]/help_rootview.html[end]
+[# end]
+[include "include/header.ezt" "diff"]
+
+<form method="get" action="[diff_format_action]" style="display: inline;">
+  <div>
+    [for diff_format_hidden_values]<input type="hidden" name="[diff_format_hidden_values.name]" value="[diff_format_hidden_values.value]"/>[end]
+    <select name="diff_format" onchange="submit()">
+      <option value="h" [is diff_format "h"]selected="selected"[end]>Colored Diff</option>
+      <option value="l" [is diff_format "l"]selected="selected"[end]>Long Colored Diff</option>
+      <option value="f" [is diff_format "f"]selected="selected"[end]>Full Colored Diff</option>
+      <option value="u" [is diff_format "u"]selected="selected"[end]>Unidiff</option>
+      <option value="c" [is diff_format "c"]selected="selected"[end]>Context Diff</option>
+      <option value="s" [is diff_format "s"]selected="selected"[end]>Side by Side</option>
+    </select>
+    <input type="submit" value="Show" />
+    (<a href="[patch_href]">Generate patch</a>)
+  </div>
+</form>
+
+<div id="vc_main_body">
+<!-- ************************************************************** -->
+
+[if-any raw_diff]
+<pre>[raw_diff]</pre>
+[else]
+
+[define change_right][end]
+[define last_change_type][end]
+
+[# these should live in stylesheets]
+
+<table cellpadding="0" cellspacing="0" style="width: 100%;">
+[for changes]
+ [is changes.type "change"][else]
+  [if-any change_right][change_right][define change_right][end][end]
+ [end]
+ [is changes.type "header"]
+  <tr>
+    <th class="vc_header" style="width:6%;"><strong>#</strong></th>
+    <th colspan="2" class="vc_header">
+      <strong>Line [changes.line_info_left]</strong> |
+      <strong>Line [changes.line_info_right]</strong> 
+    </th>
+  </tr>
+ [else]
+ [is changes.type "add"]
+  <tr>
+    <td id="l[changes.line_number]">[if-any right.annotate_href]<a href="[right.annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
+    <td class="vc_diff_plusminus"><strong style="color: green;">+</strong></td>
+    <td class="vc_diff_add">[changes.right]</td>
+  </tr>
+ [else]
+ [is changes.type "remove"]
+  <tr>
+    <td style="text-decoration: line-through">[changes.line_number]</td>
+    <td class="vc_diff_plusminus"><strong style="color: red;">&ndash;</strong></td>
+    <td class="vc_diff_remove">[changes.left]</td>
+  </tr>
+ [else]
+ [is changes.type "change"]
+  [if-any changes.have_left]
+  <tr>
+    <td style="text-decoration: line-through">[changes.line_number]</td>
+    <td class="vc_diff_plusminus"><strong style="color: yellow;">&lt;</strong></td>
+    <td class="vc_diff_changes1">[changes.left]</td>
+  </tr>
+  [end]
+  [define change_right][change_right]
+  [if-any changes.have_right]
+  <tr>
+    <td id="l[changes.line_number]">[if-any right.annotate_href]<a href="[right.annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
+    <td class="vc_diff_plusminus"><strong style="color: yellow;">&gt;</strong></td>
+    <td class="vc_diff_changes2">[changes.right]</td>
+  </tr>[end]
+  [end]
+ [else]
+ [is changes.type "no-changes"]
+  <tr><td colspan="3" style="vc_diff_nochange"><strong>- No changes -</strong></td></tr>
+ [else]
+ [is changes.type "binary-diff"]
+  <tr><td colspan="3" class="vc_diff_binary"><strong>- Binary file revisions differ -</strong></td></tr>
+ [else]
+ [is changes.type "error"]
+  <tr><td colspan="3" class="vc_diff_error"><strong>- ViewVC depends on rcsdiff and GNU diff
+      to create this page.  ViewVC cannot find GNU diff. Even if you
+      have GNU diff installed, the rcsdiff program must be configured
+      and compiled with the GNU diff location.  -</strong></td></tr>
+ [else][# a line of context]
+  <tr>
+    <td id="l[changes.line_number]">[if-any right.annotate_href]<a href="[right.annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
+    <td class="vc_diff_plusminus">&nbsp;</td>
+    <td style="font-family: monospace; white-space: pre;">[changes.right]</td>
+  </tr>
+ [end][end][end][end][end][end][end]
+ [define last_change_type][changes.type][end]
+[end]
+[if-any change_right][change_right][end]
+</table>
+
+<h3>Diff Legend</h3>
+<table class="auto" cellspacing="0">
+<tr>
+ <td class="vc_diff_plusminus"><strong style="color: red;">&ndash;</strong></td>
+ <td class="vc_diff_remove">Removed lines</td>
+</tr>
+<tr>
+ <td class="vc_diff_plusminus"><strong style="color: green;">+</strong></td>
+ <td class="vc_diff_add">Added lines</td>
+</tr>
+<tr>
+ <td class="vc_diff_plusminus"><strong style="color: yellow;">&lt;</strong></td>
+ <td class="vc_diff_changes1">Changed lines</td>
+</tr>
+<tr>
+ <td class="vc_diff_plusminus"><strong style="color: yellow;">&gt;</strong></td>
+ <td class="vc_diff_changes2">Changed lines</td>
+</tr>
+</table>
+
+[end]
+
+<!-- ************************************************************** -->
+</div>
+
+[include "include/footer.ezt"]

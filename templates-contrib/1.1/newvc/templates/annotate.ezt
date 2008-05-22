@@ -1,0 +1,46 @@
+[# setup page definitions]
+  [define page_title]Annotation of:[end]
+  [define help_href][docroot]/help_rootview.html[end]
+[# end]
+[include "include/header.ezt" "annotate"]
+[include "include/fileview.ezt"]
+
+<div id="vc_main_body">
+<!-- ************************************************************** -->
+
+[define last_rev]0[end]
+[define rowclass]vc_row_odd[end]
+
+<table class="fixed" cellspacing="0" cellpadding="0">
+<tr>
+<th class="vc_header" style="text-align: center; width: 5em;">Line</th>
+<th class="vc_header" style="text-align: center; width: 8em;">User</th>
+<th class="vc_header" style="text-align: center; width: 5em;">Rev</th>
+<th class="vc_header" style="text-align: left;">File contents</th>
+</tr>
+[for lines]
+  [is lines.rev last_rev]
+  [else]
+    [is rowclass "vc_row_even"]
+      [define rowclass]vc_row_odd[end]
+    [else]
+      [define rowclass]vc_row_even[end]
+    [end]
+  [end]
+
+  <tr class="[rowclass]">
+    <td id="l[lines.line_number]" class="vc_blame_metadata">[lines.line_number]</td>
+    <td class="vc_blame_metadata">[is lines.rev last_rev]&nbsp;[else][lines.author][end]</td>
+    <td class="vc_blame_metadata">[is lines.rev last_rev]&nbsp;[else][if-any lines.diff_url]<a href="[lines.diff_url]">[end][lines.rev][if-any lines.diff_url]</a>[end][end]</td>
+    <td class="vc_blame_textdata" style="background: [is rowclass "vc_row_even"]white[else]rgb(95%,95%,95%)[end];">[lines.text]</td>
+  </tr>
+  [define last_rev][lines.rev][end]
+[end]
+</table>
+
+[include "include/props.ezt"]
+
+<!-- ************************************************************** -->
+</div>
+
+[include "include/footer.ezt"]
