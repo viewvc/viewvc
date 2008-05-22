@@ -1969,8 +1969,7 @@ def view_directory(request):
   pathrev_form(request, data)
 
   ### one day, if EZT has "or" capability, we can lose this
-  data['search_re_form'] = ezt.boolean(cfg.options.use_re_search
-                                       and (num_displayed > 0 or search_re))
+  data['search_re_form'] = ezt.boolean(cfg.options.use_re_search)
   if data['search_re_form']:
     data['search_re_action'], data['search_re_hidden_values'] = \
       request.get_form(params={'search': None})
