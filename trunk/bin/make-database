@@ -20,11 +20,12 @@ import os, sys, string
 import popen2
 
 INTRO_TEXT = """\
-This script creates the database and tables in MySQL used by the ViewVC
-checkin database.  You will be prompted for: database user, database user
-password, and database name.  This script will use mysql to create the
-database for you.  You will then need to set the appropriate parameters
-in your viewvc.conf file under the [cvsdb] section.
+This script creates the database and tables in MySQL used by the
+ViewVC checkin database.  You will be prompted for:  database server
+hostname, database user, database user password, and database name.
+This script will use the 'mysql' program to create the database for
+you.  You will then need to set the appropriate parameters in the
+[cvsdb] section of your viewvc.conf file.
 """
 
 DATABASE_SCRIPT="""\
@@ -121,24 +122,21 @@ CREATE TABLE tags (
 """
 
 if __name__ == "__main__":
+  try:
     print INTRO_TEXT
-    
+    host = raw_input("MySQL Hostname [default: localhost]: ") or "localhost"
     user = raw_input("MySQL User: ")
     passwd = raw_input("MySQL Password: ")
-    dbase = raw_input("ViewVC Database Name [default: ViewVC]: ")
-    if not dbase:
-        dbase = "ViewVC"
-
+    dbase = raw_input("ViewVC Database Name [default: ViewVC]: ") or "ViewVC"
     dscript = string.replace(DATABASE_SCRIPT, "<dbname>", dbase)
-
     if sys.platform == "win32":
       # popen2.Popen3 is not provided on windows
-      cmd = "mysql --user=%s --password=%s" % (user, passwd)
+      cmd = "mysql --user=%s --password=%s --host=%s " % (user, passwd, host)
       mysql = os.popen(cmd, "w")
       mysql.write(dscript)
       status = mysql.close()
     else:
-      cmd = "{ mysql --user=%s --password=%s ; } 2>&1" % (user, passwd)
+      cmd = "{ mysql --user=%s --password=%s --host=%s ; } 2>&1" % (user, passwd, host)
       pipes = popen2.Popen3(cmd)
       pipes.tochild.write(dscript)
       pipes.tochild.close()
@@ -150,5 +148,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     print "Database created successfully."
-    sys.exit(0)
+  except KeyboardInterrupt:
+    pass
+  sys.exit(0)
     
