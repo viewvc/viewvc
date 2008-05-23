@@ -1,6 +1,6 @@
 # -*-python-*-
 #
-# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2008 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -54,6 +54,7 @@ class BaseCVSRepository(vclib.Repository):
   
   def itemtype(self, path_parts, rev):
     basepath = self._getpath(path_parts)
+    kind = None
     if os.path.isdir(basepath):
       kind = vclib.DIR
     elif os.path.isfile(basepath + ',v'):
@@ -68,6 +69,10 @@ class BaseCVSRepository(vclib.Repository):
       raise vclib.ItemNotFound(path_parts)
     return kind
 
+  def itemprops(self, path_parts, rev):
+    self.itemtype(path_parts, rev)  # does authz check
+    return {}  # CVS doesn't support properties
+  
   def listdir(self, path_parts, rev, options):
     if not vclib.check_path_access(self, path_parts, vclib.DIR, rev):
       raise vclib.ItemNotFound(path_parts)
@@ -241,7 +246,7 @@ class BinCVSRepository(BaseCVSRepository):
       else:
         tags.append(name)
 
-  def itemlog(self, path_parts, rev, options):
+  def itemlog(self, path_parts, rev, sortby, first, limit, options):
     """see vclib.Repository.itemlog docstring
 
     rev parameter can be a revision number, a branch number, a tag name,
@@ -284,6 +289,15 @@ class BinCVSRepository(BaseCVSRepository):
     filtered_revs = _file_log(revs, tags, lockinfo, default_branch, rev)
 
     options['cvs_tags'] = tags
+    if sortby == vclib.SORTBY_DATE:
+      filtered_revs.sort(_logsort_date_cmp)
+    elif sortby == vclib.SORTBY_REV:
+      filtered_revs.sort(_logsort_rev_cmp)
+
+    if len(filtered_revs) < first:
+      return []
+    if limit:
+      return filtered_revs[first:first+limit]
     return filtered_revs
 
   def rcs_popen(self, rcs_cmd, rcs_args, mode, capture_err=1):
@@ -358,6 +372,14 @@ class Tag:
 
 # ======================================================================
 # Functions for dealing with Revision and Tag objects
+
+def _logsort_date_cmp(rev1, rev2):
+  # sort on date; secondary on revision number
+  return -cmp(rev1.date, rev2.date) or -cmp(rev1.number, rev2.number)
+
+def _logsort_rev_cmp(rev1, rev2):
+  # sort highest revision first
+  return -cmp(rev1.number, rev2.number)
 
 def _match_revs_tags(revlist, taglist):
   """Match up a list of Revision objects with a list of Tag objects
@@ -586,30 +608,24 @@ def _parse_co_header(fp):
     raise COMalformedOutput, "Unable to find filename in co output stream"
   filename = match.group(1)
 
-  # look for a revision in the second line.
-  line = fp.readline()
-  if not line:
-    raise COMalformedOutput, "Missing second line from co output stream"
-  match = _re_co_revision.match(line)
-  if match:
-    return filename, match.group(1)
-  elif _re_co_missing_rev.match(line) or _re_co_side_branches.match(line):
-    raise COMissingRevision, "Got missing revision error from co output stream"
-  elif _re_co_warning.match(line):
-    pass
-  else:
-    raise COMalformedOutput, "Unable to find revision in co output stream"
+  # look through subsequent lines for a revision.  we might encounter
+  # some ignorable or problematic lines along the way.
+  while 1:
+    line = fp.readline()
+    if not line:
+      break
+    # look for a revision.
+    match = _re_co_revision.match(line)
+    if match:
+      return filename, match.group(1)
+    elif _re_co_missing_rev.match(line) or _re_co_side_branches.match(line):
+      raise COMissingRevision, "Got missing revision error from co output stream"
+    elif _re_co_warning.match(line):
+      pass
+    else:
+      break
     
-  # if we get here, the second line wasn't a revision, but it was a
-  # warning we can ignore.  look for a revision in the third line.
-  line = fp.readline()
-  if not line:
-    raise COMalformedOutput, "Missing third line from co output stream"
-  match = _re_co_revision.match(line)
-  if match:
-    return filename, match.group(1)
   raise COMalformedOutput, "Unable to find revision in co output stream"
-
 
 # if your rlog doesn't use 77 '=' characters, then this must change
 LOG_END_MARKER = '=' * 77 + '\n'
@@ -932,7 +948,8 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
         chunk.append(entry)
 
       # set properties even if we don't retrieve logs
-      entry.rev = entry.date = entry.author = entry.dead = entry.log = None
+      entry.rev = entry.date = entry.author = None
+      entry.dead = entry.log = entry.lockinfo = None
 
       entries_idx = entries_idx + 1
 

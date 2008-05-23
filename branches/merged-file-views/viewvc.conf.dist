@@ -273,11 +273,6 @@ php = php
 cvsgraph =
 # cvsgraph = /usr/local/bin/cvsgraph
 
-# Gzip, a file compression utility (used by the "tarball" view).  You can
-# leave this unset if your version of Python provides the 'gzip' module.
-gzip =
-# gzip = /usr/bin/gzip
-
 # Sed, stream editor
 sed =
 # sed = /usr/bin/sed
@@ -321,11 +316,18 @@ allowed_views = markup, annotate
 #   forbidden   - simple path glob matches against top-level root directories
 #   forbiddenre - root and path matches against regular expressions
 #
+# NOTE: Only one authorizer may be in use for a given ViewVC request.
+# It doesn't matter if you configure the parameters of multiple
+# authorizer plugins -- only the authorizer whose name is configured
+# here (or effectively configured here via vhost configuration) will
+# be activated.
 authorizer = forbidden
 
 # mangle_email_addresses: Mangle email addresses in marked-up output.
-#   0      Markup un-mangled email addresses as hyperlinks
-#   1      Mangle (and don't markup as hyperlinks) email addresses
+# There are various levels of mangling available:
+#   0 - No mangling; markup un-mangled email addresses as hyperlinks
+#   1 - Obfuscation (using entity encoding); no hyperlinking
+#   2 - Data-dropping address truncation; no hyperlinking
 # Note: this will not effect the display of versioned file contents, only
 # addresses that appear in version control metadata (e.g. log messages).
 mangle_email_addresses = 0
@@ -411,7 +413,7 @@ hr_funout = 0
 # ignore whitespaces for human readable diffs
 # (indendation and stuff ..)
 # ( '-w' option to diff)
-hr_ignore_white = 1
+hr_ignore_white = 0
 
 # ignore diffs which are caused by
 # keyword-substitution like $Id - Stuff
@@ -424,9 +426,8 @@ hr_ignore_keyword_subst = 1
 hr_intraline = 0
 
 # allow compression with gzip of output if the Browser accepts it
-# (HTTP_ACCEPT_ENCODING=gzip)
-# [make sure to have gzip in the path]
-allow_compress = 1
+# (HTTP_ACCEPT_ENCODING contains "gzip")
+#allow_compress = 1
 
 # The directory which contains the EZT templates used by ViewVC to
 # customize the display of the various output views.  ViewVC looks in
@@ -485,18 +486,22 @@ short_log_len = 80
 # PyFontify) to colorize Python files?
 use_py2html = 0
 
+# should we use Pygments for syntax coloring?
+use_pygments = 0
+
 # should we use 'enscript' for syntax coloring?
+# NOTE: ignored if use_pygments is set
 use_enscript = 0
 
 # should we use 'highlight' for syntax coloring?
-# NOTE: use_enscript has to be 0 or enscript will be used instead
+# NOTE: ignored if use_pygments or use_enscript is set
 use_highlight = 0
 
 # convert tabs to ## spaces (use 0 for no conversion)
 highlight_convert_tabs = 2
 
 # should we use 'source-highlight' for syntax coloring?
-# NOTE: use_enscript and use_highlight have to be 0
+# NOTE: ignored if use_pygments, use_enscript or use_highlight is set
 use_source_highlight = 0
 
 # use php to colorize .php and .inc files?
@@ -734,15 +739,16 @@ forbidden =
 #---------------------------------------------------------------------------
 [authz-forbiddenre]
 
-# The "forbiddenre" authorizer forbids access to repository paths by
-# comparing a list of regular expressions (separated by commas)
-# against paths consisting of the repository (or root) name plus the
-# path of the versioned file or directory to be tested.  For example,
-# to see if the user is authorized to see the path
-# "/trunk/www/index.html" in the repository whose root name is
+# The "forbiddenre" authorizer forbids access to repositories and
+# repository paths by comparing a list of regular expressions
+# (separated by commas) against paths consisting of the repository (or
+# root) name plus the path of the versioned file or directory to be
+# tested.  For example, to see if the user is authorized to see the
+# path "/trunk/www/index.html" in the repository whose root name is
 # "svnrepos", this authorizer will check the path
 # "svnrepos/trunk/www/index.html" against the list of forbidden
-# regular expressions.
+# regular expressions.  Directory paths will be terminated by a forward
+# slash.
 #
 # Like the "forbidden" authorizer...
 #
@@ -753,20 +759,25 @@ forbidden =
 #   *) Tests are performed in sequence. The first match will terminate the
 #      testing. This allows for more complex allow/deny patterns.
 #
-# NOTE: Again, this is for the hiding of modules within repositories, *not* 
-# for the hiding of repositories (roots) themselves.
+# Unlike the "forbidden" authorizer, you can can use this to hide roots, too.
 #
 # Some examples:
 #
 #    Disallow files named "PRIVATE", but allow all others:
-#       forbidden = /PRIVATE$
+#       forbiddenre = /PRIVATE$
+#
+#    Disallow the "hidden" repository, allowing all others:
+#       forbiddenre = ^hidden(/|$)
 #
 #    Allow only the "example1" and "example2" roots and the paths inside them,
 #    disallowing all others (which can be done in multiple ways):
-#       forbidden = !^example1(/|$), !^example2(/|$)/
-#       forbidden = !^example[12](/|$)
+#       forbiddenre = !^example1(/|$), !^example2(/|$)/
+#       forbiddenre = !^example[12](/|$)
 #
-forbidden = 
+#    Only allow visibility of HTML files and the directories that hold them:
+#       forbiddenre = !^([^/]+|.*(/|\.html))$
+#
+forbiddenre = 
 
 #---------------------------------------------------------------------------
 [authz-svnauthz]

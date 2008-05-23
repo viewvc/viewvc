@@ -1,6 +1,6 @@
 # -*-python-*-
 #
-# Copyright (C) 1999-2007 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2008 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -39,8 +39,7 @@ import fnmatch
 
 class Config:
   _sections = ('general', 'utilities', 'options', 'cvsdb', 'templates')
-  _force_multi_value = ('cvs_roots', 'forbidden',
-                        'svn_roots', 'languages', 'kv_files',
+  _force_multi_value = ('cvs_roots', 'svn_roots', 'languages', 'kv_files',
                         'root_parents', 'allowed_views')
 
   def __init__(self):
@@ -163,6 +162,16 @@ class Config:
       return
     self._process_root_options(self.parser, rootname)
 
+  def _get_parser_items(self, parser, section):
+    """Basically implement ConfigParser.items() for pre-Python-2.3 versions."""
+    try:
+      return self.parser.items(section)
+    except AttributeError:
+      d = {}
+      for option in parser.options(section):
+        d[option] = parser.get(section, option)
+      return d.items()
+    
   def get_authorizer_params(self, authorizer, rootname=None):
     if not self.conf_path:
       return {}
@@ -171,13 +180,13 @@ class Config:
     authz_section = 'authz-%s' % (authorizer)
     for section in self.parser.sections():
       if section == authz_section:
-        for key, value in self.parser.items(section):
+        for key, value in self._get_parser_items(self.parser, section):
           params[key] = value
     if rootname:
       root_authz_section = 'root-%s/authz-%s' % (rootname, authorizer)
       for section in self.parser.sections():
         if section == root_authz_section:
-          for key, value in self.parser.items(section):
+          for key, value in self._get_parser_items(self.parser, section):
             params[key] = value
     return params
   
@@ -206,7 +215,6 @@ class Config:
     self.utilities.py2html_dir = '.'
     self.utilities.php = 'php'
     self.utilities.cvsgraph = ''
-    self.utilities.gzip = ''
     self.utilities.sed = ''
 
     self.options.root_as_url_component = 1
@@ -226,10 +234,10 @@ class Config:
     self.options.hide_cvsroot = 1
     self.options.hr_breakable = 1
     self.options.hr_funout = 1
-    self.options.hr_ignore_white = 1
+    self.options.hr_ignore_white = 0
     self.options.hr_ignore_keyword_subst = 1
     self.options.hr_intraline = 0
-    self.options.allow_compress = 1
+    self.options.allow_compress = 0
     self.options.template_dir = "templates"
     self.options.docroot = None
     self.options.show_subdir_lastmod = 0
@@ -238,6 +246,7 @@ class Config:
     self.options.cross_copies = 0
     self.options.use_localtime = 0
     self.options.short_log_len = 80
+    self.options.use_pygments = 0
     self.options.use_py2html = 0
     self.options.use_enscript = 0
     self.options.use_highlight = 0

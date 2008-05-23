@@ -162,11 +162,26 @@ td {
    specific to that authz module.</p>
 
 <p>Migrating your existing configuration of forbidden modules should
-   be fairly straightforward.  Simply ensure that that the new
-   <code>authorizer</code> option is set to "forbidden" (which is the
-   default), and in the new "authz-forbidden" section of viewvc.conf,
-   set the <code>forbidden</code> option to the same thing it was set
-   to when it lived in the "options" section.</p>
+   be fairly straightforward:</p>
+
+<ol>
+
+   <li>In the new "authz-forbidden" section of viewvc.conf, set the
+       <code>forbidden</code> option to the same value as the
+       <code>forbidden</code> option in your ViewVC 1.0.x
+       configuration's "general" section.</li>
+
+   <li>In the new "authz-forbiddenre" section of viewvc.conf, set the
+       <code>forbiddenre</code> option to the same value as the
+       <code>forbiddenre</code> option in your ViewVC 1.0.x
+       configuration's "general" section.</li>
+
+   <li>Finally, ensure that that the new <code>authorizer</code>
+       option is set to either "forbidden" (which is the default) or
+       "forbiddenre", depending on which of those you were using in
+       ViewVC 1.0.x.</li>
+
+</ol>
 
 <p>Of course, you might wish to take advantage of another of the
    provided authz modules.  Or, you might wish to write a brand new
@@ -193,7 +208,6 @@ td {
   <li>utilities/cvsnt</li>
   <li>utilities/diff</li>
   <li>utilities/enscript</li>
-  <li>utilities/gzip</li>
   <li>utilities/highlight</li>
   <li>utilities/php</li>
   <li>utilities/py2html_dir</li>
@@ -288,9 +302,24 @@ allow_tar = 1
   <td><em>all templates</em></td>
   <td>added</td>
 </tr>
+<tr class="removed">
+  <td class="varname">change_root_action</td>
+  <td><em>all templates</em></td>
+  <td>removed</td>
+</tr>
+<tr class="removed">
+  <td class="varname">change_root_hidden_values</td>
+  <td><em>all templates</em></td>
+  <td>removed</td>
+</tr>
+<tr class="removed">
+  <td class="varname">roots</td>
+  <td><em>all templates</em> except roots.ezt</td>
+  <td>removed</td>
+</tr>
 <tr class="added">
   <td class="varname">roots.path</td>
-  <td><em>all templates</em></td>
+  <td>roots.ezt</td>
   <td>added</td>
 </tr>
 <tr class="added">
@@ -303,6 +332,26 @@ allow_tar = 1
   <td class="varname">tarball_href</td>
   <td>annotate.ezt, diff.ezt, graph.ezt, log.ezt, log_table.ezt, markup.ezt, 
       query_form.ezt, query_results.ezt, revision.ezt, roots.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">properties</td>
+  <td>annotate.ezt, markup.ezt, directory.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">properties.name</td>
+  <td>annotate.ezt, markup.ezt, directory.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">properties.undisplayable</td>
+  <td>annotate.ezt, markup.ezt, directory.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">properties.value</td>
+  <td>annotate.ezt, markup.ezt, directory.ezt</td>
   <td>added</td>
 </tr>
 <tr class="added">
@@ -371,24 +420,14 @@ allow_tar = 1
   <td>added</td>
 </tr>
 <tr class="changed">
+  <td class="varname">diff_format_hidden_values</td>
+  <td>diff.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
   <td class="varname">diff_type</td>
   <td>diff.ezt</td>
   <td>new value: <code>f</code></td>
-</tr>
-<tr class="changed">
-  <td class="varname">entries.log</td>
-  <td>directory.ezt, dir_alternate.ezt</td>
-  <td>now always contains untruncated log message</td>
-</tr>
-<tr class="added">
-  <td class="varname">entries.short_log</td>
-  <td>directory.ezt, dir_alternate.ezt</td>
-  <td>added</td>
-</tr>
-<tr class="added">
-  <td class="varname">rss_link_href</td>
-  <td>query.ezt, rss.ezt</td>
-  <td>added</td>
 </tr>
 <tr class="renamed">
   <td class="varname">date_left</td>
@@ -499,6 +538,96 @@ allow_tar = 1
   <td class="varname">right.view_href</td>
   <td>diff.ezt</td>
   <td>added</td>
+</tr>
+<tr class="changed">
+  <td class="varname">dir_paging_hidden_values</td>
+  <td>directory.ezt, , dir_alternate.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">entries.log</td>
+  <td>directory.ezt, dir_alternate.ezt</td>
+  <td>now always contains untruncated log message</td>
+</tr>
+<tr class="added">
+  <td class="varname">entries.short_log</td>
+  <td>directory.ezt, dir_alternate.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="changed">
+  <td class="varname">search_re_hidden_values</td>
+  <td>directory.ezt, dir_alternate.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">search_tag_hidden_values</td>
+  <td>directory.ezt, dir_alternate.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">pathrev_clear_hidden_values</td>
+  <td>log.ezt, log_table.ezt, directory.ezt, dir_alternate.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">pathrev_hidden_values</td>
+  <td>log.ezt, log_table.ezt, directory.ezt, dir_alternate.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">annotate_href</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>head_annotate_href</code></td>
+</tr>
+<tr class="changed">
+  <td class="varname">diff_form_hidden_values</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">download_href</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>head_download_href</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">download_text_href</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>head_download_text_href</code></td>
+</tr>
+<tr class="changed">
+  <td class="varname">log_paging_hidden_values</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">logsort_hidden_values</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">prefer_markup</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>head_prefer_markup</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">view_href</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>head_view_href</code></td>
+</tr>
+<tr class="added">
+  <td class="varname">rss_link_href</td>
+  <td>query.ezt, rss.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="changed">
+  <td class="varname">query_hidden_values</td>
+  <td>query_form.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">jump_rev_hidden_values</td>
+  <td>revision.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
 </tr>
 </tbody>
 </table>

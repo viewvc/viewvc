@@ -59,6 +59,7 @@ td {
     <li><a href="#variables-common">Common Template Variable Set (COMMON)</a></li>
     <li><a href="#variables-pathrev">Path Revision Form Variable Set (PATHREV)</a></li>
     <li><a href="#variables-paging">Paging Form Variable Set (PAGING)</a></li>
+    <li><a href="#variables-properties">Property Listing Variable Set (PROPERTIES)</a></li>
     <li><a href="#variables-annotate">Annotation View (annotate.ezt)</a></li>
     <li><a href="#variables-graph">Revision Graph View (graph.ezt)</a></li>
     <li><a href="#variables-diff">File Difference View (diff.ezt)</a></li>
@@ -111,16 +112,6 @@ td {
       <var>cfg.options.show_logs</var> contains the value of the
       <var>show_logs</var> variable in the <var>options</var> section
       of the configuration file.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">change_root_action</td>
-  <td>String</td>
-  <td>Form action URL for the root selection form.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">change_root_hidden_values</td>
-  <td>String</td>
-  <td>Hidden value HTML markup for the root selection form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">docroot</td>
@@ -228,35 +219,6 @@ td {
   <td>Name of the current repository (root).</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">roots</td>
-  <td>List</td>
-  <td>Set of configured viewable repositories.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">roots.name</td>
-  <td>String</td>
-  <td>Name of a configured repository.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">roots.path</td>
-  <td>String</td>
-  <td>Server-local location of a configured repository.  WARNING:  Revealing
-      information to untrusted guests about the details of your server
-      configuration can have negative security implications.  Use this
-      token at your own risk.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">roots.type</td>
-  <td>String</td>
-  <td>Version control type of a configured repository.  Valid
-      values: <tt>cvs</tt>, <tt>svn</tt>.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">roots.href</td>
-  <td>String</td>
-  <td>URL of root directory view for a configured repository.</td>
-</tr>
-<tr class="varlevel1">
   <td class="varname">roots_href</td>
   <td>String</td>
   <td>URL of ViewVC root listing view.  Valid only when ViewVC is
@@ -290,6 +252,11 @@ td {
   <td class="varname">up_href</td>
   <td>String</td>
   <td>Link to the current object's parent directory view.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">username</td>
+  <td>String</td>
+  <td>Authenticated username of the requesting user.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">view</td>
@@ -354,8 +321,8 @@ td {
 </tr>
 <tr class="varlevel1">
   <td class="varname">pathrev_hidden_values</td>
-  <td>String</td>
-  <td>Hidden value HTML markup for the revision/tag selection form.</td>
+  <td>List</td>
+  <td>Hidden value name/value pairs for the revision/tag selection form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">pathrev_clear_action</td>
@@ -364,8 +331,8 @@ td {
 </tr>
 <tr class="varlevel1">
   <td class="varname">pathrev_clear_hidden_values</td>
-  <td>String</td>
-  <td>Hidden value HTML markup for the path revision clear button.</td>
+  <td>List</td>
+  <td>Hidden value name/value pairs for the path revision clear button.</td>
 </tr>
 </tbody>
 </table>
@@ -388,9 +355,9 @@ td {
   <td>List of pages that make up the current directory or log view.</td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">picklist.start</td>
+  <td class="varname">picklist.count</td>
   <td>String</td>
-  <td>Name of first item on the page</td>
+  <td>Number of the first item on the page (indexed from 0)</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">picklist.end</td>
@@ -398,19 +365,63 @@ td {
   <td>Name of last item on the page</td>
 </tr>
 <tr class="varlevel2">
+  <td class="varname">picklist.more</td>
+  <td>Boolean</td>
+  <td>If set, indicates that this picklist item is a placeholder for
+      an unspecified number of additional pages.  In this case,
+      <code>picklist.end</code> is undefined.</td>
+</tr>
+<tr class="varlevel2">
   <td class="varname">picklist.page</td>
   <td>String</td>
   <td>Page number (indexed from 1)</td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">picklist.count</td>
+  <td class="varname">picklist.start</td>
   <td>String</td>
-  <td>Number of the first item on the page (indexed from 0)</td>
+  <td>Name of first item on the page</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">picklist_len</td>
   <td>String</td>
   <td>Number of pages in <var>picklist</var></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="h3">
+<h3 id="variables-properties">Property Listing Variable Set (PROPERTIES)</h3>
+<table>
+<thead>
+<tr>
+  <th>Variable</th>
+  <th>Type</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="varlevel1">
+  <td class="varname">properties</td>
+  <td>List</td>
+  <td>List of item properties set on the current directory, minus
+      those with undisplayable names.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">properties.name</td>
+  <td>String</td>
+  <td>Name of an item property.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">properties.undisplayable</td>
+  <td>Boolean</td>
+  <td>Indicates whether or not the value of this property is
+      undisplayable (by virtue of not being UTF-8 text).</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">properties.value</td>
+  <td>String</td>
+  <td>Value of this property.</td>
 </tr>
 </tbody>
 </table>
@@ -429,7 +440,8 @@ td {
 <tbody>
 <tr class="include">
   <td colspan="3">Includes all variables from the 
-     <a href="#variables-common">COMMON</a> variable set</td>
+     <a href="#variables-common">COMMON</a> and
+     <a href="#variables-properties">PROPERTIES</a> variable sets</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">ago</td>
@@ -698,8 +710,8 @@ td {
 </tr>
 <tr class="varlevel1">
   <td class="varname">diff_format_hidden_values</td>
-  <td>String</td>
-  <td>Hidden value HTML markup for the diff format selection form.</td>
+  <td>List</td>
+  <td>Hidden value name/value pairs for the diff format selection form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">left</td>
@@ -847,8 +859,9 @@ td {
 <tr class="include">
   <td colspan="3">Includes all variables from the 
      <a href="#variables-common">COMMON</a>,
-     <a href="#variables-pathrev">PATHREV</a>, and 
-     <a href="#variables-paging">PAGING</a> variable sets</td>
+     <a href="#variables-pathrev">PATHREV</a>,
+     <a href="#variables-paging">PAGING</a>, and
+     <a href="#variables-properties">PROPERTIES</a> variable sets</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">attic_showing</td>
@@ -877,8 +890,8 @@ td {
 </tr>
 <tr class="varlevel1">
   <td class="varname">dir_paging_hidden_values</td>
-  <td>String</td>
-  <td>Hidden value HTML markup for the page selection form.</td>
+  <td>List</td>
+  <td>Hidden value name/value pairs for the page selection form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">entries</td>
@@ -1075,8 +1088,8 @@ td {
 </tr>
 <tr class="varlevel1">
   <td class="varname">search_re_hidden_values</td>
-  <td>String</td>
-  <td>Hidden value HTML markup for the regular expression search form.</td>
+  <td>List</td>
+  <td>Hidden value name/value pairs for the regular expression search form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">show_attic_href</td>
@@ -1197,11 +1210,6 @@ td {
      <a href="#variables-paging">PAGING</a> variable sets</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">annotate_href</td>
-  <td>String</td>
-  <td>URL for annotate view of the HEAD revision of the file.</td>
-</tr>
-<tr class="varlevel1">
   <td class="varname">branch_tags</td>
   <td>List</td>
   <td>Names of branch tags in the file. CVS only.</td>
@@ -1226,19 +1234,8 @@ td {
 </tr>
 <tr class="varlevel1">
   <td class="varname">diff_select_hidden_values</td>
-  <td>String</td>
-  <td>Hidden value HTML markup for the diff selection form.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">download_href</td>
-  <td>String</td>
-  <td>URL to download the HEAD revision of the file.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">download_text_href</td>
-  <td>String</td>
-  <td>URL to download the HEAD revision of the file as
-      <tt>text/plain</tt>.</td>
+  <td>List</td>
+  <td>Hidden value name/value pairs for the diff selection form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">entries</td>
@@ -1472,6 +1469,33 @@ td {
       for a directory revision.</td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">head_annotate_href</td>
+  <td>String</td>
+  <td>URL for annotate view of the HEAD revision of the file.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">head_download_href</td>
+  <td>String</td>
+  <td>URL to download the HEAD revision of the file.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">head_download_text_href</td>
+  <td>String</td>
+  <td>URL to download the HEAD revision of the file as
+      <tt>text/plain</tt>.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">head_prefer_markup</td>
+  <td>Boolean</td>
+  <td>Indicates whether to make the default HEAD file link a link to the markup
+      page instead of the checkout page.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">head_view_href</td>
+  <td>String</td>
+  <td>URL for markup view of the HEAD revision of the file.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">human_readable</td>
   <td>Boolean</td>
   <td>Indicates whether or not currently selected diff format
@@ -1491,8 +1515,8 @@ td {
 </tr>
 <tr class="varlevel1">
   <td class="varname">log_paging_hidden_values</td>
-  <td>String</td>
-  <td>Hidden value HTML markup for the page selection form.</td>
+  <td>List</td>
+  <td>Hidden value name/value pairs for the page selection form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">logsort</td>
@@ -1507,8 +1531,8 @@ td {
 </tr>
 <tr class="varlevel1">
   <td class="varname">logsort_hidden_values</td>
-  <td>String</td>
-  <td>Hidden value HTML markup for the log sort drop down box</td>
+  <td>List</td>
+  <td>Hidden value name/value pairs for the log sort drop down box</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">mime_type</td>
@@ -1519,12 +1543,6 @@ td {
   <td class="varname">plain_tags</td>
   <td>List</td>
   <td>Names of non-branch in the file. CVS only.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">prefer_markup</td>
-  <td>Boolean</td>
-  <td>Indicates whether to make the default file link a link to the markup
-      page instead of the checkout page.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">rev_selected</td>
@@ -1552,8 +1570,8 @@ td {
 <tr class="varlevel1">
   <td class="varname">tag_prefer_markup</td>
   <td>Boolean</td>
-  <td>Indicates whether to make the default file link a link to the markup
-      page instead of the checkout page.</td>
+  <td>Indicates whether to make the default sticky tag file link a
+      link to the markup page instead of the checkout page.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">tag_view_href</td>
@@ -1577,11 +1595,6 @@ td {
   <td>String</td>
   <td>Tag name</td>
 </tr>
-<tr class="varlevel1">
-  <td class="varname">view_href</td>
-  <td>String</td>
-  <td>URL for markup view of the HEAD revision of the file.</td>
-</tr>
 </tbody>
 </table>
 </div>
@@ -1599,7 +1612,8 @@ td {
 <tbody>
 <tr class="include">
   <td colspan="3">Includes all variables from the 
-     <a href="#variables-common">COMMON</a> variable set</td>
+     <a href="#variables-common">COMMON</a> and
+     <a href="#variables-properties">PROPERTIES</a> variable sets</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">ago</td>
@@ -1805,9 +1819,19 @@ td {
   <td>True if files list was cut short due to <tt>limit_changes</tt>.</td>
 </tr>
 <tr class="varlevel2">
+  <td class="varname">commits.minus</td>
+  <td>String</td>
+  <td>Total number of lines removed from files in this commit.</td>
+</tr>
+<tr class="varlevel2">
   <td class="varname">commits.num_files</td>
   <td>String</td>
-  <td>Number of files in the <var>commits.files</var> list.</td>
+  <td>Total number of files in the <var>commits.files</var> list.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">commits.plus</td>
+  <td>String</td>
+  <td>Number of lines added to files in this commit.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">commits.rev</td>
@@ -1848,12 +1872,14 @@ td {
 <tr class="varlevel1">
   <td class="varname">minus_count</td>
   <td>String</td>
-  <td>Total number of lines removed in the commit (over all files).</td>
+  <td>Total number of lines removed from all files across all returned
+      commits.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">plus_count</td>
   <td>String</td>
-  <td>Total number of lines added in the commit (over all files).</td>
+  <td>Total number of lines added to all files across all returned
+      commits.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">querysort</td>
@@ -1976,8 +2002,8 @@ td {
 </tr>
 <tr class="varlevel1">
   <td class="varname">query_hidden_values</td>
-  <td>String</td>
-  <td>Hidden value HTML markup for query form.</td>
+  <td>List</td>
+  <td>Hidden value name/value pairs for query form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">querysort</td>
@@ -2116,8 +2142,8 @@ td {
 </tr>
 <tr class="varlevel1">
   <td class="varname">jump_rev_hidden_values</td>
-  <td>String</td>
-  <td>Hidden value HTML markup for revision jump form.</td>
+  <td>List</td>
+  <td>Hidden value name/value pairs for revision jump form.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">limit_changes</td>
@@ -2173,6 +2199,35 @@ td {
 <tr class="include">
   <td colspan="3">Includes all variables from the 
      <a href="#variables-common">COMMON</a> variable set</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">roots</td>
+  <td>List</td>
+  <td>Set of configured viewable repositories.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">roots.name</td>
+  <td>String</td>
+  <td>Name of a configured repository.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">roots.path</td>
+  <td>String</td>
+  <td>Server-local location of a configured repository.  WARNING:  Revealing
+      information to untrusted guests about the details of your server
+      configuration can have negative security implications.  Use this
+      token at your own risk.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">roots.type</td>
+  <td>String</td>
+  <td>Version control type of a configured repository.  Valid
+      values: <tt>cvs</tt>, <tt>svn</tt>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">roots.href</td>
+  <td>String</td>
+  <td>URL of root directory view for a configured repository.</td>
 </tr>
 </tbody>
 </table>

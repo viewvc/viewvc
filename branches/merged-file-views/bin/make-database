@@ -20,11 +20,12 @@ import os, sys, string
 import popen2
 
 INTRO_TEXT = """\
-This script creates the database and tables in MySQL used by the ViewVC
-checkin database.  You will be prompted for: database user, database user
-password, and database name.  This script will use mysql to create the
-database for you.  You will then need to set the appropriate parameters
-in your viewvc.conf file under the [cvsdb] section.
+This script creates the database and tables in MySQL used by the
+ViewVC checkin database.  You will be prompted for:  database server
+hostname, database user, database user password, and database name.
+This script will use the 'mysql' program to create the database for
+you.  You will then need to set the appropriate parameters in the
+[cvsdb] section of your viewvc.conf file.
 """
 
 DATABASE_SCRIPT="""\
@@ -121,24 +122,27 @@ CREATE TABLE tags (
 """
 
 if __name__ == "__main__":
+  try:
     print INTRO_TEXT
-    
+
+    # Prompt for necessary information
+    host = raw_input("MySQL Hostname [default: localhost]: ") or ""
     user = raw_input("MySQL User: ")
     passwd = raw_input("MySQL Password: ")
-    dbase = raw_input("ViewVC Database Name [default: ViewVC]: ")
-    if not dbase:
-        dbase = "ViewVC"
+    dbase = raw_input("ViewVC Database Name [default: ViewVC]: ") or "ViewVC"
 
+    # Create the database
     dscript = string.replace(DATABASE_SCRIPT, "<dbname>", dbase)
-
+    host_option = host and "--host=%s" % (host) or ""
     if sys.platform == "win32":
-      # popen2.Popen3 is not provided on windows
-      cmd = "mysql --user=%s --password=%s" % (user, passwd)
-      mysql = os.popen(cmd, "w")
+      cmd = "mysql --user=%s --password=%s %s "\
+            % (user, passwd, host_option)
+      mysql = os.popen(cmd, "w") # popen2.Popen3 is not provided on windows
       mysql.write(dscript)
       status = mysql.close()
     else:
-      cmd = "{ mysql --user=%s --password=%s ; } 2>&1" % (user, passwd)
+      cmd = "{ mysql --user=%s --password=%s %s ; } 2>&1" \
+            % (user, passwd, host_option)
       pipes = popen2.Popen3(cmd)
       pipes.tochild.write(dscript)
       pipes.tochild.close()
@@ -146,9 +150,11 @@ if __name__ == "__main__":
       status = pipes.wait()
 
     if status:
-        print "[ERROR] the database did not create sucessfully."
-        sys.exit(1)
+      print "[ERROR] the database did not create sucessfully."
+      sys.exit(1)
 
     print "Database created successfully."
-    sys.exit(0)
+  except KeyboardInterrupt:
+    pass
+  sys.exit(0)
     

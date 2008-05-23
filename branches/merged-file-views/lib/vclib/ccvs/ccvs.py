@@ -1,6 +1,6 @@
 # -*-python-*-
 #
-# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2008 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -22,7 +22,7 @@ import blame
 
 ### The functionality shared with bincvs should probably be moved to a
 ### separate module
-from bincvs import BaseCVSRepository, Revision, Tag, _file_log, _log_path
+from bincvs import BaseCVSRepository, Revision, Tag, _file_log, _log_path, _logsort_date_cmp, _logsort_rev_cmp
 
 class CCVSRepository(BaseCVSRepository):
   def dirlogs(self, path_parts, rev, entries, options):
@@ -51,7 +51,8 @@ class CCVSRepository(BaseCVSRepository):
     }
 
     for entry in entries:
-      entry.rev = entry.date = entry.author = entry.dead = entry.log = None
+      entry.rev = entry.date = entry.author = None
+      entry.dead = entry.log = entry.lockinfo = None
       path = _log_path(entry, dirpath, subdirs)
       if path:
         entry.path = path
@@ -72,7 +73,7 @@ class CCVSRepository(BaseCVSRepository):
       else:
         tags.append(name)
 
-  def itemlog(self, path_parts, rev, options):
+  def itemlog(self, path_parts, rev, sortby, first, limit, options):
     """see vclib.Repository.itemlog docstring
 
     rev parameter can be a revision number, a branch number, a tag name,
@@ -94,6 +95,15 @@ class CCVSRepository(BaseCVSRepository):
         rev.changed = rev.prev.next_changed
     options['cvs_tags'] = sink.tags
 
+    if sortby == vclib.SORTBY_DATE:
+      filtered_revs.sort(_logsort_date_cmp)
+    elif sortby == vclib.SORTBY_REV:
+      filtered_revs.sort(_logsort_rev_cmp)
+      
+    if len(filtered_revs) < first:
+      return []
+    if limit:
+      return filtered_revs[first:first+limit]
     return filtered_revs
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
@@ -102,8 +112,8 @@ class CCVSRepository(BaseCVSRepository):
     temp2 = tempfile.mktemp()
     open(temp2, 'wb').write(self.openfile(path_parts2, rev2)[0].getvalue())
 
-    r1 = self.itemlog(path_parts1, rev1, {})[-1]
-    r2 = self.itemlog(path_parts2, rev2, {})[-1]
+    r1 = self.itemlog(path_parts1, rev1, vclib.SORTBY_DEFAULT, 0, 0, {})[-1]
+    r2 = self.itemlog(path_parts2, rev2, vclib.SORTBY_DEFAULT, 0, 0, {})[-1]
 
     info1 = (self.rcsfile(path_parts1, root=1, v=0), r1.date, r1.string)
     info2 = (self.rcsfile(path_parts2, root=1, v=0), r2.date, r2.string)

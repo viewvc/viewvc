@@ -47,7 +47,7 @@
     [is picklist_len "1"]
     [else]
       <form method="get" action="[dir_paging_action]">
-        [dir_paging_hidden_values]
+        [for dir_paging_hidden_values]<input type="hidden" name="[dir_paging_hidden_values.name]" value="[dir_paging_hidden_values.value]"/>[end]
         <input type="submit" value="Go to:" />
         <select name="dir_pagestart"  onchange="submit()">
           [for picklist]

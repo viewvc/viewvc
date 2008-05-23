@@ -1,6 +1,6 @@
 # -*-python-*-
 #
-# Copyright (C) 1999-2007 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2008 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -20,6 +20,7 @@ import re
 import tempfile
 import popen2
 import time
+import urllib
 from svn_repos import Revision, SVNChangedPath, _datestr_to_date, _compare_paths, _cleanup_path, _rev2optrev
 from svn import core, delta, client, wc, ra
 
@@ -131,7 +132,7 @@ def temp_checkout(svnrepos, path, rev):
   """Check out file revision to temporary file"""
   temp = tempfile.mktemp()
   stream = core.svn_stream_from_aprfile(temp)
-  url = svnrepos.rootpath + (path and '/' + path)
+  url = svnrepos._geturl(path)
   client.svn_client_cat(core.Stream(stream), url, _rev2optrev(rev),
                         svnrepos.ctx)
   core.svn_stream_close(stream)
@@ -229,10 +230,10 @@ class RemoteSubversionRepository(vclib.Repository):
       raise vclib.ItemNotFound(path_parts)
 
   def openfile(self, path_parts, rev):
+    path = self._getpath(path_parts)
     rev = self._getrev(rev)
-    url = self.rootpath
-    if len(path_parts):
-      url = self.rootpath + '/' + self._getpath(path_parts)
+    url = self._geturl(path)
+    
     tmp_file = tempfile.mktemp()
     stream = core.svn_stream_from_aprfile(tmp_file)
     ### rev here should be the last history revision of the URL
@@ -276,41 +277,55 @@ class RemoteSubversionRepository(vclib.Repository):
       if locks.has_key(entry.name):
         entry.lockinfo = locks[entry.name].owner
 
-  def itemlog(self, path_parts, rev, options):
-    full_name = self._getpath(path_parts)
+  def itemlog(self, path_parts, rev, sortby, first, limit, options):
+    assert sortby == vclib.SORTBY_DEFAULT or sortby == vclib.SORTBY_REV   
+    path = self._getpath(path_parts)
     rev = self._getrev(rev)
-    dir_url = self.rootpath
-    if full_name:
-      dir_url = dir_url + '/' + full_name
+    url = self._geturl(path)
 
     # Use ls3 to fetch the lock status for this item.
     lockinfo = None
-    dirents, locks = client.svn_client_ls3(dir_url, _rev2optrev(rev),
+    dirents, locks = client.svn_client_ls3(url, _rev2optrev(rev),
                                            _rev2optrev(rev), 0, self.ctx)
     if locks.has_key(path_parts[-1]):
       lockinfo = locks[path_parts[-1]].owner
 
     # It's okay if we're told to not show all logs on a file -- all
     # the revisions should match correctly anyway.
-    lc = LogCollector(full_name, options.get('svn_show_all_dir_logs', 0),
-                      lockinfo)
+    lc = LogCollector(path, options.get('svn_show_all_dir_logs', 0), lockinfo)
 
     cross_copies = options.get('svn_cross_copies', 0)
-    client.svn_client_log([dir_url], _rev2optrev(rev), _rev2optrev(1),
-                          1, not cross_copies, lc.add_log, self.ctx)
+    log_limit = 0
+    if limit:
+      log_limit = first + limit
+    client.svn_client_log2([url], _rev2optrev(rev), _rev2optrev(1),
+                           log_limit, 1, not cross_copies, lc.add_log, self.ctx)
     revs = lc.logs
     revs.sort()
     prev = None
     for rev in revs:
       rev.prev = prev
       prev = rev
+    revs.reverse()
 
+    if len(revs) < first:
+      return []
+    if limit:
+      return revs[first:first+limit]
     return revs
 
+  def itemprops(self, path_parts, rev):
+    path = self._getpath(path_parts)
+    rev = self._getrev(rev)
+    url = self._geturl(path)
+    pairs = client.svn_client_proplist2(url, _rev2optrev(rev),
+                                        _rev2optrev(rev), 0, self.ctx)
+    return pairs and pairs[0][1] or {}
+  
   def annotate(self, path_parts, rev):
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
-    url = self.rootpath + (path and '/' + path)
+    url = self._geturl(path)
 
     blame_data = []
 
@@ -363,16 +378,20 @@ class RemoteSubversionRepository(vclib.Repository):
       raise vclib.InvalidRevision(rev)
     return rev
 
+  def _geturl(self, path=None):
+    if not path:
+      return self.rootpath
+    return self.rootpath + '/' + urllib.quote(path, "/*~")
+
   def _get_dirents(self, path, rev):
     """Return a 2-type of dirents and locks, possibly reading/writing
     from a local cache of that information."""
 
+    dir_url = self._geturl(path)
     if path:
       key = str(rev) + '/' + path
-      dir_url = self.rootpath + '/' + path
     else:
       key = str(rev)
-      dir_url = self.rootpath
     dirents_locks = self._dirent_cache.get(key)
     if not dirents_locks:
       dirents, locks = client.svn_client_ls3(dir_url, _rev2optrev(rev),
@@ -400,18 +419,26 @@ class RemoteSubversionRepository(vclib.Repository):
   
     return _cleanup_path(old_path)
   
-  def created_rev(self, full_name, rev):
-    kind = ra.svn_ra_check_path(self.ra_session, full_name, rev)
-    if kind == core.svn_node_dir:
+  def created_rev(self, path, rev):
+    # NOTE: We can't use svn_client_propget here because the
+    # interfaces in that layer strip out the properties not meant for
+    # human consumption (such as svn:entry:committed-rev, which we are
+    # using here to get the created revision of PATH@REV).
+    kind = ra.svn_ra_check_path(self.ra_session, path, rev)
+    if kind == core.svn_node_none:
+      raise vclib.ItemNotFound(_path_parts(path))
+    elif kind == core.svn_node_dir:
       try:
         dirents, fetched_rev, props = ra.svn_ra_get_dir(self.ra_session,
-                                                        full_name, rev)
+                                                        path, rev)
       except ValueError:
         # older versions of the bindings didn't handle ra.svn_ra_get_dir()
         # correctly.
-        props = ra.svn_ra_get_dir(self.ra_session, full_name, rev)
-      return int(props[core.SVN_PROP_ENTRY_COMMITTED_REV])
-    return core.SVN_INVALID_REVNUM
+        props = ra.svn_ra_get_dir(self.ra_session, path, rev)
+    elif kind == core.svn_node_file:
+      fetched_rev, props = ra.svn_ra_get_file(self.ra_session, path, rev, None)
+    return int(props.get(core.SVN_PROP_ENTRY_COMMITTED_REV,
+                         core.SVN_INVALID_REVNUM))
 
   def last_rev(self, path, peg_revision, limit_revision=None):
     """Given PATH, known to exist in PEG_REVISION, find the youngest

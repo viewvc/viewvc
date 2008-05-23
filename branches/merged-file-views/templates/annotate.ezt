@@ -87,4 +87,6 @@ Revision [if-any revision_href]<a href="[revision_href]"><strong>[rev]</strong><
 </div>
 [end]
 [end]
+
+[include "include/props.ezt"]
 [include "include/footer.ezt"]

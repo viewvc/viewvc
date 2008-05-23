@@ -1,6 +1,6 @@
 # -*-python-*-
 #
-# Copyright (C) 1999-2007 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2008 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -36,6 +36,12 @@ ADDED      = 'added'
 DELETED    = 'deleted'
 REPLACED   = 'replaced'
 MODIFIED   = 'modified'
+
+# log sort keys
+SORTBY_DEFAULT = 0  # default/no sorting
+SORTBY_DATE    = 1  # sorted by date, youngest first
+SORTBY_REV     = 2  # sorted by revision, youngest first
+
 
 # ======================================================================
 #
@@ -115,7 +121,7 @@ class Repository:
     options is a dictionary of implementation specific options
     """
   
-  def itemlog(self, path_parts, rev, options):
+  def itemlog(self, path_parts, rev, sortby, first, limit, options):
     """Retrieve an item's log information
 
     The result is a list of Revision objects
@@ -125,9 +131,28 @@ class Repository:
 
     rev is the revision of the item to return information about
 
+    sortby indicates the way in which the returned list should be
+    sorted (SORTBY_DEFAULT, SORTBY_DATE, SORTBY_REV)
+
+    first is the 0-based index of the first Revision returned (after
+    sorting, if any, has occured)
+
+    limit is the maximum number of returned Revisions, or 0 to return
+    all available data
+    
     options is a dictionary of implementation specific options
     """
 
+  def itemprops(self, path_parts, rev):
+    """Return a dictionary mapping property names to property values
+    for properties stored on an item.
+
+    The path is specified as a list of components, relative to the root
+    of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+    rev is the revision of the item to return information about.
+    """
+    
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     """Return a diff (in GNU diff format) of two file revisions
 
