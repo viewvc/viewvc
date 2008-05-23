@@ -246,6 +246,7 @@ class Config:
     self.options.cross_copies = 0
     self.options.use_localtime = 0
     self.options.short_log_len = 80
+    self.options.use_pygments = 0
     self.options.use_py2html = 0
     self.options.use_enscript = 0
     self.options.use_highlight = 0

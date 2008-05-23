@@ -1416,6 +1416,23 @@ class MarkupSourceHighlight(MarkupShell):
 
     MarkupShell.__init__(self, cfg, fp, [highlight_cmd, sed_cmd])
 
+def markup_stream_pygments(fp, filename, cfg):
+  if not cfg.options.use_pygments:
+    return None
+  
+  try:
+    from pygments import highlight
+    from pygments.lexers import ClassNotFound, get_lexer_by_name, get_lexer_for_filename
+    from pygments.formatters import HtmlFormatter
+  except ImportError:
+    return None
+
+  try:
+    lexer = get_lexer_for_filename(filename)
+  except ClassNotFound:
+    lexer = get_lexer_by_name("text")
+  return highlight(fp.read(), lexer, HtmlFormatter(nowrap=True, classprefix="pygments-"))
+
 def markup_stream_python(fp, cfg):
   if not cfg.options.use_py2html:
     return None
@@ -1556,7 +1573,11 @@ def markup_or_annotate(request, is_annotate):
       streamer = markup_streamers.get(ext)
       if streamer:
         markup_fp = streamer(fp, cfg)
-  
+
+      # Try using Pygments
+      if not markup_fp:
+        markup_fp = markup_stream_pygments(fp, request.path_parts[-1], cfg)
+        
       # If there wasn't a custom streamer, or the streamer wasn't
       # enabled, we'll try to use one of the configured syntax
       # highlighting programs.
