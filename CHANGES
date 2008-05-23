@@ -29,6 +29,7 @@ Version 1.1.0 (released ??-???-????)
   * add gzip output encoding support for template-driven pages
   * fix cache control bugs (issue #259)
   * add RSS feed URL generation for file history
+  * add support for remote creation of ViewVC checkins database
 
 Version 1.0.5 (released 28-Feb-2008)
 
