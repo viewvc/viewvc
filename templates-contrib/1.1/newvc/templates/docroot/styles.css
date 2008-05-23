@@ -157,6 +157,9 @@ address { font-style: normal; display: inline; }
   padding: 0.2em;
   vertical-align: middle;
 }
+#dirlist tr:hover {
+  background-color: white;
+}
 
 
 /*** Log messages ***/
