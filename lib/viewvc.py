@@ -1369,7 +1369,7 @@ class MarkupHighlight(MarkupShell):
     highlight_cmd = [cfg.utilities.highlight or 'highlight',
                      '--force', '--anchors', '--fragment', '--xhtml']
 
-    if cfg.options.highlight_line_numbers:
+    if cfg.options.markup_line_numbers:
       highlight_cmd.extend(['--linenumbers'])
 
     if cfg.options.highlight_convert_tabs:
@@ -1407,7 +1407,7 @@ class MarkupSourceHighlight(MarkupShell):
     highlight_cmd = [cfg.utilities.source_highlight or 'source-highlight',
                      '--out-format', 'xhtml-css', '--output', 'STDOUT',
                      '-s', ext, '--quiet', '--failsafe']
-    if cfg.options.source_highlight_line_numbers:
+    if cfg.options.markup_line_numbers:
       highlight_cmd.extend(['--line-number-ref=l_'])
 
     sed_cmd = [cfg.utilities.sed or 'sed',
@@ -1427,11 +1427,28 @@ def markup_stream_pygments(fp, filename, cfg):
   except ImportError:
     return None
 
+  class LineNoHtmlFormatter(HtmlFormatter):
+    def __init__(self, **options):
+      HtmlFormatter.__init__(self, **options)
+      self.line_count = 0
+    def wrap(self, source, outfile):
+      return self._wrap_code(source)
+    def _wrap_code(self, source):
+      for i, t in source:
+        if i == 1:
+          self.line_count = self.line_count + 1
+          t = '<span class="line" id="l_%d">%8d </span>%s' \
+              % (self.line_count, self.line_count, t)
+        yield i, t
+
   try:
     lexer = get_lexer_for_filename(filename)
   except ClassNotFound:
     lexer = get_lexer_by_name("text")
-  return highlight(fp.read(), lexer, HtmlFormatter(nowrap=True, classprefix="pygments-"))
+  formatter = cfg.options.markup_line_numbers \
+              and LineNoHtmlFormatter or HtmlFormatter
+  return highlight(fp.read(), lexer,
+                   formatter(linenowrap=True, classprefix="pygments-"))
 
 def markup_stream_python(fp, cfg):
   if not cfg.options.use_py2html:

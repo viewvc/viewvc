@@ -195,7 +195,7 @@ form { margin: 0; }
 #vc_markup .PY_KEYWORD    { color: #9c20ee; font-weight: bold; }
 #vc_markup .PY_IDENTIFIER { color: #404040; }
 
-/*** Line numbers outputted by highlight and source-highlight colorizer ***/
+/*** Line numbers outputted by Pygments, highlight and source-highlight colorizers ***/
 .line, .linenum {
   border-right-width: 1px;
   border-right-style: solid;
