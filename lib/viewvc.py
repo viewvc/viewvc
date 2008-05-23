@@ -1448,7 +1448,7 @@ class MarkupPygments:
     formatter = self.cfg.options.markup_line_numbers \
                 and LineNoHtmlFormatter or HtmlFormatter
     highlight(self.fp.read(), self.lexer,
-              formatter(linenowrap=True, classprefix="pygments-"),
+              formatter(nowrap=True, classprefix="pygments-"),
               ctx.fp)
     
 def markup_stream_pygments(fp, filename, cfg):
