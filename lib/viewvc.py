@@ -1416,39 +1416,48 @@ class MarkupSourceHighlight(MarkupShell):
 
     MarkupShell.__init__(self, cfg, fp, [highlight_cmd, sed_cmd])
 
+class MarkupPygments:
+  def __init__(self, fp, filename, cfg):
+    from pygments.lexers import ClassNotFound, get_lexer_by_name, get_lexer_for_filename
+
+    try:
+      self.lexer = get_lexer_for_filename(filename)
+    except ClassNotFound:
+      self.lexer = get_lexer_by_name("text")
+    self.cfg = cfg
+    self.fp = fp
+    
+  def __call__(self, ctx):
+    from pygments import highlight
+    from pygments.formatters import HtmlFormatter
+    
+    class LineNoHtmlFormatter(HtmlFormatter):
+      def __init__(self, **options):
+        HtmlFormatter.__init__(self, **options)
+        self.line_count = 0
+      def wrap(self, source, outfile):
+        return self._wrap_code(source)
+      def _wrap_code(self, source):
+        for i, t in source:
+          if i == 1:
+            self.line_count = self.line_count + 1
+            t = '<span class="line" id="l_%d">%5d </span>%s' \
+                % (self.line_count, self.line_count, t)
+          yield i, t
+
+    formatter = self.cfg.options.markup_line_numbers \
+                and LineNoHtmlFormatter or HtmlFormatter
+    highlight(self.fp.read(), self.lexer,
+              formatter(linenowrap=True, classprefix="pygments-"),
+              ctx.fp)
+    
 def markup_stream_pygments(fp, filename, cfg):
   if not cfg.options.use_pygments:
     return None
-  
   try:
-    from pygments import highlight
-    from pygments.lexers import ClassNotFound, get_lexer_by_name, get_lexer_for_filename
-    from pygments.formatters import HtmlFormatter
+    return MarkupPygments(fp, filename, cfg)
   except ImportError:
     return None
-
-  class LineNoHtmlFormatter(HtmlFormatter):
-    def __init__(self, **options):
-      HtmlFormatter.__init__(self, **options)
-      self.line_count = 0
-    def wrap(self, source, outfile):
-      return self._wrap_code(source)
-    def _wrap_code(self, source):
-      for i, t in source:
-        if i == 1:
-          self.line_count = self.line_count + 1
-          t = '<span class="line" id="l_%d">%8d </span>%s' \
-              % (self.line_count, self.line_count, t)
-        yield i, t
-
-  try:
-    lexer = get_lexer_for_filename(filename)
-  except ClassNotFound:
-    lexer = get_lexer_by_name("text")
-  formatter = cfg.options.markup_line_numbers \
-              and LineNoHtmlFormatter or HtmlFormatter
-  return highlight(fp.read(), lexer,
-                   formatter(linenowrap=True, classprefix="pygments-"))
 
 def markup_stream_python(fp, cfg):
   if not cfg.options.use_py2html:
