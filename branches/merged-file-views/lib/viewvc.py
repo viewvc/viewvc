@@ -1284,9 +1284,6 @@ class MarkupShell:
 class MarkupEnscript(MarkupShell):
   def __init__(self, cfg, fp, filename):
     
-    # I've tried to pass option '-C' to enscript to generate line numbers
-    # Unfortunately this option doesn't work with HTML output in enscript
-    # version 1.6.2.
     enscript_cmd = [cfg.utilities.enscript or 'enscript',
                     '--color', '--language=html', '--pretty-print',
                     '-o', '-', '-']
@@ -1364,9 +1361,6 @@ class MarkupSourceHighlight(MarkupShell):
     highlight_cmd = [cfg.utilities.source_highlight or 'source-highlight',
                      '--out-format', 'xhtml-css', '--output', 'STDOUT',
                      '-s', ext, '--quiet', '--failsafe']
-    if cfg.options.source_highlight_line_numbers:
-      highlight_cmd.extend(['--line-number-ref=l_'])
-
     sed_cmd = [cfg.utilities.sed or 'sed',
                '-n',
                '/^<pre><tt>/,/<\\/tt><\\/pre>$/p']
@@ -1450,14 +1444,15 @@ def make_rss_time_string(date, cfg):
 
 
 class IOInverter:
+  """A pull-type file-pointer-like object created from a push-type
+  file-pointer-like object."""
+  
   def __init__(self, fp):
     self.is_open = 0
     self.temp = tempfile.mktemp()
     outfile = open(self.temp, 'wb')
     if hasattr(fp, '__call__'):
-      ctx = _item()
-      ctx.fp = outfile
-      fp(ctx)
+      fp(_item(fp=outfile))
     elif hasattr(fp, 'read'):
       copy_stream(self.fp, outfile, None, 0)
     else:

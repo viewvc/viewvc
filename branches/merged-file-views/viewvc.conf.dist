@@ -492,18 +492,12 @@ use_enscript = 0
 # NOTE: use_enscript has to be 0 or enscript will be used instead
 use_highlight = 0
 
-# should we add line numbers?
-highlight_line_numbers = 1
-
 # convert tabs to ## spaces (use 0 for no conversion)
 highlight_convert_tabs = 2
 
 # should we use 'source-highlight' for syntax coloring?
 # NOTE: use_enscript and use_highlight have to be 0
 use_source_highlight = 0
-
-# should we add line numbers?
-source_highlight_line_numbers = 1
 
 # use php to colorize .php and .inc files?
 use_php = 0
