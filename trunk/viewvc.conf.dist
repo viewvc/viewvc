@@ -497,9 +497,6 @@ use_enscript = 0
 # NOTE: ignored if use_pygments or use_enscript is set
 use_highlight = 0
 
-# should we add line numbers?
-highlight_line_numbers = 1
-
 # convert tabs to ## spaces (use 0 for no conversion)
 highlight_convert_tabs = 2
 
@@ -507,11 +504,12 @@ highlight_convert_tabs = 2
 # NOTE: ignored if use_pygments, use_enscript or use_highlight is set
 use_source_highlight = 0
 
-# should we add line numbers?
-source_highlight_line_numbers = 1
-
 # use php to colorize .php and .inc files?
 use_php = 0
+
+# should we add line numbers in the markup view (only works for
+# certain syntax highlighting engines)?
+markup_line_numbers = 1
 
 #
 # Use CvsGraph. See http://www.akhphd.au.dk/~bertho/cvsgraph/ for

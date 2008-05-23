@@ -250,11 +250,10 @@ class Config:
     self.options.use_py2html = 0
     self.options.use_enscript = 0
     self.options.use_highlight = 0
-    self.options.highlight_line_numbers = 1
     self.options.highlight_convert_tabs = 2
     self.options.use_source_highlight = 0
-    self.options.source_highlight_line_numbers = 1
     self.options.use_php = 0
+    self.options.markup_line_numbers = 1
     self.options.use_cvsgraph = 0
     self.options.cvsgraph_conf = "cvsgraph.conf"
     self.options.use_re_search = 0
