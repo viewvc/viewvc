@@ -486,11 +486,15 @@ short_log_len = 80
 # PyFontify) to colorize Python files?
 use_py2html = 0
 
+# should we use Pygments for syntax coloring?
+use_pygments = 0
+
 # should we use 'enscript' for syntax coloring?
+# NOTE: ignored if use_pygments is set
 use_enscript = 0
 
 # should we use 'highlight' for syntax coloring?
-# NOTE: use_enscript has to be 0 or enscript will be used instead
+# NOTE: ignored if use_pygments or use_enscript is set
 use_highlight = 0
 
 # should we add line numbers?
@@ -500,7 +504,7 @@ highlight_line_numbers = 1
 highlight_convert_tabs = 2
 
 # should we use 'source-highlight' for syntax coloring?
-# NOTE: use_enscript and use_highlight have to be 0
+# NOTE: ignored if use_pygments, use_enscript or use_highlight is set
 use_source_highlight = 0
 
 # should we add line numbers?
