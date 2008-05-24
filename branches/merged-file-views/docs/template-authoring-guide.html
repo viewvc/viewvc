@@ -60,13 +60,12 @@ td {
     <li><a href="#variables-pathrev">Path Revision Form Variable Set (PATHREV)</a></li>
     <li><a href="#variables-paging">Paging Form Variable Set (PAGING)</a></li>
     <li><a href="#variables-properties">Property Listing Variable Set (PROPERTIES)</a></li>
-    <li><a href="#variables-annotate">Annotation View (annotate.ezt)</a></li>
+    <li><a href="#variables-annotate">File Contents View (annotate.ezt)</a></li>
     <li><a href="#variables-graph">Revision Graph View (graph.ezt)</a></li>
     <li><a href="#variables-diff">File Difference View (diff.ezt)</a></li>
     <li><a href="#variables-directory">Directory Listing View (directory.ezt)</a></li>
     <li><a href="#variables-error">Error View (error.ezt)</a></li>
     <li><a href="#variables-log">Revision Log View (log.ezt)</a></li>
-    <li><a href="#variables-markup">File Contents View (markup.ezt)</a></li>
     <li><a href="#variables-query_results">Revision History Query Results View (query_results.ezt, rss.ezt)</a></li>
     <li><a href="#variables-query_form">Revision History Query Form View (query_form.ezt)</a></li>
     <li><a href="#variables-revision">Revision/ChangeSet View (revision.ezt)</a></li>
@@ -428,7 +427,7 @@ td {
 </div>
 
 <div class="h3">
-<h3 id="variables-annotate">Annotation View (annotate.ezt)</h3>
+<h3 id="variables-annotate">File Contents View (annotate.ezt)</h3>
 <table>
 <thead>
 <tr>
@@ -447,6 +446,11 @@ td {
   <td class="varname">ago</td>
   <td>String</td>
   <td>Text description of the time elapsed since <var>date</var>.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">annotated</td>
+  <td>Boolean</td>
+  <td>Indicates where <code>lines</code> contains annotation information.</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">author</td>
@@ -475,6 +479,13 @@ td {
   <td>String</td>
   <td>Date (in UTC if not otherwise configured) of the revision currently
       being viewed.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">image_src_href</td>
+  <td>String</td>
+  <td>URL used to display the current revision of the file as an
+      embedded image.  (Set only if the file is not a web-viewable
+      image.)</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">lines</td>
@@ -1594,113 +1605,6 @@ td {
   <td class="varname">tags.name</td>
   <td>String</td>
   <td>Tag name</td>
-</tr>
-</tbody>
-</table>
-</div>
-
-<div class="h3">
-<h3 id="variables-markup">File Contents View (markup.ezt)</h3>
-<table>
-<thead>
-<tr>
-  <th>Variable</th>
-  <th>Type</th>
-  <th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="include">
-  <td colspan="3">Includes all variables from the 
-     <a href="#variables-common">COMMON</a> and
-     <a href="#variables-properties">PROPERTIES</a> variable sets</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">ago</td>
-  <td>String</td>
-  <td>Text description of the time elapsed since <var>date</var>.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">author</td>
-  <td>String</td>
-  <td>Author of the revision being viewed.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">branch_points</td>
-  <td>String</td>
-  <td>List of branch tag names which branch off of the revision being
-      viewed (CVS only).</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">branches</td>
-  <td>List</td>
-  <td>If revision currently being viewed is on a branch, list of names
-      for the branch.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">changed</td>
-  <td>String</td>
-  <td>Numbers of lines added and removed since the previous revision.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">date</td>
-  <td>String</td>
-  <td>Date (in UTC if not otherwise configured) of the revision currently
-      being viewed.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">log</td>
-  <td>String</td>
-  <td>Log message of the revision currently being viewed.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">markup</td>
-  <td>File</td>
-  <td>Marked up contents of the current file revision.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">mime_type</td>
-  <td>String</td>
-  <td>MIME type of the current file.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">orig_path</td>
-  <td>String</td>
-  <td>When viewing an old file revision through a copy of the file,
-      this is the old file revision's original path.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">orig_href</td>
-  <td>String</td>
-  <td>URL of a ViewVC log view for <code>orig_path</code>.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">prev</td>
-  <td>String</td>
-  <td>Previous revision number.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">size</td>
-  <td>String</td>
-  <td>Size of the file revision, in bytes. Subversion only.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">state</td>
-  <td>String</td>
-  <td>State of the file revision. Possible values: <tt>dead</tt>, and
-      the empty string.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">tags</td>
-  <td>List</td>
-  <td>Names of tags that have been applied to the current file
-      revision.</td>
-</tr>
-<tr class="varlevel1">
-  <td class="varname">vendor_branch</td>
-  <td>Boolean</td>
-  <td>Indicates whether or not the current file revision is on a vendor
-      branch.</td>
 </tr>
 </tbody>
 </table>

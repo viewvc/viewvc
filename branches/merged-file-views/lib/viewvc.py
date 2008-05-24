@@ -1289,200 +1289,74 @@ class MarkupPipeWrapper:
     if self.posttext:
       ctx.fp.write(self.posttext)
 
-class MarkupShell:
-  """A EZT callback object slamming file contents through shell tools."""
-
-  def __init__(self, cfg, fp, cmds):
-    self.fp = fp
-    self.cmds = cmds
-    self.cfg = cfg
-
-  def __call__(self, ctx):
-    ctx.fp.flush()
-    try:
-      pipe = popen.pipe_cmds(self.cmds, ctx.fp)
-      try:
-        if self.fp:
-          copy_stream(self.fp, pipe, self.cfg)
-          self.fp.close()
-          self.fp = None
-      finally:
-        pipe.close()
-    except IOError:
-      raise debug.ViewVCException \
-        ('Error running external program. Command line was: "%s"'
-         % string.join(map(lambda args: string.join(args, ' '), self.cmds),
-                       ' | '))
-
-  def __del__(self):
-    self.close()
-
-  def close(self):
-    if self.fp:
-      self.fp.close()
-      self.fp = None
-
-class MarkupEnscript(MarkupShell):
-  def __init__(self, cfg, fp, filename):
-    
-    enscript_cmd = [cfg.utilities.enscript or 'enscript',
-                    '--color', '--language=html', '--pretty-print',
-                    '-o', '-', '-']
-
-    ### I'd like to also strip the <PRE> and </PRE> tags, too, but
-    ### can't come up with a suitable sed expression.  Using
-    ### '1,/^<PRE>$/d;/<\\/PRE>/,$d;p' gets me most of the way, but
-    ### will drop the last line of a non-newline-terminated filed.
-    sed_cmd = [cfg.utilities.sed or 'sed', '-n', '/^<PRE>$/,/<\\/PRE>$/p']
-
-    MarkupShell.__init__(self, cfg, fp, [enscript_cmd, sed_cmd])
-    self.filename = filename
-    self.cfg = cfg
-
-  def __call__(self, ctx):
-    # create a temporary file with the same name as the file in
-    # the repository so enscript can detect file type correctly
-    dir = compat.mkdtemp("", "viewvc")
-    try:
-      file = os.path.join(dir, self.filename)
-      try:
-        copy_stream(self.fp, open(file, 'wb'), self.cfg)
-        self.fp.close()
-        self.fp = None
-        self.cmds[0][-1] = file
-        MarkupShell.__call__(self, ctx)
-      finally:
-        os.unlink(file)
-    finally:
-      os.rmdir(dir)
-      
-
-class MarkupPHP(MarkupShell):
-  def __init__(self, cfg, fp):
-    php_cmd = [cfg.utilities.php or 'php', '-q', '-s', '-n']
-    MarkupShell.__init__(self, cfg, fp, [php_cmd])
-
-class MarkupHighlight(MarkupShell):
-  def __init__(self, cfg, fp, filename):
-    highlight_cmd = [cfg.utilities.highlight or 'highlight',
-                     '--force', '--anchors', '--fragment', '--xhtml']
-
-    if cfg.options.highlight_convert_tabs:
-      highlight_cmd.extend(['--replace-tabs',
-                            str(cfg.options.highlight_convert_tabs)])
-
-    highlight_cmd.extend(['-'])
-    MarkupShell.__init__(self, cfg, fp, [highlight_cmd])
-    self.filename = filename
-    self.cfg = cfg
-
-  def __call__(self, ctx):
-    # create a temporary file with the same name as the file in
-    # the repository so highlight can detect file type correctly
-    dir = compat.mkdtemp("", "viewvc")
-    try:
-      file = os.path.join(dir, self.filename)
-      try:
-        copy_stream(self.fp, open(file, 'wb'), self.cfg)
-        self.fp.close()
-        self.fp = None
-        self.cmds[0][-1] = file
-        MarkupShell.__call__(self, ctx)
-      finally:
-        os.unlink(file)
-    finally:
-      os.rmdir(dir)
-
-class MarkupSourceHighlight(MarkupShell):
-  def __init__(self, cfg, fp, filename):
-    basename, ext = os.path.splitext(filename)
-    if ext:
-      ext = ext[1:]
-
-    highlight_cmd = [cfg.utilities.source_highlight or 'source-highlight',
-                     '--out-format', 'xhtml-css', '--output', 'STDOUT',
-                     '-s', ext, '--quiet', '--failsafe']
-    sed_cmd = [cfg.utilities.sed or 'sed',
-               '-n',
-               '/^<pre><tt>/,/<\\/tt><\\/pre>$/p']
-
-    MarkupShell.__init__(self, cfg, fp, [highlight_cmd, sed_cmd])
-
-class MarkupPygments:
-  def __init__(self, fp, filename, cfg):
-    from pygments.lexers import ClassNotFound, get_lexer_by_name, get_lexer_for_filename
-    try:
-      self.lexer = get_lexer_for_filename(filename)
-    except ClassNotFound:
-      self.lexer = get_lexer_by_name("text")
-    self.cfg = cfg
-    self.fp = fp
-    
-  def __call__(self, ctx):
+def markup_stream_pygments(request, cfg, blame_data, fp, path_parts):
+  # Determine if we should use Pygments to highlight our output.
+  # Reasons not to include a) being told not to by the configuration,
+  # b) not being able to import the Pygments modules, and c) Pygments
+  # not having a lexer for our file's format.
+  blame_source = []
+  if blame_data:
+    for i in blame_data:
+      i.diff_url = None
+      blame_source.append(i)
+    blame_data = blame_source
+  lexer = None
+  use_pygments = cfg.options.enable_syntax_coloration
+  try:
     from pygments import highlight
     from pygments.formatters import HtmlFormatter
-    highlight(self.fp.read(), self.lexer,
-              HtmlFormatter(nowrap=True, classprefix="pygments-"),
-              ctx.fp)
-    
-def markup_stream_pygments(fp, filename, cfg):
-  if not cfg.options.use_pygments:
-    return None
-  try:
-    return MarkupPygments(fp, filename, cfg)
+    from pygments.lexers import ClassNotFound, get_lexer_by_name, get_lexer_for_filename
+    try:
+      lexer = get_lexer_for_filename(path_parts[-1])
+    except ClassNotFound:
+      use_pygments = 0
   except ImportError:
-    return None
+    use_pygments = 0
 
-def markup_stream_python(fp, cfg):
-  if not cfg.options.use_py2html:
-    return None
-  
-  ### Convert this code to use the recipe at:
-  ###     http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52298
-  ### Note that the cookbook states all the code is licensed according to
-  ### the Python license.
-  try:
-    # See if Marc-Andre Lemburg's py2html stuff is around.
-    # http://www.egenix.com/files/python/SoftwareDescriptions.html#py2html.py
-    ### maybe restrict the import to *only* this directory?
-    sys.path.insert(0, cfg.utilities.py2html_dir)
-    import py2html
-    import PyFontify
-  except ImportError:
-    return None
+  # If we aren't going to be highlighting anything, just return the
+  # BLAME_SOURCE.  If there's no blame_source, we'll generate a fake
+  # one from the file contents we fetch with PATH and REV.
+  if not use_pygments:
+    if blame_source:
+      return blame_source
+    else:
+      lines = []
+      line_no = 0
+      while 1:
+        line = fp.readline()
+        if not line:
+          break
+        line_no = line_no + 1
+        item = vclib.Annotation(cgi.escape(line), line_no,
+                                None, None, None, None)
+        item.diff_url = None
+        lines.append(item)
+    return lines
 
-  ### It doesn't escape stuff quite right, nor does it munge URLs and
-  ### mailtos as well as we do.
-  html = cgi.escape(fp.read())
-  pp = py2html.PrettyPrint(PyFontify.fontify, "rawhtml", "color")
-  pp.set_mode_rawhtml_color()
-  html = pp.fontify(html)
-  html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
-  html = re.sub(_re_rewrite_email, r'<a href="mailto:\1">\1</a>', html)
-  return html
-
-def markup_stream_php(fp, cfg):
-  if not cfg.options.use_php:
-    return None
-
-  # The following HACK may be be used to allow a PHP CGI executable to
-  # be invoked instead of a CLI executable, on systems that do not
-  # have PHP's CLI (command line interface) installed. Just uncomment
-  # the following lines:
-  #os.unsetenv("SERVER_SOFTWARE")
-  #os.unsetenv("SERVER_NAME")
-  #os.unsetenv("GATEWAY_INTERFACE")
-  #os.unsetenv("REQUEST_METHOD")
-  #os.unsetenv("SCRIPT_FILENAME")
-  #os.unsetenv("PATH_TRANSLATED")
-
-  return MarkupPHP(cfg, fp)
-
-markup_streamers = {
-  '.py' : markup_stream_python,
-  '.php' : markup_stream_php,
-  '.inc' : markup_stream_php,
-  }
+  # If we get here, we're highlighting something.
+  class PygmentsSink:
+    def __init__(self, blame_data):
+      if blame_data:
+        self.has_blame_data = 1
+        self.blame_data = blame_data
+      else:
+        self.has_blame_data = 0
+        self.blame_data = []
+      self.line_no = 0
+    def write(self, buf):
+      ### FIXME:  Don't bank on write() being called once per line
+      if self.has_blame_data:
+        self.blame_data[self.line_no].text = buf
+      else:
+        item = vclib.Annotation(buf, self.line_no + 1,
+                                None, None, None, None)
+        item.diff_url = None
+        self.blame_data.append(item)
+      self.line_no = self.line_no + 1
+  ps = PygmentsSink(blame_source)
+  highlight(fp.read(), lexer,
+            HtmlFormatter(nowrap=True, classprefix="pygments-"), ps)
+  return ps.blame_data
 
 def make_time_string(date, cfg):
   """Returns formatted date string in either local time or UTC.
@@ -1508,150 +1382,6 @@ def make_rss_time_string(date, cfg):
     return None
   return time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(date)) + ' UTC'
 
-
-class IOInverter:
-  """A pull-type file-pointer-like object created from a push-type
-  file-pointer-like object."""
-  
-  def __init__(self, fp):
-    self.is_open = 0
-    self.temp = tempfile.mktemp()
-    outfile = open(self.temp, 'wb')
-    if hasattr(fp, '__call__'):
-      fp(_item(fp=outfile))
-    elif hasattr(fp, 'read'):
-      copy_stream(self.fp, outfile, None, 0)
-    else:
-      output.write(fp)
-    outfile.close()
-    self.fp = open(self.temp, 'rb')
-    self.is_open = 1
-
-  def readline(self):
-    return self.fp.readline()
-
-  def read(self, reqlen):
-    return self.fp.read(reqlen)
-
-  def close(self):
-    self.fp.close()
-    self.is_open = 0
-    
-  def __del__(self):
-    try:
-      if self.is_open:
-        self.fp.close()
-      os.unlink(self.temp)
-    except:
-      pass
-    
-    
-class BlameMarkupWrapper:
-  """A file-pointer-like object which merges a list of BLAME_DATA
-  (vclib.Annotation objects) with a readline()-able FP file pointer
-  containing tthe text associated with those lines.  The result is an
-  iterate-able object with vclib.Annotation objects that actually have
-  their .text members populated with marked-up text.  If BLAME_DATA is
-  None, mostly-empty vclib.Annotation objects will be the result."""
-  
-  def __init__(self, blame_data, fp):
-    self.blame_data = blame_data
-    self.fp = fp
-    self.idx = -1
-    
-  def __getitem__(self, idx):
-    self.idx = self.idx + 1
-    if idx != self.idx:
-      raise debug.ViewVCException("There was sequencing error in the "
-                                  "calculation of annotation data.",
-                                  "500 Internal Server Error")
-    try:
-      text = self.fp.readline()
-    except:
-      raise
-      raise debug.ViewVCException("There was sequencing error in the "
-                                  "syncronization of annotation data.",
-                                  "500 Internal Server Error")
-    if not text:
-      raise IndexError
-    
-    if self.blame_data:
-      item = self.blame_data[self.idx]
-      item.text = text
-    else:
-      item = _item(text=text, line_number=self.idx+1, rev=None, prev_rev=None,
-                   diff_url=None, date=None, author=None)
-    return item
-
-
-class BlameContents:
-  """A file-pointer-like object which wraps an iterable collection of
-  vclib.Annotation() items, and provides a .read() function for
-  pulling only the text out of those items, and a .get_blame_data()
-  function for getting the now text-less annotation data back again."""
-  
-  def __init__(self, request, source):
-    self.request = request
-    self.buf = ''
-    self.source = source
-    self.blame_data = []
-    self._eof = 0
-    self.idx = -1
-    
-  def get_blame_data(self):
-    if not self._eof:
-      raise debug.ViewVCException("Unable to query annotation data before "
-                                  "it is parsed.", "500 Internal Server Error")
-    return self.blame_data
-     
-  def eof(self):
-    return self._eof
-
-  def close(self):
-    pass
-  
-  def read(self, reqlen=CHUNK_SIZE):
-    if self._eof:
-      return None
-    if not reqlen:
-      return ''
-    chunk, self.buf, reqlen = self._read_from_buf(reqlen)
-    while reqlen:
-      try:
-        self.buf = self._next_source_line() + "\n"
-        buflen = len(self.buf)
-      except IndexError:
-        self._eof = 1
-        break
-      hunk, self.buf, reqlen = self._read_from_buf(reqlen)
-      chunk = chunk + hunk
-    return chunk
-    
-  def _next_source_line(self):
-    self.idx = self.idx + 1
-    blame_data = self.source[self.idx]
-    line = blame_data.text
-    blame_data.text = None
-    blame_data.diff_url = None
-    if blame_data.prev_rev:
-      blame_data.diff_url = \
-          self.request.get_url(view_func=view_diff,
-                               params={'r1': blame_data.prev_rev,
-                                       'r2': blame_data.rev,
-                                       'diff_format': None},
-                               escape=1)
-    self.blame_data.append(blame_data)
-    return line
-
-  def _read_from_buf(self, reqlen):
-    buflen = len(self.buf)
-    if not buflen:
-      return '', '', reqlen
-    if reqlen > buflen:
-      return self.buf, '', reqlen - buflen
-    else:
-      return self.buf[:reqlen], self.buf[reqlen:], 0
-    
 def get_itemprops(request, path_parts, rev):
   itemprops = request.repos.itemprops(path_parts, rev)
   propnames = itemprops.keys()
@@ -1679,7 +1409,7 @@ def markup_or_annotate(request, is_annotate):
   cfg = request.cfg
   path, rev = _orig_path(request, is_annotate and 'annotate' or 'revision')
   data = common_template_data(request)
-  lines = fp = blame_data = markup_fp = image_src_href = None
+  lines = fp = image_src_href = None
 
   # Is this a viewable image type?
   if is_viewable_image(request.mime_type) \
@@ -1690,59 +1420,17 @@ def markup_or_annotate(request, is_annotate):
     image_src_href = request.get_url(view_func=view_checkout,
                                      params={'revision': rev}, escape=1)
 
-  else: 
-    # Try to annotate this file, but don't croak if we fail.
-    try:
-      source, revision = request.repos.annotate(path, rev)
-
-      # Since the templates could be changed by the user, we can't provide
-      # a strong validator for this page, so we mark the etag as weak.
-      if check_freshness(request, None, revision, weak=1):
-        return
-      
-      fp = BlameContents(request, source)
-    except vclib.NonTextualFileContents:
-      pass
-
-    # If we didn't produce a BlameContents() object, we'll just get a
-    # regular file pointer.
-    if not fp:
-      fp, revision = request.repos.openfile(path, rev)
-
-      # Since the templates could be changed by the user, we can't provide
-      # a strong validator for this page, so we mark the etag as weak.
-      if check_freshness(request, None, revision, weak=1):
-        fp.close()
-        return
-
-  if fp:
-    basename, ext = os.path.splitext(request.path_parts[-1])
-    streamer = markup_streamers.get(ext)
-    if streamer:
-      markup_fp = streamer(fp, cfg)
-
-    # Try using Pygments
-    if not markup_fp:
-      markup_fp = markup_stream_pygments(fp, request.path_parts[-1], cfg)
-        
-    # If there wasn't a custom streamer, or the streamer wasn't
-    # enabled, we'll try to use one of the configured syntax
-    # highlighting programs.
-    if not markup_fp:
-      if cfg.options.use_enscript:
-        markup_fp = MarkupEnscript(cfg, fp, request.path_parts[-1])
-      elif cfg.options.use_highlight:
-        markup_fp = MarkupHighlight(cfg, fp, request.path_parts[-1])
-      elif cfg.options.use_source_highlight:
-        markup_fp = MarkupSourceHighlight(cfg, fp, request.path_parts[-1])
-      else:
-        # If no one has a suitable markup handler, we'll use the default.
-        markup_fp = MarkupPipeWrapper(cfg, fp)
-
-    markup_fp = IOInverter(markup_fp)
-    if hasattr(fp, 'blame_data'):
-      blame_data = fp.get_blame_data()
-    lines = BlameMarkupWrapper(blame_data, markup_fp)
+  else:
+    blame_source = None
+    if is_annotate:
+      # Try to annotate this file, but don't croak if we fail.
+      try:
+        blame_source, revision = request.repos.annotate(path, rev)
+      except vclib.NonTextualFileContents:
+        pass
+    fp, revision = request.repos.openfile(path, rev)
+    lines = markup_stream_pygments(request, cfg, blame_source, fp, path)
+    fp.close()
 
   data.update({
     'mime_type' : request.mime_type,
@@ -1761,6 +1449,7 @@ def markup_or_annotate(request, is_annotate):
     'orig_path' : None,
     'orig_href' : None,
     'image_src_href' : image_src_href,
+    'annotated' : ezt.boolean(blame_source is not None),
     'lines' : lines,
     'properties': get_itemprops(request, path, rev),
     })

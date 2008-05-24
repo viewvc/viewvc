@@ -71,8 +71,10 @@ Revision [if-any revision_href]<a href="[revision_href]"><strong>[rev]</strong><
 
   <tr class="[rowclass]" id="l[lines.line_number]">
     <td class="vc_blame_line">[lines.line_number]</td>
+[if-any annotated]
     <td class="vc_blame_author">[is lines.rev last_rev]&nbsp;[else][lines.author][end]</td>
     <td class="vc_blame_rev">[is lines.rev last_rev]&nbsp;[else][if-any lines.diff_url]<a href="[lines.diff_url]">[end][lines.rev][if-any lines.diff_url]</a>[end][end]</td>
+[end]
     <td class="vc_blame_text">[lines.text]</td>
   </tr>
   [define last_rev][lines.rev][end]
