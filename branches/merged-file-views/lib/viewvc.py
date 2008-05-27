@@ -1297,7 +1297,12 @@ def markup_stream_pygments(request, cfg, blame_data, fp, path_parts):
   blame_source = []
   if blame_data:
     for i in blame_data:
-      i.diff_url = None
+      i.diff_href = None
+      if i.prev_rev:
+        i.diff_href = request.get_url(view_func=view_diff,
+                                      params={'r1': i.prev_rev,
+                                              'r2': i.rev},
+                                      escape=1, partial=1)
       blame_source.append(i)
     blame_data = blame_source
   lexer = None
@@ -1329,7 +1334,7 @@ def markup_stream_pygments(request, cfg, blame_data, fp, path_parts):
         line_no = line_no + 1
         item = vclib.Annotation(cgi.escape(line), line_no,
                                 None, None, None, None)
-        item.diff_url = None
+        item.diff_href = None
         lines.append(item)
     return lines
 
@@ -1350,7 +1355,7 @@ def markup_stream_pygments(request, cfg, blame_data, fp, path_parts):
       else:
         item = vclib.Annotation(buf, self.line_no + 1,
                                 None, None, None, None)
-        item.diff_url = None
+        item.diff_href = None
         self.blame_data.append(item)
       self.line_no = self.line_no + 1
   ps = PygmentsSink(blame_source)
