@@ -247,13 +247,12 @@ class Config:
     self.options.use_pagesize = 0
     self.options.limit_changes = 100
 
-    self.templates.annotate = None
     self.templates.diff = None
     self.templates.directory = None
     self.templates.error = None
+    self.templates.file = None
     self.templates.graph = None
     self.templates.log = None
-    self.templates.markup = None
     self.templates.query = None
     self.templates.query_form = None
     self.templates.query_results = None

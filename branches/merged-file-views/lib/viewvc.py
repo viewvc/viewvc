@@ -1410,13 +1410,15 @@ def markup_or_annotate(request, is_annotate):
   path, rev = _orig_path(request, is_annotate and 'annotate' or 'revision')
   data = common_template_data(request)
   lines = fp = image_src_href = None
-
+  annotation = None
+  
   # Is this a viewable image type?
   if is_viewable_image(request.mime_type) \
      and 'co' in cfg.options.allowed_views:
     fp, revision = request.repos.openfile(path, rev)
     fp.close()
     fp = None
+    annotation = 'binary'
     image_src_href = request.get_url(view_func=view_checkout,
                                      params={'revision': rev}, escape=1)
 
@@ -1426,8 +1428,11 @@ def markup_or_annotate(request, is_annotate):
       # Try to annotate this file, but don't croak if we fail.
       try:
         blame_source, revision = request.repos.annotate(path, rev)
+        annotation = 'annotated'
       except vclib.NonTextualFileContents:
-        pass
+        annotation = 'binary'
+      except:
+        annotation = 'error'
     fp, revision = request.repos.openfile(path, rev)
     lines = markup_stream_pygments(request, cfg, blame_source, fp, path)
     fp.close()
@@ -1449,9 +1454,9 @@ def markup_or_annotate(request, is_annotate):
     'orig_path' : None,
     'orig_href' : None,
     'image_src_href' : image_src_href,
-    'annotated' : ezt.boolean(blame_source is not None),
     'lines' : lines,
-    'properties': get_itemprops(request, path, rev),
+    'properties' : get_itemprops(request, path, rev),
+    'annotation' : annotation,
     })
 
   if cfg.options.show_log_in_markup:
@@ -1492,7 +1497,7 @@ def markup_or_annotate(request, is_annotate):
                                         params={'pathrev': revision},
                                         escape=1)
     
-  generate_page(request, "annotate", data)
+  generate_page(request, "file", data)
   
 def view_markup(request):
   if 'markup' not in request.cfg.options.allowed_views:

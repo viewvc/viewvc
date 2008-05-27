@@ -60,7 +60,7 @@ td {
     <li><a href="#variables-pathrev">Path Revision Form Variable Set (PATHREV)</a></li>
     <li><a href="#variables-paging">Paging Form Variable Set (PAGING)</a></li>
     <li><a href="#variables-properties">Property Listing Variable Set (PROPERTIES)</a></li>
-    <li><a href="#variables-annotate">File Contents View (annotate.ezt)</a></li>
+    <li><a href="#variables-file">File Contents View (file.ezt)</a></li>
     <li><a href="#variables-graph">Revision Graph View (graph.ezt)</a></li>
     <li><a href="#variables-diff">File Difference View (diff.ezt)</a></li>
     <li><a href="#variables-directory">Directory Listing View (directory.ezt)</a></li>
@@ -427,7 +427,7 @@ td {
 </div>
 
 <div class="h3">
-<h3 id="variables-annotate">File Contents View (annotate.ezt)</h3>
+<h3 id="variables-file">File Contents View (file.ezt)</h3>
 <table>
 <thead>
 <tr>
@@ -448,9 +448,12 @@ td {
   <td>Text description of the time elapsed since <var>date</var>.</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">annotated</td>
-  <td>Boolean</td>
-  <td>Indicates where <code>lines</code> contains annotation information.</td>
+  <td class="varname">annotation</td>
+  <td>String</td>
+  <td>If set, indicates that annotations were requested.  Valid values
+      are "annotated" (annotation was successful), "binary" (file contents
+      are not line-based and human-readable), and "error" (something went
+      wrong during annotation).</td>
 </tr>
 <tr class="varlevel1">
   <td class="varname">author</td>

@@ -94,12 +94,37 @@ form { margin: 0; }
 }
 
 
-/*** Markup Summary Header ***/
+/*** File Content Markup Styles ***/
 .vc_summary {
   background-color: #eeeeee;
 }
-
-/*** Pygments Markup Styles ***/
+#vc_file td {
+  border-right-width: 1px;
+  border-right-style: solid;
+  border-right-color: #505050;
+  text-decoration: none;
+  font-weight: normal;
+  font-style: normal;
+}
+.vc_file_line_number {
+  background-color: #eeeeee;
+  color: #505050;
+  padding: 1px 1px;
+  text-align: right;
+}
+.vc_file_line_author, .vc_file_line_rev {
+  text-align: right;
+}
+.vc_file_line_rev, .vc_blame_line_number {
+  padding: 1px 5px;
+}
+.vc_file_line_text {
+  background-color: white;
+  font-family: monospace;
+  text-align: left;
+  white-space: pre;
+  width: 100%;
+}
 .pygments-c { color: #408080; font-style: italic } /* Comment */
 .pygments-err { border: 1px solid #FF0000 } /* Error */
 .pygments-k { color: #008000; font-weight: bold } /* Keyword */
@@ -160,69 +185,6 @@ form { margin: 0; }
 .pygments-vi { color: #19177C } /* Name.Variable.Instance */
 .pygments-il { color: #666666 } /* Literal.Number.Integer.Long */
 
-/*** Highlight Markup Styles ***/
-#vc_blame .num  { color: #000000; }
-#vc_blame .esc  { color: #bd8d8b; }
-#vc_blame .str  { color: #bd8d8b; }
-#vc_blame .dstr { color: #bd8d8b; }
-#vc_blame .slc  { color: #ac2020; font-style: italic; }
-#vc_blame .com  { color: #ac2020; font-style: italic; }
-#vc_blame .dir  { color: #000000; }
-#vc_blame .sym  { color: #000000; }
-#vc_blame .line { color: #555555; }
-#vc_blame .kwa  { color: #9c20ee; font-weight: bold; }
-#vc_blame .kwb  { color: #208920; }
-#vc_blame .kwc  { color: #0000ff; }
-#vc_blame .kwd  { color: #404040; }
-
-/*** Source-Highlight Markup Styles ***/
-#vc_blame .keyword     { color: #9c20ee; font-weight: bold; }
-#vc_blame .type        { color: #208920; }
-#vc_blame .string      { color: #bd8d8b; }
-#vc_blame .specialchar { color: #bd8d8b; }
-#vc_blame .comment     { color: #ac2020; font-style: italic; }
-#vc_blame .number      { color: #000000; }
-#vc_blame .preproc     { color: #0000ff; }
-#vc_blame .symbol      { color: #000000; }
-#vc_blame .function    { color: #404040; }
-#vc_blame .cbracket    { color: #000000; }
-#vc_blame .todo        { color: #000000; }
-#vc_blame .variable    { color: #00ac40; }
-
-/*** Py2html Markup Styles  ***/
-#vc_blame .PY_STRING     { color: #bd8d8b; }
-#vc_blame .PY_COMMENT    { color: #ac2020; font-style: italic; }
-#vc_blame .PY_KEYWORD    { color: #9c20ee; font-weight: bold; }
-#vc_blame .PY_IDENTIFIER { color: #404040; }
-
-/*** Annotate Styles ***/
-#vc_blame td {
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-right-color: #505050;
-  text-decoration: none;
-  font-weight: normal;
-  font-style: normal;
-}
-.vc_blame_line {
-  background-color: #eeeeee;
-  color: #505050;
-  padding: 1px 1px;
-}
-.vc_blame_author, .vc_blame_rev, .vc_blame_line {
-  text-align: right;
-}
-.vc_blame_rev, .vc_blame_line {
-  padding: 1px 5px;
-}
-.vc_blame_text {
-  background-color: white;
-  font-family: monospace;
-  text-align: left;
-  white-space: pre;
-  width: 100%;
-}
-
 
 /*** Diff Styles ***/
 .vc_diff_header {
@@ -268,8 +230,8 @@ form { margin: 0; }
   font-size: smaller;
 }
 
-/*** Intraline Diff Styles ***/
 
+/*** Intraline Diff Styles ***/
 .vc_idiff_add {
   background-color: #aaffaa;
 }
@@ -282,7 +244,6 @@ form { margin: 0; }
 .vc_idiff_empty {
   background-color:#e0e0e0;
 }
-
 table.vc_idiff col.content { 
   width: 50%;
 }
@@ -299,6 +260,7 @@ table.vc_idiff tbody th {
   background-color:#e0e0e0;
   text-align:right;
 }
+
 
 /*** Query Form ***/
 .vc_query_form {
