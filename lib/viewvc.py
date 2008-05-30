@@ -1297,6 +1297,7 @@ def markup_stream_pygments(request, cfg, blame_data, fp, path_parts):
   blame_source = []
   if blame_data:
     for i in blame_data:
+      i.text = cgi.escape(i.text)
       i.diff_href = None
       if i.prev_rev:
         i.diff_href = request.get_url(view_func=view_diff,
@@ -1310,7 +1311,9 @@ def markup_stream_pygments(request, cfg, blame_data, fp, path_parts):
   try:
     from pygments import highlight
     from pygments.formatters import HtmlFormatter
-    from pygments.lexers import ClassNotFound, get_lexer_by_name, get_lexer_for_filename
+    from pygments.lexers import ClassNotFound, \
+                                get_lexer_by_name, \
+                                get_lexer_for_filename
     try:
       lexer = get_lexer_for_filename(path_parts[-1])
     except ClassNotFound:
