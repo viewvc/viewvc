@@ -209,13 +209,7 @@ class Config:
       self.utilities.cvsnt = None
     self.utilities.svn = ''
     self.utilities.diff = ''
-    self.utilities.enscript = ''
-    self.utilities.highlight = ''
-    self.utilities.source_highlight = ''
-    self.utilities.py2html_dir = '.'
-    self.utilities.php = 'php'
     self.utilities.cvsgraph = ''
-    self.utilities.sed = ''
 
     self.options.root_as_url_component = 1
     self.options.checkout_magic = 0
@@ -246,27 +240,19 @@ class Config:
     self.options.cross_copies = 0
     self.options.use_localtime = 0
     self.options.short_log_len = 80
-    self.options.use_pygments = 0
-    self.options.use_py2html = 0
-    self.options.use_enscript = 0
-    self.options.use_highlight = 0
-    self.options.highlight_convert_tabs = 2
-    self.options.use_source_highlight = 0
-    self.options.use_php = 0
-    self.options.markup_line_numbers = 1
+    self.options.enable_syntax_coloration = 1
     self.options.use_cvsgraph = 0
     self.options.cvsgraph_conf = "cvsgraph.conf"
     self.options.use_re_search = 0
     self.options.use_pagesize = 0
     self.options.limit_changes = 100
 
-    self.templates.annotate = None
     self.templates.diff = None
     self.templates.directory = None
     self.templates.error = None
+    self.templates.file = None
     self.templates.graph = None
     self.templates.log = None
-    self.templates.markup = None
     self.templates.query = None
     self.templates.query_form = None
     self.templates.query_results = None
