@@ -43,15 +43,8 @@ Congratulations on getting this far. :-)
       * MySQL 3.22 and MySQLdb 0.9.0 or later to create a commit database
           (http://www.mysql.com/)
           (http://sourceforge.net/projects/mysql-python)
-      * one of the following syntax highlighting programs/packages:
-          - Pygments 0.9 or later
-              (http://pygments.org)
-          - GNU enscript
-              (http://www.codento.com/people/mtr/genscript/)
-          - Highlight 2.2.10 or later (we recommend 2.4.5 or later)
-              (http://www.andre-simon.de/)
-          - GNU source-highlight 2.6 or later
-              (http://www.gnu.org/software/src-highlite/)
+      * Pygments 0.9 or later, syntax highlighting engine
+          (http://pygments.org)
       * CvsGraph 1.5.0 or later, graphical CVS revision tree generator
           (http://www.akhphd.au.dk/~bertho/cvsgraph/)
 
@@ -227,8 +220,8 @@ or if you've got Mod_Python installed you can use METHOD D:
    you copied the files to.
    
    Note: If you are using Mod_Python under Apache 1.3 the tarball generation
-   and enscript colorizing features may not work because they use
-   multithreading. They do work fine with Apache 2.
+   feature may not work because it uses multithreading.  This works fine
+   under Apache 2.
    
    continue with step 3).
 
@@ -398,25 +391,11 @@ links in ViewVC directory listings and give it a try.
 ENABLING SYNTAX COLORATION
 --------------------------
 
-ViewVC can use several different syntax coloration engines.  Some of
-them (such as 'enscript', 'highlight', and 'source-highlight') use
-external programs to generate colorized file contents.  Others (such
-as Pygments and py2html) are Python modules.  Some of them are able to
-colorize files of various types; some only understand a single file
-type.  Things can get confusing pretty quickly, and you might have to
-decide which package to use based on what's available for your
-platform.
-
-There are several options related to syntax highlighting in ViewVC's
-configuration file.  They come in two flavors:  those under the
-[options] section which enable the integration of one of the
-highlighting engines ('use_pygments', 'use_enscript', 'use_highlight',
-'use_source_highlight', etc.), and those under the [utilities] section
-which indicate where ViewVC can find the necessary helper programs
-('enscript', 'highlight', etc.).  So be sure to check the [utilities]
-configuration section for program paths you might need to configure
-based on the decision of which highlighting engine you've chosen under
-the [options] section.
+ViewVC uses Pygments (http://pygments.org) for syntax coloration.  You
+need only install a suitable version of that module, and if ViewVC
+finds it in your Python module path, it will use it (unless you
+specifically disable the feature by setting use_pygments = 0 in your
+viewvc.conf file).
 
 
 CVSGRAPH CONFIGURATION
