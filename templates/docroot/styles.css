@@ -6,6 +6,7 @@
 html, body {
   color: #000000;
   background-color: #ffffff;
+  font-family: sans-serif;
 }
 
 a:link    { color: #0000ff; }
