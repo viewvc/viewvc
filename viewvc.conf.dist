@@ -243,39 +243,9 @@ svn =
 diff = 
 # diff = /usr/bin/diff
 
-# GNU Enscript, a syntax highlighting program (see options.use_enscript)
-enscript =
-# enscript = /usr/bin/enscript
-
-# Highlight, a syntax highlighting program (see options.use_highlight)
-highlight =
-# highlight = /usr/bin/highlight
-
-# GNU source-highlight, a syntax highlighting program (see 
-# options.use_source_highlight)
-source_highlight = 
-# source_highlight = /usr/bin/source-highlight
-
-# Marc-Andrew Lemburg's py2html, Python colorizer (see options.use_py2html)
-py2html_dir = .
-# py2html_dir = /usr/local/lib/python1.5/site-python
-
-# PHP, used to colorize PHP files (see options.use_php)
-# (This should be set to the path of a PHP CLI executable, not the path
-# to a CGI executable. If you use a CGI executable, you may see "no input file
-# specified" or "force-cgi-redirect" errors instead of colorized source. The
-# output of "php -v" tells you whether an given executable is CLI or CGI.)
-php = php
-# php = /usr/local/bin/php
-# php = C:\Program Files\php\cli\php.exe
-
 # CvsGraph, a graphical CVS version graph generator (see options.use_cvsgraph)
 cvsgraph =
 # cvsgraph = /usr/local/bin/cvsgraph
-
-# Sed, stream editor
-sed =
-# sed = /usr/bin/sed
 
 
 #---------------------------------------------------------------------------
@@ -482,34 +452,8 @@ use_localtime = 0
 # shown in the directory view
 short_log_len = 80
 
-# should we use Marc-Andrew Lemburg's py2html (and Just van Rossum's
-# PyFontify) to colorize Python files?
-use_py2html = 0
-
-# should we use Pygments for syntax coloring?
-use_pygments = 0
-
-# should we use 'enscript' for syntax coloring?
-# NOTE: ignored if use_pygments is set
-use_enscript = 0
-
-# should we use 'highlight' for syntax coloring?
-# NOTE: ignored if use_pygments or use_enscript is set
-use_highlight = 0
-
-# convert tabs to ## spaces (use 0 for no conversion)
-highlight_convert_tabs = 2
-
-# should we use 'source-highlight' for syntax coloring?
-# NOTE: ignored if use_pygments, use_enscript or use_highlight is set
-use_source_highlight = 0
-
-# use php to colorize .php and .inc files?
-use_php = 0
-
-# should we add line numbers in the markup view (only works for
-# certain syntax highlighting engines)?
-markup_line_numbers = 1
+# should we colorize known file content syntaxes?  (requires Pygments module)
+enable_syntax_coloration = 1
 
 #
 # Use CvsGraph. See http://www.akhphd.au.dk/~bertho/cvsgraph/ for
@@ -586,17 +530,16 @@ limit_changes = 100
 #       [general] section, and based on the request's Accept-Language
 #       header.
 #
-#annotate = templates/annotate.ezt
 #diff = templates/diff.ezt
 #directory = templates/directory.ezt
 ### an alternative directory view
 #directory = templates/dir_new.ezt   
 #error = templates/error.ezt
+#file = templates/file.ezt
 #graph = templates/graph.ezt
 #log = templates/log.ezt
 ### a table-based alternative log view
 #log = templates/log_table.ezt  
-#markup = templates/markup.ezt
 #query = templates/query.ezt
 #query_form = templates/query_form.ezt
 #query_results = templates/query_results.ezt
