@@ -53,6 +53,18 @@
 <td><strong><em>FILE REMOVED</em></strong></td>
 </tr>
 [end]
+[if-any annotation]
+[is annotation "binary"]
+<tr>
+<td colspan="2"><strong>Unable to calculate annotation data on binary file contents.</strong></td>
+</tr>
+[end]
+[is annotation "error"]
+<tr>
+<td colspan="2"><strong>Error occurred while calculating annotation data.</strong></td>
+</tr>
+[end]
+[end]
 [if-any log]
 <tr>
 <td>Log Message:</td>

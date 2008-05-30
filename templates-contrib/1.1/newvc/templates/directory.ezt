@@ -92,7 +92,7 @@
 
     <td [if-any entries.log_href]onclick="jumpTo('[entries.log_href]')"[end]>
       [if-any entries.rev]
-        <strong>[if-any entries.log_href]<a href="" title="Revision [entries.rev]">[entries.rev]</a>[else][entries.rev][end]</strong>
+        <strong>[if-any entries.log_href]<a href="[entries.log_href]" title="Revision [entries.rev]">[entries.rev]</a>[else][entries.rev][end]</strong>
         ([entries.ago] ago)
         by <em>[entries.author]</em>:
         [entries.log]
