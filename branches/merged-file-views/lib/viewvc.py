@@ -1422,7 +1422,6 @@ def markup_or_annotate(request, is_annotate):
      and 'co' in cfg.options.allowed_views:
     fp, revision = request.repos.openfile(path, rev)
     fp.close()
-    fp = None
     annotation = 'binary'
     image_src_href = request.get_url(view_func=view_checkout,
                                      params={'revision': rev}, escape=1)
