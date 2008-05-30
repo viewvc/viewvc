@@ -118,5 +118,4 @@
 
 </table>
 
-[include "include/props.ezt"]
 [include "include/dir_footer.ezt"]
