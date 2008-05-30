@@ -1,28 +1,9 @@
-[if-any search_re_form]
-<hr />
-<div>
-Show files containing the regular expression:
-<form method="get" action="[search_re_action]" style="display: inline;">
-  <div style="display: inline;">
-    [for search_re_hidden_values]<input type="hidden" name="[search_re_hidden_values.name]" value="[search_re_hidden_values.value]"/>[end]
-    <input type="text" name="search" value="[search_re]" />
-    <input type="submit" value="Show" />
-  </div>
-</form>
-[if-any search_re]
-<form method="get" action="[search_re_action]" style="display: inline;">
-  <div style="display: inline;">
-    [for search_re_hidden_values]<input type="hidden" name="[search_re_hidden_values.name]" value="[search_re_hidden_values.value]"/>[end]
-    <input type="submit" value="Show all files" />
-  </div>
-</form>
-[end]
-[end]
-</div>
-
 [# if you want to disable tarball generation remove the following: ]
 [if-any tarball_href]
-  <p style="margin:0;"><a href="[tarball_href]">Download GNU tarball</a></p>
+<hr/>
+<p style="margin:0;"><a href="[tarball_href]">Download GNU tarball</a></p>
 [end]
 
+[include "props.ezt"]
 [include "footer.ezt"]
+
