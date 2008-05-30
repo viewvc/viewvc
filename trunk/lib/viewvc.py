@@ -1360,7 +1360,9 @@ def markup_stream_pygments(request, cfg, blame_data, fp, path_parts):
       self.line_no = self.line_no + 1
   ps = PygmentsSink(blame_source)
   highlight(fp.read(), lexer,
-            HtmlFormatter(nowrap=True, classprefix="pygments-"), ps)
+            HtmlFormatter(nowrap=True,
+                          classprefix="pygments-",
+                          encoding='utf-8'), ps)
   return ps.blame_data
 
 def make_time_string(date, cfg):
