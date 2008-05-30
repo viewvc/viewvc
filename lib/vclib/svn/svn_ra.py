@@ -29,6 +29,13 @@ from svn import core, delta, client, wc, ra
 if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 3, 1):
   raise Exception, "Version requirement not met (needs 1.3.1 or better)"
 
+
+# The 1.4.x bindings inadvertantly lost core.SVN_INVALID_REVNUM
+try:
+  SVN_INVALID_REVNUM = core.SVN_INVALID_REVNUM
+except AttributeError:
+  SVN_INVALID_REVNUM = -1
+
   
 def date_from_rev(svnrepos, rev):
   return _datestr_to_date(ra.svn_ra_rev_prop(svnrepos.ra_session, rev,
@@ -438,7 +445,7 @@ class RemoteSubversionRepository(vclib.Repository):
     elif kind == core.svn_node_file:
       fetched_rev, props = ra.svn_ra_get_file(self.ra_session, path, rev, None)
     return int(props.get(core.SVN_PROP_ENTRY_COMMITTED_REV,
-                         core.SVN_INVALID_REVNUM))
+                         SVN_INVALID_REVNUM))
 
   def last_rev(self, path, peg_revision, limit_revision=None):
     """Given PATH, known to exist in PEG_REVISION, find the youngest
