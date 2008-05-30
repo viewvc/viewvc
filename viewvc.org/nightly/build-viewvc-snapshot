@@ -97,7 +97,7 @@ def publish_releases(branches, publish_dir, root_url, username, password):
     finally:
       if export_dir:
         sys.stdout.write("Removing temporary directory '%s'.\n" % (export_dir))
-        #shutil.rmtree(export_dir)
+        shutil.rmtree(export_dir)
     sys.stdout.write("Finished build for branch '%s'.\n" % (branch))
 
   new_index_contents = new_index_contents + get_html_index_footer()
