@@ -36,7 +36,16 @@ try:
 except AttributeError:
   SVN_INVALID_REVNUM = -1
 
-  
+
+def svn_client_ls3(url, peg_rev, rev, flag, ctx):
+  try:
+    dirents, locks = client.svn_client_ls3(url, peg_rev, rev, flag, ctx)
+  except TypeError: # 1.4.x bindings are goofed
+    dirents = client.svn_client_ls3(None, url, peg_rev, rev, flag, ctx)
+    locks = {}
+  return dirents, locks  
+
+
 def date_from_rev(svnrepos, rev):
   return _datestr_to_date(ra.svn_ra_rev_prop(svnrepos.ra_session, rev,
                                              core.SVN_PROP_REVISION_DATE))
@@ -292,8 +301,8 @@ class RemoteSubversionRepository(vclib.Repository):
 
     # Use ls3 to fetch the lock status for this item.
     lockinfo = None
-    dirents, locks = client.svn_client_ls3(url, _rev2optrev(rev),
-                                           _rev2optrev(rev), 0, self.ctx)
+    dirents, locks = svn_client_ls3(url, _rev2optrev(rev),
+                                    _rev2optrev(rev), 0, self.ctx)
     if locks.has_key(path_parts[-1]):
       lockinfo = locks[path_parts[-1]].owner
 
@@ -401,8 +410,8 @@ class RemoteSubversionRepository(vclib.Repository):
       key = str(rev)
     dirents_locks = self._dirent_cache.get(key)
     if not dirents_locks:
-      dirents, locks = client.svn_client_ls3(dir_url, _rev2optrev(rev),
-                                             _rev2optrev(rev), 0, self.ctx)
+      dirents, locks = svn_client_ls3(dir_url, _rev2optrev(rev),
+                                      _rev2optrev(rev), 0, self.ctx)
       dirents_locks = [dirents, locks]
       self._dirent_cache[key] = dirents_locks
     return dirents_locks[0], dirents_locks[1]
