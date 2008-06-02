@@ -416,20 +416,20 @@ class LocalSubversionRepository(vclib.Repository):
     return pathtype
 
   def openfile(self, path_parts, rev):
-    rev = self._getrev(rev)
+    path = self._getpath(path_parts)
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % path)
-    path = self._getpath(path_parts)
+    rev = self._getrev(rev)
     fsroot = self._getroot(rev)
     revision = str(_get_last_history_rev(fsroot, path))
     fp = FileContentsPipe(fsroot, path)
     return fp, revision
 
   def listdir(self, path_parts, rev, options):
-    rev = self._getrev(rev)
     path = self._getpath(path_parts)
     if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
       raise vclib.Error("Path '%s' is not a directory." % path)
+    rev = self._getrev(rev)
     fsroot = self._getroot(rev)
     dirents = fs.dir_entries(fsroot, path)
     entries = [ ]
@@ -443,11 +443,11 @@ class LocalSubversionRepository(vclib.Repository):
     return entries
 
   def dirlogs(self, path_parts, rev, entries, options):
-    fsroot = self._getroot(self._getrev(rev))
-    rev = self._getrev(rev)
+    path = self._getpath(path_parts)
     if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
       raise vclib.Error("Path '%s' is not a directory." % path)
-
+    fsroot = self._getroot(self._getrev(rev))
+    rev = self._getrev(rev)
     for entry in entries:
       entry_path_parts = path_parts + [entry.name]
       if not vclib.check_path_access(self, entry_path_parts, entry.kind, rev):
@@ -484,8 +484,8 @@ class LocalSubversionRepository(vclib.Repository):
     assert sortby == vclib.SORTBY_DEFAULT or sortby == vclib.SORTBY_REV   
 
     path = self._getpath(path_parts)
-    rev = self._getrev(rev)
     path_type = self.itemtype(path_parts, rev)  # does auth-check
+    rev = self._getrev(rev)
     revs = []
     lockinfo = None
 
@@ -532,18 +532,17 @@ class LocalSubversionRepository(vclib.Repository):
 
   def itemprops(self, path_parts, rev):
     path = self._getpath(path_parts)
+    path_type = self.itemtype(path_parts, rev)  # does auth-check
     rev = self._getrev(rev)
     fsroot = self._getroot(rev)
-    path_type = self.itemtype(path_parts, rev)  # does auth-check
     return fs.node_proplist(fsroot, path)
   
   def annotate(self, path_parts, rev):
     path = self._getpath(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file." % path)
     rev = self._getrev(rev)
     fsroot = self._getroot(rev)
-    path_type = self.itemtype(path_parts, rev)  # does auth-check
-    if path_type != vclib.FILE:
-      raise vclib.Error("Path '%s' is not a file." % path)
     history = _get_history(self, path, rev, path_type, 0,
                            {'svn_cross_copies': 1})
     youngest_rev, youngest_path = history[0]
