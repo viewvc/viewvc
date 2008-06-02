@@ -42,6 +42,14 @@ class CCVSRepository(BaseCVSRepository):
       cvs_tags, cvs_branches
         lists of tag and branch names encountered in the directory
     """
+    if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
+      raise vclib.Error("Path '%s' is not a directory."
+                        % (string.join(path_parts, "/")))
+    entries_to_fetch = []
+    for entry in entries:
+      if vclib.check_path_access(self, path_parts + [entry.name], None, rev):
+        entries_to_fetch.append(entry)
+
     subdirs = options.get('cvs_subdirs', 0)
 
     dirpath = self._getpath(path_parts)
@@ -50,7 +58,7 @@ class CCVSRepository(BaseCVSRepository):
       'HEAD' : '1.1'
     }
 
-    for entry in entries:
+    for entry in entries_to_fetch:
       entry.rev = entry.date = entry.author = None
       entry.dead = entry.log = entry.lockinfo = None
       path = _log_path(entry, dirpath, subdirs)
@@ -85,6 +93,10 @@ class CCVSRepository(BaseCVSRepository):
       cvs_tags
         dictionary of Tag objects for all tags encountered
     """
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts, "/")))
+
     path = self.rcsfile(path_parts, 1)
     sink = TreeSink()
     rcsparse.parse(open(path, 'rb'), sink)
@@ -107,6 +119,13 @@ class CCVSRepository(BaseCVSRepository):
     return filtered_revs
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
+    if self.itemtype(path_parts1, rev1) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts1, "/")))
+    if self.itemtype(path_parts2, rev2) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts2, "/")))
+    
     temp1 = tempfile.mktemp()
     open(temp1, 'wb').write(self.openfile(path_parts1, rev1)[0].getvalue())
     temp2 = tempfile.mktemp()
@@ -124,6 +143,9 @@ class CCVSRepository(BaseCVSRepository):
                           self.utilities.diff or 'diff', diff_args)
 
   def annotate(self, path_parts, rev=None):
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts, "/")))
     source = blame.BlameSource(self.rcsfile(path_parts, 1), rev)
     return source, source.revision
 
@@ -131,6 +153,9 @@ class CCVSRepository(BaseCVSRepository):
     raise vclib.UnsupportedFeature
 
   def openfile(self, path_parts, rev=None):
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts, "/")))
     path = self.rcsfile(path_parts, 1)
     sink = COSink(rev)
     rcsparse.parse(open(path, 'rb'), sink)
