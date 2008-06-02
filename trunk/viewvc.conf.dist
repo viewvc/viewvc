@@ -419,14 +419,14 @@ template_dir = templates
 # specified by the "template_dir" option).
 #docroot = /docroot
 
-# Show last changelog message for sub directories
-# The current implementation makes many assumptions and may show the
-# incorrect file at some times. The main assumption is that the last
-# modified file has the newest filedate. But some CVS operations
+# Show last changelog message for CVS subdirectories
+# NOTE: The current implementation makes many assumptions and may show
+# the incorrect file at some times. The main assumption is that the
+# last modified file has the newest filedate. But some CVS operations
 # touches the file without even when a new version is not checked in,
 # and TAG based browsing essentially puts this out of order, unless
-# the last checkin was on the same tag as you are viewing.
-# Enable this if you like the feature, but don't rely on correct results.
+# the last checkin was on the same tag as you are viewing.  Enable
+# this if you like the feature, but don't rely on correct results.
 #
 # ** WARNING: Enabling this will currently leak unauthorized path names **
 show_subdir_lastmod = 0
