@@ -30,20 +30,29 @@ if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 3, 1):
   raise Exception, "Version requirement not met (needs 1.3.1 or better)"
 
 
-# The 1.4.x bindings inadvertantly lost core.SVN_INVALID_REVNUM
+### BEGIN COMPATABILITY CODE ###
+
 try:
   SVN_INVALID_REVNUM = core.SVN_INVALID_REVNUM
-except AttributeError:
+except AttributeError: # The 1.4.x bindings are missing core.SVN_INVALID_REVNUM
   SVN_INVALID_REVNUM = -1
 
-
-def svn_client_ls3(url, peg_rev, rev, flag, ctx):
+def list_directory(url, peg_rev, rev, flag, ctx):
   try:
     dirents, locks = client.svn_client_ls3(url, peg_rev, rev, flag, ctx)
   except TypeError: # 1.4.x bindings are goofed
     dirents = client.svn_client_ls3(None, url, peg_rev, rev, flag, ctx)
     locks = {}
   return dirents, locks  
+
+def get_directory_props(ra_session, path, rev):
+  try:
+    dirents, fetched_rev, props = ra.svn_ra_get_dir(ra_session, path, rev)
+  except ValueError: # older bindings are goofed
+    props = ra.svn_ra_get_dir(ra_session, path, rev)
+  return props
+
+### END COMPATABILITY CODE ###
 
 
 def date_from_rev(svnrepos, rev):
@@ -231,25 +240,32 @@ class RemoteSubversionRepository(vclib.Repository):
     return self.auth
   
   def itemtype(self, path_parts, rev):
-    path = self._getpath(path_parts[:-1])
-    rev = self._getrev(rev)
+    pathtype = None
     if not len(path_parts):
-      return vclib.DIR
-    dirents, locks = self._get_dirents(path, rev)
-    try:
-      entry = dirents[path_parts[-1]]
-      if entry.kind == core.svn_node_dir:
-        return vclib.DIR
-      if entry.kind == core.svn_node_file:
-        return vclib.FILE
-    except KeyError:
+      pathtype = vclib.DIR
+    else:
+      path = self._getpath(path_parts)
+      rev = self._getrev(rev)
+      try:
+        kind = ra.svn_ra_check_path(self.ra_session, path, rev)
+        if kind == core.svn_node_file:
+          pathtype = vclib.FILE
+        elif kind == core.svn_node_dir:
+          pathtype = vclib.DIR
+      except:
+        pass
+    if pathtype is None:
       raise vclib.ItemNotFound(path_parts)
+    if not vclib.check_path_access(self, path_parts, pathtype, rev):
+      raise vclib.ItemNotFound(path_parts)
+    return pathtype
 
   def openfile(self, path_parts, rev):
     path = self._getpath(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file." % path)
     rev = self._getrev(rev)
     url = self._geturl(path)
-    
     tmp_file = tempfile.mktemp()
     stream = core.svn_stream_from_aprfile(tmp_file)
     ### rev here should be the last history revision of the URL
@@ -259,6 +275,8 @@ class RemoteSubversionRepository(vclib.Repository):
 
   def listdir(self, path_parts, rev, options):
     path = self._getpath(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
+      raise vclib.Error("Path '%s' is not a directory." % path)
     rev = self._getrev(rev)
     entries = [ ]
     dirents, locks = self._get_dirents(path, rev)
@@ -268,14 +286,21 @@ class RemoteSubversionRepository(vclib.Repository):
         kind = vclib.DIR
       elif entry.kind == core.svn_node_file:
         kind = vclib.FILE
-      entries.append(vclib.DirEntry(name, kind))
+      if vclib.check_path_access(self, path_parts + [name], kind, rev):
+        entries.append(vclib.DirEntry(name, kind))
     return entries
 
   def dirlogs(self, path_parts, rev, entries, options):
+    path = self._getpath(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
+      raise vclib.Error("Path '%s' is not a directory." % path)
+    rev = self._getrev(rev)
     rev_info_cache = { }
-    dirents, locks = self._get_dirents(self._getpath(path_parts),
-                                       self._getrev(rev))
+    dirents, locks = self._get_dirents(path, rev)
     for entry in entries:
+      entry_path_parts = path_parts + [entry.name]
+      if not vclib.check_path_access(self, entry_path_parts, entry.kind, rev):
+        continue
       dirent = dirents[entry.name]
       if rev_info_cache.has_key(dirent.created_rev):
         rev, author, date, log = rev_info_cache[dirent.created_rev]
@@ -295,13 +320,14 @@ class RemoteSubversionRepository(vclib.Repository):
 
   def itemlog(self, path_parts, rev, sortby, first, limit, options):
     assert sortby == vclib.SORTBY_DEFAULT or sortby == vclib.SORTBY_REV   
+    path_type = self.itemtype(path_parts, rev) # does auth-check
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
     url = self._geturl(path)
 
     # Use ls3 to fetch the lock status for this item.
     lockinfo = None
-    dirents, locks = svn_client_ls3(url, _rev2optrev(rev),
+    dirents, locks = list_directory(url, _rev2optrev(rev),
                                     _rev2optrev(rev), 0, self.ctx)
     if locks.has_key(path_parts[-1]):
       lockinfo = locks[path_parts[-1]].owner
@@ -332,6 +358,7 @@ class RemoteSubversionRepository(vclib.Repository):
 
   def itemprops(self, path_parts, rev):
     path = self._getpath(path_parts)
+    path_type = self.itemtype(path_parts, rev) # does auth-check
     rev = self._getrev(rev)
     url = self._geturl(path)
     pairs = client.svn_client_proplist2(url, _rev2optrev(rev),
@@ -340,6 +367,8 @@ class RemoteSubversionRepository(vclib.Repository):
   
   def annotate(self, path_parts, rev):
     path = self._getpath(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file." % path)
     rev = self._getrev(rev)
     url = self._geturl(path)
 
@@ -367,8 +396,12 @@ class RemoteSubversionRepository(vclib.Repository):
     p2 = self._getpath(path_parts2)
     r1 = self._getrev(rev1)
     r2 = self._getrev(rev2)
-    args = vclib._diff_args(type, options)
+    if not vclib.check_path_access(self, path_parts1, vclib.FILE, rev1):
+      raise vclib.ItemNotFound(path_parts1)
+    if not vclib.check_path_access(self, path_parts2, vclib.FILE, rev2):
+      raise vclib.ItemNotFound(path_parts2)
 
+    args = vclib._diff_args(type, options)
     try:
       temp1 = temp_checkout(self, p1, r1)
       temp2 = temp_checkout(self, p2, r2)
@@ -410,7 +443,7 @@ class RemoteSubversionRepository(vclib.Repository):
       key = str(rev)
     dirents_locks = self._dirent_cache.get(key)
     if not dirents_locks:
-      dirents, locks = svn_client_ls3(dir_url, _rev2optrev(rev),
+      dirents, locks = list_directory(dir_url, _rev2optrev(rev),
                                       _rev2optrev(rev), 0, self.ctx)
       dirents_locks = [dirents, locks]
       self._dirent_cache[key] = dirents_locks
@@ -444,13 +477,7 @@ class RemoteSubversionRepository(vclib.Repository):
     if kind == core.svn_node_none:
       raise vclib.ItemNotFound(_path_parts(path))
     elif kind == core.svn_node_dir:
-      try:
-        dirents, fetched_rev, props = ra.svn_ra_get_dir(self.ra_session,
-                                                        path, rev)
-      except ValueError:
-        # older versions of the bindings didn't handle ra.svn_ra_get_dir()
-        # correctly.
-        props = ra.svn_ra_get_dir(self.ra_session, path, rev)
+      props = get_directory_props(self.ra_session, path, rev)
     elif kind == core.svn_node_file:
       fetched_rev, props = ra.svn_ra_get_file(self.ra_session, path, rev, None)
     return int(props.get(core.SVN_PROP_ENTRY_COMMITTED_REV,
