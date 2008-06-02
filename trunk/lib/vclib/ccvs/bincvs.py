@@ -70,12 +70,14 @@ class BaseCVSRepository(vclib.Repository):
     return kind
 
   def itemprops(self, path_parts, rev):
-    self.itemtype(path_parts, rev)  # does authz check
+    self.itemtype(path_parts, rev)  # does auth-check
     return {}  # CVS doesn't support properties
   
   def listdir(self, path_parts, rev, options):
-    if not vclib.check_path_access(self, path_parts, vclib.DIR, rev):
-      raise vclib.ItemNotFound(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
+      raise vclib.Error("Path '%s' is not a directory."
+                        % (string.join(path_parts, "/")))
+    
     # Only RCS files (*,v) and subdirs are returned.
     data = [ ]
     full_name = self._getpath(path_parts)
@@ -156,8 +158,9 @@ class BinCVSRepository(BaseCVSRepository):
     return None
 
   def openfile(self, path_parts, rev):
-    if not vclib.check_path_access(self, path_parts, vclib.FILE, rev):
-      raise vclib.ItemNotFound(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts, "/")))
     if not rev or rev == 'HEAD' or rev == 'MAIN':
       rev_flag = '-p'
     else:
@@ -227,17 +230,16 @@ class BinCVSRepository(BaseCVSRepository):
       cvs_tags, cvs_branches
         lists of tag and branch names encountered in the directory
     """
-    if not vclib.check_path_access(self, path_parts, vclib.DIR, rev):
-      raise vclib.ItemNotFound(path_parts)
-    subdirs = options.get('cvs_subdirs', 0)
+    if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
+      raise vclib.Error("Path '%s' is not a directory."
+                        % (string.join(path_parts, "/")))
 
+    subdirs = options.get('cvs_subdirs', 0)
     entries_to_fetch = []
     for entry in entries:
       if vclib.check_path_access(self, path_parts + [entry.name], None, rev):
         entries_to_fetch.append(entry)
-      
     alltags = _get_logs(self, path_parts, entries_to_fetch, rev, subdirs)
-
     branches = options['cvs_branches'] = []
     tags = options['cvs_tags'] = []
     for name, rev in alltags.items():
@@ -266,8 +268,9 @@ class BinCVSRepository(BaseCVSRepository):
         dictionary of Tag objects for all tags encountered
     """
 
-    if not vclib.check_path_access(self, path_parts, vclib.FILE, rev):
-      raise vclib.ItemNotFound(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts, "/")))
     
     # Invoke rlog
     rcsfile = self.rcsfile(path_parts, 1)
@@ -311,8 +314,10 @@ class BinCVSRepository(BaseCVSRepository):
     return popen.popen(cmd, args, mode, capture_err)
 
   def annotate(self, path_parts, rev=None):
-    if not vclib.check_path_access(self, path_parts, vclib.FILE, rev):
-      raise vclib.ItemNotFound(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts, "/")))
+                        
     from vclib.ccvs import blame
     source = blame.BlameSource(self.rcsfile(path_parts, 1), rev)
     return source, source.revision
@@ -327,10 +332,12 @@ class BinCVSRepository(BaseCVSRepository):
 
       ignore_keyword_subst - boolean, ignore keyword substitution
     """
-    if not vclib.check_path_access(self, path_parts1, vclib.FILE, rev1):
-      raise vclib.ItemNotFound(path_parts1)
-    if not vclib.check_path_access(self, path_parts2, vclib.FILE, rev2):
-      raise vclib.ItemNotFound(path_parts2)
+    if self.itemtype(path_parts1, rev1) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts1, "/")))
+    if self.itemtype(path_parts2, rev2) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts2, "/")))
     
     args = vclib._diff_args(type, options)
     if options.get('ignore_keyword_subst', 0):
