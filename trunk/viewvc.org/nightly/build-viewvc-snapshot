@@ -38,7 +38,7 @@ def make_release(branch, export_dir, publish_dir, root_url, username, password):
 
   # Now, use ViewVC tools to make the distribution archives.
   localtime = time.localtime()
-  date = "%d%0d%0d" % (localtime[0], localtime[1], localtime[2])
+  date = "%4d%02d%02d" % (localtime[0], localtime[1], localtime[2])
   distversion = "viewvc-%s" % (version)
   distname = "%s-%s" % (distversion, date)
   gzip_name = distname + '.tar.gz'
