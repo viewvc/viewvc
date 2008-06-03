@@ -672,6 +672,10 @@ class LocalSubversionRepository(vclib.Repository):
         raise vclib.InvalidRevision
       raise
 
+  def isexecutable(self, path_parts, rev):
+    props = self.itemprops(path_parts, rev) # does authz-check
+    return props.has_key(core.SVN_PROP_EXECUTABLE)
+  
   def _getpath(self, path_parts):
     return string.join(path_parts, '/')
 

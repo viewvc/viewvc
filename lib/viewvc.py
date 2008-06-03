@@ -2971,7 +2971,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     for file in entries:
       if cvs and (file.kind != vclib.FILE or file.rev is None or file.dead):
         continue
-      if file.date > dir_mtime:
+      if (file.date is not None) and (file.date > dir_mtime):
         dir_mtime = file.date
 
   # Push current directory onto the stack.
@@ -2999,9 +2999,11 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
         generate_tarball_header(out, dir, mtime=dir_mtime)
       del stack[:]
 
-    if cvs:
-      info = os.stat(file.path)
-      mode = (info[stat.ST_MODE] & 0555) | 0200
+    # Calculate the mode for the file.  Sure, we could look directly
+    # at the ,v file in CVS, but that's a layering violation we'd like
+    # to avoid as much as possible.
+    if request.repos.isexecutable(rep_path + [file.name], request.pathrev):
+      mode = 0755
     else:
       mode = 0644
 
@@ -3012,7 +3014,8 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     fp.close()
 
     generate_tarball_header(out, tar_dir + file.name,
-                            len(contents), mode, file.date)
+                            len(contents), mode,
+                            file.date is not None and file.date or 0)
     out.write(contents)
     out.write('\0' * (511 - ((len(contents) + 511) % 512)))
 
