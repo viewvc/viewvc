@@ -2653,7 +2653,7 @@ def diff_parse_headers(fp, diff_type, rev1, rev2, sym1=None, sym2=None):
 def _get_diff_path_parts(request, query_key, rev, base_rev):
   repos = request.repos
   if request.query_dict.has_key(query_key):
-    path = _path_parts(request.query_dict[query_key])
+    parts = _path_parts(request.query_dict[query_key])
   elif request.roottype == 'svn':
     try:
       parts = _path_parts(repos.get_location(request.where,
