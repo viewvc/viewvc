@@ -311,7 +311,7 @@ class RemoteSubversionRepository(vclib.Repository):
         rev_info_cache[dirent.created_rev] = rev, author, date, log
       entry.rev = rev
       entry.author = author
-      entry.date = _datestr_to_date(date)
+      entry.date = date
       entry.log = log
       entry.size = dirent.size
       entry.lockinfo = None
