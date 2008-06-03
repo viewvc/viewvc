@@ -31,6 +31,7 @@ Version 1.1.0 (released ??-???-????)
   * add RSS feed URL generation for file history
   * add support for remote creation of ViewVC checkins database
   * add integration with Pygments for syntax highlighting
+  * preserve executability of Subversion files in tarballs (issue #233)
 
 Version 1.0.5 (released 28-Feb-2008)
 
