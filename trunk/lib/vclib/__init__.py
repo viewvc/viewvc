@@ -187,6 +187,17 @@ class Repository:
     doesn't support a global revision concept.
     """
 
+  def isexecutable(self, path_parts, rev):
+    """Return true iff a given revision of a versioned file is to be
+    considered an executable program or script.
+
+    The path is specified as a list of components, relative to the root
+    of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+    rev is the revision of the item to return information about
+    """
+    
+    
 # ======================================================================
 class DirEntry:
   """Instances represent items in a directory listing"""

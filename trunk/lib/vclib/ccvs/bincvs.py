@@ -130,16 +130,21 @@ class BaseCVSRepository(vclib.Repository):
       ret_file = self._getpath(ret_parts)
       if not os.path.isfile(ret_file + ',v'):
         raise vclib.ItemNotFound(path_parts)
-
     if root:
       ret = ret_file
     else:
       ret = string.join(ret_parts, "/")
-
     if v:
       ret = ret + ",v"
-
     return ret
+
+  def isexecutable(self, path_parts, rev):
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts, "/")))
+    rcsfile = self.rcsfile(path_parts, 1)
+    return os.access(rcsfile, os.X_OK)
+
 
 class BinCVSRepository(BaseCVSRepository):
   def _get_tip_revision(self, rcs_file, rev=None):
