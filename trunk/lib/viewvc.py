@@ -793,10 +793,9 @@ def setup_authorizer(cfg, username, rootname):
   return my_auth.ViewVCAuthorizer(username, params)
 
 def check_freshness(request, mtime=None, etag=None, weak=0):
-  # See if we are supposed to disable etags (for debugging, usually)
-
   cfg = request.cfg
 
+  # See if we are supposed to disable etags (for debugging, usually)
   if not cfg.options.generate_etags:
     return 0
   
@@ -1421,16 +1420,19 @@ def markup_or_annotate(request, is_annotate):
   data = common_template_data(request)
   lines = fp = image_src_href = None
   annotation = None
-  
+
   # Is this a viewable image type?
   if is_viewable_image(request.mime_type) \
      and 'co' in cfg.options.allowed_views:
     fp, revision = request.repos.openfile(path, rev)
     fp.close()
+    if check_freshness(request, None, revision, weak=1):
+      return
     annotation = 'binary'
     image_src_href = request.get_url(view_func=view_checkout,
                                      params={'revision': rev}, escape=1)
 
+  # Not a viewable image.
   else:
     blame_source = None
     if is_annotate:
@@ -1438,11 +1440,17 @@ def markup_or_annotate(request, is_annotate):
       try:
         blame_source, revision = request.repos.annotate(path, rev)
         annotation = 'annotated'
+        if check_freshness(request, None, revision, weak=1):
+          return
       except vclib.NonTextualFileContents:
         annotation = 'binary'
       except:
         annotation = 'error'
+
     fp, revision = request.repos.openfile(path, rev)
+    if check_freshness(request, None, revision, weak=1):
+      fp.close()
+      return
     lines = markup_stream_pygments(request, cfg, blame_source, fp, path)
     fp.close()
 
