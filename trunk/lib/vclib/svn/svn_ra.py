@@ -331,10 +331,11 @@ class RemoteSubversionRepository(vclib.Repository):
 
     # Use ls3 to fetch the lock status for this item.
     lockinfo = None
+    basename = path_parts and path_parts[-1] or ""
     dirents, locks = list_directory(url, _rev2optrev(rev),
                                     _rev2optrev(rev), 0, self.ctx)
-    if locks.has_key(path_parts[-1]):
-      lockinfo = locks[path_parts[-1]].owner
+    if locks.has_key(basename)
+      lockinfo = locks[basename].owner
 
     # It's okay if we're told to not show all logs on a file -- all
     # the revisions should match correctly anyway.
