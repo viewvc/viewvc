@@ -328,6 +328,12 @@ http_expiration_time = 600
 #   0      Don't generate Etags
 generate_etags = 1
 
+# svn_config_dir: Path of the Subversion runtime configuration
+# directory ViewVC should consult for various things, including cached
+# remote authentication credentials.  If unset, Subversion will use
+# the default location(s) ($HOME/.subversion, etc.)
+svn_config_dir = 
+
 # use the rcsparse Python module to retrieve CVS repository
 # information instead of invoking rcs utilities [EXPERIMENTAL]
 use_rcsparse = 0

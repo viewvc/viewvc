@@ -244,7 +244,8 @@ class Request:
             self.repos = vclib.svn.SubversionRepository(self.rootname,
                                                         self.rootpath,
                                                         self.auth,
-                                                        cfg.utilities)
+                                                        cfg.utilities,
+                                                        cfg.options.svn_config_dir)
           else:
             raise vclib.ReposNotFound()
         except vclib.ReposNotFound:
@@ -3767,8 +3768,8 @@ def list_roots(request):
   for root in cfg.general.svn_roots.keys():
     auth = setup_authorizer(cfg, request.username, root)
     try:
-      vclib.svn.SubversionRepository(root, cfg.general.svn_roots[root],
-                                     auth, cfg.utilities)
+      vclib.svn.SubversionRepository(root, cfg.general.svn_roots[root], auth,
+                                     cfg.utilities, cfg.options.svn_config_dir)
     except vclib.ReposNotFound:
       continue
     allroots[root] = [cfg.general.svn_roots[root], 'svn']

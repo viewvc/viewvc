@@ -196,11 +196,12 @@ class SelfCleanFP:
 
 
 class RemoteSubversionRepository(vclib.Repository):
-  def __init__(self, name, rootpath, authorizer, utilities):
+  def __init__(self, name, rootpath, authorizer, utilities, config_dir):
     self.name = name
     self.rootpath = rootpath
     self.auth = authorizer
     self.diff_cmd = utilities.diff or 'diff'
+    self.config_dir = config_dir or None
 
     # See if this repository is even viewable, authz-wise.
     if not vclib.check_root_access(self):
@@ -209,7 +210,7 @@ class RemoteSubversionRepository(vclib.Repository):
   def open(self):
     # Setup the client context baton, complete with non-prompting authstuffs.
     # TODO: svn_cmdline_setup_auth_baton() is mo' better (when available)
-    core.svn_config_ensure(None)
+    core.svn_config_ensure(self.config_dir)
     self.ctx = client.svn_client_ctx_t()
     self.ctx.auth_baton = core.svn_auth_open([
       client.svn_client_get_simple_provider(),
@@ -218,8 +219,11 @@ class RemoteSubversionRepository(vclib.Repository):
       client.svn_client_get_ssl_client_cert_file_provider(),
       client.svn_client_get_ssl_client_cert_pw_file_provider(),
       ])
-    self.ctx.config = core.svn_config_get_config(None)
-
+    self.ctx.config = core.svn_config_get_config(self.config_dir)
+    if self.config_dir is not None:
+      core.svn_auth_set_parameter(self.ctx.auth_baton,
+                                  core.SVN_AUTH_PARAM_CONFIG_DIR,
+                                  self.config_dir)
     ra_callbacks = ra.svn_ra_callbacks_t()
     ra_callbacks.auth_baton = self.ctx.auth_baton
     self.ra_session = ra.svn_ra_open(self.rootpath, ra_callbacks, None,
@@ -341,7 +345,8 @@ class RemoteSubversionRepository(vclib.Repository):
     if limit:
       log_limit = first + limit
     client.svn_client_log2([url], _rev2optrev(rev), _rev2optrev(1),
-                           log_limit, 1, not cross_copies, lc.add_log, self.ctx)
+                           log_limit, 1, not cross_copies,
+                           lc.add_log, self.ctx)
     revs = lc.logs
     revs.sort()
     prev = None
