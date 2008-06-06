@@ -334,7 +334,7 @@ class RemoteSubversionRepository(vclib.Repository):
     basename = path_parts and path_parts[-1] or ""
     dirents, locks = list_directory(url, _rev2optrev(rev),
                                     _rev2optrev(rev), 0, self.ctx)
-    if locks.has_key(basename)
+    if locks.has_key(basename):
       lockinfo = locks[basename].owner
 
     # It's okay if we're told to not show all logs on a file -- all
