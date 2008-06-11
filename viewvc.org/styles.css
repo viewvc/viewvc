@@ -1,5 +1,5 @@
 body {
-    background-color: #94bd5e;
+    background-color: #f7f4e0;
     color: black;
     font-family: trebuchet ms, arial, sans-serif;
     margin: 0;
@@ -25,7 +25,7 @@ address {
 }
 
 h2 {
-    background-color: rgb(204,213,221);
+    background-color: #94bd5e;
     padding: 2px 0.5em 2px 0.5em;
     margin: 0;
     border-bottom: dotted 1px rgb(180,193,205);
