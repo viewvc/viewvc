@@ -1,15 +1,13 @@
 body {
-    background-color: rgb(180,193,205);
-    background-image: url('./images/bg-grad.jpg');
-    background-repeat: repeat-x;
+    background-color: #94bd5e;
     color: black;
     font-family: trebuchet ms, arial, sans-serif;
     margin: 0;
 }
 
 #title {
-    background-color: rgb(100,128,150);
-    height: 60px;
+    background-color: #739c3e;
+    height: 90px;
 }
 
 img {
