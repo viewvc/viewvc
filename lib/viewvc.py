@@ -364,11 +364,17 @@ class Request:
         else:
           self.view_func = view_log
 
+    # If we've chosen the roots or revision view, our effective
+    # location is not really "inside" the repository, so we have no
+    # path and therefore no path parts or type, either.
+    if self.view_func is view_revision or self.view_func is view_roots:
+      self.where = ''
+      self.path_parts = []
+      self.pathtype = None
+      
     # if we have a directory and the request didn't end in "/", then redirect
     # so that it does.
     if (self.pathtype == vclib.DIR and path_info[-1:] != '/'
-        and self.view_func is not view_revision
-        and self.view_func is not view_roots
         and self.view_func is not download_tarball
         and self.view_func is not redirect_pathrev):
       needs_redirect = 1
@@ -1179,6 +1185,7 @@ def common_template_data(request):
                   and request.repos._getrev(rev) or rev
   except vclib.InvalidRevision:
     raise debug.ViewVCException('Invalid revision', '404 Not Found')
+
   if request.pathtype == vclib.DIR:
     data['pathtype'] = 'dir'
   elif request.pathtype == vclib.FILE:
@@ -1218,7 +1225,8 @@ def common_template_data(request):
                                              escape=1)
     if request.roottype == 'svn':
       data['revision_href'] = request.get_url(view_func=view_revision,
-                                              params={}, escape=1)
+                                              params={'revision': data['rev']},
+                                              escape=1)
 
       data['log_href'] = request.get_url(view_func=view_log,
                                          params={}, escape=1)
