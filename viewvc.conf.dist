@@ -526,8 +526,9 @@ limit_changes = 100
 # appropriate option below and specify the currect location of the EZT
 # template file you wish to use for that view.
 # 
-# Templates are specified relative to the directory where this config
-# file resides, but absolute paths may also be used as well.
+# Templates are specified relative to the configured template
+# directory (see the "template_dir" option), but absolute paths may
+# also be used as well.
 #
 # If %lang% occurs in the pathname, then the selected language will be
 # substituted.
@@ -536,21 +537,21 @@ limit_changes = 100
 #       [general] section, and based on the request's Accept-Language
 #       header.
 #
-#diff = templates/diff.ezt
-#directory = templates/directory.ezt
+#diff = diff.ezt
+#directory = directory.ezt
 ### an alternative directory view
-#directory = templates/dir_new.ezt   
-#error = templates/error.ezt
-#file = templates/file.ezt
-#graph = templates/graph.ezt
-#log = templates/log.ezt
+#directory = dir_new.ezt   
+#error = error.ezt
+#file = file.ezt
+#graph = graph.ezt
+#log = log.ezt
 ### a table-based alternative log view
-#log = templates/log_table.ezt  
-#query = templates/query.ezt
-#query_form = templates/query_form.ezt
-#query_results = templates/query_results.ezt
-#revision = templates/revision.ezt
-#roots = templates/roots.ezt
+#log = log_table.ezt  
+#query = query.ezt
+#query_form = query_form.ezt
+#query_results = query_results.ezt
+#revision = revision.ezt
+#roots = roots.ezt
 
 #---------------------------------------------------------------------------
 [cvsdb]
