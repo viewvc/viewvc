@@ -540,7 +540,8 @@ class LocalSubversionRepository(vclib.Repository):
   
   def annotate(self, path_parts, rev):
     path = self._getpath(path_parts)
-    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+    path_type = self.itemtype(path_parts, rev)  # does auth-check
+    if path_type != vclib.FILE:
       raise vclib.Error("Path '%s' is not a file." % path)
     rev = self._getrev(rev)
     fsroot = self._getroot(rev)
