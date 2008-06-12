@@ -16,14 +16,40 @@ import os
 import os.path
 import re
 
+_re_url = re.compile('^(http|https|file|svn|svn\+[^:]+)://')
+
+def canonicalize_rootpath(rootpath):
+  try:
+    import svn.core
+    return svn.core.svn_path_canonicalize(rootpath)
+  except:
+    if re.search(_re_url, rootpath):
+      return rootpath[-1] == '/' and rootpath[:-1] or rootpath
+    return os.path.normpath(rootpath)
+
+
+def expand_root_parent(parent_path):
+  roots = {}
+  if re.search(_re_url, parent_path):
+    pass
+  else:
+    # Any subdirectories of PARENT_PATH which themselves have a child
+    # "format" are returned as roots.
+    subpaths = os.listdir(parent_path)
+    for rootname in subpaths:
+      rootpath = os.path.join(parent_path, rootname)
+      if os.path.exists(os.path.join(rootpath, "format")):
+        roots[rootname] = canonicalize_rootpath(rootpath)
+  return roots
+
+
 def SubversionRepository(name, rootpath, authorizer, utilities, config_dir):
-  re_url = re.compile('^(http|https|file|svn|svn\+[^:]+)://')
-  if re.search(re_url, rootpath):
+  rootpath = canonicalize_rootpath(rootpath)
+  if re.search(_re_url, rootpath):
     import svn_ra
     return svn_ra.RemoteSubversionRepository(name, rootpath, authorizer,
                                              utilities, config_dir)
   else:
     import svn_repos
-    rootpath = os.path.normpath(rootpath)
     return svn_repos.LocalSubversionRepository(name, rootpath, authorizer,
                                                utilities, config_dir)
