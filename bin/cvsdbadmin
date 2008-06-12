@@ -168,6 +168,7 @@ if __name__ == '__main__':
 
     # get repository and path, and do the work
     root, path_parts = RootPath(args[2], quiet_level)
+    rootpath = vclib.ccvs.canonicalize_rootpath(root)
     try:
         cfg = viewvc.load_config(CONF_PATHNAME)
         db = cvsdb.ConnectDatabase(cfg)
@@ -178,7 +179,7 @@ if __name__ == '__main__':
             db.PurgeRepository(root)
 
         if command in ('rebuild', 'update'):
-            repository = vclib.ccvs.CVSRepository(None, root, None,
+            repository = vclib.ccvs.CVSRepository(None, rootpath, None,
                                                   cfg.utilities, 0)
             RecurseUpdate(db, repository, path_parts,
                           command == 'update', quiet_level)

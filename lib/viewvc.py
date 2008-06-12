@@ -229,7 +229,7 @@ class Request:
         try:
           if roottype == 'cvs':
             cfg.overlay_root_options(self.rootname)
-            self.rootpath = os.path.normpath(rootpath)
+            self.rootpath = vclib.ccvs.canonicalize_rootpath(rootpath)
             self.repos = vclib.ccvs.CVSRepository(self.rootname,
                                                   self.rootpath,
                                                   self.auth,
@@ -240,7 +240,7 @@ class Request:
             os.environ['CVSROOT'] = self.rootpath
           elif roottype == 'svn':
             cfg.overlay_root_options(self.rootname)
-            self.rootpath = rootpath
+            self.rootpath = vclib.svn.canonicalize_rootpath(rootpath)
             self.repos = vclib.svn.SubversionRepository(self.rootname,
                                                         self.rootpath,
                                                         self.auth,
@@ -3787,50 +3787,39 @@ def list_roots(request):
   return allroots
 
 def expand_root_parents(cfg):
+  """Expand the configured root parents into individual roots."""
+  
   # Each item in root_parents is a "directory : repo_type" string.
-  # For each item in root_parents, we get a list of the
-  # subdirectories.
-  #
-  # If repo_type is "cvs", and the subdirectory contains a child
-  # "CVSROOT/config", then it is added to cvs_roots. Or, if the
-  # root directory itself contains a child "CVSROOT/config" file,
-  # then all its subdirectories are added to cvs_roots.
-  #
-  # If repo_type is "svn", and the subdirectory contains a child
-  # "format", then it is added to svn_roots.
   for pp in cfg.general.root_parents:
     pos = string.rfind(pp, ':')
     if pos < 0:
       raise debug.ViewVCException(
         "The path '%s' in 'root_parents' does not include a "
-        "repository type." % pp)
+        "repository type." % (pp))
 
     repo_type = string.strip(pp[pos+1:])
     pp = os.path.normpath(string.strip(pp[:pos]))
 
-    try:
-      subpaths = os.listdir(pp)
-    except OSError:
+    if repo_type == 'cvs':
+      roots = vclib.ccvs.expand_root_parent(pp)
+      if cfg.options.hide_cvsroot and roots.has_key('CVSROOT'):
+        del roots['CVSROOT']
+      cfg.general.cvs_roots.update(roots)
+    elif repo_type == 'svn':
+      roots = vclib.svn.expand_root_parent(pp)
+      cfg.general.svn_roots.update(roots)
+    else:
       raise debug.ViewVCException(
-        "The path '%s' in 'root_parents' does not refer to "
-        "a valid directory." % pp)
-
-    cvsroot = os.path.exists(os.path.join(pp, "CVSROOT", "config"))
-
-    for subpath in subpaths:
-      if os.path.exists(os.path.join(pp, subpath)):
-        if (repo_type == 'cvs'
-            and (os.path.exists(os.path.join(pp, subpath,
-                                             "CVSROOT", "config"))
-                 or (cvsroot and (subpath != 'CVSROOT'
-                                  or not cfg.options.hide_cvsroot)))):
-          cfg.general.cvs_roots[subpath] = os.path.join(pp, subpath)
-        elif repo_type == 'svn' and \
-             os.path.exists(os.path.join(pp, subpath, "format")):
-          cfg.general.svn_roots[subpath] = os.path.join(pp, subpath)
+        "The path '%s' in 'root_parents' has an unrecognized "
+        "repository type." % (pp))
 
 def find_root_in_parents(cfg, rootname, roottype):
   """Return the rootpath for configured ROOTNAME of ROOTTYPE."""
+
+  # Easy out:  caller wants rootname "CVSROOT", and we're hiding those.
+  if rootname == 'CVSROOT' and cfg.options.hide_cvsroot:
+    return None
+  
   for pp in cfg.general.root_parents:
     pos = string.rfind(pp, ':')
     if pos < 0:
@@ -3839,20 +3828,19 @@ def find_root_in_parents(cfg, rootname, roottype):
     if repo_type != roottype:
       continue
     pp = os.path.normpath(string.strip(pp[:pos]))
-    if not os.path.exists(os.path.join(pp, rootname)):
-      continue
+    
     if roottype == 'cvs':
-      if os.path.exists(os.path.join(pp, rootname, "CVSROOT", "config")) \
-         or (os.path.exists(os.path.join(pp, "CVSROOT", "config")) \
-             and (rootname != 'CVSROOT' or not cfg.options.hide_cvsroot)):
-        return os.path.join(pp, rootname)
-    elif repo_type == 'svn':
-      if os.path.exists(os.path.join(pp, rootname, "format")):
-        return os.path.join(pp, rootname)
+      roots = vclib.ccvs.expand_root_parent(pp)
+    elif roottype == 'svn':
+      roots = vclib.svn.expand_root_parent(pp)
+    else:
+      roots = {}
+    if roots.has_key(rootname):
+      return roots[rootname]
   return None
 
 def locate_root(cfg, rootname):
-  """Return a 2-type ROOTTYPE, ROOTPATH for configured ROOTNAME."""
+  """Return a 2-tuple ROOTTYPE, ROOTPATH for configured ROOTNAME."""
   if cfg.general.cvs_roots.has_key(rootname):
     return 'cvs', cfg.general.cvs_roots[rootname]
   path_in_parent = find_root_in_parents(cfg, rootname, 'cvs')
