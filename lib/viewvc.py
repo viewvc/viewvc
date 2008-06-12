@@ -842,18 +842,18 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
   return isfresh
 
 def get_view_template(cfg, view_name, language="en"):
-  # see if the configuration specifies a template for this view
-  tname = vars(cfg.templates).get(view_name)
+  # See if the configuration specifies a template for this view.  If
+  # not, use the default template path for this view.
+  tname = vars(cfg.templates).get(view_name) or view_name + ".ezt"
 
-  # if there is no specific template definition for this view, look in
-  # the default location (relative to the configured template_dir)
-  if not tname:
-    tname = os.path.join(cfg.options.template_dir, view_name + ".ezt")
+  # Template paths are relative to the configurated template_dir (if
+  # any, "templates" otherwise), so build the template path as such.
+  tname = os.path.join(cfg.options.template_dir or "templates", tname)
 
-  # allow per-language template selection
+  # Allow per-language template selection.
   tname = string.replace(tname, '%lang%', language)
 
-  # finally, construct the whole template path.
+  # Finally, construct the whole template path.
   tname = cfg.path(tname)
 
   debug.t_start('ezt-parse')
