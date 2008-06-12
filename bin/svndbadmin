@@ -324,8 +324,9 @@ if __name__ == '__main__':
 
     repository = args[2]
     if not os.path.exists(repository):
-        sys.stderr.write('ERROR: could not find repository %s\n' % repository)
+        sys.stderr.write('ERROR: could not find repository %s\n' % args[2])
         usage()
+    repository = vclib.svn.canonicalize_rootpath(repository)
 
     revs = []
     if len(sys.argv) > 3:
