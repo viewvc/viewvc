@@ -293,6 +293,13 @@ allowed_views = markup, annotate
 # be activated.
 authorizer = forbidden
 
+# hide_cvsroot: Don't show the CVSROOT directory
+#   1      Hide CVSROOT directory
+#   0      Show CVSROOT directory
+# NOTE: Someday this option may be removed in favor of letting
+# individual authorizer plugin hide the CVSROOT.
+hide_cvsroot = 1
+
 # mangle_email_addresses: Mangle email addresses in marked-up output.
 # There are various levels of mangling available:
 #   0 - No mangling; markup un-mangled email addresses as hyperlinks
@@ -368,16 +375,13 @@ log_sort = date
 #   c      Context diff
 #   s      Side by side
 #   l      Long human readable (more context)
+#   f      Full human readable (entire file)
 diff_format = h
 
-# hide_cvsroot: Don't show the CVSROOT directory
-#   1      Hide CVSROOT directory
-#   0      Show CVSROOT directory
-hide_cvsroot = 1
-
-# set to 1 to make lines break at spaces,
-# set to 0 to make no-break lines,
-# set to a positive integer to make the lines cut at that length
+# hr_breakable: Diff view line breaks
+#   1     lines break at spaces
+#   0     no line breaking
+# Or, use a positive integer > 1 to cut lines after that many characters
 hr_breakable = 1
 
 # give out function names in human readable diffs
@@ -398,7 +402,6 @@ hr_ignore_keyword_subst = 1
 
 # Enable highlighting of intraline changes in human readable diffs
 # this feature is experimental and currently requires python 2.4
-# 
 hr_intraline = 0
 
 # allow compression with gzip of output if the Browser accepts it
