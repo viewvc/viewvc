@@ -359,7 +359,7 @@ hide_attic = 1
 # log_sort: Sort order for log messages
 #   date   Sort revisions by date
 #   rev    Sort revision by revision number
-#   cvs    Don't sort them. Same order as CVS/RCS shows them.
+#   none   Use the version control system's ordering
 log_sort = date
 
 # diff_format: Default diff format
