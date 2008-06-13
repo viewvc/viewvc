@@ -418,6 +418,9 @@ hr_intraline = 0
 # If %lang% occurs in the pathname, then the selected language will be
 # substituted.
 #
+# See also the [templates] configuration section, where you can
+# override templates on a per-view basis.
+#
 template_dir = templates
 
 # Web path to a directory that contains ViewVC static files
@@ -440,7 +443,7 @@ template_dir = templates
 # ** WARNING: Enabling this will currently leak unauthorized path names **
 show_subdir_lastmod = 0
 
-# show a portion of the most recent log entry in directory listings
+# Show the most recent log entry in directory listings.
 show_logs = 1
 
 # Show log when viewing file contents
@@ -453,9 +456,10 @@ cross_copies = 1
 use_localtime = 0
 #use_localtime = 1
 
-# == Configuration defaults ==
-# Defaults for configuration variables that shouldn't need
-# to be configured..
+### CONFIGURATION DEFAULTS ###
+###
+### Defaults for configuration variables that shouldn't need
+### to be configured..
 
 # the length to which the most recent log entry should be truncated when
 # shown in the directory view
@@ -464,16 +468,12 @@ short_log_len = 80
 # should we colorize known file content syntaxes?  (requires Pygments module)
 enable_syntax_coloration = 1
 
-#
 # Use CvsGraph. See http://www.akhphd.au.dk/~bertho/cvsgraph/ for
 # documentation and download. 
-#
 use_cvsgraph = 0
-# use_cvsgraph = 1
+#use_cvsgraph = 1
 
-#
 # Location of the customized cvsgraph configuration file.  
-#
 cvsgraph_conf = cvsgraph.conf
 
 #
