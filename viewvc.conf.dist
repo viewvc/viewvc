@@ -237,7 +237,7 @@ cvsnt =
 
 # Subversion command-line client, used for viewing Subversion repositories
 svn =
-# svn_dir = /usr/bin/svn
+# svn = /usr/bin/svn
 
 # GNU diff, used for showing file version differences
 diff = 
