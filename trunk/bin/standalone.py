@@ -578,8 +578,8 @@ def cli(argv):
 
     try:
         opts, args = getopt.getopt(argv[1:], 'gdc:p:r:h:s:', 
-            ['gui', 'daemon', 'config-file=', 'port=', 'repository=',
-             'script-alias='])
+            ['gui', 'daemon', 'config-file=', 'host=',
+             'port=', 'repository=', 'script-alias='])
         for opt, val in opts:
             if opt in ('-g', '--gui'):
                 options.start_gui = 1
