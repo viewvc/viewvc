@@ -66,6 +66,7 @@ import svn.delta
 
 import cvsdb
 import viewvc
+import vclib
 
 class SvnRepo:
     """Class used to manage a connection to a SVN repository."""
