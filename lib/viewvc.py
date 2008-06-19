@@ -1231,16 +1231,14 @@ def common_template_data(request):
       data['log_href'] = request.get_url(view_func=view_log,
                                          params={}, escape=1)
 
-  if is_query_supported(request):
-    params = {}
-    if request.roottype == 'cvs' and request.pathrev:
-      params['branch'] = request.pathrev
-    data['queryform_href'] = request.get_url(view_func=view_queryform,
-                                             params=params,
-                                             escape=1)
-
-  if request.cfg.cvsdb.enabled and request.roottype in ['cvs', 'svn']:
+  if is_querydb_nonempty_for_root(request):
     if request.pathtype == vclib.DIR:
+      params = {}
+      if request.roottype == 'cvs' and request.pathrev:
+        params['branch'] = request.pathrev
+      data['queryform_href'] = request.get_url(view_func=view_queryform,
+                                               params=params,
+                                               escape=1)
       data['rss_href'] = request.get_url(view_func=view_query,
                                          params={'date': 'month',
                                                  'format': 'rss'},
@@ -3249,6 +3247,18 @@ def is_query_supported(request):
   return request.cfg.cvsdb.enabled \
          and request.pathtype == vclib.DIR \
          and request.roottype in ['cvs', 'svn']
+
+def is_querydb_nonempty_for_root(request):
+  """Return 1 iff commits database integration is supported *and* the
+  current root is found in that database."""
+  if request.cfg.cvsdb.enabled and request.roottype in ['cvs', 'svn']:
+    global cvsdb
+    import cvsdb
+    db = cvsdb.ConnectDatabaseReadOnly(request.cfg)
+    repos_root, repos_dir = cvsdb.FindRepository(db, request.rootpath)
+    if repos_root:
+      return 1
+  return 0
 
 def view_queryform(request):
   if not is_query_supported(request):
