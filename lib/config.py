@@ -269,6 +269,7 @@ class Config:
     self.cvsdb.readonly_passwd = '' 
     self.cvsdb.row_limit = 1000
     self.cvsdb.rss_row_limit = 100
+    self.cvsdb.check_database_for_root = 0
 
 def _startswith(somestr, substr):
   return somestr[:len(substr)] == substr
