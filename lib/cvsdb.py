@@ -17,6 +17,7 @@ import time
 import fnmatch
 import re
 
+import vclib
 import dbi
 
 
@@ -761,7 +762,8 @@ def GetCommitListFromRCSFile(repository, path_parts, revision=None):
     directory = string.join(path_parts[:-1], "/")
     file = path_parts[-1]
 
-    revs = repository.itemlog(path_parts, revision, {"cvs_pass_rev": 1})
+    revs = repository.itemlog(path_parts, revision, vclib.SORTBY_DEFAULT,
+                              0, 0, {"cvs_pass_rev": 1})
     for rev in revs:
         commit = CreateCommit()
         commit.SetRepository(repository.rootpath)
