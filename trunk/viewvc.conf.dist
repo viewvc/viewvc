@@ -588,6 +588,17 @@ enabled = 0
 # to a conservative number.)
 #rss_row_limit = 100
 
+# Check if the repository is found in the database before showing
+# the query link and RSS feeds.  Set to 1 to enable check.
+# 
+# WARNING: Enabling this check adds the cost of a database connection
+# and query to most ViewVC requests.  If all your roots are represented
+# in the commits database, or if you don't care about the creation of
+# RSS and query links that might lead ultimately to error pages for
+# certain of your roots, or if you simply don't want to add this extra
+# cost to your ViewVC requests, leave this disabled.
+#check_database_for_root = 0
+
 #---------------------------------------------------------------------------
 [vhosts]
 

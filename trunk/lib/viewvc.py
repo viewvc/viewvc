@@ -3250,13 +3250,17 @@ def is_query_supported(request):
 
 def is_querydb_nonempty_for_root(request):
   """Return 1 iff commits database integration is supported *and* the
-  current root is found in that database."""
+  current root is found in that database.  Only does this check if
+  check_database is set to 1."""
   if request.cfg.cvsdb.enabled and request.roottype in ['cvs', 'svn']:
-    global cvsdb
-    import cvsdb
-    db = cvsdb.ConnectDatabaseReadOnly(request.cfg)
-    repos_root, repos_dir = cvsdb.FindRepository(db, request.rootpath)
-    if repos_root:
+    if request.cfg.cvsdb.check_database_for_root:
+      global cvsdb
+      import cvsdb
+      db = cvsdb.ConnectDatabaseReadOnly(request.cfg)
+      repos_root, repos_dir = cvsdb.FindRepository(db, request.rootpath)
+      if repos_root:
+        return 1
+    else:
       return 1
   return 0
 
