@@ -3412,15 +3412,9 @@ def build_commit(request, files, max_files, dir_strip, format):
   num_allowed = 0
   plus_count = 0
   minus_count = 0
+  found_unreadable = 0
   
   for f in files:
-    commit_time = f.GetTime()
-    if commit_time:
-      commit_time = make_time_string(commit_time, cfg)
-    change_type = f.GetTypeString()
-    rev = f.GetRevision()
-    rev_prev = prev_rev(rev)
-    
     dirname = f.GetDirectory()
     filename = f.GetFile()
     if dir_strip:
@@ -3428,6 +3422,20 @@ def build_commit(request, files, max_files, dir_strip, format):
       assert len(dirname) == len_strip or dirname[len(dir_strip)] == '/'
       dirname = dirname[len_strip+1:]
     where = dirname and ("%s/%s" % (dirname, filename)) or filename
+    rev = f.GetRevision()
+
+    # Check path access (since the commits database logic bypasses the
+    # vclib layer and, thus, the vcauth stuff that layer uses).
+    if not vclib.check_path_access(request.repos, _path_parts(where),
+                                   vclib.FILE, rev):
+      found_unreadable = 1
+      continue
+    
+    commit_time = f.GetTime()
+    if commit_time:
+      commit_time = make_time_string(commit_time, cfg)
+    change_type = f.GetTypeString()
+    rev_prev = prev_rev(rev)
     
     # In CVS, we can actually look at deleted revisions; in Subversion
     # we can't -- we'll look at the previous revision instead.
@@ -3505,7 +3513,7 @@ def build_commit(request, files, max_files, dir_strip, format):
                               prefer_markup=prefer_markup,
                               diff_href=diff_href))
 
-  # No files survived forbiddenness checks?  Let's just pretend this
+  # No files survived authz checks?  Let's just pretend this
   # little commit didn't happen, shall we?
   if not len(commit_files):
     return None
@@ -3513,8 +3521,20 @@ def build_commit(request, files, max_files, dir_strip, format):
   commit = _item(num_files=len(commit_files), files=commit_files,
                  plus=plus_count, minus=minus_count)
   commit.limited_files = ezt.boolean(num_allowed > len(commit_files))
-  commit.log = htmlify(desc)
-  commit.short_log = format_log(desc, cfg, format != 'rss')
+
+  # We'll mask log messages in commits which contain unreadable paths,
+  # but even that is kinda iffy.  If a person searches for
+  # '/some/hidden/path' across log messages, then gets a response set
+  # that shows commits lacking log message, said person can reasonably
+  # assume that the log messages contained the hidden path, and that
+  # this is likely because they are referencing a real path in the
+  # repository -- a path the user isn't supposed to even know about.
+  if found_unreadable:
+    commit.log = None
+    commit.short_log = None
+  else:
+    commit.log = htmlify(desc)
+    commit.short_log = format_log(desc, cfg, format != 'rss')
   commit.author = request.server.escape(author)
   commit.rss_date = make_rss_time_string(date, request.cfg)
   if request.roottype == 'svn':
