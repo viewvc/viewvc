@@ -55,12 +55,9 @@ def get_directory_props(ra_session, path, rev):
 ### END COMPATABILITY CODE ###
 
 
-def date_from_rev(svnrepos, rev):
-  return _datestr_to_date(ra.svn_ra_rev_prop(svnrepos.ra_session, rev,
-                                             core.SVN_PROP_REVISION_DATE))
-
-
 class LogCollector:
+  ### TODO: Make this thing authz-aware
+  
   def __init__(self, path, show_all_logs, lockinfo):
     # This class uses leading slashes for paths internally
     if not path:
@@ -348,11 +345,16 @@ class RemoteSubversionRepository(vclib.Repository):
       raise vclib.ItemNotFound(path_parts2)
 
     args = vclib._diff_args(type, options)
+
+    def _date_from_rev(rev):
+      date, author, msg, changes = self.revinfo(rev)
+      return date
+    
     try:
       temp1 = temp_checkout(self, p1, r1)
       temp2 = temp_checkout(self, p2, r2)
-      info1 = p1, date_from_rev(self, r1), r1  ### not authz-safe
-      info2 = p2, date_from_rev(self, r2), r2  ### not authz-safe
+      info1 = p1, _date_from_rev(r1), r1
+      info2 = p2, _date_from_rev(r2), r2
       return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args)
     except core.SubversionException, e:
       if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
