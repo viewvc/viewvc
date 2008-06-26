@@ -1139,7 +1139,7 @@ def html_time(request, secs, extended=0):
       s = s + ', ' + ext
   return s
 
-def common_template_data(request):
+def common_template_data(request, revision=None):
   cfg = request.cfg
   data = {
     'cfg' : cfg,
@@ -1175,7 +1175,9 @@ def common_template_data(request):
     'prefer_markup' : ezt.boolean(0),
   }
 
-  rev = request.query_dict.get('annotate')
+  rev = revision
+  if not rev:
+    rev = request.query_dict.get('annotate')
   if not rev:
     rev = request.query_dict.get('revision')
   if not rev and request.roottype == 'svn':
@@ -1424,9 +1426,9 @@ def get_itemprops(request, path_parts, rev):
 def markup_or_annotate(request, is_annotate):
   cfg = request.cfg
   path, rev = _orig_path(request, is_annotate and 'annotate' or 'revision')
-  data = common_template_data(request)
   lines = fp = image_src_href = None
   annotation = None
+  revision = None
 
   # Is this a viewable image type?
   if is_viewable_image(request.mime_type) \
@@ -1461,6 +1463,7 @@ def markup_or_annotate(request, is_annotate):
     lines = markup_stream_pygments(request, cfg, blame_source, fp, path)
     fp.close()
 
+  data = common_template_data(request, revision)
   data.update({
     'mime_type' : request.mime_type,
     'log' : None,
