@@ -37,17 +37,18 @@ def _allow_all(root, path, pool):
   return 1
 
 
-def _fs_path_join(base, relative):
-  # Subversion filesystem paths are '/'-delimited, regardless of OS.
-  joined_path = base + '/' + relative
-  parts = filter(None, string.split(joined_path, '/'))
-  return string.join(parts, '/')
+def _path_parts(path):
+  return filter(None, string.split(path, '/'))
 
 
 def _cleanup_path(path):
   """Return a cleaned-up Subversion filesystem path"""
-  return string.join(filter(None, string.split(path, '/')), '/')
+  return string.join(_path_parts(path), '/')
   
+
+def _fs_path_join(base, relative):
+  return _cleanup_path(base + '/' + relative)
+
 
 def _compare_paths(path1, path2):
   path1_len = len (path1);
@@ -195,7 +196,7 @@ def _get_history(svnrepos, path, rev, path_type, limit=0, options={}):
   # Now, iterate over those history items, checking for changes of
   # location, pruning as necessitated by authz rules.
   for hist_rev, hist_path in history:
-    path_parts = filter(None, string.split(hist_path, '/'))
+    path_parts = _path_parts(hist_path)
     if not vclib.check_path_access(svnrepos, path_parts, path_type, hist_rev):
       break
     rev_paths.append([hist_rev, hist_path])
@@ -340,8 +341,8 @@ class SVNChangedPath(vclib.ChangedPath):
   
   def __init__(self, path, rev, pathtype, base_path, base_rev,
                action, copied, text_changed, props_changed):
-    path_parts = filter(None, string.split(path or '', '/'))
-    base_path_parts = filter(None, string.split(base_path or '', '/'))
+    path_parts = _path_parts(path or '')
+    base_path_parts = _path_parts(base_path or '')
     vclib.ChangedPath.__init__(self, path_parts, rev, pathtype,
                                base_path_parts, base_rev, action,
                                copied, text_changed, props_changed)
@@ -521,7 +522,7 @@ class LocalSubversionRepository(vclib.Repository):
         if revision:
           # If we have unreadable copyfrom data, obscure it.
           if revision.copy_path is not None:
-            cp_parts = filter(None, string.split(revision.copy_path, '/'))
+            cp_parts = _path_parts(revision.copy_path)
             if not vclib.check_path_access(self, cp_parts, path_type,
                                            revision.copy_rev):
               revision.copy_path = revision.copy_rev = None
@@ -612,10 +613,10 @@ class LocalSubversionRepository(vclib.Repository):
       else:
         pathtype = None
 
-      parts = filter(None, string.split(path, '/'))
+      parts = _path_parts(path)
       if vclib.check_path_access(self, parts, pathtype, rev):
         if is_copy and change.base_path and (change.base_path != path):
-          parts = filter(None, string.split(path, '/'))
+          parts = _path_parts(change.base_path)
           if vclib.check_path_access(self, parts, pathtype, change.base_rev):
             is_copy = 0
             change.base_path = None
