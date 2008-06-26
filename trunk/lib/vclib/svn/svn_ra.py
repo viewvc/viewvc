@@ -125,6 +125,11 @@ class SelfCleanFP:
       self._eof = 1
     return chunk
 
+  def readlines(self):
+    lines = self._fp.readlines()
+    self._eof = 1
+    return lines
+    
   def close(self):
     self._fp.close()
     os.remove(self._path)
