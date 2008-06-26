@@ -21,7 +21,7 @@ import tempfile
 import popen2
 import time
 import urllib
-from svn_repos import Revision, SVNChangedPath, _datestr_to_date, _compare_paths, _cleanup_path, _rev2optrev
+from svn_repos import Revision, SVNChangedPath, _datestr_to_date, _compare_paths, _path_parts, _cleanup_path, _rev2optrev
 from svn import core, delta, client, wc, ra
 
 
@@ -60,62 +60,6 @@ def date_from_rev(svnrepos, rev):
                                              core.SVN_PROP_REVISION_DATE))
 
 
-class LastHistoryCollector:
-  def __init__(self):
-    self.has_history = 0
-
-  def add_history(self, paths, revision, author, date, message, pool):
-    if not self.has_history:
-      self.has_history = 1
-      self.revision = revision
-      self.author = author
-      self.date = _datestr_to_date(date)
-      self.message = message
-      self.changes = []
-
-      if not paths:
-        return
-      changed_paths = paths.keys()
-      changed_paths.sort(lambda a, b: _compare_paths(a, b))
-      action_map = { 'D' : vclib.DELETED,
-                     'A' : vclib.ADDED,
-                     'R' : vclib.REPLACED,
-                     'M' : vclib.MODIFIED,
-                     }
-      for changed_path in changed_paths:
-        pathtype = None
-        change = paths[changed_path]
-        action = action_map.get(change.action, vclib.MODIFIED)
-        is_copy = 0
-        base_path = changed_path
-        base_rev = revision - 1
-        ### Wrong, diddily wrong wrong wrong.  Can you say,
-        ### "Manufacturing data left and right because it hurts to
-        ### figure out the right stuff?"
-        if change.copyfrom_path and change.copyfrom_rev:
-          is_copy = 1
-          base_path = change.copyfrom_path
-          base_rev = change.copyfrom_rev
-        elif action == vclib.ADDED or action == vclib.REPLACED:
-          base_path = base_rev = None
-        self.changes.append(SVNChangedPath(changed_path, revision, pathtype,
-                                           base_path, base_rev, action,
-                                           is_copy, 0, 0))
-
-  def get_history(self):
-    if not self.has_history:
-      return None, None, None, None, None
-    return self.revision, self.author, self.date, self.message, self.changes
-
-
-def _get_rev_details(svnrepos, rev):
-  lhc = LastHistoryCollector()
-  client.svn_client_log([svnrepos.rootpath],
-                        _rev2optrev(rev), _rev2optrev(rev),
-                        1, 0, lhc.add_history, svnrepos.ctx)
-  return lhc.get_history()
-
-  
 class LogCollector:
   def __init__(self, path, show_all_logs, lockinfo):
     # This class uses leading slashes for paths internally
@@ -230,7 +174,8 @@ class RemoteSubversionRepository(vclib.Repository):
                                      self.ctx.config)
     self.youngest = ra.svn_ra_get_latest_revnum(self.ra_session)
     self._dirent_cache = { }
-
+    self._revinfo_cache = { }
+    
   def rootname(self):
     return self.name
 
@@ -275,7 +220,7 @@ class RemoteSubversionRepository(vclib.Repository):
     ### rev here should be the last history revision of the URL
     client.svn_client_cat(core.Stream(stream), url, _rev2optrev(rev), self.ctx)
     core.svn_stream_close(stream)
-    return SelfCleanFP(tmp_file), rev
+    return SelfCleanFP(tmp_file), self._get_last_history_rev(path_parts, rev)
 
   def listdir(self, path_parts, rev, options):
     path = self._getpath(path_parts)
@@ -299,24 +244,15 @@ class RemoteSubversionRepository(vclib.Repository):
     if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
       raise vclib.Error("Path '%s' is not a directory." % path)
     rev = self._getrev(rev)
-    rev_info_cache = { }
     dirents, locks = self._get_dirents(path, rev)
     for entry in entries:
       entry_path_parts = path_parts + [entry.name]
       if not vclib.check_path_access(self, entry_path_parts, entry.kind, rev):
         continue
       dirent = dirents[entry.name]
-      if rev_info_cache.has_key(dirent.created_rev):
-        rev, author, date, log = rev_info_cache[dirent.created_rev]
-      else:
-        ### i think this needs some get_last_history action to be accurate
-        rev, author, date, log, changes = \
-             _get_rev_details(self, dirent.created_rev)
-        rev_info_cache[dirent.created_rev] = rev, author, date, log
-      entry.rev = rev
-      entry.author = author
-      entry.date = date
-      entry.log = log
+      entry.date, entry.author, entry.log, changes = \
+                  self.revinfo(dirent.created_rev)
+      entry.rev = dirent.created_rev
       entry.size = dirent.size
       entry.lockinfo = None
       if locks.has_key(entry.name):
@@ -394,8 +330,12 @@ class RemoteSubversionRepository(vclib.Repository):
     return blame_data, rev
 
   def revinfo(self, rev):
-    rev, author, date, log, changes = _get_rev_details(self, rev)
-    return date, author, log, changes
+    rev = self._getrev(rev)
+    cached_info = self._revinfo_cache.get(rev)
+    if not cached_info:
+      cached_info = self._revinfo_raw(rev)
+      self._revinfo_cache[rev] = cached_info
+    return cached_info[0], cached_info[1], cached_info[2], cached_info[3]
     
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     p1 = self._getpath(path_parts1)
@@ -411,8 +351,8 @@ class RemoteSubversionRepository(vclib.Repository):
     try:
       temp1 = temp_checkout(self, p1, r1)
       temp2 = temp_checkout(self, p2, r2)
-      info1 = p1, date_from_rev(self, r1), r1
-      info2 = p2, date_from_rev(self, r2), r2
+      info1 = p1, date_from_rev(self, r1), r1  ### not authz-safe
+      info2 = p2, date_from_rev(self, r2), r2  ### not authz-safe
       return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args)
     except core.SubversionException, e:
       if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
@@ -458,6 +398,77 @@ class RemoteSubversionRepository(vclib.Repository):
       dirents_locks = [dirents, locks]
       self._dirent_cache[key] = dirents_locks
     return dirents_locks[0], dirents_locks[1]
+
+  def _get_last_history_rev(self, path_parts, rev):
+    url = self._geturl(self._getpath(path_parts))
+    optrev = _rev2optrev(rev)
+    revisions = []
+    def _info_cb(path, info, pool, retval=revisions):
+      revisions.append(info.last_changed_rev)
+    client.svn_client_info(url, optrev, optrev, _info_cb, 0, self.ctx)
+    return revisions[0]
+    
+  def _revinfo_raw(self, rev):
+    # return 5-tuple (date, author, message, changes)
+    optrev = _rev2optrev(rev)
+    revs = []
+
+    def _log_cb(changed_paths, revision, author,
+                datestr, message, pool, retval=revs):
+      date = _datestr_to_date(datestr)
+      action_map = { 'D' : vclib.DELETED,
+                     'A' : vclib.ADDED,
+                     'R' : vclib.REPLACED,
+                     'M' : vclib.MODIFIED,
+                     }
+      paths = (changed_paths or {}).keys()
+      paths.sort(lambda a, b: _compare_paths(a, b))
+      changes = []
+      found_readable = found_unreadable = 0
+      for path in paths:
+        pathtype = None
+        change = changed_paths[path]
+        action = action_map.get(change.action, vclib.MODIFIED)
+        ### Wrong, diddily wrong wrong wrong.  Can you say,
+        ### "Manufacturing data left and right because it hurts to
+        ### figure out the right stuff?"
+        if change.copyfrom_path and change.copyfrom_rev:
+          is_copy = 1
+          base_path = change.copyfrom_path
+          base_rev = change.copyfrom_rev
+        elif action == vclib.ADDED or action == vclib.REPLACED:
+          is_copy = 0
+          base_path = base_rev = None
+        else:
+          is_copy = 0
+          base_path = path
+          base_rev = revision - 1
+
+        ### Check authz rules (we lie about the path type)
+        parts = _path_parts(path)
+        if vclib.check_path_access(self, parts, vclib.FILE, revision):
+          if is_copy and base_path and (base_path != path):
+            parts = _path_parts(base_path)
+            if vclib.check_path_access(self, parts, vclib.FILE, base_rev):
+              is_copy = 0
+              base_path = None
+              base_rev = None
+          changes.append(SVNChangedPath(path, revision, pathtype, base_path,
+                                        base_rev, action, is_copy, 0, 0))
+          found_readable = 1
+        else:
+          found_unreadable = 1
+
+      if found_unreadable:
+        message = None
+        if not found_readable:
+          author = None
+          date = None
+      revs.append([date, author, message, changes])
+
+    client.svn_client_log([self.rootpath], optrev, optrev,
+                          1, 0, _log_cb, self.ctx)
+    return revs[0][0], revs[0][1], revs[0][2], revs[0][3]
 
   ##--- custom --##
 
