@@ -42,6 +42,14 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     cp = ConfigParser()
     cp.read(self.authz_file)
 
+    # Figure out if there are any aliases for the current username
+    aliases = []
+    if cp.has_section('aliases'):
+      for alias in cp.options('aliases'):
+        entry = cp.get('aliases', alias)
+        if entry == self.username:
+          aliases.append(alias)
+
     # Figure out which groups USERNAME has a part of.
     groups = []
     if cp.has_section('groups'):
@@ -81,6 +89,9 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
           elif entry[0:1] == "@" and _process_group(entry[1:]):
             group_member = 1
             break
+          elif entry[0:1] == "&" and entry[1:] in aliases:
+            group_member = 1
+            break
         if group_member:
           groups.append(groupname)
         return group_member
@@ -101,7 +112,8 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
         user = string.strip(user)
         if user == '*' \
            or user == self.username \
-           or (user[0:1] == "@" and user[1:] in groups):
+           or (user[0:1] == "@" and user[1:] in groups) \
+           or (user[0:1] == "&" and user[1:] in aliases):
           # See if the 'r' permission is among the ones granted to
           # USER.  If so, we can stop looking.  (Entry order is not
           # relevant -- we'll use the most permissive entry, meaning
@@ -122,6 +134,9 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
 
       # Skip the "groups" section -- we handled that already.
       if section == 'groups':
+        continue
+      
+      if section == 'aliases':
         continue
 
       # Process root-agnostic access sections; skip (but remember)
