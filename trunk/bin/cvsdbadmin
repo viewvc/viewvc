@@ -129,7 +129,8 @@ Usage: 1. %s [[-q] -q] rebuild REPOS-PATH
        3. %s [[-q] -q] purge REPOS-PATH
 
 1.  Rebuild the commit database information for the repository located
-    at REPOS-PATH.
+    at REPOS-PATH, after first purging information specific to that
+    repository (if any).
 
 2.  Update the commit database information for all unrecorded commits
     in the repository located at REPOS-PATH.

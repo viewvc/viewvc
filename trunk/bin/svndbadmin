@@ -279,7 +279,8 @@ Usage: 1. %s [-v] rebuild REPOS-PATH
        3. %s [-v] purge REPOS-PATH
 
 1.  Rebuild the commit database information for the repository located
-    at REPOS-PATH across all revisions.
+    at REPOS-PATH across all revisions, after first purging
+    information specific to that repository (if any).
 
 2.  Update the commit database information for the repository located
     at REPOS-PATH across all revisions or, optionally, only for the

@@ -448,9 +448,13 @@ class CheckinDatabase:
 
         return commit
 
-    def sql_delete(self, table, key, value):
+    def sql_delete(self, table, key, value, keep_fkey = None):
         sql = "DELETE FROM %s WHERE %s=%%s" % (table, key)
         sql_args = (value, )
+        if keep_fkey:
+          sql += " AND %s NOT IN (SELECT %s FROM checkins WHERE %s = %%s)" \
+                 % (key, keep_fkey, keep_fkey)
+          sql_args = (value, value)
         cursor = self.db.cursor()
         cursor.execute(sql, sql_args)
         
@@ -471,16 +475,16 @@ class CheckinDatabase:
                  plus_count, minus_count, description_id) = cursor.fetchone()
             except TypeError:
                 break
-            checkins.append([file_id, dir_id, branch_id, description_id])
+            checkins.append([file_id, dir_id, branch_id, description_id, who_id])
 
         #self.sql_delete('repositories', 'id', rep_id)
         self.sql_delete('checkins', 'repositoryid', rep_id)
         for checkin in checkins:
-            self.sql_delete('files', 'id', checkin[0])
-            self.sql_delete('dirs', 'id', checkin[1])
-            self.sql_delete('branches', 'id', checkin[2])
-            self.sql_delete('descs', 'id', checkin[3])
-
+            self.sql_delete('files', 'id', checkin[0], 'fileid')
+            self.sql_delete('dirs', 'id', checkin[1], 'dirid')
+            self.sql_delete('branches', 'id', checkin[2], 'branchid')
+            self.sql_delete('descs', 'id', checkin[3], 'descid')
+            self.sql_delete('people', 'id', checkin[4], 'whoid')
 
 ## the Commit class holds data on one commit, the representation is as
 ## close as possible to how it should be committed and retrieved to the
