@@ -9,14 +9,7 @@
 <hr />
 
 <table class="auto">
-
-[if-any default_branch]
-<tr>
-  <td>Default branch:</td>
-  <td>[for default_branch]<a href="[default_branch.href]">[default_branch.name]</a>[if-index default_branch last][else], [end]
-[end]</td>
 </tr>
-[end]
 
 [is pathtype "file"]
 [if-any view_href]

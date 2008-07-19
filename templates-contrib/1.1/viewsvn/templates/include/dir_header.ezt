@@ -10,25 +10,13 @@
 [end]
 
 <table class="auto">
-<tr><td>Files shown:</td><td><strong>[files_shown]</strong>
-[is num_dead "0"]
-[else]
-  [if-any attic_showing]
-    (<a href="[hide_attic_href]">Hide [num_dead] dead files</a>)
-  [else]
-    (<a href="[show_attic_href]">Show [num_dead] dead files</a>)
-  [end]
-[end]
-</td></tr>
-
-[is roottype "svn"]
 <tr>
   <td>Directory revision:</td>
   <td><a href="[tree_rev_href]" title="Revision [tree_rev]">[tree_rev]</a>[if-any youngest_rev] (of <a href="[youngest_rev_href]" title="Revision [youngest_rev]">[youngest_rev]</a>)[end]</td>
 </tr>
-[end]
+
 <tr>
-  <td>Sticky [is roottype "cvs"]Tag[else]Revision[end]:</td>
+  <td>Sticky Revision:</td>
   <td>[include "pathrev_form.ezt"]</td>
 </tr>
 [if-any search_re]

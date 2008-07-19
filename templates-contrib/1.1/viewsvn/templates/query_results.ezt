@@ -18,9 +18,6 @@
   <tr>
    <th class="vc_header">Revision</th>
    <th class="vc_header[is querysort "file"]_sort[end]">File</th>
-[if-any show_branch]
-   <th class="vc_header">Branch</th>
-[end]
    <th class="vc_header">+/-</th>
    <th class="vc_header[is querysort "date"]_sort[end]">Date</th>
    <th class="vc_header[is querysort "author"]_sort[end]">Author</th>
@@ -53,11 +50,6 @@
 		
 		
       </td>
-[if-any show_branch]
-      <td style="vertical-align: top;">
-	[if-any commits.files.branch][commits.files.branch][else]&nbsp;[end]
-      </td>
-[end]
       <td style="vertical-align: top;">
         [# only show a diff link for changes ]
         [is commits.files.type "Add"]<ins>[end]

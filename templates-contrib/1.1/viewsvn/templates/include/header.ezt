@@ -14,6 +14,14 @@
 </head>
 <body>
 
+[is roottype "svn"][else][if-any roots][else]
+<h1>
+Do not use this template set if you plan to view cvs repositories through ViewVC! 
+This template-set is heavily trimmed for Subversion needs. Special CVS features are 
+untested, possibly disabled or broken.
+</h1>
+[end][end]
+
 <div style="float: right; padding: 5px;">
   [# insert your logo and link to your organisation here ]
   <!--

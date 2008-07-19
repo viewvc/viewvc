@@ -3,7 +3,7 @@
 <channel>
     <title>[rootname] checkins[if-any where] (in [where])[end]</title>
 
-    <description>[is roottype "svn"]Subversion[else]CVS[end] commits to the[if-any where] [where] directory of the[end] [rootname] repository</description>
+    <description>Subversion commits to the[if-any where] [where] directory of the[end] [rootname] repository</description>
 
 	[for commits]<item>
         <title>[if-any commits.rev][commits.rev]: [end][[commits.author]] [commits.short_log]</title>
