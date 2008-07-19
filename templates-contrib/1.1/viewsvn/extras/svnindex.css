@@ -1,0 +1,76 @@
+
+html, body {
+  color: #000000;
+  background-color: #ffffff;
+  font-family: arial,helvetica,sans-serif;
+  font-size: 12px;
+}
+
+body{
+  margin: 0;
+  padding: 0;
+}
+
+a         { text-decoration:none;}
+a:hover   { text-decoration:underline;}
+a:link    { color: #0000ff; }
+a:visited { color: #880088; }
+a:active  { color: #0000ff; }
+
+.img a:hover { text-decoration:none;}
+
+img { 
+  border: none; 
+}
+
+.footer {
+  margin-top: 8em;
+  padding: 0.5em 1em 0.5em;
+  clear: both;
+  font-size: smaller;
+  font-style: italic;
+}
+
+.svn {
+  margin: 3em;
+}
+
+.rev {
+  margin-right: 3px;
+  margin-bottom: 15px;
+  padding-left: 3px;
+  
+  text-align: left;
+  font-size: 24px;
+  font-weight: bold;
+  color: #000066
+}
+
+.path {
+  margin: 3px;
+  padding: 3px;
+  background: #e0e0ff;
+font-weight: bold;
+}
+
+.updir {
+  margin: 3px;
+  padding: 3px;
+  margin-left: 3em;
+  background: #eeeeee;
+}
+
+.file {
+  margin: 3px;
+  padding: 3px;
+  margin-left: 3em;
+  background: #eeeeee;
+}
+
+.dir {
+  margin: 3px;
+  padding: 3px;
+  margin-left: 3em;
+  background: #eeeeee;
+}
+

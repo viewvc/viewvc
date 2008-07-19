@@ -1,0 +1,132 @@
+I.   BASIC INSTALLATION
+
+
+Let ViewVC use the viewsvn templates folder as templates. You can either delete the original
+templates folder in the ViewVC installation directory and copy the one from this archive to
+the ViewVC installation directory or copy the templates folder from this archive with a different 
+name to the ViewVC installation directory and change the template_dir option in viewvc.conf
+
+template_dir = templates-viewsvn
+
+Leave the section [templates] as is, thus do not override any templates. 
+
+
+
+ 
+II.  TWEAKS
+
+
+1. Set your own favicon
+
+Modify include/header.ezt, line 9, to include your favicon.
+
+
+2. Let your own logo appear in the upper right area and link to your homepage. 
+
+Modify include/header.ezt, line 78, to include your link and logo.
+
+
+3. Enable TortoiseSVN checkout links.
+
+If you are certain that most of your guest use TortoiseSVN you can give them the ability
+to use TortoiseSVN checkout links 
+(see http://tortoisesvn.net/docs/release/TortoiseSVN_en/tsvn-repository-links.html). This wil
+only work if all your repositories share the same base location, e.g. http://svn.server/svn/.
+This is mostly the case if you are using the mod_dav_svn SVNParentPath directive.
+ 
+Modify include/dir_footer.ezt, line 44. Enable this section and configure your subversion location. 
+
+
+
+
+III. EXTRAS
+
+
+1.   fix-blame-output.diff
+
+If you are running ViewVC 1.0 and you are suffering from a broken blame/annotate output because of
+long author names you can apply this patch. Note that Subversion 1.3.1 or higher is required.
+
+
+2.   svnindex.xsl & svnindex.css
+
+If you are using mod_dav_svn to host your repository you can teach it to use a stylesheet if you are 
+browsing the repository directly. Take a look at the SVNIndexXSLT directive for more information.
+You can use the .xsl and .css from the extras folder to get a look & feel that is similiar to this
+ViewVC template. Note that these stylesheets knows nothing about ViewVC. You have to teach
+svnindex.xsl where the [docroot] folder exists. If it is /docroot you have to change nothing, 
+otherwise edit line 68, 82 and 97.
+
+
+
+
+IV.  EXAMPLE VIEWVC.CONF
+
+
+The following viewvc.conf setting were used to create the templates, do not copy these blindly,
+just check them if something seems wrong:
+
+[general]
+root_parents = [REPOSPATH] : svn
+use_rcsparse = 0
+mime_types_file = [PATHTO]\mime.types
+address = <a href="mailto:[ADRESS]">Admin</a>
+forbidden =
+kv_files =
+languages = en-us
+[options]
+root_as_url_component = 0
+default_file_view = log
+checkout_magic = 0
+http_expiration_time = 600
+generate_etags = 1
+sort_by = file
+sort_group_dirs = 1
+hide_attic = 1
+log_sort = date
+diff_format = h
+hide_cvsroot = 1
+hr_breakable = 1
+hr_funout = 0
+hr_ignore_white = 1
+hr_ignore_keyword_subst = 1
+hr_intraline = 0
+allow_annotate = 1
+allow_markup = 1
+allow_compress = 1
+template_dir = templates-viewsvn
+docroot = [PATHTO]/docroot
+show_subdir_lastmod = 0
+show_logs = 1
+show_log_in_markup = 1
+cross_copies = 0
+use_localtime = 1
+py2html_path = .
+short_log_len = 80
+use_enscript = 0
+enscript_path =
+use_highlight = 1
+highlight_path = [PATH]
+highlight_line_numbers = 1
+highlight_convert_tabs = 2
+use_php = 0
+php_exe_path = php
+allow_tar = 0
+use_cvsgraph = 0
+cvsgraph_path =
+cvsgraph_conf = cvsgraph.conf
+use_re_search = 0
+use_pagesize = 200
+limit_changes = 100
+[templates]
+[cvsdb]
+enabled = 1
+host = localhost
+port = 3306
+database_name = ViewVC
+user = [UID]
+passwd = [PWD]
+readonly_user = [UID] 
+readonly_passwd = [PWD] 
+#row_limit = 1000
+[vhosts]

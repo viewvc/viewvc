@@ -1,0 +1,28 @@
+[# setup page definitions]
+  [define page_title]Repository Listing[end]
+  [define help_href][docroot]/help_rootview.html[end]
+[# end]
+
+[include "include/header.ezt" "directory"]
+
+<table cellspacing="1" cellpadding="2">
+<thead>
+<tr>
+  <th class="vc_header_sort">Name</th>
+</tr>
+</thead>
+
+<tbody>
+[for roots]
+  <tr class="vc_row_[if-index roots even]even[else]odd[end]">
+    <td>
+      <a href="[roots.href]" title="[roots.name]" class="img"><img src="[docroot]/images/tortoisesvn/repos.png" alt="[roots.name]" width="16" height="16" /></a>
+	  <a href="[roots.href]">[roots.name]</a>
+    </td>
+  </tr>
+[end]
+</tbody>
+
+</table>
+
+[include "include/footer.ezt"]

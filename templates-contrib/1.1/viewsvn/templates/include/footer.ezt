@@ -1,0 +1,21 @@
+[# standard footer used by all ViewVC pages ]
+
+<hr />
+
+<table>
+<tr>
+  <td>[if-any cfg.general.address]<address><a href="mailto:[cfg.general.address]">[cfg.general.address]</a></address>[else]&nbsp;[end]</td>
+  <td style="text-align: right;">
+    <a href="http://subversion.tigris.org/" title="Subversion"><img src="[docroot]/images/svn.png" alt="Subversion"/></a>&nbsp;
+	<a href="http://tortoisesvn.net/" title="TortoiseSVN"><img src="[docroot]/images/tortoisesvn/tsvn.png" alt="TortoiseSVN"/></a>&nbsp;
+	<a href="http://www.viewvc.org/" title="ViewVC" ><img src="[docroot]/images/viewvc.png" alt="ViewVC"/></a>
+  </td>
+</tr>
+<tr>
+  <td>&nbsp;</td>
+  <td style="text-align: right;">[if-any rss_href]<a href="[rss_href]" title="RSS 2.0 feed"><img src="[docroot]/images/feed-icon-16x16.jpg" alt="RSS 2.0 feed"/></a>[else]&nbsp;[end]</td>
+</tr>
+</table>
+
+</body>
+</html>
