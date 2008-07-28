@@ -161,6 +161,11 @@ class Request:
       # validate the parameter
       _validate_param(name, values[0])
 
+      # only allow the magic ViewVC MIME types to be declared via CGI params
+      if (name == 'content-type') and \
+         (not values[0] in (viewcvs_mime_type, alt_mime_type)):
+        continue
+      
       # if we're here, then the parameter is okay
       self.query_dict[name] = values[0]
 
@@ -2298,8 +2303,7 @@ def view_checkout(request):
 
   # The revision number acts as a strong validator.
   if not check_freshness(request, None, revision):
-    mime_type = request.query_dict.get('content-type') \
-                or request.mime_type or 'text/plain'
+    mime_type = request.mime_type or 'text/plain'
     server_fp = get_writeready_server_file(request, mime_type)
     copy_stream(fp, server_fp, cfg)
   fp.close()
