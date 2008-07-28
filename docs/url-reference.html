@@ -89,7 +89,7 @@ th.caption {
     <li><a href="#compat-tarball">'<code>tarball=1</code>' Parameter &rArr; '<code>view=tar</code>'</a></li>
     <li><a href="#compat-graph">'<code>graph=1</code>' Parameter &rArr; '<code>view=graph</code>'</a></li>
     <li><a href="#compat-makeimage">'<code>graph=1&makeimage=1</code>' Parameters &rArr; '<code>view=graphimg</code>'</a></li>
-    <li><a href="#compat-content_type">'<code>content_type=text/vnd.viewcvs-markup</code>' and '<code>content_type=text/x-cvsweb-markup</code>' Parameters&rArr; '<code>view=markup</code>'
+    <li><a href="#compat-content_type">'<code>content-type=text/vnd.viewcvs-markup</code>' and '<code>content-type=text/x-cvsweb-markup</code>' Parameters&rArr; '<code>view=markup</code>'
     <li><a href="#compat-attic">'<code>Attic/FILE</code>' Paths &rArr; '<code>FILE</code>'</a></li>
   </ul>
 </div>
@@ -283,11 +283,6 @@ th.caption {
     <td><code>view=co</code></td>
     <td>depends</td>
     <td><a href="#view-param"><code>view</code> parameter</a>, not needed if the <code>default_file_view</code> configuration variable is set to <code>co</code>, since that makes the checkout view the default view for file paths. Also not needed if the <code>/*checkout*</code> magic prefix or the <code>revision</code> parameter is present.
-  </tr>
-  <tr>
-    <td><code>content-type=<var>TYPE</var></code></td>
-    <td>optional</td>
-    <td>MIME type to send with checked out file, default is a guess based on file extension</td>
   </tr>
   <tr>
     <td><code>revision=<var>REVISION</var></code></td>
@@ -1233,8 +1228,8 @@ th.caption {
 <h3 id="compat-makeimage">'<code>graph=1&amp;makeimage=1</code>' Parameters &rArr; '<code>view=graphimg</code>'</h3>
 <p>A <code>graph=1&amp;makeimage=1</code> parameter is treated like a <code>view=graph</code> parameter. There is currently no redirect when it is encountered, but there could be one in the future.</p>
 
-<h3 id="compat-content_type">'<code>content_type=text/vnd.viewcvs-markup</code>' and '<code>content_type=text/x-cvsweb-markup</code>' Parameters&rArr; '<code>view=markup</code>'</h3>
-<p><code>content_type=text/vnd.viewcvs-markup</code> and <code>content_type=text/x-cvsweb-markup</code> parameters are treated like a <code>view=markup</code> parameter. There is currently no redirect when it is encountered, but there could be one in the future.</p>
+<h3 id="compat-content_type">'<code>content-type=text/vnd.viewcvs-markup</code>' and '<code>content-type=text/x-cvsweb-markup</code>' Parameters&rArr; '<code>view=markup</code>'; other values ignored</h3>
+<p><code>content-type=text/vnd.viewcvs-markup</code> and <code>content-type=text/x-cvsweb-markup</code> parameters are treated like a <code>view=markup</code> parameter. There is currently no redirect when it is encountered, but there could be one in the future.  Other values of the <code>content-type</code> parameter, which were used to dictate the MIME type of files displayed in the checkout/download view prior to ViewVC 1.0.6, are ignored.</p>
 
 <h3 id="compat-attic">'<code>Attic/FILE</code>' Paths &rArr; '<code>FILE</code>'</h3>
 <p>When ViewVC encounters an invalid repository path whose last or second-to-last component is named <code>Attic</code>, and stripping the component yields a valid path, it will redirect to a URL with that path.</p>
