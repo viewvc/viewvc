@@ -79,22 +79,24 @@
      <td[if-any entries.graph_href][else] colspan="2"[end]>
        [is entries.pathtype "dir"]
          <a href="[entries.view_href]" title="View directory contents" class="img">
-           <img src="[docroot]/images/[is entries.pathtype "dir"]dir[else]text[end].png" alt="View directory contents" width="16" height="16" />
+           <img src="[docroot]/images/dir.png" alt="View directory contents" width="16" height="16" />
          </a>
          &nbsp;
        [else]
-         <a href="[if-any entries.prefer_markup][entries.view_href][else][entries.download_href][end]" title="[if-any entries.prefer_markup]View[else]Download[end] file contents" class="img">
-           <img src="[docroot]/images/[is entries.pathtype "dir"]dir[else]text[end].png" alt="[if-any entries.prefer_markup]View[else]Download[end] file contents" width="16" height="16" />
-         </a>
+         [if-any entries.view_href]<a href="[entries.view_href]" title="View file contents" class="img">[end]
+           <img src="[docroot]/images/text.png" alt="View file contents" width="16" height="16" />
+         [if-any entries.view_href]</a>[end]
          &nbsp;
        [end]
        
        [is entries.pathtype "dir"]
-         <a href="[entries.view_href]" title="View directory contents">
+         <a href="[entries.view_href]" title="View directory contents">[entries.name]</a>
        [else]
-         <a href="[if-any entries.prefer_markup][entries.view_href][else][entries.download_href][end]" title="[if-any entries.prefer_markup]View[else]Download[end] file contents">
+         [if-any entries.view_href]<a href="[entries.view_href]" title="View file contents">[end]
+         [entries.name]
+         [if-any entries.view_href]</a>[end]
        [end]
-       [entries.name][is entries.pathtype "dir"]/[end]</a>
+       
      </td>
      [if-any entries.errors]
        <td colspan=[is cfg.options.show_logs "1"]4[else]3[end]>
@@ -110,8 +112,7 @@
        <td>&nbsp;[entries.author]</td>
        [is cfg.options.show_logs "1"]
          [if-any entries.log]
-           <td>&nbsp;[entries.log][is entries.pathtype "dir"][is roottype "cvs"]
-             <em>(from [entries.log_file]/[entries.log_rev])</em>[end][end]</td>
+           <td>&nbsp;[entries.log]</td>
          [else]
            <td>&nbsp;</td>
          [end]

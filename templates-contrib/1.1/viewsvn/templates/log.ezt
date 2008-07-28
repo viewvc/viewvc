@@ -12,9 +12,9 @@
 
    <a name="rev[entries.rev]"></a>
 
-   Revision <a href="[entries.revision_href]"><strong>[entries.rev]</strong></a> -
+   Revision <a href="[entries.revision_href]"><strong>[entries.rev]</strong></a>&nbsp;
    [is pathtype "file"]
-     <a href="[entries.view_href]" title="View"><img src="[docroot]/images/text.png" alt="View"/></a>
+     [if-any entries.view_href]<a href="[entries.view_href]" title="View"><img src="[docroot]/images/text.png" alt="View"/></a>[end]
    [else]
      <a href="[entries.view_href]" title="Directory Listing"><img src="[docroot]/images/dir.png" alt="Directory Listing"/></a>
    [end]
