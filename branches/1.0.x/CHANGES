@@ -1,5 +1,6 @@
 Version 1.0.6 (released ??-???-????)
 
+  * security fix: ignore arbitrary user-provided MIME types (issue #354)
   * fix bug in regexp search filter when used with sticky tag (issue #346)
   * fix bug in handling of certain 'co' output (issue #348)
   * fix regexp search filter template bug
