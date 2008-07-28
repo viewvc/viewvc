@@ -98,7 +98,7 @@ th.caption {
     <li><a href="#compat-tarball">'<code>tarball=1</code>' Parameter &rArr; '<code>view=tar</code>'</a></li>
     <li><a href="#compat-graph">'<code>graph=1</code>' Parameter &rArr; '<code>view=graph</code>'</a></li>
     <li><a href="#compat-makeimage">'<code>graph=1&makeimage=1</code>' Parameters &rArr; '<code>view=graphimg</code>'</a></li>
-    <li><a href="#compat-content_type">'<code>content_type=text/vnd.viewcvs-markup</code>' and '<code>content_type=text/x-cvsweb-markup</code>' Parameters&rArr; '<code>view=markup</code>'
+    <li><a href="#compat-content_type">'<code>content-type=text/vnd.viewcvs-markup</code>' and '<code>content-type=text/x-cvsweb-markup</code>' Parameters&rArr; '<code>view=markup</code>'
     <li><a href="#compat-attic">'<code>Attic/FILE</code>' Paths &rArr; '<code>FILE</code>'</a></li>
   </ul>
 </div>
@@ -1467,11 +1467,14 @@ th.caption {
 
 <h3 id="compat-content_type">'<code>content_type=text/vnd.viewcvs-markup</code>' and '<code>content_type=text/x-cvsweb-markup</code>' Parameters&rArr; '<code>view=markup</code>'</h3>
 
-<p><code>content_type=text/vnd.viewcvs-markup</code> and
-   <code>content_type=text/x-cvsweb-markup</code> parameters are
+<p><code>content-type=text/vnd.viewcvs-markup</code> and
+   <code>content-type=text/x-cvsweb-markup</code> parameters are
    treated like a <code>view=markup</code> parameter. There is
    currently no redirect when it is encountered, but there could be
-   one in the future.</p>
+   one in the future.  Other values of the <code>content-type</code>
+   parameter, which were used to dictate the MIME type of files
+   displayed in the checkout/download view prior to ViewVC 1.0.6, are
+   ignored.</p>
 
 <h3 id="compat-attic">'<code>Attic/FILE</code>' Paths &rArr; '<code>FILE</code>'</h3>
 
