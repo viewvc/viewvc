@@ -388,14 +388,10 @@ class Request:
     if needs_redirect:
       self.server.redirect(self.get_url())
 
-    # Finally done parsing query string, set mime type and call view_func
-    self.mime_type = None
-    if self.pathtype == vclib.FILE:
-      self.mime_type = guess_mime(self.where)
-
     # startup is done now.
     debug.t_end('startup')
     
+    # Call the function for the selected view.
     self.view_func(self)
 
   def get_url(self, escape=0, partial=0, prefix=0, **args):
@@ -987,7 +983,7 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
   """Return common hrefs and a viewability flag used for various views
   of FILENAME at revision REV whose MIME type is MIME_TYPE."""
   rev = rev and str(rev) or None
-  mime_type = mime_type or request.mime_type
+  mime_type = mime_type or guess_mime(where)
   if pathrev == -1: # cheesy default value, since we need to preserve None
     pathrev = request.pathrev
 
@@ -1144,7 +1140,7 @@ def html_time(request, secs, extended=0):
       s = s + ', ' + ext
   return s
 
-def common_template_data(request, revision=None):
+def common_template_data(request, revision=None, mime_type=None):
   cfg = request.cfg
   data = {
     'cfg' : cfg,
@@ -1207,8 +1203,7 @@ def common_template_data(request, revision=None):
   if request.pathtype == vclib.FILE:
     data['view_href'], data['download_href'], data['download_text_href'], \
       data['annotate_href'], data['revision_href'], data['prefer_markup'] \
-        = get_file_view_info(request, request.where,
-                             data['rev'], request.mime_type)
+        = get_file_view_info(request, request.where, data['rev'], mime_type)
     data['log_href'] = request.get_url(view_func=view_log,
                                        params={}, escape=1)
     if request.roottype == 'cvs' and cfg.options.use_cvsgraph:
@@ -1302,7 +1297,7 @@ class MarkupPipeWrapper:
     if self.posttext:
       ctx.fp.write(self.posttext)
 
-def markup_stream_pygments(request, cfg, blame_data, fp, path_parts):
+def markup_stream_pygments(request, cfg, blame_data, fp, filename, mime_type):
   # Determine if we should use Pygments to highlight our output.
   # Reasons not to include a) being told not to by the configuration,
   # b) not being able to import the Pygments modules, and c) Pygments
@@ -1326,11 +1321,15 @@ def markup_stream_pygments(request, cfg, blame_data, fp, path_parts):
     from pygments.formatters import HtmlFormatter
     from pygments.lexers import ClassNotFound, \
                                 get_lexer_by_name, \
+                                get_lexer_for_mimetype, \
                                 get_lexer_for_filename
     try:
-      lexer = get_lexer_for_filename(path_parts[-1])
+      lexer = get_lexer_for_mimetype(mime_type)
     except ClassNotFound:
-      use_pygments = 0
+      try:
+        lexer = get_lexer_for_filename(filename)
+      except ClassNotFound:
+        use_pygments = 0
   except ImportError:
     use_pygments = 0
 
@@ -1428,15 +1427,25 @@ def get_itemprops(request, path_parts, rev):
     props.append(_item(name=name, value=value, undisplayable=undisplayable))
   return props
 
+def calculate_mime_type(request, path_parts, rev):
+  mime_type = None
+  if request.roottype == 'svn':
+    itemprops = request.repos.itemprops(path_parts, rev)
+    mime_type = itemprops.get('svn:mime-type')
+    if mime_type:
+      return mime_type
+  return guess_mime(path_parts[-1])
+
 def markup_or_annotate(request, is_annotate):
   cfg = request.cfg
   path, rev = _orig_path(request, is_annotate and 'annotate' or 'revision')
   lines = fp = image_src_href = None
   annotation = None
   revision = None
+  mime_type = calculate_mime_type(request, path, rev)
 
   # Is this a viewable image type?
-  if is_viewable_image(request.mime_type) \
+  if is_viewable_image(mime_type) \
      and 'co' in cfg.options.allowed_views:
     fp, revision = request.repos.openfile(path, rev)
     fp.close()
@@ -1465,12 +1474,13 @@ def markup_or_annotate(request, is_annotate):
     if check_freshness(request, None, revision, weak=1):
       fp.close()
       return
-    lines = markup_stream_pygments(request, cfg, blame_source, fp, path)
+    lines = markup_stream_pygments(request, cfg, blame_source, fp,
+                                   path[-1], mime_type)
     fp.close()
 
   data = common_template_data(request, revision)
   data.update({
-    'mime_type' : request.mime_type,
+    'mime_type' : mime_type,
     'log' : None,
     'date' : None,
     'ago' : None,
@@ -1765,8 +1775,8 @@ def view_directory(request):
       if request.roottype == 'svn': 
         row.size = file.size
 
-      ### for Subversion, we should first try to get this from the properties
-      row.mime_type = guess_mime(file.name)
+      row.mime_type = calculate_mime_type(request, _path_parts(file_where),
+                                          file.rev)
       row.view_href, row.download_href, row.download_text_href, \
                      row.annotate_href, row.revision_href, \
                      row.prefer_markup \
@@ -2012,9 +2022,13 @@ def view_log(request):
   diff_format = request.query_dict.get('diff_format', cfg.options.diff_format)
   pathtype = request.pathtype
 
-  if pathtype is vclib.DIR and request.roottype == 'cvs':
-    raise debug.ViewVCException('Unsupported feature: log view on CVS '
-                                 'directory', '400 Bad Request')
+  if pathtype is vclib.DIR:
+    if request.roottype == 'cvs':
+      raise debug.ViewVCException('Unsupported feature: log view on CVS '
+                                  'directory', '400 Bad Request')
+    mime_type = None
+  else:
+    mime_type = calculate_mime_type(request, request.path_parts, request.pathrev)
 
   options = {}
   options['svn_show_all_dir_logs'] = 1 ### someday make this optional?
@@ -2135,8 +2149,7 @@ def view_log(request):
     if pathtype is vclib.FILE:
       entry.view_href, entry.download_href, entry.download_text_href, \
         entry.annotate_href, entry.revision_href, entry.prefer_markup \
-        = get_file_view_info(request, request.where, rev.string,
-                             request.mime_type)
+        = get_file_view_info(request, request.where, rev.string, mime_type)
     else:
       entry.revision_href = request.get_url(view_func=view_revision,
                                             params={'revision': rev.string},
@@ -2197,7 +2210,7 @@ def view_log(request):
   data = common_template_data(request)
   data.update({
     'default_branch' : None,
-    'mime_type' : request.mime_type,
+    'mime_type' : mime_type,
     'rev_selected' : selected_rev,
     'diff_format' : diff_format,
     'logsort' : logsort,
@@ -2230,8 +2243,7 @@ def view_log(request):
     if not request.pathrev or lastrev is None:
       view_href, download_href, download_text_href, \
         annotate_href, revision_href, prefer_markup \
-        = get_file_view_info(request, request.where, None,
-                             request.mime_type, None)
+        = get_file_view_info(request, request.where, None, mime_type, None)
       data.update({
         'head_view_href': view_href,
         'head_download_href': download_href,
@@ -2243,7 +2255,7 @@ def view_log(request):
     if request.pathrev and request.roottype == 'cvs':
       view_href, download_href, download_text_href, \
         annotate_href, revision_href, prefer_markup \
-        = get_file_view_info(request, request.where, None, request.mime_type)
+        = get_file_view_info(request, request.where, None, mime_type)
       data.update({
         'tag_view_href': view_href,
         'tag_download_href': download_href,
@@ -2303,7 +2315,7 @@ def view_checkout(request):
 
   # The revision number acts as a strong validator.
   if not check_freshness(request, None, revision):
-    mime_type = request.mime_type or 'text/plain'
+    mime_type = calculate_mime_type(request, path, rev) or 'text/plain'
     server_fp = get_writeready_server_file(request, mime_type)
     copy_stream(fp, server_fp, cfg)
   fp.close()
@@ -2345,8 +2357,8 @@ def view_cvsgraph(request):
   #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib:/path/to/cvsgraph'
 
   imagesrc = request.get_url(view_func=view_cvsgraph_image, escape=1)
-
-  view = default_view(request.mime_type, cfg)
+  mime_type = guess_mime(request.where)
+  view = default_view(mime_type, cfg)
   up_where = _path_join(request.path_parts[:-1])
 
   # Create an image map
@@ -3479,8 +3491,8 @@ def build_commit(request, files, max_files, dir_strip, format):
       diff_href = request.get_url(view_func=view_diff,
                                   where=where, pathtype=vclib.FILE,
                                   params=diff_href_params, escape=1)
-    prefer_markup = ezt.boolean(default_view(guess_mime(filename),
-                                             cfg) == view_markup)      
+    mime_type = calculate_mime_type(request, path_parts, rev)
+    prefer_markup = ezt.boolean(default_view(mime_type, cfg) == view_markup)      
 
     # Skip files in hidden modules.
     path_parts = _path_parts(filename)
