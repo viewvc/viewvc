@@ -34,6 +34,7 @@ Version 1.1.0 (released ??-???-????)
   * preserve executability of Subversion files in tarballs (issue #233)
   * add ability to set Subversion runtime config dir (issue #351, issue #339)
   * only show RSS/query links for roots found in the commits database (issue #357)
+  * recognize Subversion svn:mime-type property values (issue #364)
 
 Version 1.0.5 (released 28-Feb-2008)
 
