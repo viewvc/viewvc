@@ -34,6 +34,9 @@ Revision [if-any revision_href]<a href="[revision_href]"><strong>[rev]</strong><
     <br />Changes since <strong>[prev]: [changed] lines</strong>
   [end]
 [end]
+[if-any mime_type]
+  <br />File MIME type: [mime_type]
+[end]
 [is roottype "svn"][if-any size]
   <br />File size: [size] byte(s)
 [end][end]
