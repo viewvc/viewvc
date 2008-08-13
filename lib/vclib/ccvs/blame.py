@@ -346,7 +346,7 @@ class CVSParser(rcsparse.Sink):
       is_trunk_revision = self.trunk_rev.match(revision) is not None
 
       if is_trunk_revision:
-	diffs = self.deltatext_split(last_revision)
+        diffs = self.deltatext_split(last_revision)
 
         # Revisions on the trunk specify deltas that transform a
         # revision into an earlier revision, so invert the translation
@@ -379,7 +379,7 @@ class CVSParser(rcsparse.Sink):
         # the trunk.  They specify deltas that transform a revision
         # into a later revision.
         adjust = 0
-	diffs = self.deltatext_split(revision)
+        diffs = self.deltatext_split(revision)
         for command in diffs:
           if skip > 0:
             skip = skip - 1

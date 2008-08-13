@@ -33,7 +33,6 @@ import time
 import math
 import cgi
 import vclib
-import vclib.ccvs.blame
 
 
 re_includes = re.compile('\\#(\\s*)include(\\s*)"(.*?)"')
@@ -100,6 +99,7 @@ class _item:
 
 
 def make_html(root, rcs_path):
+  import vclib.ccvs.blame
   bs = vclib.ccvs.blame.BlameSource(os.path.join(root, rcs_path))
 
   count = bs.num_lines
