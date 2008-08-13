@@ -364,11 +364,11 @@ class _pipe:
       else:
         if self.thread:
           self.thread.join()
-	if type(self.child_pid) == type([]):
+        if type(self.child_pid) == type([]):
           for pid in self.child_pid:
             exit = os.waitpid(pid, 0)[1]
           return exit
-	else:
+        else:
             return os.waitpid(self.child_pid, 0)[1]
     return None
 
