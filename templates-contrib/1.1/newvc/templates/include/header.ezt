@@ -55,14 +55,7 @@
 </div>
 
 <div id="vc_current_path">
-[if-any roots_href]<a href="[roots_href]">root</a>[end]
-[if-any nav_path]
-/ [for nav_path]
-    [if-any nav_path.href]<a href="[nav_path.href]">[end]
-      [if-index nav_path last]<span class="thisitem">[end][nav_path.name][if-index nav_path last]</span>[end][if-any nav_path.href]</a>[end]
-    [if-index nav_path last][else]/[end]
-  [end]
-[end]
+[if-any roots_href]<a href="[roots_href]">root</a>[end][if-any nav_path]<span class="pathdiv">/</span>[for nav_path][if-any nav_path.href]<a href="[nav_path.href]">[end][if-index nav_path last]<span class="thisitem">[end][nav_path.name][if-index nav_path last]</span>[end][if-any nav_path.href]</a>[end][if-index nav_path last][else]<span class="pathdiv">/</span>[end][end][end]
 </div>
 
 </div> <!-- vc_header -->

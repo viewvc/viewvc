@@ -86,6 +86,10 @@ address { font-style: normal; display: inline; }
   color: #94bd5e;
 }
 
+#vc_current_path .pathdiv {
+  padding: 0 0.1em;
+}
+
 #vc_view_selection_group {
   background: black;
   color: white;
