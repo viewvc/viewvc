@@ -35,6 +35,7 @@ tr, td, th { vertical-align: top; }
 th { white-space: nowrap; }
 form { margin: 0; }
 
+
 /*** Icons ***/
 .vc_icon {
   width: 16px;
@@ -48,6 +49,10 @@ form { margin: 0; }
 .vc_navheader {
   background-color: #cccccc;
   padding: .25em;
+  font-weight: bold;
+}
+.vc_navheader .pathdiv {
+  padding: 0 3px;
 }
 
 
