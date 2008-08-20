@@ -25,6 +25,7 @@ import time
 
 import cvsdb
 import viewvc
+import vclib
 import ezt
 import debug
 import urllib
