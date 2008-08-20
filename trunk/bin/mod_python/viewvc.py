@@ -1,6 +1,6 @@
 # -*-python-*-
 #
-# Copyright (C) 1999-2007 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -10,7 +10,7 @@
 #
 # -----------------------------------------------------------------------
 #
-# ViewVC: View CVS/SVN repositories via a web browser
+# viewvc: View CVS/SVN repositories via a web browser
 #
 # -----------------------------------------------------------------------
 #
@@ -42,15 +42,20 @@ if LIBRARY_DIR:
   sys.path.insert(0, LIBRARY_DIR)
 
 import sapi
-import viewvc
-import query
+import imp
 
-cfg = viewvc.load_config(CONF_PATHNAME)
+# Import real ViewVC module
+fp, pathname, description = imp.find_module('viewvc', [LIBRARY_DIR])
+try:
+  viewvc = imp.load_module('viewvc', fp, pathname, description)
+finally:
+  if fp:
+    fp.close()
 
 def index(req):
   server = sapi.ModPythonServer(req)
+  cfg = viewvc.load_config(CONF_PATHNAME, server)
   try:
-    query.main(server, cfg, "viewvc_mp.py")
+    viewvc.main(server, cfg)
   finally:
     server.close()
-
