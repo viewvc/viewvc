@@ -42,9 +42,15 @@ if LIBRARY_DIR:
   sys.path.insert(0, LIBRARY_DIR)
 
 import sapi
-import viewvc
-reload(viewvc) # need reload because initial import loads this stub file
+import imp
 
+# Import real ViewVC module
+fp, pathname, description = imp.find_module('viewvc', [LIBRARY_DIR])
+try:
+  viewvc = imp.load_module('viewvc', fp, pathname, description)
+finally:
+  if fp:
+    fp.close()
 
 def index(req):
   server = sapi.ModPythonServer(req)

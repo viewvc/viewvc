@@ -42,9 +42,23 @@ if LIBRARY_DIR:
   sys.path.insert(0, LIBRARY_DIR)
 
 import sapi
-import viewvc
-import query
-reload(query) # need reload because initial import loads this stub file
+import imp
+
+# Import real ViewVC module
+fp, pathname, description = imp.find_module('viewvc', [LIBRARY_DIR])
+try:
+  viewvc = imp.load_module('viewvc', fp, pathname, description)
+finally:
+  if fp:
+    fp.close()
+
+# Import real ViewVC Query modules
+fp, pathname, description = imp.find_module('query', [LIBRARY_DIR])
+try:
+  query = imp.load_module('query', fp, pathname, description)
+finally:
+  if fp:
+    fp.close()
 
 cfg = viewvc.load_config(CONF_PATHNAME)
 
