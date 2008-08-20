@@ -3448,6 +3448,10 @@ def build_commit(request, files, max_files, dir_strip, format):
     where = dirname and ("%s/%s" % (dirname, filename)) or filename
     rev = f.GetRevision()
     rev_prev = prev_rev(rev)
+    commit_time = f.GetTime()
+    if commit_time:
+      commit_time = make_time_string(commit_time, cfg)
+    change_type = f.GetTypeString()
 
     # In CVS, we can actually look at deleted revisions; in Subversion
     # we can't -- we'll look at the previous revision instead.
@@ -3476,17 +3480,12 @@ def build_commit(request, files, max_files, dir_strip, format):
       # can't find.
       try:
         readable = vclib.check_path_access(request.repos, path_parts,
-                                           None, exam_rev):
+                                           None, exam_rev)
       except vclib.ItemNotFound:
         readable = 0
       if not readable:
         found_unreadable = 1
         continue
-
-    commit_time = f.GetTime()
-    if commit_time:
-      commit_time = make_time_string(commit_time, cfg)
-    change_type = f.GetTypeString()
          
     if request.roottype == 'svn':
       params = { 'pathrev': exam_rev }
