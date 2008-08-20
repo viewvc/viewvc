@@ -1429,11 +1429,16 @@ def get_itemprops(request, path_parts, rev):
 
 def calculate_mime_type(request, path_parts, rev):
   mime_type = None
+  if not path_parts:
+    return None
   if request.roottype == 'svn':
-    itemprops = request.repos.itemprops(path_parts, rev)
-    mime_type = itemprops.get('svn:mime-type')
-    if mime_type:
-      return mime_type
+    try:
+      itemprops = request.repos.itemprops(path_parts, rev)
+      mime_type = itemprops.get('svn:mime-type')
+      if mime_type:
+        return mime_type
+    except:
+      pass
   return guess_mime(path_parts[-1])
 
 def markup_or_annotate(request, is_annotate):
