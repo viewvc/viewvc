@@ -5,6 +5,7 @@ Version 1.0.6 (released ??-???-????)
   * fix bug in handling of certain 'co' output (issue #348)
   * fix regexp search filter template bug
   * fix annotate code syntax error
+  * fix mod_python import cycle (issue #369)
 
 Version 1.0.5 (released 28-Feb-2008)
 
