@@ -617,7 +617,7 @@ class LocalSubversionRepository(vclib.Repository):
       if vclib.check_path_access(self, parts, pathtype, rev):
         if is_copy and change.base_path and (change.base_path != path):
           parts = _path_parts(change.base_path)
-          if vclib.check_path_access(self, parts, pathtype, change.base_rev):
+          if not vclib.check_path_access(self, parts, pathtype, change.base_rev):
             is_copy = 0
             change.base_path = None
             change.base_rev = None
