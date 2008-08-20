@@ -3447,30 +3447,52 @@ def build_commit(request, files, max_files, dir_strip, format):
       dirname = dirname[len_strip+1:]
     where = dirname and ("%s/%s" % (dirname, filename)) or filename
     rev = f.GetRevision()
+    rev_prev = prev_rev(rev)
+
+    # In CVS, we can actually look at deleted revisions; in Subversion
+    # we can't -- we'll look at the previous revision instead.
+    exam_rev = rev
+    if request.roottype == 'svn' and change_type == 'Remove':
+      exam_rev = rev_prev
 
     # Check path access (since the commits database logic bypasses the
     # vclib layer and, thus, the vcauth stuff that layer uses).
-    if not vclib.check_path_access(request.repos, _path_parts(where),
-                                   vclib.FILE, rev):
-      found_unreadable = 1
-      continue
-    
+    path_parts = _path_parts(where)
+    if path_parts:
+      # Skip files in CVSROOT if asked to hide such.
+      if cfg.options.hide_cvsroot \
+         and is_cvsroot_path(request.roottype, path_parts):
+        found_unreadable = 1
+        continue
+      
+      # We have to do a rare authz check here because this data comes
+      # from the CVSdb, not from the vclib providers.
+      #
+      # WARNING: The Subversion CVSdb integration logic is weak, weak,
+      # weak.  It has no ability to track copies, so complex
+      # situations like a copied directory with a deleted subfile (all
+      # in the same revision) are very ... difficult.  We've no choice
+      # but to omit as unauthorized paths the authorization logic
+      # can't find.
+      try:
+        readable = vclib.check_path_access(request.repos, path_parts,
+                                           None, exam_rev):
+      except vclib.ItemNotFound:
+        readable = 0
+      if not readable:
+        found_unreadable = 1
+        continue
+
     commit_time = f.GetTime()
     if commit_time:
       commit_time = make_time_string(commit_time, cfg)
     change_type = f.GetTypeString()
-    rev_prev = prev_rev(rev)
-    
-    # In CVS, we can actually look at deleted revisions; in Subversion
-    # we can't -- we'll look at the previous revision instead.
+         
     if request.roottype == 'svn':
-      if change_type == 'Remove':
-        params = { 'pathrev': rev_prev }
-      else:
-        params = { 'pathrev': rev }
+      params = { 'pathrev': exam_rev }
     else:
-      params = { 'revision': rev, 'pathrev': f.GetBranch() or None }
-        
+      params = { 'revision': exam_rev, 'pathrev': f.GetBranch() or None }  
+    
     dir_href = request.get_url(view_func=view_directory,
                                where=dirname, pathtype=vclib.DIR,
                                params=params, escape=1)
@@ -3496,21 +3518,9 @@ def build_commit(request, files, max_files, dir_strip, format):
       diff_href = request.get_url(view_func=view_diff,
                                   where=where, pathtype=vclib.FILE,
                                   params=diff_href_params, escape=1)
-    mime_type = calculate_mime_type(request, path_parts, rev)
-    prefer_markup = ezt.boolean(default_view(mime_type, cfg) == view_markup)      
+    mime_type = calculate_mime_type(request, path_parts, exam_rev)
+    prefer_markup = ezt.boolean(default_view(mime_type, cfg) == view_markup)
 
-    # Skip files in hidden modules.
-    path_parts = _path_parts(filename)
-    if path_parts:
-      if cfg.options.hide_cvsroot \
-         and is_cvsroot_path(request.roottype, path_parts):
-        continue
-      # We have to do a rare authz check here because this data comes
-      # from the CVSdb, not from the vclib providers.
-      if not vclib.check_path_access(request.repos, path_parts,
-                                     vclib.FILE, rev):
-        continue
-      
     # Update plus/minus line change count.
     plus = int(f.GetPlusCount())
     minus = int(f.GetMinusCount())
