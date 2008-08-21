@@ -21,7 +21,9 @@ Revision [if-any revision_href]<a href="[revision_href]"><strong>[rev]</strong><
 [if-any orig_path]
   <br />Original Path: <a href="[orig_href]"><em>[orig_path]</em></a>
 [end]
-
+[if-any mime_type]
+  <br />File MIME type: [mime_type]
+[end]
 [if-any size]
   <br />File size: [size] byte(s)
 [end]
