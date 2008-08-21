@@ -1715,7 +1715,8 @@ def view_directory(request):
                 date=None, ago=None, view_href=None, log_href=None,
                 revision_href=None, annotate_href=None, download_href=None,
                 download_text_href=None, prefer_markup=ezt.boolean(0))
-
+    if request.roottype == 'cvs' and file.absent:
+      continue
     row.rev = file.rev
     row.author = file.author
     row.state = (request.roottype == 'cvs' and file.dead) and 'dead' or ''

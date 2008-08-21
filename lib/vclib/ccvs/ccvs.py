@@ -60,7 +60,7 @@ class CCVSRepository(BaseCVSRepository):
 
     for entry in entries_to_fetch:
       entry.rev = entry.date = entry.author = None
-      entry.dead = entry.log = entry.lockinfo = None
+      entry.dead = entry.absent = entry.log = entry.lockinfo = None
       path = _log_path(entry, dirpath, subdirs)
       if path:
         entry.path = path
@@ -209,6 +209,8 @@ class InfoSink(MatchingSink):
     MatchingSink.admin_completed(self)
     if self.find_tag is None:
       # tag we're looking for doesn't exist
+      if self.entry.kind == vclib.FILE:
+        self.entry.absent = 1
       raise rcsparse.RCSStopParser
 
   def set_locker(self, rev, locker):
@@ -241,6 +243,7 @@ class InfoSink(MatchingSink):
         self.entry.author = self.matching_rev.author
         self.entry.dead = self.matching_rev.dead
         self.entry.lockinfo = self.matching_rev.lockinfo
+        self.entry.absent = 0
         self.entry.log = log
         raise rcsparse.RCSStopParser
     else:
