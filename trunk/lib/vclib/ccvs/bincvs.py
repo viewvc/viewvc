@@ -364,9 +364,10 @@ class BinCVSRepository(BaseCVSRepository):
   
 
 class CVSDirEntry(vclib.DirEntry):
-  def __init__(self, name, kind, errors, in_attic):
+  def __init__(self, name, kind, errors, in_attic, absent=0):
     vclib.DirEntry.__init__(self, name, kind, errors)
     self.in_attic = in_attic
+    self.absent = absent # meaning, no revisions found on requested tag
 
 class Revision(vclib.Revision):
   def __init__(self, revstr, date=None, author=None, dead=None,
@@ -1070,14 +1071,16 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
         file.date = wanted_entry.date
         file.author = wanted_entry.author
         file.dead = file.kind == vclib.FILE and wanted_entry.dead
+        file.absent = 0
         file.log = wanted_entry.log
         file.lockinfo = lockinfo.get(file.rev)
         # suppress rlog errors if we find a usable revision in the end
         del file.errors[:]
       elif file.kind == vclib.FILE:
-        file.dead = 1
-        file.errors.append("No revisions exist on %s" % (view_tag or "MAIN"))
-
+        file.dead = 0
+        #file.errors.append("No revisions exist on %s" % (view_tag or "MAIN"))
+        file.absent = 1
+        
       # done with this file now, skip the rest of this file's revisions
       if not eof:
         _skip_file(rlog)
