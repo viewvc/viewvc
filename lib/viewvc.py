@@ -1717,6 +1717,8 @@ def view_directory(request):
                 download_text_href=None, prefer_markup=ezt.boolean(0))
     if request.roottype == 'cvs' and file.absent:
       continue
+    if cfg.options.hide_errorful_entries and file.errors:
+      continue
     row.rev = file.rev
     row.author = file.author
     row.state = (request.roottype == 'cvs' and file.dead) and 'dead' or ''

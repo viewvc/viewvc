@@ -35,6 +35,8 @@ Version 1.1.0 (released ??-???-????)
   * add ability to set Subversion runtime config dir (issue #351, issue #339)
   * only show RSS/query links for roots found in the commits database (issue #357)
   * recognize Subversion svn:mime-type property values (issue #364)
+  * hide CVS files when viewing tags/branches on which they don't exist
+  * add support for hiding errorful entries from the directory view (issue #105)
 
 Version 1.0.5 (released 28-Feb-2008)
 

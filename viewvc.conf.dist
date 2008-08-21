@@ -363,6 +363,13 @@ sort_group_dirs = 1
 #   0      Show the files which are inside the Attic subdir
 hide_attic = 1
 
+# hide_errorful_entries: Hide or show errorful directory entries
+# (perhaps due to not being readable, or some other rlog parsing
+# error, etc.)
+#   1      Hide errorful entries from the directory display
+#   0      Show errorful entries (with their errors) in the directory display
+hide_errorful_entries = 0
+
 # log_sort: Sort order for log messages
 #   date   Sort revisions by date
 #   rev    Sort revision by revision number
