@@ -780,21 +780,27 @@ def _orig_path(request, rev_param='revision', path_param=None):
   return _path_parts(path), rev
 
 def setup_authorizer(cfg, username, rootname):
+  import imp
+  
   # No configured authorizer?  No problem.
   if not cfg.options.authorizer:
     return None
 
   # First, try to load a module with the configured name.
+  fp = None
   try:
-    exec('import vcauth.%s' % (cfg.options.authorizer))
+    fp, path, desc = imp.find_module("vcauth/%s" % (cfg.options.authorizer))
+    my_auth = imp.load_module('viewvc', fp, path, desc)
   except ImportError:
     raise debug.ViewVCException(
       'Invalid authorizer (%s) specified for root "%s"' \
       % (cfg.options.authorizer, rootname),
       '500 Internal Server Error')
+  finally:
+    if fp:
+      fp.close()
 
   # Now we'll get custom parameters for our particular root.
-  exec('my_auth = vcauth.%s' % (cfg.options.authorizer))
   params = cfg.get_authorizer_params(cfg.options.authorizer, rootname)
 
   # Finally, instantiate our Authorizer.
