@@ -68,9 +68,6 @@
 #       address
 #       forbidden
 #   
-#       use_enscript
-#       use_cvsgraph
-#   
 #    To optimize delivery of ViewVC static files:
 #   
 #       docroot
