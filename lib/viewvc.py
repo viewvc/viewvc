@@ -789,13 +789,14 @@ def setup_authorizer(cfg, username, rootname):
   # First, try to load a module with the configured name.
   fp = None
   try:
-    fp, path, desc = imp.find_module("vcauth/%s" % (cfg.options.authorizer))
-    my_auth = imp.load_module('viewvc', fp, path, desc)
-  except ImportError:
-    raise debug.ViewVCException(
-      'Invalid authorizer (%s) specified for root "%s"' \
-      % (cfg.options.authorizer, rootname),
-      '500 Internal Server Error')
+    try:
+      fp, path, desc = imp.find_module("vcauth/%s" % (cfg.options.authorizer))
+      my_auth = imp.load_module('viewvc', fp, path, desc)
+    except ImportError:
+      raise debug.ViewVCException(
+        'Invalid authorizer (%s) specified for root "%s"' \
+        % (cfg.options.authorizer, rootname),
+        '500 Internal Server Error')
   finally:
     if fp:
       fp.close()
