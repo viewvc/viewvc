@@ -5,8 +5,8 @@
 <table cellspacing="1" cellpadding="2" class="props">
 <thead>
   <tr>
-    <th class="vc_header_sort">Name</th>
-    <th class="vc_header">Value</th>
+    <th class="vc_header_sort" width="50%">Name</th>
+    <th class="vc_header" width="50%">Value</th>
   </tr>
 </thead>
 <tbody>

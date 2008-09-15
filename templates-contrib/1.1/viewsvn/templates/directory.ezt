@@ -3,7 +3,7 @@
 <table cellspacing="1" cellpadding="2">
 <thead>
 <tr>
-  <th class="vc_header[is sortby "file"]_sort[end]" colspan="2">
+  <th class="vc_header[is sortby "file"]_sort[end]" colspan="2" width="[is cfg.options.show_logs "1"]25[else]50[end]%">
     <a href="[sortby_file_href]#dirlist">File</a>
     <a href="[sortby_file_href]#dirlist" class="img">
     [is sortby "file"]
@@ -44,7 +44,7 @@
     </a>
   </th>
 [is cfg.options.show_logs "1"]
-  <th class="vc_header[is sortby "log"]_sort[end]">
+  <th class="vc_header[is sortby "log"]_sort[end]" width="50%">
     <a href="[sortby_log_href]#dirlist">Last log entry</a>
     <a href="[sortby_log_href]#dirlist" class="img">
     [is sortby "log"]
