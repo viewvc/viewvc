@@ -38,6 +38,15 @@ Version 1.1.0 (released ??-???-????)
   * hide CVS files when viewing tags/branches on which they don't exist
   * add support for hiding errorful entries from the directory view (issue #105)
 
+Version 1.0.6 (released 16-Sep-2008)
+
+  * security fix: ignore arbitrary user-provided MIME types (issue #354)
+  * fix bug in regexp search filter when used with sticky tag (issue #346)
+  * fix bug in handling of certain 'co' output (issue #348)
+  * fix regexp search filter template bug
+  * fix annotate code syntax error
+  * fix mod_python import cycle (issue #369)
+
 Version 1.0.5 (released 28-Feb-2008)
 
   * security fix: omit commits of all-forbidden files from query results
