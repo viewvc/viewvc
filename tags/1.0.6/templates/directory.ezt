@@ -1,0 +1,118 @@
+[include "include/dir_header.ezt"]
+
+<table cellspacing="1" cellpadding="2">
+<thead>
+<tr>
+  <th class="vc_header[is sortby "file"]_sort[end]" colspan="2">
+    <a href="[sortby_file_href]#dirlist">File
+    [is sortby "file"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
+    [end]
+    </a>
+  </th>
+  <th class="vc_header[is sortby "rev"]_sort[end]">
+    <a href="[sortby_rev_href]#dirlist">Rev.
+    [is sortby "rev"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
+    [end]
+    </a>
+  </th>
+  <th class="vc_header[is sortby "date"]_sort[end]">
+    <a href="[sortby_date_href]#dirlist">Age
+    [is sortby "date"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
+    [end]
+    </a>
+  </th>
+  <th class="vc_header[is sortby "author"]_sort[end]">
+    <a href="[sortby_author_href]#dirlist">Author
+    [is sortby "author"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
+    [end]
+    </a>
+  </th>
+[is cfg.options.show_logs "1"]
+  <th class="vc_header[is sortby "log"]_sort[end]">
+    <a href="[sortby_log_href]#dirlist">Last log entry
+    [is sortby "log"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
+    [end]
+    </a>
+  </th>
+[end]
+</tr>
+</thead>
+
+<tbody>
+[if-any up_href]
+  <tr class="vc_row_odd">
+    <td colspan="2">
+      <a href="[up_href]">
+      <img src="[docroot]/images/back_small.png" alt="" width="16" height="16"
+      />&nbsp;Parent&nbsp;Directory</a>
+    </td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    [is cfg.options.show_logs "1"]
+      <td>&nbsp;</td>
+    [end]
+  </tr>
+ [end]
+ [for entries]
+   <tr class="vc_row_[if-index entries even]even[else]odd[end]">
+     <td[if-any entries.graph_href][else] colspan="2"[end]>
+       [is entries.pathtype "dir"]
+       <a name="[entries.anchor]" href="[entries.view_href]" title="View directory contents">
+       [else]
+       <a name="[entries.anchor]" href="[entries.log_href]" title="View file revision log">
+       [end]
+       <img src="[docroot]/images/[is entries.pathtype "dir"]dir[else][is entries.state "dead"]broken[else]text[end][end].png" alt="" width="16" height="16" />
+       [entries.name][is entries.pathtype "dir"]/[end]</a>
+       [is entries.state "dead"](dead)[end]
+     </td>
+     [if-any entries.graph_href]
+       <td style="width:1%"><a href="[entries.graph_href]"
+       title="View Revision Graph"><img
+       src="[docroot]/images/cvsgraph_16x16.png"
+       alt="View Revision Graph" width="16" height="16" />
+       </a></td>
+     [end]
+     [if-any entries.errors]
+       <td colspan=[is cfg.options.show_logs "1"]4[else]3[end]>
+         [for entries.errors]<em>[entries.errors]</em>[end]
+       </td>
+     [else]
+       [is entries.pathtype "dir"]
+       <td>&nbsp;[if-any entries.rev]<a href="[entries.log_href]" title="View directory revision log"><strong>[entries.rev]</strong></a>[end]</td>
+       [else]
+       <td>&nbsp;[if-any entries.rev]<a href="[if-any entries.prefer_markup][entries.view_href][else][entries.download_href][end]" title="[if-any entries.prefer_markup]View[else]Download[end] file contents"><strong>[entries.rev]</strong></a>[end]</td>
+       [end]
+       <td>&nbsp;[entries.ago]</td>
+       <td>&nbsp;[entries.author]</td>
+       [is cfg.options.show_logs "1"]
+         [if-any entries.log]
+           <td>&nbsp;[entries.log][is entries.pathtype "dir"][is roottype "cvs"]
+             <em>(from [entries.log_file]/[entries.log_rev])</em>[end][end]</td>
+         [else]
+           <td>&nbsp;</td>
+         [end]
+      [end]
+    [end]
+  </tr>
+[end]
+</tbody>
+
+</table>
+
+[include "include/dir_footer.ezt"]
