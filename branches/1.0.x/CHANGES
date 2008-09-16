@@ -1,4 +1,4 @@
-Version 1.0.6 (released ??-???-????)
+Version 1.0.6 (released 16-Sep-2008)
 
   * security fix: ignore arbitrary user-provided MIME types (issue #354)
   * fix bug in regexp search filter when used with sticky tag (issue #346)
