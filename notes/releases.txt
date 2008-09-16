@@ -24,7 +24,7 @@ numbers, and not literal):
     Commit any modifications.  NOTE: This step should not be necessary
     for patch releases.
 
-3.  Verify that copyright years are correct in both the license-1.html
+3.  Verify that copyright years are correct in both the LICENSE.html
     file and the source code.
 
 4.  Update and commit the 'CHANGES' file.
