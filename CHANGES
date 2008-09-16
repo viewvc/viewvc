@@ -1,3 +1,5 @@
+Version 1.0.7 (released ??-???-????)
+
 Version 1.0.6 (released 16-Sep-2008)
 
   * security fix: ignore arbitrary user-provided MIME types (issue #354)
