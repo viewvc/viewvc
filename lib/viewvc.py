@@ -790,7 +790,8 @@ def setup_authorizer(cfg, username, rootname):
   fp = None
   try:
     try:
-      fp, path, desc = imp.find_module("vcauth/%s" % (cfg.options.authorizer))
+      fp, path, desc = imp.find_module("%s" % (cfg.options.authorizer),
+                                       vcauth.__path__)
       my_auth = imp.load_module('viewvc', fp, path, desc)
     except ImportError:
       raise debug.ViewVCException(
