@@ -13,7 +13,7 @@
     [end]
     </a>
   </th>
-  <th class="vc_header[is sortby "rev"]_sort[end]">
+  <th class="vc_header[is sortby "rev"]_sort[end]" width="[is cfg.options.show_logs "1"]5[else]10[end]%">
     <a href="[sortby_rev_href]#dirlist">Rev.</a>
     <a href="[sortby_rev_href]#dirlist" class="img">
     [is sortby "rev"]
@@ -23,7 +23,7 @@
     [end]
     </a>
   </th>
-  <th class="vc_header[is sortby "date"]_sort[end]">
+  <th class="vc_header[is sortby "date"]_sort[end]" width="[is cfg.options.show_logs "1"]10[else]20[end]%">
     <a href="[sortby_date_href]#dirlist">Age</a>
     <a href="[sortby_date_href]#dirlist" class="img">
     [is sortby "date"]
@@ -33,7 +33,7 @@
     [end]
     </a>
   </th>
-  <th class="vc_header[is sortby "author"]_sort[end]">
+  <th class="vc_header[is sortby "author"]_sort[end]" width="[is cfg.options.show_logs "1"]10[else]20[end]%">
     <a href="[sortby_author_href]#dirlist">Author</a>
     <a href="[sortby_author_href]#dirlist" class="img">
     [is sortby "author"]
