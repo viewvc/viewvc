@@ -3,8 +3,8 @@
 <table cellspacing="1" cellpadding="2">
 <thead>
 <tr>
-  <th class="vc_header[is sortby "file"]_sort[end]" colspan="2" width="[is cfg.options.show_logs "1"]25[else]50[end]%">
-    <a href="[sortby_file_href]#dirlist">File</a>
+  <th class="vc_header[is sortby "file"]_sort[end]">
+    <a href="[sortby_file_href]#dirlist">Name</a>
     <a href="[sortby_file_href]#dirlist" class="img">
     [is sortby "file"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
@@ -61,10 +61,13 @@
 <tbody>
 [if-any up_href]
   <tr class="vc_row_odd">
-    <td colspan="2">
-      <a href="[up_href]" class="img"><img src="[docroot]/images/tortoisesvn/back_small.png" alt="" width="16" height="16"/></a>
-      &nbsp;
-      <a href="[up_href]">Parent&nbsp;Directory</a>
+    <td>
+      <table cellspacing=0 cellpadding=0>
+        <tr>
+          <td width="18px"><a href="[up_href]" class="img"><img src="[docroot]/images/tortoisesvn/back_small.png" alt="" width="16" height="16"/></a></td>
+          <td><a href="[up_href]">Parent&nbsp;Directory</a></td>
+        </tr>
+      </table>    
     </td>
     <td>&nbsp;</td>
     <td>&nbsp;</td>
@@ -76,27 +79,33 @@
  [end]
  [for entries]
    <tr class="vc_row_[if-index entries even]even[else]odd[end]">
-     <td[if-any entries.graph_href][else] colspan="2"[end]>
-       [is entries.pathtype "dir"]
-         <a href="[entries.view_href]" title="View directory contents" class="img">
-           <img src="[docroot]/images/dir.png" alt="View directory contents" width="16" height="16" />
-         </a>
-         &nbsp;
-       [else]
-         [if-any entries.view_href]<a href="[entries.view_href]" title="View file contents" class="img">[end]
-           <img src="[docroot]/images/text.png" alt="View file contents" width="16" height="16" />
-         [if-any entries.view_href]</a>[end]
-         &nbsp;
-       [end]
-       
-       [is entries.pathtype "dir"]
-         <a href="[entries.view_href]" title="View directory contents">[entries.name]</a>
-       [else]
-         [if-any entries.view_href]<a href="[entries.view_href]" title="View file contents">[end]
-         [entries.name]
-         [if-any entries.view_href]</a>[end]
-       [end]
-       
+     <td>
+
+       <table cellspacing=0 cellpadding=0>
+         <tr>
+           <td width="18px">      
+             [is entries.pathtype "dir"]
+               <a href="[entries.view_href]" title="View directory contents" class="img">
+                 <img src="[docroot]/images/dir.png" alt="View directory contents" width="16" height="16" />
+               </a>
+             [else]
+               [if-any entries.view_href]<a href="[entries.view_href]" title="View file contents" class="img">[end]
+               <img src="[docroot]/images/text.png" alt="View file contents" width="16" height="16" />
+               [if-any entries.view_href]</a>[end]
+             [end]
+           </td>
+           <td>
+             [is entries.pathtype "dir"]
+               <a href="[entries.view_href]" title="View directory contents">[entries.name]</a>
+             [else]
+               [if-any entries.view_href]<a href="[entries.view_href]" title="View file contents">[end]
+               [entries.name]
+               [if-any entries.view_href]</a>[end]
+             [end]
+           </td>
+         </tr>
+       </table>
+
      </td>
      [if-any entries.errors]
        <td colspan=[is cfg.options.show_logs "1"]4[else]3[end]>
