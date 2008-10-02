@@ -1,5 +1,7 @@
 Version 1.0.7 (released ??-???-????)
 
+  * fix regression in the 'as text' download view (issue #373)
+
 Version 1.0.6 (released 16-Sep-2008)
 
   * security fix: ignore arbitrary user-provided MIME types (issue #354)
