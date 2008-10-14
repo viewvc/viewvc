@@ -65,12 +65,14 @@ numbers, and not literal):
     archive files into the root directory of the viewvc.org website
     (unversioned).
 
-12. Update the websites (both the viewvc.org/ and www/ ones) to refer
-    to the new release files.
+12. On trunk, update the websites (both the viewvc.org/ and www/ ones)
+    to refer to the new release files, and copy the CHANGES for the
+    new release into trunk's CHANGES file.
 
 13. Edit the file 'lib/viewvc.py' again, re-adding the "-dev" suffix
     and incrementing the patch number assigned to the __version__
-    variable, and commit:
+    variable, and add a new empty block in the branch's CHANGES file,
+    and commit:
 
        svn ci -m "Begin a new release cycle."
 
