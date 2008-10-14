@@ -1,10 +1,8 @@
-[is roottype "svn"]
-[else]
 <form method="get" action="[logsort_action]">
   <div>
     <hr />
     <a name="logsort"></a>
-      [for logsort_hidden_values]<input type="hidden" name="[logsort_hidden_values.name]" value="[logsort_hidden_values.value]"/>[end]
+      [logsort_hidden_values]
       Sort log by:
       <select name="logsort" onchange="submit()">
         <option value="cvs" [is logsort "cvs"]selected="selected"[end]>Not sorted</option>
@@ -14,4 +12,3 @@
       <input type="submit" value="  Sort  " />
   </div>
 </form>
-[end]

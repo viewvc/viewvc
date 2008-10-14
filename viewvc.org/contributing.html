@@ -1,11 +1,8 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
 <head>
 <title>ViewVC: Contributing</title>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 <link rel="stylesheet" type="text/css" href="./styles.css"/>
-<link rel="shortcut icon" href="./favicon.ico" type="image/x-icon" />
 </head>
 
 <body>
@@ -19,8 +16,8 @@
 <p><a href="./index.html">Home</a> |
    <a href="http://viewvc.tigris.org/">Project Page</a> |
    <a href="./download.html">Download</a> |
+   <a href="./upgrading.html">Upgrading</a> |
    <a href="./contributing.html">Contributing</a> |
-   <a href="./faq.html">FAQ</a> |
    <a href="http://viewvc.tigris.org/nonav/source/browse/*checkout*/viewvc/trunk/LICENSE.html">License</a> |
    <a href="./contact.html">Contact</a> |
    <a href="./who.html">About</a>
@@ -41,12 +38,12 @@
   <li><a href="#sec-security">Security</a></li>
   <li><a href="#sec-adding-features">Adding Features</a></li>
   <li><a href="#sec-templates">Hacking on Templates</a></li>
+  <li><a href="#sec-releasing">Release Management</a></li>
 </ul>
 
-<p><a href="http://validator.w3.org/check?uri=referer"><img
-       src="http://www.w3.org/Icons/valid-xhtml10"
-       alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
-</p>
+<hr/>
+
+<address><a href="mailto:&#117&#115&#101&#114&#115&#64&#118&#105&#101&#119&#118&#99&#46&#116&#105&#103&#114&#105&#115&#46&#111&#114&#103">ViewVC Users Group</a></address>
 
 </td>
 <td id="pagecolumn2">
@@ -54,8 +51,6 @@
 <div class="section">
 
 <h2 id="sec-getting-started">Getting Started</h2>
-
-<div class="section-body">
 
 <p>Some basic knowledge about <a
    href="http://www.python.org">Python</a> and development tools like
@@ -69,14 +64,10 @@
    href="http://viewvc.tigris.org/source/browse/viewvc/trunk/"
    >tigris.org's integrated ViewVC tool</a>.</p>
 
-</div> <!-- section-body -->
-</div> <!-- section -->
-
+</div>
 <div class="section">
 
 <h2 id="sec-testing">Testing and Reporting</h2>
-
-<div class="section-body">
 
 <p>Testing usability and the installation process on different
    platforms is also a valuable contribution.  Please report your
@@ -104,34 +95,26 @@
 
 </ul>
 
-</div> <!-- section-body -->
-</div> <!-- section -->
-
+</div>
 <div class="section">
       
 <h2 id="sec-coding-style">Coding Style</h2>
-
-<div class="section-body">
 
 <p>Unlike its predecessor, CvsWeb, ViewVC is written in Python, so it
    doesn't suffer from the "unmaintainable code effect" that hits most
    Perl projects sooner or later:</p>
 
-<blockquote>
-  
-<p>&quot;[Perl] combines all the worst aspects of C and Lisp: a
+<blockquote><em>&quot;[Perl] combines all the worst aspects of C and Lisp: a
    billion different sublanguages in one monolithic executable.  It
-   combines the power of C with the readability of
-   PostScript.&quot;  &mdash;&nbsp;Jamie&nbsp;Zawinski
-</p>
-
+   combines the power of C with the readability of PostScript.&quot;</em>
+   &mdash;&nbsp;Jamie&nbsp;Zawinski
 </blockquote>
 
 <p>Of course, a symphony of insanity can be composed in any language,
    so we do try to stick to some basic guiding principles.  Maintain
    whatever style is present in the code being modified.  New code can
    use anything sane (which generally means <a
-   href="http://www.python.org/dev/peps/pep-0008/">PEP&nbsp;8</a>).
+   href="http://python.sourceforge.net/peps/pep-0008.html">PEP&nbsp;8</a>).
    Our only real peeve is if someone writes a function call as:
    <code>some_func&nbsp;(args)</code> &mdash; that space between the
    function name and opening parenthesis is Huge Badness.  Oh, and we
@@ -140,14 +123,10 @@
 
 <p>Otherwise&hellip; <em>shrug</em>.</p>
 
-</div> <!-- section-body -->
-</div> <!-- section -->
-
+</div>
 <div class="section">
 
 <h2 id="sec-patches">Submitting Patches</h2>
-
-<div class="section-body">
 
 <p>Nothing speaks more loudly when bugs or features are the topic than
    a patch.  And quite frankly, sometimes if you want something done,
@@ -169,14 +148,10 @@
    ><tt>dev@</tt> developer mailing list</a> is recommended in any
    case.</p>
 
-</div> <!-- section-body -->
-</div> <!-- section -->
-
+</div>
 <div class="section">
 
 <h2 id="sec-security">Security</h2>
-
-<div class="section-body">
 
 <p>Since ViewVC is used on the Internet, security is a major concern.
    If you need to pass data from the request into an external program,
@@ -185,14 +160,10 @@
    <code>lib/popen.py</code> that is included in the ViewVC
    distribution instead.</p>
 
-</div> <!-- section-body -->
-</div> <!-- section -->
-
+</div>
 <div class="section">
 
 <h2 id="sec-adding-features">Adding Features</h2>
-
-<div class="section-body">
 
 <p>If you need a new configuration option think carefully, into which
    section it belongs.  Try to keep the content of
@@ -215,14 +186,10 @@
 <p>If a new file or module is added, a new line in the installer
    program <code>viewvc-install</code> is required.</p>
 
-</div> <!-- section-body -->
-</div> <!-- section -->
-
+</div>
 <div class="section">
 
 <h2 id="sec-templates">Hacking on Templates</h2>
-
-<div class="section-body">
 
 <p>The library module <code>ezt.py</code> contains a module docstring
    which describes the directives used in the HTML templates used by
@@ -231,8 +198,76 @@
    how-to guide for <a href="./template-authoring-guide.html">ViewVC
    template customization</a>.</p>
 
-</div> <!-- section-body -->
-</div> <!-- section -->
+</div>
+<div class="section">
+
+<h2 id="sec-releasing">Release Management</h2>
+
+<p>There is a script, <code>tools/make-release</code>, which creates a
+   release directory and the various archive files that we distribute.
+   All other steps required to get a ViewVC release out of the door
+   require manual execution (currently by C. Michael Pilato).  Those
+   steps are as follows:</p>
+
+<ol>
+
+  <li>Add a new subsection to the file
+      <code>website/upgrading.html</code> describing all user visible
+      changes for users of previous releases of ViewVC.</li>
+
+   <li>Update the <code>CHANGES</code> file</li>
+
+   <li>Update the <code>website/index.html</code> file to refer to the
+       new X.Y files. (there are three links to update)</li>
+
+   <li>Edit the file <code>lib/viewvc.py</code> and remove the
+       <tt>"-dev"</tt> suffix from <code>__version__</code>.  The
+       remainder should be of the form X.Y.Z, where X, Y, and Z are
+       positive integers.</li>
+
+   <li>Ensure all of the above changes have been committed.</li>
+
+   <li>Test, Test, Test!  At the time of this writing (1.0-dev) there
+       is no automatic testsuite available.  So just run with
+       permuting different <code>viewvc.conf</code> settings&hellip;
+       and pray.</li>
+
+   <li>Review any open <a
+       href="http://viewvc.tigris.org/servlets/ProjectIssues">bug
+       reports.</a></li>
+
+   <li>Use <code>svn cp</code> to tag the release to
+       <code>/tags/<i>X</i>.<i>Y</i>.<i>Z</i></code>, where
+       <i>X</i>, <i>Y</i>, and <i>Z</i> should be replaced by the
+       release number from above.  If a developer is willing to
+       volunteer as a bug fix patch release manager, it is now
+       possible to start here at this point with a feature-frozen
+       branch using <code>svn cp</code> to copy the tag to
+       <code>/branches/<i>X</i>.<i>Y</i>.x</code>.</li>
+
+   <li>Go into an empty directory and run <code>tools/make-release
+       viewvc-<i>X.Y.Z</i> <i>X.Y.Z</i></code>.  This step requires
+       read access to the Subversion source code repository.</li>
+
+   <li>Upload the created archive files (tar.gz and zip) into the
+       Files and Documents section of the Tigris.org project.</li>
+
+   <li>Edit the file <code>lib/viewvc.py</code> again and this time
+       increment the <code>__version__</code> for the next release
+       cycle, again append the <code>-dev</code> to the version and
+       again <code>svn commit -m "Begin a new release cycle."
+       lib/viewvc.py</code>.</li>
+
+   <li>Write an announcement explaining all the cool new features and
+       post it <a
+       href="mailto:&#97&#110&#110&#111&#117&#110&#99&#101&#64&#118&#105&#101&#119&#118&#99&#46&#116&#105&#103&#114&#105&#115&#46&#111&#114&#103">&#97&#110&#110&#111&#117&#110&#99&#101&#64&#118&#105&#101&#119&#118&#99&#46&#116&#105&#103&#114&#105&#115&#46&#111&#114&#103</a>,
+       to the project's News area, and to other places interested in
+       this sort of stuff (such as <a
+       href="http://www.freshmeat.net">Freshmeat</a>).</p>
+
+</ol>
+
+</div>
 
 </td>
 </tr>

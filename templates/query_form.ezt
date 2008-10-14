@@ -6,13 +6,13 @@
 [include "include/header.ezt" "query"]
 
 <p><a href="[dir_href]">
-<img src="[docroot]/images/dir.png" class="vc_icon" alt="Directory" />
+<img src="[docroot]/images/dir.png" width="16" height="16" alt="Directory" />
 Browse Directory</a></p>
 
 <form action="[query_action]" method="get">
 
 <div class="vc_query_form">
-  [for query_hidden_values]<input type="hidden" name="[query_hidden_values.name]" value="[query_hidden_values.value]"/>[end]
+  [query_hidden_values]
 <table cellspacing="0" cellpadding="5" class="auto">
   [is roottype "cvs"]
   [# For subversion, the branch field is not used ]
@@ -98,32 +98,6 @@ Browse Directory</a></p>
       <label for="who_match_notregex">
         <input type="radio" name="who_match" id="who_match_notregex"
            value="notregex" [is who_match "notregex"]checked="checked"[end] />
-        Regex doesn't match
-      </label>
-    </td>
-  </tr>
-  <tr>
-    <th style="text-align:right;vertical-align:top;">Comment:</th>
-    <td>
-      <input type="text" name="comment" value="[comment]" /><br />
-      <label for="comment_match_exact">
-        <input type="radio" name="comment_match" id="comment_match_exact"
-           value="exact" [is comment_match "exact"]checked=""[end] />
-        Exact match
-      </label>
-      <label for="comment_match_glob">
-        <input type="radio" name="comment_match" id="comment_match_glob"
-           value="glob" [is comment_match "glob"]checked=""[end] />
-        Glob pattern match
-      </label>
-      <label for="comment_match_regex">
-        <input type="radio" name="comment_match" id="comment_match_regex"
-           value="regex" [is comment_match "regex"]checked=""[end] />
-        Regex match
-      </label>
-      <label for="comment_match_notregex">
-        <input type="radio" name="comment_match" id="comment_match_notregex"
-           value="notregex" [is comment_match "notregex"]checked=""[end] />
         Regex doesn't match
       </label>
     </td>

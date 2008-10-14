@@ -25,10 +25,10 @@ import time
 
 import cvsdb
 import viewvc
+import vclib
 import ezt
 import debug
 import urllib
-import fnmatch
 
 class FormData:
     def __init__(self, form):
@@ -274,20 +274,6 @@ def prev_rev(rev):
         r = r[:-2]
     return string.join(r, '.')
 
-def is_forbidden(cfg, cvsroot_name, module):
-    auth_params = cfg.get_authorizer_params('forbidden', cvsroot_name)
-    forbidden = auth_params.get('forbidden', '')
-    forbidden = map(string.strip, filter(None, string.split(forbidden, ',')))
-    default = 0
-    for pat in forbidden:
-        if pat[0] == '!':
-            default = 1
-            if fnmatch.fnmatchcase(module, pat[1:]):
-                return 0
-        elif fnmatch.fnmatchcase(module, pat):
-            return 1
-    return default
-    
 def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
     ob = _item(num_files=len(files), files=[])
     
@@ -297,19 +283,8 @@ def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
         ob.log = '&nbsp;'
 
     for commit in files:
-        repository = commit.GetRepository()
-        directory = commit.GetDirectory()
-        cvsroot_name = cvsroots.get(repository)
-
-        ## find the module name (if any)
-        try:
-            module = filter(None, string.split(directory, '/'))[0]
-        except IndexError:
-            module = None
-
-        ## skip commits we aren't supposed to show
-        if module and ((module == 'CVSROOT' and cfg.options.hide_cvsroot) \
-                       or is_forbidden(cfg, cvsroot_name, module)):
+        parts = filter(None, string.split(commit.GetDirectory(), '/'))
+        if parts and cfg.options.hide_cvsroot and parts[0] == 'CVSROOT':
             continue
 
         ctime = commit.GetTime()
@@ -320,13 +295,18 @@ def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
             ctime = time.strftime("%y/%m/%d %H:%M %Z", time.localtime(ctime))
           else:
             ctime = time.strftime("%y/%m/%d %H:%M", time.gmtime(ctime)) \
-                    + ' UTC'
+                  + ' UTC'
         
         ## make the file link
-        try:
-            file = (directory and directory + "/") + commit.GetFile()
-        except:
-            raise Exception, str([directory, commit.GetFile()])
+        repository = commit.GetRepository()
+        directory = commit.GetDirectory()
+        file = (directory and directory + "/") + commit.GetFile()
+        cvsroot_name = cvsroots.get(repository)
+
+        ## skip forbidden files
+        if cfg.is_forbidden(cvsroot_name,
+                            filter(None, string.split(file, "/")), vclib.FILE):
+            continue
 
         ## if we couldn't find the cvsroot path configured in the 
         ## viewvc.conf file, then don't make the link
@@ -446,7 +426,7 @@ def main(server, cfg, viewvc_link):
 
     # generate the page
     template = viewvc.get_view_template(cfg, "query")
-    template.generate(server.file(), data)
+    template.generate(sys.stdout, data)
 
   except SystemExit, e:
     pass

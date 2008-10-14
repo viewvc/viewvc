@@ -1,42 +1,6 @@
-Version 1.1.0 (released ??-???-????)
+Version 1.0.7 (released 14-Oct-2008)
 
-  * add support for full content diffs (issue #153)
-  * make many more data dictionary items available to all views
-  * various rcsparse and tparse module fixes
-  * add daemon mode to standalone.py (issue #235)
-  * rework helper application configuration options (issues #229, #62)
-  * teach standalone.py to recognize Subversion repositories via -r option
-  * now interpret relative paths in "viewvc.conf" as relative to that file
-  * add 'purge' subcommand to cvsdbadmin and svndbadmin (issue #271)
-  * fix orphaned data bug in cvsdbadmin/svndbadmin rebuild (issue #271)
-  * add support for query by log message (issues #22, #121)
-  * fix bug parsing 'svn blame' output with too-long author names (issue #221)
-  * fix default standalone.py port to be within private IANA range (issue #234)
-  * add support for integration with GNU source-highlight (issue #285)
-  * add unified configury of allowed views
-  * add support for disabling the checkout view (now the default state)
-  * add support for ranges of revisions to svndbadmin (issue #224)
-  * make the query handling more forgiving of malformatted subdirs (issue #244)
-  * add support for per-root configuration overrides
-  * add support for optional email address mangling (issue #290)
-  * extensible path-based authorization subsystem (issue #268), supporting:
-    - Subversion authz files (new)
-    - regexp-based path hiding (for compat with 1.0.x)
-    - file glob top-level directory hiding (for compat with 1.0.x)
-  * allow default file view to be "markup" (issue #305)
-  * add support for displaying file/directory properties (issue #39)
-  * pagination improvements
-  * add gzip output encoding support for template-driven pages
-  * fix cache control bugs (issue #259)
-  * add RSS feed URL generation for file history
-  * add support for remote creation of ViewVC checkins database
-  * add integration with Pygments for syntax highlighting
-  * preserve executability of Subversion files in tarballs (issue #233)
-  * add ability to set Subversion runtime config dir (issue #351, issue #339)
-  * only show RSS/query links for roots found in the commits database (issue #357)
-  * recognize Subversion svn:mime-type property values (issue #364)
-  * hide CVS files when viewing tags/branches on which they don't exist
-  * add support for hiding errorful entries from the directory view (issue #105)
+  * fix regression in the 'as text' download view (issue #373)
 
 Version 1.0.6 (released 16-Sep-2008)
 
@@ -236,6 +200,7 @@ Version 0.9 (released 23-Dec-2001)
   * fix to log.ezt and log_table.ezt to select "Side by Side" properly
   * create dir_alternate.ezt for the flipped rev/name links
   * various UI tweaks for the directory pages
+
 
 Version 0.8 (released 10-Dec-2001)
 
