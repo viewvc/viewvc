@@ -33,10 +33,14 @@ Version 1.1.0 (released ??-???-????)
   * add integration with Pygments for syntax highlighting
   * preserve executability of Subversion files in tarballs (issue #233)
   * add ability to set Subversion runtime config dir (issue #351, issue #339)
-  * only show RSS/query links for roots found in the commits database (issue #357)
+  * show RSS/query links only for roots found in commits database (issue #357)
   * recognize Subversion svn:mime-type property values (issue #364)
   * hide CVS files when viewing tags/branches on which they don't exist
   * add support for hiding errorful entries from the directory view (issue #105)
+
+Version 1.0.7 (released 14-Oct-2008)
+
+  * fix regression in the 'as text' download view (issue #373)
 
 Version 1.0.6 (released 16-Sep-2008)
 
