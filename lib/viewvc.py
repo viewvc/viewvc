@@ -1628,6 +1628,10 @@ def icmp(x, y):
   return cmp(string.lower(x), string.lower(y))
 
 def view_roots(request):
+  if 'roots' not in request.cfg.options.allowed_views:
+    raise debug.ViewVCException('Root listing view is disabled',
+                                '403 Forbidden')
+  
   # add in the roots for the selection
   roots = []
   expand_root_parents(request.cfg)
