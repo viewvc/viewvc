@@ -231,13 +231,15 @@ class Request:
     if self.rootname:
       roottype, rootpath = locate_root(cfg, self.rootname)
       if roottype:
+        # Overlay root-specific options.
+        cfg.overlay_root_options(self.rootname)
+        
         # Setup an Authorizer for this rootname and username
         self.auth = setup_authorizer(cfg, self.username, self.rootname)
 
         # Create the repository object
         try:
           if roottype == 'cvs':
-            cfg.overlay_root_options(self.rootname)
             self.rootpath = vclib.ccvs.canonicalize_rootpath(rootpath)
             self.repos = vclib.ccvs.CVSRepository(self.rootname,
                                                   self.rootpath,
@@ -248,7 +250,6 @@ class Request:
             # $CVSHeader$
             os.environ['CVSROOT'] = self.rootpath
           elif roottype == 'svn':
-            cfg.overlay_root_options(self.rootname)
             self.rootpath = vclib.svn.canonicalize_rootpath(rootpath)
             self.repos = vclib.svn.SubversionRepository(self.rootname,
                                                         self.rootpath,

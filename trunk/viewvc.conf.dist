@@ -663,6 +663,27 @@ enabled = 0
 #
 
 #---------------------------------------------------------------------------
+# ViewVC recognizes per-root configuration overrides, too.  To
+# override the value of a configuration parameter only for a single
+# root, create a configuration section whose names is of the form
+# root-ROOTNAME/CONFIGSECTION.  ROOTNAME here is the name of the root
+# as defined explicitly in cvs_roots or svn_roots or implicitly as the
+# basename of a root path in root_parents.  Options found in this new
+# configuration section override for this one root the corresponding
+# options found in the base configuration section CONFIGSECTION
+# ("options", "authz-*", etc.)
+#
+# Here is an example showing how to enable Subversion authz-based
+# authorization for only the single root named "svnroot":
+# 
+# [root-svnroot/options]
+# authorizer = svnauthz
+#
+# [root-svnroot/authz-svnauthz]
+# authzfile = /path/to/authzfile
+#
+
+#---------------------------------------------------------------------------
 [authz-forbidden]
 
 # The "forbidden" authorizer forbids access to repository modules,
