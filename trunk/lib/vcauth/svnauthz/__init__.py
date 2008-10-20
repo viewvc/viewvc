@@ -112,6 +112,8 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
         user = string.strip(user)
         if user == '*' \
            or user == self.username \
+           or (self.username is not None and user == "$authenticated") \
+           or (self.username is None and user == "$anonymous") \
            or (user[0:1] == "@" and user[1:] in groups) \
            or (user[0:1] == "&" and user[1:] in aliases):
           # See if the 'r' permission is among the ones granted to
@@ -127,7 +129,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     # Read the other (non-"groups") sections, and figure out in which
     # repositories USERNAME or his groups have read rights.  We'll
     # first check groups that have no specific repository designation,
-    # then superimpose that have a repository designation which
+    # then superimpose those that have a repository designation which
     # matches the one we're asking about.
     root_sections = []
     for section in cp.sections():
