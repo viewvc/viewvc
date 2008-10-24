@@ -17,7 +17,7 @@ Version 1.1.0 (released ??-???-????)
   * add support for disabling the checkout view (now the default state)
   * add support for ranges of revisions to svndbadmin (issue #224)
   * make the query handling more forgiving of malformatted subdirs (issue #244)
-  * add support for per-root configuration overrides
+  * add support for per-root configuration overrides (issue #371)
   * add support for optional email address mangling (issue #290)
   * extensible path-based authorization subsystem (issue #268), supporting:
     - Subversion authz files (new)
@@ -37,7 +37,6 @@ Version 1.1.0 (released ??-???-????)
   * recognize Subversion svn:mime-type property values (issue #364)
   * hide CVS files when viewing tags/branches on which they don't exist
   * add support for hiding errorful entries from the directory view (issue #105)
-  * add support for per-root configuration overrides (issue #371)
 
 Version 1.0.7 (released 14-Oct-2008)
 
