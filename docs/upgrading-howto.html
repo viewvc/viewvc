@@ -109,40 +109,12 @@ td {
 </div>
 
 <div class="h3">
-<h3>Checkin Database</h3>
-
-<p>In ViewVC 1.1, the <code>svndbadmin</code> program's "rebuild"
-   subcommand has had its purpose become more defined.  It no longer
-   accepts a revision argument, and therefore can now only be used to
-   completely rebuild the entirety of the checkin database information
-   for a Subversion repository (instead of being able to only update
-   the information related to single Subversion revision).  For
-   per-revision updating, use <code>svndbadmin update</code> and
-   provide a revision (or revision range).  And to get the previous
-   rebuild-a-revision effect, pass the new <code>--force</code>
-   option to <code>svndbadmin update</code>.</p>
-
-<p>In other words, where you once did this:</p>
-
-<blockquote><pre>$ svndbadmin rebuild /path/to/repository 1234
-</pre>
-</blockquote>
-
-<p>you now need to do this:</p>
-
-<blockquote><pre>$ svndbadmin update /path/to/repository 1234 --force
-</pre>
-</blockquote>
-
-</div>
-
-<div class="h3">
-<h3>Forbidden Modules</h3>
+<h3>Path-Based Authorization / Forbidden Modules</h3>
     
 <p>ViewVC 1.1 introduces a new pluggable authorization (authz)
    subsystem which gives administrators greater control over the
    accessibility of the information ViewVC displays in its output.
-   ViewVC provides a number of working authz modules and framework for
+   ViewVC provides a number of working authz modules and a framework for
    configuring them.  But of specific interest to folks upgrading from
    ViewVC 1.0 is that one of these new modules has replaced the
    handling of forbidden modules.  As such, the <code>forbidden</code>
@@ -174,6 +146,39 @@ td {
 <p>Of course, you might wish to take advantage of another of the
    provided authz modules.  Or, you might wish to write a brand new
    one for your purposes.  The flexibility is yours.</p>
+
+<p><strong>Known Issues:</strong></p>
+
+<ul>
+
+   <li>ViewVC does not provide an <em>authentication</em> framework.
+       It does, however, inherit authenticated usernames as determined
+       by the HTTP server (Apache, e.g.) via the CGI environment.  So,
+       any authorization module that assigns privileges based on
+       usernames will work only if ViewVC is deployed in a way that
+       requires successful authentication (as opposed to allowing
+       anonymous access).</li>
+
+   <li>Currently, the root listing view only honors the global or
+       vhost-specific configurations, <em>not</em> any root-specific
+       configuration.  In the event that ViewVC is using root-specific
+       configuration for its authorization stuffs, this may cause
+       either the unintended leak of root names to users or the
+       inability to see roots at all.  However, for root-specific
+       ViewVC views, all configuration &mdash; include root-specific
+       configuration &mdash; is honored.  If you are concerned about
+       leaking root names in the root listing view, you might consider
+       disabling that view altogether by removing <code>roots</code>
+       from the list of views specified in the 
+       <code>allowed_views</code> configuration option.</li>
+
+   <li>The experimental module which allows ViewVC to serve up views
+       of remote Subversion repositories is not yet fully integrated
+       with the authorization subsystem, and almost certainly will
+       leak privileged data.  Sorry.  That's (one reason) why it's
+       experimental.</li>
+
+</ul>
 
 </div>
 
@@ -215,6 +220,34 @@ td {
   <li>options/use_pygments</li>
   <li>options/use_source_highlight</li>
 </ul>
+
+</div>
+
+<div class="h3">
+<h3>Checkin Database</h3>
+
+<p>In ViewVC 1.1, the <code>svndbadmin</code> program's "rebuild"
+   subcommand has had its purpose become more defined.  It no longer
+   accepts a revision argument, and therefore can now only be used to
+   completely rebuild the entirety of the checkin database information
+   for a Subversion repository (instead of being able to only update
+   the information related to single Subversion revision).  For
+   per-revision updating, use <code>svndbadmin update</code> and
+   provide a revision (or revision range).  And to get the previous
+   rebuild-a-revision effect, pass the new <code>--force</code>
+   option to <code>svndbadmin update</code>.</p>
+
+<p>In other words, where you once did this:</p>
+
+<blockquote><pre>$ svndbadmin rebuild /path/to/repository 1234
+</pre>
+</blockquote>
+
+<p>you now need to do this:</p>
+
+<blockquote><pre>$ svndbadmin update /path/to/repository 1234 --force
+</pre>
+</blockquote>
 
 </div>
 
