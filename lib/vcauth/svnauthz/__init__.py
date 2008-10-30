@@ -100,6 +100,20 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
       for group in cp.options('groups'):
         _process_group(group)
 
+    def _userspec_matches_user(userspec):
+      # If there is an inversion character, recurse and return the
+      # opposite result.
+      if userspec[0:1] == '~':
+        return not _userspec_matches_user(userspec[1:])
+
+      # See if the userspec applies to our current user.
+      return userspec == '*' \
+             or userspec == self.username \
+             or (self.username is not None and userspec == "$authenticated") \
+             or (self.username is None and userspec == "$anonymous") \
+             or (userspec[0:1] == "@" and userspec[1:] in groups) \
+             or (userspec[0:1] == "&" and userspec[1:] in aliases)
+      
     def _process_access_section(section):
       """Inline function for determining user access in a single
       config secction.  Return a two-tuple (ALLOW, DENY) containing
@@ -110,12 +124,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
       allow = deny = 0
       for user in cp.options(section):
         user = string.strip(user)
-        if user == '*' \
-           or user == self.username \
-           or (self.username is not None and user == "$authenticated") \
-           or (self.username is None and user == "$anonymous") \
-           or (user[0:1] == "@" and user[1:] in groups) \
-           or (user[0:1] == "&" and user[1:] in aliases):
+        if _userspec_matches_user(user):
           # See if the 'r' permission is among the ones granted to
           # USER.  If so, we can stop looking.  (Entry order is not
           # relevant -- we'll use the most permissive entry, meaning
