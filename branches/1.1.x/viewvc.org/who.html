@@ -1,0 +1,181 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>ViewVC: About</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<link rel="stylesheet" type="text/css" href="./styles.css"/>
+<link rel="shortcut icon" href="./favicon.ico" type="image/x-icon" />
+</head>
+
+<body>
+
+<div id="title">
+<a href="http://www.viewvc.org/"><img 
+   src="./images/title.jpg" alt="ViewVC: Repository Browsing"/></a>
+</div>
+
+<div id="menu">
+<p><a href="./index.html">Home</a> |
+   <a href="http://viewvc.tigris.org/">Project Page</a> |
+   <a href="./download.html">Download</a> |
+   <a href="./contributing.html">Contributing</a> |
+   <a href="./faq.html">FAQ</a> |
+   <a href="http://viewvc.tigris.org/nonav/source/browse/*checkout*/viewvc/trunk/LICENSE.html">License</a> |
+   <a href="./contact.html">Contact</a> |
+   <a href="./who.html">About</a>
+</p>
+</div>
+
+<table id="pagetable">
+<tr>
+<td id="pagecolumn1">
+
+<h4>On this page:</h4>
+
+<ul id="bookmarks">
+  <li><a href="#sec-history">The History of ViewVC</a></li>
+  <li><a href="#sec-viewcvs-group">The ViewCVS Group</a></li>
+  <li><a href="#sec-site-credits">About This Site</a></li>
+</ul>
+
+<p><a href="http://validator.w3.org/check?uri=referer"><img
+       src="http://www.w3.org/Icons/valid-xhtml10"
+       alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
+</p>
+
+</td>
+<td id="pagecolumn2">
+
+<div class="section">
+
+<h2 id="sec-history">The History of ViewVC</h2>
+
+<div class="section-body">
+
+<p>The ViewVC software was inspired by early versions of cvsweb
+   (originally written by Bill Fenner, further developed by Henner
+   Zeller, and now maintained as <a
+   href="http://www.freebsd.org/projects/cvsweb.html">CVSweb</a> by
+   the FreeBSD community).  Greg Stein wanted to make some changes and
+   updates, but cvsweb was implemented in Perl.  He wrote:</p>
+
+<blockquote>
+
+<p>&quot;While I can manage some Perl, cvsweb was rather
+   unmaintainable for me. So I undertook the task to convert the
+   software to Python. As a result, I've actually been able to go
+   <strong>way</strong> beyond the simple changes that I had
+   envisioned.&quot;
+</p>
+
+</blockquote>
+
+<p>So ViewVC started out as just a port of the cvsweb script,
+   originally called ViewCVS.  Along the way, it has had numerous
+   cleanups and other modifications, a process simplified by the
+   elegance of the <a href="http://www.python.org/">Python</a>
+   language.</p>
+
+<p>In 2001, the ViewCVS project was moved to <a
+   href="http://www.sourceforge.net">SourceForge</a>, a popular
+   software collaboration environment.  There the project continued to
+   mature, releasing several stable-yet-pre-1.0 versions.  In 2002,
+   C. Michael Pilato began implementing support for Subversion in
+   ViewCVS, taking advantage of a version control abstraction layer
+   begun by Lucas Bruand.  Along the way, Russell Yanofsky delivered
+   large improvements to that abstraction, and to ViewCVS as whole.
+   ViewCVS was well on its way to releasing a 1.0 version.</p>
+
+<p>Of course, now that ViewCVS could browse Subversion repositories as
+   easily as CVS ones, the ViewCVS name seemed inappropriate.  Also,
+   the active ViewCVS developers at the time were growing frustrated
+   with SourceForge as a project hosting environment &mdash;
+   Subversion wasn't yet available as an option for version control,
+   the CVS service was always down at just the wrong moment, the bug
+   trackers were painful to use, and so on.  So in late 2005, the
+   decision was made to rename the project to ViewVC, to convert the
+   project's CVS data to Subversion, and to move the project and its
+   version controlled and open issue data to <a
+   href="http://www.tigris.org">Tigris.org</a>.</p>
+
+<p>Today, ViewVC is being developed at <a
+   href="http://viewvc.tigris.org">http://viewvc.tigris.org</a> by a
+   small community of folks.</p>
+
+</div> <!-- section-body -->
+</div> <!-- section -->
+
+<div class="section">
+
+<h2 id="sec-viewcvs-group">The ViewCVS Group</h2>
+
+<div class="section-body">
+
+<p>The ViewCVS Group is an informal group of people working on and
+   developing the ViewVC package. The current set of members are
+   listed below with some of their notable contributions:</p>
+
+<dl>
+  <dt><a href="http://www.lyra.org/greg/">Greg Stein</a></dt>
+  <dd>original python port of Henner Zeller's cvsweb, secure popen
+      implementation, configuration file implementation, rcsparse
+      module, and EZT template engine</dd>
+
+  <dt>Jay Painter</dt>
+  <dd>CVSdb query engine</dd>
+
+  <dt>Tanaka Akira</dt> 
+  <dd>enscript colorization and tarball generation</dd>
+
+  <dt>Tim Cera</dt>
+  <dd>CvsGraph support, log_table template, regular expression search,
+      and paging capability</dd>
+
+  <dt>Peter Funk</dt> 
+  <dd>standalone server, blimp logo, and numerous improvements to
+      ViewVC's interfaces and documentation</dd>
+
+  <dt>Lucas Bruand</dt>
+  <dd>C++ RCS parser (tparse) and vclib module for supporting new
+      version control systems</dd>
+
+  <dt><a href="http://www.cmichaelpilato.com/">C. Michael Pilato</a></dt>
+  <dd>Subversion support, root_as_url alternative URL scheme,
+      templatization work, website design, documentation</dd>
+
+  <dt>Russell Yanofsky</dt>
+  <dd>Windows support and the sapi module for supporting multiple web
+      server interfaces, sweeping abstraction and UI improvements</dd>
+
+  <dt>James Henstridge</dt>
+  <dd>integrated query interface, support for querying Subversion
+      repositories, caching support, CSS formatting, and the EZT
+      &quot;define&quot; directive</dd>
+
+</dl>
+
+</div> <!-- section-body -->
+</div> <!-- section -->
+
+<div class="section">
+
+<h2 id="sec-site-credits">About This Site</h2>
+
+<div class="section-body">
+
+<p>The ViewVC website was designed by <a
+   href="http://www.cmichaelpilato.com/">C. Michael Pilato</a>.  All
+   HTML was hand-edited in Emacs, and the little splashes of graphical
+   goodness owe their existence to Open Office and the Gimp.  Textual
+   content for the site is mostly the work of Greg Stein, but has been
+   tweaked through the ages by various ViewVC contributors.</p>
+
+</div> <!-- section-body -->
+</div> <!-- section -->
+
+</td>
+</tr>
+</table>
+</body>
+</html>

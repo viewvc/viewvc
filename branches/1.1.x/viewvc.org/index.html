@@ -1,0 +1,204 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>ViewVC: Repository Browsing</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<link rel="stylesheet" type="text/css" href="./styles.css"/>
+<link rel="shortcut icon" href="./favicon.ico" type="image/x-icon" />
+</head>
+
+<body>
+
+<div id="title">
+<a href="http://www.viewvc.org/"><img 
+   src="./images/title.jpg" alt="ViewVC: Repository Browsing"/></a>
+</div>
+
+<div id="menu">
+<p><a href="./index.html">Home</a> |
+   <a href="http://viewvc.tigris.org/">Project Page</a> |
+   <a href="./download.html">Download</a> |
+   <a href="./contributing.html">Contributing</a> |
+   <a href="./faq.html">FAQ</a> |
+   <a href="http://viewvc.tigris.org/nonav/source/browse/*checkout*/viewvc/trunk/LICENSE.html">License</a> |
+   <a href="./contact.html">Contact</a> |
+   <a href="./who.html">About</a>
+</p>
+</div>
+
+<table id="pagetable">
+<tr>
+<td id="pagecolumn1">
+
+<h4>On this page:</h4>
+
+<ul id="bookmarks">
+  <li><a href="#sec-what-is-viewvc">What Is ViewVC?</a></li>
+  <li><a href="#sec-requirements">Requirements</a></li>
+  <li><a href="#sec-future">Future Plans</a></li>
+</ul>
+
+<p><a href="http://validator.w3.org/check?uri=referer"><img
+       src="http://www.w3.org/Icons/valid-xhtml10"
+       alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
+</p>
+
+</td>
+<td id="pagecolumn2">
+
+<div class="section">
+
+<h2 id="sec-what-is-viewvc">What Is ViewVC?</h2>
+
+<div class="section-body">
+
+<p>ViewVC is a browser interface for CVS and Subversion version
+   control repositories.  It generates templatized HTML to present
+   navigable directory, revision, and change log listings.  It can
+   display specific versions of files as well as diffs between those
+   versions.  Basically, ViewVC provides the bulk of the report-like
+   functionality you expect out of your version control tool, but much
+   more prettily than the average textual command-line program
+   output.</p>
+
+<p>Here are some of the additional features of ViewVC:</p>
+
+<ul>
+
+  <li>Support for filesystem-accessible CVS and Subversion repositories.</li>
+
+  <li>Individually configurable virtual host support.</li>
+
+  <li>Line-based annotation/blame display.</li>
+
+  <li>Revision graph capabilities (via integration with <a
+      href="http://www.akhphd.au.dk/~bertho/cvsgraph/">CvsGraph</a>)
+      (<em>CVS only</em>).</li>
+
+  <li>Syntax highlighting support.</li>
+
+  <li><a href="http://www.mozilla.org/projects/bonsai/">Bonsai</a>-like
+      repository query facilities.</li>
+
+  <li>Template-driven output generation.</li>
+
+  <li>Colorized, side-by-side differences.</li>
+
+  <li>Tarball generation (by tag/branch for CVS, by revision for
+      Subversion).</li>
+
+  <li>I18N support based on the Accept-Language request header.</li>
+
+  <li>Ability to run either as CGI script or as a standalone
+      server.</li>
+  
+  <li>Regexp-based file searching.</li>
+
+  <li>INI-like configuration file (as opposed to requiring actual code
+      tweaks).</li>
+
+</ul>
+
+<p>For a complete list of changes present in each release, see
+   ViewVC's <a
+   href="http://viewvc.tigris.org/source/browse/viewvc/trunk/CHANGES?rev=HEAD"
+   >CHANGES</a> file.</p>
+
+</div> <!-- section-body -->
+</div> <!-- section -->
+
+<div class="section">
+
+<h2 id="sec-requirements">Requirements</h2>
+
+<div class="section-body">
+
+<p>The only hard software requirement for running ViewVC is <a
+   href="http://www.python.org/">Python 1.5.2</a> or later.  All other
+   requirements depend on what you want to do with the tool.</p>
+
+<p>If you plan to use ViewVC with CVS repositories, you need the
+   following things:</p>
+
+<ul>
+
+  <li><a href="http://www.cs.purdue.edu/homes/trinkle/RCS/">RCS</a>
+      (Revision Control System)</li>
+
+  <li><a href="http://www.gnu.org/software/diffutils/diffutils.html">GNU 
+      diff</a></li>
+ 
+  <li>Read-only, physical access to a CVS repository.</li>
+
+</ul>
+
+<p>For use with Subversion repositories, you need these things:</p>
+
+<ul>
+
+  <li><a href="http://subversion.tigris.org/">Subversion</a> 1.2 or
+      later and its SWIG Python bindings.</li>
+
+  <li><a href="http://www.gnu.org/software/diffutils/diffutils.html">GNU 
+      diff</a></li>
+
+  <li>Physical access to a Subversion repository (though there is
+      limited, use-at-your-risk support for remote access, too).</li>
+
+</ul>
+
+<p>ViewVC integrates with additional pieces of software to provide
+   certain bits of optional functionality:</p>
+
+<ul>
+
+  <li><a href="http://www.mysql.com/">MySQL</a> &mdash; Needed to use
+      the commit database query functionality.</li>
+
+  <li><a href="http://www.codento.com/people/mtr/genscript/">GNU
+      enscript</a> &mdash; Needed for syntax highlighting in versioned
+      file contents displays</li>
+
+  <li><a href="http://www.akhphd.au.dk/~bertho/cvsgraph/">CvsGraph</a>
+      &mdash; Needed for version graph displays.</li>
+
+  <li><a href="http://httpd.apache.org/">Apache HTTP Server</a>, or
+      another server capable of running CGI programs &mdash; unless
+      you just want ViewVC to run in standalone server mode.</li>
+
+</ul>
+
+</div> <!-- section-body -->
+</div> <!-- section -->
+
+<div class="section">
+
+<h2 id="sec-future">Future Plans</h2>
+
+<div class="section-body">
+
+<p>ViewVC is an Open Source project.  So any future development
+   depends on the <a href="./contributing.html">contributions</a> that
+   will be made by its user community.  Certainly working patches have
+   a greater chance to become realized quickly than feature requests,
+   but please don't hesitate to submit your suggestions to our <a
+   href="http://viewvc.tigris.org/servlets/ProjectIssues">issue
+   tracker</a>.</p>
+
+<p>Some things we're thinking about include:</p>
+
+<ul>
+  <li>UI streamlining/simplification.</li>
+  <li>Integration with CVS and Subversion commit mail scripts.</li>
+  <li>Integration with an indexer such as LXR.</li>
+</ul>
+
+</div> <!-- section-body -->
+</div> <!-- section -->
+
+</td>
+</tr>
+</table>
+</body>
+</html>

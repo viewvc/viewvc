@@ -1,0 +1,269 @@
+Version 1.1.0 (released ??-???-????)
+
+  * add support for full content diffs (issue #153)
+  * make many more data dictionary items available to all views
+  * various rcsparse and tparse module fixes
+  * add daemon mode to standalone.py (issue #235)
+  * rework helper application configuration options (issues #229, #62)
+  * teach standalone.py to recognize Subversion repositories via -r option
+  * now interpret relative paths in "viewvc.conf" as relative to that file
+  * add 'purge' subcommand to cvsdbadmin and svndbadmin (issue #271)
+  * fix orphaned data bug in cvsdbadmin/svndbadmin rebuild (issue #271)
+  * add support for query by log message (issues #22, #121)
+  * fix bug parsing 'svn blame' output with too-long author names (issue #221)
+  * fix default standalone.py port to be within private IANA range (issue #234)
+  * add support for integration with GNU source-highlight (issue #285)
+  * add unified configury of allowed views
+  * add support for disabling the checkout view (now the default state)
+  * add support for ranges of revisions to svndbadmin (issue #224)
+  * make the query handling more forgiving of malformatted subdirs (issue #244)
+  * add support for per-root configuration overrides (issue #371)
+  * add support for optional email address mangling (issue #290)
+  * extensible path-based authorization subsystem (issue #268), supporting:
+    - Subversion authz files (new)
+    - regexp-based path hiding (for compat with 1.0.x)
+    - file glob top-level directory hiding (for compat with 1.0.x)
+  * allow default file view to be "markup" (issue #305)
+  * add support for displaying file/directory properties (issue #39)
+  * pagination improvements
+  * add gzip output encoding support for template-driven pages
+  * fix cache control bugs (issue #259)
+  * add RSS feed URL generation for file history
+  * add support for remote creation of ViewVC checkins database
+  * add integration with Pygments for syntax highlighting
+  * preserve executability of Subversion files in tarballs (issue #233)
+  * add ability to set Subversion runtime config dir (issue #351, issue #339)
+  * show RSS/query links only for roots found in commits database (issue #357)
+  * recognize Subversion svn:mime-type property values (issue #364)
+  * hide CVS files when viewing tags/branches on which they don't exist
+  * add support for hiding errorful entries from the directory view (issue #105)
+
+Version 1.0.7 (released 14-Oct-2008)
+
+  * fix regression in the 'as text' download view (issue #373)
+
+Version 1.0.6 (released 16-Sep-2008)
+
+  * security fix: ignore arbitrary user-provided MIME types (issue #354)
+  * fix bug in regexp search filter when used with sticky tag (issue #346)
+  * fix bug in handling of certain 'co' output (issue #348)
+  * fix regexp search filter template bug
+  * fix annotate code syntax error
+  * fix mod_python import cycle (issue #369)
+
+Version 1.0.5 (released 28-Feb-2008)
+
+  * security fix: omit commits of all-forbidden files from query results
+  * security fix: disallow direct URL navigation to hidden CVSROOT folder
+  * security fix: strip forbidden paths from revision view
+  * security fix: don't traverse log history thru forbidden locations
+  * security fix: honor forbiddenness via diff view path parameters
+  * new 'forbiddenre' regexp-based path authorization feature
+  * fix root name conflict resolution inconsistencies (issue #287)
+  * fix an oversight in the CVS 1.12.9 loginfo-handler support
+  * fix RSS feed content type to be more specific (issue #306)
+  * fix entity escaping problems in RSS feed data (issue #238)
+  * fix bug in tarball generation for remote Subversion repositories
+  * fix query interface file-count-limiting logic
+  * fix query results plus/minus count to ignore forbidden files
+  * fix blame error caused by 'svn' unable to create runtime config dir
+
+Version 1.0.4 (released 10-Apr-2007)
+
+  * fix some markup bugs in query views (issue #266)
+  * fix loginfo-handler's support for CVS 1.12.9 (issues #151, #257)
+  * make viewvc-install able to run from an arbitrary location
+  * update viewvc-install's output for readability
+  * fix bug writing commits to non-MyISAM databases (issue #262)
+  * allow long paths in generated tarballs (issue #12)
+  * fix bug interpreting EZT substitute patterns
+  * fix broken markup view disablement
+  * fix broken directory view link generation in directory log view
+  * fix Windows-specific viewvc-install bugs
+  * fix broke query result links for Subversion deleted items (issue #296)
+  * fix some output XHTML validation buglets
+  * fix database query cache staleness problems (issue #180)
+
+Version 1.0.3 (released 13-Oct-2006)
+
+  * fix bug in path shown for Subversion deleted-under-copy items (issue #265)
+  * security fix: declare charset for views to avoid IE UTF7 XSS attack
+
+Version 1.0.2 (released 29-Sep-2006)
+
+  * minor documentation fixes
+  * fix Subversion annotate functionality on Windows (issue #18)
+  * fix annotate assertions on uncanonicalized #include paths (issue #208)
+  * make RSS URL method match the method used to generate it (issue #245)
+  * fix Subversion annotation to run non-interactively, preventing hangs
+  * fix bug in custom syntax highlighter fallback logic
+  * fix bug in PHP CGI hack to avoid force-cgi-redirect errors
+
+Version 1.0.1 (released 20-Jul-2006)
+
+  * fix exception on log page when use_pagesize is enabled
+  * fix an XHTML validation bug in the footer template (issue #239)
+  * fix handling of single-component CVS revision numbers (issue #237)
+  * fix bug in download-as-text URL link generation (issue #241)
+  * fix query.cgi bug, missing 'rss_href' template data item (issue #249)
+  * no longer omit empty Subversion directories from tarballs (issue #250)
+  * use actual modification time for Subversion directories in tarballs
+
+Version 1.0 (released 01-May-2006)
+
+  * add support for viewing Subversion repositories
+  * add support for running on MS Windows
+  * generate strict XHTML output
+  * add support for caching by sending "Last-Modified", "Expires", 
+    "ETag", and "Cache-Control" headers
+  * add support for Mod_Python on Apache 2.x and ASP on IIS
+  * Several changes to standalone.py:
+    - -h commandline option to specify hostname for non local use.
+    - -r commandline option may be repeated to use more than repository
+      before actually installing ViewCVS.
+    - New GUI field to test paging.
+  * add new, better-integrated query interface
+  * add integrated RSS feeds
+  * add new "root_as_url_component" option to embed root names as
+    path components in ViewCVS URLs for a more natural URL scheme
+    in ViewCVS configurations with multiple repositories.
+  * add new "use_localtime" option to display local times instead of UTC times
+  * add new "root_parents" option to make it possible to add and
+    remove repositories without modifying the ViewCVS configuration
+  * add new "template_dir" option to facilitate switching between sets of 
+    templates
+  * add new "sort_group_dirs" option to disable grouping of
+    directories in directory listings
+  * add new "port" option to connect to a MySQL database on a nonstandard port
+  * make "default_root" option optional. When no root is specified,
+    show a page listing all available repositories
+  * add "default_file_view" option to make it possible for relative
+    links and image paths in checked out HTML files to work without
+    the need for special /*checkout*/ prefixes in URLs. Deprecate
+    "checkout_magic" option and disable by default
+  * add "limit_changes" option to limit number of changed files shown per
+    commit by default in query results and in the Subversion revision view
+  * hide CVS "Attic" directories and add simple toggle for showing
+    dead files in directory listings
+  * show Unified, Context and Side-by-side diffs in HTML instead of
+    in bare text pages
+  * make View/Download links work the same for all file types
+  * add links to tip of selected branch on log page
+  * allow use of "Highlight" program for colorizing
+  * enable enscript colorizing for more file types
+  * add sorting arrows for directory views
+  * get rid of popup windows for checkout links
+  * obfuscate email addresses in html output by encoding @ symbol
+    with an HTML character reference
+  * add paging capability
+  * Improvements to templates
+    - add new template authoring guide
+    - increase coverage, use templates to produce HTML for diff pages,
+      markup pages, annotate pages, and error pages
+    - move more common page elements into includes
+    - add new template variables providing ViewCVS URLs for more 
+      links between related pages and less URL generation inside
+      templates
+  * add new [define] EZT directive for assigning variables within templates
+  * add command line argument parsing to install script to allow 
+    non-interactive installs
+  * add stricter parameter validation to lower likelihood of cross-site
+    scripting vulnerabilities
+  * add support for cvsweb's "mime_type=text/x-cvsweb-markup" URLs
+  * fix incompatibility with enscript 1.6.3
+  * fix bug in parsing FreeBSD rlog output
+  * work around rlog assumption all two digit years in RCS files are
+    relative to the year 1900.
+  * change loginfo-handler to cope with spaces in filenames and
+    support a simpler command line invocation from CVS
+  * make cvsdbadmin work properly when invoked on CVS subdirectory
+    paths instead of top-level CVS root paths
+  * show diff error when comparing two binary files
+  * make regular expression search skip binary files
+  * make regular expression search skip nonversioned files in CVS
+    directories instead of choking on them
+  * fix tarball generator so it doesn't include forbidden modules
+  * output "404 Not Found" errors instead of "403 Forbidden" errors
+    to not reveal whether forbidden paths exist
+  * fix sorting bug in directory view
+  * reset log and directory page numbers when leaving those pages
+  * reset sort direction in directory listing when clicking new columns
+  * fix "Accept-Language" handling for Netscape 4.x browsers   
+  * fix file descriptor leak in standalone server
+  * clean up zombie processes from running enscript
+  * fix mysql "Too many connections" error in cvsdbadmin
+  * get rid of mxDateTime dependency for query database
+  * store query database times in UTC instead of local time
+  * fix daylight saving time bugs in various parts of the code
+
+Version 0.9.4 (released 17-Aug-2005)
+
+  * security fix: omit forbidden/hidden modules from query results.
+
+Version 0.9.3 (released 17-May-2005)
+
+  * security fix: disallow bad "content-type" input [CAN-2004-1062]
+  * security fix: disallow bad "sortby" and "cvsroot" input [CAN-2002-0771]
+  * security fix: omit forbidden/hidden modules from tarballs [CAN-2004-0915]
+
+Version 0.9.2 (released 15-Jan-2002)
+
+  * fix redirects to Attic for diffs
+  * fix diffs that have no changes (causing an infinite loop)
+
+Version 0.9.1 (released 26-Dec-2001)
+
+  * fix a problem with some syntax in ndiff.py which isn't compatible
+    with Python 1.5.2 (causing problems at install time)
+  * remove a debug statement left in the code which continues to
+    append lines to /tmp/log
+
+Version 0.9 (released 23-Dec-2001)
+
+  * create templates for the rest of the pages: markup pages, graphs,
+    annotation, and diff.
+  * add multiple language support and dynamic selection based on the
+    Accept-Language request header
+  * add support for key/value files to provide a way for user-defined
+    variables within templates
+  * add optional regex searching for file contents
+  * add new templates for the navigation header and the footer
+  * EZT changes:
+    - add formatting into print directives
+    - add parameters to [include] directives
+    - relax what can go in double quotes
+    - [include] directives are now relative to the current template
+    - throw an exception for unclosed blocks
+  * changes to standalone.py: add flag for regex search
+  * add more help pages
+  * change installer to optionally show diffs
+  * fix to log.ezt and log_table.ezt to select "Side by Side" properly
+  * create dir_alternate.ezt for the flipped rev/name links
+  * various UI tweaks for the directory pages
+
+Version 0.8 (released 10-Dec-2001)
+
+  * add EZT templating mechanism for generating output pages
+  * big update of cvs commit database
+    - updated MySQL support
+    - new CGI
+    - better database caching
+    - switch from old templates to new EZT templates (and integration
+      of look-and-feel)
+  * optional usage of CVSGraph is now builtin
+  * standalone server (for testing) is now provided
+  * shifted some options from viewcvs.conf to the templates
+  * the help at the top of the pages has been shifted to separate help
+    pages, so experienced users don't have to keep seeing it
+  * paths in viewcvs.conf don't require trailing slashes any more
+  * tweak the colorizing for Pascal and Fortran files
+  * fix file readability problem where the user had access via the
+    group, but the process' group did not match that group
+  * some Daylight Savings Time fixes in the CVS commit database
+  * fix tarball generation (the file name) for the root dir
+  * changed default human-readable-diff colors to "stoplight" metaphor
+  * web site and doc revamps
+  * fix the mime types on the download, view, etc links
+  * improved error response when the cvs root is missing
+  * don't try to process vhosts if the config section is not present
+  * various bug fixes and UI tweaks
