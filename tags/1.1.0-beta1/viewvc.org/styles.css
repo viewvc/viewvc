@@ -1,0 +1,169 @@
+body {
+    background-color: #b2d388;
+    color: black;
+    font-family: trebuchet ms, arial, sans-serif;
+    margin: 0;
+}
+
+#title {
+    background-color: #739c3e;
+    height: 70px;
+}
+
+img {
+    border: none;
+}
+
+hr {
+    width: 95%;
+    height: 1px;
+}
+
+address {
+    font-size: 60%;
+    font-style: normal;
+}
+
+h2 {
+    background-color: #94bd5e;
+    padding: 2px 0.5em 2px 0.5em;
+    margin: 0;
+    border-bottom: dotted 1px rgb(180,193,205);
+    font-size: 110%;
+}
+
+h3 {
+    margin: 0;
+    font-size: 100%;
+    font-weight: bold;
+    border-bottom: dotted 1px rgb(180,193,205);
+}
+
+h4 {
+    padding: 2px 0.5em 2px 0.5em;
+    margin: 0;
+    font-size: 90%;
+    font-weight: bold;
+}
+
+p, dl {
+    padding: 0.5em;
+    margin: 0;
+    font-size: 90%;
+}
+
+ul, ol {
+    font-size: 90%;
+    padding: 0.5em;
+    margin: 0 0 0 0.25in;
+}
+
+code {
+    font-size: 105%;
+    font-style: italic;
+    font-family: monospace;
+}
+
+blockquote {
+    text-align: justify;
+    font-style: italic;
+    margin: 0 0.5in 0 0.5in;
+    padding: 5px;
+    border: 1px dotted black;
+}
+
+.section {
+    background: white;
+    border-color: rgb(24,24,24);
+    border-width: 1px;
+    border-style: solid;
+    padding: 0;
+    margin-bottom: 0.5em;
+}
+
+.section-body {
+    padding: 0 1em;
+}
+
+.section p, .section dl, .section ul, .section ol { 
+    padding: 0.5em 0;
+}
+
+#menu {
+    background: black;
+    color: white;
+}
+
+#menu a, #menu a:visited {
+    background: black;
+    color: white;
+    text-decoration: none;
+}
+
+#menu a:hover {
+    background: black;
+    color: white;
+    text-decoration: underline;
+}
+
+#submenu {
+    background: rgb(90%,97%,99%);
+    font-size: 80%;
+}
+
+#pagetable tr {
+    vertical-align: top;
+}
+
+#pagetable {
+    width: 100%;
+}
+
+#pagecolumn1 {
+    width: 175px;
+    padding: 1em 0 0 0;
+}
+
+#pagecolumn1 a, #pagecolumn1 a:visited {
+    color: rgb(0,0,164);
+    text-decoration: none;
+}
+
+#pagecolumn1 a:hover {
+    text-decoration: underline;
+}
+
+#pagecolumn2 {
+    padding: 1em 2em;
+}
+
+#pagecolumn2 a, #pagecolumn2 a:visited {
+    color: rgb(0,0,164);
+    text-decoration: underline;
+}
+
+#pagecolumn2 a:hover {
+    background-color: rgb(180,193,205);
+    text-decoration: underline;
+}
+
+#bookmarks {
+    padding-left: 0.5em;
+    font-size: 80%;
+    white-space: nowrap;
+}
+
+.notice {
+    border: 1px solid black;
+    margin-bottom: 0.5em;
+    background: yellow;
+}
+
+.faq-section {
+    margin-top: 1em;
+}
+
+.faq-atitle {
+    font-weight: bold;
+}
+

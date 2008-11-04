@@ -1,0 +1,78 @@
+The following is an email from a developer who was integrating bzr
+into ViewVC in which he shares some thoughts on how to further
+abstract the version control system interactions into first-class APIs
+in the vclib module.
+
+   Subject: Re: [ViewCVS-dev] difflib module
+   Date: Wed, 1 Jun 2005 16:59:10 -0800
+   From: "Johan Rydberg" <jrydberg@gnu.org>
+   To: "Michael Pilato" <cmpilato@collab.net>
+   Cc: <viewcvs-dev@lyra.org>
+   
+   "C. Michael Pilato" <cmpilato@collab.net> writes:
+   
+   >> I've tried to minimize the changes to the viewcvs.py, but of course
+   >> there are a few places where some things has to be altered.
+   >
+   > Well, if along the way, you have ideas about how to further abstract
+   > stuff into the vclib/ modules, please post.
+   
+   I came up with a few as off now;
+   
+    * Generalize revision counting; svn starts from 0, bzr starts from 1.
+      Can be done by a constant; request.repos.MIN_REVNO.  For CVS I'm not
+      sure exactly what should be done.  Right now this is only used in
+      view_revision_svn, so it is not a problem in the short term.
+   
+    * Generalize view_diff;
+   
+      * Have a repo-method diff(file1, rev1, file2, rev2, args) that returns
+        (date1, date2, fp).  Means human_readbale_diff and raw_diff does not
+        have to parse dates.  Good for VCS that does not have the date in
+        the diff.   [### DONE ###]
+   
+      * I'm not sure you should require GNU diff.  Some VCS may use own
+        diff mechanisms (bzr uses difflib, _or_ GNU diff when needed.
+        Monotone uses its own, IIRC.)
+   
+    * Generalize view_revision ;
+   
+      * Have a method, revision_info(), which returns (date, author, msg,
+        changes) much like vclib.svn.get_revision_info.  The CVS version
+        can raise a ViewCVSException.  [### DONE ###]
+   
+      * Establish a convention for renamed/copied files; current should
+        work good enough (change.base_path, change.base_rev) but action
+        string must be same for both svn and others.
+   
+    * request.repos.rev (or .revision) should give the current revision
+      number of the repo.  No need for this (from view_directory):
+   
+       if request.roottype == 'svn': 
+         revision = str(vclib.svn.created_rev(request.repos, request.where))
+   
+      If svn needs the full name of the repo, why not give it when the
+      repo is created?
+   
+    * request.repos.youngest vs vclib.svn.get_youngest_revision(REPO)
+   
+    * More object oriented;
+   
+      * The subversion backend is not really object oriented.  viewcfg.py uses
+        a lot function from vclib.svn, which could instead be methods of the
+        Repository class.  Example:
+   
+          diffobj = vclib.svn.do_diff(request.repos, p1, int(rev1),
+                                      p2, int(rev2), args)  
+   
+        This should be a method of the repository;
+   
+          diffobj = request.repos.do_diff(p1, rev1, ...)
+   
+        I have identified the following functions;
+   
+         - vclib.svn.created_rev
+         - vclib.svn.get_youngest_revision
+         - vclib.svn.date_from_rev
+         - vclib.svn.do_diff
+         - vclib.svn.get_revision_info
