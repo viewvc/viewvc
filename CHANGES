@@ -14,9 +14,7 @@ Version 1.1.0 (released ??-???-????)
   * add support for query by log message (issues #22, #121)
   * fix bug parsing 'svn blame' output with too-long author names (issue #221)
   * fix default standalone.py port to be within private IANA range (issue #234)
-  * add support for integration with GNU source-highlight (issue #285)
-  * add unified configury of allowed views
-  * add support for disabling the checkout view (now the default state)
+  * add unified configury of allowed views; checkout view disabled by default
   * add support for ranges of revisions to svndbadmin (issue #224)
   * make the query handling more forgiving of malformatted subdirs (issue #244)
   * add support for per-root configuration overrides (issue #371)
