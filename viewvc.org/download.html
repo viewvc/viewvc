@@ -35,7 +35,8 @@
 
 <ul id="bookmarks">
   <li><a href="#sec-download">Downloading</a></li>
-  <li><a href="#sec-subversion">Subversion</a></li>
+  <li><a href="#sec-subversion">Subversion Checkout</a></li>
+  <li><a href="#sec-upgrading">Upgrading</a></li>
 </ul>
 
 <p><a href="http://validator.w3.org/check?uri=referer"><img
@@ -68,7 +69,7 @@
 
 <div class="section">
 
-<h2 id="sec-subversion">Subversion</h2>
+<h2 id="sec-subversion">Subversion Checkout</h2>
 
 <div class="section-body">
 
@@ -82,6 +83,36 @@
   
 </div> <!-- section-body -->
 </div> <!-- section -->
+
+<div class="section">
+
+<h2 id="sec-upgrading">Upgrading</h2>
+
+<div class="section-body">
+
+<p>We've tried to ensure that ViewVC URLs are stable, and that even
+   when we deprecate a particular URL syntax, we continue to support
+   the handling of it (using HTTP redirects to point browsers to the
+   new form of that URL).  We know that ViewVC URLs get bookmarked,
+   and nobody likes when their bookmarked URLs suddenly stop working.</p>
+
+<p>Across patch releases of ViewVC (when only the <em>Z</em> component
+   of <em>version X.Y.Z</em> changes), we do our best to keep the
+   configuration file syntax and template data dictionary unchanged,
+   too.  This makes it much easier for folks who need to upgrade
+   quickly to get security or other bug fixes.  But across major and
+   minor releases, all bets are off, and chances are good that we've
+   done some major plumbing.  When upgrading your ViewVC instance
+   across major or minor version numbers, you'll almost certainly want
+   to consult our
+   <a href="http://viewvc.tigris.org/source/browse/viewvc/trunk/docs/upgrading-howto.html?rev=HEAD"
+   >upgrading HOWTO</a> for tips on how to migrate your configuration
+   files and any template customizations you've made into their new
+   formats.</p>
+  
+</div> <!-- section-body -->
+</div> <!-- section -->
+
 
 </td>
 </tr>
