@@ -36,7 +36,6 @@
 <ul id="bookmarks">
   <li><a href="#sec-what-is-viewvc">What Is ViewVC?</a></li>
   <li><a href="#sec-requirements">Requirements</a></li>
-  <li><a href="#sec-future">Future Plans</a></li>
 </ul>
 
 <p><a href="http://validator.w3.org/check?uri=referer"><img
@@ -66,7 +65,15 @@
 
 <ul>
 
-  <li>Support for filesystem-accessible CVS and Subversion repositories.</li>
+  <li>Support for filesystem-accessible CVS and Subversion
+      repositories.</li>
+
+  <li>Support for path-based authorization, including parsing and
+      honoring Subversion authz configuration files.  <em>(Coming in
+      ViewVC 1.1!)</em></li>
+
+  <li>RSS feed generation for tracking changes to repositories or
+      individual items within repositories.</li>
 
   <li>Individually configurable virtual host support.</li>
 
@@ -88,7 +95,8 @@
   <li>Tarball generation (by tag/branch for CVS, by revision for
       Subversion).</li>
 
-  <li>I18N support based on the Accept-Language request header.</li>
+  <li>Localization support based on the Accept-Language request
+      header.</li>
 
   <li>Ability to run either as CGI script or as a standalone
       server.</li>
@@ -118,21 +126,6 @@
    href="http://www.python.org/">Python 1.5.2</a> or later.  All other
    requirements depend on what you want to do with the tool.</p>
 
-<p>If you plan to use ViewVC with CVS repositories, you need the
-   following things:</p>
-
-<ul>
-
-  <li><a href="http://www.cs.purdue.edu/homes/trinkle/RCS/">RCS</a>
-      (Revision Control System)</li>
-
-  <li><a href="http://www.gnu.org/software/diffutils/diffutils.html">GNU 
-      diff</a></li>
- 
-  <li>Read-only, physical access to a CVS repository.</li>
-
-</ul>
-
 <p>For use with Subversion repositories, you need these things:</p>
 
 <ul>
@@ -148,50 +141,40 @@
 
 </ul>
 
+<p>If you plan to use ViewVC with CVS repositories, you need the
+   following things:</p>
+
+<ul>
+
+  <li><a href="http://www.cs.purdue.edu/homes/trinkle/RCS/">RCS</a>
+      (Revision Control System)</li>
+
+  <li><a href="http://www.gnu.org/software/diffutils/diffutils.html">GNU 
+      diff</a></li>
+ 
+  <li>Read-only, physical access to a CVS repository.</li>
+
+</ul>
+
 <p>ViewVC integrates with additional pieces of software to provide
    certain bits of optional functionality:</p>
 
 <ul>
 
-  <li><a href="http://www.mysql.com/">MySQL</a> &mdash; Needed to use
-      the commit database query functionality.</li>
-
-  <li><a href="http://www.codento.com/people/mtr/genscript/">GNU
-      enscript</a> &mdash; Needed for syntax highlighting in versioned
-      file contents displays</li>
-
-  <li><a href="http://www.akhphd.au.dk/~bertho/cvsgraph/">CvsGraph</a>
-      &mdash; Needed for version graph displays.</li>
-
   <li><a href="http://httpd.apache.org/">Apache HTTP Server</a>, or
       another server capable of running CGI programs &mdash; unless
       you just want ViewVC to run in standalone server mode.</li>
 
-</ul>
+  <li><a href="http://www.mysql.com/">MySQL</a> &mdash; Needed to use
+      the commit database query functionality.</li>
 
-</div> <!-- section-body -->
-</div> <!-- section -->
+  <li><a href="http://pygments.org/">Pygments</a> &mdash; Needed for
+      syntax highlighting in versioned file contents
+      displays.  <em>(Coming in ViewVC 1.1!)</em></li>
 
-<div class="section">
+  <li><a href="http://www.akhphd.au.dk/~bertho/cvsgraph/">CvsGraph</a>
+      &mdash; Needed for version graph displays.</li>
 
-<h2 id="sec-future">Future Plans</h2>
-
-<div class="section-body">
-
-<p>ViewVC is an Open Source project.  So any future development
-   depends on the <a href="./contributing.html">contributions</a> that
-   will be made by its user community.  Certainly working patches have
-   a greater chance to become realized quickly than feature requests,
-   but please don't hesitate to submit your suggestions to our <a
-   href="http://viewvc.tigris.org/servlets/ProjectIssues">issue
-   tracker</a>.</p>
-
-<p>Some things we're thinking about include:</p>
-
-<ul>
-  <li>UI streamlining/simplification.</li>
-  <li>Integration with CVS and Subversion commit mail scripts.</li>
-  <li>Integration with an indexer such as LXR.</li>
 </ul>
 
 </div> <!-- section-body -->
