@@ -151,21 +151,20 @@
 <p class="faq-atitle">Does ViewVC support path-based authorization,
    such as Subversion's authz-file mechanism?</p>
 
-<p>There are no released versions of ViewVC which have this support
-   built-in.  The feature request is being tracking in <a
-   href="http://viewvc.tigris.org/issues/show_bug.cgi?id=268">issue
-   #268</a>, and we're working to complete it for release in ViewVC
-   1.1.</p>
+<p>This feature will be available in ViewVC 1.1.  You can try it out
+   now using the ViewVC 1.1.0-beta1 release, available from
+   our <a href="http://viewvc.org/download.html" >Download</a>
+   page.</p>
 
-<p>In the meantime, there are some available workarounds.  For
-   example, if you are running ViewVC under Apache, you can use
-   regular Apache configuration directives to authz-protect areas of
-   your repository &mdash; see the <a
-   href="http://httpd.apache.org/docs/2.2/mod/core.html#location"
-   >Location</a> and <a
-   href="http://httpd.apache.org/docs/2.2/mod/core.html#locationmatch"
-   >LocationMatch</a> directives, as well as the <a
-   href="http://httpd.apache.org/docs/2.2/howto/auth.html"
+<p>If you prefer to use only final releases, there are some available
+   workarounds.  For example, if you are running ViewVC under Apache,
+   you can use regular Apache configuration directives to
+   authz-protect areas of your repository &mdash; see
+   the <a href="http://httpd.apache.org/docs/2.2/mod/core.html#location"
+   >Location</a>
+   and <a href="http://httpd.apache.org/docs/2.2/mod/core.html#locationmatch"
+   >LocationMatch</a> directives, as well as
+   the <a href="http://httpd.apache.org/docs/2.2/howto/auth.html"
    >Authentication, Authorization and Access Control</a> portions of
    the Apache HTTP Server documentation.  This works best when ViewVC
    is only serving up a single repository, or when the
