@@ -4012,7 +4012,7 @@ def main(server, cfg):
 
   finally:
     debug.t_end('main')
-    debug.dump()
+    debug.t_dump(server.file())
     debug.DumpChildren(server)
 
 
