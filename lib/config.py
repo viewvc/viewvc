@@ -219,6 +219,7 @@ class Config:
     self.options.default_file_view = "log"
     self.options.http_expiration_time = 600
     self.options.generate_etags = 1
+    self.options.svn_ignore_mimetype = 0
     self.options.svn_config_dir = None
     self.options.use_rcsparse = 0
     self.options.sort_by = 'file'

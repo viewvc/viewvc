@@ -332,6 +332,13 @@ http_expiration_time = 600
 #   0      Don't generate Etags
 generate_etags = 1
 
+# Don't use the svn:mime-type property to determine how to display a
+# file in the markup view.  This is especially helpful when versioned
+# images carry the default Subversion-calculated MIME type of
+# "application/octet-stream" (which isn't recognized as viewable type
+# by browsers).
+svn_ignore_mimetype = 0
+
 # svn_config_dir: Path of the Subversion runtime configuration
 # directory ViewVC should consult for various things, including cached
 # remote authentication credentials.  If unset, Subversion will use
