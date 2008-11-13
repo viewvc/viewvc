@@ -210,7 +210,7 @@ def _log_helper(svnrepos, path, rev, lockinfo):
   copyfrom_rev, copyfrom_path = fs.copied_from(rev_root, path)
 
   # Assemble our LogEntry
-  date, author, msg, changes = svnrepos.revinfo(rev)
+  date, author, msg, changes = svnrepos._revinfo(rev)
   if fs.is_file(rev_root, path):
     size = fs.file_length(rev_root, path)
   else:
@@ -456,7 +456,7 @@ class LocalSubversionRepository(vclib.Repository):
         continue
       path = self._getpath(entry_path_parts)
       entry_rev = _get_last_history_rev(fsroot, path)
-      date, author, msg, changes = self.revinfo(entry_rev)
+      date, author, msg, changes = self._revinfo(entry_rev)
       entry.rev = str(entry_rev)
       entry.date = date
       entry.author = author
@@ -554,99 +554,124 @@ class LocalSubversionRepository(vclib.Repository):
                          youngest_rev, oldest_rev)
     return source, youngest_rev
 
-  def _revinfo_raw(self, rev):
-    fsroot = self._getroot(rev)
-
-    # Get the changes for the revision
-    editor = repos.ChangeCollector(self.fs_ptr, fsroot)
-    e_ptr, e_baton = delta.make_editor(editor)
-    repos.svn_repos_replay(fsroot, e_ptr, e_baton)
-    changes = editor.get_changes()
-    changedpaths = {}
+  def _revinfo(self, rev, include_changed_paths=0):
+    """Internal-use, cache-friendly revision information harvester."""
     
-    # Now get the revision property info.  Would use
-    # editor.get_root_props(), but something is broken there...
-    revprops = fs.revision_proplist(self.fs_ptr, rev)
-    msg = revprops.get(core.SVN_PROP_REVISION_LOG)
-    author = revprops.get(core.SVN_PROP_REVISION_AUTHOR)
-    datestr = revprops.get(core.SVN_PROP_REVISION_DATE)
-
-    # Copy the Subversion changes into a new hash, converting them into
-    # ChangedPath objects.
-    found_readable = found_unreadable = 0
-    for path in changes.keys():
-      change = changes[path]
-      if change.path:
-        change.path = _cleanup_path(change.path)
-      if change.base_path:
-        change.base_path = _cleanup_path(change.base_path)
-      is_copy = 0
-      if not hasattr(change, 'action'): # new to subversion 1.4.0
-        action = vclib.MODIFIED
-        if not change.path:
-          action = vclib.DELETED
-        elif change.added:
-          action = vclib.ADDED
-          replace_check_path = path
-          if change.base_path and change.base_rev:
-            replace_check_path = change.base_path
-          if changedpaths.has_key(replace_check_path) \
-             and changedpaths[replace_check_path].action == vclib.DELETED:
-            action = vclib.REPLACED
-      else:
-        if change.action == repos.CHANGE_ACTION_ADD:
-          action = vclib.ADDED
-        elif change.action == repos.CHANGE_ACTION_DELETE:
-          action = vclib.DELETED
-        elif change.action == repos.CHANGE_ACTION_REPLACE:
-          action = vclib.REPLACED
-        else:
+    def _revinfo_helper(rev, include_changed_paths):
+      # Get the revision property info.  (Would use
+      # editor.get_root_props(), but something is broken there...)
+      revprops = fs.revision_proplist(self.fs_ptr, rev)
+      msg = revprops.get(core.SVN_PROP_REVISION_LOG)
+      author = revprops.get(core.SVN_PROP_REVISION_AUTHOR)
+      datestr = revprops.get(core.SVN_PROP_REVISION_DATE)
+      date = _datestr_to_date(datestr)
+  
+      # Optimization: If our caller doesn't care about the changed
+      # paths, and we don't need them to do authz determinations, let's
+      # get outta here.
+      if self.auth is None and not include_changed_paths:
+        return date, author, msg, None
+  
+      # If we get here, then we either need the changed paths because we
+      # were asked for them, or we need them to do authorization checks.
+      # Either way, we need 'em, so let's get 'em.
+      fsroot = self._getroot(rev)
+      editor = repos.ChangeCollector(self.fs_ptr, fsroot)
+      e_ptr, e_baton = delta.make_editor(editor)
+      repos.svn_repos_replay(fsroot, e_ptr, e_baton)
+      changedpaths = {}
+      changes = editor.get_changes()
+    
+      # Copy the Subversion changes into a new hash, checking
+      # authorization and converting them into ChangedPath objects.
+      found_readable = found_unreadable = 0
+      for path in changes.keys():
+        change = changes[path]
+        if change.path:
+          change.path = _cleanup_path(change.path)
+        if change.base_path:
+          change.base_path = _cleanup_path(change.base_path)
+        is_copy = 0
+        if not hasattr(change, 'action'): # new to subversion 1.4.0
           action = vclib.MODIFIED
-      if (action == vclib.ADDED or action == vclib.REPLACED) \
-         and change.base_path \
-         and change.base_rev:
-        is_copy = 1
-      if change.item_kind == core.svn_node_dir:
-        pathtype = vclib.DIR
-      elif change.item_kind == core.svn_node_file:
-        pathtype = vclib.FILE
+          if not change.path:
+            action = vclib.DELETED
+          elif change.added:
+            action = vclib.ADDED
+            replace_check_path = path
+            if change.base_path and change.base_rev:
+              replace_check_path = change.base_path
+            if changedpaths.has_key(replace_check_path) \
+               and changedpaths[replace_check_path].action == vclib.DELETED:
+              action = vclib.REPLACED
+        else:
+          if change.action == repos.CHANGE_ACTION_ADD:
+            action = vclib.ADDED
+          elif change.action == repos.CHANGE_ACTION_DELETE:
+            action = vclib.DELETED
+          elif change.action == repos.CHANGE_ACTION_REPLACE:
+            action = vclib.REPLACED
+          else:
+            action = vclib.MODIFIED
+        if (action == vclib.ADDED or action == vclib.REPLACED) \
+           and change.base_path \
+           and change.base_rev:
+          is_copy = 1
+        if change.item_kind == core.svn_node_dir:
+          pathtype = vclib.DIR
+        elif change.item_kind == core.svn_node_file:
+          pathtype = vclib.FILE
+        else:
+          pathtype = None
+  
+        parts = _path_parts(path)
+        if vclib.check_path_access(self, parts, pathtype, rev):
+          if is_copy and change.base_path and (change.base_path != path):
+            parts = _path_parts(change.base_path)
+            if not vclib.check_path_access(self, parts, pathtype, change.base_rev):
+              is_copy = 0
+              change.base_path = None
+              change.base_rev = None
+          changedpaths[path] = SVNChangedPath(path, rev, pathtype,
+                                              change.base_path,
+                                              change.base_rev, action,
+                                              is_copy, change.text_changed,
+                                              change.prop_changes)
+          found_readable = 1
+        else:
+          found_unreadable = 1
+  
+        # If our caller doesn't care about changed paths, we must be
+        # here for authz reasons only.  That means the minute we've
+        # found both a readable and an unreadable path, we can bail out.
+        if (not include_changed_paths) and found_readable and found_unreadable:
+          return date, author, None, None
+        
+      # Okay, we've process all our paths.  Let's filter our metadata,
+      # and return the requested data.
+      if found_unreadable:
+        msg = None
+        if not found_readable:
+          author = None
+          date = None
+      if include_changed_paths:
+        return date, author, msg, changedpaths.values()
       else:
-        pathtype = None
+        return date, author, msg, None
 
-      parts = _path_parts(path)
-      if vclib.check_path_access(self, parts, pathtype, rev):
-        if is_copy and change.base_path and (change.base_path != path):
-          parts = _path_parts(change.base_path)
-          if not vclib.check_path_access(self, parts, pathtype, change.base_rev):
-            is_copy = 0
-            change.base_path = None
-            change.base_rev = None
-        changedpaths[path] = SVNChangedPath(path, rev, pathtype,
-                                            change.base_path,
-                                            change.base_rev, action,
-                                            is_copy, change.text_changed,
-                                            change.prop_changes)
-        found_readable = 1
-      else:
-        found_unreadable = 1
-
-    # Return our tuple, auth-filtered: date, author, msg, changes
-    if found_unreadable:
-      msg = None
-      if not found_readable:
-        author = None
-        datestr = None
-
-    date = _datestr_to_date(datestr)
-    return date, author, msg, changedpaths.values()
-
-  def revinfo(self, rev):
+    # Consult the revinfo cache first.  If we don't have cached info,
+    # or our caller wants changed paths and we don't have those for
+    # this revision, go do the real work.
     rev = self._getrev(rev)
     cached_info = self._revinfo_cache.get(rev)
-    if not cached_info:
-      cached_info = self._revinfo_raw(rev)
+    if not cached_info \
+       or (include_changed_paths and cached_info[3] is None):
+      cached_info = _revinfo_helper(rev, include_changed_paths)
       self._revinfo_cache[rev] = cached_info
     return cached_info[0], cached_info[1], cached_info[2], cached_info[3]
+  
+  def revinfo(self, rev):
+    return self._revinfo(rev, 1) 
   
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     p1 = self._getpath(path_parts1)
@@ -661,7 +686,7 @@ class LocalSubversionRepository(vclib.Repository):
     args = vclib._diff_args(type, options)
 
     def _date_from_rev(rev):
-      date, author, msg, changes = self.revinfo(rev)
+      date, author, msg, changes = self._revinfo(rev)
       return date
 
     try:
