@@ -1444,7 +1444,8 @@ def calculate_mime_type(request, path_parts, rev):
   mime_type = None
   if not path_parts:
     return None
-  if request.roottype == 'svn':
+  if request.roottype == 'svn' \
+     and (not request.cfg.options.svn_ignore_mimetype):
     try:
       itemprops = request.repos.itemprops(path_parts, rev)
       mime_type = itemprops.get('svn:mime-type')
