@@ -286,9 +286,9 @@ allowed_views = markup, annotate, roots
 # NOTE: Only one authorizer may be in use for a given ViewVC request.
 # It doesn't matter if you configure the parameters of multiple
 # authorizer plugins -- only the authorizer whose name is configured
-# here (or effectively configured here via vhost configuration) will
-# be activated.
-authorizer = forbidden
+# here (or effectively configured here via per-vhost or per-root
+# configuration) will be activated.
+authorizer =
 
 # hide_cvsroot: Don't show the CVSROOT directory
 #   1      Hide CVSROOT directory
