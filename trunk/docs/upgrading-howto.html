@@ -293,6 +293,18 @@ td {
   <li>options/allow_tar</li>
 </ul>
 
+<p>ViewVC now honors the "svn:mime-type" property stored on
+   Subversion-versioned files as the primary source of MIME type
+   determination (before falling back to name-based MIME mappings and
+   such).  However, this can negatively affect the viewability of
+   certain files &mdash; especially images &mdash; whose
+   "svn:mime-type" properties are set incorrectly, such as will happen
+   if Subversion itself merely determines that the file isn't
+   human-readable and uses the "application/octet-stream" MIME type to
+   record this determination.  To make ViewVC <em>not</em> honor the
+   "svn:mime-type" property value, set the <code>svn_ignore_mimetype</code>
+   configuration option.</p>
+
 <p>The <code>use_rcsparse</code> option was moved from the "general"
    section to the "options" section.</p>
 
