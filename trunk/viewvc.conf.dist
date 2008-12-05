@@ -266,8 +266,8 @@ checkout_magic = 0
 # allowed_views: List the ViewVC views which are enabled.  Views not
 # in this comma-delited list will not be served (or, will return an
 # error on attempted access).
-# Possible values: "tar", "annotate", "co", "markup", "roots"
-allowed_views = markup, annotate, roots
+# Possible values: "annotate", "co", "diff", "markup", "roots", "tar"
+allowed_views = annotate, diff, markup, roots
 
 # authorizer: The name of the ViewVC authorizer plugin to use when
 # authorizing access to repository contents.  This value must be the
