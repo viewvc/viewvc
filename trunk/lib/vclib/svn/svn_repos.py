@@ -15,11 +15,9 @@
 import vclib
 import os
 import os.path
-import stat
 import string
 import cStringIO
 import signal
-import shutil
 import time
 import tempfile
 import popen
