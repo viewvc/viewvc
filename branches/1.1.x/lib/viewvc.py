@@ -1480,7 +1480,7 @@ def markup_or_annotate(request, is_annotate):
   cfg = request.cfg
   path, rev = _orig_path(request, is_annotate and 'annotate' or 'revision')
   lines = fp = image_src_href = None
-  annotation = None
+  annotation = 'none'
   revision = None
   mime_type = calculate_mime_type(request, path, rev)
 
