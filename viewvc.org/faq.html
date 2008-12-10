@@ -84,6 +84,9 @@
 
 <ul>
 
+<li><a href="#error-displaying-cvs-files">Why can I navigate only those CVS
+    directories that have no files in them?</a></li>
+
 <li><a href="#rlog-output-ended-early">What causes "Error: Rlog output ended
     early. Expected RCS file "/opt/cvs/project/file,v""?</a></li>
 
@@ -222,20 +225,34 @@
 <h3 class="faq-section" id="faq-a-cvs">CVS Browsing</h3>
 <!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
 
+<div id="error-displaying-cvs-files">
+
+<p class="faq-atitle">Why can I navigate only those CVS directories
+   that have no files in them?</p>
+
+<p>ViewVC can generally display CVS directories without the use of any
+   external tools.  But unless configured to use the incomplete,
+   experimental rcsparse module (via the <code>use_rcsparse</code>
+   configuration option), it relies on either the RCS toolchain or the
+   CVSNT tool (on Windows) to get information about versioned files.
+   If the system is missing both of these, you'll need to remedy that.
+   If ViewVC simply cannot find the installed tools, ensure that they
+   are available in the system <code>$PATH</code>, or specify their
+   location in the <code>viewvc.conf</code> file using
+   the <code>utilities/rcs_dir</code> or <code>utilities/cvsnt</code>
+   options.  (Note that prior to ViewVC 1.1, these options were found
+   at <code>general/rcs_path</code>
+   and <code>general/cvsnt_exe_path</code>.)</p>
+
+</div>
+
 <div id="rlog-output-ended-early">
 
 <p class="faq-atitle">What causes "Error: Rlog output ended
    early. Expected RCS file "/opt/cvs/project/file,v""?</p>
 
-<p>This error generally occurs when ViewVC is unable to locate the
-   rlog tool, one of several in the RCS toolchain.  If the system
-   doesn't have the RCS toolchain installed, you'll need to install
-   it.  If the RCS toolchain is installed, but ViewVC simply can't
-   locate the RCS programs, either ensure that the programs are
-   in the system <code>$PATH</code>, or specify their location in
-   the <code>viewvc.conf</code> file &mdash; the option is
-   <code>utilities/rcs_dir</code> as of ViewVC 1.1,
-   <code>general/rcs_path</code> in earlier versions.</p>
+<p>This is another symptom of the basic problem described <a
+   href="#error-displaying-cvs-files">here</a>.</p>
 
 </div>
 
@@ -245,7 +262,7 @@
    find filename in co output stream"?</p>
 
 <p>This is another symptom of the basic problem described <a
-   href="#rlog-output-ended-early">here</a>.</p>
+   href="#error-displaying-cvs-files">here</a>.</p>
 
 </div>
 
