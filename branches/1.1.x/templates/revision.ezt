@@ -29,6 +29,11 @@
         [if-any ago]<em>([ago] ago)</em>[end]</td>
   </tr>
   <tr align="left">
+    <th>Changed paths:</th>
+    <td><strong>[num_changes]</strong>
+        [if-any more_changes](showing only [limit_changes]; <a href="[more_changes_href]">show all</a>)[end][if-any first_changes](<a href="[first_changes_href]">show only first [first_changes]</a>)[end]</td>
+  </tr>
+  <tr align="left">
     <th>Log Message:</th>
     <td><pre class="vc_log">[log]</pre></td>
   </tr>
@@ -38,17 +43,6 @@
 <hr />
 
 <p><strong>Changed paths:</strong></p>
-
-[if-any more_changes]
-  <div>
-    Only [limit_changes] changes shown,
-    <a href="[more_changes_href]">display [more_changes] more changes...</a>
-  </div>
-[end]
-
-[if-any first_changes]
-  <div><a href="[first_changes_href]">Show only first [first_changes] changes...</div>
-[end]
 
 <table cellspacing="1" cellpadding="2">
   <thead>
@@ -73,6 +67,11 @@
   [else]
     <tr>
     <td colspan="5">No changed paths.</td>
+    </tr>
+  [end]
+  [if-any more_changes]
+    <tr>
+    <td colspan="5">[[]<a href="[more_changes_href]">...</a>]</td>
     </tr>
   [end]
   </tbody>
