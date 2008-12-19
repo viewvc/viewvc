@@ -29,6 +29,13 @@ from svn import fs, repos, core, client, delta
 if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 3, 1):
   raise Exception, "Version requirement not met (needs 1.3.1 or better)"
 
+
+### Pre-1.5 Subversion doesn't have SVN_ERR_CEASE_INVOCATION
+try:
+  _SVN_ERR_CEASE_INVOCATION = core.SVN_ERR_CEASE_INVOCATION
+except:
+  _SVN_ERR_CEASE_INVOCATION = core.SVN_ERR_CANCELLED
+
   
 def _allow_all(root, path, pool):
   """Generic authz_read_func that permits access to all paths"""
@@ -165,7 +172,7 @@ class NodeHistory:
           return
     self.histories.append([revision, _cleanup_path(path)])
     if self.limit and len(self.histories) == self.limit:
-      raise core.SubversionException("", core.SVN_ERR_CEASE_INVOCATION)
+      raise core.SubversionException("", _SVN_ERR_CEASE_INVOCATION)
 
   def __getitem__(self, idx):
     return self.histories[idx]
@@ -188,7 +195,7 @@ def _get_history(svnrepos, path, rev, path_type, limit=0, options={}):
     repos.svn_repos_history(svnrepos.fs_ptr, path, history.add_history,
                             1, rev, options.get('svn_cross_copies', 0))
   except core.SubversionException, e:
-    if e.apr_err != core.SVN_ERR_CEASE_INVOCATION:
+    if e.apr_err != _SVN_ERR_CEASE_INVOCATION:
       raise
 
   # Now, iterate over those history items, checking for changes of
