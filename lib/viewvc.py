@@ -3214,6 +3214,7 @@ def view_revision(request):
   more_changes_href = None
   first_changes = None
   first_changes_href = None
+  num_changes = len(changes)
   if limit_changes and len(changes) > limit_changes:
     more_changes = len(changes) - limit_changes
     params = query_dict.copy()
@@ -3316,6 +3317,7 @@ def view_revision(request):
     'changes' : changes,
     'prev_href' : prev_rev_href,
     'next_href' : next_rev_href,
+    'num_changes' : num_changes,
     'limit_changes': limit_changes,
     'more_changes': more_changes,
     'more_changes_href': more_changes_href,
