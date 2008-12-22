@@ -20,6 +20,13 @@ import re
 import vclib
 import dbi
 
+## Current CVSDB version number.
+##
+## Version 0 was the original Bonsai-compatible version.
+##
+## Version 1 added the 'metadata' table (which hold the 'version' key).
+##
+CVSDB_VERSION = 1
 
 ## error
 error = "cvsdb error"
@@ -37,6 +44,7 @@ class CheckinDatabase:
         self._passwd = passwd
         self._database = database
         self._row_limit = row_limit
+        self._version = None
 
         ## database lookup caches
         self._get_cache = {}
@@ -48,6 +56,19 @@ class CheckinDatabase:
             self._host, self._port, self._user, self._passwd, self._database)
         cursor = self.db.cursor()
         cursor.execute("SET AUTOCOMMIT=1")
+        table_list = self.GetTableList()
+        if 'metadata' in table_list:
+            version = self.GetMetadataValue("version")
+            if version is None:
+                self._version = 0
+            else:
+                self._version = int(version)
+        else:
+            self._version = 0
+        if self._version > CVSDB_VERSION:
+            raise Exception("Database version %d is newer than the last "
+                            "version supported by this software."
+                            % (self._version))
 
     def sql_get_id(self, table, column, value, auto_set):
         sql = "SELECT id FROM %s WHERE %s=%%s" % (table, column)
@@ -147,6 +168,42 @@ class CheckinDatabase:
 
         return list
 
+    def GetTableList(self):
+        sql = "SHOW TABLES"
+        cursor = self.db.cursor()
+        cursor.execute(sql)
+        list = []
+        while 1:
+            row = cursor.fetchone()
+            if row == None:
+                break
+            list.append(row[0])
+        return list
+        
+    def GetMetadataValue(self, name):
+        sql = "SELECT value FROM metadata WHERE name=%s"
+        sql_args = (name)
+        cursor = self.db.cursor()
+        cursor.execute(sql, sql_args)
+        try:
+            (value,) = cursor.fetchone()
+        except TypeError:
+            return None
+        return value
+        
+    def SetMetadataValue(self, name, value):
+        assert(self._version > 0)
+        sql = "REPLACE INTO metadata (name, value) VALUES (%s, %s)"
+        sql_args = (name, value)
+        cursor = self.db.cursor()
+        try:
+            cursor.execute(sql, sql_args)
+        except Exception, e:
+            raise Exception("Error setting metadata: '%s'\n"
+                            "\tname  = %s\n"
+                            "\tvalue = %s\n"
+                            % (str(e), name, value))
+        
     def GetBranchID(self, branch, auto_set = 1):
         return self.get_id("branches", "branch", branch, auto_set)
 
