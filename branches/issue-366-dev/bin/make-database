@@ -232,13 +232,31 @@ INSERT INTO metadata (name, value) VALUES ('version', '1');
 """
 
 BONSAI_COMPAT="""
-Creating Bonsai-compatible database version.  Some ViewVC features may not
-be available, or may not perform especially well.
+WARNING:  Creating Bonsai-compatible legacy database version.  Some ViewVC
+features may not be available, or may not perform especially well.
+
 """
 
 ## ------------------------------------------------------------------------
 
 if __name__ == "__main__":
+
+  if "--help" in sys.argv[1:]:
+    sys.stderr.write("""\
+Usage: %s [OPTIONS]
+
+Create and initialize a ViewVC commits database.  You will be prompted for
+a MySQL hostname, and the username and password of a MySQL user who
+has permission to create this database and its collection of tables.
+
+Options:
+
+  --bonsai-compatible       Create the database using the original ViewCVS
+                            schema, which was designed for compatibility
+                            with Bonsai.
+""" % (os.path.basename(sys.argv[0])))
+    sys.exit(0)
+    
   try:
     print INTRO_TEXT
 
