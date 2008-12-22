@@ -130,7 +130,8 @@ CREATE TABLE tags (
 """
 
 ## ------------------------------------------------------------------------
-## Version 1:  Adds the 'metadata' table.
+## Version 1:  Adds the 'metadata' table.  Adds 'descid' index to
+##             'checkins' table.
 ##
 DATABASE_SCRIPT_VERSION_1="""\
 DROP TABLE IF EXISTS branches;
@@ -161,7 +162,8 @@ CREATE TABLE checkins (
   KEY repositoryid_2 (repositoryid),
   KEY dirid (dirid),
   KEY fileid (fileid),
-  KEY branchid (branchid)
+  KEY branchid (branchid),
+  KEY descid (descid)
 ) TYPE=MyISAM;
 
 DROP TABLE IF EXISTS descs;

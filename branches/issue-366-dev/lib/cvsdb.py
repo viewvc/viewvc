@@ -515,33 +515,50 @@ class CheckinDatabase:
         cursor = self.db.cursor()
         cursor.execute(sql, sql_args)
         
+    def sql_purge(self, table, key, fkey, ftable):
+        sql = "DELETE FROM %s WHERE %s NOT IN (SELECT %s FROM %s)" \
+              % (table, key, fkey, ftable)
+        cursor = self.db.cursor()
+        cursor.execute(sql)
+
     def PurgeRepository(self, repository):
         rep_id = self.GetRepositoryID(repository)
         if not rep_id:
             raise Exception, "Unknown repository '%s'" % (repository)
-        
-        sql = "SELECT * FROM checkins WHERE repositoryid=%s"
-        sql_args = (rep_id, )
-        cursor = self.db.cursor()
-        cursor.execute(sql, sql_args)
-        checkins = []
-        while 1:
-            try:
-                (ci_type, ci_when, who_id, repository_id,
-                 dir_id, file_id, revision, sticky_tag, branch_id,
-                 plus_count, minus_count, description_id) = cursor.fetchone()
-            except TypeError:
-                break
-            checkins.append([file_id, dir_id, branch_id, description_id, who_id])
 
-        #self.sql_delete('repositories', 'id', rep_id)
-        self.sql_delete('checkins', 'repositoryid', rep_id)
-        for checkin in checkins:
-            self.sql_delete('files', 'id', checkin[0], 'fileid')
-            self.sql_delete('dirs', 'id', checkin[1], 'dirid')
-            self.sql_delete('branches', 'id', checkin[2], 'branchid')
-            self.sql_delete('descs', 'id', checkin[3], 'descid')
-            self.sql_delete('people', 'id', checkin[4], 'whoid')
+        if (self._version > 0):
+            self.sql_delete('repositories', 'id', rep_id)
+            self.sql_purge('checkins', 'repositoryid', 'id', 'repositories')
+            self.sql_purge('files', 'id', 'fileid', 'checkins')
+            self.sql_purge('dirs', 'id', 'dirid', 'checkins')
+            self.sql_purge('branches', 'id', 'branchid', 'checkins')
+            self.sql_purge('descs', 'id', 'descid', 'checkins')
+            self.sql_purge('people', 'id', 'whoid', 'checkins')
+        else:
+            sql = "SELECT * FROM checkins WHERE repositoryid=%s"
+            sql_args = (rep_id, )
+            cursor = self.db.cursor()
+            cursor.execute(sql, sql_args)
+            checkins = []
+            while 1:
+                try:
+                    (ci_type, ci_when, who_id, repository_id,
+                     dir_id, file_id, revision, sticky_tag, branch_id,
+                     plus_count, minus_count, description_id) = \
+                     cursor.fetchone()
+                except TypeError:
+                    break
+                checkins.append([file_id, dir_id, branch_id,
+                                 description_id, who_id])
+
+            #self.sql_delete('repositories', 'id', rep_id)
+            self.sql_delete('checkins', 'repositoryid', rep_id)
+            for checkin in checkins:
+                self.sql_delete('files', 'id', checkin[0], 'fileid')
+                self.sql_delete('dirs', 'id', checkin[1], 'dirid')
+                self.sql_delete('branches', 'id', checkin[2], 'branchid')
+                self.sql_delete('descs', 'id', checkin[3], 'descid')
+                self.sql_delete('people', 'id', checkin[4], 'whoid')
 
 ## the Commit class holds data on one commit, the representation is as
 ## close as possible to how it should be committed and retrieved to the
