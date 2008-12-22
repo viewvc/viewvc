@@ -20,13 +20,14 @@ import re
 import vclib
 import dbi
 
-## Current CVSDB version number.
+## Current commits database schema version number.
 ##
 ## Version 0 was the original Bonsai-compatible version.
 ##
-## Version 1 added the 'metadata' table (which hold the 'version' key).
+## Version 1 added the 'metadata' table (which holds the 'version' key)
+## and renamed all the 'repository'-related stuff to be 'root'-
 ##
-CVSDB_VERSION = 1
+CURRENT_SCHEMA_VERSION = 1
 
 ## error
 error = "cvsdb error"
@@ -65,7 +66,7 @@ class CheckinDatabase:
                 self._version = int(version)
         else:
             self._version = 0
-        if self._version > CVSDB_VERSION:
+        if self._version > CURRENT_SCHEMA_VERSION:
             raise Exception("Database version %d is newer than the last "
                             "version supported by this software."
                             % (self._version))
@@ -308,7 +309,9 @@ class CheckinDatabase:
         minus_count = commit.GetMinusCount() or '0'
         description_id = self.GetDescriptionID(commit.GetDescription())
 
-        sql = "REPLACE INTO checkins"\
+        commits_table = self._version >= 1 and 'commits' or 'checkins'
+        sql = "REPLACE INTO %s" % (commits_table)
+        sql = sql + \
               "  (type,ci_when,whoid,repositoryid,dirid,fileid,revision,"\
               "   stickytag,branchid,addedlines,removedlines,descid)"\
               "VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
@@ -361,58 +364,69 @@ class CheckinDatabase:
         return "(%s)" % (string.join(sqlList, " OR "))
 
     def CreateSQLQueryString(self, query):
-        tableList = [("checkins", None)]
+        commits_table = self._version >= 1 and 'commits' or 'checkins'
+        tableList = [(commits_table, None)]
         condList = []
 
         if len(query.repository_list):
             tableList.append(("repositories",
-                              "(checkins.repositoryid=repositories.id)"))
+                              "(%s.repositoryid=repositories.id)"
+                              % (commits_table)))
             temp = self.SQLQueryListString("repositories.repository",
                                            query.repository_list)
             condList.append(temp)
 
         if len(query.branch_list):
-            tableList.append(("branches", "(checkins.branchid=branches.id)"))
+            tableList.append(("branches",
+                              "(%s.branchid=branches.id)" % (commits_table)))
             temp = self.SQLQueryListString("branches.branch",
                                            query.branch_list)
             condList.append(temp)
 
         if len(query.directory_list):
-            tableList.append(("dirs", "(checkins.dirid=dirs.id)"))
+            tableList.append(("dirs",
+                              "(%s.dirid=dirs.id)" % (commits_table)))
             temp = self.SQLQueryListString("dirs.dir", query.directory_list)
             condList.append(temp)
             
         if len(query.file_list):
-            tableList.append(("files", "(checkins.fileid=files.id)"))
+            tableList.append(("files",
+                              "(%s.fileid=files.id)" % (commits_table)))
             temp = self.SQLQueryListString("files.file", query.file_list)
             condList.append(temp)
             
         if len(query.author_list):
-            tableList.append(("people", "(checkins.whoid=people.id)"))
+            tableList.append(("people",
+                              "(%s.whoid=people.id)" % (commits_table)))
             temp = self.SQLQueryListString("people.who", query.author_list)
             condList.append(temp)
             
         if len(query.comment_list):
-            tableList.append(("descs", "(checkins.descid=descs.id)"))
+            tableList.append(("descs",
+                              "(%s.descid=descs.id)" % (commits_table)))
             temp = self.SQLQueryListString("descs.description",
                                            query.comment_list)
             condList.append(temp)
             
         if query.from_date:
-            temp = "(checkins.ci_when>=\"%s\")" % (str(query.from_date))
+            temp = "(%s.ci_when>=\"%s\")" \
+                   % (commits_table, str(query.from_date))
             condList.append(temp)
 
         if query.to_date:
-            temp = "(checkins.ci_when<=\"%s\")" % (str(query.to_date))
+            temp = "(%s.ci_when<=\"%s\")" \
+                   % (commits_table, str(query.to_date))
             condList.append(temp)
 
         if query.sort == "date":
-            order_by = "ORDER BY checkins.ci_when DESC,descid"
+            order_by = "ORDER BY %s.ci_when DESC,descid" % (commits_table)
         elif query.sort == "author":
-            tableList.append(("people", "(checkins.whoid=people.id)"))
+            tableList.append(("people",
+                              "(%s.whoid=people.id)" % (commits_table)))
             order_by = "ORDER BY people.who,descid"
         elif query.sort == "file":
-            tableList.append(("files", "(checkins.fileid=files.id)"))
+            tableList.append(("files",
+                              "(%s.fileid=files.id)" % (commits_table)))
             order_by = "ORDER BY files.file,descid"
 
         ## exclude duplicates from the table list, and split out join
@@ -438,8 +452,8 @@ class CheckinDatabase:
         elif self._row_limit:
             limit = "LIMIT %s" % (str(self._row_limit))
 
-        sql = "SELECT checkins.* FROM %s %s %s %s" % (
-            tables, conditions, order_by, limit)
+        sql = "SELECT %s.* FROM %s %s %s %s" \
+              % (commits_table, tables, conditions, order_by, limit)
 
         return sql
     
@@ -490,8 +504,13 @@ class CheckinDatabase:
         if file_id == None:
             return None
 
-        sql = "SELECT * FROM checkins WHERE "\
-              "  repositoryid=%s AND dirid=%s AND fileid=%s AND revision=%s"
+        commits_table = self._version >= 1 and 'commits' or 'checkins'
+        sql = "SELECT * FROM %s WHERE "\
+              "  repositoryid=%%s "\
+              "  AND dirid=%%s"\
+              "  AND fileid=%%s"\
+              "  AND revision=%%s"\
+              % (commits_table)
         sql_args = (repository_id, dir_id, file_id, commit.GetRevision())
 
         cursor = self.db.cursor()
@@ -508,10 +527,11 @@ class CheckinDatabase:
     def sql_delete(self, table, key, value, keep_fkey = None):
         sql = "DELETE FROM %s WHERE %s=%%s" % (table, key)
         sql_args = (value, )
+        commits_table = self._version >= 1 and 'commits' or 'checkins'
         if keep_fkey:
-          sql += " AND %s NOT IN (SELECT %s FROM checkins WHERE %s = %%s)" \
-                 % (key, keep_fkey, keep_fkey)
-          sql_args = (value, value)
+            sql += " AND %s NOT IN (SELECT %s FROM %s WHERE %s = %%s)" \
+                   % (key, keep_fkey, commits_table, keep_fkey)
+            sql_args = (value, value)
         cursor = self.db.cursor()
         cursor.execute(sql, sql_args)
         
@@ -526,14 +546,14 @@ class CheckinDatabase:
         if not rep_id:
             raise Exception, "Unknown repository '%s'" % (repository)
 
-        if (self._version > 0):
+        if (self._version >= 1):
             self.sql_delete('repositories', 'id', rep_id)
-            self.sql_purge('checkins', 'repositoryid', 'id', 'repositories')
-            self.sql_purge('files', 'id', 'fileid', 'checkins')
-            self.sql_purge('dirs', 'id', 'dirid', 'checkins')
-            self.sql_purge('branches', 'id', 'branchid', 'checkins')
-            self.sql_purge('descs', 'id', 'descid', 'checkins')
-            self.sql_purge('people', 'id', 'whoid', 'checkins')
+            self.sql_purge('commits', 'repositoryid', 'id', 'repositories')
+            self.sql_purge('files', 'id', 'fileid', 'commits')
+            self.sql_purge('dirs', 'id', 'dirid', 'commits')
+            self.sql_purge('branches', 'id', 'branchid', 'commits')
+            self.sql_purge('descs', 'id', 'descid', 'commits')
+            self.sql_purge('people', 'id', 'whoid', 'commits')
         else:
             sql = "SELECT * FROM checkins WHERE repositoryid=%s"
             sql_args = (rep_id, )

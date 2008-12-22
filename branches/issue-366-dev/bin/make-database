@@ -131,7 +131,7 @@ CREATE TABLE tags (
 
 ## ------------------------------------------------------------------------
 ## Version 1:  Adds the 'metadata' table.  Adds 'descid' index to
-##             'checkins' table.
+##             'checkins' table, and renames that table to 'commits'.
 ##
 DATABASE_SCRIPT_VERSION_1="""\
 DROP TABLE IF EXISTS branches;
@@ -142,8 +142,8 @@ CREATE TABLE branches (
   UNIQUE branch (branch)
 ) TYPE=MyISAM;
 
-DROP TABLE IF EXISTS checkins;
-CREATE TABLE checkins (
+DROP TABLE IF EXISTS commits;
+CREATE TABLE commits (
   type enum('Change','Add','Remove'),
   ci_when datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
   whoid mediumint(9) DEFAULT '0' NOT NULL,
