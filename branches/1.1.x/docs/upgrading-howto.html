@@ -223,16 +223,23 @@ td {
 <div class="h3">
 <h3>Checkin Database</h3>
 
-<p>In ViewVC 1.1, the <code>svndbadmin</code> program's "rebuild"
-   subcommand has had its purpose become more defined.  It no longer
-   accepts a revision argument, and therefore can now only be used to
-   completely rebuild the entirety of the checkin database information
-   for a Subversion repository (instead of being able to only update
-   the information related to single Subversion revision).  For
-   per-revision updating, use <code>svndbadmin update</code> and
+<p>ViewVC 1.1 introduces to the <code>cvsdbadmin</code>
+   and <code>svndbadmin</code> tools a new "purge" operation, which
+   allows you to remove all the information related to a given root
+   from your checkins database (without disturbing the information
+   associated with other roots).  Likewise, the "rebuild" command in
+   those tools now implies a "purge" followed by an update.</p>
+
+<p>As a related change, the <code>svndbadmin</code> program's
+   "rebuild" subcommand has had its purpose become more defined.  It
+   no longer accepts a revision argument, and therefore can now only
+   be used to completely rebuild the entirety of the checkin database
+   information for a Subversion repository (instead of being able to
+   only update the information related to single Subversion revision).
+   For per-revision updating, use <code>svndbadmin update</code> and
    provide a revision (or revision range).  And to get the previous
-   rebuild-a-revision effect, pass the new <code>--force</code>
-   option to <code>svndbadmin update</code>.</p>
+   rebuild-a-revision effect, pass the new <code>--force</code> option
+   to <code>svndbadmin update</code>.</p>
 
 <p>In other words, where you once did this:</p>
 
@@ -245,6 +252,19 @@ td {
 <blockquote><pre>$ svndbadmin update /path/to/repository 1234 --force
 </pre>
 </blockquote>
+
+<p>To enhance the performance of the new "purge" operation, ViewVC 1.1
+   introduces some slight changes to the checkin database schema.  If
+   you use the <code>make-database</code> tool to (re)create your
+   checkins database, it will by default employ the new database
+   schema.  This should cause the database to be virtually unusable by
+   previous versions of ViewVC, and that's by design.  If, however,
+   you need to (re)create your checkins database and you require
+   compatibility with previous versions of ViewVC or ViewCVS, simply
+   pass the "--version=1.0" option to the <code>make-database</code>
+   script.  Note that your "purge" and "rebuild" operations could be
+   abysmally slow, though, as that version of the database schema is
+   not optimized for those operations.</p>
 
 </div>
 
@@ -673,7 +693,7 @@ allow_tar = 1
 <h3>Checkin Database</h3>
     
 <p>ViewVC 1.0 reads and writes commit times in the MySQL database in
-   UTC time rather than local time. This can cause times displayed on
+   UTC time rather than local time.  This can cause times displayed on
    the query page to be a few hours off if an old database is being
    used with a new version of ViewVC.  The best way to fix this is to
    rebuild the database with the new version of cvsdbadmin, but it
