@@ -49,7 +49,7 @@
     [else]
       [is changes.type "add"]
         <tr>
-          <td id="l[changes.line_number]">[if-any right.annotate_href]<a href="[right.annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
+          <td class="vc_diff_line_number" id="l[changes.line_number]">[if-any right.annotate_href]<a href="[right.annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
           <td class="vc_diff_empty">&nbsp;</td>
           <td class="vc_diff_add">&nbsp;[changes.right]</td>
         </tr>
@@ -64,7 +64,7 @@
           [is changes.type "change"]
             <tr>
               [if-any changes.have_right]
-                <td id="l[changes.line_number]">[if-any right.annotate_href]<a href="[right.annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
+                <td class="vc_diff_line_number" id="l[changes.line_number]">[if-any right.annotate_href]<a href="[right.annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
               [else]
                 <td></td>
               [end]
@@ -112,7 +112,7 @@
                   </tr>
                 [else]
                   <tr>
-                    <td id="l[changes.line_number]">[if-any right.annotate_href]<a href="[right.annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
+                    <td class="vc_diff_line_number" id="l[changes.line_number]">[if-any right.annotate_href]<a href="[right.annotate_href]#l[changes.line_number]">[changes.line_number]</a>[else][changes.line_number][end]</td>
                     <td class="vc_diff_nochange">&nbsp;[changes.left]</td>
                     <td class="vc_diff_nochange">&nbsp;[changes.right]</td>
                   </tr>
