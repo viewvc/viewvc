@@ -18,15 +18,7 @@
 
 import os, sys, string
 import popen2
-
-INTRO_TEXT = """\
-This script creates the database and tables in MySQL used by the
-ViewVC checkin database.  You will be prompted for:  database server
-hostname, database user, database user password, and database name.
-This script will use the 'mysql' program to create the database for
-you.  You will then need to set the appropriate parameters in the
-[cvsdb] section of your viewvc.conf file.
-"""
+import getopt
 
 ## ------------------------------------------------------------------------
 ## Stuff common to all schemas
@@ -239,50 +231,103 @@ features may not be available, or may not perform especially well.
 
 ## ------------------------------------------------------------------------
 
-if __name__ == "__main__":
-
-  if "--help" in sys.argv[1:]:
-    sys.stderr.write("""\
+def usage_and_exit(errmsg=None):
+  stream = errmsg is None and sys.stdout or sys.stderr
+  stream.write("""\
 Usage: %s [OPTIONS]
 
-Create and initialize a ViewVC commits database.  You will be prompted for
-a MySQL hostname, and the username and password of a MySQL user who
-has permission to create this database and its collection of tables.
+This script creates the database and tables in MySQL used by the
+ViewVC checkin database.  In order to operate correctly, it needs to
+know the following:  your database server hostname, database user,
+database user password, and database name.  (You will be prompted for
+any of this information that you do not provide via command-line
+options.)  This script will use the 'mysql' program to create the
+database for you.  You will then need to set the appropriate
+parameters in the [cvsdb] section of your viewvc.conf file.
 
 Options:
 
-  --bonsai-compatible       Create the database using the original ViewCVS
-                            schema, which was designed for compatibility
-                            with Bonsai.
-""" % (os.path.basename(sys.argv[0])))
-    sys.exit(0)
-    
-  try:
-    print INTRO_TEXT
+  --dbname=ARG        Use ARG as the ViewVC database name to create.
+                      [Default: ViewVC]
 
-    # Prompt for necessary information
-    host = raw_input("MySQL Hostname [default: localhost]: ") or ""
-    user = raw_input("MySQL User: ")
-    passwd = raw_input("MySQL Password: ")
-    dbase = raw_input("ViewVC Database Name [default: ViewVC]: ") or "ViewVC"
+  --help              Show this usage message.
+  
+  --hostname=ARG      Use ARG as the hostname for the MySQL connection.
+                      [Default: localhost]
+
+  --password=ARG      Use ARG as the password for the MySQL connection.
+
+  --username=ARG      Use ARG as the username for the MySQL connection.
+
+  --version=ARG       Create the database using the schema employed by
+                      version ARG of ViewVC.  Valid values are:
+                      [ "1.0" ]
+                            
+""" % (os.path.basename(sys.argv[0])))
+  if errmsg is not None:
+    stream.write("[ERROR] %s.\n" % (errmsg))
+    sys.exit(1)
+  sys.exit(0)
+
+
+if __name__ == "__main__":
+  try:
+    # Parse the command-line options, if any.
+    dbname = version = hostname = username = password = None
+    opts, args = getopt.getopt(sys.argv[1:], '', [ 'dbname=',
+                                                   'help',
+                                                   'hostname=',
+                                                   'password=',
+                                                   'username=',
+                                                   'version=',
+                                                   ])
+    if len(args) > 0:
+      usage_and_exit("Unexpected command-line parameters")
+    for name, value in opts:
+      if name == '--help':
+        usage_and_exit(0)
+      elif name == '--dbname':
+        dbname = value
+      elif name == '--hostname':
+        hostname = value
+      elif name == '--username':
+        username = value
+      elif name == '--password':
+        password = value
+      elif name == '--version':
+        if value in ["1.0"]:
+          version = value
+        else:
+          usage_and_exit("Invalid version specified")
+
+    # Prompt for information not provided via command-line options.
+    if hostname is None:
+      hostname = raw_input("MySQL Hostname [default: localhost]: ") or ""
+    if username is None:
+      username = raw_input("MySQL User: ")
+    if password is None:
+      password = raw_input("MySQL Password: ")
+    if dbname is None:
+      dbname = raw_input("ViewVC Database Name [default: ViewVC]: ") or "ViewVC"
 
     # Create the database
-    dscript = string.replace(DATABASE_SCRIPT_COMMON, "<dbname>", dbase)
-    if "--bonsai-compatible" in sys.argv[1:]:
+    dscript = string.replace(DATABASE_SCRIPT_COMMON, "<dbname>", dbname)
+    if version == "1.0":
       print BONSAI_COMPAT
       dscript = dscript + DATABASE_SCRIPT_VERSION_0
     else:
       dscript = dscript + DATABASE_SCRIPT_VERSION_1
-    host_option = host and "--host=%s" % (host) or ""
+
+    host_option = hostname and "--host=%s" % (hostname) or ""
     if sys.platform == "win32":
       cmd = "mysql --user=%s --password=%s %s "\
-            % (user, passwd, host_option)
+            % (username, password, host_option)
       mysql = os.popen(cmd, "w") # popen2.Popen3 is not provided on windows
       mysql.write(dscript)
       status = mysql.close()
     else:
       cmd = "{ mysql --user=%s --password=%s %s ; } 2>&1" \
-            % (user, passwd, host_option)
+            % (username, password, host_option)
       pipes = popen2.Popen3(cmd)
       pipes.tochild.write(dscript)
       pipes.tochild.close()
@@ -290,10 +335,11 @@ Options:
       status = pipes.wait()
 
     if status:
-      print "[ERROR] the database did not create sucessfully."
+      print "[ERROR] The database did not create sucessfully."
       sys.exit(1)
 
-    print "Database created successfully."
+    print "Database created successfully.  Don't forget to configure the "
+    print "[cvsdb] section of your viewvc.conf file."
   except KeyboardInterrupt:
     pass
   sys.exit(0)
