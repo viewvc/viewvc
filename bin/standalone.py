@@ -226,9 +226,16 @@ If this doesn't work, please click on the link above.
             save_stdout = sys.stdout
             save_stderr = sys.stderr
             # For external tools like enscript we also need to redirect
-            # the real stdout file descriptor. (On windows, reassigning the
-            # sys.stdout variable is sufficient because pipe_cmds makes it
-            # the standard output for child processes.)
+            # the real stdout file descriptor.
+            #
+            # FIXME:  This code used to carry the following comment:
+            #
+            #   (On windows, reassigning the sys.stdout variable is sufficient
+            #   because pipe_cmds makes it the standard output for child
+            #   processes.)
+            #
+            # But we no longer use pipe_cmds.  So at the very least, the
+            # comment is stale.  Is the code okay, though?
             if sys.platform != "win32": save_realstdout = os.dup(1) 
             try:
                 try:
