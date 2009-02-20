@@ -35,6 +35,7 @@ Version 1.1.0 (released ??-???-????)
   * recognize Subversion svn:mime-type property values (issue #364)
   * hide CVS files when viewing tags/branches on which they don't exist
   * add support for hiding errorful entries from the directory view (issue #105)
+  * fix directory view sorting UI
 
 Version 1.0.7 (released 14-Oct-2008)
 
