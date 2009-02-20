@@ -1,5 +1,7 @@
 Version 1.2.0 (released ??-???-????)
 
+  * add optional support for character encoding detection (issue #400)
+
 Version 1.1.0 (released ??-???-????)
 
   * add support for full content diffs (issue #153)

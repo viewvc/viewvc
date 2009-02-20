@@ -479,6 +479,12 @@ short_log_len = 80
 # should we colorize known file content syntaxes?  (requires Pygments module)
 enable_syntax_coloration = 1
 
+# Should we attempt to detect versioned file character encodings?
+# (Requires 'chardet' module, and is currently used only by the syntax
+# coloration logic -- if enabled -- for the 'markup' and 'annotate'
+# views; see 'enable_syntax_coloration'.)
+detect_encoding = 0
+
 # Use CvsGraph. See http://www.akhphd.au.dk/~bertho/cvsgraph/ for
 # documentation and download. 
 use_cvsgraph = 0
