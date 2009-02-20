@@ -1892,6 +1892,9 @@ def view_directory(request):
     data['sortby_%s_href' % sortby] = request.get_url(params={'sortdir':
                                                               revsortdir},
                                                       escape=1)
+  # CVS doesn't support sorting by rev
+  if request.roottype == "cvs":
+    data['sortby_rev_href'] = None
 
   # set cvs-specific fields
   if request.roottype == 'cvs':
