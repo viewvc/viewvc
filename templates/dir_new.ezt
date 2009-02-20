@@ -4,23 +4,31 @@
 <thead>
 <tr>
   <th style="width: 200px" class="vc_header[is sortby "file"]_sort[end]">
-    <a href="[sortby_file_href]#dirlist">File
+    [if-any sortby_file_href]<a href="[sortby_file_href]#dirlist">File</a>[else]File[end]
     [is sortby "file"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
         width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
-    </a>
   </th>
   <th style="width: 96px" class="vc_header"></th>
+  [if-any sortby_rev_href]
   <th class="vc_header[is sortby "rev"]_sort[end]">
-    <a href="[sortby_rev_href]#dirlist">Last Change
+    <a href="[sortby_rev_href]#dirlist">Last Change</a>
     [is sortby "rev"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
         width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
-    </a>
+  [else]
+  <th class="vc_header[is sortby "date"]_sort[end]">
+    [if-any sortby_date_href]<a href="[sortby_date_href]#dirlist">Last Change</a>[else]Last Change[end]
+    [is sortby "date"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](date)[end]"
+        width="13" height="13"
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
+    [end]
+  [end]
   </th>
 </tr>
 </thead>
