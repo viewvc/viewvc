@@ -4,50 +4,45 @@
 <thead>
 <tr>
   <th class="vc_header[is sortby "file"]_sort[end]" colspan="2">
-    <a href="[sortby_file_href]#dirlist">File
+    [if-any sortby_file_href]<a href="[sortby_file_href]#dirlist">File</a>[else]File[end]
     [is sortby "file"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
         width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
-    </a>
   </th>
   <th class="vc_header[is sortby "rev"]_sort[end]">
-    <a href="[sortby_rev_href]#dirlist">Rev.
+   [if-any sortby_rev_href]<a href="[sortby_rev_href]#dirlist">Rev.</a>[else]Rev.[end]
     [is sortby "rev"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
         width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
-    </a>
   </th>
   <th class="vc_header[is sortby "date"]_sort[end]">
-    <a href="[sortby_date_href]#dirlist">Age
+    [if-any sortby_date_href]<a href="[sortby_date_href]#dirlist">Age</a>[else]Age[end]
     [is sortby "date"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
         width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
-    </a>
   </th>
   <th class="vc_header[is sortby "author"]_sort[end]">
-    <a href="[sortby_author_href]#dirlist">Author
+    [if-any sortby_author_href]<a href="[sortby_author_href]#dirlist">Author</a>[else]Author[end]
     [is sortby "author"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
         width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
-    </a>
   </th>
 [is cfg.options.show_logs "1"]
   <th class="vc_header[is sortby "log"]_sort[end]">
-    <a href="[sortby_log_href]#dirlist">Last log entry
+    [if-any sortby_log_href]<a href="[sortby_log_href]#dirlist">Last log entry</a>[else]Last log entry[end]
     [is sortby "log"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
         width="13" height="13"
         src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
     [end]
-    </a>
   </th>
 [end]
 </tr>
