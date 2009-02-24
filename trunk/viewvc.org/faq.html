@@ -63,6 +63,9 @@
 <li><a href="#installation">Where does the installation documentation,
     if any, live?</a></li>
 
+<li><a href="#vhost-root">How can I expose ViewVC at the root of a
+    virtual host on my webserver?</a></li>
+
 <li><a href="#authz-support">Does ViewVC support path-based
     authorization, such as Subversion's authz-file mechanism?</a></li>
 
@@ -148,6 +151,23 @@
    to read the upgrade documentation, found
    at <a href="http://viewvc.tigris.org/source/browse/*checkout*/viewvc/trunk/docs/upgrading-howto.html"
    >http://viewvc.tigris.org/source/browse/*checkout*/viewvc/trunk/docs/upgrading-howto.html</a>.</p>
+</div>
+
+<div id="vhost-root">
+<p class="faq-atitle">How can I expose ViewVC at the root of a virtual
+   host on my webserver?</p>
+
+<p>If you want to dedicate a virtual host on your server just to
+   ViewVC, such the root directory of that host maps to ViewVC's root
+   display, you can do so by placing the following lines inside
+   the <code>VirtualHost</code>Apache configuration:</p>
+
+<blockquote><pre>Alias /docroot /usr/local/viewvc/templates/docroot
+ScriptAlias / /usr/local/viewvc/bin/cgi/viewvc.cgi/</pre></blockquote>
+
+<p>The trick appears to be the presence of the trailing slash
+   character on the <code>ScriptAlias</code> directive.</p>
+
 </div>
 
 <div id="authz-support">
