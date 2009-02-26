@@ -112,7 +112,10 @@ class Request:
 
     # process the Accept-Language: header
     hal = server.getenv('HTTP_ACCEPT_LANGUAGE','')
-    self.lang_selector = accept.language(hal)
+    try:
+      self.lang_selector = accept.language(hal)
+    except accept.AcceptLanguageParseError:
+      self.lang_selector = accept.language('en')
     self.language = self.lang_selector.select_from(cfg.general.languages)
 
     # load the key/value files, given the selected language
