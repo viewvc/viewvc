@@ -40,7 +40,7 @@ import fnmatch
 class Config:
   _sections = ('general', 'utilities', 'options', 'cvsdb', 'templates')
   _force_multi_value = ('cvs_roots', 'svn_roots', 'languages', 'kv_files',
-                        'root_parents', 'allowed_views')
+                        'root_parents', 'allowed_views', 'mime_types_files')
 
   def __init__(self):
     for section in self._sections:
@@ -197,7 +197,7 @@ class Config:
     self.general.svn_roots = { }
     self.general.root_parents = []
     self.general.default_root = ''
-    self.general.mime_types_file = ''
+    self.general.mime_types_files = ["mimetypes.conf"]
     self.general.address = ''
     self.general.kv_files = [ ]
     self.general.languages = ['en-us']
