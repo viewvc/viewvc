@@ -139,7 +139,7 @@ installation instructions.
       default_root
       root_as_url_component
       rcs_dir
-      mime_types_file
+      mime_types_files
 
    There are some other options that are usually nice to change. See
    viewvc.conf for more information.  ViewVC provides a working,

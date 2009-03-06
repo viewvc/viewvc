@@ -4025,9 +4025,14 @@ def load_config(pathname=None, server=None):
   cfg.set_defaults()
   cfg.load_config(pathname, server and server.getenv("HTTP_HOST"))
 
-  # load mime types file
-  if cfg.general.mime_types_file:
-    mimetypes.init([cfg.general.mime_types_file])
+  # Load mime types file(s), but reverse the order -- our
+  # configuration uses a most-to-least preferred approach, but the
+  # 'mimetypes' package wants things the other way around.
+  if cfg.general.mime_types_files:
+    files = cfg.general.mime_types_files[:]
+    files.reverse()
+    files = map(lambda x: os.path.join(os.path.dirname(pathname), x), files)
+    mimetypes.init(files)
   
   debug.t_end('load-config')
   return cfg

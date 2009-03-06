@@ -60,7 +60,7 @@
 #       default_root
 #       root_as_url_component
 #       rcs_dir
-#       mime_types_file
+#       mime_types_files
 #       the many options in the [utilities] section
 #   
 #    It is usually desirable to change the following variables:
@@ -127,13 +127,26 @@ cvs_roots = cvs: /home/cvsroot
 default_root = cvs
 
 #
-# This is a pathname to a MIME types file to help viewvc to guess the
-# correct MIME type on checkout.  If you are having problems with the
-# default guess on the MIME type, then uncomment this option and point
-# it at a MIME type file.
+# This is a list of pathnames to a set of MIME type mapping files to
+# help ViewVC guess the correct MIME type of a versioned file.  The
+# pathnames listed here are specified in order of authoritativeness
+# either as absolute paths or relative to this configuration file.
 #
-# For example, you can use the mime.types provided by Apache here:
-#mime_types_file = /usr/local/apache2/conf/mime.types
+# As a convenience, ViewVC provides a MIME type mapping file
+# (mimetypes.conf) which is, by default, the preferred provider of
+# MIME type mapping answers, but which is also empty.  If you find
+# that ViewVC is unable to accurately guess MIME types based on the
+# extensions of some of your versioned files, you can add records of
+# your preferred mappings to the provided mimetypes.conf file (or to
+# your system's mapping files, if you wish).
+#
+# You might, for example, wish to have ViewVC also consult the mapping
+# files provided by your operating system and Apache.
+#
+#    mime_types_files = mimetypes.conf,
+#                       /etc/mime.types,
+#                       /usr/local/apache2/conf/mime.types
+mime_types_files = mimetypes.conf
 
 # The address of the local repository maintainer.  (This option is
 # provided only as a convenience for ViewVC installations which are
