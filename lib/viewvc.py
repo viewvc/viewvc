@@ -2991,8 +2991,9 @@ def download_tarball(request):
 
 def view_revision(request):
   if request.roottype == "cvs":
-    raise ViewVCException("Revision view not supported for CVS repositories "
-                           "at this time.", "400 Bad Request")
+    raise debug.ViewVCException("Revision view not supported for CVS "
+                                "repositories at this time.",
+                                "400 Bad Request")
 
   data = common_template_data(request)
   query_dict = request.query_dict
