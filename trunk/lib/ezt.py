@@ -525,7 +525,8 @@ class Template:
     ((valref,), unused, section) = args
     list = _get_value(valref, ctx)
     if isinstance(list, StringType):
-      raise NeedSequenceError()
+      raise NeedSequenceError("The value of '%s' is not a sequence"
+                              % (valref[0]))
     refname = valref[0]
     ctx.for_iterators[refname] = iterator = _iter(list)
     for unused in iterator:
