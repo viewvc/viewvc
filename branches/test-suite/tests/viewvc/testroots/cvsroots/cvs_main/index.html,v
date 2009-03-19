@@ -1,0 +1,32 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2009.03.18.19.00.40;	author cmpilato;	state Exp;
+branches;
+next	;
+commitid	jIpiVlHeVih0ZxGt;
+
+
+desc
+@@
+
+
+1.1
+log
+@Add new index file.
+@
+text
+@<html>
+<head>
+<title>Index</title>
+</head>
+<body>
+<p>This is the index.</p>
+</body>
+</html>
+@
