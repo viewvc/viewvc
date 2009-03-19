@@ -460,7 +460,10 @@ class Template:
   def _cmd_print(self, valrefs, ctx):
     value = _get_value(valrefs[0], ctx)
     args = map(lambda valref, ctx=ctx: _get_value(valref, ctx), valrefs[1:])
-    _write_value(value, args, ctx)
+    try:
+      _write_value(value, args, ctx)
+    except TypeError:
+      raise Exception("Unprintable value type for '%s'" % (str(valrefs[0][0])))
 
   def _cmd_format(self, printer, ctx):
     if type(printer) is TupleType:
