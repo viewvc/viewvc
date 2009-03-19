@@ -339,6 +339,68 @@ class ModPythonServer(ThreadedServer):
     pass
 
 
+class OutfileServer(Server):
+  """Server which mimics a CGI server, but without the overhead of a
+  real web server.  This just manually sets up necessary CGI-ish
+  environment variables, and writes its output to the specified file
+  handle."""
+  
+  def __init__(self, outfile, script_name, username):
+    global server
+    global cgi
+    import cgi
+
+    Server.__init__(self)
+    self.headerSent = 0
+    self.headers = []
+    self.outfile = outfile
+    os.environ['SCRIPT_NAME'] = script_name or ""
+    os.environ['REMOTE_USER'] = username or ""
+    server = self
+
+  def addheader(self, name, value):
+    if not headerSent:
+      self.headers.append((name, value))
+
+  def header(self, content_type='text/html; charset=UTF-8', status=None):
+    if not self.headerSent:
+      self.headerSent = 1
+      self.headers.insert(0, ('Content-Type', content_type))
+      self.headers.insert(0, ('Status', status))
+      for (name, value) in self.headers:
+        self.write('%s: %s\n' % (name, value))
+      self.write('\n')
+
+  def redirect(self, url):
+    self.addheader('Location', url)
+    self.header(status='301 Moved')
+    self.write('This document is located <a href="%s">here</a>.' % url)
+    sys.exit(0)
+
+  def escape(self, s, quote = None):
+    return cgi.escape(s, quote)
+
+  def getenv(self, name, value=None):
+    return os.environ.get(name, value)
+
+  def params(self):
+    return cgi.parse()
+
+  def FieldStorage(fp=None, headers=None, outerboundary="",
+                   environ=os.environ, keep_blank_values=0, strict_parsing=0):
+    return cgi.FieldStorage(fp, headers, outerboundary, environ,
+                            keep_blank_values, strict_parsing)
+
+  def write(self, s):
+    self.outfile.write(s)
+
+  def flush(self):
+    self.outfile.flush()
+
+  def file(self):
+    return self.outfile
+
+
 def fix_iis_url(server, url):
   """When a CGI application under IIS outputs a "Location" header with a url
   beginning with a forward slash, IIS tries to optimise the redirect by not
