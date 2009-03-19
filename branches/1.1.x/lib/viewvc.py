@@ -1201,7 +1201,6 @@ def common_template_data(request, revision=None, mime_type=None):
     'tarball_href' : None,
     'up_href'  : None,
     'log_href' : None,
-    'log_href_rev': None,
     'graph_href': None,
     'rss_href' : None,
     'roots_href' : request.get_url(view_func=view_roots, escape=1, params={}),
