@@ -1173,39 +1173,44 @@ def html_time(request, secs, extended=0):
   return s
 
 def common_template_data(request, revision=None, mime_type=None):
+  """Return a ezt.TemplateData instance with data dictionary items
+  common to most ViewVC views."""
+  
   cfg = request.cfg
-  data = {
+
+  # Initialize data dictionary members (sorted alphanumerically)
+  data = ezt.TemplateData({
+    'annotate_href' : None,
     'cfg' : cfg,
-    'vsn' : __version__,
-    'kv'  : request.kv,
-    'docroot' : cfg.options.docroot is None                        \
+    'docroot' : cfg.options.docroot is None \
                 and request.script_name + '/' + docroot_magic_path \
                 or cfg.options.docroot,
-    'username' : request.username,
-    'where' : request.server.escape(request.where),
-    'roottype' : request.roottype,
+    'download_href' : None,
+    'download_text_href' : None,
+    'graph_href': None,
+    'kv'  : request.kv,
+    'lockinfo' : None,
+    'log_href' : None,
+    'nav_path' : nav_path(request),
+    'pathtype' : None,
+    'prefer_markup' : ezt.boolean(0),
+    'queryform_href' : None,
+    'rev'      : None,
+    'revision_href' : None,
     'rootname' : request.rootname \
                  and request.server.escape(request.rootname) or None,
     'rootpath' : request.rootpath,
-    'pathtype' : None,
-    'nav_path' : nav_path(request),
-    'view'     : _view_codes[request.view_func],
-    'rev'      : None,
-    'lockinfo' : None,
-    'view_href' : None,
-    'annotate_href' : None,
-    'download_href' : None,
-    'download_text_href' : None,
-    'revision_href' : None,
-    'queryform_href' : None,
+    'roots_href' : request.get_url(view_func=view_roots, escape=1, params={}),
+    'roottype' : request.roottype,
+    'rss_href' : None,
     'tarball_href' : None,
     'up_href'  : None,
-    'log_href' : None,
-    'graph_href': None,
-    'rss_href' : None,
-    'roots_href' : request.get_url(view_func=view_roots, escape=1, params={}),
-    'prefer_markup' : ezt.boolean(0),
-  }
+    'username' : request.username,
+    'view'     : _view_codes[request.view_func],
+    'view_href' : None,
+    'vsn' : __version__,
+    'where' : request.server.escape(request.where),
+  })
 
   rev = revision
   if not rev:
@@ -1233,15 +1238,13 @@ def common_template_data(request, revision=None, mime_type=None):
 
   if request.pathtype == vclib.FILE:
     fvi = get_file_view_info(request, request.where, data['rev'], mime_type)
-    data.update({
-      'view_href' : fvi.view_href,
-      'download_href' : fvi.download_href,
-      'download_text_href' : fvi.download_text_href,
-      'annotate_href' : fvi.annotate_href,
-      'revision_href' : fvi.revision_href,
-      'prefer_markup' : fvi.prefer_markup,
-      'log_href' : request.get_url(view_func=view_log, params={}, escape=1)
-      })
+    data['view_href'] = fvi.view_href
+    data['download_href'] = fvi.download_href
+    data['download_text_href'] = fvi.download_text_href
+    data['annotate_href'] = fvi.annotate_href
+    data['revision_href'] = fvi.revision_href
+    data['prefer_markup'] = fvi.prefer_markup
+    data['log_href'] = request.get_url(view_func=view_log, params={}, escape=1)
     if request.roottype == 'cvs' and cfg.options.use_cvsgraph:
       data['graph_href'] = request.get_url(view_func=view_cvsgraph,
                                            params={}, escape=1)
@@ -1447,6 +1450,9 @@ def make_rss_time_string(date, cfg):
     return None
   return time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(date)) + ' UTC'
 
+def make_comma_sep_list_string(items):
+  return string.join(map(lambda x: x.name, items), ', ')
+
 def get_itemprops(request, path_parts, rev):
   itemprops = request.repos.itemprops(path_parts, rev)
   propnames = itemprops.keys()
@@ -1528,7 +1534,7 @@ def markup_or_annotate(request, is_annotate):
     fp.close()
 
   data = common_template_data(request, revision)
-  data.update({
+  data.merge(ezt.TemplateData({
     'mime_type' : mime_type,
     'log' : None,
     'date' : None,
@@ -1548,20 +1554,18 @@ def markup_or_annotate(request, is_annotate):
     'lines' : lines,
     'properties' : get_itemprops(request, path, rev),
     'annotation' : annotation,
-    })
+    }))
 
   if cfg.options.show_log_in_markup:
     options = {'svn_latest_log': 1}  ### FIXME: No longer needed?
     revs = request.repos.itemlog(path, revision, vclib.SORTBY_REV,
                                  0, 1, options)
     entry = revs[-1]
-    data.update({
-        'date' : make_time_string(entry.date, cfg),
-        'author' : entry.author,
-        'changed' : entry.changed,
-        'log' : htmlify(entry.log, cfg.options.mangle_email_addresses),
-        'size' : entry.size,
-        })
+    data['date'] = make_time_string(entry.date, cfg)
+    data['author'] = entry.author
+    data['changed'] = entry.changed
+    data['log'] = htmlify(entry.log, cfg.options.mangle_email_addresses)
+    data['size'] = entry.size
 
     if entry.date is not None:
       data['ago'] = html_time(request, entry.date, 1)
@@ -1569,15 +1573,14 @@ def markup_or_annotate(request, is_annotate):
     if request.roottype == 'cvs':
       branch = entry.branch_number
       prev = entry.prev or entry.parent
-      data.update({
-        'state' : entry.dead and 'dead',
-        'prev' : prev and prev.string,
-        'vendor_branch' : ezt.boolean(branch and branch[2] % 2 == 1),
-        'branches' : string.join(map(lambda x: x.name, entry.branches), ', '),
-        'tags' : string.join(map(lambda x: x.name, entry.tags), ', '),
-        'branch_points': string.join(map(lambda x: x.name,
-                                         entry.branch_points), ', ')
-        })
+      data['state'] = entry.dead and 'dead'
+      data['prev'] = prev and prev.string
+      data['vendor_branch'] = ezt.boolean(branch and branch[2] % 2 == 1)
+
+      ### TODO:  Should this be using prep_tags() instead?
+      data['branches'] = make_comma_sep_list_string(entry.branches)
+      data['tags'] = make_comma_sep_list_string(entry.tags)
+      data['branch_points']= make_comma_sep_list_string(entry.branch_points)
 
   if path != request.path_parts:
     orig_path = _path_join(path)
@@ -1680,10 +1683,14 @@ def view_roots(request):
                          href=href))
 
   data = common_template_data(request)
-  data['roots'] = roots
+  data.merge(ezt.TemplateData({
+    'roots' : roots,
+    }))
   generate_page(request, "roots", data)
 
 def view_directory(request):
+  cfg = request.cfg
+
   # For Subversion repositories, the revision acts as a weak validator for
   # the directory listing (to take into account template changes or
   # revision property changes).
@@ -1697,7 +1704,6 @@ def view_directory(request):
       return
 
   # List current directory
-  cfg = request.cfg
   options = {}
   if request.roottype == 'cvs':
     hideattic = int(request.query_dict.get('hideattic', 
@@ -1854,9 +1860,10 @@ def view_directory(request):
 
     rows.append(row)
 
-  # prepare the data that will be passed to the template
+  # Prepare the data that will be passed to the template, based on the
+  # common template data.
   data = common_template_data(request)
-  data.update({
+  data.merge(ezt.TemplateData({
     'entries' : rows,
     'sortby' : sortby,
     'sortdir' : sortdir,
@@ -1890,7 +1897,21 @@ def view_directory(request):
     'branch_tags': None,
     'plain_tags': None,
     'properties': get_itemprops(request, request.path_parts, request.pathrev),
-  })
+    'tree_rev' : None,
+    'tree_rev_href' : None,
+    'dir_paging_action' : None,
+    'dir_paging_hidden_values' : [],
+    'pathrev_action' : None,
+    'pathrev_hidden_values' : [],
+    'pathrev_clear_action' : None,
+    'pathrev_clear_hidden_values' : [],
+    'pathrev' : None,
+    'lastrev' : None,
+    'search_re_action' : None,
+    'search_re_hidden_values' : [],
+    'picklist' : [],
+    'picklist_len' : 0,
+  }))
 
   # clicking on sort column reverses sort order
   if sortdir == 'down':
@@ -1910,18 +1931,18 @@ def view_directory(request):
     plain_tags = options['cvs_tags']
     plain_tags.sort(icmp)
     plain_tags.reverse()
+    data['plain_tags']= plain_tags
 
     branch_tags = options['cvs_branches']
     branch_tags.sort(icmp)
     branch_tags.reverse()
-
-    data.update({
-      'attic_showing' : ezt.boolean(not hideattic),
-      'show_attic_href' : request.get_url(params={'hideattic': 0}, escape=1),
-      'hide_attic_href' : request.get_url(params={'hideattic': 1}, escape=1),
-      'branch_tags': branch_tags,
-      'plain_tags': plain_tags,
-    })
+    data['branch_tags']= branch_tags
+    
+    data['attic_showing'] = ezt.boolean(not hideattic)
+    data['show_attic_href'] = request.get_url(params={'hideattic': 0},
+                                              escape=1)
+    data['hide_attic_href'] = request.get_url(params={'hideattic': 1},
+                                              escape=1)
 
   # set svn-specific fields
   elif request.roottype == 'svn':
@@ -1940,9 +1961,7 @@ def view_directory(request):
 
   pathrev_form(request, data)
 
-  ### one day, if EZT has "or" capability, we can lose this
-  data['search_re_form'] = ezt.boolean(cfg.options.use_re_search)
-  if data['search_re_form']:
+  if cfg.options.use_re_search:
     data['search_re_action'], data['search_re_hidden_values'] = \
       request.get_form(params={'search': None})
 
@@ -2273,8 +2292,16 @@ def view_log(request):
       entry.copy_path = request.server.escape(entry.copy_path)
     entries.append(entry)
 
+  diff_select_action, diff_select_hidden_values = \
+    request.get_form(view_func=view_diff,
+                     params={'r1': None, 'r2': None, 'tr1': None,
+                             'tr2': None, 'diff_format': None})
+  logsort_action, logsort_hidden_values = \
+    request.get_form(params={'logsort': None})
+
+
   data = common_template_data(request)
-  data.update({
+  data.merge(ezt.TemplateData({
     'default_branch' : None,
     'mime_type' : mime_type,
     'rev_selected' : selected_rev,
@@ -2282,6 +2309,8 @@ def view_log(request):
     'logsort' : logsort,
     'human_readable' : ezt.boolean(diff_format in ('h', 'l')),
     'log_pagestart' : None,
+    'log_paging_action' : None,
+    'log_paging_hidden_values' : [],
     'entries': entries,
     'head_prefer_markup' : ezt.boolean(0),
     'head_view_href' : None,
@@ -2293,38 +2322,41 @@ def view_log(request):
     'tag_download_href': None,
     'tag_download_text_href': None,
     'tag_annotate_href': None,
-  })
+    'diff_select_action' : diff_select_action,
+    'diff_select_hidden_values' : diff_select_hidden_values,
+    'pathrev_action' : None,
+    'pathrev_hidden_values' : [],
+    'pathrev_clear_action' : None,
+    'pathrev_clear_hidden_values' : [],
+    'pathrev' : None,
+    'lastrev' : None,
+    'logsort_action' : logsort_action,
+    'logsort_hidden_values' : logsort_hidden_values,
+    'tags' : [],
+    'branch_tags' : [],
+    'plain_tags' : [],
+    'picklist' : [],
+    'picklist_len' : 0,
+  }))
 
   lastrev = pathrev_form(request, data)
-
-  data['diff_select_action'], data['diff_select_hidden_values'] = \
-    request.get_form(view_func=view_diff,
-                     params={'r1': None, 'r2': None, 'tr1': None,
-                             'tr2': None, 'diff_format': None})
-
-  data['logsort_action'], data['logsort_hidden_values'] = \
-    request.get_form(params={'logsort': None})
 
   if pathtype is vclib.FILE:
     if not request.pathrev or lastrev is None:
       fvi = get_file_view_info(request, request.where, None, mime_type, None)
-      data.update({
-        'head_view_href': fvi.view_href,
-        'head_download_href': fvi.download_href,
-        'head_download_text_href': fvi.download_text_href,
-        'head_annotate_href': fvi.annotate_href,
-        'head_prefer_markup': fvi.prefer_markup,
-        })
+      data['head_view_href']= fvi.view_href
+      data['head_download_href']= fvi.download_href
+      data['head_download_text_href']= fvi.download_text_href
+      data['head_annotate_href']= fvi.annotate_href
+      data['head_prefer_markup']= fvi.prefer_markup
 
     if request.pathrev and request.roottype == 'cvs':
       fvi = get_file_view_info(request, request.where, None, mime_type)
-      data.update({
-        'tag_view_href': fvi.view_href,
-        'tag_download_href': fvi.download_href,
-        'tag_download_text_href': fvi.download_text_href,
-        'tag_annotate_href': fvi.annotate_href,
-        'tag_prefer_markup': fvi.prefer_markup,
-        })
+      data['tag_view_href']= fvi.view_href
+      data['tag_download_href']= fvi.download_href
+      data['tag_download_text_href']= fvi.download_text_href
+      data['tag_annotate_href']= fvi.annotate_href
+      data['tag_prefer_markup']= fvi.prefer_markup
   else:
     data['head_view_href'] = request.get_url(view_func=view_directory, 
                                              params={}, escape=1)
@@ -2344,16 +2376,13 @@ def view_log(request):
         branches.append(branch)
     data['default_branch'] = prep_tags(request, branches)
 
-  data['tags'] = tags = [ ]
-  data['branch_tags'] = branch_tags = []
-  data['plain_tags'] = plain_tags = []
   for tag, rev in tagitems:
     if rev.co_rev:
-      tags.append(_item(rev=rev.co_rev.string, name=tag))
+      data['tags'].append(_item(rev=rev.co_rev.string, name=tag))
     if rev.is_branch:
-      branch_tags.append(tag)
+      data['branch_tags'].append(tag)
     else:
-      plain_tags.append(tag)
+      data['plain_tags'].append(tag)
 
   if cfg.options.use_pagesize:
     data['log_paging_action'], data['log_paging_hidden_values'] = \
@@ -2414,8 +2443,6 @@ def view_cvsgraph(request):
   if not cfg.options.use_cvsgraph:
     raise debug.ViewVCException('Graph view is disabled', '403 Forbidden')
 
-  data = common_template_data(request)
-
   # If cvsgraph can't find its supporting libraries, uncomment and set
   # accordingly.  Do the same in view_cvsgraph_image().
   #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib:/path/to/cvsgraph'
@@ -2447,11 +2474,11 @@ def view_cvsgraph(request):
                                           escape=1, partial=1),
                     rcsfile), 'rb', 0)
 
-  data.update({
+  data = common_template_data(request)
+  data.merge(ezt.TemplateData({
     'imagemap' : fp,
     'imagesrc' : imagesrc,
-    })
-
+    }))
   generate_page(request, "graph", data)
 
 def search_file(repos, path_parts, rev, search_re):
@@ -2981,9 +3008,12 @@ def view_diff(request):
                 annotate_href=fvi.annotate_href,
                 revision_href=fvi.revision_href,
                 prefer_markup=fvi.prefer_markup)
+
+  diff_format_action, diff_format_hidden_values = \
+    request.get_form(params=no_format_params)
       
   data = common_template_data(request)
-  data.update({
+  data.merge(ezt.TemplateData({
     'left' : left,
     'right' : right,
     'raw_diff' : raw_diff_fp,
@@ -2995,11 +3025,9 @@ def view_diff(request):
     'patch_href' : request.get_url(view_func=view_patch,
                                    params=no_format_params,
                                    escape=1),
-    })
-
-  data['diff_format_action'], data['diff_format_hidden_values'] = \
-    request.get_form(params=no_format_params)
-
+    'diff_format_action' : diff_format_action,
+    'diff_format_hidden_values' : diff_format_hidden_values,
+    }))
   generate_page(request, "diff", data)
 
 
@@ -3198,7 +3226,6 @@ def view_revision(request):
                                 "400 Bad Request")
 
   cfg = request.cfg
-  data = common_template_data(request)
   query_dict = request.query_dict
   try:
     rev = request.repos._getrev(query_dict.get('revision'))
@@ -3321,12 +3348,16 @@ def view_revision(request):
                                     pathtype=None,
                                     params={'revision': str(rev + 1)},
                                     escape=1)
-  data.update({
+  jump_rev_action, jump_rev_hidden_values = \
+    request.get_form(params={'revision': None})
+    
+  data = common_template_data(request)
+  data.merge(ezt.TemplateData({
     'rev' : str(rev),
     'author' : author,
     'date' : date_str,
     'log' : msg and htmlify(msg, cfg.options.mangle_email_addresses) or None,
-    'ago' : None,
+    'ago' : date is not None and html_time(request, date, 1) or None,
     'changes' : changes,
     'prev_href' : prev_rev_href,
     'next_href' : next_rev_href,
@@ -3336,14 +3367,9 @@ def view_revision(request):
     'more_changes_href': more_changes_href,
     'first_changes': first_changes,
     'first_changes_href': first_changes_href,
-  })
-
-  if date is not None:
-    data['ago'] = html_time(request, date, 1)
-
-  data['jump_rev_action'], data['jump_rev_hidden_values'] = \
-    request.get_form(params={'revision': None})
-
+    'jump_rev_action' : jump_rev_action,
+    'jump_rev_hidden_values' : jump_rev_hidden_values,
+  }))
   if rev == youngest_rev:
     request.server.addheader("Cache-control", "no-store")
   generate_page(request, "revision", data)
@@ -3376,32 +3402,32 @@ def view_queryform(request):
                                  % (request.rootname, request.where),
                                  '403 Forbidden')
 
-  data = common_template_data(request)
-
-  data['query_action'], data['query_hidden_values'] = \
+  query_action, query_hidden_values = \
     request.get_form(view_func=view_query, params={'limit_changes': None})
-
-  # default values ...
-  data['branch'] = request.query_dict.get('branch', '')
-  data['branch_match'] = request.query_dict.get('branch_match', 'exact')
-  data['dir'] = request.query_dict.get('dir', '')
-  data['file'] = request.query_dict.get('file', '')
-  data['file_match'] = request.query_dict.get('file_match', 'exact')
-  data['who'] = request.query_dict.get('who', '')
-  data['who_match'] = request.query_dict.get('who_match', 'exact')
-  data['comment'] = request.query_dict.get('comment', '')
-  data['comment_match'] = request.query_dict.get('comment_match', 'exact')
-  data['querysort'] = request.query_dict.get('querysort', 'date')
-  data['date'] = request.query_dict.get('date', 'hours')
-  data['hours'] = request.query_dict.get('hours', '2')
-  data['mindate'] = request.query_dict.get('mindate', '')
-  data['maxdate'] = request.query_dict.get('maxdate', '')
-  data['limit_changes'] = int(request.query_dict.get('limit_changes',
-                                           request.cfg.options.limit_changes))
-
-  data['dir_href'] = request.get_url(view_func=view_directory, params={},
-                                     escape=1)
-
+  limit_changes = \
+    int(request.query_dict.get('limit_changes',
+                               request.cfg.options.limit_changes))
+  
+  data = common_template_data(request)
+  data.merge(ezt.TemplateData({
+    'branch' : request.query_dict.get('branch', ''),
+    'branch_match' : request.query_dict.get('branch_match', 'exact'),
+    'dir' : request.query_dict.get('dir', ''),
+    'file' : request.query_dict.get('file', ''),
+    'file_match' : request.query_dict.get('file_match', 'exact'),
+    'who' : request.query_dict.get('who', ''),
+    'who_match' : request.query_dict.get('who_match', 'exact'),
+    'comment' : request.query_dict.get('comment', ''),
+    'comment_match' : request.query_dict.get('comment_match', 'exact'),
+    'querysort' : request.query_dict.get('querysort', 'date'),
+    'date' : request.query_dict.get('date', 'hours'),
+    'hours' : request.query_dict.get('hours', '2'),
+    'mindate' : request.query_dict.get('mindate', ''),
+    'maxdate' : request.query_dict.get('maxdate', ''),
+    'limit_changes' : limit_changes,
+    'dir_href' : request.get_url(view_func=view_directory, params={},
+                                 escape=1),
+    }))
   generate_page(request, "query_form", data)
 
 def parse_date(datestr):
@@ -3872,7 +3898,7 @@ def view_query(request):
     return
 
   data = common_template_data(request)
-  data.update({
+  data.merge(ezt.TemplateData({
     'sql': sql,
     'english_query': english_query(request),
     'queryform_href': request.get_url(view_func=view_queryform, escape=1),
@@ -3888,8 +3914,7 @@ def view_query(request):
                                      params={'date': 'month'},
                                      escape=1,
                                      prefix=1),
-    })
-
+    }))
   if format == 'rss':
     generate_page(request, "rss", data, "application/rss+xml")
   else:
