@@ -1901,16 +1901,20 @@ def view_directory(request):
     'tree_rev_href' : None,
     'dir_paging_action' : None,
     'dir_paging_hidden_values' : [],
+    'search_re_action' : None,
+    'search_re_hidden_values' : [],
+
+    # Populated by paging()/paging_sws()
+    'picklist' : [],
+    'picklist_len' : 0,
+
+    # Populated by pathrev_form()
     'pathrev_action' : None,
     'pathrev_hidden_values' : [],
     'pathrev_clear_action' : None,
     'pathrev_clear_hidden_values' : [],
     'pathrev' : None,
     'lastrev' : None,
-    'search_re_action' : None,
-    'search_re_hidden_values' : [],
-    'picklist' : [],
-    'picklist_len' : 0,
   }))
 
   # clicking on sort column reverses sort order
@@ -2324,19 +2328,23 @@ def view_log(request):
     'tag_annotate_href': None,
     'diff_select_action' : diff_select_action,
     'diff_select_hidden_values' : diff_select_hidden_values,
+    'logsort_action' : logsort_action,
+    'logsort_hidden_values' : logsort_hidden_values,
+    'tags' : [],
+    'branch_tags' : [],
+    'plain_tags' : [],
+
+    # Populated by paging()/paging_sws()
+    'picklist' : [],
+    'picklist_len' : 0,
+
+    # Populated by pathrev_form()
     'pathrev_action' : None,
     'pathrev_hidden_values' : [],
     'pathrev_clear_action' : None,
     'pathrev_clear_hidden_values' : [],
     'pathrev' : None,
     'lastrev' : None,
-    'logsort_action' : logsort_action,
-    'logsort_hidden_values' : logsort_hidden_values,
-    'tags' : [],
-    'branch_tags' : [],
-    'plain_tags' : [],
-    'picklist' : [],
-    'picklist_len' : 0,
   }))
 
   lastrev = pathrev_form(request, data)
