@@ -3,12 +3,12 @@
 
 [is view "markup"]
 	[if-any log_href] 
-    	<a href="[log_href][if-any log_href_rev]#rev[log_href_rev][end]" title="Revision Log" class="img"><img src="[docroot]/images/tortoisesvn/log.png" width="16" height="16" alt="Revision Log" /></a>&nbsp;<a href="[log_href][if-any log_href_rev]#rev[log_href_rev][end]">Revision Log</a>
+    	<a href="[log_href]" title="Revision Log" class="img"><img src="[docroot]/images/tortoisesvn/log.png" width="16" height="16" alt="Revision Log" /></a>&nbsp;<a href="[log_href]">Revision Log</a>
 	[end]
 [end]
 [is view "annotate"]
 	[if-any log_href] 
-    	<a href="[log_href][if-any log_href_rev]#rev[log_href_rev][end]" title="Revision Log" class="img"><img src="[docroot]/images/tortoisesvn/log.png" width="16" height="16" alt="Revision Log" /></a>&nbsp;<a href="[log_href][if-any log_href_rev]#rev[log_href_rev][end]">Revision Log</a>
+    	<a href="[log_href]" title="Revision Log" class="img"><img src="[docroot]/images/tortoisesvn/log.png" width="16" height="16" alt="Revision Log" /></a>&nbsp;<a href="[log_href]">Revision Log</a>
 	[end]
 [end]
 
