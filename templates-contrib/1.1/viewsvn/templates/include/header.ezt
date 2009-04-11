@@ -33,10 +33,17 @@ untested, possibly disabled or broken.
   <strong>[if-any roots_href]<a href="[roots_href]">[[]Repository Listing]</a> /[else]/[end]</strong>
   [if-any nav_path]<strong>
     [for nav_path]
-      [if-any nav_path.href]<a href="[nav_path.href]">[end]
+      [if-index nav_path last][else]
+        [if-any nav_path.href]<a href="[nav_path.href]">[end]
+      [end]
       [if-index nav_path first]
-        [[][nav_path.name]][else]
-        [nav_path.name][end][if-any nav_path.href]</a>[end]
+        [[][nav_path.name]]
+      [else]
+        [nav_path.name]
+      [end]
+      [if-index nav_path last][else]
+        [if-any nav_path.href]</a>[end]
+      [end]
       [if-index nav_path last][else]/[end]
     [end]
     </strong>
