@@ -50,7 +50,7 @@ numbers, and not literal):
 
 9.  Go into an empty directory and run the 'make-release' script:
 
-       tools/make-release viewvc-X.Y.Z X.Y.Z
+       tools/make-release viewvc-X.Y.Z tags/X.Y.Z
 
 10. Verify the archive files:
 
