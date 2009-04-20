@@ -17,10 +17,10 @@
 
 ### Validate input
 if test $# != 2 && test $# != 1; then
-  echo "Usage: $0 TARGET-DIRECTORY [BRANCHNAME]"
+  echo "Usage: $0 TARGET-DIRECTORY [BRANCH]"
   echo ""
-  echo "If BRANCHNAME (i.e. \"tags/1.1.0\" or \"branches/1.0.x\") is not"
-  echo "provided, the release will be rolled from trunk."
+  echo "If BRANCH (i.e. \"tags/1.1.0\" or \"branches/1.0.x\") is not provided,"
+  echo "the release will be rolled from trunk."
   exit 1
 fi
 
