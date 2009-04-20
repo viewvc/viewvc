@@ -17,17 +17,18 @@
 
 ### Validate input
 if test $# != 2 && test $# != 1; then
-  echo "Usage: $0 TARGET-DIRECTORY [TAGNAME]"
+  echo "Usage: $0 TARGET-DIRECTORY [BRANCHNAME]"
   echo ""
-  echo "If TAGNAME is not provided, the release will be rolled from trunk."
+  echo "If BRANCHNAME (i.e. \"tags/1.1.0\" or \"branches/1.0.x\") is not"
+  echo "provided, the release will be rolled from trunk."
   exit 1
 fi
 
 TARGET=${1}
-if test $# == 1; then
+if test $# = 1; then
   ROOT=trunk
 else
-  ROOT=tags/${2}
+  ROOT=${2}
 fi
 
 if test -e ${TARGET}; then
@@ -36,7 +37,8 @@ if test -e ${TARGET}; then
 fi
 
 ### Grab an export from the Subversion repository.
-echo "Exporting into:" ${TARGET}
+EXPORT_URL="http://viewvc.tigris.org/svn/viewvc/${ROOT}"
+echo "Exporting '${EXPORT_URL}' into '${TARGET}'"
 
 for PLATFORM in unix windows; do
   if test ${PLATFORM} = windows; then
@@ -48,7 +50,7 @@ for PLATFORM in unix windows; do
   echo "Beginning build for ${PLATFORM}:"
 
   echo "   Exporting source code..."
-  svn export --quiet ${EOL} http://viewvc.tigris.org/svn/viewvc/${ROOT} ${TARGET}
+  svn export --quiet ${EOL} ${EXPORT_URL} ${TARGET}
 
   ### Various shifting, cleanup.  
 
