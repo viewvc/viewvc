@@ -46,7 +46,7 @@ def make_release(branch, export_dir, publish_dir, root_url, username, password):
   curdir = os.getcwd()
   try:
     os.chdir(os.path.join(export_dir, 'tools'))
-    os.system('./make-release %s' % (distname))
+    os.system('./make-release %s %s' % (distname, branch))
   finally:
     os.chdir(curdir)
 
