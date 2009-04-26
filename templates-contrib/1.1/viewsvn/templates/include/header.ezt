@@ -50,6 +50,12 @@ untested, possibly disabled or broken.
   [end]
 </div>
 
+<table>
+<tr>
+  <td>&nbsp;</td>
+  <td style="text-align: right;">[if-any username]Logged in as: <strong>[username]</strong>[end]</td>
+</tr>
+</table>
 
 <h1>[page_title]</h1>
 
