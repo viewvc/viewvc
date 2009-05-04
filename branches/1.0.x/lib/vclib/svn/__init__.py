@@ -239,6 +239,9 @@ class NodeHistory:
     
   
 def _get_history(svnrepos, full_name, rev, options={}):
+  if svnrepos.youngest == 0:
+    return {}
+
   fsroot = svnrepos._getroot(rev)
   show_all_logs = options.get('svn_show_all_dir_logs', 0)
   if not show_all_logs:
