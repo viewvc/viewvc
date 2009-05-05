@@ -421,16 +421,27 @@ def gui(host, port):
                 command=self.toggle_use_localtime)
             self.use_localtime_toggle.pack(side='top', anchor='w')
 
-            # use_pagesize integer var:
-            self.usepagesize_lbl = Tkinter.Label(self.options_frm,
-                text='Paging (number of items per page, 0 disables):')
-            self.usepagesize_lbl.pack(side='top', anchor='w')
-            self.use_pagesize_ivar = Tkinter.IntVar()
-            self.use_pagesize_ivar.set(cfg.options.use_pagesize)
-            self.use_pagesize_entry = Tkinter.Entry(self.options_frm,
-                width=10, textvariable=self.use_pagesize_ivar)
-            self.use_pagesize_entry.bind('<Return>', self.set_use_pagesize)
-            self.use_pagesize_entry.pack(side='top', anchor='w')
+            # log_pagesize integer var:
+            self.log_pagesize_lbl = Tkinter.Label(self.options_frm,
+                text='Paging (number of items per log page, 0 disables):')
+            self.log_pagesize_lbl.pack(side='top', anchor='w')
+            self.log_pagesize_ivar = Tkinter.IntVar()
+            self.log_pagesize_ivar.set(cfg.options.log_pagesize)
+            self.log_pagesize_entry = Tkinter.Entry(self.options_frm,
+                width=10, textvariable=self.log_pagesize_ivar)
+            self.log_pagesize_entry.bind('<Return>', self.set_log_pagesize)
+            self.log_pagesize_entry.pack(side='top', anchor='w')
+
+            # dir_pagesize integer var:
+            self.dir_pagesize_lbl = Tkinter.Label(self.options_frm,
+                text='Paging (number of items per dir page, 0 disables):')
+            self.dir_pagesize_lbl.pack(side='top', anchor='w')
+            self.dir_pagesize_ivar = Tkinter.IntVar()
+            self.dir_pagesize_ivar.set(cfg.options.dir_pagesize)
+            self.dir_pagesize_entry = Tkinter.Entry(self.options_frm,
+                width=10, textvariable=self.dir_pagesize_ivar)
+            self.dir_pagesize_entry.bind('<Return>', self.set_dir_pagesize)
+            self.dir_pagesize_entry.pack(side='top', anchor='w')
 
             # directory view template:
             self.dirtemplate_lbl = Tkinter.Label(self.options_frm,
@@ -515,8 +526,11 @@ def gui(host, port):
         def toggle_useresearch(self, event=None):
             cfg.options.use_re_search = self.useresearch_ivar.get()
 
-        def set_use_pagesize(self, event=None):
-            cfg.options.use_pagesize = self.use_pagesize_ivar.get()
+        def set_log_pagesize(self, event=None):
+            cfg.options.log_pagesize = self.log_pagesize_ivar.get()
+
+        def set_dir_pagesize(self, event=None):
+            cfg.options.dir_pagesize = self.dir_pagesize_ivar.get()
 
         def set_templates_log(self, event=None):
             cfg.templates.log = self.logtemplate_svar.get()

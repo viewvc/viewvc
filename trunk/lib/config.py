@@ -248,7 +248,8 @@ class Config:
     self.options.use_cvsgraph = 0
     self.options.cvsgraph_conf = "cvsgraph.conf"
     self.options.use_re_search = 0
-    self.options.use_pagesize = 0
+    self.options.dir_pagesize = 0
+    self.options.log_pagesize = 0
     self.options.limit_changes = 100
 
     self.templates.diff = None

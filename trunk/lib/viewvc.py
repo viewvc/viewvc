@@ -81,7 +81,7 @@ _sticky_vars = [
   ]
 
 # number of extra pages of information on either side of the current
-# page to fetch (see use_pagesize configuration option)
+# page to fetch (see dir_pagesize/log_pagesize configuration option)
 EXTRA_PAGES = 3
 
 # for reading/writing between a couple descriptors
@@ -1723,11 +1723,11 @@ def view_directory(request):
   # however, when sorting by other properties or not paging, we've no
   # choice but to fetch dirlogs for everything.
   debug.t_start("dirlogs")
-  if cfg.options.use_pagesize and sortby == 'file':
+  if cfg.options.dir_pagesize and sortby == 'file':
     dirlogs_first = int(request.query_dict.get('dir_pagestart', 0))
     if dirlogs_first > len(file_data):
       dirlogs_first = 0
-    dirlogs_last = dirlogs_first + cfg.options.use_pagesize
+    dirlogs_last = dirlogs_first + cfg.options.dir_pagesize
     for file in file_data:
       file.rev = None
       file.date = None
@@ -1959,7 +1959,7 @@ def view_directory(request):
                                                 params={},
                                                 escape=1)
 
-  if cfg.options.use_pagesize:
+  if cfg.options.dir_pagesize:
     data['dir_paging_action'], data['dir_paging_hidden_values'] = \
       request.get_form(params={'dir_pagestart': None})
 
@@ -1969,10 +1969,10 @@ def view_directory(request):
     data['search_re_action'], data['search_re_hidden_values'] = \
       request.get_form(params={'search': None})
 
-  if cfg.options.use_pagesize:
+  if cfg.options.dir_pagesize:
     data['dir_pagestart'] = int(request.query_dict.get('dir_pagestart',0))
     data['entries'] = paging(data, 'entries', data['dir_pagestart'], 'name',
-                             cfg.options.use_pagesize)
+                             cfg.options.dir_pagesize)
 
   generate_page(request, "directory", data)
 
@@ -2132,11 +2132,11 @@ def view_log(request):
       sortby = vclib.SORTBY_DEFAULT
 
   first = last = 0
-  if cfg.options.use_pagesize:
+  if cfg.options.log_pagesize:
     log_pagestart = int(request.query_dict.get('log_pagestart', 0))
     first = log_pagestart - min(log_pagestart,
-                                (EXTRA_PAGES * cfg.options.use_pagesize))
-    last = log_pagestart + ((EXTRA_PAGES + 1) * cfg.options.use_pagesize) + 1
+                                (EXTRA_PAGES * cfg.options.log_pagesize))
+    last = log_pagestart + ((EXTRA_PAGES + 1) * cfg.options.log_pagesize) + 1
   show_revs = request.repos.itemlog(request.path_parts, request.pathrev,
                                     sortby, first, last - first, options)
 
@@ -2392,12 +2392,12 @@ def view_log(request):
     else:
       data['plain_tags'].append(tag)
 
-  if cfg.options.use_pagesize:
+  if cfg.options.log_pagesize:
     data['log_paging_action'], data['log_paging_hidden_values'] = \
       request.get_form(params={'log_pagestart': None})
     data['log_pagestart'] = int(request.query_dict.get('log_pagestart',0))
     data['entries'] = paging_sws(data, 'entries', data['log_pagestart'],
-                                 'rev', cfg.options.use_pagesize, first)
+                                 'rev', cfg.options.log_pagesize, first)
 
   generate_page(request, "log", data)
 
