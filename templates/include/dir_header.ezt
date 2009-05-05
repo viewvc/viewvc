@@ -63,7 +63,7 @@
 
 </table>
 
-[is cfg.options.use_pagesize "0"]
+[is picklist_len "0"]
 [else]
   [is picklist_len "1"]
   [else]
