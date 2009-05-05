@@ -1,4 +1,4 @@
-Version 1.0.8 (released ??-???-????)
+Version 1.0.8 (released 05-May-2009)
 
   * fix directory view sorting UI
   * tolerate malformed Accept-Language headers (issue #396)
