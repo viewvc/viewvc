@@ -40,6 +40,13 @@ Version 1.1.0 (released ??-???-????)
   * hide CVS files when viewing tags/branches on which they don't exist
   * add support for hiding errorful entries from the directory view (issue #105)
 
+Version 1.0.8 (released 05-May-2009)
+
+  * fix directory view sorting UI
+  * tolerate malformed Accept-Language headers (issue #396)
+  * fix directory log views in revision-less Subversion repositories
+  * fix exception in rev-sorted remote Subversion directory views (issue #409)
+
 Version 1.0.7 (released 14-Oct-2008)
 
   * fix regression in the 'as text' download view (issue #373)
