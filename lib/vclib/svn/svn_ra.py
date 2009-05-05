@@ -254,7 +254,7 @@ class RemoteSubversionRepository(vclib.Repository):
       dirent = dirents[entry.name]
       entry.date, entry.author, entry.log, changes = \
                   self.revinfo(dirent.created_rev)
-      entry.rev = dirent.created_rev
+      entry.rev = str(dirent.created_rev)
       entry.size = dirent.size
       entry.lockinfo = None
       if locks.has_key(entry.name):
