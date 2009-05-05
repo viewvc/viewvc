@@ -382,7 +382,7 @@ def gui(host, port):
 
             # Early loading of configuration here.  Used to
             # allow tinkering with configuration settings through the gui:
-            handle_config()
+            handle_config(options.config_file)
             if not LIBRARY_DIR:
                 cfg.options.cvsgraph_conf = "../cgi/cvsgraph.conf.dist"
 
@@ -395,14 +395,6 @@ def gui(host, port):
                 text="enable cvsgraph (needs binary)", var=self.cvsgraph_ivar,
                 command=self.toggle_use_cvsgraph)
             self.cvsgraph_toggle.pack(side='top', anchor='w')
-
-            # enscript toggle:
-            self.enscript_ivar = Tkinter.IntVar()
-            self.enscript_ivar.set(cfg.options.use_enscript)
-            self.enscript_toggle = Tkinter.Checkbutton(self.options_frm,
-                text="enable enscript (needs binary)", var=self.enscript_ivar,
-                command=self.toggle_use_enscript)
-            self.enscript_toggle.pack(side='top', anchor='w')
 
             # show_subdir_lastmod toggle:
             self.subdirmod_ivar = Tkinter.IntVar()
@@ -514,9 +506,6 @@ def gui(host, port):
         def toggle_use_cvsgraph(self, event=None):
             cfg.options.use_cvsgraph = self.cvsgraph_ivar.get()
 
-        def toggle_use_enscript(self, event=None):
-            cfg.options.use_enscript = self.enscript_ivar.get()
-
         def toggle_use_localtime(self, event=None):
             cfg.options.use_localtime = self.use_localtime_ivar.get()
 
@@ -621,7 +610,7 @@ def cli(argv):
             if pid != 0:
                 sys.exit()  
         if options.start_gui:
-            gui(options.host, options.port, options.config_file)
+            gui(options.host, options.port)
             return
         elif options.port:
             def ready(server):
