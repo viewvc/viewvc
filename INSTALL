@@ -32,7 +32,7 @@ Congratulations on getting this far. :-)
 
       * Python 2.0 or later
           (http://www.python.org/)
-      * Subversion, Version Control System, 1.3.1 or later
+      * Subversion, Version Control System, 1.2.0 or later
           (binary installation and Python bindings)
           (http://subversion.tigris.org/)
 
@@ -43,8 +43,11 @@ Congratulations on getting this far. :-)
       * MySQL 3.22 and MySQLdb 0.9.0 or later to create a commit database
           (http://www.mysql.com/)
           (http://sourceforge.net/projects/mysql-python)
-      * Pygments 0.9 or later, syntax highlighting engine
-          (http://pygments.org)
+      * Enscript, code colorizer
+          (http://www.codento.com/people/mtr/genscript/)
+      * Highlight, code colorizer, 2.2.10 or later required, 2.4.5 or
+        later recommended for reliable line numbering
+          (http://www.andre-simon.de/)
       * CvsGraph 1.5.0 or later, graphical CVS revision tree generator
           (http://www.akhphd.au.dk/~bertho/cvsgraph/)
 
@@ -55,7 +58,7 @@ Congratulations on getting this far. :-)
 
        $ bin/standalone.py -r /PATH/TO/REPOSITORY
 
-    This will start a tiny ViewVC server at http://localhost:49152/viewvc/,
+    This will start a tiny ViewVC server at http://localhost:7467/viewvc/,
     to which you can connect with your browser.
 
   Standard operation:
@@ -91,9 +94,15 @@ Visitors viewing those versioned controlled documents get the
 malicious code, too, which might not be what the original author
 intended.
 
-For this reason, ViewVC's "checkout" view is disabled by default.  If
-you wish to enable it, simply add "co" to the list of views enabled in
-the allowed_views configuration option.
+If you wish to disable ViewVC's "checkout" view which implements this
+feature, you can do so by editing lib/viewvc.py, and modifying the
+function view_checkout() like so, adding the lines indicated:
+
+      def view_checkout(request):
+>>      raise debug.ViewVCException('Checkout view is disabled',
+>>                                  '403 Forbidden')
+        path, rev = _orig_path(request)
+        fp, revision = request.repos.openfile(path, rev)
 
 
 INSTALLING VIEWVC
@@ -138,8 +147,8 @@ installation instructions.
       root_parents (for CVS or Subversion)
       default_root
       root_as_url_component
-      rcs_dir
-      mime_types_files
+      rcs_path
+      mime_types_file
 
    There are some other options that are usually nice to change. See
    viewvc.conf for more information.  ViewVC provides a working,
@@ -220,8 +229,8 @@ or if you've got Mod_Python installed you can use METHOD D:
    you copied the files to.
    
    Note: If you are using Mod_Python under Apache 1.3 the tarball generation
-   feature may not work because it uses multithreading.  This works fine
-   under Apache 2.
+   and enscript colorizing features may not work because they use
+   multithreading. They do work fine with Apache 2.
    
    continue with step 3).
 
@@ -352,37 +361,27 @@ there are some additional steps required to get the database working.
         ALL <VIEWVC_INSTALLATION_DIRECTORY>/bin/loginfo-handler %{sVv} cvsnt
 
    To publish Subversion commits into the database:
-   
+
       To build a database of all the commits in the Subversion
       repository /home/svn, invoke: "./svndbadmin rebuild /home/svn".
       If you want to update the checkin database, invoke:
       "./svndbadmin update /home/svn".
-   
+
       To get real time updates, you will need to add a post-commit
       hook (for the repository example above, the script should go in
       /home/svn/hooks/post-commit).  The script should look something
       like this:
-   
-        #!/bin/sh
-        REPOS="$1"
-        REV="$2"
-        <VIEWVC_INSTALLATION_DIRECTORY>/bin/svndbadmin update \
-            "$REPOS" "$REV"
-   
+
+         #!/bin/sh
+         REPOS="$1"
+         REV="$2"
+         <VIEWVC_INSTALLATION_DIRECTORY>/bin/svndbadmin rebuild "$REPOS" "$REV"
+
       If you allow revision property changes in your repository,
-      create a post-revprop-change hook script which uses the same
-      'svndbadmin update' command as the post-commit script, except
-      with the addition of the --force option:
-   
-        #!/bin/sh
-        REPOS="$1"
-        REV="$2"
-        <VIEWVC_INSTALLATION_DIRECTORY>/bin/svndbadmin update --force \
-            "$REPOS" "$REV"
-   
-      This will make sure that the checkin database stays consistent
-      when you change the svn:log, svn:author or svn:date revision
-      properties.
+      create a post-revprop-change hook script containing the same
+      commands as the post-commit one.  This will make sure that the
+      checkin database stays consistent when you change the svn:log,
+      svn:author or svn:date revision properties.
 
 You should be ready to go.  Click one of the "Query revision history"
 links in ViewVC directory listings and give it a try.
@@ -391,11 +390,20 @@ links in ViewVC directory listings and give it a try.
 ENABLING SYNTAX COLORATION
 --------------------------
 
-ViewVC uses Pygments (http://pygments.org) for syntax coloration.  You
-need only install a suitable version of that module, and if ViewVC
-finds it in your Python module path, it will use it (unless you
-specifically disable the feature by setting use_pygments = 0 in your
-viewvc.conf file).
+Enscript and Highlight are two programs that can colorize source code
+for a lot of languages.  ViewVC can be configured to use either one.
+
+1) Install Enscript or Highlight using your system's package manager
+   or downloading from the project home pages.
+
+2) Set either the 'use_enscript' or 'use_highlight' options in
+   viewvc.conf to 1.
+
+3) You may also need to set 'enscript_path' or 'highlight_path' option
+   if the executables are not located on the system PATH.
+
+That's it!  Now when you view the contents of recognized filetypes in
+ViewVC, you should see colorized syntax.
 
 
 CVSGRAPH CONFIGURATION
@@ -433,12 +441,9 @@ SUBVERSION INTEGRATION
 Unlike the CVS integration, which simply wraps the RCS and CVS utility
 programs, the Subversion integration requires additional Python
 libraries.  To use ViewVC with Subversion, make sure you have both
-Subversion itself and the Subversion Python bindings installed.  These
-can be obtained through typical package distribution mechanisms, or
-may be build from source.  (See the files 'INSTALL' and
-'subversion/bindings/swig/INSTALL' in the Subversion source tree for
-more details on how to build and install Subversion and its Python
-bindings.)
+Subversion itself and the Subversion Python bindings installed.  See
+Subversion's installation notes for more details on how to build and
+install these items.
 
 Generally speaking, you'll know when your installation of Subversion's
 bindings has been successful if you can import the 'svn.core' module
@@ -452,7 +457,7 @@ Python binding you have:
    Type "help", "copyright", "credits" or "license" for more information.
    >>> from svn.core import *
    >>> "%s.%s.%s" % (SVN_VER_MAJOR, SVN_VER_MINOR, SVN_VER_PATCH)
-   '1.3.1'
+   '1.2.0'
    >>>
 
 Note that by default, Subversion installs its bindings in a location
@@ -460,7 +465,7 @@ that is not in Python's default module search path (for example, on
 Linux systems the default is usually /usr/local/lib/svn-python).  You
 need to remedy this, either by adding this path to Python's module
 search path, or by relocating the bindings to some place in that
-search path.  
+search path.
 
 For example, you might want to create .pth file in your Python
 installation directory's site-packages area which tells Python where
@@ -496,7 +501,7 @@ error: you can't see any files)
     CVS-Repository. The CGI-script generally runs as the same user
     that the web server does, often user 'nobody' or 'httpd'.
 
-  * Does ViewVC find your RCS utilities? (edit rcs_dir)
+  * Does ViewVC find your RCS utilities? (edit rcs_path)
 
 If something else happens or you can't get it to work:
 
