@@ -526,13 +526,22 @@ use_re_search = 0
 # use_re_search = 1
 
 #
-# Split directories and logs into pages.
-# Allows ViewVC to present discrete pages to the users instead of the
-# entire log or directory.
-# Set use_pagesize to the number of entries you want displayed on a page.
+# Split directory listings across pages as needed.  Allows ViewVC to
+# present discrete pages to the users instead of the entire directory.
+# Set dir_pagesize to the number of entries you want displayed on a page,
+# or 0 to disable pagination.
 #
-use_pagesize = 0
-# use_pagesize = 20
+dir_pagesize = 0
+# dir_pagesize = 20
+
+#
+# Split revision log listings across multiple pages as needed.  Allows
+# ViewVC to present discrete pages to the users instead of the entire log.
+# Set log_pagesize to the number of entries you want displayed on a page,
+# or 0 to disable pagination.
+#
+log_pagesize = 0
+# log_pagesize = 20
 
 # Limit number of changed paths shown per commit in the Subversion revision
 # view and in query results. This is not a hard limit (the UI provides

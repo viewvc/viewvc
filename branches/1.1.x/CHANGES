@@ -39,6 +39,7 @@ Version 1.1.0 (released ??-???-????)
   * tolerate malformed Accept-Language headers (issue #396)
   * allow MIME type mapping overrides in ViewVC configuration (issue #401)
   * fix exception in rev-sorted remote Subversion directory views (issue #409)
+  * allow setting of page sizes for log and dir views individually (issue #402)
 
 Version 1.0.7 (released 14-Oct-2008)
 
