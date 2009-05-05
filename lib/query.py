@@ -412,13 +412,10 @@ def main(server, cfg, viewvc_link):
         commits = [ ]
         query = 'skipped'
 
-    script_name = server.getenv('SCRIPT_NAME', '')
-
-    data = {
+    data = ezt.TemplateData({
       'cfg' : cfg,
       'address' : cfg.general.address,
       'vsn' : viewvc.__version__,
-
       'repository' : server.escape(form_data.repository, 1),
       'branch' : server.escape(form_data.branch, 1),
       'directory' : server.escape(form_data.directory, 1),
@@ -435,16 +432,11 @@ def main(server, cfg, viewvc_link):
       'commits' : commits,
       'num_commits' : len(commits),
       'rss_href' : None,
-      }
-
-    if form_data.hours:
-      data['hours'] = form_data.hours
-    else:
-      data['hours'] = 2
-
-    server.header()
+      'hours' : form_data.hours and form_data.hours or 2,
+      })
 
     # generate the page
+    server.header()
     template = viewvc.get_view_template(cfg, "query")
     template.generate(server.file(), data)
 

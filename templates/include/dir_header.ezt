@@ -32,7 +32,7 @@
   <td>[include "pathrev_form.ezt"]</td>
 </tr>
 
-[if-any search_re_form]
+[if-any search_re_action]
 <tr>
   <td>Filter files by content:</td>
   <td><form method="get" action="[search_re_action]" style="display: inline;">
