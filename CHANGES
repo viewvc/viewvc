@@ -1,4 +1,4 @@
-Version 1.1.0 (released ??-???-????)
+Version 1.1.0 (released 13-May-2009)
 
   * add support for full content diffs (issue #153)
   * make many more data dictionary items available to all views
