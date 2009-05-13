@@ -2,7 +2,7 @@ Version 1.2.0 (released ??-???-????)
 
   * add optional support for character encoding detection (issue #400)
 
-Version 1.1.0 (released ??-???-????)
+Version 1.1.0 (released 13-May-2009)
 
   * add support for full content diffs (issue #153)
   * make many more data dictionary items available to all views
@@ -38,7 +38,12 @@ Version 1.1.0 (released ??-???-????)
   * show RSS/query links only for roots found in commits database (issue #357)
   * recognize Subversion svn:mime-type property values (issue #364)
   * hide CVS files when viewing tags/branches on which they don't exist
-  * add support for hiding errorful entries from the directory view (issue #105)
+  * allow hiding of errorful entries from the directory view (issue #105)
+  * fix directory view sorting UI
+  * tolerate malformed Accept-Language headers (issue #396)
+  * allow MIME type mapping overrides in ViewVC configuration (issue #401)
+  * fix exception in rev-sorted remote Subversion directory views (issue #409)
+  * allow setting of page sizes for log and dir views individually (issue #402)
 
 Version 1.0.8 (released 05-May-2009)
 
