@@ -14,7 +14,7 @@
 #
 # -----------------------------------------------------------------------
 
-__version__ = '1.2-dev'
+__version__ = '1.1.0'
 
 # this comes from our library; measure the startup time
 import debug
@@ -1362,18 +1362,11 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename, mime_type):
                                 get_lexer_by_name, \
                                 get_lexer_for_mimetype, \
                                 get_lexer_for_filename
-    encoding = 'guess'
-    if cfg.options.detect_encoding:
-      try:
-        import chardet
-        encoding = 'chardet'
-      except (SyntaxError, ImportError):
-        pass
     try:
-      lexer = get_lexer_for_mimetype(mime_type, encoding=encoding)
+      lexer = get_lexer_for_mimetype(mime_type)
     except ClassNotFound:
       try:
-        lexer = get_lexer_for_filename(filename, encoding=encoding)
+        lexer = get_lexer_for_filename(filename)
       except ClassNotFound:
         use_pygments = 0
   except ImportError:
