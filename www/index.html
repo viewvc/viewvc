@@ -18,18 +18,27 @@
 
 <h1>ViewVC &mdash; Web-based Version Control Repository Browsing</h1>
 
-<div class="h2">
+<div class="h2"
+     style="border-style: solid;
+            border-width: 1px 2px 2px 1px;
+            border-color: black;
+            background: #eed;
+            padding: 0.5em;">
+
 <h2>Latest Release(s)</h2>
 
-<p style="background: yellow;">The next release of ViewVC &mdash;
-   version <strong>1.1.0</strong> &mdash; is now available as a
-   Beta!</p>
+<p>The most recent stable release of ViewVC is: <strong>1.1.0</strong></p>
 
-<p>The most recent stable release of ViewVC is: <strong>1.0.8</strong></p>
-
-<p>Visit our <a href="http://www.viewvc.org/download.html"
-   >Download</a> page for instructions on how to download these and
-   other releases.</p>
+<ul>
+  <li><a href="http://www.viewvc.org/download.html"
+      >Download or checkout</a> this release</li>
+  <li>Read the
+      <a href="http://viewvc.tigris.org/source/browse/*checkout*/viewvc/trunk/docs/release-notes/1.1.0.html" 
+      >release notes</a></li>
+  <li>See the
+      <a href="http://viewvc.tigris.org/source/browse/*checkout*/viewvc/tags/1.1.0/CHANGES"
+      >CHANGES</a> in this release.</li>
+</ul>
 
 </div>
 
@@ -53,15 +62,16 @@
   <li>Line-based annotation/blame display</li>
   <li>Revision graph capabilities (<em>CVS only</em>)</li>
   <li>Syntax highlighting support</li>
+  <li>Path-based authorization</li>
   <li>Commit metadata query facilities</li>
   <li>Template-driven output generation</li>
   <li>Colorized, side-by-side differences</li>
   <li>Tarball generation (by tag for CVS, by revision for Subversion)</li>
-  <li>Localization support based on the Accept-Language request header</li>
-  <li>Ability to run either as CGI script or as a standalone server</li>
+  <li>Ability to run as CGI script, under mod_python, or as a
+      standalone server application</li>
   <li>Regexp-based file searching</li>
-  <li>INI-like configuration file (as opposed to requiring actual code
-      tweaks)</li>
+  <li>INI-like configuration file (no code tweaking required)</li>
+  <li>Localization support based on the Accept-Language request header</li>
 </ul>
 
 <p>For a complete list of changes present in each release, see
