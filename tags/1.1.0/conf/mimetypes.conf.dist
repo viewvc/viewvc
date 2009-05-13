@@ -1,0 +1,32 @@
+#---------------------------------------------------------------------------
+#
+# MIME type mapping file for ViewVC
+#
+# Information on ViewVC is located at the following web site:
+#     http://viewvc.org/
+#
+#---------------------------------------------------------------------------
+
+# THE FORMAT OF THIS FILE
+#
+#    This file contains records -- one per line -- of the following format:
+#
+#       MIME_TYPE [EXTENSION [EXTENSION ...]]
+#
+#    where whitespace separates the MIME_TYPE from the EXTENSION(s),
+#    and the EXTENSIONs from each other.
+#
+#    For example:
+#
+#       text/x-csh         csh
+#       text/x-csrc        c
+#       text/x-diff        diff patch
+#       image/png          png
+#       image/jpeg         jpeg jpg jpe
+#
+#    By default, this file is left empty, allowing ViewVC to continue
+#    consulting it first without overriding the MIME type mappings
+#    found in more standard mapping files (such as those provided as
+#    part of the operating system or web server software).
+#
+#

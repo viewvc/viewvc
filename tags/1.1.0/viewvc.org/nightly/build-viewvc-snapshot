@@ -1,0 +1,219 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import time
+import urllib
+import shutil
+import getopt
+import tempfile
+
+  
+class BuildError(Exception):
+  def __init__(self, message):
+    self.message = message
+  def __str__(self):
+    return self.message
+  
+
+def make_release(branch, export_dir, publish_dir, root_url, username, password):
+    
+  # Export the requested ViewVC source tree.
+  cmd = "svn export --quiet '%s/%s' %s " \
+        "--username '%s' --password '%s' --non-interactive --force" \
+        % (root_url, urllib.quote(branch), export_dir, username, password)
+  sys.stdout.write("Running: %s\n" % (cmd))
+  os.system(cmd)
+
+  # Get the version number from ViewVC itself.
+  sys.path.insert(0, os.path.join(export_dir, 'lib'))
+  try:
+    import viewvc
+  except ImportError:
+    raise BuildError("Unable to import viewvc module; export failed?")
+  version = viewvc.__version__
+  del sys.modules['viewvc']
+  del viewvc
+  del sys.path[0]
+
+  # Now, use ViewVC tools to make the distribution archives.
+  localtime = time.localtime()
+  date = "%4d%02d%02d" % (localtime[0], localtime[1], localtime[2])
+  distversion = "viewvc-%s" % (version)
+  distname = "%s-%s" % (distversion, date)
+  gzip_name = distname + '.tar.gz'
+  zip_name = distname + '.zip'
+  curdir = os.getcwd()
+  try:
+    os.chdir(os.path.join(export_dir, 'tools'))
+    os.system('./make-release %s' % (distname))
+  finally:
+    os.chdir(curdir)
+
+  # Finally, return the locations of the archive files we've built.
+  gzip_file = os.path.join(export_dir, 'tools', gzip_name)
+  if not os.path.exists(gzip_file):
+    gzip_file = None
+  zip_file = os.path.join(export_dir, 'tools', zip_name)
+  if not os.path.exists(zip_file):
+    zip_file = None
+
+  # Remove superceded archives.
+  if gzip_file or zip_file:
+    dirents = os.listdir(publish_dir)
+    for dirent in dirents:
+      if dirent.startswith(distversion) \
+             and ((dirent.endswith('.tar.gz') and gzip_file) \
+                  or (dirent.endswith('.zip') and zip_file)):
+        os.unlink(dirent)
+
+  # Install the new archives.
+  if gzip_file:
+    os.rename(gzip_file, os.path.join(publish_dir, gzip_name))
+  if zip_file:
+    os.rename(zip_file, os.path.join(publish_dir, zip_name))
+    
+  # Return our archive names.
+  return gzip_file and gzip_name or None, zip_file and zip_name or None
+
+
+def publish_releases(branches, publish_dir, root_url, username, password):
+  new_index_contents = get_html_index_header()
+  for branch in branches:
+    sys.stdout.write("Beginning build for branch '%s'.\n" % (branch))
+    export_dir = None
+    try:
+      export_dir = tempfile.mkdtemp("", "viewvc-nightly-")
+      gzip_file, zip_file = make_release(branch, export_dir, publish_dir,
+                                         root_url, username, password)
+      new_index_contents = new_index_contents + """
+<p>Build of %s:</p>
+<ul>
+<li><a href="%s">%s</a></li>
+<li><a href="%s">%s</a></li>
+</ul>
+""" % (branch, urllib.quote(gzip_file), gzip_file,
+       urllib.quote(zip_file), zip_file)
+    finally:
+      if export_dir:
+        sys.stdout.write("Removing temporary directory '%s'.\n" % (export_dir))
+        shutil.rmtree(export_dir)
+    sys.stdout.write("Finished build for branch '%s'.\n" % (branch))
+
+  new_index_contents = new_index_contents + get_html_index_footer()
+  open(os.path.join(publish_dir, 'index.html'), 'w').write(new_index_contents)
+       
+
+def get_html_index_header():
+  return """
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>ViewVC: Nightly Snapshots</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<link rel="stylesheet" type="text/css" href="../styles.css"/>
+<link rel="shortcut icon" href="../favicon.ico" type="image/x-icon" />
+</head>
+
+<body>
+
+<div id="title">
+<a href="http://www.viewvc.org/"><img 
+   src="../images/title.jpg" alt="ViewVC: Repository Browsing"/></a>
+</div>
+
+<div id="menu">
+<p><a href="../index.html">Home</a> |
+   <a href="http://viewvc.tigris.org/">Project Page</a> |
+   <a href="../download.html">Download</a> |
+   <a href="../contributing.html">Contributing</a> |
+   <a href="./faq.html">FAQ</a> |
+   <a href="http://viewvc.tigris.org/nonav/source/browse/*checkout*/viewvc/trunk/LICENSE.html">License</a> |
+   <a href="../contact.html">Contact</a> |
+   <a href="../who.html">About</a>
+</p>
+</div>
+
+<table id="pagetable">
+<tr>
+<td id="pagecolumn1">
+
+<h4>On this page:</h4>
+
+<ul id="bookmarks">
+  <li><a href="%s">Snapshots</a></li>
+</ul>
+
+<p><a href="http://validator.w3.org/check?uri=referer"><img
+       src="http://www.w3.org/Icons/valid-xhtml10"
+       alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
+</p>
+
+</td>
+<td id="pagecolumn2">
+
+<div class="section">
+<h2 id="sec-snapshots">Snapshots</h2>
+<div class="section-body">
+""" % ("#sec-snapshots")
+
+
+def get_html_index_footer():
+  return """
+</div> <!-- section-body -->
+</div> <!-- section -->
+
+</td>
+</tr>
+</table>
+</body>
+</html>
+"""
+
+
+def usage_and_exit(errmsg=None):
+  stream = errmsg and sys.stderr or sys.stdout
+  progname = os.path.basename(sys.argv[0])
+  stream.write("""%s -- nightly ViewVC build generation
+  
+Usage: %s [OPTIONS] PUBLISH-DIR BRANCH ...
+
+Build an archive from one or more BRANCH in the ViewVC source
+repository, dropping them into PUBLISH-DIR alongside an index.html
+file that name and links to them.
+
+Options:
+   --help (-h, -?)  : Show this usage message
+   --username       : Username used for source export
+   --password       : Password used for source export
+   --root-url       : Alternative source repository root URL
+
+""" % (progname, progname))
+  if errmsg:
+    stream.write("ERROR: %s\n" % (errmsg))
+  sys.exit(errmsg and 1 or 0)
+
+
+if __name__ == "__main__":
+  root_url = "http://viewvc.tigris.org/svn/viewvc"
+  username = password = ""
+  opts, args = getopt.getopt(sys.argv[1:], 'h?',
+                             ['help', 'username=', 'password=', 'root-url='])
+  for name, value in opts:
+    if name == '-h' or name == '-?' or name == '--help':
+      usage_and_exit()
+    elif name == '--username':
+      username = value
+    elif name == '--password':
+      password = value
+    elif name == '--root-url':
+      root_url = value
+  argc = len(args)
+  if argc < 2:
+    usage_and_exit("Not enough arguments")
+  try:
+    publish_releases(args[1:], args[0], root_url, username, password)
+  except BuildError, e:
+    sys.stderr.write(str(e) + "\n")
+    sys.exit(1)
