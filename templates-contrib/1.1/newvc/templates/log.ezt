@@ -45,7 +45,7 @@
   <td>[include "include/pathrev_form.ezt"]</td>
 </tr>
 
-[is cfg.options.use_pagesize "0"][else][is picklist_len "1"][else]    
+[is picklist_len "0"][else][is picklist_len "1"][else]    
 <tr>
   <td>Jump to page:</td>
   <td><form method="get" action="[log_paging_action]">

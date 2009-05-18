@@ -9,7 +9,7 @@
 [end]
 
 <table class="auto">
-[is cfg.options.use_pagesize "0"][else][is picklist_len "1"][else]
+[is picklist_len "0"][else][is picklist_len "1"][else]
 <tr>
   <td>Jump to page:</td>
   <td><form method="get" action="[dir_paging_action]">
@@ -108,7 +108,7 @@
 </table>
 
 <div id="vc_view_summary">
-[if-any search_re_form]
+[if-any search_re_action]
 <form class="inline" method="get" action="[search_re_action]">
   <div class="inline">
     [for search_re_hidden_values]<input type="hidden" name="[search_re_hidden_values.name]" value="[search_re_hidden_values.value]"/>[end]
