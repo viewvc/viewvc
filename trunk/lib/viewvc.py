@@ -3432,6 +3432,8 @@ def view_queryform(request):
     'hours' : request.query_dict.get('hours', '2'),
     'mindate' : request.query_dict.get('mindate', ''),
     'maxdate' : request.query_dict.get('maxdate', ''),
+    'query_action' : query_action,
+    'query_hidden_values' : query_hidden_values,
     'limit_changes' : limit_changes,
     'dir_href' : request.get_url(view_func=view_directory, params={},
                                  escape=1),
