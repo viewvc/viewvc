@@ -1,6 +1,6 @@
 Version 1.1.1 (released ??-???-????)
 
-  * 
+  * fix broken query form (missing required ezt template variables)
 
 Version 1.1.0 (released 13-May-2009)
 
