@@ -542,7 +542,7 @@ class CheckinDatabase:
         cursor.execute(sql)
 
     def PurgeRepository(self, repository):
-        rep_id = self.GetRepositoryID(repository)
+        rep_id = self.GetRepositoryID(repository, auto_set=0)
         if not rep_id:
             raise Exception, "Unknown repository '%s'" % (repository)
 
@@ -579,6 +579,13 @@ class CheckinDatabase:
                 self.sql_delete('branches', 'id', checkin[2], 'branchid')
                 self.sql_delete('descs', 'id', checkin[3], 'descid')
                 self.sql_delete('people', 'id', checkin[4], 'whoid')
+
+        # Reset all internal id caches.  We could be choosier here,
+        # but let's just be as safe as possible.
+        self._get_cache = {}
+        self._get_id_cache = {}
+        self._desc_id_cache = {}
+        
 
 ## the Commit class holds data on one commit, the representation is as
 ## close as possible to how it should be committed and retrieved to the
