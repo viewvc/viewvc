@@ -3,6 +3,7 @@ Version 1.1.1 (released ??-???-????)
   * fix broken query form (missing required template variables) (issue #416)
   * fix bug in cvsdb which caused rebuild operations to lose data (issue #417)
   * fix cvsdb purge/rebuild repos lookup to error on missing repos
+  * fix misleading file contents view page title
 
 Version 1.1.0 (released 13-May-2009)
 
