@@ -542,7 +542,7 @@ class CheckinDatabase:
         cursor.execute(sql)
 
     def PurgeRepository(self, repository):
-        rep_id = self.GetRepositoryID(repository)
+        rep_id = self.GetRepositoryID(repository, auto_set=0)
         if not rep_id:
             raise Exception, "Unknown repository '%s'" % (repository)
 
