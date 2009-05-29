@@ -1,5 +1,5 @@
 [# setup page definitions]
-  [define page_title]Annotate of /[where][end]
+  [define page_title]Contents of /[where][end]
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
