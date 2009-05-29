@@ -37,9 +37,9 @@
    schema, so you are not required to rebuild your commits database
    for ViewVC 1.1.0 compatibility.  By default, new commits databases
    created using the 1.1.0 version of the <code>make-database</code>
-   script will use the a new database schema that is unreadable by
-   previous ViewVC versions, but if you need a database which can
-   co-exist with a previous ViewVC version, you can use
+   script will use a new database schema that is unreadable by
+   previous ViewVC versions.  However, if you need a database which
+   can co-exist with a previous ViewVC version, you can use
    the <code>--version=1.0</code> option
    to <code>make-database</code>.</p>
 
@@ -60,7 +60,7 @@
    ViewVC 1.0 has a configuration option for naming 'forbidden'
    modules, but it is really limited &mdash; it basically just makes a
    universal decision about which top-level directories in every
-   hosted repository should be hidden by the ViewVC.  People want
+   hosted repository should be hidden by ViewVC.  People want
    more, and specifically requested that ViewVC learn how to honor
    Subversion's authz files and semantics.  So, along with some other
    types of authorization approaches, that's what ViewVC 1.1 can now
@@ -80,38 +80,43 @@
 <div class="h3">
 <h3 id="">Subversion versioned properties display</h3>
 
-<p>ViewVC 1.0 can't show you the properties that Subversion lets you
-   store on files and directory
+<p>ViewVC 1.1 displays the properties that Subversion lets you store
+   on files and directories
    (<code>svn:mime-type</code>, <code>svn:mergeinfo</code>,
-   <code>svn:ignore</code>, etc.).  ViewVC 1.1 can.  'Nuff said.</p>
+   <code>svn:ignore</code>, etc.).  Directory properties are shown by
+   default at the bottom of that directory's entry listing.  File
+   properties are displayed at the bottom of that file's
+   markup/annotate view.</p>
 
 </div>
 
 <div class="h3">
 <h3 id="">Unified markup and annotation views</h3>
 
-<p>The "markup" and "annotate" views in ViewVC how have a unified look
-   and feel (driven by a single EZT template now), and both can
-   support syntax highlighting.</p>
+<p>The "markup" and "annotate" views in ViewVC now have a unified look
+   and feel (driven by a single EZT template).  Both views support
+   syntax highlighting and Subversion file property display.</p>
 
 </div>
 
 <div class="h3">
 <h3 id="">Unified, hassle-free Pygments-based syntax highlighting</h3>
 
-<p>ViewVC 1.0 does syntax highlight by working with GNU enscript, or
-   highlight, or php, or py2html &mdash; all these external tools just to
-   accomplish a single task.  But they all do things in slightly
+<p>ViewVC 1.0 does syntax highlighting by working with GNU enscript, or
+   highlight, or php, or py2html &mdash; all these external tools just
+   to accomplish a single task.  But they all do things in slightly
    different ways.  And if you configure them wrongly, you get strange
-   errors.  Pygments (which is also used by Trac for syntax
-   highlighting) is a Python package that requires no configuration,
-   is easier to use inside ViewVC, and so on.  So ViewVC 1.1 drops
-   support for all those various old integrations, and just uses
-   Pygments for everything now.  This change was about developer
-   and administrator sanity.  There will be complaints, to be sure,
-   about how various color schemes differ and what file types now are
-   and aren't understood by the syntax highlighting engine, but this
-   change should vastly simplify the discussions of such things.</p>
+   errors.  <a href="http://www.pygments.org/">Pygments</a> (which is
+   also used by <a href="http://trac.edgewall.org/">Trac</a> for
+   syntax highlighting) is a Python package that requires no
+   configuration, is easier to use inside ViewVC, and so on.  So
+   ViewVC 1.1 drops support for all those various old integrations,
+   and just uses Pygments for everything now.  This change was about
+   developer and administrator sanity.  There will be complaints, to
+   be sure, about how various color schemes differ and what file types
+   now are and aren't understood by the syntax highlighting engine,
+   but this change should vastly simplify the discussions of such
+   things.</p>
 
 </div>
 
@@ -123,22 +128,28 @@
    (<code>.jpg</code> = <code>image/jpeg</code>, &hellip;).  But
    Subversion lets you dictate a file's MIME type using
    the <code>svn:mime-type</code> property.  ViewVC now recognizes and
-   honors that property as the preferred source of a file's MIME
-   type.  (This can be disabled in the configuration, though.)</p>
+   honors that property as the preferred source of a file's MIME type.
+   This can be disabled in the configuration, though, which might be
+   desirable if many of your Subversion-versioned files carry the
+   generic <code>application/octet-stream</code> MIME type that
+   Subversion uses by default for non-human-readable files.</p>
 
 <p>Also, ViewVC now allows you to specify multiple MIME type mapping
-   files that you'd like it to consult for extension-to-type answers.
-   This allows administrators to easily define their own custom
-   mappings for ViewVC's benefit without potentially affecting the
-   mappings used by other site services.</p>
+   files that you'd like it to consult when determine the MIME type of
+   files based on their extensions.  This allows administrators to
+   easily define their own custom mappings for ViewVC's benefit
+   without potentially affecting the mappings used by other site
+   services.</p>
 
 </div>
 
 <div class="h3">
 <h3 id="">Support for full content diffs</h3>
 
-<p>ViewVC 1.1 can display colored diffs that show the full contents of
-   the file (instead of only 3 or 15 lines of context).</p>
+<p>ViewVC 1.1 expands the previously existing options of "colored
+   diff" and "long colored diff" with a new "full colored diff", which
+   shows the full contents of the changed file (instead of only the 3
+   or 15 lines of context shown via the older diff display types).</p>
 
 </div>
 
@@ -146,7 +157,9 @@
 <h3 id="">Support for per-root configuration overrides</h3>
 
 <p>In ViewVC 1.1, you can setup configuration option overrides on a
-   per-root (per-repository) basis (if you need/care to do so).</p>
+   per-root (per-repository) basis (if you need/care to do so).  See
+   the comments in the <code>viewvc.conf.dist</code> file for more on
+   how to do this.</p>
 
 </div>
 
@@ -155,9 +168,14 @@
 
 <p>ViewVC can, when displaying revision metadata, munge strings that
    look like email addresses to protect them from screen-scraping
-   spammers.  A log message that says, "Patch by:
-   cmpilato@red-bean.com" can optionally be displayed by ViewVC as
-   "Patch by: cmpilato@..."</p>
+   spammers.  For example, a log message that says, "Patch by:
+   cmpilato@red-bean.com" can optionally be displayed by ViewVC using
+   HTML entity encoding for the characters (a trick that causes no
+   visible change to the output, but that might confuse
+   unsophisticated spam bot crawlers) or as "Patch by: cmpilato@..."
+   (which isn't a complete email address at all, but might be enough
+   information for the human reading the log message to know who to
+   blame for the patch).</p>
 
 </div>
 
