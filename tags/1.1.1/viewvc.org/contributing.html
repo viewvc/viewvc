@@ -1,0 +1,241 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>ViewVC: Contributing</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<link rel="stylesheet" type="text/css" href="./styles.css"/>
+<link rel="shortcut icon" href="./favicon.ico" type="image/x-icon" />
+</head>
+
+<body>
+
+<div id="title">
+<a href="http://www.viewvc.org/"><img 
+   src="./images/title.jpg" alt="ViewVC: Repository Browsing"/></a>
+</div>
+
+<div id="menu">
+<p><a href="./index.html">Home</a> |
+   <a href="http://viewvc.tigris.org/">Project Page</a> |
+   <a href="./download.html">Download</a> |
+   <a href="./contributing.html">Contributing</a> |
+   <a href="./faq.html">FAQ</a> |
+   <a href="http://viewvc.tigris.org/nonav/source/browse/*checkout*/viewvc/trunk/LICENSE.html">License</a> |
+   <a href="./contact.html">Contact</a> |
+   <a href="./who.html">About</a>
+</p>
+</div>
+
+<table id="pagetable">
+<tr>
+<td id="pagecolumn1">
+
+<h4>On this page:</h4>
+
+<ul id="bookmarks">
+  <li><a href="#sec-getting-started">Getting Started</a></li>
+  <li><a href="#sec-testing">Testing and Reporting</a></li>
+  <li><a href="#sec-coding-style">Coding Style</a></li>
+  <li><a href="#sec-patches">Submitting Patches</a></li>
+  <li><a href="#sec-security">Security</a></li>
+  <li><a href="#sec-adding-features">Adding Features</a></li>
+  <li><a href="#sec-templates">Hacking on Templates</a></li>
+</ul>
+
+<p><a href="http://validator.w3.org/check?uri=referer"><img
+       src="http://www.w3.org/Icons/valid-xhtml10"
+       alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
+</p>
+
+</td>
+<td id="pagecolumn2">
+
+<div class="section">
+
+<h2 id="sec-getting-started">Getting Started</h2>
+
+<div class="section-body">
+
+<p>Some basic knowledge about <a
+   href="http://www.python.org">Python</a> and development tools like
+   <code>diff</code> is required.  Your best bet is to start with a
+   fresh source code snapshot, which you may obtain from our
+   Subversion repository (see instructions <a
+   href="./download.html#sec-subversion">here</a>).</p>
+
+<p>Version control history can be obtained using Subversion clients,
+   but is also browsable using <a
+   href="http://viewvc.tigris.org/source/browse/viewvc/trunk/"
+   >tigris.org's integrated ViewVC tool</a>.</p>
+
+</div> <!-- section-body -->
+</div> <!-- section -->
+
+<div class="section">
+
+<h2 id="sec-testing">Testing and Reporting</h2>
+
+<div class="section-body">
+
+<p>Testing usability and the installation process on different
+   platforms is also a valuable contribution.  Please report your
+   results back to us developers.  Bandwidth is getting cheaper daily,
+   so don't be afraid &mdash; in fact, feel encouraged &mdash; to dump
+   as much detail about the problems you are seeing as possible into
+   your bug reports.  Here are some things you definitely should
+   try to include:</p>
+
+<ul>
+
+  <li>What version of ViewVC you are using (if you are using a source
+      snapshot, tell us the date of that snapshot).</li>
+
+  <li>What operating system your ViewVC is running on.</li>
+
+  <li>What version of Python you are using.</li>
+
+  <li>Whether you are running ViewVC standalone, or as a CGI program
+      under a web server (and if so, what web server).</li>
+
+  <li>The URL of your ViewVC instantiation, if it is public.
+      Sometimes, letting developers see the problem for themselves can
+      save everyone alot of time.</li>
+
+</ul>
+
+</div> <!-- section-body -->
+</div> <!-- section -->
+
+<div class="section">
+      
+<h2 id="sec-coding-style">Coding Style</h2>
+
+<div class="section-body">
+
+<p>Unlike its predecessor, CvsWeb, ViewVC is written in Python, so it
+   doesn't suffer from the "unmaintainable code effect" that hits most
+   Perl projects sooner or later:</p>
+
+<blockquote>
+  
+<p>&quot;[Perl] combines all the worst aspects of C and Lisp: a
+   billion different sublanguages in one monolithic executable.  It
+   combines the power of C with the readability of
+   PostScript.&quot;  &mdash;&nbsp;Jamie&nbsp;Zawinski
+</p>
+
+</blockquote>
+
+<p>Of course, a symphony of insanity can be composed in any language,
+   so we do try to stick to some basic guiding principles.  Maintain
+   whatever style is present in the code being modified.  New code can
+   use anything sane (which generally means <a
+   href="http://www.python.org/dev/peps/pep-0008/">PEP&nbsp;8</a>).
+   Our only real peeve is if someone writes a function call as:
+   <code>some_func&nbsp;(args)</code> &mdash; that space between the
+   function name and opening parenthesis is Huge Badness.  Oh, and we
+   do <strong>not</strong> use Subversion keywords (such as
+   <code>$</code><code>Id$</code>) within the source.</p>
+
+<p>Otherwise&hellip; <em>shrug</em>.</p>
+
+</div> <!-- section-body -->
+</div> <!-- section -->
+
+<div class="section">
+
+<h2 id="sec-patches">Submitting Patches</h2>
+
+<div class="section-body">
+
+<p>Nothing speaks more loudly when bugs or features are the topic than
+   a patch.  And quite frankly, sometimes if you want something done,
+   you gotta do it yourself.  So, patches are always welcome.  If you
+   aren't sure what exactly a &quot;patch&quot; is, or don't know how
+   to generate one, but you've got code contributions to make, please
+   don't hesitate to ask questions on the mailing lists.  Patch
+   generation and application are pretty easy thing to get the hang of,
+   and drastically simplify code submission and review.</p>
+
+<p>Please use the <a
+   href="http://viewvc.tigris.org/servlets/ProjectIssues">Issue
+   Tracker</a> to submit your patches.  Unified contextual diffs
+   against the latest development snapshot are preferred.</p>
+
+<p>If you have commit access, then you should know what you're doing.
+   Just make changes directly.  Subscribing to the <a
+   href="http://viewvc.tigris.org/servlets/ProjectMailingListList"
+   ><tt>dev@</tt> developer mailing list</a> is recommended in any
+   case.</p>
+
+</div> <!-- section-body -->
+</div> <!-- section -->
+
+<div class="section">
+
+<h2 id="sec-security">Security</h2>
+
+<div class="section-body">
+
+<p>Since ViewVC is used on the Internet, security is a major concern.
+   If you need to pass data from the request into an external program,
+   please don't use <code>os.system()</code> or
+   <code>os.popen()</code>.  Please use the module
+   <code>lib/popen.py</code> that is included in the ViewVC
+   distribution instead.</p>
+
+</div> <!-- section-body -->
+</div> <!-- section -->
+
+<div class="section">
+
+<h2 id="sec-adding-features">Adding Features</h2>
+
+<div class="section-body">
+
+<p>If you need a new configuration option think carefully, into which
+   section it belongs.  Try to keep the content of
+   <code>cgi/viewvc.conf.dist</code> file and the library module
+   <code>lib/config.py</code> in sync.</p>
+
+<p>Because ViewVC is a Web-based application, people will have ViewVC
+   URLs hyperlinked from other sites, embedded in emails, bookmarked
+   in their browsers, etc.  It is very important to ensure that those
+   URLs continue to retrieve the information they were intended to
+   retrieve even if ViewVC is upgraded on the hosting server.  In
+   other words, as new features require modifications to the <a
+   href="./url-reference.html">ViewVC URL schema</a>, make sure those
+   modifications preserve the existing functionality of all ViewVC
+   URLs.</p>
+
+<p>The library subdirectory contains a module <code>debug.py</code>,
+   which you may find useful for performance testing.</p>
+
+<p>If a new file or module is added, a new line in the installer
+   program <code>viewvc-install</code> is required.</p>
+
+</div> <!-- section-body -->
+</div> <!-- section -->
+
+<div class="section">
+
+<h2 id="sec-templates">Hacking on Templates</h2>
+
+<div class="section-body">
+
+<p>The library module <code>ezt.py</code> contains a module docstring
+   which describes the directives used in the HTML templates used by
+   ViewVC.  The templates themselves can be found in the
+   <code>templates</code> subdirectory.  We're currently developing a
+   how-to guide for <a href="./template-authoring-guide.html">ViewVC
+   template customization</a>.</p>
+
+</div> <!-- section-body -->
+</div> <!-- section -->
+
+</td>
+</tr>
+</table>
+</body>
+</html>

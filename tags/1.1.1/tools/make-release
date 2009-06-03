@@ -1,0 +1,90 @@
+#!/bin/sh
+#
+# Copyright (C) 1999-2007 The ViewCVS Group. All Rights Reserved.
+#
+# By using this file, you agree to the terms and conditions set forth in
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
+#
+# For more information, visit http://viewvc.org/
+#
+# -----------------------------------------------------------------------
+#
+# make-release: internal tool for creating ViewVC releases
+#
+# -----------------------------------------------------------------------
+#
+
+### Validate input
+if test $# != 2 && test $# != 1; then
+  echo "Usage: $0 TARGET-DIRECTORY [BRANCH]"
+  echo ""
+  echo "If BRANCH (i.e. \"tags/1.1.0\" or \"branches/1.0.x\") is not provided,"
+  echo "the release will be rolled from trunk."
+  exit 1
+fi
+
+TARGET=${1}
+if test $# = 1; then
+  ROOT=trunk
+else
+  ROOT=${2}
+fi
+
+if test -e ${TARGET}; then
+  echo "ERROR: must remove ${TARGET} first."
+  exit 1
+fi
+
+### Grab an export from the Subversion repository.
+EXPORT_URL="http://viewvc.tigris.org/svn/viewvc/${ROOT}"
+echo "Exporting '${EXPORT_URL}' into '${TARGET}'"
+
+for PLATFORM in unix windows; do
+  if test ${PLATFORM} = windows; then
+    EOL="--native-eol CRLF"
+  else
+    EOL="--native-eol LF"
+  fi
+
+  echo "Beginning build for ${PLATFORM}:"
+
+  echo "   Exporting source code..."
+  svn export --quiet ${EOL} ${EXPORT_URL} ${TARGET}
+
+  ### Various shifting, cleanup.  
+
+  # Remove some not useful directories
+  for JUNK in elemx \
+              notes \
+              tests \
+              tools \
+              tparse \
+              viewcvs.sourceforge.net \
+              viewvc.org \
+              www; do
+    if [ -d ${TARGET}/${JUNK} ]; then
+      echo "   Removing ${TARGET}/${JUNK}..."
+      rm -r ${TARGET}/${JUNK}
+    fi
+  done
+
+  # Make sure permissions are reasonable:
+  echo "   Normalizing permissions..."
+  find ${TARGET} -print | xargs chmod uoa+r
+  find ${TARGET} -type d -print | xargs chmod uoa+x
+
+  if test ${PLATFORM} = windows; then
+    # Create also a ZIP file for those poor souls :-) still using Windows: 
+    echo "   Creating ZIP archive..."
+    zip -qor9 ${TARGET}.zip ${TARGET}
+  else
+    # Cut the tarball:
+    echo "   Creating tarball archive..."
+    tar cf - ${TARGET} | gzip -9 > ${TARGET}.tar.gz
+  fi
+
+  # remove target directory
+  rm -r ${TARGET}
+done
+echo "Done."
