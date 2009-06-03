@@ -1,4 +1,4 @@
-Version 1.1.1 (released ??-???-????)
+Version 1.1.1 (released 03-Jun-2009)
 
   * fix broken query form (missing required template variables) (issue #416)
   * fix bug in cvsdb which caused rebuild operations to lose data (issue #417)
