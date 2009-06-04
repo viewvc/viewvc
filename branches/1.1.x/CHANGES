@@ -1,6 +1,6 @@
 Version 1.1.2 (released ??-???-????)
 
-  *
+  * add optional support for character encoding detection (issue #400)
 
 Version 1.1.1 (released 03-Jun-2009)
 
