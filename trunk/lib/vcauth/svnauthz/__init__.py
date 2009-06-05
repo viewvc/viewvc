@@ -22,7 +22,6 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   """Subversion authz authorizer module"""
   
   def __init__(self, username, params={}):
-    self.username = username
     self.rootpaths = { }  # {root -> { paths -> access boolean for USERNAME }}
     
     # Get the authz file location from a passed-in parameter.
@@ -32,14 +31,29 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     if not os.path.exists(self.authz_file):
       raise debug.ViewVCException("Configured authzfile file not found")
 
+    # See if the admin wants us to do case normalization of usernames.
+    self.force_username_case = params.get('force_username_case')
+    if self.force_username_case == "upper":
+      self.username = username.upper()
+    elif self.force_username_case == "lower":
+      self.username = username.lower()
+    elif not self.force_username_case:
+      self.username = username
+    else:
+      raise debug.ViewVCException("Invalid value for force_username_case "
+                                  "option")
+
   def _get_paths_for_root(self, rootname):
     if self.rootpaths.has_key(rootname):
       return self.rootpaths[rootname]
 
     paths_for_root = { }
     
-    # Parse the authz file.
+    # Parse the authz file, replacing ConfigParser's optionxform()
+    # method with something that won't futz with the case of the
+    # option names.
     cp = ConfigParser()
+    cp.optionxform = lambda x: x
     cp.read(self.authz_file)
 
     # Figure out if there are any aliases for the current username
