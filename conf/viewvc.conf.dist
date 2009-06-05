@@ -830,9 +830,17 @@ forbiddenre =
 [authz-svnauthz]
 
 # The "svnauthz" authorizer uses a Subversion authz configuration file
-# to determine access to repository paths.  This option specifies the
-# location of that file using an absolute path.
-#
+# to determine access to repository paths.
+
+# authzfile: Specifies the location of the authorization rules file
+# (using an absolute path).
 authzfile =
+
+# force_username_case: Like the AuthzForceUsernameCase httpd.conf
+# directive, set this to "upper" or "lower" to force the normalization
+# to upper- or lower-case, respectively, of incoming usernames prior
+# to comparison against the authorization rules files.  Leave the
+# option unset to preserve the username case.
+force_username_case = 
 
 #---------------------------------------------------------------------------
