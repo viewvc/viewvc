@@ -177,7 +177,12 @@ if __name__ == '__main__':
         if command in ('rebuild', 'purge'):
             if quiet_level < 2:
                 print "Purging existing data for repository root `%s'" % root
-            db.PurgeRepository(root)
+            try:
+                db.PurgeRepository(root)
+            except cvsdb.UnknownRepositoryError, e:
+                if command == 'purge':
+                    sys.stderr.write("ERROR: " + str(e) + "\n")
+                    sys.exit(1)
 
         if command in ('rebuild', 'update'):
             repository = vclib.ccvs.CVSRepository(None, rootpath, None,

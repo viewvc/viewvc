@@ -67,9 +67,9 @@ class CheckinDatabase:
         else:
             self._version = 0
         if self._version > CURRENT_SCHEMA_VERSION:
-            raise Exception("Database version %d is newer than the last "
-                            "version supported by this software."
-                            % (self._version))
+            raise DatabaseVersionError("Database version %d is newer than the "
+                                       "last version supported by this "
+                                       "software." % (self._version))
 
     def sql_get_id(self, table, column, value, auto_set):
         sql = "SELECT id FROM %s WHERE %s=%%s" % (table, column)
@@ -544,7 +544,8 @@ class CheckinDatabase:
     def PurgeRepository(self, repository):
         rep_id = self.GetRepositoryID(repository, auto_set=0)
         if not rep_id:
-            raise Exception, "Unknown repository '%s'" % (repository)
+            raise UnknownRepositoryError("Unknown repository '%s'"
+                                         % (repository))
 
         if (self._version >= 1):
             self.sql_delete('repositories', 'id', rep_id)
@@ -586,6 +587,12 @@ class CheckinDatabase:
         self._get_id_cache = {}
         self._desc_id_cache = {}
         
+
+class DatabaseVersionError(Exception):
+    pass
+class UnknownRepositoryError(Exception):
+    pass
+
 
 ## the Commit class holds data on one commit, the representation is as
 ## close as possible to how it should be committed and retrieved to the

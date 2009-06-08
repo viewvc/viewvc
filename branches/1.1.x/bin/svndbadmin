@@ -245,7 +245,12 @@ def main(command, repository, revs=[], verbose=0, force=0):
     if command in ('rebuild', 'purge'):
         if verbose:
             print "Purging commit info for repository root `%s'" % repository
-        db.PurgeRepository(repository)
+        try:
+            db.PurgeRepository(repository)
+        except cvsdb.UnknownRepositoryError, e:
+            if command == 'purge':
+                sys.stderr.write("ERROR: " + str(e) + "\n")
+                sys.exit(1)
 
     repo = SvnRepo(repository)
     if command == 'rebuild' or (command == 'update' and not revs):
