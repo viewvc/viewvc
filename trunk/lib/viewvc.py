@@ -685,6 +685,13 @@ _legal_params = {
   'revision'      : _re_validate_revnum,
   'content-type'  : _re_validate_mimetype,
 
+  # for cvsgraph
+  'gflip'         : _re_validate_boolint,
+  'gbbox'         : _re_validate_boolint,
+  'gshow'         : _re_validate_alpha,
+  'gleft'         : _re_validate_boolint,
+  'gmaxtag'       : _re_validate_number,
+
   # for query
   'branch'        : _validate_regex,
   'branch_match'  : _re_validate_alpha,
@@ -2422,6 +2429,59 @@ def view_checkout(request):
     copy_stream(fp, server_fp, cfg)
   fp.close()
 
+def cvsgraph_make_reqopt(request, cfgname, queryparam, optvalue):
+  # Return a cvsgraph custom option substring bit OPTVALUE based on
+  # CFGNAME's presence in the allowed list of user-configurable
+  # options and QUERYPARAM's presence and boolean interpretation in
+  # the actual request; otherwise, return the empty string for options
+  # that either aren't overridden or aren't allowed to be overridden.
+  
+  if (cfgname in request.cfg.options.allowed_cvsgraph_useropts) \
+     and (int(request.query_dict.get(queryparam, 0))):
+    return optvalue
+  return ''
+
+def cvsgraph_normalize_gshow(request):
+  # Return the effective value of the 'gshow' query parameter, noting
+  # that a missing parameter is the same as gshow=all, and treating a
+  # bogus parameter value as the same as gshow=all, too.
+  gshow = request.query_dict.get('gshow', 'all')
+  if gshow not in ('all', 'inittagged', 'tagged'):
+    gshow = 'all'
+  return gshow
+  
+def cvsgraph_extraopts(request):
+  # Build a set of -O options for controlling cvsgraph's behavior,
+  # based on what the user has requested and filtered against what the
+  # user is allowed to request.
+  
+  cfg = request.cfg
+
+  ep = '-O'
+
+  # Simple mappings of boolean flags
+  ep = ep + cvsgraph_make_reqopt(request, 'invert', 'gflip',
+                                 ';upside_down=true')
+  ep = ep + cvsgraph_make_reqopt(request, 'branchbox', 'gbbox',
+                                 ';branch_dupbox=true')
+  ep = ep + cvsgraph_make_reqopt(request, 'rotate', 'gleft',
+                                 ';left_right=true')
+
+  # Stripping is a little more complex.
+  if ('show' in request.cfg.options.allowed_cvsgraph_useropts):
+    gshow = cvsgraph_normalize_gshow(request)
+    if gshow == 'inittagged':
+      ep = ep + ';strip_untagged=true'
+    elif gshow == 'tagged':
+      ep = ep + ';strip_untagged=true;strip_first_rev=true'
+
+  # And tag limitation has a user-supplied value to mess with.
+  if ('limittags' in request.cfg.options.allowed_cvsgraph_useropts) \
+     and request.query_dict.has_key('gmaxtag'):
+    ep = ep + ';rev_maxtags=' + request.query_dict['gmaxtag']
+
+  return ep + ';'
+  
 def view_cvsgraph_image(request):
   "output the image rendered by cvsgraph"
   # this function is derived from cgi/cvsgraphmkimg.cgi
@@ -2439,6 +2499,7 @@ def view_cvsgraph_image(request):
   fp = popen.popen(cfg.utilities.cvsgraph or 'cvsgraph',
                    ("-c", cfg.path(cfg.options.cvsgraph_conf),
                     "-r", request.repos.rootpath,
+                    cvsgraph_extraopts(request),
                     rcsfile), 'rb', 0)
   
   copy_stream(fp, get_writeready_server_file(request, 'image/png'), cfg)
@@ -2481,12 +2542,28 @@ def view_cvsgraph(request):
                                           pathtype=vclib.DIR,
                                           params={'pathrev': None},
                                           escape=1, partial=1),
+                    cvsgraph_extraopts(request),
                     rcsfile), 'rb', 0)
+
+  graph_action, graph_hidden_values = \
+    request.get_form(view_func=view_cvsgraph, params={})
 
   data = common_template_data(request)
   data.merge(ezt.TemplateData({
     'imagemap' : fp,
     'imagesrc' : imagesrc,
+    'graph_action' : graph_action,
+    'graph_hidden_values' : graph_hidden_values,
+    'opt_gflip' : ezt.boolean('invert' in cfg.options.allowed_cvsgraph_useropts),
+    'opt_gbbox' : ezt.boolean('branchbox' in cfg.options.allowed_cvsgraph_useropts),
+    'opt_gshow' : ezt.boolean('show' in cfg.options.allowed_cvsgraph_useropts),
+    'opt_gleft' : ezt.boolean('rotate' in cfg.options.allowed_cvsgraph_useropts),
+    'opt_gmaxtag' : ezt.boolean('limittags' in cfg.options.allowed_cvsgraph_useropts),
+    'gflip' : ezt.boolean(int(request.query_dict.get('gflip', 0))),
+    'gbbox' : ezt.boolean(int(request.query_dict.get('gbbox', 0))),
+    'gleft' : ezt.boolean(int(request.query_dict.get('gleft', 0))),
+    'gmaxtag' : request.query_dict.get('gmaxtag', 0),
+    'gshow' : cvsgraph_normalize_gshow(request),
     }))
   generate_page(request, "graph", data)
 

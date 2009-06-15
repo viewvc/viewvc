@@ -532,6 +532,27 @@ use_cvsgraph = 0
 # configuration file.
 cvsgraph_conf = cvsgraph.conf
 
+# allowed_cvsgraph_useropts: A list of settings used for cvsgraph's
+# user-modifiable behavior which can be changed in the graph display.
+# This value is a comma-delimited list of features, taken from the
+# following set:
+#   invert     - Display graph upside down
+#   branchbox  - Add a branchbox at the tip of each branch
+#   show       - Display user-selected classes of revisions
+#   rotate     - Draw the tree left-to-right or top-to-bottom [*]
+#   limittags  - Allow limit on the maximum number of tags displayed
+#
+# If this option is left unset, users will not be permitted to modify
+# the graph display behavior.
+#
+# [*] WARNING: The 'rotate' option is known to cause some browsers to
+# crash due, presumably, to the display of excessively wide images.
+#
+# Example:
+# allowed_cvsgraph_useropts = limittags, show
+#
+allowed_cvsgraph_useropts = 
+
 # use_re_search: Enable regular expression search of files in a directory.
 #
 # WARNING: Enabling this option can consume HUGE amounts of server
