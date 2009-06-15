@@ -867,7 +867,7 @@ th.caption {
     <td>file query string</td>
   </tr>
   <tr>
-    <td><code>file_match=FILE_MATCH</code></td>
+    <td><code>file_match=<var>FILE_MATCH</var></code></td>
     <td>optional</td>
     <td>"exact" "like" "glob" "regex" or "notregex" determining type of file match</td>
   </tr>
@@ -877,37 +877,37 @@ th.caption {
     <td>author query string</td>
   </tr>
   <tr>
-    <td><code>who_match=WHO_MATCH</code></td>
+    <td><code>who_match=<var>WHO_MATCH</var></code></td>
     <td>optional</td>
     <td>"exact" "like" "glob" "regex" or "notregex" determining type of author match</td>
   </tr>
   <tr>
-    <td><code>querysort=SORT</code></td>
+    <td><code>querysort=<var>SORT</var></code></td>
     <td>optional</td>
     <td>"date" "author" or "file" determining order of query results</td>
   </tr>
   <tr>
-    <td><code>date=DATE</code></td>
+    <td><code>date=<var>DATE</var></code></td>
     <td>optional</td>
     <td>"hours" "day" "week" "month" "all" or "explicit" to filter query results by date</td>
   </tr>
   <tr>
-    <td><code>hours=HOURS</code></td>
+    <td><code>hours=<var>HOURS</var></code></td>
     <td>optional</td>
     <td>number of hours back to include results from when <code><var>DATE</var></code> is "hours"</td>
   </tr>
   <tr>
-    <td><code>mindate=MINDATE</code></td>
+    <td><code>mindate=<var>MINDATE</var></code></td>
     <td>optional</td>
     <td>earliest date to include results from when <code><var>DATE</var></code> is "explicit"</td>
   </tr>
   <tr>
-    <td><code>maxdate=MAXDATE</code></td>
+    <td><code>maxdate=<var>MAXDATE</var></code></td>
     <td>optional</td>
     <td>latest date to include results from when <code><var>DATE</var></code> is "explicit"</td>
   </tr>
   <tr>
-    <td><code>limit_changes=LIMIT_CHANGES</code></td>
+    <td><code>limit_changes=<var>LIMIT_CHANGES</var></code></td>
     <td>optional</td>
     <td>maximum number of files to list per commit in query results. Default is value of <code>limit_changes</code> configuration option</td>
   </tr>
@@ -965,7 +965,7 @@ th.caption {
     <td>branch query string</td>
   </tr>
   <tr>
-    <td><code>branch_match=BRANCH_MATCH</code></td>
+    <td><code>branch_match=<var>BRANCH_MATCH</var></code></td>
     <td>optional</td>
     <td>"exact" "like" "glob" "regex" or "notregex" determining type of branch match</td>
   </tr>
@@ -980,7 +980,7 @@ th.caption {
     <td>file query string</td>
   </tr>
   <tr>
-    <td><code>file_match=FILE_MATCH</code></td>
+    <td><code>file_match=<var>FILE_MATCH</var></code></td>
     <td>optional</td>
     <td>"exact" "like" "glob" "regex" or "notregex" determining type of file match</td>
   </tr>
@@ -990,47 +990,47 @@ th.caption {
     <td>author query string</td>
   </tr>
   <tr>
-    <td><code>who_match=WHO_MATCH</code></td>
+    <td><code>who_match=<var>WHO_MATCH</var></code></td>
     <td>optional</td>
     <td>"exact" "like" "glob" "regex" or "notregex" determining type of author match</td>
   </tr>
   <tr>
-    <td><code>querysort=SORT</code></td>
+    <td><code>querysort=<var>SORT</var></code></td>
     <td>optional</td>
     <td>"date" "author" or "file" determining order of query results</td>
   </tr>
   <tr>
-    <td><code>date=DATE</code></td>
+    <td><code>date=<var>DATE</var></code></td>
     <td>optional</td>
     <td>"hours" "day" "week" "month" "all" or "explicit" to filter query results by date</td>
   </tr>
   <tr>
-    <td><code>hours=HOURS</code></td>
+    <td><code>hours=<var>HOURS</var></code></td>
     <td>optional</td>
     <td>number of hours back to include results from when <code><var>DATE</var></code> is "hours"</td>
   </tr>
   <tr>
-    <td><code>mindate=MINDATE</code></td>
+    <td><code>mindate=<var>MINDATE</var></code></td>
     <td>optional</td>
     <td>earliest date to include results from when <code><var>DATE</var></code> is "explicit"</td>
   </tr>
   <tr>
-    <td><code>maxdate=MAXDATE</code></td>
+    <td><code>maxdate=<var>MAXDATE</var></code></td>
     <td>optional</td>
     <td>latest date to include results from when <code><var>DATE</var></code> is "explicit"</td>
   </tr>
   <tr>
-    <td><code>format=FORMAT</code></td>
+    <td><code>format=<var>FORMAT</var></code></td>
     <td>optional</td>
     <td>"rss" or "backout" values to generate an rss feed or list of commands to back out changes instead showing a normal query result page</td>
   </tr>
   <tr>
-    <td><code>limit=LIMIT</code></td>
+    <td><code>limit=<var>LIMIT</var></code></td>
     <td>optional</td>
     <td>maximum number of file-revisions to process during a query. Default is value of <code>row_limit</code> configuration option</td>
   </tr>
   <tr>
-    <td><code>limit_changes=LIMIT_CHANGES</code></td>
+    <td><code>limit_changes=<var>LIMIT_CHANGES</var></code></td>
     <td>optional</td>
     <td>maximum number of files to list per commit in query results. Default is value of <code>limit_changes</code> configuration option</td>
   </tr>
@@ -1082,7 +1082,7 @@ th.caption {
     <td><a href="#revision-param"><code>revision</code> parameter</a></td>
   </tr>
   <tr>
-    <td><code>limit_changes=LIMIT_CHANGES</code></td>
+    <td><code>limit_changes=<var>LIMIT_CHANGES</var></code></td>
     <td>optional</td>
     <td>maximum number of files to list per commit. Default is value of <code>limit_changes</code> configuration option</td>
   </tr>
