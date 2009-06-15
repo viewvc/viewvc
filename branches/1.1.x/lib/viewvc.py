@@ -645,6 +645,7 @@ def _validate_regex(value):
 # obvious things here. note that we don't need uppercase for alpha.
 _re_validate_alpha = re.compile('^[a-z]+$')
 _re_validate_number = re.compile('^[0-9]+$')
+_re_validate_boolint = re.compile('^[01]$')
 
 # when comparing two revs, we sometimes construct REV:SYMBOL, so ':' is needed
 _re_validate_revnum = re.compile('^[-_.a-zA-Z0-9:~\\[\\]/]*$')
@@ -665,7 +666,7 @@ _legal_params = {
   'p1'            : None,
   'p2'            : None,
   
-  'hideattic'     : _re_validate_number,
+  'hideattic'     : _re_validate_boolint,
   'limit_changes' : _re_validate_number,
   'sortby'        : _re_validate_alpha,
   'sortdir'       : _re_validate_alpha,
@@ -676,7 +677,7 @@ _legal_params = {
   'log_pagestart' : _re_validate_number,
   'annotate'      : _re_validate_revnum,
   'graph'         : _re_validate_revnum,
-  'makeimage'     : _re_validate_number,
+  'makeimage'     : _re_validate_boolint,
   'r1'            : _re_validate_revnum,
   'tr1'           : _re_validate_revnum,
   'r2'            : _re_validate_revnum,
@@ -709,10 +710,10 @@ _legal_params = {
   'orig_view'     : None,
 
   # deprecated
-  'parent'        : _re_validate_number,
+  'parent'        : _re_validate_boolint,
   'rev'           : _re_validate_revnum,
-  'tarball'       : _re_validate_number,
-  'hidecvsroot'   : _re_validate_number,
+  'tarball'       : _re_validate_boolint,
+  'hidecvsroot'   : _re_validate_boolint,
   }
 
 def _path_join(path_parts):
