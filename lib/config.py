@@ -247,6 +247,7 @@ class Config:
     self.options.detect_encoding = 0
     self.options.use_cvsgraph = 0
     self.options.cvsgraph_conf = "cvsgraph.conf"
+    self.options.allowed_cvsgraph_useropts = []
     self.options.use_re_search = 0
     self.options.dir_pagesize = 0
     self.options.log_pagesize = 0
