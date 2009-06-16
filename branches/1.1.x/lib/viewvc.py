@@ -392,15 +392,14 @@ class Request:
         and self.view_func is not redirect_pathrev):
       needs_redirect = 1
 
-    # redirect now that we know the URL is valid
-    if needs_redirect:
-      self.server.redirect(self.get_url())
-
     # startup is done now.
     debug.t_end('startup')
-    
-    # Call the function for the selected view.
-    self.view_func(self)
+
+    # If we need to redirect, do so.  Otherwise, handle our requested view.
+    if needs_redirect:
+      self.server.redirect(self.get_url())
+    else:
+      self.view_func(self)
 
   def get_url(self, escape=0, partial=0, prefix=0, **args):
     """Constructs a link to another ViewVC page just like the get_link

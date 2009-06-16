@@ -158,8 +158,7 @@ class CgiServer(Server):
     if self.iis: url = fix_iis_url(self, url)
     self.addheader('Location', url)
     self.header(status='301 Moved')
-    print 'This document is located <a href="%s">here</a>.' % url
-    sys.exit(0)
+    sys.stdout.write('This document is located <a href="%s">here</a>.\n' % url)
 
   def escape(self, s, quote = None):
     return cgi.escape(s, quote)
@@ -219,7 +218,6 @@ class AspServer(ThreadedServer):
 
   def redirect(self, url):
     self.response.Redirect(url)
-    sys.exit()
 
   def escape(self, s, quote = None):
     return self.server.HTMLEncode(str(s))
@@ -308,8 +306,7 @@ class ModPythonServer(ThreadedServer):
     self.request.headers_out['Location'] = url
     self.request.status = mod_python.apache.HTTP_MOVED_TEMPORARILY
     self.request.write("You are being redirected to <a href=\"%s\">%s</a>"
-      % (url, url))
-    sys.exit()
+                       % (url, url))
 
   def escape(self, s, quote = None):
     return cgi.escape(s, quote)
