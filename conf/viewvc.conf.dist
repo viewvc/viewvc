@@ -19,8 +19,9 @@
 ##
 ##    Comments should always start in column zero, and are identified
 ##    with "#".  By default each of the configuration items is
-##    commented out -- you'll need to remove the '#' that precedes
-##    configuration options whose values you wish to modify.
+##    commented out, with the default value of the option shown.
+##    You'll need to remove the '#' that precedes configuration
+##    options whose values you wish to modify.
 ##
 ##    Certain configuration settings may have multiple values.  These should 
 ##    be separated by a comma.  The settings where this is allowed are noted 
