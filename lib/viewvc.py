@@ -151,6 +151,9 @@ class Request:
 
     # Process the query params
     for name, values in self.server.params().items():
+      # we only care about the first value
+      value = values[0]
+      
       # patch up old queries that use 'cvsroot' to look like they used 'root'
       if name == 'cvsroot':
         name = 'root'
@@ -162,19 +165,19 @@ class Request:
         needs_redirect = 1
 
       # validate the parameter
-      _validate_param(name, values[0])
+      _validate_param(name, value)
 
       # Only allow the magic ViewVC MIME types (the ones used for
       # requesting the markup as as-text views) to be declared via CGI
       # params.  Ignore disallowed values.
       if (name == 'content-type') and \
-         (not values[0] in (viewcvs_mime_type,
-                            alt_mime_type,
-                            'text/plain')):
+         (not value in (viewcvs_mime_type,
+                        alt_mime_type,
+                        'text/plain')):
         continue
       
       # if we're here, then the parameter is okay
-      self.query_dict[name] = values[0]
+      self.query_dict[name] = value
 
     # handle view parameter, redirecting old view=rev URLs to view=revision
     if self.query_dict.get('view') == 'rev':
