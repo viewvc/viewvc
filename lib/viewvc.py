@@ -602,30 +602,29 @@ def _validate_param(name, value):
   this function throws an exception. Otherwise, it simply returns None.
   """
 
+  # First things first -- check that we have a legal parameter name.
   try:
     validator = _legal_params[name]
   except KeyError:
     raise debug.ViewVCException(
-      'An illegal parameter name ("%s") was passed.' % name,
+      'An illegal parameter name was provided.',
       '400 Bad Request')
 
+  # Is there a validator?  Is it a regex or a function?  Validate if
+  # we can, returning without incident on valid input.
   if validator is None:
     return
+  elif hasattr(validator, 'match'):
+    if validator.match(value):
+      return
+  else:
+    if validator(value):
+      return
 
-  # is the validator a regex?
-  if hasattr(validator, 'match'):
-    if not validator.match(value):
-      raise debug.ViewVCException(
-        'An illegal value ("%s") was passed as a parameter.' %
-        value, '400 Bad Request')
-    return
-
-  # the validator must be a function, so execute it and see if it
-  # returns true (that is, "valid")
-  if not validator(value):
-    raise debug.ViewVCException(
-      'An illegal value ("%s") was passed as a parameter.' %
-      value, '400 Bad Request')
+  # If we get here, the input value isn't valid.
+  raise debug.ViewVCException(
+    'An illegal value was provided for the "%s" parameter.' % (name),
+    '400 Bad Request')
 
 def _validate_regex(value):
   # hmm. there isn't anything that we can do here.

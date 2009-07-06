@@ -1,6 +1,7 @@
 Version 1.0.9 (released ??-???-????)
 
   * security fix: validate the 'view' parameter to avoid XSS attack
+  * security fix: avoid printing illegal parameter names and values
 
 Version 1.0.8 (released 05-May-2009)
 
