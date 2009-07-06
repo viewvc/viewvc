@@ -171,15 +171,6 @@ class Request:
 
       # validate the parameter
       _validate_param(name, value)
-
-      # Only allow the magic ViewVC MIME types (the ones used for
-      # requesting the markup as as-text views) to be declared via CGI
-      # params.  Ignore disallowed values.
-      if (name == 'content-type') and \
-         (not value in (viewcvs_mime_type,
-                        alt_mime_type,
-                        'text/plain')):
-        continue
       
       # if we're here, then the parameter is okay
       self.query_dict[name] = value
@@ -635,8 +626,12 @@ def _validate_param(name, value):
         value, '400 Bad Request')
     return
 
-  # the validator must be a function
-  validator(value)
+  # the validator must be a function, so execute it and see if it
+  # returns true (that is, "valid")
+  if not validator(value):
+    raise debug.ViewVCException(
+      'An illegal value ("%s") was passed as a parameter.' %
+      value, '400 Bad Request')
 
 def _validate_regex(value):
   # hmm. there isn't anything that we can do here.
@@ -646,6 +641,15 @@ def _validate_regex(value):
   ### parameters could constitute a CSS attack.
   pass
 
+def _validate_view(value):
+  # Return true iff VALUE is one of our allowed views.
+  return _views.has_key(value)
+
+def _validate_mimetype(value):
+  # For security purposes, we only allow mimetypes from a predefined set
+  # thereof.
+  return value in (viewcvs_mime_type, alt_mime_type, 'text/plain')
+
 # obvious things here. note that we don't need uppercase for alpha.
 _re_validate_alpha = re.compile('^[a-z]+$')
 _re_validate_number = re.compile('^[0-9]+$')
@@ -654,10 +658,6 @@ _re_validate_boolint = re.compile('^[01]$')
 # when comparing two revs, we sometimes construct REV:SYMBOL, so ':' is needed
 _re_validate_revnum = re.compile('^[-_.a-zA-Z0-9:~\\[\\]/]*$')
 
-# it appears that RFC 2045 also says these chars are legal: !#$%&'*+^{|}~`
-# but woah... I'll just leave them out for now
-_re_validate_mimetype = re.compile('^[-_.a-zA-Z0-9/]+$')
-
 # date time values
 _re_validate_datetime = re.compile(r'^(\d\d\d\d-\d\d-\d\d(\s+\d\d:\d\d'
                                    '(:\d\d)?)?)?$')
@@ -665,7 +665,7 @@ _re_validate_datetime = re.compile(r'^(\d\d\d\d-\d\d-\d\d(\s+\d\d:\d\d'
 # the legal query parameters and their validation functions
 _legal_params = {
   'root'          : None,
-  'view'          : None,
+  'view'          : _validate_view,
   'search'        : _validate_regex,
   'p1'            : None,
   'p2'            : None,
@@ -687,7 +687,7 @@ _legal_params = {
   'r2'            : _re_validate_revnum,
   'tr2'           : _re_validate_revnum,
   'revision'      : _re_validate_revnum,
-  'content-type'  : _re_validate_mimetype,
+  'content-type'  : _validate_mimetype,
 
   # for cvsgraph
   'gflip'         : _re_validate_boolint,
