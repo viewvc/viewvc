@@ -164,6 +164,11 @@ class Request:
         name = 'pathrev'
         needs_redirect = 1
 
+      # redirect view=rev to view=revision, too
+      if name == 'view' and value == 'rev':
+        value = 'revision'
+        needs_redirect = 1
+
       # validate the parameter
       _validate_param(name, value)
 
@@ -179,10 +184,7 @@ class Request:
       # if we're here, then the parameter is okay
       self.query_dict[name] = value
 
-    # handle view parameter, redirecting old view=rev URLs to view=revision
-    if self.query_dict.get('view') == 'rev':
-      self.query_dict['view'] = 'revision'
-      needs_redirect = 1
+    # Resolve the view parameter into a handler function.
     self.view_func = _views.get(self.query_dict.get('view', None), 
                                 self.view_func)
 
