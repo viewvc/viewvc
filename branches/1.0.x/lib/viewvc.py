@@ -163,11 +163,6 @@ class Request:
         name = 'pathrev'
         needs_redirect = 1
 
-      # redirect view=rev to view=revision, too
-      if name == 'view' and value == 'rev':
-        value = 'revision'
-        needs_redirect = 1
-
       # validate the parameter
       _validate_param(name, value)
       
