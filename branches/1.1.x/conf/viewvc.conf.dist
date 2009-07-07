@@ -490,6 +490,11 @@
 ## allow_compress: Allow compression via gzip of output if the Browser
 ## accepts it (HTTP_ACCEPT_ENCODING contains "gzip").
 ##
+## Note: this relies on Python's gzip module, which has proven to be
+## not-so-performant.  Enabling this feature should reduce the overall
+## transfer size of ViewVC's responses to the client's request, but
+## will do so with a speed penalty.
+##
 #allow_compress = 0
 
 ## template_dir: The directory which contains the EZT templates used by
