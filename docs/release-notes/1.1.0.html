@@ -7,6 +7,9 @@
   padding: 0.25em 0em;
   background: white;
 }
+.warning {
+  font-style: italic;
+}
 </style>
 </head>
 
@@ -74,6 +77,18 @@
    credentials from users, which the web server itself can then hand
    off to ViewVC for application against the authorization rules
    you've defined.</p>
+
+<p class="warning">WARNING: The root listing view does not consult the
+   authorization subsystem when deciding what roots to display to a
+   given user.  If you need to protect your root names, consider
+   disabling it by removing <code>roots</code> from the set of views
+   listed in the
+   <code>allowed_views</code> configuration option.</p>
+
+<p class="warning">WARNING: Support for path-based authorization is
+   incomplete in the experimental version control backend modules,
+   including the one that permits display of remote Subversion
+   repositories.</p>
 
 </div>
 
