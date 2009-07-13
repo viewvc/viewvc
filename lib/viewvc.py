@@ -1374,10 +1374,14 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename, mime_type):
       except (SyntaxError, ImportError):
         pass
     try:
-      lexer = get_lexer_for_mimetype(mime_type, encoding=encoding)
+      lexer = get_lexer_for_mimetype(mime_type,
+                                     encoding=encoding,
+                                     stripnl=False)
     except ClassNotFound:
       try:
-        lexer = get_lexer_for_filename(filename, encoding=encoding)
+        lexer = get_lexer_for_filename(filename,
+                                       encoding=encoding,
+                                       stripnl=False)
       except ClassNotFound:
         use_pygments = 0
   except ImportError:
