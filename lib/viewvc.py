@@ -4085,10 +4085,9 @@ def view_error(server, cfg):
   exc_dict = debug.GetExceptionData()
   status = exc_dict['status']
   if exc_dict['msg']:
-    exc_dict['msg'] = htmlify(exc_dict['msg'], mangle_email_addrs=0)
+    exc_dict['msg'] = server.escape(exc_dict['msg'])
   if exc_dict['stacktrace']:
-    exc_dict['stacktrace'] = htmlify(exc_dict['stacktrace'],
-                                     mangle_email_addrs=0)
+    exc_dict['stacktrace'] = server.escape(exc_dict['stacktrace'])
   handled = 0
   
   # use the configured error template if possible
