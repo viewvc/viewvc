@@ -1,3 +1,13 @@
+[# ------------------------------------------------------------------------- ]
+[# CUSTOMIZE ME: To avoid displaying "binary garbage" -- the contents of     ]
+[# files with non-human-readable file formats -- change the value of the     ]
+[# hide_binary_garbage variable below to 1.                                  ]
+[# ------------------------------------------------------------------------- ]
+
+[define hide_binary_garbage]0[end]
+
+[# ------------------------------------------------------------------------- ]
+
 [# setup page definitions]
   [define page_title]Contents of /[where][end]
   [define help_href][docroot]/help_rootview.html[end]
@@ -57,6 +67,14 @@ Revision [if-any revision_href]<a href="[revision_href]"><strong>[rev]</strong><
 [end]
 </div>
 
+[if-any prefer_markup][define hide_binary_garbage]0[end][end]
+[if-any image_src_href][define hide_binary_garbage]0[end][end]
+
+[is hide_binary_garbage "1"]
+<p><strong>This file's contents are not viewable.  Please 
+   <a href="[download_href]">download</a> this version of the
+   file in order to view it.</strong></p>
+[else]
 
 [define last_rev]0[end]
 [define rowclass]vc_row_even[end]
@@ -97,6 +115,7 @@ Revision [if-any revision_href]<a href="[revision_href]"><strong>[rev]</strong><
 <div id="vc_file_image">
 <img src="[image_src_href]" alt="" />
 </div>
+[end]
 [end]
 [end]
 
