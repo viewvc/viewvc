@@ -6,6 +6,7 @@ Version 1.1.2 (released ??-???-????)
   * fix username case handling in svnauthz module (issue #419)
   * fix cvsdbadmin/svnadmin rebuild error on missing repos (issue #420)
   * don't drop leading blank lines from colorized file contents (issue #422)
+  * add file.ezt template logic for optionally hiding binary file contents
 
 Version 1.1.1 (released 03-Jun-2009)
 
