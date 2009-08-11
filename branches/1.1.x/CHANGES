@@ -1,4 +1,4 @@
-Version 1.1.2 (released ??-???-????)
+Version 1.1.2 (released 11-Aug-2009)
 
   * security fix: validate the 'view' parameter to avoid XSS attack
   * security fix: avoid printing illegal parameter names and values
@@ -57,6 +57,11 @@ Version 1.1.0 (released 13-May-2009)
   * allow MIME type mapping overrides in ViewVC configuration (issue #401)
   * fix exception in rev-sorted remote Subversion directory views (issue #409)
   * allow setting of page sizes for log and dir views individually (issue #402)
+
+Version 1.0.9 (released 11-Aug-2009)
+
+  * security fix: validate the 'view' parameter to avoid XSS attack
+  * security fix: avoid printing illegal parameter names and values
 
 Version 1.0.8 (released 05-May-2009)
 
