@@ -2,6 +2,16 @@ Version 1.2.0 (released ??-???-????)
 
   * allow user-configurable cvsgraph display (issue #336)
 
+Version 1.1.2 (released 11-Aug-2009)
+
+  * security fix: validate the 'view' parameter to avoid XSS attack
+  * security fix: avoid printing illegal parameter names and values
+  * add optional support for character encoding detection (issue #400)
+  * fix username case handling in svnauthz module (issue #419)
+  * fix cvsdbadmin/svnadmin rebuild error on missing repos (issue #420)
+  * don't drop leading blank lines from colorized file contents (issue #422)
+  * add file.ezt template logic for optionally hiding binary file contents
+
 Version 1.1.1 (released 03-Jun-2009)
 
   * fix broken query form (missing required template variables) (issue #416)
@@ -51,6 +61,11 @@ Version 1.1.0 (released 13-May-2009)
   * allow MIME type mapping overrides in ViewVC configuration (issue #401)
   * fix exception in rev-sorted remote Subversion directory views (issue #409)
   * allow setting of page sizes for log and dir views individually (issue #402)
+
+Version 1.0.9 (released 11-Aug-2009)
+
+  * security fix: validate the 'view' parameter to avoid XSS attack
+  * security fix: avoid printing illegal parameter names and values
 
 Version 1.0.8 (released 05-May-2009)
 
