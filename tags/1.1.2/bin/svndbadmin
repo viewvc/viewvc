@@ -1,0 +1,366 @@
+#!/usr/bin/env python
+# -*-python-*-
+#
+# Copyright (C) 2004-2008 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 2004-2007 James Henstridge
+#
+# By using this file, you agree to the terms and conditions set forth in
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
+#
+# For more information, visit http://viewvc.org/
+#
+# -----------------------------------------------------------------------
+#
+# administrative program for loading Subversion revision information
+# into the checkin database.  It can be used to add a single revision
+# to the database, or rebuild/update all revisions.
+#
+# To add all the checkins from a Subversion repository to the checkin
+# database, run the following:
+#    /path/to/svndbadmin rebuild /path/to/repo
+#
+# This script can also be called from the Subversion post-commit hook,
+# something like this:
+#    REPOS="$1"
+#    REV="$2"
+#    /path/to/svndbadmin update "$REPOS" "$REV"
+#
+# If you allow changes to revision properties in your repository, you
+# might also want to set up something similar in the
+# post-revprop-change hook using "update" with the --force option to
+# keep the checkin database consistent with the repository.
+#
+# -----------------------------------------------------------------------
+#
+
+#########################################################################
+#
+# INSTALL-TIME CONFIGURATION
+#
+# These values will be set during the installation process. During
+# development, they will remain None.
+#
+
+LIBRARY_DIR = None
+CONF_PATHNAME = None
+
+# Adjust sys.path to include our library directory
+import sys
+import os
+
+if LIBRARY_DIR:
+    sys.path.insert(0, LIBRARY_DIR)
+else:
+    sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
+
+#########################################################################
+
+import os
+import string
+import re
+
+import svn.core
+import svn.repos
+import svn.fs
+import svn.delta
+
+import cvsdb
+import viewvc
+import vclib
+
+class SvnRepo:
+    """Class used to manage a connection to a SVN repository."""
+    def __init__(self, path):
+        self.path = path
+        self.repo = svn.repos.svn_repos_open(path)
+        self.fs = svn.repos.svn_repos_fs(self.repo)
+        self.rev_max = svn.fs.youngest_rev(self.fs)
+    def __getitem__(self, rev):
+        if rev is None:
+            rev = self.rev_max
+        elif rev < 0:
+            rev = rev + self.rev_max + 1
+        assert 0 <= rev <= self.rev_max
+        rev = SvnRev(self, rev)
+        return rev
+
+_re_diff_change_command = re.compile('(\d+)(?:,(\d+))?([acd])(\d+)(?:,(\d+))?')
+
+def _get_diff_counts(diff_fp):
+    """Calculate the plus/minus counts by parsing the output of a
+    normal diff.  The reasons for choosing Normal diff format are:
+      - the output is short, so should be quicker to parse.
+      - only the change commands need be parsed to calculate the counts.
+      - All file data is prefixed, so won't be mistaken for a change
+        command.
+    This code is based on the description of the format found in the
+    GNU diff manual."""
+
+    plus, minus = 0, 0
+    line = diff_fp.readline()
+    while line:
+        match = re.match(_re_diff_change_command, line)
+        if match:
+            # size of first range
+            if match.group(2):
+                count1 = int(match.group(2)) - int(match.group(1)) + 1
+            else:
+                count1 = 1
+            cmd = match.group(3)
+            # size of second range
+            if match.group(5):
+                count2 = int(match.group(5)) - int(match.group(4)) + 1
+            else:
+                count2 = 1
+
+            if cmd == 'a':
+                # LaR - insert after line L of file1 range R of file2
+                plus = plus + count2
+            elif cmd == 'c':
+                # FcT - replace range F of file1 with range T of file2
+                minus = minus + count1
+                plus = plus + count2
+            elif cmd == 'd':
+                # RdL - remove range R of file1, which would have been
+                #       at line L of file2
+                minus = minus + count1
+        line = diff_fp.readline()
+    return plus, minus
+
+
+class SvnRev:
+    """Class used to hold information about a particular revision of
+    the repository."""
+    def __init__(self, repo, rev):
+        self.repo = repo
+        self.rev = rev
+        self.rev_roots = {} # cache of revision roots
+
+        # revision properties ...
+        revprops = svn.fs.revision_proplist(repo.fs, rev)
+        self.author = str(revprops.get(svn.core.SVN_PROP_REVISION_AUTHOR,''))
+        self.date = str(revprops.get(svn.core.SVN_PROP_REVISION_DATE, ''))
+        self.log = str(revprops.get(svn.core.SVN_PROP_REVISION_LOG, ''))
+
+        # convert the date string to seconds since epoch ...
+        try:
+            self.date = svn.core.svn_time_from_cstring(self.date) / 1000000
+        except:
+            self.date = None
+
+        # get a root for the current revisions
+        fsroot = self._get_root_for_rev(rev)
+        
+        # find changes in the revision
+        editor = svn.repos.RevisionChangeCollector(repo.fs, rev)
+        e_ptr, e_baton = svn.delta.make_editor(editor)
+        svn.repos.svn_repos_replay(fsroot, e_ptr, e_baton)
+
+        self.changes = []
+        for path, change in editor.changes.items():
+            # skip non-file changes
+            if change.item_kind != svn.core.svn_node_file:
+                continue
+
+            # deal with the change types we handle
+            base_root = None
+            if change.base_path:
+                base_root = self._get_root_for_rev(change.base_rev)
+                
+            if not change.path:
+                action = 'remove'
+            elif change.added:
+                action = 'add'
+            else:
+                action = 'change'
+
+            diffobj = svn.fs.FileDiff(base_root and base_root or None,
+                                      base_root and change.base_path or None,
+                                      change.path and fsroot or None,
+                                      change.path and change.path or None)
+            diff_fp = diffobj.get_pipe()
+            plus, minus = _get_diff_counts(diff_fp)
+            self.changes.append((path, action, plus, minus))
+
+    def _get_root_for_rev(self, rev):
+        """Fetch a revision root from a cache of such, or a fresh root
+        (which is then cached for later use."""
+        if not self.rev_roots.has_key(rev):
+            self.rev_roots[rev] = svn.fs.revision_root(self.repo.fs, rev)
+        return self.rev_roots[rev]
+
+
+def handle_revision(db, command, repo, rev, verbose, force=0):
+    """Adds a particular revision of the repository to the checkin database."""
+    revision = repo[rev]
+    committed = 0
+
+    if verbose: print "Building commit info for revision %d..." % (rev),
+
+    if not revision.changes:
+        if verbose: print "skipped (no changes)."
+        return
+
+    for (path, action, plus, minus) in revision.changes:
+        directory, file = os.path.split(path)
+        commit = cvsdb.CreateCommit()
+        commit.SetRepository(repo.path)
+        commit.SetDirectory(directory)
+        commit.SetFile(file)
+        commit.SetRevision(str(rev))
+        commit.SetAuthor(revision.author)
+        commit.SetDescription(revision.log)
+        commit.SetTime(revision.date)
+        commit.SetPlusCount(plus)
+        commit.SetMinusCount(minus)
+        commit.SetBranch(None)
+
+        if action == 'add':
+            commit.SetTypeAdd()
+        elif action == 'remove':
+            commit.SetTypeRemove()
+        elif action == 'change':
+            commit.SetTypeChange()
+
+        if command == 'update':
+            result = db.CheckCommit(commit)
+            if result and not force:
+                continue # already recorded
+
+        # commit to database
+        db.AddCommit(commit)
+        committed = 1
+
+    if verbose:
+        if committed:
+            print "done."
+        else:
+            print "skipped (already recorded)."
+
+def main(command, repository, revs=[], verbose=0, force=0):
+    cfg = viewvc.load_config(CONF_PATHNAME)
+    db = cvsdb.ConnectDatabase(cfg)
+
+    if command in ('rebuild', 'purge'):
+        if verbose:
+            print "Purging commit info for repository root `%s'" % repository
+        try:
+            db.PurgeRepository(repository)
+        except cvsdb.UnknownRepositoryError, e:
+            if command == 'purge':
+                sys.stderr.write("ERROR: " + str(e) + "\n")
+                sys.exit(1)
+
+    repo = SvnRepo(repository)
+    if command == 'rebuild' or (command == 'update' and not revs):
+        for rev in range(repo.rev_max+1):
+            handle_revision(db, command, repo, rev, verbose)
+    elif command == 'update':
+        if revs[0] is None:
+            revs[0] = repo.rev_max
+        if revs[1] is None:
+            revs[1] = repo.rev_max
+        revs.sort()
+        for rev in range(revs[0], revs[1]+1):
+            handle_revision(db, command, repo, rev, verbose, force)
+
+def _rev2int(r):
+    if r == 'HEAD':
+        r = None
+    else:
+        r = int(r)
+        if r < 0:
+            raise ValueError, "invalid revision '%d'" % (r)
+    return r
+
+def usage():
+    cmd = os.path.basename(sys.argv[0])
+    sys.stderr.write(
+"""Administer the ViewVC checkins database data for the Subversion repository
+located at REPOS-PATH.
+
+Usage: 1. %s [-v] rebuild REPOS-PATH
+       2. %s [-v] update REPOS-PATH [REV:[REV2]] [--force]
+       3. %s [-v] purge REPOS-PATH
+
+1.  Rebuild the commit database information for the repository located
+    at REPOS-PATH across all revisions, after first purging
+    information specific to that repository (if any).
+
+2.  Update the commit database information for the repository located
+    at REPOS-PATH across all revisions or, optionally, only for the
+    specified revision REV (or revision range REV:REV2).  This is just
+    like rebuilding, except that, unless --force is specified, no
+    commit information will be stored for commits already present in
+    the database.  If a range is specified, the revisions will be
+    processed in ascending order, and you may specify "HEAD" to
+    indicate "the youngest revision currently in the repository".
+    
+3.  Purge information specific to the repository located at REPOS-PATH
+    from the database.
+
+Use the -v flag to cause this script to give progress information as it works.
+
+""" % (cmd, cmd, cmd))
+    sys.exit(1)
+
+if __name__ == '__main__':
+    verbose = 0
+    force = 0
+    args = sys.argv
+    try:
+        index = args.index('-v')
+        verbose = 1
+        del args[index]
+    except ValueError:
+        pass
+    try:
+        index = args.index('--force')
+        force = 1
+        del args[index]
+    except ValueError:
+        pass
+        
+    if len(args) < 3:
+        usage()
+
+    command = string.lower(args[1])
+    if command not in ('rebuild', 'update', 'purge'):
+        sys.stderr.write('ERROR: unknown command %s\n' % command)
+        usage()
+
+    repository = args[2]
+    if not os.path.exists(repository):
+        sys.stderr.write('ERROR: could not find repository %s\n' % args[2])
+        usage()
+    repository = vclib.svn.canonicalize_rootpath(repository)
+
+    revs = []
+    if len(sys.argv) > 3:
+        if command == 'rebuild':
+            sys.stderr.write('ERROR: rebuild no longer accepts a revision '
+                             'number argument.  Usage update --force.')
+            usage()
+        elif command != 'update':
+            usage()
+        try:
+            revs = map(lambda x: _rev2int(x), sys.argv[3].split(':'))
+            if len(revs) > 2:
+                raise ValueError, "too many revisions in range"
+            if len(revs) == 1:
+                revs.append(revs[0])
+        except ValueError:
+            sys.stderr.write('ERROR: invalid revision specification "%s"\n' \
+                             % sys.argv[3])
+            usage()
+    else:
+        rev = None
+
+    try:
+        repository = cvsdb.CleanRepository(os.path.abspath(repository))
+        main(command, repository, revs, verbose, force)
+    except KeyboardInterrupt:
+        print
+        print '** break **'
+    sys.exit(0)

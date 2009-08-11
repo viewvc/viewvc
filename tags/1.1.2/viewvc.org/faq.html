@@ -1,0 +1,359 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>ViewVC: Frequently Asked Questions (FAQ)</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<link rel="stylesheet" type="text/css" href="./styles.css"/>
+<link rel="shortcut icon" href="./favicon.ico" type="image/x-icon" />
+</head>
+
+<body>
+
+<div id="title">
+<a href="http://www.viewvc.org/"><img 
+   src="./images/title.jpg" alt="ViewVC: Frequently Asked Questions (FAQ)"/></a>
+</div>
+
+<div id="menu">
+<p><a href="./index.html">Home</a> |
+   <a href="http://viewvc.tigris.org/">Project Page</a> |
+   <a href="./download.html">Download</a> |
+   <a href="./contributing.html">Contributing</a> |
+   <a href="./faq.html">FAQ</a> |
+   <a href="http://viewvc.tigris.org/nonav/source/browse/*checkout*/viewvc/trunk/LICENSE.html">License</a> |
+   <a href="./contact.html">Contact</a> |
+   <a href="./who.html">About</a>
+</p>
+</div>
+
+<table id="pagetable">
+<tr>
+<td id="pagecolumn1">
+
+<h4>On this page:</h4>
+
+<ul id="bookmarks">
+  <li><a href="#faq-q">Questions</a></li>
+  <li><a href="#faq-a">Answers</a></li>
+</ul>
+
+<p><a href="http://validator.w3.org/check?uri=referer"><img
+       src="http://www.w3.org/Icons/valid-xhtml10"
+       alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
+</p>
+
+</td>
+<td id="pagecolumn2">
+
+<div class="section">
+
+<!-- ##################################################################### -->
+<h2 id="faq-q">Questions</h2>
+<!-- ##################################################################### -->
+
+<div class="section-body">
+
+<!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
+<h3 class="faq-section" id="faq-q-general">General Usage</h3>
+<!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
+
+<ul>
+
+<li><a href="#installation">Where does the installation documentation,
+    if any, live?</a></li>
+
+<li><a href="#authz-support">Does ViewVC support path-based
+    authorization, such as Subversion's authz-file mechanism?</a></li>
+
+<li><a href="#missing-tmpdir">What causes "Error: OSError: [Errno 2] No such file
+    or directory: '/tmp/tmpGc-Ztj'"?</a></li>
+
+<li><a href="#standalone-only">Why does <em>SOME-FEATURE</em>
+    work under standalone.py, but not under Apache (or IIS or
+    &hellip;)?</a></li>
+
+<li><a href="#rss-support">How do I enable ViewVC's RSS feed
+    capabilities?</a></li>
+
+</ul>
+
+<!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
+<h3 class="faq-section" id="faq-q-cvs">CVS Browsing</h3>
+<!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
+
+<ul>
+
+<li><a href="#rlog-output-ended-early">What causes "Error: Rlog output ended
+    early. Expected RCS file "/opt/cvs/project/file,v""?</a></li>
+
+<li><a href="#comalformedoutput">What causes "Error: COMalformedOutput: Unable to
+    find filename in co output stream"?</a></li>
+
+<li><a href="#error-during-rlog">What causes "Error: error during
+    rlog: 0x100"?</a></li>
+
+<li><a href="#missing-files">Why do my directories have no files in them?</a></li>
+
+<li><a href="#none-match">ViewVC doesn't show files I'm looking for,
+    and instead displays the message "NOTE: There are N files, but
+    none match the current selection criteria".  How can I fix this?</a></li>
+
+</ul>
+
+<!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
+<h3 class="faq-section" id="faq-q-svn">Subversion Browsing</h3>
+<!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
+
+<ul>
+
+<li><a href="#no-module-named-svn">What causes "Error: ImportError: No module named
+    svn"?</a></li>
+
+<li><a href="#remote-svn-access">Can I use ViewVC with remote
+    Subversion repositories?</a></li>
+
+</ul>
+
+<!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
+</div>
+</div>
+
+<div class="section">
+
+<!-- ##################################################################### -->
+<h2 id="faq-a">Answers</h2>
+<!-- ##################################################################### -->
+
+<div class="section-body">
+
+<!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
+<h3 class="faq-section" id="faq-a-general">General Usage</h3>
+<!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
+
+<div id="installation">
+<p class="faq-atitle">Where does the installation documentation, if
+   any, live?</p>
+
+<p>ViewVC's installation how-to documentation lives in the INSTALL
+   file located in the root of the ViewVC source code distribution.
+   The most recent version of this document (which may cover
+   unreleased ViewVC versions) can be found
+   at <a href="http://viewvc.tigris.org/source/browse/*checkout*/viewvc/trunk/INSTALL"
+   >http://viewvc.tigris.org/source/browse/*checkout*/viewvc/trunk/INSTALL</a>.
+   If you are upgrading an existing ViewVC instance, you'll also want
+   to read the upgrade documentation, found
+   at <a href="http://viewvc.tigris.org/source/browse/*checkout*/viewvc/trunk/docs/upgrading-howto.html"
+   >http://viewvc.tigris.org/source/browse/*checkout*/viewvc/trunk/docs/upgrading-howto.html</a>.</p>
+</div>
+
+<div id="authz-support">
+<p class="faq-atitle">Does ViewVC support path-based authorization,
+   such as Subversion's authz-file mechanism?</p>
+
+<p>There are no released versions of ViewVC which have this support
+   built-in.  The feature request is being tracking in <a
+   href="http://viewvc.tigris.org/issues/show_bug.cgi?id=268">issue
+   #268</a>, and we're working to complete it for release in ViewVC
+   1.1.</p>
+
+<p>In the meantime, there are some available workarounds.  For
+   example, if you are running ViewVC under Apache, you can use
+   regular Apache configuration directives to authz-protect areas of
+   your repository &mdash; see the <a
+   href="http://httpd.apache.org/docs/2.2/mod/core.html#location"
+   >Location</a> and <a
+   href="http://httpd.apache.org/docs/2.2/mod/core.html#locationmatch"
+   >LocationMatch</a> directives, as well as the <a
+   href="http://httpd.apache.org/docs/2.2/howto/auth.html"
+   >Authentication, Authorization and Access Control</a> portions of
+   the Apache HTTP Server documentation.  This works best when ViewVC
+   is only serving up a single repository, or when the
+   <code>root_as_url_component</code> option is enabled otherwise.
+   And you might have to disable the checkout view, or at least turn
+   off the use of <code>checkout_magic</code> (see
+   <code>viewvc.conf</code> for details).</p>
+</div>
+
+<div id="missing-tmpdir">
+<p class="faq-atitle">What causes "Error: OSError: [Errno 2] No such
+   file or directory: '/tmp/tmpGc-Ztj'"?</p>
+
+<p>This is tracked in <a
+   href="http://viewvc.tigris.org/issues/show_bug.cgi?id=282">issue
+   #282</a>.  While we haven't figured out how to make the error
+   message more graceful or helpful, the basic problem seems to
+   generally boil down to a misconfiguration of ViewVC.  Make sure
+   your helper applications are in the program search path
+   (<code>$PATH</code>, e.g.) on your ViewVC server, or accurately
+   specified in <code>viewvc.conf</code>.</p>
+</div>
+
+<div id="standalone-only">
+<p class="faq-atitle">Why does <em>SOME-FEATURE</em> work under
+    standalone.py, but not under Apache (or IIS or &hellip;)?</p>
+
+<p>Most of the time folks run standalone.py, they do so as a regular
+   system user, from a shell running with any and all the
+   environmental customizations present in their shell startup
+   scripts.  But most web server packages (like Apache) run as a
+   different, often underprivileged, user, whose environment is
+   stripped down to just the system-wide default state.  This can
+   cause problems for ViewVC's various helper applications, which
+   might reside in a location that's included as part of your (and
+   thus standalone.py's) <code>$PATH</code>, but not that of the user
+   as whom the web server package runs.  The solution might be as
+   simple explicitly configuring the paths of the helper applications
+   in <code>viewvc.conf</code>, or as complex as expanding the program
+   search path used by your web server software.</p>
+</div>
+
+<div id="rss-support">
+<p class="faq-atitle">How do I enable ViewVC's RSS feed capabilities?</p>
+
+<p>ViewVC generates its RSS feeds from repository data mirrored in a
+   database as part of its MySQL integration.  Follow the steps in
+   ViewVC's <code>INSTALL</code> file to setup and configure the MySQL
+   integration and begin mirroring your commit metadata in the
+   database &mdash; the RSS feed feature will then be enabled with no
+   additional configuration.</p>
+</div>
+
+<!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
+<h3 class="faq-section" id="faq-a-cvs">CVS Browsing</h3>
+<!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
+
+<div id="rlog-output-ended-early">
+
+<p class="faq-atitle">What causes "Error: Rlog output ended
+   early. Expected RCS file "/opt/cvs/project/file,v""?</p>
+
+<p>This error generally occurs when ViewVC is unable to locate the
+   rlog tool, one of several in the RCS toolchain.  If the system
+   doesn't have the RCS toolchain installed, you'll need to install
+   it.  If the RCS toolchain is installed, but ViewVC simply can't
+   locate the RCS programs, either ensure that the programs are
+   in the system <code>$PATH</code>, or specify their location in
+   the <code>viewvc.conf</code> file &mdash; the option is
+   <code>utilities/rcs_dir</code> as of ViewVC 1.1,
+   <code>general/rcs_path</code> in earlier versions.</p>
+
+</div>
+
+<div id="comalformedoutput">
+
+<p class="faq-atitle">What causes "Error: COMalformedOutput: Unable to
+   find filename in co output stream"?</p>
+
+<p>This is another symptom of the basic problem described <a
+   href="#rlog-output-ended-early">here</a>.</p>
+
+</div>
+
+<div id="error-during-rlog">
+<p class="faq-atitle">What causes "Error: error during rlog:
+   0x100"?</p>
+
+<p>### TODO ###</p>
+</div>
+
+<div id="missing-files">
+<p class="faq-atitle">Why do my directories have no files in them?</p>
+
+<p>There are a few reasons why this can happen.  Here are some of the
+   most common ones:</p>
+
+<ul>
+<li>Some folks mistakenly point ViewVC's configuration bits to their
+    CVS working copies.  But ViewVC isn't a working copy browser
+    &mdash; it's a <em>repository</em> browser.  If you don't know
+    the difference, here's a tip that might help:  CVS repositories
+    are directories trees filled with files that end with
+    "<code>,v</code>".  If your directory isn't filled with "comma
+    vee" files, it probably is <em>not</em> a CVS repository.</li>
+<li>&hellip; <!-- TODO --></li>
+</ul>
+</div>
+
+<div id="none-match">
+<p class="faq-atitle">ViewVC doesn't show files I'm looking for, and
+   instead displays the message "NOTE: There are N files, but none
+   match the current selection criteria".  How can I fix this?</p>
+
+<p>From time to time, CVS and CVSNT add support for new keywords to
+   the RCS backend used to house repository data.  If you're running a
+   version of ViewVC or ViewCVS that hasn't yet learned to handle
+   those new keywords, you might get the error you're seeing.  The
+   solution is to try to get versions of CVS/CVSNT and ViewVC which
+   are better aligned, which generally means upgrading ViewVC (which
+   is probably less disruptive than downgrading your version control
+   system).</p>
+</div>
+
+<!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
+<h3 class="faq-section" id="faq-a-svn">Subversion Browsing</h3>
+<!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
+
+<div id="no-module-named-svn">
+<p class="faq-atitle">What causes "Error: ImportError: No module named
+   svn"?</p>
+
+<p>ViewVC uses Subversion's Python bindings to interact with and pull
+   information out of your Subversion repositories.  These bindings
+   are not, however, generally provided as part of the ViewVC
+   distribution &mdash; you have to install them yourself some other
+   way.  (For more information, contact the <a
+   href="http://subversion.tigris.org">Subversion</a> community.)  The
+   error you see is Python being asked to import the Subversion Python
+   bindings and being unable to do so, typically because the bindings
+   modules aren't found in the Python library search path.</p>
+</div>
+
+<div id="remote-svn-access">
+
+<p class="faq-atitle">Can I use ViewVC with remote Subversion
+   repositories?</p>
+
+<p>ViewVC prefers to have direct access to the repository (and in
+   fact, <em>must</em> have that for CVS repositories), but there does
+   exist experimental support for remote Subversion repositories.
+   Enabling this is a fairly simple &mdash; just use the URL of the
+   repository where you would use its path in the
+   <code>svn_roots</code> configuration options (sorry, you can't use
+   <code>root_parents</code> for remote repositories because
+   Subversion doesn't expose a repository-listing repository access
+   API).</p>
+
+<p>What you should expect:</p>
+
+<ul>
+  <li><p>Near parity with local-access Subversion in terms of
+         functionality.</p></li>
+
+  <li><p>Known shortcomings:</p>
+      <ul>
+        <li>file sizes aren't reported everywhere</li>
+        <li>the "revision" view lacks/botches some information</li>
+        <li>she ain't the fastest horse on the track&hellip;</li>
+      </ul>
+  </li>
+
+  <li><p>Lack of configury for dealing with the intricacies of remote
+         access.  If the auth credentials and such you need to access
+         the remote repository aren't cached in
+         <code>~VIEWVC_USER/.subversion</code> (where
+         <code>VIEWVC_USER</code> is the system user as whom ViewVC
+         runs), stuff won't work.</p></li>
+</ul>
+
+<!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
+</div>
+</div>
+
+</div> <!-- section -->
+
+</td>
+</tr>
+</table>
+</body>
+</html>

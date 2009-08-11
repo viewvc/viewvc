@@ -1,0 +1,346 @@
+#!/usr/bin/env python
+# -*-python-*-
+#
+# Copyright (C) 1999-2009 The ViewCVS Group. All Rights Reserved.
+#
+# By using this file, you agree to the terms and conditions set forth in
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
+#
+# For more information, visit http://viewvc.org/
+#
+# -----------------------------------------------------------------------
+#
+# administrative program for CVSdb; creates a clean database in
+# MySQL 3.22 or later
+#
+# -----------------------------------------------------------------------
+
+import os, sys, string
+import popen2
+import getopt
+
+## ------------------------------------------------------------------------
+## Stuff common to all schemas
+##
+DATABASE_SCRIPT_COMMON="""\
+DROP DATABASE IF EXISTS <dbname>;
+CREATE DATABASE <dbname>;
+
+USE <dbname>;
+"""
+
+## ------------------------------------------------------------------------
+## Version 0:  The original, Bonsai-compatible schema.
+##
+DATABASE_SCRIPT_VERSION_0="""\
+DROP TABLE IF EXISTS branches;
+CREATE TABLE branches (
+  id mediumint(9) NOT NULL auto_increment,
+  branch varchar(64) binary DEFAULT '' NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE branch (branch)
+) TYPE=MyISAM;
+
+DROP TABLE IF EXISTS checkins;
+CREATE TABLE checkins (
+  type enum('Change','Add','Remove'),
+  ci_when datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+  whoid mediumint(9) DEFAULT '0' NOT NULL,
+  repositoryid mediumint(9) DEFAULT '0' NOT NULL,
+  dirid mediumint(9) DEFAULT '0' NOT NULL,
+  fileid mediumint(9) DEFAULT '0' NOT NULL,
+  revision varchar(32) binary DEFAULT '' NOT NULL,
+  stickytag varchar(255) binary DEFAULT '' NOT NULL,
+  branchid mediumint(9) DEFAULT '0' NOT NULL,
+  addedlines int(11) DEFAULT '0' NOT NULL,
+  removedlines int(11) DEFAULT '0' NOT NULL,
+  descid mediumint(9),
+  UNIQUE repositoryid (repositoryid,dirid,fileid,revision),
+  KEY ci_when (ci_when),
+  KEY whoid (whoid),
+  KEY repositoryid_2 (repositoryid),
+  KEY dirid (dirid),
+  KEY fileid (fileid),
+  KEY branchid (branchid)
+) TYPE=MyISAM;
+
+DROP TABLE IF EXISTS descs;
+CREATE TABLE descs (
+  id mediumint(9) NOT NULL auto_increment,
+  description text,
+  hash bigint(20) DEFAULT '0' NOT NULL,
+  PRIMARY KEY (id),
+  KEY hash (hash)
+) TYPE=MyISAM;
+
+DROP TABLE IF EXISTS dirs;
+CREATE TABLE dirs (
+  id mediumint(9) NOT NULL auto_increment,
+  dir varchar(255) binary DEFAULT '' NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE dir (dir)
+) TYPE=MyISAM;
+
+DROP TABLE IF EXISTS files;
+CREATE TABLE files (
+  id mediumint(9) NOT NULL auto_increment,
+  file varchar(255) binary DEFAULT '' NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE file (file)
+) TYPE=MyISAM;
+
+DROP TABLE IF EXISTS people;
+CREATE TABLE people (
+  id mediumint(9) NOT NULL auto_increment,
+  who varchar(128) binary DEFAULT '' NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE who (who)
+) TYPE=MyISAM;
+
+DROP TABLE IF EXISTS repositories;
+CREATE TABLE repositories (
+  id mediumint(9) NOT NULL auto_increment,
+  repository varchar(64) binary DEFAULT '' NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE repository (repository)
+) TYPE=MyISAM;
+
+DROP TABLE IF EXISTS tags;
+CREATE TABLE tags (
+  repositoryid mediumint(9) DEFAULT '0' NOT NULL,
+  branchid mediumint(9) DEFAULT '0' NOT NULL,
+  dirid mediumint(9) DEFAULT '0' NOT NULL,
+  fileid mediumint(9) DEFAULT '0' NOT NULL,
+  revision varchar(32) binary DEFAULT '' NOT NULL,
+  UNIQUE repositoryid (repositoryid,dirid,fileid,branchid,revision),
+  KEY repositoryid_2 (repositoryid),
+  KEY dirid (dirid),
+  KEY fileid (fileid),
+  KEY branchid (branchid)
+) TYPE=MyISAM;
+"""
+
+## ------------------------------------------------------------------------
+## Version 1:  Adds the 'metadata' table.  Adds 'descid' index to
+##             'checkins' table, and renames that table to 'commits'.
+##
+DATABASE_SCRIPT_VERSION_1="""\
+DROP TABLE IF EXISTS branches;
+CREATE TABLE branches (
+  id mediumint(9) NOT NULL auto_increment,
+  branch varchar(64) binary DEFAULT '' NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE branch (branch)
+) TYPE=MyISAM;
+
+DROP TABLE IF EXISTS commits;
+CREATE TABLE commits (
+  type enum('Change','Add','Remove'),
+  ci_when datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+  whoid mediumint(9) DEFAULT '0' NOT NULL,
+  repositoryid mediumint(9) DEFAULT '0' NOT NULL,
+  dirid mediumint(9) DEFAULT '0' NOT NULL,
+  fileid mediumint(9) DEFAULT '0' NOT NULL,
+  revision varchar(32) binary DEFAULT '' NOT NULL,
+  stickytag varchar(255) binary DEFAULT '' NOT NULL,
+  branchid mediumint(9) DEFAULT '0' NOT NULL,
+  addedlines int(11) DEFAULT '0' NOT NULL,
+  removedlines int(11) DEFAULT '0' NOT NULL,
+  descid mediumint(9),
+  UNIQUE repositoryid (repositoryid,dirid,fileid,revision),
+  KEY ci_when (ci_when),
+  KEY whoid (whoid),
+  KEY repositoryid_2 (repositoryid),
+  KEY dirid (dirid),
+  KEY fileid (fileid),
+  KEY branchid (branchid),
+  KEY descid (descid)
+) TYPE=MyISAM;
+
+DROP TABLE IF EXISTS descs;
+CREATE TABLE descs (
+  id mediumint(9) NOT NULL auto_increment,
+  description text,
+  hash bigint(20) DEFAULT '0' NOT NULL,
+  PRIMARY KEY (id),
+  KEY hash (hash)
+) TYPE=MyISAM;
+
+DROP TABLE IF EXISTS dirs;
+CREATE TABLE dirs (
+  id mediumint(9) NOT NULL auto_increment,
+  dir varchar(255) binary DEFAULT '' NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE dir (dir)
+) TYPE=MyISAM;
+
+DROP TABLE IF EXISTS files;
+CREATE TABLE files (
+  id mediumint(9) NOT NULL auto_increment,
+  file varchar(255) binary DEFAULT '' NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE file (file)
+) TYPE=MyISAM;
+
+DROP TABLE IF EXISTS people;
+CREATE TABLE people (
+  id mediumint(9) NOT NULL auto_increment,
+  who varchar(128) binary DEFAULT '' NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE who (who)
+) TYPE=MyISAM;
+
+DROP TABLE IF EXISTS repositories;
+CREATE TABLE repositories (
+  id mediumint(9) NOT NULL auto_increment,
+  repository varchar(64) binary DEFAULT '' NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE repository (repository)
+) TYPE=MyISAM;
+
+DROP TABLE IF EXISTS tags;
+CREATE TABLE tags (
+  repositoryid mediumint(9) DEFAULT '0' NOT NULL,
+  branchid mediumint(9) DEFAULT '0' NOT NULL,
+  dirid mediumint(9) DEFAULT '0' NOT NULL,
+  fileid mediumint(9) DEFAULT '0' NOT NULL,
+  revision varchar(32) binary DEFAULT '' NOT NULL,
+  UNIQUE repositoryid (repositoryid,dirid,fileid,branchid,revision),
+  KEY repositoryid_2 (repositoryid),
+  KEY dirid (dirid),
+  KEY fileid (fileid),
+  KEY branchid (branchid)
+) TYPE=MyISAM;
+
+DROP TABLE IF EXISTS metadata;
+CREATE TABLE metadata (
+  name varchar(255) binary DEFAULT '' NOT NULL,
+  value text,
+  PRIMARY KEY (name),
+  UNIQUE name (name)
+) TYPE=MyISAM;
+INSERT INTO metadata (name, value) VALUES ('version', '1');
+"""
+
+BONSAI_COMPAT="""
+WARNING:  Creating Bonsai-compatible legacy database version.  Some ViewVC
+features may not be available, or may not perform especially well.
+
+"""
+
+## ------------------------------------------------------------------------
+
+def usage_and_exit(errmsg=None):
+  stream = errmsg is None and sys.stdout or sys.stderr
+  stream.write("""\
+Usage: %s [OPTIONS]
+
+This script creates the database and tables in MySQL used by the
+ViewVC checkin database.  In order to operate correctly, it needs to
+know the following:  your database server hostname, database user,
+database user password, and database name.  (You will be prompted for
+any of this information that you do not provide via command-line
+options.)  This script will use the 'mysql' program to create the
+database for you.  You will then need to set the appropriate
+parameters in the [cvsdb] section of your viewvc.conf file.
+
+Options:
+
+  --dbname=ARG        Use ARG as the ViewVC database name to create.
+                      [Default: ViewVC]
+
+  --help              Show this usage message.
+  
+  --hostname=ARG      Use ARG as the hostname for the MySQL connection.
+                      [Default: localhost]
+
+  --password=ARG      Use ARG as the password for the MySQL connection.
+
+  --username=ARG      Use ARG as the username for the MySQL connection.
+
+  --version=ARG       Create the database using the schema employed by
+                      version ARG of ViewVC.  Valid values are:
+                      [ "1.0" ]
+                            
+""" % (os.path.basename(sys.argv[0])))
+  if errmsg is not None:
+    stream.write("[ERROR] %s.\n" % (errmsg))
+    sys.exit(1)
+  sys.exit(0)
+
+
+if __name__ == "__main__":
+  try:
+    # Parse the command-line options, if any.
+    dbname = version = hostname = username = password = None
+    opts, args = getopt.getopt(sys.argv[1:], '', [ 'dbname=',
+                                                   'help',
+                                                   'hostname=',
+                                                   'password=',
+                                                   'username=',
+                                                   'version=',
+                                                   ])
+    if len(args) > 0:
+      usage_and_exit("Unexpected command-line parameters")
+    for name, value in opts:
+      if name == '--help':
+        usage_and_exit(0)
+      elif name == '--dbname':
+        dbname = value
+      elif name == '--hostname':
+        hostname = value
+      elif name == '--username':
+        username = value
+      elif name == '--password':
+        password = value
+      elif name == '--version':
+        if value in ["1.0"]:
+          version = value
+        else:
+          usage_and_exit("Invalid version specified")
+
+    # Prompt for information not provided via command-line options.
+    if hostname is None:
+      hostname = raw_input("MySQL Hostname [default: localhost]: ") or ""
+    if username is None:
+      username = raw_input("MySQL User: ")
+    if password is None:
+      password = raw_input("MySQL Password: ")
+    if dbname is None:
+      dbname = raw_input("ViewVC Database Name [default: ViewVC]: ") or "ViewVC"
+
+    # Create the database
+    dscript = string.replace(DATABASE_SCRIPT_COMMON, "<dbname>", dbname)
+    if version == "1.0":
+      print BONSAI_COMPAT
+      dscript = dscript + DATABASE_SCRIPT_VERSION_0
+    else:
+      dscript = dscript + DATABASE_SCRIPT_VERSION_1
+
+    host_option = hostname and "--host=%s" % (hostname) or ""
+    if sys.platform == "win32":
+      cmd = "mysql --user=%s --password=%s %s "\
+            % (username, password, host_option)
+      mysql = os.popen(cmd, "w") # popen2.Popen3 is not provided on windows
+      mysql.write(dscript)
+      status = mysql.close()
+    else:
+      cmd = "{ mysql --user=%s --password=%s %s ; } 2>&1" \
+            % (username, password, host_option)
+      pipes = popen2.Popen3(cmd)
+      pipes.tochild.write(dscript)
+      pipes.tochild.close()
+      print pipes.fromchild.read()
+      status = pipes.wait()
+
+    if status:
+      print "[ERROR] The database did not create sucessfully."
+      sys.exit(1)
+
+    print "Database created successfully.  Don't forget to configure the "
+    print "[cvsdb] section of your viewvc.conf file."
+  except KeyboardInterrupt:
+    pass
+  sys.exit(0)
+    
