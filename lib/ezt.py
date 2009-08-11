@@ -189,10 +189,9 @@ Directives
    templates are escaped before they are put into the output stream. It
    has no effect on the literal text of the templates, only the output
    from [QUAL_NAME ...] directives. STRING can be one of "raw" "html" 
-   "xml" or "uri". The "raw" mode leaves the output unaltered; the "html"
-   and "xml" modes escape special characters using entity escapes (like
-   &quot; and &gt;); the "uri" mode escapes characters using hexadecimal
-   escape sequences (like %20 and %7e).
+   or "xml". The "raw" mode leaves the output unaltered. The "html" and
+   "xml" modes escape special characters using entity escapes (like
+   &quot; and &gt;)
 
    [format CALLBACK]
  
@@ -236,7 +235,6 @@ import re
 from types import StringType, IntType, FloatType, LongType, TupleType
 import os
 import cgi
-import urllib
 try:
   import cStringIO
 except ImportError:
@@ -249,7 +247,6 @@ except ImportError:
 FORMAT_RAW = 'raw'
 FORMAT_HTML = 'html'
 FORMAT_XML = 'xml'
-FORMAT_URI = 'uri'
 
 #
 # This regular expression matches three alternatives:
@@ -460,10 +457,7 @@ class Template:
   def _cmd_print(self, valrefs, ctx):
     value = _get_value(valrefs[0], ctx)
     args = map(lambda valref, ctx=ctx: _get_value(valref, ctx), valrefs[1:])
-    try:
-      _write_value(value, args, ctx)
-    except TypeError:
-      raise Exception("Unprintable value type for '%s'" % (str(valrefs[0][0])))
+    _write_value(value, args, ctx)
 
   def _cmd_format(self, printer, ctx):
     if type(printer) is TupleType:
@@ -525,8 +519,7 @@ class Template:
     ((valref,), unused, section) = args
     list = _get_value(valref, ctx)
     if isinstance(list, StringType):
-      raise NeedSequenceError("The value of '%s' is not a sequence"
-                              % (valref[0]))
+      raise NeedSequenceError()
     refname = valref[0]
     ctx.for_iterators[refname] = iterator = _iter(list)
     for unused in iterator:
@@ -676,41 +669,6 @@ def _write_value(value, args, ctx):
     ctx.printers.append(printer)
 
 
-class TemplateData:
-  """A custom dictionary-like object that allows one-time definition
-  of keys, and only value fetches and changes, and key deletions,
-  thereafter.
-
-  EZT doesn't require the use of this special class -- a normal
-  dict-type data dictionary works fine.  But use of this class will
-  assist those who want the data sent to their templates to have a
-  consistent set of keys."""
-
-  def __init__(self, initial_data={}):
-    self._items = initial_data
-    
-  def __getitem__(self, key):
-    return self._items.__getitem__(key)
-
-  def __setitem__(self, key, item):
-    assert self._items.has_key(key)
-    return self._items.__setitem__(key, item)
-
-  def __delitem__(self, key):
-    return self._items.__delitem__(key)
-
-  def keys(self):
-    return self._items.keys()
-
-  def merge(self, template_data):
-    """Merge the data in TemplataData instance TEMPLATA_DATA into this
-    instance.  Avoid the temptation to use this conditionally in your
-    code -- it rather defeats the purpose of this class."""
-    
-    assert isinstance(template_data, TemplateData)
-    self._items.update(template_data._items)
-
-
 class Context:
   """A container for the execution context"""
   def __init__(self, fp):
@@ -834,14 +792,10 @@ def _raw_printer(ctx, s):
 def _html_printer(ctx, s):
   ctx.fp.write(cgi.escape(s))
 
-def _uri_printer(ctx, s):
-  ctx.fp.write(urllib.quote(s))
-
 _printers = {
   FORMAT_RAW  : _raw_printer,
   FORMAT_HTML : _html_printer,
   FORMAT_XML  : _html_printer,
-  FORMAT_URI  : _uri_printer,
 }
 
 # --- standard test environment ---
