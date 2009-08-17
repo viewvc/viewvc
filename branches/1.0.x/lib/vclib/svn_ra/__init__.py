@@ -20,6 +20,7 @@ import re
 import tempfile
 import popen2
 import time
+import urllib
 from vclib.svn import Revision, ChangedPath, _datestr_to_date, _compare_paths, _cleanup_path
 from svn import core, delta, client, wc, ra
 
@@ -234,7 +235,7 @@ def temp_checkout(svnrepos, path, rev, pool):
   """Check out file revision to temporary file"""
   temp = tempfile.mktemp()
   stream = core.svn_stream_from_aprfile(temp, pool)
-  url = svnrepos.rootpath + (path and '/' + path)
+  url = svnrepos._geturl(path)
   client.svn_client_cat(core.Stream(stream), url, _rev2optrev(rev),
                         svnrepos.ctx, pool)
   core.svn_stream_close(stream)
@@ -323,10 +324,10 @@ class SubversionRepository(vclib.Repository):
       raise vclib.ItemNotFound(path_parts)
 
   def openfile(self, path_parts, rev):
+    path = self._getpath(path_parts)
     rev = self._getrev(rev)
-    url = self.rootpath
-    if len(path_parts):
-      url = self.rootpath + '/' + self._getpath(path_parts)
+    url = self._geturl(path)
+    
     tmp_file = tempfile.mktemp()
     stream = core.svn_stream_from_aprfile(tmp_file, self.pool)
     ### rev here should be the last history revision of the URL
@@ -353,18 +354,15 @@ class SubversionRepository(vclib.Repository):
     get_logs(self, self._getpath(path_parts), self._getrev(rev), entries)
 
   def itemlog(self, path_parts, rev, options):
-    full_name = self._getpath(path_parts)
+    path = self._getpath(path_parts)
     rev = self._getrev(rev)
+    url = self._geturl(path)
 
     # It's okay if we're told to not show all logs on a file -- all
     # the revisions should match correctly anyway.
-    lc = LogCollector(full_name, options.get('svn_show_all_dir_logs', 0))
-    dir_url = self.rootpath
-    if full_name:
-      dir_url = dir_url + '/' + full_name
-
+    lc = LogCollector(path, options.get('svn_show_all_dir_logs', 0))
     cross_copies = options.get('svn_cross_copies', 0)
-    client.svn_client_log([dir_url], _rev2optrev(rev), _rev2optrev(1),
+    client.svn_client_log([url], _rev2optrev(rev), _rev2optrev(1),
                           1, not cross_copies, lc.add_log,
                           self.ctx, self.pool)
     revs = lc.logs
@@ -379,7 +377,7 @@ class SubversionRepository(vclib.Repository):
   def annotate(self, path_parts, rev):
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
-    url = self.rootpath + (path and '/' + path)
+    url = self._geturl(path)
 
     blame_data = []
 
@@ -429,13 +427,17 @@ class SubversionRepository(vclib.Repository):
       raise vclib.InvalidRevision(rev)
     return rev
 
+  def _geturl(self, path=None):
+    if not path:
+      return self.rootpath
+    return self.rootpath + '/' + urllib.quote(path, "/*~")
+
   def _get_dirents(self, path, rev):
+    dir_url = self._geturl(path)
     if path:
       key = str(rev) + '/' + path
-      dir_url = self.rootpath + '/' + path
     else:
       key = str(rev)
-      dir_url = self.rootpath
     dirents = self._dirent_cache.get(key)
     if dirents:
       return dirents
