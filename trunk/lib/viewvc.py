@@ -1137,12 +1137,15 @@ class HtmlFormatter:
            characters.  If MAXLEN is 0, there is no maximum.
          - the number of characters returned.
     """
-    if (maxlen == 0) or (len(mobj.group(1)) < (maxlen - 2)):
-      return self._entity_encode(mobj.group(1)) + '&#64;&hellip;', \
-             len(mobj.group(1)) + 2
+    s = mobj.group(1)
+    s_len = len(s)
+    if (maxlen == 0) or (s_len < (maxlen - 1)):
+      return self._entity_encode(s) + '&#64;&hellip;', s_len + 2
+    elif s_len < maxlen:
+      return self._entity_encode(s) + '&#64;', s_len + 1
     else:
-      trunc_s = mobj.group(1)[:maxlen-1]
-      return self._entity_encode(trunc_s) + '&hellip;', len(trunc_s) + 1
+      trunc_s = mobj.group(1)[:maxlen]
+      return self._entity_encode(trunc_s), len(trunc_s)
 
   def format_text(self, s, unused, maxlen=0):
     """Return a 2-tuple containing:
@@ -1168,8 +1171,10 @@ class HtmlFormatter:
     self._formatters.append([regexp, conv, userdata])
 
   def get_result(self, s, maxlen=0):
-    """Return the string S, formatted per the set of added formatters,
-    with no more than MAXLEN characters of 'visible' output.
+    """Format S per the set of formatters registered with this object,
+    and limited to MAXLEN visible characters (or unlimited if MAXLEN
+    is 0).  Return a 2-tuple containing the formatted result string
+    and a boolean flag indicating whether or not S was truncated.
     """
     out = ''
     for token in self._tokenize_text(s):
@@ -1178,8 +1183,8 @@ class HtmlFormatter:
       if maxlen:
         maxlen = maxlen - chunk_len
         if maxlen <= 0:
-          break
-    return out
+          return out, 1
+    return out, 0
 
   def _entity_encode(self, s):
     return string.join(map(lambda x: '&#%d;' % (ord(x)), s), '')
@@ -1229,7 +1234,8 @@ def format_log(log, cfg, maxlen=0, htmlize=1):
       lf.add_formatter(_re_rewrite_email, lf.format_email_obfuscated)
     else:
       lf.add_formatter(_re_rewrite_email, lf.format_email)
-    return lf.get_result(log, maxlen)
+    log, truncated = lf.get_result(log, maxlen)
+    return log + (truncated and '&hellip;' or '')
   else:
     if cfg.options.mangle_email_addresses == 2:
       log = re.sub(_re_rewrite_email, r'\1@...', log)
