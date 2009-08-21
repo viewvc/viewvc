@@ -1068,55 +1068,165 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
                revision_href=revision_href,
                prefer_markup=ezt.boolean(prefer_markup))
 
+def htmlify(html):
+  return html and cgi.escape(html) or html
 
-# Regular expressions for location text that looks like URLs and email
-# addresses.  Note that the regexps assume the text is already HTML-encoded.
+
+# Matches URLs
 _re_rewrite_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)'
-                             '(://[-a-zA-Z0-9%.~:_/]+)((\?|\&amp;)'
+                             '(://[-a-zA-Z0-9%.~:_/]+)((\?|\&)'
                              '([-a-zA-Z0-9%.~:_]+)=([-a-zA-Z0-9%.~:_])+)*'
                              '(#([-a-zA-Z0-9%.~:_]+)?)?)')
+# Matches email addresses
 _re_rewrite_email = re.compile('([-a-zA-Z0-9_.\+]+)@'
                                '(([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
 
-def mangle_email_addresses(text, style=0):
-  # style=2:  truncation mangling
-  if style == 2: 
-    return re.sub(_re_rewrite_email, r'\1&#64;&hellip;', text)
 
-  # style=1:  entity-encoding and at-wrapping    
-  if style == 1: 
-    def _match_replace(matchobj):
-      return string.join(map(lambda x: '&#%d;' % (ord(x)),
-                             matchobj.group(1)), '') \
-             + ' {at} ' + \
-             string.join(map(lambda x: '&#%d;' % (ord(x)),
-                             matchobj.group(2)), '')
-    return re.sub(_re_rewrite_email, _match_replace, text)
+class HtmlFormatter:
+  def __init__(self):
+    self._formatters = []
 
-  # otherwise, no mangling
-  return text
+  def format_url(self, mobj, userdata, maxlen=0):
+    """Return a 2-tuple containing:
+         - the text represented by MatchObject MOBJ, formatted as
+           linkified URL, with no more than MAXLEN characters in the
+           non-HTML-tag bits.  If MAXLEN is 0, there is no maximum.
+         - the number of non-HTML-tag characters returned.
+    """
+    s = mobj.group(0)
+    trunc_s = maxlen and s[:maxlen] or s
+    return '<a href="%s">%s</a>' % (cgi.escape(s),
+                                    cgi.escape(trunc_s)), \
+           len(trunc_s)
 
-def htmlify(html, mangle_email_addrs=0):
-  if not html:
-    return html
-  html = cgi.escape(html)
-  html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
-  html = mangle_email_addresses(html, mangle_email_addrs)
-  return html
+  def format_email(self, mobj, userdata, maxlen=0):
+    """Return a 2-tuple containing:
+         - the text represented by MatchObject MOBJ, formatted as
+           linkified email address, with no more than MAXLEN characters
+           in the non-HTML-tag bits.  If MAXLEN is 0, there is no maximum.
+         - the number of non-HTML-tag characters returned.
+    """    
+    s = mobj.group(0)
+    trunc_s = maxlen and s[:maxlen] or s
+    return '<a href="mailto:%s">%s</a>' % (urllib.quote(s),
+                                           self._entity_encode(trunc_s)), \
+           len(trunc_s)
 
-def format_log(log, cfg, htmlize=1):
+  def format_email_obfuscated(self, mobj, userdata, maxlen=0):
+    """Return a 2-tuple containing:
+         - the text represented by MatchObject MOBJ, formatted as an
+           entity-encoded email address, with no more than MAXLEN characters
+           in the non-HTML-tag bits.  If MAXLEN is 0, there is no maximum.
+         - the number of non-HTML-tag characters returned.
+    """    
+    s = mobj.group(0)
+    trunc_s = maxlen and s[:maxlen] or s
+    return self._entity_encode(trunc_s), len(trunc_s)
+
+  def format_email_truncated(self, mobj, userdata, maxlen=0):
+    """Return a 2-tuple containing:
+         - the text represented by MatchObject MOBJ, formatted as an
+           HTML-escaped truncated email address of no more than MAXLEN
+           characters.  If MAXLEN is 0, there is no maximum.
+         - the number of characters returned.
+    """
+    if (maxlen == 0) or (len(mobj.group(1)) < (maxlen - 2)):
+      return self._entity_encode(mobj.group(1)) + '&#64;&hellip;', \
+             len(mobj.group(1)) + 2
+    else:
+      trunc_s = mobj.group(1)[:maxlen-1]
+      return self._entity_encode(trunc_s) + '&hellip;', len(trunc_s) + 1
+
+  def format_text(self, s, unused, maxlen=0):
+    """Return a 2-tuple containing:
+         - the text S, HTML-escaped, containing no more than MAXLEN
+           characters.  If MAXLEN is 0, there is no maximum.
+         - the number of characters returned.
+    """   
+    trunc_s = maxlen and s[:maxlen] or s
+    return cgi.escape(trunc_s), len(trunc_s)
+  
+  def add_formatter(self, regexp, conv, userdata=None):
+    """Register a formatter which finds instances of strings matching
+    REGEXP, and using the function CONV and USERDATA to format them.
+
+    CONV is a function which accepts three parameters:
+      - the MatchObject which holds the string portion to be formatted,
+      - the USERDATA object,
+      - the maximum number of characters from that string to use for
+        human-readable output (or 0 to indicate no maximum).
+    """
+    if type(regexp) == type(''):
+      regexp = re.compile(regexp)
+    self._formatters.append([regexp, conv, userdata])
+
+  def get_result(self, s, maxlen=0):
+    """Return the string S, formatted per the set of added formatters,
+    with no more than MAXLEN characters of 'visible' output.
+    """
+    out = ''
+    for token in self._tokenize_text(s):
+      chunk, chunk_len = token.converter(token.match, token.userdata, maxlen)
+      out = out + chunk
+      if maxlen:
+        maxlen = maxlen - chunk_len
+        if maxlen <= 0:
+          break
+    return out
+
+  def _entity_encode(self, s):
+    return string.join(map(lambda x: '&#%d;' % (ord(x)), s), '')
+
+  def _tokenize_text(self, s):
+    tokens = []
+    while s:
+      best_match = best_conv = best_userdata = None
+      for test in self._formatters:
+        match = test[0].search(s)
+        if match \
+           and ((best_match is None) \
+                or (match.start() < best_match.start())):
+          best_match = match
+          best_conv = test[1]
+          best_userdata = test[2]
+      if best_match:
+        # add any non-matching stuff at the beginning, then the matching bit.
+        start = best_match.start()
+        end = best_match.end()
+        if start > 0:
+          tokens.append(_item(match=s[:start],
+                              converter=self.format_text,
+                              userdata=None))
+        tokens.append(_item(match=best_match,
+                            converter=best_conv,
+                            userdata=best_userdata))
+        s = s[end:]
+      else:
+        # add the rest of the string.
+        tokens.append(_item(match=s,
+                            converter=self.format_text,
+                            userdata=None))
+        s = ''
+    return tokens
+
+def format_log(log, cfg, maxlen=0, htmlize=1):
   if not log:
     return log
+
   if htmlize:
-    s = htmlify(log[:cfg.options.short_log_len],
-                cfg.options.mangle_email_addresses)
-  else:
-    s = cgi.escape(log[:cfg.options.short_log_len])
+    lf = HtmlFormatter()
+    lf.add_formatter(_re_rewrite_url, lf.format_url)
     if cfg.options.mangle_email_addresses == 2:
-      s = re.sub(_re_rewrite_email, r'\1@...', s)
-  if len(log) > cfg.options.short_log_len:
-    s = s + '...'
-  return s
+      lf.add_formatter(_re_rewrite_email, lf.format_email_truncated)
+    elif cfg.options.mangle_email_addresses == 1:
+      lf.add_formatter(_re_rewrite_email, lf.format_email_obfuscated)
+    else:
+      lf.add_formatter(_re_rewrite_email, lf.format_email)
+    return lf.get_result(log, maxlen)
+  else:
+    if cfg.options.mangle_email_addresses == 2:
+      log = re.sub(_re_rewrite_email, r'\1@...', log)
+    return maxlen and log[:maxlen] or log
 
 _time_desc = {
          1 : 'second',
@@ -1312,22 +1422,21 @@ def retry_read(src, reqlen=CHUNK_SIZE):
         continue
     return chunk
   
-def copy_stream(src, dst, cfg, htmlize=0):
+def copy_stream(src, dst, htmlize=0):
   while 1:
     chunk = retry_read(src)
     if not chunk:
       break
     if htmlize:
-      chunk = htmlify(chunk, mangle_email_addrs=0)
+      chunk = htmlify(chunk)
     dst.write(chunk)
 
 class MarkupPipeWrapper:
   """An EZT callback that outputs a filepointer, plus some optional
   pre- and post- text."""
 
-  def __init__(self, cfg, fp, pretext=None, posttext=None, htmlize=1):
+  def __init__(self, fp, pretext=None, posttext=None, htmlize=0):
     self.fp = fp
-    self.cfg = cfg
     self.pretext = pretext
     self.posttext = posttext
     self.htmlize = htmlize
@@ -1335,7 +1444,7 @@ class MarkupPipeWrapper:
   def __call__(self, ctx):
     if self.pretext:
       ctx.fp.write(self.pretext)
-    copy_stream(self.fp, ctx.fp, self.cfg, self.htmlize)
+    copy_stream(self.fp, ctx.fp, self.htmlize)
     self.fp.close()
     if self.posttext:
       ctx.fp.write(self.posttext)
@@ -1572,7 +1681,7 @@ def markup_or_annotate(request, is_annotate):
     data['date'] = make_time_string(entry.date, cfg)
     data['author'] = entry.author
     data['changed'] = entry.changed
-    data['log'] = htmlify(entry.log, cfg.options.mangle_email_addresses)
+    data['log'] = format_log(entry.log, cfg)
     data['size'] = entry.size
 
     if entry.date is not None:
@@ -1788,8 +1897,9 @@ def view_directory(request):
       row.date = make_time_string(file.date, cfg)
       row.ago = html_time(request, file.date)
     if cfg.options.show_logs:
-      row.short_log = format_log(file.log, cfg)
-      row.log = htmlify(file.log, cfg.options.mangle_email_addresses)
+      row.log = format_log(file.log, cfg)
+      row.short_log = format_log(file.log, cfg,
+                                 maxlen=cfg.options.short_log_len)
     row.lockinfo = file.lockinfo
     row.anchor = request.server.escape(file.name)
     row.name = request.server.escape(file.name)
@@ -1875,9 +1985,7 @@ def view_directory(request):
     'entries' : rows,
     'sortby' : sortby,
     'sortdir' : sortdir,
-    'search_re' : search_re \
-                  and htmlify(search_re, cfg.options.mangle_email_addresses) \
-                  or None,
+    'search_re' : htmlify(search_re),
     'dir_pagestart' : None,
     'sortby_file_href' :   request.get_url(params={'sortby': 'file',
                                                    'sortdir': None},
@@ -2164,7 +2272,7 @@ def view_log(request):
     entry.ago = None
     if rev.date is not None:
       entry.ago = html_time(request, rev.date, 1)
-    entry.log = htmlify(rev.log or "", cfg.options.mangle_email_addresses)
+    entry.log = format_log(rev.log or '', cfg)
     entry.size = rev.size
     entry.lockinfo = rev.lockinfo
     entry.branch_point = None
@@ -2619,7 +2727,7 @@ class DiffSource:
       text = string.replace(text, '  ', ' \x01nbsp;')
     else:
       text = string.replace(text, ' ', '\x01nbsp;')
-    text = htmlify(text, mangle_email_addrs=0)
+    text = htmlify(text)
     text = string.replace(text, '\x01', '&')
     text = string.replace(text, '\x02',
                           '<span style="color:red">\</span><br />')
@@ -2994,9 +3102,7 @@ def view_diff(request):
       else:
         changes = DiffSource(fp, cfg)
     else:
-      raw_diff_fp = MarkupPipeWrapper(cfg, fp,
-                                      htmlify(headers, mangle_email_addrs=0),
-                                      None, 1)
+      raw_diff_fp = MarkupPipeWrapper(fp, htmlify(headers), None, 1)
 
   no_format_params = request.query_dict.copy()
   no_format_params['diff_format'] = None
@@ -3372,7 +3478,7 @@ def view_revision(request):
     'rev' : str(rev),
     'author' : author,
     'date' : date_str,
-    'log' : msg and htmlify(msg, cfg.options.mangle_email_addresses) or None,
+    'log' : format_log(msg, cfg),
     'ago' : date is not None and html_time(request, date, 1) or None,
     'changes' : changes,
     'prev_href' : prev_rev_href,
@@ -3503,8 +3609,7 @@ def english_query(request):
     ret.append('on all branches ')
   comment = request.query_dict.get('comment', '')
   if comment:
-    ret.append('with comment <i>%s</i> '
-               % htmlify(comment, mangle_email_addrs=0))
+    ret.append('with comment <i>%s</i> ' % htmlify(comment))
   if who:
     ret.append('by <em>%s</em> ' % request.server.escape(who))
   date = request.query_dict.get('date', 'hours')
@@ -3692,8 +3797,9 @@ def build_commit(request, files, max_files, dir_strip, format):
     commit.log = None
     commit.short_log = None
   else:
-    commit.log = htmlify(desc)
-    commit.short_log = format_log(desc, cfg, format != 'rss')
+    commit.log = format_log(desc, cfg, format != 'rss')
+    commit.short_log = format_log(desc, cfg, format != 'rss',
+                                  cfg.options.short_log_len)
   commit.author = request.server.escape(author)
   commit.rss_date = make_rss_time_string(date, request.cfg)
   if request.roottype == 'svn':
