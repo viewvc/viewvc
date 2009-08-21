@@ -1089,17 +1089,11 @@ _re_rewrite_email = re.compile('([-a-zA-Z0-9_.\+]+)@'
                                '(([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
 
 
-class HtmlFormatToken:
-  def __init__(self, mobj, converter):
-    self.mobj = mobj
-    self.converter = converter
-
-    
 class HtmlFormatter:
   def __init__(self):
     self._formatters = []
 
-  def format_url(self, mobj, maxlen=0):
+  def format_url(self, mobj, userdata, maxlen=0):
     """Return a 2-tuple containing:
          - the text represented by MatchObject MOBJ, formatted as
            linkified URL, with no more than MAXLEN characters in the
@@ -1112,7 +1106,7 @@ class HtmlFormatter:
                                     cgi.escape(trunc_s)), \
            len(trunc_s)
 
-  def format_email(self, mobj, maxlen=0):
+  def format_email(self, mobj, userdata, maxlen=0):
     """Return a 2-tuple containing:
          - the text represented by MatchObject MOBJ, formatted as
            linkified email address, with no more than MAXLEN characters
@@ -1125,7 +1119,7 @@ class HtmlFormatter:
                                            self._entity_encode(trunc_s)), \
            len(trunc_s)
 
-  def format_email_obfuscated(self, mobj, maxlen=0):
+  def format_email_obfuscated(self, mobj, userdata, maxlen=0):
     """Return a 2-tuple containing:
          - the text represented by MatchObject MOBJ, formatted as an
            entity-encoded email address, with no more than MAXLEN characters
@@ -1136,7 +1130,7 @@ class HtmlFormatter:
     trunc_s = maxlen and s[:maxlen] or s
     return self._entity_encode(trunc_s), len(trunc_s)
 
-  def format_email_truncated(self, mobj, maxlen=0):
+  def format_email_truncated(self, mobj, userdata, maxlen=0):
     """Return a 2-tuple containing:
          - the text represented by MatchObject MOBJ, formatted as an
            HTML-escaped truncated email address of no more than MAXLEN
@@ -1150,7 +1144,7 @@ class HtmlFormatter:
       trunc_s = mobj.group(1)[:maxlen-1]
       return self._entity_encode(trunc_s) + '&hellip;', len(trunc_s) + 1
 
-  def format_text(self, s, maxlen=0):
+  def format_text(self, s, unused, maxlen=0):
     """Return a 2-tuple containing:
          - the text S, HTML-escaped, containing no more than MAXLEN
            characters.  If MAXLEN is 0, there is no maximum.
@@ -1159,18 +1153,19 @@ class HtmlFormatter:
     trunc_s = maxlen and s[:maxlen] or s
     return cgi.escape(trunc_s), len(trunc_s)
   
-  def add_formatter(self, regexp, conv):
+  def add_formatter(self, regexp, conv, userdata=None):
     """Register a formatter which finds instances of strings matching
-    REGEXP, and using the function CONV to format them.
+    REGEXP, and using the function CONV and USERDATA to format them.
 
-    CONV is a function which accepts two parameters: the MatchObject
-    which holds the string portion to be formatted, and the maximum
-    number of characters from that string to use for human-readable
-    output (or 0 to indicate no maximum).
+    CONV is a function which accepts three parameters:
+      - the MatchObject which holds the string portion to be formatted,
+      - the USERDATA object,
+      - the maximum number of characters from that string to use for
+        human-readable output (or 0 to indicate no maximum).
     """
     if type(regexp) == type(''):
       regexp = re.compile(regexp)
-    self._formatters.append([regexp, conv])
+    self._formatters.append([regexp, conv, userdata])
 
   def get_result(self, s, maxlen=0):
     """Return the string S, formatted per the set of added formatters,
@@ -1178,7 +1173,7 @@ class HtmlFormatter:
     """
     out = ''
     for token in self._tokenize_text(s):
-      chunk, chunk_len = token.converter(token.mobj, maxlen)
+      chunk, chunk_len = token.converter(token.match, token.userdata, maxlen)
       out = out + chunk
       if maxlen:
         maxlen = maxlen - chunk_len
@@ -1192,8 +1187,7 @@ class HtmlFormatter:
   def _tokenize_text(self, s):
     tokens = []
     while s:
-      best_match = None
-      best_conv = None
+      best_match = best_conv = best_userdata = None
       for test in self._formatters:
         match = test[0].search(s)
         if match \
@@ -1201,17 +1195,24 @@ class HtmlFormatter:
                 or (match.start() < best_match.start())):
           best_match = match
           best_conv = test[1]
+          best_userdata = test[2]
       if best_match:
         # add any non-matching stuff at the beginning, then the matching bit.
         start = best_match.start()
         end = best_match.end()
         if start > 0:
-          tokens.append(HtmlFormatToken(s[:start], self.format_text))
-        tokens.append(HtmlFormatToken(best_match, best_conv))
+          tokens.append(_item(match=s[:start],
+                              converter=self.format_text,
+                              userdata=None))
+        tokens.append(_item(match=best_match,
+                            converter=best_conv,
+                            userdata=best_userdata))
         s = s[end:]
       else:
         # add the rest of the string.
-        tokens.append(HtmlFormatToken(s, self.format_text))
+        tokens.append(_item(match=s,
+                            converter=self.format_text,
+                            userdata=None))
         s = ''
     return tokens
 
