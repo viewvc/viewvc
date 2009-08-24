@@ -1491,11 +1491,13 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename, mime_type):
     try:
       lexer = get_lexer_for_mimetype(mime_type,
                                      encoding=encoding,
+                                     tabsize=cfg.options.tabsize,
                                      stripnl=False)
     except ClassNotFound:
       try:
         lexer = get_lexer_for_filename(filename,
                                        encoding=encoding,
+                                       tabsize=cfg.options.tabsize,
                                        stripnl=False)
       except ClassNotFound:
         use_pygments = 0
@@ -1507,7 +1509,15 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename, mime_type):
   # one from the file contents we fetch with PATH and REV.
   if not use_pygments:
     if blame_source:
-      return blame_source
+      class BlameSourceTabsizeWrapper:
+        def __init__(self, blame_source, tabsize):
+          self.blame_source = blame_source
+          self.tabsize = cfg.options.tabsize
+        def __getitem__(self, idx):
+          item = self.blame_source.__getitem__(idx)
+          item.text = string.expandtabs(item.text, self.tabsize)
+          return item
+      return BlameSourceTabsizeWrapper(blame_source, cfg.options.tabsize)
     else:
       lines = []
       line_no = 0
@@ -1516,8 +1526,8 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename, mime_type):
         if not line:
           break
         line_no = line_no + 1
-        item = vclib.Annotation(cgi.escape(line), line_no,
-                                None, None, None, None)
+        line = cgi.escape(string.expandtabs(line, cfg.options.tabsize))
+        item = vclib.Annotation(line, line_no, None, None, None, None)
         item.diff_href = None
         lines.append(item)
     return lines
@@ -2719,7 +2729,7 @@ class DiffSource:
         return item
 
   def _format_text(self, text):
-    text = string.expandtabs(string.rstrip(text))
+    text = string.expandtabs(string.rstrip(text), self.cfg.options.tabsize)
     hr_breakable = self.cfg.options.hr_breakable
     
     # in the code below, "\x01" will be our stand-in for "&". We don't want

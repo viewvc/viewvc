@@ -1,6 +1,7 @@
 Version 1.1.3 (released ??-???-????)
 
   * fix URL-ification of truncated log messages (issue #3)
+  * add support for configurable tab-to-spaces conversion
 
 Version 1.1.2 (released 11-Aug-2009)
 
