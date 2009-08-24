@@ -559,6 +559,11 @@
 ##
 #enable_syntax_coloration = 1
 
+## tabsize: The number of spaces into which tabstops are converted
+## when viewing file contents.
+##
+#tabsize = 8
+
 ## detect_encoding: Should we attempt to detect versioned file
 ## character encodings?  [Requires 'chardet' module, and is currently
 ## used only by the syntax coloration logic -- if enabled -- for the

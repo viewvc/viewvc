@@ -244,6 +244,7 @@ class Config:
     self.options.use_localtime = 0
     self.options.short_log_len = 80
     self.options.enable_syntax_coloration = 1
+    self.options.tabsize = 8
     self.options.detect_encoding = 0
     self.options.use_cvsgraph = 0
     self.options.cvsgraph_conf = "cvsgraph.conf"
