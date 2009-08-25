@@ -75,11 +75,12 @@ if sys.platform == "win32":
 ## List of directories for installation.
 ##    type (source path,
 ##          destination path,
+##          boolean -- optional item?,
 ##          boolean -- prompt before replacing?)
 TREE_LIST = [
-    ("lib",                       "lib",                       0),
-    ("templates",                 "templates",                 1),
-    ("templates-contrib",         "templates-contrib",         1),
+    ("lib",                       "lib",                       0, 0),
+    ("templates",                 "templates",                 0, 1),
+    ("templates-contrib",         "templates-contrib",         1, 1),
     ]
 
 
@@ -275,18 +276,22 @@ LEGEND
         py_compile.compile(destdir_path, destdir_path + "c" , dst_path)
 
 
-def install_tree(src_path, dst_path, prompt_replace):
+def install_tree(src_path, dst_path, is_optional, prompt_replace):
     """Install a tree whose source is at SRC_PATH (which is relative
     to the ViewVC source directory) into the location DST_PATH (which
     is relative both to the global ROOT_DIR and DESTDIR settings).  If
     PROMPT_REPLACE is set (and is not overridden by global setting
     CLEAN_MODE), prompt the user for how to deal with already existing
-    files that differ from the to-be-installed version."""
+    files that differ from the to-be-installed version.  If
+    IS_OPTIONAL is set, don't fuss about a missing source item."""
 
     orig_src_path = src_path
     orig_dst_path = dst_path
     src_path = _actual_src_path(src_path)
     dst_path = os.path.join(ROOT_DIR, string.replace(dst_path, '/', os.sep))
+    if not os.path.isdir(src_path):
+        print "   skipping  %s" % (dst_path)
+        return
     destdir_path = os.path.join(DESTDIR + dst_path)
 
     # Get a list of items in the directory.
@@ -306,7 +311,7 @@ def install_tree(src_path, dst_path, prompt_replace):
 
         # If the item is a subdirectory, recurse.  Otherwise, install the file.
         if os.path.isdir(os.path.join(src_path, fname)):
-            install_tree(orig_src_child, orig_dst_child, prompt_replace)
+            install_tree(orig_src_child, orig_dst_child, 0, prompt_replace)
         else:
             set_paths = 0
             compile_it = fname[-3:] == '.py'
