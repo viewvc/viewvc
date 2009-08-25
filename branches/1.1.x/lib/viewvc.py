@@ -3103,15 +3103,12 @@ def view_diff(request):
                                  'to diff', '400 Bad Request')
   path_left = _path_join(p1)
   path_right = _path_join(p2)
+
+  date1 = date2 = raw_diff_fp = None
+  changes = []
   if fp:
     date1, date2, flag, headers = diff_parse_headers(fp, diff_type,
-                                                     rev1, rev2,
-                                                     sym1, sym2)
-  else:
-    date1 = date2 = flag = headers = None
-
-  raw_diff_fp = changes = None
-  if fp:
+                                                     rev1, rev2, sym1, sym2)
     if human_readable:
       if flag is not None:
         changes = [ _item(type=flag) ]
@@ -3122,6 +3119,8 @@ def view_diff(request):
 
   no_format_params = request.query_dict.copy()
   no_format_params['diff_format'] = None
+  diff_format_action, diff_format_hidden_values = \
+    request.get_form(params=no_format_params)
 
   fvi = get_file_view_info(request, path_left, rev1)
   left = _item(date=rcsdiff_date_reformat(date1, cfg),
@@ -3147,9 +3146,6 @@ def view_diff(request):
                 revision_href=fvi.revision_href,
                 prefer_markup=fvi.prefer_markup)
 
-  diff_format_action, diff_format_hidden_values = \
-    request.get_form(params=no_format_params)
-      
   data = common_template_data(request)
   data.merge(ezt.TemplateData({
     'left' : left,
