@@ -1090,6 +1090,14 @@ _re_rewrite_email = re.compile('([-a-zA-Z0-9_.\+]+)@'
 
 
 class HtmlFormatter:
+  """Format a string as HTML-encoded output with customizable markup
+  rules, for example turning strings that look like URLs into anchor links.
+
+  NOTE:  While there might appear to be some unused portions of this
+  interface, there is a good chance that there are consumers outside
+  of ViewVC itself that make use of these things.
+  """
+  
   def __init__(self):
     self._formatters = []
 
@@ -1173,18 +1181,21 @@ class HtmlFormatter:
   def get_result(self, s, maxlen=0):
     """Format S per the set of formatters registered with this object,
     and limited to MAXLEN visible characters (or unlimited if MAXLEN
-    is 0).  Return a 2-tuple containing the formatted result string
-    and a boolean flag indicating whether or not S was truncated.
+    is 0).  Return a 3-tuple containing the formatted result string,
+    the number of visible characters in the result string, and a
+    boolean flag indicating whether or not S was truncated.
     """
     out = ''
+    out_len = 0
     for token in self._tokenize_text(s):
       chunk, chunk_len = token.converter(token.match, token.userdata, maxlen)
       out = out + chunk
+      out_len = out_len + chunk_len
       if maxlen:
         maxlen = maxlen - chunk_len
         if maxlen <= 0:
-          return out, 1
-    return out, 0
+          return out, out_len, 1
+    return out, out_len, 0
 
   def _entity_encode(self, s):
     return string.join(map(lambda x: '&#%d;' % (ord(x)), s), '')
@@ -1234,7 +1245,7 @@ def format_log(log, cfg, maxlen=0, htmlize=1):
       lf.add_formatter(_re_rewrite_email, lf.format_email_obfuscated)
     else:
       lf.add_formatter(_re_rewrite_email, lf.format_email)
-    log, truncated = lf.get_result(log, maxlen)
+    log, log_len, truncated = lf.get_result(log, maxlen)
     return log + (truncated and '&hellip;' or '')
   else:
     if cfg.options.mangle_email_addresses == 2:
