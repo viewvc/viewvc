@@ -1199,14 +1199,25 @@ class HtmlFormatter:
       best_match = best_conv = best_userdata = None
       for test in self._formatters:
         match = test[0].search(s)
+        # If we find and match and (a) its our first one, or (b) it
+        # matches text earlier than our previous best match, or (c) it
+        # matches text at the same location as our previous best match
+        # but extends to cover more text than that match, then this is
+        # our new best match.
+        #
+        # Implied here is that when multiple formatters match exactly
+        # the same text, the first formatter in the registration list wins.
         if match \
            and ((best_match is None) \
-                or (match.start() < best_match.start())):
+                or (match.start() < best_match.start())
+                or ((match.start() == best_match.start()) \
+                    and (match.end() > best_match.end()))):
           best_match = match
           best_conv = test[1]
           best_userdata = test[2]
+      # If we found a match...
       if best_match:
-        # add any non-matching stuff at the beginning, then the matching bit.
+        # ... add any non-matching stuff first, then the matching bit.
         start = best_match.start()
         end = best_match.end()
         if start > 0:
@@ -1218,7 +1229,7 @@ class HtmlFormatter:
                             userdata=best_userdata))
         s = s[end:]
       else:
-        # add the rest of the string.
+        # Otherwise, just add the rest of the string.
         tokens.append(_item(match=s,
                             converter=self.format_text,
                             userdata=None))
