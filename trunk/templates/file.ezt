@@ -71,9 +71,9 @@ Revision [if-any revision_href]<a href="[revision_href]"><strong>[rev]</strong><
 [if-any image_src_href][define hide_binary_garbage]0[end][end]
 
 [is hide_binary_garbage "1"]
-<p><strong>This file's contents are not viewable.  Please 
-   <a href="[download_href]">download</a> this version of the
-   file in order to view it.</strong></p>
+<p><strong>This file's contents are not viewable.
+   [if-any download_href]Please <a href="[download_href]">download</a>
+   this version of the file in order to view it.[end]</strong></p>
 [else]
 
 [define last_rev]0[end]
