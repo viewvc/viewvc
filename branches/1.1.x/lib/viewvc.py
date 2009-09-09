@@ -633,12 +633,14 @@ def _validate_param(name, value):
     '400 Bad Request')
 
 def _validate_regex(value):
-  # hmm. there isn't anything that we can do here.
-
   ### we need to watch the flow of these parameters through the system
   ### to ensure they don't hit the page unescaped. otherwise, these
   ### parameters could constitute a CSS attack.
-  pass
+  try:
+    re.compile(value)
+    return True
+  except:
+    return None
 
 def _validate_view(value):
   # Return true iff VALUE is one of our allowed views.
