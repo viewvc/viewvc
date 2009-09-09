@@ -243,9 +243,14 @@
 ## aren't installed in the executable search path, so here's where you can
 ## tell ViewVC where to find them.
 ##
-## NOTE:  Options with a "_dir" suffix are for configuring the directories
-## in which certain programs live; otherwise, the option value should
-## point to the actual program.
+## NOTE: Options with a "_dir" suffix are for configuring the
+## directories in which certain programs live.  Note that this might
+## not be the same directory into which the program's installer dumped
+## the whole program package -- we want the deepest directory in which
+## the executable program itself resides ("C:\rcstools\bin\win32"
+## rather than just "C:\rcsroos", for example).  The values of options
+## whose names lack the "_dir" suffix should point to the actual
+## program itself (such as "C:\Program Files\cvsnt\cvs.exe").
 
 
 ## rcs_dir: Directory in which the RCS utilities are installed, used
