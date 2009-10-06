@@ -17,7 +17,6 @@ import os
 import os.path
 import string
 import cStringIO
-import signal
 import time
 import tempfile
 import popen
@@ -383,22 +382,6 @@ class LocalSubversionRepository(vclib.Repository):
       raise vclib.ReposNotFound(name)
 
   def open(self):
-    # Register a handler for SIGTERM so we can have a chance to
-    # cleanup.  If ViewVC takes too long to start generating CGI
-    # output, Apache will grow impatient and SIGTERM it.  While we
-    # don't mind getting told to bail, we want to gracefully close the
-    # repository before we bail.
-    def _sigterm_handler(signum, frame, self=self):
-      sys.exit(-1)
-    try:
-      signal.signal(signal.SIGTERM, _sigterm_handler)
-    except ValueError:
-      # This is probably "ValueError: signal only works in main
-      # thread", which will get thrown by the likes of mod_python
-      # when trying to install a signal handler from a thread that
-      # isn't the main one.  We'll just not care.
-      pass
-
     # Open the repository and init some other variables.
     self.repos = repos.svn_repos_open(self.rootpath)
     self.fs_ptr = repos.svn_repos_fs(self.repos)
