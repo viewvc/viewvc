@@ -3833,9 +3833,9 @@ def build_commit(request, files, max_files, dir_strip, format):
     commit.log = None
     commit.short_log = None
   else:
-    commit.log = format_log(desc, cfg, format != 'rss')
-    commit.short_log = format_log(desc, cfg, format != 'rss',
-                                  cfg.options.short_log_len)
+    commit.log = format_log(desc, cfg, 0, format != 'rss')
+    commit.short_log = format_log(desc, cfg, cfg.options.short_log_len,
+                                  format != 'rss')
   commit.author = request.server.escape(author)
   commit.rss_date = make_rss_time_string(date, request.cfg)
   if request.roottype == 'svn':
