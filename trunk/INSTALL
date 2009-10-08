@@ -201,7 +201,6 @@ APACHE CONFIGURATION
    Copy the CGI scripts from 
    <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/*.cgi
    to the /cgi-bin/ directory configured in your httpd.conf file.
-
    
    ------------------------------------------
    METHOD C:  CGI mode in ExecCGI'd directory
@@ -218,9 +217,9 @@ APACHE CONFIGURATION
    to be effective, "AllowOverride All" or "AllowOverride Options FileInfo"
    need to have been specified for the directory.)
    
-   ---------------------------
-   METHOD D:  Using mod_python
-   ---------------------------
+   ------------------------------------------
+   METHOD D:  Using mod_python (if installed)
+   ------------------------------------------
    Copy the Python scripts and .htaccess file from 
    <VIEWVC_INSTALLATION_DIRECTORY>/bin/mod_python/
    to a directory being served by Apache.
