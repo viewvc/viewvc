@@ -168,14 +168,23 @@ checkin database working are below.
 APACHE CONFIGURATION
 --------------------
 
-1) Find out where the web server configuration file is kept. Typical
-   locations are /etc/httpd/httpd.conf, /etc/httpd/conf/httpd.conf,
-   and /etc/apache/httpd.conf. Depending on how apache was installed,
-   you may also look under /usr/local/etc or /etc/local. Use the vendor
-   documentation or the find utility if in doubt.
+1) Locate your Apache configuration file(s).
 
-Either METHOD A: 
-2) The ScriptAlias directive is very useful for pointing 
+   Typical locations are /etc/httpd/httpd.conf,
+   /etc/httpd/conf/httpd.conf, and /etc/apache/httpd.conf. Depending
+   on how Apache was installed, you may also look under /usr/local/etc
+   or /etc/local. Use the vendor documentation or the find utility if
+   in doubt.
+
+2) Configure Apache to expose ViewVC to users at the URL of your choice.
+
+   ViewVC provides several different ways to do this.  Choose one of
+   the following methods:
+
+   -----------------------------------
+   METHOD A:  CGI mode via ScriptAlias
+   -----------------------------------
+   The ScriptAlias directive is very useful for pointing 
    directly to the viewvc.cgi script.  Simply insert a line containing
 
      ScriptAlias /viewvc <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/viewvc.cgi
@@ -186,20 +195,20 @@ Either METHOD A:
      ScriptAlias /viewvc /usr/local/viewvc-1.0/bin/cgi/viewvc.cgi
      ScriptAlias /query /usr/local/viewvc-1.0/bin/cgi/query.cgi
 
-   continue with step 3).
-
-or alternatively METHOD B: 
-2) Copy the CGI scripts from 
+   ----------------------------------------
+   METHOD B:  CGI mode in cgi-bin directory
+   ----------------------------------------
+   Copy the CGI scripts from 
    <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/*.cgi
    to the /cgi-bin/ directory configured in your httpd.conf file.
-
-   continue with step 3).
    
-and then there's METHOD C:
-2) Copy the CGI scripts from 
+   ------------------------------------------
+   METHOD C:  CGI mode in ExecCGI'd directory
+   ------------------------------------------
+   Copy the CGI scripts from 
    <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/*.cgi
    to the directory of your choosing in the Document Root adding the following
-   apache directives for the directory in httpd.conf or an .htaccess file:
+   Apache directives for the directory in httpd.conf or an .htaccess file:
 
      Options +ExecCGI
      AddHandler cgi-script .cgi
@@ -208,12 +217,12 @@ and then there's METHOD C:
    to be effective, "AllowOverride All" or "AllowOverride Options FileInfo"
    need to have been specified for the directory.)
    
-   continue with step 3).
-
-or if you've got Mod_Python installed you can use METHOD D:
-2) Copy the Python scripts and .htaccess file from 
+   ------------------------------------------
+   METHOD D:  Using mod_python (if installed)
+   ------------------------------------------
+   Copy the Python scripts and .htaccess file from 
    <VIEWVC_INSTALLATION_DIRECTORY>/bin/mod_python/
-   to a directory being served by apache.
+   to a directory being served by Apache.
    
    In httpd.conf, make sure that "AllowOverride All" or at least 
    "AllowOverride FileInfo Options" are enabled for the directory
@@ -223,17 +232,17 @@ or if you've got Mod_Python installed you can use METHOD D:
    feature may not work because it uses multithreading.  This works fine
    under Apache 2.
    
-   continue with step 3).
+3) Restart Apache.
 
-3) Restart apache.  The commands to do this vary.  "httpd -k restart" and 
-   "apache -k restart" are two common variants.  On RedHat Linux it is
-   done using the command "/sbin/service httpd restart" and on SuSE Linux
-   it is done with "rcapache restart" 
+   The commands to do this vary.  "httpd -k restart" and "apache -k
+   restart" are two common variants.  On RedHat Linux it is done using
+   the command "/sbin/service httpd restart" and on SuSE Linux it is
+   done with "rcapache restart".  Other systems use "apachectl restart".
 
-4) Optional: Add access control.
+4) [Optional] Add access control.
 
-   In your httpd.conf you can control access to certain modules by adding 
-   directives like this:
+   In your httpd.conf you can control access to certain modules by
+   adding directives like this:
 
       <Location "<url to viewvc.cgi>/<modname_you_wish_to_access_ctl>">
         AllowOverride None
