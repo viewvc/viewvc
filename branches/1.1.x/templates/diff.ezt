@@ -21,13 +21,13 @@
     <th style="width:6%;"></th>
     <th style="width:47%; vertical-align:top;">
       [is left.path right.path][else][left.path][end]
-      revision [if-any left_view_href]<a href="[left_view_href]">[end][left.rev][if-any left_view_href]</a>[end],
+      revision [if-any left_view_href]<a href="[left_view_href]">[end][left.rev][if-any left_view_href]</a>[end][if-any left.author] by <em>[left.author]</em>[end],
       [left.date]
       [if-any left.tag]<br />Tag: [left.tag][end]
     </th>
     <th style="width:47%; vertical-align:top;">
       [is left.path right.path][else][right.path][end]
-      revision [if-any right_view_href]<a href="[right_view_href]">[end][right.rev][if-any right_view_href]</a>[end],
+      revision [if-any right_view_href]<a href="[right_view_href]">[end][right.rev][if-any right_view_href]</a>[end][if-any right.author] by <em>[right.author]</em>[end],
       [right.date]
       [if-any right.tag]<br />Tag: [right.tag][end]
     </th>

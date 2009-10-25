@@ -3067,6 +3067,15 @@ def view_diff(request):
   if check_freshness(request, None, '%s-%s' % (rev1, rev2), weak=1):
     return
 
+  # TODO: Is the slice necessary, or is limit enough?
+  log_entry1 = request.repos.itemlog(p1, rev1, vclib.SORTBY_REV, 0, 1, {})[-1]
+  log_entry2 = request.repos.itemlog(p2, rev2, vclib.SORTBY_REV, 0, 1, {})[-1]
+
+  ago1 = log_entry1.date is not None \
+         and html_time(request, log_entry1.date, 1) or None
+  ago2 = log_entry2.date is not None \
+         and html_time(request, log_entry2.date, 2) or None
+  
   diff_type = None
   diff_options = {}
   human_readable = 0
@@ -3147,7 +3156,11 @@ def view_diff(request):
     request.get_form(params=no_format_params)
 
   fvi = get_file_view_info(request, path_left, rev1)
-  left = _item(date=rcsdiff_date_reformat(date1, cfg),
+  left = _item(date=make_time_string(log_entry1.date, cfg),
+               author=log_entry1.author,
+               log=format_log(log_entry1.log, cfg),
+               size=log_entry1.size,
+               ago=ago1,
                path=path_left,
                rev=rev1,
                tag=sym1,
@@ -3159,7 +3172,11 @@ def view_diff(request):
                prefer_markup=fvi.prefer_markup)
     
   fvi = get_file_view_info(request, path_right, rev2)
-  right = _item(date=rcsdiff_date_reformat(date2, cfg),
+  right = _item(date=make_time_string(log_entry2.date, cfg),
+                author=log_entry2.author,
+                log=format_log(log_entry2.log, cfg),
+                size=log_entry2.size,
+                ago=ago2,
                 path=path_right,
                 rev=rev2,
                 tag=sym2,
