@@ -727,10 +727,20 @@ td {
   <td>Container object for grouping information about the left file.</td>
 </tr>
 <tr class="varlevel2">
+  <td class="varname">left.ago</td>
+  <td>String</td>
+  <td>Text description of the time elapsed since <var>left.date</date>.</td>
+</tr>
+<tr class="varlevel2">
   <td class="varname">left.annotate_href</td>
   <td>String</td>
   <td>URL of the ViewVC annotation view for the left file.
       Valid only when <var>entries.pathtype</var> is <tt>file</tt>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">left.author</td>
+  <td>String</td>
+  <td>Author of the revision of the left file.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">left.date</td>
@@ -748,6 +758,11 @@ td {
   <td>String</td>
   <td>URL to download the HEAD revision of the left file as
       <tt>text/plain</tt>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">left.log</td>
+  <td>String</td>
+  <td>Log message of the left file revision.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">left.path</td>
@@ -773,6 +788,11 @@ td {
       <tt>svn</tt>.</td>
 </tr>
 <tr class="varlevel2">
+  <td class="varname">left.size</td>
+  <td>String</td>
+  <td>Size of the left file revision, in bytes. Subversion only.</td>
+</tr>
+<tr class="varlevel2">
   <td class="varname">left.tag</td>
   <td>String</td>
   <td>Tag of the left file.</td>
@@ -794,10 +814,20 @@ td {
   <td>Container object for grouping information about the right file.</td>
 </tr>
 <tr class="varlevel2">
+  <td class="varname">right.author</td>
+  <td>String</td>
+  <td>Author of the revision of the right file.</td>
+</tr>
+<tr class="varlevel2">
   <td class="varname">right.annotate_href</td>
   <td>String</td>
   <td>URL of the ViewVC annotation view for the right file.
       Valid only when <var>entries.pathtype</var> is <tt>file</tt>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">right.author</td>
+  <td>String</td>
+  <td>Author of the revision of the right file.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">right.date</td>
@@ -815,6 +845,11 @@ td {
   <td>String</td>
   <td>URL to download the HEAD revision of the right file as
       <tt>text/plain</tt>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">right.log</td>
+  <td>String</td>
+  <td>Log message of the right file revision.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">right.path</td>
@@ -838,6 +873,11 @@ td {
   <td>URL of the Subversion revision view for the right file's
       current revision.  Valid only when <var>roottype</var> is
       <tt>svn</tt>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">right.size</td>
+  <td>String</td>
+  <td>Size of the right file revision, in bytes. Subversion only.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">right.tag</td>
