@@ -1624,7 +1624,7 @@ def get_itemprops(request, path_parts, rev):
   props = []
   has_binary_props = 0
   for name in propnames:
-    value = itemprops[name]
+    value = format_log(itemprops[name], request.cfg)
     undisplayable = ezt.boolean(0)
     # skip non-utf8 property names
     try:
