@@ -8,6 +8,7 @@ Version 1.1.3 (released ??-???-????)
   * minor template improvements/corrections
   * expose revision metadata in diff view (issue #431)
   * markup file/directory item property URLs and email addresses (issue #434)
+  * make ViewVC cross copies in Subversion history by default
 
 Version 1.1.2 (released 11-Aug-2009)
 
