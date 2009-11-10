@@ -2581,7 +2581,7 @@ def view_checkout(request):
                 or calculate_mime_type(request, path, rev) \
                 or 'text/plain'
     server_fp = get_writeready_server_file(request, mime_type)
-    copy_stream(fp, server_fp, cfg)
+    copy_stream(fp, server_fp)
   fp.close()
 
 def cvsgraph_make_reqopt(request, cfgname, queryparam, optvalue):
@@ -2657,7 +2657,7 @@ def view_cvsgraph_image(request):
                     cvsgraph_extraopts(request),
                     rcsfile), 'rb', 0)
   
-  copy_stream(fp, get_writeready_server_file(request, 'image/png'), cfg)
+  copy_stream(fp, get_writeready_server_file(request, 'image/png'))
   fp.close()
 
 def view_cvsgraph(request):
@@ -2781,7 +2781,7 @@ def view_doc(request):
     mime_type = 'text/css'
   else: # assume HTML:
     mime_type = None
-  copy_stream(fp, get_writeready_server_file(request, mime_type), cfg)
+  copy_stream(fp, get_writeready_server_file(request, mime_type))
   fp.close()
 
 def rcsdiff_date_reformat(date_str, cfg):
@@ -3126,7 +3126,7 @@ def view_patch(request):
 
   server_fp = get_writeready_server_file(request, 'text/plain')
   server_fp.write(headers)
-  copy_stream(fp, server_fp, cfg)
+  copy_stream(fp, server_fp)
   fp.close()
 
 
