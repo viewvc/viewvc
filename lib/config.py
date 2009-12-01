@@ -24,42 +24,141 @@ import fnmatch
 #########################################################################
 #
 # CONFIGURATION
+# -------------
 #
 # There are three forms of configuration:
 #
-#       1) edit the viewvc.conf created by the viewvc-install(er)
-#       2) as (1), but delete all unchanged entries from viewvc.conf
-#       3) do not use viewvc.conf and just edit the defaults in this file
+#    1. edit the viewvc.conf created by the viewvc-install(er)
+#    2. as (1), but delete all unchanged entries from viewvc.conf
+#    3. do not use viewvc.conf and just edit the defaults in this file
 #
 # Most users will want to use (1), but there are slight speed advantages
 # to the other two options. Note that viewvc.conf values are a bit easier
 # to work with since it is raw text, rather than python literal values.
 #
+#
+# A WORD ABOUT OPTION LAYERING/OVERRIDES
+# --------------------------------------
+#
+# ViewVC has three "layers" of configuration options:
+#
+#    1. base configuration options - very basic configuration bits
+#       found in sections like 'general', 'options', etc.
+#    2. vhost overrides - these options overlay/override the base
+#       configuration on a per-vhost basis.
+#    3. root overrides - these options overlay/override the base
+#       configuration and vhost overrides on a per-root basis.
+#
+# Here's a diagram of the valid overlays/overrides:
+#
+#         PER-ROOT          PER-VHOST            BASE
+#       
+#                         ,-----------.     ,-----------.
+#                         | vhost-*/  |     |           |
+#                         |  general  | --> |  general  |
+#                         |           |     |           |
+#                         `-----------'     `-----------'
+#       ,-----------.     ,-----------.     ,-----------.
+#       |  root-*/  |     | vhost-*/  |     |           |
+#       |  options  | --> |  options  | --> |  options  |
+#       |           |     |           |     |           |
+#       `-----------'     `-----------'     `-----------'
+#       ,-----------.     ,-----------.     ,-----------.
+#       |  root-*/  |     | vhost-*/  |     |           |
+#       | templates | --> | templates | --> | templates |
+#       |           |     |           |     |           |
+#       `-----------'     `-----------'     `-----------'
+#       ,-----------.     ,-----------.     ,-----------.
+#       |  root-*/  |     | vhost-*/  |     |           |
+#       | utilities | --> | utilities | --> | utilities |
+#       |           |     |           |     |           |
+#       `-----------'     `-----------'     `-----------'
+#                         ,-----------.     ,-----------.
+#                         | vhost-*/  |     |           |
+#                         |   cvsdb   | --> |   cvsdb   |
+#                         |           |     |           |
+#                         `-----------'     `-----------'
+#       ,-----------.     ,-----------.     ,-----------.
+#       |  root-*/  |     | vhost-*/  |     |           |
+#       |  authz-*  | --> |  authz-*  | --> |  authz-*  |
+#       |           |     |           |     |           |
+#       `-----------'     `-----------'     `-----------'
+#                                           ,-----------.
+#                                           |           |
+#                                           |  vhosts   |
+#                                           |           |
+#                                           `-----------'
+#
+# ### TODO:  Figure out what this all means for the 'kv' stuff.
+#
 #########################################################################
 
 class Config:
-  _sections = ('general', 'utilities', 'options', 'cvsdb', 'templates')
-  _force_multi_value = ('cvs_roots', 'svn_roots', 'languages', 'kv_files',
-                        'root_parents', 'allowed_views', 'mime_types_files')
+  _base_sections = (
+    # Base configuration sections.
+    'authz-*',
+    'cvsdb',
+    'general',
+    'options',
+    'templates',
+    'utilities',
+    )
+  _force_multi_value = (
+    # Configuration values with multiple, comma-separated values.
+    'allowed_views',
+    'cvs_roots',
+    'kv_files',
+    'languages',
+    'mime_types_files',
+    'root_parents',
+    'svn_roots',
+    )
+  _allowed_overrides = {
+    # Mapping of override types to allowed overridable sections.
+    'vhost' : ('authz-*',
+               'cvsdb',
+               'general',
+               'options',
+               'templates',
+               'utilities',
+               ),
+    'root'  : ('authz-*',
+               'options',
+               'templates',
+               'utilities',
+               )
+    }
 
   def __init__(self):
-    for section in self._sections:
+    for section in self._base_sections:
+      if section[-1] == '*':
+        continue
       setattr(self, section, _sub_config())
 
   def load_config(self, pathname, vhost=None):
+    """Load the configuration file at PATHNAME, applying configuration
+    settings there as overrides to the built-in default values.  If
+    VHOST is provided, also process the configuration overrides
+    specific to that virtual host."""
+    
     self.conf_path = os.path.isfile(pathname) and pathname or None
     self.base = os.path.dirname(pathname)
     self.parser = ConfigParser.ConfigParser()
     self.parser.read(self.conf_path or [])
-
-    for section in self._sections:
-      if self.parser.has_section(section):
+    
+    for section in self.parser.sections():
+      if self._is_allowed_section(self.parser, section,
+                                  self._base_sections):
         self._process_section(self.parser, section, section)
 
     if vhost and self.parser.has_section('vhosts'):
       self._process_vhost(self.parser, vhost)
 
   def load_kv_files(self, language):
+    """Process the key/value (kv) files specified in the
+    configuration, merging their values into the configuration as
+    dotted heirarchical items."""
+    
     kv = _sub_config()
 
     for fname in self.general.kv_files:
@@ -89,10 +188,12 @@ class Config:
     return kv
 
   def path(self, path):
-    """Return path relative to the config file directory"""
+    """Return PATH relative to the config file directory."""
     return os.path.join(self.base, path)
 
   def _process_section(self, parser, section, subcfg_name):
+    if not hasattr(self, subcfg_name):
+      setattr(self, subcfg_name, _sub_config())
     sc = getattr(self, subcfg_name)
 
     for opt in parser.options(section):
@@ -105,25 +206,55 @@ class Config:
         except ValueError:
           pass
 
+      ### FIXME: This feels like unnecessary depth of knowledge for a
+      ### semi-generic configuration object.
       if opt == 'cvs_roots' or opt == 'svn_roots':
         value = _parse_roots(opt, value)
 
       setattr(sc, opt, value)
 
+  def _is_allowed_section(self, parser, section, allowed_sections):
+    """Return 1 iff SECTION is an allowed section, defined as being
+    explicitly present in the ALLOWED_SECTIONS list or present in the
+    form 'someprefix-*' in that list."""
+    
+    for allowed_section in allowed_sections:
+      if allowed_section[-1] == '*':
+        if _startswith(section, allowed_section[:-1]):
+          return 1
+      elif allowed_section == section:
+        return 1
+    return 0
+
+  def _is_allowed_override(self, parser, sectype, secspec, section):
+    """Test if SECTION is an allowed override section for sections of
+    type SECTYPE ('vhosts' or 'root', currently) and type-specifier
+    SECSPEC (a rootname or vhostname, currently).  If it is, return
+    the overridden base section name.  If it's not an override section
+    at all, return None.  And if it's an override section but not an
+    allowed one, raise IllegalOverrideSection."""
+
+    cv = '%s-%s/' % (sectype, secspec)
+    lcv = len(cv)
+    if section[:lcv] != cv:
+      return None
+    base_section = section[lcv:]
+    if self._is_allowed_section(parser, base_section,
+                                self._allowed_overrides[sectype]):
+      return base_section
+    raise IllegalOverrideSection(sectype, section)
+
   def _process_vhost(self, parser, vhost):
-    # find a vhost name for this vhost, if any (if not, we've nothing to do)
+    # Find a vhost name for this VHOST, if any (else, we've nothing to do).
     canon_vhost = self._find_canon_vhost(parser, vhost)
     if not canon_vhost:
       return
 
-    # overlay any option sections associated with this vhost name
-    cv = 'vhost-%s/' % (canon_vhost)
-    lcv = len(cv)
+    # Overlay any option sections associated with this vhost name.
     for section in parser.sections():
-      if section[:lcv] == cv:
-        base_section = section[lcv:]
-        if base_section not in self._sections:
-          raise IllegalOverrideSection('vhost', section)
+      base_section = self._is_allowed_override(parser, 'vhost',
+                                               canon_vhost, section)
+      if base_section:
         self._process_section(parser, section, base_section)
 
   def _find_canon_vhost(self, parser, vhost):
@@ -138,26 +269,17 @@ class Config:
 
     return None
 
-  def _process_root_options(self, parser, rootname):
-    rn = 'root-%s/' % (rootname)
-    lrn = len(rn)
-    for section in parser.sections():
-      if section[:lrn] == rn:
-        base_section = section[lrn:]
-        if base_section in self._sections:
-          if base_section == 'general':
-            raise IllegalOverrideSection('root', section)
-          self._process_section(parser, section, base_section)
-        elif _startswith(base_section, 'authz-'):
-          pass
-        else:
-          raise IllegalOverrideSection('root', section)
-          
   def overlay_root_options(self, rootname):
-    "Overly per-root options atop the existing option set."
+    """Overlay per-root options for ROOTNAME atop the existing option
+    set.  This is a destructive change to the configuration."""
     if not self.conf_path:
       return
-    self._process_root_options(self.parser, rootname)
+
+    for section in self.parser.sections():
+      base_section = self._is_allowed_override(self.parser, 'root',
+                                               rootname, section)
+      if base_section:
+        self._process_section(self.parser, section, base_section)
 
   def _get_parser_items(self, parser, section):
     """Basically implement ConfigParser.items() for pre-Python-2.3 versions."""
@@ -173,12 +295,24 @@ class Config:
     if not self.conf_path:
       return {}
 
-    params = {}
     authz_section = 'authz-%s' % (authorizer)
-    for section in self.parser.sections():
-      if section == authz_section:
-        for key, value in self._get_parser_items(self.parser, section):
-          params[key] = value
+    params = {}
+
+    # First, copy into PARAMS all the attributes from the
+    # base-configured authorizer sections.
+    if hasattr(self, authz_section):
+      sub_config = getattr(self, authz_section)
+      for attr in dir(sub_config):
+        params[attr] = getattr(sub_config, attr)
+
+    # Now, if we've been given a rootname, check for per-root
+    # overrides of the authorizer parameters.
+    #
+    ### FIXME: This whole thing is a hack caused by our not being able
+    ### to non-destructively overlay root options when trying to do
+    ### something like a root listing (which might need to get
+    ### different authorizer bits for each and every root in the
+    ### list).  See issue #371.
     if rootname:
       root_authz_section = 'root-%s/authz-%s' % (rootname, authorizer)
       for section in self.parser.sections():
