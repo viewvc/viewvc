@@ -40,18 +40,26 @@
   [end]
 [end]
 [is pathtype "file"]
-  <a class="vc_view_link[is view "markup"]_this[end]" href="[view_href]">View File</a>
-  | <a class="vc_view_link[is view "log"]_this[end]" href="[log_href]">Revision Log</a>
+  [if-any view_href]
+  <a class="vc_view_link[is view "markup"]_this[end]" href="[view_href]">View File</a> |
+  [end]
+  <a class="vc_view_link[is view "log"]_this[end]" href="[log_href]">Revision Log</a>
+  [if-any annotate_href]
   | <a class="vc_view_link[is view "annotate"]_this[end]" href="[annotate_href]">Show Annotations</a>
+  [end]
   [if-any graph_href]
   | <a class="vc_view_link[is view "graph"]_this[end]" href="[graph_href]">Revision Graph</a>
   [end]
+  [if-any download_href]
   | <a class="vc_view_link" href="[download_href]">Download File</a>
+  [end]
 [end]
 [if-any revision_href]
   | <a class="vc_view_link[is view "revision"]_this[end]" href="[revision_href]">View Changeset</a>
 [end]
+[if-any roots_href]
   | <a class="vc_view_link[is view "roots"]_this[end]" href="[roots_href]">Root Listing</a>
+[end]
 </div>
 
 <div id="vc_current_path">
