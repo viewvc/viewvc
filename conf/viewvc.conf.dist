@@ -815,6 +815,16 @@
 ## ViewVC options typically found in the base configuration section
 ## named CONFIGSECTION ("general", "option", etc.)
 ##
+## NOTE: Per-vhost overrides may only be applied to the following
+## sections:
+##
+##    general
+##    options
+##    utilities
+##    templates
+##    cvsdb
+##    authz-*
+##
 ## Here is an example:
 ##
 ## [vhosts]
@@ -844,7 +854,15 @@
 ## basename of a root path in root_parents.  Options found in this new
 ## configuration section override for this one root the corresponding
 ## options found in the base configuration section CONFIGSECTION
-## ("options", "authz-*", etc.)
+## ("options", "authz-*", etc.) as interpreted after per-vhost
+## overrides (if any) have been applied.
+##
+## NOTE: Per-root overrides may only be applied to the following
+## sections:
+##
+##    options
+##    utilities
+##    authz-*
 ##
 ## Here is an example showing how to enable Subversion authz-based
 ## authorization for only the single root named "svnroot":
