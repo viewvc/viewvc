@@ -691,15 +691,15 @@ _legal_params = {
   'content-type'  : _validate_mimetype,
 
   # for query
-  'branch'        : _validate_regex,
-  'branch_match'  : _re_validate_alpha,
-  'dir'           : None,
-  'file'          : _validate_regex,
   'file_match'    : _re_validate_alpha,
-  'who'           : _validate_regex,
+  'branch_match'  : _re_validate_alpha,
   'who_match'     : _re_validate_alpha,
-  'comment'       : _validate_regex,
   'comment_match' : _re_validate_alpha,
+  'dir'           : None,
+  'file'          : None,
+  'branch'        : None,
+  'who'           : None,
+  'comment'       : None,
   'querysort'     : _re_validate_alpha,
   'date'          : _re_validate_alpha,
   'hours'         : _re_validate_number,
@@ -3571,12 +3571,42 @@ def is_querydb_nonempty_for_root(request):
       return 1
   return 0
 
+def validate_query_args(request):
+  # Do some additional input validation of query form arguments beyond
+  # what is offered by the CGI param validation loop in Request.run_viewvc().
+  
+  for arg_base in ['branch', 'file', 'comment', 'who']:
+    # First, make sure the the XXX_match args have valid values:
+    arg_match = arg_base + '_match'
+    arg_match_value = request.query_dict.get(arg_match, 'exact')
+    if not arg_match_value in ('exact', 'like', 'glob', 'regex', 'notregex'):
+      raise debug.ViewVCException(
+        'An illegal value was provided for the "%s" parameter.'
+        % (arg_match),
+        '400 Bad Request')
+
+    # Now, for those args which are supposed to be regular expressions (per
+    # their corresponding XXX_match values), make sure they are.
+    if arg_match_value == 'regex' or arg_match_value == 'notregex':
+      arg_base_value = request.query_dict.get(arg_base)
+      if arg_base_value:
+        try:
+          re.compile(arg_base_value)
+        except:
+          raise debug.ViewVCException(
+            'An illegal value was provided for the "%s" parameter.'
+            % (arg_base),
+            '400 Bad Request')
+  
 def view_queryform(request):
   if not is_query_supported(request):
     raise debug.ViewVCException('Can not query project root "%s" at "%s".'
                                  % (request.rootname, request.where),
                                  '403 Forbidden')
 
+  # Do some more precise input validation.
+  validate_query_args(request)
+  
   query_action, query_hidden_values = \
     request.get_form(view_func=view_query, params={'limit_changes': None})
   limit_changes = \
@@ -3898,6 +3928,9 @@ def view_query(request):
                                  '403 Forbidden')
 
   cfg = request.cfg
+
+  # Do some more precise input validation.
+  validate_query_args(request)
 
   # get form data
   branch = request.query_dict.get('branch', '')
