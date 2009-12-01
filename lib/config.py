@@ -46,7 +46,7 @@ class Config:
     for section in self._sections:
       setattr(self, section, _sub_config())
 
-  def load_config(self, pathname, vhost=None, rootname=None):
+  def load_config(self, pathname, vhost=None):
     self.conf_path = os.path.isfile(pathname) and pathname or None
     self.base = os.path.dirname(pathname)
     self.parser = ConfigParser.ConfigParser()
@@ -58,9 +58,6 @@ class Config:
 
     if vhost and self.parser.has_section('vhosts'):
       self._process_vhost(self.parser, vhost)
-
-    if rootname:
-      self._process_root_options(self.parser, rootname)
 
   def load_kv_files(self, language):
     kv = _sub_config()
