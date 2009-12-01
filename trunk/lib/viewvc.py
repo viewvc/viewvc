@@ -1351,7 +1351,7 @@ def common_template_data(request, revision=None, mime_type=None):
     'rootname' : request.rootname \
                  and request.server.escape(request.rootname) or None,
     'rootpath' : request.rootpath,
-    'roots_href' : request.get_url(view_func=view_roots, escape=1, params={}),
+    'roots_href' : None,
     'roottype' : request.roottype,
     'rss_href' : None,
     'tarball_href' : None,
@@ -1386,6 +1386,10 @@ def common_template_data(request, revision=None, mime_type=None):
     data['up_href'] = request.get_url(view_func=view_directory,
                                       where=dir, pathtype=vclib.DIR,
                                       params={}, escape=1)
+
+  if 'roots' in cfg.options.allowed_views:
+    data['roots_href'] = request.get_url(view_func=view_roots,
+                                         escape=1, params={})
 
   if request.pathtype == vclib.FILE:
     fvi = get_file_view_info(request, request.where, data['rev'], mime_type)
