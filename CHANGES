@@ -10,6 +10,7 @@ Version 1.1.3 (released ??-???-????)
   * markup file/directory item property URLs and email addresses (issue #434)
   * make ViewVC cross copies in Subversion history by default
   * fix bug that caused standalone.py failure under Python 1.5.2 (issue #442)
+  * fix support for  per-vhost overrides of authorizer parameters (issue #411)
 
 Version 1.1.2 (released 11-Aug-2009)
 
