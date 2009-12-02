@@ -4270,7 +4270,7 @@ def load_config(pathname=None, server=None):
   if cfg.general.mime_types_files:
     files = cfg.general.mime_types_files[:]
     files.reverse()
-    files = map(lambda x: os.path.join(os.path.dirname(pathname), x), files)
+    files = map(lambda x, y=pathname: os.path.join(os.path.dirname(y), x), files)
     mimetypes.init(files)
   
   debug.t_end('load-config')
