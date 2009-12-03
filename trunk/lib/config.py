@@ -130,6 +130,7 @@ class Config:
     }
 
   def __init__(self):
+    self.root_options_overlayed = 0
     for section in self._base_sections:
       if section[-1] == '*':
         continue
@@ -272,6 +273,11 @@ class Config:
   def overlay_root_options(self, rootname):
     """Overlay per-root options for ROOTNAME atop the existing option
     set.  This is a destructive change to the configuration."""
+
+    # We can only deal with this happening once!
+    assert(self.root_options_overlayed == 0)
+    self.root_options_overlayed = 1
+    
     if not self.conf_path:
       return
 
@@ -290,35 +296,67 @@ class Config:
       for option in parser.options(section):
         d[option] = parser.get(section, option)
       return d.items()
-    
-  def get_authorizer_params(self, authorizer, rootname=None):
+
+  def get_authorizer_and_params_hack(self, rootname):
+    """Return a 2-tuple containing the name and parameters of the
+    authorizer configured for use with ROOTNAME.
+
+    ### FIXME: This whole thing is a hack caused by our not being able
+    ### to non-destructively overlay root options when trying to do
+    ### something like a root listing (which might need to get
+    ### different authorizer bits for each and every root in the list).
+    ### Until we have a good way to do that, we expose this function,
+    ### which assumes that base and per-vhost configuration has been
+    ### absorbed into this object and that per-root options have *not*
+    ### been overlayed.  See issue #371."""
+
+    # We assume that per-root options have *not* been overlayed.
+    assert(self.root_options_overlayed == 0)
+
     if not self.conf_path:
-      return {}
+      return None
 
-    authz_section = 'authz-%s' % (authorizer)
+    # Figure out the authorizer by searching first for a per-root
+    # override, then falling back to the base/vhost configuration.
+    authorizer = None
+    root_options_section = 'root-%s/options' % (rootname)
+    if self.parser.has_section(root_options_section) \
+       and self.parser.has_option(root_options_section, 'authorizer'):
+      authorizer = self.parser.get(root_options_section, 'authorizer')
+    if not authorizer:
+      authorizer = self.options.authorizer
+
+    # No authorizer?  Get outta here.
+    if not authorizer:
+      return None, {}
+
+    # Dig up the parameters for the authorizer, starting with the
+    # base/vhost items, then overlaying any root-specific ones we find.
     params = {}
-
-    # First, copy into PARAMS all the attributes from the
-    # base-configured authorizer sections.
+    authz_section = 'authz-%s' % (authorizer)
     if hasattr(self, authz_section):
       sub_config = getattr(self, authz_section)
       for attr in dir(sub_config):
         params[attr] = getattr(sub_config, attr)
+    root_authz_section = 'root-%s/authz-%s' % (rootname, authorizer)
+    for section in self.parser.sections():
+      if section == root_authz_section:
+        for key, value in self._get_parser_items(self.parser, section):
+          params[key] = value
+    return authorizer, params
 
-    # Now, if we've been given a rootname, check for per-root
-    # overrides of the authorizer parameters.
-    #
-    ### FIXME: This whole thing is a hack caused by our not being able
-    ### to non-destructively overlay root options when trying to do
-    ### something like a root listing (which might need to get
-    ### different authorizer bits for each and every root in the
-    ### list).  See issue #371.
-    if rootname:
-      root_authz_section = 'root-%s/authz-%s' % (rootname, authorizer)
-      for section in self.parser.sections():
-        if section == root_authz_section:
-          for key, value in self._get_parser_items(self.parser, section):
-            params[key] = value
+  def get_authorizer_params(self, authorizer=None):
+    """Return a dictionary of parameter names and values which belong
+    to the configured authorizer (or AUTHORIZER, if provided)."""
+    params = {}
+    if authorizer is None:
+      authorizer = self.options.authorizer
+    if authorizer:
+      authz_section = 'authz-%s' % (self.options.authorizer)
+      if hasattr(self, authz_section):
+        sub_config = getattr(self, authz_section)
+        for attr in dir(sub_config):
+          params[attr] = getattr(sub_config, attr)
     return params
   
   def set_defaults(self):
