@@ -1,5 +1,7 @@
 Version 1.1.3 (released ??-???-????)
 
+  * security fix: add root listing support of per-root authz config
+  * security fix: query.py requires 'forbidden' authorizer (or none) in config
   * fix URL-ification of truncated log messages (issue #3)
   * fix regexp input validation (issue #426, #427, #440)
   * add support for configurable tab-to-spaces conversion
