@@ -369,6 +369,7 @@ def run_query(server, cfg, form_data, viewvc_link):
     files = [ ]
 
     cvsroots = {}
+    viewvc.expand_root_parents(cfg)
     rootitems = cfg.general.svn_roots.items() + cfg.general.cvs_roots.items()
     for key, value in rootitems:
         cvsroots[cvsdb.CleanRepository(value)] = key
