@@ -275,8 +275,30 @@ def prev_rev(rev):
     return string.join(r, '.')
 
 def is_forbidden(cfg, cvsroot_name, module):
-    auth_params = cfg.get_authorizer_params('forbidden', cvsroot_name)
-    forbidden = auth_params.get('forbidden', '')
+    '''Return 1 if MODULE in CVSROOT_NAME is forbidden; return 0 otherwise.'''
+
+    # CVSROOT_NAME might be None here if the data comes from an
+    # unconfigured root.  This interfaces doesn't care that the root
+    # isn't configured, but if that's the case, it will consult only
+    # the base and per-vhost configuration for authorizer and
+    # authorizer parameters.
+    if cvsroot_name:
+        authorizer, params = cfg.get_authorizer_and_params_hack(cvsroot_name)
+    else:
+        authorizer = cfg.options.authorizer
+        params = cfg.get_authorizer_params()
+        
+    # If CVSROOT_NAME isn't configured to use an authorizer, nothing
+    # is forbidden.  If it's configured to use something other than
+    # the 'forbidden' authorizer, complain.  Otherwise, check for
+    # forbiddenness per the PARAMS as expected.
+    if not authorizer:
+        return 0
+    if authorizer != 'forbidden':    
+        raise Exception("The 'forbidden' authorizer is the only one supported "
+                        "by this interface.  The '%s' root is configured to "
+                        "use a different one." % (cvsroot_name))
+    forbidden = params.get('forbidden', '')
     forbidden = map(string.strip, filter(None, string.split(forbidden, ',')))
     default = 0
     for pat in forbidden:

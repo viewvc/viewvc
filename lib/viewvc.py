@@ -234,7 +234,7 @@ class Request:
         cfg.overlay_root_options(self.rootname)
         
         # Setup an Authorizer for this rootname and username
-        self.auth = setup_authorizer(cfg, self.username, self.rootname)
+        self.auth = setup_authorizer(cfg, self.username)
 
         # Create the repository object
         try:
@@ -800,31 +800,36 @@ def _orig_path(request, rev_param='revision', path_param=None):
     return _path_parts(request.repos.get_location(path, pathrev, rev)), rev
   return _path_parts(path), rev
 
-def setup_authorizer(cfg, username, rootname):
-  import imp
+def setup_authorizer(cfg, username, rootname=None):
+  """Setup the authorizer.  If ROOTNAME is provided, assume that
+  per-root options have not been overlayed.  Otherwise, assume they
+  have (and fetch the authorizer for the configured root)."""
   
+  if rootname is None:
+    authorizer = cfg.options.authorizer
+    params = cfg.get_authorizer_params()
+  else:
+    authorizer, params = cfg.get_authorizer_and_params_hack(rootname)
+
   # No configured authorizer?  No problem.
-  if not cfg.options.authorizer:
+  if not authorizer:
     return None
 
   # First, try to load a module with the configured name.
+  import imp
   fp = None
   try:
     try:
-      fp, path, desc = imp.find_module("%s" % (cfg.options.authorizer),
-                                       vcauth.__path__)
+      fp, path, desc = imp.find_module("%s" % (authorizer), vcauth.__path__)
       my_auth = imp.load_module('viewvc', fp, path, desc)
     except ImportError:
       raise debug.ViewVCException(
         'Invalid authorizer (%s) specified for root "%s"' \
-        % (cfg.options.authorizer, rootname),
+        % (authorizer, rootname),
         '500 Internal Server Error')
   finally:
     if fp:
       fp.close()
-
-  # Now we'll get custom parameters for our particular root.
-  params = cfg.get_authorizer_params(cfg.options.authorizer, rootname)
 
   # Finally, instantiate our Authorizer.
   return my_auth.ViewVCAuthorizer(username, params)
