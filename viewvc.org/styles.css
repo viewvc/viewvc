@@ -1,7 +1,7 @@
 body {
     background-color: #b2d388;
     color: black;
-    font-family: trebuchet ms, arial, sans-serif;
+    font-family: serif;
     margin: 0;
 }
 
@@ -50,6 +50,7 @@ p, dl {
     padding: 0.5em;
     margin: 0;
     font-size: 90%;
+    line-height: 1.4em;
 }
 
 ul, ol {
@@ -72,6 +73,12 @@ blockquote {
     border: 1px dotted black;
 }
 
+.imagecaptionbox {
+    display: inline-block;
+    text-align: center;
+    margin: 0 1em;
+    font-size: 70%;
+}
 .section {
     background: white;
     border-color: rgb(24,24,24);
@@ -79,10 +86,11 @@ blockquote {
     border-style: solid;
     padding: 0;
     margin-bottom: 0.5em;
+    clear: both;
 }
 
 .section-body {
-    padding: 0 1em;
+    padding: 0.5em 1em;
 }
 
 .section p, .section dl, .section ul, .section ol { 
@@ -90,6 +98,7 @@ blockquote {
 }
 
 #menu {
+    font-family: sans-serif;
     background: black;
     color: white;
 }
@@ -107,20 +116,21 @@ blockquote {
 }
 
 #submenu {
+    font-family: sans-serif;
     background: rgb(90%,97%,99%);
     font-size: 80%;
-}
-
-#pagetable tr {
-    vertical-align: top;
 }
 
 #pagetable {
     width: 100%;
 }
 
+#pagetable tr {
+    vertical-align: top;
+}
+
 #pagecolumn1 {
-    width: 175px;
+    width: 200px;
     padding: 1em 0 0 0;
 }
 
@@ -149,8 +159,13 @@ blockquote {
 
 #bookmarks {
     padding-left: 0.5em;
-    font-size: 80%;
     white-space: nowrap;
+    border-color: rgb(24,24,24);
+    border-style: solid;
+    border-width: 1px 2px 2px 1px;
+}
+#bookmarks li {
+    list-style-type: none;
 }
 
 .notice {
