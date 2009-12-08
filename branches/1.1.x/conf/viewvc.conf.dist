@@ -529,6 +529,12 @@
 ## penalty, and from the "docroot" subdirectory of the directory
 ## specified by the "template_dir" option).
 ##
+## NOTE: This option is evaluated outside the context of a particular
+## root.  Be careful when using per-root configuration to select an
+## alternate template set as the default value for this option will
+## still be based on the global default template set per 'template_dir'
+## above, not on 'template_dir' as overridden for a given root.
+##
 #docroot = 
 
 ## show_subdir_lastmod: Show last changelog message for CVS subdirectories
