@@ -2,6 +2,23 @@ Version 1.2.0 (released ??-???-????)
 
   * allow user-configurable cvsgraph display (issue #336)
 
+Version 1.1.3 (released 22-Dec-2009)
+
+  * security fix: add root listing support of per-root authz config
+  * security fix: query.py requires 'forbidden' authorizer (or none) in config
+  * fix URL-ification of truncated log messages (issue #3)
+  * fix regexp input validation (issue #426, #427, #440)
+  * add support for configurable tab-to-spaces conversion
+  * fix not-a-sequence error in diff view
+  * allow viewvc-install to work when templates-contrib is absent
+  * minor template improvements/corrections
+  * expose revision metadata in diff view (issue #431)
+  * markup file/directory item property URLs and email addresses (issue #434)
+  * make ViewVC cross copies in Subversion history by default
+  * fix bug that caused standalone.py failure under Python 1.5.2 (issue #442)
+  * fix support for per-vhost overrides of authorizer parameters (issue #411)
+  * fix root name identification in query.py interface
+
 Version 1.1.2 (released 11-Aug-2009)
 
   * security fix: validate the 'view' parameter to avoid XSS attack
