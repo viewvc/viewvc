@@ -236,7 +236,7 @@ APACHE CONFIGURATION
    METHOD E:  Using mod_wsgi (if installed)
    ----------------------------------------
    Copy the Python scripts file from
-   <VIEWVC_INSTALLATION_DIRECTORY>/bin/mod_python/
+   <VIEWVC_INSTALLATION_DIRECTORY>/bin/wsgi/
    to the directory of your choosing.  Modify httpd.conf with the
    following directives:
 
