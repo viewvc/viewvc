@@ -1,0 +1,1770 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<title>ViewVC: Upgrading</title>
+<style>
+body {
+  background-color: rgb(180,193,205);
+  color: black;
+  font-family: sans-serif;
+}
+table { margin-left: 1em; }
+td, th { padding: 0 0.5em; }
+th { 
+  vertical-align: bottom; 
+  background: rgb(60%,70%,90%);
+}
+td { 
+  vertical-align: top; 
+}
+.h2, .h3 {
+  padding: 0.5em 1em;
+  border-color: black;
+  border-style: solid;
+  margin-bottom: 1em;
+  background: white;
+}
+.h2 { border-width: 1px 2px 2px 1px; }
+.h3 { border-width: 1px 0 0 0; }
+.toc-list { font-size: 90%; }
+.varname { font-family: monospace; }
+.added { background: rgb(50%,75%,25%); }
+.unchanged { background: rgb(75%,75%,75%); }
+.renamed { background: rgb(75%,50%,75%); }
+.changed { background: rgb(100%,100%,25%); }
+.replaced { background: rgb(100%,75%,0%); }
+.removed { background: rgb(100%,25%,25%); }
+</style>
+</head>
+
+<body>
+
+<h1>Upgrading ViewVC</h1>
+
+<div class="h2">
+<h2 id="introduction">Introduction</h2>
+
+<p>This document describes some of the things that you will need to 
+   consider, change, or handle when upgrading an existing ViewVC
+   or ViewCVS installation to a newer version.</p>
+
+<p>Upgrading from an ancient version to the latest version
+   isn't necessarily a multi step process.  The instructions are only
+   organized that way.  You can certainly upgrade in a single step.</p>
+
+<p>It is always recommended to install the new version in a fresh
+   directory and to carefully compare the configuration files.  A
+   possible approach is to name the directories
+   <code>/usr/local/viewvc-1.0</code>,
+   <code>/usr/local/viewvc-1.1</code> and so on and than create a
+   symbolic link <code>viewvc</code> pointing to the production
+   version.  This way you can easily test several versions and switch
+   back if your users start to complain.</p>
+
+</div>
+
+<div class="h2">
+<h2 id="toc">Table of Contents</h2>
+<ul class="toc-list">
+  <li><a href="#introduction">Introduction</a></li>
+  <li><a href="#sec-from-1-0">Upgrading From ViewVC 1.0</a></li>
+  <li><a href="#sec-from-0-9">Upgrading From ViewCVS 0.9</a></li>
+  <li><a href="#sec-from-0-8">Upgrading From ViewCVS 0.8</a></li>
+</ul>
+</div>
+
+<div class="h2">
+<h2 id="sec-from-1-0">Upgrading From ViewVC 1.0</h2>
+
+<p>This section discusses how to upgrade ViewVC 1.0.x to ViewVC 1.1.x.</p>
+
+<div class="h3">
+<h3>root_as_url_component Now Enabled by Default</h3>
+    
+<p>In ViewVC 1.1, the <code>root_as_url_component</code> configuration
+   option is now enabled by default.  This option causes ViewVC URLs
+   to be of the form
+   <code>&hellip;/root-name/path-in-root[?&hellip;]</code> instead of
+   <code>&hellip;/path-in-root/?root=root-name[&amp;&hellip;]</code>,
+   and makes for a much more intuitive user experience,
+   navigation-wise, when ViewVC is serving up multiple version control
+   repositories.  When in this mode, ViewVC will automatically perform
+   the obvious redirection for URLs which have a <code>root=</code>
+   CGI parameter.</p>
+
+<p>Unfortunately, there's a catch.  Older URLs for the default root
+   (specified by the <code>default_root</code> configuration option)
+   were optimized to <em>not</em> include the <code>root=</code> CGI
+   parameter.  This means they look unfortunately similar to the newer
+   root-in-the-path URL format, and ViewVC will not attempt to
+   redirect them.  But ViewVC won't be able to handle them, either.
+   So, old-style default-root URLs, when aimed at a ViewVC for which
+   the <code>root_as_url_component</code> option has been subsequently
+   enabled, will result in an error.  If you need to preserve the
+   functionality of those old URLs, you'll need to either disable
+   <code>root_as_url_component</code>, or use some other mechanism
+   (like server URL rewriting) to morph them into compliance with the
+   new URL format.</p>
+
+</div>
+
+<div class="h3">
+<h3>Path-Based Authorization / Forbidden Modules</h3>
+    
+<p>ViewVC 1.1 introduces a new pluggable authorization (authz)
+   subsystem which gives administrators greater control over the
+   accessibility of the information ViewVC displays in its output.
+   ViewVC provides a number of working authz modules and a framework for
+   configuring them.  But of specific interest to folks upgrading from
+   ViewVC 1.0 is that one of these new modules has replaced the
+   handling of forbidden modules.  As such, the <code>forbidden</code>
+   configuration option now lives under the configuration section
+   specific to that authz module.</p>
+
+<p>Migrating your existing configuration of forbidden modules should
+   be fairly straightforward:</p>
+
+<ol>
+
+   <li>In the new "authz-forbidden" section of viewvc.conf, set the
+       <code>forbidden</code> option to the same value as the
+       <code>forbidden</code> option in your ViewVC 1.0.x
+       configuration's "general" section.</li>
+
+   <li>In the new "authz-forbiddenre" section of viewvc.conf, set the
+       <code>forbiddenre</code> option to the same value as the
+       <code>forbiddenre</code> option in your ViewVC 1.0.x
+       configuration's "general" section.</li>
+
+   <li>Finally, ensure that that the new <code>authorizer</code>
+       option is set to either "forbidden" or "forbiddenre", depending
+       on which of those you were using in ViewVC 1.0.x.</li>
+
+</ol>
+
+<p>Of course, you might wish to take advantage of another of the
+   provided authz modules.  Or, you might wish to write a brand new
+   one for your purposes.  The flexibility is yours.</p>
+
+<p><strong>Known Issues:</strong></p>
+
+<ul>
+
+   <li>ViewVC does not provide an <em>authentication</em> framework.
+       It does, however, inherit authenticated usernames as determined
+       by the HTTP server (Apache, e.g.) via the CGI environment.  So,
+       any authorization module that assigns privileges based on
+       usernames will work only if ViewVC is deployed in a way that
+       requires successful authentication (as opposed to allowing
+       anonymous access).</li>
+
+   <li>Currently, the root listing view only honors the global or
+       vhost-specific configurations, <em>not</em> any root-specific
+       configuration.  In the event that ViewVC is using root-specific
+       configuration for its authorization stuffs, this may cause
+       either the unintended leak of root names to users or the
+       inability to see roots at all.  However, for root-specific
+       ViewVC views, all configuration &mdash; include root-specific
+       configuration &mdash; is honored.  If you are concerned about
+       leaking root names in the root listing view, you might consider
+       disabling that view altogether by removing <code>roots</code>
+       from the list of views specified in the 
+       <code>allowed_views</code> configuration option.</li>
+
+   <li>The experimental module which allows ViewVC to serve up views
+       of remote Subversion repositories is not yet fully integrated
+       with the authorization subsystem, and almost certainly will
+       leak privileged data.  Sorry.  That's (one reason) why it's
+       experimental.</li>
+
+</ul>
+
+</div>
+
+<div class="h3">
+<h3>Syntax Highlighting</h3>
+
+<p>ViewVC 1.0.x supports syntax highlighting provided by multiple
+   third-party highlighting engines, including GNU enscript, GNU
+   source-highlight, highlight, php, and py2html.  Unfortunately, each
+   of those integrations worked differently than the others.  Some
+   supported line numbers, some didn't; some were under active
+   development and recognized newer languages; some weren't; each had
+   its own set of CSS stylations that needed to be customized;
+   etc.</p>
+
+<p>In ViewVC 1.1, we've dropped support for all of those integations
+   in favor of a single integration with <a
+   href="http://www.pygments.org/" >Pygments</a>, a
+   Python-module-based syntax highlighting engine.  As such, the
+   configuration options for the various other engines (both those
+   that enabled the integration and those that specified the locations
+   of the third-party tools) have been removed from ViewVC, and have
+   been replaced by a single new configuration option:
+   <code>enable_syntax_coloration</code>.</p>
+
+<p>The list of removed options is as follows:</p>
+
+<ul>
+  <li>options/enscript_path</li>
+  <li>options/highlight_convert_tabs</li>
+  <li>options/highlight_path</li>
+  <li>options/markup_line_numbers</li>
+  <li>options/php_exe</li>
+  <li>options/py2html_path</li>
+  <li>options/use_enscript</li>
+  <li>options/use_highlight</li>
+  <li>options/use_pagesize</li>
+  <li>options/use_php</li>
+  <li>options/use_py2html</li>
+</ul>
+
+</div>
+
+<div class="h3">
+<h3>Checkin Database</h3>
+
+<p>ViewVC 1.1 introduces to the <code>cvsdbadmin</code>
+   and <code>svndbadmin</code> tools a new "purge" operation, which
+   allows you to remove all the information related to a given root
+   from your checkins database (without disturbing the information
+   associated with other roots).  Likewise, the "rebuild" command in
+   those tools now implies a "purge" followed by an update.</p>
+
+<p>As a related change, the <code>svndbadmin</code> program's
+   "rebuild" subcommand has had its purpose become more defined.  It
+   no longer accepts a revision argument, and therefore can now only
+   be used to completely rebuild the entirety of the checkin database
+   information for a Subversion repository (instead of being able to
+   only update the information related to single Subversion revision).
+   For per-revision updating, use <code>svndbadmin update</code> and
+   provide a revision (or revision range).  And to get the previous
+   rebuild-a-revision effect, pass the new <code>--force</code> option
+   to <code>svndbadmin update</code>.</p>
+
+<p>In other words, where you once did this:</p>
+
+<blockquote><pre>$ svndbadmin rebuild /path/to/repository 1234
+</pre>
+</blockquote>
+
+<p>you now need to do this:</p>
+
+<blockquote><pre>$ svndbadmin update /path/to/repository 1234 --force
+</pre>
+</blockquote>
+
+<p>To enhance the performance of the new "purge" operation, ViewVC 1.1
+   introduces some slight changes to the checkin database schema.  If
+   you use the <code>make-database</code> tool to (re)create your
+   checkins database, it will by default employ the new database
+   schema.  This should cause the database to be virtually unusable by
+   previous versions of ViewVC, and that's by design.  If, however,
+   you need to (re)create your checkins database and you require
+   compatibility with previous versions of ViewVC or ViewCVS, simply
+   pass the "--version=1.0" option to the <code>make-database</code>
+   script.  Note that your "purge" and "rebuild" operations could be
+   abysmally slow, though, as that version of the database schema is
+   not optimized for those operations.</p>
+
+</div>
+
+<div class="h3">
+<h3>Configuration Options</h3>
+
+<p>This section covers changes to configuration options not already
+   discussed in other sections pertaining to this upgrade.</p>
+
+<p>In ViewVC 1.1, a new "utilities" section was added to the
+   viewvc.conf file.  All the options used for configuring the
+   locations of various helper applications that ViewVC uses which
+   were previously scattered throughout the configuration file are now
+   all centralized in this one new section.  To accomplish this, the
+   following options were added:</p>
+
+<ul>
+  <li>utilities/cvsgraph</li>
+  <li>utilities/cvsnt</li>
+  <li>utilities/diff</li>
+  <li>utilities/rcs_dir</li>
+  <li>utilities/svn</li>
+</ul>
+
+<p>&hellip;and these were removed:</p>
+
+<ul>
+  <li>general/cvsnt_ext_path</li>
+  <li>general/rcs_path</li>
+  <li>general/svn_path</li>
+  <li>options/cvsgraph_path</li>
+</ul>
+
+<p>All the options which governed which ViewVC views were enabled have
+   been consolidated into a single new option.  This new option:</p>
+
+<ul>
+  <li>options/allowed_views</li>
+</ul>
+
+<p>&hellip;replaces these, which have been removed:</p>
+
+<ul>
+  <li>options/allow_annotate</li>
+  <li>options/allow_markup</li>
+  <li>options/allow_tar</li>
+</ul>
+
+<p>ViewVC now honors the "svn:mime-type" property stored on
+   Subversion-versioned files as the primary source of MIME type
+   determination (before falling back to name-based MIME mappings and
+   such).  However, this can negatively affect the viewability of
+   certain files &mdash; especially images &mdash; whose
+   "svn:mime-type" properties are set incorrectly, such as will happen
+   if Subversion itself merely determines that the file isn't
+   human-readable and uses the "application/octet-stream" MIME type to
+   record this determination.  To make ViewVC <em>not</em> honor the
+   "svn:mime-type" property value, set the <code>svn_ignore_mimetype</code>
+   configuration option.</p>
+
+<p>Speaking of MIME types, the option <code>mime_types_file</code> is
+   now <code>mime_types_files</code>, as it now carries multiple paths
+   to MIME mappings files, ordered by preference.</p>
+
+<p>The <code>use_rcsparse</code> option was moved from the "general"
+   section to the "options" section.</p>
+
+<p>The <code>log_sort</code> option's value "cvs" has been renamed to
+   "none" (for general application across all supported version
+   control systems).</p>
+
+<p>Custom sections which define per-virtual-host configuration option
+   overrides must now have their names prefixed with "vhost-".  Also,
+   instead of a hyphen (-) between the virtual host name and the base
+   configuration section being overridden, now there should be a
+   forward slash character (/).  For example, the following
+   configuration which was valid in ViewVC 1.0 is no longer valid:</p>
+
+<blockquote><pre>[vhosts]
+all = viewvc.*
+
+[all-options]
+allow_tar = 1
+</pre>
+</blockquote>
+
+<p>This now needs to be written like so:</p>
+
+<blockquote><pre>[vhosts]
+all = viewvc.*
+
+[vhost-all/options]
+allow_tar = 1
+</pre>
+</blockquote>
+
+<p>The following is a grab-bag of additional new options:</p>
+
+<ul>
+  <li>options/hide_errorful_entries</li>
+  <li>options/mangle_email_addresses</li>
+</ul>
+
+</div>
+
+<div class="h3">
+<h3>Templates</h3>
+    
+<p>This section describes template variable changes introduced in this
+   release.  See the <a href="./template-authoring-guide.html">Template
+   Authoring Guide</a> for the current set of variables available to
+   each templates.</p>
+
+<p>One notable change in ViewVC 1.1 is that the markup.ezt and
+   annotate.ezt templates have been combined into a single file.ezt
+   template.</p>
+
+<p>Also, the configuration options under the <code>[templates]</code>
+   section are now paths relative to the configured template directory
+   (either the value of the <code>options/template_dir</code>
+   option, or the default "templates" directory), instead of being
+   relative to the configuration location.</p>
+
+<table>
+<thead>
+<tr>
+  <th>Variable</th>
+  <th>Location</th>
+  <th>Changes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="added">
+  <td class="varname">rootpath</td>
+  <td><em>all templates</em></td>
+  <td>added</td>
+</tr>
+<tr class="removed">
+  <td class="varname">change_root_action</td>
+  <td><em>all templates</em></td>
+  <td>removed</td>
+</tr>
+<tr class="removed">
+  <td class="varname">change_root_hidden_values</td>
+  <td><em>all templates</em></td>
+  <td>removed</td>
+</tr>
+<tr class="removed">
+  <td class="varname">roots</td>
+  <td><em>all templates</em> except roots.ezt</td>
+  <td>removed</td>
+</tr>
+<tr class="added">
+  <td class="varname">roots.path</td>
+  <td>roots.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">queryform_href</td>
+  <td>diff.ezt, file.ezt, graph.ezt, log.ezt, log_table.ezt, 
+      query_form.ezt, revision.ezt, roots.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">tarball_href</td>
+  <td>diff.ezt, file.ezt, graph.ezt, log.ezt, log_table.ezt,
+      query_form.ezt, query_results.ezt, revision.ezt, roots.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">properties</td>
+  <td>directory.ezt, file.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">properties.name</td>
+  <td>directory.ezt, file.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">properties.undisplayable</td>
+  <td>directory.ezt, file.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">properties.value</td>
+  <td>directory.ezt, file.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="changed">
+  <td class="varname">diff_format_hidden_values</td>
+  <td>diff.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">diff_type</td>
+  <td>diff.ezt</td>
+  <td>new value: <code>f</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">date_left</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>left.date</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">path_left</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>left.path</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">rev_left</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>left.rev</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">tag_left</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>left.tag</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">date_right</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>right.date</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">path_right</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>right.path</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">rev_right</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>right.rev</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">tag_right</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>right.tag</code></td>
+</tr>
+<tr class="removed">
+  <td class="varname">annotate_href</td>
+  <td>diff.ezt</td>
+  <td>removed, use <code>right.annotate_href</code> instead</td>
+</tr>
+<tr class="added">
+  <td class="varname">left.annotate_href</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">left.download_href</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">left.download_text_href</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">left.prefer_markup</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">left.revision_href</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">left.view_href</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">right.annotate_href</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">right.download_href</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">right.download_text_href</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">right.prefer_markup</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">right.revision_href</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">right.view_href</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">right.view_href</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="changed">
+  <td class="varname">dir_paging_hidden_values</td>
+  <td>directory.ezt, , dir_alternate.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">entries.log</td>
+  <td>directory.ezt, dir_alternate.ezt</td>
+  <td>now always contains untruncated log message</td>
+</tr>
+<tr class="added">
+  <td class="varname">entries.short_log</td>
+  <td>directory.ezt, dir_alternate.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="changed">
+  <td class="varname">search_re_hidden_values</td>
+  <td>directory.ezt, dir_alternate.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">search_tag_hidden_values</td>
+  <td>directory.ezt, dir_alternate.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">pathrev_clear_hidden_values</td>
+  <td>log.ezt, log_table.ezt, directory.ezt, dir_alternate.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">pathrev_hidden_values</td>
+  <td>log.ezt, log_table.ezt, directory.ezt, dir_alternate.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">annotate_href</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>head_annotate_href</code></td>
+</tr>
+<tr class="changed">
+  <td class="varname">diff_form_hidden_values</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">download_href</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>head_download_href</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">download_text_href</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>head_download_text_href</code></td>
+</tr>
+<tr class="changed">
+  <td class="varname">log_paging_hidden_values</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">logsort_hidden_values</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">prefer_markup</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>head_prefer_markup</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">view_href</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>head_view_href</code></td>
+</tr>
+<tr class="added">
+  <td class="varname">rss_link_href</td>
+  <td>query.ezt, rss.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="changed">
+  <td class="varname">query_hidden_values</td>
+  <td>query_form.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="changed">
+  <td class="varname">jump_rev_hidden_values</td>
+  <td>revision.ezt</td>
+  <td>now is an iterable list of objects with .name and .value attributes</td>
+</tr>
+<tr class="added">
+  <td class="varname">num_changes</td>
+  <td>revision.ezt</td>
+  <td>added</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+
+<div class="h2">
+<h2 id="sec-from-0-9">Upgrading From ViewCVS 0.9</h2>
+
+<p>This section discusses how to upgrade ViewCVS 0.9 to ViewVC 1.0.</p>
+
+<div class="h3">
+<h3>CGI Stubs</h3>
+    
+<p>The CGI stub scripts haved been moved from
+   <code>&lt;VIEWVC_INSTALLATION_DIRECTORY&gt;/cgi/</code> to
+   <code>&lt;VIEWVC_INSTALLATION_DIRECTORY&gt;/bin/cgi/</code>, so
+   you will need update any ScriptAlias directives pointing to them in
+   your apache configuration. Also, the contents of these scripts have
+   changed, so you may need to replace copies of the old scripts you
+   put in other directories.</p>
+
+</div>
+
+<div class="h3">
+<h3>Checkin Database</h3>
+    
+<p>ViewVC 1.0 reads and writes commit times in the MySQL database in
+   UTC time rather than local time.  This can cause times displayed on
+   the query page to be a few hours off if an old database is being
+   used with a new version of ViewVC.  The best way to fix this is to
+   rebuild the database with the new version of cvsdbadmin, but it
+   is also possible to enable a backwards compatibility mode by
+   setting <code>utc_time = 0</code> at the top of lib/dbi.py</p>
+
+</div>
+
+<div class="h3">
+<h3>"checkout_magic" Option</h3>
+
+<p>In ViewVC 1.0, the <code>checkout_magic</code> option has been
+   disabled by default to provide a simpler URL scheme that works
+   safely with URL authorization. Most users will not notice any
+   difference in behavior, but users who had been using ViewCVS to
+   browse the contents of static HTML pages stored in a repository
+   may notice that links and images in those pages targetted at other
+   files in the repository no longer display correctly. The new
+   <code>default_file_view</code> option can be used to solve this
+   problem and, if neccessary, <code>checkout_magic</code> can also
+   be re-enabled. The <code>viewcvs.conf</code> file describes these
+   options in detail.</p>
+
+</div>
+
+<div class="h3">
+<h3>Configuration Options</h3>
+
+<p>The following options have been added:</p>
+
+<ul>
+  <li>general/svn_roots</li>
+  <li>general/root_parents</li>
+  <li>general/use_rcsparse</li>
+  <li>general/cvsnt_exe_path</li>
+  <li>options/template_dir</li>
+  <li>options/docroot</li>
+  <li>options/http_expiration_time</li>
+  <li>options/generate_etags</li>
+  <li>options/root_as_url_component</li>
+  <li>options/default_file_view</li>
+  <li>options/sort_group_dirs</li>
+  <li>options/dir_pagesize</li>
+  <li>options/log_pagesize</li>
+  <li>options/limit_changes</li>
+  <li>options/use_localtime</li>
+  <li>options/cross_copies</li>
+  <li>options/use_highlight</li>
+  <li>options/highlight_path</li>
+  <li>options/highlight_line_numbers</li>
+  <li>options/highlight_convert_tabs</li>
+  <li>options/use_php</li>
+  <li>options/php_path</li>
+  <li>options/svn_path</li>
+  <li>templates/error</li>
+  <li>templates/query_form</li>
+  <li>templates/query_results</li>
+  <li>cvsdb/port</li>
+  <li>cvsdb/rss_row_limit</li>
+</ul>
+
+<p>The following options have been removed:</p>
+
+<ul>
+  <li>general/main_title</li>
+  <li>options/diff_font_face</li> 
+  <li>options/diff_font_size</li>
+  <li>options/disable_enscript_lang</li>
+  <li>templates/footer</li>
+</ul>
+
+</div>
+
+<div class="h3">
+<h3>Templates</h3>
+    
+<p>The templates have changed drastically in this version of ViewVC.
+   If you are using customized templates from 0.9 or earlier, you will want
+   to port your old customizations to the new template files instead of
+   trying to get the old template files to work with the new ViewVC.</p>
+
+<p>There is a new <a href="template-authoring-guide.html">Template
+   Authoring Guide</a> for ViewVC 1.0 templates that can help you
+   with your customizations. And the chart below lists all 0.9 
+   template variables and shows what's become of them in 1.0.</p>
+
+<table>
+<thead>
+<tr>
+  <th>Variable</th>
+  <th>Location</th>
+  <th>Changes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="unchanged">
+  <td class="varname">ago</td>
+  <td>markup.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">author</td>
+  <td>markup.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="replaced">
+  <td class="varname">back_url</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>replaced by <code>up_href</code>, which doesn't include the current #file anchor</td>
+</tr>
+<tr class="replaced">
+  <td class="varname">branch</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>replaced by <code>default_branch</code>, which is a list instead of a string</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">branch</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">branch_names</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>branch_tags</code></td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">branch_points</td>
+  <td>markup.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">branch_tags</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">branches</td>
+  <td>markup.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">cfg.general.address</td>
+  <td>footer.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="removed">
+  <td class="varname">cfg.general.main_title</td>
+  <td>dir_alternate.ezt, directory.ezt, query.ezt</td>
+  <td>removed, used to be a string from the configuration file that was shown in the title of the root directory page.</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">cfg.options.use_cvsgraph</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">cfg.options.use_re_search</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">changed</td>
+  <td>markup.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="changed">
+  <td class="varname">changes</td>
+  <td>diff.ezt</td>
+  <td>attributes changed, see below</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">changes.extra</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>changes.line_info_extra</code></td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">changes.have_left</td>
+  <td>diff.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">changes.have_right</td>
+  <td>diff.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">changes.left</td>
+  <td>diff.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">changes.line1</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>changes.line_info_left</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">changes.line2</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>changes.line_info_right</code></td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">changes.right</td>
+  <td>diff.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="changed">
+  <td class="varname">changes.type</td>
+  <td>diff.ezt</td>
+  <td>new values <code>binary_diff</code> and <code>error</code></td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">commits</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">commits.desc</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">commits.files</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">commits.files.author</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">commits.files.branch</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">commits.files.date</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">commits.files.link</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">commits.files.minus</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">commits.files.plus</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">commits.files.rev</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">current_root</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>renamed to <code>rootname</code></td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">date</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">date1</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>date_left</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">date2</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>date_right</code></td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">diff_format</td>
+  <td>diff.ezt, log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">directory</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="changed">
+  <td class="varname">entries</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>attributes changed, see below</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.ago</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.author</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.branch_names</td>
+  <td>log.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.branch_point</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.branch_points</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.branch_points.href</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.branch_points.name</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.branches</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.branches.href</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.branches.name</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.changed</td>
+  <td>log.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">entries.href</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>entries.download_href</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">entries.html_log</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>entries.log</code></td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.next_main</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.prev</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.rev</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.state</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.tag_names</td>
+  <td>log.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.tags</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.tags.href</td>
+  <td>log.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.tags.name</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">entries.text_href</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>entries.download_text_href</code></td>
+</tr>
+<tr class="replaced">
+  <td class="varname">entries.to_selected</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>combined into <code>diff_to_sel_href</code> variable</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">entries.utc_date</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>entries.date</code></td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.vendor_branch</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">entries.view_href</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">file</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">file_url</td>
+  <td>header.ezt</td>
+  <td>renamed to <code>log_href</code></td>
+</tr>
+<tr class="removed">
+  <td class="varname">filename</td>
+  <td>header.ezt</td>
+  <td>removed, used to be set to the name of the file being shown</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">files_shown</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">graph_href</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="removed">
+  <td class="varname">has_tags</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>removed, used to be a boolean that was true when either tag information was available from the current directory or a tag was set. Determined whether or not to show a tag selector box on the bottom of the directory page.</td>
+</tr>
+<tr class="removed">
+  <td class="varname">have_logs</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>removed, used to be a boolean that was true whenever any logs were being shown in a directory listing. When it was false the template code would omit the log column from the directory table.</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">head_abs_href</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>download_href</code></td>
+</tr>
+<tr class="replaced">
+  <td class="varname">head_href</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>replaced by <code>view_href</code> and <code>download_href</code></td>
+</tr>
+<tr class="replaced">
+  <td class="varname">hidden_values</td>
+  <td>diff.ezt, log.ezt, log_table.ezt</td>
+  <td>combined into <code>*_hidden_values</code> variables</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">hide_attic_href</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">hours</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="replaced">
+  <td class="varname">href</td>
+  <td>log.ezt, log_table.ezt</td>
+    <td>combined into <code>*_href</code> variables</td>
+  </tr>
+  <tr class="renamed">
+    <td class="varname">href</td>
+    <td>markup.ezt</td>
+    <td>renamed to <code>download_href</code></td>
+  </tr>
+  <tr class="unchanged">
+    <td class="varname">human_readable</td>
+    <td>log.ezt, log_table.ezt</td>
+    <td>unchanged</td>
+  </tr>
+  <tr class="unchanged">
+    <td class="varname">imagemap</td>
+    <td>graph.ezt</td>
+    <td>unchanged</td>
+  </tr>
+  <tr class="unchanged">
+    <td class="varname">log</td>
+    <td>markup.ezt</td>
+    <td>unchanged</td>
+  </tr>
+  <tr class="unchanged">
+    <td class="varname">logsort</td>
+    <td>log.ezt, log_table.ezt</td>
+    <td>unchanged</td>
+  </tr>
+  <tr class="unchanged">
+    <td class="varname">mime_type</td>
+    <td>log.ezt, log_table.ezt, markup.ezt</td>
+    <td>unchanged</td>
+  </tr>
+  <tr class="replaced">
+    <td class="varname">nav_file</td>
+    <td>markup.ezt</td>
+    <td>replaced with <code>nav_path</code></td>
+  </tr>
+  <tr class="changed">
+    <td class="varname">nav_path</td>
+    <td>dir_alternate.ezt, directory.ezt, header.ezt, log.ezt, log_table.ezt</td>
+    <td>changed from a block of HTML to a list of path components</td>
+  </tr>
+  <tr class="removed">
+    <td class="varname">no_match</td>
+    <td>dir_alternate.ezt, directory.ezt</td>
+    <td>removed, used to be a boolean that was true when a directory contained files, but none of them could be displayed due to regular expression or view tag filtering. Would trigger an error message.</td>
+  </tr>
+  <tr class="unchanged">
+    <td class="varname">num_commits</td>
+    <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="removed">
+  <td class="varname">num_files</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>removed, used to be a count of files in a directory, including dead and filtered files. This number was only shown in the <code>no_match</code> error message.</td>
+</tr>
+<tr class="replaced">
+  <td class="varname">params</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>replaced by <code>search_re_hidden_values</code></td>
+</tr>
+<tr class="removed">
+  <td class="varname">path</td>
+  <td>header.ezt</td>
+  <td>removed, used to be set to the directory path of the file being shown</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">plain_tags</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">prev</td>
+  <td>markup.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="replaced">
+  <td class="varname">qquery</td>
+  <td>header.ezt</td>
+  <td>combined into <code>log_href</code> variable</td>
+</tr>
+<tr class="replaced">
+  <td class="varname">qquery</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>replaced by <code>diff_select_hidden_values</code></td>
+</tr>
+<tr class="replaced">
+  <td class="varname">query</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>combined into <code>*_href</code> variables</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">query</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">repository</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="replaced">
+  <td class="varname">request.amp_query</td>
+  <td>graph.ezt</td>
+  <td>combined into <code>imagesrc</code> variable</td>
+</tr>
+<tr class="replaced">
+  <td class="varname">request.script_name</td>
+  <td>dir_alternate.ezt, directory.ezt, log.ezt, log_table.ezt</td>
+  <td>combined into <code>*_href</code> variables</td>
+</tr>
+<tr class="replaced">
+  <td class="varname">request.url</td>
+  <td>diff.ezt</td>
+  <td>combined into <code>diff_format_action</code> variable</td>
+</tr>
+<tr class="replaced">
+  <td class="varname">request.url</td>
+  <td>graph.ezt</td>
+  <td>combined into <code>imagesrc</code> variable</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">request.where</td>
+  <td>graph.ezt</td>
+  <td>renamed to just <code>where</code></td>
+</tr>
+<tr class="removed">
+  <td class="varname">rev</td>
+  <td>graph.ezt</td>
+  <td>removed, used to be set to the value of the "graph" parameter in CvsGraph page urls. The value was passed on through the <code>rev</code> parameter to CvsGraph image URLs, where, oddly enough, it was ignored. It'd be set to a file revision number in directory page graph links, and just "1" in log page graph links.</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">rev</td>
+  <td>graph.ezt, header.ezt, markup.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">rev1</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>rev_left</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">rev2</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>rev_right</code></td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">rev_selected</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="changed">
+  <td class="varname">roots</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>changed to a list of objects instead of a list of strings</td>
+</tr>
+<tr class="replaced">
+  <td class="varname">rows</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>replaced by <code>entries</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">rows.anchor</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>renamed to <code>entries.anchor</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">rows.author</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>renamed to <code>entries.author</code></td>
+</tr>
+<tr class="replaced">
+  <td class="varname">rows.cvs</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>replaced by <code>entries.errors</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">rows.graph_href</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>renamed to <code>entries.graph_href</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">rows.href</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>renamed to <code>entries.log_href</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">rows.log</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>renamed to <code>entries.short_log</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">rows.log_file</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>renamed to <code>entries.log_file</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">rows.log_rev</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>renamed to <code>entries.log_rev</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">rows.name</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>renamed to <code>entries.name</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">rows.rev</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>renamed to <code>entries.rev</code></td>
+</tr>
+<tr class="replaced">
+  <td class="varname">rows.rev_href</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>replaced by <code>entries.view_href</code> and <code>entries.download_href</code></td>
+</tr>
+<tr class="removed">
+  <td class="varname">rows.show_log</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>removed, used to be a boolean that was true whenever a log message was present for the directory entry.</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">rows.state</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>renamed to <code>entries.state</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">rows.time</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>renamed to <code>entries.ago</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">rows.type</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>renamed to <code>entries.pathtype</code></td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">search_re</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">selection_form</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>renamed to <code>search_re_form</code></td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">show_attic_href</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">sortby</td>
+  <td>dir_alternate.ezt, directory.ezt, query.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">sortby_author_href</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">sortby_date_href</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">sortby_file_href</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">sortby_log_href</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">sortby_rev_href</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">state</td>
+  <td>markup.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">tag</td>
+  <td>markup.ezt</td>
+  <td>renamed to <code>pathrev</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">tag1</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>tag_left</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">tag2</td>
+  <td>diff.ezt</td>
+  <td>renamed to <code>tag_right</code></td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">tags</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">tags</td>
+  <td>markup.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">tags.name</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">tags.rev</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">tags</td>
+  <td>markup.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">tarball_href</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">text_href</td>
+  <td>markup.ezt</td>
+  <td>renamed to <code>download_text_href</code></td>
+</tr>
+<tr class="removed">
+  <td class="varname">tr1</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>removed, used to be a default value for the first text field in the diff selector form. In 1.0, the default value is computed in the templates.</td>
+</tr>
+<tr class="removed">
+  <td class="varname">tr2</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>removed, used to be a default value for the second text field in the diff selector form. In 1.0, the default value is computed in the templates.</td>
+</tr>
+<tr class="removed">
+  <td class="varname">unreadable</td>
+  <td>dir_alternate.ezt, directory.ezt</td>
+  <td>removed, used to be a boolean that was true whenever any of the files in the directory listing were 'unreadable.' It would trigger a generic error message at the bottom of the page.</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">utc_date</td>
+  <td>markup.ezt</td>
+  <td>renamed to <code>date</code></td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">vendor_branch</td>
+  <td>markup.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">view_tag</td>
+  <td>dir_alternate.ezt, directory.ezt, log.ezt, log_table.ezt</td>
+  <td>renamed to <code>pathrev</code></td>
+</tr>
+<tr class="renamed">
+  <td class="varname">viewable</td>
+  <td>log.ezt, log_table.ezt</td>
+  <td>renamed to <code>prefer_markup</code></td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">vsn</td>
+  <td>footer.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">where</td>
+  <td>diff.ezt, dir_alternate.ezt, directory.ezt, log.ezt, log_table.ezt</td>
+  <td>unchanged</td>
+</tr>
+<tr class="unchanged">
+  <td class="varname">who</td>
+  <td>query.ezt</td>
+  <td>unchanged</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<div class="h3">
+<h3>Template Arrangement</h3>
+    
+<p>The default templates have been rearranged a bit in ViewVC 1.0.
+   Specifically, "header.ezt" and "footer.ezt" have moved into the
+   "templates/include/" subdirectory.  Also, "directory.ezt" and
+   "dir_alternate.ezt" now reference new template files
+   "dir_header.ezt" and "dir_footer.ezt", also found in the
+   "templates/include/" subdirectory.</p>
+
+<p>Notably, the "markup.ezt" and "annotate.ezt" templates are now
+   fully self-contained.  That is, the markup and annotation data
+   generated by ViewVC is now accessible in those templates just like
+   other template variables.  As a result, ViewVC now has no more
+   internal need for the <var>templates.footer</var> configuration
+   variable, so that variable has been removed from the default
+   configuration file.</p>
+
+</div>
+</div>
+
+<div class="h2">
+<h2 id="sec-from-0-8">Upgrading From ViewCVS 0.8</h2>
+
+<p>This section discusses how to upgrade ViewCVS 0.8 to version
+   0.9 or a later version of the software.</p>
+    
+<p><strong>NOTE:</strong> these changes will bring you up to the
+   requirements of version 0.9. You must also follow the directions
+   for <a href="#sec-from-0-9">upgrading from 0.9</a>.</p>
+
+<div class="h3">
+<h3>Configuration Options</h3>
+
+<p>More templates were introduced in version 0.8 of the software,
+   which made many of the configuration options obsolete. This section
+   covers which options were removed. If you made any changes to these
+   options, then you will need to make corresponding changes in the
+   templates.</p>
+
+      <dl>
+	<dt>
+	  Colors:
+	  <strong>diff_heading</strong>,
+	  <strong>diff_empty</strong>,
+	  <strong>diff_remove</strong>,
+	  <strong>diff_change</strong>,
+	  <strong>diff_add</strong>,
+	  and <strong>diff_dark_change</strong>
+	</dt>
+	<dd>
+	  These options have been incorporated into the
+	  <code>diff.ezt</code> template.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>markup_log</strong></dt>
+	<dd>
+	  This option has been incorporated into the
+	  <code>markup.ezt</code> template.
+
+	  <p></p>
+	</dd>
+
+        <dt>Colors: <strong>nav_header</strong>
+          and <strong>alt_background</strong></dt>
+	<dd>
+	  These options have been incorporated into the
+	  <code>header.ezt</code> template.
+
+	  <p></p>
+	</dd>
+
+        <dt>
+	  Images:
+          <strong>back_icon</strong>,
+          <strong>dir_icon</strong>,
+          and <strong>file_icon</strong>
+        </dt>
+	<dd>
+	  These options have been incorporated into the
+	  <code>directory.ezt</code>, <code>header.ezt</code>,
+	  <code>log.ezt</code>, <code>log_table.ezt</code>, and
+	  <code>query.ezt</code> templates.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>use_java_script</strong>
+          and <strong>open_extern_window</strong></dt>
+	<dd>
+	  The templates now use JavaScript in all applicable places,
+	  and open external windows for most downloading and viewing
+	  of files. If you wish to not use JavaScript and/or external
+	  windows, then remove the feature(s) from the templates.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>show_author</strong></dt>
+	<dd>
+          Changing this option would be quite strange and rare. If you
+          do not want to show the author for the revisions, then you
+          should remove it from the various templates.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>hide_non_readable</strong></dt>
+	<dd>
+          This option was never used, so it has been removed.
+
+	  <p></p>
+	</dd>
+
+	<dt><strong>flip_links_in_dirview</strong></dt>
+	<dd>
+          This option is no longer available. If you want the links in
+          your directory view flipped, then you may use the
+          <code>dir_alternate.ezt</code> template.
+
+	  <p></p>
+	</dd>
+
+      </dl>
+
+</div>
+
+<div class="h3">
+<h3>Template Variables</h3>
+
+<p>Some template variables that were available in 0.8 have been
+   removed in 0.9. If you have custom templates that refer to these
+   variables, then you will need to modify your templates.</p>
+
+	    <dl>
+	      <dt><code>directory.ezt</code>: <var>headers</var></dt>
+	      <dd>
+		The headers are now listed explicitly in the template,
+		rather than made available through a list.
+		<p></p>
+	      </dd>
+
+	      <dt>
+		<code>directory.ezt</code>:
+		<var>rows.cols</var>,
+		and <var>rows.span</var>
+	      </dt>
+	      <dd>
+		These variables were used in conjunction with the
+		<var>headers</var> variable to control the column
+		displays. This is now controlled explicitly within the
+		templates.
+		<p></p>
+	      </dd>
+
+	      <dt><code>directory.ezt</code>:
+		<var>rev_in_front</var></dt>
+	      <dd>
+		This was used to indicate that revision links should
+		be used in the first column, rather than in their
+		standard place in the second column. Changing the
+		links should now be done in the template, rather than
+		according to this variable. You may want to look at
+		the <code>dir_alternate.ezt</code> template, which has
+		the revision in front.
+		<p></p>
+	      </dd>
+
+	      <dt><code>directory.ezt</code>:
+		<var>rows.attic</var>
+		and <var>rows.hide_attic_href</var></dt>
+	      <dd>
+		These variable were used to manage the hide and
+		showing of the contents of the <code>Attic/</code>
+		subdirectory. Several new variables were introduced
+		which can be used to replace this functionality:
+		<var>show_attic_href</var>,
+		<var>hide_attic_href</var>, and <var>rows.state</var>.
+		<p></p>
+	      </dd>
+	    </dl>
+
+</div>
+</div>
+
+</body>
+</html>
