@@ -858,6 +858,10 @@
 ##    utilities
 ##    authz-*
 ##
+## WARNING: Do not use per-root overrides if your ViewVC instance is
+## served via the standalone.py server option!  Doing so could cause
+## ViewVC to be unable to function properly (or at all).
+##
 ## Here is an example showing how to enable Subversion authz-based
 ## authorization for only the single root named "svnroot":
 ## 
