@@ -897,8 +897,15 @@
 [authz-forbidden]
 
 ## The "forbidden" authorizer forbids access to repository modules,
-## defined to be top-level subdirectories in a repository.  You can use
-## a simple list of modules, or something more complex:
+## defined to be top-level subdirectories in a repository.
+##
+## NOTE: The options in this section apply only when the 'authorizer'
+## option (in the [options] section) is set to 'forbidden'.
+
+## forbidden: A comma-delimited list of patterns which match modules
+## that ViewVC should hide from users.
+##
+## You can use a simple list of modules, or something more complex:
 ##
 ##   *) The "!" can be used before a module to explicitly state that it
 ##      is NOT forbidden. Whenever this form is seen, then all modules will
@@ -953,6 +960,12 @@
 ## regular expressions.  Directory paths will be terminated by a forward
 ## slash.
 ##
+## NOTE: The options in this section apply only when the 'authorizer'
+## option (in the [options] section) is set to 'forbiddenre'.
+
+## forbiddenre: A comma-delimited list of regular expressions which
+## match paths that ViewVC should hide from users.
+##
 ## Like the "forbidden" authorizer...
 ##
 ##   *) The "!" can be used before a module to explicitly state that it
@@ -987,6 +1000,9 @@
 
 ## The "svnauthz" authorizer uses a Subversion authz configuration file
 ## to determine access to repository paths.
+##
+## NOTE: The options in this section apply only when the 'authorizer'
+## option (in the [options] section) is set to 'svnauthz'.
 
 ## authzfile: Specifies the location of the authorization rules file
 ## (using an absolute path).
