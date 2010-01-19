@@ -313,14 +313,14 @@ class FileContentsPipe:
 
 
 class BlameSource:
-  def __init__(self, local_url, rev, first_rev):
+  def __init__(self, local_url, rev, first_rev, config_dir):
     self.idx = -1
     self.first_rev = first_rev
     self.blame_data = []
 
     ctx = client.ctx_t()
-    core.svn_config_ensure(None)
-    ctx.config = core.svn_config_get_config(None)
+    core.svn_config_ensure(config_dir)
+    ctx.config = core.svn_config_get_config(config_dir)
     ctx.auth_baton = core.svn_auth_open([])
     try:
       ### TODO: Is this use of FIRST_REV always what we want?  Should we
@@ -375,7 +375,7 @@ class LocalSubversionRepository(vclib.Repository):
     self.auth = authorizer
     self.svn_client_path = utilities.svn or 'svn'
     self.diff_cmd = utilities.diff or 'diff'
-    self.config_dir = config_dir
+    self.config_dir = config_dir or None
 
     # See if this repository is even viewable, authz-wise.
     if not vclib.check_root_access(self):
@@ -550,7 +550,7 @@ class LocalSubversionRepository(vclib.Repository):
     youngest_rev, youngest_path = history[0]
     oldest_rev, oldest_path = history[-1]
     source = BlameSource(_rootpath2url(self.rootpath, path),
-                         youngest_rev, oldest_rev)
+                         youngest_rev, oldest_rev, self.config_dir)
     return source, youngest_rev
 
   def _revinfo(self, rev, include_changed_paths=0):
