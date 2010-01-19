@@ -1,6 +1,7 @@
 Version 1.1.4 (released ??-???-????)
 
-  * fix standalone.py failure (when per-root options aren't used)(issue #445)
+  * fix standalone.py failure (when per-root options aren't used) (issue #445)
+  * fix annotate failure caused by ignore svn_config_dir (issue #447)
 
 Version 1.1.3 (released 22-Dec-2009)
 
