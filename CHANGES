@@ -1,6 +1,7 @@
 Version 1.1.10 (released ??-???-????)
 
   * fix errors viewing remote Subversion paths with URI-unsafe characters
+  * fix regexp input validation (issue #426, #427, #440)
 
 Version 1.0.9 (released 11-Aug-2009)
 
