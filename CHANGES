@@ -1,5 +1,6 @@
 Version 1.1.4 (released ??-???-????)
 
+  * security fix: escape user-provided query form input to avoid XSS attack
   * fix standalone.py failure (when per-root options aren't used) (issue #445)
   * fix annotate failure caused by ignore svn_config_dir (issue #447)
 
