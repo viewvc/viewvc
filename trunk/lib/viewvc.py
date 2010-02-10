@@ -3985,27 +3985,29 @@ def build_commit(request, files, max_files, dir_strip, format):
   return commit
 
 def query_backout(request, commits):
-  request.server.header('text/plain')
-  if commits:
-    print '# This page can be saved as a shell script and executed.'
-    print '# It should be run at the top of your work area.  It will update'
-    print '# your working copy to back out the changes selected by the'
-    print '# query.'
-    print
-  else:
-    print '# No changes were selected by the query.'
-    print '# There is nothing to back out.'
+  server_fp = get_writeready_server_file(request, 'text/plain')
+  if not commits:
+    server_fp.write("""\
+# No changes were selected by the query.
+# There is nothing to back out.
+""")
     return
+  server_fp.write("""\
+# This page can be saved as a shell script and executed.
+# It should be run at the top of your work area.  It will update
+# your working copy to back out the changes selected by the
+# query.
+""")
   for commit in commits:
     for fileinfo in commit.files:
       if request.roottype == 'cvs':
-        print 'cvs update -j %s -j %s %s/%s' \
-              % (fileinfo.rev, prev_rev(fileinfo.rev),
-                 fileinfo.dir, fileinfo.file)
+        server_fp.write('cvs update -j %s -j %s %s/%s\n'
+                        % (fileinfo.rev, prev_rev(fileinfo.rev),
+                           fileinfo.dir, fileinfo.file))
       elif request.roottype == 'svn':
-        print 'svn merge -r %s:%s %s/%s' \
-              % (fileinfo.rev, prev_rev(fileinfo.rev),
-                 fileinfo.dir, fileinfo.file)
+        server_fp.write('svn merge -r %s:%s %s/%s\n'
+                        % (fileinfo.rev, prev_rev(fileinfo.rev),
+                           fileinfo.dir, fileinfo.file))
 
 def view_query(request):
   if not is_query_supported(request):
