@@ -1,5 +1,6 @@
 Version 1.1.10 (released ??-???-????)
 
+  * security fix: escape user-provided query form input to avoid XSS attack
   * fix errors viewing remote Subversion paths with URI-unsafe characters
   * fix regexp input validation (issue #426, #427, #440)
 

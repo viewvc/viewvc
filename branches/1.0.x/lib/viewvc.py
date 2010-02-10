@@ -3168,19 +3168,22 @@ def view_queryform(request):
   data['query_action'], data['query_hidden_values'] = \
     request.get_form(view_func=view_query, params={'limit_changes': None})
 
+  def escaped_query_dict_get(itemname, itemdefault=''):
+    return request.server.escape(request.query_dict.get(itemname, itemdefault))
+
   # default values ...
-  data['branch'] = request.query_dict.get('branch', '')
-  data['branch_match'] = request.query_dict.get('branch_match', 'exact')
-  data['dir'] = request.query_dict.get('dir', '')
-  data['file'] = request.query_dict.get('file', '')
-  data['file_match'] = request.query_dict.get('file_match', 'exact')
-  data['who'] = request.query_dict.get('who', '')
-  data['who_match'] = request.query_dict.get('who_match', 'exact')
-  data['querysort'] = request.query_dict.get('querysort', 'date')
-  data['date'] = request.query_dict.get('date', 'hours')
-  data['hours'] = request.query_dict.get('hours', '2')
-  data['mindate'] = request.query_dict.get('mindate', '')
-  data['maxdate'] = request.query_dict.get('maxdate', '')
+  data['branch'] = escaped_query_dict_get('branch', '')
+  data['branch_match'] = escaped_query_dict_get('branch_match', 'exact')
+  data['dir'] = escaped_query_dict_get('dir', '')
+  data['file'] = escaped_query_dict_get('file', '')
+  data['file_match'] = escaped_query_dict_get('file_match', 'exact')
+  data['who'] = escaped_query_dict_get('who', '')
+  data['who_match'] = escaped_query_dict_get('who_match', 'exact')
+  data['querysort'] = escaped_query_dict_get('querysort', 'date')
+  data['date'] = escaped_query_dict_get('date', 'hours')
+  data['hours'] = escaped_query_dict_get('hours', '2')
+  data['mindate'] = escaped_query_dict_get('mindate', '')
+  data['maxdate'] = escaped_query_dict_get('maxdate', '')
   data['limit_changes'] = int(request.query_dict.get('limit_changes',
                                            request.cfg.options.limit_changes))
 
@@ -3410,27 +3413,29 @@ def build_commit(request, files, max_files, dir_strip, format):
   return commit
 
 def query_backout(request, commits):
-  request.server.header('text/plain')
-  if commits:
-    print '# This page can be saved as a shell script and executed.'
-    print '# It should be run at the top of your work area.  It will update'
-    print '# your working copy to back out the changes selected by the'
-    print '# query.'
-    print
-  else:
-    print '# No changes were selected by the query.'
-    print '# There is nothing to back out.'
+  server_fp = get_writeready_server_file(request, 'text/plain')
+  if not commits:
+    server_fp.write("""\
+# No changes were selected by the query.
+# There is nothing to back out.
+""")
     return
+  server_fp.write("""\
+# This page can be saved as a shell script and executed.
+# It should be run at the top of your work area.  It will update
+# your working copy to back out the changes selected by the
+# query.
+""")
   for commit in commits:
     for fileinfo in commit.files:
       if request.roottype == 'cvs':
-        print 'cvs update -j %s -j %s %s/%s' \
-              % (fileinfo.rev, prev_rev(fileinfo.rev),
-                 fileinfo.dir, fileinfo.file)
+        server_fp.write('cvs update -j %s -j %s %s/%s\n'
+                        % (fileinfo.rev, prev_rev(fileinfo.rev),
+                           fileinfo.dir, fileinfo.file))
       elif request.roottype == 'svn':
-        print 'svn merge -r %s:%s %s/%s' \
-              % (fileinfo.rev, prev_rev(fileinfo.rev),
-                 fileinfo.dir, fileinfo.file)
+        server_fp.write('svn merge -r %s:%s %s/%s\n'
+                        % (fileinfo.rev, prev_rev(fileinfo.rev),
+                           fileinfo.dir, fileinfo.file))
 
 def view_query(request):
   if not is_query_supported(request):
