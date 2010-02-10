@@ -3698,23 +3698,26 @@ def view_queryform(request):
   limit_changes = \
     int(request.query_dict.get('limit_changes',
                                request.cfg.options.limit_changes))
-  
+
+  def escaped_query_dict_get(itemname, itemdefault=''):
+    return request.server.escape(request.query_dict.get(itemname, itemdefault))
+    
   data = common_template_data(request)
   data.merge(ezt.TemplateData({
-    'branch' : request.query_dict.get('branch', ''),
-    'branch_match' : request.query_dict.get('branch_match', 'exact'),
-    'dir' : request.query_dict.get('dir', ''),
-    'file' : request.query_dict.get('file', ''),
-    'file_match' : request.query_dict.get('file_match', 'exact'),
-    'who' : request.query_dict.get('who', ''),
-    'who_match' : request.query_dict.get('who_match', 'exact'),
-    'comment' : request.query_dict.get('comment', ''),
-    'comment_match' : request.query_dict.get('comment_match', 'exact'),
-    'querysort' : request.query_dict.get('querysort', 'date'),
-    'date' : request.query_dict.get('date', 'hours'),
-    'hours' : request.query_dict.get('hours', '2'),
-    'mindate' : request.query_dict.get('mindate', ''),
-    'maxdate' : request.query_dict.get('maxdate', ''),
+    'branch' : escaped_query_dict_get('branch', ''),
+    'branch_match' : escaped_query_dict_get('branch_match', 'exact'),
+    'dir' : escaped_query_dict_get('dir', ''),
+    'file' : escaped_query_dict_get('file', ''),
+    'file_match' : escaped_query_dict_get('file_match', 'exact'),
+    'who' : escaped_query_dict_get('who', ''),
+    'who_match' : escaped_query_dict_get('who_match', 'exact'),
+    'comment' : escaped_query_dict_get('comment', ''),
+    'comment_match' : escaped_query_dict_get('comment_match', 'exact'),
+    'querysort' : escaped_query_dict_get('querysort', 'date'),
+    'date' : escaped_query_dict_get('date', 'hours'),
+    'hours' : escaped_query_dict_get('hours', '2'),
+    'mindate' : escaped_query_dict_get('mindate', ''),
+    'maxdate' : escaped_query_dict_get('maxdate', ''),
     'query_action' : query_action,
     'query_hidden_values' : query_hidden_values,
     'limit_changes' : limit_changes,
