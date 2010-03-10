@@ -1,5 +1,5 @@
 /*
-# Copyright (C) 1999-2007 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2006 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -30,7 +30,7 @@
 #include <memory>     /* for auto_ptr */
 #include <algorithm>  /* for iterator */
 #include <exception>  /* for exception */
-#include <istream>    /* for istream */
+#include <iostream>   /* for istream */
 #include <list>       /* for list<> */
 #include <string>     /* for string */
 
@@ -121,7 +121,7 @@ class rcstoken
         free(data);
       data = NULL;
     };
-  void init(const char *mydata, size_t mylen);
+  void rcstoken::init(const char *mydata, size_t mylen);
   int null_token()
     {
       return data == NULL;
