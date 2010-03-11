@@ -25,7 +25,6 @@ debug.t_start('imports')
 import sys
 import os
 import sapi
-import cgi
 import string
 import urllib
 import mimetypes
@@ -999,7 +998,7 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
 _re_rewrite_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)(://[-a-zA-Z0-9%.~:_/]+)((\?|\&amp;)([-a-zA-Z0-9%.~:_]+)=([-a-zA-Z0-9%.~:_])+)*(#([-a-zA-Z0-9%.~:_]+)?)?)')
 _re_rewrite_email = re.compile('([-a-zA-Z0-9_.\+]+)@(([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
 def htmlify(html):
-  html = cgi.escape(html)
+  html = sapi.escape(html)
   html = re.sub(_re_rewrite_url, r'<a href="\1">\1</a>', html)
   html = re.sub(_re_rewrite_email, r'<a href="mailto:\1&#64;\2">\1&#64;\2</a>', html)
   return html
@@ -1010,7 +1009,7 @@ def format_log(log, cfg, htmlize=1):
   if htmlize:
     s = htmlify(log[:cfg.options.short_log_len])
   else:
-    s = cgi.escape(log[:cfg.options.short_log_len])
+    s = sapi.escape(log[:cfg.options.short_log_len])
   if len(log) > cfg.options.short_log_len:
     s = s + '...'
   return s
@@ -1334,7 +1333,7 @@ def markup_stream_python(fp, cfg):
 
   ### It doesn't escape stuff quite right, nor does it munge URLs and
   ### mailtos as well as we do.
-  html = cgi.escape(fp.read())
+  html = sapi.escape(fp.read())
   pp = py2html.PrettyPrint(PyFontify.fontify, "rawhtml", "color")
   pp.set_mode_rawhtml_color()
   html = pp.fontify(html)
@@ -1487,7 +1486,7 @@ def prepare_hidden_values(params):
   hidden_values = []
   for name, value in params.items():
     hidden_values.append('<input type="hidden" name="%s" value="%s" />' %
-                         (name, value))
+                         (sapi.escape(name), sapi.escape(value)))
   return string.join(hidden_values, '')
 
 def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):

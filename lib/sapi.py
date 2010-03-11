@@ -20,6 +20,7 @@ import string
 import os
 import sys
 import re
+import cgi
 
 
 # global server object. It will be either a CgiServer or a proxy to
@@ -27,6 +28,18 @@ import re
 server = None
 
 
+# Simple HTML string escaping.  Note that we always escape the
+# double-quote character -- ViewVC shouldn't ever need to preserve
+# that character as-is, and sometimes needs to embed escaped values
+# into HTML attributes.
+def escape(s):
+  s = string.replace(s, '&', '&amp;')
+  s = string.replace(s, '>', '&gt;')
+  s = string.replace(s, '<', '&lt;')
+  s = string.replace(s, '"', "&quot;")
+  return s
+
+  
 class Server:
   def __init__(self):
     self.pageGlobals = {}
@@ -34,6 +47,9 @@ class Server:
   def self(self):
     return self
 
+  def escape(self, s):
+    return escape(s)
+    
   def close(self):
     pass
 
@@ -129,9 +145,6 @@ class CgiServer(Server):
     global server
     server = self
 
-    global cgi
-    import cgi
-
   def addheader(self, name, value):
     self.headers.append((name, value))
 
@@ -160,9 +173,6 @@ class CgiServer(Server):
     self.header(status='301 Moved')
     print 'This document is located <a href="%s">here</a>.' % url
     sys.exit(0)
-
-  def escape(self, s, quote = None):
-    return cgi.escape(s, quote)
 
   def getenv(self, name, value=None):
     ret = os.environ.get(name, value)
@@ -220,9 +230,6 @@ class AspServer(ThreadedServer):
   def redirect(self, url):
     self.response.Redirect(url)
     sys.exit()
-
-  def escape(self, s, quote = None):
-    return self.server.HTMLEncode(str(s))
 
   def getenv(self, name, value = None):
     ret = self.request.ServerVariables(name)()
@@ -285,9 +292,6 @@ class ModPythonServer(ThreadedServer):
     self.request = request
     self.headerSent = 0
     
-    global cgi
-    import cgi
-
   def addheader(self, name, value):
     self.request.headers_out.add(name, value)
 
@@ -310,9 +314,6 @@ class ModPythonServer(ThreadedServer):
     self.request.write("You are being redirected to <a href=\"%s\">%s</a>"
       % (url, url))
     sys.exit()
-
-  def escape(self, s, quote = None):
-    return cgi.escape(s, quote)
 
   def getenv(self, name, value = None):
     try:

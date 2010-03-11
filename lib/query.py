@@ -398,12 +398,11 @@ def main(server, cfg, viewvc_link):
       'cfg' : cfg,
       'address' : cfg.general.address,
       'vsn' : viewvc.__version__,
-
-      'repository' : server.escape(form_data.repository, 1),
-      'branch' : server.escape(form_data.branch, 1),
-      'directory' : server.escape(form_data.directory, 1),
-      'file' : server.escape(form_data.file, 1),
-      'who' : server.escape(form_data.who, 1),
+      'repository' : server.escape(form_data.repository),
+      'branch' : server.escape(form_data.branch),
+      'directory' : server.escape(form_data.directory),
+      'file' : server.escape(form_data.file),
+      'who' : server.escape(form_data.who),
       'docroot' : cfg.options.docroot is None \
                   and viewvc_link + '/' + viewvc.docroot_magic_path \
                   or cfg.options.docroot,
