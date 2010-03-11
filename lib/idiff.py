@@ -20,7 +20,7 @@ import difflib
 import sys
 import re
 import ezt
-import cgi
+import sapi
 
 def sidebyside(fromlines, tolines, context):
   """Generate side by side diff"""
@@ -49,18 +49,18 @@ def _mdiff_split(flag, (line_number, text)):
   while True:
     m = _re_mdiff.search(text, pos)
     if not m:
-      segments.append(_item(text=cgi.escape(text[pos:]), type=None))
+      segments.append(_item(text=sapi.escape(text[pos:]), type=None))
       break
 
     if m.start() > pos:
-      segments.append(_item(text=cgi.escape(text[pos:m.start()]), type=None))
+      segments.append(_item(text=sapi.escape(text[pos:m.start()]), type=None))
 
     if m.group(1) == "+":
-      segments.append(_item(text=cgi.escape(m.group(2)), type="add"))
+      segments.append(_item(text=sapi.escape(m.group(2)), type="add"))
     elif m.group(1) == "-":
-      segments.append(_item(text=cgi.escape(m.group(2)), type="remove"))
+      segments.append(_item(text=sapi.escape(m.group(2)), type="remove"))
     elif m.group(1) == "^":
-      segments.append(_item(text=cgi.escape(m.group(2)), type="change"))
+      segments.append(_item(text=sapi.escape(m.group(2)), type="change"))
 
     pos = m.end()
 
@@ -166,12 +166,12 @@ def _differ_split(row, guide):
 
     for m in _re_differ.finditer(guide, pos):
       if m.start() > pos:
-        segments.append(_item(text=cgi.escape(line[pos:m.start()]), type=None))
-      segments.append(_item(text=cgi.escape(line[m.start():m.end()]),
+        segments.append(_item(text=sapi.escape(line[pos:m.start()]), type=None))
+      segments.append(_item(text=sapi.escape(line[m.start():m.end()]),
                             type="change"))
       pos = m.end()
 
-  segments.append(_item(text=cgi.escape(line[pos:]), type=None))
+  segments.append(_item(text=sapi.escape(line[pos:]), type=None))
 
   return _item(gap=ezt.boolean(gap), type=type, segments=segments,
                left_number=left_number, right_number=right_number)

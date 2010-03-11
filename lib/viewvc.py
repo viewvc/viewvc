@@ -24,7 +24,6 @@ debug.t_start('imports')
 # standard modules that we know are in the path or builtin
 import sys
 import os
-import cgi
 import gzip
 import mimetypes
 import re
@@ -432,7 +431,8 @@ class Request:
     action = self.server.escape(urllib.quote(url, _URL_SAFE_CHARS))
     hidden_values = []
     for name, value in params.items():
-      hidden_values.append(_item(name=name, value=value))
+      hidden_values.append(_item(name=self.server.escape(name),
+                                 value=self.server.escape(value)))
     return action, hidden_values
 
   def get_link(self, view_func=None, where=None, pathtype=None, params=None):
@@ -1075,9 +1075,6 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
                revision_href=revision_href,
                prefer_markup=ezt.boolean(prefer_markup))
 
-def htmlify(html):
-  return html and cgi.escape(html) or html
-
 
 # Matches URLs
 _re_rewrite_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)'
@@ -1110,8 +1107,8 @@ class HtmlFormatter:
     """
     s = mobj.group(0)
     trunc_s = maxlen and s[:maxlen] or s
-    return '<a href="%s">%s</a>' % (cgi.escape(s),
-                                    cgi.escape(trunc_s)), \
+    return '<a href="%s">%s</a>' % (sapi.escape(s),
+                                    sapi.escape(trunc_s)), \
            len(trunc_s)
 
   def format_email(self, mobj, userdata, maxlen=0):
@@ -1162,7 +1159,7 @@ class HtmlFormatter:
          - the number of characters returned.
     """   
     trunc_s = maxlen and s[:maxlen] or s
-    return cgi.escape(trunc_s), len(trunc_s)
+    return sapi.escape(trunc_s), len(trunc_s)
   
   def add_formatter(self, regexp, conv, userdata=None):
     """Register a formatter which finds instances of strings matching
@@ -1467,7 +1464,7 @@ def copy_stream(src, dst, htmlize=0):
     if not chunk:
       break
     if htmlize:
-      chunk = htmlify(chunk)
+      chunk = sapi.escape(chunk)
     dst.write(chunk)
 
 class MarkupPipeWrapper:
@@ -1496,7 +1493,7 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename, mime_type):
   blame_source = []
   if blame_data:
     for i in blame_data:
-      i.text = cgi.escape(i.text)
+      i.text = sapi.escape(i.text)
       i.diff_href = None
       if i.prev_rev:
         i.diff_href = request.get_url(view_func=view_diff,
@@ -1559,7 +1556,7 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename, mime_type):
         if not line:
           break
         line_no = line_no + 1
-        line = cgi.escape(string.expandtabs(line, cfg.options.tabsize))
+        line = sapi.escape(string.expandtabs(line, cfg.options.tabsize))
         item = vclib.Annotation(line, line_no, None, None, None, None)
         item.diff_href = None
         lines.append(item)
@@ -2034,7 +2031,7 @@ def view_directory(request):
     'entries' : rows,
     'sortby' : sortby,
     'sortdir' : sortdir,
-    'search_re' : htmlify(search_re),
+    'search_re' : request.server.escape(search_re),
     'dir_pagestart' : None,
     'sortby_file_href' :   request.get_url(params={'sortby': 'file',
                                                    'sortdir': None},
@@ -2766,7 +2763,7 @@ class DiffSource:
     hr_breakable = self.cfg.options.hr_breakable
     
     # in the code below, "\x01" will be our stand-in for "&". We don't want
-    # to insert "&" because it would get escaped by htmlify().  Similarly,
+    # to insert "&" because it would get escaped by sapi.escape().  Similarly,
     # we use "\x02" as a stand-in for "<br>"
   
     if hr_breakable > 1 and len(text) > hr_breakable:
@@ -2776,7 +2773,7 @@ class DiffSource:
       text = string.replace(text, '  ', ' \x01nbsp;')
     else:
       text = string.replace(text, ' ', '\x01nbsp;')
-    text = htmlify(text)
+    text = sapi.escape(text)
     text = string.replace(text, '\x01', '&')
     text = string.replace(text, '\x02',
                           '<span style="color:red">\</span><br />')
@@ -3157,7 +3154,7 @@ def view_diff(request):
       else:
         changes = DiffSource(fp, cfg)
     else:
-      raw_diff_fp = MarkupPipeWrapper(fp, htmlify(headers), None, 1)
+      raw_diff_fp = MarkupPipeWrapper(fp, request.server.escape(headers), None, 1)
 
   no_format_params = request.query_dict.copy()
   no_format_params['diff_format'] = None
@@ -3704,7 +3701,7 @@ def english_query(request):
     ret.append('on all branches ')
   comment = request.query_dict.get('comment', '')
   if comment:
-    ret.append('with comment <i>%s</i> ' % htmlify(comment))
+    ret.append('with comment <i>%s</i> ' % request.server.escape(comment))
   if who:
     ret.append('by <em>%s</em> ' % request.server.escape(who))
   date = request.query_dict.get('date', 'hours')

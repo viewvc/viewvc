@@ -32,9 +32,8 @@ import os
 import re
 import time
 import math
-import cgi
 import vclib
-
+import sapi
 
 re_includes = re.compile('\\#(\\s*)include(\\s*)"(.*?)"')
 
@@ -82,7 +81,7 @@ class HTMLBlameSource:
     diff_url = None
     if item.prev_rev:
       diff_url = '%sr1=%s&amp;r2=%s' % (self.diff_url, item.prev_rev, item.rev)
-    thisline = link_includes(cgi.escape(item.text), self.repos,
+    thisline = link_includes(sapi.escape(item.text), self.repos,
                              self.path_parts, self.include_url)
     return _item(text=thisline, line_number=item.line_number,
                  rev=item.rev, prev_rev=item.prev_rev,
