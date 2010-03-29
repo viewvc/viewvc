@@ -2,6 +2,10 @@ Version 1.2.0 (released ??-???-????)
 
   * allow user-configurable cvsgraph display (issue #336)
 
+Version 1.1.5 (released 29-Mar-2010)
+
+  * security fix: escape user-provided search_re input to avoid XSS attack
+
 Version 1.1.4 (released 10-Mar-2010)
 
   * security fix: escape user-provided query form input to avoid XSS attack
@@ -84,6 +88,10 @@ Version 1.1.0 (released 13-May-2009)
   * allow MIME type mapping overrides in ViewVC configuration (issue #401)
   * fix exception in rev-sorted remote Subversion directory views (issue #409)
   * allow setting of page sizes for log and dir views individually (issue #402)
+
+Version 1.0.11 (released 29-Mar-2010)
+
+  * security fix: escape user-provided search_re input to avoid XSS attack
 
 Version 1.0.10 (released 10-Mar-2010)
 
