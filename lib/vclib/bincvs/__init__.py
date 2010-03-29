@@ -13,7 +13,6 @@
 "Version Control lib driver for locally accessible cvs-repositories."
 
 import vclib
-import vcauth
 import os
 import os.path
 import sys
@@ -26,91 +25,50 @@ import time
 import compat
 import popen
 
-class BaseCVSRepository(vclib.Repository):
-  def __init__(self, name, rootpath, authorizer, utilities):
+class CVSRepository(vclib.Repository):
+  def __init__(self, name, rootpath):
     if not os.path.isdir(rootpath):
-      raise vclib.ReposNotFound(name) 
-   
-    self.name = name
-    self.rootpath = rootpath
-    self.auth = authorizer
-    self.utilities = utilities
-
-    # See if this repository is even viewable, authz-wise.
-    if not vclib.check_root_access(self):
       raise vclib.ReposNotFound(name)
 
-  def rootname(self):
-    return self.name
+    self.name = name
+    self.rootpath = rootpath
 
-  def rootpath(self):
-    return self.rootpath
-
-  def roottype(self):
-    return vclib.CVS
-
-  def authorizer(self):
-    return self.auth
-  
   def itemtype(self, path_parts, rev):
     basepath = self._getpath(path_parts)
-    kind = None
     if os.path.isdir(basepath):
-      kind = vclib.DIR
-    elif os.path.isfile(basepath + ',v'):
-      kind = vclib.FILE
-    else:
-      atticpath = self._getpath(self._atticpath(path_parts))
-      if os.path.isfile(atticpath + ',v'):
-        kind = vclib.FILE
-    if not kind:
-      raise vclib.ItemNotFound(path_parts)
-    if not vclib.check_path_access(self, path_parts, kind, rev):
-      raise vclib.ItemNotFound(path_parts)
-    return kind
+      return vclib.DIR
+    if os.path.isfile(basepath + ',v'):
+      return vclib.FILE
+    atticpath = self._getpath(self._atticpath(path_parts))
+    if os.path.isfile(atticpath + ',v'):
+      return vclib.FILE
+    raise vclib.ItemNotFound(path_parts)
 
-  def itemprops(self, path_parts, rev):
-    self.itemtype(path_parts, rev)  # does auth-check
-    return {}  # CVS doesn't support properties
-  
   def listdir(self, path_parts, rev, options):
-    if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
-      raise vclib.Error("Path '%s' is not a directory."
-                        % (string.join(path_parts, "/")))
-    
     # Only RCS files (*,v) and subdirs are returned.
     data = [ ]
+
     full_name = self._getpath(path_parts)
     for file in os.listdir(full_name):
-      name = None
       kind, errors = _check_path(os.path.join(full_name, file))
       if kind == vclib.FILE:
         if file[-2:] == ',v':
-          name = file[:-2]
+          data.append(CVSDirEntry(file[:-2], kind, errors, 0))
       elif kind == vclib.DIR:
         if file != 'Attic' and file != 'CVS': # CVS directory is for fileattr
-          name = file
+          data.append(CVSDirEntry(file, kind, errors, 0))
       else:
-        name = file
-      if not name:
-        continue
-      if vclib.check_path_access(self, path_parts + [name], kind, rev):
-        data.append(CVSDirEntry(name, kind, errors, 0))
+        data.append(CVSDirEntry(file, kind, errors, 0))
 
     full_name = os.path.join(full_name, 'Attic')
     if os.path.isdir(full_name):
       for file in os.listdir(full_name):
-        name = None
         kind, errors = _check_path(os.path.join(full_name, file))
         if kind == vclib.FILE:
           if file[-2:] == ',v':
-            name = file[:-2]
+            data.append(CVSDirEntry(file[:-2], kind, errors, 1))
         elif kind != vclib.DIR:
-          name = file
-        if not name:
-          continue
-        if vclib.check_path_access(self, path_parts + [name], kind, rev):
-          data.append(CVSDirEntry(name, kind, errors, 1))
+          data.append(CVSDirEntry(file, kind, errors, 1))
 
     return data
     
@@ -130,42 +88,38 @@ class BaseCVSRepository(vclib.Repository):
       ret_file = self._getpath(ret_parts)
       if not os.path.isfile(ret_file + ',v'):
         raise vclib.ItemNotFound(path_parts)
+
     if root:
       ret = ret_file
     else:
       ret = string.join(ret_parts, "/")
+
     if v:
       ret = ret + ",v"
+
     return ret
 
-  def isexecutable(self, path_parts, rev):
-    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file."
-                        % (string.join(path_parts, "/")))
-    rcsfile = self.rcsfile(path_parts, 1)
-    return os.access(rcsfile, os.X_OK)
+class BinCVSRepository(CVSRepository):
+  def __init__(self, name, rootpath, rcs_paths):
+    CVSRepository.__init__(self, name, rootpath)
+    self.rcs_paths = rcs_paths
 
-
-class BinCVSRepository(BaseCVSRepository):
   def _get_tip_revision(self, rcs_file, rev=None):
     """Get the (basically) youngest revision (filtered by REV)."""
     args = rcs_file,
     fp = self.rcs_popen('rlog', args, 'rt', 0)
-    filename, default_branch, tags, lockinfo, msg, eof = _parse_log_header(fp)
+    filename, default_branch, tags, msg, eof = _parse_log_header(fp)
     revs = []
     while not eof:
       revision, eof = _parse_log_entry(fp)
       if revision:
         revs.append(revision)
-    revs = _file_log(revs, tags, lockinfo, default_branch, rev)
+    revs = _file_log(revs, tags, default_branch, rev)
     if revs:
       return revs[-1]
     return None
 
   def openfile(self, path_parts, rev):
-    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file."
-                        % (string.join(path_parts, "/")))
     if not rev or rev == 'HEAD' or rev == 'MAIN':
       rev_flag = '-p'
     else:
@@ -235,16 +189,11 @@ class BinCVSRepository(BaseCVSRepository):
       cvs_tags, cvs_branches
         lists of tag and branch names encountered in the directory
     """
-    if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
-      raise vclib.Error("Path '%s' is not a directory."
-                        % (string.join(path_parts, "/")))
-
     subdirs = options.get('cvs_subdirs', 0)
-    entries_to_fetch = []
-    for entry in entries:
-      if vclib.check_path_access(self, path_parts + [entry.name], None, rev):
-        entries_to_fetch.append(entry)
-    alltags = _get_logs(self, path_parts, entries_to_fetch, rev, subdirs)
+
+    dirpath = self._getpath(path_parts)
+    alltags = _get_logs(self, dirpath, entries, rev, subdirs)
+
     branches = options['cvs_branches'] = []
     tags = options['cvs_tags'] = []
     for name, rev in alltags.items():
@@ -253,7 +202,7 @@ class BinCVSRepository(BaseCVSRepository):
       else:
         tags.append(name)
 
-  def itemlog(self, path_parts, rev, sortby, first, limit, options):
+  def itemlog(self, path_parts, rev, options):
     """see vclib.Repository.itemlog docstring
 
     rev parameter can be a revision number, a branch number, a tag name,
@@ -273,10 +222,6 @@ class BinCVSRepository(BaseCVSRepository):
         dictionary of Tag objects for all tags encountered
     """
 
-    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file."
-                        % (string.join(path_parts, "/")))
-    
     # Invoke rlog
     rcsfile = self.rcsfile(path_parts, 1)
     if rev and options.get('cvs_pass_rev', 0):
@@ -285,7 +230,7 @@ class BinCVSRepository(BaseCVSRepository):
       args = rcsfile,
 
     fp = self.rcs_popen('rlog', args, 'rt', 0)
-    filename, default_branch, tags, lockinfo, msg, eof = _parse_log_header(fp)
+    filename, default_branch, tags, msg, eof = _parse_log_header(fp)
 
     # Retrieve revision objects
     revs = []
@@ -294,42 +239,26 @@ class BinCVSRepository(BaseCVSRepository):
       if revision:
         revs.append(revision)
 
-    filtered_revs = _file_log(revs, tags, lockinfo, default_branch, rev)
+    filtered_revs = _file_log(revs, tags, default_branch, rev)
 
     options['cvs_tags'] = tags
-    if sortby == vclib.SORTBY_DATE:
-      filtered_revs.sort(_logsort_date_cmp)
-    elif sortby == vclib.SORTBY_REV:
-      filtered_revs.sort(_logsort_rev_cmp)
-
-    if len(filtered_revs) < first:
-      return []
-    if limit:
-      return filtered_revs[first:first+limit]
     return filtered_revs
 
   def rcs_popen(self, rcs_cmd, rcs_args, mode, capture_err=1):
-    if self.utilities.cvsnt:
-      cmd = self.utilities.cvsnt
+    if self.rcs_paths.cvsnt_exe_path:
+      cmd = self.rcs_paths.cvsnt_exe_path
       args = ['rcsfile', rcs_cmd]
       args.extend(list(rcs_args))
     else:
-      cmd = os.path.join(self.utilities.rcs_dir, rcs_cmd)
+      cmd = os.path.join(self.rcs_paths.rcs_path, rcs_cmd)
       args = rcs_args
     return popen.popen(cmd, args, mode, capture_err)
 
   def annotate(self, path_parts, rev=None):
-    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file."
-                        % (string.join(path_parts, "/")))
-                        
     from vclib.ccvs import blame
     source = blame.BlameSource(self.rcsfile(path_parts, 1), rev)
     return source, source.revision
 
-  def revinfo(self, rev):
-    raise vclib.UnsupportedFeature
-  
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     """see vclib.Repository.rawdiff docstring
 
@@ -337,13 +266,6 @@ class BinCVSRepository(BaseCVSRepository):
 
       ignore_keyword_subst - boolean, ignore keyword substitution
     """
-    if self.itemtype(path_parts1, rev1) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file."
-                        % (string.join(path_parts1, "/")))
-    if self.itemtype(path_parts2, rev2) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file."
-                        % (string.join(path_parts2, "/")))
-    
     args = vclib._diff_args(type, options)
     if options.get('ignore_keyword_subst', 0):
       args.append('-kk')
@@ -364,16 +286,15 @@ class BinCVSRepository(BaseCVSRepository):
   
 
 class CVSDirEntry(vclib.DirEntry):
-  def __init__(self, name, kind, errors, in_attic, absent=0):
+  def __init__(self, name, kind, errors, in_attic):
     vclib.DirEntry.__init__(self, name, kind, errors)
     self.in_attic = in_attic
-    self.absent = absent # meaning, no revisions found on requested tag
 
 class Revision(vclib.Revision):
   def __init__(self, revstr, date=None, author=None, dead=None,
                changed=None, log=None):
     vclib.Revision.__init__(self, _revision_tuple(revstr), revstr,
-                            date, author, changed, log, None, None)
+                            date, author, changed, log, None)
     self.dead = dead
 
 class Tag:
@@ -385,14 +306,6 @@ class Tag:
 
 # ======================================================================
 # Functions for dealing with Revision and Tag objects
-
-def _logsort_date_cmp(rev1, rev2):
-  # sort on date; secondary on revision number
-  return -cmp(rev1.date, rev2.date) or -cmp(rev1.number, rev2.number)
-
-def _logsort_rev_cmp(rev1, rev2):
-  # sort highest revision first
-  return -cmp(rev1.number, rev2.number)
 
 def _match_revs_tags(revlist, taglist):
   """Match up a list of Revision objects with a list of Tag objects
@@ -684,14 +597,13 @@ def _parse_log_header(fp):
   If there is no revision information (e.g. the "-h" switch was passed to
   rlog), then fp will consumed the file separator line on exit.
 
-  Returns: filename, default branch, tag dictionary, lock dictionary,
-  rlog error message, and eof flag
+  Returns: filename, default branch, tag dictionary, rlog error message, 
+  and eof flag
   """
-  
   filename = head = branch = msg = ""
-  taginfo = { }   # tag name => number
-  lockinfo = { }  # revision => locker
-  state = 0       # 0 = base, 1 = parsing symbols, 2 = parsing locks
+  taginfo = { }         # tag name => number
+
+  parsing_tags = 0
   eof = None
 
   while 1:
@@ -701,35 +613,24 @@ def _parse_log_header(fp):
       eof = _EOF_LOG
       break
 
-    if state == 1:
+    if parsing_tags:
       if line[0] == '\t':
         [ tag, rev ] = map(string.strip, string.split(line, ':'))
         taginfo[tag] = rev
       else:
         # oops. this line isn't tag info. stop parsing tags.
-        state = 0
+        parsing_tags = 0
 
-    if state == 2:
-      if line[0] == '\t':
-        [ locker, rev ] = map(string.strip, string.split(line, ':'))
-        lockinfo[rev] = locker
-      else:
-        # oops. this line isn't lock info. stop parsing tags.
-        state = 0
-      
-    if state == 0:
+    if not parsing_tags:
       if line[:9] == 'RCS file:':
         filename = line[10:-1]
       elif line[:5] == 'head:':
         head = line[6:-1]
       elif line[:7] == 'branch:':
         branch = line[8:-1]
-      elif line[:6] == 'locks:':
-        # start parsing the lock information
-        state = 2
       elif line[:14] == 'symbolic names':
         # start parsing the tag information
-        state = 1
+        parsing_tags = 1
       elif line == ENTRY_END_MARKER:
         # end of the headers
         break
@@ -758,7 +659,7 @@ def _parse_log_header(fp):
           eof = _EOF_ERROR
           break
 
-  return filename, branch, taginfo, lockinfo, msg, eof
+  return filename, branch, taginfo, msg, eof
 
 _re_log_info = re.compile(r'^date:\s+([^;]+);'
                           r'\s+author:\s+([^;]+);'
@@ -858,7 +759,7 @@ def _paths_eq(path1, path2):
 # ======================================================================
 # Functions for interpreting and manipulating log information
 
-def _file_log(revs, taginfo, lockinfo, cur_branch, filter):
+def _file_log(revs, taginfo, cur_branch, filter):
   """Augment list of Revisions and a dictionary of Tags"""
 
   # Add artificial ViewVC tag MAIN. If the file has a default branch, then
@@ -889,10 +790,6 @@ def _file_log(revs, taginfo, lockinfo, cur_branch, filter):
   # Match up tags and revisions
   _match_revs_tags(revs, tags)
 
-  # Match up lockinfo and revision
-  for rev in revs:
-    rev.lockinfo = lockinfo.get(rev.string)
-      
   # Add artificial ViewVC tag HEAD, which acts like a non-branch tag pointing
   # at the latest revision on the MAIN branch. The HEAD revision doesn't have
   # anything to do with the "head" revision number specified in the RCS file
@@ -939,7 +836,7 @@ def _file_log(revs, taginfo, lockinfo, cur_branch, filter):
   
   return filtered_revs
 
-def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
+def _get_logs(repos, dirpath, entries, view_tag, get_dirs):
   alltags = {           # all the tags seen in the files of this dir
     'MAIN' : '',
     'HEAD' : '1.1'
@@ -954,15 +851,14 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
 
     while len(chunk) < max_args and entries_idx < entries_len:
       entry = entries[entries_idx]
-      path = _log_path(entry, repos._getpath(dir_path_parts), get_dirs)
+      path = _log_path(entry, dirpath, get_dirs)
       if path:
         entry.path = path
         entry.idx = entries_idx
         chunk.append(entry)
 
       # set properties even if we don't retrieve logs
-      entry.rev = entry.date = entry.author = None
-      entry.dead = entry.log = entry.lockinfo = None
+      entry.rev = entry.date = entry.author = entry.dead = entry.log = None
 
       entries_idx = entries_idx + 1
 
@@ -982,8 +878,7 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
     chunk_idx = 0
     while chunk_idx < len(chunk):
       file = chunk[chunk_idx]
-      filename, default_branch, taginfo, lockinfo, msg, eof \
-        = _parse_log_header(rlog)
+      filename, default_branch, taginfo, msg, eof = _parse_log_header(rlog)
 
       if eof == _EOF_LOG:
         # the rlog output ended early. this can happen on errors that rlog 
@@ -1071,16 +966,13 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
         file.date = wanted_entry.date
         file.author = wanted_entry.author
         file.dead = file.kind == vclib.FILE and wanted_entry.dead
-        file.absent = 0
         file.log = wanted_entry.log
-        file.lockinfo = lockinfo.get(file.rev)
         # suppress rlog errors if we find a usable revision in the end
         del file.errors[:]
       elif file.kind == vclib.FILE:
-        file.dead = 0
-        #file.errors.append("No revisions exist on %s" % (view_tag or "MAIN"))
-        file.absent = 1
-        
+        file.dead = 1
+        file.errors.append("No revisions exist on %s" % (view_tag or "MAIN"))
+
       # done with this file now, skip the rest of this file's revisions
       if not eof:
         _skip_file(rlog)
@@ -1192,8 +1084,6 @@ def _newest_file(dirpath):
   newest_file = None
   newest_time = 0
 
-  ### FIXME:  This sucker is leaking unauthorized paths! ###
-  
   for subfile in os.listdir(dirpath):
     ### filter CVS locks? stale NFS handles?
     if subfile[-2:] != ',v':

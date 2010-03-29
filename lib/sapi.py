@@ -23,8 +23,8 @@ import re
 import cgi
 
 
-# global server object. It will be either a CgiServer, a WsgiServer,
-# or a proxy to an AspServer or ModPythonServer object.
+# global server object. It will be either a CgiServer or a proxy to
+# an AspServer or ModPythonServer object.
 server = None
 
 
@@ -171,7 +171,8 @@ class CgiServer(Server):
     if self.iis: url = fix_iis_url(self, url)
     self.addheader('Location', url)
     self.header(status='301 Moved')
-    sys.stdout.write('This document is located <a href="%s">here</a>.\n' % url)
+    print 'This document is located <a href="%s">here</a>.' % url
+    sys.exit(0)
 
   def getenv(self, name, value=None):
     ret = os.environ.get(name, value)
@@ -195,60 +196,6 @@ class CgiServer(Server):
 
   def file(self):
     return sys.stdout
-
-
-class WsgiServer(Server):
-  def __init__(self, environ, start_response):
-    Server.__init__(self)
-
-    self._environ = environ
-    self._start_response = start_response;
-    self._headers = []
-    self._wsgi_write = None
-    self.headerSent = False
-
-    global server
-    server = self
-
-  def addheader(self, name, value):
-    self._headers.append((name, value))
-
-  def header(self, content_type='text/html; charset=UTF-8', status=None):
-    if not status:
-      status = "200 OK"
-    if not self.headerSent:
-      self.headerSent = True
-      self._headers.insert(0, ("Content-Type", content_type),)
-      self._wsgi_write = self._start_response("%s" % status, self._headers)
-
-  def redirect(self, url):
-    """Redirect client to url. This discards any data that has been queued
-    to be sent to the user. But there should never by any anyway.
-    """
-    self.addheader('Location', url)
-    self.header(status='301 Moved')
-    self._wsgi_write('This document is located <a href="%s">here</a>.' % url)
-
-  def getenv(self, name, value=None):
-    return self._environ.get(name, value)
-
-  def params(self):
-    return cgi.parse(environ=self._environ, fp=self._environ["wsgi.input"])
-
-  def FieldStorage(self, fp=None, headers=None, outerboundary="",
-                   environ=os.environ, keep_blank_values=0, strict_parsing=0):
-    return cgi.FieldStorage(self._environ["wsgi.input"], self._headers,
-                            outerboundary, self._environ, keep_blank_values,
-                            strict_parsing)
-
-  def write(self, s):
-    self._wsgi_write(s)
-
-  def flush(self):
-    pass
-
-  def file(self):
-    return File(self)
 
 
 class AspServer(ThreadedServer):
@@ -282,6 +229,7 @@ class AspServer(ThreadedServer):
 
   def redirect(self, url):
     self.response.Redirect(url)
+    sys.exit()
 
   def getenv(self, name, value = None):
     ret = self.request.ServerVariables(name)()
@@ -364,7 +312,8 @@ class ModPythonServer(ThreadedServer):
     self.request.headers_out['Location'] = url
     self.request.status = mod_python.apache.HTTP_MOVED_TEMPORARILY
     self.request.write("You are being redirected to <a href=\"%s\">%s</a>"
-                       % (url, url))
+      % (url, url))
+    sys.exit()
 
   def getenv(self, name, value = None):
     try:
