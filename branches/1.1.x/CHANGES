@@ -1,6 +1,6 @@
-Version 1.1.5 (released ??-???-????)
+Version 1.1.5 (released 29-Mar-2010)
 
-  *
+  * security fix: escape user-provided search_re input to avoid XSS attack
 
 Version 1.1.4 (released 10-Mar-2010)
 
