@@ -1,0 +1,87 @@
+                        RELEASE MANAGEMENT
+
+ViewVC rolls releases from release branches associate with each minor
+version of the software.  For example, the 1.1.0 is rolled from the
+1.1.x branch.  The same is true for the 1.1.1, 1.1.2, ... releases.
+
+There is a script, `tools/make-release', which creates a release
+directory and the various archive files that we distribute.  All other
+steps required to get a ViewVC release out of the door require manual
+execution (currently by C. Michael Pilato).  Those steps are as
+follows:
+
+Checkout a working copy of the release branch for the release you
+intend to roll, and in that working copy, perform the following steps
+(X, Y, and Z below represent integral major, minor, and patch version
+numbers, and not literal):
+
+1.  Review any open bug reports:
+
+       http://viewvc.tigris.org/servlets/ProjectIssues
+
+2.  Add a new subsection to the file 'docs/upgrading.html' describing
+    all user visible changes for users of previous releases of ViewVC.
+    Commit any modifications.  NOTE: This step should not be necessary
+    for patch releases.
+
+3.  Verify that copyright years are correct in both the license-1.html
+    file and the source code.
+
+4.  Update and commit the 'CHANGES' file.
+
+5.  Test, test, test!  There is no automatic testsuite available.  So
+    just run with permuting different `viewvc.conf' settings... and
+    pray.  Fix what needs fixin', keeping the CHANGES file in sync
+    with the branch.
+
+6.  At this point, the source code committed to the release branch
+    should exactly reflect what you wish to distribute and dub "the
+    release".
+
+7.  Edit the file 'lib/viewvc.py' and remove the "-dev" suffix from
+    __version__.  The remainder should be of the form "X.Y.Z", where X,
+    Y, and Z are positive integers.  Do NOT commit this change.
+
+8.  Update your working copy to HEAD, and tag the release:
+
+       svn update
+       svn cp -m "Tag the X.Y.Z final release." . \
+                 http://viewvc.tigris.org/svn/viewvc/tags/X.Y.Z
+
+9.  Go into an empty directory and run the 'make-release' script:
+
+       tools/make-release viewvc-X.Y.Z tags/X.Y.Z
+
+10. Verify the archive files:
+
+       - do they have a LICENSE.html file?
+       - do they have necessary include documentation?
+       - do they *not* have unnecessary stuff?
+       - do they install and work correctly?
+
+11. Upload the created archive files (tar.gz and zip) into the Files
+    and Documents section of the Tigris.org project, and modify the
+    CHECKSUMS document there accordingly.  Also, drop a copy of the
+    archive files into the root directory of the viewvc.org website
+    (unversioned).
+
+12. On trunk, update the websites (both the viewvc.org/ and www/ ones)
+    to refer to the new release files, and copy the CHANGES for the
+    new release into trunk's CHANGES file.
+
+13. Edit the file 'lib/viewvc.py' again, re-adding the "-dev" suffix
+    and incrementing the patch number assigned to the __version__
+    variable, and add a new empty block in the branch's CHANGES file,
+    and commit:
+
+       svn ci -m "Begin a new release cycle."
+
+14. Edit the Issue Tracker configuration options, adding a new Version
+    for the just-released one, and a new Milestone for the next patch
+    (and possibly, minor or major) release.  (For the Milestone sort
+    key, use a packed integer XXYYZZ:  1.0.3 == 10003, 2.11.4 == 21104.)
+
+15. Write an announcement explaining all the cool new features and
+    post it to the announce@ list, to the project's News area, and to
+    other places interested in this sort of stuff, such as Freshmeat
+    (http://www.freshmeat.net).
