@@ -3550,6 +3550,11 @@ def view_revision(request):
     'first_changes_href': first_changes_href,
     'jump_rev_action' : jump_rev_action,
     'jump_rev_hidden_values' : jump_rev_hidden_values,
+    'revision_href' : request.get_url(view_func=view_revision,
+                                      where=None,
+                                      pathtype=None,
+                                      params={'revision': str(rev)},
+                                      escape=1),
   }))
   if rev == youngest_rev:
     request.server.addheader("Cache-control", "no-store")
