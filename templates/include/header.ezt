@@ -5,7 +5,7 @@
 <head>
   <title>[if-any rootname][[][rootname]][else]ViewVC[end] [page_title]</title>
   <meta name="generator" content="ViewVC [vsn]" />
-  <link rel="shortcut icon" href="[docroot]/images/favicon.ico" type="image/x-icon" />
+  <link rel="shortcut icon" href="[docroot]/images/favicon.ico" />
   <link rel="stylesheet" href="[docroot]/styles.css" type="text/css" />
   [if-any rss_href]<link rel="alternate" type="application/rss+xml" title="RSS [[][rootname]][where]" href="[rss_href]" />[end]
 </head>
