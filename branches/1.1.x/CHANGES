@@ -1,6 +1,6 @@
 Version 1.1.6 (released ??-???-????)
 
-  * 
+  * add rudimentary support for WSGI-based deployments (issue #397)
 
 Version 1.1.5 (released 29-Mar-2010)
 
