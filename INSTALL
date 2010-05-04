@@ -232,6 +232,22 @@ APACHE CONFIGURATION
    feature may not work because it uses multithreading.  This works fine
    under Apache 2.
    
+   ----------------------------------------
+   METHOD E:  Using mod_wsgi (if installed)
+   ----------------------------------------
+   Copy the Python scripts file from
+   <VIEWVC_INSTALLATION_DIRECTORY>/bin/mod_python/
+   to the directory of your choosing.  Modify httpd.conf with the
+   following directives:
+
+      WSGIScriptAlias /viewvc <VIEWVC_INSTALLATION_DIRECTORY>/bin/wsgi/viewvc.wsgi
+      WSGIScriptAlias /query <VIEWVC_INSTALLATION_DIRECTORY>/bin/wsgi/query.wsgi
+
+   You'll probably also need the following directive because of the
+   not-quite-sanctioned way that ViewVC manipulates Python objects.
+
+      WSGIApplicationGroup %{GLOBAL}
+
 3) Restart Apache.
 
    The commands to do this vary.  "httpd -k restart" and "apache -k
