@@ -213,9 +213,9 @@ APACHE CONFIGURATION
      Options +ExecCGI
      AddHandler cgi-script .cgi
      
-   (Note: For this to work mod_cgi has to be loaded. And for the .htaccess file
+   Note: For this to work mod_cgi has to be loaded.  And for the .htaccess file
    to be effective, "AllowOverride All" or "AllowOverride Options FileInfo"
-   need to have been specified for the directory.)
+   needs to have been specified for the directory.
    
    ------------------------------------------
    METHOD D:  Using mod_python (if installed)
@@ -247,6 +247,9 @@ APACHE CONFIGURATION
    not-quite-sanctioned way that ViewVC manipulates Python objects.
 
       WSGIApplicationGroup %{GLOBAL}
+
+   Note: WSGI support in ViewVC is at this time quite rudimentary,
+   bordering on downright experimental.  Your mileage may vary.
 
 3) Restart Apache.
 
