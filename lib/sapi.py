@@ -33,6 +33,7 @@ server = None
 # that character as-is, and sometimes needs to embed escaped values
 # into HTML attributes.
 def escape(s):
+  s = str(s)
   s = string.replace(s, '&', '&amp;')
   s = string.replace(s, '>', '&gt;')
   s = string.replace(s, '<', '&lt;')
