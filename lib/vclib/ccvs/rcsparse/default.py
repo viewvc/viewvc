@@ -19,7 +19,11 @@ import string
 import common
 
 class _TokenStream:
-  token_term = string.whitespace + ';:'
+  token_term = string.whitespace + ";:"
+  try:
+    token_term = frozenset(token_term)
+  except NameError:
+    pass
 
   # the algorithm is about the same speed for any CHUNK_SIZE chosen.
   # grab a good-sized chunk, but not too large to overwhelm memory.
@@ -44,15 +48,17 @@ class _TokenStream:
     # out more complex solutions.
 
     buf = self.buf
+    lbuf = len(buf)
     idx = self.idx
 
     while 1:
-      if idx == len(buf):
+      if idx == lbuf:
         buf = self.rcsfile.read(self.CHUNK_SIZE)
         if buf == '':
           # signal EOF by returning None as the token
           del self.buf   # so we fail if get() is called again
           return None
+        lbuf = len(buf)
         idx = 0
 
       if buf[idx] not in string.whitespace:
@@ -60,7 +66,7 @@ class _TokenStream:
 
       idx = idx + 1
 
-    if buf[idx] == ';' or buf[idx] == ':':
+    if buf[idx] in ';:':
       self.buf = buf
       self.idx = idx + 1
       return buf[idx]
@@ -70,17 +76,18 @@ class _TokenStream:
       token = ''
       while 1:
         # find token characters in the current buffer
-        while end < len(buf) and buf[end] not in self.token_term:
+        while end < lbuf and buf[end] not in self.token_term:
           end = end + 1
         token = token + buf[idx:end]
 
-        if end < len(buf):
+        if end < lbuf:
           # we stopped before the end, so we have a full token
           idx = end
           break
 
         # we stopped at the end of the buffer, so we may have a partial token
         buf = self.rcsfile.read(self.CHUNK_SIZE)
+        lbuf = len(buf)
         idx = end = 0
 
       self.buf = buf
@@ -94,22 +101,24 @@ class _TokenStream:
     chunks = [ ]
 
     while 1:
-      if idx == len(buf):
+      if idx == lbuf:
         idx = 0
         buf = self.rcsfile.read(self.CHUNK_SIZE)
         if buf == '':
           raise RuntimeError, 'EOF'
+        lbuf = len(buf)
       i = string.find(buf, '@', idx)
       if i == -1:
         chunks.append(buf[idx:])
-        idx = len(buf)
+        idx = lbuf
         continue
-      if i == len(buf) - 1:
+      if i == lbuf - 1:
         chunks.append(buf[idx:i])
         idx = 0
         buf = '@' + self.rcsfile.read(self.CHUNK_SIZE)
         if buf == '@':
           raise RuntimeError, 'EOF'
+        lbuf = len(buf)
         continue
       if buf[i + 1] == '@':
         chunks.append(buf[idx:i+1])
