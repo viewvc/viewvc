@@ -242,6 +242,7 @@ def main(command, repository, revs=[], verbose=0, force=0):
     cfg = viewvc.load_config(CONF_PATHNAME)
     db = cvsdb.ConnectDatabase(cfg)
 
+    # Purge what must be purged.
     if command in ('rebuild', 'purge'):
         if verbose:
             print "Purging commit info for repository root `%s'" % repository
@@ -252,18 +253,24 @@ def main(command, repository, revs=[], verbose=0, force=0):
                 sys.stderr.write("ERROR: " + str(e) + "\n")
                 sys.exit(1)
 
-    repo = SvnRepo(repository)
-    if command == 'rebuild' or (command == 'update' and not revs):
-        for rev in range(repo.rev_max+1):
-            handle_revision(db, command, repo, rev, verbose)
-    elif command == 'update':
-        if revs[0] is None:
-            revs[0] = repo.rev_max
-        if revs[1] is None:
-            revs[1] = repo.rev_max
-        revs.sort()
-        for rev in range(revs[0], revs[1]+1):
-            handle_revision(db, command, repo, rev, verbose, force)
+    # Record what must be recorded.
+    if command in ('rebuild', 'update'):
+        if not os.path.exists(repository):
+            sys.stderr.write('ERROR: could not find repository %s\n'
+                             % (repository))
+            sys.exit(1)
+        repo = SvnRepo(repository)
+        if command == 'rebuild' or (command == 'update' and not revs):
+            for rev in range(repo.rev_max+1):
+                handle_revision(db, command, repo, rev, verbose)
+        elif command == 'update':
+            if revs[0] is None:
+                revs[0] = repo.rev_max
+            if revs[1] is None:
+                revs[1] = repo.rev_max
+            revs.sort()
+            for rev in range(revs[0], revs[1]+1):
+                handle_revision(db, command, repo, rev, verbose, force)
 
 def _rev2int(r):
     if r == 'HEAD':
@@ -330,12 +337,6 @@ if __name__ == '__main__':
         sys.stderr.write('ERROR: unknown command %s\n' % command)
         usage()
 
-    repository = args[2]
-    if not os.path.exists(repository):
-        sys.stderr.write('ERROR: could not find repository %s\n' % args[2])
-        usage()
-    repository = vclib.svn.canonicalize_rootpath(repository)
-
     revs = []
     if len(sys.argv) > 3:
         if command == 'rebuild':
@@ -358,6 +359,7 @@ if __name__ == '__main__':
         rev = None
 
     try:
+        repository = vclib.svn.canonicalize_rootpath(args[2])
         repository = cvsdb.CleanRepository(os.path.abspath(repository))
         main(command, repository, revs, verbose, force)
     except KeyboardInterrupt:
