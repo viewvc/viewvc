@@ -3,6 +3,7 @@ Version 1.1.6 (released ??-???-????)
   * add rudimentary support for WSGI-based deployments (issue #397)
   * fix exception caused by trying to HTML-escape non-string data (issue #454)
   * fix incorrect RSS feed Content-Type header (issue #449)
+  * fix RSS <title> encoding problem (issue #451)
 
 Version 1.1.5 (released 29-Mar-2010)
 
