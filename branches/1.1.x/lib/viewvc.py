@@ -915,7 +915,7 @@ def get_writeready_server_file(request, content_type=None):
   return fp
   
 def generate_page(request, view_name, data, content_type=None):
-  server_fp = get_writeready_server_file(request)
+  server_fp = get_writeready_server_file(request, content_type)
   template = get_view_template(request.cfg, view_name, request.language)
   template.generate(server_fp, data)
 
