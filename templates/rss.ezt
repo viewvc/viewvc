@@ -7,11 +7,11 @@
     <description>[is roottype "svn"]Subversion[else]CVS[end] commits to the[if-any where] [where] directory of the[end] [rootname] repository</description>
 
 	[for commits]<item>
-        <title>[if-any commits.rev][commits.rev]: [end][[commits.author]] [commits.short_log]</title>
+        <title>[if-any commits.rev][commits.rev]: [end][[commits.author]] [format "xml"][commits.short_log][end]</title>
 		[if-any commits.rss_url]<link>[commits.rss_url]</link>[end]
 		<author>[commits.author]</author>
 		<pubDate>[if-any commits.rss_date][commits.rss_date][else](unknown date)[end]</pubDate>
-		<description>&lt;pre&gt;[format "xml"][commits.log][end]&lt;/pre&gt;</description>
+		<description>&#x3C;pre&#x3E;[format "xml"][format "html"][commits.log][end][end]&#x3C;/pre&#x3E;</description>
     </item>[end]
 </channel>	
 </rss>
