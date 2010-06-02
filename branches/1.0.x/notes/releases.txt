@@ -44,9 +44,7 @@ numbers, and not literal):
 
 8.  Update your working copy to HEAD, and tag the release:
 
-       svn update
-       svn cp -m "Tag the X.Y.Z final release." . \
-                 http://viewvc.tigris.org/svn/viewvc/tags/X.Y.Z
+       svn up && svn cp -m "Tag the X.Y.Z final release." . ^/tags/X.Y.Z
 
 9.  Go into an empty directory and run the 'make-release' script:
 
