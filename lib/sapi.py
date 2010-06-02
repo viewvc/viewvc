@@ -211,6 +211,9 @@ class WsgiServer(Server):
     global server
     server = self
 
+    global cgi
+    import cgi
+
   def addheader(self, name, value):
     self._headers.append((name, value))
 
@@ -229,6 +232,9 @@ class WsgiServer(Server):
     self.addheader('Location', url)
     self.header(status='301 Moved')
     self._wsgi_write('This document is located <a href="%s">here</a>.' % url)
+
+  def escape(self, s, quote = None):
+    return cgi.escape(s, quote)
 
   def getenv(self, name, value=None):
     return self._environ.get(name, value)
