@@ -79,7 +79,6 @@ numbers, and not literal):
     (and possibly, minor or major) release.  (For the Milestone sort
     key, use a packed integer XXYYZZ:  1.0.3 == 10003, 2.11.4 == 21104.)
 
-15. Write an announcement explaining all the cool new features and
-    post it to the announce@ list, to the project's News area, and to
-    other places interested in this sort of stuff, such as Freshmeat
-    (http://www.freshmeat.net).
+15. Send to the announce@ list a message explaining all the cool new
+    features, and post similar announcements to other places interested
+    in this sort of stuff, such as Freshmeat (http://www.freshmeat.net).
