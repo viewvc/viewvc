@@ -1,4 +1,4 @@
-Version 1.0.12 (released ??-???-????)
+Version 1.0.12 (released 02-Jun-2010)
 
   * fix exception caused by trying to HTML-escape non-string data (issue #454)
 
