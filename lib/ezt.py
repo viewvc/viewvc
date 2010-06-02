@@ -189,10 +189,9 @@ Directives
    templates are escaped before they are put into the output stream. It
    has no effect on the literal text of the templates, only the output
    from [QUAL_NAME ...] directives. STRING can be one of "raw" "html" 
-   "xml" or "uri". The "raw" mode leaves the output unaltered; the "html"
-   and "xml" modes escape special characters using entity escapes (like
-   &quot; and &gt;); the "uri" mode escapes characters using hexadecimal
-   escape sequences (like %20 and %7e).
+   or "xml". The "raw" mode leaves the output unaltered. The "html" and
+   "xml" modes escape special characters using entity escapes (like
+   &quot; and &gt;)
 
    [format CALLBACK]
  
@@ -236,7 +235,6 @@ import re
 from types import StringType, IntType, FloatType, LongType, TupleType
 import os
 import cgi
-import urllib
 try:
   import cStringIO
 except ImportError:
@@ -249,7 +247,6 @@ except ImportError:
 FORMAT_RAW = 'raw'
 FORMAT_HTML = 'html'
 FORMAT_XML = 'xml'
-FORMAT_URI = 'uri'
 
 #
 # This regular expression matches three alternatives:
@@ -347,7 +344,7 @@ class Template:
       for_names = [ ]
 
     if base_format:
-      program.append((self._cmd_format, _formatters[base_format]))
+      program.append((self._cmd_format, _printers[base_format]))
 
     for i in range(len(parts)):
       piece = parts[i]
@@ -405,13 +402,13 @@ class Template:
           elif cmd == 'format':
             if args[1][0]:
               # argument is a variable reference
-              formatter = args[1]
+              printer = args[1]
             else:
-              # argument is a string constant referring to built-in formatter
-              formatter = _formatters.get(args[1][1])
-              if not formatter:
+              # argument is a string constant referring to built-in printer
+              printer = _printers.get(args[1][1])
+              if not printer:
                 raise UnknownFormatConstantError(str(args[1:]))
-            program.append((self._cmd_format, formatter))
+            program.append((self._cmd_format, printer))
 
           # remember the cmd, current pos, args, and a section placeholder
           stack.append([cmd, len(program), args[1:], None])
@@ -460,18 +457,15 @@ class Template:
   def _cmd_print(self, valrefs, ctx):
     value = _get_value(valrefs[0], ctx)
     args = map(lambda valref, ctx=ctx: _get_value(valref, ctx), valrefs[1:])
-    try:
-      _write_value(value, args, ctx)
-    except TypeError:
-      raise Exception("Unprintable value type for '%s'" % (str(valrefs[0][0])))
+    _write_value(value, args, ctx)
 
-  def _cmd_format(self, formatter, ctx):
-    if type(formatter) is TupleType:
-      formatter = _get_value(formatter, ctx)
-    ctx.formatters.append(formatter)
+  def _cmd_format(self, printer, ctx):
+    if type(printer) is TupleType:
+      printer = _get_value(printer, ctx)
+    ctx.printers.append(printer)
 
   def _cmd_end_format(self, valref, ctx):
-    ctx.formatters.pop()
+    ctx.printers.pop()
 
   def _cmd_include(self, (valref, reader), ctx):
     fname = _get_value(valref, ctx)
@@ -525,8 +519,7 @@ class Template:
     ((valref,), unused, section) = args
     list = _get_value(valref, ctx)
     if isinstance(list, StringType):
-      raise NeedSequenceError("The value of '%s' is not a sequence"
-                              % (valref[0]))
+      raise NeedSequenceError()
     refname = valref[0]
     ctx.for_iterators[refname] = iterator = _iter(list)
     for unused in iterator:
@@ -637,23 +630,14 @@ def _get_value((refname, start, rest), ctx):
   # string or a sequence
   return ob
 
-def _print_formatted(formatters, ctx, chunk):
-  # print chunk to ctx.fp after running it sequentially through formatters
-  for formatter in formatters:
-    chunk = formatter(chunk)
-  ctx.fp.write(chunk)
-  
 def _write_value(value, args, ctx):
   # value is a callback function, generates its own output
   if callable(value):
     apply(value, [ctx] + list(args))
     return
 
-  # squirrel away formatters in case one of them recursively calls
-  # _write_value() -- we'll use them (in reverse order) to format our
-  # output.
-  formatters = ctx.formatters[:]
-  formatters.reverse()
+  # pop printer in case it recursively calls _write_value
+  printer = ctx.printers.pop()
 
   try:
     # if the value has a 'read' attribute, then it is a stream: copy it
@@ -662,7 +646,7 @@ def _write_value(value, args, ctx):
         chunk = value.read(16384)
         if not chunk:
           break
-        _print_formatted(formatters, ctx, chunk)
+        printer(ctx, chunk)
 
     # value is a substitution pattern
     elif args:
@@ -675,58 +659,21 @@ def _write_value(value, args, ctx):
             piece = args[idx]
           else:
             piece = '<undef>'
-        _print_formatted(formatters, ctx, piece)
+        printer(ctx, piece)
 
     # plain old value, write to output
     else:
-      _print_formatted(formatters, ctx, value)
+      printer(ctx, value)
 
   finally:
-    # restore our formatters
-    formatters.reverse()
-    ctx.formatters = formatters
-
-
-class TemplateData:
-  """A custom dictionary-like object that allows one-time definition
-  of keys, and only value fetches and changes, and key deletions,
-  thereafter.
-
-  EZT doesn't require the use of this special class -- a normal
-  dict-type data dictionary works fine.  But use of this class will
-  assist those who want the data sent to their templates to have a
-  consistent set of keys."""
-
-  def __init__(self, initial_data={}):
-    self._items = initial_data
-    
-  def __getitem__(self, key):
-    return self._items.__getitem__(key)
-
-  def __setitem__(self, key, item):
-    assert self._items.has_key(key)
-    return self._items.__setitem__(key, item)
-
-  def __delitem__(self, key):
-    return self._items.__delitem__(key)
-
-  def keys(self):
-    return self._items.keys()
-
-  def merge(self, template_data):
-    """Merge the data in TemplataData instance TEMPLATA_DATA into this
-    instance.  Avoid the temptation to use this conditionally in your
-    code -- it rather defeats the purpose of this class."""
-    
-    assert isinstance(template_data, TemplateData)
-    self._items.update(template_data._items)
+    ctx.printers.append(printer)
 
 
 class Context:
   """A container for the execution context"""
   def __init__(self, fp):
     self.fp = fp
-    self.formatters = []
+    self.printers = []
   def write(self, value, args=()):
     _write_value(value, args, self)
 
@@ -839,26 +786,16 @@ class BaseUnavailableError(EZTException):
 class UnknownFormatConstantError(EZTException):
   """The format specifier is an unknown value."""
 
-def _raw_formatter(s):
-  return s
+def _raw_printer(ctx, s):
+  ctx.fp.write(s)
+  
+def _html_printer(ctx, s):
+  ctx.fp.write(cgi.escape(s))
 
-def _html_formatter(s):
-  return cgi.escape(s)
-
-def _xml_formatter(s):
-  s = s.replace('&', '&#x26;')
-  s = s.replace('<', '&#x3C;')
-  s = s.replace('>', '&#x3E;')
-  return s
-
-def _uri_formatter(s):
-  return urllib.quote(s)
-
-_formatters = {
-  FORMAT_RAW  : _raw_formatter,
-  FORMAT_HTML : _html_formatter,
-  FORMAT_XML  : _xml_formatter,
-  FORMAT_URI  : _uri_formatter,
+_printers = {
+  FORMAT_RAW  : _raw_printer,
+  FORMAT_HTML : _html_printer,
+  FORMAT_XML  : _html_printer,
 }
 
 # --- standard test environment ---

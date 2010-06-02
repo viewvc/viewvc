@@ -24,34 +24,15 @@
 [is roottype "svn"]
 <tr>
   <td>Directory revision:</td>
-  <td><a href="[tree_rev_href]" title="Revision [tree_rev]">[tree_rev]</a>[if-any youngest_rev] (of <a href="[youngest_rev_href]" title="Revision [youngest_rev]">[youngest_rev]</a>)[end]</td>
+  <td><a href="[tree_rev_href]">[tree_rev]</a>[if-any youngest_rev] (of <a href="[youngest_rev_href]">[youngest_rev]</a>)[end]</td>
 </tr>
 [end]
 <tr>
   <td>Sticky [is roottype "cvs"]Tag[else]Revision[end]:</td>
   <td>[include "pathrev_form.ezt"]</td>
 </tr>
-
-[if-any search_re_action]
-<tr>
-  <td>Filter files by content:</td>
-  <td><form method="get" action="[search_re_action]" style="display: inline;">
-      <div style="display: inline;">
-      [for search_re_hidden_values]<input type="hidden" name="[search_re_hidden_values.name]" value="[search_re_hidden_values.value]"/>[end]
-      <input type="text" name="search" value="[search_re]" />
-      <input type="submit" value="Search Regexp" />
-      </div>
-     </form>
-     [if-any search_re]
-     <form method="get" action="[search_re_action]" style="display: inline;">
-     <div style="display: inline;">
-     [for search_re_hidden_values]<input type="hidden" name="[search_re_hidden_values.name]" value="[search_re_hidden_values.value]"/>[end]
-     <input type="submit" value="Show All Files" />
-     </div>
-     </form>
-     [end]
-  </td>
-</tr>
+[if-any search_re]
+<tr><td>Current search:</td><td><strong>[search_re]</strong></td></tr>
 [end]
 
 [if-any queryform_href]
@@ -60,25 +41,24 @@
   <td><a href="[queryform_href]">Query revision history</a></td>
 </tr>
 [end]
-
 </table>
-
-[is picklist_len "0"]
-[else]
-  [is picklist_len "1"]
+  [is cfg.options.use_pagesize "0"]
   [else]
-    <form method="get" action="[dir_paging_action]">
-      [for dir_paging_hidden_values]<input type="hidden" name="[dir_paging_hidden_values.name]" value="[dir_paging_hidden_values.value]"/>[end]
-      <input type="submit" value="Go to:" />
-      <select name="dir_pagestart"  onchange="submit()">
-        [for picklist]
-          <option [is picklist.count dir_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] to [picklist.end]</option>
-        [end]
-      </select>
-    </form>
+    [is picklist_len "1"]
+    [else]
+      <form method="get" action="[dir_paging_action]">
+        [dir_paging_hidden_values]
+        <input type="submit" value="Go to:" />
+        <select name="dir_pagestart"  onchange="submit()">
+          [for picklist]
+            <option [is picklist.count dir_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] to [picklist.end]</option>
+          [end]
+        </select>
+      </form>
+    [end]
   [end]
-[end]
 
 <p><a name="dirlist"></a></p>
+
 <hr />
 
