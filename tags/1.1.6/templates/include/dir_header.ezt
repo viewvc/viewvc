@@ -1,0 +1,84 @@
+[# setup page definitions]
+  [define page_title]Index of /[where][end]
+  [define help_href][docroot]/help_[if-any where]dir[else]root[end]view.html[end]
+[# end]
+
+[include "header.ezt" "directory"]
+
+[if-any where][else]
+  <!-- you may insert repository access instructions here -->
+[end]
+
+<table class="auto">
+<tr><td>Files shown:</td><td><strong>[files_shown]</strong>
+[is num_dead "0"]
+[else]
+  [if-any attic_showing]
+    (<a href="[hide_attic_href]">Hide [num_dead] dead files</a>)
+  [else]
+    (<a href="[show_attic_href]">Show [num_dead] dead files</a>)
+  [end]
+[end]
+</td></tr>
+
+[is roottype "svn"]
+<tr>
+  <td>Directory revision:</td>
+  <td><a href="[tree_rev_href]" title="Revision [tree_rev]">[tree_rev]</a>[if-any youngest_rev] (of <a href="[youngest_rev_href]" title="Revision [youngest_rev]">[youngest_rev]</a>)[end]</td>
+</tr>
+[end]
+<tr>
+  <td>Sticky [is roottype "cvs"]Tag[else]Revision[end]:</td>
+  <td>[include "pathrev_form.ezt"]</td>
+</tr>
+
+[if-any search_re_action]
+<tr>
+  <td>Filter files by content:</td>
+  <td><form method="get" action="[search_re_action]" style="display: inline;">
+      <div style="display: inline;">
+      [for search_re_hidden_values]<input type="hidden" name="[search_re_hidden_values.name]" value="[search_re_hidden_values.value]"/>[end]
+      <input type="text" name="search" value="[search_re]" />
+      <input type="submit" value="Search Regexp" />
+      </div>
+     </form>
+     [if-any search_re]
+     <form method="get" action="[search_re_action]" style="display: inline;">
+     <div style="display: inline;">
+     [for search_re_hidden_values]<input type="hidden" name="[search_re_hidden_values.name]" value="[search_re_hidden_values.value]"/>[end]
+     <input type="submit" value="Show All Files" />
+     </div>
+     </form>
+     [end]
+  </td>
+</tr>
+[end]
+
+[if-any queryform_href]
+<tr>
+  <td>Query:</td>
+  <td><a href="[queryform_href]">Query revision history</a></td>
+</tr>
+[end]
+
+</table>
+
+[is picklist_len "0"]
+[else]
+  [is picklist_len "1"]
+  [else]
+    <form method="get" action="[dir_paging_action]">
+      [for dir_paging_hidden_values]<input type="hidden" name="[dir_paging_hidden_values.name]" value="[dir_paging_hidden_values.value]"/>[end]
+      <input type="submit" value="Go to:" />
+      <select name="dir_pagestart"  onchange="submit()">
+        [for picklist]
+          <option [is picklist.count dir_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] to [picklist.end]</option>
+        [end]
+      </select>
+    </form>
+  [end]
+[end]
+
+<p><a name="dirlist"></a></p>
+<hr />
+
