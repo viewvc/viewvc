@@ -273,7 +273,8 @@ class Request:
         self.roottype = 'cvs'
       else:
         raise debug.ViewVCException(
-          'The root "%s" has an unknown type (%s).' % (self.rootname, type),
+          'The root "%s" has an unknown type ("%s").  Expected "cvs" or "svn".'
+          % (self.rootname, type),
           "500 Internal Server Error")
       
     # If this is using an old-style 'rev' parameter, redirect to new hotness.
@@ -4279,8 +4280,8 @@ def expand_root_parents(cfg):
     pos = string.rfind(pp, ':')
     if pos < 0:
       raise debug.ViewVCException(
-        "The path '%s' in 'root_parents' does not include a "
-        "repository type." % (pp))
+        'The path "%s" in "root_parents" does not include a '
+        'repository type.  Expected "cvs" or "svn".' % (pp))
 
     repo_type = string.strip(pp[pos+1:])
     pp = os.path.normpath(string.strip(pp[:pos]))
@@ -4295,8 +4296,9 @@ def expand_root_parents(cfg):
       cfg.general.svn_roots.update(roots)
     else:
       raise debug.ViewVCException(
-        "The path '%s' in 'root_parents' has an unrecognized "
-        "repository type." % (pp))
+        'The path "%s" in "root_parents" has an unrecognized '
+        'repository type ("%s").  Expected "cvs" or "svn".'
+        % (pp, repo_type))
 
 def find_root_in_parents(cfg, rootname, roottype):
   """Return the rootpath for configured ROOTNAME of ROOTTYPE."""
