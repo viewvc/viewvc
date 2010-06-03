@@ -106,27 +106,47 @@
 ##
 #svn_roots =
 
-## root_parents:  Specifies a list of directories in which any number of
-## repositories may reside.  Rather than force you to add a new entry
-## to 'cvs_roots' or 'svn_roots' each time you create a new repository,
-## ViewVC rewards you for organising all your repositories under a few
-## parent directories by allowing you to simply specifiy just those
-## parent directories.  ViewVC will then notice each repository in that
-## directory as a new root whose name is the subdirectory of the parent
-## path in which that repository lives.
+## root_parents: Specifies a list of directories under which any
+## number of repositories may reside.  You can specify multiple root
+## parents separated by commas or new lines, each of which is of the
+## form "path: type" (where type is either "cvs" or "svn").
 ##
-## You can specify multiple parent paths separated by commas or new lines.
+## Rather than force you to add a new entry to 'cvs_roots' or
+## 'svn_roots' each time you create a new repository, ViewVC rewards
+## you for organizing all your repositories under a few parent
+## directories by allowing you to simply tell it about those parent
+## directories.  ViewVC will then notice each repository of the
+## specified type in that directory as a root whose name is the
+## subdirectory in which that repository lives.
 ##
-## WARNING: these names can, of course, clash with names you have
-## defined in your cvs_roots or svn_roots configuration items.  If this
-## occurs, you can either rename the offending repository on disk, or
-## grant new names to the clashing item in cvs_roots or svn_roots.
-## Each parent path is processed sequentially, so repositories under
-## later parent paths may override earlier ones.
+## For example, if you have three Subversion repositories located at
+## /opt/svn/projects, /opt/svn/websites, and /opt/svn/devstuff, you
+## could list them individually in svn_roots like so:
+##
+##    svn_roots = projects: /opt/svn/projects,
+##                websites: /opt/svn/websites,
+##                devstuff: /opt/svn/devstuff
+##
+## or you could instead use the root_parents configuration option:
+##
+##    root_parents = /opt/svn: svn
+##
+## The benefit of this latter approach is that, as you add new
+## repositories to your /opt/svn directory, they automatically become
+## available for display in ViewVC without additional configuration.
+##
+## WARNING: the root names derived for repositories configured via the
+## root_parents option can, of course, clash with names you have
+## defined in your cvs_roots or svn_roots configuration items.  If
+## this occurs, you can either rename the offending repository on
+## disk, or grant new names to the clashing item in cvs_roots or
+## svn_roots.  Each parent path is processed sequentially, so the
+## names of repositories under later parent paths may override earlier
+## ones.
 ##
 ## Example:
-## root_parents = /opt/svn : svn,
-##                /opt/cvs : cvs
+## root_parents = /opt/svn: svn,
+##                /opt/cvs: cvs
 ##
 #root_parents =
 
