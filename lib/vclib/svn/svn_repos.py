@@ -114,6 +114,25 @@ def _rootpath2url(rootpath, path):
   return 'file://' + string.join([rootpath, path], "/")
 
 
+# Given a dictionary REVPROPS of revision properties, pull special
+# ones out of them and return a 4-tuple containing the log message,
+# the author, the date (converted from the date string property), and
+# a dictionary of any/all other revprops.
+def _split_revprops(revprops):
+  special_props = []
+  for prop in core.SVN_PROP_REVISION_LOG, \
+              core.SVN_PROP_REVISION_AUTHOR, \
+              core.SVN_PROP_REVISION_DATE:
+    if revprops.has_key(prop):
+      special_props.append(revprops[prop])
+      del(revprops[prop])
+    else:
+      special_props.append(None)
+  msg, author, datestr = tuple(special_props)
+  date = _datestr_to_date(datestr)
+  return msg, author, date, revprops  
+
+
 def _datestr_to_date(datestr):
   try:
     return core.svn_time_from_cstring(datestr) / 1000000
@@ -224,7 +243,7 @@ def _log_helper(svnrepos, path, rev, lockinfo):
   copyfrom_rev, copyfrom_path = fs.copied_from(rev_root, path)
 
   # Assemble our LogEntry
-  date, author, msg, changes = svnrepos._revinfo(rev)
+  date, author, msg, revprops, changes = svnrepos._revinfo(rev)
   if fs.is_file(rev_root, path):
     size = fs.file_length(rev_root, path)
   else:
@@ -455,7 +474,7 @@ class LocalSubversionRepository(vclib.Repository):
         continue
       path = self._getpath(entry_path_parts)
       entry_rev = _get_last_history_rev(fsroot, path)
-      date, author, msg, changes = self._revinfo(entry_rev)
+      date, author, msg, revprops, changes = self._revinfo(entry_rev)
       entry.rev = str(entry_rev)
       entry.date = date
       entry.author = author
@@ -560,16 +579,13 @@ class LocalSubversionRepository(vclib.Repository):
       # Get the revision property info.  (Would use
       # editor.get_root_props(), but something is broken there...)
       revprops = fs.revision_proplist(self.fs_ptr, rev)
-      msg = revprops.get(core.SVN_PROP_REVISION_LOG)
-      author = revprops.get(core.SVN_PROP_REVISION_AUTHOR)
-      datestr = revprops.get(core.SVN_PROP_REVISION_DATE)
-      date = _datestr_to_date(datestr)
+      msg, author, date, revprops = _split_revprops(revprops)
   
       # Optimization: If our caller doesn't care about the changed
       # paths, and we don't need them to do authz determinations, let's
       # get outta here.
       if self.auth is None and not include_changed_paths:
-        return date, author, msg, None
+        return date, author, msg, revprops, None
   
       # If we get here, then we either need the changed paths because we
       # were asked for them, or we need them to do authorization checks.
@@ -644,7 +660,7 @@ class LocalSubversionRepository(vclib.Repository):
         # here for authz reasons only.  That means the minute we've
         # found both a readable and an unreadable path, we can bail out.
         if (not include_changed_paths) and found_readable and found_unreadable:
-          return date, author, None, None
+          return date, author, None, None, None
         
       # Okay, we've process all our paths.  Let's filter our metadata,
       # and return the requested data.
@@ -654,9 +670,9 @@ class LocalSubversionRepository(vclib.Repository):
           author = None
           date = None
       if include_changed_paths:
-        return date, author, msg, changedpaths.values()
+        return date, author, msg, revprops, changedpaths.values()
       else:
-        return date, author, msg, None
+        return date, author, msg, revprops, None
 
     # Consult the revinfo cache first.  If we don't have cached info,
     # or our caller wants changed paths and we don't have those for
@@ -664,10 +680,10 @@ class LocalSubversionRepository(vclib.Repository):
     rev = self._getrev(rev)
     cached_info = self._revinfo_cache.get(rev)
     if not cached_info \
-       or (include_changed_paths and cached_info[3] is None):
+       or (include_changed_paths and cached_info[4] is None):
       cached_info = _revinfo_helper(rev, include_changed_paths)
       self._revinfo_cache[rev] = cached_info
-    return cached_info[0], cached_info[1], cached_info[2], cached_info[3]
+    return tuple(cached_info)
   
   def revinfo(self, rev):
     return self._revinfo(rev, 1) 
@@ -685,7 +701,7 @@ class LocalSubversionRepository(vclib.Repository):
     args = vclib._diff_args(type, options)
 
     def _date_from_rev(rev):
-      date, author, msg, changes = self._revinfo(rev)
+      date, author, msg, revprops, changes = self._revinfo(rev)
       return date
 
     try:
