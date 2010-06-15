@@ -1622,7 +1622,6 @@ def get_itemprops(request, path_parts, rev):
   propnames = itemprops.keys()
   propnames.sort()
   props = []
-  has_binary_props = 0
   for name in propnames:
     value = format_log(itemprops[name], request.cfg)
     undisplayable = ezt.boolean(0)
@@ -3402,7 +3401,7 @@ def download_tarball(request):
 
 
 def view_revision(request):
-  if request.roottype == "cvs":
+  if request.roottype != "svn":
     raise debug.ViewVCException("Revision view not supported for CVS "
                                 "repositories at this time.",
                                 "400 Bad Request")
@@ -3421,9 +3420,29 @@ def view_revision(request):
     return
 
   # Fetch the revision information.
-  date, author, msg, changes = request.repos.revinfo(rev)
+  date, author, msg, revprops, changes = request.repos.revinfo(rev)
   date_str = make_time_string(date, cfg)
 
+  # Fix up the revprops list (rather like get_itemprops()).
+  propnames = revprops.keys()
+  propnames.sort()
+  props = []
+  for name in propnames:
+    value = format_log(revprops[name], request.cfg)
+    undisplayable = ezt.boolean(0)
+    # skip non-utf8 property names
+    try:
+      unicode(name, 'utf8')
+    except:
+      continue
+    # note non-utf8 property values
+    try:
+      unicode(value, 'utf8')
+    except:
+      value = None
+      undisplayable = ezt.boolean(1)
+    props.append(_item(name=name, value=value, undisplayable=undisplayable))
+  
   # Sort the changes list by path.
   def changes_sort_by_path(a, b):
     return cmp(a.path_parts, b.path_parts)
@@ -3539,6 +3558,7 @@ def view_revision(request):
     'author' : author,
     'date' : date_str,
     'log' : format_log(msg, cfg),
+    'properties' : props,
     'ago' : date is not None and html_time(request, date, 1) or None,
     'changes' : changes,
     'prev_href' : prev_rev_href,
