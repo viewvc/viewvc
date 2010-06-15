@@ -6,6 +6,7 @@
 [include "include/header.ezt" "revision"]
 
 <hr />
+
 <form method="get" action="[jump_rev_action]">
 <table cellspacing="1" cellpadding="2" style="width: auto;">
   <tr align="left">
@@ -42,7 +43,7 @@
 
 <hr />
 
-<p><strong>Changed paths:</strong></p>
+<h2>Changed paths</h2>
 
 <table cellspacing="1" cellpadding="2">
   <thead>
@@ -77,4 +78,5 @@
   </tbody>
 </table>
 
+[include "include/props.ezt"]
 [include "include/footer.ezt"]
