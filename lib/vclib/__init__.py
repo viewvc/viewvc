@@ -180,8 +180,10 @@ class Repository:
 
     rev is the revision of the item to return information about
     
-    Return value is a 4-tuple containing the date, author, log
-    message, and a list of ChangedPath items representing paths changed
+    Return value is a 5-tuple containing: the date, author, log
+    message, a list of ChangedPath items representing paths changed,
+    and a dictionary mapping property names to property values for
+    properties stored on an item.
 
     Raise vclib.UnsupportedFeature if the version control system
     doesn't support a global revision concept.
