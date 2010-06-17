@@ -727,6 +727,8 @@ class LocalSubversionRepository(vclib.Repository):
     if rev is None or rev == 'HEAD':
       return self.youngest
     try:
+      if type(rev) == type('') and rev[0] == 'r':
+        rev = rev[1:]
       rev = int(rev)
     except ValueError:
       raise vclib.InvalidRevision(rev)
