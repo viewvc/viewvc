@@ -322,7 +322,7 @@ class Config:
     assert(self.root_options_overlayed == 0)
 
     if not self.conf_path:
-      return None
+      return None, {}
 
     # Figure out the authorizer by searching first for a per-root
     # override, then falling back to the base/vhost configuration.
