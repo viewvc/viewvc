@@ -85,31 +85,57 @@ class StandaloneServer(sapi.CgiServer):
       self.handler.end_headers()
 
 
+class NotViewVCLocationException(Exception):
+  """The request location was not aimed at ViewVC."""
+  pass
+
+
 class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
   """Custom HTTP request handler for ViewVC."""
   
   def do_GET(self):
     """Serve a GET request."""
-    if not self.path or self.path == "/":
-      self.redirect()
-    elif self.is_viewvc():
-      try:
-        self.run_viewvc()
-      except IOError:
-        # ignore IOError: [Errno 32] Broken pipe
-        pass
-    else:
-      self.send_error(404)
+    self.handle_request('GET')
 
   def do_POST(self):
     """Serve a POST request."""
-    if self.is_viewvc():
-      self.run_viewvc()
-    else:
-      self.send_error(501, "Can only POST to %s" % (options.script_alias))
+    self.handle_request('POST')
 
+  def handle_request(self, method):
+    """Handle a request of type METHOD."""
+    try:
+      self.run_viewvc()
+    except NotViewVCLocationException:
+      # If the request was aimed at the server root, but there's a
+      # non-empty script_alias, automatically redirect to the
+      # script_alias.  Otherwise, just return a 404 and shrug.
+      if (not self.path or self.path == "/") and options.script_alias:
+        new_url = self.server.url + options.script_alias + '/'
+        self.send_response(301, "Moved Permanently")
+        self.send_header("Content-type", "text/html")
+        self.send_header("Location", new_url)
+        self.end_headers()
+        self.wfile.write("""<html>
+<head>
+<meta http-equiv="refresh" content="10; url=%s" />
+<title>Moved Temporarily</title>
+</head>
+<body>
+<h1>Redirecting to ViewVC</h1>
+<p>You will be automatically redirected to <a href="%s">ViewVC</a>.
+   If this doesn't work, please click on the link above.</p>
+</body>
+</html>
+""" % (new_url, new_url))
+      else:
+        self.send_error(404)
+    except IOError: # ignore IOError: [Errno 32] Broken pipe
+      pass
+      
   def is_viewvc(self):
     """Check whether self.path is, or is a child of, the ScriptAlias"""
+    if not options.script_alias:
+      return 1
     if self.path == '/' + options.script_alias:
       return 1
     alias_len = len(options.script_alias)
@@ -119,33 +145,17 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       return 1
     return 0
 
-  def redirect(self):
-    """Redirect the browser to the ViewVC URL."""
-    new_url = self.server.url + options.script_alias + '/'
-    self.send_response(301, "Moved (redirection follows)")
-    self.send_header("Content-type", "text/html")
-    self.send_header("Location", new_url)
-    self.end_headers()
-    self.wfile.write("""<html>
-<head>
-<meta http-equiv="refresh" content="1; URL=%s">
-</head>
-<body>
-<h1>Redirection to <a href="%s">ViewVC</a></h1>
-Wait a second.   You will be automatically redirected to <b>ViewVC</b>.
-If this doesn't work, please click on the link above.
-</body>
-</html>
-""" % tuple([new_url]*2))
-
   def run_viewvc(self):
     """Run ViewVC to field a single request."""
 
     ### Much of this is adapter from Python's standard library
     ### module CGIHTTPServer.
-      
-    scriptname = '/' + options.script_alias
-    assert string.find(self.path, scriptname) == 0
+
+    if not self.is_viewvc():
+      raise NotViewVCLocationException()
+    
+    scriptname = options.script_alias and '/' + options.script_alias or ''
+
     viewvc_url = self.server.url[:-1] + scriptname
     rest = self.path[len(scriptname):]
     i = string.rfind(rest, '?')
