@@ -54,20 +54,19 @@ import compat; compat.for_standalone()
 
 
 class Options:
-  port = 49152 # default TCP/IP port used for the server
-  start_gui = 0 # No GUI unless requested.
-  daemon = 0 # stay in the foreground by default
+  port = 49152      # default TCP/IP port used for the server
+  start_gui = 0     # No GUI unless requested.
+  daemon = 0        # stay in the foreground by default
   repositories = {} # use default repositories specified in config
-  if sys.platform == 'mac':
-    host = '127.0.0.1' 
-  else:
-    host = 'localhost'
+  host = sys.platform == 'mac' and '127.0.0.1' or 'localhost'
   script_alias = 'viewvc'
   config_file = None
 
-# --- web browser interface: ----------------------------------------------
 
 class StandaloneServer(sapi.CgiServer):
+  """Custom sapi interface that uses a BaseHTTPRequestHandler HANDLER
+  to generate output."""
+  
   def __init__(self, handler):
     sapi.CgiServer.__init__(self, inheritableOut = sys.platform != "win32")
     self.handler = handler
@@ -91,54 +90,50 @@ class StandaloneServer(sapi.CgiServer):
       for (name, value) in self.headers:
         self.handler.send_header(name, value)
       self.handler.end_headers()
-            
 
-def serve(host, port, callback=None):
-  """Start an HTTP server for HOST on PORT.  Call CALLBACK function
-  when the server is ready to serve."""
 
-  class ViewVC_Handler(BaseHTTPServer.BaseHTTPRequestHandler):
-     
-    def do_GET(self):
-      """Serve a GET request."""
-      if not self.path or self.path == "/":
-        self.redirect()
-      elif self.is_viewvc():
-        try:
-          self.run_viewvc()
-        except IOError:
-          # ignore IOError: [Errno 32] Broken pipe
-          pass
-      else:
-        self.send_error(404)
-
-    def do_POST(self):
-      """Serve a POST request."""
-      if self.is_viewvc():
+class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+  """Custom HTTP request handler for ViewVC."""
+  
+  def do_GET(self):
+    """Serve a GET request."""
+    if not self.path or self.path == "/":
+      self.redirect()
+    elif self.is_viewvc():
+      try:
         self.run_viewvc()
-      else:
-        self.send_error(501, "Can only POST to %s"
-                % (options.script_alias))
+      except IOError:
+        # ignore IOError: [Errno 32] Broken pipe
+        pass
+    else:
+      self.send_error(404)
 
-    def is_viewvc(self):
-      """Check whether self.path is, or is a child of, the ScriptAlias"""
-      if self.path == '/' + options.script_alias:
-        return 1
-      alias_len = len(options.script_alias)
-      if self.path[:alias_len+2] == '/' + options.script_alias + '/':
-        return 1
-      if self.path[:alias_len+2] == '/' + options.script_alias + '?':
-        return 1
-      return 0
+  def do_POST(self):
+    """Serve a POST request."""
+    if self.is_viewvc():
+      self.run_viewvc()
+    else:
+      self.send_error(501, "Can only POST to %s" % (options.script_alias))
 
-    def redirect(self):
-      """Redirect the browser to the ViewVC URL."""
-      new_url = self.server.url + options.script_alias + '/'
-      self.send_response(301, "Moved (redirection follows)")
-      self.send_header("Content-type", "text/html")
-      self.send_header("Location", new_url)
-      self.end_headers()
-      self.wfile.write("""<html>
+  def is_viewvc(self):
+    """Check whether self.path is, or is a child of, the ScriptAlias"""
+    if self.path == '/' + options.script_alias:
+      return 1
+    alias_len = len(options.script_alias)
+    if self.path[:alias_len+2] == '/' + options.script_alias + '/':
+      return 1
+    if self.path[:alias_len+2] == '/' + options.script_alias + '?':
+      return 1
+    return 0
+
+  def redirect(self):
+    """Redirect the browser to the ViewVC URL."""
+    new_url = self.server.url + options.script_alias + '/'
+    self.send_response(301, "Moved (redirection follows)")
+    self.send_header("Content-type", "text/html")
+    self.send_header("Location", new_url)
+    self.end_headers()
+    self.wfile.write("""<html>
 <head>
 <meta http-equiv="refresh" content="1; URL=%s">
 </head>
@@ -150,144 +145,150 @@ If this doesn't work, please click on the link above.
 </html>
 """ % tuple([new_url]*2))
 
-    def run_viewvc(self):
-      """Run ViewVC to field a single request."""
+  def run_viewvc(self):
+    """Run ViewVC to field a single request."""
 
-      ### Much of this is adapter from Python's standard library
-      ### module CGIHTTPServer.
+    ### Much of this is adapter from Python's standard library
+    ### module CGIHTTPServer.
       
-      scriptname = '/' + options.script_alias
-      assert string.find(self.path, scriptname) == 0
-      viewvc_url = self.server.url[:-1] + scriptname
-      rest = self.path[len(scriptname):]
-      i = string.rfind(rest, '?')
-      if i >= 0:
-        rest, query = rest[:i], rest[i+1:]
+    scriptname = '/' + options.script_alias
+    assert string.find(self.path, scriptname) == 0
+    viewvc_url = self.server.url[:-1] + scriptname
+    rest = self.path[len(scriptname):]
+    i = string.rfind(rest, '?')
+    if i >= 0:
+      rest, query = rest[:i], rest[i+1:]
+    else:
+      query = ''
+
+    env = os.environ
+
+    # Since we're going to modify the env in the parent, provide empty
+    # values to override previously set values
+    for k in env.keys():
+      if k[:5] == 'HTTP_':
+        del env[k]
+    for k in ('QUERY_STRING', 'REMOTE_HOST', 'CONTENT_LENGTH',
+              'HTTP_USER_AGENT', 'HTTP_COOKIE'):
+      if env.has_key(k): 
+        env[k] = ""
+
+    # XXX Much of the following could be prepared ahead of time!
+    env['SERVER_SOFTWARE'] = self.version_string()
+    env['SERVER_NAME'] = self.server.server_name
+    env['GATEWAY_INTERFACE'] = 'CGI/1.1'
+    env['SERVER_PROTOCOL'] = self.protocol_version
+    env['SERVER_PORT'] = str(self.server.server_port)
+    env['REQUEST_METHOD'] = self.command
+    uqrest = urllib.unquote(rest)
+    env['PATH_INFO'] = uqrest
+    env['SCRIPT_NAME'] = scriptname
+    if query:
+      env['QUERY_STRING'] = query
+    env['HTTP_HOST'] = self.server.address[0]
+    host = self.address_string()
+    if host != self.client_address[0]:
+      env['REMOTE_HOST'] = host
+    env['REMOTE_ADDR'] = self.client_address[0]
+    # AUTH_TYPE
+    # REMOTE_USER
+    # REMOTE_IDENT
+    if self.headers.typeheader is None:
+      env['CONTENT_TYPE'] = self.headers.type
+    else:
+      env['CONTENT_TYPE'] = self.headers.typeheader
+    length = self.headers.getheader('content-length')
+    if length:
+      env['CONTENT_LENGTH'] = length
+    accept = []
+    for line in self.headers.getallmatchingheaders('accept'):
+      if line[:1] in string.whitespace:
+        accept.append(string.strip(line))
       else:
-        query = ''
-
-      env = os.environ
-
-      # Since we're going to modify the env in the parent, provide empty
-      # values to override previously set values
-      for k in env.keys():
-        if k[:5] == 'HTTP_':
-          del env[k]
-      for k in ('QUERY_STRING', 'REMOTE_HOST', 'CONTENT_LENGTH',
-                'HTTP_USER_AGENT', 'HTTP_COOKIE'):
-        if env.has_key(k): 
-          env[k] = ""
-
-      # XXX Much of the following could be prepared ahead of time!
-      env['SERVER_SOFTWARE'] = self.version_string()
-      env['SERVER_NAME'] = self.server.server_name
-      env['GATEWAY_INTERFACE'] = 'CGI/1.1'
-      env['SERVER_PROTOCOL'] = self.protocol_version
-      env['SERVER_PORT'] = str(self.server.server_port)
-      env['REQUEST_METHOD'] = self.command
-      uqrest = urllib.unquote(rest)
-      env['PATH_INFO'] = uqrest
-      env['SCRIPT_NAME'] = scriptname
-      if query:
-        env['QUERY_STRING'] = query
-      env['HTTP_HOST'] = self.server.address[0]
-      host = self.address_string()
-      if host != self.client_address[0]:
-        env['REMOTE_HOST'] = host
-      env['REMOTE_ADDR'] = self.client_address[0]
-      # AUTH_TYPE
-      # REMOTE_USER
-      # REMOTE_IDENT
-      if self.headers.typeheader is None:
-        env['CONTENT_TYPE'] = self.headers.type
-      else:
-        env['CONTENT_TYPE'] = self.headers.typeheader
-      length = self.headers.getheader('content-length')
-      if length:
-        env['CONTENT_LENGTH'] = length
-      accept = []
-      for line in self.headers.getallmatchingheaders('accept'):
-        if line[:1] in string.whitespace:
-          accept.append(string.strip(line))
-        else:
-          accept = accept + string.split(line[7:], ',')
-      env['HTTP_ACCEPT'] = string.joinfields(accept, ',')
-      ua = self.headers.getheader('user-agent')
-      if ua:
-        env['HTTP_USER_AGENT'] = ua
-      modified = self.headers.getheader('if-modified-since')
-      if modified:
-        env['HTTP_IF_MODIFIED_SINCE'] = modified
-      etag = self.headers.getheader('if-none-match')
-      if etag:
-        env['HTTP_IF_NONE_MATCH'] = etag
-      # XXX Other HTTP_* headers
+        accept = accept + string.split(line[7:], ',')
+    env['HTTP_ACCEPT'] = string.joinfields(accept, ',')
+    ua = self.headers.getheader('user-agent')
+    if ua:
+      env['HTTP_USER_AGENT'] = ua
+    modified = self.headers.getheader('if-modified-since')
+    if modified:
+      env['HTTP_IF_MODIFIED_SINCE'] = modified
+    etag = self.headers.getheader('if-none-match')
+    if etag:
+      env['HTTP_IF_NONE_MATCH'] = etag
+    # XXX Other HTTP_* headers
       
-      # Preserve state, because we execute script in current process:
-      save_argv = sys.argv
-      save_stdin = sys.stdin
-      save_stdout = sys.stdout
-      save_stderr = sys.stderr
-      # For external tools like enscript we also need to redirect
-      # the real stdout file descriptor.
-      #
-      # FIXME:  This code used to carry the following comment:
-      #
-      #   (On windows, reassigning the sys.stdout variable is sufficient
-      #   because pipe_cmds makes it the standard output for child
-      #   processes.)
-      #
-      # But we no longer use pipe_cmds.  So at the very least, the
-      # comment is stale.  Is the code okay, though?
-      if sys.platform != "win32":
-        save_realstdout = os.dup(1) 
+    # Preserve state, because we execute script in current process:
+    save_argv = sys.argv
+    save_stdin = sys.stdin
+    save_stdout = sys.stdout
+    save_stderr = sys.stderr
+    # For external tools like enscript we also need to redirect
+    # the real stdout file descriptor.
+    #
+    # FIXME:  This code used to carry the following comment:
+    #
+    #   (On windows, reassigning the sys.stdout variable is sufficient
+    #   because pipe_cmds makes it the standard output for child
+    #   processes.)
+    #
+    # But we no longer use pipe_cmds.  So at the very least, the
+    # comment is stale.  Is the code okay, though?
+    if sys.platform != "win32":
+      save_realstdout = os.dup(1) 
+    try:
       try:
-        try:
-          sys.stdout = self.wfile
-          if sys.platform != "win32":
-            os.dup2(self.wfile.fileno(), 1)
-          sys.stdin = self.rfile
-          viewvc.main(StandaloneServer(self), cfg)
-        finally:
-          sys.argv = save_argv
-          sys.stdin = save_stdin
-          sys.stdout.flush()
-          if sys.platform != "win32":
-            os.dup2(save_realstdout, 1)
-            os.close(save_realstdout)
-          sys.stdout = save_stdout
-          sys.stderr = save_stderr
-      except SystemExit, status:
-        self.log_error("ViewVC exit status %s", str(status))
-      else:
-        self.log_error("ViewVC exited ok")
+        sys.stdout = self.wfile
+        if sys.platform != "win32":
+          os.dup2(self.wfile.fileno(), 1)
+        sys.stdin = self.rfile
+        viewvc.main(StandaloneServer(self), cfg)
+      finally:
+        sys.argv = save_argv
+        sys.stdin = save_stdin
+        sys.stdout.flush()
+        if sys.platform != "win32":
+          os.dup2(save_realstdout, 1)
+          os.close(save_realstdout)
+        sys.stdout = save_stdout
+        sys.stderr = save_stderr
+    except SystemExit, status:
+      self.log_error("ViewVC exit status %s", str(status))
+    else:
+      self.log_error("ViewVC exited ok")
 
-  class ViewVC_Server(BaseHTTPServer.HTTPServer):
-    def __init__(self, host, port, callback):
-      self.address = (host, port)
-      self.url = 'http://%s:%d/' % (host, port)
-      self.callback = callback
-      BaseHTTPServer.HTTPServer.__init__(self, self.address, self.handler)
+class ViewVCHTTPServer(BaseHTTPServer.HTTPServer):
+  """Customized HTTP server for ViewVC."""
+  
+  def __init__(self, host, port, callback):
+    self.address = (host, port)
+    self.url = 'http://%s:%d/' % (host, port)
+    self.callback = callback
+    BaseHTTPServer.HTTPServer.__init__(self, self.address, self.handler)
 
-    def serve_until_quit(self):
-      self.quit = 0
-      while not self.quit:
-        rd, wr, ex = select.select([self.socket.fileno()], [], [], 1)
-        if rd:
-          self.handle_request()
+  def serve_until_quit(self):
+    self.quit = 0
+    while not self.quit:
+      rd, wr, ex = select.select([self.socket.fileno()], [], [], 1)
+      if rd:
+        self.handle_request()
 
-    def server_activate(self):
-      BaseHTTPServer.HTTPServer.server_activate(self)
-      if self.callback:
-        self.callback(self)
+  def server_activate(self):
+    BaseHTTPServer.HTTPServer.server_activate(self)
+    if self.callback:
+      self.callback(self)
 
-    def server_bind(self):
-      # set SO_REUSEADDR (if available on this platform)
-      if hasattr(socket, 'SOL_SOCKET') and hasattr(socket, 'SO_REUSEADDR'):
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-      BaseHTTPServer.HTTPServer.server_bind(self)
+  def server_bind(self):
+    # set SO_REUSEADDR (if available on this platform)
+    if hasattr(socket, 'SOL_SOCKET') and hasattr(socket, 'SO_REUSEADDR'):
+      self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    BaseHTTPServer.HTTPServer.server_bind(self)
 
-  ViewVC_Server.handler = ViewVC_Handler
+def serve(host, port, callback=None):
+  """Start an HTTP server for HOST on PORT.  Call CALLBACK function
+  when the server is ready to serve."""
+
+  ViewVCHTTPServer.handler = ViewVCHTTPRequestHandler
 
   try:
     # XXX Move this code out of this function.
@@ -335,7 +336,7 @@ If this doesn't work, please click on the link above.
       if not cvsnt_works:
         cfg.utilities.cvsnt = None
 
-    ViewVC_Server(host, port, callback).serve_until_quit()
+    ViewVCHTTPServer(host, port, callback).serve_until_quit()
   except (KeyboardInterrupt, select.error):
     pass
   print 'server stopped'
