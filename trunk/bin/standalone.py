@@ -358,7 +358,7 @@ def main(argv):
   class BadUsage(Exception): pass
 
   try:
-    opts, args = getopt.getopt(argv[1:], 'gdc:p:r:h:s:', 
+    opts, args = getopt.getopt(argv[1:], 'dc:p:r:h:s:', 
                                ['daemon', 'config-file=', 'host=',
                                 'port=', 'repository=', 'script-alias='])
     for opt, val in opts:
