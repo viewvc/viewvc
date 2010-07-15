@@ -41,6 +41,8 @@ import urllib
 import rfc822
 import socket
 import select
+import base64
+import crypt
 import BaseHTTPServer
 
 if LIBRARY_DIR:
@@ -61,6 +63,7 @@ class Options:
   host = sys.platform == 'mac' and '127.0.0.1' or 'localhost'
   script_alias = 'viewvc'
   config_file = None
+  htpasswd_file = None
 
 
 class StandaloneServer(sapi.CgiServer):
@@ -94,6 +97,11 @@ class StandaloneServer(sapi.CgiServer):
 
 class NotViewVCLocationException(Exception):
   """The request location was not aimed at ViewVC."""
+  pass
+
+
+class AuthenticationException(Exception):
+  """Authentication requirements have not been met."""
   pass
 
 
@@ -138,6 +146,21 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.send_error(404)
     except IOError: # ignore IOError: [Errno 32] Broken pipe
       pass
+    except AuthenticationException:
+      self.send_response(401, "Unauthorized")
+      self.send_header("WWW-Authenticate", 'Basic realm="ViewVC"')
+      self.send_header("Content-type", "text/html")
+      self.end_headers()
+      self.wfile.write("""<html>
+<head>
+<title>Authentication failed</title>
+</head>
+<body>
+<h1>Authentication failed</h1>
+<p>Authentication has failed.  Please retry with the correct username
+   and password.</p>
+</body>
+</html>""")
       
   def is_viewvc(self):
     """Check whether self.path is, or is a child of, the ScriptAlias"""
@@ -152,14 +175,47 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       return 1
     return 0
 
+  def validate_password(self, htpasswd_file, username, password):
+    """Compare USERNAME and PASSWORD against HTPASSWD_FILE."""
+    try:
+      lines = open(htpasswd_file, 'r').readlines()
+      for line in lines:
+        file_user, file_pass = string.split(line.rstrip(), ':', 1)
+        if username == file_user:
+          return file_pass == crypt.crypt(password, file_pass[:2])
+    except:
+      pass
+    return False
+    
   def run_viewvc(self):
     """Run ViewVC to field a single request."""
 
     ### Much of this is adapter from Python's standard library
     ### module CGIHTTPServer.
 
+    # Is this request even aimed at ViewVC?  If not, complain.
     if not self.is_viewvc():
       raise NotViewVCLocationException()
+
+    # If htpasswd authentication is enabled, try to authenticate the user.
+    self.username = None
+    if options.htpasswd_file:
+      authn = self.headers.get('authorization')
+      if not authn:
+        raise AuthenticationException()
+      try:
+        kind, data = string.split(authn, ' ', 1)
+        if kind == 'Basic':
+          data = base64.b64decode(data)
+          username, password = string.split(data, ':', 1)
+      except:
+        raise AuthenticationException()
+      if not self.validate_password(options.htpasswd_file, username, password):
+        raise AuthenticationException()
+      self.username = username
+
+    # Setup the environment in preparation of executing ViewVC's core code.
+    env = os.environ  
     
     scriptname = options.script_alias and '/' + options.script_alias or ''
 
@@ -170,8 +226,6 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       rest, query = rest[:i], rest[i+1:]
     else:
       query = ''
-
-    env = os.environ
 
     # Since we're going to modify the env in the parent, provide empty
     # values to override previously set values
@@ -200,9 +254,8 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     if host != self.client_address[0]:
       env['REMOTE_HOST'] = host
     env['REMOTE_ADDR'] = self.client_address[0]
-    # AUTH_TYPE
-    # REMOTE_USER
-    # REMOTE_IDENT
+    if self.username:
+      env['REMOTE_USER'] = self.username
     if self.headers.typeheader is None:
       env['CONTENT_TYPE'] = self.headers.type
     else:
@@ -226,6 +279,8 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     etag = self.headers.getheader('if-none-match')
     if etag:
       env['HTTP_IF_NONE_MATCH'] = etag
+    # AUTH_TYPE
+    # REMOTE_IDENT
     # XXX Other HTTP_* headers
       
     # Preserve state, because we execute script in current process:
@@ -641,7 +696,8 @@ def cli(argv):
   try:
     opts, args = getopt.getopt(argv[1:], 'gdc:p:r:h:s:', 
                                ['gui', 'daemon', 'config-file=', 'host=',
-                                'port=', 'repository=', 'script-alias='])
+                                'port=', 'repository=', 'script-alias=',
+                                'htpasswd-file='])
     for opt, val in opts:
       if opt in ('-g', '--gui'):
         options.start_gui = 1
@@ -665,7 +721,15 @@ def cli(argv):
         options.script_alias = \
           string.join(filter(None, string.split(val, '/')), '/')
       elif opt in ('-c', '--config-file'):
+        if not os.path.isfile(val):
+          raise BadUsage, "'%s' does not appear to be a valid " \
+                          "configuration file." % (val)
         options.config_file = val
+      elif opt in ('-c', '--htpasswd-file'):
+        if not os.path.isfile(val):
+          raise BadUsage, "'%s' does not appear to be a valid " \
+                          "htpasswd file." % (val)
+        options.htpasswd_file = val
     if options.start_gui and options.config_file:
       raise BadUsage, "--config-file option is not valid in GUI mode."
     if not options.start_gui and not options.port:
@@ -722,6 +786,10 @@ Options:
                              at "http://%(host)s:%(port)s/cgi-bin/viewvc".
                              [default: %(script_alias)s]
   
+  --htpasswd-file=FILE       Demand authentication from clients, validating
+                             authentication credentials against Apache
+                             htpasswd file FILE.
+
   --gui (-g)                 Pop up a graphical interface for serving and
                              testing ViewVC.  NOTE: this requires a valid
                              X11 display connection.
