@@ -5,6 +5,7 @@ Version 1.1.7 (released ??-???-????)
   * fix standalone.py server root deployments (--script-alias='')
   * add rudimentary Basic authentication support to standalone.py (issue #49)
   * fix obscure "unexpected NULL parent pool" Subversion bindings error
+  * enable path info / link display in remote Subversion root revision view
 
 Version 1.1.6 (released 02-Jun-2010)
 
