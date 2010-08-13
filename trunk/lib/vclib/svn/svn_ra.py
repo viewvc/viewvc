@@ -450,7 +450,15 @@ class RemoteSubversionRepository(vclib.Repository):
     revs = []
 
     def _log_cb(log_entry, pool, retval=revs):
-      changed_paths = log_entry.changed_paths
+      ### Subversion 1.5 and earlier didn't offer the 'changed_paths2'
+      ### hash, and in Subversion 1.6, it's offered but broken.
+      try: 
+        changed_paths = log_entry.changed_paths2
+        paths = (changed_paths or {}).keys()
+      except:
+        changed_paths = log_entry.changed_paths
+        paths = (changed_paths or {}).keys()
+      paths.sort(lambda a, b: _compare_paths(a, b))
       revision = log_entry.revision
       msg, author, date, revprops = _split_revprops(log_entry.revprops)
       action_map = { 'D' : vclib.DELETED,
@@ -458,17 +466,33 @@ class RemoteSubversionRepository(vclib.Repository):
                      'R' : vclib.REPLACED,
                      'M' : vclib.MODIFIED,
                      }
-      paths = (changed_paths or {}).keys()
-      paths.sort(lambda a, b: _compare_paths(a, b))
       changes = []
       found_readable = found_unreadable = 0
       for path in paths:
-        pathtype = None
         change = changed_paths[path]
-        action = action_map.get(change.action, vclib.MODIFIED)
+        ### svn_log_changed_path_t (which we might get instead of the
+        ### svn_log_changed_path2_t we'd prefer) doesn't have the
+        ### 'node_kind' member.        
+        pathtype = None
+        if hasattr(change, 'node_kind'):
+          if change.node_kind == core.svn_node_dir:
+            pathtype = vclib.DIR
+          elif change.node_kind == core.svn_node_file:
+            pathtype = vclib.FILE
+        ### svn_log_changed_path2_t only has the 'text_modified' and
+        ### 'props_modified' bits in Subversion 1.7 and beyond.  And
+        ### svn_log_changed_path_t is without.
+        text_modified = props_modified = 0
+        if hasattr(change, 'text_modified'):
+          if change.text_modified == core.svn_tristate_true:
+            text_modified = 1
+        if hasattr(change, 'props_modified'):
+          if change.props_modified == core.svn_tristate_true:
+            props_modified = 1
         ### Wrong, diddily wrong wrong wrong.  Can you say,
         ### "Manufacturing data left and right because it hurts to
         ### figure out the right stuff?"
+        action = action_map.get(change.action, vclib.MODIFIED)
         if change.copyfrom_path and change.copyfrom_rev:
           is_copy = 1
           base_path = change.copyfrom_path
@@ -491,7 +515,8 @@ class RemoteSubversionRepository(vclib.Repository):
               base_path = None
               base_rev = None
           changes.append(SVNChangedPath(path, revision, pathtype, base_path,
-                                        base_rev, action, is_copy, 0, 0))
+                                        base_rev, action, is_copy,
+                                        text_modified, props_modified))
           found_readable = 1
         else:
           found_unreadable = 1
