@@ -286,7 +286,7 @@ class SubversionRepository(vclib.Repository):
     self.rootpath = rootpath
 
     # Setup the client context baton, complete with non-prompting authstuffs.
-    ctx = client.svn_client_ctx_t()
+    ctx = client.svn_client_create_context()
     providers = []
     providers.append(client.svn_client_get_simple_provider(pool))
     providers.append(client.svn_client_get_username_provider(pool))
