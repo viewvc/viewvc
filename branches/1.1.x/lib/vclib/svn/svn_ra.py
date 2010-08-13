@@ -184,7 +184,7 @@ class RemoteSubversionRepository(vclib.Repository):
     # Setup the client context baton, complete with non-prompting authstuffs.
     # TODO: svn_cmdline_setup_auth_baton() is mo' better (when available)
     core.svn_config_ensure(self.config_dir)
-    self.ctx = client.svn_client_ctx_t()
+    self.ctx = client.svn_client_create_context()
     self.ctx.auth_baton = core.svn_auth_open([
       client.svn_client_get_simple_provider(),
       client.svn_client_get_username_provider(),
