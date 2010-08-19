@@ -1087,7 +1087,7 @@ _re_rewrite_email = re.compile('([-a-zA-Z0-9_.\+]+)@'
                                '(([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
 
 
-class HtmlFormatter:
+class ViewVCHtmlFormatter:
   """Format a string as HTML-encoded output with customizable markup
   rules, for example turning strings that look like URLs into anchor links.
 
@@ -1246,7 +1246,7 @@ def format_log(log, cfg, maxlen=0, htmlize=1):
     return log
 
   if htmlize:
-    lf = HtmlFormatter()
+    lf = ViewVCHtmlFormatter()
     lf.add_formatter(_re_rewrite_url, lf.format_url)
     if cfg.options.mangle_email_addresses == 2:
       lf.add_formatter(_re_rewrite_email, lf.format_email_truncated)
