@@ -145,6 +145,7 @@ class Config:
     self.conf_path = os.path.isfile(pathname) and pathname or None
     self.base = os.path.dirname(pathname)
     self.parser = ConfigParser.ConfigParser()
+    self.parser.optionxform = lambda x: x # don't case-normalize option names.
     self.parser.read(self.conf_path or [])
     
     for section in self.parser.sections():
@@ -172,6 +173,7 @@ class Config:
       fname = string.replace(fname, '%lang%', language)
 
       parser = ConfigParser.ConfigParser()
+      parser.optionxform = lambda x: x # don't case-normalize option names.
       parser.read(os.path.join(self.base, fname))
       for section in parser.sections():
         for option in parser.options(section):
