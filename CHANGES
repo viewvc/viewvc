@@ -7,6 +7,7 @@ Version 1.1.7 (released ??-???-????)
   * fix obscure "unexpected NULL parent pool" Subversion bindings error
   * enable path info / link display in remote Subversion root revision view
   * fix vhost name case handling inconsistency (issue #466)
+  * use svn:mime-type property charset param as encoding hint
 
 Version 1.1.6 (released 02-Jun-2010)
 
