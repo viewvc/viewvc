@@ -904,14 +904,17 @@ def get_view_template(cfg, view_name, language="en"):
 
   return template
 
-def get_writeready_server_file(request, content_type=None):
+def get_writeready_server_file(request, content_type=None, encoding=None):
   """Return a file handle to a response body stream, after outputting
   any queued special headers (on REQUEST.server) and (optionally) a
-  'Content-Type' header whose value is CONTENT_TYPE.  After this is
-  called, it is too late to add new headers to the response."""
+  'Content-Type' header whose value is CONTENT_TYPE and character set
+  is ENCODING.  After this is called, it is too late to add new
+  headers to the response."""
   if request.gzip_compress_level:
     request.server.addheader('Content-Encoding', 'gzip')
-  if content_type:
+  if content_type and encoding:
+    request.server.header("%s; charset=%s" % (content_type, encoding))
+  elif content_type:
     request.server.header(content_type)
   else:
     request.server.header()
@@ -1493,7 +1496,8 @@ class MarkupPipeWrapper:
     if self.posttext:
       ctx.fp.write(self.posttext)
 
-def markup_stream_pygments(request, cfg, blame_data, fp, filename, mime_type):
+def markup_stream_pygments(request, cfg, blame_data, fp, filename,
+                           mime_type, encoding):
   # Determine if we should use Pygments to highlight our output.
   # Reasons not to include a) being told not to by the configuration,
   # b) not being able to import the Pygments modules, and c) Pygments
@@ -1519,13 +1523,14 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename, mime_type):
                                 get_lexer_by_name, \
                                 get_lexer_for_mimetype, \
                                 get_lexer_for_filename
-    encoding = 'guess'
-    if cfg.options.detect_encoding:
-      try:
-        import chardet
-        encoding = 'chardet'
-      except (SyntaxError, ImportError):
-        pass
+    if not encoding:
+      encoding = 'guess'
+      if cfg.options.detect_encoding:
+        try:
+          import chardet
+          encoding = 'chardet'
+        except (SyntaxError, ImportError):
+          pass
     try:
       lexer = get_lexer_for_mimetype(mime_type,
                                      encoding=encoding,
@@ -1646,20 +1651,33 @@ def get_itemprops(request, path_parts, rev):
     props.append(_item(name=name, value=value, undisplayable=undisplayable))
   return props
 
+def parse_mime_type(mime_type):
+  mime_parts = map(lambda x: x.strip(), string.split(mime_type, ';'))
+  type_subtype = mime_parts[0].lower()
+  parameters = {}
+  for part in mime_parts[1:]:
+    name, value = string.split(part, '=', 1)
+    parameters[name] = value
+  return type_subtype, parameters
+  
 def calculate_mime_type(request, path_parts, rev):
-  mime_type = None
+  """Return a 2-tuple carrying the MIME content type and character
+  encoding for the file represented by PATH_PARTS in REV.  Use REQUEST
+  for repository access as necessary."""
   if not path_parts:
-    return None
+    return None, None
+  mime_type = encoding = None
   if request.roottype == 'svn' \
      and (not request.cfg.options.svn_ignore_mimetype):
     try:
       itemprops = request.repos.itemprops(path_parts, rev)
       mime_type = itemprops.get('svn:mime-type')
       if mime_type:
-        return mime_type
+        mime_type, parameters = parse_mime_type(mime_type)
+        return mime_type, parameters.get('charset')
     except:
       pass
-  return guess_mime(path_parts[-1])
+  return guess_mime(path_parts[-1]), None
 
 def markup_or_annotate(request, is_annotate):
   cfg = request.cfg
@@ -1667,7 +1685,7 @@ def markup_or_annotate(request, is_annotate):
   lines = fp = image_src_href = None
   annotation = 'none'
   revision = None
-  mime_type = calculate_mime_type(request, path, rev)
+  mime_type, encoding = calculate_mime_type(request, path, rev)
 
   # Is this a viewable image type?
   if is_viewable_image(mime_type) \
@@ -1700,7 +1718,7 @@ def markup_or_annotate(request, is_annotate):
       fp.close()
       return
     lines = markup_stream_pygments(request, cfg, blame_source, fp,
-                                   path[-1], mime_type)
+                                   path[-1], mime_type, encoding)
     fp.close()
 
   data = common_template_data(request, revision)
@@ -2008,8 +2026,9 @@ def view_directory(request):
       if request.roottype == 'svn': 
         row.size = file.size
 
-      row.mime_type = calculate_mime_type(request, _path_parts(file_where),
-                                          file.rev)
+      row.mime_type, encoding = calculate_mime_type(request,
+                                                    _path_parts(file_where),
+                                                    file.rev)
       fvi = get_file_view_info(request, file_where, file.rev, row.mime_type)
       row.view_href = fvi.view_href
       row.download_href = fvi.download_href
@@ -2280,9 +2299,11 @@ def view_log(request):
     if request.roottype == 'cvs':
       raise debug.ViewVCException('Unsupported feature: log view on CVS '
                                   'directory', '400 Bad Request')
-    mime_type = None
+    mime_type = encoding = None
   else:
-    mime_type = calculate_mime_type(request, request.path_parts, request.pathrev)
+    mime_type, encoding = calculate_mime_type(request,
+                                              request.path_parts,
+                                              request.pathrev)
 
   options = {}
   options['svn_show_all_dir_logs'] = 1 ### someday make this optional?
@@ -2583,10 +2604,11 @@ def view_checkout(request):
 
   # The revision number acts as a strong validator.
   if not check_freshness(request, None, revision):
+    mime_type, encoding = calculate_mime_type(request, path, rev)
     mime_type = request.query_dict.get('content-type') \
-                or calculate_mime_type(request, path, rev) \
+                or mime_type \
                 or 'text/plain'
-    server_fp = get_writeready_server_file(request, mime_type)
+    server_fp = get_writeready_server_file(request, mime_type, encoding)
     copy_stream(fp, server_fp)
   fp.close()
 
@@ -3943,7 +3965,7 @@ def build_commit(request, files, max_files, dir_strip, format):
       diff_href = request.get_url(view_func=view_diff,
                                   where=where, pathtype=vclib.FILE,
                                   params=diff_href_params, escape=1)
-    mime_type = calculate_mime_type(request, path_parts, exam_rev)
+    mime_type, encoding = calculate_mime_type(request, path_parts, exam_rev)
     prefer_markup = ezt.boolean(default_view(mime_type, cfg) == view_markup)
 
     # Update plus/minus line change count.
