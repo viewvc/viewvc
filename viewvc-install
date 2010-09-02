@@ -17,7 +17,6 @@
 
 import os
 import sys
-import string
 import re
 import traceback
 import py_compile
@@ -100,14 +99,14 @@ def _escape(str):
     re.escape() is no good because it blindly puts backslashes in
     front of anything that is not a number or letter regardless of
     whether the resulting sequence will be interpreted."""
-    return string.replace(str, "\\", "\\\\")
+    return str.replace("\\", "\\\\")
 
 
 def _actual_src_path(path):
     """Return the real on-disk location of PATH, which is relative to
     the ViewVC source directory."""
     return os.path.join(os.path.dirname(sys.argv[0]),
-                        string.replace(path, '/', os.sep))
+                        path.replace('/', os.sep))
                  
     
 def error(text, etype=None, evalue=None):
@@ -151,7 +150,7 @@ def install_file(src_path, dst_path, mode, subst_path_vars,
     is set, compile the file as a Python module."""
     
     src_path = _actual_src_path(src_path)
-    dst_path = os.path.join(ROOT_DIR, string.replace(dst_path, '/', os.sep))
+    dst_path = os.path.join(ROOT_DIR, dst_path.replace('/', os.sep))
     destdir_path = DESTDIR + dst_path
 
     overwrite = None
@@ -175,7 +174,7 @@ def install_file(src_path, dst_path, mode, subst_path_vars,
         # Collect the '+ ' and '- ' lines.
         diff_lines = []
         looking_at_diff_lines = 0
-        for line in string.split(ndiff_output, '\n'):
+        for line in ndiff_output.split('\n'):
             # Print line if it is a difference line
             if line[:2] == "+ " or line[:2] == "- " or line[:2] == "? ":
                 diff_lines.append(line)
@@ -207,11 +206,11 @@ def install_file(src_path, dst_path, mode, subst_path_vars,
                         temp = raw_input("Do you want to [O]verwrite, [D]o "
                                          "not overwrite, or [V]iew "
                                          "differences? ")
-                    temp = string.lower(temp[0])
+                    temp = temp[0].lower()
                     if temp == "v" and ext not in BINARY_FILE_EXTS:
                         print """
 ---------------------------------------------------------------------------"""
-                        print string.join(diff_lines, '\n') + '\n'
+                        print '\n'.join(diff_lines) + '\n'
                         print """
 LEGEND
    A leading '- ' indicates line to remove from installed file
@@ -290,7 +289,7 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
     orig_src_path = src_path
     orig_dst_path = dst_path
     src_path = _actual_src_path(src_path)
-    dst_path = os.path.join(ROOT_DIR, string.replace(dst_path, '/', os.sep))
+    dst_path = os.path.join(ROOT_DIR, dst_path.replace('/', os.sep))
     if not os.path.isdir(src_path):
         print "   skipping  %s" % (dst_path)
         return
@@ -339,7 +338,7 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
             while 1:
                 temp = raw_input("Do you want to [D]elete it, or [L]eave "
                                  "it as is? ")
-                temp = string.lower(temp[0])
+                temp = temp[0].lower()
                 if temp == "l":
                     delete = 0
                 elif temp == "d":
@@ -428,8 +427,7 @@ Just hit [Enter] if a default is okay.
             default = os.path.join(pf, "viewvc-" + version)    
         else:
             default = "/usr/local/viewvc-" + version
-        temp = string.strip(raw_input("Installation path [%s]: " \
-                                      % default))
+        temp = raw_input("Installation path [%s]: " % (default)).strip()
         print
         if len(temp):
             ROOT_DIR = temp
@@ -439,10 +437,8 @@ Just hit [Enter] if a default is okay.
     # Prompt for DESTDIR if none provided.
     if DESTDIR is None:
         default = ''
-        temp = string.strip(raw_input(
-            "DESTDIR path (generally only used by package "
-            "maintainers) [%s]: " \
-            % default))
+        temp = raw_input("DESTDIR path (generally only used by package "
+                         "maintainers) [%s]: " % (default)).strip()
         print
         if len(temp):
             DESTDIR = temp
