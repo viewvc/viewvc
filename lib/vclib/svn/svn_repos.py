@@ -15,7 +15,6 @@
 import vclib
 import os
 import os.path
-import string
 import cStringIO
 import time
 import tempfile
@@ -48,12 +47,12 @@ def _allow_all(root, path, pool):
 
 
 def _path_parts(path):
-  return filter(None, string.split(path, '/'))
+  return filter(None, path.split('/'))
 
 
 def _cleanup_path(path):
   """Return a cleaned-up Subversion filesystem path"""
-  return string.join(_path_parts(path), '/')
+  return '/'.join(_path_parts(path))
   
 
 def _fs_path_join(base, relative):
@@ -110,8 +109,8 @@ def _rootpath2url(rootpath, path):
   if rootpath and rootpath[0] != '/':
     rootpath = '/' + rootpath
   if os.sep != '/':
-    rootpath = string.replace(rootpath, os.sep, '/')
-  return 'file://' + string.join([rootpath, path], "/")
+    rootpath = rootpath.replace(os.sep, '/')
+  return 'file://' + rootpath + '/' + path
 
 
 # Given a dictionary REVPROPS of revision properties, pull special
@@ -183,7 +182,7 @@ class NodeHistory:
         test_path = path
         found = 0
         while 1:
-          off = string.rfind(test_path, '/')
+          off = test_path.rfind('/')
           if off < 0:
             break
           test_path = test_path[0:off]
@@ -721,7 +720,7 @@ class LocalSubversionRepository(vclib.Repository):
     return props.has_key(core.SVN_PROP_EXECUTABLE)
   
   def _getpath(self, path_parts):
-    return string.join(path_parts, '/')
+    return '/'.join(path_parts)
 
   def _getrev(self, rev):
     if rev is None or rev == 'HEAD':
