@@ -12,10 +12,6 @@
 
 """Generic API for implementing authorization checks employed by ViewVC."""
 
-import string
-import vclib
-
-
 class GenericViewVCAuthorizer:
   """Abstract class encapsulating version control authorization routines."""
   

@@ -40,7 +40,6 @@ else:
 #########################################################################
   
 import os
-import string
 import cvsdb
 import viewvc
 import vclib.ccvs
@@ -56,7 +55,7 @@ def UpdateFile(db, repository, path, update, quiet_level):
         print '[ERROR] %s' % (e)
         return
 
-    file = string.join(path, "/")
+    file = '/'.join(path)
     printing = 0
     if update:
         if quiet_level < 1 or (quiet_level < 2 and len(commit_list)):

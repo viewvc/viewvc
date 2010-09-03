@@ -16,7 +16,8 @@
 #
 # -----------------------------------------------------------------------
 
-import os, sys, string
+import os
+import sys
 import popen2
 import getopt
 
@@ -311,7 +312,7 @@ if __name__ == "__main__":
       dbname = raw_input("ViewVC Database Name [default: ViewVC]: ") or "ViewVC"
 
     # Create the database
-    dscript = string.replace(DATABASE_SCRIPT_COMMON, "<dbname>", dbname)
+    dscript = DATABASE_SCRIPT_COMMON.replace("<dbname>", dbname)
     if version == "1.0":
       print BONSAI_COMPAT
       dscript = dscript + DATABASE_SCRIPT_VERSION_0

@@ -11,7 +11,6 @@
 # -----------------------------------------------------------------------
 
 import os
-import string
 import re
 import cStringIO
 import tempfile
@@ -22,7 +21,8 @@ import blame
 
 ### The functionality shared with bincvs should probably be moved to a
 ### separate module
-from bincvs import BaseCVSRepository, Revision, Tag, _file_log, _log_path, _logsort_date_cmp, _logsort_rev_cmp
+from bincvs import BaseCVSRepository, Revision, Tag, _file_log, _log_path, _logsort_date_cmp, _logsort_rev_cmp, _path_join
+
 
 class CCVSRepository(BaseCVSRepository):
   def dirlogs(self, path_parts, rev, entries, options):
@@ -44,7 +44,7 @@ class CCVSRepository(BaseCVSRepository):
     """
     if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
       raise vclib.Error("Path '%s' is not a directory."
-                        % (string.join(path_parts, "/")))
+                        % (part2path(path_parts)))
     entries_to_fetch = []
     for entry in entries:
       if vclib.check_path_access(self, path_parts + [entry.name], None, rev):
@@ -94,8 +94,7 @@ class CCVSRepository(BaseCVSRepository):
         dictionary of Tag objects for all tags encountered
     """
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file."
-                        % (string.join(path_parts, "/")))
+      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
 
     path = self.rcsfile(path_parts, 1)
     sink = TreeSink()
@@ -120,11 +119,9 @@ class CCVSRepository(BaseCVSRepository):
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     if self.itemtype(path_parts1, rev1) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file."
-                        % (string.join(path_parts1, "/")))
+      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts1)))
     if self.itemtype(path_parts2, rev2) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file."
-                        % (string.join(path_parts2, "/")))
+      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts2)))
     
     temp1 = tempfile.mktemp()
     open(temp1, 'wb').write(self.openfile(path_parts1, rev1)[0].getvalue())
@@ -144,8 +141,7 @@ class CCVSRepository(BaseCVSRepository):
 
   def annotate(self, path_parts, rev=None):
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file."
-                        % (string.join(path_parts, "/")))
+      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
     source = blame.BlameSource(self.rcsfile(path_parts, 1), rev)
     return source, source.revision
 
@@ -154,13 +150,12 @@ class CCVSRepository(BaseCVSRepository):
 
   def openfile(self, path_parts, rev=None):
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file."
-                        % (string.join(path_parts, "/")))
+      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
     path = self.rcsfile(path_parts, 1)
     sink = COSink(rev)
     rcsparse.parse(open(path, 'rb'), sink)
     revision = sink.last and sink.last.string
-    return cStringIO.StringIO(string.join(sink.sstext.text, "\n")), revision
+    return cStringIO.StringIO('\n'.join(sink.sstext.text)), revision
 
 class MatchingSink(rcsparse.Sink):
   """Superclass for sinks that search for revisions based on tag or number"""
