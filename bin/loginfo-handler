@@ -39,7 +39,6 @@ else:
 #########################################################################
 
 import os
-import string
 import getopt
 import re
 import cvsdb
@@ -152,11 +151,11 @@ def FindLongestDirectory(s, repository):
     and a file name, either of which may contain spaces. Returns the longest
     possible directory name that actually exists"""
 
-    parts = string.split(s, " ")
+    parts = s.split()
     
     for i in range(len(parts)-1, 0, -1):
-        directory = string.join(parts[:i])
-        filename = string.join(parts[i:])
+        directory = ' '.join(parts[:i])
+        filename = ' '.join(parts[i:])
         if os.path.isdir(os.path.join(repository, directory)):
             return directory, filename
     
@@ -227,7 +226,7 @@ def ProcessLoginfo(rootpath, directory, files):
                                           cfg.utilities, 0)
 
     # split up the directory components
-    dirpath = filter(None, string.split(os.path.normpath(directory), os.sep))
+    dirpath = filter(None, os.path.normpath(directory).split(os.sep))
 
     ## build a list of Commit objects
     commit_list = []
@@ -279,7 +278,7 @@ if __name__ == '__main__':
         else:
             # if there are no arguments, read version information from
             # first line of input like old versions of ViewCVS did
-            arg = string.rstrip(sys.stdin.readline())
+            arg = sys.stdin.readline().rstrip()
     
         if len(sys.argv) > 2:
             # if there is a second argument it indicates which parser

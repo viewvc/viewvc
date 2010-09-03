@@ -57,7 +57,6 @@ else:
 #########################################################################
 
 import os
-import string
 import re
 
 import svn.core
@@ -332,7 +331,7 @@ if __name__ == '__main__':
     if len(args) < 3:
         usage()
 
-    command = string.lower(args[1])
+    command = args[1].lower()
     if command not in ('rebuild', 'update', 'purge'):
         sys.stderr.write('ERROR: unknown command %s\n' % command)
         usage()
