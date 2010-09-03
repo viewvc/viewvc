@@ -12,7 +12,6 @@
 # (c) 2006 Sergey Lapin <slapin@dataart.com>
 
 import vcauth
-import string
 import os.path
 import debug
 
@@ -94,9 +93,9 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
         all_groups.append(groupname)
         group_member = 0
         groupname = groupname.strip()
-        entries = string.split(cp.get('groups', groupname), ',')
+        entries = cp.get('groups', groupname).split(',')
         for entry in entries:
-          entry = string.strip(entry)
+          entry = entry.strip()
           if entry == self.username:
             group_member = 1
             break
@@ -137,13 +136,13 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
       # Figure if this path is explicitly allowed or denied to USERNAME.
       allow = deny = 0
       for user in cp.options(section):
-        user = string.strip(user)
+        user = user.strip()
         if _userspec_matches_user(user):
           # See if the 'r' permission is among the ones granted to
           # USER.  If so, we can stop looking.  (Entry order is not
           # relevant -- we'll use the most permissive entry, meaning
           # one 'allow' is all we need.)
-          allow = string.find(cp.get(section, user), 'r') != -1
+          allow = cp.get(section, user).find('r') != -1
           deny = not allow
           if allow:
             break
@@ -172,7 +171,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
       if section.find(':') == -1:
         path = section
       else:
-        name, path = string.split(section, ':', 1)
+        name, path = section.split(':', 1)
         if name == rootname:
           root_sections.append(section)
         continue
@@ -184,14 +183,14 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
       # USERNAME, record it.
       if allow or deny:
         if path != '/':
-          path = '/' + string.join(filter(None, string.split(path, '/')), '/')
+          path = '/' + '/'.join(filter(None, path.split('/')))
         paths_for_root[path] = allow
 
     # Okay.  Superimpose those root-specific values now.
     for section in root_sections:
 
       # Get the path again.
-      name, path = string.split(section, ':', 1)
+      name, path = section.split(':', 1)
       
       # Check for a specific access determination.
       allow, deny = _process_access_section(section)
@@ -200,7 +199,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
       # USERNAME, record it.
       if allow or deny:
         if path != '/':
-          path = '/' + string.join(filter(None, string.split(path, '/')), '/')
+          path = '/' + '/'.join(filter(None, path.split('/')))
         paths_for_root[path] = allow
 
     # If the root isn't readable, there's no point in caring about all
@@ -230,7 +229,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
       return 0
     parts = path_parts[:]
     while parts:
-      path = '/' + string.join(parts, '/')
+      path = '/' + '/'.join(parts)
       if paths.has_key(path):
         return paths[path]
       del parts[-1]

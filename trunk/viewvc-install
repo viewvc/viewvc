@@ -26,7 +26,6 @@ import StringIO
 # Get access to our library modules.
 sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), 'lib'))
 
-import compat
 import viewvc
 import compat_ndiff
 version = viewvc.__version__
@@ -246,7 +245,7 @@ LEGEND
     dst_parent = os.path.dirname(destdir_path)
     if not os.path.exists(dst_parent):
         try:
-            compat.makedirs(dst_parent)
+            os.makedirs(dst_parent)
             print "   created   %s%s" % (dst_parent, os.sep)
         except os.error, e:
             if e.errno == 17: # EEXIST: file exists

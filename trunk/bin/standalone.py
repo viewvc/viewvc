@@ -46,7 +46,6 @@ else:
 
 import sapi
 import viewvc
-import compat; compat.for_standalone()
 
 
 class Options:
@@ -74,7 +73,7 @@ class StandaloneServer(sapi.CgiServer):
         statusCode = 200
         statusText = 'OK'       
       else:        
-        p = string.find(status, ' ')
+        p = status.find(' ')
         if p < 0:
           statusCode = int(status)
           statusText = ''
@@ -173,7 +172,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     try:
       lines = open(htpasswd_file, 'r').readlines()
       for line in lines:
-        file_user, file_pass = string.split(line.rstrip(), ':', 1)
+        file_user, file_pass = line.rstrip().split(':', 1)
         if username == file_user:
           return file_pass == crypt.crypt(password, file_pass[:2])
     except:
@@ -197,10 +196,10 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       if not authn:
         raise AuthenticationException()
       try:
-        kind, data = string.split(authn, ' ', 1)
+        kind, data = authn.split(' ', 1)
         if kind == 'Basic':
           data = base64.b64decode(data)
-          username, password = string.split(data, ':', 1)
+          username, password = data.split(':', 1)
       except:
         raise AuthenticationException()
       if not self.validate_password(options.htpasswd_file, username, password):
@@ -214,7 +213,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     viewvc_url = self.server.url[:-1] + scriptname
     rest = self.path[len(scriptname):]
-    i = string.rfind(rest, '?')
+    i = rest.rfind('?')
     if i >= 0:
       rest, query = rest[:i], rest[i+1:]
     else:
@@ -259,10 +258,10 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     accept = []
     for line in self.headers.getallmatchingheaders('accept'):
       if line[:1] in string.whitespace:
-        accept.append(string.strip(line))
+        accept.append(line.strip())
       else:
-        accept = accept + string.split(line[7:], ',')
-    env['HTTP_ACCEPT'] = string.joinfields(accept, ',')
+        accept = accept + line[7:].split(',')
+    env['HTTP_ACCEPT'] = ','.join(accept)
     ua = self.headers.getheader('user-agent')
     if ua:
       env['HTTP_USER_AGENT'] = ua
@@ -384,7 +383,7 @@ def serve(host, port, callback=None):
             line = fp.readline()
             if not line:
               break
-            if string.find(line, "Concurrent Versions System (CVSNT)") >= 0:
+            if line.find("Concurrent Versions System (CVSNT)") >= 0:
               cvsnt_works = 1
               while fp.read(4096):
                 pass
@@ -435,8 +434,7 @@ def main(argv):
       elif opt in ('-h', '--host'):
         options.host = val
       elif opt in ('-s', '--script-alias'):
-        options.script_alias = \
-          string.join(filter(None, string.split(val, '/')), '/')
+        options.script_alias = '/'.join(filter(None, val.split('/')))
       elif opt in ('-c', '--config-file'):
         if not os.path.isfile(val):
           raise BadUsage, "'%s' does not appear to be a valid " \

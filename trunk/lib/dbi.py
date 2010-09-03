@@ -14,7 +14,7 @@ import sys
 import time
 import types
 import re
-import compat
+import calendar
 import MySQLdb
 
 # set to 1 to store commit times in UTC, or 0 to use the ViewVC machine's
@@ -55,7 +55,7 @@ def TicksFromDateTime(datetime):
     t = datetime.tuple()
 
   if utc_time:
-    return compat.timegm(t)
+    return calendar.timegm(t)
   else:
     return time.mktime(t[:8] + (-1,))
     
