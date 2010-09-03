@@ -336,7 +336,7 @@ class BlameSource:
     self.first_rev = first_rev
     self.blame_data = []
 
-    ctx = client.ctx_t()
+    ctx = client.svn_client_create_context()
     core.svn_config_ensure(config_dir)
     ctx.config = core.svn_config_get_config(config_dir)
     ctx.auth_baton = core.svn_auth_open([])
