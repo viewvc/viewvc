@@ -8,6 +8,7 @@ Version 1.1.7 (released ??-???-????)
   * enable path info / link display in remote Subversion root revision view
   * fix vhost name case handling inconsistency (issue #466)
   * use svn:mime-type property charset param as encoding hint
+  * markup Subversion revision references in log messages (issue #313)
 
 Version 1.1.6 (released 02-Jun-2010)
 
