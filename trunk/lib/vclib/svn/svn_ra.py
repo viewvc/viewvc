@@ -17,7 +17,6 @@ import sys
 import os
 import re
 import tempfile
-import popen2
 import time
 import urllib
 from svn_repos import Revision, SVNChangedPath, _datestr_to_date, _compare_paths, _path_parts, _cleanup_path, _rev2optrev, _fix_subversion_exception, _split_revprops
