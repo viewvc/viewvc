@@ -4,6 +4,7 @@ Version 1.2.0 (released ??-???-????)
   * allow user-configurable cvsgraph display (issue #336)
   * allow rNNNN syntax for Subversion revision numbers (issue #441)
   * removed standalone.py GUI mode
+  * add support for FastCGI deployment (issue #464)
 
 Version 1.1.6 (released 02-Jun-2010)
 
