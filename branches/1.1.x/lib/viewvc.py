@@ -1089,6 +1089,8 @@ _re_rewrite_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)'
 _re_rewrite_email = re.compile('([-a-zA-Z0-9_.\+]+)@'
                                '(([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
 
+# Matches revision references
+_re_rewrite_svnrevref = re.compile('(r|rev #?|revision #?)([0-9]+)')
 
 class ViewVCHtmlFormatter:
   """Format a string as HTML-encoded output with customizable markup
@@ -1155,6 +1157,25 @@ class ViewVCHtmlFormatter:
     else:
       trunc_s = mobj.group(1)[:maxlen]
       return self._entity_encode(trunc_s), len(trunc_s)
+
+  def format_svnrevref(self, mobj, userdata, maxlen=0):
+    """Return a 2-tuple containing:
+         - the text represented by MatchObject MOBJ, formatted as an
+           linkified URL to a ViewVC Subversion revision view, with no
+           more than MAXLEN characters in the non-HTML-tag portions.
+           If MAXLEN is 0, there is no maximum.
+         - the number of characters returned.
+
+       USERDATA is a function that accepts a revision reference
+       and returns a URL to that revision.
+    """
+    s = mobj.group(0)
+    revref = mobj.group(2)
+    trunc_s = maxlen and s[:maxlen] or s
+    revref_url = userdata(revref)
+    return '<a href="%s">%s</a>' % (sapi.escape(revref_url),
+                                    sapi.escape(trunc_s)), \
+           len(trunc_s)
 
   def format_text(self, s, unused, maxlen=0):
     """Return a 2-tuple containing:
@@ -1244,13 +1265,22 @@ class ViewVCHtmlFormatter:
         s = ''
     return tokens
 
-def format_log(log, cfg, maxlen=0, htmlize=1):
+
+def format_log(request, log, maxlen=0, htmlize=1):
   if not log:
     return log
 
+  cfg = request.cfg
   if htmlize:
     lf = ViewVCHtmlFormatter()
     lf.add_formatter(_re_rewrite_url, lf.format_url)
+    if request.roottype == 'svn':
+      def revision_to_url(rev):
+        return request.get_url(view_func=view_revision,
+                               params={'revision': rev},
+                               escape=1)
+      lf.add_formatter(_re_rewrite_svnrevref, lf.format_svnrevref,
+                       revision_to_url)
     if cfg.options.mangle_email_addresses == 2:
       lf.add_formatter(_re_rewrite_email, lf.format_email_truncated)
     elif cfg.options.mangle_email_addresses == 1:
@@ -1628,7 +1658,7 @@ def get_itemprops(request, path_parts, rev):
   propnames.sort()
   props = []
   for name in propnames:
-    value = format_log(itemprops[name], request.cfg)
+    value = format_log(request, itemprops[name])
     undisplayable = ezt.boolean(0)
     # skip non-utf8 property names
     try:
@@ -1745,7 +1775,7 @@ def markup_or_annotate(request, is_annotate):
     data['date'] = make_time_string(entry.date, cfg)
     data['author'] = entry.author
     data['changed'] = entry.changed
-    data['log'] = format_log(entry.log, cfg)
+    data['log'] = format_log(request, entry.log)
     data['size'] = entry.size
 
     if entry.date is not None:
@@ -1961,8 +1991,8 @@ def view_directory(request):
       row.date = make_time_string(file.date, cfg)
       row.ago = html_time(request, file.date)
     if cfg.options.show_logs:
-      row.log = format_log(file.log, cfg)
-      row.short_log = format_log(file.log, cfg,
+      row.log = format_log(request, file.log)
+      row.short_log = format_log(request, file.log,
                                  maxlen=cfg.options.short_log_len)
     row.lockinfo = file.lockinfo
     row.anchor = request.server.escape(file.name)
@@ -2339,7 +2369,7 @@ def view_log(request):
     entry.ago = None
     if rev.date is not None:
       entry.ago = html_time(request, rev.date, 1)
-    entry.log = format_log(rev.log or '', cfg)
+    entry.log = format_log(request, rev.log or '')
     entry.size = rev.size
     entry.lockinfo = rev.lockinfo
     entry.branch_point = None
@@ -3186,7 +3216,7 @@ def view_diff(request):
   fvi = get_file_view_info(request, path_left, rev1)
   left = _item(date=make_time_string(log_entry1.date, cfg),
                author=log_entry1.author,
-               log=format_log(log_entry1.log, cfg),
+               log=format_log(request, log_entry1.log),
                size=log_entry1.size,
                ago=ago1,
                path=path_left,
@@ -3202,7 +3232,7 @@ def view_diff(request):
   fvi = get_file_view_info(request, path_right, rev2)
   right = _item(date=make_time_string(log_entry2.date, cfg),
                 author=log_entry2.author,
-                log=format_log(log_entry2.log, cfg),
+                log=format_log(request, log_entry2.log),
                 size=log_entry2.size,
                 ago=ago2,
                 path=path_right,
@@ -3450,7 +3480,7 @@ def view_revision(request):
   propnames.sort()
   props = []
   for name in propnames:
-    value = format_log(revprops[name], request.cfg)
+    value = format_log(request, revprops[name])
     undisplayable = ezt.boolean(0)
     # skip non-utf8 property names
     try:
@@ -3579,7 +3609,7 @@ def view_revision(request):
     'rev' : str(rev),
     'author' : author,
     'date' : date_str,
-    'log' : format_log(msg, cfg),
+    'log' : format_log(request, msg),
     'properties' : props,
     'ago' : date is not None and html_time(request, date, 1) or None,
     'changes' : changes,
@@ -3937,8 +3967,8 @@ def build_commit(request, files, max_files, dir_strip, format):
     commit.log = None
     commit.short_log = None
   else:
-    commit.log = format_log(desc, cfg, 0, format != 'rss')
-    commit.short_log = format_log(desc, cfg, cfg.options.short_log_len,
+    commit.log = format_log(request, desc, 0, format != 'rss')
+    commit.short_log = format_log(request, desc, cfg.options.short_log_len,
                                   format != 'rss')
   commit.author = request.server.escape(author)
   commit.rss_date = make_rss_time_string(date, request.cfg)
