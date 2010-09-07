@@ -16,7 +16,7 @@
 #
 # This is a wsgi entry point for the main ViewVC app. It's appropriate
 # for use with mod_wsgi. It defines a single application function that
-# is a walid wsgi entry point.
+# is a valid wsgi entry point.
 #
 # -----------------------------------------------------------------------
 
