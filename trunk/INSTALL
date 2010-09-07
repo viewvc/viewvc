@@ -252,6 +252,33 @@ APACHE CONFIGURATION
    Note: WSGI support in ViewVC is at this time quite rudimentary,
    bordering on downright experimental.  Your mileage may vary.
 
+   -----------------------------------------
+   METHOD F:  Using mod_fcgid (if installed)
+   -----------------------------------------
+
+   This uses ViewVC's WSGI support (from above), but supports using FastCGI,
+   and is a somewhat hybrid approach of several of the above methods.
+
+   Especially if fcgi is already being used for other purposes, e.g. PHP,
+   also using fcgi can prevent the need for including additional modules
+   (e.g. mod_python or mod_wsgi) within Apache, which may help lessen Apache's
+   memory usage and/or help improve performance.
+
+   This depends on mod_fcgid:
+
+      http://httpd.apache.org/mod_fcgid/
+
+   as well as the fcgi server from Python's flup package:
+
+      http://pypi.python.org/pypi/flup
+      http://trac.saddi.com/flup
+
+   The following are some example httpd.conf fragments you can use to
+   support this configuration:
+
+      ScriptAlias /viewvc /usr/local/viewvc/bin/wsgi/viewvc.fcgi
+      ScriptAlias /query /usr/local/viewvc/bin/wsgi/query.fcgi
+
 3) Restart Apache.
 
    The commands to do this vary.  "httpd -k restart" and "apache -k
