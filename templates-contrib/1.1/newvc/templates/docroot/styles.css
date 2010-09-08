@@ -10,7 +10,11 @@ html, body {
   font-size: 100%;
   margin: 5px;
 }
-
+h2 {
+  border-top: 3px solid #d0d775;
+  font-size: 115%;
+  font-weight: bold;
+}
 a { 
   text-decoration: none; 
   color: rgb(30%,30%,60%); 
@@ -177,12 +181,15 @@ address { font-style: normal; display: inline; }
 }
 
 
+/*** Changed Paths Listing ***/
+.vc_changedpaths {
+  margin: 1em 0 1em 2em;
+}
+
+
 /*** Properties Listing ***/
 .vc_properties {
-  margin: 1em 0;
-}
-.vc_properties h2 {
-  font-size: 115%;
+  margin: 1em 0 1em 2em;
 }
 .vc_properties td, .vc_properties th {
   padding: 0.2em;

@@ -1,7 +1,6 @@
 [if-any properties]
-<hr/>
-<div class="vc_properties">
 <h2>Properties</h2>
+<div class="vc_properties">
 <table cellspacing="2" class="fixed">
 <thead>
   <tr>
