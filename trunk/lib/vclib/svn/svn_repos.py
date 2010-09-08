@@ -118,6 +118,8 @@ def _rootpath2url(rootpath, path):
 # the author, the date (converted from the date string property), and
 # a dictionary of any/all other revprops.
 def _split_revprops(revprops):
+  if not revprops:
+    return None, None, None, {}
   special_props = []
   for prop in core.SVN_PROP_REVISION_LOG, \
               core.SVN_PROP_REVISION_AUTHOR, \
