@@ -1090,7 +1090,7 @@ _re_rewrite_email = re.compile('([-a-zA-Z0-9_.\+]+)@'
                                '(([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
 
 # Matches revision references
-_re_rewrite_svnrevref = re.compile('(r|rev #?|revision #?)([0-9]+)')
+_re_rewrite_svnrevref = re.compile(r'\b(r|rev #?|revision #?)([0-9]+)\b')
 
 class ViewVCHtmlFormatter:
   """Format a string as HTML-encoded output with customizable markup
