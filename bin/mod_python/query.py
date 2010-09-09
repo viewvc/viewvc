@@ -65,7 +65,10 @@ cfg = viewvc.load_config(CONF_PATHNAME)
 def index(req):
   server = sapi.ModPythonServer(req)
   try:
-    query.main(server, cfg, "viewvc.py")
+    viewvc_base_url = cfg.query.viewvc_base_url
+    if viewvc_base_url is None:
+      viewvc_base_url = "viewvc.py"
+    query.main(server, cfg, viewvc_base_url)
   finally:
     server.close()
 
