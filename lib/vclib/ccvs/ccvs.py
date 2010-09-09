@@ -282,18 +282,18 @@ class TreeSink(rcsparse.Sink):
     deled = 0
     if self.head != revision:
       changed = 1
-      lines = string.split(text, '\n')
+      lines = text.split('\n')
       idx = 0
       while idx < len(lines):
         command = lines[idx]
         dmatch = self.d_command.match(command)
         idx = idx + 1
         if dmatch:
-          deled = deled + string.atoi(dmatch.group(2))
+          deled = deled + int(dmatch.group(2))
         else:
           amatch = self.a_command.match(command)
           if amatch:
-            count = string.atoi(amatch.group(2))
+            count = int(amatch.group(2))
             added = added + count
             idx = idx + count
           elif command:
@@ -309,12 +309,12 @@ class StreamText:
   a_command = re.compile('^a(\d+)\\s(\\d+)')
 
   def __init__(self, text):
-    self.text = string.split(text, "\n")
+    self.text = text.split('\n')
 
   def command(self, cmd):
     adjust = 0
     add_lines_remaining = 0
-    diffs = string.split(cmd, "\n")
+    diffs = cmd.split('\n')
     if diffs[-1] == "":
       del diffs[-1]
     if len(diffs) == 0:
@@ -332,22 +332,22 @@ class StreamText:
       amatch = self.a_command.match(command)
       if dmatch:
         # "d" - Delete command
-        start_line = string.atoi(dmatch.group(1))
-        count      = string.atoi(dmatch.group(2))
+        start_line = int(dmatch.group(1))
+        count      = int(dmatch.group(2))
         begin = start_line + adjust - 1
         del self.text[begin:begin + count]
         adjust = adjust - count
       elif amatch:
         # "a" - Add command
-        start_line = string.atoi(amatch.group(1))
-        count      = string.atoi(amatch.group(2))
+        start_line = int(amatch.group(1))
+        count      = int(amatch.group(2))
         add_lines_remaining = count
       else:
         raise RuntimeError, 'Error parsing diff commands'
 
 def secondnextdot(s, start):
   # find the position the second dot after the start index.
-  return string.find(s, '.', string.find(s, '.', start) + 1)
+  return s.find('.', s.find('.', start) + 1)
 
 
 class COSink(MatchingSink):
