@@ -54,4 +54,7 @@ import query
 
 server = sapi.CgiServer()
 cfg = viewvc.load_config(CONF_PATHNAME, server)
-query.main(server, cfg, "viewvc.cgi")
+viewvc_base_url = cfg.query.viewvc_base_url
+if viewvc_base_url is None:
+  viewvc_base_url = "viewvc.cgi"
+query.main(server, cfg, viewvc_base_url)

@@ -5,7 +5,7 @@
 <table>
 <tr>
   <td>[if-any cfg.general.address]<address><a href="mailto:[cfg.general.address]">[cfg.general.address]</a></address>[else]&nbsp;[end]</td>
-  <td style="text-align: right;"><strong><a href="[help_href]">ViewVC Help</a></strong></td>
+  <td style="text-align: right;">[if-any help_href]<strong><a href="[help_href]">ViewVC Help</a></strong>[else]&nbsp;[end]</td>
 </tr>
 <tr>
   <td>Powered by <a href="http://viewvc.tigris.org/">ViewVC [vsn]</a></td>

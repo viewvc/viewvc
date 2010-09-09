@@ -1017,3 +1017,30 @@
 #force_username_case = 
 
 ##---------------------------------------------------------------------------
+[query]
+
+## The configuration items in this section are used exclusively by the
+## 'query' script, a separate script from ViewVC itself that ships
+## with ViewVC and allows for queries into the ViewVC commits
+## database.  If you aren't using this separate script (which was made
+## largely irrelevant by the introduction of an integrated "query"
+## view in ViewVC itself, or aren't using the ViewVC commits database
+## functionality at all, you can ignore these configurations items
+## altogether.
+
+## viewvc_base_url: Base URL at which ViewVC may be accessed on this
+## server.  The default value for this option is determined at
+## run-time by the various front-ends to the query script.
+##
+## Examples:
+## viewvc_base_url = /viewvc.py
+## viewvc_base_url = /viewvc.wsgi
+## viewvc_base_url = /cgi-bin/viewvc
+## viewvc_base_url = viewvc
+##
+## To disable cross-linking between the query script and ViewVC,
+## uncomment this option and leave its value empty.
+##
+#viewvc_base_url =
+
+##---------------------------------------------------------------------------

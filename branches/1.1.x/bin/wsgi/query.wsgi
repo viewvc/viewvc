@@ -38,5 +38,8 @@ import query
 def application(environ, start_response):
   server = sapi.WsgiServer(environ, start_response)
   cfg = viewvc.load_config(CONF_PATHNAME, server)
-  query.main(server, cfg, "viewvc.wsgi")
+  viewvc_base_url = cfg.query.viewvc_base_url
+  if viewvc_base_url is None:
+    viewvc_base_url = "viewvc.wsgi"
+  query.main(server, cfg, viewvc_base_url)
   return []
