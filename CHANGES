@@ -4,6 +4,21 @@ Version 1.2.0 (released ??-???-????)
   * allow user-configurable cvsgraph display (issue #336)
   * allow rNNNN syntax for Subversion revision numbers (issue #441)
 
+Version 1.1.7 (released 09-Sep-2010)
+
+  * display Subversion revision properties in the revision view (issue #453)
+  * fix exception in 'standalone.py -r REPOS' when run without a config file
+  * fix standalone.py server root deployments (--script-alias='')
+  * add rudimentary Basic authentication support to standalone.py (issue #49)
+  * fix obscure "unexpected NULL parent pool" Subversion bindings error
+  * enable path info / link display in remote Subversion root revision view
+  * fix vhost name case handling inconsistency (issue #466)
+  * use svn:mime-type property charset param as encoding hint
+  * markup Subversion revision references in log messages (issue #313)
+  * add rudimentary support for FastCGI-based deployments (issue #464)
+  * fix query script WSGI deployment
+  * add configuration to fix query script cross-linking to ViewVC
+
 Version 1.1.6 (released 02-Jun-2010)
 
   * add rudimentary support for WSGI-based deployments (issue #397)
