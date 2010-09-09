@@ -185,7 +185,7 @@ class CgiServer(Server):
   def FieldStorage(fp=None, headers=None, outerboundary="",
                  environ=os.environ, keep_blank_values=0, strict_parsing=0):
     return cgi.FieldStorage(fp, headers, outerboundary, environ,
-      keep_blank_values, strict_parsing)
+                            keep_blank_values, strict_parsing)
 
   def write(self, s):
     sys.stdout.write(s)
@@ -237,7 +237,7 @@ class WsgiServer(Server):
 
   def FieldStorage(self, fp=None, headers=None, outerboundary="",
                    environ=os.environ, keep_blank_values=0, strict_parsing=0):
-    return cgi.FieldStorage(self._environ["wsgi.input"], self._headers,
+    return cgi.FieldStorage(self._environ["wsgi.input"], headers,
                             outerboundary, self._environ, keep_blank_values,
                             strict_parsing)
 
