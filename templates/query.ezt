@@ -4,13 +4,13 @@
 <!-- ViewVC :: http://www.viewvc.org/ -->
 <head>
   <title>Checkin Database Query</title>
-  <link rel="stylesheet" href="[docroot]/styles.css" type="text/css" />
+  [if-any docroot]<link rel="stylesheet" href="[docroot]/styles.css" type="text/css" />[end]
 </head>
 
 <body>
 
 [# setup page definitions]
-  [define help_href][docroot]/help_query.html[end]
+  [define help_href][if-any docroot][docroot]/help_query.html[end][end]
 [# end]
 
   <p> 
@@ -202,21 +202,21 @@
       </td>
 
 [# uncommment, if you want a separate Description column:
-      {if-index commits.files first{
+      {if-index commits.files first}
         <td style="vertical-align:top;" rowspan="{commits.num_files}">
-          {commits.log}
+          {if-any commits.log}{commits.log}{else}&nbsp;{end}
         </td>
       {end}
 
    (substitute brackets for the braces)
 ]
     </tr>
-[# and also take the following out in the "Description column"-case:]
+[# and also take the following out in the "Description column" case:]
       [if-index commits.files last]
 	<tr class="vc_row_[if-index commits even]even[else]odd[end]">
 	  <td>&nbsp;</td>
 	  <td colspan="5"><strong>Log:</strong><br />
-	    <pre class="vc_log">[commits.log]</pre></td>
+	    <pre class="vc_log">[if-any commits.log][commits.log][else]&nbsp;[end]</pre></td>
 	</tr>
       [end]
 [# ---]

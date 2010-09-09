@@ -87,6 +87,11 @@ import fnmatch
 #                                           |  vhosts   |
 #                                           |           |
 #                                           `-----------'
+#                                           ,-----------.
+#                                           |           |
+#                                           |   query   |
+#                                           |           |
+#                                           `-----------'
 #
 # ### TODO:  Figure out what this all means for the 'kv' stuff.
 #
@@ -99,6 +104,7 @@ class Config:
     'cvsdb',
     'general',
     'options',
+    'query',
     'templates',
     'utilities',
     )
@@ -455,6 +461,8 @@ class Config:
     self.cvsdb.rss_row_limit = 100
     self.cvsdb.check_database_for_root = 0
 
+    self.query.viewvc_base_url = None
+    
 def _startswith(somestr, substr):
   return somestr[:len(substr)] == substr
 
