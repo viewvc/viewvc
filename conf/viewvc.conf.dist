@@ -1057,6 +1057,7 @@
 ## viewvc_base_url = /viewvc.py
 ## viewvc_base_url = /viewvc.wsgi
 ## viewvc_base_url = /cgi-bin/viewvc
+## viewvc_base_url = viewvc
 ##
 ## To disable cross-linking between the query script and ViewVC,
 ## uncomment this option and leave its value empty.
