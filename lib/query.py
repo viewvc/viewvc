@@ -312,11 +312,7 @@ def is_forbidden(cfg, cvsroot_name, module):
     
 def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
     ob = _item(num_files=len(files), files=[])
-    
-    if desc:
-        ob.log = server.escape(desc).replace('\n', '<br />')
-    else:
-        ob.log = '&nbsp;'
+    ob.log = desc and server.escape(desc).replace('\n', '<br />') or ''
 
     for commit in files:
         repository = commit.GetRepository()
@@ -350,9 +346,10 @@ def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
         except:
             raise Exception, str([directory, commit.GetFile()])
 
-        ## if we couldn't find the cvsroot path configured in the 
-        ## viewvc.conf file, then don't make the link
-        if cvsroot_name:
+        ## If we couldn't find the cvsroot path configured in the
+        ## viewvc.conf file, or we don't have a VIEWVC_LINK, then
+        ## don't make the link.
+        if cvsroot_name and viewvc_link:
             flink = '[%s] <a href="%s/%s?root=%s">%s</a>' % (
                     cvsroot_name, viewvc_link, urllib.quote(file),
                     cvsroot_name, file)
@@ -435,6 +432,10 @@ def main(server, cfg, viewvc_link):
         commits = [ ]
         query = 'skipped'
 
+    docroot = cfg.options.docroot
+    if docroot is None and viewvc_link:
+        docroot = viewvc_link + '/' + viewvc.docroot_magic_path
+        
     data = ezt.TemplateData({
       'cfg' : cfg,
       'address' : cfg.general.address,
@@ -444,13 +445,9 @@ def main(server, cfg, viewvc_link):
       'directory' : server.escape(form_data.directory),
       'file' : server.escape(form_data.file),
       'who' : server.escape(form_data.who),
-      'docroot' : cfg.options.docroot is None \
-                  and viewvc_link + '/' + viewvc.docroot_magic_path \
-                  or cfg.options.docroot,
-
+      'docroot' : docroot,
       'sortby' : form_data.sortby,
       'date' : form_data.date,
-
       'query' : query,
       'commits' : commits,
       'num_commits' : len(commits),
