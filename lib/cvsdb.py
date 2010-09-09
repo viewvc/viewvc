@@ -12,6 +12,7 @@
 
 import os
 import sys
+import string
 import time
 import fnmatch
 import re
@@ -360,7 +361,7 @@ class CheckinDatabase:
 
             sqlList.append("%s%s%s" % (field, match, self.db.literal(data)))
 
-        return "(%s)" % (" OR ".join(sqlList))
+        return "(%s)" % (string.join(sqlList, " OR "))
 
     def CreateSQLQueryString(self, query):
         commits_table = self._version >= 1 and 'commits' or 'checkins'
@@ -439,8 +440,8 @@ class CheckinDatabase:
                 tables.append(table)
                 if cond is not None: joinConds.append(cond)
 
-        tables = ",".join(tables)
-        conditions = " AND ".join(joinConds + condList)
+        tables = string.join(tables, ",")
+        conditions = string.join(joinConds + condList, " AND ")
         conditions = conditions and "WHERE %s" % conditions
 
         ## limit the number of rows requested or we could really slam
@@ -870,7 +871,7 @@ def ConnectDatabaseReadOnly(cfg):
 def GetCommitListFromRCSFile(repository, path_parts, revision=None):
     commit_list = []
 
-    directory = "/".join(path_parts[:-1])
+    directory = string.join(path_parts[:-1], "/")
     file = path_parts[-1]
 
     revs = repository.itemlog(path_parts, revision, vclib.SORTBY_DEFAULT,
@@ -887,7 +888,7 @@ def GetCommitListFromRCSFile(repository, path_parts, revision=None):
 
         if rev.changed:
             # extract the plus/minus and drop the sign
-            plus, minus = rev.changed.split()
+            plus, minus = string.split(rev.changed)
             commit.SetPlusCount(plus[1:])
             commit.SetMinusCount(minus[1:])
 

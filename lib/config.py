@@ -16,6 +16,7 @@
 
 import sys
 import os
+import string
 import ConfigParser
 import fnmatch
 
@@ -170,12 +171,12 @@ class Config:
 
     for fname in self.general.kv_files:
       if fname[0] == '[':
-        idx = fname.index(']')
-        parts = fname[1:idx].split('.')
-        fname = fname[idx+1:].strip()
+        idx = string.index(fname, ']')
+        parts = string.split(fname[1:idx], '.')
+        fname = string.strip(fname[idx+1:])
       else:
         parts = [ ]
-      fname = fname.replace('%lang%', language)
+      fname = string.replace(fname, '%lang%', language)
 
       parser = ConfigParser.ConfigParser()
       parser.optionxform = lambda x: x # don't case-normalize option names.
@@ -207,7 +208,7 @@ class Config:
     for opt in parser.options(section):
       value = parser.get(section, opt)
       if opt in self._force_multi_value:
-        value = map(lambda x: x.strip(), filter(None, value.split(',')))
+        value = map(string.strip, filter(None, string.split(value, ',')))
       else:
         try:
           value = int(value)
@@ -266,11 +267,11 @@ class Config:
         self._process_section(parser, section, base_section)
 
   def _find_canon_vhost(self, parser, vhost):
-    vhost = vhost.lower().split(':')[0]  # lower-case, no port
+    vhost = string.split(string.lower(vhost), ':')[0]  # lower-case, no port
     for canon_vhost in parser.options('vhosts'):
       value = parser.get('vhosts', canon_vhost)
-      patterns = map(lambda x: x.lower().strip(),
-                     filter(None, value.split(',')))
+      patterns = map(string.lower, map(string.strip,
+                                       filter(None, string.split(value, ','))))
       for pat in patterns:
         if fnmatch.fnmatchcase(vhost, pat):
           return canon_vhost
@@ -432,7 +433,6 @@ class Config:
     self.options.detect_encoding = 0
     self.options.use_cvsgraph = 0
     self.options.cvsgraph_conf = "cvsgraph.conf"
-    self.options.allowed_cvsgraph_useropts = []
     self.options.use_re_search = 0
     self.options.dir_pagesize = 0
     self.options.log_pagesize = 0
@@ -469,11 +469,11 @@ def _startswith(somestr, substr):
 def _parse_roots(config_name, config_value):
   roots = { }
   for root in config_value:
-    try:
-      name, path = root.split(':', 1)
-    except:
+    pos = string.find(root, ':')
+    if pos < 0:
       raise MalformedRoot(config_name, root)
-    roots[name.strip()] = path.strip()
+    name, path = map(string.strip, (root[:pos], root[pos+1:]))
+    roots[name] = path
   return roots
 
 class ViewVCConfigurationError(Exception):
@@ -499,3 +499,10 @@ class MalformedRoot(ViewVCConfigurationError):
 
 class _sub_config:
   pass
+
+if not hasattr(sys, 'hexversion'):
+  # Python 1.5 or 1.5.1. fix the syntax for ConfigParser options.
+  import regex
+  ConfigParser.option_cre = regex.compile('^\([-A-Za-z0-9._]+\)\(:\|['
+                                          + string.whitespace
+                                          + ']*=\)\(.*\)$')

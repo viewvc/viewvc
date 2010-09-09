@@ -14,7 +14,7 @@
 #
 # -----------------------------------------------------------------------
 
-__version__ = '1.2-dev'
+__version__ = '1.1.7'
 
 # this comes from our library; measure the startup time
 import debug
@@ -24,12 +24,12 @@ debug.t_start('imports')
 # standard modules that we know are in the path or builtin
 import sys
 import os
-import calendar
 import gzip
 import mimetypes
 import re
 import rfc822
 import stat
+import string
 import struct
 import tempfile
 import time
@@ -38,6 +38,7 @@ import urllib
 
 # These modules come from our library (the stub has set up the path)
 import accept
+import compat
 import config
 import ezt
 import popen
@@ -119,8 +120,8 @@ class Request:
     if cfg.options.allow_compress:
       http_accept_encoding = os.environ.get("HTTP_ACCEPT_ENCODING", "")
       if "gzip" in filter(None,
-                          map(lambda x: x.strip(),
-                              http_accept_encoding.split(','))):
+                          map(lambda x: string.strip(x),
+                              string.split(http_accept_encoding, ","))):
         self.gzip_compress_level = 9  # make this configurable?
 
   def run_viewvc(self):
@@ -403,7 +404,7 @@ class Request:
     server name portions of the URL."""
 
     url, params = apply(self.get_link, (), args)
-    qs = urllib.urlencode(params)
+    qs = compat.urlencode(params)
     if qs:
       result = urllib.quote(url, _URL_SAFE_CHARS) + '?' + qs
     else:
@@ -579,7 +580,7 @@ def _path_parts(path):
   """Split up a repository path into a list of path components"""
   # clean it up. this removes duplicate '/' characters and any that may
   # exist at the front or end of the path.
-  return filter(None, path.split('/'))
+  return filter(None, string.split(path, '/'))
 
 def _normalize_path(path):
   """Collapse leading slashes in the script name
@@ -690,13 +691,6 @@ _legal_params = {
   'revision'      : _re_validate_revnum,
   'content-type'  : _validate_mimetype,
 
-  # for cvsgraph
-  'gflip'         : _re_validate_boolint,
-  'gbbox'         : _re_validate_boolint,
-  'gshow'         : _re_validate_alpha,
-  'gleft'         : _re_validate_boolint,
-  'gmaxtag'       : _re_validate_number,
-
   # for query
   'file_match'    : _re_validate_alpha,
   'branch_match'  : _re_validate_alpha,
@@ -729,7 +723,7 @@ _legal_params = {
   }
 
 def _path_join(path_parts):
-  return '/'.join(path_parts)
+  return string.join(path_parts, '/')
 
 def _strip_suffix(suffix, path_parts, rev, pathtype, repos, view_func):
   """strip the suffix from a repository path if the resulting path
@@ -867,7 +861,7 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
 
   # require revalidation after the configured amount of time
   if cfg and cfg.options.http_expiration_time >= 0:
-    expiration = rfc822.formatdate(time.time() +
+    expiration = compat.formatdate(time.time() +
                                    cfg.options.http_expiration_time)
     request.server.addheader('Expires', expiration)
     request.server.addheader('Cache-Control',
@@ -879,7 +873,7 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
     if etag is not None:
       request.server.addheader('ETag', etag)
     if mtime is not None:
-      request.server.addheader('Last-Modified', rfc822.formatdate(mtime))
+      request.server.addheader('Last-Modified', compat.formatdate(mtime))
   return isfresh
 
 def get_view_template(cfg, view_name, language="en"):
@@ -892,7 +886,7 @@ def get_view_template(cfg, view_name, language="en"):
   tname = os.path.join(cfg.options.template_dir or "templates", tname)
 
   # Allow per-language template selection.
-  tname = tname.replace('%lang%', language)
+  tname = string.replace(tname, '%lang%', language)
 
   # Finally, construct the whole template path.
   tname = cfg.path(tname)
@@ -974,7 +968,7 @@ def nav_path(request):
 
 def prep_tags(request, tags):
   url, params = request.get_link(params={'pathrev': None})
-  params = urllib.urlencode(params)
+  params = compat.urlencode(params)
   if params:
     url = urllib.quote(url, _URL_SAFE_CHARS) + '?' + params + '&pathrev='
   else:
@@ -1226,7 +1220,7 @@ class ViewVCHtmlFormatter:
     return out, out_len, 0
 
   def _entity_encode(self, s):
-    return ''.join(map(lambda x: '&#%d;' % (ord(x)), s))
+    return string.join(map(lambda x: '&#%d;' % (ord(x)), s), '')
 
   def _tokenize_text(self, s):
     tokens = []
@@ -1587,7 +1581,7 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
           self.tabsize = cfg.options.tabsize
         def __getitem__(self, idx):
           item = self.blame_source.__getitem__(idx)
-          item.text = item.text.expandtabs(self.tabsize)
+          item.text = string.expandtabs(item.text, self.tabsize)
           return item
       return BlameSourceTabsizeWrapper(blame_source, cfg.options.tabsize)
     else:
@@ -1598,7 +1592,7 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
         if not line:
           break
         line_no = line_no + 1
-        line = sapi.escape(line.expandtabs(cfg.options.tabsize))
+        line = sapi.escape(string.expandtabs(line, cfg.options.tabsize))
         item = vclib.Annotation(line, line_no, None, None, None, None)
         item.diff_href = None
         lines.append(item)
@@ -1656,7 +1650,7 @@ def make_rss_time_string(date, cfg):
   return time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(date)) + ' UTC'
 
 def make_comma_sep_list_string(items):
-  return ', '.join(map(lambda x: x.name, items))
+  return string.join(map(lambda x: x.name, items), ', ')
 
 def get_itemprops(request, path_parts, rev):
   itemprops = request.repos.itemprops(path_parts, rev)
@@ -1681,11 +1675,11 @@ def get_itemprops(request, path_parts, rev):
   return props
 
 def parse_mime_type(mime_type):
-  mime_parts = map(lambda x: x.strip(), mime_type.split(';'))
+  mime_parts = map(lambda x: x.strip(), string.split(mime_type, ';'))
   type_subtype = mime_parts[0].lower()
   parameters = {}
   for part in mime_parts[1:]:
-    name, value = part.split('=', 1)
+    name, value = string.split(part, '=', 1)
     parameters[name] = value
   return type_subtype, parameters
   
@@ -1823,8 +1817,8 @@ def view_annotate(request):
   markup_or_annotate(request, 1)
 
 def revcmp(rev1, rev2):
-  rev1 = map(int, rev1.split('.'))
-  rev2 = map(int, rev2.split('.'))
+  rev1 = map(int, string.split(rev1, '.'))
+  rev2 = map(int, string.split(rev2, '.'))
   return cmp(rev1, rev2)
 
 def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
@@ -1876,7 +1870,7 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
 
 def icmp(x, y):
   """case insensitive comparison"""
-  return cmp(x.lower(), y.lower())
+  return cmp(string.lower(x), string.lower(y))
 
 def view_roots(request):
   if 'roots' not in request.cfg.options.allowed_views:
@@ -2641,59 +2635,6 @@ def view_checkout(request):
     copy_stream(fp, server_fp)
   fp.close()
 
-def cvsgraph_make_reqopt(request, cfgname, queryparam, optvalue):
-  # Return a cvsgraph custom option substring bit OPTVALUE based on
-  # CFGNAME's presence in the allowed list of user-configurable
-  # options and QUERYPARAM's presence and boolean interpretation in
-  # the actual request; otherwise, return the empty string for options
-  # that either aren't overridden or aren't allowed to be overridden.
-  
-  if (cfgname in request.cfg.options.allowed_cvsgraph_useropts) \
-     and (int(request.query_dict.get(queryparam, 0))):
-    return optvalue
-  return ''
-
-def cvsgraph_normalize_gshow(request):
-  # Return the effective value of the 'gshow' query parameter, noting
-  # that a missing parameter is the same as gshow=all, and treating a
-  # bogus parameter value as the same as gshow=all, too.
-  gshow = request.query_dict.get('gshow', 'all')
-  if gshow not in ('all', 'inittagged', 'tagged'):
-    gshow = 'all'
-  return gshow
-  
-def cvsgraph_extraopts(request):
-  # Build a set of -O options for controlling cvsgraph's behavior,
-  # based on what the user has requested and filtered against what the
-  # user is allowed to request.
-  
-  cfg = request.cfg
-
-  ep = '-O'
-
-  # Simple mappings of boolean flags
-  ep = ep + cvsgraph_make_reqopt(request, 'invert', 'gflip',
-                                 ';upside_down=true')
-  ep = ep + cvsgraph_make_reqopt(request, 'branchbox', 'gbbox',
-                                 ';branch_dupbox=true')
-  ep = ep + cvsgraph_make_reqopt(request, 'rotate', 'gleft',
-                                 ';left_right=true')
-
-  # Stripping is a little more complex.
-  if ('show' in request.cfg.options.allowed_cvsgraph_useropts):
-    gshow = cvsgraph_normalize_gshow(request)
-    if gshow == 'inittagged':
-      ep = ep + ';strip_untagged=true'
-    elif gshow == 'tagged':
-      ep = ep + ';strip_untagged=true;strip_first_rev=true'
-
-  # And tag limitation has a user-supplied value to mess with.
-  if ('limittags' in request.cfg.options.allowed_cvsgraph_useropts) \
-     and request.query_dict.has_key('gmaxtag'):
-    ep = ep + ';rev_maxtags=' + request.query_dict['gmaxtag']
-
-  return ep + ';'
-  
 def view_cvsgraph_image(request):
   "output the image rendered by cvsgraph"
   # this function is derived from cgi/cvsgraphmkimg.cgi
@@ -2711,7 +2652,6 @@ def view_cvsgraph_image(request):
   fp = popen.popen(cfg.utilities.cvsgraph or 'cvsgraph',
                    ("-c", cfg.path(cfg.options.cvsgraph_conf),
                     "-r", request.repos.rootpath,
-                    cvsgraph_extraopts(request),
                     rcsfile), 'rb', 0)
   
   copy_stream(fp, get_writeready_server_file(request, 'image/png'))
@@ -2754,28 +2694,12 @@ def view_cvsgraph(request):
                                           pathtype=vclib.DIR,
                                           params={'pathrev': None},
                                           escape=1, partial=1),
-                    cvsgraph_extraopts(request),
                     rcsfile), 'rb', 0)
-
-  graph_action, graph_hidden_values = \
-    request.get_form(view_func=view_cvsgraph, params={})
 
   data = common_template_data(request)
   data.merge(ezt.TemplateData({
     'imagemap' : fp,
     'imagesrc' : imagesrc,
-    'graph_action' : graph_action,
-    'graph_hidden_values' : graph_hidden_values,
-    'opt_gflip' : ezt.boolean('invert' in cfg.options.allowed_cvsgraph_useropts),
-    'opt_gbbox' : ezt.boolean('branchbox' in cfg.options.allowed_cvsgraph_useropts),
-    'opt_gshow' : ezt.boolean('show' in cfg.options.allowed_cvsgraph_useropts),
-    'opt_gleft' : ezt.boolean('rotate' in cfg.options.allowed_cvsgraph_useropts),
-    'opt_gmaxtag' : ezt.boolean('limittags' in cfg.options.allowed_cvsgraph_useropts),
-    'gflip' : ezt.boolean(int(request.query_dict.get('gflip', 0))),
-    'gbbox' : ezt.boolean(int(request.query_dict.get('gbbox', 0))),
-    'gleft' : ezt.boolean(int(request.query_dict.get('gleft', 0))),
-    'gmaxtag' : request.query_dict.get('gmaxtag', 0),
-    'gshow' : cvsgraph_normalize_gshow(request),
     }))
   generate_page(request, "graph", data)
 
@@ -2845,10 +2769,10 @@ def rcsdiff_date_reformat(date_str, cfg):
   if date_str is None:
     return None
   try:
-    date = vclib.ccvs.cvs_strptime(date_str)
+    date = compat.cvs_strptime(date_str)
   except ValueError:
     return date_str
-  return make_time_string(calendar.timegm(date), cfg)
+  return make_time_string(compat.timegm(date), cfg)
 
 _re_extract_rev = re.compile(r'^[-+*]{3} [^\t]+\t([^\t]+)\t((\d+\.)*\d+)$')
 _re_extract_info = re.compile(r'@@ \-([0-9]+).*\+([0-9]+).*@@(.*)')
@@ -2887,7 +2811,7 @@ class DiffSource:
         return item
 
   def _format_text(self, text):
-    text = text.rstrip().expandtabs(self.cfg.options.tabsize)
+    text = string.expandtabs(string.rstrip(text), self.cfg.options.tabsize)
     hr_breakable = self.cfg.options.hr_breakable
     
     # in the code below, "\x01" will be our stand-in for "&". We don't want
@@ -2898,12 +2822,13 @@ class DiffSource:
       text = re.sub('(' + ('.' * hr_breakable) + ')', '\\1\x02', text)
     if hr_breakable:
       # make every other space "breakable"
-      text = text.replace('  ', ' \x01nbsp;')
+      text = string.replace(text, '  ', ' \x01nbsp;')
     else:
-      text = text.replace(' ', '\x01nbsp;')
+      text = string.replace(text, ' ', '\x01nbsp;')
     text = sapi.escape(text)
-    text = text.replace('\x01', '&')
-    text = text.replace('\x02', '<span style="color:red">\</span><br />')
+    text = string.replace(text, '\x01', '&')
+    text = string.replace(text, '\x02',
+                          '<span style="color:red">\</span><br />')
     return text
     
   def _get_row(self):
@@ -3054,8 +2979,8 @@ def diff_parse_headers(fp, diff_type, rev1, rev2, sym1=None, sym2=None):
       elif line[:3] == 'Bin':
         flag = _RCSDIFF_IS_BINARY
         parsing = 0
-      elif (line.find('not found') != -1 or 
-            line.find('illegal option') != -1):
+      elif (string.find(line, 'not found') != -1 or 
+            string.find(line, 'illegal option') != -1):
         flag = _RCSDIFF_ERROR
         parsing = 0
       header_lines.append(line)
@@ -3069,7 +2994,7 @@ def diff_parse_headers(fp, diff_type, rev1, rev2, sym1=None, sym2=None):
                                  'revision %s' % (log_rev2, rev2),
                                  '500 Internal Server Error')
 
-  return date1, date2, flag, ''.join(header_lines)
+  return date1, date2, flag, string.join(header_lines, '')
 
 
 def _get_diff_path_parts(request, query_key, rev, base_rev):
@@ -3106,7 +3031,7 @@ def setup_diff(request):
       raise debug.ViewVCException('Missing revision from the diff '
                                    'form text field', '400 Bad Request')
   else:
-    idx = r1.find(':')
+    idx = string.find(r1, ':')
     if idx == -1:
       rev1 = r1
     else:
@@ -3120,7 +3045,7 @@ def setup_diff(request):
                                    'form text field', '400 Bad Request')
     sym2 = ''
   else:
-    idx = r2.find(':')
+    idx = string.find(r2, ':')
     if idx == -1:
       rev2 = r2
     else:
@@ -3825,7 +3750,7 @@ def parse_date(datestr):
       second = 0
     # return a "seconds since epoch" value assuming date given in UTC
     tm = (year, month, day, hour, minute, second, 0, 0, 0)
-    return calendar.timegm(tm)
+    return compat.timegm(tm)
   else:
     return None
 
@@ -3882,17 +3807,17 @@ def english_query(request):
     if maxdate:
       maxdate = make_time_string(parse_date(maxdate), cfg)
       ret.append('%s <em>%s</em> ' % (w2, maxdate))
-  return ''.join(ret)
+  return string.join(ret, '')
 
 def prev_rev(rev):
   """Returns a string representing the previous revision of the argument."""
-  r = rev.split('.')
+  r = string.split(rev, '.')
   # decrement final revision component
   r[-1] = str(int(r[-1]) - 1)
   # prune if we pass the beginning of the branch
   if len(r) > 2 and r[-1] == '0':
     r = r[:-2]
-  return '.'.join(r)
+  return string.join(r, '.')
 
 def build_commit(request, files, max_files, dir_strip, format):
   """Return a commit object build from the information in FILES, or
@@ -4150,9 +4075,9 @@ def view_query(request):
   elif branch:
     query.SetBranch(branch, branch_match)
   if dir:
-    for subdir in dir.split(','):
+    for subdir in string.split(dir, ','):
       path = (_path_join(repos_dir + request.path_parts
-                         + _path_parts(subdir.strip())))
+                         + _path_parts(string.strip(subdir))))
       query.SetDirectory(path, 'exact')
       query.SetDirectory('%s/%%' % cvsdb.EscapeLike(path), 'like')
   else:
@@ -4347,14 +4272,14 @@ def expand_root_parents(cfg):
   
   # Each item in root_parents is a "directory : repo_type" string.
   for pp in cfg.general.root_parents:
-    pos = pp.rfind(':')
+    pos = string.rfind(pp, ':')
     if pos < 0:
       raise debug.ViewVCException(
         'The path "%s" in "root_parents" does not include a '
         'repository type.  Expected "cvs" or "svn".' % (pp))
 
-    repo_type = pp[pos+1:].strip()
-    pp = os.path.normpath(pp[:pos].strip())
+    repo_type = string.strip(pp[pos+1:])
+    pp = os.path.normpath(string.strip(pp[:pos]))
 
     if repo_type == 'cvs':
       roots = vclib.ccvs.expand_root_parent(pp)
@@ -4378,13 +4303,13 @@ def find_root_in_parents(cfg, rootname, roottype):
     return None
   
   for pp in cfg.general.root_parents:
-    pos = pp.rfind(':')
+    pos = string.rfind(pp, ':')
     if pos < 0:
       continue
-    repo_type = pp[pos+1:].strip()
+    repo_type = string.strip(pp[pos+1:])
     if repo_type != roottype:
       continue
-    pp = os.path.normpath(pp[:pos].strip())
+    pp = os.path.normpath(string.strip(pp[:pos]))
     
     if roottype == 'cvs':
       roots = vclib.ccvs.expand_root_parent(pp)
