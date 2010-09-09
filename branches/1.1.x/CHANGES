@@ -9,7 +9,7 @@ Version 1.1.7 (released ??-???-????)
   * fix vhost name case handling inconsistency (issue #466)
   * use svn:mime-type property charset param as encoding hint
   * markup Subversion revision references in log messages (issue #313)
-  * add support for FastCGI deployment (issue #464)
+  * add rudimentary support for FastCGI-based deployments (issue #464)
 
 Version 1.1.6 (released 02-Jun-2010)
 
