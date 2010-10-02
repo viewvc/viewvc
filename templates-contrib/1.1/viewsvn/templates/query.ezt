@@ -4,13 +4,13 @@
 <!-- ViewVC :: http://www.viewvc.org/ -->
 <head>
   <title>Checkin Database Query</title>
-  <link rel="stylesheet" href="[docroot]/styles.css" type="text/css" />
+  [if-any docroot]<link rel="stylesheet" href="[docroot]/styles.css" type="text/css" />[end]
 </head>
 
 <body>
 
 [# setup page definitions]
-  [define help_href][docroot]/help_query.html[end]
+  [define help_href][if-any docroot][docroot]/help_query.html[end][end]
 [# end]
 
   <p> 

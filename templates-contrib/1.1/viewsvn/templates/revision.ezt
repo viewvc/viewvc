@@ -82,4 +82,5 @@
   </tbody>
 </table>
 
+[include "include/props.ezt"]
 [include "include/footer.ezt"]
