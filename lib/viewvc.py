@@ -903,25 +903,37 @@ def get_view_template(cfg, view_name, language="en"):
 
   return template
 
-def get_writeready_server_file(request, content_type=None, encoding=None):
+def get_writeready_server_file(request, content_type=None, encoding=None,
+                               content_length=None):
   """Return a file handle to a response body stream, after outputting
   any queued special headers (on REQUEST.server) and (optionally) a
   'Content-Type' header whose value is CONTENT_TYPE and character set
-  is ENCODING.  After this is called, it is too late to add new
-  headers to the response."""
+  is ENCODING.
+
+  If CONTENT_LENGTH is provided and compression is not in use, also
+  generate a 'Content-Length' header for this response.
+
+  After this function is called, it is too late to add new headers to
+  the response."""
+
   if request.gzip_compress_level:
     request.server.addheader('Content-Encoding', 'gzip')
+  elif content_length is not None:
+    request.server.addheader('Content-Length', content_length)
+  
   if content_type and encoding:
     request.server.header("%s; charset=%s" % (content_type, encoding))
   elif content_type:
     request.server.header(content_type)
   else:
     request.server.header()
+
   if request.gzip_compress_level:
     fp = gzip.GzipFile('', 'wb', request.gzip_compress_level,
                        request.server.file())
   else:
     fp = request.server.file()
+  
   return fp
   
 def generate_page(request, view_name, data, content_type=None):
@@ -2827,7 +2839,6 @@ def view_doc(request):
     raise debug.ViewVCException('Static file "%s" not available (%s)'
                                  % (document, str(v)), '404 Not Found')
 
-  request.server.addheader('Content-Length', content_length)
   if document[-3:] == 'png':
     mime_type = 'image/png'
   elif document[-3:] == 'jpg':
@@ -2838,7 +2849,8 @@ def view_doc(request):
     mime_type = 'text/css'
   else: # assume HTML:
     mime_type = None
-  copy_stream(fp, get_writeready_server_file(request, mime_type))
+  copy_stream(fp, get_writeready_server_file(request, mime_type,
+                                             content_length=content_length))
   fp.close()
 
 def rcsdiff_date_reformat(date_str, cfg):
