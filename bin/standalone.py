@@ -36,7 +36,6 @@ import rfc822
 import socket
 import select
 import base64
-import crypt
 import BaseHTTPServer
 
 if LIBRARY_DIR:
@@ -47,6 +46,19 @@ else:
 import sapi
 import viewvc
 
+
+# The 'crypt' module is only available on Unix platforms.
+has_crypt = False
+try:
+  import crypt
+  has_crypt = True
+  def _check_passwd(user_passwd, real_passwd):
+    return real_passwd == crypt.crypt(user_passwd, real_passwd[:2])
+except ImportError:
+  has_crypt = False
+  def _check_passwd(user_passwd, real_passwd):
+    return False
+  
 
 class Options:
   port = 49152      # default TCP/IP port used for the server
@@ -174,7 +186,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       for line in lines:
         file_user, file_pass = line.rstrip().split(':', 1)
         if username == file_user:
-          return file_pass == crypt.crypt(password, file_pass[:2])
+          return _check_passwd(password, file_pass)
     except:
       pass
     return False
@@ -411,11 +423,25 @@ def main(argv):
   import getopt
   class BadUsage(Exception): pass
 
+  short_opts = ''.join(['c',
+                        'd:',
+                        'h:',
+                        'p:',
+                        'r:',
+                        's:',
+                        ])
+  long_opts = ['daemon',
+               'config-file=',
+               'host=',
+               'port=',
+               'repository=',
+               'script-alias=',
+               ]
+  if has_crypt:
+    long_opts.append('htpasswd-file=')
+    
   try:
-    opts, args = getopt.getopt(argv[1:], 'dc:p:r:h:s:', 
-                               ['daemon', 'config-file=', 'host=',
-                                'port=', 'repository=', 'script-alias=',
-                                'htpasswd-file='])
+    opts, args = getopt.getopt(argv[1:], short_opts, long_opts)
     for opt, val in opts:
       if opt in ('-r', '--repository'):
         if options.repositories: # option may be used more than once:
@@ -496,7 +522,11 @@ Options:
                              "cgi-bin/viewvc", then ViewVC will be accessible
                              at "http://%(host)s:%(port)s/cgi-bin/viewvc".
                              [default: %(script_alias)s]
-
+""" % locals())
+                             
+    if has_crypt:
+      sys.stderr.write("""
+                    
   --htpasswd-file=FILE       Demand authentication from clients, validating
                              authentication credentials against Apache
                              htpasswd file FILE.
