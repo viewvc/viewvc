@@ -1,13 +1,14 @@
 Version 1.1.8 (released ??-???-????)
 
   * fix slowness triggered by allow_compress=1 configuration (issue #467)
+  * fix standalone.py Windows regression (issue #471)
 
 Version 1.1.7 (released 09-Sep-2010)
 
   * display Subversion revision properties in the revision view (issue #453)
   * fix exception in 'standalone.py -r REPOS' when run without a config file
   * fix standalone.py server root deployments (--script-alias='')
-  * add rudimentary Basic authentication support to standalone.py (issue #49)
+  * add Basic authentication support to standalone.py (Unix only) (issue #49)
   * fix obscure "unexpected NULL parent pool" Subversion bindings error
   * enable path info / link display in remote Subversion root revision view
   * fix vhost name case handling inconsistency (issue #466)
