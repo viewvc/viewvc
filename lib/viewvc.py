@@ -1939,8 +1939,10 @@ def view_directory(request):
                                            cfg.options.hide_attic))
     options["cvs_subdirs"] = (cfg.options.show_subdir_lastmod and
                               cfg.options.show_logs)
+  debug.t_start("listdir")
   file_data = request.repos.listdir(request.path_parts, request.pathrev,
                                     options)
+  debug.t_end("listdir")
 
   # sort with directories first, and using the "sortby" criteria
   sortby = request.query_dict.get('sortby', cfg.options.sort_by) or 'file'
@@ -1992,6 +1994,7 @@ def view_directory(request):
   where = request.where
   where_prefix = where and where + '/'
 
+  debug.t_start("row-building")
   for file in file_data:
     row = _item(author=None, log=None, short_log=None, state=None, size=None,
                 log_file=None, log_rev=None, graph_href=None, mime_type=None,
@@ -2090,6 +2093,7 @@ def view_directory(request):
                                           escape=1)
 
     rows.append(row)
+  debug.t_end("row-building")
 
   # Prepare the data that will be passed to the template, based on the
   # common template data.
