@@ -47,7 +47,9 @@ import sapi
 import viewvc
 
 
-# The 'crypt' module is only available on Unix platforms.
+# The 'crypt' module is only available on Unix platforms.  We'll try
+# to use 'fcrypt' if it's available (for more information, see
+# http://carey.geek.nz/code/python-fcrypt/).
 has_crypt = False
 try:
   import crypt
@@ -55,10 +57,15 @@ try:
   def _check_passwd(user_passwd, real_passwd):
     return real_passwd == crypt.crypt(user_passwd, real_passwd[:2])
 except ImportError:
-  has_crypt = False
-  def _check_passwd(user_passwd, real_passwd):
-    return False
-  
+  try:
+    import fcrypt
+    has_crypt = True
+    def _check_passwd(user_passwd, real_passwd):
+      return real_passwd == fcrypt.crypt(user_passwd, real_passwd[:2])
+  except ImportError:
+    def _check_passwd(user_passwd, real_passwd):
+      return False
+
 
 class Options:
   port = 49152      # default TCP/IP port used for the server
@@ -433,12 +440,11 @@ def main(argv):
   long_opts = ['daemon',
                'config-file=',
                'host=',
+               'htpasswd-file=',
                'port=',
                'repository=',
                'script-alias=',
                ]
-  if has_crypt:
-    long_opts.append('htpasswd-file=')
     
   try:
     opts, args = getopt.getopt(argv[1:], short_opts, long_opts)
@@ -470,6 +476,13 @@ def main(argv):
         if not os.path.isfile(val):
           raise BadUsage, "'%s' does not appear to be a valid " \
                           "htpasswd file." % (val)
+        if not has_crypt:
+          raise BadUsage, "Unable to locate suitable `crypt' module for use " \
+                          "with --htpasswd-file option.  If your Python " \
+                          "distribution does not include this module (as is " \
+                          "the case on many non-Unix platforms), consider " \
+                          "installing the `fcrypt' module instead (see " \
+                          "http://carey.geek.nz/code/python-fcrypt/)."
         options.htpasswd_file = val
         
     if not options.port:
@@ -522,14 +535,11 @@ Options:
                              "cgi-bin/viewvc", then ViewVC will be accessible
                              at "http://%(host)s:%(port)s/cgi-bin/viewvc".
                              [default: %(script_alias)s]
-""" % locals())
-                             
-    if has_crypt:
-      sys.stderr.write("""
-                    
+
   --htpasswd-file=FILE       Demand authentication from clients, validating
-                             authentication credentials against Apache
-                             htpasswd file FILE.
+                             authentication credentials against FILE, which is
+                             an Apache htpasswd file that employs CRYPT
+                             encryption.  (Sorry, no DIGEST support yet.)
 """ % locals())
 
 if __name__ == '__main__':
