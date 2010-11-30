@@ -1820,12 +1820,18 @@ def view_markup(request):
   if 'markup' not in request.cfg.options.allowed_views:
     raise debug.ViewVCException('Markup view is disabled',
                                 '403 Forbidden')
+  if request.pathtype != vclib.FILE:
+    raise debug.ViewVCException('Unsupported feature: markup view on '
+                                'directory', '400 Bad Request')
   markup_or_annotate(request, 0)
 
 def view_annotate(request):
   if 'annotate' not in request.cfg.options.allowed_views:
     raise debug.ViewVCException('Annotation view is disabled',
                                  '403 Forbidden')
+  if request.pathtype != vclib.FILE:
+    raise debug.ViewVCException('Unsupported feature: annotate view on '
+                                'directory', '400 Bad Request')
   markup_or_annotate(request, 1)
 
 def revcmp(rev1, rev2):
