@@ -1,7 +1,7 @@
 Version 1.1.8 (released ??-???-????)
 
   * fix slowness triggered by allow_compress=1 configuration (issue #467)
-  * fix standalone.py Windows regression (issue #471)
+  * allow use of 'fcrypt' for Windows standalone.py authn support (issue #471)
 
 Version 1.1.7 (released 09-Sep-2010)
 
