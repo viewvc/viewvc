@@ -155,8 +155,7 @@ class Config:
     self.parser.read(self.conf_path or [])
     
     for section in self.parser.sections():
-      if self._is_allowed_section(self.parser, section,
-                                  self._base_sections):
+      if self._is_allowed_section(section, self._base_sections):
         self._process_section(self.parser, section, section)
 
     if vhost and self.parser.has_section('vhosts'):
@@ -222,7 +221,7 @@ class Config:
 
       setattr(sc, opt, value)
 
-  def _is_allowed_section(self, parser, section, allowed_sections):
+  def _is_allowed_section(self, section, allowed_sections):
     """Return 1 iff SECTION is an allowed section, defined as being
     explicitly present in the ALLOWED_SECTIONS list or present in the
     form 'someprefix-*' in that list."""
@@ -235,7 +234,7 @@ class Config:
         return 1
     return 0
 
-  def _is_allowed_override(self, parser, sectype, secspec, section):
+  def _is_allowed_override(self, sectype, secspec, section):
     """Test if SECTION is an allowed override section for sections of
     type SECTYPE ('vhosts' or 'root', currently) and type-specifier
     SECSPEC (a rootname or vhostname, currently).  If it is, return
@@ -248,7 +247,7 @@ class Config:
     if section[:lcv] != cv:
       return None
     base_section = section[lcv:]
-    if self._is_allowed_section(parser, base_section,
+    if self._is_allowed_section(base_section,
                                 self._allowed_overrides[sectype]):
       return base_section
     raise IllegalOverrideSection(sectype, section)
@@ -261,8 +260,7 @@ class Config:
 
     # Overlay any option sections associated with this vhost name.
     for section in parser.sections():
-      base_section = self._is_allowed_override(parser, 'vhost',
-                                               canon_vhost, section)
+      base_section = self._is_allowed_override('vhost', canon_vhost, section)
       if base_section:
         self._process_section(parser, section, base_section)
 
@@ -288,8 +286,7 @@ class Config:
       return
 
     for section in self.parser.sections():
-      base_section = self._is_allowed_override(self.parser, 'root',
-                                               rootname, section)
+      base_section = self._is_allowed_override('root', rootname, section)
       if base_section:
         # We can currently only deal with root overlays happening
         # once, so check that we've not yet done any overlaying of
