@@ -1,3 +1,7 @@
+Version 1.1.9 (released ??-???-????)
+
+  *
+
 Version 1.1.8 (released 02-Dec-2010)
 
   * fix slowness triggered by allow_compress=1 configuration (issue #467)
