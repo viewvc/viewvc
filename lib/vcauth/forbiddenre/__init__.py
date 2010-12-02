@@ -12,6 +12,7 @@
 import vcauth
 import vclib
 import fnmatch
+import string
 import re
 
 
@@ -28,8 +29,8 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   """A simple regular-expression-based authorizer."""
   def __init__(self, username, params={}):
     forbidden = params.get('forbiddenre', '')
-    self.forbidden = map(lambda x: _split_regexp(x.strip()),
-                         filter(None, forbidden.split(',')))
+    self.forbidden = map(lambda x: _split_regexp(string.strip(x)),
+                         filter(None, string.split(forbidden, ',')))
                          
   def _check_root_path_access(self, root_path):
     default = 1
@@ -48,7 +49,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   def check_path_access(self, rootname, path_parts, pathtype, rev=None):
     root_path = rootname
     if path_parts:
-      root_path = root_path + '/' + '/'.join(path_parts)
+      root_path = root_path + '/' + string.join(path_parts, '/')
       if pathtype == vclib.DIR:
         root_path = root_path + '/'
     else:
