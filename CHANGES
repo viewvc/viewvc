@@ -1,4 +1,4 @@
-Version 1.1.8 (released ??-???-????)
+Version 1.1.8 (released 02-Dec-2010)
 
   * fix slowness triggered by allow_compress=1 configuration (issue #467)
   * allow use of 'fcrypt' for Windows standalone.py authn support (issue #471)
