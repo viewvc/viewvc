@@ -4,6 +4,12 @@ Version 1.2.0 (released ??-???-????)
   * allow user-configurable cvsgraph display (issue #336)
   * allow rNNNN syntax for Subversion revision numbers (issue #441)
 
+Version 1.1.8 (released 02-Dec-2010)
+
+  * fix slowness triggered by allow_compress=1 configuration (issue #467)
+  * allow use of 'fcrypt' for Windows standalone.py authn support (issue #471)
+  * yield more useful error on directory markup/annotate request (issue #472)
+
 Version 1.1.7 (released 09-Sep-2010)
 
   * display Subversion revision properties in the revision view (issue #453)
