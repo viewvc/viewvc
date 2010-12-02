@@ -27,7 +27,9 @@ numbers, and not literal):
 3.  Verify that copyright years are correct in both the license-1.html
     file and the source code.
 
-4.  Update and commit the 'CHANGES' file.
+4.  Update and commit the 'CHANGES' file, using any available crystal
+    balls or other forward-looking devices to take a stab at the
+    release date.
 
 5.  Test, test, test!  There is no automatic testsuite available.  So
     just run with permuting different `viewvc.conf' settings... and
