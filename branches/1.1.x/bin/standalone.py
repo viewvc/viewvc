@@ -827,14 +827,14 @@ Options:
                              at "http://%(host)s:%(port)s/cgi-bin/viewvc".
                              [default: %(script_alias)s]
 
-  --gui (-g)                 Pop up a graphical interface for serving and
-                             testing ViewVC.  NOTE: this requires a valid
-                             X11 display connection.
-
   --htpasswd-file=FILE       Demand authentication from clients, validating
                              authentication credentials against FILE, which is
                              an Apache htpasswd file that employs CRYPT
                              encryption.  (Sorry, no DIGEST support yet.)
+
+  --gui (-g)                 Pop up a graphical interface for serving and
+                             testing ViewVC.  NOTE: this requires a valid
+                             X11 display connection.
 """ % locals())
 
 if __name__ == '__main__':
