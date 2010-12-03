@@ -26,7 +26,7 @@ import calendar
 import popen
 import vclib.ccvs
 
-def _path_join(parts):
+def _path_join(path_parts):
   return '/'.join(path_parts)
   
 class BaseCVSRepository(vclib.Repository):
