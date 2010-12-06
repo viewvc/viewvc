@@ -393,7 +393,6 @@ class LocalSubversionRepository(vclib.Repository):
     self.rootpath = rootpath
     self.name = name
     self.auth = authorizer
-    self.svn_client_path = utilities.svn or 'svn'
     self.diff_cmd = utilities.diff or 'diff'
     self.config_dir = config_dir or None
 
