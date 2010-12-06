@@ -295,14 +295,6 @@
 ##
 #cvsnt =
 
-## svn: Location of the Subversion command-line client, used for
-## viewing Subversion repositories.
-##
-## Example:
-## svn = /usr/bin/svn
-##
-#svn =
-
 ## diff: Location of the GNU diff program, used for showing file
 ## version differences.
 ##

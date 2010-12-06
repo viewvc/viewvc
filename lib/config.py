@@ -388,7 +388,6 @@ class Config:
       self.utilities.cvsnt = 'cvs'
     else:
       self.utilities.cvsnt = None
-    self.utilities.svn = ''
     self.utilities.diff = ''
     self.utilities.cvsgraph = ''
 
