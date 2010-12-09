@@ -221,6 +221,36 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     paths = self._get_paths_for_root(rootname)
     return (paths is not None) and 1 or 0
   
+  def check_universal_access(self, rootname):
+    paths = self._get_paths_for_root(rootname)
+    if not paths: # None or empty.
+      return 0
+
+    # Search the access determinations.  If there's a mix, we can't
+    # claim a universal access determination.
+    found_allow = 0
+    found_deny = 0
+    for access in paths.values():
+      if access:
+        found_allow = 1
+      else:
+        found_deny = 1
+      if found_allow and found_deny:
+        return None
+
+    # We didn't find both allowances and denials, so we must have
+    # found one or the other.  Denials only is a universal denial.
+    if found_deny:
+      return 0
+
+    # ... but allowances only is only a universal allowance if read
+    # access is granted to the root directory.
+    if found_allow and paths.has_key('/'):
+      return 1
+
+    # Anything else is indeterminable.
+    return None
+    
   def check_path_access(self, rootname, path_parts, pathtype, rev=None):
     # Crawl upward from the path represented by PATH_PARTS toward to
     # the root of the repository, looking for an explicitly grant or

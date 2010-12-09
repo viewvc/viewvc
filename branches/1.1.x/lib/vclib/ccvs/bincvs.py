@@ -40,6 +40,11 @@ class BaseCVSRepository(vclib.Repository):
     if not vclib.check_root_access(self):
       raise vclib.ReposNotFound(name)
 
+  def open(self):
+    # See if a universal read access determination can be made.
+    if self.auth and self.auth.check_universal_access(self.name) == 1:
+      self.auth = None
+
   def rootname(self):
     return self.name
 
