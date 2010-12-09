@@ -25,7 +25,15 @@ class GenericViewVCAuthorizer:
   def check_root_access(self, rootname):
     """Return 1 iff the associated username is permitted to read ROOTNAME."""
     pass
-  
+
+  def check_universal_access(self, rootname):
+    """Return 1 if the associated username is permitted to read every
+    path in the repository at every revision, 0 if the associated
+    username is prohibited from reading any path in the repository, or
+    None if no such determination can be made (perhaps because the
+    cost of making it is too great)."""
+    pass
+    
   def check_path_access(self, rootname, path_parts, pathtype, rev=None):
     """Return 1 iff the associated username is permitted to read
     revision REV of the path PATH_PARTS (of type PATHTYPE) in
@@ -39,6 +47,9 @@ class GenericViewVCAuthorizer:
 class ViewVCAuthorizer(GenericViewVCAuthorizer):
   """The uber-permissive authorizer."""
   def check_root_access(self, rootname):
+    return 1
+
+  def check_universal_access(self, rootname):
     return 1
     
   def check_path_access(self, rootname, path_parts, pathtype, rev=None):
