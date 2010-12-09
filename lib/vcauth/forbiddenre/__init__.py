@@ -45,6 +45,13 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   def check_root_access(self, rootname):
     return self._check_root_path_access(rootname)
   
+  def check_universal_access(self, rootname):
+    # If there aren't any forbidden regexps, we can grant universal
+    # read access.  Otherwise, we make no claim.
+    if not self.forbidden:
+      return 1
+    return None
+    
   def check_path_access(self, rootname, path_parts, pathtype, rev=None):
     root_path = rootname
     if path_parts:

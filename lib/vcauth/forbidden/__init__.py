@@ -22,7 +22,14 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
 
   def check_root_access(self, rootname):
     return 1
-  
+
+  def check_universal_access(self, rootname):
+    # If there aren't any forbidden paths, we can grant universal read
+    # access.  Otherwise, we make no claim.
+    if not self.forbidden:
+      return 1
+    return None
+    
   def check_path_access(self, rootname, path_parts, pathtype, rev=None):
     # No path?  No problem.
     if not path_parts:

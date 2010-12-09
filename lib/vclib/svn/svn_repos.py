@@ -408,6 +408,10 @@ class LocalSubversionRepository(vclib.Repository):
     self._fsroots = {}
     self._revinfo_cache = {}
 
+    # See if a universal read access determination can be made.
+    if self.auth and self.auth.check_universal_access(self.name) == 1:
+      self.auth = None
+
   def rootname(self):
     return self.name
 
