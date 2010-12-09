@@ -203,6 +203,10 @@ class RemoteSubversionRepository(vclib.Repository):
     self.youngest = ra.svn_ra_get_latest_revnum(self.ra_session)
     self._dirent_cache = { }
     self._revinfo_cache = { }
+
+    # See if a universal read access determination can be made.
+    if self.auth and self.auth.check_universal_access(self.name) == 1:
+      self.auth = None
     
   def rootname(self):
     return self.name
