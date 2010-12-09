@@ -365,8 +365,11 @@ class _Parser:
     date_fields = map(string.atoi, date_fields)
     EPOCH = 1970
     if date_fields[0] < EPOCH:
-      raise ValueError, 'invalid year'
-    timestamp = calendar.timegm(tuple(date_fields) + (0, 0, 0,))
+      raise ValueError, 'invalid year for revision %s' % (revision,)
+    try:
+      timestamp = calendar.timegm(tuple(date_fields) + (0, 0, 0,))
+    except ValueError, e:
+      raise ValueError, 'invalid date for revision %s: %s' % (revision, e,)
 
     # Parse author
     ### NOTE: authors containing whitespace are violations of the
