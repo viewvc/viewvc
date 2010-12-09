@@ -649,6 +649,26 @@
 ##
 #log_pagesize = 0
 
+## log_pagesextra: Maximum number of extra pages (based on
+## log_pagesize) of revision log data to fetch and present to the user
+## as additional options for display.  Revision log information
+## "beyond" this window is still accessible, but must be navigated to
+## in multiple steps.
+##
+## Example:
+## log_pagesize = 100
+## log_pagesextra = 3
+##
+## For a versioned file with 1000 revisions, the above settings would
+## present to the user the first 100 of those 1000 revisions, with
+## links to three additional pages (the 200-299th revisions, 300-399th
+## revisions, and 400-499th revisions) plus a link to the 500th
+## revision.  Following these links slides the display "window",
+## showing the requested set of revisions plus links to three
+## additional pages beyond those, and so on.
+##
+#log_pagesextra = 5
+
 ## limit_changes: Maximum number of changed paths shown per commit in
 ## the Subversion revision view and in query results. This is not a
 ## hard limit (the UI provides options to show all changed paths), but

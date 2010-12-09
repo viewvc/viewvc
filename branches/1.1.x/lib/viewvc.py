@@ -79,10 +79,6 @@ _sticky_vars = [
   'limit_changes',
   ]
 
-# number of extra pages of information on either side of the current
-# page to fetch (see dir_pagesize/log_pagesize configuration option)
-EXTRA_PAGES = 3
-
 # for reading/writing between a couple descriptors
 CHUNK_SIZE = 8192
 
@@ -2233,10 +2229,11 @@ def paging(data, key, pagestart, local_name, pagesize):
   # Slice
   return data[key][pagestart:pageend]
 
-def paging_sws(data, key, pagestart, local_name, pagesize, offset):
+def paging_sws(data, key, pagestart, local_name, pagesize,
+               extra_pages, offset):
   """Implement sliding window-style paging."""
   # Create the picklist
-  last_requested = pagestart + (EXTRA_PAGES * pagesize)
+  last_requested = pagestart + (extra_pages * pagesize)
   picklist = data['picklist'] = []
   has_more = ezt.boolean(0)
   for i in range(0, len(data[key]), pagesize):
@@ -2365,9 +2362,9 @@ def view_log(request):
   first = last = 0
   if cfg.options.log_pagesize:
     log_pagestart = int(request.query_dict.get('log_pagestart', 0))
-    first = log_pagestart - min(log_pagestart,
-                                (EXTRA_PAGES * cfg.options.log_pagesize))
-    last = log_pagestart + ((EXTRA_PAGES + 1) * cfg.options.log_pagesize) + 1
+    total = cfg.options.log_pagesextra * cfg.options.log_pagesize
+    first = log_pagestart - min(log_pagestart, total)
+    last = log_pagestart + (total + cfg.options.log_pagesize) + 1
   show_revs = request.repos.itemlog(request.path_parts, request.pathrev,
                                     sortby, first, last - first, options)
 
@@ -2628,7 +2625,8 @@ def view_log(request):
       request.get_form(params={'log_pagestart': None})
     data['log_pagestart'] = int(request.query_dict.get('log_pagestart',0))
     data['entries'] = paging_sws(data, 'entries', data['log_pagestart'],
-                                 'rev', cfg.options.log_pagesize, first)
+                                 'rev', cfg.options.log_pagesize,
+                                 cfg.options.log_pagesextra, first)
 
   generate_page(request, "log", data)
 
