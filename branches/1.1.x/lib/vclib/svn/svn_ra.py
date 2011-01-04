@@ -57,7 +57,7 @@ def client_log(url, start_rev, end_rev, log_limit, cross_copies,
     client.svn_client_log4([url], start_rev, start_rev, end_rev,
                            log_limit, 1, not cross_copies, 0, None,
                            cb_func, ctx)
-  except NameError:
+  except AttributeError:
     # Wrap old svn_log_message_receiver_t interface with a
     # svn_log_entry_t one.
     def cb_convert(paths, revision, author, date, message, pool):
