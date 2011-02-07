@@ -19,7 +19,7 @@ Congratulations on getting this far. :-)
 
     In General:
 
-      * Python 2.4 or later
+      * Python 2, version 2.4 or later (sorry, no 3.x support yet)
           (http://www.python.org/)
 
     For CVS Support: 
