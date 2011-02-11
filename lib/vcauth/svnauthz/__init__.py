@@ -53,7 +53,10 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     # option names.
     cp = ConfigParser()
     cp.optionxform = lambda x: x
-    cp.read(self.authz_file)
+    try:
+      cp.read(self.authz_file)
+    except:
+      raise debug.ViewVCException("Unable to parse configured authzfile file")
 
     # Figure out if there are any aliases for the current username
     aliases = []
