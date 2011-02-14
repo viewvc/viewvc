@@ -580,23 +580,9 @@ class LocalSubversionRepository(vclib.Repository):
 
   def _revinfo(self, rev, include_changed_paths=0):
     """Internal-use, cache-friendly revision information harvester."""
-    
-    def _revinfo_helper(rev, include_changed_paths):
-      # Get the revision property info.  (Would use
-      # editor.get_root_props(), but something is broken there...)
-      revprops = fs.revision_proplist(self.fs_ptr, rev)
-      msg, author, date, revprops = _split_revprops(revprops)
-  
-      # Optimization: If our caller doesn't care about the changed
-      # paths, and we don't need them to do authz determinations, let's
-      # get outta here.
-      if self.auth is None and not include_changed_paths:
-        return date, author, msg, revprops, None
-  
-      # If we get here, then we either need the changed paths because we
-      # were asked for them, or we need them to do authorization checks.
-      # Either way, we need 'em, so let's get 'em.
-      fsroot = self._getroot(rev)
+
+    def _get_changed_paths(fsroot):
+      """Return a 3-tuple: found_readable, found_unreadable, changed_paths."""
       editor = repos.ChangeCollector(self.fs_ptr, fsroot)
       e_ptr, e_baton = delta.make_editor(editor)
       repos.svn_repos_replay(fsroot, e_ptr, e_baton)
@@ -662,24 +648,76 @@ class LocalSubversionRepository(vclib.Repository):
           found_readable = 1
         else:
           found_unreadable = 1
+      return found_readable, found_unreadable, changedpaths.values()
+
+    def _simple_auth_check(fsroot):
+      """Return a 2-tuple: found_readable, found_unreadable."""
+      found_unreadable = found_readable = 0
+      if hasattr(fs, 'paths_changed2'):
+        changes = fs.paths_changed2(fsroot)
+      else:
+        changes = fs.paths_changed(fsroot)
+      paths = changes.keys()
+      for path in paths:
+        change = changes[path]
+        pathtype = None
+        if hasattr(change, 'node_kind'):
+          if change.node_kind == core.svn_node_file:
+            pathtype = vclib.FILE
+          elif change.node_kind == core.svn_node_dir:
+            pathtype = vclib.DIR
+        parts = _path_parts(path)
+        if vclib.check_path_access(self, parts, pathtype, rev):
+          found_readable = 1
+          if hasattr(change, 'copyfrom_path'):
+            copyfrom_path = change.copyfrom_path
+            copyfrom_rev = change.copyfrom_rev
+          else:
+            copyfrom_rev, copyfrom_path = fs.copied_from(fsroot, path)
+          if copyfrom_path and copyfrom_path != path:
+            parts = _path_parts(copyfrom_path)
+            if not vclib.check_path_access(self, parts, pathtype,
+                                           copyfrom_rev):
+              found_unreadable = 1
+        else:
+          found_unreadable = 1
+        if found_readable and found_unreadable:
+          break
+      return found_readable, found_unreadable
+      
+    def _revinfo_helper(rev, include_changed_paths):
+      # Get the revision property info.  (Would use
+      # editor.get_root_props(), but something is broken there...)
+      revprops = fs.revision_proplist(self.fs_ptr, rev)
+      msg, author, date, revprops = _split_revprops(revprops)
   
-        # If our caller doesn't care about changed paths, we must be
-        # here for authz reasons only.  That means the minute we've
-        # found both a readable and an unreadable path, we can bail out.
-        if (not include_changed_paths) and found_readable and found_unreadable:
-          return date, author, None, None, None
+      # Optimization: If our caller doesn't care about the changed
+      # paths, and we don't need them to do authz determinations, let's
+      # get outta here.
+      if self.auth is None and not include_changed_paths:
+        return date, author, msg, revprops, None
+  
+      # If we get here, then we either need the changed paths because we
+      # were asked for them, or we need them to do authorization checks.
+      #
+      # If we only need them for authorization checks, though, we
+      # won't bother generating fully populated ChangedPath items (the
+      # cost is too great).
+      fsroot = self._getroot(rev)
+      if include_changed_paths:
+        found_readable, found_unreadable, changedpaths = \
+          _get_changed_paths(fsroot)
+      else:
+        changedpaths = None
+        found_readable, found_unreadable = _simple_auth_check(fsroot)
         
-      # Okay, we've process all our paths.  Let's filter our metadata,
-      # and return the requested data.
+      # Filter our metadata where necessary, and return the requested data.
       if found_unreadable:
         msg = None
         if not found_readable:
           author = None
           date = None
-      if include_changed_paths:
-        return date, author, msg, revprops, changedpaths.values()
-      else:
-        return date, author, msg, revprops, None
+      return date, author, msg, revprops, changedpaths
 
     # Consult the revinfo cache first.  If we don't have cached info,
     # or our caller wants changed paths and we don't have those for
