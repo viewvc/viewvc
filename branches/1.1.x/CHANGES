@@ -5,6 +5,7 @@ Version 1.1.9 (released ??-???-????)
   * make revision log "extra pages" count configurable
   * fix Subversion 1.4.x revision log compatibility code regression
   * display sanitized error when authzfile is malformed
+  * internally treat file:/// Subversion rootpaths as local repositories
 
 Version 1.1.8 (released 02-Dec-2010)
 
