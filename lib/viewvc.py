@@ -1533,6 +1533,21 @@ class MarkupPipeWrapper:
     if self.posttext:
       ctx.fp.write(self.posttext)
 
+_re_rewrite_escaped_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)'
+                                     '(://[-a-zA-Z0-9%.~:_/]+)'
+                                     '((\?|\&amp;amp;|\&amp;|\&)'
+                                     '([-a-zA-Z0-9%.~:_]+)=([-a-zA-Z0-9%.~:_])+)*'
+                                     '(#([-a-zA-Z0-9%.~:_]+)?)?)')
+
+def markup_escaped_urls(s):
+  # Return a copy of S with all URL references -- which are expected
+  # to be already HTML-escaped -- wrapped in <a href=""></a>.
+  def _url_repl(match_obj):
+    url = match_obj.group(0)
+    unescaped_url = url.replace("&amp;amp;", "&amp;")
+    return "<a href=\"%s\">%s</a>" % (unescaped_url, url)
+  return re.sub(_re_rewrite_escaped_url, _url_repl, s)
+
 def markup_stream_pygments(request, cfg, blame_data, fp, filename,
                            mime_type, encoding):
   # Determine if we should use Pygments to highlight our output.
@@ -1596,6 +1611,7 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
         def __getitem__(self, idx):
           item = self.blame_source.__getitem__(idx)
           item.text = item.text.expandtabs(self.tabsize)
+          item.text = markup_escaped_urls(item.text)
           return item
       return BlameSourceTabsizeWrapper(blame_source, cfg.options.tabsize)
     else:
@@ -1607,6 +1623,7 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
           break
         line_no = line_no + 1
         line = sapi.escape(line.expandtabs(cfg.options.tabsize))
+        line = markup_escaped_urls(line)
         item = vclib.Annotation(line, line_no, None, None, None, None)
         item.diff_href = None
         lines.append(item)
@@ -1624,6 +1641,7 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
       self.line_no = 0
     def write(self, buf):
       ### FIXME:  Don't bank on write() being called once per line
+      buf = markup_escaped_urls(buf)
       if self.has_blame_data:
         self.blame_data[self.line_no].text = buf
       else:
