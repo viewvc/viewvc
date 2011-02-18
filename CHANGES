@@ -7,6 +7,7 @@ Version 1.1.9 (released ??-???-????)
   * display sanitized error when authzfile is malformed
   * internally treat file:/// Subversion rootpaths as local repositories
   * restore markup of URLs in file contents (issue #455)
+  * optionally display last-committed metadata in roots view (issue #457)
 
 Version 1.1.8 (released 02-Dec-2010)
 

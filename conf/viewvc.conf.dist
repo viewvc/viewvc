@@ -572,6 +572,14 @@
 ##
 #show_subdir_lastmod = 0
 
+## show_roots_lastmod: In the root listing view, show the most recent
+## modifications made to the root.  (Subversion roots only.)
+##
+## NOTE: Enabling this feature will significantly reduce the
+## performance of the root listing view.
+##
+#show_roots_lastmod = 0
+
 ## show_logs: Show the most recent log entry in directory listings.
 ##
 #show_logs = 1
