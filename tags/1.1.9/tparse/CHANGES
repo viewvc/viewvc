@@ -1,0 +1,50 @@
+Bugfix ( 19-Feb-2002 - Daniel Berlin)
+  * tparsemodule.cpp (tparse): Change tparseParser object to
+    non-pointer.
+
+Modif ( 13-Feb-2002)
+  * Removed debugging statments from the (C++) Sink class.
+  * Changed INSTALL to reflect the move of rcsparse to lib/vclib/ccvs/rcsparse.
+  * Now when tparse cannot import common.py, it fails.
+  * Added check for sink being of common.Sink class.
+  
+Modif ( 11-Feb-2002)
+  * Support for parser exceptions  ( RCS* ):
+     tparse will try import those exceptions from the "common" module.
+     If it fails, tparse create those exceptions inside itself.
+  * Changed the INSTALL file to make installation clearer.
+
+Modif ( 08-Feb-2002)
+  * Added Daniel Berlin's patch:
+    Use a buffer stdiobufstream to access a python File in C++.
+    Much faster.
+    
+Modif ( 30-Jan-2002)
+	* Fixed compilation problem of revision 1.2 of tparser.cpp
+	* Streamlined some part of the code. ( Added returns here and there...)
+	
+Modif ( 29-Jan-2002)
+	* Greg Fixed a problem with revisions' date.
+	* Greg Fixed a problem with the state ostrstream. ( added a space in the end)
+	
+Modif ( 27-Jan-2002)
+	* Added Install file
+	* Added the list of the platforms on which tparse has been compiled ( compile farm of sourceforge.)
+	* Added lots of little variable ( __version__, etc...)
+Modif ( 25-Jan-2002)
+	* renamed module as tparse
+	* wrote distutils Setup.py
+	* added inline (__doc__) documentation in python module.
+	
+Modif ( 24-Jan-2002)
+	* Implementation of the python exceptions in the C++ code.	
+	* Added an exception to stop the parser.
+	* Fixed bug that added a "@" in the end of string in certain cases.
+	
+Modif ( 21-Jan-2002)
+	* Extensive testing of the memory leaks
+	* Started to write the python wrapper. (tparsemodule.cpp & tparsemodule.h)
+
+Creation ( 20-Jan-2002 )
+	* Implementation of the Token parser in C++ ( tparse.cpp & tparse.h)
+	* Implementation of the parser itself in C++

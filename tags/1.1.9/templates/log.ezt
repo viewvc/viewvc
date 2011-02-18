@@ -1,0 +1,150 @@
+[include "include/log_header.ezt"]
+
+[define first_revision][end]
+[define last_revision][end]
+
+[for entries]
+[if-index entries first][define first_revision][entries.rev][end][end]
+[if-index entries last][define last_revision][entries.rev][end][end]
+
+<div>
+  <hr />
+
+  [is entries.state "dead"]
+    Revision <strong>[entries.rev]</strong>
+  [else]
+    <a name="rev[entries.rev]"></a>
+    [for entries.tag_names]<a name="[entries.tag_names]"></a>
+    [end]
+    [for entries.branch_names]<a name="[entries.branch_names]"></a>
+    [end]
+
+    Revision [is roottype "svn"]<a href="[entries.revision_href]"><strong>[entries.rev]</strong></a>[else]<strong>[entries.rev]</strong>[end] -
+    [if-any entries.view_href]
+      [is pathtype "file"]
+        (<a href="[entries.view_href]">view</a>)
+      [else]
+        <a href="[entries.view_href]">Directory Listing</a>
+      [end]
+    [end]
+    [if-any entries.download_href](<a href="[entries.download_href]">download</a>)[end]
+    [if-any entries.download_text_href](<a href="[entries.download_text_href]">as text</a>)[end]
+    [if-any entries.annotate_href](<a href="[entries.annotate_href]">annotate</a>)[end]
+
+    [is pathtype "file"]
+      [# if you don't want to allow select for diffs then remove this section]
+      [is entries.rev rev_selected]
+        - <strong>[[]selected]</strong>
+      [else]
+        - <a href="[entries.sel_for_diff_href]">[[]select for diffs]</a>
+      [end]
+    [end]
+  [end]
+
+  [if-any entries.vendor_branch]
+    <em>(vendor branch)</em>
+  [end]
+
+  <br />
+
+  [is roottype "svn"]
+    [if-index entries last]Added[else]Modified[end]
+  [end]
+
+  <em>[if-any entries.date][entries.date][else](unknown date)[end]</em>
+  [if-any entries.ago]([entries.ago] ago)[end] 
+  by <em>[if-any entries.author][entries.author][else](unknown author)[end]</em>
+
+  [if-any entries.orig_path]
+    <br />Original Path: <a href="[entries.orig_href]"><em>[entries.orig_path]</em></a>
+  [end]
+
+  [if-any entries.branches]
+    <br />Branch:
+    [for entries.branches]
+      <a href="[entries.branches.href]"><strong>[entries.branches.name]</strong></a>[if-index entries.branches last][else],[end]
+    [end]
+  [end]
+
+  [if-any entries.tags]
+    <br />CVS Tags:
+    [for entries.tags]
+      <a href="[entries.tags.href]"><strong>[entries.tags.name]</strong></a>[if-index entries.tags last][else],[end]
+    [end]
+  [end]
+
+  [if-any entries.branch_points]
+    <br />Branch point for:
+    [for entries.branch_points]
+      <a href="[entries.branch_points.href]"><strong>[entries.branch_points.name]</strong></a>[if-index entries.branch_points last][else],[end]
+    [end]
+  [end]
+
+  [if-any entries.prev]
+    [if-any entries.changed]
+      [is roottype "cvs"]
+      <br />Changes since <strong>[entries.prev]: [entries.changed] lines</strong>
+      [end]
+    [end]
+  [end]
+
+  [is roottype "svn"]
+    [if-any entries.size]
+    <br />File length: [entries.size] byte(s)
+    [end]
+
+    [if-any entries.copy_path]
+    <br />Copied from: <a href="[entries.copy_href]"><em>[entries.copy_path]</em></a> revision [entries.copy_rev]
+    [end]
+  [end]
+
+  [if-any entries.lockinfo]
+    <br />Lock status: <img src="[docroot]/images/lock.png" alt="Locked" width="16" height="16" /> [entries.lockinfo]
+  [end]
+
+  [is entries.state "dead"]
+    <br /><strong><em>FILE REMOVED</em></strong>
+  [else]
+   [is pathtype "file"]
+    [if-any entries.prev]
+      <br />Diff to <a href="[entries.diff_to_prev_href]">previous [entries.prev]</a>
+      [if-any human_readable]
+      [else]
+        (<a href="[entries.diff_to_prev_href]&amp;diff_format=h">colored</a>)
+      [end]
+    [end]
+
+    [is roottype "cvs"]
+      [if-any entries.branch_point]
+        , to <a href="[entries.diff_to_branch_href]">branch point [entries.branch_point]</a>
+        [if-any human_readable]
+        [else]
+           (<a href="[entries.diff_to_branch_href]&amp;diff_format=h">colored</a>)
+        [end]
+      [end]
+  
+      [if-any entries.next_main]
+        , to <a href="[entries.diff_to_main_href]">next main [entries.next_main]</a>
+        [if-any human_readable]
+        [else]
+           (<a href="[entries.diff_to_main_href]&amp;diff_format=h">colored</a>)
+        [end]
+      [end]
+    [end]
+
+    [if-any entries.diff_to_sel_href]
+      [if-any entries.prev], [else]<br />Diff[end]
+        to <a href="[entries.diff_to_sel_href]">selected [rev_selected]</a>
+      [if-any human_readable]
+      [else]
+        (<a href="[entries.diff_to_sel_href]&amp;diff_format=h">colored</a>)
+      [end]
+    [end]
+   [end]
+  [end]
+
+<pre class="vc_log">[entries.log]</pre>
+</div>
+[end]
+
+[include "include/log_footer.ezt"]
