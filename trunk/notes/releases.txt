@@ -85,9 +85,12 @@ numbers, and not literal):
 
 14. Upload the created archive files (tar.gz and zip) into the Files
     and Documents section of the Tigris.org project, and modify the
-    CHECKSUMS document there accordingly.  Also, drop a copy of the
-    archive files into the root directory of the viewvc.org website
-    (unversioned).
+    CHECKSUMS document there accordingly:
+
+       http://viewvc.tigris.org/servlets/ProjectDocumentList?folderID=6004
+
+    Also, drop a copy of the archive files into the root directory of
+    the viewvc.org website (unversioned).
 
 15. On trunk, update the websites (both the viewvc.org/ and www/ ones)
     to refer to the new release files, and copy the CHANGES for the
@@ -103,6 +106,9 @@ numbers, and not literal):
     for the just-released one, and a new Milestone for the next patch
     (and possibly, minor or major) release.  (For the Milestone sort
     key, use a packed integer XXYYZZ:  1.0.3 == 10003, 2.11.4 == 21104.)
+
+       http://viewvc.tigris.org/issues/editversions.cgi?component=viewvc&action=add
+       http://viewvc.tigris.org/issues/editmilestones.cgi?component=viewvc&action=add
 
 18. Send to the announce@ list a message explaining all the cool new
     features, and post similar announcements to other places interested
