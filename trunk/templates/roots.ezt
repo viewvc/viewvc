@@ -10,9 +10,10 @@
 <tr>
   <th class="vc_header_sort">Name</th>
 [is cfg.options.show_roots_lastmod "1"]
-  <th class="vc_header_sort">Revision</th>
-  <th class="vc_header_sort">Age</th>
-  <th class="vc_header_sort">Log</th>
+  <th class="vc_header">Revision</th>
+  <th class="vc_header">Age</th>
+  <th class="vc_header">Author</th>
+  <th class="vc_header">Log</th>
 [end]
 </tr>
 </thead>
@@ -28,6 +29,7 @@
 [is cfg.options.show_roots_lastmod "1"]
     <td style="width:20">&nbsp;[roots.rev]</td>
     <td style="width:20">&nbsp;[roots.ago]</td>
+    <td style="width:20">&nbsp;[roots.author]</td>
     <td style="width:20">&nbsp;[roots.short_log]</td>
 [end]
   </tr>
