@@ -9,6 +9,11 @@
 <thead>
 <tr>
   <th class="vc_header_sort">Name</th>
+[is cfg.options.show_roots_lastmod "1"]
+  <th class="vc_header_sort">Revision</th>
+  <th class="vc_header_sort">Age</th>
+  <th class="vc_header_sort">Log</th>
+[end]
 </tr>
 </thead>
 
@@ -20,6 +25,11 @@
       <img src="[docroot]/images/dir.png" alt="" class="vc_icon" />
       [roots.name]</a>
     </td>
+[is cfg.options.show_roots_lastmod "1"]
+    <td style="width:20">&nbsp;[roots.rev]</td>
+    <td style="width:20">&nbsp;[roots.ago]</td>
+    <td style="width:20">&nbsp;[roots.short_log]</td>
+[end]
   </tr>
 [end]
 </tbody>

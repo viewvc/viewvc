@@ -2145,6 +2145,32 @@ td {
   <td>Set of configured viewable repositories.</td>
 </tr>
 <tr class="varlevel2">
+  <td class="varname">roots.ago</td>
+  <td>String</td>
+  <td>Textual description of the time since <var>roots.date</var>.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">roots.author</td>
+  <td>String</td>
+  <td>Username of the last modifier of the root.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">root.date</td>
+  <td>String</td>
+  <td>Date (in UTC if not otherwise configured) of the last
+      modification of the root.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">roots.href</td>
+  <td>String</td>
+  <td>URL of root directory view for a configured repository.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">roots.log</td>
+  <td>String</td>
+  <td>Log message of last modification to the root.</td>
+</tr>
+<tr class="varlevel2">
   <td class="varname">roots.name</td>
   <td>String</td>
   <td>Name of a configured repository.</td>
@@ -2158,15 +2184,22 @@ td {
       token at your own risk.</td>
 </tr>
 <tr class="varlevel2">
+  <td class="varname">roots.rev</td>
+  <td>String</td>
+  <td>Youngest revision of the root.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">roots.short_log</td>
+  <td>String</td>
+  <td>Log message of last modification to the root, truncated to
+      contain no more than the number of characters specified by
+      the <code>short_log_len</code> configuration option.</td>
+</tr>
+<tr class="varlevel2">
   <td class="varname">roots.type</td>
   <td>String</td>
   <td>Version control type of a configured repository.  Valid
       values: <tt>cvs</tt>, <tt>svn</tt>.</td>
-</tr>
-<tr class="varlevel2">
-  <td class="varname">roots.href</td>
-  <td>String</td>
-  <td>URL of root directory view for a configured repository.</td>
 </tr>
 </tbody>
 </table>

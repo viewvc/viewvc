@@ -420,6 +420,7 @@ class Config:
     self.options.template_dir = "templates"
     self.options.docroot = None
     self.options.show_subdir_lastmod = 0
+    self.options.show_roots_lastmod = 0
     self.options.show_logs = 1
     self.options.show_log_in_markup = 1
     self.options.cross_copies = 1
