@@ -11,6 +11,7 @@
 # -----------------------------------------------------------------------
 
 import os
+import string
 import re
 import cStringIO
 import tempfile
@@ -21,8 +22,7 @@ import blame
 
 ### The functionality shared with bincvs should probably be moved to a
 ### separate module
-from bincvs import BaseCVSRepository, Revision, Tag, _file_log, _log_path, _logsort_date_cmp, _logsort_rev_cmp, _path_join
-
+from bincvs import BaseCVSRepository, Revision, Tag, _file_log, _log_path, _logsort_date_cmp, _logsort_rev_cmp
 
 class CCVSRepository(BaseCVSRepository):
   def dirlogs(self, path_parts, rev, entries, options):
@@ -44,7 +44,7 @@ class CCVSRepository(BaseCVSRepository):
     """
     if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
       raise vclib.Error("Path '%s' is not a directory."
-                        % (part2path(path_parts)))
+                        % (string.join(path_parts, "/")))
     entries_to_fetch = []
     for entry in entries:
       if vclib.check_path_access(self, path_parts + [entry.name], None, rev):
@@ -94,7 +94,8 @@ class CCVSRepository(BaseCVSRepository):
         dictionary of Tag objects for all tags encountered
     """
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts, "/")))
 
     path = self.rcsfile(path_parts, 1)
     sink = TreeSink()
@@ -119,9 +120,11 @@ class CCVSRepository(BaseCVSRepository):
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     if self.itemtype(path_parts1, rev1) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts1)))
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts1, "/")))
     if self.itemtype(path_parts2, rev2) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts2)))
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts2, "/")))
     
     temp1 = tempfile.mktemp()
     open(temp1, 'wb').write(self.openfile(path_parts1, rev1)[0].getvalue())
@@ -141,7 +144,8 @@ class CCVSRepository(BaseCVSRepository):
 
   def annotate(self, path_parts, rev=None):
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts, "/")))
     source = blame.BlameSource(self.rcsfile(path_parts, 1), rev)
     return source, source.revision
 
@@ -150,12 +154,13 @@ class CCVSRepository(BaseCVSRepository):
 
   def openfile(self, path_parts, rev=None):
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts, "/")))
     path = self.rcsfile(path_parts, 1)
     sink = COSink(rev)
     rcsparse.parse(open(path, 'rb'), sink)
     revision = sink.last and sink.last.string
-    return cStringIO.StringIO('\n'.join(sink.sstext.text)), revision
+    return cStringIO.StringIO(string.join(sink.sstext.text, "\n")), revision
 
 class MatchingSink(rcsparse.Sink):
   """Superclass for sinks that search for revisions based on tag or number"""
@@ -282,18 +287,18 @@ class TreeSink(rcsparse.Sink):
     deled = 0
     if self.head != revision:
       changed = 1
-      lines = text.split('\n')
+      lines = string.split(text, '\n')
       idx = 0
       while idx < len(lines):
         command = lines[idx]
         dmatch = self.d_command.match(command)
         idx = idx + 1
         if dmatch:
-          deled = deled + int(dmatch.group(2))
+          deled = deled + string.atoi(dmatch.group(2))
         else:
           amatch = self.a_command.match(command)
           if amatch:
-            count = int(amatch.group(2))
+            count = string.atoi(amatch.group(2))
             added = added + count
             idx = idx + count
           elif command:
@@ -309,12 +314,12 @@ class StreamText:
   a_command = re.compile('^a(\d+)\\s(\\d+)')
 
   def __init__(self, text):
-    self.text = text.split('\n')
+    self.text = string.split(text, "\n")
 
   def command(self, cmd):
     adjust = 0
     add_lines_remaining = 0
-    diffs = cmd.split('\n')
+    diffs = string.split(cmd, "\n")
     if diffs[-1] == "":
       del diffs[-1]
     if len(diffs) == 0:
@@ -332,22 +337,22 @@ class StreamText:
       amatch = self.a_command.match(command)
       if dmatch:
         # "d" - Delete command
-        start_line = int(dmatch.group(1))
-        count      = int(dmatch.group(2))
+        start_line = string.atoi(dmatch.group(1))
+        count      = string.atoi(dmatch.group(2))
         begin = start_line + adjust - 1
         del self.text[begin:begin + count]
         adjust = adjust - count
       elif amatch:
         # "a" - Add command
-        start_line = int(amatch.group(1))
-        count      = int(amatch.group(2))
+        start_line = string.atoi(amatch.group(1))
+        count      = string.atoi(amatch.group(2))
         add_lines_remaining = count
       else:
         raise RuntimeError, 'Error parsing diff commands'
 
 def secondnextdot(s, start):
   # find the position the second dot after the start index.
-  return s.find('.', s.find('.', start) + 1)
+  return string.find(s, '.', string.find(s, '.', start) + 1)
 
 
 class COSink(MatchingSink):

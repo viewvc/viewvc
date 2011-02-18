@@ -15,7 +15,9 @@
 import vclib
 import os
 import os.path
+import string
 import cStringIO
+import signal
 import time
 import tempfile
 import popen
@@ -47,12 +49,12 @@ def _allow_all(root, path, pool):
 
 
 def _path_parts(path):
-  return filter(None, path.split('/'))
+  return filter(None, string.split(path, '/'))
 
 
 def _cleanup_path(path):
   """Return a cleaned-up Subversion filesystem path"""
-  return '/'.join(_path_parts(path))
+  return string.join(_path_parts(path), '/')
   
 
 def _fs_path_join(base, relative):
@@ -109,8 +111,8 @@ def _rootpath2url(rootpath, path):
   if rootpath and rootpath[0] != '/':
     rootpath = '/' + rootpath
   if os.sep != '/':
-    rootpath = rootpath.replace(os.sep, '/')
-  return 'file://' + rootpath + '/' + path
+    rootpath = string.replace(rootpath, os.sep, '/')
+  return 'file://' + string.join([rootpath, path], "/")
 
 
 # Given a dictionary REVPROPS of revision properties, pull special
@@ -184,7 +186,7 @@ class NodeHistory:
         test_path = path
         found = 0
         while 1:
-          off = test_path.rfind('/')
+          off = string.rfind(test_path, '/')
           if off < 0:
             break
           test_path = test_path[0:off]
@@ -340,6 +342,7 @@ class LocalSubversionRepository(vclib.Repository):
     self.rootpath = rootpath
     self.name = name
     self.auth = authorizer
+    self.svn_client_path = utilities.svn or 'svn'
     self.diff_cmd = utilities.diff or 'diff'
     self.config_dir = config_dir or None
 
@@ -348,6 +351,22 @@ class LocalSubversionRepository(vclib.Repository):
       raise vclib.ReposNotFound(name)
 
   def open(self):
+    # Register a handler for SIGTERM so we can have a chance to
+    # cleanup.  If ViewVC takes too long to start generating CGI
+    # output, Apache will grow impatient and SIGTERM it.  While we
+    # don't mind getting told to bail, we want to gracefully close the
+    # repository before we bail.
+    def _sigterm_handler(signum, frame, self=self):
+      sys.exit(-1)
+    try:
+      signal.signal(signal.SIGTERM, _sigterm_handler)
+    except ValueError:
+      # This is probably "ValueError: signal only works in main
+      # thread", which will get thrown by the likes of mod_python
+      # when trying to install a signal handler from a thread that
+      # isn't the main one.  We'll just not care.
+      pass
+
     # Open the repository and init some other variables.
     self.repos = repos.svn_repos_open(self.rootpath)
     self.fs_ptr = repos.svn_repos_fs(self.repos)
@@ -757,14 +776,12 @@ class LocalSubversionRepository(vclib.Repository):
     return rev_paths
   
   def _getpath(self, path_parts):
-    return '/'.join(path_parts)
+    return string.join(path_parts, '/')
 
   def _getrev(self, rev):
     if rev is None or rev == 'HEAD':
       return self.youngest
     try:
-      if type(rev) == type('') and rev[0] == 'r':
-        rev = rev[1:]
       rev = int(rev)
     except ValueError:
       raise vclib.InvalidRevision(rev)

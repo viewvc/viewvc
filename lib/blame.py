@@ -27,6 +27,7 @@
 # -----------------------------------------------------------------------
 
 import sys
+import string
 import os
 import re
 import time
@@ -41,7 +42,7 @@ def link_includes(text, repos, path_parts, include_url):
   if match:
     incfile = match.group(3)
     include_path_parts = path_parts[:-1]
-    for part in filter(None, incfile.split('/')):
+    for part in filter(None, string.split(incfile, '/')):
       if part == "..":
         if not include_path_parts:
           # nothing left to pop; don't bother marking up this include.
@@ -53,14 +54,14 @@ def link_includes(text, repos, path_parts, include_url):
     include_path = None
     try:
       if repos.itemtype(include_path_parts, None) == vclib.FILE:
-        include_path = '/'.join(include_path_parts)
+        include_path = string.join(include_path_parts, '/')
     except vclib.ItemNotFound:
       pass
 
     if include_path:
       return '#%sinclude%s<a href="%s">"%s"</a>' % \
              (match.group(1), match.group(2),
-              include_url.replace('/WHERE/', include_path), incfile)
+              string.replace(include_url, '/WHERE/', include_path), incfile)
     
   return text
 
@@ -134,7 +135,7 @@ def make_html(root, rcs_path):
       sys.stdout.write('<td>&nbsp;</td><td>&nbsp;</td>')
     rev_count = rev_count + 1
 
-    sys.stdout.write('<td%s>%s</td></tr>\n' % (align % 'left', thisline.rstrip() or '&nbsp;'))
+    sys.stdout.write('<td%s>%s</td></tr>\n' % (align % 'left', string.rstrip(thisline) or '&nbsp;'))
   sys.stdout.write('</table>\n')
 
 
