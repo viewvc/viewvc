@@ -689,7 +689,7 @@
 ## showing the requested set of revisions plus links to three
 ## additional pages beyond those, and so on.
 ##
-#log_pagesextra = 5
+#log_pagesextra = 3
 
 ## limit_changes: Maximum number of changed paths shown per commit in
 ## the Subversion revision view and in query results. This is not a
