@@ -1926,9 +1926,16 @@ def view_roots(request):
       href = request.get_url(view_func=view_directory,
                              where='', pathtype=vclib.DIR,
                              params={'root': rootname}, escape=1)
+      lastmod = allroots[rootname][2]
       roots.append(_item(name=request.server.escape(rootname),
                          type=allroots[rootname][1],
                          path=allroots[rootname][0],
+                         author=lastmod and lastmod.author or None,
+                         ago=lastmod and lastmod.ago or None,
+                         date=lastmod and lastmod.date or None,
+                         log=lastmod and lastmod.log or None,
+                         short_log=lastmod and lastmod.short_log or None,
+                         rev=lastmod and lastmod.rev or None,
                          href=href))
 
   data = common_template_data(request)
@@ -4362,11 +4369,26 @@ def list_roots(request):
   for root in cfg.general.svn_roots.keys():
     auth = setup_authorizer(cfg, request.username, root)
     try:
-      vclib.svn.SubversionRepository(root, cfg.general.svn_roots[root], auth,
-                                     cfg.utilities, cfg.options.svn_config_dir)
+      repos = vclib.svn.SubversionRepository(root, cfg.general.svn_roots[root],
+                                             auth, cfg.utilities,
+                                             cfg.options.svn_config_dir)
+      lastmod = None
+      if cfg.options.show_roots_lastmod:
+        try:
+          repos.open()
+          youngest_rev = repos.youngest
+          date, author, msg, revprops, changes = repos.revinfo(youngest_rev)
+          date_str = make_time_string(date, cfg)
+          ago = html_time(request, date)
+          log = format_log(request, msg)
+          short_log = format_log(request, msg, maxlen=cfg.options.short_log_len)
+          lastmod = _item(ago=ago, author=author, date=date_str, log=log,
+                          short_log=short_log, rev=str(youngest_rev))
+        except:
+          lastmod = None
     except vclib.ReposNotFound:
       continue
-    allroots[root] = [cfg.general.svn_roots[root], 'svn']
+    allroots[root] = [cfg.general.svn_roots[root], 'svn', lastmod]
 
   # Add the viewable CVS roots
   for root in cfg.general.cvs_roots.keys():
@@ -4376,7 +4398,7 @@ def list_roots(request):
                                cfg.utilities, cfg.options.use_rcsparse)
     except vclib.ReposNotFound:
       continue
-    allroots[root] = [cfg.general.cvs_roots[root], 'cvs']
+    allroots[root] = [cfg.general.cvs_roots[root], 'cvs', None]
     
   return allroots
 
