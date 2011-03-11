@@ -1,6 +1,6 @@
 Version 1.1.10 (released ??-???-????)
 
-  *
+  * fix regression in Subversion authz consultation (issue #475, issue #476)
 
 Version 1.1.9 (released 18-Feb-2011)
 
