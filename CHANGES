@@ -1,6 +1,6 @@
 Version 1.1.11 (released ??-???-????)
 
-  * 
+  * fix broken standalone.py -c and -d options handling
 
 Version 1.1.10 (released 15-Mar-2011)
 
