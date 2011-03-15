@@ -712,8 +712,8 @@ def cli(argv):
   import getopt
   class BadUsage(Exception): pass
 
-  short_opts = string.join(['c',
-                            'd:',
+  short_opts = string.join(['c:',
+                            'd',
                             'g',
                             'h:',
                             'p:',
@@ -759,7 +759,7 @@ def cli(argv):
           raise BadUsage, "'%s' does not appear to be a valid " \
                           "configuration file." % (val)
         options.config_file = val
-      elif opt in ('-c', '--htpasswd-file'):
+      elif opt in ('--htpasswd-file'):
         if not os.path.isfile(val):
           raise BadUsage, "'%s' does not appear to be a valid " \
                           "htpasswd file." % (val)
