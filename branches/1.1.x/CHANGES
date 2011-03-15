@@ -1,4 +1,4 @@
-Version 1.1.10 (released ??-???-????)
+Version 1.1.10 (released 15-Mar-2011)
 
   * fix stack trace in Subversion revision info logic (issue #475, issue #476)
 
