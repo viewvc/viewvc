@@ -147,7 +147,7 @@ class CVSParser(rcsparse.Sink):
         elif amatch:
           # "a" - Add command
           start_line = int(amatch.group(1))
-          count      = iht(amatch.group(2))
+          count      = int(amatch.group(2))
           add_lines_remaining = count
           lines_added_now = lines_added_now + count
         else:
