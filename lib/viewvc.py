@@ -2672,7 +2672,10 @@ def view_checkout(request):
   if 'co' not in cfg.options.allowed_views:
     raise debug.ViewVCException('Checkout view is disabled',
                                  '403 Forbidden')
-  
+  if request.pathtype != vclib.FILE:
+    raise debug.ViewVCException('Unsupported feature: checkout view on '
+                                'directory', '400 Bad Request')
+
   path, rev = _orig_path(request)
   fp, revision = request.repos.openfile(path, rev)
 
