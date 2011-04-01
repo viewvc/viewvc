@@ -124,9 +124,9 @@ class CCVSRepository(BaseCVSRepository):
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts2)))
     
     temp1 = tempfile.mktemp()
-    open(temp1, 'wb').write(self.openfile(path_parts1, rev1)[0].getvalue())
+    open(temp1, 'wb').write(self.openfile(path_parts1, rev1, {})[0].getvalue())
     temp2 = tempfile.mktemp()
-    open(temp2, 'wb').write(self.openfile(path_parts2, rev2)[0].getvalue())
+    open(temp2, 'wb').write(self.openfile(path_parts2, rev2, {})[0].getvalue())
 
     r1 = self.itemlog(path_parts1, rev1, vclib.SORTBY_DEFAULT, 0, 0, {})[-1]
     r2 = self.itemlog(path_parts2, rev2, vclib.SORTBY_DEFAULT, 0, 0, {})[-1]
@@ -148,7 +148,7 @@ class CCVSRepository(BaseCVSRepository):
   def revinfo(self, rev):
     raise vclib.UnsupportedFeature
 
-  def openfile(self, path_parts, rev=None):
+  def openfile(self, path_parts, rev, options):
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
     path = self.rcsfile(path_parts, 1)

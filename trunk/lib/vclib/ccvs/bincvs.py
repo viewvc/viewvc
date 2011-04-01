@@ -169,19 +169,28 @@ class BinCVSRepository(BaseCVSRepository):
       return revs[-1]
     return None
 
-  def openfile(self, path_parts, rev):
+  def openfile(self, path_parts, rev, options):
+    """see vclib.Repository.openfile docstring
+
+    Option values recognized by this implementation:
+
+      cvs_oldkeywords
+        boolean. true to use the original keyword substitution values.
+    """
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
     if not rev or rev == 'HEAD' or rev == 'MAIN':
       rev_flag = '-p'
     else:
       rev_flag = '-p' + rev
+    if options.get('cvs_oldkeywords', 0):
+      kv_flag = '-ko'
+    else:
+      kv_flag = '-kkv'
     full_name = self.rcsfile(path_parts, root=1, v=0)
-
     used_rlog = 0
     tip_rev = None  # used only if we have to fallback to using rlog
-
-    fp = self.rcs_popen('co', (rev_flag, full_name), 'rb') 
+    fp = self.rcs_popen('co', (kv_flag, rev_flag, full_name), 'rb') 
     try:
       filename, revision = _parse_co_header(fp)
     except COMissingRevision:
