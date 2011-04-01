@@ -1751,7 +1751,7 @@ def markup_or_annotate(request, is_annotate):
   # Is this a viewable image type?
   if is_viewable_image(mime_type) \
      and 'co' in cfg.options.allowed_views:
-    fp, revision = request.repos.openfile(path, rev)
+    fp, revision = request.repos.openfile(path, rev, {})
     fp.close()
     if check_freshness(request, None, revision, weak=1):
       return
@@ -1774,7 +1774,7 @@ def markup_or_annotate(request, is_annotate):
       except:
         annotation = 'error'
 
-    fp, revision = request.repos.openfile(path, rev)
+    fp, revision = request.repos.openfile(path, rev, {'cvs_oldkeywords' : 1})
     if check_freshness(request, None, revision, weak=1):
       fp.close()
       return
@@ -2683,7 +2683,7 @@ def view_checkout(request):
                                 'directory', '400 Bad Request')
 
   path, rev = _orig_path(request)
-  fp, revision = request.repos.openfile(path, rev)
+  fp, revision = request.repos.openfile(path, rev, {})
 
   # The revision number acts as a strong validator.
   if not check_freshness(request, None, revision):
@@ -2839,7 +2839,7 @@ def search_file(repos, path_parts, rev, search_re):
 
   # Read in each line of a checked-out file, and then use re.search to
   # search line.
-  fp = repos.openfile(path_parts, rev)[0]
+  fp = repos.openfile(path_parts, rev, {})[0]
   matches = 0
   while 1:
     line = fp.readline()
@@ -3298,13 +3298,13 @@ def view_diff(request):
     if (cfg.options.hr_intraline and idiff
         and ((human_readable and idiff.sidebyside)
              or (not human_readable and diff_type == vclib.UNIFIED))):
-      f1 = request.repos.openfile(p1, rev1)[0]
+      f1 = request.repos.openfile(p1, rev1, {})[0]
       try:
         lines_left = f1.readlines()
       finally:
         f1.close()
 
-      f2 = request.repos.openfile(p2, rev2)[0]
+      f2 = request.repos.openfile(p2, rev2, {})[0]
       try:
         lines_right = f2.readlines()
       finally:
@@ -3517,7 +3517,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
 
     ### FIXME: Read the whole file into memory?  Bad... better to do
     ### 2 passes.
-    fp = request.repos.openfile(rep_path + [file.name], request.pathrev)[0]
+    fp = request.repos.openfile(rep_path + [file.name], request.pathrev, {})[0]
     contents = fp.read()
     fp.close()
 
