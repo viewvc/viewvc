@@ -3,6 +3,7 @@ Version 1.1.11 (released ??-???-????)
   * fix broken standalone.py -c and -d options handling
   * avoid stack track when asked to checkout a directory (issue #478)
   * improve memory usage and speed of revision log markup (issue #477)
+  * fix broken annotation view in CVS keyword-bearing files (issue #479)
 
 Version 1.1.10 (released 15-Mar-2011)
 

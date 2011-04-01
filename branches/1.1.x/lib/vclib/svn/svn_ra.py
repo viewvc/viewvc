@@ -241,7 +241,7 @@ class RemoteSubversionRepository(vclib.Repository):
       raise vclib.ItemNotFound(path_parts)
     return pathtype
 
-  def openfile(self, path_parts, rev):
+  def openfile(self, path_parts, rev, options):
     path = self._getpath(path_parts)
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % path)

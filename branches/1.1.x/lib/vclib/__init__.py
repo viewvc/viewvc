@@ -76,7 +76,7 @@ class Repository:
     """
     pass
 
-  def openfile(self, path_parts, rev):
+  def openfile(self, path_parts, rev, options):
     """Open a file object to read file contents at a given path and revision.
 
     The return value is a 2-tuple of containg the file object and revision
@@ -86,6 +86,8 @@ class Repository:
     of the repository. e.g. ["subdir1", "subdir2", "filename"]
 
     rev is the revision of the file to check out
+
+    options is a dictionary of implementation specific options
     """
 
   def listdir(self, path_parts, rev, options):
