@@ -1137,7 +1137,7 @@ class ViewVCHtmlFormatter:
            linkified email address, with no more than MAXLEN characters
            in the non-HTML-tag bits.  If MAXLEN is 0, there is no maximum.
          - the number of non-HTML-tag characters returned.
-    """    
+    """
     s = mobj.group(0)
     trunc_s = maxlen and s[:maxlen] or s
     return '<a href="mailto:%s">%s</a>' % (urllib.quote(s),
@@ -1238,45 +1238,51 @@ class ViewVCHtmlFormatter:
 
   def _tokenize_text(self, s):
     tokens = []
-    while s:
-      best_match = best_conv = best_userdata = None
-      for test in self._formatters:
-        match = test[0].search(s)
-        # If we find and match and (a) its our first one, or (b) it
-        # matches text earlier than our previous best match, or (c) it
-        # matches text at the same location as our previous best match
-        # but extends to cover more text than that match, then this is
-        # our new best match.
-        #
-        # Implied here is that when multiple formatters match exactly
-        # the same text, the first formatter in the registration list wins.
-        if match \
-           and ((best_match is None) \
-                or (match.start() < best_match.start())
-                or ((match.start() == best_match.start()) \
-                    and (match.end() > best_match.end()))):
-          best_match = match
-          best_conv = test[1]
-          best_userdata = test[2]
-      # If we found a match...
-      if best_match:
-        # ... add any non-matching stuff first, then the matching bit.
-        start = best_match.start()
-        end = best_match.end()
-        if start > 0:
-          tokens.append(_item(match=s[:start],
+    # We could just have a "while s:" here instead of "for line: while
+    # line:", but for really large log messages with heavy
+    # tokenization, the cost in both performance and memory
+    # consumption of the approach taken was atrocious.
+    for line in s.replace('\r\n', '\n').split('\n'):
+      line = line + '\n'
+      while line:
+        best_match = best_conv = best_userdata = None
+        for test in self._formatters:
+          match = test[0].search(line)
+          # If we find and match and (a) its our first one, or (b) it
+          # matches text earlier than our previous best match, or (c) it
+          # matches text at the same location as our previous best match
+          # but extends to cover more text than that match, then this is
+          # our new best match.
+          #
+          # Implied here is that when multiple formatters match exactly
+          # the same text, the first formatter in the registration list wins.
+          if match \
+             and ((best_match is None) \
+                  or (match.start() < best_match.start())
+                  or ((match.start() == best_match.start()) \
+                      and (match.end() > best_match.end()))):
+            best_match = match
+            best_conv = test[1]
+            best_userdata = test[2]
+        # If we found a match...
+        if best_match:
+          # ... add any non-matching stuff first, then the matching bit.
+          start = best_match.start()
+          end = best_match.end()
+          if start > 0:
+            tokens.append(_item(match=line[:start],
+                                converter=self.format_text,
+                                userdata=None))
+          tokens.append(_item(match=best_match,
+                              converter=best_conv,
+                              userdata=best_userdata))
+          line = line[end:]
+        else:
+          # Otherwise, just add the rest of the string.
+          tokens.append(_item(match=line,
                               converter=self.format_text,
                               userdata=None))
-        tokens.append(_item(match=best_match,
-                            converter=best_conv,
-                            userdata=best_userdata))
-        s = s[end:]
-      else:
-        # Otherwise, just add the rest of the string.
-        tokens.append(_item(match=s,
-                            converter=self.format_text,
-                            userdata=None))
-        s = ''
+          line = ''
     return tokens
 
 
