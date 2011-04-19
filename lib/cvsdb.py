@@ -38,13 +38,12 @@ error = "cvsdb error"
 ## complient database interface
 
 class CheckinDatabase:
-    def __init__(self, host, port, user, passwd, database, row_limit):
+    def __init__(self, host, port, user, passwd, database):
         self._host = host
         self._port = port
         self._user = user
         self._passwd = passwd
         self._database = database
-        self._row_limit = row_limit
         self._version = None
 
         ## database lookup caches
@@ -444,13 +443,11 @@ class CheckinDatabase:
         conditions = string.join(joinConds + condList, " AND ")
         conditions = conditions and "WHERE %s" % conditions
 
-        ## limit the number of rows requested or we could really slam
-        ## a server with a large database
+        ## apply the query's row limit, if any (so we avoid really
+        ## slamming a server with a large database)
         limit = ""
         if query.limit:
             limit = "LIMIT %s" % (str(query.limit))
-        elif self._row_limit:
-            limit = "LIMIT %s" % (str(self._row_limit))
 
         sql = "SELECT %s.* FROM %s %s %s %s" \
               % (commits_table, tables, conditions, order_by, limit)
@@ -769,8 +766,8 @@ class QueryEntry:
         self.data = data
         self.match = match
 
-## CheckinDatabaseQueryData is a object which contains the search parameters
-## for a query to the CheckinDatabase
+## CheckinDatabaseQuery is an object which contains the search
+## parameters for a query to the Checkin Database
 class CheckinDatabaseQuery:
     def __init__(self):
         ## sorting
@@ -861,7 +858,7 @@ def ConnectDatabase(cfg, readonly=0):
         user = cfg.cvsdb.user
         passwd = cfg.cvsdb.passwd
     db = CheckinDatabase(cfg.cvsdb.host, cfg.cvsdb.port, user, passwd,
-                         cfg.cvsdb.database_name, cfg.cvsdb.row_limit)
+                         cfg.cvsdb.database_name)
     db.Connect()
     return db
 

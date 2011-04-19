@@ -703,7 +703,6 @@ _legal_params = {
   'mindate'       : _re_validate_datetime,
   'maxdate'       : _re_validate_datetime,
   'format'        : _re_validate_alpha,
-  'limit'         : _re_validate_number,
 
   # for redirect_pathrev
   'orig_path'     : None,
@@ -4087,7 +4086,6 @@ def view_query(request):
   mindate = request.query_dict.get('mindate', '')
   maxdate = request.query_dict.get('maxdate', '')
   format = request.query_dict.get('format')
-  limit = int(request.query_dict.get('limit', 0))
   limit_changes = int(request.query_dict.get('limit_changes',
                                              cfg.options.limit_changes))
 
@@ -4157,15 +4155,16 @@ def view_query(request):
       query.SetFromDateObject(mindate)
     if maxdate is not None:
       query.SetToDateObject(maxdate)
-  if limit:
-    query.SetLimit(limit)
-  elif format == 'rss':
+
+  # Set the admin-defined (via configuration) row limits.  This is to avoid
+  # slamming the database server with a monster query.
+  if format == 'rss':
     query.SetLimit(cfg.cvsdb.rss_row_limit)
+  else:
+    query.SetLimit(cfg.cvsdb.row_limit)
 
   # run the query
   db.RunQuery(query)
-
-  sql = request.server.escape(db.CreateSQLQueryString(query))
 
   # gather commits
   commits = []
@@ -4248,7 +4247,7 @@ def view_query(request):
 
   data = common_template_data(request)
   data.merge(ezt.TemplateData({
-    'sql': sql,
+    'sql': request.server.escape(db.CreateSQLQueryString(query)),
     'english_query': english_query(request),
     'queryform_href': request.get_url(view_func=view_queryform, escape=1),
     'backout_href': backout_href,

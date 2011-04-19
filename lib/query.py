@@ -217,8 +217,9 @@ def decode_command(cmd):
     else:
         return "exact"
 
-def form_to_cvsdb_query(form_data):
+def form_to_cvsdb_query(cfg, form_data):
     query = cvsdb.CreateCheckinQuery()
+    query.SetLimit(cfg.cvsdb.row_limit)
 
     if form_data.repository:
         for cmd, str in listparse_string(form_data.repository):
@@ -377,7 +378,7 @@ def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
     return ob
 
 def run_query(server, cfg, form_data, viewvc_link):
-    query = form_to_cvsdb_query(form_data)
+    query = form_to_cvsdb_query(cfg, form_data)
     db = cvsdb.ConnectDatabaseReadOnly(cfg)
     db.RunQuery(query)
 
