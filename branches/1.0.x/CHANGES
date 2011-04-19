@@ -1,5 +1,6 @@
 Version 1.0.13 (released ??-???-????)
 
+  * security fix: remove user-reachable override of cvsdb row limit
   * fix obscure "unexpected NULL parent pool" Subversion bindings error
 
 Version 1.0.12 (released 02-Jun-2010)
