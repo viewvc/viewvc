@@ -167,6 +167,9 @@ class CheckinDatabase:
 
         return list
 
+    def GetCommitsTable(self):
+        return self._version >= 1 and 'commits' or 'checkins'
+        
     def GetTableList(self):
         sql = "SHOW TABLES"
         cursor = self.db.cursor()
@@ -307,8 +310,7 @@ class CheckinDatabase:
         minus_count = commit.GetMinusCount() or '0'
         description_id = self.GetDescriptionID(commit.GetDescription())
 
-        commits_table = self._version >= 1 and 'commits' or 'checkins'
-        sql = "REPLACE INTO %s" % (commits_table)
+        sql = "REPLACE INTO %s" % (self.GetCommitsTable())
         sql = sql + \
               "  (type,ci_when,whoid,repositoryid,dirid,fileid,revision,"\
               "   stickytag,branchid,addedlines,removedlines,descid)"\
@@ -362,7 +364,7 @@ class CheckinDatabase:
         return "(%s)" % (" OR ".join(sqlList))
 
     def CreateSQLQueryString(self, query):
-        commits_table = self._version >= 1 and 'commits' or 'checkins'
+        commits_table = self.GetCommitsTable()
         tableList = [(commits_table, None)]
         condList = []
 
@@ -500,13 +502,12 @@ class CheckinDatabase:
         if file_id == None:
             return None
 
-        commits_table = self._version >= 1 and 'commits' or 'checkins'
         sql = "SELECT * FROM %s WHERE "\
               "  repositoryid=%%s "\
               "  AND dirid=%%s"\
               "  AND fileid=%%s"\
               "  AND revision=%%s"\
-              % (commits_table)
+              % (self.GetCommitsTable())
         sql_args = (repository_id, dir_id, file_id, commit.GetRevision())
 
         cursor = self.db.cursor()
@@ -523,10 +524,9 @@ class CheckinDatabase:
     def sql_delete(self, table, key, value, keep_fkey = None):
         sql = "DELETE FROM %s WHERE %s=%%s" % (table, key)
         sql_args = (value, )
-        commits_table = self._version >= 1 and 'commits' or 'checkins'
         if keep_fkey:
             sql += " AND %s NOT IN (SELECT %s FROM %s WHERE %s = %%s)" \
-                   % (key, keep_fkey, commits_table, keep_fkey)
+                   % (key, keep_fkey, self.GetCommitsTable(), keep_fkey)
             sql_args = (value, value)
         cursor = self.db.cursor()
         cursor.execute(sql, sql_args)
