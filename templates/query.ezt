@@ -164,7 +164,7 @@
    <em>not</em> represent the entirety of the data set which matches
    the query.  Consider modifying your query to be more specific</a>,
    using your version control tool's query capabilities, or asking
-   your adminstrator to raise the database response size
+   your administrator to raise the database response size
    threshold.</p>
 [end]
 [if-any commits]
