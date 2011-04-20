@@ -13,7 +13,7 @@
    <em>not</em> represent the entirety of the data set which matches
    the query.  Consider <a href="[queryform_href]">modifying your
    query to be more specific</a>, using your version control tool's
-   query capabilities, or asking your adminstrator to raise the
+   query capabilities, or asking your administrator to raise the
    database response size threshold.</p>
 [end]
 <p><a href="[queryform_href]">Modify query</a></p>
