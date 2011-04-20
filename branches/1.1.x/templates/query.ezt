@@ -158,7 +158,15 @@
 [is query "skipped"]
 [else]
 <p><strong>[num_commits]</strong> matches found.</p>
-
+[if-any row_limit_reached]
+<p class="vc_warning">WARNING:  These query results have been
+   artificially limited by an administrative threshold value and do
+   <em>not</em> represent the entirety of the data set which matches
+   the query.  Consider modifying your query to be more specific</a>,
+   using your version control tool's query capabilities, or asking
+   your adminstrator to raise the database response size
+   threshold.</p>
+[end]
 [if-any commits]
 <table cellspacing="0" cellpadding="2">
  <thead>

@@ -797,12 +797,23 @@
 ## row_limit: Maximum number of rows returned by a given normal query
 ## to the database.
 ##
+## NOTE: This limits the amount of data provided to ViewVC by the
+## database.  It is from this already-reduced data set that ViewVC
+## builds the query response it presents to the user, which may or may
+## not include still more limiting via the query form's 'limit'
+## parameter.  In other words, there is no value which the user can use
+## in the query form's 'limit' parameter which will cause more data to
+## be returned by the database for ViewVC to process.
+##
 #row_limit = 1000
 
 ## rss_row_limit: Maximum number of rows returned by a given query to
 ## the database made as part of an RSS feed request.  (Keeping in mind
 ## that RSS readers tend to poll regularly for new data, you might want
 ## to keep this set to a conservative number.)
+##
+## See also the `NOTE' for the 'row_limit' option, which applies here
+## as well.
 ##
 #rss_row_limit = 100
 
