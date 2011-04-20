@@ -363,7 +363,7 @@ class CheckinDatabase:
 
         return "(%s)" % (" OR ".join(sqlList))
 
-    def CreateSQLQueryString(self, query):
+    def CreateSQLQueryString(self, query, detect_leftover=0):
         commits_table = self.GetCommitsTable()
         tableList = [(commits_table, None)]
         condList = []
@@ -448,7 +448,10 @@ class CheckinDatabase:
         ## slamming a server with a large database)
         limit = ""
         if query.limit:
-            limit = "LIMIT %s" % (str(query.limit))
+            if detect_leftover:
+                limit = "LIMIT %s" % (str(query.limit + 1))
+            else:
+                limit = "LIMIT %s" % (str(query.limit))
 
         sql = "SELECT %s.* FROM %s %s %s %s" \
               % (commits_table, tables, conditions, order_by, limit)
@@ -456,13 +459,19 @@ class CheckinDatabase:
         return sql
     
     def RunQuery(self, query):
-        sql = self.CreateSQLQueryString(query)
+        sql = self.CreateSQLQueryString(query, 1)
         cursor = self.db.cursor()
         cursor.execute(sql)
+        query.SetExecuted()
+        row_count = 0
         
         while 1:
             row = cursor.fetchone()
             if not row:
+                break
+            row_count = row_count + 1
+            if query.limit and (row_count > query.limit):
+                query.SetLimitReached()
                 break
             
             (dbType, dbCI_When, dbAuthorID, dbRepositoryID, dbDirID,
@@ -766,7 +775,8 @@ class QueryEntry:
         self.match = match
 
 ## CheckinDatabaseQuery is an object which contains the search
-## parameters for a query to the Checkin Database
+## parameters for a query to the Checkin Database and -- after the
+## query is executed -- the data returned by the query.
 class CheckinDatabaseQuery:
     def __init__(self):
         ## sorting
@@ -786,13 +796,17 @@ class CheckinDatabaseQuery:
 
         ## limit on number of rows to return
         self.limit = None
-
+        self.limit_reached = 0
+        
         ## list of commits -- filled in by CVS query
         self.commit_list = []
 
         ## commit_cb provides a callback for commits as they
         ## are added
         self.commit_cb = None
+
+        ## has this query been run?
+        self.executed = 0
 
     def SetRepository(self, repository, match = "exact"):
         self.repository_list.append(QueryEntry(repository, match))
@@ -839,6 +853,20 @@ class CheckinDatabaseQuery:
     def AddCommit(self, commit):
         self.commit_list.append(commit)
 
+    def SetExecuted(self):
+        self.executed = 1
+
+    def SetLimitReached(self):
+        self.limit_reached = 1
+
+    def GetLimitReached(self):
+        assert self.executed
+        return self.limit_reached
+
+    def GetCommitList(self):
+        assert self.executed
+        return self.commit_list
+        
 
 ##
 ## entrypoints
