@@ -4244,20 +4244,22 @@ def view_query(request):
 
   # run the query
   db.RunQuery(query)
-
+  commit_list = query.GetCommitList()
+  row_limit_reached = query.GetLimitReached()
+  
   # gather commits
   commits = []
   plus_count = 0
   minus_count = 0
   mod_time = -1
-  if query.commit_list:
+  if commit_list:
     files = []
     limited_files = 0
-    current_desc = query.commit_list[0].GetDescriptionID()
-    current_rev = query.commit_list[0].GetRevision()
+    current_desc = commit_list[0].GetDescriptionID()
+    current_rev = commit_list[0].GetRevision()
     dir_strip = _path_join(repos_dir)
 
-    for commit in query.commit_list:
+    for commit in commit_list:
       commit_desc = commit.GetDescriptionID()
       commit_rev = commit.GetRevision()
 
@@ -4335,6 +4337,7 @@ def view_query(request):
     'show_branch': show_branch,
     'querysort': querysort,
     'commits': commits,
+    'row_limit_reached' : ezt.boolean(row_limit_reached),
     'limit_changes': limit_changes,
     'limit_changes_href': limit_changes_href,
     'rss_link_href': request.get_url(view_func=view_query,
