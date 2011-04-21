@@ -6,6 +6,7 @@ Version 1.1.11 (released ??-???-????)
   * improve memory usage and speed of revision log markup (issue #477)
   * fix broken annotation view in CVS keyword-bearing files (issue #479)
   * warn users when query results are incomplete (issue #443)
+  * avoid parsing errors on RCS newphrases in the admin section (issue #483)
 
 Version 1.1.10 (released 15-Mar-2011)
 
