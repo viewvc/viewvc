@@ -341,7 +341,8 @@ class _Parser:
         else:
           # Chew up "newphrase"
           # warn("Unexpected RCS token: $token\n")
-          pass
+          while self.ts.get() != ';':
+            pass
       else:
         if f is None:
           self.ts.unget(token)
