@@ -1033,16 +1033,16 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
         file.errors.append("rlog error: %s" % msg)
         continue
 
+      tag = None
       if view_tag == 'MAIN' or view_tag == 'HEAD':
         tag = Tag(None, default_branch)
       elif taginfo.has_key(view_tag):
         tag = Tag(None, taginfo[view_tag])
-      elif view_tag:
-        # the tag wasn't found, so skip this file
+      elif view_tag and (eof != _EOF_FILE):
+        # the tag wasn't found, so skip this file (unless we already
+        # know there's nothing left of it to read)
         _skip_file(rlog)
-        eof = 1
-      else:
-        tag = None
+        eof = _EOF_FILE
 
       # we don't care about the specific values -- just the keys and whether
       # the values point to branches or revisions. this the fastest way to 
