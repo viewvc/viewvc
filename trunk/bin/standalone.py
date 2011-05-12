@@ -69,7 +69,6 @@ except ImportError:
 
 class Options:
   port = 49152      # default TCP/IP port used for the server
-  daemon = 0        # stay in the foreground by default
   repositories = {} # use default repositories specified in config
   host = sys.platform == 'mac' and '127.0.0.1' or 'localhost'
   script_alias = 'viewvc'
@@ -425,90 +424,15 @@ def handle_config(config_file):
   cfg = viewvc.load_config(config_file or CONF_PATHNAME)
 
 
-def main(argv):
-  """Command-line interface (looks at argv to decide what to do)."""
-  import getopt
-  class BadUsage(Exception): pass
+def usage():
+  clean_options = Options()
+  cmd = os.path.basename(sys.argv[0])
+  port = clean_options.port
+  host = clean_options.host
+  script_alias = clean_options.script_alias
+  sys.stderr.write("""Usage: %(cmd)s [OPTIONS]
 
-  short_opts = ''.join(['c:',
-                        'd',
-                        'h:',
-                        'p:',
-                        'r:',
-                        's:',
-                        ])
-  long_opts = ['daemon',
-               'config-file=',
-               'host=',
-               'htpasswd-file=',
-               'port=',
-               'repository=',
-               'script-alias=',
-               ]
-    
-  try:
-    opts, args = getopt.getopt(argv[1:], short_opts, long_opts)
-    for opt, val in opts:
-      if opt in ['-r', '--repository']:
-        if options.repositories: # option may be used more than once:
-          num = len(options.repositories.keys())+1
-          symbolic_name = "Repository"+str(num)
-          options.repositories[symbolic_name] = val
-        else:
-          options.repositories["Development"] = val
-      elif opt in ['-d', '--daemon']:
-        options.daemon = 1
-      elif opt in ['-p', '--port']:
-        try:
-          options.port = int(val)
-        except ValueError:
-          raise BadUsage, "Port '%s' is not a valid port number" % (val)
-      elif opt in ['-h', '--host']:
-        options.host = val
-      elif opt in ['-s', '--script-alias']:
-        options.script_alias = '/'.join(filter(None, val.split('/')))
-      elif opt in ['-c', '--config-file']:
-        if not os.path.isfile(val):
-          raise BadUsage, "'%s' does not appear to be a valid " \
-                          "configuration file." % (val)
-        options.config_file = val
-      elif opt in ['--htpasswd-file']:
-        if not os.path.isfile(val):
-          raise BadUsage, "'%s' does not appear to be a valid " \
-                          "htpasswd file." % (val)
-        if not has_crypt:
-          raise BadUsage, "Unable to locate suitable `crypt' module for use " \
-                          "with --htpasswd-file option.  If your Python " \
-                          "distribution does not include this module (as is " \
-                          "the case on many non-Unix platforms), consider " \
-                          "installing the `fcrypt' module instead (see " \
-                          "http://carey.geek.nz/code/python-fcrypt/)."
-        options.htpasswd_file = val
-        
-    if not options.port:
-      raise BadUsage, "You must supply a valid port."
-    
-    if options.daemon:
-      pid = os.fork()
-      if pid != 0:
-        sys.exit()
-        
-    def ready(server):
-      print 'server ready at %s%s' % (server.url, options.script_alias)
-    serve(options.host, options.port, ready)
-    return
-  except (getopt.error, BadUsage), err:
-    clean_options = Options()
-    cmd = os.path.basename(sys.argv[0])
-    port = clean_options.port
-    host = clean_options.host
-    script_alias = clean_options.script_alias
-    if str(err):
-      sys.stderr.write("ERROR: %s\n\n" % (str(err)))
-    sys.stderr.write("""Usage: %(cmd)s [OPTIONS]
-
-Run a simple, standalone HTTP server configured to serve up ViewVC
-requests.
+Run a simple, standalone HTTP server configured to serve up ViewVC requests.
 
 Options:
 
@@ -518,6 +442,8 @@ Options:
                              built-in default values.
                              
   --daemon (-d)              Background the server process.
+
+  --help                     Show this usage message and exit.
   
   --host=HOSTNAME (-h)       Listen on HOSTNAME.  Required for access from a
                              remote machine.  [default: %(host)s]
@@ -537,6 +463,120 @@ Options:
                              ViewVC at "http://HOSTNAME:PORT/repo/view".
                              [default: %(script_alias)s]
 """ % locals())
+  sys.exit(0)
+
+
+def badusage(errstr):
+  cmd = os.path.basename(sys.argv[0])
+  sys.stderr.write("ERROR: %s\n\n"
+                   "Try '%s --help' for detailed usage information.\n"
+                   % (errstr, cmd))
+  sys.exit(1)
+
+
+def main(argv):
+  """Command-line interface (looks at argv to decide what to do)."""
+  import getopt
+
+  short_opts = ''.join(['c:',
+                        'd',
+                        'h:',
+                        'p:',
+                        'r:',
+                        's:',
+                        ])
+  long_opts = ['daemon',
+               'config-file=',
+               'help',
+               'host=',
+               'htpasswd-file=',
+               'port=',
+               'repository=',
+               'script-alias=',
+               ]
+    
+  opt_daemon = False
+  opt_host = None
+  opt_port = None
+  opt_htpasswd_file = None
+  opt_config_file = None
+  opt_script_alias = None
+  opt_repositories = []
+
+  # Parse command-line options.
+  try:  
+    opts, args = getopt.getopt(argv[1:], short_opts, long_opts)
+    for opt, val in opts:
+      if opt in ['--help']:
+        usage()
+      elif opt in ['-r', '--repository']: # may be used more than once
+        opt_repositories.append(val)
+      elif opt in ['-d', '--daemon']:
+        opt_daemon = 1
+      elif opt in ['-p', '--port']:
+        opt_port = val
+      elif opt in ['-h', '--host']:
+        opt_host = val
+      elif opt in ['-s', '--script-alias']:
+        opt_script_alias = val
+      elif opt in ['-c', '--config-file']:
+        opt_config_file = val
+      elif opt in ['--htpasswd-file']:
+        opt_htpasswd_file = val
+  except getopt.error, err:
+    badusage(str(err))
+
+  # Validate options that need validating.
+  class BadUsage(Exception): pass
+  try:
+    if opt_port is not None:
+      try:
+        options.port = int(opt_port)
+      except ValueError:
+        raise BadUsage("Port '%s' is not a valid port number" % (opt_port))
+      if not options.port:
+        raise BadUsage("You must supply a valid port.")
+    if opt_htpasswd_file is not None:
+      if not os.path.isfile(opt_htpasswd_file):
+        raise BadUsage("'%s' does not appear to be a valid htpasswd file."
+                       % (opt_htpasswd_file))
+      if not has_crypt:
+        raise BadUsage("Unable to locate suitable `crypt' module for use "
+                       "with --htpasswd-file option.  If your Python "
+                       "distribution does not include this module (as is "
+                       "the case on many non-Unix platforms), consider "
+                       "installing the `fcrypt' module instead (see "
+                       "http://carey.geek.nz/code/python-fcrypt/).")
+      options.htpasswd_file = opt_htpasswd_file
+    if opt_config_file is not None:
+      if not os.path.isfile(opt_config_file):
+        raise BadUsage("'%s' does not appear to be a valid configuration file."
+                       % (opt_config_file))
+      options.config_file = opt_config_file
+    if opt_host is not None:
+      options.host = opt_host
+    if opt_script_alias is not None:
+      options.script_alias = '/'.join(filter(None, opt_script_alias.split('/')))
+    for repository in opt_repositories:
+      if not options.repositories.has_key('Development'):
+        rootname = 'Development'
+      else:
+        rootname = 'Repository%d' % (len(options.repositories.keys()) + 1)
+      options.repositories[rootname] = repository
+  except BadUsage, err:
+    badusage(str(err))
+      
+  # Fork if we're in daemon mode.
+  if opt_daemon:
+    pid = os.fork()
+    if pid != 0:
+      sys.exit()
+
+  # Finaly, start the server.
+  def ready(server):
+    print 'server ready at %s%s' % (server.url, options.script_alias)
+  serve(options.host, options.port, ready)
+
 
 if __name__ == '__main__':
   options = Options()
