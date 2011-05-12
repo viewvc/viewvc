@@ -8,6 +8,7 @@ Version 1.1.11 (released ??-???-????)
   * warn users when query results are incomplete (issue #443)
   * avoid parsing errors on RCS newphrases in the admin section (issue #483)
   * make rlog parsing code more robust in certain error cases (issue #444)
+  * add --help option to standalone.py
 
 Version 1.1.10 (released 15-Mar-2011)
 
