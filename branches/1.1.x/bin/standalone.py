@@ -733,33 +733,33 @@ def cli(argv):
   try:
     opts, args = getopt.getopt(argv[1:], short_opts, long_opts)
     for opt, val in opts:
-      if opt in ('-g', '--gui'):
+      if opt in ['-g', '--gui']:
         options.start_gui = 1
-      elif opt in ('-r', '--repository'):
+      elif opt in ['-r', '--repository']:
         if options.repositories: # option may be used more than once:
           num = len(options.repositories.keys())+1
           symbolic_name = "Repository"+str(num)
           options.repositories[symbolic_name] = val
         else:
           options.repositories["Development"] = val
-      elif opt in ('-d', '--daemon'):
+      elif opt in ['-d', '--daemon']:
         options.daemon = 1
-      elif opt in ('-p', '--port'):
+      elif opt in ['-p', '--port']:
         try:
           options.port = int(val)
         except ValueError:
           raise BadUsage, "Port '%s' is not a valid port number" % (val)
-      elif opt in ('-h', '--host'):
+      elif opt in ['-h', '--host']:
         options.host = val
-      elif opt in ('-s', '--script-alias'):
+      elif opt in ['-s', '--script-alias']:
         options.script_alias = \
           string.join(filter(None, string.split(val, '/')), '/')
-      elif opt in ('-c', '--config-file'):
+      elif opt in ['-c', '--config-file']:
         if not os.path.isfile(val):
           raise BadUsage, "'%s' does not appear to be a valid " \
                           "configuration file." % (val)
         options.config_file = val
-      elif opt in ('--htpasswd-file'):
+      elif opt in ['--htpasswd-file']:
         if not os.path.isfile(val):
           raise BadUsage, "'%s' does not appear to be a valid " \
                           "htpasswd file." % (val)
@@ -788,10 +788,11 @@ def cli(argv):
       serve(options.host, options.port, ready)
       return
   except (getopt.error, BadUsage), err:
+    clean_options = Options()
     cmd = os.path.basename(sys.argv[0])
-    port = options.port
-    host = options.host
-    script_alias = options.script_alias
+    port = clean_options.port
+    host = clean_options.host
+    script_alias = clean_options.script_alias
     if str(err):
       sys.stderr.write("ERROR: %s\n\n" % (str(err)))
     sys.stderr.write("""Usage: %(cmd)s [OPTIONS]
@@ -801,40 +802,33 @@ requests.
 
 Options:
 
-  --config-file=PATH (-c)    Use the file at PATH as the ViewVC configuration
-                             file.  If not specified, ViewVC will try to use
-                             the configuration file in its installation tree;
-                             otherwise, built-in default values are used.
-                             (Not valid in GUI mode.)
+  --config-file=FILE (-c)    Read configuration options from FILE.  If not
+                             specified, ViewVC will look for a configuration
+                             file in its installation tree, falling back to
+                             built-in default values.  (Not valid in GUI mode.)
                              
   --daemon (-d)              Background the server process.
   
-  --host=HOST (-h)           Start the server listening on HOST.  You need
-                             to provide the hostname if you want to
-                             access the standalone server from a remote
-                             machine.  [default: %(host)s]
+  --gui (-g)                 Pop up a graphical configuration interface.
+                             Requires a valid X11 display connection.
 
-  --port=PORT (-p)           Start the server on the given PORT.
-                             [default: %(port)d]
+  --host=HOSTNAME (-h)       Listen on HOSTNAME.  Required for access from a
+                             remote machine.  [default: %(host)s]
 
-  --repository=PATH (-r)     Serve up the Subversion or CVS repository located
+  --htpasswd-file=FILE       Authenticate incoming requests, validating against
+                             against FILE, which is an Apache HTTP Server
+                             htpasswd file.  (CRYPT only; no DIGEST support.)
+
+  --port=PORT (-p)           Listen on PORT.  [default: %(port)d]
+
+  --repository=PATH (-r)     Serve the Subversion or CVS repository located
                              at PATH.  This option may be used more than once.
 
-  --script-alias=PATH (-s)   Specify the ScriptAlias, the artificial path
-                             location that at which ViewVC appears to be
-                             located.  For example, if your ScriptAlias is
-                             "cgi-bin/viewvc", then ViewVC will be accessible
-                             at "http://%(host)s:%(port)s/cgi-bin/viewvc".
+  --script-alias=PATH (-s)   Use PATH as the virtual script location (similar
+                             to Apache HTTP Server's ScriptAlias directive).
+                             For example, "--script-alias=repo/view" will serve
+                             ViewVC at "http://HOSTNAME:PORT/repo/view".
                              [default: %(script_alias)s]
-
-  --htpasswd-file=FILE       Demand authentication from clients, validating
-                             authentication credentials against FILE, which is
-                             an Apache htpasswd file that employs CRYPT
-                             encryption.  (Sorry, no DIGEST support yet.)
-
-  --gui (-g)                 Pop up a graphical interface for serving and
-                             testing ViewVC.  NOTE: this requires a valid
-                             X11 display connection.
 """ % locals())
 
 if __name__ == '__main__':
