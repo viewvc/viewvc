@@ -759,7 +759,7 @@ def badusage(errstr):
   sys.exit(1)
 
 
-def cli(argv):
+def main(argv):
   """Command-line interface (looks at argv to decide what to do)."""
   import getopt
 
@@ -876,4 +876,4 @@ def cli(argv):
 
 if __name__ == '__main__':
   options = Options()
-  cli(sys.argv)
+  main(sys.argv)
