@@ -528,9 +528,8 @@ Options:
 
   --port=PORT (-p)           Listen on PORT.  [default: %(port)d]
 
-  --repository=PATH (-r)     Add the repository located at PATH to the set of
-                             those served.  This option may be used more than
-                             once.
+  --repository=PATH (-r)     Serve the Subversion or CVS repository located
+                             at PATH.  This option may be used more than once.
 
   --script-alias=PATH (-s)   Use PATH as the virtual script location (similar
                              to Apache HTTP Server's ScriptAlias directive).
