@@ -449,30 +449,30 @@ def main(argv):
   try:
     opts, args = getopt.getopt(argv[1:], short_opts, long_opts)
     for opt, val in opts:
-      if opt in ('-r', '--repository'):
+      if opt in ['-r', '--repository']:
         if options.repositories: # option may be used more than once:
           num = len(options.repositories.keys())+1
           symbolic_name = "Repository"+str(num)
           options.repositories[symbolic_name] = val
         else:
           options.repositories["Development"] = val
-      elif opt in ('-d', '--daemon'):
+      elif opt in ['-d', '--daemon']:
         options.daemon = 1
-      elif opt in ('-p', '--port'):
+      elif opt in ['-p', '--port']:
         try:
           options.port = int(val)
         except ValueError:
           raise BadUsage, "Port '%s' is not a valid port number" % (val)
-      elif opt in ('-h', '--host'):
+      elif opt in ['-h', '--host']:
         options.host = val
-      elif opt in ('-s', '--script-alias'):
+      elif opt in ['-s', '--script-alias']:
         options.script_alias = '/'.join(filter(None, val.split('/')))
-      elif opt in ('-c', '--config-file'):
+      elif opt in ['-c', '--config-file']:
         if not os.path.isfile(val):
           raise BadUsage, "'%s' does not appear to be a valid " \
                           "configuration file." % (val)
         options.config_file = val
-      elif opt in ('--htpasswd-file'):
+      elif opt in ['--htpasswd-file']:
         if not os.path.isfile(val):
           raise BadUsage, "'%s' does not appear to be a valid " \
                           "htpasswd file." % (val)
