@@ -512,34 +512,30 @@ requests.
 
 Options:
 
-  --config-file=PATH (-c)    Use the file at PATH as the ViewVC configuration
-                             file.  If not specified, ViewVC will try to use
-                             the configuration file in its installation tree;
-                             otherwise, built-in default values are used.
+  --config-file=FILE (-c)    Read configuration options from FILE.  If not
+                             specified, ViewVC will look for a configuration
+                             file in its installation tree, falling back to
+                             built-in default values.
                              
   --daemon (-d)              Background the server process.
   
-  --host=HOST (-h)           Start the server listening on HOST.  You need
-                             to provide the hostname if you want to
-                             access the standalone server from a remote
-                             machine.  [default: %(host)s]
+  --host=HOSTNAME (-h)       Listen on HOSTNAME.  Required for access from a
+                             remote machine.  [default: %(host)s]
 
-  --htpasswd-file=FILE       Demand authentication from clients, validating
-                             authentication credentials against FILE, which is
-                             an Apache htpasswd file that employs CRYPT
-                             encryption.  (Sorry, no DIGEST support yet.)
+  --htpasswd-file=FILE       Authenticate incoming requests, validating against
+                             against FILE, which is an Apache HTTP Server
+                             htpasswd file.  (CRYPT only; no DIGEST support.)
 
-  --port=PORT (-p)           Start the server on the given PORT.
-                             [default: %(port)d]
+  --port=PORT (-p)           Listen on PORT.  [default: %(port)d]
 
-  --repository=PATH (-r)     Serve up the Subversion or CVS repository located
-                             at PATH.  This option may be used more than once.
+  --repository=PATH (-r)     Add the repository located at PATH to the set of
+                             those served.  This option may be used more than
+                             once.
 
-  --script-alias=PATH (-s)   Specify the ScriptAlias, the artificial path
-                             location that at which ViewVC appears to be
-                             located.  For example, if your ScriptAlias is
-                             "cgi-bin/viewvc", then ViewVC will be accessible
-                             at "http://%(host)s:%(port)s/cgi-bin/viewvc".
+  --script-alias=PATH (-s)   Use PATH as the virtual script location (similar
+                             to Apache HTTP Server's ScriptAlias directive).
+                             For example, "--script-alias=repo/view" will serve
+                             ViewVC at "http://HOSTNAME:PORT/repo/view".
                              [default: %(script_alias)s]
 """ % locals())
 
