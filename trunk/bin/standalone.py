@@ -498,10 +498,11 @@ def main(argv):
     serve(options.host, options.port, ready)
     return
   except (getopt.error, BadUsage), err:
+    clean_options = Options()
     cmd = os.path.basename(sys.argv[0])
-    port = options.port
-    host = options.host
-    script_alias = options.script_alias
+    port = clean_options.port
+    host = clean_options.host
+    script_alias = clean_options.script_alias
     if str(err):
       sys.stderr.write("ERROR: %s\n\n" % (str(err)))
     sys.stderr.write("""Usage: %(cmd)s [OPTIONS]
