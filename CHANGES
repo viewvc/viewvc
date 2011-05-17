@@ -1,3 +1,7 @@
+Version 1.1.12 (released ??-???-????)
+
+  * 
+
 Version 1.1.11 (released 17-May-2011)
 
   * security fix: remove user-reachable override of cvsdb row limit
