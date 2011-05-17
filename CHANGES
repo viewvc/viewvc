@@ -1,4 +1,4 @@
-Version 1.1.11 (released ??-???-????)
+Version 1.1.11 (released 17-May-2011)
 
   * security fix: remove user-reachable override of cvsdb row limit
   * fix broken standalone.py -c and -d options handling
