@@ -1,0 +1,23 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!-- ViewVC :: http://www.viewvc.org/ -->
+<head>
+  <title>[if-any rootname][[][rootname]][else]ViewVC[end] [page_title]</title>
+  <meta name="generator" content="ViewVC [vsn]" />
+  <link rel="shortcut icon" href="[docroot]/images/favicon.ico" />
+  <link rel="stylesheet" href="[docroot]/styles.css" type="text/css" />
+  [if-any rss_href]<link rel="alternate" type="application/rss+xml" title="RSS [[][rootname]][where]" href="[rss_href]" />[end]
+</head>
+<body>
+<div class="vc_navheader">
+<table><tr>
+<td><strong>[if-any roots_href]<a href="[roots_href]"><span class="pathdiv">/</span></a>[else]<span class="pathdiv">/</span>[end][if-any nav_path][for nav_path][if-any nav_path.href]<a href="[nav_path.href]">[end][if-index nav_path first][[][nav_path.name]][else][nav_path.name][end][if-any nav_path.href]</a>[end][if-index nav_path last][else]<span class="pathdiv">/</span>[end][end][end]</strong></td>
+<td style="text-align: right;">[if-any username]Logged in as: <strong>[username]</strong>[end]</td>
+</tr></table>
+</div>
+
+<div style="float: right; padding: 5px;"><a href="http://www.viewvc.org/" title="ViewVC Home"><img src="[docroot]/images/viewvc-logo.png" alt="ViewVC logotype" width="240" height="70" /></a></div>
+<h1>[page_title]</h1>
+
+

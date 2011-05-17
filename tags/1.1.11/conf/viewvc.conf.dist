@@ -1,0 +1,1085 @@
+##---------------------------------------------------------------------------
+##
+## Configuration file for ViewVC
+##
+## Information on ViewVC is located at the following web site:
+##     http://viewvc.org/
+##
+##---------------------------------------------------------------------------
+
+## THE FORMAT OF THIS CONFIGURATION FILE
+##
+##    This file is delineated by sections, specified in [brackets].  Within 
+##    each section, are a number of configuration settings.  These settings
+##    take the form of: name = value.  Values may be continued on the
+##    following line by indenting the continued line.
+##
+##    WARNING:  Indentation *always* means continuation.  Name=value lines
+##    should always start in column zero.
+##
+##    Comments should always start in column zero, and are identified
+##    with "#".  By default each of the configuration items is
+##    commented out, with the default value of the option shown.
+##    You'll need to remove the '#' that precedes configuration
+##    options whose values you wish to modify.
+##
+##    Certain configuration settings may have multiple values.  These should 
+##    be separated by a comma.  The settings where this is allowed are noted 
+##    below.  Any other setting that requires special syntax is noted at that
+##    setting.
+## 
+##
+## SOME TERMINOLOGY USED HEREIN
+##
+##    "root" - This is a CVS or Subversion repository.  For Subversion, the
+##        meaning is pretty clear, as the virtual, versioned directory tree
+##        stored inside a Subversion repository looks nothing like the actual
+##        tree visible with shell utilities that holds the repository.  For
+##        CVS, this is more confusing, because CVS's repository layout mimics
+##        (actually, defines) the layout of the stuff housed in the repository.
+##        But a CVS repository can be identified by the presence of a CVSROOT
+##        subdirectory in its root directory.
+##
+##    "module" - A module is a top-level subdirectory of a root, usually
+##        associated with the concept of a single "project" among many housed
+##        within a single repository.
+##
+##
+## BASIC VIEWVC CONFIGURATION HINTS
+##
+##    While ViewVC has quite a few configuration options, you generally
+##    only need to change a small subset of them to get your ViewVC
+##    installation working properly.  Here are some options that we
+##    recommend you pay attention to.  Of course, don't try to change the
+##    options here -- do so in the relevant section of the configuration
+##    file below.
+##    
+##    For correct operation, you will probably need to change the following
+##    configuration variables:
+##   
+##       cvs_roots (for CVS)
+##       svn_roots (for Subversion)
+##       root_parents (for CVS or Subversion)
+##       default_root
+##       root_as_url_component
+##       rcs_dir
+##       mime_types_files
+##       the many options in the [utilities] section
+##   
+##    It is usually desirable to change the following variables:
+##   
+##       address
+##       forbidden
+##   
+##    To optimize delivery of ViewVC static files:
+##   
+##       docroot
+##   
+##    To customize the display of ViewVC for your site:
+##   
+##       template_dir
+##       the [templates] override section
+##
+
+##---------------------------------------------------------------------------
+[general]
+
+## cvs_roots: Specifies each of the CVS roots on your system and
+## assigns names to them. Each root should be given by a "name: path"
+## value. Multiple roots should be separated by commas and can be
+## placed on separate lines.
+##
+## Example:
+## cvs_roots = cvsroot: /opt/cvs/repos1,
+##             anotherroot: /usr/local/cvs/repos2
+##
+#cvs_roots =
+
+## svn_roots: Specifies each of the Subversion roots (repositories) on
+## your system and assigns names to them. Each root should be given by
+## a "name: path" value. Multiple roots should be separated by commas
+## and can be placed on separate lines.
+##
+## Example:
+## svn_roots = svnrepos: /opt/svn/,
+##             anotherrepos: /usr/local/svn/repos2
+##
+#svn_roots =
+
+## root_parents: Specifies a list of directories under which any
+## number of repositories may reside.  You can specify multiple root
+## parents separated by commas or new lines, each of which is of the
+## form "path: type" (where type is either "cvs" or "svn").
+##
+## Rather than force you to add a new entry to 'cvs_roots' or
+## 'svn_roots' each time you create a new repository, ViewVC rewards
+## you for organizing all your repositories under a few parent
+## directories by allowing you to simply tell it about those parent
+## directories.  ViewVC will then notice each repository of the
+## specified type in that directory as a root whose name is the
+## subdirectory in which that repository lives.
+##
+## For example, if you have three Subversion repositories located at
+## /opt/svn/projects, /opt/svn/websites, and /opt/svn/devstuff, you
+## could list them individually in svn_roots like so:
+##
+##    svn_roots = projects: /opt/svn/projects,
+##                websites: /opt/svn/websites,
+##                devstuff: /opt/svn/devstuff
+##
+## or you could instead use the root_parents configuration option:
+##
+##    root_parents = /opt/svn: svn
+##
+## The benefit of this latter approach is that, as you add new
+## repositories to your /opt/svn directory, they automatically become
+## available for display in ViewVC without additional configuration.
+##
+## WARNING: the root names derived for repositories configured via the
+## root_parents option can, of course, clash with names you have
+## defined in your cvs_roots or svn_roots configuration items.  If
+## this occurs, you can either rename the offending repository on
+## disk, or grant new names to the clashing item in cvs_roots or
+## svn_roots.  Each parent path is processed sequentially, so the
+## names of repositories under later parent paths may override earlier
+## ones.
+##
+## Example:
+## root_parents = /opt/svn: svn,
+##                /opt/cvs: cvs
+##
+#root_parents =
+
+## default_root: This is the name of the default root.  Valid names
+## include those explicitly listed in the cvs_roots and svn_roots
+## configuration options, as well as those implicitly indicated by
+## virtue of being the basenames of repositories found in the
+## root_parents option locations.
+##
+## NOTE: This setting is ignored when root_as_url_component is enabled.
+##
+## Example:
+## default_root = cvsroot
+##
+#default_root =
+
+## mime_types_files: This is a list of pathnames to a set of MIME type
+## mapping files to help ViewVC guess the correct MIME type of a
+## versioned file.  The pathnames listed here are specified in order of
+## authoritativeness either as absolute paths or relative to this
+## configuration file.
+##
+## As a convenience, ViewVC provides a MIME type mapping file
+## (mimetypes.conf) which is, by default, the preferred provider of
+## MIME type mapping answers, but which is also empty.  If you find
+## that ViewVC is unable to accurately guess MIME types based on the
+## extensions of some of your versioned files, you can add records of
+## your preferred mappings to the provided mimetypes.conf file (or to
+## your system's mapping files, if you wish).
+##
+## You might, for example, wish to have ViewVC also consult the mapping
+## files provided by your operating system and Apache.
+##
+## Example:
+## mime_types_files = mimetypes.conf,
+##                    /etc/mime.types,
+##                    /usr/local/apache2/conf/mime.types
+##
+#mime_types_files = mimetypes.conf
+
+## address: The address of the local repository maintainer.  (This
+## option is provided only as a convenience for ViewVC installations
+## which are using the default template set, where the value of this
+## option will be displayed in the footer of every ViewVC page.)
+##
+## Example:
+## address = admin@server.com
+##
+#address =
+
+## kv_files: Provides a mechanism for custom key/value pairs to be
+## available to templates.  These are stored in key/value (KV) files.
+##
+## The paths of the KV files are listed here, specified either as
+## absolute paths or relative to this configuration file.  The files
+## use the same format as this configuration file, containing one or
+## more user-defined sections, and user-defined options in those
+## sections.  ViewVC makes these options available to template authors
+## as:
+##
+##    kv.SECTION.OPTION
+##
+## Note that an option name can be dotted.  For example:
+##
+##    [my_images]
+##    logos.small = /images/small-logo.png
+##    logos.big = /images/big-logo.png
+##
+## Templates can use these with a directive like:  [kv.my_images.logos.small]
+##
+## Note that section names which are common to multiple KV files will
+## be merged.  If two files have a [my_images] section, then the
+## options in those two like-named sections will be merged together.
+## If two files have the same option name in a section, then one will
+## overwrite the other (and which one "wins" is unspecified).
+##
+## To further categorize the KV files, and how the values are provided to
+## the templates, a KV file name may be annotated with an additional level
+## of dotted naming. For example:
+##
+##    kv_files = [asf]kv/images.conf
+##
+## Assuming the same section as above, the template would refer to an image
+## using [kv.asf.my_images.logos.small]
+##
+## Lastly, it is possible to use %lang% in the filenames to specify a
+## substitution of the selected language-tag.
+##
+## Example:
+## kv_files = kv/file1.conf, kv/file2.conf, [i18n]kv/%lang%_data.conf
+##
+#kv_files =
+
+## This option is a comma-separated list of language-tag values
+## available to ViewVC.  The first language-tag listed is the default
+## language, and will be used if an Accept-Language header is not
+## present in the request, or none of the user's requested languages
+## are available.  If there are ties on the selection of a language,
+## then the first to appear in the list is chosen.
+##
+## Example:
+## languages = en-us, en-gb, de
+##
+#languages = en-us
+
+
+##---------------------------------------------------------------------------
+[utilities]
+
+## ViewVC uses (sometimes optionally) various third-party programs to do some
+## of the heavy lifting.  Generally, it will attempt to execute those utility
+## programs in such a way that if they are found in ViewVC's executable
+## search path ($PATH, %PATH%, etc.) all is well.  But sometimes these tools
+## aren't installed in the executable search path, so here's where you can
+## tell ViewVC where to find them.
+##
+## NOTE: Options with a "_dir" suffix are for configuring the
+## directories in which certain programs live.  Note that this might
+## not be the same directory into which the program's installer dumped
+## the whole program package -- we want the deepest directory in which
+## the executable program itself resides ("C:\rcstools\bin\win32"
+## rather than just "C:\rcstools", for example).  The values of options
+## whose names lack the "_dir" suffix should point to the actual
+## program itself (such as "C:\Program Files\cvsnt\cvs.exe").
+
+
+## rcs_dir: Directory in which the RCS utilities are installed, used
+## for viewing CVS repositories.
+##
+## Example:
+## rcs_dir = /usr/bin/
+##
+#rcs_dir =
+
+## cvsnt: Location of cvsnt program.  ViewVC can use CVSNT (www.cvsnt.org)
+## instead of the RCS utilities to retrieve information from CVS
+## repositories.  To enable use of CVSNT, set the "cvsnt" value to the
+## path of the CVSNT executable. (If CVSNT is on the standard path, you
+## can also set it to the name of the CVSNT executable). By default
+## "cvsnt" is set to "cvs" on Windows and is not set on other platforms.
+##
+## Examples:
+## cvsnt = K:\Program Files\cvsnt\cvs.exe
+## cvsnt = /usr/bin/cvs
+## cvsnt = cvs
+##
+#cvsnt =
+
+## svn: Location of the Subversion command-line client, used for
+## viewing Subversion repositories.
+##
+## Example:
+## svn = /usr/bin/svn
+##
+#svn =
+
+## diff: Location of the GNU diff program, used for showing file
+## version differences.
+##
+## Example:
+## diff = /usr/bin/diff
+##
+#diff = 
+
+## cvsgraph: Location of the CvsGraph program, a graphical CVS version
+## graph generator (see options.use_cvsgraph).
+##
+## Example:
+## cvsgraph = /usr/local/bin/cvsgraph
+##
+#cvsgraph =
+
+
+##---------------------------------------------------------------------------
+[options]
+
+## root_as_url_component: Interpret the first path component in the URL
+## after the script location as the root to use.  This is an
+## alternative to using the "root=" query key. If ViewVC is configured
+## with multiple repositories, this results in more natural looking
+## ViewVC URLs.
+##
+## NOTE: Enabling this option will break backwards compatibility with
+## any old ViewCVS URL which doesn't have an explicit "root" parameter.
+##
+#root_as_url_component = 1
+
+## checkout_magic: Use checkout links with magic /*checkout*/ prefixes so
+## checked out HTML pages can have working links to other repository files
+##
+## NOTE: This option is DEPRECATED and should not be used in new ViewVC
+## installations. Setting "default_file_view = co" achieves the same effect
+##
+#checkout_magic = 0
+
+## allowed_views: List the ViewVC views which are enabled.  Views not
+## in this comma-delited list will not be served (or, will return an
+## error on attempted access).
+## Possible values: "annotate", "co", "diff", "markup", "roots", "tar"
+##
+#allowed_views = annotate, diff, markup, roots
+
+## authorizer: The name of the ViewVC authorizer plugin to use when
+## authorizing access to repository contents.  This value must be the
+## name of a Python module addressable as vcauth.MODULENAME (most
+## easily accomplished by placing it in ViewVC's lib/vcauth/ directory)
+## and which implements a ViewVCAuthorizer class (as a subclass of
+## vcauth.GenericViewVCAuthorizer).  You can provide custom parameters
+## to the authorizer module by defining configuration sections named
+## authz-MODULENAME and adding the parameter keys and values there.
+##
+## ViewVC provides the following modules:
+##   svnauthz    - based on Subversion authz files
+##   forbidden   - simple path glob matches against top-level root directories
+##   forbiddenre - root and path matches against regular expressions
+##
+## NOTE: Only one authorizer may be in use for a given ViewVC request.
+## It doesn't matter if you configure the parameters of multiple
+## authorizer plugins -- only the authorizer whose name is configured
+## here (or effectively configured here via per-vhost or per-root
+## configuration) will be activated.
+##
+#authorizer =
+
+## hide_cvsroot: Don't show the CVSROOT directory
+##   1      Hide CVSROOT directory
+##   0      Show CVSROOT directory
+##
+## NOTE: Someday this option may be removed in favor of letting
+## individual authorizer plugin hide the CVSROOT.
+##
+#hide_cvsroot = 1
+
+## mangle_email_addresses: Mangle email addresses in marked-up output.
+## There are various levels of mangling available:
+##   0 - No mangling; markup un-mangled email addresses as hyperlinks
+##   1 - Obfuscation (using entity encoding); no hyperlinking
+##   2 - Data-dropping address truncation; no hyperlinking
+##
+## NOTE: this will not effect the display of versioned file contents, only
+## addresses that appear in version control metadata (e.g. log messages).
+##
+#mangle_email_addresses = 0
+
+## default_file_view: "log", "co", or "markup"
+## Controls whether the default view for file URLs is a checkout view or
+## a log view. "log" is the default for backwards compatibility with old
+## ViewCVS URLs, but "co" has the advantage that it allows ViewVC to serve
+## static HTML pages directly from a repository with working links
+## to other repository files
+##
+## NOTE: Changing this option may break compatibility with existing
+## bookmarked URLs.
+##
+## ALSO NOTE: If you choose one of the "co" or "markup" views, be sure
+## to enable it (via the allowed_views option)
+##
+#default_file_view = log
+
+## http_expiration_time: Expiration time (in seconds) for cacheable
+## pages served by ViewVC.  Note that in most cases, a cache aware
+## client will only revalidate the page after it expires (using the
+## If-Modified-Since and/or If-None-Match headers) and that browsers
+## will also revalidate the page when the reload button is pressed.
+## Set to 0 to disable the transmission of these caching headers.
+##
+#http_expiration_time = 600
+
+## generate_etags: Generate Etag headers for relevant pages to assist
+## in browser caching.
+##   1      Generate Etags
+##   0      Don't generate Etags
+##
+#generate_etags = 1
+
+## svn_ignore_mimetype: Don't consult the svn:mime-type property to
+## determine how to display a file in the markup view.  This is
+## especially helpful when versioned images carry the default
+## Subversion-calculated MIME type of "application/octet-stream" (which
+## isn't recognized as viewable type by browsers).
+##
+#svn_ignore_mimetype = 0
+
+## svn_config_dir: Path of the Subversion runtime configuration
+## directory ViewVC should consult for various things, including cached
+## remote authentication credentials.  If unset, Subversion will use
+## the default location(s) ($HOME/.subversion, etc.)
+##
+#svn_config_dir = 
+
+## use_rcsparse: Use the rcsparse Python module to retrieve CVS
+## repository information instead of invoking rcs utilities [EXPERIMENTAL]
+##
+#use_rcsparse = 0
+
+## sort_by: File sort order
+##   file   Sort by filename
+##   rev    Sort by revision number
+##   date   Sort by commit date
+##   author Sort by author
+##   log    Sort by log message
+##
+#sort_by = file
+
+## sort_group_dirs: Group directories when sorting
+##   1      Group directories together
+##   0      No grouping -- sort directories as any other item would be sorted
+##
+#sort_group_dirs = 1
+
+## hide_attic: Hide or show the contents of the Attic subdirectory
+##   1      Hide dead files inside Attic subdir
+##   0      Show the files which are inside the Attic subdir
+##
+#hide_attic = 1
+
+## hide_errorful_entries: Hide or show errorful directory entries
+## (perhaps due to not being readable, or some other rlog parsing
+## error, etc.)
+##   1      Hide errorful entries from the directory display
+##   0      Show errorful entries (with their errors) in the directory display
+##
+#hide_errorful_entries = 0
+
+## log_sort: Sort order for log messages
+##   date   Sort revisions by date
+##   rev    Sort revision by revision number
+##   none   Use the version control system's ordering
+##
+#log_sort = date
+
+## diff_format: Default diff format
+##   h      Human readable
+##   u      Unified diff
+##   c      Context diff
+##   s      Side by side
+##   l      Long human readable (more context)
+##   f      Full human readable (entire file)
+##
+#diff_format = h
+
+## hr_breakable: Diff view line breaks
+##   1     lines break at spaces
+##   0     no line breaking
+## Or, use a positive integer > 1 to cut lines after that many characters
+##
+#hr_breakable = 1
+
+## hr_funout: Give out function names in human readable diffs.
+## (Only works well for C source files, otherwise diff's heuristic falls short.)
+## ('-p' option to diff)
+##
+#hr_funout = 0
+
+## hr_ignore_white: Ignore whitespace (indendation and stuff) for human
+## readable diffs.
+## ('-w' option to diff)
+##
+#hr_ignore_white = 0
+
+## hr_ignore_keyword_subst: Ignore diffs which are caused by keyword
+## substitution (such as "$Id - Stuff").
+## ('-kk' option to rcsdiff)
+##
+#hr_ignore_keyword_subst = 1
+
+## hr_intraline: Enable highlighting of intraline changes in human
+## readable diffs.  [Requires Python 2.4]
+##
+#hr_intraline = 0
+
+## allow_compress: Allow compression via gzip of output if the Browser
+## accepts it (HTTP_ACCEPT_ENCODING contains "gzip").
+##
+## NOTE: this relies on Python's gzip module, which has proven to be
+## not-so-performant.  Enabling this feature should reduce the overall
+## transfer size of ViewVC's responses to the client's request, but
+## will do so with a speed penalty.
+##
+#allow_compress = 0
+
+## template_dir: The directory which contains the EZT templates used by
+## ViewVC to customize the display of the various output views.  ViewVC
+## looks in this directory for files with names that match the name of
+## the view ("log", "directory", etc.) plus the ".ezt" extension.  If
+## specified as a relative path, it is relative to the directory where
+## this config file resides; absolute paths may be used as well.  If
+## %lang% occurs in the pathname, then the selected language will be
+## substituted.
+## 
+## SEE ALSO: the [templates] configuration section, where you can
+## override templates on a per-view basis.
+##
+#template_dir = templates
+
+## docroot: Web path to a directory that contains ViewVC static files
+## (stylesheets, images, etc.)  If set, static files will get
+## downloaded directory from this location.  If unset, static files
+## will be served by the ViewVC script (at a likely performance
+## penalty, and from the "docroot" subdirectory of the directory
+## specified by the "template_dir" option).
+##
+## NOTE: This option is evaluated outside the context of a particular
+## root.  Be careful when using per-root configuration to select an
+## alternate template set as the default value for this option will
+## still be based on the global default template set per 'template_dir'
+## above, not on 'template_dir' as overridden for a given root.
+##
+#docroot = 
+
+## show_subdir_lastmod: Show last changelog message for CVS subdirectories
+##
+## NOTE: The current implementation makes many assumptions and may show
+## the incorrect file at some times. The main assumption is that the
+## last modified file has the newest filedate. But some CVS operations
+## touches the file without even when a new version is not checked in,
+## and TAG based browsing essentially puts this out of order, unless
+## the last checkin was on the same tag as you are viewing.  Enable
+## this if you like the feature, but don't rely on correct results.
+##
+## SECURITY WARNING: Enabling this will currently leak unauthorized
+## path names.
+##
+#show_subdir_lastmod = 0
+
+## show_roots_lastmod: In the root listing view, show the most recent
+## modifications made to the root.  (Subversion roots only.)
+##
+## NOTE: Enabling this feature will significantly reduce the
+## performance of the root listing view.
+##
+#show_roots_lastmod = 0
+
+## show_logs: Show the most recent log entry in directory listings.
+##
+#show_logs = 1
+
+## show_log_in_markup: Show log when viewing file contents.
+##
+#show_log_in_markup = 1
+
+## cross_copies: Cross filesystem copies when traversing Subversion
+## file revision histories.
+##
+#cross_copies = 1
+
+## use_localtime: Display dates as UTC or in local time zone.
+##
+#use_localtime = 0
+
+## short_log_len: The length (in characters) to which the most recent
+## log entry should be truncated when shown in the directory view.
+##
+#short_log_len = 80
+
+## enable_syntax_coloration: Should we colorize known file content
+## syntaxes?  [Requires Pygments Python module]
+##
+#enable_syntax_coloration = 1
+
+## tabsize: The number of spaces into which tabstops are converted
+## when viewing file contents.
+##
+#tabsize = 8
+
+## detect_encoding: Should we attempt to detect versioned file
+## character encodings?  [Requires 'chardet' module, and is currently
+## used only by the syntax coloration logic -- if enabled -- for the
+## 'markup' and 'annotate' views; see 'enable_syntax_coloration'.]
+##
+#detect_encoding = 0
+
+## use_cvsgraph: Use CvsGraph to offer visual graphs of CVS revision history.
+##
+#use_cvsgraph = 0
+
+## cvsgraph_conf: Location of the customized cvsgraph configuration file.
+## May be specified as an absolute path or as a path relative to this
+## configuration file.
+##
+#cvsgraph_conf = cvsgraph.conf
+
+## use_re_search: Enable regular expression search of files in a directory.
+##
+## WARNING: Enabling this option can consume HUGE amounts of server
+## time. A "checkout" must be performed on *each* file in a directory,
+## and the result needs to be searched for a match against the regular
+## expression.
+##
+## SECURITY WARNING: Since a user can enter the regular expression, it
+## is possible for them to enter an expression with many alternatives
+## and a lot of backtracking. Executing that search over thousands of
+## lines over dozens of files can easily tie up a server for a long
+## period of time.  This option should only be used on sites with
+## trusted users. It is highly inadvisable to use this on a public site.
+##
+#use_re_search = 0
+
+## dir_pagesize: Maximum number of directory entries on a given page.
+## This allows ViewVC to present discrete pages to the users instead of
+## the entire directory.  Set to 0 to disable pagination.
+##
+#dir_pagesize = 0
+
+## log_pagesize: Maximum number of revision log entries on a given page.
+## This allows ViewVC to present discrete pages to the users instead of
+## the entire revision log.  Set to 0 to disable pagination.
+##
+#log_pagesize = 0
+
+## log_pagesextra: Maximum number of extra pages (based on
+## log_pagesize) of revision log data to fetch and present to the user
+## as additional options for display.  Revision log information
+## "beyond" this window is still accessible, but must be navigated to
+## in multiple steps.
+##
+## Example:
+## log_pagesize = 100
+## log_pagesextra = 3
+##
+## For a versioned file with 1000 revisions, the above settings would
+## present to the user the first 100 of those 1000 revisions, with
+## links to three additional pages (the 200-299th revisions, 300-399th
+## revisions, and 400-499th revisions) plus a link to the 500th
+## revision.  Following these links slides the display "window",
+## showing the requested set of revisions plus links to three
+## additional pages beyond those, and so on.
+##
+#log_pagesextra = 3
+
+## limit_changes: Maximum number of changed paths shown per commit in
+## the Subversion revision view and in query results. This is not a
+## hard limit (the UI provides options to show all changed paths), but
+## it prevents ViewVC from generating enormous and hard to read pages
+## by default when they happen to contain import or merge commits
+## affecting hundreds or thousands of files.  Set to 0 to disable the
+## limit.
+##
+#limit_changes = 100
+
+##---------------------------------------------------------------------------
+[templates]
+
+## You can override the templates used by various ViewVC views in this
+## section.  By default, ViewVC will look for templates in the
+## directory specified by the "template_dir" configuration option (see
+## the documentation for that option for details).  But if you want to
+## use a different template for a particular view, simply uncomment the
+## appropriate option below and specify the currect location of the EZT
+## template file you wish to use for that view.
+## 
+## Templates are specified relative to the configured template
+## directory (see the "template_dir" option), but absolute paths may
+## also be used as well.
+##
+## If %lang% occurs in the pathname, then the selected language will be
+## substituted.
+##
+## NOTE: the selected language is defined by the "languages" item in the
+##       [general] section, and based on the request's Accept-Language
+##       header.
+##
+
+## diff: Template used for the file differences view.
+##
+#diff = 
+
+## directory: Template used for the directory listing view.
+##
+#directory = 
+
+## error: Template used for the ViewVC error display view.
+##
+#error = 
+
+## file: Template used for the file contents/annotation view.
+##
+#file = 
+
+## graph: Template used for the revision graph view.
+##
+#graph = 
+
+## log: Template used for the revision log view.
+##
+#log = 
+
+## query: Template used for the non-integrated query interface.
+##
+#query = 
+
+## query_form: Template used for the query form view.
+##
+#query_form = 
+
+## query_results: Template used for the query results view.
+##
+#query_results = 
+
+## revision: Template used for the revision/changeset view.
+##
+#revision = 
+
+## roots: Template used for the root listing view.
+##
+#roots = 
+
+##---------------------------------------------------------------------------
+[cvsdb]
+
+## enabled: Enable database integration feature.
+##
+#enabled = 0
+
+## host: Database hostname.  Leave unset to use a local Unix socket
+## connection.
+##
+#host = 
+
+## post: Database listening port.
+##
+#port = 3306
+
+## database_name: ViewVC database name.
+##
+#database_name = ViewVC
+
+## user: Username of user with read/write privileges to the database
+## specified by the 'database_name' configuration option.
+##
+#user = 
+
+## passwd: Password of user with read/write privileges to the database
+## specified by the 'database_name' configuration option.
+##
+#passwd = 
+
+## readonly_user: Username of user with read privileges to the database
+## specified by the 'database_name' configuration option.
+##
+#readonly_user = 
+
+## readonly_passwd: Password of user with read privileges to the database
+## specified by the 'database_name' configuration option.
+##
+#readonly_passwd = 
+
+## row_limit: Maximum number of rows returned by a given normal query
+## to the database.
+##
+## NOTE: This limits the amount of data provided to ViewVC by the
+## database.  It is from this already-reduced data set that ViewVC
+## builds the query response it presents to the user, which may or may
+## not include still more limiting via the query form's 'limit'
+## parameter.  In other words, there is no value which the user can use
+## in the query form's 'limit' parameter which will cause more data to
+## be returned by the database for ViewVC to process.
+##
+#row_limit = 1000
+
+## rss_row_limit: Maximum number of rows returned by a given query to
+## the database made as part of an RSS feed request.  (Keeping in mind
+## that RSS readers tend to poll regularly for new data, you might want
+## to keep this set to a conservative number.)
+##
+## See also the `NOTE' for the 'row_limit' option, which applies here
+## as well.
+##
+#rss_row_limit = 100
+
+## check_database_for_root: Check if the repository is found in the
+## database before showing the query link and RSS feeds.
+## 
+## WARNING: Enabling this check adds the cost of a database connection
+## and query to most ViewVC requests.  If all your roots are represented
+## in the commits database, or if you don't care about the creation of
+## RSS and query links that might lead ultimately to error pages for
+## certain of your roots, or if you simply don't want to add this extra
+## cost to your ViewVC requests, leave this disabled.
+##
+#check_database_for_root = 0
+
+##---------------------------------------------------------------------------
+[vhosts]
+
+## Virtual hosts are individual logical servers accessible via
+## different hostnames, but which are all really the same physical
+## computer.  For example, you might have your web server configured to
+## accept incoming traffic for both http://www.yourdomain.com/ and
+## http://viewvc.yourdomain.com/.  Users pointing their web browsers at
+## each of those two URLs might see entirely different content via one
+## URL versus the other, but all that content actually lives on the
+## same computer, is served up via the same web server, and so
+## on.  It just *looks* like its coming from multiple servers.
+##
+## ViewVC allows you to customize its configuration options for
+## individual virtual hosts.  You might, for example, wish to expose
+## all of your Subversion repositories at http://svn.yourdomain.com/viewvc/ 
+## and all your CVS ones at http://cvs.yourdomain.com/viewvc/, with no
+## cross-exposure.  Using ViewVC's virtual host (vhost) configuration
+## support, you can do this.  Simply create two vhost configurations
+## (one for each of your hostnames), then configure the cvs_roots
+## option only for the vhost associated with cvs.yourdomain.com, and
+## configure the svn_roots option only for the vhost associated with
+## svn.yourdomain.com.
+##
+## This section is a freeform configuration section, where you create
+## both the option names and their values.  The names of the options
+## are then treated as canonical names of virtual hosts, and their
+## values are defined to be comma-delimited lists of hostname globs
+## against which incoming ViewVC requests will be matched to figure out
+## which vhost they apply to.
+##
+## After you've named and defined your vhosts, you may then create new
+## configuration sections whose names are of the form
+## vhost-VHOSTNAME/CONFIGSECTION.  VHOSTNAME here is the canonical name
+## of one of the virtual hosts you defined under the [vhosts] section.
+## Inside those configuration sections, you override the standard
+## ViewVC options typically found in the base configuration section
+## named CONFIGSECTION ("general", "option", etc.)
+##
+## NOTE: Per-vhost overrides may only be applied to the following
+## sections:
+##
+##    general
+##    options
+##    utilities
+##    templates
+##    cvsdb
+##    authz-*
+##
+## Here is an example:
+##
+## [vhosts]
+## libs = libs.yourdomain.*, *.yourlibs.*
+## gui = guiproject.yourdomain.*
+##
+## [vhost-libs/general]
+## cvs_roots = 
+## svn_roots = svnroot: /var/svn/libs-repos
+## default_root = svnroot
+##
+## [vhost-libs/options]
+## show_logs = 1
+##
+## [vhost-gui/general]
+## cvs_roots = cvsroot: /var/cvs/guiproject
+## svn_roots = 
+## default_root = cvsroot
+##
+
+##---------------------------------------------------------------------------
+## ViewVC recognizes per-root configuration overrides, too.  To
+## override the value of a configuration parameter only for a single
+## root, create a configuration section whose names is of the form
+## root-ROOTNAME/CONFIGSECTION.  ROOTNAME here is the name of the root
+## as defined explicitly in cvs_roots or svn_roots or implicitly as the
+## basename of a root path in root_parents.  Options found in this new
+## configuration section override for this one root the corresponding
+## options found in the base configuration section CONFIGSECTION
+## ("options", "authz-*", etc.) as interpreted after per-vhost
+## overrides (if any) have been applied.
+##
+## NOTE: Per-root overrides may only be applied to the following
+## sections:
+##
+##    options
+##    utilities
+##    authz-*
+##
+## WARNING: Do not use per-root overrides if your ViewVC instance is
+## served via the standalone.py server option!  Doing so could cause
+## ViewVC to be unable to function properly (or at all).
+##
+## Here is an example showing how to enable Subversion authz-based
+## authorization for only the single root named "svnroot":
+## 
+## [root-svnroot/options]
+## authorizer = svnauthz
+##
+## [root-svnroot/authz-svnauthz]
+## authzfile = /path/to/authzfile
+##
+
+##---------------------------------------------------------------------------
+[authz-forbidden]
+
+## The "forbidden" authorizer forbids access to repository modules,
+## defined to be top-level subdirectories in a repository.
+##
+## NOTE: The options in this section apply only when the 'authorizer'
+## option (in the [options] section) is set to 'forbidden'.
+
+## forbidden: A comma-delimited list of patterns which match modules
+## that ViewVC should hide from users.
+##
+## You can use a simple list of modules, or something more complex:
+##
+##   *) The "!" can be used before a module to explicitly state that it
+##      is NOT forbidden. Whenever this form is seen, then all modules will
+##      be forbidden unless one of the "!" modules match.
+##
+##   *) Shell-style "glob" expressions may be used. "*" will match any
+##      sequence of zero or more characters, "?" will match any single
+##      character, "[seq]" will match any character in seq, and "[!seq]"
+##      will match any character not in seq.
+##
+##   *) Tests are performed in sequence. The first match will terminate the
+##      testing. This allows for more complex allow/deny patterns.
+##
+## Tests are case-sensitive.
+##
+## NOTE: Again, this is for the hiding of modules within repositories, *not* 
+## for the hiding of repositories (roots) themselves.
+##
+## Some examples:
+##
+##    Disallow "example" but allow all others:
+##       forbidden = example
+##
+##    Disallow "example1" and "example2" but allow all others:
+##       forbidden = example1, example2
+##
+##    Allow *only* "example1" and "example2":
+##       forbidden = !example1, !example2
+##
+##    Forbid modules starting with "x":
+##       forbidden = x*
+##
+##    Allow modules starting with "x" but no others:
+##       forbidden = !x*
+##
+##    Allow "xml", forbid other modules starting with "x", and allow the rest:
+##       forbidden = !xml, x*, !*
+##
+#forbidden = 
+
+##---------------------------------------------------------------------------
+[authz-forbiddenre]
+
+## The "forbiddenre" authorizer forbids access to repositories and
+## repository paths by comparing a list of regular expressions
+## (separated by commas) against paths consisting of the repository (or
+## root) name plus the path of the versioned file or directory to be
+## tested.  For example, to see if the user is authorized to see the
+## path "/trunk/www/index.html" in the repository whose root name is
+## "svnrepos", this authorizer will check the path
+## "svnrepos/trunk/www/index.html" against the list of forbidden
+## regular expressions.  Directory paths will be terminated by a forward
+## slash.
+##
+## NOTE: The options in this section apply only when the 'authorizer'
+## option (in the [options] section) is set to 'forbiddenre'.
+
+## forbiddenre: A comma-delimited list of regular expressions which
+## match paths that ViewVC should hide from users.
+##
+## Like the "forbidden" authorizer...
+##
+##   *) The "!" can be used before a module to explicitly state that it
+##      is NOT forbidden. Whenever this form is seen, then all modules will
+##      be forbidden unless one of the "!" modules match.
+##
+##   *) Tests are performed in sequence. The first match will terminate the
+##      testing. This allows for more complex allow/deny patterns.
+##
+## Unlike the "forbidden" authorizer, you can can use this to hide roots, too.
+##
+## Some examples:
+##
+##    Disallow files named "PRIVATE", but allow all others:
+##       forbiddenre = /PRIVATE$
+##
+##    Disallow the "hidden" repository, allowing all others:
+##       forbiddenre = ^hidden(/|$)
+##
+##    Allow only the "example1" and "example2" roots and the paths inside them,
+##    disallowing all others (which can be done in multiple ways):
+##       forbiddenre = !^example1(/|$), !^example2(/|$)/
+##       forbiddenre = !^example[12](/|$)
+##
+##    Only allow visibility of HTML files and the directories that hold them:
+##       forbiddenre = !^([^/]+|.*(/|\.html))$
+##
+#forbiddenre = 
+
+##---------------------------------------------------------------------------
+[authz-svnauthz]
+
+## The "svnauthz" authorizer uses a Subversion authz configuration file
+## to determine access to repository paths.
+##
+## NOTE: The options in this section apply only when the 'authorizer'
+## option (in the [options] section) is set to 'svnauthz'.
+
+## authzfile: Specifies the location of the authorization rules file
+## (using an absolute path).
+##
+#authzfile =
+
+## force_username_case: Like the AuthzForceUsernameCase httpd.conf
+## directive, set this to "upper" or "lower" to force the normalization
+## to upper- or lower-case, respectively, of incoming usernames prior
+## to comparison against the authorization rules files.  Leave the
+## option unset to preserve the username case.
+##
+#force_username_case = 
+
+##---------------------------------------------------------------------------
+[query]
+
+## The configuration items in this section are used exclusively by the
+## 'query' script, a separate script from ViewVC itself that ships
+## with ViewVC and allows for queries into the ViewVC commits
+## database.  If you aren't using this separate script (which was made
+## largely irrelevant by the introduction of an integrated "query"
+## view in ViewVC itself, or aren't using the ViewVC commits database
+## functionality at all, you can ignore these configurations items
+## altogether.
+
+## viewvc_base_url: Base URL at which ViewVC may be accessed on this
+## server.  The default value for this option is determined at
+## run-time by the various front-ends to the query script.
+##
+## Examples:
+## viewvc_base_url = /viewvc.py
+## viewvc_base_url = /viewvc.wsgi
+## viewvc_base_url = /cgi-bin/viewvc
+## viewvc_base_url = viewvc
+##
+## To disable cross-linking between the query script and ViewVC,
+## uncomment this option and leave its value empty.
+##
+#viewvc_base_url =
+
+##---------------------------------------------------------------------------
