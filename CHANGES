@@ -1,6 +1,6 @@
 Version 1.1.12 (released ??-???-????)
 
-  * 
+  * fix path display in patch and certain diff views (issue #485)
 
 Version 1.1.11 (released 17-May-2011)
 

@@ -2986,7 +2986,8 @@ class DiffSource:
 class DiffSequencingError(Exception):
   pass
 
-def diff_parse_headers(fp, diff_type, rev1, rev2, sym1=None, sym2=None):
+def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2,
+                       sym1=None, sym2=None):
   date1 = date2 = log_rev1 = log_rev2 = flag = None
   header_lines = []
 
@@ -3015,15 +3016,15 @@ def diff_parse_headers(fp, diff_type, rev1, rev2, sym1=None, sym2=None):
         if match:
           date1 = match.group(1)
           log_rev1 = match.group(2)
-        if sym1:
-          line = line[:-1] + ' %s\n' % sym1
+          line = '%s%s\t%s\t%s%s\n' % (f1, path1, date1, log_rev1,
+                                       sym1 and ' ' + sym1 or '')
       elif line[:len(f2)] == f2:
         match = _re_extract_rev.match(line)
         if match:
           date2 = match.group(1)
           log_rev2 = match.group(2)
-        if sym2:
-          line = line[:-1] + ' %s\n' % sym2
+          line = '%s%s\t%s\t%s%s\n' % (f2, path2, date2, log_rev2,
+                                       sym2 and ' ' + sym2 or '')
         parsing = 0
       elif line[:3] == 'Bin':
         flag = _RCSDIFF_IS_BINARY
@@ -3151,8 +3152,11 @@ def view_patch(request):
     raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                  'to diff', '400 Bad Request')
 
-  date1, date2, flag, headers = diff_parse_headers(fp, diff_type, rev1, rev2,
-                                                   sym1, sym2)
+  path_left = _path_join(p1)
+  path_right = _path_join(p2)
+  date1, date2, flag, headers = diff_parse_headers(fp, diff_type,
+                                                   path_left, path_right,
+                                                   rev1, rev2, sym1, sym2)
 
   server_fp = get_writeready_server_file(request, 'text/plain')
   server_fp.write(headers)
@@ -3248,6 +3252,7 @@ def view_diff(request):
   changes = []
   if fp:
     date1, date2, flag, headers = diff_parse_headers(fp, diff_type,
+                                                     path_left, path_right,
                                                      rev1, rev2, sym1, sym2)
     if human_readable:
       if flag is not None:
