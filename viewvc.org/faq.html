@@ -105,6 +105,10 @@
     and instead displays the message "NOTE: There are N files, but
     none match the current selection criteria".  How can I fix this?</a></li>
 
+<li><a href="#createprocess-2">Why am I getting a stack trace with a
+   "CreateProcess" error of "The system cannot find the file
+   specified"?</a></li>
+
 </ul>
 
 <!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
@@ -308,6 +312,25 @@ ScriptAlias / /usr/local/viewvc/bin/cgi/viewvc.cgi/</pre></blockquote>
    is probably less disruptive than downgrading your version control
    system).</p>
 </div>
+
+<div id="createprocess-2">
+<p class="faq-atitle">Why am I getting a stack trace with a
+   "CreateProcess" error of "The system cannot find the file
+   specified"?</p>
+
+<p>The stack trace which ends with <code>error: (2, 'CreateProcess',
+   'The system cannot find the file specified.')</code> indicates that
+   some program that ViewVC was trying to execute doesn't exist.
+   Unfortunately, the error message and stack trace don't reveal which
+   program ViewVC was <em>trying</em> to execute at the time.  Usually
+   it's the RCS or CVSNT executables that it employs to harvest your
+   repository information, or perhaps one of the syntax coloration
+   tools (enscript, highlight, etc.).  If you are using ViewVC 1.1 or
+   higher, review the settings in the <tt>[utilities]</tt> section of
+   your <code>viewvc.conf</code> file; for older versions, these
+   settings are scattered throughout viewvc.conf with names such
+   as <code>rcs_path</code>, <code>cvsnt_exe_path</code>,
+   <code>enscript_path</code>, and <code>highlight_path</code>.</p>
 
 <!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
 <h3 class="faq-section" id="faq-a-svn">Subversion Browsing</h3>
