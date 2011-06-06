@@ -351,9 +351,17 @@ class CheckinDatabase:
                 match = " LIKE "
             elif query_entry.match == "glob":
                 match = " REGEXP "
-                # use fnmatch to translate the glob into a regexp
+                # Use fnmatch to translate the glob into a regular
+                # expression.  Sadly, we have to account for the fact
+                # that in Python 2.6, fnmatch.translate() started
+                # sticking '\Z(?ms)' at the end of the regular
+                # expression instead of just '$', and doesn't prepend
+                # the '^'.
                 data = fnmatch.translate(data)
-                if data[0] != '^': data = '^' + data
+                if data[0] != '^':
+                    data = '^' + data
+                if data[-7:] == '\Z(?ms)':
+                    data = data[:-7] + '$'
             elif query_entry.match == "regex":
                 match = " REGEXP "
             elif query_entry.match == "notregex":
