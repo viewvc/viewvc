@@ -177,7 +177,24 @@ APACHE CONFIGURATION
    or /etc/local. Use the vendor documentation or the find utility if
    in doubt.
 
-2) Configure Apache to expose ViewVC to users at the URL of your choice.
+2) Depending on how your Apache configuration is setup by default, you
+   might need to explicitly allow high-level access to the ViewVC
+   install location.
+
+      <Directory <VIEWVC_INSTALLATION_DIRECTORY>>
+        Order allow,deny
+        Allow from all
+      </Directory>
+
+   For example, if ViewVC is installed in /usr/local/viewvc-1.0 on
+   your system:
+
+      <Directory /usr/local/viewvc-1.0>
+        Order allow,deny
+        Allow from all
+      </Directory>
+
+3) Configure Apache to expose ViewVC to users at the URL of your choice.
 
    ViewVC provides several different ways to do this.  Choose one of
    the following methods:
@@ -188,13 +205,13 @@ APACHE CONFIGURATION
    The ScriptAlias directive is very useful for pointing 
    directly to the viewvc.cgi script.  Simply insert a line containing
 
-     ScriptAlias /viewvc <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/viewvc.cgi
+      ScriptAlias /viewvc <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/viewvc.cgi
 
    into your httpd.conf file.  Choose the location in httpd.conf where 
    also the other ScriptAlias lines reside.  Some examples:
 
-     ScriptAlias /viewvc /usr/local/viewvc-1.0/bin/cgi/viewvc.cgi
-     ScriptAlias /query /usr/local/viewvc-1.0/bin/cgi/query.cgi
+      ScriptAlias /viewvc /usr/local/viewvc-1.0/bin/cgi/viewvc.cgi
+      ScriptAlias /query /usr/local/viewvc-1.0/bin/cgi/query.cgi
 
    ----------------------------------------
    METHOD B:  CGI mode in cgi-bin directory
@@ -211,8 +228,8 @@ APACHE CONFIGURATION
    to the directory of your choosing in the Document Root adding the following
    Apache directives for the directory in httpd.conf or an .htaccess file:
 
-     Options +ExecCGI
-     AddHandler cgi-script .cgi
+      Options +ExecCGI
+      AddHandler cgi-script .cgi
      
    Note: For this to work mod_cgi has to be loaded.  And for the .htaccess file
    to be effective, "AllowOverride All" or "AllowOverride Options FileInfo"
@@ -279,13 +296,6 @@ APACHE CONFIGURATION
       ScriptAlias /viewvc /usr/local/viewvc/bin/wsgi/viewvc.fcgi
       ScriptAlias /query /usr/local/viewvc/bin/wsgi/query.fcgi
 
-3) Restart Apache.
-
-   The commands to do this vary.  "httpd -k restart" and "apache -k
-   restart" are two common variants.  On RedHat Linux it is done using
-   the command "/sbin/service httpd restart" and on SuSE Linux it is
-   done with "rcapache restart".  Other systems use "apachectl restart".
-
 4) [Optional] Add access control.
 
    In your httpd.conf you can control access to certain modules by
@@ -307,7 +317,14 @@ APACHE CONFIGURATION
       http://<server_name>/viewvc/~checkout~/<module_name>
       http://<server_name>/viewvc/<module_name>.tar.gz?view=tar
 
-5) Optional: Protect your ViewVC instance from server-whacking webcrawlers.
+5) Restart Apache.
+
+   The commands to do this vary.  "httpd -k restart" and "apache -k
+   restart" are two common variants.  On RedHat Linux it is done using
+   the command "/sbin/service httpd restart" and on SuSE Linux it is
+   done with "rcapache restart".  Other systems use "apachectl restart".
+
+6) Optional: Protect your ViewVC instance from server-whacking webcrawlers.
 
    As ViewVC is a web-based application which each page containing various
    links to other pages and views, you can expect your server's performance

@@ -12,7 +12,7 @@ Version 1.1.11 (released 17-May-2011)
   * fix stack trace when asked to checkout a directory (issue #478)
   * improve memory usage and speed of revision log markup (issue #477)
   * fix broken annotation view in CVS keyword-bearing files (issue #479)
-  * warn users when query results are incomplete (issue #443)
+  * warn users when query results are incomplete (issue #433)
   * avoid parsing errors on RCS newphrases in the admin section (issue #483)
   * make rlog parsing code more robust in certain error cases (issue #444)
 
