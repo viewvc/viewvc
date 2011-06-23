@@ -410,7 +410,7 @@ class RemoteSubversionRepository(vclib.Repository):
         while rev[0] == 'r':
           rev = rev[1:]
       rev = int(rev)
-    except ValueError:
+    except:
       raise vclib.InvalidRevision(rev)
     if (rev < 0) or (rev > self.youngest):
       raise vclib.InvalidRevision(rev)
