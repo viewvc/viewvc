@@ -2,6 +2,7 @@ Version 1.1.12 (released ??-???-????)
 
   * fix path display in patch and certain diff views (issue #485)
   * fix broken cvsdb glob searching (issue 486)
+  * allow svn revision specifiers to have leading r's (issue #441, #448) 
 
 Version 1.1.11 (released 17-May-2011)
 
