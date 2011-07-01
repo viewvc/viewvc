@@ -288,7 +288,7 @@ def usage():
 located at REPOS-PATH.
 
 Usage: 1. %s [-v] rebuild REPOS-PATH
-       2. %s [-v] update REPOS-PATH [REV:[REV2]] [--force]
+       2. %s [-v] update REPOS-PATH [REV[:REV2]] [--force]
        3. %s [-v] purge REPOS-PATH
 
 1.  Rebuild the commit database information for the repository located
