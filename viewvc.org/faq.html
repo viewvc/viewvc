@@ -77,6 +77,10 @@
 <li><a href="#rss-support">How do I enable ViewVC's RSS feed
     capabilities?</a></li>
 
+<li><a href="#openxml-downloads">When I try to download a Microsoft
+    Word 2007 (.docx) document, ViewVC tells me that it is a .zip
+    file.  How can I make files such as this open in Word?</a></li>
+
 </ul>
 
 <!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
@@ -227,6 +231,37 @@ ScriptAlias / /usr/local/viewvc/bin/cgi/viewvc.cgi/</pre></blockquote>
    database &mdash; the RSS feed feature will then be enabled with no
    additional configuration.</p>
 </div>
+
+<div id="openxml-downloads">
+<p class="faq-atitle">When I try to download a Microsoft Word 2007
+   (.docx) document, ViewVC tells me that it is a .zip file.  How can
+   I make files such as this open in Word?</p>
+
+<p>As it turns out, <code>.docx</code> files <em>are</em> essentially
+   just structured ZIP archives.  Of course, you don't want them
+   handled on the client side as ZIP archives, but as a Office OpenXML
+   documents.  The key to making this happen lies in having the server
+   tell the user agent (or "web browser") precisely what kinds of
+   files these are.</p>
+
+<p>First, you'll want to make sure that ViewVC is configured to
+  consult a MIME types mapping file.  You do this via the
+  <code>options/mime_types_files</code> option
+  in <code>viewvc.conf</code> (or <code>options/mime_types_file</code>
+  for ViewVC 1.0.x).  Then, ensure the the MIME types mapping file
+  you've told ViewVC to consult actually contains mappings for the
+  various standard OpenXML file extensions:</p>
+
+<blockquote><pre>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet           xlsx
+application/vnd.openxmlformats-officedocument.spreadsheetml.template        xltx
+application/vnd.openxmlformats-officedocument.presentationml.presentation   pptx
+application/vnd.openxmlformats-officedocument.presentationml.slideshow      ppsx
+application/vnd.openxmlformats-officedocument.presentationml.template       potx
+application/vnd.openxmlformats-officedocument.wordprocessingml.document     docx
+application/vnd.openxmlformats-officedocument.wordprocessingml.template     dotx
+</pre></blockquote>
+</div>
+
 
 <!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
 <h3 class="faq-section" id="faq-a-cvs">CVS Browsing</h3>
