@@ -337,7 +337,43 @@
 ## allowed_views: List the ViewVC views which are enabled.  Views not
 ## in this comma-delited list will not be served (or, will return an
 ## error on attempted access).
-## Possible values: "annotate", "co", "diff", "markup", "roots", "tar"
+##
+## Valid items for this list include: "annotate", "co", "diff", "markup",
+## "roots", "tar".
+##
+## ----------+---------------------------------------------------------
+##    VIEW   |                       DESCRIPTION
+## ----------+---------------------------------------------------------
+##  annotate | The 'annotate' view shows the contents of a single
+##           | revision of a versioned file in exactly the same way as
+##           | the markup view, but with additional line-by-line
+##           | change attribution (the revision number, author, etc.
+##           | the most recent edit to that line of text as of the
+##           | displayed version).
+## ----------+---------------------------------------------------------
+##  co       | The 'co' (aka "checkout" or "download") view isn't
+##           | really a branded view at all, but allows for direct
+##           | downloading of the contents of a single revision of a 
+##           | versioned file.
+## ----------+---------------------------------------------------------
+##  diff     | The 'diff' view displays line-based differences between
+##           | two revisions of a versioned file in a variety of
+##           | different user-selectable formats.
+## ----------+---------------------------------------------------------
+##  markup   | The 'markup' view shows the contents of a single
+##           | revision of a versioned file, with syntax highlighting
+##           | where possible and enabled.  It can also optionally
+##           | show change log information for that revision of the
+##           | file.
+## ----------+---------------------------------------------------------
+##  roots    | The 'roots' view is a simple listing of the various
+##           | repositories which ViewVC has been configured to serve
+##           | to users.
+## ----------+---------------------------------------------------------
+##  tar      | The 'tar' view isn't a branded view, but generates
+##           | a GNU Tar archive file containing a single versioned
+##           | directory and its contents (recursively).
+## ----------+---------------------------------------------------------
 ##
 #allowed_views = annotate, diff, markup, roots
 
