@@ -631,7 +631,13 @@
 #short_log_len = 80
 
 ## enable_syntax_coloration: Should we colorize known file content
-## syntaxes?  [Requires Pygments Python module]
+## syntaxes?
+##
+## NOTE: This feature requires the Pygments Python module
+## (http://pygments.org) and works only when ViewVC can determine the
+## MIME content type of the file whose contents it wishes to colorize.
+## Use the 'mime_types_files' configuration option to specify MIME
+## type mapping files useful for making that determination.
 ##
 #enable_syntax_coloration = 1
 
