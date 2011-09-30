@@ -4492,8 +4492,8 @@ def load_config(pathname=None, server=None):
   debug.t_start('load-config')
 
   if pathname is None:
-    pathname = (os.environ.get("VIEWVC_CONF_PATHNAME")
-                or os.environ.get("VIEWCVS_CONF_PATHNAME")
+    pathname = (server.getenv("VIEWVC_CONF_PATHNAME")
+                or server.getenv("VIEWCVS_CONF_PATHNAME")
                 or os.path.join(os.path.dirname(os.path.dirname(__file__)),
                                 "viewvc.conf"))
 
