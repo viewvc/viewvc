@@ -218,6 +218,10 @@ APACHE CONFIGURATION
    Copy the CGI scripts from 
    <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/*.cgi
    to the /cgi-bin/ directory configured in your httpd.conf file.
+
+   You can override configuration file location using:
+
+       SetEnv VIEWVC_CONF_PATHNAME /etc/viewvc.conf
    
    ------------------------------------------
    METHOD C:  CGI mode in ExecCGI'd directory
@@ -244,6 +248,10 @@ APACHE CONFIGURATION
    In httpd.conf, make sure that "AllowOverride All" or at least 
    "AllowOverride FileInfo Options" are enabled for the directory
    you copied the files to.
+
+   You can override configuration file location using:
+
+       SetEnv VIEWVC_CONF_PATHNAME /etc/viewvc.conf
    
    Note: If you are using Mod_Python under Apache 1.3 the tarball generation
    feature may not work because it uses multithreading.  This works fine
