@@ -4410,14 +4410,35 @@ def locate_root(cfg, rootname):
   return None, None
   
 def load_config(pathname=None, server=None):
+  """Load the ViewVC configuration file.  SERVER is the server object
+  that will be using this configuration.  Consult the environment for
+  the variable VIEWVC_CONF_PATHNAME and VIEWCVS_CONF_PATHNAME (its
+  legacy name) and, if set, use its value as the path of the
+  configuration file; otherwise, use PATHNAME (if provided).  Failing
+  all else, use a hardcoded default configuration path."""
+  
   debug.t_start('load-config')
 
-  if pathname is None:
-    pathname = (os.environ.get("VIEWVC_CONF_PATHNAME")
-                or os.environ.get("VIEWCVS_CONF_PATHNAME")
-                or os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                                "viewvc.conf"))
+  # See if the environment contains overrides to the configuration
+  # path.  If we have a SERVER object, consult its environment; use
+  # the OS environment otherwise.
+  env_pathname = None
+  if server is not None:
+    env_pathname = (server.getenv("VIEWVC_CONF_PATHNAME")
+                    or server.getenv("VIEWCVS_CONF_PATHNAME"))
+  else:
+    env_pathname = (os.environ.get("VIEWVC_CONF_PATHNAME")
+                    or os.environ.get("VIEWCVS_CONF_PATHNAME"))
 
+  # Try to find the configuration pathname by searching these ordered
+  # locations: the environment, the passed-in PATHNAME, the hard-coded
+  # default.
+  pathname = (env_pathname
+              or pathname
+              or os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                              "viewvc.conf"))
+
+  # Load the configuration!
   cfg = config.Config()
   cfg.set_defaults()
   cfg.load_config(pathname, server and server.getenv("HTTP_HOST"))
