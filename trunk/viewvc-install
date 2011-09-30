@@ -207,6 +207,8 @@ def install_file(src_path, dst_path, mode, subst_path_vars,
                         temp = raw_input("Do you want to [O]verwrite, [D]o "
                                          "not overwrite, or [V]iew "
                                          "differences? ")
+                    if len(temp) == 0:
+                        continue
                     temp = temp[0].lower()
                     if temp == "v" and ext not in BINARY_FILE_EXTS:
                         print """
