@@ -29,7 +29,7 @@
       </form>
     </td>
     <td>
-[if-any raw_diff]
+[if-any diff.raw_diff]
       &nbsp;
 [else]
       <table style="border:solid gray 1px;" class="auto">
@@ -37,7 +37,7 @@
           <td>Legend:<br />
             <table cellspacing="0" cellpadding="1">
               <tr>
-                <td style="text-align:center;" class="vc_diff_remove">Removed from v.[left.rev]</td>
+                <td style="text-align:center;" class="vc_diff_remove">Removed from v.[diff.left.rev]</td>
                 <td class="vc_diff_empty">&nbsp;</td>
               </tr>
               <tr>
@@ -45,7 +45,7 @@
               </tr>
               <tr>
                 <td class="vc_diff_empty">&nbsp;</td>
-                <td style="text-align:center;" class="vc_diff_add">Added in v.[right.rev]</td>
+                <td style="text-align:center;" class="vc_diff_add">Added in v.[diff.right.rev]</td>
               </tr>
             </table>
           </td>

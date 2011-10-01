@@ -3380,12 +3380,12 @@ def view_diff(request):
 
   data = common_template_data(request)
   data.merge(ezt.TemplateData({
-    'left' : left,
-    'right' : right,
-    'raw_diff' : raw_diff_fp,
-    'changes' : changes,
-    'sidebyside': sidebyside,
-    'unified': unified,
+    'diff' : _item(left=left,
+                   right=right,
+                   raw_diff=raw_diff_fp,
+                   changes=changes,
+                   sidebyside=sidebyside,
+                   unified=unified),
     'diff_format' : request.query_dict.get('diff_format',
                                            cfg.options.diff_format),
     'patch_href' : request.get_url(view_func=view_patch,
