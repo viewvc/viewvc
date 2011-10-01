@@ -31,6 +31,8 @@ import os
 import re
 import time
 import math
+
+from common import _item
 import vclib
 import sapi
 
@@ -90,11 +92,6 @@ class HTMLBlameSource:
 def blame(repos, path_parts, diff_url, include_url, opt_rev=None):
   source = HTMLBlameSource(repos, path_parts, diff_url, include_url, opt_rev)
   return source, source.revision
-
-
-class _item:
-  def __init__(self, **kw):
-    vars(self).update(kw)
 
 
 def make_html(root, rcs_path):

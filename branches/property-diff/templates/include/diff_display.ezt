@@ -4,6 +4,12 @@
   <pre class="vc_raw_diff">[diff.raw_diff]</pre>
 [end]
 
+[define msg_no_changes]<br/><strong>- No changes -</strong><br/>&nbsp;[end]
+[define msg_binary]<br/><strong>- Binary content differs -</strong><br/>&nbsp;[end]
+[define msg_error]<br/><strong>- ViewVC depends on rcsdiff and GNU diff to create this page. ViewVC cannot find GNU diff.
+Even if you have GNU diff installed, the rcsdiff program must be configured and compiled with the GNU
+diff location. -</strong><br/>&nbsp;[end]
+
 [define left_view_href][if-any diff.left.prefer_markup][diff.left.view_href][else][if-any diff.left.download_href][diff.left.download_href][end][end][end]
 [define right_view_href][if-any diff.right.prefer_markup][diff.right.view_href][else][if-any diff.right.download_href][diff.right.download_href][end][end][end]
 
@@ -77,8 +83,7 @@
                 <td colspan="3">&nbsp;</td>
               </tr>
               <tr class="vc_diff_empty">
-                <td colspan="3" style="text-align:center;"><br />
-                <strong>- No changes -</strong><br />&nbsp; </td>
+                <td colspan="3" style="text-align:center;">[msg_no_changes]</td>
               </tr>
             [else]
               [is diff.changes.type "binary-diff"]
@@ -86,8 +91,7 @@
                   <td colspan="3">&nbsp;</td>
                 </tr>
                 <tr class="vc_diff_empty">
-                  <td colspan="3" style="text-align:center;"><br />
-                  <strong>- Binary file revisions differ -</strong><br />&nbsp; </td>
+                  <td colspan="3" style="text-align:center;">[msg_binary]</td>
                 </tr>
               [else]
                 [is diff.changes.type "error"]
@@ -95,12 +99,7 @@
                     <td colspan="3">&nbsp;</td>
                   </tr>
                   <tr class="vc_diff_empty">
-                    <td colspan="3" style="text-align:center;"> <br />
-                    <strong>- ViewVC depends on rcsdiff and GNU diff to create 
-                    this page.  ViewVC cannot find GNU diff. Even if you 
-                    have GNU diff installed, the rcsdiff program must be 
-                    configured and compiled with the GNU diff location.
-                    -</strong> <br />&nbsp; </td>
+                    <td colspan="3" style="text-align:center;">[msg_error]</td>
                   </tr>
                 [else]
                   <tr>
@@ -137,17 +136,29 @@
     </thead>
     <tbody>
       [for diff.sidebyside]
-        [if-any diff.sidebyside.gap]
-          <tr>
-            <th>&hellip;</th><th></th>
-            <th>&hellip;</th><th></th>
-          </tr>
-        [end]
-        <tr>
-          [for diff.sidebyside.columns]
-            <th>[diff.sidebyside.columns.line_number]</th><td[if-any diff.sidebyside.columns.line_number][else] class="vc_idiff_empty"[end]>[for diff.sidebyside.columns.segments][if-any diff.sidebyside.columns.segments.type]<span class="vc_idiff_[diff.sidebyside.columns.segments.type]">[diff.sidebyside.columns.segments.text]</span>[else][diff.sidebyside.columns.segments.text][end][end]</td>
+	[is diff.sidebyside.type "no-changes"]
+	  <tr class="vc_diff_empty">
+	    <td colspan="4" style="text-align:center;">[msg_no_changes]</td>
+	  </tr>
+	[else]
+	  [is diff.sidebyside.type "binary-diff"]
+	    <tr class="vc_diff_empty">
+	      <td colspan="4" style="text-align:center;">[msg_binary]</td>
+	    </tr>
+	  [else]
+            [if-any diff.sidebyside.gap]
+              <tr>
+                <th>&hellip;</th><th></th>
+                <th>&hellip;</th><th></th>
+              </tr>
+            [end]
+            <tr>
+              [for diff.sidebyside.columns]
+                <th>[diff.sidebyside.columns.line_number]</th><td[if-any diff.sidebyside.columns.line_number][else] class="vc_idiff_empty"[end]>[for diff.sidebyside.columns.segments][if-any diff.sidebyside.columns.segments.type]<span class="vc_idiff_[diff.sidebyside.columns.segments.type]">[diff.sidebyside.columns.segments.text]</span>[else][diff.sidebyside.columns.segments.text][end][end]</td>
+              [end]
+            </tr>
           [end]
-        </tr>
+        [end]
       [end]
     </tbody>
   </table>
@@ -164,18 +175,30 @@
     </thead>
     <tbody>
       [for diff.unified]
-        [if-any diff.unified.gap]
-          <tr>
-            <th>&hellip;</th>
-            <th>&hellip;</th>
-            <th></th>
-          </tr>
+	[is diff.unified.type "no-changes"]
+	  <tr class="vc_diff_empty">
+	    <td colspan="3" style="text-align:center;">[msg_no_changes]</td>
+	  </tr>
+	[else]
+	  [is diff.unified.type "binary-diff"]
+	    <tr class="vc_diff_empty">
+	      <td colspan="3" style="text-align:center;">[msg_binary]</td>
+	    </tr>
+	  [else]
+            [if-any diff.unified.gap]
+              <tr>
+                <th>&hellip;</th>
+                <th>&hellip;</th>
+                <th></th>
+              </tr>
+            [end]
+            <tr>
+              <th>[diff.unified.left_number]</th>
+              <th>[diff.unified.right_number]</th>
+              <td[if-any diff.unified.type] class="vc_idiff_[diff.unified.type]"[end]>[for diff.unified.segments][if-any diff.unified.segments.type]<span class="vc_idiff_[diff.unified.segments.type]">[diff.unified.segments.text]</span>[else][diff.unified.segments.text][end][end]</td>
+            </tr>
+          [end]
         [end]
-        <tr>
-          <th>[diff.unified.left_number]</th>
-          <th>[diff.unified.right_number]</th>
-          <td[if-any diff.unified.type] class="vc_idiff_[diff.unified.type]"[end]>[for diff.unified.segments][if-any diff.unified.segments.type]<span class="vc_idiff_[diff.unified.segments.type]">[diff.unified.segments.text]</span>[else][diff.unified.segments.text][end][end]</td>
-        </tr>
       [end]
     </tbody>
   </table>

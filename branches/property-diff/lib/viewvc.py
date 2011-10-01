@@ -37,6 +37,7 @@ import types
 import urllib
 
 # These modules come from our library (the stub has set up the path)
+from common import _item, _RCSDIFF_NO_CHANGES, _RCSDIFF_IS_BINARY, _RCSDIFF_ERROR
 import accept
 import config
 import ezt
@@ -80,10 +81,6 @@ _sticky_vars = [
 
 # for reading/writing between a couple descriptors
 CHUNK_SIZE = 8192
-
-# for rcsdiff processing of header
-_RCSDIFF_IS_BINARY = 'binary-diff'
-_RCSDIFF_ERROR = 'error'
 
 # special characters that don't need to be URL encoded
 _URL_SAFE_CHARS = "/*~"
@@ -2975,7 +2972,7 @@ class DiffSource:
     if not line:
       if self.state == 'no-changes':
         self.state = 'done'
-        return _item(type='no-changes')
+        return _item(type=_RCSDIFF_NO_CHANGES)
 
       # see if there are lines to flush
       if self.left_col or self.right_col:
@@ -4575,8 +4572,3 @@ def main(server, cfg):
     debug.t_end('main')
     debug.t_dump(server.file())
     debug.DumpChildren(server)
-
-
-class _item:
-  def __init__(self, **kw):
-    vars(self).update(kw)
