@@ -25,6 +25,7 @@ debug.t_start('imports')
 import sys
 import os
 import calendar
+import copy
 import gzip
 import mimetypes
 import re
@@ -3240,6 +3241,39 @@ def view_patch(request):
   fp.close()
 
 
+def diff_side_item(request, path_comp, rev, sym):
+  '''Prepare information about left/right side of the diff. Prepare two flavors, with
+  and without file view links.'''
+  # TODO: Is the slice necessary, or is limit enough?
+  log_entry = request.repos.itemlog(path_comp, rev, vclib.SORTBY_REV, 0, 1, {})[-1]
+  ago = log_entry.date is not None \
+         and html_time(request, log_entry.date, 1) or None
+  path_joined = _path_join(path_comp)
+  i_bare = _item(date=make_time_string(log_entry.date, request.cfg),
+		 author=log_entry.author,
+		 log=format_log(request, log_entry.log),
+		 size=log_entry.size,
+		 ago=ago,
+		 path=path_joined,
+		 rev=rev,
+		 tag=sym,
+		 view_href=None,
+		 download_href=None,
+		 download_text_href=None,
+		 annotate_href=None,
+		 revision_href=None,
+		 prefer_markup=ezt.boolean(0))
+  fvi = get_file_view_info(request, path_joined, rev)
+  i_links = copy.copy(i_bare)
+  i_links.view_href = fvi.view_href
+  i_links.download_href = fvi.download_href
+  i_links.download_text_href = fvi.download_text_href
+  i_links.annotate_href = fvi.annotate_href
+  i_links.revision_href = fvi.revision_href
+  i_links.prefer_markup = fvi.prefer_markup
+  return log_entry, i_bare, i_links
+
+
 def view_diff(request):
   if 'diff' not in request.cfg.options.allowed_views:
     raise debug.ViewVCException('Diff generation is disabled',
@@ -3254,15 +3288,9 @@ def view_diff(request):
   if check_freshness(request, None, '%s-%s' % (rev1, rev2), weak=1):
     return
 
-  # TODO: Is the slice necessary, or is limit enough?
-  log_entry1 = request.repos.itemlog(p1, rev1, vclib.SORTBY_REV, 0, 1, {})[-1]
-  log_entry2 = request.repos.itemlog(p2, rev2, vclib.SORTBY_REV, 0, 1, {})[-1]
+  log_entry1, left_bare, left_links = diff_side_item(request, p1, rev1, sym1)
+  log_entry2, right_bare, right_links = diff_side_item(request, p2, rev2, sym2)
 
-  ago1 = log_entry1.date is not None \
-         and html_time(request, log_entry1.date, 1) or None
-  ago2 = log_entry2.date is not None \
-         and html_time(request, log_entry2.date, 2) or None
-  
   diff_type = None
   diff_options = {}
   human_readable = 0
@@ -3340,42 +3368,10 @@ def view_diff(request):
   diff_format_action, diff_format_hidden_values = \
     request.get_form(params=no_format_params)
 
-  fvi = get_file_view_info(request, path_left, rev1)
-  left = _item(date=make_time_string(log_entry1.date, cfg),
-               author=log_entry1.author,
-               log=format_log(request, log_entry1.log),
-               size=log_entry1.size,
-               ago=ago1,
-               path=path_left,
-               rev=rev1,
-               tag=sym1,
-               view_href=fvi.view_href,
-               download_href=fvi.download_href,
-               download_text_href=fvi.download_text_href,
-               annotate_href=fvi.annotate_href,
-               revision_href=fvi.revision_href,
-               prefer_markup=fvi.prefer_markup)
-    
-  fvi = get_file_view_info(request, path_right, rev2)
-  right = _item(date=make_time_string(log_entry2.date, cfg),
-                author=log_entry2.author,
-                log=format_log(request, log_entry2.log),
-                size=log_entry2.size,
-                ago=ago2,
-                path=path_right,
-                rev=rev2,
-                tag=sym2,
-                view_href=fvi.view_href,
-                download_href=fvi.download_href,
-                download_text_href=fvi.download_text_href,
-                annotate_href=fvi.annotate_href,
-                revision_href=fvi.revision_href,
-                prefer_markup=fvi.prefer_markup)
-
   data = common_template_data(request)
   data.merge(ezt.TemplateData({
-    'diff' : _item(left=left,
-                   right=right,
+    'diff' : _item(left=left_links,
+                   right=right_links,
                    raw_diff=raw_diff_fp,
                    changes=changes,
                    sidebyside=sidebyside,
