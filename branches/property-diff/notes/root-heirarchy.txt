@@ -1,0 +1,107 @@
+                                 -*- text -*-
+
+This document carries some design thoughts regarding the solution of
+Issue #439[1] ("allow svn repositories to reside in web-navigable
+subdirectories")
+
+[1] http://viewvc.tigris.org/issues/show_bug.cgi?id=439
+
+
+INTRODUCTION
+============
+
+Many folks have expressed the desire that ViewVC expose its configured
+roots at more or less arbitrary virtual paths below the ViewVC root
+URL.  An example might explain this better.
+
+Say you have a ViewVC instance configured with roots like so:
+
+   #              path           vc
+   #              ------------   ---
+   root_parents = /var/cvs/old : cvs,
+                  /var/svn/dev : svn,
+                  /var/svn/qa  : svn,
+
+and say that each of these root parents has a few roots whose names
+begin with the basenames of the parent directory ("dev-tools" lives in
+"/var/svn/dev", "old-docs" lives in "/var/cvs/old", etc.)
+
+Today, ViewVC will display all those roots in the "root listing" view
+as if they are siblings:
+
+   old-docs/
+   old-src/
+   dev-build/
+   dev-libs/
+   dev-tools/
+   qa-scripts/
+   qa-utils/
+
+In other words, any heirarchy which might exist in the on-disk
+locations of the roots, or (in the Subversion case) in the
+version-control system itself, is flattened.
+
+But sometimes you might want to preserve -- or even introduce -- some
+heirarchy in those roots, exposed to the users.  For example, you
+might wish that instead of a single "root listing" view, ViewVC
+instead presented users with a navigable tree constructed from paths
+configured by the admin.  For example, imagine if each root_parent
+item also carried an "exposure path" bit of configuration:
+
+   #              path           vc    exposure-path
+   #              ------------   ---   -------------
+   root_parents = /var/cvs/old : cvs : old,
+                  /var/svn/dev : svn : current/dev,
+                  /var/svn/qa  : svn : current/qa,
+
+A visit to ViewVC's root URL would then show:
+
+   old/
+   current/
+
+Clicking into "old/", you'd see:
+
+   old-docs/
+   old-src/
+
+Alternatively, clicking into "current/" would show:
+
+   dev/
+   qa/
+
+...and so on.
+
+In fact, you'd have a virtual heirarchy like so:
+
+   /
+      old/
+         old-docs/      => CVS root at /var/cvs/old/docs
+         old-src/       => CVS root at /var/cvs/old/src
+      current/
+         dev/
+            dev-build/  => SVN root at /var/svn/dev/dev-build
+            dev-libs/   => SVN root at /var/svn/dev/dev-libs
+            dev-tools/  => SVN root at /var/svn/dev/dev-tools
+         qa/
+            qa-scripts/ => SVN root at /var/svn/qa/qa-scripts
+            qa-utils/   => SVN root at /var/svn/qa/qa-utils
+
+
+CHALLENGES
+==========
+
+* Merely tacking on a new "exposure path" item in the definition of
+  the root_parents, cvs_roots, and svn_roots seems clunky.  It also
+  limits the the granularity of control:  you couldn't assign
+  different locations to the various roots that live within a single
+  root parent path.  Finally, the current code is banking on there
+  being only a single colon (:) separator (since those might legally
+  appear in Windows on-disk paths).  That might create a bit of a
+  compatibility annoyance.
+
+* What do you do about root_as_url_component=0?  I guess this feature
+  is just simply unavailable in that case.
+
+* Do you continue to allow cvs_roots and svn_roots members to specify
+  a root name, or does the root name concept go away entirely in light
+  of the new exposure path concept?

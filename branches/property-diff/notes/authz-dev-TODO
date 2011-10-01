@@ -1,0 +1,82 @@
+Here lie TODO items for the pluggable authz system:
+
+  * Subversion uses path privelege to determine visibility of revision
+    metadata.  That logic is pretty Subversion-specific, so it feels like it
+    belongs outside the vcauth library as just a helper function in viewvc.py
+    or something.  The algorithm is something like this (culled from the
+    CollabNet implementation, and not expected to work as edited):
+
+      # Subversion revision access levels
+      REVISION_ACCESS_NONE = 0
+      REVISION_ACCESS_PARTIAL = 1
+      REVISION_ACCESS_FULL = 2
+      
+      def check_svn_revision_access(request, rev):
+        # Check our revision access cache first.
+        if request.rev_access_cache.has_key(rev):
+          return request.rev_access_cache[rev]
+
+        # Check our cached answer to the question "Does the user have 
+        # an all-access or a not-at-all-access pass?"
+        if request.full_access is not None:
+          return request.full_access \
+                   and REVISION_ACCESS_FULL or REVISION_ACCESS_NONE
+ 
+        # Get a list of paths changed in REV.
+        ### FIXME:  There outta be a vclib-complaint way to do this,
+        ### as this won't work for vclib.svn_ra.
+        import svn.fs
+        rev_root = svn.fs.revision_root(self.repos.fs_ptr, rev)
+        changes = svn.fs.paths_changed(rev_root)
+      
+        # Loop over the list of changed paths, asking the access question
+        # for each one.  We'll track whether we've found any readable paths
+        # as well as any un-readable (non-authorized) paths, and quit
+        # checking as soon as we know our revision access level.
+        found_readable = 0
+        found_unreadable = 0
+        for path in changes.keys():
+          parts = _path_parts(path)
+          kind = request.repos.itemtype(parts, rev)
+          if kind == vclib.DIR:
+            access = request.auth.check_dir_access(parts, rev)
+          elif:
+            access = request.auth.check_file_access(parts, rev)
+          if access:
+            found_readable = 1
+          else:
+            found_unreadable = 1
+          # Optimization: if we've found at least one readable, and one
+          # unreadable, we needn't ask about any more paths.
+          if found_readable and found_unreadable:
+            break
+          
+        # If there are paths but we can't read any of them, no access is
+        # granted.
+        if len(changes) and not found_readable:
+          request.rev_access_cache[rev] = REVISION_ACCESS_NONE
+        # If we found at least one unreadable path, partial access is
+        # granted.
+        elif found_unreadable:
+          request.rev_access_cache[rev] = REVISION_ACCESS_PARTIAL
+        # Finally, if there were no paths at all, or none of the existing
+        # ones were unreadable, grant full access.
+        else:
+          request.rev_access_cache[rev] = REVISION_ACCESS_FULL
+        return request.rev_access_cache[rev]
+
+    The problems are:  where does one hang the revision access cache
+    so that it doesn't survive a given request?  On the request, as
+    shown in the edited code above?
+
+    Can we actually get a good interface into the vcauth layer for
+    asking the all-access / no-access question?  Obviously each vcauth
+    provider can cache that value for itself and use it as it deems
+    necessary, but ideally the revision access level question will
+    want to know if said auth provider was able to answer the question
+    and, if so, what the answer was.
+
+    Another off-the-wall idea -- let's just teach Subversion to do
+    this calculation as part of a libsvn_repos API.
+
+ 
