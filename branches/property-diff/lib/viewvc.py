@@ -3329,39 +3329,43 @@ def view_diff(request):
   date1 = date2 = raw_diff_fp = None
   changes = []
 
-  if (cfg.options.hr_intraline and idiff
-      and ((human_readable and idiff.sidebyside)
-	   or (not human_readable and diff_type == vclib.UNIFIED))):
-    f1 = request.repos.openfile(p1, rev1, {})[0]
-    try:
-      lines_left = f1.readlines()
-    finally:
-      f1.close()
+  try:
+    if (cfg.options.hr_intraline and idiff
+	and ((human_readable and idiff.sidebyside)
+	     or (not human_readable and diff_type == vclib.UNIFIED))):
+      f1 = request.repos.openfile(p1, rev1, {})[0]
+      try:
+	lines_left = f1.readlines()
+      finally:
+	f1.close()
 
-    f2 = request.repos.openfile(p2, rev2, {})[0]
-    try:
-      lines_right = f2.readlines()
-    finally:
-      f2.close()
+      f2 = request.repos.openfile(p2, rev2, {})[0]
+      try:
+	lines_right = f2.readlines()
+      finally:
+	f2.close()
 
-    if human_readable:
-      sidebyside = idiff.sidebyside(lines_left, lines_right,
-				    diff_options.get("context", 5))
-    else:
-      unified = idiff.unified(lines_left, lines_right,
-			      diff_options.get("context", 2))
-  else: 
-    fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options)
-    date1, date2, flag, headers = diff_parse_headers(fp, diff_type,
-                                                     path_left, path_right,
-                                                     rev1, rev2, sym1, sym2)
-    if human_readable:
-      if flag is not None:
-        changes = [ _item(type=flag) ]
+      if human_readable:
+	sidebyside = idiff.sidebyside(lines_left, lines_right,
+				      diff_options.get("context", 5))
       else:
-        changes = DiffSource(fp, cfg)
-    else:
-      raw_diff_fp = MarkupPipeWrapper(fp, request.server.escape(headers), None, 1)
+	unified = idiff.unified(lines_left, lines_right,
+				diff_options.get("context", 2))
+    else: 
+      fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options)
+      date1, date2, flag, headers = diff_parse_headers(fp, diff_type,
+						       path_left, path_right,
+						       rev1, rev2, sym1, sym2)
+      if human_readable:
+	if flag is not None:
+	  changes = [ _item(type=flag) ]
+	else:
+	  changes = DiffSource(fp, cfg)
+      else:
+	raw_diff_fp = MarkupPipeWrapper(fp, request.server.escape(headers), None, 1)
+  except vclib.InvalidRevision:
+    raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
+	'to diff', '400 Bad Request')
 
   no_format_params = request.query_dict.copy()
   no_format_params['diff_format'] = None
