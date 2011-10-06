@@ -3295,23 +3295,23 @@ def view_diff(request):
   diff_options = {}
   human_readable = 0
 
-  format = query_dict.get('diff_format', cfg.options.diff_format)
-  if format == 'c':
+  diff_format = query_dict.get('diff_format', cfg.options.diff_format)
+  if diff_format == 'c':
     diff_type = vclib.CONTEXT
-  elif format == 's':
+  elif diff_format == 's':
     diff_type = vclib.SIDE_BY_SIDE
-  elif format == 'l':
+  elif diff_format == 'l':
     diff_type = vclib.UNIFIED
     diff_options['context'] = 15
     human_readable = 1
-  elif format == 'f':
+  elif diff_format == 'f':
     diff_type = vclib.UNIFIED
     diff_options['context'] = None
     human_readable = 1
-  elif format == 'h':
+  elif diff_format == 'h':
     diff_type = vclib.UNIFIED
     human_readable = 1
-  elif format == 'u':
+  elif diff_format == 'u':
     diff_type = vclib.UNIFIED
   else:
     raise debug.ViewVCException('Diff format %s not understood'
@@ -3328,6 +3328,7 @@ def view_diff(request):
   fp = sidebyside = unified = None
   date1 = date2 = raw_diff_fp = None
   changes = []
+  hide_legend = ezt.boolean(0)
 
   try:
     if (cfg.options.hr_intraline and idiff
@@ -3362,6 +3363,7 @@ def view_diff(request):
 	else:
 	  changes = DiffSource(fp, cfg)
       else:
+	hide_legend = ezt.boolean(1)
 	raw_diff_fp = MarkupPipeWrapper(fp, request.server.escape(headers), None, 1)
   except vclib.InvalidRevision:
     raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
@@ -3374,14 +3376,16 @@ def view_diff(request):
 
   data = common_template_data(request)
   data.merge(ezt.TemplateData({
-    'diff' : _item(left=left_links,
+    'diff' : [ _item(left=left_links,
                    right=right_links,
                    raw_diff=raw_diff_fp,
                    changes=changes,
                    sidebyside=sidebyside,
-                   unified=unified),
-    'diff_format' : request.query_dict.get('diff_format',
-                                           cfg.options.diff_format),
+                   unified=unified) ],
+    'diff_format' : diff_format,
+    'hide_legend' : hide_legend,
+    'left_rev' : rev1,
+    'right_rev' : rev2,
     'patch_href' : request.get_url(view_func=view_patch,
                                    params=no_format_params,
                                    escape=1),
