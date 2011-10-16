@@ -1,14 +1,38 @@
 <h3 style="text-align:center;"></h3>
 
-[if-any diff.raw_diff]
-  <pre class="vc_raw_diff">[diff.raw_diff]</pre>
-[end]
+  [define msg_no_changes]<br/><strong>- No changes -</strong><br/>&nbsp;[end]
+  [define msg_binary]<br/><strong>- Binary content differs -</strong><br/>&nbsp;[end]
+  [define msg_error]<br/><strong>- ViewVC depends on rcsdiff and GNU diff to create this page. ViewVC cannot find GNU diff.
+  Even if you have GNU diff installed, the rcsdiff program must be configured and compiled with the GNU
+  diff location. -</strong><br/>&nbsp;[end]
 
-[define msg_no_changes]<br/><strong>- No changes -</strong><br/>&nbsp;[end]
-[define msg_binary]<br/><strong>- Binary content differs -</strong><br/>&nbsp;[end]
-[define msg_error]<br/><strong>- ViewVC depends on rcsdiff and GNU diff to create this page. ViewVC cannot find GNU diff.
-Even if you have GNU diff installed, the rcsdiff program must be configured and compiled with the GNU
-diff location. -</strong><br/>&nbsp;[end]
+  [define left_view_href][if-any diff.left.prefer_markup][diff.left.view_href][else][if-any diff.left.download_href][diff.left.download_href][end][end][end]
+  [define right_view_href][if-any diff.right.prefer_markup][diff.right.view_href][else][if-any diff.right.download_href][diff.right.download_href][end][end][end]
+
+  [define left_header][is diff.left.path diff.right.path][else][diff.left.path]<br/>[end]
+  Revision [if-any left_view_href]<a href="[left_view_href]">[end][diff.left.rev][if-any left_view_href]</a>[end][if-any diff.left.author] by <em>[diff.left.author]</em>[end],
+  [diff.left.date]
+  [if-any diff.left.tag]<br/>Tag: [diff.left.tag][end][end]
+
+  [define right_header][is diff.right.path diff.left.path][else][diff.right.path]<br/>[end]
+  Revision [if-any right_view_href]<a href="[right_view_href]">[end][diff.right.rev][if-any right_view_href]</a>[end][if-any diff.right.author] by <em>[diff.right.author]</em>[end],
+  [diff.right.date]
+  [if-any diff.right.tag]<br/>Tag: [diff.right.tag][end][end]
+
+[if-any diff.raw_diff]
+  <table cellspacing="0" cellpadding="0" style="margin-top: 1em;">
+    <tr class="vc_diff_header">
+      <th style="width:5%">&nbsp;</th><th style="width:95%; text-align:left;">[left_header]</th>
+    </tr>
+    <tr>
+      <th colspan="2" style="text-align:left;">vs.</th>
+    </tr>
+    <tr class="vc_diff_header">
+      <th style="width:5%">&nbsp;</th><th style="width:95%; text-align:left;">[right_header]</th>
+    </tr>
+    <tr><td colspan="2"><pre class="vc_raw_diff">[diff.raw_diff]</pre></td></tr>
+  </table>
+[end]
 
 [define left_view_href][if-any diff.left.prefer_markup][diff.left.view_href][else][if-any diff.left.download_href][diff.left.download_href][end][end][end]
 [define right_view_href][if-any diff.right.prefer_markup][diff.right.view_href][else][if-any diff.right.download_href][diff.right.download_href][end][end][end]
@@ -17,18 +41,8 @@ diff location. -</strong><br/>&nbsp;[end]
 <table cellspacing="0" cellpadding="0">
   <tr class="vc_diff_header">
     <th style="width:6%;"></th>
-    <th style="width:47%; vertical-align:top;">
-      [is diff.left.path diff.right.path][else][diff.left.path][end]
-      revision [if-any left_view_href]<a href="[left_view_href]">[end][diff.left.rev][if-any left_view_href]</a>[end][if-any diff.left.author] by <em>[diff.left.author]</em>[end],
-      [diff.left.date]
-      [if-any diff.left.tag]<br />Tag: [diff.left.tag][end]
-    </th>
-    <th style="width:47%; vertical-align:top;">
-      [is diff.left.path diff.right.path][else][diff.right.path][end]
-      revision [if-any right_view_href]<a href="[right_view_href]">[end][diff.right.rev][if-any right_view_href]</a>[end][if-any diff.right.author] by <em>[diff.right.author]</em>[end],
-      [diff.right.date]
-      [if-any diff.right.tag]<br />Tag: [diff.right.tag][end]
-    </th>
+    <th style="width:47%; vertical-align:top;">[left_header]</th>
+    <th style="width:47%; vertical-align:top;">[right_header]</th>
   </tr>
 
   [for diff.changes]
@@ -124,14 +138,8 @@ diff location. -</strong><br/>&nbsp;[end]
     <colgroup><col /><col class="content" /></colgroup>
     <thead>
       <tr>
-        <th colspan="2">    
-          [is diff.left.path diff.right.path][else][diff.left.path][end]
-          Revision [diff.left.rev]
-        </th>
-        <th colspan="2">
-          [is diff.left.path diff.right.path][else][diff.right.path][end]
-          Revision [diff.right.rev]
-        </th>
+        <th colspan="2">[left_header]</th>
+        <th colspan="2">[right_header]</th>
       </tr>
     </thead>
     <tbody>
@@ -167,10 +175,14 @@ diff location. -</strong><br/>&nbsp;[end]
 [if-any diff.unified]
   <table class="vc_idiff">
     <thead>
+      <tr class="vc_diff_header">
+	<th style="width:5%">&nbsp;</th><th colspan="2" style="width:95%; text-align:left;">[left_header]</th>
+      </tr>
       <tr>
-        <th>r[diff.left.rev]</th>
-        <th>r[diff.right.rev]</th>
-        <th></th>
+	<th colspan="3" style="text-align:left;">vs.</th>
+      </tr>
+      <tr class="vc_diff_header">
+	<th style="width:5%">&nbsp;</th><th colspan="2" style="width:95%; text-align:left;">[right_header]</th>
       </tr>
     </thead>
     <tbody>
