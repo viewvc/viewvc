@@ -1687,26 +1687,27 @@ def make_rss_time_string(date, cfg):
 def make_comma_sep_list_string(items):
   return ', '.join(map(lambda x: x.name, items))
 
+def is_undisplayable(val):
+  try:
+    unicode(val)
+    return 0
+  except:
+    return 1
+
 def get_itemprops(request, path_parts, rev):
   itemprops = request.repos.itemprops(path_parts, rev)
   propnames = itemprops.keys()
   propnames.sort()
   props = []
   for name in propnames:
-    value = format_log(request, itemprops[name])
-    undisplayable = ezt.boolean(0)
     # skip non-utf8 property names
-    try:
-      unicode(name, 'utf8')
-    except:
+    if is_undisplayable(name):
       continue
-    # note non-utf8 property values
-    try:
-      unicode(value, 'utf8')
-    except:
+    value = format_log(request, itemprops[name])
+    undisplayable = is_undisplayable(value)
+    if undisplayable:
       value = None
-      undisplayable = ezt.boolean(1)
-    props.append(_item(name=name, value=value, undisplayable=undisplayable))
+    props.append(_item(name=name, value=value, undisplayable=ezt.boolean(undisplayable)))
   return props
 
 def parse_mime_type(mime_type):
@@ -3611,20 +3612,15 @@ def view_revision(request):
   propnames.sort()
   props = []
   for name in propnames:
-    value = format_log(request, revprops[name])
-    undisplayable = ezt.boolean(0)
     # skip non-utf8 property names
-    try:
-      unicode(name, 'utf8')
-    except:
+    if is_undisplayable(name):
       continue
+    value = format_log(request, revprops[name])
     # note non-utf8 property values
-    try:
-      unicode(value, 'utf8')
-    except:
+    undisplayable = is_undisplayable(value)
+    if undisplayable:
       value = None
-      undisplayable = ezt.boolean(1)
-    props.append(_item(name=name, value=value, undisplayable=undisplayable))
+    props.append(_item(name=name, value=value, undisplayable=ezt.boolean(undisplayable)))
   
   # Sort the changes list by path.
   def changes_sort_by_path(a, b):
