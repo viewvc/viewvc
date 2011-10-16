@@ -3413,8 +3413,6 @@ def view_diff(request):
     raise debug.ViewVCException('Diff generation is disabled',
                                  '403 Forbidden')
 
-  cfg = request.cfg
-  query_dict = request.query_dict
   p1, p2, rev1, rev2, sym1, sym2 = setup_diff(request)
   
   # since templates are in use and subversion allows changes to the dates,
