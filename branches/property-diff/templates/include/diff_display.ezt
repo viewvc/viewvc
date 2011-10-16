@@ -34,9 +34,6 @@
   </table>
 [end]
 
-[define left_view_href][if-any diff.left.prefer_markup][diff.left.view_href][else][if-any diff.left.download_href][diff.left.download_href][end][end][end]
-[define right_view_href][if-any diff.right.prefer_markup][diff.right.view_href][else][if-any diff.right.download_href][diff.right.download_href][end][end][end]
-
 [if-any diff.changes]
 <table cellspacing="0" cellpadding="0">
   <tr class="vc_diff_header">
