@@ -1,3 +1,6 @@
+[is diff.display_as "anchor"]
+  <a name="[diff.anchor]"></a>
+[else]
   [define msg_no_changes]<br/><strong>- No changes -</strong><br/>&nbsp;[end]
   [define msg_binary]<br/><strong>- Binary content differs -</strong><br/>&nbsp;[end]
   [define msg_error]<br/><strong>- ViewVC depends on rcsdiff and GNU diff to create this page. ViewVC cannot find GNU diff.
@@ -18,6 +21,7 @@
   Revision [if-any right_view_href]<a href="[right_view_href]">[end][diff.right.rev][if-any right_view_href]</a>[end][if-any diff.right.author] by <em>[diff.right.author]</em>[end],
   [diff.right.date]
   [if-any diff.right.tag]<br/>Tag: [diff.right.tag][end][end]
+[end]
 
 [is diff.display_as "raw"]
   <table cellspacing="0" cellpadding="0" style="margin-top: 1em;">

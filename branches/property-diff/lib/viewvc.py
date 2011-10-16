@@ -3354,6 +3354,9 @@ class DiffDescription:
 	self.display_as = 'raw'
 	self.fp_differ = self._fp_vclib_raw
 
+  def anchor(self, anchor_name):
+    self.changes.append(_item(display_as='anchor', anchor=anchor_name))
+
   def get_content_diff(self, left, right):
     options = {}
     if self.context != -1:
@@ -3497,9 +3500,11 @@ def view_diff(request):
   try:
     if request.pathtype == vclib.FILE:
       # Get file content diff
+      desc.anchor("content")
       desc.get_content_diff(left_side_content, right_side_content)
 
     # Get property list and diff each property
+    desc.anchor("properties")
     desc.get_prop_diff(left_side_prop, right_side_prop)
 
   except vclib.InvalidRevision:
