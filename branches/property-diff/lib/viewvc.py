@@ -3281,6 +3281,10 @@ def diff_side_item(request, path_comp, rev, sym):
   i_content.annotate_href = fvi.annotate_href
   i_content.revision_href = fvi.revision_href
   i_content.prefer_markup = fvi.prefer_markup
+
+  # Property diff item has properties hash, naturally. Content item doesn't.
+  i_content.properties = None
+  i_prop.properties = request.repos.itemprops(path_comp, rev)
   return i_content, i_prop
 
 
@@ -3362,6 +3366,31 @@ class DiffDescription:
     self._get_diff(left, right, self._content_lines, self._content_fp,
 		    options, None)
 
+  def get_prop_diff(self, left, right):
+    options = {}
+    if self.context != -1:
+      options['context'] = self.context
+    if self.human_readable:
+      cfg = self.request.cfg
+      self.diff_options['ignore_white'] = cfg.options.hr_ignore_white
+    for name in self._uniq(left.properties.keys() + right.properties.keys()):
+      # Skip non-utf8 property names
+      if is_undisplayable(name):
+	continue
+      val_left = left.properties.get(name, '')
+      val_right = right.properties.get(name, '')
+      # Skip non-changed properties
+      if val_left == val_right:
+	continue
+      # Check for binary properties
+      if is_undisplayable(val_left) or is_undisplayable(val_right):
+	self.changes.append(_item(left=left, right=right,
+	  display_as=self.display_as,
+	  changes=[ _item(type=_RCSDIFF_IS_BINARY) ],
+	  propname=name))
+	continue
+      self._get_diff(left, right, self._prop_lines, self._prop_fp, options, name)
+
   def _get_diff(self, left, right, get_lines, get_fp, options, propname):
     if self.fp_differ is not None:
       fp = get_fp(left, right, propname, options)
@@ -3381,7 +3410,9 @@ class DiffDescription:
 
   def _fp_vclib_hr(self, left, right, fp, propname):
     date1, date2, flag, headers = diff_parse_headers(fp, self.diff_type,
-	left.path, right.path, left.rev, right.rev, left.tag, right.tag)
+	self._property_path(left, propname),
+	self._property_path(right, propname),
+	left.rev, right.rev, left.tag, right.tag)
     if flag is not None:
       return [ _item(type=flag) ]
     else:
@@ -3389,7 +3420,9 @@ class DiffDescription:
 
   def _fp_vclib_raw(self, left, right, fp, propname):
     date1, date2, flag, headers = diff_parse_headers(fp, self.diff_type,
-	left.path, right.path, left.rev, right.rev, left.tag, right.tag)
+	self._property_path(left, propname),
+	self._property_path(right, propname),
+	left.rev, right.rev, left.tag, right.tag)
     if flag is not None:
       return _item(type=flag)
     else:
@@ -3406,6 +3439,42 @@ class DiffDescription:
   def _content_fp(self, left, right, propname, options):
     return self.request.repos.rawdiff(left.path_comp, left.rev,
 	right.path_comp, right.rev, self.diff_type, options)
+
+  def _prop_lines(self, side, propname):
+    val = side.properties.get(propname, '')
+    return val.splitlines()
+
+  def _prop_fp(self, left, right, propname, options):
+    fn_left = self._temp_file(left.properties.get(propname))
+    fn_right = self._temp_file(right.properties.get(propname))
+    diff_args = vclib._diff_args(self.diff_type, options)
+    info_left = self._property_path(left, propname), left.log_entry.date, left.rev
+    info_right = self._property_path(right, propname), right.log_entry.date, right.rev
+    return vclib._diff_fp(fn_left, fn_right, info_left, info_right,
+	self.request.cfg.utilities.diff or 'diff', diff_args)
+
+  def _temp_file(self, val):
+    '''Create a temporary file with content from val'''
+    fn = tempfile.mktemp()
+    fp = open(fn, "wb")
+    if val:
+      fp.write(val)
+    fp.close()
+    return fn
+
+  def _uniq(self, lst):
+    '''Determine unique set of list elements'''
+    h = {}
+    for e in lst:
+      h[e] = 1
+    return sorted(h.keys())
+
+  def _property_path(self, side, propname):
+    '''Return path to be displayed in raw diff - possibly augmented with property name'''
+    if propname is None:
+      return side.path
+    else:
+      return "%s:property(%s)" % (side.path, propname)
 
 
 def view_diff(request):
@@ -3429,6 +3498,9 @@ def view_diff(request):
     if request.pathtype == vclib.FILE:
       # Get file content diff
       desc.get_content_diff(left_side_content, right_side_content)
+
+    # Get property list and diff each property
+    desc.get_prop_diff(left_side_prop, right_side_prop)
 
   except vclib.InvalidRevision:
     raise debug.ViewVCException('Invalid path(s) or revision(s) passed '

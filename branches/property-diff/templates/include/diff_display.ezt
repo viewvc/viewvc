@@ -8,11 +8,13 @@
   [define right_view_href][if-any diff.right.prefer_markup][diff.right.view_href][else][if-any diff.right.download_href][diff.right.download_href][end][end][end]
 
   [define left_header][is diff.left.path diff.right.path][else][diff.left.path]<br/>[end]
+  [if-any diff.propname]Property: <em>[diff.propname]</em><br/>[end]
   Revision [if-any left_view_href]<a href="[left_view_href]">[end][diff.left.rev][if-any left_view_href]</a>[end][if-any diff.left.author] by <em>[diff.left.author]</em>[end],
   [diff.left.date]
   [if-any diff.left.tag]<br/>Tag: [diff.left.tag][end][end]
 
   [define right_header][is diff.right.path diff.left.path][else][diff.right.path]<br/>[end]
+  [if-any diff.propname]Property: <em>[diff.propname]</em><br/>[end]
   Revision [if-any right_view_href]<a href="[right_view_href]">[end][diff.right.rev][if-any right_view_href]</a>[end][if-any diff.right.author] by <em>[diff.right.author]</em>[end],
   [diff.right.date]
   [if-any diff.right.tag]<br/>Tag: [diff.right.tag][end][end]
