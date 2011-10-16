@@ -343,6 +343,8 @@ class Request:
         # ViewCVS 0.9.2 used to put ?tarball=1 at the end of tarball urls
         if self.query_dict.has_key('tarball'):
           self.view_func = download_tarball
+        elif self.query_dict.has_key('r1') and self.query_dict.has_key('r2'):
+          self.view_func = view_diff
         else:
           self.view_func = view_directory
       elif self.pathtype == vclib.FILE:
@@ -3821,7 +3823,8 @@ def view_revision(request):
                                         params={'pathrev' : link_rev},
                                         escape=1)
 
-      if change.pathtype is vclib.FILE and change.text_changed:
+      if (change.pathtype is vclib.FILE and change.text_changed) \
+	  or change.props_changed:
         change.diff_href = request.get_url(view_func=view_diff,
                                            where=path, 
                                            pathtype=change.pathtype,

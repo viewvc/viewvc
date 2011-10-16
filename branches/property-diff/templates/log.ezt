@@ -31,13 +31,11 @@
     [if-any entries.download_text_href](<a href="[entries.download_text_href]">as text</a>)[end]
     [if-any entries.annotate_href](<a href="[entries.annotate_href]">annotate</a>)[end]
 
-    [is pathtype "file"]
-      [# if you don't want to allow select for diffs then remove this section]
-      [is entries.rev rev_selected]
-        - <strong>[[]selected]</strong>
-      [else]
-        - <a href="[entries.sel_for_diff_href]">[[]select for diffs]</a>
-      [end]
+    [# if you don't want to allow select for diffs then remove this section]
+    [is entries.rev rev_selected]
+      - <strong>[[]selected]</strong>
+    [else]
+      - <a href="[entries.sel_for_diff_href]">[[]select for diffs]</a>
     [end]
   [end]
 
@@ -105,8 +103,7 @@
   [is entries.state "dead"]
     <br /><strong><em>FILE REMOVED</em></strong>
   [else]
-   [is pathtype "file"]
-    [if-any entries.prev]
+    [if-any entries.diff_to_prev_href]
       <br />Diff to <a href="[entries.diff_to_prev_href]">previous [entries.prev]</a>
       [if-any human_readable]
       [else]
@@ -140,7 +137,6 @@
         (<a href="[entries.diff_to_sel_href]&amp;diff_format=h">colored</a>)
       [end]
     [end]
-   [end]
   [end]
 
 <pre class="vc_log">[entries.log]</pre>
