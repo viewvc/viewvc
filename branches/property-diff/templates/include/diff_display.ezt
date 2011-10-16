@@ -28,7 +28,19 @@
     <tr class="vc_diff_header">
       <th style="width:5%">&nbsp;</th><th style="width:95%; text-align:left;">[right_header]</th>
     </tr>
-    <tr><td colspan="2"><pre class="vc_raw_diff">[diff.changes]</pre></td></tr>
+    [is diff.changes.type "no-changes"]
+      <tr class="vc_diff_empty">
+	<td colspan="2" style="text-align:center;">[msg_no_changes]</td>
+      </tr>
+    [else]
+      [is diff.changes.type "binary-diff"]
+	<tr class="vc_diff_empty">
+	  <td colspan="2" style="text-align:center;">[msg_binary]</td>
+	</tr>
+      [else]
+	<tr><td colspan="2"><pre class="vc_raw_diff">[diff.changes.raw]</pre></td></tr>
+      [end]
+    [end]
   </table>
 [end]
 

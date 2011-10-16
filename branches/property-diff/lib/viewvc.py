@@ -3082,12 +3082,16 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2,
   # collecting them in an array until we've read and handled them all.
   if f1 and f2:
     parsing = 1
+    flag = _RCSDIFF_NO_CHANGES
     len_f1 = len(f1)
     len_f2 = len(f2)
     while parsing:
       line = fp.readline()
       if not line:
         break
+
+      # Saw at least one line in the stream
+      flag = None
 
       if line[:len(f1)] == f1:
         match = _re_extract_rev.match(line)
@@ -3375,7 +3379,10 @@ def view_diff(request):
       else:
 	display_as = 'raw'
 	hide_legend = ezt.boolean(1)
-	changes = MarkupPipeWrapper(fp, request.server.escape(headers), None, 1)
+	if flag is not None:
+	  changes = _item(type=flag)
+	else:
+	  changes = _item(type='raw', raw=MarkupPipeWrapper(fp, request.server.escape(headers), None, 1))
   except vclib.InvalidRevision:
     raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
 	'to diff', '400 Bad Request')
