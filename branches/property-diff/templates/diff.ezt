@@ -41,15 +41,15 @@
           <td>Legend:<br />
             <table cellspacing="0" cellpadding="1">
               <tr>
-                <td style="text-align:center;" class="vc_diff_remove">Removed from revision [left_rev]</td>
+                <td style="text-align:center;" class="vc_diff_remove">Removed lines/characters</td>
                 <td class="vc_diff_empty">&nbsp;</td>
               </tr>
               <tr>
-                <td style="text-align:center;" colspan="2" class="vc_diff_change">Changed lines</td>
+                <td style="text-align:center;" colspan="2" class="vc_diff_change">Changed lines/characters</td>
               </tr>
               <tr>
                 <td class="vc_diff_empty">&nbsp;</td>
-                <td style="text-align:center;" class="vc_diff_add">Added in revision [right_rev]</td>
+                <td style="text-align:center;" class="vc_diff_add">Added lines/characters</td>
               </tr>
             </table>
           </td>
