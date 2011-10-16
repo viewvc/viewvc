@@ -3326,9 +3326,10 @@ def view_diff(request):
   path_left = _path_join(p1)
   path_right = _path_join(p2)
 
-  fp = sidebyside = unified = None
-  date1 = date2 = raw_diff_fp = None
-  changes = []
+  fp = None
+  date1 = date2 = None
+  changes = None
+  display_as = None
   hide_legend = ezt.boolean(0)
 
   try:
@@ -3348,10 +3349,12 @@ def view_diff(request):
 	f2.close()
 
       if human_readable:
-	sidebyside = idiff.sidebyside(lines_left, lines_right,
+	display_as = 'sidebyside-2'
+	changes = idiff.sidebyside(lines_left, lines_right,
 				      diff_options.get("context", 5))
       else:
-	unified = idiff.unified(lines_left, lines_right,
+	display_as = 'unified'
+	changes = idiff.unified(lines_left, lines_right,
 				diff_options.get("context", 2))
     else: 
       fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options)
@@ -3359,13 +3362,15 @@ def view_diff(request):
 						       path_left, path_right,
 						       rev1, rev2, sym1, sym2)
       if human_readable:
+	display_as = 'sidebyside-1'
 	if flag is not None:
 	  changes = [ _item(type=flag) ]
 	else:
 	  changes = DiffSource(fp, cfg)
       else:
+	display_as = 'raw'
 	hide_legend = ezt.boolean(1)
-	raw_diff_fp = MarkupPipeWrapper(fp, request.server.escape(headers), None, 1)
+	changes = MarkupPipeWrapper(fp, request.server.escape(headers), None, 1)
   except vclib.InvalidRevision:
     raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
 	'to diff', '400 Bad Request')
@@ -3379,10 +3384,8 @@ def view_diff(request):
   data.merge(ezt.TemplateData({
     'diff' : [ _item(left=left_links,
                    right=right_links,
-                   raw_diff=raw_diff_fp,
                    changes=changes,
-                   sidebyside=sidebyside,
-                   unified=unified) ],
+		   display_as=display_as) ],
     'diff_format' : diff_format,
     'hide_legend' : hide_legend,
     'left_rev' : rev1,

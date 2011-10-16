@@ -17,7 +17,7 @@
   [diff.right.date]
   [if-any diff.right.tag]<br/>Tag: [diff.right.tag][end][end]
 
-[if-any diff.raw_diff]
+[is diff.display_as "raw"]
   <table cellspacing="0" cellpadding="0" style="margin-top: 1em;">
     <tr class="vc_diff_header">
       <th style="width:5%">&nbsp;</th><th style="width:95%; text-align:left;">[left_header]</th>
@@ -28,11 +28,11 @@
     <tr class="vc_diff_header">
       <th style="width:5%">&nbsp;</th><th style="width:95%; text-align:left;">[right_header]</th>
     </tr>
-    <tr><td colspan="2"><pre class="vc_raw_diff">[diff.raw_diff]</pre></td></tr>
+    <tr><td colspan="2"><pre class="vc_raw_diff">[diff.changes]</pre></td></tr>
   </table>
 [end]
 
-[if-any diff.changes]
+[is diff.display_as "sidebyside-1"]
 <table cellspacing="0" cellpadding="0" style="margin-top: 1em;">
   <tr class="vc_diff_header">
     <th style="width:6%;"></th>
@@ -127,7 +127,7 @@
 </table>
 [end]
 
-[if-any diff.sidebyside]
+[is diff.display_as "sidebyside-2"]
   <table class="vc_idiff" style="margin-top: 1em;">
     <colgroup><col style="width: 3%;"/><col class="content" style="width: 47%;"/></colgroup>
     <colgroup><col style="width: 3%;"/><col class="content" style="width: 47%;"/></colgroup>
@@ -138,26 +138,26 @@
       </tr>
     </thead>
     <tbody>
-      [for diff.sidebyside]
-	[is diff.sidebyside.type "no-changes"]
+      [for diff.changes]
+	[is diff.changes.type "no-changes"]
 	  <tr class="vc_diff_empty">
 	    <td colspan="4" style="text-align:center;">[msg_no_changes]</td>
 	  </tr>
 	[else]
-	  [is diff.sidebyside.type "binary-diff"]
+	  [is diff.changes.type "binary-diff"]
 	    <tr class="vc_diff_empty">
 	      <td colspan="4" style="text-align:center;">[msg_binary]</td>
 	    </tr>
 	  [else]
-            [if-any diff.sidebyside.gap]
+            [if-any diff.changes.gap]
               <tr>
                 <th>&hellip;</th><th></th>
                 <th>&hellip;</th><th></th>
               </tr>
             [end]
             <tr>
-              [for diff.sidebyside.columns]
-                <th>[diff.sidebyside.columns.line_number]</th><td[if-any diff.sidebyside.columns.line_number][else] class="vc_idiff_empty"[end]>[for diff.sidebyside.columns.segments][if-any diff.sidebyside.columns.segments.type]<span class="vc_idiff_[diff.sidebyside.columns.segments.type]">[diff.sidebyside.columns.segments.text]</span>[else][diff.sidebyside.columns.segments.text][end][end]</td>
+              [for diff.changes.columns]
+                <th>[diff.changes.columns.line_number]</th><td[if-any diff.changes.columns.line_number][else] class="vc_idiff_empty"[end]>[for diff.changes.columns.segments][if-any diff.changes.columns.segments.type]<span class="vc_idiff_[diff.changes.columns.segments.type]">[diff.changes.columns.segments.text]</span>[else][diff.changes.columns.segments.text][end][end]</td>
               [end]
             </tr>
           [end]
@@ -167,7 +167,7 @@
   </table>
 [end]
 
-[if-any diff.unified]
+[is diff.display_as "unified"]
   <table class="vc_idiff" style="margin-top: 1em;">
     <colgroup>
       <col style="width: 3%;"/>
@@ -186,18 +186,18 @@
       </tr>
     </thead>
     <tbody>
-      [for diff.unified]
-	[is diff.unified.type "no-changes"]
+      [for diff.changes]
+	[is diff.changes.type "no-changes"]
 	  <tr class="vc_diff_empty">
 	    <td colspan="3" style="text-align:center;">[msg_no_changes]</td>
 	  </tr>
 	[else]
-	  [is diff.unified.type "binary-diff"]
+	  [is diff.changes.type "binary-diff"]
 	    <tr class="vc_diff_empty">
 	      <td colspan="3" style="text-align:center;">[msg_binary]</td>
 	    </tr>
 	  [else]
-            [if-any diff.unified.gap]
+            [if-any diff.changes.gap]
               <tr>
                 <th>&hellip;</th>
                 <th>&hellip;</th>
@@ -205,9 +205,9 @@
               </tr>
             [end]
             <tr>
-              <th>[diff.unified.left_number]</th>
-              <th>[diff.unified.right_number]</th>
-              <td[if-any diff.unified.type] class="vc_idiff_[diff.unified.type]"[end]>[for diff.unified.segments][if-any diff.unified.segments.type]<span class="vc_idiff_[diff.unified.segments.type]">[diff.unified.segments.text]</span>[else][diff.unified.segments.text][end][end]</td>
+              <th>[diff.changes.left_number]</th>
+              <th>[diff.changes.right_number]</th>
+              <td[if-any diff.changes.type] class="vc_idiff_[diff.changes.type]"[end]>[for diff.changes.segments][if-any diff.changes.segments.type]<span class="vc_idiff_[diff.changes.segments.type]">[diff.changes.segments.text]</span>[else][diff.changes.segments.text][end][end]</td>
             </tr>
           [end]
         [end]
