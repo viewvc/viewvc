@@ -3284,6 +3284,130 @@ def diff_side_item(request, path_comp, rev, sym):
   return i_content, i_prop
 
 
+class DiffDescription:
+  def __init__(self, request):
+    cfg = request.cfg
+    query_dict = request.query_dict
+
+    self.diff_format = query_dict.get('diff_format', cfg.options.diff_format)
+    self.diff_options = {}
+    self.human_readable = 0
+    self.hide_legend = 0
+    self.line_differ = None
+    self.fp_differ = None
+    self.request = request
+    self.context = -1
+    self.changes = []
+
+    if self.diff_format == 'c':
+      self.diff_type = vclib.CONTEXT
+      self.hide_legend = 1
+    elif self.diff_format == 's':
+      self.diff_type = vclib.SIDE_BY_SIDE
+      self.hide_legend = 1
+    elif self.diff_format == 'l':
+      self.diff_type = vclib.UNIFIED
+      self.context = 15
+      self.human_readable = 1
+    elif self.diff_format == 'f':
+      self.diff_type = vclib.UNIFIED
+      self.context = None
+      self.human_readable = 1
+    elif self.diff_format == 'h':
+      self.diff_type = vclib.UNIFIED
+      self.human_readable = 1
+    elif self.diff_format == 'u':
+      self.diff_type = vclib.UNIFIED
+      self.hide_legend = 1
+    else:
+      raise debug.ViewVCException('Diff format %s not understood'
+				   % self.diff_format, '400 Bad Request')
+
+    # Determine whether idiff is avaialble and whether it could be used.
+    # idiff only supports side-by-side (conditionally) and unified formats,
+    # and is only used if intra-line diffs are requested.
+    if (cfg.options.hr_intraline and idiff
+	and ((self.human_readable and idiff.sidebyside)
+	     or (not self.human_readable and self.diff_type == vclib.UNIFIED))):
+      # Override hiding legend for unified format. It is not marked 'human
+      # readable', and it is displayed differently depending on whether
+      # hr_intraline is disabled (displayed as raw diff) or enabled
+      # (displayed as colored). What a royal mess... Issue #301 should
+      # at some time address it; at that time, human_readable and hide_legend
+      # controls should both be merged into one, 'is_colored' or something.
+      self.hide_legend = 0
+      if self.human_readable:
+	self.line_differ = self._line_idiff_sidebyside
+	self.display_as = 'sidebyside-2'
+      else:
+	self.line_differ = self._line_idiff_unified
+	self.display_as = 'unified'
+    else:
+      if self.human_readable:
+	self.display_as = 'sidebyside-1'
+	self.fp_differ = self._fp_vclib_hr
+      else:
+	self.display_as = 'raw'
+	self.fp_differ = self._fp_vclib_raw
+
+  def get_content_diff(self, left, right):
+    options = {}
+    if self.context != -1:
+      options['context'] = self.context
+    if self.human_readable:
+      cfg = self.request.cfg
+      self.diff_options['funout'] = cfg.options.hr_funout
+      self.diff_options['ignore_white'] = cfg.options.hr_ignore_white
+      self.diff_options['ignore_keyword_subst'] = cfg.options.hr_ignore_keyword_subst
+    self._get_diff(left, right, self._content_lines, self._content_fp,
+		    options, None)
+
+  def _get_diff(self, left, right, get_lines, get_fp, options, propname):
+    if self.fp_differ is not None:
+      fp = get_fp(left, right, propname, options)
+      changes = self.fp_differ(left, right, fp, propname)
+    else:
+      lines_left = get_lines(left, propname)
+      lines_right = get_lines(right, propname)
+      changes = self.line_differ(lines_left, lines_right, options)
+    self.changes.append(_item(left=left, right=right, changes=changes,
+		    display_as=self.display_as, propname=propname))
+
+  def _line_idiff_sidebyside(self, lines_left, lines_right, options):
+    return idiff.sidebyside(lines_left, lines_right, options.get("context", 5))
+
+  def _line_idiff_unified(self, lines_left, lines_right, options):
+    return idiff.unified(lines_left, lines_right, options.get("context", 2))
+
+  def _fp_vclib_hr(self, left, right, fp, propname):
+    date1, date2, flag, headers = diff_parse_headers(fp, self.diff_type,
+	left.path, right.path, left.rev, right.rev, left.tag, right.tag)
+    if flag is not None:
+      return [ _item(type=flag) ]
+    else:
+      return DiffSource(fp, self.request.cfg)
+
+  def _fp_vclib_raw(self, left, right, fp, propname):
+    date1, date2, flag, headers = diff_parse_headers(fp, self.diff_type,
+	left.path, right.path, left.rev, right.rev, left.tag, right.tag)
+    if flag is not None:
+      return _item(type=flag)
+    else:
+      return _item(type='raw', raw=MarkupPipeWrapper(fp, self.request.server.escape(headers), None, 1))
+
+  def _content_lines(self, side, propname):
+    f = self.request.repos.openfile(side.path_comp, side.rev, {})[0]
+    try:
+      lines = f.readlines()
+    finally:
+      f.close()
+    return lines
+
+  def _content_fp(self, left, right, propname, options):
+    return self.request.repos.rawdiff(left.path_comp, left.rev,
+	right.path_comp, right.rev, self.diff_type, options)
+
+
 def view_diff(request):
   if 'diff' not in request.cfg.options.allowed_views:
     raise debug.ViewVCException('Diff generation is disabled',
@@ -3301,88 +3425,13 @@ def view_diff(request):
   left_side_content, left_side_prop = diff_side_item(request, p1, rev1, sym1)
   right_side_content, right_side_prop = diff_side_item(request, p2, rev2, sym2)
 
-  diff_type = None
-  diff_options = {}
-  human_readable = 0
-
-  diff_format = query_dict.get('diff_format', cfg.options.diff_format)
-  if diff_format == 'c':
-    diff_type = vclib.CONTEXT
-  elif diff_format == 's':
-    diff_type = vclib.SIDE_BY_SIDE
-  elif diff_format == 'l':
-    diff_type = vclib.UNIFIED
-    diff_options['context'] = 15
-    human_readable = 1
-  elif diff_format == 'f':
-    diff_type = vclib.UNIFIED
-    diff_options['context'] = None
-    human_readable = 1
-  elif diff_format == 'h':
-    diff_type = vclib.UNIFIED
-    human_readable = 1
-  elif diff_format == 'u':
-    diff_type = vclib.UNIFIED
-  else:
-    raise debug.ViewVCException('Diff format %s not understood'
-                                 % format, '400 Bad Request')
-
-  if human_readable:
-    diff_options['funout'] = cfg.options.hr_funout
-    diff_options['ignore_white'] = cfg.options.hr_ignore_white
-    diff_options['ignore_keyword_subst'] = cfg.options.hr_ignore_keyword_subst
-
-  path_left = _path_join(p1)
-  path_right = _path_join(p2)
-
-  fp = None
-  date1 = date2 = None
-  changes = None
-  display_as = None
-  hide_legend = ezt.boolean(0)
+  desc = DiffDescription(request)
 
   try:
-    if (cfg.options.hr_intraline and idiff
-	and ((human_readable and idiff.sidebyside)
-	     or (not human_readable and diff_type == vclib.UNIFIED))):
-      f1 = request.repos.openfile(p1, rev1, {})[0]
-      try:
-	lines_left = f1.readlines()
-      finally:
-	f1.close()
+    if request.pathtype == vclib.FILE:
+      # Get file content diff
+      desc.get_content_diff(left_side_content, right_side_content)
 
-      f2 = request.repos.openfile(p2, rev2, {})[0]
-      try:
-	lines_right = f2.readlines()
-      finally:
-	f2.close()
-
-      if human_readable:
-	display_as = 'sidebyside-2'
-	changes = idiff.sidebyside(lines_left, lines_right,
-				      diff_options.get("context", 5))
-      else:
-	display_as = 'unified'
-	changes = idiff.unified(lines_left, lines_right,
-				diff_options.get("context", 2))
-    else: 
-      fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options)
-      date1, date2, flag, headers = diff_parse_headers(fp, diff_type,
-						       path_left, path_right,
-						       rev1, rev2, sym1, sym2)
-      if human_readable:
-	display_as = 'sidebyside-1'
-	if flag is not None:
-	  changes = [ _item(type=flag) ]
-	else:
-	  changes = DiffSource(fp, cfg)
-      else:
-	display_as = 'raw'
-	hide_legend = ezt.boolean(1)
-	if flag is not None:
-	  changes = _item(type=flag)
-	else:
-	  changes = _item(type='raw', raw=MarkupPipeWrapper(fp, request.server.escape(headers), None, 1))
   except vclib.InvalidRevision:
     raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
 	'to diff', '400 Bad Request')
@@ -3394,14 +3443,9 @@ def view_diff(request):
 
   data = common_template_data(request)
   data.merge(ezt.TemplateData({
-    'diff' : [ _item(left=left_side_content,
-                   right=right_side_content,
-                   changes=changes,
-		   display_as=display_as) ],
-    'diff_format' : diff_format,
-    'hide_legend' : hide_legend,
-    'left_rev' : rev1,
-    'right_rev' : rev2,
+    'diff' : desc.changes,
+    'diff_format' : desc.diff_format,
+    'hide_legend' : ezt.boolean(desc.hide_legend),
     'patch_href' : request.get_url(view_func=view_patch,
                                    params=no_format_params,
                                    escape=1),
