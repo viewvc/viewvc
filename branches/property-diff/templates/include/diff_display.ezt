@@ -1,5 +1,3 @@
-<h3 style="text-align:center;"></h3>
-
   [define msg_no_changes]<br/><strong>- No changes -</strong><br/>&nbsp;[end]
   [define msg_binary]<br/><strong>- Binary content differs -</strong><br/>&nbsp;[end]
   [define msg_error]<br/><strong>- ViewVC depends on rcsdiff and GNU diff to create this page. ViewVC cannot find GNU diff.
@@ -35,7 +33,7 @@
 [end]
 
 [if-any diff.changes]
-<table cellspacing="0" cellpadding="0">
+<table cellspacing="0" cellpadding="0" style="margin-top: 1em;">
   <tr class="vc_diff_header">
     <th style="width:6%;"></th>
     <th style="width:47%; vertical-align:top;">[left_header]</th>
@@ -130,9 +128,9 @@
 [end]
 
 [if-any diff.sidebyside]
-  <table class="vc_idiff">
-    <colgroup><col /><col class="content" /></colgroup>
-    <colgroup><col /><col class="content" /></colgroup>
+  <table class="vc_idiff" style="margin-top: 1em;">
+    <colgroup><col style="width: 3%;"/><col class="content" style="width: 47%;"/></colgroup>
+    <colgroup><col style="width: 3%;"/><col class="content" style="width: 47%;"/></colgroup>
     <thead>
       <tr>
         <th colspan="2">[left_header]</th>
@@ -170,16 +168,21 @@
 [end]
 
 [if-any diff.unified]
-  <table class="vc_idiff">
+  <table class="vc_idiff" style="margin-top: 1em;">
+    <colgroup>
+      <col style="width: 3%;"/>
+      <col style="width: 3%;"/>
+      <col class="content" style="width: 94%;"/>
+    </colgroup>
     <thead>
       <tr class="vc_diff_header">
-	<th style="width:5%">&nbsp;</th><th colspan="2" style="width:95%; text-align:left;">[left_header]</th>
+	<th>&nbsp;</th><th colspan="2" style="width:95%; text-align:left;">[left_header]</th>
       </tr>
       <tr>
 	<th colspan="3" style="text-align:left;">vs.</th>
       </tr>
       <tr class="vc_diff_header">
-	<th style="width:5%">&nbsp;</th><th colspan="2" style="width:95%; text-align:left;">[right_header]</th>
+	<th>&nbsp;</th><th colspan="2" style="width:95%; text-align:left;">[right_header]</th>
       </tr>
     </thead>
     <tbody>
