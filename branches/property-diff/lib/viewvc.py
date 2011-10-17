@@ -3249,30 +3249,32 @@ def view_patch(request):
 
 
 def diff_side_item(request, path_comp, rev, sym):
-  '''Prepare information about left/right side of the diff. Prepare two flavors, with
-  and without file view links.'''
+  '''Prepare information about left/right side of the diff. Prepare two flavors,
+  for content and for property diffs.'''
   # TODO: Is the slice necessary, or is limit enough?
-  log_entry = request.repos.itemlog(path_comp, rev, vclib.SORTBY_REV, 0, 1, {})[-1]
+  log_entry = request.repos.itemlog(path_comp, rev, vclib.SORTBY_REV,
+                                    0, 1, {})[-1]
   ago = log_entry.date is not None \
          and html_time(request, log_entry.date, 1) or None
   path_joined = _path_join(path_comp)
-  # Item for property diff: no hrefs, there's no view to download/annotate property
+  # Item for property diff: no hrefs, there's no view
+  # to download/annotate property
   i_prop = _item(log_entry=log_entry,
-      date=make_time_string(log_entry.date, request.cfg),
-      author=log_entry.author,
-      log=format_log(request, log_entry.log),
-      size=log_entry.size,
-      ago=ago,
-      path=path_joined,
-      path_comp=path_comp,
-      rev=rev,
-      tag=sym,
-      view_href=None,
-      download_href=None,
-      download_text_href=None,
-      annotate_href=None,
-      revision_href=None,
-      prefer_markup=ezt.boolean(0))
+                 date=make_time_string(log_entry.date, request.cfg),
+                 author=log_entry.author,
+                 log=format_log(request, log_entry.log),
+                 size=log_entry.size,
+                 ago=ago,
+                 path=path_joined,
+                 path_comp=path_comp,
+                 rev=rev,
+                 tag=sym,
+                 view_href=None,
+                 download_href=None,
+                 download_text_href=None,
+                 annotate_href=None,
+                 revision_href=None,
+                 prefer_markup=ezt.boolean(0))
 
   # Content diff item is based on property diff, with URIs added
   fvi = get_file_view_info(request, path_joined, rev)
@@ -3367,9 +3369,10 @@ class DiffDescription:
       cfg = self.request.cfg
       self.diff_options['funout'] = cfg.options.hr_funout
       self.diff_options['ignore_white'] = cfg.options.hr_ignore_white
-      self.diff_options['ignore_keyword_subst'] = cfg.options.hr_ignore_keyword_subst
+      self.diff_options['ignore_keyword_subst'] = \
+                      cfg.options.hr_ignore_keyword_subst
     self._get_diff(left, right, self._content_lines, self._content_fp,
-                    options, None)
+                   options, None)
 
   def get_prop_diff(self, left, right):
     options = {}
@@ -3389,10 +3392,11 @@ class DiffDescription:
         continue
       # Check for binary properties
       if is_undisplayable(val_left) or is_undisplayable(val_right):
-        self.changes.append(_item(left=left, right=right,
-          display_as=self.display_as,
-          changes=[ _item(type=_RCSDIFF_IS_BINARY) ],
-          propname=name))
+        self.changes.append(_item(left=left,
+                                  right=right,
+                                  display_as=self.display_as,
+                                  changes=[ _item(type=_RCSDIFF_IS_BINARY) ],
+                                  propname=name))
         continue
       self._get_diff(left, right, self._prop_lines, self._prop_fp, options, name)
 
@@ -3404,8 +3408,11 @@ class DiffDescription:
       lines_left = get_lines(left, propname)
       lines_right = get_lines(right, propname)
       changes = self.line_differ(lines_left, lines_right, options)
-    self.changes.append(_item(left=left, right=right, changes=changes,
-                    display_as=self.display_as, propname=propname))
+    self.changes.append(_item(left=left,
+                              right=right,
+                              changes=changes,
+                              display_as=self.display_as,
+                              propname=propname))
 
   def _line_idiff_sidebyside(self, lines_left, lines_right, options):
     return idiff.sidebyside(lines_left, lines_right, options.get("context", 5))
@@ -3414,24 +3421,27 @@ class DiffDescription:
     return idiff.unified(lines_left, lines_right, options.get("context", 2))
 
   def _fp_vclib_hr(self, left, right, fp, propname):
-    date1, date2, flag, headers = diff_parse_headers(fp, self.diff_type,
-        self._property_path(left, propname),
-        self._property_path(right, propname),
-        left.rev, right.rev, left.tag, right.tag)
+    date1, date2, flag, headers = \
+                    diff_parse_headers(fp, self.diff_type,
+                                       self._property_path(left, propname),
+                                       self._property_path(right, propname),
+                                       left.rev, right.rev, left.tag, right.tag)
     if flag is not None:
       return [ _item(type=flag) ]
     else:
       return DiffSource(fp, self.request.cfg)
 
   def _fp_vclib_raw(self, left, right, fp, propname):
-    date1, date2, flag, headers = diff_parse_headers(fp, self.diff_type,
-        self._property_path(left, propname),
-        self._property_path(right, propname),
-        left.rev, right.rev, left.tag, right.tag)
+    date1, date2, flag, headers = \
+                    diff_parse_headers(fp, self.diff_type,
+                                       self._property_path(left, propname),
+                                       self._property_path(right, propname),
+                                       left.rev, right.rev, left.tag, right.tag)
     if flag is not None:
       return _item(type=flag)
     else:
-      return _item(type='raw', raw=MarkupPipeWrapper(fp, self.request.server.escape(headers), None, 1))
+      return _item(type='raw', raw=MarkupPipeWrapper(fp,
+              self.request.server.escape(headers), None, 1))
 
   def _content_lines(self, side, propname):
     f = self.request.repos.openfile(side.path_comp, side.rev, {})[0]
@@ -3453,10 +3463,12 @@ class DiffDescription:
     fn_left = self._temp_file(left.properties.get(propname))
     fn_right = self._temp_file(right.properties.get(propname))
     diff_args = vclib._diff_args(self.diff_type, options)
-    info_left = self._property_path(left, propname), left.log_entry.date, left.rev
-    info_right = self._property_path(right, propname), right.log_entry.date, right.rev
+    info_left = self._property_path(left, propname), \
+                left.log_entry.date, left.rev
+    info_right = self._property_path(right, propname), \
+                 right.log_entry.date, right.rev
     return vclib._diff_fp(fn_left, fn_right, info_left, info_right,
-        self.request.cfg.utilities.diff or 'diff', diff_args)
+                          self.request.cfg.utilities.diff or 'diff', diff_args)
 
   def _temp_file(self, val):
     '''Create a temporary file with content from val'''
@@ -3475,7 +3487,8 @@ class DiffDescription:
     return sorted(h.keys())
 
   def _property_path(self, side, propname):
-    '''Return path to be displayed in raw diff - possibly augmented with property name'''
+    '''Return path to be displayed in raw diff - possibly augmented with
+    property name'''
     if propname is None:
       return side.path
     else:
