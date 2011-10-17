@@ -4,6 +4,7 @@ Version 1.1.12 (released ??-???-????)
   * fix broken cvsdb glob searching (issue 486)
   * allow svn revision specifiers to have leading r's (issue #441, #448) 
   * allow environmental override of configuration location (issue #494)
+  * fix exception HTML-escaping non-string data under WSGI (issue #454)
 
 Version 1.1.11 (released 17-May-2011)
 
