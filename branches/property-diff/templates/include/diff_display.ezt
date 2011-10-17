@@ -1,5 +1,5 @@
 [is diff.display_as "anchor"]
-  <a name="[diff.anchor]"></a>
+  <p id="[diff.anchor]"/>
 [else]
   [define msg_no_changes]<br/><strong>- No changes -</strong><br/>&nbsp;[end]
   [define msg_binary]<br/><strong>- Binary content differs -</strong><br/>&nbsp;[end]
