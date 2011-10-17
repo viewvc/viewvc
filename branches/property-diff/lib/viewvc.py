@@ -3327,14 +3327,14 @@ class DiffDescription:
       self.hide_legend = 1
     else:
       raise debug.ViewVCException('Diff format %s not understood'
-				   % self.diff_format, '400 Bad Request')
+                                   % self.diff_format, '400 Bad Request')
 
     # Determine whether idiff is avaialble and whether it could be used.
     # idiff only supports side-by-side (conditionally) and unified formats,
     # and is only used if intra-line diffs are requested.
     if (cfg.options.hr_intraline and idiff
-	and ((self.human_readable and idiff.sidebyside)
-	     or (not self.human_readable and self.diff_type == vclib.UNIFIED))):
+        and ((self.human_readable and idiff.sidebyside)
+             or (not self.human_readable and self.diff_type == vclib.UNIFIED))):
       # Override hiding legend for unified format. It is not marked 'human
       # readable', and it is displayed differently depending on whether
       # hr_intraline is disabled (displayed as raw diff) or enabled
@@ -3343,18 +3343,18 @@ class DiffDescription:
       # controls should both be merged into one, 'is_colored' or something.
       self.hide_legend = 0
       if self.human_readable:
-	self.line_differ = self._line_idiff_sidebyside
-	self.display_as = 'sidebyside-2'
+        self.line_differ = self._line_idiff_sidebyside
+        self.display_as = 'sidebyside-2'
       else:
-	self.line_differ = self._line_idiff_unified
-	self.display_as = 'unified'
+        self.line_differ = self._line_idiff_unified
+        self.display_as = 'unified'
     else:
       if self.human_readable:
-	self.display_as = 'sidebyside-1'
-	self.fp_differ = self._fp_vclib_hr
+        self.display_as = 'sidebyside-1'
+        self.fp_differ = self._fp_vclib_hr
       else:
-	self.display_as = 'raw'
-	self.fp_differ = self._fp_vclib_raw
+        self.display_as = 'raw'
+        self.fp_differ = self._fp_vclib_raw
 
   def anchor(self, anchor_name):
     self.changes.append(_item(display_as='anchor', anchor=anchor_name))
@@ -3369,7 +3369,7 @@ class DiffDescription:
       self.diff_options['ignore_white'] = cfg.options.hr_ignore_white
       self.diff_options['ignore_keyword_subst'] = cfg.options.hr_ignore_keyword_subst
     self._get_diff(left, right, self._content_lines, self._content_fp,
-		    options, None)
+                    options, None)
 
   def get_prop_diff(self, left, right):
     options = {}
@@ -3381,19 +3381,19 @@ class DiffDescription:
     for name in self._uniq(left.properties.keys() + right.properties.keys()):
       # Skip non-utf8 property names
       if is_undisplayable(name):
-	continue
+        continue
       val_left = left.properties.get(name, '')
       val_right = right.properties.get(name, '')
       # Skip non-changed properties
       if val_left == val_right:
-	continue
+        continue
       # Check for binary properties
       if is_undisplayable(val_left) or is_undisplayable(val_right):
-	self.changes.append(_item(left=left, right=right,
-	  display_as=self.display_as,
-	  changes=[ _item(type=_RCSDIFF_IS_BINARY) ],
-	  propname=name))
-	continue
+        self.changes.append(_item(left=left, right=right,
+          display_as=self.display_as,
+          changes=[ _item(type=_RCSDIFF_IS_BINARY) ],
+          propname=name))
+        continue
       self._get_diff(left, right, self._prop_lines, self._prop_fp, options, name)
 
   def _get_diff(self, left, right, get_lines, get_fp, options, propname):
@@ -3405,7 +3405,7 @@ class DiffDescription:
       lines_right = get_lines(right, propname)
       changes = self.line_differ(lines_left, lines_right, options)
     self.changes.append(_item(left=left, right=right, changes=changes,
-		    display_as=self.display_as, propname=propname))
+                    display_as=self.display_as, propname=propname))
 
   def _line_idiff_sidebyside(self, lines_left, lines_right, options):
     return idiff.sidebyside(lines_left, lines_right, options.get("context", 5))
@@ -3415,9 +3415,9 @@ class DiffDescription:
 
   def _fp_vclib_hr(self, left, right, fp, propname):
     date1, date2, flag, headers = diff_parse_headers(fp, self.diff_type,
-	self._property_path(left, propname),
-	self._property_path(right, propname),
-	left.rev, right.rev, left.tag, right.tag)
+        self._property_path(left, propname),
+        self._property_path(right, propname),
+        left.rev, right.rev, left.tag, right.tag)
     if flag is not None:
       return [ _item(type=flag) ]
     else:
@@ -3425,9 +3425,9 @@ class DiffDescription:
 
   def _fp_vclib_raw(self, left, right, fp, propname):
     date1, date2, flag, headers = diff_parse_headers(fp, self.diff_type,
-	self._property_path(left, propname),
-	self._property_path(right, propname),
-	left.rev, right.rev, left.tag, right.tag)
+        self._property_path(left, propname),
+        self._property_path(right, propname),
+        left.rev, right.rev, left.tag, right.tag)
     if flag is not None:
       return _item(type=flag)
     else:
@@ -3443,7 +3443,7 @@ class DiffDescription:
 
   def _content_fp(self, left, right, propname, options):
     return self.request.repos.rawdiff(left.path_comp, left.rev,
-	right.path_comp, right.rev, self.diff_type, options)
+        right.path_comp, right.rev, self.diff_type, options)
 
   def _prop_lines(self, side, propname):
     val = side.properties.get(propname, '')
@@ -3456,7 +3456,7 @@ class DiffDescription:
     info_left = self._property_path(left, propname), left.log_entry.date, left.rev
     info_right = self._property_path(right, propname), right.log_entry.date, right.rev
     return vclib._diff_fp(fn_left, fn_right, info_left, info_right,
-	self.request.cfg.utilities.diff or 'diff', diff_args)
+        self.request.cfg.utilities.diff or 'diff', diff_args)
 
   def _temp_file(self, val):
     '''Create a temporary file with content from val'''
@@ -3511,7 +3511,7 @@ def view_diff(request):
 
   except vclib.InvalidRevision:
     raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
-	'to diff', '400 Bad Request')
+        'to diff', '400 Bad Request')
 
   no_format_params = request.query_dict.copy()
   no_format_params['diff_format'] = None
@@ -3824,7 +3824,7 @@ def view_revision(request):
                                         escape=1)
 
       if (change.pathtype is vclib.FILE and change.text_changed) \
-	  or change.props_changed:
+          or change.props_changed:
         change.diff_href = request.get_url(view_func=view_diff,
                                            where=path, 
                                            pathtype=change.pathtype,

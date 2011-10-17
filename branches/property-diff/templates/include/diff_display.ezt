@@ -36,15 +36,15 @@
     </tr>
     [is diff.changes.type "no-changes"]
       <tr class="vc_diff_empty">
-	<td colspan="2" style="text-align:center;">[msg_no_changes]</td>
+        <td colspan="2" style="text-align:center;">[msg_no_changes]</td>
       </tr>
     [else]
       [is diff.changes.type "binary-diff"]
-	<tr class="vc_diff_empty">
-	  <td colspan="2" style="text-align:center;">[msg_binary]</td>
-	</tr>
+        <tr class="vc_diff_empty">
+          <td colspan="2" style="text-align:center;">[msg_binary]</td>
+        </tr>
       [else]
-	<tr><td colspan="2"><pre class="vc_raw_diff">[diff.changes.raw]</pre></td></tr>
+        <tr><td colspan="2"><pre class="vc_raw_diff">[diff.changes.raw]</pre></td></tr>
       [end]
     [end]
   </table>
@@ -157,16 +157,16 @@
     </thead>
     <tbody>
       [for diff.changes]
-	[is diff.changes.type "no-changes"]
-	  <tr class="vc_diff_empty">
-	    <td colspan="4" style="text-align:center;">[msg_no_changes]</td>
-	  </tr>
-	[else]
-	  [is diff.changes.type "binary-diff"]
-	    <tr class="vc_diff_empty">
-	      <td colspan="4" style="text-align:center;">[msg_binary]</td>
-	    </tr>
-	  [else]
+        [is diff.changes.type "no-changes"]
+          <tr class="vc_diff_empty">
+            <td colspan="4" style="text-align:center;">[msg_no_changes]</td>
+          </tr>
+        [else]
+          [is diff.changes.type "binary-diff"]
+            <tr class="vc_diff_empty">
+              <td colspan="4" style="text-align:center;">[msg_binary]</td>
+            </tr>
+          [else]
             [if-any diff.changes.gap]
               <tr>
                 <th>&hellip;</th><th></th>
@@ -194,27 +194,27 @@
     </colgroup>
     <thead>
       <tr class="vc_diff_header">
-	<th>&nbsp;</th><th colspan="2" style="width:95%; text-align:left;">[left_header]</th>
+        <th>&nbsp;</th><th colspan="2" style="width:95%; text-align:left;">[left_header]</th>
       </tr>
       <tr>
-	<th colspan="3" style="text-align:left;">vs.</th>
+        <th colspan="3" style="text-align:left;">vs.</th>
       </tr>
       <tr class="vc_diff_header">
-	<th>&nbsp;</th><th colspan="2" style="width:95%; text-align:left;">[right_header]</th>
+        <th>&nbsp;</th><th colspan="2" style="width:95%; text-align:left;">[right_header]</th>
       </tr>
     </thead>
     <tbody>
       [for diff.changes]
-	[is diff.changes.type "no-changes"]
-	  <tr class="vc_diff_empty">
-	    <td colspan="3" style="text-align:center;">[msg_no_changes]</td>
-	  </tr>
-	[else]
-	  [is diff.changes.type "binary-diff"]
-	    <tr class="vc_diff_empty">
-	      <td colspan="3" style="text-align:center;">[msg_binary]</td>
-	    </tr>
-	  [else]
+        [is diff.changes.type "no-changes"]
+          <tr class="vc_diff_empty">
+            <td colspan="3" style="text-align:center;">[msg_no_changes]</td>
+          </tr>
+        [else]
+          [is diff.changes.type "binary-diff"]
+            <tr class="vc_diff_empty">
+              <td colspan="3" style="text-align:center;">[msg_binary]</td>
+            </tr>
+          [else]
             [if-any diff.changes.gap]
               <tr>
                 <th>&hellip;</th>
