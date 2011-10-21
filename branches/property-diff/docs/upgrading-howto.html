@@ -28,12 +28,12 @@ td {
 .h3 { border-width: 1px 0 0 0; }
 .toc-list { font-size: 90%; }
 .varname { font-family: monospace; }
-.added { background: rgb(50%,75%,25%); }
+.added { background: rgb(60%,90%,60%); }
 .unchanged { background: rgb(75%,75%,75%); }
-.renamed { background: rgb(75%,50%,75%); }
-.changed { background: rgb(100%,100%,25%); }
-.replaced { background: rgb(100%,75%,0%); }
-.removed { background: rgb(100%,25%,25%); }
+.renamed { background: rgb(80%,60%,80%); }
+.changed { background: rgb(100%,100%,50%); }
+.replaced { background: rgb(100%,80%,40%); }
+.removed { background: rgb(100%,70%,70%); }
 </style>
 </head>
 
@@ -67,11 +67,20 @@ td {
 <h2 id="toc">Table of Contents</h2>
 <ul class="toc-list">
   <li><a href="#introduction">Introduction</a></li>
+  <li><a href="#sec-from-1-1">Upgrading From ViewVC 1.1</a></li>
   <li><a href="#sec-from-1-0">Upgrading From ViewVC 1.0</a></li>
   <li><a href="#sec-from-0-9">Upgrading From ViewCVS 0.9</a></li>
   <li><a href="#sec-from-0-8">Upgrading From ViewCVS 0.8</a></li>
 </ul>
 </div>
+
+<div class="h2">
+<h2 id="sec-from-1-0">Upgrading From ViewVC 1.1</h2>
+
+<p>This section discusses how to upgrade ViewVC 1.1.x to ViewVC 1.2.x.</p>
+
+</div>
+
 
 <div class="h2">
 <h2 id="sec-from-1-0">Upgrading From ViewVC 1.0</h2>
@@ -1603,13 +1612,8 @@ allowed_views = annotate, diff, markup, tar
 <div class="h2">
 <h2 id="sec-from-0-8">Upgrading From ViewCVS 0.8</h2>
 
-<p>This section discusses how to upgrade ViewCVS 0.8 to version
-   0.9 or a later version of the software.</p>
+<p>This section discusses how to upgrade ViewCVS 0.8 to ViewCVS 0.9.x.</p>
     
-<p><strong>NOTE:</strong> these changes will bring you up to the
-   requirements of version 0.9. You must also follow the directions
-   for <a href="#sec-from-0-9">upgrading from 0.9</a>.</p>
-
 <div class="h3">
 <h3>Configuration Options</h3>
 
@@ -1619,92 +1623,50 @@ allowed_views = annotate, diff, markup, tar
    options, then you will need to make corresponding changes in the
    templates.</p>
 
-      <dl>
-	<dt>
-	  Colors:
-	  <strong>diff_heading</strong>,
-	  <strong>diff_empty</strong>,
-	  <strong>diff_remove</strong>,
-	  <strong>diff_change</strong>,
-	  <strong>diff_add</strong>,
-	  and <strong>diff_dark_change</strong>
-	</dt>
-	<dd>
-	  These options have been incorporated into the
-	  <code>diff.ezt</code> template.
+<dl>
+  <dt>Colors: <code>diff_heading</code>, <code>diff_empty</code>,
+      <code>diff_remove</code>, <code>diff_change</code>,
+      <code>diff_add</code>, and <code>diff_dark_change</code></dt>
+  <dd>These options have been incorporated into the
+      <code>diff.ezt</code> template.</dd>
 
-	  <p></p>
-	</dd>
+  <dt><code>markup_log</code></dt>
+  <dd>This option has been incorporated into the
+      <code>markup.ezt</code> template.</dd>
 
-	<dt><strong>markup_log</strong></dt>
-	<dd>
-	  This option has been incorporated into the
-	  <code>markup.ezt</code> template.
+  <dt>Colors: <code>nav_header</code> and
+      <code>alt_background</code></dt>
+  <dd>These options have been incorporated into the
+      <code>header.ezt</code> template.</dd>
 
-	  <p></p>
-	</dd>
+  <dt>Images: <code>back_icon</code>, <code>dir_icon</code>,
+      and <code>file_icon</code></dt>
+  <dd>These options have been incorporated into the
+      <code>directory.ezt</code>, <code>header.ezt</code>,
+      <code>log.ezt</code>, <code>log_table.ezt</code>, and
+      <code>query.ezt</code> templates.</dd>
 
-        <dt>Colors: <strong>nav_header</strong>
-          and <strong>alt_background</strong></dt>
-	<dd>
-	  These options have been incorporated into the
-	  <code>header.ezt</code> template.
+  <dt><code>use_java_script</code>
+      and <code>open_extern_window</code></dt>
+  <dd>The templates now use JavaScript in all applicable places, and
+      open external windows for most downloading and viewing of
+      files. If you wish to not use JavaScript and/or external
+      windows, then remove the feature(s) from the templates.</dd>
 
-	  <p></p>
-	</dd>
+  <dt><code>show_author</code></dt>
+  <dd>Changing this option would be quite strange and rare. If you
+      do not want to show the author for the revisions, then you
+      should remove it from the various templates.</dd>
 
-        <dt>
-	  Images:
-          <strong>back_icon</strong>,
-          <strong>dir_icon</strong>,
-          and <strong>file_icon</strong>
-        </dt>
-	<dd>
-	  These options have been incorporated into the
-	  <code>directory.ezt</code>, <code>header.ezt</code>,
-	  <code>log.ezt</code>, <code>log_table.ezt</code>, and
-	  <code>query.ezt</code> templates.
+  <dt><code>hide_non_readable</code></dt>
+  <dd>This option was never used, so it has been removed.</dd>
 
-	  <p></p>
-	</dd>
+  <dt><code>flip_links_in_dirview</code></dt>
+  <dd>This option is no longer available. If you want the links in
+      your directory view flipped, then you may use the
+      <code>dir_alternate.ezt</code> template.</dd>
 
-	<dt><strong>use_java_script</strong>
-          and <strong>open_extern_window</strong></dt>
-	<dd>
-	  The templates now use JavaScript in all applicable places,
-	  and open external windows for most downloading and viewing
-	  of files. If you wish to not use JavaScript and/or external
-	  windows, then remove the feature(s) from the templates.
-
-	  <p></p>
-	</dd>
-
-	<dt><strong>show_author</strong></dt>
-	<dd>
-          Changing this option would be quite strange and rare. If you
-          do not want to show the author for the revisions, then you
-          should remove it from the various templates.
-
-	  <p></p>
-	</dd>
-
-	<dt><strong>hide_non_readable</strong></dt>
-	<dd>
-          This option was never used, so it has been removed.
-
-	  <p></p>
-	</dd>
-
-	<dt><strong>flip_links_in_dirview</strong></dt>
-	<dd>
-          This option is no longer available. If you want the links in
-          your directory view flipped, then you may use the
-          <code>dir_alternate.ezt</code> template.
-
-	  <p></p>
-	</dd>
-
-      </dl>
+</dl>
 
 </div>
 
@@ -1715,53 +1677,65 @@ allowed_views = annotate, diff, markup, tar
    removed in 0.9. If you have custom templates that refer to these
    variables, then you will need to modify your templates.</p>
 
-	    <dl>
-	      <dt><code>directory.ezt</code>: <var>headers</var></dt>
-	      <dd>
-		The headers are now listed explicitly in the template,
-		rather than made available through a list.
-		<p></p>
-	      </dd>
-
-	      <dt>
-		<code>directory.ezt</code>:
-		<var>rows.cols</var>,
-		and <var>rows.span</var>
-	      </dt>
-	      <dd>
-		These variables were used in conjunction with the
-		<var>headers</var> variable to control the column
-		displays. This is now controlled explicitly within the
-		templates.
-		<p></p>
-	      </dd>
-
-	      <dt><code>directory.ezt</code>:
-		<var>rev_in_front</var></dt>
-	      <dd>
-		This was used to indicate that revision links should
-		be used in the first column, rather than in their
-		standard place in the second column. Changing the
-		links should now be done in the template, rather than
-		according to this variable. You may want to look at
-		the <code>dir_alternate.ezt</code> template, which has
-		the revision in front.
-		<p></p>
-	      </dd>
-
-	      <dt><code>directory.ezt</code>:
-		<var>rows.attic</var>
-		and <var>rows.hide_attic_href</var></dt>
-	      <dd>
-		These variable were used to manage the hide and
-		showing of the contents of the <code>Attic/</code>
-		subdirectory. Several new variables were introduced
-		which can be used to replace this functionality:
-		<var>show_attic_href</var>,
-		<var>hide_attic_href</var>, and <var>rows.state</var>.
-		<p></p>
-	      </dd>
-	    </dl>
+<table>
+<thead>
+<tr>
+  <th>Variable</th>
+  <th>Location</th>
+  <th>Changes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="removed">
+  <td class="varname">headers</td>
+  <td>directory.ezt</td>
+  <td>removed; headers are now listed explicitly in the template, rather
+      than made available through a list.</td>
+</tr>
+<tr class="removed">
+  <td class="varname">rows.cols</td>
+  <td>directory.ezt</td>
+  <td>removed; was used in conjunction with the <var>headers</var>
+      variable to control the column displays. This is now controlled
+      explicitly within the templates.</td>
+</tr>
+<tr class="removed">
+  <td class="varname">rows.span</td>
+  <td>directory.ezt</td>
+  <td>removed; was used in conjunction with the <var>headers</var>
+      variable to control the column displays. This is now controlled
+      explicitly within the templates.</td>
+</tr>
+<tr class="removed">
+  <td class="varname">rev_in_front</td>
+  <td>directory.ezt</td>
+  <td>removed; was used to indicate that revision links should be used in
+      the first column, rather than in their standard place in the
+      second column. Changing the links should now be done in the
+      template, rather than according to this variable. You may want
+      to look at the <code>dir_alternate.ezt</code> template, which
+      has the revision in front.</dd>
+</tr>
+<tr class="removed">
+  <td class="varname">rows.attic</td>
+  <td>directory.ezt</td>
+  <td>removed; used to manage the hide and showing of the
+      contents of the <code>Attic/</code> subdirectory. Several new
+      variables were introduced which can be used to replace this
+      functionality: <var>show_attic_href</var>,
+      <var>hide_attic_href</var>, and <var>rows.state</var>.</td>
+</tr>
+<tr class="removed">
+  <td class="varname">rows.hide_attic_href</td>
+  <td>directory.ezt</td>
+  <td>removed; used to manage the hide and showing of the
+      contents of the <code>Attic/</code> subdirectory. Several new
+      variables were introduced which can be used to replace this
+      functionality: <var>show_attic_href</var>,
+      <var>hide_attic_href</var>, and <var>rows.state</var>.</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 </div>
