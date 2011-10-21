@@ -1,8 +1,41 @@
-                        RELEASE MANAGEMENT
+                          RELEASE MANAGEMENT
 
 ViewVC rolls releases from release branches associate with each minor
 version of the software.  For example, the 1.1.0 is rolled from the
 1.1.x branch.  The same is true for the 1.1.1, 1.1.2, ... releases.
+
+
+A. Creating Release Branches
+============================
+
+Primary ViewVC development occurs on the trunk, with bugfixes and
+compatible features being backported to release branches as
+appropriate.  When, however, the need arises to create a new release
+branch, here's the process (M, N, X, and Y below represent integral
+major, minor, and patch version numbers, and are not literal):
+
+1.  Create the release branch as a copy of the trunk@HEAD (the
+    lower-case "x" in the branch name is literal):
+
+       svn cp -m "Branch for X.Y release stabilization." . ^/branches/X.Y.x
+
+2.  On the trunk, update the following files to reflect the new
+    version which trunk will be progressing towards:
+
+       CHANGES:  Add stub section for new release.
+       INSTALL:  Update example configuration.
+       lib/viewvc.py:  Update "__version__" value.
+       docs/upgrading-howto.html:  Add stub section for new release.
+       docs/template-authoring-guide.html:  Update to reflect new release.
+       docs/release-notes/M.N.0.html:  Add a new stub file.
+
+    Commit these changes:
+
+       svn ci -m "Trunk is now progressing toward version M.N."
+
+
+B. Publishing Releases
+======================
 
 There is a script, `tools/make-release', which creates a release
 directory and the various archive files that we distribute.  All other
@@ -13,16 +46,17 @@ follows:
 Checkout a working copy of the release branch for the release you
 intend to roll, and in that working copy, perform the following steps
 (X, Y, and Z below represent integral major, minor, and patch version
-numbers, and not literal):
+numbers, and are not literal):
 
 1.  Review any open bug reports:
 
        http://viewvc.tigris.org/servlets/ProjectIssues
 
-2.  Add a new subsection to the file 'docs/upgrading.html' describing
-    all user visible changes for users of previous releases of ViewVC.
-    Commit any modifications.  NOTE: This step should not be necessary
-    for patch releases.
+2.  Ensure that the file 'docs/upgrading.html' describes all user
+    visible changes for users of previous releases of ViewVC.  (Any
+    changes here should be made on the trunk and backported to the
+    branch.)  NOTE: This step should not be necessary for patch
+    releases.
 
 3.  Verify that copyright years are correct in both the license-1.html
     file and the source code.
