@@ -704,13 +704,13 @@ td {
      <a href="#variables-common">COMMON</a> variable set</td>
 </tr>
 <tr class="varlevel1">
-  <td class="varname">diff</td>
+  <td class="varname">diffs</td>
   <td>List</td>
   <td>List of all blocks of differences between the two sides, including content
       and property differences.</td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">diff.display_as</td>
+  <td class="varname">diffs.display_as</td>
   <td>String</td>
   <td>Indicates the type of this block. One of the <tt>anchor</tt> (no display,
       create an anchor), <tt>raw</tt> (non-colored diff, display as produced),
@@ -719,47 +719,47 @@ td {
       <tt>unified</tt> (colored unified diff).</td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">diff.anchor</td>
+  <td class="varname">diffs.anchor</td>
   <td>String</td>
-  <td>If <var>diff.display_as</var> is <tt>anchor</tt>, this variable specifies
+  <td>If <var>diffs.display_as</var> is <tt>anchor</tt>, this variable specifies
       the anchor name.</td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">diff.changes</td>
+  <td class="varname">diffs.changes</td>
   <td>List/Container</td>
   <td>Set of objects which contain information about a change in a single
-      object (file or property). Not present if <var>diff.display_as</var> is
+      object (file or property). Not present if <var>diffs.display_as</var> is
       <tt>anchor</tt>, otherwise has different format depending on
-      <var>diff.display_as</var> (applicable as indicated in brackets below).</td>
+      <var>diffs.display_as</var> (applicable as indicated in brackets below).</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.changes.raw</td>
+  <td class="varname">diffs.changes.raw</td>
   <td>String</td>
-  <td>[raw] Diff text. Valid only if <var>diff.changes.type</var> is
+  <td>[raw] Diff text. Valid only if <var>diffs.changes.type</var> is
       <tt>raw</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.changes.type</td>
+  <td class="varname">diffs.changes.type</td>
   <td>String</td>
   <td>[raw] The type of change. Values: <tt>binary-diff</tt>,
       <tt>error</tt>, <tt>no-changes</tt>, <tt>raw</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.changes.have_left</td>
+  <td class="varname">diffs.changes.have_left</td>
   <td>Boolean</td>
   <td>[sidebyside-1] Specifies whether the left file has a line of content relevant
       to the difference data line.  Valid only when
       <var>changes.type</var> is <tt>change</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.changes.have_right</td>
+  <td class="varname">diffs.changes.have_right</td>
   <td>Boolean</td>
   <td>[sidebyside-1] Specifies whether the right file has a line of content relevant
       to the difference data line.  Valid only when
       <var>changes.type</var> is <tt>change</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.changes.left</td>
+  <td class="varname">diffs.changes.left</td>
   <td>String</td>
   <td>[sidebyside-1] Textual contents of the relevant line in the left file.  Valid
       only when <var>changes.type</var> is <tt>change</tt>,
@@ -770,7 +770,7 @@ td {
       support).</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.changes.right</td>
+  <td class="varname">diffs.changes.right</td>
   <td>String</td>
   <td>[sidebyside-1] Textual contents of the relevant line in the right file.  Valid
       only when <var>changes.type</var> is <tt>add</tt>, <tt>change</tt>, 
@@ -781,256 +781,256 @@ td {
       support).</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.changes.line_info_extra</td>
+  <td class="varname">diffs.changes.line_info_extra</td>
   <td>String</td>
   <td>[sidebyside-1] Additional line information for the current difference hunk.
       Valid only when <var>changes.type</var> is <tt>header</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.changes.line_info_left</td>
+  <td class="varname">diffs.changes.line_info_left</td>
   <td>String</td>
   <td>[sidebyside-1] First line number represented by the current hunk in the left
       file.  Valid only when <var>changes.type</var> is <tt>header</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.changes.line_info_right</td>
+  <td class="varname">diffs.changes.line_info_right</td>
   <td>String</td>
   <td>[sidebyside-1] First line number represented by the current hunk in the right
       file.  Valid only when <var>changes.type</var> is <tt>header</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.changes.line_number</td>
+  <td class="varname">diffs.changes.line_number</td>
   <td>String</td>
   <td>[sidebyside-1] Line number (1-based) of the line.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.changes.type</td>
+  <td class="varname">diffs.changes.type</td>
   <td>String</td>
   <td>[sidebyside-1] The type of change. Values: <tt>add</tt>, <tt>binary-diff</tt>,
       <tt>change</tt>, <tt>context</tt>, <tt>error</tt>, <tt>header</tt>,
       <tt>no-changes</tt>, <tt>remove</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.changes.columns</td>
+  <td class="varname">diffs.changes.columns</td>
   <td>List</td>
   <td>[sidebyside-2] List of two columns for left and right parts of the diff.</td>
 </tr>
 <tr class="varlevel4">
-  <td class="varname">diff.changes.columns.line_number</td>
+  <td class="varname">diffs.changes.columns.line_number</td>
   <td>String</td>
   <td>[sidebyside-2] Line number in the left/right column.</td>
 </tr>
 <tr class="varlevel4">
-  <td class="varname">diff.changes.columns.segments</td>
+  <td class="varname">diffs.changes.columns.segments</td>
   <td>List</td>
   <td>[sidebyside-2] Left/right line, broken into change segments.</td>
 </tr>
 <tr class="varlevel5">
-  <td class="varname">diff.changes.columns.segments.text</td>
+  <td class="varname">diffs.changes.columns.segments.text</td>
   <td>String</td>
   <td>[sidebyside-2] Text of this segment.</td>
 </tr>
 <tr class="varlevel5">
-  <td class="varname">diff.changes.columns.segments.type</td>
+  <td class="varname">diffs.changes.columns.segments.type</td>
   <td>String</td>
   <td>[sidebyside-2] Not set if the segment is the same in both left and right sides;
       otherwise, one of the <tt>add</tt>, <tt>remove</tt> or <tt>change</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.changes.gap</td>
+  <td class="varname">diffs.changes.gap</td>
   <td>Boolean</td>
   <td>[sidebyside-2] If true, indicates that change blocks are non-contiguous
       and that the template should display some sort of ellipsis before the
       current block.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.changes.type</td>
+  <td class="varname">diffs.changes.type</td>
   <td>String</td>
   <td>[sidebyside-2] The type of change. Values: <tt>binary-diff</tt>,
       <tt>error</tt>, <tt>intraline</tt>, <tt>no-changes</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.changes.segments</td>
+  <td class="varname">diffs.changes.segments</td>
   <td>List</td>
   <td>[unified] Left/right line, broken into change segments.</td>
 </tr>
 <tr class="varlevel4">
-  <td class="varname">diff.changes.segments.text</td>
+  <td class="varname">diffs.changes.segments.text</td>
   <td>String</td>
   <td>[unified] Text of this segment.</td>
 </tr>
 <tr class="varlevel4">
-  <td class="varname">diff.changes.segments.type</td>
+  <td class="varname">diffs.changes.segments.type</td>
   <td>String</td>
   <td>[unified] Not set if the segment is the same in both left and right sides;
       otherwise, one of the <tt>add</tt>, <tt>remove</tt> or <tt>change</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.changes.type</td>
+  <td class="varname">diffs.changes.type</td>
   <td>String</td>
   <td>[unified] The type of change. Values: <tt>add</tt>, <tt>binary-diff</tt>,
       <tt>error</tt>, <tt>no-changes</tt>, <tt>remove</tt> or empty string
       if the line was not changed (context line).</td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">diff.left</td>
+  <td class="varname">diffs.left</td>
   <td>Container</td>
   <td>Container object for grouping information about the left file.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.left.ago</td>
+  <td class="varname">diffs.left.ago</td>
   <td>String</td>
   <td>Text description of the time elapsed since <var>left.date</date>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.left.annotate_href</td>
+  <td class="varname">diffs.left.annotate_href</td>
   <td>String</td>
   <td>URL of the ViewVC annotation view for the left file.
       Valid only when <var>entries.pathtype</var> is <tt>file</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.left.author</td>
+  <td class="varname">diffs.left.author</td>
   <td>String</td>
   <td>Author of the revision of the left file.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.left.date</td>
+  <td class="varname">diffs.left.date</td>
   <td>String</td>
   <td>Date (in UTC if not otherwise configured) in which the left file
       revision was created.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.left.download_href</td>
+  <td class="varname">diffs.left.download_href</td>
   <td>String</td>
   <td>URL to download the HEAD revision of the left file.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.left.download_text_href</td>
+  <td class="varname">diffs.left.download_text_href</td>
   <td>String</td>
   <td>URL to download the HEAD revision of the left file as
       <tt>text/plain</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.left.log</td>
+  <td class="varname">diffs.left.log</td>
   <td>String</td>
   <td>Log message of the left file revision.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.left.path</td>
+  <td class="varname">diffs.left.path</td>
   <td>String</td>
   <td>Path of the left file.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.left.prefer_markup</td>
+  <td class="varname">diffs.left.prefer_markup</td>
   <td>Boolean</td>
   <td>Indicates whether to make the default file link a link to the markup
       page instead of the checkout page.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.left.rev</td>
+  <td class="varname">diffs.left.rev</td>
   <td>String</td>
   <td>Revision of the left file.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.left.revision_href</td>
+  <td class="varname">diffs.left.revision_href</td>
   <td>String</td>
   <td>URL of the Subversion revision view for the left file's
       current revision.  Valid only when <var>roottype</var> is
       <tt>svn</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.left.size</td>
+  <td class="varname">diffs.left.size</td>
   <td>String</td>
   <td>Size of the left file revision, in bytes. Subversion only.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.left.tag</td>
+  <td class="varname">diffs.left.tag</td>
   <td>String</td>
   <td>Tag of the left file.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.left.view_href</td>
+  <td class="varname">diffs.left.view_href</td>
   <td>String</td>
   <td>This is a URL for the markup view of the left file.</td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">diff.right</td>
+  <td class="varname">diffs.right</td>
   <td>Container</td>
   <td>Container object for grouping information about the right file.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.right.ago</td>
+  <td class="varname">diffs.right.ago</td>
   <td>String</td>
   <td>Text description of the time elapsed since <var>right.date</var>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.right.annotate_href</td>
+  <td class="varname">diffs.right.annotate_href</td>
   <td>String</td>
   <td>URL of the ViewVC annotation view for the right file.
       Valid only when <var>entries.pathtype</var> is <tt>file</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.right.author</td>
+  <td class="varname">diffs.right.author</td>
   <td>String</td>
   <td>Author of the revision of the right file.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.right.date</td>
+  <td class="varname">diffs.right.date</td>
   <td>String</td>
   <td>Date (in UTC if not otherwise configured) in which the right file
       revision was created.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.right.download_href</td>
+  <td class="varname">diffs.right.download_href</td>
   <td>String</td>
   <td>URL to download the HEAD revision of the right file.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.right.download_text_href</td>
+  <td class="varname">diffs.right.download_text_href</td>
   <td>String</td>
   <td>URL to download the HEAD revision of the right file as
       <tt>text/plain</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.right.log</td>
+  <td class="varname">diffs.right.log</td>
   <td>String</td>
   <td>Log message of the right file revision.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.right.path</td>
+  <td class="varname">diffs.right.path</td>
   <td>String</td>
   <td>Path of the right file.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.right.prefer_markup</td>
+  <td class="varname">diffs.right.prefer_markup</td>
   <td>Boolean</td>
   <td>Indicates whether to make the default file link a link to the markup
       page instead of the checkout page.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.right.rev</td>
+  <td class="varname">diffs.right.rev</td>
   <td>String</td>
   <td>Revision of the right file.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.right.revision_href</td>
+  <td class="varname">diffs.right.revision_href</td>
   <td>String</td>
   <td>URL of the Subversion revision view for the right file's
       current revision.  Valid only when <var>roottype</var> is
       <tt>svn</tt>.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.right.size</td>
+  <td class="varname">diffs.right.size</td>
   <td>String</td>
   <td>Size of the right file revision, in bytes. Subversion only.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.right.tag</td>
+  <td class="varname">diffs.right.tag</td>
   <td>String</td>
   <td>Tag of the right file.</td>
 </tr>
 <tr class="varlevel3">
-  <td class="varname">diff.right.view_href</td>
+  <td class="varname">diffs.right.view_href</td>
   <td>String</td>
   <td>This is a URL for the markup view of the right file.</td>
 </tr>
