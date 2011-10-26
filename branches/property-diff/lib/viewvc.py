@@ -3533,7 +3533,7 @@ def view_diff(request):
 
   data = common_template_data(request)
   data.merge(ezt.TemplateData({
-    'diff' : desc.changes,
+    'diffs' : desc.changes,
     'diff_format' : desc.diff_format,
     'hide_legend' : ezt.boolean(desc.hide_legend),
     'patch_href' : request.get_url(view_func=view_patch,

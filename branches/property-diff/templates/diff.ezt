@@ -6,8 +6,8 @@
 [include "include/header.ezt" "diff"]
 [include "include/file_header.ezt"]
 
-[if-any diff]
-  [for diff]
+[if-any diffs]
+  [for diffs]
     [include "include/diff_display.ezt"]
   [end]
 [end]
