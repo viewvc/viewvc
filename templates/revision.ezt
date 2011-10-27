@@ -60,8 +60,8 @@
       [if-any changes.is_copy]<br /><em>(Copied from [changes.copy_path], r[changes.copy_rev])</em>[end]
       </td>
       <td>[if-any changes.log_href]<a href="[changes.log_href]" title="View Log">[end][changes.action][if-any changes.log_href]</a>[end]
-          [if-any changes.text_mods], [if-any changes.diff_href]<a href="[changes.diff_href]" title="View Diff">[end]text changed[if-any changes.diff_href]</a>[end][end]
-          [if-any changes.prop_mods], props changed[end]
+          [if-any changes.text_mods], [if-any changes.diff_href]<a href="[changes.diff_href]#content" title="View Diff">[end]text changed[if-any changes.diff_href]</a>[end][end]
+          [if-any changes.prop_mods], [if-any changes.diff_href]<a href="[changes.diff_href]#properties" title="View Property Diff">[end]props changed[if-any changes.diff_href]</a>[end][end]
       </td>
     </tr>
    [end]
