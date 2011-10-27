@@ -8,6 +8,8 @@
 <div id="vc_main_body">
 <!-- ************************************************************** -->
 
+<h2>File Contents</h2>
+
 [define last_rev]0[end]
 [define rowclass]vc_row_odd[end]
 
@@ -15,12 +17,15 @@
 <div id="vc_file">
 <table cellspacing="0" cellpadding="0">
 <tr>
-<th class="vc_header">Line</th>
 [is annotation "annotated"]
+<th class="vc_header">#</th>
 <th class="vc_header">User</th>
 <th class="vc_header">Rev</th>
+<th class="vc_header">Content</th>
+[else]
+<th class="vc_header">#</th>
+<th class="vc_header">Content</th>
 [end]
-<th class="vc_header">File contents</th>
 </tr>
 [for lines]
   [is lines.rev last_rev]
