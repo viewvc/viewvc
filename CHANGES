@@ -1,6 +1,7 @@
 Version 1.2.0 (released ??-???-????)
 
   * bumped minimum support Python version to 2.4
+  * implemented support for property diffs (issue #383)
   * allow user-configurable cvsgraph display (issue #336)
   * allow rNNNN syntax for Subversion revision numbers (issue #441)
 
