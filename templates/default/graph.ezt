@@ -1,0 +1,15 @@
+[# setup page definitions]
+  [define page_title]Graph of:[end]
+  [define help_href][docroot]/help_rootview.html[end]
+[# end]
+
+[include "include/header.ezt" "graph"]
+
+<div style="text-align:center;">
+[imagemap]
+<img usemap="#MyMapName"
+  src="[imagesrc]" 
+  alt="Revisions of [where]" />
+</div>
+
+[include "include/footer.ezt"]

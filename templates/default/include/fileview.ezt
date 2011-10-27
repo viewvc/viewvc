@@ -1,0 +1,74 @@
+<table class="auto">
+<tr>
+<td>Revision:</td>
+<td><strong>[if-any revision_href]<a href="[revision_href]">[rev]</a>[else][rev][end]</strong> [if-any vendor_branch] <em>(vendor branch)</em>[end]</td> 
+</tr>
+<tr>
+<tr>
+<td>Committed:</td>
+<td>[if-any date]<em>[date]</em> [end][if-any ago]([ago] ago) [end][if-any author]by <em>[author]</em>[end]</td>
+</tr>
+[if-any orig_path]
+<tr>
+<td>Original Path:</td>
+<td><strong><a href="[orig_href]"><em>[orig_path]</em></a></strong></td>
+</tr>
+[end]
+[if-any branches]
+<tr>
+<td>Branch:</td>
+<td><strong>[branches]</strong></td>
+</tr>
+[end]
+[if-any tags]
+<tr>
+<td>CVS Tags:</td>
+<td><strong>[tags]</strong></td>
+</tr>
+[end]
+[if-any branch_points]
+<tr>
+<td>Branch point for:</td>
+<td><strong>[branch_points]</strong></td>
+</tr>
+[end]
+[is roottype "cvs"][if-any changed]
+<tr>
+<td>Changes since <strong>[prev]</strong>:</td>
+<td><strong>[changed] lines</strong></td>
+</tr>
+[end][end]
+[is roottype "svn"][if-any size]
+<td>File size:</td>
+<td>[size] byte(s)</td>
+</tr>
+[end][end]
+[if-any lockinfo]
+<td>Lock status:</td>
+<td>[lockinfo]</td>
+[end]
+[is state "dead"]
+<tr>
+<td>State:</td>
+<td><strong><em>FILE REMOVED</em></strong></td>
+</tr>
+[end]
+[if-any annotation]
+[is annotation "binary"]
+<tr>
+<td colspan="2"><strong>Unable to calculate annotation data on binary file contents.</strong></td>
+</tr>
+[end]
+[is annotation "error"]
+<tr>
+<td colspan="2"><strong>Error occurred while calculating annotation data.</strong></td>
+</tr>
+[end]
+[end]
+[if-any log]
+<tr>
+<td>Log Message:</td>
+<td><pre class="vc_log">[log]</span></td>
+</tr>
+[end]
+</table>
