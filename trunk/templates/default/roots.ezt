@@ -1,0 +1,40 @@
+[# setup page definitions]
+  [define page_title]Repository Listing[end]
+  [define help_href][docroot]/help_rootview.html[end]
+[# end]
+
+[include "include/header.ezt" "directory"]
+
+<div id="vc_main_body">
+<!-- ************************************************************** -->
+
+<table cellspacing="1" class="fixed" id="dirlist">
+<thead>
+<tr>
+  <th style="width: 200px" class="vc_header_sort">Name</th>
+[is cfg.options.show_roots_lastmod "1"]
+  <th class="vc_header">Last Change</th>
+[end]
+</tr>
+</thead>
+
+<tbody>
+[if-any roots]
+[for roots]
+  <tr class="vc_row_[if-index roots even]even[else]odd[end]">
+    <td onclick="jumpTo('[roots.href]')"><a href="[roots.href]"><img src="[docroot]/images/[roots.type]-logo.png" alt="" class="vc_icon" />[roots.name]</a></td>
+[is cfg.options.show_roots_lastmod "1"]
+    <td>[if-any roots.rev]<strong>[roots.rev]</strong> ([roots.ago] ago)
+        by <em>[roots.author]</em>: [roots.log][end]</td>
+[end]
+  </tr>
+[end]
+[end]
+</tbody>
+
+</table>
+
+<!-- ************************************************************** -->
+</div>
+
+[include "include/footer.ezt"]

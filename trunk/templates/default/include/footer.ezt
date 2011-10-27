@@ -1,0 +1,10 @@
+</div> <!-- vc_view_main -->
+
+<div id="vc_footer">
+[if-any cfg.general.address]Administered by <address><a href="mailto:[cfg.general.address]">[cfg.general.address]</a></address><br/>[end]
+Powered by <a href="http://viewvc.tigris.org/">ViewVC [vsn]</a>
+[if-any rss_href]<br/><a href="[rss_href]" title="RSS 2.0 feed"><img src="[docroot]/images/feed-icon-16x16.jpg" class="vc_icon" alt="RSS 2.0 feed" /></a>[else]&nbsp;[end]
+</div>
+
+</body>
+</html>
