@@ -1,0 +1,188 @@
+[is diffs.display_as "anchor"]
+  <p id="[diffs.anchor]"/>
+[else]
+  [define msg_no_changes]<strong>- No changes -</strong>[end]
+  [define msg_binary]<strong>- Binary content differs -</strong>[end]
+  [define msg_error]<strong>- ViewVC depends on rcsdiff and GNU diff to create
+    this page. ViewVC cannot find GNU diff. Even if you have GNU diff
+    installed, the rcsdiff program must be configured and compiled with
+    the GNU diff location. -</strong>[end]
+
+  [define left_view_href][if-any diffs.left.prefer_markup][diffs.left.view_href][else][if-any diffs.left.download_href][diffs.left.download_href][end][end][end]
+  [define right_view_href][if-any diffs.right.prefer_markup][diffs.right.view_href][else][if-any diffs.right.download_href][diffs.right.download_href][end][end][end]
+
+  [define left_item][diffs.left.path] ([if-any diffs.propname]property <em>[diffs.propname]</em>[else]file contents[end])[end]
+  [define right_item][diffs.right.path] ([if-any diffs.propname]property <em>[diffs.propname]</em>[else]file contents[end])[end]
+
+  [is left_item right_item]
+    [define common_header][left_item][end]
+    [define left_header]Revision [if-any left_view_href]<a href="[left_view_href]">[end][diffs.left.rev][if-any left_view_href]</a>[end][if-any diffs.left.author] by <em>[diffs.left.author]</em>[end], [diffs.left.date] [if-any diffs.left.tag]<br/>Tag: [diffs.left.tag][end][end]
+    [define right_header]Revision [if-any right_view_href]<a href="[right_view_href]">[end][diffs.right.rev][if-any right_view_href]</a>[end][if-any diffs.right.author] by <em>[diffs.right.author]</em>[end], [diffs.right.date] [if-any diffs.right.tag]<br/>Tag: [diffs.right.tag][end][end]
+  [else]
+    [define common_header][end]
+    [define left_header][left_item], Revision [if-any left_view_href]<a href="[left_view_href]">[end][diffs.left.rev][if-any left_view_href]</a>[end][if-any diffs.left.author] by <em>[diffs.left.author]</em>[end], [diffs.left.date] [if-any diffs.left.tag]<br/>Tag: [diffs.left.tag][end][end]
+    [define right_header][right_item], Revision [if-any right_view_href]<a href="[right_view_href]">[end][diffs.right.rev][if-any right_view_href]</a>[end][if-any diffs.right.author] by <em>[diffs.right.author]</em>[end], [diffs.right.date] [if-any diffs.right.tag]<br/>Tag: [diffs.right.tag][end][end]
+  [end]
+
+  <h2 style="text-indent: -2em; padding-left: 2em;">Comparing[if-any common_header] [common_header][else][end]:<br/>
+    [left_header] vs.<br/>
+    [right_header]</h2>
+[end]
+
+[is diffs.display_as "raw"]
+  <table cellspacing="0" cellpadding="0" style="margin-top: 1em; margin-left: 2em;">
+    [is diffs.changes.type "no-changes"]
+      <tr class="vc_diff_empty">
+        <td colspan="2" style="text-align:center;">[msg_no_changes]</td>
+      </tr>
+    [else]
+    [is diffs.changes.type "binary-diff"]
+      <tr class="vc_diff_empty">
+        <td colspan="2" style="text-align:center;">[msg_binary]</td>
+      </tr>
+    [else]
+      <tr><td colspan="2"><pre class="vc_raw_diff">[diffs.changes.raw]</pre></td></tr>
+    [end][end]
+  </table>
+[end]
+
+[is diffs.display_as "sidebyside-1"]
+  [define change_right][end]
+  [define last_change_type][end]
+
+  <table cellspacing="0" cellpadding="0" style="margin-top: 1em; margin-left: 2em;">
+  [for diffs.changes]
+   [is diffs.changes.type "change"][else][if-any change_right][change_right][define change_right][end][end][end]
+   [is diffs.changes.type "header"]
+    <tr>
+      <th class="vc_header" style="width:6%;"><strong>#</strong></th>
+      <th colspan="2" class="vc_header">
+        <strong>Line [diffs.changes.line_info_left]</strong> |
+        <strong>Line [diffs.changes.line_info_right]</strong> 
+      </th>
+    </tr>
+   [else]
+   [is diffs.changes.type "add"]
+    <tr>
+      <td id="l[diffs.changes.line_number]">[if-any diffs.right.annotate_href]<a href="[diffs.right.annotate_href]#l[diffs.changes.line_number]">[diffs.changes.line_number]</a>[else][diffs.changes.line_number][end]</td>
+      <td class="vc_diff_plusminus"><strong style="color: green;">+</strong></td>
+      <td class="vc_diff_add">[diffs.changes.right]</td>
+    </tr>
+   [else]
+   [is diffs.changes.type "remove"]
+    <tr>
+      <td style="text-decoration: line-through">[diffs.changes.line_number]</td>
+      <td class="vc_diff_plusminus"><strong style="color: red;">&ndash;</strong></td>
+      <td class="vc_diff_remove">[diffs.changes.left]</td>
+    </tr>
+   [else]
+   [is diffs.changes.type "change"]
+    [if-any diffs.changes.have_left]
+    <tr>
+      <td style="text-decoration: line-through">[diffs.changes.line_number]</td>
+      <td class="vc_diff_plusminus"><strong style="color: yellow;">&lt;</strong></td>
+      <td class="vc_diff_changes1">[diffs.changes.left]</td>
+    </tr>
+    [end]
+    [define change_right][change_right]
+    [if-any diffs.changes.have_right]
+    <tr>
+      <td id="l[diffs.changes.line_number]">[if-any diffs.right.annotate_href]<a href="[diffs.right.annotate_href]#l[diffs.changes.line_number]">[diffs.changes.line_number]</a>[else][diffs.changes.line_number][end]</td>
+      <td class="vc_diff_plusminus"><strong style="color: yellow;">&gt;</strong></td>
+      <td class="vc_diff_changes2">[diffs.changes.right]</td>
+    </tr>
+    [end]
+   [end]
+   [else]
+   [is diffs.changes.type "no-changes"]
+    <tr><td colspan="3" style="vc_diff_nochange">[msg_no_changes]</td></tr>
+   [else]
+   [is diffs.changes.type "binary-diff"]
+    <tr><td colspan="3" class="vc_diff_binary">[msg_binary]</td></tr>
+   [else]
+   [is diffs.changes.type "error"]
+    <tr><td colspan="3" class="vc_diff_error">[msg_error]</td></tr>
+   [else][# a line of context]
+    <tr>
+      <td id="l[diffs.changes.line_number]">[if-any diffs.right.annotate_href]<a href="[diffs.right.annotate_href]#l[diffs.changes.line_number]">[diffs.changes.line_number]</a>[else][diffs.changes.line_number][end]</td>
+      <td class="vc_diff_plusminus">&nbsp;</td>
+      <td style="font-family: monospace; white-space: pre;">[diffs.changes.right]</td>
+    </tr>
+   [end][end][end][end][end][end][end]
+   [define last_change_type][diffs.changes.type][end]
+  [end]
+  [if-any change_right][change_right][end]
+  </table>
+[end]
+
+[is diffs.display_as "sidebyside-2"]
+  <table class="vc_idiff" cellspacing="0" cellpadding="0" style="margin-top: 1em; margin-left: 2em;">
+    <colgroup><col style="width: 3%;"/><col class="content" style="width: 47%;"/></colgroup>
+    <colgroup><col style="width: 3%;"/><col class="content" style="width: 47%;"/></colgroup>
+    <tbody>
+      [for diffs.changes]
+        [is diffs.changes.type "no-changes"]
+          <tr class="vc_diff_empty">
+            <td colspan="4" style="text-align:center;">[msg_no_changes]</td>
+          </tr>
+        [else]
+          [is diffs.changes.type "binary-diff"]
+            <tr class="vc_diff_empty">
+              <td colspan="4" style="text-align:center;">[msg_binary]</td>
+            </tr>
+          [else]
+            [if-any diffs.changes.gap]
+              <tr>
+                <th>&hellip;</th><th></th>
+                <th>&hellip;</th><th></th>
+              </tr>
+            [end]
+            <tr>
+              [for diffs.changes.columns]
+                <th>[diffs.changes.columns.line_number]</th><td[if-any diffs.changes.columns.line_number][else] class="vc_idiff_empty"[end]>[for diffs.changes.columns.segments][if-any diffs.changes.columns.segments.type]<span class="vc_idiff_[diffs.changes.columns.segments.type]">[diffs.changes.columns.segments.text]</span>[else][diffs.changes.columns.segments.text][end][end]</td>
+              [end]
+            </tr>
+          [end]
+        [end]
+      [end]
+    </tbody>
+  </table>
+[end]
+
+[is diffs.display_as "unified"]
+  <table class="vc_idiff" cellspacing="0" cellpadding="0" style="margin-top: 1em; margin-left: 2em;">
+    <colgroup>
+      <col style="width: 3%;"/>
+      <col style="width: 3%;"/>
+      <col class="content" style="width: 94%;"/>
+    </colgroup>
+    <tbody>
+      [for diffs.changes]
+        [is diffs.changes.type "no-changes"]
+          <tr class="vc_diff_empty">
+            <td colspan="3" style="text-align:center;">[msg_no_changes]</td>
+          </tr>
+        [else]
+          [is diffs.changes.type "binary-diff"]
+            <tr class="vc_diff_empty">
+              <td colspan="3" style="text-align:center;">[msg_binary]</td>
+            </tr>
+          [else]
+            [if-any diffs.changes.gap]
+              <tr>
+                <th>&hellip;</th>
+                <th>&hellip;</th>
+                <th></th>
+              </tr>
+            [end]
+            <tr>
+              <th>[diffs.changes.left_number]</th>
+              <th>[diffs.changes.right_number]</th>
+              <td[if-any diffs.changes.type] class="vc_idiff_[diffs.changes.type]"[end]>[for diffs.changes.segments][if-any diffs.changes.segments.type]<span class="vc_idiff_[diffs.changes.segments.type]">[diffs.changes.segments.text]</span>[else][diffs.changes.segments.text][end][end]</td>
+            </tr>
+          [end]
+        [end]
+      [end]
+    </tbody>
+  </table>
+[end]
