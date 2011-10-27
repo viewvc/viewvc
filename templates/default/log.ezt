@@ -87,9 +87,12 @@
 <div id="vc_main_body">
 <!-- ************************************************************** -->
 
+<h2>Revision History</h2>
+
+<div id="vc_revision_log">
+
 [define first_revision][end]
 [define last_revision][end]
-
 [for entries]
 
 [if-index entries first][define first_revision][entries.rev][end][end]
@@ -229,14 +232,17 @@
     [end]
   [end]
 
-<pre class="vc_log">[entries.log]</pre>
+  <pre class="vc_log">[entries.log]</pre>
 </div>
 [end]
+
+</div>
 
 <!-- ************************************************************** -->
 </div>
 
 [is pathtype "file"]
+  <h2>Compare Revisions</h2>
   [include "include/diff_form.ezt"]
 [end]
 
