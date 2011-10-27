@@ -3346,20 +3346,20 @@ class DiffDescription:
       self.hide_legend = 0
       if self.human_readable:
         self.line_differ = self._line_idiff_sidebyside
-        self.display_as = 'sidebyside-2'
+        self.diff_block_format = 'sidebyside-2'
       else:
         self.line_differ = self._line_idiff_unified
-        self.display_as = 'unified'
+        self.diff_block_format = 'unified'
     else:
       if self.human_readable:
-        self.display_as = 'sidebyside-1'
+        self.diff_block_format = 'sidebyside-1'
         self.fp_differ = self._fp_vclib_hr
       else:
-        self.display_as = 'raw'
+        self.diff_block_format = 'raw'
         self.fp_differ = self._fp_vclib_raw
 
   def anchor(self, anchor_name):
-    self.changes.append(_item(display_as='anchor', anchor=anchor_name))
+    self.changes.append(_item(diff_block_format='anchor', anchor=anchor_name))
 
   def get_content_diff(self, left, right):
     options = {}
@@ -3394,7 +3394,7 @@ class DiffDescription:
       if is_undisplayable(val_left) or is_undisplayable(val_right):
         self.changes.append(_item(left=left,
                                   right=right,
-                                  display_as=self.display_as,
+                                  diff_block_format=self.diff_block_format,
                                   changes=[ _item(type=_RCSDIFF_IS_BINARY) ],
                                   propname=name))
         continue
@@ -3411,7 +3411,7 @@ class DiffDescription:
     self.changes.append(_item(left=left,
                               right=right,
                               changes=changes,
-                              display_as=self.display_as,
+                              diff_block_format=self.diff_block_format,
                               propname=propname))
 
   def _line_idiff_sidebyside(self, lines_left, lines_right, options):
