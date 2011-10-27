@@ -23,6 +23,7 @@ import sys
 import string
 import time
 
+from common import _item
 import cvsdb
 import viewvc
 import ezt
@@ -473,7 +474,3 @@ def main(server, cfg, viewvc_link):
     exc_info = debug.GetExceptionData()
     server.header(status=exc_info['status'])
     debug.PrintException(server, exc_info) 
-
-class _item:
-  def __init__(self, **kw):
-    vars(self).update(kw)
