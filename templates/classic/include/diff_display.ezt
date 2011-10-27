@@ -1,4 +1,4 @@
-[is diffs.display_as "anchor"]
+[is diffs.diff_block_format "anchor"]
   <p id="[diffs.anchor]"/>
 [else]
   [define msg_no_changes]<br/><strong>- No changes -</strong><br/>&nbsp;[end]
@@ -23,7 +23,7 @@
   [if-any diffs.right.tag]<br/>Tag: [diffs.right.tag][end][end]
 [end]
 
-[is diffs.display_as "raw"]
+[is diffs.diff_block_format "raw"]
   <table cellspacing="0" cellpadding="0" style="margin-top: 1em;">
     <tr class="vc_diff_header">
       <th style="width:5%">&nbsp;</th><th style="width:95%; text-align:left;">[left_header]</th>
@@ -50,7 +50,7 @@
   </table>
 [end]
 
-[is diffs.display_as "sidebyside-1"]
+[is diffs.diff_block_format "sidebyside-1"]
 <table cellspacing="0" cellpadding="0" style="margin-top: 1em;">
   <tr class="vc_diff_header">
     <th style="width:6%;"></th>
@@ -145,7 +145,7 @@
 </table>
 [end]
 
-[is diffs.display_as "sidebyside-2"]
+[is diffs.diff_block_format "sidebyside-2"]
   <table class="vc_idiff" style="margin-top: 1em;">
     <colgroup><col style="width: 3%;"/><col class="content" style="width: 47%;"/></colgroup>
     <colgroup><col style="width: 3%;"/><col class="content" style="width: 47%;"/></colgroup>
@@ -185,7 +185,7 @@
   </table>
 [end]
 
-[is diffs.display_as "unified"]
+[is diffs.diff_block_format "unified"]
   <table class="vc_idiff" style="margin-top: 1em;">
     <colgroup>
       <col style="width: 3%;"/>

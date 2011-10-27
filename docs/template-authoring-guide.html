@@ -710,7 +710,7 @@ td {
       and property differences.</td>
 </tr>
 <tr class="varlevel2">
-  <td class="varname">diffs.display_as</td>
+  <td class="varname">diffs.diff_block_format</td>
   <td>String</td>
   <td>Indicates the type of this block. One of the <tt>anchor</tt> (no display,
       create an anchor), <tt>raw</tt> (non-colored diff, display as produced),
@@ -721,16 +721,16 @@ td {
 <tr class="varlevel2">
   <td class="varname">diffs.anchor</td>
   <td>String</td>
-  <td>If <var>diffs.display_as</var> is <tt>anchor</tt>, this variable specifies
+  <td>If <var>diffs.diff_block_format</var> is <tt>anchor</tt>, this variable specifies
       the anchor name.</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">diffs.changes</td>
   <td>List/Container</td>
   <td>Set of objects which contain information about a change in a single
-      object (file or property). Not present if <var>diffs.display_as</var> is
+      object (file or property). Not present if <var>diffs.diff_block_format</var> is
       <tt>anchor</tt>, otherwise has different format depending on
-      <var>diffs.display_as</var> (applicable as indicated in brackets below).</td>
+      <var>diffs.diff_block_format</var> (applicable as indicated in brackets below).</td>
 </tr>
 <tr class="varlevel3">
   <td class="varname">diffs.changes.raw</td>
