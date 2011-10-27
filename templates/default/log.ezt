@@ -1,0 +1,247 @@
+[# setup page definitions]
+  [define page_title]Log of:[end]
+  [define help_href][docroot]/help_log.html[end]
+[# end]
+[include "include/header.ezt" "log"]
+
+<table class="auto">
+
+[if-any default_branch]
+<tr>
+  <td>Default branch:</td>
+  <td>[for default_branch]<a href="[default_branch.href]">[default_branch.name]</a>[if-index default_branch last][else], [end]
+[end]</td>
+</tr>
+[end]
+
+[is pathtype "file"]
+[if-any view_href]
+<tr>
+  <td>Links to HEAD:</td>
+  <td>
+    (<a href="[view_href]">view</a>)
+    [if-any download_href](<a href="[download_href]">download</a>)[end]
+    [if-any download_text_href](<a href="[download_text_href]">as text</a>)[end]
+    [if-any annotate_href](<a href="[annotate_href]">annotate</a>)[end]
+  </td>
+</tr>
+[end]
+
+[if-any tag_view_href]
+<tr>
+  <td>Links to [pathrev]:</td>
+  <td>
+    (<a href="[tag_view_href]">view</a>)
+    [if-any tag_download_href](<a href="[tag_download_href]">download</a>)[end]
+    [if-any tag_download_text_href](<a href="[tag_download_text_href]">as text</a>)[end]
+    [if-any tag_annotate_href](<a href="[tag_annotate_href]">annotate</a>)[end]
+  </td>
+</tr>
+[end]
+[end]
+
+<tr>
+  <td>Sticky [is roottype "cvs"]Tag[else]Revision[end]:</td>
+  <td>[include "include/pathrev_form.ezt"]</td>
+</tr>
+
+[is picklist_len "0"][else][is picklist_len "1"][else]    
+<tr>
+  <td>Jump to page:</td>
+  <td><form method="get" action="[log_paging_action]">
+        [for log_paging_hidden_values]<input type="hidden" name="[log_paging_hidden_values.name]" value="[log_paging_hidden_values.value]"/>[end]
+        <select name="log_pagestart"  onchange="submit()">
+          [for picklist]
+           [if-any picklist.more]
+            <option [is picklist.count log_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] ...</option>
+           [else]
+            <option [is picklist.count log_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] - [picklist.end]</option>
+           [end]
+          [end]
+        </select>
+        <input type="submit" value="Go" />
+      </form>
+  </td>
+</tr>
+[end][end]
+
+<tr>
+  <td>Sort logs by:</td>
+  <td><form method="get" action="[logsort_action]">
+      <div>
+        <a name="logsort"></a>
+          [for logsort_hidden_values]<input type="hidden" name="[logsort_hidden_values.name]" value="[logsort_hidden_values.value]"/>[end]
+          <select name="logsort" onchange="submit()">
+            <option value="cvs" [is logsort "cvs"]selected="selected"[end]>Not sorted</option>
+            <option value="date" [is logsort "date"]selected="selected"[end]>Commit date</option>
+            <option value="rev" [is logsort "rev"]selected="selected"[end]>Revision</option>
+          </select>
+          <input type="submit" value="  Sort  " />
+      </div>
+    </form>
+  </td>
+</tr>
+
+</table>
+
+<div id="vc_main_body">
+<!-- ************************************************************** -->
+
+[define first_revision][end]
+[define last_revision][end]
+
+[for entries]
+
+[if-index entries first][define first_revision][entries.rev][end][end]
+[if-index entries last]
+[define last_revision][entries.rev][end]
+<div>
+[else]
+<div style="border-bottom: 1px dotted black">
+[end]
+
+  [is entries.state "dead"]
+    Revision <strong>[entries.rev]</strong>
+  [else]
+    <a name="rev[entries.rev]"></a>
+    [for entries.tag_names]<a name="[entries.tag_names]"></a>
+    [end]
+    [for entries.branch_names]<a name="[entries.branch_names]"></a>
+    [end]
+
+    Revision [is roottype "svn"]<a href="[entries.revision_href]"><strong>[entries.rev]</strong></a>[else]<strong>[entries.rev]</strong>[end] -
+    [if-any entries.view_href]
+      [is pathtype "file"]
+        (<a href="[entries.view_href]">view</a>)
+      [else]
+        <a href="[entries.view_href]">Directory Listing</a>
+      [end]
+    [end]
+    [if-any entries.download_href](<a href="[entries.download_href]">download</a>)[end]
+    [if-any entries.download_text_href](<a href="[entries.download_text_href]">as text</a>)[end]
+    [if-any entries.annotate_href](<a href="[entries.annotate_href]">annotate</a>)[end]
+
+    [is pathtype "file"]
+      [# if you don't want to allow select for diffs then remove this section]
+      [is entries.rev rev_selected]
+        - <strong>[[]selected]</strong>
+      [else]
+        - <a href="[entries.sel_for_diff_href]">[[]select for diffs]</a>
+      [end]
+    [end]
+  [end]
+
+  [if-any entries.vendor_branch]
+    <em>(vendor branch)</em>
+  [end]
+
+  <br />
+
+  [is roottype "svn"]
+    [if-index entries last]Added[else]Modified[end]
+  [end]
+
+  <em>[if-any entries.date][entries.date][else](unknown date)[end]</em>
+  [if-any entries.ago]([entries.ago] ago)[end] 
+  by <em>[if-any entries.author][entries.author][else](unknown author)[end]</em>
+
+  [if-any entries.orig_path]
+    <br />Original Path: <a href="[entries.orig_href]"><em>[entries.orig_path]</em></a>
+  [end]
+
+  [if-any entries.branches]
+    <br />Branch:
+    [for entries.branches]
+      <a href="[entries.branches.href]"><strong>[entries.branches.name]</strong></a>[if-index entries.branches last][else],[end]
+    [end]
+  [end]
+
+  [if-any entries.tags]
+    <br />CVS Tags:
+    [for entries.tags]
+      <a href="[entries.tags.href]"><strong>[entries.tags.name]</strong></a>[if-index entries.tags last][else],[end]
+    [end]
+  [end]
+
+  [if-any entries.branch_points]
+    <br />Branch point for:
+    [for entries.branch_points]
+      <a href="[entries.branch_points.href]"><strong>[entries.branch_points.name]</strong></a>[if-index entries.branch_points last][else],[end]
+    [end]
+  [end]
+
+  [if-any entries.prev]
+    [if-any entries.changed]
+      [is roottype "cvs"]
+      <br />Changes since <strong>[entries.prev]: [entries.changed] lines</strong>
+      [end]
+    [end]
+  [end]
+
+  [if-any entries.lockinfo]
+    <br />Lock status: [entries.lockinfo]
+  [end]
+
+  [is roottype "svn"]
+    [if-any entries.size]
+    <br />File length: [entries.size] byte(s)
+    [end]
+
+    [if-any entries.copy_path]
+    <br />Copied from: <a href="[entries.copy_href]"><em>[entries.copy_path]</em></a> revision [entries.copy_rev]
+    [end]
+  [end]
+
+  [is entries.state "dead"]
+    <br /><strong><em>FILE REMOVED</em></strong>
+  [else]
+   [is pathtype "file"]
+    [if-any entries.prev]
+      <br />Diff to <a href="[entries.diff_to_prev_href]">previous [entries.prev]</a>
+      [if-any human_readable]
+      [else]
+        (<a href="[entries.diff_to_prev_href]&amp;diff_format=h">colored</a>)
+      [end]
+    [end]
+
+    [is roottype "cvs"]
+      [if-any entries.branch_point]
+        , to <a href="[entries.diff_to_branch_href]">branch point [entries.branch_point]</a>
+        [if-any human_readable]
+        [else]
+           (<a href="[entries.diff_to_branch_href]&amp;diff_format=h">colored</a>)
+        [end]
+      [end]
+  
+      [if-any entries.next_main]
+        , to <a href="[entries.diff_to_main_href]">next main [entries.next_main]</a>
+        [if-any human_readable]
+        [else]
+           (<a href="[entries.diff_to_main_href]&amp;diff_format=h">colored</a>)
+        [end]
+      [end]
+    [end]
+
+    [if-any entries.diff_to_sel_href]
+      [if-any entries.prev], [else]<br />Diff[end]
+        to <a href="[entries.diff_to_sel_href]">selected [rev_selected]</a>
+      [if-any human_readable]
+      [else]
+        (<a href="[entries.diff_to_sel_href]&amp;diff_format=h">colored</a>)
+      [end]
+    [end]
+   [end]
+  [end]
+
+<pre class="vc_log">[entries.log]</pre>
+</div>
+[end]
+
+<!-- ************************************************************** -->
+</div>
+
+[is pathtype "file"]
+  [include "include/diff_form.ezt"]
+[end]
+
+[include "include/footer.ezt"]

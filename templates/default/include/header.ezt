@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<!-- ViewVC :: http://www.viewvc.org/ -->
+
+<head>
+  <title>[[]ViewVC] [page_title] [if-any rootname][rootname][if-any where]/[where][end][end]</title>
+  <meta name="generator" content="ViewVC [vsn]" />
+  <link rel="stylesheet" href="[docroot]/styles.css" type="text/css" />
+  <script src="[docroot]/scripts.js"></script>
+  [if-any rss_href]
+  <link rel="alternate" type="application/rss+xml" href="[rss_href]" title="ViewVC RSS: [if-any rootname][rootname][if-any where]/[where][end][end]">
+  [end]
+</head>
+
+<body>
+
+<div id="vc_header">
+
+<div id="vc_topmatter">
+[if-any username]Logged in as: <strong>[username]</strong> |[end]
+<a href="[help_href]">ViewVC Help</a>
+</div>
+
+<div id="vc_logo">
+<a href="http://www.viewvc.org/"><img src="[docroot]/images/viewvc-logo.png" alt="ViewVC logotype" width="240" height="70" /></a>
+</div>
+
+<div id="vc_view_selection_group">
+[is pathtype "dir"]
+  <a class="vc_view_link[is view "dir"]_this[end]" href="[view_href]">View Directory</a>
+  [if-any log_href]
+  | <a class="vc_view_link[is view "log"]_this[end]" href="[log_href]">Revision Log</a>
+  [end]
+  [if-any queryform_href]
+  | <a class="vc_view_link[is view "queryform"]_this[end]" href="[queryform_href]">Commit Query</a>
+  [end]
+  [if-any tarball_href]
+  | <a class="vc_view_link" href="[tarball_href]">Download Tarball</a>
+  [end]
+[end]
+[is pathtype "file"]
+  [if-any view_href]
+  <a class="vc_view_link[is view "markup"]_this[end]" href="[view_href]">View File</a> |
+  [end]
+  <a class="vc_view_link[is view "log"]_this[end]" href="[log_href]">Revision Log</a>
+  [if-any annotate_href]
+  | <a class="vc_view_link[is view "annotate"]_this[end]" href="[annotate_href]">Show Annotations</a>
+  [end]
+  [if-any graph_href]
+  | <a class="vc_view_link[is view "graph"]_this[end]" href="[graph_href]">Revision Graph</a>
+  [end]
+  [if-any download_href]
+  | <a class="vc_view_link" href="[download_href]">Download File</a>
+  [end]
+[end]
+[if-any revision_href]
+  | <a class="vc_view_link[is view "revision"]_this[end]" href="[revision_href]">View Changeset</a>
+[end]
+[if-any roots_href]
+  | <a class="vc_view_link[is view "roots"]_this[end]" href="[roots_href]">Root Listing</a>
+[end]
+</div>
+
+<div id="vc_current_path">
+[if-any roots_href]<a href="[roots_href]">root</a>[end][if-any nav_path]<span class="pathdiv">/</span>[for nav_path][if-any nav_path.href]<a href="[nav_path.href]">[end][if-index nav_path last]<span class="thisitem">[end][nav_path.name][if-index nav_path last]</span>[end][if-any nav_path.href]</a>[end][if-index nav_path last][else]<span class="pathdiv">/</span>[end][end][end]
+</div>
+
+</div> <!-- vc_header -->
+
+<div id="vc_view_main">
