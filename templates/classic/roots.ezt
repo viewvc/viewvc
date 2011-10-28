@@ -27,7 +27,7 @@
       [roots.name]</a>
     </td>
 [is cfg.options.show_roots_lastmod "1"]
-    <td style="width:20">&nbsp;[roots.rev]</td>
+    <td style="width:20">&nbsp;[if-any roots.log_href]<a href="[roots.log_href]">[roots.rev]</a>[else][roots.rev][end]</td>
     <td style="width:20">&nbsp;[roots.ago]</td>
     <td style="width:20">&nbsp;[roots.author]</td>
     <td style="width:20">&nbsp;[roots.short_log]</td>
