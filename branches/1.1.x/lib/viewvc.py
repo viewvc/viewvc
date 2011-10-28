@@ -1922,20 +1922,27 @@ def view_roots(request):
     rootnames = allroots.keys()
     rootnames.sort(icmp)
     for rootname in rootnames:
+      root_path, root_type, lastmod = allroots[rootname]
       href = request.get_url(view_func=view_directory,
                              where='', pathtype=vclib.DIR,
                              params={'root': rootname}, escape=1)
-      lastmod = allroots[rootname][2]
+      if root_type == vclib.SVN:
+        log_href = request.get_url(view_func=view_log,
+                                   where='', pathtype=vclib.DIR,
+                                   params={'root': rootname}, escape=1)
+      else:
+        log_href = None
       roots.append(_item(name=request.server.escape(rootname),
-                         type=allroots[rootname][1],
-                         path=allroots[rootname][0],
+                         type=root_type,
+                         path=root_path,
                          author=lastmod and lastmod.author or None,
                          ago=lastmod and lastmod.ago or None,
                          date=lastmod and lastmod.date or None,
                          log=lastmod and lastmod.log or None,
                          short_log=lastmod and lastmod.short_log or None,
                          rev=lastmod and lastmod.rev or None,
-                         href=href))
+                         href=href,
+                         log_href=log_href))
 
   data = common_template_data(request)
   data.merge(ezt.TemplateData({
