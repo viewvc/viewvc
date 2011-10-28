@@ -3009,10 +3009,8 @@ class DiffSource:
     
     if line[0] == '\\':
       # \ No newline at end of file
-
-      # move into the flushing state. note: it doesn't matter if we really
-      # have data to flush or not; that will be figured out later
-      self.state = 'flush-' + self.state
+      # Just skip. This code used to move to flush state, but that resulted in
+      # changes being displayed as removals-and-readditions.
       return None
 
     diff_code = line[0]
