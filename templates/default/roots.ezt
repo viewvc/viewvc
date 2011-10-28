@@ -24,7 +24,7 @@
   <tr class="vc_row_[if-index roots even]even[else]odd[end]">
     <td onclick="jumpTo('[roots.href]')"><a href="[roots.href]"><img src="[docroot]/images/[roots.type]-logo.png" alt="" class="vc_icon" />[roots.name]</a></td>
 [is cfg.options.show_roots_lastmod "1"]
-    <td>[if-any roots.rev]<strong>[roots.rev]</strong> ([roots.ago] ago)
+    <td>[if-any roots.rev]<strong>[if-any roots.log_href]<a href="[roots.log_href]">[roots.rev]</a>[else][roots.rev][end]</strong> ([roots.ago] ago)
         by <em>[roots.author]</em>: [roots.log][end]</td>
 [end]
   </tr>
