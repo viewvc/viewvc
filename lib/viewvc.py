@@ -1567,13 +1567,15 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
     blame_data = blame_source
   lexer = None
   use_pygments = cfg.options.enable_syntax_coloration
+  first_line = None
   try:
     from pygments import highlight
     from pygments.formatters import HtmlFormatter
     from pygments.lexers import ClassNotFound, \
                                 get_lexer_by_name, \
                                 get_lexer_for_mimetype, \
-                                get_lexer_for_filename
+                                get_lexer_for_filename, \
+                                guess_lexer
     if not encoding:
       encoding = 'guess'
       if cfg.options.detect_encoding:
@@ -1594,7 +1596,12 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
                                        tabsize=cfg.options.tabsize,
                                        stripnl=False)
       except ClassNotFound:
-        use_pygments = 0
+        try:
+          first_line = fp.readline()
+          lexer = guess_lexer(first_line)
+          use_pygments = 1
+        except ClassNotFound:
+          use_pygments = 0
   except ImportError:
     use_pygments = 0
 
@@ -1617,7 +1624,11 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
       lines = []
       line_no = 0
       while 1:
-        line = fp.readline()
+        if first_line is not None:
+          line = first_line
+          first_line = None
+        else:
+          line = fp.readline()
         if not line:
           break
         line_no = line_no + 1
@@ -1650,7 +1661,7 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
         self.blame_data.append(item)
       self.line_no = self.line_no + 1
   ps = PygmentsSink(blame_source)
-  highlight(fp.read(), lexer,
+  highlight((first_line or '') + fp.read(), lexer,
             HtmlFormatter(nowrap=True,
                           classprefix="pygments-",
                           encoding='utf-8'), ps)
