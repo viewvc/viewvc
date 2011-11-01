@@ -184,8 +184,19 @@ address { font-style: normal; display: inline; }
 
 /*** Revision Log View ***/
 #vc_revision_log {
-  margin: 1em 0 1em 2em;
 }
+.vc_log_block_even {
+  border-left: 10px solid #d0d775;
+  padding-left: 1em;
+  background-color: rgb(95%,95%,95%);
+}
+.vc_log_block_odd {
+  border-left: 10px solid #94bd5e;
+  padding-left: 1em;
+  background-color: rgb(90%,90%,90%);
+}
+
+
 
 /*** Changed Paths Listing ***/
 .vc_changedpaths {
