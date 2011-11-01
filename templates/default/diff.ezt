@@ -4,8 +4,8 @@
 [# end]
 [include "include/header.ezt" "diff"]
 
-<form method="get" action="[diff_format_action]" style="display: inline;">
-  <div>
+<form class="inline" method="get" action="[diff_format_action]">
+  <div class="inline">
     [for diff_format_hidden_values]<input type="hidden" name="[diff_format_hidden_values.name]" value="[diff_format_hidden_values.value]"/>[end]
     <select name="diff_format" onchange="submit()">
       <option value="h" [is diff_format "h"]selected="selected"[end]>Colored Diff</option>
