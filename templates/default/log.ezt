@@ -40,48 +40,6 @@
 [end]
 [end]
 
-<tr>
-  <td>Sticky [is roottype "cvs"]Tag[else]Revision[end]:</td>
-  <td>[include "include/pathrev_form.ezt"]</td>
-</tr>
-
-[is picklist_len "0"][else][is picklist_len "1"][else]    
-<tr>
-  <td>Jump to page:</td>
-  <td><form method="get" action="[log_paging_action]">
-        [for log_paging_hidden_values]<input type="hidden" name="[log_paging_hidden_values.name]" value="[log_paging_hidden_values.value]"/>[end]
-        <select name="log_pagestart"  onchange="submit()">
-          [for picklist]
-           [if-any picklist.more]
-            <option [is picklist.count log_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] ...</option>
-           [else]
-            <option [is picklist.count log_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] - [picklist.end]</option>
-           [end]
-          [end]
-        </select>
-        <input type="submit" value="Go" />
-      </form>
-  </td>
-</tr>
-[end][end]
-
-<tr>
-  <td>Sort logs by:</td>
-  <td><form method="get" action="[logsort_action]">
-      <div>
-        <a name="logsort"></a>
-          [for logsort_hidden_values]<input type="hidden" name="[logsort_hidden_values.name]" value="[logsort_hidden_values.value]"/>[end]
-          <select name="logsort" onchange="submit()">
-            <option value="cvs" [is logsort "cvs"]selected="selected"[end]>Not sorted</option>
-            <option value="date" [is logsort "date"]selected="selected"[end]>Commit date</option>
-            <option value="rev" [is logsort "rev"]selected="selected"[end]>Revision</option>
-          </select>
-          <input type="submit" value="  Sort  " />
-      </div>
-    </form>
-  </td>
-</tr>
-
 </table>
 
 <div id="vc_main_body">
@@ -94,26 +52,20 @@
 [define first_revision][end]
 [define last_revision][end]
 [for entries]
-
 [if-index entries first][define first_revision][entries.rev][end][end]
-[if-index entries last]
-[define last_revision][entries.rev][end]
-<div>
+[if-index entries last][define last_revision][entries.rev][end][end]
+
+<div class="vc_log_block_[if-index entries even]even[else]odd[end]">
+
+[is entries.state "dead"]
+  Revision <strong>[entries.rev]</strong>
 [else]
-<div style="border-bottom: 1px dotted black">
-[end]
+  <a name="rev[entries.rev]"></a>
+  [for entries.tag_names]<a name="[entries.tag_names]"></a>[end]
+  [for entries.branch_names]<a name="[entries.branch_names]"></a>[end]
 
-  [is entries.state "dead"]
-    Revision <strong>[entries.rev]</strong>
-  [else]
-    <a name="rev[entries.rev]"></a>
-    [for entries.tag_names]<a name="[entries.tag_names]"></a>
-    [end]
-    [for entries.branch_names]<a name="[entries.branch_names]"></a>
-    [end]
-
-    Revision [is roottype "svn"]<a href="[entries.revision_href]"><strong>[entries.rev]</strong></a>[else]<strong>[entries.rev]</strong>[end] -
-    [if-any entries.view_href]
+  Revision [is roottype "svn"]<a href="[entries.revision_href]"><strong>[entries.rev]</strong></a>[else]<strong>[entries.rev]</strong>[end] -
+  [if-any entries.view_href]
       [is pathtype "file"]
         (<a href="[entries.view_href]">view</a>)
       [else]
@@ -236,6 +188,36 @@
 </div>
 [end]
 
+</div>
+
+<div id="vc_view_summary">
+[is picklist_len "0"][else][is picklist_len "1"][else]    
+<div style="display: inline;">
+<form method="get" action="[log_paging_action]" style="display: inline;">
+[for log_paging_hidden_values]<input type="hidden" name="[log_paging_hidden_values.name]" value="[log_paging_hidden_values.value]"/>[end]
+  <select name="log_pagestart"  onchange="submit()">
+  [for picklist]
+    <option [is picklist.count log_pagestart]selected[end] value="[picklist.count]">page [picklist.page]: [picklist.start] [if-any picklist.more]...[else]- [picklist.end][end]</option>
+  [end]
+  </select>
+  <input type="submit" value="  View Range  " />
+</form>
+</div>
+[end][end]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<form method="get" action="[logsort_action]" style="display: inline;">
+<div id="logsort" style="display: inline;">
+[for logsort_hidden_values]<input type="hidden" name="[logsort_hidden_values.name]" value="[logsort_hidden_values.value]"/>[end]
+  <select name="logsort" onchange="submit()">
+    <option value="cvs" [is logsort "cvs"]selected="selected"[end]>unsorted</option>
+    <option value="date" [is logsort "date"]selected="selected"[end]>by date</option>
+    <option value="rev" [is logsort "rev"]selected="selected"[end]>by revision</option>
+  </select>
+  <input type="submit" value="  Sort  " />
+</div>
+</form>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[include "include/pathrev_form.ezt"]
 </div>
 
 <!-- ************************************************************** -->
