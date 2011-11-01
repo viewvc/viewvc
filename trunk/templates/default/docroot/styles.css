@@ -44,6 +44,7 @@ table.fixed td {
 form { margin: 0; }
 address { font-style: normal; display: inline; }
 .inline { display: inline; }
+.lpad { margin-left: 2em; }
 
 /*** Icons ***/
 .vc_icon {
