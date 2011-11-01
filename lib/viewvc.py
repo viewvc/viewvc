@@ -3267,9 +3267,11 @@ def view_patch(request):
 def diff_side_item(request, path_comp, rev, sym):
   '''Prepare information about left/right side of the diff. Prepare two flavors,
   for content and for property diffs.'''
+
   # TODO: Is the slice necessary, or is limit enough?
+  options = {'svn_show_all_dir_logs': 1}
   log_entry = request.repos.itemlog(path_comp, rev, vclib.SORTBY_REV,
-                                    0, 1, {})[-1]
+                                    0, 1, options)[-1]
   ago = log_entry.date is not None \
          and html_time(request, log_entry.date, 1) or None
   path_joined = _path_join(path_comp)
