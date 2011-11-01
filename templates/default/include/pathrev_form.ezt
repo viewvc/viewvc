@@ -1,5 +1,5 @@
-<form method="get" action="[pathrev_action]" style="display: inline">
-<div style="display: inline">
+<form class="inline" method="get" action="[pathrev_action]">
+<div class="inline">
 [for pathrev_hidden_values]<input type="hidden" name="[pathrev_hidden_values.name]" value="[pathrev_hidden_values.value]"/>[end]
 [is roottype "cvs"]
   [define pathrev_selected][pathrev][end]
@@ -39,8 +39,8 @@
 </form>
 
 [if-any pathrev]
-<form method="get" action="[pathrev_clear_action]" style="display: inline">
-<div style="display: inline">
+<form class="inline"  method="get" action="[pathrev_clear_action]">
+<div class="inline">
 [for pathrev_clear_hidden_values]<input type="hidden" name="[pathrev_clear_hidden_values.name]" value="[pathrev_clear_hidden_values.value]"/>[end]
 [if-any lastrev]
   [is pathrev lastrev][else]<input type="submit" value="Set to [lastrev]" />[end]

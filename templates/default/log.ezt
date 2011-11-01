@@ -4,48 +4,8 @@
 [# end]
 [include "include/header.ezt" "log"]
 
-<table class="auto">
-
-[if-any default_branch]
-<tr>
-  <td>Default branch:</td>
-  <td>[for default_branch]<a href="[default_branch.href]">[default_branch.name]</a>[if-index default_branch last][else], [end]
-[end]</td>
-</tr>
-[end]
-
-[is pathtype "file"]
-[if-any view_href]
-<tr>
-  <td>Links to HEAD:</td>
-  <td>
-    (<a href="[view_href]">view</a>)
-    [if-any download_href](<a href="[download_href]">download</a>)[end]
-    [if-any download_text_href](<a href="[download_text_href]">as text</a>)[end]
-    [if-any annotate_href](<a href="[annotate_href]">annotate</a>)[end]
-  </td>
-</tr>
-[end]
-
-[if-any tag_view_href]
-<tr>
-  <td>Links to [pathrev]:</td>
-  <td>
-    (<a href="[tag_view_href]">view</a>)
-    [if-any tag_download_href](<a href="[tag_download_href]">download</a>)[end]
-    [if-any tag_download_text_href](<a href="[tag_download_text_href]">as text</a>)[end]
-    [if-any tag_annotate_href](<a href="[tag_annotate_href]">annotate</a>)[end]
-  </td>
-</tr>
-[end]
-[end]
-
-</table>
-
 <div id="vc_main_body">
 <!-- ************************************************************** -->
-
-<h2>Revision History</h2>
 
 <div id="vc_revision_log">
 
@@ -192,8 +152,8 @@
 
 <div id="vc_view_summary">
 [is picklist_len "0"][else][is picklist_len "1"][else]    
-<div style="display: inline;">
-<form method="get" action="[log_paging_action]" style="display: inline;">
+<form class="inline" method="get" action="[log_paging_action]">
+<div class="inline lpad">
 [for log_paging_hidden_values]<input type="hidden" name="[log_paging_hidden_values.name]" value="[log_paging_hidden_values.value]"/>[end]
   <select name="log_pagestart"  onchange="submit()">
   [for picklist]
@@ -201,12 +161,11 @@
   [end]
   </select>
   <input type="submit" value="  View Range  " />
-</form>
 </div>
+</form>
 [end][end]
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<form method="get" action="[logsort_action]" style="display: inline;">
-<div id="logsort" style="display: inline;">
+<form class="inline" method="get" action="[logsort_action]">
+<div id="logsort" class="inline lpad">
 [for logsort_hidden_values]<input type="hidden" name="[logsort_hidden_values.name]" value="[logsort_hidden_values.value]"/>[end]
   <select name="logsort" onchange="submit()">
     <option value="cvs" [is logsort "cvs"]selected="selected"[end]>unsorted</option>
@@ -216,12 +175,51 @@
   <input type="submit" value="  Sort  " />
 </div>
 </form>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<div class="inline lpad">
 [include "include/pathrev_form.ezt"]
+</div>
 </div>
 
 <!-- ************************************************************** -->
 </div>
+
+<h2>Convenience Links</h2>
+
+[if-any default_branch]
+<tr>
+  <td>Default branch:</td>
+  <td>[for default_branch]<a href="[default_branch.href]">[default_branch.name]</a>[if-index default_branch last][else], [end]
+[end]</td>
+</tr>
+[end]
+
+[is pathtype "file"]
+[if-any view_href]
+<tr>
+  <td>Links to HEAD:</td>
+  <td>
+    (<a href="[view_href]">view</a>)
+    [if-any download_href](<a href="[download_href]">download</a>)[end]
+    [if-any download_text_href](<a href="[download_text_href]">as text</a>)[end]
+    [if-any annotate_href](<a href="[annotate_href]">annotate</a>)[end]
+  </td>
+</tr>
+[end]
+
+[if-any tag_view_href]
+<tr>
+  <td>Links to [pathrev]:</td>
+  <td>
+    (<a href="[tag_view_href]">view</a>)
+    [if-any tag_download_href](<a href="[tag_download_href]">download</a>)[end]
+    [if-any tag_download_text_href](<a href="[tag_download_text_href]">as text</a>)[end]
+    [if-any tag_annotate_href](<a href="[tag_annotate_href]">annotate</a>)[end]
+  </td>
+</tr>
+[end]
+[end]
+
+</table>
 
 [is pathtype "file"]
   <h2>Compare Revisions</h2>
