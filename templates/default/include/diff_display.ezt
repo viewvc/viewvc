@@ -1,4 +1,4 @@
-[is diffs.display_as "anchor"]
+[is diffs.diff_block_format "anchor"]
   <p id="[diffs.anchor]"/>
 [else]
   [define msg_no_changes]<strong>- No changes -</strong>[end]
@@ -29,7 +29,7 @@
     [right_header]</h2>
 [end]
 
-[is diffs.display_as "raw"]
+[is diffs.diff_block_format "raw"]
   <table cellspacing="0" cellpadding="0" style="margin-top: 1em; margin-left: 2em;">
     [is diffs.changes.type "no-changes"]
       <tr class="vc_diff_empty">
@@ -46,7 +46,7 @@
   </table>
 [end]
 
-[is diffs.display_as "sidebyside-1"]
+[is diffs.diff_block_format "sidebyside-1"]
   [define change_right][end]
   [define last_change_type][end]
 
@@ -115,7 +115,7 @@
   </table>
 [end]
 
-[is diffs.display_as "sidebyside-2"]
+[is diffs.diff_block_format "sidebyside-2"]
   <table class="vc_idiff" cellspacing="0" cellpadding="0" style="margin-top: 1em; margin-left: 2em;">
     <colgroup><col style="width: 3%;"/><col class="content" style="width: 47%;"/></colgroup>
     <colgroup><col style="width: 3%;"/><col class="content" style="width: 47%;"/></colgroup>
@@ -149,7 +149,7 @@
   </table>
 [end]
 
-[is diffs.display_as "unified"]
+[is diffs.diff_block_format "unified"]
   <table class="vc_idiff" cellspacing="0" cellpadding="0" style="margin-top: 1em; margin-left: 2em;">
     <colgroup>
       <col style="width: 3%;"/>
