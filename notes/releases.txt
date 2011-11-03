@@ -113,3 +113,6 @@ numbers, and not literal):
 18. Send to the announce@ list a message explaining all the cool new
     features, and post similar announcements to other places interested
     in this sort of stuff, such as Freshmeat (http://www.freshmeat.net).
+
+19. Merge CHANGES for this release into the CHANGES file for newer
+    release lines.
