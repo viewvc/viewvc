@@ -5,6 +5,16 @@ Version 1.2.0 (released ??-???-????)
   * allow user-configurable cvsgraph display (issue #336)
   * allow rNNNN syntax for Subversion revision numbers (issue #441)
 
+Version 1.1.12 (released 03-Nov-2011)
+
+  * fix path display in patch and certain diff views (issue #485)
+  * fix broken cvsdb glob searching (issue 486)
+  * allow svn revision specifiers to have leading r's (issue #441, #448) 
+  * allow environmental override of configuration location (issue #494)
+  * fix exception HTML-escaping non-string data under WSGI (issue #454)
+  * add links to root logs from roots view (issue #470)
+  * use Pygments lexer-guessing functionality (issue #495)
+
 Version 1.1.11 (released 17-May-2011)
 
   * security fix: remove user-reachable override of cvsdb row limit
