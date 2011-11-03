@@ -1,0 +1,196 @@
+#!/usr/bin/env python
+# -*-python-*-
+#
+# Copyright (C) 1999-2008 The ViewCVS Group. All Rights Reserved.
+#
+# By using this file, you agree to the terms and conditions set forth in
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
+#
+# For more information, visit http://viewvc.org/
+#
+# -----------------------------------------------------------------------
+#
+# administrative program for CVSdb; this is primarily
+# used to add/rebuild CVS repositories to the database
+#
+# -----------------------------------------------------------------------
+#
+
+#########################################################################
+#
+# INSTALL-TIME CONFIGURATION
+#
+# These values will be set during the installation process. During
+# development, they will remain None.
+#
+
+LIBRARY_DIR = None
+CONF_PATHNAME = None
+
+# Adjust sys.path to include our library directory
+import sys
+import os
+
+if LIBRARY_DIR:
+  sys.path.insert(0, LIBRARY_DIR)
+else:
+  sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
+
+#########################################################################
+  
+import os
+import string
+import cvsdb
+import viewvc
+import vclib.ccvs
+
+
+def UpdateFile(db, repository, path, update, quiet_level):
+    try:
+        if update:
+            commit_list = cvsdb.GetUnrecordedCommitList(repository, path, db)
+        else:
+            commit_list = cvsdb.GetCommitListFromRCSFile(repository, path)
+    except cvsdb.error, e:
+        print '[ERROR] %s' % (e)
+        return
+
+    file = string.join(path, "/")
+    printing = 0
+    if update:
+        if quiet_level < 1 or (quiet_level < 2 and len(commit_list)):
+            printing = 1
+            print '[%s [%d new commits]]' % (file, len(commit_list)),
+    else:
+        if quiet_level < 2:
+            printing = 1
+            print '[%s [%d commits]]' % (file, len(commit_list)),
+
+    ## add the commits into the database
+    for commit in commit_list:
+        db.AddCommit(commit)
+        if printing:
+            sys.stdout.write('.')
+        sys.stdout.flush()
+    if printing:
+        print
+
+
+def RecurseUpdate(db, repository, directory, update, quiet_level):
+    for entry in repository.listdir(directory, None, {}):
+        path = directory + [entry.name]
+
+        if entry.errors:
+            continue
+
+        if entry.kind is vclib.DIR:
+            RecurseUpdate(db, repository, path, update, quiet_level)
+            continue
+
+        if entry.kind is vclib.FILE:
+            UpdateFile(db, repository, path, update, quiet_level)
+
+def RootPath(path, quiet_level):
+    """Break os path into cvs root path and other parts"""
+    root = os.path.abspath(path)
+    path_parts = []
+
+    p = root
+    while 1:
+        if os.path.exists(os.path.join(p, 'CVSROOT')):
+            root = p
+            if quiet_level < 2:
+                print "Using repository root `%s'" % root
+            break
+
+        p, pdir = os.path.split(p)
+        if not pdir:
+            del path_parts[:]
+            if quiet_level < 1:
+                print "Using repository root `%s'" % root
+                print "Warning: CVSROOT directory not found."
+            break
+
+        path_parts.append(pdir)
+
+    root = cvsdb.CleanRepository(root)
+    path_parts.reverse()
+    return root, path_parts
+
+def usage():
+    cmd = os.path.basename(sys.argv[0])
+    sys.stderr.write(
+"""Administer the ViewVC checkins database data for the CVS repository
+located at REPOS-PATH.
+
+Usage: 1. %s [[-q] -q] rebuild REPOS-PATH
+       2. %s [[-q] -q] update REPOS-PATH
+       3. %s [[-q] -q] purge REPOS-PATH
+
+1.  Rebuild the commit database information for the repository located
+    at REPOS-PATH, after first purging information specific to that
+    repository (if any).
+
+2.  Update the commit database information for all unrecorded commits
+    in the repository located at REPOS-PATH.
+
+3.  Purge information specific to the repository located at REPOS-PATH
+    from the database.
+
+Use the -q flag to cause this script to be less verbose; use it twice to
+invoke a peaceful state of noiselessness.
+
+""" % (cmd, cmd, cmd))
+    sys.exit(1)
+
+
+## main
+if __name__ == '__main__':
+    args = sys.argv
+
+    # check the quietness level (0 = verbose, 1 = new commits, 2 = silent)
+    quiet_level = 0
+    while 1:
+        try:
+            index = args.index('-q')
+            quiet_level = quiet_level + 1
+            del args[index]
+        except ValueError:
+            break
+
+    # validate the command
+    if len(args) <= 2:
+        usage()
+    command = args[1].lower()
+    if command not in ('rebuild', 'update', 'purge'):
+        sys.stderr.write('ERROR: unknown command %s\n' % command)
+        usage()
+
+    # get repository and path, and do the work
+    root, path_parts = RootPath(args[2], quiet_level)
+    rootpath = vclib.ccvs.canonicalize_rootpath(root)
+    try:
+        cfg = viewvc.load_config(CONF_PATHNAME)
+        db = cvsdb.ConnectDatabase(cfg)
+
+        if command in ('rebuild', 'purge'):
+            if quiet_level < 2:
+                print "Purging existing data for repository root `%s'" % root
+            try:
+                db.PurgeRepository(root)
+            except cvsdb.UnknownRepositoryError, e:
+                if command == 'purge':
+                    sys.stderr.write("ERROR: " + str(e) + "\n")
+                    sys.exit(1)
+
+        if command in ('rebuild', 'update'):
+            repository = vclib.ccvs.CVSRepository(None, rootpath, None,
+                                                  cfg.utilities, 0)
+            RecurseUpdate(db, repository, path_parts,
+                          command == 'update', quiet_level)
+    except KeyboardInterrupt:
+        print
+        print '** break **'
+        
+    sys.exit(0)
