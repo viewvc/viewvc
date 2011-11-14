@@ -153,7 +153,7 @@ class SvnRev:
         fsroot = self._get_root_for_rev(rev)
         
         # find changes in the revision
-        editor = svn.repos.RevisionChangeCollector(repo.fs, rev)
+        editor = svn.repos.ChangeCollector(repo.fs, fsroot)
         e_ptr, e_baton = svn.delta.make_editor(editor)
         svn.repos.svn_repos_replay(fsroot, e_ptr, e_baton)
 
@@ -164,21 +164,33 @@ class SvnRev:
                 continue
 
             # deal with the change types we handle
+            action = None
             base_root = None
+            base_path = change.base_path
             if change.base_path:
                 base_root = self._get_root_for_rev(change.base_rev)
-                
-            if not change.path:
+
+            # figure out what kind of change this is, and get a diff
+            # object for it.  note that prior to 1.4 Subversion's
+            # bindings didn't give us change.action, but that's okay
+            # because back then deleted paths always had a change.path
+            # of None.
+            if hasattr(change, 'action') \
+               and change.action == svn.repos.CHANGE_ACTION_DELETE:
+                action = 'remove'
+            elif not change.path:
                 action = 'remove'
             elif change.added:
                 action = 'add'
             else:
                 action = 'change'
 
-            diffobj = svn.fs.FileDiff(base_root and base_root or None,
-                                      base_root and change.base_path or None,
-                                      change.path and fsroot or None,
-                                      change.path and change.path or None)
+            if action == 'remove':
+                diffobj = svn.fs.FileDiff(base_root, base_path, None, None)
+            else:
+                diffobj = svn.fs.FileDiff(base_root, base_path,
+                                          fsroot, change.path)
+
             diff_fp = diffobj.get_pipe()
             plus, minus = _get_diff_counts(diff_fp)
             self.changes.append((path, action, plus, minus))
