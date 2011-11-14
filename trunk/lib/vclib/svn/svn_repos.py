@@ -20,6 +20,7 @@ import time
 import tempfile
 import popen
 import re
+import urllib
 from svn import fs, repos, core, client, delta
 
 
@@ -110,7 +111,7 @@ def _rootpath2url(rootpath, path):
     rootpath = '/' + rootpath
   if os.sep != '/':
     rootpath = rootpath.replace(os.sep, '/')
-  return 'file://' + rootpath + '/' + path
+  return 'file://' + urllib.pathname2url(rootpath) + '/' + path
 
 
 # Given a dictionary REVPROPS of revision properties, pull special
