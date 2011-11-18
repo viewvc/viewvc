@@ -358,3 +358,14 @@ table.vc_idiff tbody th {
 /*** Query Form ***/
 .vc_query_form {
 }
+
+
+/*** Warning! ***/
+.vc_warning {
+  border-width: 1px 2px 2px 2px;
+  border-color: black;
+  border-style: solid;
+  background-color: red;
+  color: white;
+  padding: 0.5em;
+}
