@@ -7,6 +7,15 @@
 
 <p><strong>[english_query]</strong></p>
 [# <!-- {sql} --> ]
+[if-any row_limit_reached]
+<p class="vc_warning">WARNING:  These query results have been
+   artificially limited by an administrative threshold value and do
+   <em>not</em> represent the entirety of the data set which matches
+   the query.  Consider <a href="[queryform_href]">modifying your
+   query to be more specific</a>, using your version control tool's
+   query capabilities, or asking your administrator to raise the
+   database response size threshold.</p>
+[end]
 <p><a href="[queryform_href]">Modify query</a></p>
 <p><a href="[backout_href]">Show commands which could be used to back out these changes</a></p>
 
