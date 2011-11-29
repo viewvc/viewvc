@@ -2,6 +2,7 @@ Version 1.1.13 (released ??-???-????)
 
   * fix svndbadmin failure on deleted paths under Subversion 1.7 (issue #499)
   * fix annotation of files in svn roots with non-URI-safe paths
+  * avoid lexer-guessing when it's likely to fail anyway (issue #501)
 
 Version 1.1.12 (released 03-Nov-2011)
 
