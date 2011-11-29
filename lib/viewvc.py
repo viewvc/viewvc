@@ -1613,11 +1613,9 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
         except ClassNotFound:
           pygments_lexer = None
 
-      # Still no lexer?  Well, maybe that's because the was no
-      # MIME_TYPE and the filename lacks an extension or doesn't
-      # follow convention.  Result to guessing based on the file's
-      # content.
-      if not pygments_lexer and not mime_type:
+      # Still no lexer?  If we're reason to believe this is a text
+      # file, try to guess the lexer based on the file's content.
+      if not pygments_lexer and is_text(mime_type):
         try:
           first_line = fp.readline()
           pygments_lexer = guess_lexer(first_line)
