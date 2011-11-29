@@ -1793,7 +1793,7 @@ def markup_or_annotate(request, is_annotate):
                                    path[-1], mime_type, encoding)
     fp.close()
 
-  data = common_template_data(request, revision)
+  data = common_template_data(request, revision, mime_type)
   data.merge(ezt.TemplateData({
     'mime_type' : mime_type,
     'log' : None,
