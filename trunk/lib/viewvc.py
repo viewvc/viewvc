@@ -1571,50 +1571,66 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
                                       escape=1, partial=1)
       blame_source.append(i)
     blame_data = blame_source
-  lexer = None
-  use_pygments = cfg.options.enable_syntax_coloration
   first_line = None
-  try:
-    from pygments import highlight
-    from pygments.formatters import HtmlFormatter
-    from pygments.lexers import ClassNotFound, \
-                                get_lexer_by_name, \
-                                get_lexer_for_mimetype, \
-                                get_lexer_for_filename, \
-                                guess_lexer
-    if not encoding:
-      encoding = 'guess'
-      if cfg.options.detect_encoding:
-        try:
-          import chardet
-          encoding = 'chardet'
-        except (SyntaxError, ImportError):
-          pass
+  pygments_lexer = None
+
+  # If syntax coloration is enabled, we'll try to get our Pygments on.
+  if cfg.options.enable_syntax_coloration:
     try:
-      lexer = get_lexer_for_mimetype(mime_type,
-                                     encoding=encoding,
-                                     tabsize=cfg.options.tabsize,
-                                     stripnl=False)
-    except ClassNotFound:
-      try:
-        lexer = get_lexer_for_filename(filename,
-                                       encoding=encoding,
-                                       tabsize=cfg.options.tabsize,
-                                       stripnl=False)
-      except ClassNotFound:
+      from pygments import highlight
+      from pygments.formatters import HtmlFormatter
+      from pygments.lexers import ClassNotFound, \
+                                  get_lexer_by_name, \
+                                  get_lexer_for_mimetype, \
+                                  get_lexer_for_filename, \
+                                  guess_lexer
+      if not encoding:
+        encoding = 'guess'
+        if cfg.options.detect_encoding:
+          try:
+            import chardet
+            encoding = 'chardet'
+          except (SyntaxError, ImportError):
+            pass
+
+      # First, see if there's a Pygments lexer associated with MIME_TYPE.
+      if mime_type:
+        try:
+          pygments_lexer = get_lexer_for_mimetype(mime_type,
+                                                  encoding=encoding,
+                                                  tabsize=cfg.options.tabsize,
+                                                  stripnl=False)
+        except ClassNotFound:
+          pygments_lexer = None
+
+      # If we've no lexer thus far, try to find one based on the FILENAME.
+      if not pygments_lexer:
+        try:
+          pygments_lexer = get_lexer_for_filename(filename,
+                                                  encoding=encoding,
+                                                  tabsize=cfg.options.tabsize,
+                                                  stripnl=False)
+        except ClassNotFound:
+          pygments_lexer = None
+
+      # Still no lexer?  Well, maybe that's because the was no
+      # MIME_TYPE and the filename lacks an extension or doesn't
+      # follow convention.  Result to guessing based on the file's
+      # content.
+      if not pygments_lexer and not mime_type:
         try:
           first_line = fp.readline()
-          lexer = guess_lexer(first_line)
-          use_pygments = 1
+          pygments_lexer = guess_lexer(first_line)
         except ClassNotFound:
-          use_pygments = 0
-  except ImportError:
-    use_pygments = 0
+          pygments_lexer = None
+        
+    except ImportError:
+      pass
 
   # If we aren't going to be highlighting anything, just return the
   # BLAME_SOURCE.  If there's no blame_source, we'll generate a fake
   # one from the file contents we fetch with PATH and REV.
-  if not use_pygments:
+  if not pygments_lexer:
     if blame_source:
       class BlameSourceTabsizeWrapper:
         def __init__(self, blame_source, tabsize):
@@ -1643,7 +1659,7 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
         item = vclib.Annotation(line, line_no, None, None, None, None)
         item.diff_href = None
         lines.append(item)
-    return lines
+      return lines
 
   # If we get here, we're highlighting something.
   class PygmentsSink:
@@ -1667,7 +1683,7 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
         self.blame_data.append(item)
       self.line_no = self.line_no + 1
   ps = PygmentsSink(blame_source)
-  highlight((first_line or '') + fp.read(), lexer,
+  highlight((first_line or '') + fp.read(), pygments_lexer,
             HtmlFormatter(nowrap=True,
                           classprefix="pygments-",
                           encoding='utf-8'), ps)
