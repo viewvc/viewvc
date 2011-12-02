@@ -1,0 +1,58 @@
+[# Setup page definitions]
+  [define page_title]Diff of:[end]
+  [define help_href][docroot]/help_rootview.html[end]
+[# end]
+[include "include/header.ezt" "diff"]
+
+<form class="inline" method="get" action="[diff_format_action]">
+  <div class="inline">
+    [for diff_format_hidden_values]<input type="hidden" name="[diff_format_hidden_values.name]" value="[diff_format_hidden_values.value]"/>[end]
+    <select name="diff_format" onchange="submit()">
+      <option value="h" [is diff_format "h"]selected="selected"[end]>Colored Diff</option>
+      <option value="l" [is diff_format "l"]selected="selected"[end]>Long Colored Diff</option>
+      <option value="f" [is diff_format "f"]selected="selected"[end]>Full Colored Diff</option>
+      <option value="u" [is diff_format "u"]selected="selected"[end]>Unidiff</option>
+      <option value="c" [is diff_format "c"]selected="selected"[end]>Context Diff</option>
+      <option value="s" [is diff_format "s"]selected="selected"[end]>Side by Side</option>
+    </select>
+    <input type="submit" value="Show" />
+    (<a href="[patch_href]">Generate patch</a>)
+  </div>
+</form>
+
+<div id="vc_main_body">
+<!-- ************************************************************** -->
+
+[if-any diffs]
+  [for diffs]
+    [include "include/diff_display.ezt"]
+  [end]
+[end]
+
+[if-any hide_legend]
+[else]
+<h3>Diff Legend</h3>
+<table class="auto" cellspacing="0">
+<tr>
+ <td class="vc_diff_plusminus"><strong style="color: red;">&ndash;</strong></td>
+ <td class="vc_diff_remove">Removed lines</td>
+</tr>
+<tr>
+ <td class="vc_diff_plusminus"><strong style="color: green;">+</strong></td>
+ <td class="vc_diff_add">Added lines</td>
+</tr>
+<tr>
+ <td class="vc_diff_plusminus"><strong style="color: yellow;">&lt;</strong></td>
+ <td class="vc_diff_changes1">Changed lines</td>
+</tr>
+<tr>
+ <td class="vc_diff_plusminus"><strong style="color: yellow;">&gt;</strong></td>
+ <td class="vc_diff_changes2">Changed lines</td>
+</tr>
+</table>
+[end]
+
+<!-- ************************************************************** -->
+</div>
+
+[include "include/footer.ezt"]

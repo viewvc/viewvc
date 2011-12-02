@@ -1,0 +1,63 @@
+[# setup page definitions]
+  [define page_title]Diff of /[where][end]
+  [define help_href][docroot]/help_rootview.html[end]
+[# end]
+
+[include "include/header.ezt" "diff"]
+[include "include/file_header.ezt"]
+
+[if-any diffs]
+  [for diffs]
+    [include "include/diff_display.ezt"]
+  [end]
+[end]
+
+<hr style="margin-top:1em;" />
+
+<table cellpadding="10" class="auto">
+  <tr>
+    <td>
+      <form method="get" action="[diff_format_action]">
+        <div>
+          [for diff_format_hidden_values]<input type="hidden" name="[diff_format_hidden_values.name]" value="[diff_format_hidden_values.value]"/>[end]
+          <select name="diff_format" onchange="submit()">
+            <option value="h" [is diff_format "h"]selected="selected"[end]>Colored Diff</option>
+            <option value="l" [is diff_format "l"]selected="selected"[end]>Long Colored Diff</option>
+            <option value="f" [is diff_format "f"]selected="selected"[end]>Full Colored Diff</option>
+            <option value="u" [is diff_format "u"]selected="selected"[end]>Unidiff</option>
+            <option value="c" [is diff_format "c"]selected="selected"[end]>Context Diff</option>
+            <option value="s" [is diff_format "s"]selected="selected"[end]>Side by Side</option>
+          </select>
+          <input type="submit" value="Show" />
+          </div>
+      </form>
+    </td>
+    <td>
+[if-any hide_legend]
+      &nbsp;
+[else]
+      <table style="border:solid gray 1px;" class="auto">
+        <tr>
+          <td>Legend:<br />
+            <table cellspacing="0" cellpadding="1">
+              <tr>
+                <td style="text-align:center;" class="vc_diff_remove">Removed lines/characters</td>
+                <td class="vc_diff_empty">&nbsp;</td>
+              </tr>
+              <tr>
+                <td style="text-align:center;" colspan="2" class="vc_diff_change">Changed lines/characters</td>
+              </tr>
+              <tr>
+                <td class="vc_diff_empty">&nbsp;</td>
+                <td style="text-align:center;" class="vc_diff_add">Added lines/characters</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+[end]
+    </td>
+  </tr>
+</table>
+
+[include "include/footer.ezt"]

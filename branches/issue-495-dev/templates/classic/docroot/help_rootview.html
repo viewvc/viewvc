@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>ViewVC Help: General</title>
+  <link rel="stylesheet" href="help.css" type="text/css" />
+  <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon" />
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+</head>
+<body>
+  <div><a href="http://viewvc.org/index.html"><img src="images/viewvc-logo.png" alt="ViewVC logotype" /></a></div>
+  <table>
+    <col class="menu" />
+    <col />
+    <tr><td>
+       <h3>Help</h3>
+       <strong>General</strong><br />
+       <a href="help_dirview.html">Directory&nbsp;View</a><br />
+       <a href="help_log.html">Log&nbsp;View</a><br />
+       <a href="help_query.html">Query&nbsp;Database</a><br />
+    </td><td>
+
+    <h1>ViewVC Help: General</h1>
+
+    <p><em>ViewVC</em> is a WWW interface for CVS and Subversion
+    repositories. It allows you to browse the files and directories in a
+    repository while showing you metadata from the repository history: log
+    messages, modification dates, author names, revision numbers, copy
+    history, and so on. It provides several different views of repository
+    data to help you find the information you are looking for:</p>
+  
+    <ul>
+      <li><a name="multiple-repositories"><strong>Root Listing
+      View</strong></a> - Show a list of repositories configured for
+      display in ViewVC.</li>
+  
+      <li><a name="view-dir" href="help_dirview.html"><strong>Directory
+      View</strong></a> - Shows a list of files and subdirectories in a
+      directory of the repository, along with metadata like author names and
+      log entries.</li>
+  
+      <li><a name="view-log" href="help_log.html"><strong>Log
+      View</strong></a> - Shows a revision by revision list of all the
+      changes that have made to a file or directory in the repository, with
+      metadata and links to views of each revision.</li>
+  
+      <li><a name="view-checkout"><strong>File Download (Checkout
+      View)</strong></a> - Retrieves the unaltered contents of a file
+      revision. Browsers may try to display the file, or just save it
+      to disk.  <em>This view is disabled in the default ViewVC
+      configuration.</em></li>
+  
+      <li><a name="view-annotate"><a name="view-markup"><strong>File
+      Contents View</strong></a></a> - Shows the contents of a file at
+      a particular revision, with revision information at the top of
+      the page. File revisions which are GIF, PNG, or JPEG images are
+      displayed inline on the page. Other file types are displayed as
+      marked up text. The markup may be limited to turning URLs and
+      email addresses into links, or configured to show colorized
+      source code.  This view can optionally show line-based
+      annotation data for the file, containing the revision number
+      where each line was last modified, along with links and other
+      information.  <em>This view is disabled in some ViewVC
+      configurations.</em></li>
+  
+      <li><a name="view-diff"><strong>File Diff View</strong></a> - Shows
+      the changes made between two revisions of a file</li>
+  
+      <li><a name="view-tarball"><strong>Directory Tarball View</strong> -
+      Retrieves a gzipped tar archive containing the contents of a
+      directory.<em>This view is disabled in the default ViewVC
+      configuration.</em></li>
+  
+      <li><a name="view-query"><strong>Directory Query View</strong></a> -
+      Shows information about changes made to all subdirectories and files
+      under a parent directory, sorted and filtered by criteria you specify.
+      <em>This view is disabled in the default ViewVC configuration.</em>
+      </li>
+  
+      <li><a name="view-rev"><strong>Revision View</strong> - Shows
+      information about a revision including log message, author, and a list
+      of changed paths. <em>For Subversion repositories only.</em></li>
+  
+      <li><a name="view-graph"><strong>Graph View</strong></a> - Shows a
+      graphical representation of a file's revisions and branches complete
+      with tag and author names and links to markup and diff pages.
+      <em>For CVS repositories only, and disabled in the default
+      configuration.</em></li>
+    </ul>
+  
+    <h3><a name="sticky-revision-tag">Sticky Revision and Tag</a></h3>
+  
+    <p>By default, ViewVC will show the files and directories and revisions
+    that currently exist in the repository. But it's also possible to browse
+    the contents of a repository at a point in its past history by choosing
+    a "sticky tag" (in CVS) or a "sticky revision" (in Subversion) from the
+    forms at the top of directory and log pages. They're called sticky
+    because once they're chosen, they stick around when you navigate to
+    other pages, until you reset them. When they're set, directory and log
+    pages only show revisions preceding the specified point in history. In
+    CVS, when a tag refers to a branch or a revision on a branch, only
+    revisions from the branch history are shown, including branch points and
+    their preceding revisions.</p>
+  
+    <h3><a name="dead-files">Dead Files</a></h3>
+  
+    <p>In CVS directory listings, ViewVC can optionally display dead files.
+    Dead files are files which used to be in a directory but are currently
+    deleted, or files which just don't exist in the currently selected
+    <a href="#sticky-revision-tag">sticky tag</a>. Dead files cannot be
+    shown in Subversion repositories. The only way to see a deleted file in
+    a Subversion directory is to navigate to a sticky revision where the
+    file previously existed.</p>
+  
+    <h3><a name="artificial-tags">Artificial Tags</a></h3>
+  
+    <p>In CVS Repositories, ViewVC adds artificial tags <em>HEAD</em> and
+    <em>MAIN</em> to tag listings and accepts them in place of revision
+    numbers and real tag names in all URLs. <em>MAIN</em> acts like a branch
+    tag pointing at the default branch, while <em>HEAD</em> acts like a
+    revision tag pointing to the latest revision on the default branch. The
+    default branch is usually just the trunk, but may be set to other
+    branches inside individual repository files. CVS will always check out
+    revisions from a file's default branch when no other branch is specified
+    on the command line.</p>
+  
+    <h3><a name="more-information">More Information</a></h3>
+  
+    <p>More information about <em>ViewVC</em> is available from
+    <a href="http://viewvc.org/">viewvc.org</a>.
+    See the links below for guides to CVS and Subversion</p>
+  
+    <h4>Documentation about CVS</h4>
+    <blockquote>
+      <p>
+        <a href="http://cvsbook.red-bean.com/"><em>Open Source
+        Development with CVS</em></a><br />
+        <a href="http://www.loria.fr/~molli/cvs/doc/cvs_toc.html">CVS
+        User's Guide</a><br />
+        <a href="http://cellworks.washington.edu/pub/docs/cvs/tutorial/cvs_tutorial_1.html">Another CVS tutorial</a><br />
+        <a href="http://www.csc.calpoly.edu/~dbutler/tutorials/winter96/cvs/">Yet another CVS tutorial (a little old, but nice)</a><br />
+        <a href="http://www.cs.utah.edu/dept/old/texinfo/cvs/FAQ.txt">An old but very useful FAQ about CVS</a>
+      </p>
+    </blockquote>
+  
+    <h4>Documentation about Subversion</h3>
+    <blockquote>
+      <p>
+        <a href="http://svnbook.red-bean.com/"><em>Version Control with
+        Subversion</em></a><br />
+      </p>
+    </blockquote>
+  </td></tr></table>
+  <hr />
+  <address><a href="mailto:users@viewvc.tigris.org">ViewVC Users Mailinglist</a></address>
+  </body>
+</html>
