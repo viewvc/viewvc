@@ -1,0 +1,27 @@
+PURPOSE
+=======
+
+This branch exists as a playground for worked aimed at gracefully
+providing the sort of syntax-coloration guessing feature requesed in
+issue #495.
+
+
+STATUS
+======
+
+There are at least a couple of problems with the functionality as of
+this commit.
+
+First, the is_text() function treats an empty 'mime_type' parameter as
+text and thus returns True for such input.  But it's just as likely
+that a given file whose MIME type isn't known and whose filename lacks
+a hinting extension to be non-human-readable as for said file to be
+human-readable.  The problem is that Pygment's lexer-guessing stuff is
+just plain wrong sometimes, assigning the PerlLexer to handle input
+from, say, OpenOffice binary files.  This leads ultimately to stack
+traces (see issue #501) when Pygments falls all over itself while
+recoding for UTF-8.
+
+Secondly, user or configuration error could cause really any binary
+file to be assigned a text-y MIME type.  ViewVC ought to be more
+graceful about handling such things.
