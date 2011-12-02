@@ -1571,6 +1571,7 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
                                       escape=1, partial=1)
       blame_source.append(i)
     blame_data = blame_source
+  first_line = None
   pygments_lexer = None
 
   # If syntax coloration is enabled, we'll try to get our Pygments on.
@@ -1581,7 +1582,8 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
       from pygments.lexers import ClassNotFound, \
                                   get_lexer_by_name, \
                                   get_lexer_for_mimetype, \
-                                  get_lexer_for_filename
+                                  get_lexer_for_filename, \
+                                  guess_lexer
       if not encoding:
         encoding = 'guess'
         if cfg.options.detect_encoding:
@@ -1610,6 +1612,15 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
                                                   stripnl=False)
         except ClassNotFound:
           pygments_lexer = None
+
+      # Still no lexer?  If we've reason to believe this is a text
+      # file, try to guess the lexer based on the file's content.
+      if not pygments_lexer and is_text(mime_type):
+        try:
+          first_line = fp.readline()
+          pygments_lexer = guess_lexer(first_line)
+        except ClassNotFound:
+          pygments_lexer = None
         
     except ImportError:
       pass
@@ -1633,7 +1644,11 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
       lines = []
       line_no = 0
       while 1:
-        line = fp.readline()
+        if first_line is not None:
+          line = first_line
+          first_line = None
+        else:
+          line = fp.readline()
         if not line:
           break
         line_no = line_no + 1
@@ -1666,7 +1681,7 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
         self.blame_data.append(item)
       self.line_no = self.line_no + 1
   ps = PygmentsSink(blame_source)
-  highlight(fp.read(), pygments_lexer,
+  highlight((first_line or '') + fp.read(), pygments_lexer,
             HtmlFormatter(nowrap=True,
                           classprefix="pygments-",
                           encoding='utf-8'), ps)
