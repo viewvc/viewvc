@@ -1758,7 +1758,8 @@ def markup_or_annotate(request, is_annotate):
     fp.close()
     if check_freshness(request, None, revision, weak=1):
       return
-    annotation = 'binary'
+    if is_annotate:
+      annotation = 'binary'
     image_src_href = request.get_url(view_func=view_checkout,
                                      params={'revision': rev}, escape=1)
 
