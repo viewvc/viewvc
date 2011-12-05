@@ -1590,43 +1590,43 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
   first_line = None
   pygments_lexer = None
   if cfg.options.enable_syntax_coloration and highlight:
-      if not encoding:
-        encoding = 'guess'
-        if cfg.options.detect_encoding:
-          try:
-            import chardet
-            encoding = 'chardet'
-          except (SyntaxError, ImportError):
-            pass
-
-      # First, see if there's a Pygments lexer associated with MIME_TYPE.
-      if mime_type:
+    if not encoding:
+      encoding = 'guess'
+      if cfg.options.detect_encoding:
         try:
-          pygments_lexer = get_lexer_for_mimetype(mime_type,
-                                                  encoding=encoding,
-                                                  tabsize=cfg.options.tabsize,
-                                                  stripnl=False)
-        except ClassNotFound:
-          pygments_lexer = None
+          import chardet
+          encoding = 'chardet'
+        except (SyntaxError, ImportError):
+          pass
 
-      # If we've no lexer thus far, try to find one based on the FILENAME.
-      if not pygments_lexer:
-        try:
-          pygments_lexer = get_lexer_for_filename(filename,
-                                                  encoding=encoding,
-                                                  tabsize=cfg.options.tabsize,
-                                                  stripnl=False)
-        except ClassNotFound:
-          pygments_lexer = None
+    # First, see if there's a Pygments lexer associated with MIME_TYPE.
+    if mime_type:
+      try:
+        pygments_lexer = get_lexer_for_mimetype(mime_type,
+                                                encoding=encoding,
+                                                tabsize=cfg.options.tabsize,
+                                                stripnl=False)
+      except ClassNotFound:
+        pygments_lexer = None
 
-      # Still no lexer?  If we've reason to believe this is a text
-      # file, try to guess the lexer based on the file's content.
-      if not pygments_lexer and is_text(mime_type):
-        try:
-          first_line = fp.readline()
-          pygments_lexer = guess_lexer(first_line)
-        except ClassNotFound:
-          pygments_lexer = None
+    # If we've no lexer thus far, try to find one based on the FILENAME.
+    if not pygments_lexer:
+      try:
+        pygments_lexer = get_lexer_for_filename(filename,
+                                                encoding=encoding,
+                                                tabsize=cfg.options.tabsize,
+                                                stripnl=False)
+      except ClassNotFound:
+        pygments_lexer = None
+
+    # Still no lexer?  If we've reason to believe this is a text
+    # file, try to guess the lexer based on the file's content.
+    if not pygments_lexer and is_text(mime_type):
+      try:
+        first_line = fp.readline()
+        pygments_lexer = guess_lexer(first_line)
+      except ClassNotFound:
+        pygments_lexer = None
         
   # If we aren't going to be highlighting anything, just return the
   # BLAME_SOURCE.  If there's no blame_source, we'll generate a fake
