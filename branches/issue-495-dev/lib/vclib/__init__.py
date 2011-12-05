@@ -170,11 +170,18 @@ class Repository:
     """
 
   def annotate(self, path_parts, rev, include_text=False):
-    """Return a list of annotate file content lines and a revision.
+    """Return a list of Annotation object, sorted by their
+    "line_number" components, which describe the lines of given
+    version of a file.
 
-    The result is a list of Annotation objects, sorted by their
-    line_number components.
-    """
+    The file path is specified as a list of components, relative to
+    the root of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+    rev is the revision of the item to return information about.
+    
+    If include_text is true, populate the Annotation objects' "text"
+    members with the corresponding line of file content; otherwise,
+    leave that member set to None."""
 
   def revinfo(self, rev):
     """Return information about a global revision
