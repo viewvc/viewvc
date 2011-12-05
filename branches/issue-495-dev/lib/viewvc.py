@@ -1564,8 +1564,8 @@ def markup_escaped_urls(s):
     return "<a href=\"%s\">%s</a>" % (unescaped_url, url)
   return re.sub(_re_rewrite_escaped_url, _url_repl, s)
 
-def markup_stream_pygments(request, cfg, blame_data, fp, filename,
-                           mime_type, encoding):
+def markup_stream(request, cfg, blame_data, fp, filename,
+                  mime_type, encoding):
   # Add diff_href items to each "line" in the blame_data (if provided).
   blame_source = []
   if blame_data:
@@ -1807,8 +1807,8 @@ def markup_or_annotate(request, is_annotate):
     if check_freshness(request, None, revision, weak=1):
       fp.close()
       return
-    lines = markup_stream_pygments(request, cfg, blame_source, fp,
-                                   path[-1], mime_type, encoding)
+    lines = markup_stream(request, cfg, blame_source, fp,
+                          path[-1], mime_type, encoding)
     fp.close()
 
   data = common_template_data(request, revision, mime_type)
