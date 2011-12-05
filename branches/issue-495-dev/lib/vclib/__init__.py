@@ -169,7 +169,7 @@ class Repository:
     Return value is a python file object
     """
 
-  def annotate(self, path_parts, rev):
+  def annotate(self, path_parts, rev, include_text=False):
     """Return a list of annotate file content lines and a revision.
 
     The result is a list of Annotation objects, sorted by their
