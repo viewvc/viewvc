@@ -54,6 +54,17 @@ try:
 except (SyntaxError, ImportError):
   idiff = None
 
+try:
+  from pygments import highlight
+  from pygments.formatters import HtmlFormatter
+  from pygments.lexers import ClassNotFound, \
+                              get_lexer_by_name, \
+                              get_lexer_for_mimetype, \
+                              get_lexer_for_filename, \
+                              guess_lexer
+except (SyntaxError, ImportError):
+  highlight = None
+
 debug.t_end('imports')
 
 #########################################################################
@@ -1555,10 +1566,7 @@ def markup_escaped_urls(s):
 
 def markup_stream_pygments(request, cfg, blame_data, fp, filename,
                            mime_type, encoding):
-  # Determine if we should use Pygments to highlight our output.
-  # Reasons not to include a) being told not to by the configuration,
-  # b) not being able to import the Pygments modules, and c) Pygments
-  # not having a lexer for our file's format.
+  # Add diff_href items to each "line" in the blame_data (if provided).
   blame_source = []
   if blame_data:
     for i in blame_data:
@@ -1571,19 +1579,17 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
                                       escape=1, partial=1)
       blame_source.append(i)
     blame_data = blame_source
+
+  # Determine if we should use Pygments to highlight our output.
+  # Reasons not to include a) being told not to by the configuration,
+  # b) not being able to import the Pygments modules, and c) Pygments
+  # not having a lexer for our file's format.
+  #
+  # We might have to eat a line of text from our file pointer in order
+  # make this happen.
   first_line = None
   pygments_lexer = None
-
-  # If syntax coloration is enabled, we'll try to get our Pygments on.
-  if cfg.options.enable_syntax_coloration:
-    try:
-      from pygments import highlight
-      from pygments.formatters import HtmlFormatter
-      from pygments.lexers import ClassNotFound, \
-                                  get_lexer_by_name, \
-                                  get_lexer_for_mimetype, \
-                                  get_lexer_for_filename, \
-                                  guess_lexer
+  if cfg.options.enable_syntax_coloration and highlight:
       if not encoding:
         encoding = 'guess'
         if cfg.options.detect_encoding:
@@ -1622,9 +1628,6 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
         except ClassNotFound:
           pygments_lexer = None
         
-    except ImportError:
-      pass
-
   # If we aren't going to be highlighting anything, just return the
   # BLAME_SOURCE.  If there's no blame_source, we'll generate a fake
   # one from the file contents we fetch with PATH and REV.
