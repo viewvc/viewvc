@@ -3,7 +3,7 @@ Version 1.1.13 (released ??-???-????)
   * fix svndbadmin failure on deleted paths under Subversion 1.7 (issue #499)
   * fix annotation of files in svn roots with non-URI-safe paths
   * fix stray annotation warning in markup display of images
-  * remove broken lexer-guessing functionality added in 1.1.12 (issue #501)
+  * more gracefully handle attempts to display binary content (issue #501)
 
 Version 1.1.12 (released 03-Nov-2011)
 
