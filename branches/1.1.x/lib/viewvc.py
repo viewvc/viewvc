@@ -53,6 +53,17 @@ try:
 except (SyntaxError, ImportError):
   idiff = None
 
+try:
+  from pygments import highlight
+  from pygments.formatters import HtmlFormatter
+  from pygments.lexers import ClassNotFound, \
+                              get_lexer_by_name, \
+                              get_lexer_for_mimetype, \
+                              get_lexer_for_filename, \
+                              guess_lexer
+except (SyntaxError, ImportError):
+  highlight = None
+
 debug.t_end('imports')
 
 #########################################################################
@@ -1547,96 +1558,82 @@ def markup_escaped_urls(s):
     return "<a href=\"%s\">%s</a>" % (unescaped_url, url)
   return re.sub(_re_rewrite_escaped_url, _url_repl, s)
 
-def markup_stream_pygments(request, cfg, blame_data, fp, filename,
-                           mime_type, encoding):
+
+def markup_stream(request, cfg, blame_data, file_lines, filename,
+                  mime_type, encoding, colorize):
+  """Return the contents of a versioned file as a list of
+  vclib.Annotation objects, each representing one line of the file's
+  contents.  Use BLAME_DATA as the annotation information for the file
+  if provided.  Use FILE_LINES as the lines of file content text
+  themselves.  MIME_TYPE is the MIME content type of the file;
+  ENCODING is its character encoding.  If COLORIZE is true, attempt to
+  apply syntax coloration to the file contents, and use the
+  HTML-marked-up results as the text in the return vclib.Annotation
+  objects."""
+  
+  # Nothing to mark up?  So be it.
+  if not file_lines:
+    return []
+
   # Determine if we should use Pygments to highlight our output.
   # Reasons not to include a) being told not to by the configuration,
   # b) not being able to import the Pygments modules, and c) Pygments
   # not having a lexer for our file's format.
-  blame_source = []
-  if blame_data:
-    for i in blame_data:
-      i.text = sapi.escape(i.text)
-      i.diff_href = None
-      if i.prev_rev:
-        i.diff_href = request.get_url(view_func=view_diff,
-                                      params={'r1': i.prev_rev,
-                                              'r2': i.rev},
-                                      escape=1, partial=1)
-      blame_source.append(i)
-    blame_data = blame_source
   pygments_lexer = None
-
-  # If syntax coloration is enabled, we'll try to get our Pygments on.
-  if cfg.options.enable_syntax_coloration:
-    try:
-      from pygments import highlight
-      from pygments.formatters import HtmlFormatter
-      from pygments.lexers import ClassNotFound, \
-                                  get_lexer_by_name, \
-                                  get_lexer_for_mimetype, \
-                                  get_lexer_for_filename
-      if not encoding:
-        encoding = 'guess'
-        if cfg.options.detect_encoding:
-          try:
-            import chardet
-            encoding = 'chardet'
-          except (SyntaxError, ImportError):
-            pass
-
-      # First, see if there's a Pygments lexer associated with MIME_TYPE.
-      if mime_type:
+  if colorize:
+    if not encoding:
+      encoding = 'guess'
+      if cfg.options.detect_encoding:
         try:
-          pygments_lexer = get_lexer_for_mimetype(mime_type,
-                                                  encoding=encoding,
-                                                  tabsize=cfg.options.tabsize,
-                                                  stripnl=False)
-        except ClassNotFound:
-          pygments_lexer = None
+          import chardet
+          encoding = 'chardet'
+        except (SyntaxError, ImportError):
+          pass
 
-      # If we've no lexer thus far, try to find one based on the FILENAME.
-      if not pygments_lexer:
-        try:
-          pygments_lexer = get_lexer_for_filename(filename,
-                                                  encoding=encoding,
-                                                  tabsize=cfg.options.tabsize,
-                                                  stripnl=False)
-        except ClassNotFound:
-          pygments_lexer = None
+    # First, see if there's a Pygments lexer associated with MIME_TYPE.
+    if mime_type:
+      try:
+        pygments_lexer = get_lexer_for_mimetype(mime_type,
+                                                encoding=encoding,
+                                                tabsize=cfg.options.tabsize,
+                                                stripnl=False)
+      except ClassNotFound:
+        pygments_lexer = None
+
+    # If we've no lexer thus far, try to find one based on the FILENAME.
+    if not pygments_lexer:
+      try:
+        pygments_lexer = get_lexer_for_filename(filename,
+                                                encoding=encoding,
+                                                tabsize=cfg.options.tabsize,
+                                                stripnl=False)
+      except ClassNotFound:
+        pygments_lexer = None
+
+    # Still no lexer?  If we've reason to believe this is a text
+    # file, try to guess the lexer based on the file's content.
+    if not pygments_lexer and is_text(mime_type) and file_lines:
+      try:
+        pygments_lexer = guess_lexer(file_lines[0])
+      except ClassNotFound:
+        pygments_lexer = None
         
-    except ImportError:
-      pass
-
-  # If we aren't going to be highlighting anything, just return the
-  # BLAME_SOURCE.  If there's no blame_source, we'll generate a fake
-  # one from the file contents we fetch with PATH and REV.
+  # If we aren't highlighting, just return an amalgamation of the
+  # BLAME_DATA (if any) and the FILE_LINES.
   if not pygments_lexer:
-    if blame_source:
-      class BlameSourceTabsizeWrapper:
-        def __init__(self, blame_source, tabsize):
-          self.blame_source = blame_source
-          self.tabsize = cfg.options.tabsize
-        def __getitem__(self, idx):
-          item = self.blame_source.__getitem__(idx)
-          item.text = string.expandtabs(item.text, self.tabsize)
-          item.text = markup_escaped_urls(item.text)
-          return item
-      return BlameSourceTabsizeWrapper(blame_source, cfg.options.tabsize)
-    else:
-      lines = []
-      line_no = 0
-      while 1:
-        line = fp.readline()
-        if not line:
-          break
-        line_no = line_no + 1
-        line = sapi.escape(string.expandtabs(line, cfg.options.tabsize))
-        line = markup_escaped_urls(line)
-        item = vclib.Annotation(line, line_no, None, None, None, None)
-        item.diff_href = None
-        lines.append(item)
-      return lines
+    lines = []
+    for i in range(len(file_lines)):
+      line = file_lines[i]
+      line = sapi.escape(string.expandtabs(line, cfg.options.tabsize))
+      line = markup_escaped_urls(line)
+      if blame_data:
+        blame_item = blame_data[i]
+        blame_item.text = line
+      else:
+        blame_item = vclib.Annotation(line, i + 1, None, None, None, None)
+        blame_item.diff_href = None
+      lines.append(blame_item)
+    return lines
 
   # If we get here, we're highlighting something.
   class PygmentsSink:
@@ -1659,8 +1656,9 @@ def markup_stream_pygments(request, cfg, blame_data, fp, filename,
         item.diff_href = None
         self.blame_data.append(item)
       self.line_no = self.line_no + 1
-  ps = PygmentsSink(blame_source)
-  highlight(fp.read(), pygments_lexer,
+
+  ps = PygmentsSink(blame_data)
+  highlight(string.join(file_lines, ''), pygments_lexer,
             HtmlFormatter(nowrap=True,
                           classprefix="pygments-",
                           encoding='utf-8'), ps)
@@ -1765,28 +1763,64 @@ def markup_or_annotate(request, is_annotate):
 
   # Not a viewable image.
   else:
-    blame_source = None
+    blame_data = None
+
+    # If this was an annotation request, try to annotate this file.
+    # If something goes wrong, that's okay -- we'll gracefully revert
+    # to a plain markup display.
     if is_annotate:
-      # Try to annotate this file, but don't croak if we fail.
       try:
-        blame_source, revision = request.repos.annotate(path, rev)
-        annotation = 'annotated'
+        blame_source, revision = request.repos.annotate(path, rev, False)
         if check_freshness(request, None, revision, weak=1):
           return
+        # Create BLAME_DATA list from BLAME_SOURCE, adding diff_href
+        # items to each relevant "line".
+        blame_data = []
+        for item in blame_source:
+          item.diff_href = None
+          if item.prev_rev:
+            item.diff_href = request.get_url(view_func=view_diff,
+                                             params={'r1': item.prev_rev,
+                                                     'r2': item.rev},
+                                             escape=1, partial=1)
+          blame_data.append(item)
+        annotation = 'annotated'
       except vclib.NonTextualFileContents:
         annotation = 'binary'
       except:
         annotation = 'error'
 
+    # Grab the file contents.
     fp, revision = request.repos.openfile(path, rev, {'cvs_oldkeywords' : 1})
     if check_freshness(request, None, revision, weak=1):
       fp.close()
       return
-    lines = markup_stream_pygments(request, cfg, blame_source, fp,
-                                   path[-1], mime_type, encoding)
+    file_lines = fp.readlines()
     fp.close()
 
-  data = common_template_data(request, revision)
+    # Do we have a differing number of file content lines and
+    # annotation items?  That's no good.  Call it an error and don't
+    # bother attempting the annotation display.
+    if blame_data and (len(file_lines) != len(blame_data)):
+      annotation = 'error'
+      blame_data = None
+
+    # Try to markup the file contents/annotation.  If we get an error
+    # and we were colorizing the stream, try once more without the
+    # colorization enabled.
+    colorize = cfg.options.enable_syntax_coloration and highlight
+    try:
+      lines = markup_stream(request, cfg, blame_data, file_lines,
+                            path[-1], mime_type, encoding, colorize)
+    except:
+      if colorize:
+        lines = markup_stream(request, cfg, blame_data, file_lines,
+                              path[-1], mime_type, encoding, False)
+      else:
+        raise debug.ViewVCException('Error displaying file contents',
+                                    '500 Internal Server Error')
+
+  data = common_template_data(request, revision, mime_type)
   data.merge(ezt.TemplateData({
     'mime_type' : mime_type,
     'log' : None,

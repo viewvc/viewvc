@@ -338,7 +338,7 @@ class RemoteSubversionRepository(vclib.Repository):
                                         _rev2optrev(rev), 0, self.ctx)
     return pairs and pairs[0][1] or {}
   
-  def annotate(self, path_parts, rev):
+  def annotate(self, path_parts, rev, include_text=False):
     path = self._getpath(path_parts)
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % path)
@@ -352,12 +352,13 @@ class RemoteSubversionRepository(vclib.Repository):
       prev_rev = None
       if revision > 1:
         prev_rev = revision - 1
-      blame_data.append(vclib.Annotation(line, line_no+1, revision, prev_rev,
+      if not include_text:
+        line = None
+      blame_data.append(vclib.Annotation(line, line_no + 1, revision, prev_rev,
                                          author, None))
       
     client.svn_client_blame(url, _rev2optrev(1), _rev2optrev(rev),
                             _blame_cb, self.ctx)
-
     return blame_data, rev
 
   def revinfo(self, rev):

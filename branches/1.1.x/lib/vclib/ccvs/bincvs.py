@@ -332,13 +332,13 @@ class BinCVSRepository(BaseCVSRepository):
       args = rcs_args
     return popen.popen(cmd, args, mode, capture_err)
 
-  def annotate(self, path_parts, rev=None):
+  def annotate(self, path_parts, rev=None, include_text=False):
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file."
                         % (string.join(path_parts, "/")))
                         
     from vclib.ccvs import blame
-    source = blame.BlameSource(self.rcsfile(path_parts, 1), rev)
+    source = blame.BlameSource(self.rcsfile(path_parts, 1), rev, include_text)
     return source, source.revision
 
   def revinfo(self, rev):
