@@ -283,10 +283,11 @@ class FileContentsPipe:
 
 
 class BlameSource:
-  def __init__(self, local_url, rev, first_rev, config_dir):
+  def __init__(self, local_url, rev, first_rev, include_text, config_dir):
     self.idx = -1
     self.first_rev = first_rev
     self.blame_data = []
+    self.include_text = include_text
 
     ctx = client.svn_client_create_context()
     core.svn_config_ensure(config_dir)
@@ -307,6 +308,8 @@ class BlameSource:
     prev_rev = None
     if rev > self.first_rev:
       prev_rev = rev - 1
+    if not self.include_text:
+      text = None
     self.blame_data.append(vclib.Annotation(text, line_no + 1, rev,
                                             prev_rev, author, None))
 
@@ -522,7 +525,7 @@ class LocalSubversionRepository(vclib.Repository):
     fsroot = self._getroot(rev)
     return fs.node_proplist(fsroot, path)
   
-  def annotate(self, path_parts, rev):
+  def annotate(self, path_parts, rev, include_text=False):
     path = self._getpath(path_parts)
     path_type = self.itemtype(path_parts, rev)  # does auth-check
     if path_type != vclib.FILE:
@@ -533,8 +536,8 @@ class LocalSubversionRepository(vclib.Repository):
                                 {'svn_cross_copies': 1})
     youngest_rev, youngest_path = history[0]
     oldest_rev, oldest_path = history[-1]
-    source = BlameSource(_rootpath2url(self.rootpath, path),
-                         youngest_rev, oldest_rev, self.config_dir)
+    source = BlameSource(_rootpath2url(self.rootpath, path), youngest_rev,
+                         oldest_rev, include_text, self.config_dir)
     return source, youngest_rev
 
   def revinfo(self, rev):
