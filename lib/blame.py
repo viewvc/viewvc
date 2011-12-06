@@ -75,7 +75,8 @@ class HTMLBlameSource:
     self.path_parts = path_parts
     self.diff_url = diff_url
     self.include_url = include_url
-    self.annotation, self.revision = self.repos.annotate(path_parts, opt_rev)
+    self.annotation, self.revision = self.repos.annotate(path_parts, opt_rev,
+                                                         True)
 
   def __getitem__(self, idx):
     item = self.annotation.__getitem__(idx)
