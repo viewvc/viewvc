@@ -53,17 +53,6 @@ try:
 except (SyntaxError, ImportError):
   idiff = None
 
-try:
-  from pygments import highlight
-  from pygments.formatters import HtmlFormatter
-  from pygments.lexers import ClassNotFound, \
-                              get_lexer_by_name, \
-                              get_lexer_for_mimetype, \
-                              get_lexer_for_filename, \
-                              guess_lexer
-except (SyntaxError, ImportError):
-  highlight = None
-
 debug.t_end('imports')
 
 #########################################################################
@@ -1575,12 +1564,19 @@ def markup_stream(request, cfg, blame_data, file_lines, filename,
   if not file_lines:
     return []
 
-  # Determine if we should use Pygments to highlight our output.
-  # Reasons not to include a) being told not to by the configuration,
-  # b) not being able to import the Pygments modules, and c) Pygments
-  # not having a lexer for our file's format.
+  # Determine if we should (and can) use Pygments to highlight our
+  # output.  Reasons not to include a) being told not to by the
+  # configuration, b) not being able to import the Pygments modules,
+  # and c) Pygments not having a lexer for our file's format.
   pygments_lexer = None
   if colorize:
+    from pygments import highlight
+    from pygments.formatters import HtmlFormatter
+    from pygments.lexers import ClassNotFound, \
+                                get_lexer_by_name, \
+                                get_lexer_for_mimetype, \
+                                get_lexer_for_filename, \
+                                guess_lexer
     if not encoding:
       encoding = 'guess'
       if cfg.options.detect_encoding:
@@ -1808,7 +1804,7 @@ def markup_or_annotate(request, is_annotate):
     # Try to markup the file contents/annotation.  If we get an error
     # and we were colorizing the stream, try once more without the
     # colorization enabled.
-    colorize = cfg.options.enable_syntax_coloration and highlight
+    colorize = cfg.options.enable_syntax_coloration
     try:
       lines = markup_stream(request, cfg, blame_data, file_lines,
                             path[-1], mime_type, encoding, colorize)
