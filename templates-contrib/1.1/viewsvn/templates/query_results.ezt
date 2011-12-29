@@ -5,10 +5,19 @@
 
 [include "include/header.ezt"]
 
-<p><a href="[queryform_href]" title="Modify query" class="img"><img src="[docroot]/images/tortoisesvn/back.png" alt="Modify query" width="16" height="16" /></a>&nbsp;<a href="[queryform_href]">Modify query</a></p>
 <p><strong>[english_query]</strong></p>
 [# <!-- {sql} --> ]
-<!-- <p><a href="[backout_href]">Show commands which could be used to back out these changes</a></p> -->
+[if-any row_limit_reached]
+<p class="vc_warning">WARNING:  These query results have been
+   artificially limited by an administrative threshold value and do
+   <em>not</em> represent the entirety of the data set which matches
+   the query.  Consider <a href="[queryform_href]">modifying your
+   query to be more specific</a>, using your version control tool's
+   query capabilities, or asking your administrator to raise the
+   database response size threshold.</p>
+[end]
+<p><a href="[queryform_href]">Modify query</a></p>
+<p><a href="[backout_href]">Show commands which could be used to back out these changes</a></p>
 
 <p><strong>+[plus_count]/-[minus_count]</strong> lines changed.</p>
 
@@ -18,6 +27,9 @@
   <tr>
    <th class="vc_header">Revision</th>
    <th class="vc_header[is querysort "file"]_sort[end]">File</th>
+[if-any show_branch]
+   <th class="vc_header">Branch</th>
+[end]
    <th class="vc_header">+/-</th>
    <th class="vc_header[is querysort "date"]_sort[end]">Date</th>
    <th class="vc_header[is querysort "author"]_sort[end]">Author</th>
@@ -31,25 +43,18 @@
     <tbody>
     <tr class="vc_row_[if-index commits even]even[else]odd[end]">
       <td style="vertical-align: top;">
-	[if-any commits.files.rev]
-	  [is commits.files.type "Add"]<a href="[commits.files.log_href]">[end]
-	  [is commits.files.type "Change"]<a href="[commits.files.log_href]">[end]
-	  [commits.files.rev]
-	  [is commits.files.type "Add"]</a>[end]
-	  [is commits.files.type "Change"]</a>[end]
-	[else]&nbsp;[end]
+        [define rev_href][if-any commits.files.prefer_markup][commits.files.view_href][else][if-any commits.files.download_href][commits.files.download_href][end][end][end]
+	[if-any commits.files.rev][if-any rev_href]<a href="[rev_href]">[end][commits.files.rev][if-any rev_href]</a>[end][else]&nbsp;[end]
       </td>
       <td style="vertical-align: top;">
         <a href="[commits.files.dir_href]">[commits.files.dir]/</a>
-		
-        [is commits.files.type "Add"]<a href="[if-any commits.files.prefer_markup][commits.files.view_href][else][commits.files.download_href][end]">[end]
-		[is commits.files.type "Change"]<a href="[if-any commits.files.prefer_markup][commits.files.view_href][else][commits.files.download_href][end]">[end]
-		[commits.files.file]
-		[is commits.files.type "Add"]</a>[end]
-		[is commits.files.type "Change"]</a>[end]
-		
-		
+        <a href="[commits.files.log_href]">[commits.files.file]</a>
       </td>
+[if-any show_branch]
+      <td style="vertical-align: top;">
+	[if-any commits.files.branch][commits.files.branch][else]&nbsp;[end]
+      </td>
+[end]
       <td style="vertical-align: top;">
         [# only show a diff link for changes ]
         [is commits.files.type "Add"]<ins>[end]
@@ -79,8 +84,8 @@
   [end]
   <tr class="vc_row_[if-index commits even]even[else]odd[end]">
     <td>&nbsp;</td>
-    <td colspan="4"><strong>Log:</strong><br />
-      <pre>[commits.log]</pre></td>
+    <td colspan="5"><strong>Log:</strong><br />
+      <pre class="vc_log">[commits.log]</pre></td>
   </tr>
   </tbody>
 [end]

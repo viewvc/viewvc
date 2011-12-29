@@ -158,7 +158,15 @@
 [is query "skipped"]
 [else]
 <p><strong>[num_commits]</strong> matches found.</p>
-
+[if-any row_limit_reached]
+<p class="vc_warning">WARNING:  These query results have been
+   artificially limited by an administrative threshold value and do
+   <em>not</em> represent the entirety of the data set which matches
+   the query.  Consider modifying your query to be more specific</a>,
+   using your version control tool's query capabilities, or asking
+   your administrator to raise the database response size
+   threshold.</p>
+[end]
 [if-any commits]
 <table cellspacing="0" cellpadding="2">
  <thead>
@@ -202,21 +210,21 @@
       </td>
 
 [# uncommment, if you want a separate Description column:
-      {if-index commits.files first{
+      {if-index commits.files first}
         <td style="vertical-align:top;" rowspan="{commits.num_files}">
-          {commits.log}
+          {if-any commits.log}{commits.log}{else}&nbsp;{end}
         </td>
       {end}
 
    (substitute brackets for the braces)
 ]
     </tr>
-[# and also take the following out in the "Description column"-case:]
+[# and also take the following out in the "Description column" case:]
       [if-index commits.files last]
 	<tr class="vc_row_[if-index commits even]even[else]odd[end]">
 	  <td>&nbsp;</td>
 	  <td colspan="5"><strong>Log:</strong><br />
-	    <pre class="vc_log">[commits.log]</pre></td>
+	    <pre class="vc_log">[if-any commits.log][commits.log][else]&nbsp;[end]</pre></td>
 	</tr>
       [end]
 [# ---]
