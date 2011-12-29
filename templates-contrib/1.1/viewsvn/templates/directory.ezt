@@ -14,7 +14,7 @@
     </a>
   </th>
   <th class="vc_header[is sortby "rev"]_sort[end]" width="[is cfg.options.show_logs "1"]5[else]10[end]%">
-    <a href="[sortby_rev_href]#dirlist">Rev.</a>
+    <a href="[sortby_rev_href]#dirlist">Revision</a>
     <a href="[sortby_rev_href]#dirlist" class="img">
     [is sortby "rev"]
       <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"

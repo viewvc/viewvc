@@ -10,10 +10,10 @@
 <tr>
   <th class="vc_header_sort">Name</th>
 [is cfg.options.show_roots_lastmod "1"]
-  <th class="vc_header">Revision</th>
-  <th class="vc_header">Age</th>
-  <th class="vc_header">Author</th>
-  <th class="vc_header">Log</th>
+  <th class="vc_header" width="5%">Revision</th>
+  <th class="vc_header" width="10%">Age</th>
+  <th class="vc_header" width="10%">Author</th>
+  <th class="vc_header" width="50%">Last log entry</th>
 [end]
 </tr>
 </thead>
