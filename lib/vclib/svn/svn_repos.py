@@ -113,7 +113,7 @@ def _rootpath2url(rootpath, path):
   rootpath = urllib.quote(rootpath)
   path = urllib.quote(path)
   if drive:
-    return 'file:///' + drive + ':' + rootpath + '/' + path
+    return 'file:///' + drive + rootpath + '/' + path
   else:
     return 'file://' + rootpath + '/' + path
 
