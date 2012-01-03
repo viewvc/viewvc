@@ -106,12 +106,16 @@ def _rev2optrev(rev):
 
 
 def _rootpath2url(rootpath, path):
+  drive, rootpath = os.path.splitdrive(rootpath)
   rootpath = os.path.abspath(rootpath)
-  if rootpath and rootpath[0] != '/':
-    rootpath = '/' + rootpath
   if os.sep != '/':
     rootpath = rootpath.replace(os.sep, '/')
-  return 'file://' + urllib.pathname2url(rootpath) + '/' + path
+  rootpath = urllib.quote(rootpath)
+  path = urllib.quote(path)
+  if drive:
+    return 'file:///' + drive + ':' + rootpath + '/' + path
+  else:
+    return 'file://' + rootpath + '/' + path
 
 
 # Given a dictionary REVPROPS of revision properties, pull special
