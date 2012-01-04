@@ -38,7 +38,7 @@ import types
 import urllib
 
 # These modules come from our library (the stub has set up the path)
-from common import _item, _RCSDIFF_NO_CHANGES, _RCSDIFF_IS_BINARY, _RCSDIFF_ERROR
+from common import _item, _RCSDIFF_NO_CHANGES, _RCSDIFF_IS_BINARY, _RCSDIFF_ERROR, TemplateData
 import accept
 import config
 import ezt
@@ -1372,13 +1372,13 @@ def html_time(request, secs, extended=0):
   return s
 
 def common_template_data(request, revision=None, mime_type=None):
-  """Return a ezt.TemplateData instance with data dictionary items
+  """Return a TemplateData instance with data dictionary items
   common to most ViewVC views."""
   
   cfg = request.cfg
 
   # Initialize data dictionary members (sorted alphanumerically)
-  data = ezt.TemplateData({
+  data = TemplateData({
     'annotate_href' : None,
     'cfg' : cfg,
     'docroot' : cfg.options.docroot is None \
@@ -1824,7 +1824,7 @@ def markup_or_annotate(request, is_annotate):
                                     '500 Internal Server Error')
 
   data = common_template_data(request, revision, mime_type)
-  data.merge(ezt.TemplateData({
+  data.merge(TemplateData({
     'mime_type' : mime_type,
     'log' : None,
     'date' : None,
@@ -1993,7 +1993,7 @@ def view_roots(request):
                          log_href=log_href))
 
   data = common_template_data(request)
-  data.merge(ezt.TemplateData({
+  data.merge(TemplateData({
     'roots' : roots,
     }))
   generate_page(request, "roots", data)
@@ -2179,7 +2179,7 @@ def view_directory(request):
   # Prepare the data that will be passed to the template, based on the
   # common template data.
   data = common_template_data(request)
-  data.merge(ezt.TemplateData({
+  data.merge(TemplateData({
     'entries' : rows,
     'sortby' : sortby,
     'sortdir' : sortdir,
@@ -2622,7 +2622,7 @@ def view_log(request):
 
 
   data = common_template_data(request)
-  data.merge(ezt.TemplateData({
+  data.merge(TemplateData({
     'default_branch' : None,
     'mime_type' : mime_type,
     'rev_selected' : selected_rev,
@@ -2863,7 +2863,7 @@ def view_cvsgraph(request):
     request.get_form(view_func=view_cvsgraph, params={})
 
   data = common_template_data(request)
-  data.merge(ezt.TemplateData({
+  data.merge(TemplateData({
     'imagemap' : fp,
     'imagesrc' : imagesrc,
     'graph_action' : graph_action,
@@ -3580,7 +3580,7 @@ def view_diff(request):
     request.get_form(params=no_format_params)
 
   data = common_template_data(request)
-  data.merge(ezt.TemplateData({
+  data.merge(TemplateData({
     'diffs' : desc.changes,
     'diff_format' : desc.diff_format,
     'hide_legend' : ezt.boolean(desc.hide_legend),
@@ -3930,7 +3930,7 @@ def view_revision(request):
     request.get_form(params={'revision': None})
     
   data = common_template_data(request)
-  data.merge(ezt.TemplateData({
+  data.merge(TemplateData({
     'rev' : str(rev),
     'author' : author,
     'date' : date_str,
@@ -4026,7 +4026,7 @@ def view_queryform(request):
     return request.server.escape(request.query_dict.get(itemname, itemdefault))
     
   data = common_template_data(request)
-  data.merge(ezt.TemplateData({
+  data.merge(TemplateData({
     'branch' : escaped_query_dict_get('branch', ''),
     'branch_match' : escaped_query_dict_get('branch_match', 'exact'),
     'dir' : escaped_query_dict_get('dir', ''),
@@ -4524,7 +4524,7 @@ def view_query(request):
     return
 
   data = common_template_data(request)
-  data.merge(ezt.TemplateData({
+  data.merge(TemplateData({
     'sql': request.server.escape(db.CreateSQLQueryString(query)),
     'english_query': english_query(request),
     'queryform_href': request.get_url(view_func=view_queryform, escape=1),
