@@ -23,7 +23,7 @@ import sys
 import string
 import time
 
-from common import _item
+from common import _item, TemplateData
 import cvsdb
 import viewvc
 import ezt
@@ -443,7 +443,7 @@ def main(server, cfg, viewvc_link):
     if docroot is None and viewvc_link:
         docroot = viewvc_link + '/' + viewvc.docroot_magic_path
         
-    data = ezt.TemplateData({
+    data = TemplateData({
       'cfg' : cfg,
       'address' : cfg.general.address,
       'vsn' : viewvc.__version__,
