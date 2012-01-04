@@ -304,7 +304,47 @@ APACHE CONFIGURATION
       ScriptAlias /viewvc /usr/local/viewvc/bin/wsgi/viewvc.fcgi
       ScriptAlias /query /usr/local/viewvc/bin/wsgi/query.fcgi
 
-4) [Optional] Add access control.
+4) [Optional] Provide direct access to icons, stylesheets, etc.
+
+   ViewVC's HTML templates reference various stylesheets and icons
+   provided by ViewVC itself.  By default, ViewVC generates URLs to
+   those artifacts which point back into ViewVC (using a magic
+   syntax); ViewVC in turn handles such magic URL requests by
+   streaming back the contents of the requested icon or stylesheet
+   file.  While this simplifies the configuration and initial
+   deployment of ViewVC, it's not the most efficient approach to
+   deliver what is essentially static content.
+
+   To improve performance, consider carving out a URL space in your
+   webserver's configuration solely for this static content and
+   instruct ViewVC to use that space when generating URLs for that
+   content.  For example, you might add an Alias such as the following
+   to your httpd.conf:
+
+      Alias /viewvc-docroot /usr/local/viewvc/templates/default/docroot
+
+   And then, in viewvc.conf, set the 'docroot' option to the same
+   location:
+
+      docroot = /viewvc-docroot
+
+   WARNING: As always when using Alias directives, be careful that you
+   have them in the correct order.  For example, if you use an
+   ordering such as the following, Apache will hand requests for your
+   static documents off to ViewVC as if they were versioned resources:
+
+      ScriptAlias /viewvc        /usr/local/viewvc/bin/wsgi/viewvc.fcgi
+      Alias       /viewvc/static /usr/local/viewvc/templates/default/docroot
+
+   The correct order would be:
+
+      Alias       /viewvc/static /usr/local/viewvc/templates/default/docroot
+      ScriptAlias /viewvc        /usr/local/viewvc/bin/wsgi/viewvc.fcgi
+
+   (That said, it's best to avoid such namespace nesting altogether if
+   you can.)
+
+5) [Optional] Add access control.
 
    In your httpd.conf you can control access to certain modules by
    adding directives like this:
@@ -325,14 +365,14 @@ APACHE CONFIGURATION
       http://<server_name>/viewvc/~checkout~/<module_name>
       http://<server_name>/viewvc/<module_name>.tar.gz?view=tar
 
-5) Restart Apache.
+6) Restart Apache.
 
    The commands to do this vary.  "httpd -k restart" and "apache -k
    restart" are two common variants.  On RedHat Linux it is done using
    the command "/sbin/service httpd restart" and on SuSE Linux it is
    done with "rcapache restart".  Other systems use "apachectl restart".
 
-6) Optional: Protect your ViewVC instance from server-whacking webcrawlers.
+7) [Optional] Protect your ViewVC instance from server-whacking webcrawlers.
 
    As ViewVC is a web-based application which each page containing various
    links to other pages and views, you can expect your server's performance
