@@ -19,6 +19,7 @@ def cvs_strptime(timestr):
 
 
 def canonicalize_rootpath(rootpath):
+  assert os.path.isabs(rootpath)
   return os.path.normpath(rootpath)
 
 
@@ -27,6 +28,7 @@ def expand_root_parent(parent_path):
   # "CVSROOT/config" is added the set of returned roots.  Or, if the
   # PARENT_PATH itself contains a child "CVSROOT/config", then all its
   # subdirectories are returned as roots.
+  assert os.path.isabs(parent_path)
   roots = {}
   subpaths = os.listdir(parent_path)
   cvsroot = os.path.exists(os.path.join(parent_path, "CVSROOT", "config"))
