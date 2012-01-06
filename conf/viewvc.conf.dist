@@ -86,8 +86,8 @@
 
 ## cvs_roots: Specifies each of the CVS roots on your system and
 ## assigns names to them. Each root should be given by a "name: path"
-## value. Multiple roots should be separated by commas and can be
-## placed on separate lines.
+## value (where the path is an absolute filesystem path). Multiple roots
+## should be separated by commas and can be placed on separate lines.
 ##
 ## Example:
 ## cvs_roots = cvsroot: /opt/cvs/repos1,
@@ -97,8 +97,13 @@
 
 ## svn_roots: Specifies each of the Subversion roots (repositories) on
 ## your system and assigns names to them. Each root should be given by
-## a "name: path" value. Multiple roots should be separated by commas
-## and can be placed on separate lines.
+## a "name: path" value (where the path is an absolute filesystem path).
+## Multiple roots should be separated by commas and can be placed on
+## separate lines.
+##
+## NOTE: ViewVC offers *experimental* support for displaying remote
+## Subversion repositories.  Simply use the repository's URL instead
+## of a local filesystem path when defining the root.
 ##
 ## Example:
 ## svn_roots = svnrepos: /opt/svn/,
@@ -109,7 +114,8 @@
 ## root_parents: Specifies a list of directories under which any
 ## number of repositories may reside.  You can specify multiple root
 ## parents separated by commas or new lines, each of which is of the
-## form "path: type" (where type is either "cvs" or "svn").
+## form "path: type" (where the type is either "cvs" or "svn", and
+## the path is an absolute filesystem path).
 ##
 ## Rather than force you to add a new entry to 'cvs_roots' or
 ## 'svn_roots' each time you create a new repository, ViewVC rewards

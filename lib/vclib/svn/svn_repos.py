@@ -108,8 +108,8 @@ def _rev2optrev(rev):
 
 
 def _rootpath2url(rootpath, path):
-  drive, rootpath = os.path.splitdrive(rootpath)
   rootpath = os.path.abspath(rootpath)
+  drive, rootpath = os.path.splitdrive(rootpath)
   if os.sep != '/':
     rootpath = string.replace(rootpath, os.sep, '/')
   rootpath = urllib.quote(rootpath)

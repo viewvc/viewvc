@@ -38,6 +38,7 @@ def canonicalize_rootpath(rootpath):
         return os.path.normpath(urllib.unquote(rootpath[7:]))
     if re.search(_re_url, rootpath):
       return rootpath.rstrip('/')
+    assert os.path.isabs(rootpath)
     return os.path.normpath(rootpath)
 
 
@@ -48,6 +49,7 @@ def expand_root_parent(parent_path):
   else:
     # Any subdirectories of PARENT_PATH which themselves have a child
     # "format" are returned as roots.
+    assert os.path.isabs(parent_path)
     subpaths = os.listdir(parent_path)
     for rootname in subpaths:
       rootpath = os.path.join(parent_path, rootname)
