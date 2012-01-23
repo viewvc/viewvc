@@ -1,0 +1,7 @@
+LIBRARY      "aspfool"
+DESCRIPTION  'aspfool'
+
+EXPORTS
+    ; Explicit exports can go here
+	GetFilterVersion @1
+	HttpFilterProc @2
