@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+#
+# Copyright (C) 2012 The ViewCVS Group. All Rights Reserved.
+#
+# By using this file, you agree to the terms and conditions set forth in
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
+#
+# For more information, visit http://viewvc.org/
+#
+# -----------------------------------------------------------------------
+#
+# bump-copyright-years: internal tool for bumping copyright years
+#
+# -----------------------------------------------------------------------
+#
+import sys
+import os
+import time
+import re
+
+_copyright_re = re.compile(r'Copyright (\(C\)|&copy;) ([0-9]{4}-)?([0-9]{4}) The ViewCVS Group')
+
+def replace_end_year(path, year):
+  updated = False
+  lines = open(path, 'r').readlines()
+  for i in range(len(lines)):
+    line = lines[i]
+    new_line = None
+    m = _copyright_re.search(line)
+    if not m:
+      continue 
+    if m.group(2):
+      new_line = line[:m.start(3)] + year + line[m.end(3):]
+    elif m.group(3) != year:
+      new_line = line[:m.end(3)] + '-' + year + line[m.end(3):]
+    if new_line is not None:
+      print "In file '%s'..." % (path)
+      print "   replaced: " + line
+      print "       with: " + new_line
+      updated = True
+      lines[i] = new_line
+  if updated:
+    open(path, 'w').write(''.join(lines))
+
+def bump_years_recursive(target_dir, year):
+  children = os.listdir(target_dir)
+  for child in children:
+    child_path = os.path.join(target_dir, child)
+    if os.path.isfile(child_path):
+      replace_end_year(child_path, year)
+    elif os.path.isdir(child_path):
+      bump_years_recursive(child_path, year)
+
+def update_license(license_file, long_date):
+  pass
+
+def bump_years(target_dir):
+  year = time.strftime('%Y')
+  long_date = time.strftime('%B %d, %Y')
+  bump_years_recursive(target_dir, year)
+  update_license(os.path.join(target_dir, 'LICENSE.html'), long_date)
+    
+if __name__ == "__main__":
+  try:
+    target_dir = sys.argv[1]
+  except:
+    sys.stderr.write("""\
+Usage: bump-copyright-years VIEWVC_DIRECTORY
+
+Recursively update the copyright years associated with files carrying
+'The ViewCVS Group' copyright in and under VIEWVC_DIRECTORY to include
+the current year.
+""")
+    sys.exit(1)
+  bump_years(target_dir)
