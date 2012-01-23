@@ -48,14 +48,17 @@ def bump_years_recursive(target_dir, year):
     elif os.path.isdir(child_path):
       bump_years_recursive(child_path, year)
 
-def update_license(license_file, long_date):
-  pass
-
 def bump_years(target_dir):
   year = time.strftime('%Y')
   long_date = time.strftime('%B %d, %Y')
   bump_years_recursive(target_dir, year)
-  update_license(os.path.join(target_dir, 'LICENSE.html'), long_date)
+  sys.stdout.write("""\
+Copyright years bumped.  Don't forget to add the following line to
+the primary license file at '%s':
+
+  <li>%s &mdash; copyright years updated</li>
+  
+""" % (os.path.join(target_dir, 'LICENSE.html'), long_date))
     
 if __name__ == "__main__":
   try:
