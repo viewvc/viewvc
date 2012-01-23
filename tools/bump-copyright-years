@@ -31,17 +31,13 @@ def replace_end_year(path, year):
     if not m:
       continue 
     if m.group(2):
-      new_line = line[:m.start(3)] + year + line[m.end(3):]
+      lines[i] = line[:m.start(3)] + year + line[m.end(3):]
+      open(path, 'w').write(''.join(lines))
+      break
     elif m.group(3) != year:
-      new_line = line[:m.end(3)] + '-' + year + line[m.end(3):]
-    if new_line is not None:
-      print "In file '%s'..." % (path)
-      print "   replaced: " + line
-      print "       with: " + new_line
-      updated = True
-      lines[i] = new_line
-  if updated:
-    open(path, 'w').write(''.join(lines))
+      lines[i] = line[:m.end(3)] + '-' + year + line[m.end(3):]
+      open(path, 'w').write(''.join(lines))
+      break
 
 def bump_years_recursive(target_dir, year):
   children = os.listdir(target_dir)
