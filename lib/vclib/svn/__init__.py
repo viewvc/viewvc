@@ -20,6 +20,10 @@ import urllib
 _re_url = re.compile('^(http|https|file|svn|svn\+[^:]+)://')
 
 def canonicalize_rootpath(rootpath):
+  ### TODO: This feels ... wrong.  We only try to convert the URL to
+  ###       a local path if we fail to call svn_path_canonicalize()?
+  ###       Really?  Something tells me I goofed this logic up at some
+  ###       point.  --cmpilato
   try:
     import svn.core
     return svn.core.svn_path_canonicalize(rootpath)
