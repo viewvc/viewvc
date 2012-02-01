@@ -92,13 +92,15 @@ numbers, and not literal):
     Also, drop a copy of the archive files into the root directory of
     the viewvc.org website (unversioned).
 
-15. On trunk, update the websites (both the viewvc.org/ and www/ ones)
-    to refer to the new release files, and copy the CHANGES for the
-    new release into trunk's CHANGES file.
+15. Update the Tigris.org website (^/trunk/www/index.html) to refer to
+    the new release files and commit.
 
-16. Edit the file 'lib/viewvc.py' again, incrementing the patch number
-    assigned to the __version__ variable.  Add a new empty block in
-    the branch's CHANGES file.  Commit your changes:
+       svn ci -m "Bump latest advertised release."
+
+16. Back on the release branch, edit the file 'lib/viewvc.py' again,
+    incrementing the patch number assigned to the __version__
+    variable.  Add a new empty block in the branch's CHANGES file.
+    Commit your changes:
 
        svn ci -m "Begin a new release cycle."
 
@@ -115,4 +117,4 @@ numbers, and not literal):
     in this sort of stuff, such as Freshmeat (http://www.freshmeat.net).
 
 19. Merge CHANGES for this release into the CHANGES file for newer
-    release lines.
+    release lines and commit.
