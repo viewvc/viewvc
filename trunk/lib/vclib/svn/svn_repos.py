@@ -113,9 +113,10 @@ def _rootpath2url(rootpath, path):
   rootpath = urllib.quote(rootpath)
   path = urllib.quote(path)
   if drive:
-    return 'file:///' + drive + rootpath + '/' + path
+    url = 'file:///' + drive + rootpath + '/' + path
   else:
-    return 'file://' + rootpath + '/' + path
+    url = 'file://' + rootpath + '/' + path
+  return core.svn_path_canonicalize(url)
 
 
 # Given a dictionary REVPROPS of revision properties, pull special
