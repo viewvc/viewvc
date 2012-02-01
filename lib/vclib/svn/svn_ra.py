@@ -420,7 +420,8 @@ class RemoteSubversionRepository(vclib.Repository):
   def _geturl(self, path=None):
     if not path:
       return self.rootpath
-    return self.rootpath + '/' + urllib.quote(path, "/*~")
+    path = self.rootpath + '/' + urllib.quote(path)
+    return core.svn_path_canonicalize(path)
 
   def _get_dirents(self, path, rev):
     """Return a 2-type of dirents and locks, possibly reading/writing
