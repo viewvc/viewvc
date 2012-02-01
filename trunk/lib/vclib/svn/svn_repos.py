@@ -41,7 +41,14 @@ def _fix_subversion_exception(e):
     e.apr_err = e[1]
   if not hasattr(e, 'message'):
     e.message = e[0]
-  
+
+### Pre-1.4 Subversion doesn't have svn_path_canonicalize()
+def _canonicalize_path(path):
+  try:
+    return core.svn_path_canonicalize(path)
+  except AttributeError:
+    return path
+
 def _allow_all(root, path, pool):
   """Generic authz_read_func that permits access to all paths"""
   return 1
@@ -116,7 +123,7 @@ def _rootpath2url(rootpath, path):
     url = 'file:///' + drive + rootpath + '/' + path
   else:
     url = 'file://' + rootpath + '/' + path
-  return core.svn_path_canonicalize(url)
+  return _canonicalize_path(url)
 
 
 # Given a dictionary REVPROPS of revision properties, pull special
