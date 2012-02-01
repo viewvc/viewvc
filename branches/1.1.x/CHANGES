@@ -1,6 +1,6 @@
 Version 1.1.14 (released ??-???-????)
 
-  * 
+  * fix annotation of svn files with non-URI-safe paths (issue #504)
 
 Version 1.1.13 (released 23-Jan-2012)
 

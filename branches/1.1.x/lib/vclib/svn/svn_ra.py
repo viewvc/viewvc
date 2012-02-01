@@ -20,7 +20,10 @@ import re
 import tempfile
 import time
 import urllib
-from svn_repos import Revision, SVNChangedPath, _datestr_to_date, _compare_paths, _path_parts, _cleanup_path, _rev2optrev, _fix_subversion_exception, _split_revprops
+from svn_repos import Revision, SVNChangedPath, _datestr_to_date, \
+                      _compare_paths, _path_parts, _cleanup_path, \
+                      _rev2optrev, _fix_subversion_exception, \
+                      _split_revprops, _canonicalize_path
 from svn import core, delta, client, wc, ra
 
 
@@ -421,7 +424,8 @@ class RemoteSubversionRepository(vclib.Repository):
   def _geturl(self, path=None):
     if not path:
       return self.rootpath
-    return self.rootpath + '/' + urllib.quote(path, "/*~")
+    path = self.rootpath + '/' + urllib.quote(path)
+    return _canonicalize_path(path)
 
   def _get_dirents(self, path, rev):
     """Return a 2-type of dirents and locks, possibly reading/writing
