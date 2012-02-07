@@ -1,6 +1,7 @@
 Version 1.1.14 (released ??-???-????)
 
   * fix annotation of svn files with non-URI-safe paths (issue #504)
+  * handle file:/// Subversion rootpaths as local roots (issue #446)
 
 Version 1.1.13 (released 23-Jan-2012)
 
@@ -42,7 +43,6 @@ Version 1.1.9 (released 18-Feb-2011)
   * make revision log "extra pages" count configurable
   * fix Subversion 1.4.x revision log compatibility code regression
   * display sanitized error when authzfile is malformed
-  * handle file:/// Subversion rootpaths as local roots (issue #446)
   * restore markup of URLs in file contents (issue #455)
   * optionally display last-committed metadata in roots view (issue #457)
 
