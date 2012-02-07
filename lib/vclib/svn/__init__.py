@@ -19,27 +19,46 @@ import urllib
 
 _re_url = re.compile('^(http|https|file|svn|svn\+[^:]+)://')
 
-def canonicalize_rootpath(rootpath):
+def _canonicalize_path(path):
+  import svn.core
   try:
-    import svn.core
-    return svn.core.svn_path_canonicalize(rootpath)
-  except:
-    if os.name == 'posix':
-      rootpath_lower = rootpath.lower()
-      if rootpath_lower in ['file://localhost',
-                            'file://localhost/',
-                            'file://',
-                            'file:///'
-                            ]:
-        return '/'
-      if rootpath_lower.startswith('file://localhost/'):
-        return os.path.normpath(urllib.unquote(rootpath[16:]))
-      elif rootpath_lower.startswith('file:///'):
-        return os.path.normpath(urllib.unquote(rootpath[7:]))
-    if re.search(_re_url, rootpath):
-      return rootpath.rstrip('/')
+    return svn.core.svn_path_canonicalize(path)
+  except AttributeError: # svn_path_canonicalize() appeared in 1.4.0 bindings
+    # There's so much more that we *could* do here, but if we're
+    # here at all its because there's a really old Subversion in
+    # place, and those older Subversion versions cared quite a bit
+    # less about the specifics of path canonicalization.
+    if re.search(_re_url, path):
+      return path.rstrip('/')
+    else:
+      return os.path.normpath(path)
+
+
+def canonicalize_rootpath(rootpath):
+  # Try to canonicalize the rootpath using Subversion semantics.
+  rootpath = _canonicalize_path(rootpath)
+  
+  # ViewVC's support for local repositories is more complete and more
+  # performant than its support for remote ones, so if we're on a
+  # Unix-y system and we have a file:/// URL, convert it to a local
+  # path instead.
+  if os.name == 'posix':
+    rootpath_lower = rootpath.lower()
+    if rootpath_lower in ['file://localhost',
+                          'file://localhost/',
+                          'file://',
+                          'file:///'
+                          ]:
+      return '/'
+    if rootpath_lower.startswith('file://localhost/'):
+      rootpath = os.path.normpath(urllib.unquote(rootpath[16:]))
+    elif rootpath_lower.startswith('file:///'):
+      rootpath = os.path.normpath(urllib.unquote(rootpath[7:]))
+
+  # Ensure that we have an absolute path (or URL), and return.
+  if not re.search(_re_url, rootpath):
     assert os.path.isabs(rootpath)
-    return os.path.normpath(rootpath)
+  return rootpath
 
 
 def expand_root_parent(parent_path):
