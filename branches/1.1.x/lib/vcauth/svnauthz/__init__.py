@@ -34,9 +34,9 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     # See if the admin wants us to do case normalization of usernames.
     self.force_username_case = params.get('force_username_case')
     if self.force_username_case == "upper":
-      self.username = username.upper()
+      self.username = username and string.upper(username) or username
     elif self.force_username_case == "lower":
-      self.username = username.lower()
+      self.username = username and string.lower(username) or username
     elif not self.force_username_case:
       self.username = username
     else:
