@@ -1357,13 +1357,6 @@ class LogFormatter:
     return result_log
 
 
-def format_log(request, log, maxlen=0, htmlize=1):
-  if not log:
-    return log
-  lf = LogFormatter(request, log)
-  return lf.get(maxlen, htmlize)
-
-  
 _time_desc = {
          1 : 'second',
         60 : 'minute',
@@ -1760,11 +1753,13 @@ def get_itemprops(request, path_parts, rev):
     # skip non-utf8 property names
     if is_undisplayable(name):
       continue
-    value = format_log(request, itemprops[name])
+    lf = LogFormatter(request, itemprops[name])
+    value = lf.get(maxlen=0, htmlize=1)
     undisplayable = is_undisplayable(value)
     if undisplayable:
       value = None
-    props.append(_item(name=name, value=value, undisplayable=ezt.boolean(undisplayable)))
+    props.append(_item(name=name, value=value,
+                       undisplayable=ezt.boolean(undisplayable)))
   return props
 
 def parse_mime_type(mime_type):
@@ -1902,10 +1897,12 @@ def markup_or_annotate(request, is_annotate):
     revs = request.repos.itemlog(path, revision, vclib.SORTBY_REV,
                                  0, 1, options)
     entry = revs[-1]
+    lf = LogFormatter(request, entry.log)
+
     data['date'] = make_time_string(entry.date, cfg)
     data['author'] = entry.author
     data['changed'] = entry.changed
-    data['log'] = format_log(request, entry.log)
+    data['log'] = lf.get(maxlen=0, htmlize=1)
     data['size'] = entry.size
 
     if entry.date is not None:
@@ -2144,9 +2141,11 @@ def view_directory(request):
       row.date = make_time_string(file.date, cfg)
       row.ago = html_time(request, file.date)
     if cfg.options.show_logs:
-      row.log = format_log(request, file.log)
-      row.short_log = format_log(request, file.log,
-                                 maxlen=cfg.options.short_log_len)
+      debug.t_start("dirview_logformat")
+      lf = LogFormatter(request, file.log)
+      row.log = lf.get(maxlen=0, htmlize=1)
+      row.short_log = lf.get(maxlen=cfg.options.short_log_len, htmlize=1)
+      debug.t_end("dirview_logformat")
     row.lockinfo = file.lockinfo
     row.anchor = request.server.escape(file.name)
     row.name = request.server.escape(file.name)
@@ -2524,13 +2523,15 @@ def view_log(request):
     entry.ago = None
     if rev.date is not None:
       entry.ago = html_time(request, rev.date, 1)
-    entry.log = format_log(request, rev.log or '')
     entry.size = rev.size
     entry.lockinfo = rev.lockinfo
     entry.branch_point = None
     entry.next_main = None
     entry.orig_path = None
     entry.copy_path = None
+
+    lf = LogFormatter(request, rev.log or '')
+    entry.log = lf.get(maxlen=0, htmlize=1)
 
     entry.view_href = None
     entry.download_href = None
@@ -3356,12 +3357,15 @@ def diff_side_item(request, path_comp, rev, sym):
   ago = log_entry.date is not None \
          and html_time(request, log_entry.date, 1) or None
   path_joined = _path_join(path_comp)
+
+  lf = LogFormatter(request, log_entry.log)
+  
   # Item for property diff: no hrefs, there's no view
   # to download/annotate property
   i_prop = _item(log_entry=log_entry,
                  date=make_time_string(log_entry.date, request.cfg),
                  author=log_entry.author,
-                 log=format_log(request, log_entry.log),
+                 log = lf.get(maxlen=0, htmlize=1),
                  size=log_entry.size,
                  ago=ago,
                  path=path_joined,
@@ -3863,12 +3867,14 @@ def view_revision(request):
     # skip non-utf8 property names
     if is_undisplayable(name):
       continue
-    value = format_log(request, revprops[name])
+    lf = LogFormatter(request, revprops[name])
+    value = lf.get(maxlen=0, htmlize=1)
     # note non-utf8 property values
     undisplayable = is_undisplayable(value)
     if undisplayable:
       value = None
-    props.append(_item(name=name, value=value, undisplayable=ezt.boolean(undisplayable)))
+    props.append(_item(name=name, value=value,
+                       undisplayable=ezt.boolean(undisplayable)))
   
   # Sort the changes list by path.
   def changes_sort_by_path(a, b):
@@ -3979,13 +3985,14 @@ def view_revision(request):
                                     escape=1)
   jump_rev_action, jump_rev_hidden_values = \
     request.get_form(params={'revision': None})
-    
+
+  lf = LogFormatter(request, msg)
   data = common_template_data(request)
   data.merge(TemplateData({
     'rev' : str(rev),
     'author' : author,
     'date' : date_str,
-    'log' : format_log(request, msg),
+    'log' : lf.get(maxlen=0, htmlize=1),
     'properties' : props,
     'ago' : date is not None and html_time(request, date, 1) or None,
     'changes' : changes,
@@ -4343,9 +4350,10 @@ def build_commit(request, files, max_files, dir_strip, format):
     commit.log = None
     commit.short_log = None
   else:
-    commit.log = format_log(request, desc, 0, format != 'rss')
-    commit.short_log = format_log(request, desc, cfg.options.short_log_len,
-                                  format != 'rss')
+    lf = LogFormatter(request, desc)
+    htmlize = (format != 'rss')
+    commit.log = lf.get(maxlen=0, htmlize=htmlize)
+    commit.short_log = lf.get(maxlen=cfg.options.short_log_len, htmlize=htmlize)
   commit.author = request.server.escape(author)
   commit.rss_date = make_rss_time_string(date, request.cfg)
   if request.roottype == 'svn':
@@ -4639,8 +4647,9 @@ def list_roots(request):
           date, author, msg, revprops, changes = repos.revinfo(youngest_rev)
           date_str = make_time_string(date, cfg)
           ago = html_time(request, date)
-          log = format_log(request, msg)
-          short_log = format_log(request, msg, maxlen=cfg.options.short_log_len)
+          lf = LogFormatter(request, msg)
+          log = lf.get(maxlen=0, htmlize=1)
+          short_log = lf.get(maxlen=cfg.options.short_log_len, htmlize=1)
           lastmod = _item(ago=ago, author=author, date=date_str, log=log,
                           short_log=short_log, rev=str(youngest_rev))
         except:
