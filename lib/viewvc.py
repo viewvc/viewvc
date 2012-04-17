@@ -1099,6 +1099,29 @@ _re_rewrite_email = re.compile('([-a-zA-Z0-9_.\+]+)@'
 # Matches revision references
 _re_rewrite_svnrevref = re.compile(r'\b(r|rev #?|revision #?)([0-9]+)\b')
 
+class ViewVCHtmlFormatterTokens:
+  def __init__(self, tokens):
+    self.tokens = tokens
+
+  def get_result(self, maxlen=0):
+    """Format the tokens per the registered set of formatters, and
+    limited to MAXLEN visible characters (or unlimited if MAXLEN is
+    0).  Return a 3-tuple containing the formatted result string, the
+    number of visible characters in the result string, and a boolean
+    flag indicating whether or not S was truncated."""
+    out = ''
+    out_len = 0
+    for token in self.tokens:
+      chunk, chunk_len = token.converter(token.match, token.userdata, maxlen)
+      out = out + chunk
+      out_len = out_len + chunk_len
+      if maxlen:
+        maxlen = maxlen - chunk_len
+        if maxlen <= 0:
+          return out, out_len, 1
+    return out, out_len, 0
+
+    
 class ViewVCHtmlFormatter:
   """Format a string as HTML-encoded output with customizable markup
   rules, for example turning strings that look like URLs into anchor links.
@@ -1216,20 +1239,14 @@ class ViewVCHtmlFormatter:
     """
     out = ''
     out_len = 0
-    for token in self._tokenize_text(s):
-      chunk, chunk_len = token.converter(token.match, token.userdata, maxlen)
-      out = out + chunk
-      out_len = out_len + chunk_len
-      if maxlen:
-        maxlen = maxlen - chunk_len
-        if maxlen <= 0:
-          return out, out_len, 1
-    return out, out_len, 0
+    tokens = self.tokenize_text(s)
+    return tokens.get_result()
 
-  def _entity_encode(self, s):
-    return string.join(map(lambda x: '&#%d;' % (ord(x)), s), '')
-
-  def _tokenize_text(self, s):
+  def tokenize_text(self, s):
+    """Return a ViewVCHtmlFormatterTokens object containing the tokens
+    created when parsing the string S.  Callers can use that object's
+    get_result() function to retrieve HTML-formatted text.
+    """
     tokens = []
     # We could just have a "while s:" here instead of "for line: while
     # line:", but for really large log messages with heavy
@@ -1276,36 +1293,63 @@ class ViewVCHtmlFormatter:
                               converter=self.format_text,
                               userdata=None))
           line = ''
-    return tokens
+    return ViewVCHtmlFormatterTokens(tokens)
+
+  def _entity_encode(self, s):
+    return string.join(map(lambda x: '&#%d;' % (ord(x)), s), '')
 
 
-def format_log(request, log, maxlen=0, htmlize=1):
-  if not log:
-    return log
+class LogFormatter:
+  def __init__(self, request, log):
+    self.request = request
+    self.log = log or ''
+    self.tokens = None
+    self.cache = {}  # (maxlen, htmlize) => resulting_log
 
-  cfg = request.cfg
-  if htmlize:
-    lf = ViewVCHtmlFormatter()
-    lf.add_formatter(_re_rewrite_url, lf.format_url)
-    if request.roottype == 'svn':
-      def revision_to_url(rev):
-        return request.get_url(view_func=view_revision,
-                               params={'revision': rev},
-                               escape=1)
-      lf.add_formatter(_re_rewrite_svnrevref, lf.format_svnrevref,
-                       revision_to_url)
-    if cfg.options.mangle_email_addresses == 2:
-      lf.add_formatter(_re_rewrite_email, lf.format_email_truncated)
-    elif cfg.options.mangle_email_addresses == 1:
-      lf.add_formatter(_re_rewrite_email, lf.format_email_obfuscated)
+  def get(self, maxlen=0, htmlize=1):
+    cfg = self.request.cfg
+    
+    # Prefer the cache.
+    if self.cache.has_key((maxlen, htmlize)):
+      return self.cache[(maxlen, htmlize)]
+    
+    # If we are HTML-izing...
+    if htmlize:
+      # ...and we don't yet have ViewVCHtmlFormatter() object tokens...
+      if not self.tokens:
+        # ... then get them.
+        lf = ViewVCHtmlFormatter()
+        lf.add_formatter(_re_rewrite_url, lf.format_url)
+        if self.request.roottype == 'svn':
+          def revision_to_url(rev):
+            return self.request.get_url(view_func=view_revision,
+                                        params={'revision': rev},
+                                        escape=1)
+          lf.add_formatter(_re_rewrite_svnrevref, lf.format_svnrevref,
+                           revision_to_url)
+        if cfg.options.mangle_email_addresses == 2:
+          lf.add_formatter(_re_rewrite_email, lf.format_email_truncated)
+        elif cfg.options.mangle_email_addresses == 1:
+          lf.add_formatter(_re_rewrite_email, lf.format_email_obfuscated)
+        else:
+          lf.add_formatter(_re_rewrite_email, lf.format_email)
+        self.tokens = lf.tokenize_text(self.log)
+
+      # Use our formatter to ... you know ... format.
+      log, log_len, truncated = self.tokens.get_result(maxlen)
+      result_log = log + (truncated and '&hellip;' or '')
+
+    # But if we're not HTML-izing...
     else:
-      lf.add_formatter(_re_rewrite_email, lf.format_email)
-    log, log_len, truncated = lf.get_result(log, maxlen)
-    return log + (truncated and '&hellip;' or '')
-  else:
-    if cfg.options.mangle_email_addresses == 2:
-      log = re.sub(_re_rewrite_email, r'\1@...', log)
-    return maxlen and log[:maxlen] or log
+      # ...then do much more simplistic transformations as necessary.
+      if cfg.options.mangle_email_addresses == 2:
+        log = re.sub(_re_rewrite_email, r'\1@...', log)
+      result_log = maxlen and log[:maxlen] or log
+
+    # In either case, populate the cache and return the results.
+    self.cache[(maxlen, htmlize)] = result_log
+    return result_log
+
 
 _time_desc = {
          1 : 'second',
@@ -1693,7 +1737,8 @@ def get_itemprops(request, path_parts, rev):
   propnames.sort()
   props = []
   for name in propnames:
-    value = format_log(request, itemprops[name])
+    lf = LogFormatter(request, itemprops[name])
+    value = lf.get(maxlen=0, htmlize=1)
     undisplayable = ezt.boolean(0)
     # skip non-utf8 property names
     try:
@@ -1844,10 +1889,12 @@ def markup_or_annotate(request, is_annotate):
     revs = request.repos.itemlog(path, revision, vclib.SORTBY_REV,
                                  0, 1, options)
     entry = revs[-1]
+    lf = LogFormatter(request, entry.log)
+
     data['date'] = make_time_string(entry.date, cfg)
     data['author'] = entry.author
     data['changed'] = entry.changed
-    data['log'] = format_log(request, entry.log)
+    data['log'] = lf.get(maxlen=0, htmlize=1)
     data['size'] = entry.size
 
     if entry.date is not None:
@@ -2083,9 +2130,11 @@ def view_directory(request):
       row.date = make_time_string(file.date, cfg)
       row.ago = html_time(request, file.date)
     if cfg.options.show_logs:
-      row.log = format_log(request, file.log)
-      row.short_log = format_log(request, file.log,
-                                 maxlen=cfg.options.short_log_len)
+      debug.t_start("dirview_logformat")
+      lf = LogFormatter(request, file.log)
+      row.log = lf.get(maxlen=0, htmlize=1)
+      row.short_log = lf.get(maxlen=cfg.options.short_log_len, htmlize=1)
+      debug.t_end("dirview_logformat")
     row.lockinfo = file.lockinfo
     row.anchor = request.server.escape(file.name)
     row.name = request.server.escape(file.name)
@@ -2462,13 +2511,15 @@ def view_log(request):
     entry.ago = None
     if rev.date is not None:
       entry.ago = html_time(request, rev.date, 1)
-    entry.log = format_log(request, rev.log or '')
     entry.size = rev.size
     entry.lockinfo = rev.lockinfo
     entry.branch_point = None
     entry.next_main = None
     entry.orig_path = None
     entry.copy_path = None
+
+    lf = LogFormatter(request, rev.log or '')
+    entry.log = lf.get(maxlen=0, htmlize=1)
 
     entry.view_href = None
     entry.download_href = None
@@ -3318,7 +3369,8 @@ def view_diff(request):
   fvi = get_file_view_info(request, path_left, rev1)
   left = _item(date=make_time_string(log_entry1.date, cfg),
                author=log_entry1.author,
-               log=format_log(request, log_entry1.log),
+               log=LogFormatter(request,
+                                log_entry1.log).get(maxlen=0, htmlize=1),
                size=log_entry1.size,
                ago=ago1,
                path=path_left,
@@ -3334,7 +3386,8 @@ def view_diff(request):
   fvi = get_file_view_info(request, path_right, rev2)
   right = _item(date=make_time_string(log_entry2.date, cfg),
                 author=log_entry2.author,
-                log=format_log(request, log_entry2.log),
+                log=LogFormatter(request,
+                                 log_entry2.log).get(maxlen=0, htmlize=1),
                 size=log_entry2.size,
                 ago=ago2,
                 path=path_right,
@@ -3582,7 +3635,8 @@ def view_revision(request):
   propnames.sort()
   props = []
   for name in propnames:
-    value = format_log(request, revprops[name])
+    lf = LogFormatter(request, revprops[name])
+    value = lf.get(maxlen=0, htmlize=1)
     undisplayable = ezt.boolean(0)
     # skip non-utf8 property names
     try:
@@ -3705,13 +3759,14 @@ def view_revision(request):
                                     escape=1)
   jump_rev_action, jump_rev_hidden_values = \
     request.get_form(params={'revision': None})
-    
+
+  lf = LogFormatter(request, msg)
   data = common_template_data(request)
   data.merge(ezt.TemplateData({
     'rev' : str(rev),
     'author' : author,
     'date' : date_str,
-    'log' : format_log(request, msg),
+    'log' : lf.get(maxlen=0, htmlize=1),
     'properties' : props,
     'ago' : date is not None and html_time(request, date, 1) or None,
     'changes' : changes,
@@ -4069,9 +4124,10 @@ def build_commit(request, files, max_files, dir_strip, format):
     commit.log = None
     commit.short_log = None
   else:
-    commit.log = format_log(request, desc, 0, format != 'rss')
-    commit.short_log = format_log(request, desc, cfg.options.short_log_len,
-                                  format != 'rss')
+    lf = LogFormatter(request, desc)
+    htmlize = (format != 'rss')
+    commit.log = lf.get(maxlen=0, htmlize=htmlize)
+    commit.short_log = lf.get(maxlen=cfg.options.short_log_len, htmlize=htmlize)
   commit.author = request.server.escape(author)
   commit.rss_date = make_rss_time_string(date, request.cfg)
   if request.roottype == 'svn':
@@ -4365,8 +4421,9 @@ def list_roots(request):
           date, author, msg, revprops, changes = repos.revinfo(youngest_rev)
           date_str = make_time_string(date, cfg)
           ago = html_time(request, date)
-          log = format_log(request, msg)
-          short_log = format_log(request, msg, maxlen=cfg.options.short_log_len)
+          lf = LogFormatter(request, msg)
+          log = lf.get(maxlen=0, htmlize=1)
+          short_log = lf.get(maxlen=cfg.options.short_log_len, htmlize=1)
           lastmod = _item(ago=ago, author=author, date=date_str, log=log,
                           short_log=short_log, rev=str(youngest_rev))
         except:

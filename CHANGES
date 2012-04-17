@@ -3,6 +3,7 @@ Version 1.1.14 (released ??-???-????)
   * fix annotation of svn files with non-URI-safe paths (issue #504)
   * handle file:/// Subversion rootpaths as local roots (issue #446)
   * fix bug caused by trying to case-normalize anon usernames (issue #505)
+  * speed up log handling by reusing tokenization results (issue #506)
 
 Version 1.1.13 (released 23-Jan-2012)
 
