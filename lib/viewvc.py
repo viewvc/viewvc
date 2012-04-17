@@ -1105,6 +1105,29 @@ _re_rewrite_email = re.compile('([-a-zA-Z0-9_.\+]+)@'
 # Matches revision references
 _re_rewrite_svnrevref = re.compile(r'\b(r|rev #?|revision #?)([0-9]+)\b')
 
+class ViewVCHtmlFormatterTokens:
+  def __init__(self, tokens):
+    self.tokens = tokens
+
+  def get_result(self, maxlen=0):
+    """Format the tokens per the registered set of formatters, and
+    limited to MAXLEN visible characters (or unlimited if MAXLEN is
+    0).  Return a 3-tuple containing the formatted result string, the
+    number of visible characters in the result string, and a boolean
+    flag indicating whether or not S was truncated."""
+    out = ''
+    out_len = 0
+    for token in self.tokens:
+      chunk, chunk_len = token.converter(token.match, token.userdata, maxlen)
+      out = out + chunk
+      out_len = out_len + chunk_len
+      if maxlen:
+        maxlen = maxlen - chunk_len
+        if maxlen <= 0:
+          return out, out_len, 1
+    return out, out_len, 0
+
+    
 class ViewVCHtmlFormatter:
   """Format a string as HTML-encoded output with customizable markup
   rules, for example turning strings that look like URLs into anchor links.
@@ -1222,20 +1245,14 @@ class ViewVCHtmlFormatter:
     """
     out = ''
     out_len = 0
-    for token in self._tokenize_text(s):
-      chunk, chunk_len = token.converter(token.match, token.userdata, maxlen)
-      out = out + chunk
-      out_len = out_len + chunk_len
-      if maxlen:
-        maxlen = maxlen - chunk_len
-        if maxlen <= 0:
-          return out, out_len, 1
-    return out, out_len, 0
+    tokens = self.tokenize_text(s)
+    return tokens.get_result()
 
-  def _entity_encode(self, s):
-    return ''.join(map(lambda x: '&#%d;' % (ord(x)), s))
-
-  def _tokenize_text(self, s):
+  def tokenize_text(self, s):
+    """Return a ViewVCHtmlFormatterTokens object containing the tokens
+    created when parsing the string S.  Callers can use that object's
+    get_result() function to retrieve HTML-formatted text.
+    """
     tokens = []
     # We could just have a "while s:" here instead of "for line: while
     # line:", but for really large log messages with heavy
@@ -1282,37 +1299,71 @@ class ViewVCHtmlFormatter:
                               converter=self.format_text,
                               userdata=None))
           line = ''
-    return tokens
+    return ViewVCHtmlFormatterTokens(tokens)
+
+  def _entity_encode(self, s):
+    return ''.join(map(lambda x: '&#%d;' % (ord(x)), s))
+
+
+class LogFormatter:
+  def __init__(self, request, log):
+    self.request = request
+    self.log = log or ''
+    self.tokens = None
+    self.cache = {}  # (maxlen, htmlize) => resulting_log
+
+  def get(self, maxlen=0, htmlize=1):
+    cfg = self.request.cfg
+    
+    # Prefer the cache.
+    if self.cache.has_key((maxlen, htmlize)):
+      return self.cache[(maxlen, htmlize)]
+    
+    # If we are HTML-izing...
+    if htmlize:
+      # ...and we don't yet have ViewVCHtmlFormatter() object tokens...
+      if not self.tokens:
+        # ... then get them.
+        lf = ViewVCHtmlFormatter()
+        lf.add_formatter(_re_rewrite_url, lf.format_url)
+        if self.request.roottype == 'svn':
+          def revision_to_url(rev):
+            return self.request.get_url(view_func=view_revision,
+                                        params={'revision': rev},
+                                        escape=1)
+          lf.add_formatter(_re_rewrite_svnrevref, lf.format_svnrevref,
+                           revision_to_url)
+        if cfg.options.mangle_email_addresses == 2:
+          lf.add_formatter(_re_rewrite_email, lf.format_email_truncated)
+        elif cfg.options.mangle_email_addresses == 1:
+          lf.add_formatter(_re_rewrite_email, lf.format_email_obfuscated)
+        else:
+          lf.add_formatter(_re_rewrite_email, lf.format_email)
+        self.tokens = lf.tokenize_text(self.log)
+
+      # Use our formatter to ... you know ... format.
+      log, log_len, truncated = self.tokens.get_result(maxlen)
+      result_log = log + (truncated and '&hellip;' or '')
+
+    # But if we're not HTML-izing...
+    else:
+      # ...then do much more simplistic transformations as necessary.
+      if cfg.options.mangle_email_addresses == 2:
+        log = re.sub(_re_rewrite_email, r'\1@...', log)
+      result_log = maxlen and log[:maxlen] or log
+
+    # In either case, populate the cache and return the results.
+    self.cache[(maxlen, htmlize)] = result_log
+    return result_log
 
 
 def format_log(request, log, maxlen=0, htmlize=1):
   if not log:
     return log
+  lf = LogFormatter(request, log)
+  return lf.get(maxlen, htmlize)
 
-  cfg = request.cfg
-  if htmlize:
-    lf = ViewVCHtmlFormatter()
-    lf.add_formatter(_re_rewrite_url, lf.format_url)
-    if request.roottype == 'svn':
-      def revision_to_url(rev):
-        return request.get_url(view_func=view_revision,
-                               params={'revision': rev},
-                               escape=1)
-      lf.add_formatter(_re_rewrite_svnrevref, lf.format_svnrevref,
-                       revision_to_url)
-    if cfg.options.mangle_email_addresses == 2:
-      lf.add_formatter(_re_rewrite_email, lf.format_email_truncated)
-    elif cfg.options.mangle_email_addresses == 1:
-      lf.add_formatter(_re_rewrite_email, lf.format_email_obfuscated)
-    else:
-      lf.add_formatter(_re_rewrite_email, lf.format_email)
-    log, log_len, truncated = lf.get_result(log, maxlen)
-    return log + (truncated and '&hellip;' or '')
-  else:
-    if cfg.options.mangle_email_addresses == 2:
-      log = re.sub(_re_rewrite_email, r'\1@...', log)
-    return maxlen and log[:maxlen] or log
-
+  
 _time_desc = {
          1 : 'second',
         60 : 'minute',
