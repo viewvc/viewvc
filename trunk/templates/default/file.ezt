@@ -25,6 +25,7 @@
 <td>[if-any date]<em>[date]</em> [end][if-any ago]([ago] ago) [end][if-any author]by <em>[author]</em>[end]</td>
 </tr>
 [if-any mime_type]
+<tr>
 <td>Content type:</td>
 <td>[mime_type]</td>
 </tr>
@@ -60,6 +61,7 @@
 </tr>
 [end][end]
 [is roottype "svn"][if-any size]
+<tr>
 <td>File size:</td>
 <td>[size] byte(s)</td>
 </tr>
@@ -89,7 +91,7 @@
 [if-any log]
 <tr>
 <td>Log Message:</td>
-<td><pre class="vc_log">[log]</span></td>
+<td><pre class="vc_log">[log]</pre></td>
 </tr>
 [end]
 </table>
