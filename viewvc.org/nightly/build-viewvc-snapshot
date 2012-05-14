@@ -69,9 +69,9 @@ def make_release(branch, export_dir, publish_dir, root_url, username, password):
 
   # Install the new archives.
   if gzip_file:
-    os.rename(gzip_file, os.path.join(publish_dir, gzip_name))
+    shutil.move(gzip_file, os.path.join(publish_dir, gzip_name))
   if zip_file:
-    os.rename(zip_file, os.path.join(publish_dir, zip_name))
+    shutil.move(zip_file, os.path.join(publish_dir, zip_name))
     
   # Return our archive names.
   return gzip_file and gzip_name or None, zip_file and zip_name or None
