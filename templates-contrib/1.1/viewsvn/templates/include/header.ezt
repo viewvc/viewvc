@@ -14,7 +14,7 @@
 </head>
 <body>
 
-[is roottype "svn"][else][if-any roots][else]
+[is roottype "svn"][else][is page_title "Repository Listing"][else]
 <h1>
 Do not use this template set if you plan to view cvs repositories through ViewVC! 
 This template-set is heavily trimmed for Subversion needs. Special CVS features are 
