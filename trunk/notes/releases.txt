@@ -147,8 +147,13 @@ numbers, and are not literal):
        http://viewvc.tigris.org/issues/editmilestones.cgi?component=viewvc&action=add
 
 18. Send to the announce@ list a message explaining all the cool new
-    features, and post similar announcements to other places interested
-    in this sort of stuff, such as Freshmeat (http://www.freshmeat.net).
+    features.
 
-19. Merge CHANGES for this release into the CHANGES file for newer
+       http://viewvc.tigris.org/ds/viewForumSummary.do?dsForumId=4253
+
+19. Post a new release notification at Freecode.
+
+       https://freecode.com/projects/viewvc/releases/new
+
+20. Merge CHANGES for this release into the CHANGES file for newer
     release lines and commit.
