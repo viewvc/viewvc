@@ -112,6 +112,7 @@ class Config:
   _force_multi_value = (
     # Configuration values with multiple, comma-separated values.
     'allowed_views',
+    'custom_log_formatting',
     'cvs_roots',
     'kv_files',
     'languages',
@@ -398,6 +399,7 @@ class Config:
     self.options.allowed_views = ['annotate', 'diff', 'markup', 'roots']
     self.options.authorizer = None
     self.options.mangle_email_addresses = 0
+    self.options.custom_log_formatting = []
     self.options.default_file_view = "log"
     self.options.http_expiration_time = 600
     self.options.generate_etags = 1

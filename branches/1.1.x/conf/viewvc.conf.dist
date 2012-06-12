@@ -433,6 +433,26 @@
 ##
 #mangle_email_addresses = 0
 
+## custom_log_formatting: Specifies mappings of regular expressions to
+## substitution format strings used to URL-ize strings found in
+## revision log messages.  Multiple mappings (specified as
+## REGEXP:FORMATSTRING) may be defined, separated by commas.
+##
+## NOTE: Due to a limitation of the configuration format, commas may
+## not be used in the regular expression portion of each mapping.
+## Commas "in the raw" may not be used in the format string portion,
+## either, but you can probably use the URI-encoded form of the comma
+## ("%2C") instead with no ill side-effects.  If you must specify a
+## colon character in either the regular expression or the format
+## string, escape it with a preceding backslash ("\:").
+##
+## Example:
+## custom_log_formatting =
+##     artf[0-9]+ : http://example.com/tracker?id=\0,
+##     issue ([0-9]+) : http://example.com/bug?id=\1&opts=full%2csortby=id
+##
+#custom_log_formatting =
+
 ## default_file_view: "log", "co", or "markup"
 ## Controls whether the default view for file URLs is a checkout view or
 ## a log view. "log" is the default for backwards compatibility with old
