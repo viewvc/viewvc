@@ -5,6 +5,14 @@ Version 1.2.0 (released ??-???-????)
   * allow user-configurable cvsgraph display (issue #336)
   * allow rNNNN syntax for Subversion revision numbers (issue #441)
 
+Version 1.1.14 (released 12-Jun-2012)
+
+  * fix annotation of svn files with non-URI-safe paths (issue #504)
+  * handle file:/// Subversion rootpaths as local roots (issue #446)
+  * fix bug caused by trying to case-normalize anon usernames (issue #505)
+  * speed up log handling by reusing tokenization results (issue #506)
+  * add support for custom review log markup rules (issue #429)
+
 Version 1.1.13 (released 23-Jan-2012)
 
   * fix svndbadmin failure on deleted paths under Subversion 1.7 (issue #499)
