@@ -1207,6 +1207,30 @@ class ViewVCHtmlFormatter:
                                     sapi.escape(trunc_s)), \
            len(trunc_s)
 
+  def format_custom_url(self, mobj, userdata, maxlen=0):
+    """Return a 2-tuple containing:
+         - the text represented by MatchObject MOBJ, formatted as an
+           linkified URL created by substituting match groups 0-9 into
+           USERDATA (which is a format string that uses \N to
+           represent the substitution locations) and with no more than
+           MAXLEN characters in the non-HTML-tag portions.  If MAXLEN
+           is 0, there is no maximum.
+         - the number of characters returned.
+    """
+    format = userdata
+    text = mobj.group(0)
+    url = format
+    for i in range(9):
+      try:
+        repl = mobj.group(i)
+      except:
+        repl = ''
+      url = url.replace('\%d' % (i), repl)
+    trunc_s = maxlen and text[:maxlen] or text
+    return '<a href="%s">%s</a>' % (sapi.escape(url),
+                                    sapi.escape(trunc_s)), \
+           len(trunc_s)
+
   def format_text(self, s, unused, maxlen=0):
     """Return a 2-tuple containing:
          - the text S, HTML-escaped, containing no more than MAXLEN
@@ -1319,7 +1343,11 @@ class LogFormatter:
       if not self.tokens:
         # ... then get them.
         lf = ViewVCHtmlFormatter()
+
+        # Rewrite URLs.
         lf.add_formatter(_re_rewrite_url, lf.format_url)
+
+        # Rewrite Subversion revision references.
         if self.request.roottype == 'svn':
           def revision_to_url(rev):
             return self.request.get_url(view_func=view_revision,
@@ -1327,12 +1355,24 @@ class LogFormatter:
                                         escape=1)
           lf.add_formatter(_re_rewrite_svnrevref, lf.format_svnrevref,
                            revision_to_url)
+
+        # Rewrite email addresses.
         if cfg.options.mangle_email_addresses == 2:
           lf.add_formatter(_re_rewrite_email, lf.format_email_truncated)
         elif cfg.options.mangle_email_addresses == 1:
           lf.add_formatter(_re_rewrite_email, lf.format_email_obfuscated)
         else:
           lf.add_formatter(_re_rewrite_email, lf.format_email)
+
+        # Add custom rewrite handling per configuration.
+        for rule in cfg.options.custom_log_formatting:
+          rule = rule.replace('\\:', '\x01')          
+          regexp, format = map(lambda x: x.strip(), rule.split(':', 1))
+          regexp = regexp.replace('\x01', ':')
+          format = format.replace('\x01', ':')
+          lf.add_formatter(re.compile(regexp), lf.format_custom_url, format)
+
+        # Tokenize the log message.
         self.tokens = lf.tokenize_text(self.log)
 
       # Use our formatter to ... you know ... format.
