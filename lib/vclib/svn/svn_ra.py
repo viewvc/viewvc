@@ -80,9 +80,8 @@ def client_log(url, start_rev, end_rev, log_limit, cross_copies,
 
 
 class LogCollector:
-  ### TODO: Make this thing authz-aware
   
-  def __init__(self, path, show_all_logs, lockinfo):
+  def __init__(self, path, show_all_logs, lockinfo, access_check_func):
     # This class uses leading slashes for paths internally
     if not path:
       self.path = '/'
@@ -91,8 +90,12 @@ class LogCollector:
     self.logs = []
     self.show_all_logs = show_all_logs
     self.lockinfo = lockinfo
+    self.access_check_func = access_check_func
+    self.done = False
     
   def add_log(self, log_entry, pool):
+    if self.done:
+      return
     paths = log_entry.changed_paths
     revision = log_entry.revision
     msg, author, date, revprops = _split_revprops(log_entry.revprops)
@@ -116,9 +119,12 @@ class LogCollector:
           if change.copyfrom_path:
             this_path = change.copyfrom_path + self.path[len(changed_path):]
     if self.show_all_logs or this_path:
-      entry = Revision(revision, date, author, msg, None, self.lockinfo,
-                       self.path[1:], None, None)
-      self.logs.append(entry)
+      if self.access_check_func(self.path[1:], revision):
+        entry = Revision(revision, date, author, msg, None, self.lockinfo,
+                         self.path[1:], None, None)
+        self.logs.append(entry)
+      else:
+        self.done = True
     if this_path:
       self.path = this_path
     
@@ -307,9 +313,14 @@ class RemoteSubversionRepository(vclib.Repository):
     if locks.has_key(basename):
       lockinfo = locks[basename].owner
 
+    def _access_checker(check_path, check_rev):
+      return vclib.check_path_access(self, _path_parts(check_path),
+                                     path_type, check_rev)
+      
     # It's okay if we're told to not show all logs on a file -- all
     # the revisions should match correctly anyway.
-    lc = LogCollector(path, options.get('svn_show_all_dir_logs', 0), lockinfo)
+    lc = LogCollector(path, options.get('svn_show_all_dir_logs', 0),
+                      lockinfo, _access_checker)
 
     cross_copies = options.get('svn_cross_copies', 0)
     log_limit = 0
