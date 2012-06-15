@@ -119,7 +119,8 @@ class LogCollector:
           if change.copyfrom_path:
             this_path = change.copyfrom_path + self.path[len(changed_path):]
     if self.show_all_logs or this_path:
-      if self.access_check_func(self.path[1:], revision):
+      if self.access_check_func is None \
+         or self.access_check_func(self.path[1:], revision):
         entry = Revision(revision, date, author, msg, None, self.lockinfo,
                          self.path[1:], None, None)
         self.logs.append(entry)
