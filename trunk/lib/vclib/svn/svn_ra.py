@@ -358,6 +358,14 @@ class RemoteSubversionRepository(vclib.Repository):
     rev = self._getrev(rev)
     url = self._geturl(path)
 
+    # Examine logs for the file to determine the oldest revision we are
+    # permitted to see.
+    revs = self.itemlog(path_parts, rev, vclib.SORTBY_REV, 0, 0, {})
+    oldest_rev = revs[-1].number
+
+    # Now calculate the annotation data.  Note that we'll not
+    # inherently trust the provided author and date, because authz
+    # rules might necessitate that we strip that information out.
     blame_data = []
 
     def _blame_cb(line_no, revision, author, date,
@@ -365,12 +373,16 @@ class RemoteSubversionRepository(vclib.Repository):
       prev_rev = None
       if revision > 1:
         prev_rev = revision - 1
+      if revision >= 0:
+        date, author, msg, revprops, changes = self.revinfo(revision)
+      else:
+        date = author = None
       if not include_text:
         line = None
       blame_data.append(vclib.Annotation(line, line_no + 1, revision, prev_rev,
                                          author, None))
       
-    client.svn_client_blame(url, _rev2optrev(1), _rev2optrev(rev),
+    client.svn_client_blame(url, _rev2optrev(oldest_rev), _rev2optrev(rev),
                             _blame_cb, self.ctx)
     return blame_data, rev
 
