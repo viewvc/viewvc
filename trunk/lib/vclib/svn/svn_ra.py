@@ -567,8 +567,12 @@ class RemoteSubversionRepository(vclib.Repository):
       old_path = results[old_rev]
     except KeyError:
       raise vclib.ItemNotFound(path)
-  
-    return _cleanup_path(old_path)
+    old_path = _cleanup_path(old_path)
+    old_path_parts = _path_parts(old_path)
+    # Check access (lying about path types)
+    if not vclib.check_path_access(self, old_path_parts, vclib.FILE, old_rev):
+      raise vclib.ItemNotFound(path)
+    return old_path
   
   def created_rev(self, path, rev):
     # NOTE: We can't use svn_client_propget here because the
