@@ -632,6 +632,7 @@ class LocalSubversionRepository(vclib.Repository):
               is_copy = 0
               change.base_path = None
               change.base_rev = None
+              found_unreadable = 1
           changedpaths[path] = SVNChangedPath(path, rev, pathtype,
                                               change.base_path,
                                               change.base_rev, action,
