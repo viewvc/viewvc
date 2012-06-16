@@ -81,9 +81,8 @@ def client_log(url, start_rev, end_rev, log_limit, cross_copies,
 
 
 class LogCollector:
-  ### TODO: Make this thing authz-aware
   
-  def __init__(self, path, show_all_logs, lockinfo):
+  def __init__(self, path, show_all_logs, lockinfo, access_check_func):
     # This class uses leading slashes for paths internally
     if not path:
       self.path = '/'
@@ -92,8 +91,12 @@ class LogCollector:
     self.logs = []
     self.show_all_logs = show_all_logs
     self.lockinfo = lockinfo
+    self.access_check_func = access_check_func
+    self.done = False
     
   def add_log(self, log_entry, pool):
+    if self.done:
+      return
     paths = log_entry.changed_paths
     revision = log_entry.revision
     msg, author, date, revprops = _split_revprops(log_entry.revprops)
@@ -117,9 +120,13 @@ class LogCollector:
           if change.copyfrom_path:
             this_path = change.copyfrom_path + self.path[len(changed_path):]
     if self.show_all_logs or this_path:
-      entry = Revision(revision, date, author, msg, None, self.lockinfo,
-                       self.path[1:], None, None)
-      self.logs.append(entry)
+      if self.access_check_func is None \
+         or self.access_check_func(self.path[1:], revision):
+        entry = Revision(revision, date, author, msg, None, self.lockinfo,
+                         self.path[1:], None, None)
+        self.logs.append(entry)
+      else:
+        self.done = True
     if this_path:
       self.path = this_path
     
@@ -262,7 +269,7 @@ class RemoteSubversionRepository(vclib.Repository):
     if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
       raise vclib.Error("Path '%s' is not a directory." % path)
     rev = self._getrev(rev)
-    entries = [ ]
+    entries = []
     dirents, locks = self._get_dirents(path, rev)
     for name in dirents.keys():
       entry = dirents[name]
@@ -270,8 +277,9 @@ class RemoteSubversionRepository(vclib.Repository):
         kind = vclib.DIR
       elif entry.kind == core.svn_node_file:
         kind = vclib.FILE
-      if vclib.check_path_access(self, path_parts + [name], kind, rev):
-        entries.append(vclib.DirEntry(name, kind))
+      else:
+        kind = None
+      entries.append(vclib.DirEntry(name, kind))
     return entries
 
   def dirlogs(self, path_parts, rev, entries, options):
@@ -282,9 +290,11 @@ class RemoteSubversionRepository(vclib.Repository):
     dirents, locks = self._get_dirents(path, rev)
     for entry in entries:
       entry_path_parts = path_parts + [entry.name]
-      if not vclib.check_path_access(self, entry_path_parts, entry.kind, rev):
+      dirent = dirents.get(entry.name, None)
+      # dirents is authz-sanitized, so ensure the entry is found therein.
+      if dirent is None:
         continue
-      dirent = dirents[entry.name]
+      # Get authz-sanitized revision metadata.
       entry.date, entry.author, entry.log, revprops, changes = \
                   self.revinfo(dirent.created_rev)
       entry.rev = str(dirent.created_rev)
@@ -308,9 +318,14 @@ class RemoteSubversionRepository(vclib.Repository):
     if locks.has_key(basename):
       lockinfo = locks[basename].owner
 
+    def _access_checker(check_path, check_rev):
+      return vclib.check_path_access(self, _path_parts(check_path),
+                                     path_type, check_rev)
+      
     # It's okay if we're told to not show all logs on a file -- all
     # the revisions should match correctly anyway.
-    lc = LogCollector(path, options.get('svn_show_all_dir_logs', 0), lockinfo)
+    lc = LogCollector(path, options.get('svn_show_all_dir_logs', 0),
+                      lockinfo, _access_checker)
 
     cross_copies = options.get('svn_cross_copies', 0)
     log_limit = 0
@@ -322,6 +337,10 @@ class RemoteSubversionRepository(vclib.Repository):
     revs.sort()
     prev = None
     for rev in revs:
+      # Swap out revision info with stuff from the cache (which is
+      # authz-sanitized).
+      rev.date, rev.author, rev.log, revprops, changes \
+                = self.revinfo(rev.number)
       rev.prev = prev
       prev = rev
     revs.reverse()
@@ -348,6 +367,14 @@ class RemoteSubversionRepository(vclib.Repository):
     rev = self._getrev(rev)
     url = self._geturl(path)
 
+    # Examine logs for the file to determine the oldest revision we are
+    # permitted to see.
+    revs = self.itemlog(path_parts, rev, vclib.SORTBY_REV, 0, 0, {})
+    oldest_rev = revs[-1].number
+
+    # Now calculate the annotation data.  Note that we'll not
+    # inherently trust the provided author and date, because authz
+    # rules might necessitate that we strip that information out.
     blame_data = []
 
     def _blame_cb(line_no, revision, author, date,
@@ -355,12 +382,16 @@ class RemoteSubversionRepository(vclib.Repository):
       prev_rev = None
       if revision > 1:
         prev_rev = revision - 1
+      if revision >= 0:
+        date, author, msg, revprops, changes = self.revinfo(revision)
+      else:
+        date = author = None
       if not include_text:
         line = None
       blame_data.append(vclib.Annotation(line, line_no + 1, revision, prev_rev,
                                          author, None))
       
-    client.svn_client_blame(url, _rev2optrev(1), _rev2optrev(rev),
+    client.svn_client_blame(url, _rev2optrev(oldest_rev), _rev2optrev(rev),
                             _blame_cb, self.ctx)
     return blame_data, rev
 
@@ -429,32 +460,73 @@ class RemoteSubversionRepository(vclib.Repository):
 
   def _get_dirents(self, path, rev):
     """Return a 2-type of dirents and locks, possibly reading/writing
-    from a local cache of that information."""
+    from a local cache of that information.  This functions performs
+    authz checks, stripping out unreadable dirents."""
 
     dir_url = self._geturl(path)
     if path:
       key = str(rev) + '/' + path
     else:
       key = str(rev)
+
+    # Ensure that the cache gets filled...
     dirents_locks = self._dirent_cache.get(key)
     if not dirents_locks:
-      dirents, locks = list_directory(dir_url, _rev2optrev(rev),
-                                      _rev2optrev(rev), 0, self.ctx)
+      tmp_dirents, locks = list_directory(dir_url, _rev2optrev(rev),
+                                          _rev2optrev(rev), 0, self.ctx)
+      dirents = {}
+      for name, dirent in tmp_dirents.items():
+        dirent_parts = _path_parts(path) + [name]
+        kind = dirent.kind 
+        if (kind == core.svn_node_dir or kind == core.svn_node_file) \
+           and vclib.check_path_access(self, dirent_parts,
+                                       kind == core.svn_node_dir \
+                                         and vclib.DIR or vclib.FILE, rev):
+          dirent.created_rev = self._get_last_history_rev(dirent_parts, rev)
+          dirents[name] = dirent
       dirents_locks = [dirents, locks]
       self._dirent_cache[key] = dirents_locks
+
+    # ...then return the goodies from the cache.
     return dirents_locks[0], dirents_locks[1]
 
   def _get_last_history_rev(self, path_parts, rev):
+    """Return the last interesting revision equal to or older than REV
+    in the history of PATH_PARTS."""
+    
+    path = self._getpath(path_parts)
     url = self._geturl(self._getpath(path_parts))
     optrev = _rev2optrev(rev)
+
+    # Get the last-changed-rev.
     revisions = []
     def _info_cb(path, info, pool, retval=revisions):
       revisions.append(info.last_changed_rev)
     client.svn_client_info(url, optrev, optrev, _info_cb, 0, self.ctx)
-    return revisions[0]
+    last_changed_rev = revisions[0]
+
+    # Now, this object might not have been directly edited since the
+    # last-changed-rev, but it might have been the child of a copy.
+    # To determine this, we'll run a potentially no-op log between
+    # LAST_CHANGED_REV and REV.
+    lc = LogCollector(path, 1, None, None)
+    client_log(url, optrev, _rev2optrev(last_changed_rev), 1, 0,
+               lc.add_log, self.ctx)
+    revs = lc.logs
+    if revs:
+      revs.sort()
+      return revs[0].number
+    else:
+      return last_changed_rev
     
   def _revinfo_raw(self, rev):
     # return 5-tuple (date, author, msg, revprops, changes)
+
+    ### TODO: This function and its related cache would benefit from
+    ### optimizations such as what the matching svn_repos functions
+    ### have, where the 'changes' information is only fully
+    ### calculated/authz-sanitized when the caller actually needs it.
+    
     optrev = _rev2optrev(rev)
     revs = []
 
@@ -519,10 +591,11 @@ class RemoteSubversionRepository(vclib.Repository):
         if vclib.check_path_access(self, parts, vclib.FILE, revision):
           if is_copy and base_path and (base_path != path):
             parts = _path_parts(base_path)
-            if vclib.check_path_access(self, parts, vclib.FILE, base_rev):
+            if not vclib.check_path_access(self, parts, vclib.FILE, base_rev):
               is_copy = 0
               base_path = None
               base_rev = None
+              found_unreadable = 1
           changes.append(SVNChangedPath(path, revision, pathtype, base_path,
                                         base_rev, action, is_copy,
                                         text_modified, props_modified))
@@ -557,23 +630,15 @@ class RemoteSubversionRepository(vclib.Repository):
       old_path = results[old_rev]
     except KeyError:
       raise vclib.ItemNotFound(path)
-  
-    return _cleanup_path(old_path)
+    old_path = _cleanup_path(old_path)
+    old_path_parts = _path_parts(old_path)
+    # Check access (lying about path types)
+    if not vclib.check_path_access(self, old_path_parts, vclib.FILE, old_rev):
+      raise vclib.ItemNotFound(path)
+    return old_path
   
   def created_rev(self, path, rev):
-    # NOTE: We can't use svn_client_propget here because the
-    # interfaces in that layer strip out the properties not meant for
-    # human consumption (such as svn:entry:committed-rev, which we are
-    # using here to get the created revision of PATH@REV).
-    kind = ra.svn_ra_check_path(self.ra_session, path, rev)
-    if kind == core.svn_node_none:
-      raise vclib.ItemNotFound(_path_parts(path))
-    elif kind == core.svn_node_dir:
-      props = get_directory_props(self.ra_session, path, rev)
-    elif kind == core.svn_node_file:
-      fetched_rev, props = ra.svn_ra_get_file(self.ra_session, path, rev, None)
-    return int(props.get(core.SVN_PROP_ENTRY_COMMITTED_REV,
-                         SVN_INVALID_REVNUM))
+    return self._get_last_history_rev(_path_parts(path), rev)
 
   def last_rev(self, path, peg_revision, limit_revision=None):
     """Given PATH, known to exist in PEG_REVISION, find the youngest
