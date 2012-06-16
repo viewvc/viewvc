@@ -55,6 +55,8 @@ def get_directory_props(ra_session, path, rev):
 
 def client_log(url, start_rev, end_rev, log_limit, include_changes,
                cross_copies, cb_func, ctx):
+  include_changes = include_changes and 1 or 0
+  cross_copies = cross_copies and 1 or 0
   try:
     client.svn_client_log4([url], start_rev, start_rev, end_rev,
                            log_limit, include_changes, not cross_copies,
