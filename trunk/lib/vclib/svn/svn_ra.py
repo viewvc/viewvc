@@ -522,27 +522,15 @@ class RemoteSubversionRepository(vclib.Repository):
     else:
       return last_changed_rev
     
-  def _revinfo(self, rev, include_changed_paths=0):
-    """Internal-use, cache-friendly revision information harvester."""
-
+  def _revinfo_fetch(self, rev, include_changed_paths=0):
     need_changes = include_changed_paths or self.auth
     revs = []
     
     def _log_cb(log_entry, pool, retval=revs):
       # If Subversion happens to call us more than once, we choose not
       # to care.
-      if revs:
+      if retval:
         return
-      
-      # Subversion 1.5 and earlier didn't offer the 'changed_paths2'
-      # hash, and in Subversion 1.6, it's offered but broken.
-      try: 
-        changed_paths = log_entry.changed_paths2
-        paths = (changed_paths or {}).keys()
-      except:
-        changed_paths = log_entry.changed_paths
-        paths = (changed_paths or {}).keys()
-      paths.sort(lambda a, b: _compare_paths(a, b))
       
       revision = log_entry.revision
       msg, author, date, revprops = _split_revprops(log_entry.revprops)
@@ -557,9 +545,18 @@ class RemoteSubversionRepository(vclib.Repository):
       if not need_changes:
         return revs.append([date, author, msg, revprops, None])
 
+      # Subversion 1.5 and earlier didn't offer the 'changed_paths2'
+      # hash, and in Subversion 1.6, it's offered but broken.
+      try: 
+        changed_paths = log_entry.changed_paths2
+        paths = (changed_paths or {}).keys()
+      except:
+        changed_paths = log_entry.changed_paths
+        paths = (changed_paths or {}).keys()
+      paths.sort(lambda a, b: _compare_paths(a, b))
+
       # If we get this far, our caller needs changed-paths, or we need
       # them for authz-related sanitization.
-      
       changes = []
       found_readable = found_unreadable = 0
       for path in paths:
@@ -622,7 +619,7 @@ class RemoteSubversionRepository(vclib.Repository):
         # If our caller doesn't want changed-path stuff, and we have
         # the info we need to make an authz determination already,
         # quit this loop and get on with it.
-        if not include_changed_paths and found_unreadable and found_readable:
+        if (not include_changed_paths) and found_unreadable and found_readable:
           break
 
       # Filter unreadable information.
@@ -637,7 +634,15 @@ class RemoteSubversionRepository(vclib.Repository):
         changes = None
 
       # Add this revision information to the "return" array.
-      revs.append([date, author, msg, revprops, changes])
+      retval.append([date, author, msg, revprops, changes])
+
+    optrev = _rev2optrev(rev)
+    client_log(self.rootpath, optrev, optrev, 1, need_changes, 0,
+               _log_cb, self.ctx)
+    return tuple(revs[0])
+
+  def _revinfo(self, rev, include_changed_paths=0):
+    """Internal-use, cache-friendly revision information harvester."""
 
     # Consult the revinfo cache first.  If we don't have cached info,
     # or our caller wants changed paths and we don't have those for
@@ -646,12 +651,9 @@ class RemoteSubversionRepository(vclib.Repository):
     cached_info = self._revinfo_cache.get(rev)
     if not cached_info \
        or (include_changed_paths and cached_info[4] is None):
-      optrev = _rev2optrev(rev)
-      client_log(self.rootpath, optrev, optrev, 1, 0, need_changes,
-                 _log_cb, self.ctx)
-      cached_info = tuple(revs[0])
+      cached_info = self._revinfo_fetch(rev, include_changed_paths)
       self._revinfo_cache[rev] = cached_info
-    return tuple(cached_info)
+    return cached_info
 
   ##--- custom --##
 
