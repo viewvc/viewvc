@@ -54,12 +54,12 @@ def get_directory_props(ra_session, path, rev):
     props = ra.svn_ra_get_dir(ra_session, path, rev)
   return props
 
-def client_log(url, start_rev, end_rev, log_limit, cross_copies,
-               cb_func, ctx):
+def client_log(url, start_rev, end_rev, log_limit, include_changes,
+               cross_copies, cb_func, ctx):
   try:
     client.svn_client_log4([url], start_rev, start_rev, end_rev,
-                           log_limit, 1, not cross_copies, 0, None,
-                           cb_func, ctx)
+                           log_limit, include_changes, not cross_copies,
+                           0, None, cb_func, ctx)
   except AttributeError:
     # Wrap old svn_log_message_receiver_t interface with a
     # svn_log_entry_t one.
@@ -75,7 +75,7 @@ def client_log(url, start_rev, end_rev, log_limit, cross_copies,
                              }
       cb_func(log_entry, pool)
     client.svn_client_log2([url], start_rev, end_rev, log_limit,
-                           1, not cross_copies, cb_convert, ctx)
+                           include_changes, not cross_copies, cb_convert, ctx)
 
 ### END COMPATABILITY CODE ###
 
@@ -296,7 +296,7 @@ class RemoteSubversionRepository(vclib.Repository):
         continue
       # Get authz-sanitized revision metadata.
       entry.date, entry.author, entry.log, revprops, changes = \
-                  self.revinfo(dirent.created_rev)
+                  self._revinfo(dirent.created_rev)
       entry.rev = str(dirent.created_rev)
       entry.size = dirent.size
       entry.lockinfo = None
@@ -331,7 +331,7 @@ class RemoteSubversionRepository(vclib.Repository):
     log_limit = 0
     if limit:
       log_limit = first + limit
-    client_log(url, _rev2optrev(rev), _rev2optrev(1), log_limit,
+    client_log(url, _rev2optrev(rev), _rev2optrev(1), log_limit, 1,
                cross_copies, lc.add_log, self.ctx)
     revs = lc.logs
     revs.sort()
@@ -340,7 +340,7 @@ class RemoteSubversionRepository(vclib.Repository):
       # Swap out revision info with stuff from the cache (which is
       # authz-sanitized).
       rev.date, rev.author, rev.log, revprops, changes \
-                = self.revinfo(rev.number)
+                = self._revinfo(rev.number)
       rev.prev = prev
       prev = rev
     revs.reverse()
@@ -390,7 +390,7 @@ class RemoteSubversionRepository(vclib.Repository):
       if revision < 0:
         date = author = None
       elif self.auth:
-        date, author, msg, revprops, changes = self.revinfo(revision)
+        date, author, msg, revprops, changes = self._revinfo(revision)
 
       # Strip text if the caller doesn't want it.
       if not include_text:
@@ -403,12 +403,7 @@ class RemoteSubversionRepository(vclib.Repository):
     return blame_data, rev
 
   def revinfo(self, rev):
-    rev = self._getrev(rev)
-    cached_info = self._revinfo_cache.get(rev)
-    if not cached_info:
-      cached_info = self._revinfo_raw(rev)
-      self._revinfo_cache[rev] = cached_info
-    return tuple(cached_info)
+    return self._revinfo(rev, 1)
     
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     p1 = self._getpath(path_parts1)
@@ -423,7 +418,7 @@ class RemoteSubversionRepository(vclib.Repository):
     args = vclib._diff_args(type, options)
 
     def _date_from_rev(rev):
-      date, author, msg, revprops, changes = self.revinfo(rev)
+      date, author, msg, revprops, changes = self._revinfo(rev)
       return date
     
     try:
@@ -517,7 +512,7 @@ class RemoteSubversionRepository(vclib.Repository):
     # To determine this, we'll run a potentially no-op log between
     # LAST_CHANGED_REV and REV.
     lc = LogCollector(path, 1, None, None)
-    client_log(url, optrev, _rev2optrev(last_changed_rev), 1, 0,
+    client_log(url, optrev, _rev2optrev(last_changed_rev), 1, 1, 0,
                lc.add_log, self.ctx)
     revs = lc.logs
     if revs:
@@ -526,20 +521,20 @@ class RemoteSubversionRepository(vclib.Repository):
     else:
       return last_changed_rev
     
-  def _revinfo_raw(self, rev):
-    # return 5-tuple (date, author, msg, revprops, changes)
+  def _revinfo(self, rev, include_changed_paths=0):
+    """Internal-use, cache-friendly revision information harvester."""
 
-    ### TODO: This function and its related cache would benefit from
-    ### optimizations such as what the matching svn_repos functions
-    ### have, where the 'changes' information is only fully
-    ### calculated/authz-sanitized when the caller actually needs it.
-    
-    optrev = _rev2optrev(rev)
+    need_changes = include_changed_paths or self.auth
     revs = []
-
+    
     def _log_cb(log_entry, pool, retval=revs):
-      ### Subversion 1.5 and earlier didn't offer the 'changed_paths2'
-      ### hash, and in Subversion 1.6, it's offered but broken.
+      # If Subversion happens to call us more than once, we choose not
+      # to care.
+      if revs:
+        return
+      
+      # Subversion 1.5 and earlier didn't offer the 'changed_paths2'
+      # hash, and in Subversion 1.6, it's offered but broken.
       try: 
         changed_paths = log_entry.changed_paths2
         paths = (changed_paths or {}).keys()
@@ -547,6 +542,7 @@ class RemoteSubversionRepository(vclib.Repository):
         changed_paths = log_entry.changed_paths
         paths = (changed_paths or {}).keys()
       paths.sort(lambda a, b: _compare_paths(a, b))
+      
       revision = log_entry.revision
       msg, author, date, revprops = _split_revprops(log_entry.revprops)
       action_map = { 'D' : vclib.DELETED,
@@ -554,22 +550,33 @@ class RemoteSubversionRepository(vclib.Repository):
                      'R' : vclib.REPLACED,
                      'M' : vclib.MODIFIED,
                      }
+
+      # Easy out: if we won't use the changed-path info, just return a
+      # changes-less tuple.
+      if not need_changes:
+        return revs.append([date, author, msg, revprops, None])
+
+      # If we get this far, our caller needs changed-paths, or we need
+      # them for authz-related sanitization.
+      
       changes = []
       found_readable = found_unreadable = 0
       for path in paths:
         change = changed_paths[path]
-        ### svn_log_changed_path_t (which we might get instead of the
-        ### svn_log_changed_path2_t we'd prefer) doesn't have the
-        ### 'node_kind' member.        
+
+        # svn_log_changed_path_t (which we might get instead of the
+        # svn_log_changed_path2_t we'd prefer) doesn't have the
+        # 'node_kind' member.        
         pathtype = None
         if hasattr(change, 'node_kind'):
           if change.node_kind == core.svn_node_dir:
             pathtype = vclib.DIR
           elif change.node_kind == core.svn_node_file:
             pathtype = vclib.FILE
-        ### svn_log_changed_path2_t only has the 'text_modified' and
-        ### 'props_modified' bits in Subversion 1.7 and beyond.  And
-        ### svn_log_changed_path_t is without.
+            
+        # svn_log_changed_path2_t only has the 'text_modified' and
+        # 'props_modified' bits in Subversion 1.7 and beyond.  And
+        # svn_log_changed_path_t is without.
         text_modified = props_modified = 0
         if hasattr(change, 'text_modified'):
           if change.text_modified == core.svn_tristate_true:
@@ -577,9 +584,10 @@ class RemoteSubversionRepository(vclib.Repository):
         if hasattr(change, 'props_modified'):
           if change.props_modified == core.svn_tristate_true:
             props_modified = 1
-        ### Wrong, diddily wrong wrong wrong.  Can you say,
-        ### "Manufacturing data left and right because it hurts to
-        ### figure out the right stuff?"
+            
+        # Wrong, diddily wrong wrong wrong.  Can you say,
+        # "Manufacturing data left and right because it hurts to
+        # figure out the right stuff?"
         action = action_map.get(change.action, vclib.MODIFIED)
         if change.copyfrom_path and change.copyfrom_rev:
           is_copy = 1
@@ -593,7 +601,7 @@ class RemoteSubversionRepository(vclib.Repository):
           base_path = path
           base_rev = revision - 1
 
-        ### Check authz rules (we lie about the path type)
+        # Check authz rules (sadly, we have to lie about the path type)
         parts = _path_parts(path)
         if vclib.check_path_access(self, parts, vclib.FILE, revision):
           if is_copy and base_path and (base_path != path):
@@ -610,15 +618,39 @@ class RemoteSubversionRepository(vclib.Repository):
         else:
           found_unreadable = 1
 
+        # If our caller doesn't want changed-path stuff, and we have
+        # the info we need to make an authz determination already,
+        # quit this loop and get on with it.
+        if not include_changed_paths and found_unreadable and found_readable:
+          break
+
+      # Filter unreadable information.
       if found_unreadable:
         msg = None
         if not found_readable:
           author = None
           date = None
+
+      # Drop unrequested changes.
+      if not include_changed_paths:
+        changes = None
+
+      # Add this revision information to the "return" array.
       revs.append([date, author, msg, revprops, changes])
 
-    client_log(self.rootpath, optrev, optrev, 1, 0, _log_cb, self.ctx)
-    return tuple(revs[0])
+    # Consult the revinfo cache first.  If we don't have cached info,
+    # or our caller wants changed paths and we don't have those for
+    # this revision, go do the real work.
+    rev = self._getrev(rev)
+    cached_info = self._revinfo_cache.get(rev)
+    if not cached_info \
+       or (include_changed_paths and cached_info[4] is None):
+      optrev = _rev2optrev(rev)
+      client_log(self.rootpath, optrev, optrev, 1, 0, need_changes,
+                 _log_cb, self.ctx)
+      cached_info = tuple(revs[0])
+      self._revinfo_cache[rev] = cached_info
+    return tuple(cached_info)
 
   ##--- custom --##
 
