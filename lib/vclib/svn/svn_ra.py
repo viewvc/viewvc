@@ -369,7 +369,8 @@ class RemoteSubversionRepository(vclib.Repository):
 
     # Examine logs for the file to determine the oldest revision we are
     # permitted to see.
-    revs = self.itemlog(path_parts, rev, vclib.SORTBY_REV, 0, 0, {})
+    revs = self.itemlog(path_parts, rev, vclib.SORTBY_REV, 0, 0,
+                        {'svn_cross_copies' : 1})
     oldest_rev = revs[-1].number
 
     # Now calculate the annotation data.  Note that we'll not
@@ -382,10 +383,16 @@ class RemoteSubversionRepository(vclib.Repository):
       prev_rev = None
       if revision > 1:
         prev_rev = revision - 1
-      if revision >= 0:
-        date, author, msg, revprops, changes = self.revinfo(revision)
-      else:
+
+      # If we have an invalid revision, clear the date and author
+      # values.  Otherwise, if we have authz filtering to do, use the
+      # revinfo cache to do so.
+      if revision < 0:
         date = author = None
+      elif self.auth:
+        date, author, msg, revprops, changes = self.revinfo(revision)
+
+      # Strip text if the caller doesn't want it.
       if not include_text:
         line = None
       blame_data.append(vclib.Annotation(line, line_no + 1, revision, prev_rev,
