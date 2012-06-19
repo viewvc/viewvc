@@ -4,6 +4,7 @@ Version 1.1.15 (released ??-???-????)
   * security fix: log msg leak in SVN revision view with unreadable copy source
   * fix several instances of incorrect information in remote SVN views
   * increase performance of some revision metadata lookups in remote SVN views
+  * fix RSS feed regression introduced in 1.1.14
 
 Version 1.1.14 (released 12-Jun-2012)
 
