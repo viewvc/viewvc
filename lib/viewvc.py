@@ -1388,6 +1388,7 @@ class LogFormatter:
     # But if we're not HTML-izing...
     else:
       # ...then do much more simplistic transformations as necessary.
+      log = self.log
       if cfg.options.mangle_email_addresses == 2:
         log = re.sub(_re_rewrite_email, r'\1@...', log)
       result_log = maxlen and log[:maxlen] or log
