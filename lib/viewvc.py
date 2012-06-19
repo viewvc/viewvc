@@ -1926,7 +1926,10 @@ def markup_or_annotate(request, is_annotate):
     }))
 
   if cfg.options.show_log_in_markup:
-    options = {'svn_latest_log': 1}  ### FIXME: No longer needed?
+    options = {
+      'svn_latest_log': 1, ### FIXME: Use of this magical value is uncool.
+      'svn_cross_copies': 1,
+      }
     revs = request.repos.itemlog(path, revision, vclib.SORTBY_REV,
                                  0, 1, options)
     entry = revs[-1]

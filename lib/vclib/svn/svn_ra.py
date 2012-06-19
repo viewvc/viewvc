@@ -264,7 +264,8 @@ class RemoteSubversionRepository(vclib.Repository):
     ### rev here should be the last history revision of the URL
     client.svn_client_cat(core.Stream(stream), url, _rev2optrev(rev), self.ctx)
     core.svn_stream_close(stream)
-    return SelfCleanFP(tmp_file), self._get_last_history_rev(path_parts, rev)
+    lh_rev, c_rev = self._get_last_history_rev(path_parts, rev)
+    return SelfCleanFP(tmp_file), lh_rev
 
   def listdir(self, path_parts, rev, options):
     path = self._getpath(path_parts)
@@ -312,13 +313,23 @@ class RemoteSubversionRepository(vclib.Repository):
     rev = self._getrev(rev)
     url = self._geturl(path)
 
-    # Use ls3 to fetch the lock status for this item.
+    # Use ls3 to fetch the lock status and size (as of REV) for this item.
     lockinfo = None
     basename = path_parts and path_parts[-1] or ""
     dirents, locks = list_directory(url, _rev2optrev(rev),
                                     _rev2optrev(rev), 0, self.ctx)
     if locks.has_key(basename):
       lockinfo = locks[basename].owner
+    size_in_rev = dirents[basename].size
+    
+    # Special handling for the 'svn_latest_log' scenario.
+    ### FIXME: Don't like this hack.  We should just introduce
+    ### something more direct in the vclib API.
+    if options.get('svn_latest_log', 0):
+      dir_lh_rev, dir_c_rev = self._get_last_history_rev(path_parts, rev)
+      date, author, log, revprops, changes = self._revinfo(dir_lh_rev)
+      return [vclib.Revision(dir_lh_rev, str(dir_lh_rev), date, author,
+                             None, log, size_in_rev, lockinfo)]
 
     def _access_checker(check_path, check_rev):
       return vclib.check_path_access(self, _path_parts(check_path),
@@ -371,8 +382,11 @@ class RemoteSubversionRepository(vclib.Repository):
 
     # Examine logs for the file to determine the oldest revision we are
     # permitted to see.
-    revs = self.itemlog(path_parts, rev, vclib.SORTBY_REV, 0, 0,
-                        {'svn_cross_copies' : 1})
+    log_options = {
+      'svn_cross_copies' : 1,
+      'svn_show_all_dir_logs' : 1,
+      }
+    revs = self.itemlog(path_parts, rev, vclib.SORTBY_REV, 0, 0, log_options)
     oldest_rev = revs[-1].number
 
     # Now calculate the annotation data.  Note that we'll not
@@ -398,10 +412,10 @@ class RemoteSubversionRepository(vclib.Repository):
       if not include_text:
         line = None
       blame_data.append(vclib.Annotation(line, line_no + 1, revision, prev_rev,
-                                         author, None))
+                                         author, date))
       
-    client.svn_client_blame(url, _rev2optrev(oldest_rev), _rev2optrev(rev),
-                            _blame_cb, self.ctx)
+    client.blame2(url, _rev2optrev(rev), _rev2optrev(oldest_rev),
+                  _rev2optrev(rev), _blame_cb, self.ctx)
     return blame_data, rev
 
   def revinfo(self, rev):
@@ -468,6 +482,7 @@ class RemoteSubversionRepository(vclib.Repository):
     authz checks, stripping out unreadable dirents."""
 
     dir_url = self._geturl(path)
+    path_parts = _path_parts(path)    
     if path:
       key = str(rev) + '/' + path
     else:
@@ -480,13 +495,14 @@ class RemoteSubversionRepository(vclib.Repository):
                                           _rev2optrev(rev), 0, self.ctx)
       dirents = {}
       for name, dirent in tmp_dirents.items():
-        dirent_parts = _path_parts(path) + [name]
+        dirent_parts = path_parts + [name]
         kind = dirent.kind 
         if (kind == core.svn_node_dir or kind == core.svn_node_file) \
            and vclib.check_path_access(self, dirent_parts,
                                        kind == core.svn_node_dir \
                                          and vclib.DIR or vclib.FILE, rev):
-          dirent.created_rev = self._get_last_history_rev(dirent_parts, rev)
+          lh_rev, c_rev = self._get_last_history_rev(dirent_parts, rev)
+          dirent.created_rev = lh_rev
           dirents[name] = dirent
       dirents_locks = [dirents, locks]
       self._dirent_cache[key] = dirents_locks
@@ -495,8 +511,10 @@ class RemoteSubversionRepository(vclib.Repository):
     return dirents_locks[0], dirents_locks[1]
 
   def _get_last_history_rev(self, path_parts, rev):
-    """Return the last interesting revision equal to or older than REV
-    in the history of PATH_PARTS."""
+    """Return the a 2-tuple which contains:
+         - the last interesting revision equal to or older than REV in
+           the history of PATH_PARTS.
+         - the created_rev of of PATH_PARTS as of REV."""
     
     path = self._getpath(path_parts)
     url = self._geturl(self._getpath(path_parts))
@@ -519,9 +537,9 @@ class RemoteSubversionRepository(vclib.Repository):
     revs = lc.logs
     if revs:
       revs.sort()
-      return revs[0].number
+      return revs[0].number, last_changed_rev
     else:
-      return last_changed_rev
+      return last_changed_rev, last_changed_rev
     
   def _revinfo_fetch(self, rev, include_changed_paths=0):
     need_changes = include_changed_paths or self.auth
@@ -681,7 +699,8 @@ class RemoteSubversionRepository(vclib.Repository):
     return old_path
   
   def created_rev(self, path, rev):
-    return self._get_last_history_rev(_path_parts(path), rev)
+    lh_rev, c_rev = self._get_last_history_rev(_path_parts(path), rev)
+    return lh_rev
 
   def last_rev(self, path, peg_revision, limit_revision=None):
     """Given PATH, known to exist in PEG_REVISION, find the youngest
