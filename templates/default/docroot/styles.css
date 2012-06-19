@@ -53,7 +53,13 @@ address { font-style: normal; display: inline; }
   border: none;
   padding: 0 1px;
 }
-
+.vc_overlay {
+  width: 12px;
+  height: 12px;
+  border: none;
+  padding: 0 1px;
+  vertical-align: top;
+}
 #vc_header {
   padding: 0 0 10px 0;
   border-bottom: 10px solid #94bd5e;

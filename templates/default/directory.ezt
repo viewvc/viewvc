@@ -63,7 +63,7 @@
     <td style="width: 200px" [if-any click_href]onclick="jumpTo('[click_href]')"[end]>
     [if-any click_href]<a name="[entries.anchor]" href="[click_href]" title="[is entries.pathtype "dir"]View Directory Contents[else][if-any entries.prefer_markup]View[else]Download[end] File Contents[end]">[end]
        <img src="[docroot]/images/[is entries.pathtype "dir"]dir[else][is entries.state "dead"]broken[else]text[end][end].png" alt="" class="vc_icon" />
-       [entries.name][is entries.pathtype "dir"]/[end][if-any click_href]</a>[end]
+       [entries.name][is entries.pathtype "dir"]/[end][if-any click_href]</a>[end][if-any entries.lockinfo]<img src="[docroot]/images/lock-icon.gif" alt="locked" class="vc_overlay" title="Locked by [entries.lockinfo]" />[end]
        [is entries.state "dead"](dead)[end]
     </td>
 
