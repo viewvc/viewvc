@@ -1,4 +1,4 @@
-Version 1.1.15 (released ??-???-????)
+Version 1.1.15 (released 22-Jun-2012)
 
   * security fix: complete authz support for remote SVN views (issue #353)
   * security fix: log msg leak in SVN revision view with unreadable copy source
