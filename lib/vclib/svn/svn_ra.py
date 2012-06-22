@@ -312,14 +312,18 @@ class RemoteSubversionRepository(vclib.Repository):
     rev = self._getrev(rev)
     url = self._geturl(path)
 
-    # Use ls3 to fetch the lock status and size (as of REV) for this item.
-    lockinfo = None
-    basename = path_parts and path_parts[-1] or ""
-    dirents, locks = list_directory(url, _rev2optrev(rev),
-                                    _rev2optrev(rev), 0, self.ctx)
-    if locks.has_key(basename):
-      lockinfo = locks[basename].owner
-    size_in_rev = dirents[basename].size
+    # If this is a file, fetch the lock status and size (as of REV)
+    # for this item.
+    lockinfo = size_in_rev = None
+    if path_type == vclib.FILE:
+      basename = path_parts[-1]
+      list_url = self._geturl(self._getpath(path_parts[:-1]))
+      dirents, locks = list_directory(list_url, _rev2optrev(rev),
+                                      _rev2optrev(rev), 0, self.ctx)
+      if locks.has_key(basename):
+        lockinfo = locks[basename].owner
+      if dirents.has_key(basename):
+        size_in_rev = dirents[basename].size
     
     # Special handling for the 'svn_latest_log' scenario.
     ### FIXME: Don't like this hack.  We should just introduce
