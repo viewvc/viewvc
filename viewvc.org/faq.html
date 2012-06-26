@@ -81,6 +81,9 @@
     Word 2007 (.docx) document, ViewVC tells me that it is a .zip
     file.  How can I make files such as this open in Word?</a></li>
 
+<li><a href="#mime-type-determination">How does ViewVC determine a
+    versioned file's MIME content type?</a></li>
+
 </ul>
 
 <!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
@@ -262,6 +265,29 @@ application/vnd.openxmlformats-officedocument.wordprocessingml.template     dotx
 </pre></blockquote>
 </div>
 
+<div id="mime-type-determination">
+<p class="faq-atitle">How does ViewVC determine a versioned file's
+   MIME content type?</p>
+
+<p>A file's MIME type is determined by consulting various sources of
+   information.  Here are those sources, ordered from highest to
+   lowest priority:
+
+<ol>
+<li>(for Subversion-versioned files
+    where <code>svn_ignore_mimetype&nbsp;=&nbsp;0</code> in
+    <code>viewvc.conf</code>) the <code>svn:mime-type</code> property
+    set on the file.</li>
+<li>the mime type mapping files listed
+    in <code>viewvc.conf</code>'s <code>mime_types_files</code>
+    configuration option, in the order listed.  (In the recommended
+    configuration, ViewVC's own <code>mimetypes.conf</code> file is
+    the first of those in the list, but admins can change that if they
+    so desire.</li>
+<li>any system mime type mapping files that Python's "mimetypes" module
+    consults by default.</li>
+</ol>
+</div>
 
 <!-- #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -# -->
 <h3 class="faq-section" id="faq-a-cvs">CVS Browsing</h3>
