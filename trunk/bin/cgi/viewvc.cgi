@@ -34,7 +34,7 @@ CONF_PATHNAME = None
 
 #########################################################################
 #
-# Adjust sys.path to include our library directory
+# Adjust sys.path to include our library directory.
 #
 
 import sys
@@ -47,12 +47,21 @@ else:
                                                   "../../../lib")))
 
 #########################################################################
+#
+# If admins want nicer processes, here's the place to get them.
+#
 
-### add code for checking the load average
+#try:
+#  os.nice(20) # bump the nice level of this process
+#except:
+#  pass
+
 
 #########################################################################
+#
+# Go do the work.
+#
 
-# go do the work
 import sapi
 import viewvc
 
