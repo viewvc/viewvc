@@ -26,6 +26,7 @@ import sys
 import os
 import calendar
 import copy
+import fnmatch
 import gzip
 import mimetypes
 import re
@@ -1023,6 +1024,15 @@ def default_view(mime_type, cfg):
     return view_markup
   return view_checkout
 
+def is_binary_file_mime_type(mime_type, cfg):
+  """Return True iff MIME_TYPE is set and matches one of the binary
+  file mime type patterns in CFG."""
+  if mime_type:
+    for pattern in cfg.options.binary_mime_types:
+      if fnmatch.fnmatch(mime_type, pattern):
+        return True
+  return False
+  
 def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
   """Return an object holding common hrefs and a viewability flag used
   for various views of FILENAME at revision REV whose MIME type is
@@ -1083,7 +1093,12 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
                                     params={'revision': rev},
                                     escape=1)
 
-  prefer_markup = default_view(mime_type, request.cfg) == view_markup
+  is_binary_file = is_binary_file_mime_type(mime_type, request.cfg)
+  if is_binary_file:
+    download_text_href = annotate_href = view_href = None
+    prefer_markup = False
+  else:
+    prefer_markup = default_view(mime_type, request.cfg) == view_markup
 
   return _item(view_href=view_href,
                download_href=download_href,
@@ -1839,6 +1854,11 @@ def markup_or_annotate(request, is_annotate):
   revision = None
   mime_type, encoding = calculate_mime_type(request, path, rev)
 
+  # Is this display blocked by 'binary_mime_types' configuration?
+  if is_binary_file_mime_type(mime_type, cfg):
+    raise debug.ViewVCException('Display of binary file content disabled '
+                                'by configuration', '403 Forbidden')
+    
   # Is this a viewable image type?
   if is_viewable_image(mime_type) \
      and 'co' in cfg.options.allowed_views:
@@ -3359,6 +3379,13 @@ def view_patch(request):
   query_dict = request.query_dict
   p1, p2, rev1, rev2, sym1, sym2 = setup_diff(request)
 
+  mime_type1, encoding1 = calculate_mime_type(request, p1, rev1)
+  mime_type2, encoding2 = calculate_mime_type(request, p2, rev2)
+  if is_binary_file_mime_type(mime_type1, cfg) or \
+     is_binary_file_mime_type(mime_type2, cfg):
+    raise debug.ViewVCException('Display of binary file content disabled '
+                                'by configuration', '403 Forbidden')
+
   # In the absence of a format dictation in the CGI params, we'll let
   # use the configured diff format, allowing 'c' to mean 'c' and
   # anything else to mean 'u'.
@@ -3649,6 +3676,13 @@ def view_diff(request):
 
   p1, p2, rev1, rev2, sym1, sym2 = setup_diff(request)
   
+  mime_type1, encoding1 = calculate_mime_type(request, p1, rev1)
+  mime_type2, encoding2 = calculate_mime_type(request, p2, rev2)
+  if is_binary_file_mime_type(mime_type1, cfg) or \
+     is_binary_file_mime_type(mime_type2, cfg):
+    raise debug.ViewVCException('Display of binary file content disabled '
+                                'by configuration', '403 Forbidden')
+
   # since templates are in use and subversion allows changes to the dates,
   # we can't provide a strong etag
   if check_freshness(request, None, '%s-%s' % (rev1, rev2), weak=1):
