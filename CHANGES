@@ -1,6 +1,6 @@
 Version 1.1.16 (released ??-???-????)
 
-  * 
+  * add 'binary_mime_types' configuration option and handling (issue #510)
 
 Version 1.1.15 (released 22-Jun-2012)
 

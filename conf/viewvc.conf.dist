@@ -391,6 +391,24 @@
 ##
 #allowed_views = annotate, diff, markup, roots
 
+## Comma-delimited list of MIME content types (with support for fnmatch-
+## style glob characters) which are considered not-human-readable and for
+## which ViewVC will neither generate links to, nor support the direct
+## display of, non-checkout views which carry the file's content (the
+## 'markup', 'annotate', 'diff', and 'patch' views).
+##
+## NOTE: Handling of this option is given priority over ViewVC's
+## longstanding support for showing web-friendly file formats -- even
+## binary ones such as "image/jpeg" and "image/gif" -- in the 'markup'
+## view.  Thus, if you add "image/*" to this list, 'markup'-view
+## display of JPEG, GIF, and PNG images will be disabled.
+##
+## Example:
+## binary_mime_types = application/octet-stream, image/*, application/pdf, 
+##                     application/vnd*, application/msword, audio/*
+#
+#binary_mime_types =
+
 ## authorizer: The name of the ViewVC authorizer plugin to use when
 ## authorizing access to repository contents.  This value must be the
 ## name of a Python module addressable as vcauth.MODULENAME (most
