@@ -3677,6 +3677,7 @@ def view_diff(request):
     raise debug.ViewVCException('Diff generation is disabled',
                                  '403 Forbidden')
 
+  cfg = request.cfg
   p1, p2, rev1, rev2, sym1, sym2 = setup_diff(request)
   
   mime_type1, encoding1 = calculate_mime_type(request, p1, rev1)
