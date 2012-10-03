@@ -2686,7 +2686,8 @@ def view_log(request):
     if selected_rev != entry.rev:
       entry.sel_for_diff_href = \
         request.get_url(view_func=view_log,
-                        params={'r1': entry.rev},
+                        params={'r1': entry.rev,
+                                'log_pagestart': log_pagestart},
                         escape=1)
     if entry.prev is not None:
       entry.diff_to_prev_href = \
@@ -2827,7 +2828,9 @@ def view_log(request):
 
   if cfg.options.log_pagesize:
     data['log_paging_action'], data['log_paging_hidden_values'] = \
-      request.get_form(params={'log_pagestart': None})
+      request.get_form(params={'log_pagestart': None,
+                               'r1': selected_rev,
+                               })
     data['log_pagestart'] = int(request.query_dict.get('log_pagestart',0))
     data['entries'] = paging_sws(data, 'entries', data['log_pagestart'],
                                  'rev', cfg.options.log_pagesize,
