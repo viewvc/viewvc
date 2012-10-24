@@ -571,7 +571,7 @@
 ## (Only works well for C source files, otherwise diff's heuristic falls short.)
 ## ('-p' option to diff)
 ##
-#hr_funout = 0
+#hr_funout = 1
 
 ## hr_ignore_white: Ignore whitespace (indendation and stuff) for human
 ## readable diffs.
