@@ -9,7 +9,11 @@
 [# ------------------------------------------------------------------------- ]
 
 [# setup page definitions]
-  [define page_title]Contents of /[where][end]
+  [is annotation "annotated"]
+    [define page_title]Annotation of /[where][end]
+  [else]
+    [define page_title]Contents of /[where][end]
+  [end]
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
