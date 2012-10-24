@@ -1,4 +1,4 @@
-Version 1.1.16 (released ??-???-????)
+Version 1.1.16 (released 24-Oct-2012)
 
   * security fix: escape "extra" diff info to avoid XSS attack (issue #515)
   * add 'binary_mime_types' configuration option and handling (issue #510)
