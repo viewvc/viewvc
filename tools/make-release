@@ -56,7 +56,6 @@ for PLATFORM in unix windows; do
 
   # Remove some not useful directories
   for JUNK in elemx \
-              misc \
               notes \
               tests \
               tools \

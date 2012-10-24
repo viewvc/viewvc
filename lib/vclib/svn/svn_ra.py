@@ -15,6 +15,7 @@
 import vclib
 import sys
 import os
+import string
 import re
 import tempfile
 import time
@@ -115,7 +116,7 @@ class LogCollector:
       if changed_path != self.path:
         # If a parent of our path was copied, our "next previous"
         # (huh?) path will exist elsewhere (under the copy source).
-        if (self.path.rfind(changed_path) == 0) and \
+        if (string.rfind(self.path, changed_path) == 0) and \
                self.path[len(changed_path)] == '/':
           change = paths[changed_path]
           if change.copyfrom_path:
@@ -457,7 +458,7 @@ class RemoteSubversionRepository(vclib.Repository):
     return props.has_key(core.SVN_PROP_EXECUTABLE)
   
   def _getpath(self, path_parts):
-    return '/'.join(path_parts)
+    return string.join(path_parts, '/')
 
   def _getrev(self, rev):
     if rev is None or rev == 'HEAD':
