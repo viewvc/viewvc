@@ -9,7 +9,11 @@
 [# ------------------------------------------------------------------------- ]
 
 [# setup page definitions]
-  [define page_title]Annotation of:[end]
+  [is annotation "annotated"]
+    [define page_title]Annotation of:[end]
+  [else]
+    [define page_title]Contents of:[end]
+  [end]
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 [include "include/header.ezt" "annotate"]
