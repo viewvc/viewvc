@@ -1,4 +1,4 @@
-Version 1.0.13 (released ??-???-????)
+Version 1.0.13 (released 24-Oct-2012)
 
   * security fix: escape "extra" diff info to avoid XSS attack (issue #515)
   * security fix: remove user-reachable override of cvsdb row limit
