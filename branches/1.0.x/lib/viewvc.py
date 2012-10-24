@@ -2457,7 +2457,7 @@ class DiffSource:
       return _item(type='header',
                    line_info_left=match.group(1),
                    line_info_right=match.group(2),
-                   line_info_extra=match.group(3))
+                   line_info_extra=spaced_html_text(match.group(3), self.cfg))
     
     if line[0] == '\\':
       # \ No newline at end of file
