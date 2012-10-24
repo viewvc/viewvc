@@ -4,6 +4,7 @@ Version 1.1.16 (released ??-???-????)
   * add 'binary_mime_types' configuration option and handling (issue #510)
   * fix 'select for diffs' persistence across log pages (issue #512)
   * remove lock status and filesize check on directories in remote SVN views
+  * fix bogus 'Annotation of' page title for non-annotated view (issue #514)
 
 Version 1.1.15 (released 22-Jun-2012)
 
