@@ -26,13 +26,11 @@
 #
 # -----------------------------------------------------------------------
 
-import sys
+import string
 import os
 import re
 import time
 import math
-
-from common import _item
 import vclib
 import sapi
 
@@ -43,7 +41,7 @@ def link_includes(text, repos, path_parts, include_url):
   if match:
     incfile = match.group(3)
     include_path_parts = path_parts[:-1]
-    for part in filter(None, incfile.split('/')):
+    for part in filter(None, string.split(incfile, '/')):
       if part == "..":
         if not include_path_parts:
           # nothing left to pop; don't bother marking up this include.
@@ -55,14 +53,14 @@ def link_includes(text, repos, path_parts, include_url):
     include_path = None
     try:
       if repos.itemtype(include_path_parts, None) == vclib.FILE:
-        include_path = '/'.join(include_path_parts)
+        include_path = string.join(include_path_parts, '/')
     except vclib.ItemNotFound:
       pass
 
     if include_path:
       return '#%sinclude%s<a href="%s">"%s"</a>' % \
              (match.group(1), match.group(2),
-              include_url.replace('/WHERE/', include_path), incfile)
+              string.replace(include_url, '/WHERE/', include_path), incfile)
     
   return text
 
@@ -75,8 +73,7 @@ class HTMLBlameSource:
     self.path_parts = path_parts
     self.diff_url = diff_url
     self.include_url = include_url
-    self.annotation, self.revision = self.repos.annotate(path_parts, opt_rev,
-                                                         True)
+    self.annotation, self.revision = self.repos.annotate(path_parts, opt_rev)
 
   def __getitem__(self, idx):
     item = self.annotation.__getitem__(idx)
@@ -95,45 +92,80 @@ def blame(repos, path_parts, diff_url, include_url, opt_rev=None):
   return source, source.revision
 
 
+class _item:
+  def __init__(self, **kw):
+    vars(self).update(kw)
+
+
 def make_html(root, rcs_path):
   import vclib.ccvs.blame
   bs = vclib.ccvs.blame.BlameSource(os.path.join(root, rcs_path))
 
+  count = bs.num_lines
+  if count == 0:
+    count = 1
+
+  line_num_width = int(math.log10(count)) + 1
+  revision_width = 3
+  author_width = 5
   line = 0
   old_revision = 0
-  row_color = 'ffffff'
+  row_color = ''
+  inMark = 0
   rev_count = 0
 
-  align = ' style="text-align: %s;"'
+  open_table_tag = '<table cellpadding="0" cellspacing="0">'
+  startOfRow = '<tr><td colspan="3"%s><pre>'
+  endOfRow = '</td></tr>'
 
-  sys.stdout.write('<table cellpadding="2" cellspacing="2" style="font-family: monospace; whitespace: pre;">\n')
+  print open_table_tag + (startOfRow % '')
+
   for line_data in bs:
     revision = line_data.rev
     thisline = line_data.text
     line = line_data.line_number
     author = line_data.author
     prev_rev = line_data.prev_rev
+    
+    output = ''
 
     if old_revision != revision and line != 1:
-      if row_color == 'ffffff':
-        row_color = 'e7e7e7'
+      if row_color == '':
+        row_color = ' style="background-color:#e7e7e7"'
       else:
-        row_color = 'ffffff'
+        row_color = ''
 
-    sys.stdout.write('<tr id="l%d" style="background-color: #%s; vertical-align: center;">' % (line, row_color))
-    sys.stdout.write('<td%s>%d</td>' % (align % 'right', line))
+      if not inMark:
+        output = output + endOfRow + (startOfRow % row_color)
+
+    output = output + '<a name="%d">%*d</a>' % (line, line_num_width, line)
 
     if old_revision != revision or rev_count > 20:
-      sys.stdout.write('<td%s>%s</td>' % (align % 'right', author or '&nbsp;'))
-      sys.stdout.write('<td%s>%s</td>' % (align % 'left', revision))
+      revision_width = max(revision_width, len(revision))
+      output = output + ' '
+      author_width = max(author_width, len(author))
+      output = output + ('%-*s ' % (author_width, author))
+      output = output + revision
+      if prev_rev:
+        output = output + '</a>'
+      output = output + (' ' * (revision_width - len(revision) + 1))
+
       old_revision = revision
       rev_count = 0
     else:
-      sys.stdout.write('<td>&nbsp;</td><td>&nbsp;</td>')
+      output = output + '   ' + (' ' * (author_width + revision_width))
     rev_count = rev_count + 1
 
-    sys.stdout.write('<td%s>%s</td></tr>\n' % (align % 'left', thisline.rstrip() or '&nbsp;'))
-  sys.stdout.write('</table>\n')
+    output = output + thisline
+
+    # Close the highlighted section
+    #if (defined $mark_cmd and mark_cmd != 'begin'):
+    #  chop($output)
+    #  output = output + endOfRow + (startOfRow % row_color)
+    #  inMark = 0
+
+    print output
+  print endOfRow + '</table>'
 
 
 def main():

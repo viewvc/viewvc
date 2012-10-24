@@ -39,11 +39,12 @@ else:
 #########################################################################
 
 import os
+import string
 import getopt
 import re
 import cvsdb
 import viewvc
-import vclib.ccvs
+import vclib.bincvs
 
 DEBUG_FLAG = 0
 
@@ -151,11 +152,11 @@ def FindLongestDirectory(s, repository):
     and a file name, either of which may contain spaces. Returns the longest
     possible directory name that actually exists"""
 
-    parts = s.split()
+    parts = string.split(s, " ")
     
     for i in range(len(parts)-1, 0, -1):
-        directory = ' '.join(parts[:i])
-        filename = ' '.join(parts[i:])
+        directory = string.join(parts[:i])
+        filename = string.join(parts[i:])
         if os.path.isdir(os.path.join(repository, directory)):
             return directory, filename
     
@@ -222,11 +223,10 @@ def NextFile(s, pos = 0):
 def ProcessLoginfo(rootpath, directory, files):
     cfg = viewvc.load_config(CONF_PATHNAME)
     db = cvsdb.ConnectDatabase(cfg)
-    repository = vclib.ccvs.CVSRepository(None, rootpath, None,
-                                          cfg.utilities, 0)
+    repository = vclib.bincvs.BinCVSRepository(None, rootpath, cfg.general)
 
     # split up the directory components
-    dirpath = filter(None, os.path.normpath(directory).split(os.sep))
+    dirpath = filter(None, string.split(os.path.normpath(directory), os.sep))
 
     ## build a list of Commit objects
     commit_list = []
@@ -278,7 +278,7 @@ if __name__ == '__main__':
         else:
             # if there are no arguments, read version information from
             # first line of input like old versions of ViewCVS did
-            arg = sys.stdin.readline().rstrip()
+            arg = string.rstrip(sys.stdin.readline())
     
         if len(sys.argv) > 2:
             # if there is a second argument it indicates which parser

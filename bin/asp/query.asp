@@ -54,10 +54,7 @@ import query
 server = sapi.AspServer(Server, Request, Response, Application)
 try:
   cfg = viewvc.load_config(CONF_PATHNAME, server)
-  viewvc_base_url = cfg.query.viewvc_base_url
-  if viewvc_base_url is None:
-    viewvc_base_url = "viewvc.asp"
-  query.main(server, cfg, viewvc_base_url)
+  query.main(server, cfg, "viewvc.asp")
 finally:
   s.close()
 

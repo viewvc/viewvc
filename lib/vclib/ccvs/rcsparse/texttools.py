@@ -25,7 +25,7 @@ _tt = TextTools
 _idchar_list = map(chr, range(33, 127)) + map(chr, range(160, 256))
 _idchar_list.remove('$')
 _idchar_list.remove(',')
-#_idchar_list.remove('.')   # leave as part of 'num' symbol
+#_idchar_list.remove('.')  # leave as part of 'num' symbol
 _idchar_list.remove(':')
 _idchar_list.remove(';')
 _idchar_list.remove('@')
@@ -41,10 +41,10 @@ _T_STRING_START = 40
 _T_STRING_SPAN = 60
 _T_STRING_END = 70
 
-_E_COMPLETE = 100       # ended on a complete token
-_E_TOKEN = 110          # ended mid-token
-_E_STRING_SPAN = 130    # ended within a string
-_E_STRING_END = 140     # ended with string-end ('@') (could be mid-@@)
+_E_COMPLETE = 100     # ended on a complete token
+_E_TOKEN = 110        # ended mid-token
+_E_STRING_SPAN = 130  # ended within a string
+_E_STRING_END = 140   # ended with string-end ('@') (could be mid-@@)
 
 _SUCCESS = +100
 
@@ -65,7 +65,7 @@ class _mxTokenStream:
   # note: we use a multiple of a standard block size
   CHUNK_SIZE  = 192 * 512  # about 100k
 
-# CHUNK_SIZE  = 5   # for debugging, make the function grind...
+#  CHUNK_SIZE  = 5  # for debugging, make the function grind...
 
   def __init__(self, file):
     self.rcsfile = file
@@ -83,83 +83,39 @@ class _mxTokenStream:
 
     # construct a tag table which refers to the buffer we need to parse.
     table = (
-      #1: ignore whitespace. with or without whitespace, move to the next rule.
+      # ignore whitespace. with or without whitespace, move to the next rule.
       (None, _tt.AllInSet, _tt.whitespace_set, +1),
 
-      #2
       (_E_COMPLETE, _tt.EOF + _tt.AppendTagobj, _tt.Here, +1, _SUCCESS),
 
-      #3: accumulate token text and exit, or move to the next rule.
+      # accumulate token text and exit, or move to the next rule.
       (_UNUSED,      _tt.AllInSet + _tt.AppendMatch, _idchar_set, +2),
 
-      #4
       (_E_TOKEN,  _tt.EOF + _tt.AppendTagobj, _tt.Here, -3, _SUCCESS),
 
-      #5: single character tokens exit immediately, or move to the next rule
+      # single character tokens exit immediately, or move to the next rule
       (_UNUSED,    _tt.IsInSet + _tt.AppendMatch, _onechar_token_set, +2),
 
-      #6
       (_E_COMPLETE, _tt.EOF + _tt.AppendTagobj, _tt.Here, -5, _SUCCESS),
 
-      #7: if this isn't an '@' symbol, then we have a syntax error (go to a
+      # if this isn't an '@' symbol, then we have a syntax error (go to a
       # negative index to indicate that condition). otherwise, suck it up
       # and move to the next rule.
       (_T_STRING_START, _tt.Is + _tt.AppendTagobj, '@'),
 
-      #8
       (None, _tt.Is, '@', +4, +1),
-      #9
       (buf, _tt.Is, '@', +1, -1),
-      #10
       (_T_STRING_END, _tt.Skip + _tt.AppendTagobj, 0, 0, +1),
-      #11
       (_E_STRING_END, _tt.EOF + _tt.AppendTagobj, _tt.Here, -10, _SUCCESS),
 
-      #12
       (_E_STRING_SPAN, _tt.EOF + _tt.AppendTagobj, _tt.Here, +1, _SUCCESS),
 
-      #13: suck up everything that isn't an AT. go to next rule to look for EOF
+      # suck up everything that isn't an AT. go to next rule to look for EOF
       (buf,  _tt.AllInSet, _not_at_set, 0, +1),
 
-      #14: go back to look for double AT if we aren't at the end of the string
+      # go back to look for double AT if we aren't at the end of the string
       (_E_STRING_SPAN,   _tt.EOF + _tt.AppendTagobj, _tt.Here, -6, _SUCCESS),
       )
-
-    # Fast, texttools may be, but it's somewhat lacking in clarity.
-    # Here's an attempt to document the logic encoded in the table above:
-    #
-    # Flowchart:
-    #                                   _____
-    #                                  /    /\
-    # 1 -> 2 ->  3 ->  5 ->  7 ->     8  ->  9 -> 10 -> 11
-    # |         \/    \/           \/  /\               \/
-    #  \         4     6          12    14              /
-    #   \_______/_____/            \    /              /
-    #    \                           13               /
-    #     \__________________________________________/                    
-    #
-    # #1: Skip over any whitespace.
-    # #2: If now EOF, exit with code _E_COMPLETE.
-    # #3: If we have a series of characters in _idchar_set, then:
-    #     #4: Output them as a token, and go back to #1.
-    # #5: If we have a character in _onechar_token_set, then:
-    #     #6: Output it as a token, and go back to #1.
-    # #7: If we do not have an '@', then error.
-    #     If we do, then log a _T_STRING_START and continue.
-    # #8: If we have another '@', continue on to #9. Otherwise:
-    #     #12: If now EOF, exit with code _E_STRING_SPAN.
-    #     #13: Record the slice up to the next '@' (or EOF).
-    #     #14: If now EOF, exit with code _E_STRING_SPAN.
-    #          Otherwise, go back to #8.
-    # #9: If we have another '@', then we've just seen an escaped
-    #     (by doubling) '@' within an @-string.  Record a slice including
-    #     just one '@' character, and jump back to #8.
-    #     Otherwise, we've *either* seen the terminating '@' of an @-string,
-    #     *or* we've seen one half of an escaped @@ sequence that just
-    #     happened to be split over a chunk boundary - in either case,
-    #     we continue on to #10.
-    # #10: Log a _T_STRING_END.
-    # #11: If now EOF, exit with _E_STRING_END. Otherwise, go back to #1.
 
     success, taglist, idx = _tt.tag(buf, table, start)
 
@@ -323,11 +279,16 @@ class _mxTokenStream:
   def match(self, match):
     if self.tokens:
       token = self.tokens.pop()
+      if token != match:
+        raise RuntimeError, ('Unexpected parsing error in RCS file.\n'
+                             'Expected token: %s, but saw: %s'
+                             % (match, token))
     else:
       token = self.get()
-
-    if token != match:
-      raise common.RCSExpected(token, match)
+      if token != match:
+        raise RuntimeError, ('Unexpected parsing error in RCS file.\n'
+                             'Expected token: %s, but saw: %s'
+                             % (match, token))
 
   def unget(self, token):
     self.tokens.append(token)

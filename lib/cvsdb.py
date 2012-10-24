@@ -12,21 +12,13 @@
 
 import os
 import sys
+import string
 import time
 import fnmatch
 import re
 
-import vclib
 import dbi
 
-## Current commits database schema version number.
-##
-## Version 0 was the original Bonsai-compatible version.
-##
-## Version 1 added the 'metadata' table (which holds the 'version' key)
-## and renamed all the 'repository'-related stuff to be 'root'-
-##
-CURRENT_SCHEMA_VERSION = 1
 
 ## error
 error = "cvsdb error"
@@ -43,7 +35,6 @@ class CheckinDatabase:
         self._user = user
         self._passwd = passwd
         self._database = database
-        self._version = None
 
         ## database lookup caches
         self._get_cache = {}
@@ -55,19 +46,6 @@ class CheckinDatabase:
             self._host, self._port, self._user, self._passwd, self._database)
         cursor = self.db.cursor()
         cursor.execute("SET AUTOCOMMIT=1")
-        table_list = self.GetTableList()
-        if 'metadata' in table_list:
-            version = self.GetMetadataValue("version")
-            if version is None:
-                self._version = 0
-            else:
-                self._version = int(version)
-        else:
-            self._version = 0
-        if self._version > CURRENT_SCHEMA_VERSION:
-            raise DatabaseVersionError("Database version %d is newer than the "
-                                       "last version supported by this "
-                                       "software." % (self._version))
 
     def sql_get_id(self, table, column, value, auto_set):
         sql = "SELECT id FROM %s WHERE %s=%%s" % (table, column)
@@ -167,45 +145,6 @@ class CheckinDatabase:
 
         return list
 
-    def GetCommitsTable(self):
-        return self._version >= 1 and 'commits' or 'checkins'
-        
-    def GetTableList(self):
-        sql = "SHOW TABLES"
-        cursor = self.db.cursor()
-        cursor.execute(sql)
-        list = []
-        while 1:
-            row = cursor.fetchone()
-            if row == None:
-                break
-            list.append(row[0])
-        return list
-        
-    def GetMetadataValue(self, name):
-        sql = "SELECT value FROM metadata WHERE name=%s"
-        sql_args = (name)
-        cursor = self.db.cursor()
-        cursor.execute(sql, sql_args)
-        try:
-            (value,) = cursor.fetchone()
-        except TypeError:
-            return None
-        return value
-        
-    def SetMetadataValue(self, name, value):
-        assert(self._version > 0)
-        sql = "REPLACE INTO metadata (name, value) VALUES (%s, %s)"
-        sql_args = (name, value)
-        cursor = self.db.cursor()
-        try:
-            cursor.execute(sql, sql_args)
-        except Exception, e:
-            raise Exception("Error setting metadata: '%s'\n"
-                            "\tname  = %s\n"
-                            "\tvalue = %s\n"
-                            % (str(e), name, value))
-        
     def GetBranchID(self, branch, auto_set = 1):
         return self.get_id("branches", "branch", branch, auto_set)
 
@@ -297,7 +236,7 @@ class CheckinDatabase:
             self.AddCommit(commit)
 
     def AddCommit(self, commit):
-        ci_when = dbi.DateTimeFromTicks(commit.GetTime() or 0.0)
+        ci_when = dbi.DateTimeFromTicks(commit.GetTime())
         ci_type = commit.GetTypeString()
         who_id = self.GetAuthorID(commit.GetAuthor())
         repository_id = self.GetRepositoryID(commit.GetRepository())
@@ -310,8 +249,7 @@ class CheckinDatabase:
         minus_count = commit.GetMinusCount() or '0'
         description_id = self.GetDescriptionID(commit.GetDescription())
 
-        sql = "REPLACE INTO %s" % (self.GetCommitsTable())
-        sql = sql + \
+        sql = "REPLACE INTO checkins"\
               "  (type,ci_when,whoid,repositoryid,dirid,fileid,revision,"\
               "   stickytag,branchid,addedlines,removedlines,descid)"\
               "VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
@@ -320,24 +258,7 @@ class CheckinDatabase:
                     plus_count, minus_count, description_id)
 
         cursor = self.db.cursor()
-        try:
-            cursor.execute(sql, sql_args)
-        except Exception, e:
-            raise Exception("Error adding commit: '%s'\n"
-                            "Values were:\n"
-                            "\ttype         = %s\n"
-                            "\tci_when      = %s\n"
-                            "\twhoid        = %s\n"
-                            "\trepositoryid = %s\n"
-                            "\tdirid        = %s\n"
-                            "\tfileid       = %s\n"
-                            "\trevision     = %s\n"
-                            "\tstickytag    = %s\n"
-                            "\tbranchid     = %s\n"
-                            "\taddedlines   = %s\n"
-                            "\tremovedlines = %s\n"
-                            "\tdescid       = %s\n"
-                            % ((str(e), ) + sql_args))
+        cursor.execute(sql, sql_args)
 
     def SQLQueryListString(self, field, query_entry_list):
         sqlList = []
@@ -351,17 +272,9 @@ class CheckinDatabase:
                 match = " LIKE "
             elif query_entry.match == "glob":
                 match = " REGEXP "
-                # Use fnmatch to translate the glob into a regular
-                # expression.  Sadly, we have to account for the fact
-                # that in Python 2.6, fnmatch.translate() started
-                # sticking '\Z(?ms)' at the end of the regular
-                # expression instead of just '$', and doesn't prepend
-                # the '^'.
+                # use fnmatch to translate the glob into a regexp
                 data = fnmatch.translate(data)
-                if data[0] != '^':
-                    data = '^' + data
-                if data[-7:] == '\Z(?ms)':
-                    data = data[:-7] + '$'
+                if data[0] != '^': data = '^' + data
             elif query_entry.match == "regex":
                 match = " REGEXP "
             elif query_entry.match == "notregex":
@@ -369,72 +282,55 @@ class CheckinDatabase:
 
             sqlList.append("%s%s%s" % (field, match, self.db.literal(data)))
 
-        return "(%s)" % (" OR ".join(sqlList))
+        return "(%s)" % (string.join(sqlList, " OR "))
 
-    def CreateSQLQueryString(self, query, detect_leftover=0):
-        commits_table = self.GetCommitsTable()
-        tableList = [(commits_table, None)]
+    def CreateSQLQueryString(self, query):
+        tableList = [("checkins", None)]
         condList = []
 
         if len(query.repository_list):
             tableList.append(("repositories",
-                              "(%s.repositoryid=repositories.id)"
-                              % (commits_table)))
+                              "(checkins.repositoryid=repositories.id)"))
             temp = self.SQLQueryListString("repositories.repository",
                                            query.repository_list)
             condList.append(temp)
 
         if len(query.branch_list):
-            tableList.append(("branches",
-                              "(%s.branchid=branches.id)" % (commits_table)))
+            tableList.append(("branches", "(checkins.branchid=branches.id)"))
             temp = self.SQLQueryListString("branches.branch",
                                            query.branch_list)
             condList.append(temp)
 
         if len(query.directory_list):
-            tableList.append(("dirs",
-                              "(%s.dirid=dirs.id)" % (commits_table)))
+            tableList.append(("dirs", "(checkins.dirid=dirs.id)"))
             temp = self.SQLQueryListString("dirs.dir", query.directory_list)
             condList.append(temp)
             
         if len(query.file_list):
-            tableList.append(("files",
-                              "(%s.fileid=files.id)" % (commits_table)))
+            tableList.append(("files", "(checkins.fileid=files.id)"))
             temp = self.SQLQueryListString("files.file", query.file_list)
             condList.append(temp)
             
         if len(query.author_list):
-            tableList.append(("people",
-                              "(%s.whoid=people.id)" % (commits_table)))
+            tableList.append(("people", "(checkins.whoid=people.id)"))
             temp = self.SQLQueryListString("people.who", query.author_list)
             condList.append(temp)
             
-        if len(query.comment_list):
-            tableList.append(("descs",
-                              "(%s.descid=descs.id)" % (commits_table)))
-            temp = self.SQLQueryListString("descs.description",
-                                           query.comment_list)
-            condList.append(temp)
-            
         if query.from_date:
-            temp = "(%s.ci_when>=\"%s\")" \
-                   % (commits_table, str(query.from_date))
+            temp = "(checkins.ci_when>=\"%s\")" % (str(query.from_date))
             condList.append(temp)
 
         if query.to_date:
-            temp = "(%s.ci_when<=\"%s\")" \
-                   % (commits_table, str(query.to_date))
+            temp = "(checkins.ci_when<=\"%s\")" % (str(query.to_date))
             condList.append(temp)
 
         if query.sort == "date":
-            order_by = "ORDER BY %s.ci_when DESC,descid" % (commits_table)
+            order_by = "ORDER BY checkins.ci_when DESC,descid"
         elif query.sort == "author":
-            tableList.append(("people",
-                              "(%s.whoid=people.id)" % (commits_table)))
+            tableList.append(("people", "(checkins.whoid=people.id)"))
             order_by = "ORDER BY people.who,descid"
         elif query.sort == "file":
-            tableList.append(("files",
-                              "(%s.fileid=files.id)" % (commits_table)))
+            tableList.append(("files", "(checkins.fileid=files.id)"))
             order_by = "ORDER BY files.file,descid"
 
         ## exclude duplicates from the table list, and split out join
@@ -448,38 +344,29 @@ class CheckinDatabase:
                 tables.append(table)
                 if cond is not None: joinConds.append(cond)
 
-        tables = ",".join(tables)
-        conditions = " AND ".join(joinConds + condList)
+        tables = string.join(tables, ",")
+        conditions = string.join(joinConds + condList, " AND ")
         conditions = conditions and "WHERE %s" % conditions
 
         ## apply the query's row limit, if any (so we avoid really
         ## slamming a server with a large database)
         limit = ""
         if query.limit:
-            if detect_leftover:
-                limit = "LIMIT %s" % (str(query.limit + 1))
-            else:
-                limit = "LIMIT %s" % (str(query.limit))
+            limit = "LIMIT %s" % (str(query.limit))
 
-        sql = "SELECT %s.* FROM %s %s %s %s" \
-              % (commits_table, tables, conditions, order_by, limit)
+        sql = "SELECT checkins.* FROM %s %s %s %s" % (
+            tables, conditions, order_by, limit)
 
         return sql
     
     def RunQuery(self, query):
-        sql = self.CreateSQLQueryString(query, 1)
+        sql = self.CreateSQLQueryString(query)
         cursor = self.db.cursor()
         cursor.execute(sql)
-        query.SetExecuted()
-        row_count = 0
         
         while 1:
             row = cursor.fetchone()
             if not row:
-                break
-            row_count = row_count + 1
-            if query.limit and (row_count > query.limit):
-                query.SetLimitReached()
                 break
             
             (dbType, dbCI_When, dbAuthorID, dbRepositoryID, dbDirID,
@@ -519,12 +406,8 @@ class CheckinDatabase:
         if file_id == None:
             return None
 
-        sql = "SELECT * FROM %s WHERE "\
-              "  repositoryid=%%s "\
-              "  AND dirid=%%s"\
-              "  AND fileid=%%s"\
-              "  AND revision=%%s"\
-              % (self.GetCommitsTable())
+        sql = "SELECT * FROM checkins WHERE "\
+              "  repositoryid=%s AND dirid=%s AND fileid=%s AND revision=%s"
         sql_args = (repository_id, dir_id, file_id, commit.GetRevision())
 
         cursor = self.db.cursor()
@@ -537,75 +420,6 @@ class CheckinDatabase:
             return None
 
         return commit
-
-    def sql_delete(self, table, key, value, keep_fkey = None):
-        sql = "DELETE FROM %s WHERE %s=%%s" % (table, key)
-        sql_args = (value, )
-        if keep_fkey:
-            sql += " AND %s NOT IN (SELECT %s FROM %s WHERE %s = %%s)" \
-                   % (key, keep_fkey, self.GetCommitsTable(), keep_fkey)
-            sql_args = (value, value)
-        cursor = self.db.cursor()
-        cursor.execute(sql, sql_args)
-        
-    def sql_purge(self, table, key, fkey, ftable):
-        sql = "DELETE FROM %s WHERE %s NOT IN (SELECT %s FROM %s)" \
-              % (table, key, fkey, ftable)
-        cursor = self.db.cursor()
-        cursor.execute(sql)
-
-    def PurgeRepository(self, repository):
-        rep_id = self.GetRepositoryID(repository, auto_set=0)
-        if not rep_id:
-            raise UnknownRepositoryError("Unknown repository '%s'"
-                                         % (repository))
-
-        if (self._version >= 1):
-            self.sql_delete('repositories', 'id', rep_id)
-            self.sql_purge('commits', 'repositoryid', 'id', 'repositories')
-            self.sql_purge('files', 'id', 'fileid', 'commits')
-            self.sql_purge('dirs', 'id', 'dirid', 'commits')
-            self.sql_purge('branches', 'id', 'branchid', 'commits')
-            self.sql_purge('descs', 'id', 'descid', 'commits')
-            self.sql_purge('people', 'id', 'whoid', 'commits')
-        else:
-            sql = "SELECT * FROM checkins WHERE repositoryid=%s"
-            sql_args = (rep_id, )
-            cursor = self.db.cursor()
-            cursor.execute(sql, sql_args)
-            checkins = []
-            while 1:
-                try:
-                    (ci_type, ci_when, who_id, repository_id,
-                     dir_id, file_id, revision, sticky_tag, branch_id,
-                     plus_count, minus_count, description_id) = \
-                     cursor.fetchone()
-                except TypeError:
-                    break
-                checkins.append([file_id, dir_id, branch_id,
-                                 description_id, who_id])
-
-            #self.sql_delete('repositories', 'id', rep_id)
-            self.sql_delete('checkins', 'repositoryid', rep_id)
-            for checkin in checkins:
-                self.sql_delete('files', 'id', checkin[0], 'fileid')
-                self.sql_delete('dirs', 'id', checkin[1], 'dirid')
-                self.sql_delete('branches', 'id', checkin[2], 'branchid')
-                self.sql_delete('descs', 'id', checkin[3], 'descid')
-                self.sql_delete('people', 'id', checkin[4], 'whoid')
-
-        # Reset all internal id caches.  We could be choosier here,
-        # but let's just be as safe as possible.
-        self._get_cache = {}
-        self._get_id_cache = {}
-        self._desc_id_cache = {}
-        
-
-class DatabaseVersionError(Exception):
-    pass
-class UnknownRepositoryError(Exception):
-    pass
-
 
 ## the Commit class holds data on one commit, the representation is as
 ## close as possible to how it should be committed and retrieved to the
@@ -654,15 +468,10 @@ class Commit:
         return self.__revision
 
     def SetTime(self, gmt_time):
-        if gmt_time is None:
-            ### We're just going to assume that a datestamp of The Epoch
-            ### ain't real.
-            self.__gmt_time = 0.0
-        else:
-            self.__gmt_time = float(gmt_time)
+        self.__gmt_time = float(gmt_time)
 
     def GetTime(self):
-        return self.__gmt_time and self.__gmt_time or None
+        return self.__gmt_time
 
     def SetAuthor(self, author):
         self.__author = author
@@ -783,8 +592,7 @@ class QueryEntry:
         self.match = match
 
 ## CheckinDatabaseQuery is an object which contains the search
-## parameters for a query to the Checkin Database and -- after the
-## query is executed -- the data returned by the query.
+## parameters for a query to the Checkin Database
 class CheckinDatabaseQuery:
     def __init__(self):
         ## sorting
@@ -796,7 +604,6 @@ class CheckinDatabaseQuery:
         self.directory_list = []
         self.file_list = []
         self.author_list = []
-        self.comment_list = []
 
         ## date range in DBI 2.0 timedate objects
         self.from_date = None
@@ -804,17 +611,13 @@ class CheckinDatabaseQuery:
 
         ## limit on number of rows to return
         self.limit = None
-        self.limit_reached = 0
-        
+
         ## list of commits -- filled in by CVS query
         self.commit_list = []
 
         ## commit_cb provides a callback for commits as they
         ## are added
         self.commit_cb = None
-
-        ## has this query been run?
-        self.executed = 0
 
     def SetRepository(self, repository, match = "exact"):
         self.repository_list.append(QueryEntry(repository, match))
@@ -830,9 +633,6 @@ class CheckinDatabaseQuery:
 
     def SetAuthor(self, author, match = "exact"):
         self.author_list.append(QueryEntry(author, match))
-
-    def SetComment(self, comment, match = "exact"):
-        self.comment_list.append(QueryEntry(comment, match))
 
     def SetSortMethod(self, sort):
         self.sort = sort
@@ -861,20 +661,6 @@ class CheckinDatabaseQuery:
     def AddCommit(self, commit):
         self.commit_list.append(commit)
 
-    def SetExecuted(self):
-        self.executed = 1
-
-    def SetLimitReached(self):
-        self.limit_reached = 1
-
-    def GetLimitReached(self):
-        assert self.executed
-        return self.limit_reached
-
-    def GetCommitList(self):
-        assert self.executed
-        return self.commit_list
-        
 
 ##
 ## entrypoints
@@ -903,11 +689,10 @@ def ConnectDatabaseReadOnly(cfg):
 def GetCommitListFromRCSFile(repository, path_parts, revision=None):
     commit_list = []
 
-    directory = "/".join(path_parts[:-1])
+    directory = string.join(path_parts[:-1], "/")
     file = path_parts[-1]
 
-    revs = repository.itemlog(path_parts, revision, vclib.SORTBY_DEFAULT,
-                              0, 0, {"cvs_pass_rev": 1})
+    revs = repository.itemlog(path_parts, revision, {"cvs_pass_rev": 1})
     for rev in revs:
         commit = CreateCommit()
         commit.SetRepository(repository.rootpath)
@@ -920,7 +705,7 @@ def GetCommitListFromRCSFile(repository, path_parts, revision=None):
 
         if rev.changed:
             # extract the plus/minus and drop the sign
-            plus, minus = rev.changed.split()
+            plus, minus = string.split(rev.changed)
             commit.SetPlusCount(plus[1:])
             commit.SetMinusCount(minus[1:])
 
