@@ -1,5 +1,6 @@
 Version 1.1.16 (released ??-???-????)
 
+  * security fix: escape "extra" diff info to avoid XSS attack (issue #515)
   * add 'binary_mime_types' configuration option and handling (issue #510)
   * fix 'select for diffs' persistence across log pages (issue #512)
 
