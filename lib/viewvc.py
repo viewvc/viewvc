@@ -3481,7 +3481,6 @@ class DiffDescription:
     query_dict = request.query_dict
 
     self.diff_format = query_dict.get('diff_format', cfg.options.diff_format)
-    self.diff_options = {}
     self.human_readable = 0
     self.hide_legend = 0
     self.line_differ = None
@@ -3545,25 +3544,25 @@ class DiffDescription:
     self.changes.append(_item(diff_block_format='anchor', anchor=anchor_name))
 
   def get_content_diff(self, left, right):
-    options = {}
+    diff_options = {}
     if self.context != -1:
-      options['context'] = self.context
+      diff_options['context'] = self.context
     if self.human_readable:
       cfg = self.request.cfg
-      self.diff_options['funout'] = cfg.options.hr_funout
-      self.diff_options['ignore_white'] = cfg.options.hr_ignore_white
-      self.diff_options['ignore_keyword_subst'] = \
+      diff_options['funout'] = cfg.options.hr_funout
+      diff_options['ignore_white'] = cfg.options.hr_ignore_white
+      diff_options['ignore_keyword_subst'] = \
                       cfg.options.hr_ignore_keyword_subst
     self._get_diff(left, right, self._content_lines, self._content_fp,
-                   options, None)
+                   diff_options, None)
 
   def get_prop_diff(self, left, right):
-    options = {}
+    diff_options = {}
     if self.context != -1:
-      options['context'] = self.context
+      diff_options['context'] = self.context
     if self.human_readable:
       cfg = self.request.cfg
-      self.diff_options['ignore_white'] = cfg.options.hr_ignore_white
+      diff_options['ignore_white'] = cfg.options.hr_ignore_white
     for name in self._uniq(left.properties.keys() + right.properties.keys()):
       # Skip non-utf8 property names
       if is_undisplayable(name):
@@ -3581,27 +3580,30 @@ class DiffDescription:
                                   changes=[ _item(type=_RCSDIFF_IS_BINARY) ],
                                   propname=name))
         continue
-      self._get_diff(left, right, self._prop_lines, self._prop_fp, options, name)
+      self._get_diff(left, right, self._prop_lines, self._prop_fp,
+                     diff_options, name)
 
-  def _get_diff(self, left, right, get_lines, get_fp, options, propname):
+  def _get_diff(self, left, right, get_lines, get_fp, diff_options, propname):
     if self.fp_differ is not None:
-      fp = get_fp(left, right, propname, options)
+      fp = get_fp(left, right, propname, diff_options)
       changes = self.fp_differ(left, right, fp, propname)
     else:
       lines_left = get_lines(left, propname)
       lines_right = get_lines(right, propname)
-      changes = self.line_differ(lines_left, lines_right, options)
+      changes = self.line_differ(lines_left, lines_right, diff_options)
     self.changes.append(_item(left=left,
                               right=right,
                               changes=changes,
                               diff_block_format=self.diff_block_format,
                               propname=propname))
 
-  def _line_idiff_sidebyside(self, lines_left, lines_right, options):
-    return idiff.sidebyside(lines_left, lines_right, options.get("context", 5))
+  def _line_idiff_sidebyside(self, lines_left, lines_right, diff_options):
+    return idiff.sidebyside(lines_left, lines_right,
+                            diff_options.get("context", 5))
 
-  def _line_idiff_unified(self, lines_left, lines_right, options):
-    return idiff.unified(lines_left, lines_right, options.get("context", 2))
+  def _line_idiff_unified(self, lines_left, lines_right, diff_options):
+    return idiff.unified(lines_left, lines_right,
+                         diff_options.get("context", 2))
 
   def _fp_vclib_hr(self, left, right, fp, propname):
     date1, date2, flag, headers = \
@@ -3634,18 +3636,19 @@ class DiffDescription:
       f.close()
     return lines
 
-  def _content_fp(self, left, right, propname, options):
+  def _content_fp(self, left, right, propname, diff_options):
     return self.request.repos.rawdiff(left.path_comp, left.rev,
-        right.path_comp, right.rev, self.diff_type, options)
+                                      right.path_comp, right.rev,
+                                      self.diff_type, diff_options)
 
   def _prop_lines(self, side, propname):
     val = side.properties.get(propname, '')
     return val.splitlines()
 
-  def _prop_fp(self, left, right, propname, options):
+  def _prop_fp(self, left, right, propname, diff_options):
     fn_left = self._temp_file(left.properties.get(propname))
     fn_right = self._temp_file(right.properties.get(propname))
-    diff_args = vclib._diff_args(self.diff_type, options)
+    diff_args = vclib._diff_args(self.diff_type, diff_options)
     info_left = self._property_path(left, propname), \
                 left.log_entry.date, left.rev
     info_right = self._property_path(right, propname), \
