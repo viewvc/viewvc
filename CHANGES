@@ -5,6 +5,10 @@ Version 1.2.0 (released ??-???-????)
   * allow user-configurable cvsgraph display (issue #336)
   * allow rNNNN syntax for Subversion revision numbers (issue #441)
 
+Version 1.1.17 (released 25-Oct-2012)
+
+  * fix exception caused by uninitialized variable usage (issue #516)
+
 Version 1.1.16 (released 24-Oct-2012)
 
   * security fix: escape "extra" diff info to avoid XSS attack (issue #515)
