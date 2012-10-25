@@ -59,6 +59,7 @@
       <th colspan="2" class="vc_header">
         <strong>Line [diffs.changes.line_info_left]</strong> |
         <strong>Line [diffs.changes.line_info_right]</strong> 
+        [if-any diffs.changes.line_info_extra]| <strong>[diffs.changes.line_info_extra]</strong>[end]
       </th>
     </tr>
    [else]
