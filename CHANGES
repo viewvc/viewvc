@@ -1,3 +1,7 @@
+Version 1.1.18 (released ??-???-????)
+
+  * 
+
 Version 1.1.17 (released 25-Oct-2012)
 
   * fix exception caused by uninitialized variable usage (issue #516)
