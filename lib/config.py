@@ -419,7 +419,7 @@ class Config:
     self.options.hr_ignore_keyword_subst = 1
     self.options.hr_intraline = 0
     self.options.allow_compress = 0
-    self.options.template_dir = "templates/classic"
+    self.options.template_dir = "templates/default"
     self.options.docroot = None
     self.options.show_subdir_lastmod = 0
     self.options.show_roots_lastmod = 0
