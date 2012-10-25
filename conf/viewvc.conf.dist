@@ -617,7 +617,7 @@
 ## template_dir = templates/default
 ## template_dir = templates-contrib/custom/templates
 #
-#template_dir = templates/classic
+#template_dir = templates/default
 
 ## docroot: Web path to a directory that contains ViewVC static files
 ## (stylesheets, images, etc.)  If set, static files will get
