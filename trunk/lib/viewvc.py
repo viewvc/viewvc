@@ -2563,6 +2563,7 @@ def view_log(request):
       sortby = vclib.SORTBY_DEFAULT
 
   first = last = 0
+  log_pagestart = None
   if cfg.options.log_pagesize:
     log_pagestart = int(request.query_dict.get('log_pagestart', 0))
     total = cfg.options.log_pagesextra * cfg.options.log_pagesize
