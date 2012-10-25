@@ -3402,9 +3402,14 @@ def view_patch(request):
   else:
     raise debug.ViewVCException('Diff format %s not understood'
                                  % format, '400 Bad Request')
+
+  # Set some diff options.  (Are there other options folks might want?
+  # Maybe not.  For a patch, perhaps the precise change is ideal.)
+  diff_options = {}
+  diff_options['funout'] = cfg.options.hr_funout
   
   try:
-    fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type)
+    fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options)
   except vclib.InvalidRevision:
     raise debug.ViewVCException('Invalid path(s) or revision(s) passed '
                                  'to diff', '400 Bad Request')
