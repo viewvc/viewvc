@@ -1,6 +1,0 @@
-set_locking('strict')
-set_comment('# ')
-admin_completed()
-tree_completed()
-set_description('')
-parse_completed()
