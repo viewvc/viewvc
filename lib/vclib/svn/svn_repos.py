@@ -663,11 +663,19 @@ class LocalSubversionRepository(vclib.Repository):
       return found_readable, found_unreadable, changedpaths.values()
 
     def _get_change_copyinfo(fsroot, path, change):
+      # If we know the copyfrom info, return it...
       if hasattr(change, 'copyfrom_known') and change.copyfrom_known:
         copyfrom_path = change.copyfrom_path
         copyfrom_rev = change.copyfrom_rev
-      else:
+      # ...otherwise, if this change could be a copy (that is, it
+      # contains an add action), query the copyfrom info ...
+      elif (change.change_kind == fs.path_change_add or
+            change.change_kind == fs.path_change_replace):
         copyfrom_rev, copyfrom_path = fs.copied_from(fsroot, path)
+      # ...else, there's no copyfrom info.
+      else:
+        copyfrom_rev = core.SVN_INVALID_REVNUM
+        copyfrom_path = None
       return copyfrom_path, copyfrom_rev
       
     def _simple_auth_check(fsroot):
