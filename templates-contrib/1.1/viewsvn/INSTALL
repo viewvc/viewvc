@@ -42,22 +42,20 @@ Modify include/dir_footer.ezt, line 44. Enable this section and configure your s
 III. EXTRAS
 
 
-1.   fix-blame-output.diff
-
-If you are running ViewVC 1.0 and you are suffering from a broken blame/annotate output because of
-long author names you can apply this patch. Note that Subversion 1.3.1 or higher is required.
-
-
-2.   svnindex.xsl & svnindex.css
+1.   svnindex.xsl & svnindex.css
 
 If you are using mod_dav_svn to host your repository you can teach it to use a stylesheet if you are 
 browsing the repository directly. Take a look at the SVNIndexXSLT directive for more information.
-You can use the .xsl and .css from the extras folder to get a look & feel that is similiar to this
-ViewVC template. Note that these stylesheets knows nothing about ViewVC. You have to teach
-svnindex.xsl where the [docroot] folder exists. If it is /docroot you have to change nothing, 
-otherwise edit line 68, 82 and 97.
+The contributed template viewsvn is useful for skinning subversion to look like
+viewvc. It is even more useful to be able to refer to a subversion URL and have
+ the links render as hyperlinks into viewvc so you can easily browse history
+from a normal subversion URL in the browser.
 
+With viewvc and subversion deployed so they use the same HTTP Basic auth realm,
+the user can browse to a link in Subversion, login, click any link on the page
+and it will seamlessly transfer them into viewvc at the right path and revision.
 
+Remember to edit viewvcroot and docroot inside svnindex.xsl according to your setup.
 
 
 IV.  EXAMPLE VIEWVC.CONF
