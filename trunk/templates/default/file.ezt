@@ -121,15 +121,12 @@
 <div id="vc_file">
 <table cellspacing="0" cellpadding="0">
 <tr>
-[is annotation "annotated"]
 <th class="vc_header">#</th>
+[is annotation "annotated"]
 <th class="vc_header">User</th>
 <th class="vc_header">Rev</th>
-<th class="vc_header">Content</th>
-[else]
-<th class="vc_header">#</th>
-<th class="vc_header">Content</th>
 [end]
+<th class="vc_header">Content</th>
 </tr>
 [for lines]
   [is lines.rev last_rev]
