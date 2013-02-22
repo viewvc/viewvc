@@ -1725,7 +1725,7 @@ def markup_stream(request, cfg, blame_data, file_lines, filename,
   if not pygments_lexer:
     lines = []
     for i in range(len(file_lines)):
-      line = file_lines[i]
+      line = file_lines[i].rstrip('\n\r')
       line = sapi.escape(line.expandtabs(cfg.options.tabsize))
       line = markup_escaped_urls(line)
       if blame_data:
@@ -1749,7 +1749,7 @@ def markup_stream(request, cfg, blame_data, file_lines, filename,
       self.line_no = 0
     def write(self, buf):
       ### FIXME:  Don't bank on write() being called once per line
-      buf = markup_escaped_urls(buf)
+      buf = markup_escaped_urls(buf.rstrip('\n\r'))
       if self.has_blame_data:
         self.blame_data[self.line_no].text = buf
       else:
