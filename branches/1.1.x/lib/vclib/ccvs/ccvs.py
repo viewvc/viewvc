@@ -232,14 +232,18 @@ class InfoSink(MatchingSink):
     rev = Revision(revision, date, author, state == "dead")
     rev.lockinfo = self.lockinfo.get(revision)
     
-    # perfect match if revision number matches tag number or if revision is on
-    # trunk and tag points to trunk. imperfect match if tag refers to a branch
-    # and this revision is the highest revision so far found on that branch
+    # perfect match if revision number matches tag number or if
+    # revision is on trunk and tag points to trunk.  imperfect match
+    # if tag refers to a branch and either a) this revision is the
+    # highest revision so far found on that branch, or b) this
+    # revision is the branchpoint.
     perfect = ((rev.number == tag.number) or
                (not tag.number and len(rev.number) == 2))
-    if perfect or (tag.is_branch and tag.number == rev.number[:-1] and
-                   (not self.matching_rev or
-                    rev.number > self.matching_rev.number)):
+    if perfect or (tag.is_branch and \
+                   ((tag.number == rev.number[:-1] and
+                     (not self.matching_rev or
+                      rev.number > self.matching_rev.number)) or
+                    (rev.number == tag.number[:-1]))):
       self.matching_rev = rev
       self.perfect_match = perfect
 

@@ -2,6 +2,7 @@ Version 1.1.18 (released ??-???-????)
 
   * fix exception raised by BDB-backed SVN repositories (issue #519)
   * hide revision-less files when rcsparse is in use, too
+  * include branchpoints in branch views using rcsparse, too (issue #347)
 
 Version 1.1.17 (released 25-Oct-2012)
 
