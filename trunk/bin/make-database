@@ -256,6 +256,9 @@ Options:
   --hostname=ARG      Use ARG as the hostname for the MySQL connection.
                       [Default: localhost]
 
+  --port=ARG          Use ARG as the port for the MySQL connection.
+                      [Default: 3306]
+
   --password=ARG      Use ARG as the password for the MySQL connection.
 
   --username=ARG      Use ARG as the username for the MySQL connection.
@@ -274,10 +277,11 @@ Options:
 if __name__ == "__main__":
   try:
     # Parse the command-line options, if any.
-    dbname = version = hostname = username = password = None
+    dbname = version = hostname = port = username = password = None
     opts, args = getopt.getopt(sys.argv[1:], '', [ 'dbname=',
                                                    'help',
                                                    'hostname=',
+                                                   'port=',
                                                    'password=',
                                                    'username=',
                                                    'version=',
@@ -291,6 +295,8 @@ if __name__ == "__main__":
         dbname = value
       elif name == '--hostname':
         hostname = value
+      elif name == '--port':
+        port = value
       elif name == '--username':
         username = value
       elif name == '--password':
@@ -304,6 +310,8 @@ if __name__ == "__main__":
     # Prompt for information not provided via command-line options.
     if hostname is None:
       hostname = raw_input("MySQL Hostname [default: localhost]: ") or ""
+    if port is None:
+      port = raw_input("MySQL Port [default: 3306]: ") or ""
     if username is None:
       username = raw_input("MySQL User: ")
     if password is None:
@@ -320,6 +328,7 @@ if __name__ == "__main__":
       dscript = dscript + DATABASE_SCRIPT_VERSION_1
 
     host_option = hostname and "--host=%s" % (hostname) or ""
+    host_option = port and (host_option + " --port=%s") % (port) or host_option
     if sys.platform == "win32":
       cmd = "mysql --user=%s --password=%s %s "\
             % (username, password, host_option)
