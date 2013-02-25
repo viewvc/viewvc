@@ -195,6 +195,7 @@ class InfoSink(MatchingSink):
     self.matching_rev = None
     self.perfect_match = 0
     self.lockinfo = { }
+    self.saw_revision = False
 
   def define_tag(self, name, revision):
     MatchingSink.define_tag(self, name, revision)
@@ -208,10 +209,17 @@ class InfoSink(MatchingSink):
         self.entry.absent = 1
       raise rcsparse.RCSStopParser
 
+  def parse_completed(self):
+    if not self.saw_revision:
+      #self.entry.errors.append("No revisions exist on %s" % (view_tag or "MAIN"))
+      self.entry.absent = 1
+    
   def set_locker(self, rev, locker):
     self.lockinfo[rev] = locker
     
   def define_revision(self, revision, date, author, state, branches, next):
+    self.saw_revision = True
+    
     if self.perfect_match:
       return
 
