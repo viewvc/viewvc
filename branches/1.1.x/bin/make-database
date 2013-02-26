@@ -40,7 +40,7 @@ CREATE TABLE branches (
   branch varchar(64) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE branch (branch)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS checkins;
 CREATE TABLE checkins (
@@ -63,7 +63,7 @@ CREATE TABLE checkins (
   KEY dirid (dirid),
   KEY fileid (fileid),
   KEY branchid (branchid)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS descs;
 CREATE TABLE descs (
@@ -72,7 +72,7 @@ CREATE TABLE descs (
   hash bigint(20) DEFAULT '0' NOT NULL,
   PRIMARY KEY (id),
   KEY hash (hash)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS dirs;
 CREATE TABLE dirs (
@@ -80,7 +80,7 @@ CREATE TABLE dirs (
   dir varchar(255) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE dir (dir)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS files;
 CREATE TABLE files (
@@ -88,7 +88,7 @@ CREATE TABLE files (
   file varchar(255) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE file (file)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS people;
 CREATE TABLE people (
@@ -96,7 +96,7 @@ CREATE TABLE people (
   who varchar(128) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE who (who)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS repositories;
 CREATE TABLE repositories (
@@ -104,7 +104,7 @@ CREATE TABLE repositories (
   repository varchar(64) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE repository (repository)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS tags;
 CREATE TABLE tags (
@@ -118,7 +118,7 @@ CREATE TABLE tags (
   KEY dirid (dirid),
   KEY fileid (fileid),
   KEY branchid (branchid)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 """
 
 ## ------------------------------------------------------------------------
@@ -132,7 +132,7 @@ CREATE TABLE branches (
   branch varchar(64) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE branch (branch)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS commits;
 CREATE TABLE commits (
@@ -156,7 +156,7 @@ CREATE TABLE commits (
   KEY fileid (fileid),
   KEY branchid (branchid),
   KEY descid (descid)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS descs;
 CREATE TABLE descs (
@@ -165,7 +165,7 @@ CREATE TABLE descs (
   hash bigint(20) DEFAULT '0' NOT NULL,
   PRIMARY KEY (id),
   KEY hash (hash)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS dirs;
 CREATE TABLE dirs (
@@ -173,7 +173,7 @@ CREATE TABLE dirs (
   dir varchar(255) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE dir (dir)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS files;
 CREATE TABLE files (
@@ -181,7 +181,7 @@ CREATE TABLE files (
   file varchar(255) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE file (file)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS people;
 CREATE TABLE people (
@@ -189,7 +189,7 @@ CREATE TABLE people (
   who varchar(128) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE who (who)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS repositories;
 CREATE TABLE repositories (
@@ -197,7 +197,7 @@ CREATE TABLE repositories (
   repository varchar(64) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE repository (repository)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS tags;
 CREATE TABLE tags (
@@ -211,7 +211,7 @@ CREATE TABLE tags (
   KEY dirid (dirid),
   KEY fileid (fileid),
   KEY branchid (branchid)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 DROP TABLE IF EXISTS metadata;
 CREATE TABLE metadata (
@@ -219,7 +219,7 @@ CREATE TABLE metadata (
   value text,
   PRIMARY KEY (name),
   UNIQUE name (name)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 INSERT INTO metadata (name, value) VALUES ('version', '1');
 """
 
@@ -245,6 +245,10 @@ options.)  This script will use the 'mysql' program to create the
 database for you.  You will then need to set the appropriate
 parameters in the [cvsdb] section of your viewvc.conf file.
 
+NOTE: If a hostname or port is supplied at the command line or during
+interactive prompting, this script will pass '--protocol=TCP' to
+'mysql'.
+
 Options:
 
   --dbname=ARG        Use ARG as the ViewVC database name to create.
@@ -253,7 +257,8 @@ Options:
   --help              Show this usage message.
   
   --hostname=ARG      Use ARG as the hostname for the MySQL connection.
-                      [Default: localhost]
+
+  --port=ARG          Use ARG as the port for the MySQL connection.
 
   --password=ARG      Use ARG as the password for the MySQL connection.
 
@@ -273,10 +278,11 @@ Options:
 if __name__ == "__main__":
   try:
     # Parse the command-line options, if any.
-    dbname = version = hostname = username = password = None
+    dbname = version = hostname = port = username = password = None
     opts, args = getopt.getopt(sys.argv[1:], '', [ 'dbname=',
                                                    'help',
                                                    'hostname=',
+                                                   'port=',
                                                    'password=',
                                                    'username=',
                                                    'version=',
@@ -290,6 +296,8 @@ if __name__ == "__main__":
         dbname = value
       elif name == '--hostname':
         hostname = value
+      elif name == '--port':
+        port = value
       elif name == '--username':
         username = value
       elif name == '--password':
@@ -302,7 +310,9 @@ if __name__ == "__main__":
 
     # Prompt for information not provided via command-line options.
     if hostname is None:
-      hostname = raw_input("MySQL Hostname [default: localhost]: ") or ""
+      hostname = raw_input("MySQL Hostname (leave blank for default): ")
+    if port is None:
+      port = raw_input("MySQL Port (leave blank for default): ")
     if username is None:
       username = raw_input("MySQL User: ")
     if password is None:
@@ -310,7 +320,7 @@ if __name__ == "__main__":
     if dbname is None:
       dbname = raw_input("ViewVC Database Name [default: ViewVC]: ") or "ViewVC"
 
-    # Create the database
+    # Create the database.
     dscript = string.replace(DATABASE_SCRIPT_COMMON, "<dbname>", dbname)
     if version == "1.0":
       print BONSAI_COMPAT
@@ -318,16 +328,22 @@ if __name__ == "__main__":
     else:
       dscript = dscript + DATABASE_SCRIPT_VERSION_1
 
-    host_option = hostname and "--host=%s" % (hostname) or ""
+    # Calculate command arguments.
+    cmd_args = "--user=%s --password=%s" % (username, password)
+    if hostname or port:
+      cmd_args = cmd_args + " --protocol=TCP"
+    if hostname:
+      cmd_args = cmd_args + " --host=%s" % (hostname)
+    if port:
+      cmd_args = cmd_args + " --port=%s" % (port)
+      
     if sys.platform == "win32":
-      cmd = "mysql --user=%s --password=%s %s "\
-            % (username, password, host_option)
+      cmd = "mysql %s" % (cmd_args)
       mysql = os.popen(cmd, "w") # popen2.Popen3 is not provided on windows
       mysql.write(dscript)
       status = mysql.close()
     else:
-      cmd = "{ mysql --user=%s --password=%s %s ; } 2>&1" \
-            % (username, password, host_option)
+      cmd = "{ mysql %s ; } 2>&1" % (cmd_args)
       pipes = popen2.Popen3(cmd)
       pipes.tochild.write(dscript)
       pipes.tochild.close()
