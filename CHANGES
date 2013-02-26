@@ -3,6 +3,10 @@ Version 1.1.18 (released ??-???-????)
   * fix exception raised by BDB-backed SVN repositories (issue #519)
   * hide revision-less files when rcsparse is in use, too
   * include branchpoints in branch views using rcsparse, too (issue #347)
+  * miscellaneous cvsdb improvements:
+    - add --port option to make-database (issue #521)
+    - explicitly name columns in queries (issue #522)
+    - update MySQL syntax to avoid discontinued "TYPE=" terms
 
 Version 1.1.17 (released 25-Oct-2012)
 
