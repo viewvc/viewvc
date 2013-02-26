@@ -519,7 +519,10 @@ class CheckinDatabase:
         if file_id == None:
             return None
 
-        sql = "SELECT * FROM %s WHERE "\
+        sql = "SELECT type, ci_when, whoid, repositoryid, dirid, fileid, " \
+              "revision, stickytag, branchid, addedlines, removedlines, " \
+              "descid "\
+              "  FROM %s WHERE "\
               "  repositoryid=%%s "\
               "  AND dirid=%%s"\
               "  AND fileid=%%s"\
@@ -569,7 +572,10 @@ class CheckinDatabase:
             self.sql_purge('descs', 'id', 'descid', 'commits')
             self.sql_purge('people', 'id', 'whoid', 'commits')
         else:
-            sql = "SELECT * FROM checkins WHERE repositoryid=%s"
+            sql = "SELECT type, ci_when, whoid, repositoryid, dirid, " \
+                  "fileid, revision, stickytag, branchid, addedlines, " \
+                  "removedlines, descid "\
+                  "  FROM checkins WHERE repositoryid=%s"
             sql_args = (rep_id, )
             cursor = self.db.cursor()
             cursor.execute(sql, sql_args)
