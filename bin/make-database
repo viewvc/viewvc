@@ -246,6 +246,10 @@ options.)  This script will use the 'mysql' program to create the
 database for you.  You will then need to set the appropriate
 parameters in the [cvsdb] section of your viewvc.conf file.
 
+NOTE: If a hostname or port is supplied at the command line or during
+interactive prompting, this script will pass '--protocol=TCP' to
+'mysql'.
+
 Options:
 
   --dbname=ARG        Use ARG as the ViewVC database name to create.
@@ -254,10 +258,8 @@ Options:
   --help              Show this usage message.
   
   --hostname=ARG      Use ARG as the hostname for the MySQL connection.
-                      [Default: localhost]
 
   --port=ARG          Use ARG as the port for the MySQL connection.
-                      [Default: 3306]
 
   --password=ARG      Use ARG as the password for the MySQL connection.
 
@@ -309,9 +311,9 @@ if __name__ == "__main__":
 
     # Prompt for information not provided via command-line options.
     if hostname is None:
-      hostname = raw_input("MySQL Hostname [default: localhost]: ") or ""
+      hostname = raw_input("MySQL Hostname (leave blank for default): ")
     if port is None:
-      port = raw_input("MySQL Port [default: 3306]: ") or ""
+      port = raw_input("MySQL Port (leave blank for default): ")
     if username is None:
       username = raw_input("MySQL User: ")
     if password is None:
@@ -319,7 +321,7 @@ if __name__ == "__main__":
     if dbname is None:
       dbname = raw_input("ViewVC Database Name [default: ViewVC]: ") or "ViewVC"
 
-    # Create the database
+    # Create the database.
     dscript = DATABASE_SCRIPT_COMMON.replace("<dbname>", dbname)
     if version == "1.0":
       print BONSAI_COMPAT
@@ -327,17 +329,22 @@ if __name__ == "__main__":
     else:
       dscript = dscript + DATABASE_SCRIPT_VERSION_1
 
-    host_option = hostname and "--host=%s" % (hostname) or ""
-    host_option = port and (host_option + " --port=%s") % (port) or host_option
+    # Calculate command arguments.
+    cmd_args = "--user=%s --password=%s" % (username, password)
+    if hostname or port:
+      cmd_args = cmd_args + " --protocol=TCP"
+    if hostname:
+      cmd_args = cmd_args + " --host=%s" % (hostname)
+    if port:
+      cmd_args = cmd_args + " --port=%s" % (port)
+      
     if sys.platform == "win32":
-      cmd = "mysql --user=%s --password=%s %s "\
-            % (username, password, host_option)
+      cmd = "mysql %s" % (cmd_args)
       mysql = os.popen(cmd, "w") # popen2.Popen3 is not provided on windows
       mysql.write(dscript)
       status = mysql.close()
     else:
-      cmd = "{ mysql --user=%s --password=%s %s ; } 2>&1" \
-            % (username, password, host_option)
+      cmd = "{ mysql %s ; } 2>&1" % (cmd_args)
       pipes = popen2.Popen3(cmd)
       pipes.tochild.write(dscript)
       pipes.tochild.close()
