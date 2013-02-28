@@ -5,6 +5,16 @@ Version 1.2.0 (released ??-???-????)
   * allow user-configurable cvsgraph display (issue #336)
   * allow rNNNN syntax for Subversion revision numbers (issue #441)
 
+Version 1.1.18 (released 28-Feb-2013)
+
+  * fix exception raised by BDB-backed SVN repositories (issue #519)
+  * hide revision-less files when rcsparse is in use
+  * include branchpoints in branch views using rcsparse (issue #347)
+  * miscellaneous cvsdb improvements:
+    - add --port option to make-database (issue #521)
+    - explicitly name columns in queries (issue #522)
+    - update MySQL syntax to avoid discontinued "TYPE=" terms
+
 Version 1.1.17 (released 25-Oct-2012)
 
   * fix exception caused by uninitialized variable usage (issue #516)
