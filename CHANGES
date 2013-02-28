@@ -1,4 +1,4 @@
-Version 1.1.18 (released ??-???-????)
+Version 1.1.18 (released 28-Feb-2013)
 
   * fix exception raised by BDB-backed SVN repositories (issue #519)
   * hide revision-less files when rcsparse is in use, too
