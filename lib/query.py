@@ -23,7 +23,6 @@ import sys
 import string
 import time
 
-from common import _item, TemplateData
 import cvsdb
 import viewvc
 import ezt
@@ -48,7 +47,7 @@ class FormData:
         
     def decode_thyself(self, form):
         try:
-            self.repository = form["repository"].value.strip()
+            self.repository = string.strip(form["repository"].value)
         except KeyError:
             pass
         except TypeError:
@@ -57,7 +56,7 @@ class FormData:
             self.valid = 1
         
         try:
-            self.branch = form["branch"].value.strip()
+            self.branch = string.strip(form["branch"].value)
         except KeyError:
             pass
         except TypeError:
@@ -66,7 +65,7 @@ class FormData:
             self.valid = 1
             
         try:
-            self.directory = form["directory"].value.strip()
+            self.directory = string.strip(form["directory"].value)
         except KeyError:
             pass
         except TypeError:
@@ -75,7 +74,7 @@ class FormData:
             self.valid = 1
             
         try:
-            self.file = form["file"].value.strip()
+            self.file = string.strip(form["file"].value)
         except KeyError:
             pass
         except TypeError:
@@ -84,7 +83,7 @@ class FormData:
             self.valid = 1
             
         try:
-            self.who = form["who"].value.strip()
+            self.who = string.strip(form["who"].value)
         except KeyError:
             pass
         except TypeError:
@@ -93,14 +92,14 @@ class FormData:
             self.valid = 1
             
         try:
-            self.sortby = form["sortby"].value.strip()
+            self.sortby = string.strip(form["sortby"].value)
         except KeyError:
             pass
         except TypeError:
             pass
         
         try:
-            self.date = form["date"].value.strip()
+            self.date = string.strip(form["date"].value)
         except KeyError:
             pass
         except TypeError:
@@ -159,7 +158,7 @@ def listparse_string(str):
             ## command; add the command and start over
             elif c == ",":
                 ## strip ending whitespace on un-quoted data
-                temp = temp.rstrip()
+                temp = string.rstrip(temp)
                 return_list.append( ("", temp) )
                 temp = ""
                 state = "eat leading whitespace"
@@ -268,13 +267,13 @@ def form_to_cvsdb_query(cfg, form_data):
 
 def prev_rev(rev):
     '''Returns a string representing the previous revision of the argument.'''
-    r = rev.split('.')
+    r = string.split(rev, '.')
     # decrement final revision component
     r[-1] = str(int(r[-1]) - 1)
     # prune if we pass the beginning of the branch
     if len(r) > 2 and r[-1] == '0':
         r = r[:-2]
-    return '.'.join(r)
+    return string.join(r, '.')
 
 def is_forbidden(cfg, cvsroot_name, module):
     '''Return 1 if MODULE in CVSROOT_NAME is forbidden; return 0 otherwise.'''
@@ -301,7 +300,7 @@ def is_forbidden(cfg, cvsroot_name, module):
                         "by this interface.  The '%s' root is configured to "
                         "use a different one." % (cvsroot_name))
     forbidden = params.get('forbidden', '')
-    forbidden = map(lambda x: x.strip(), filter(None, forbidden.split(',')))
+    forbidden = map(string.strip, filter(None, string.split(forbidden, ',')))
     default = 0
     for pat in forbidden:
         if pat[0] == '!':
@@ -314,7 +313,7 @@ def is_forbidden(cfg, cvsroot_name, module):
     
 def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
     ob = _item(num_files=len(files), files=[])
-    ob.log = desc and server.escape(desc).replace('\n', '<br />') or ''
+    ob.log = desc and string.replace(server.escape(desc), '\n', '<br />') or ''
 
     for commit in files:
         repository = commit.GetRepository()
@@ -323,7 +322,7 @@ def build_commit(server, cfg, desc, files, cvsroots, viewvc_link):
 
         ## find the module name (if any)
         try:
-            module = filter(None, directory.split('/'))[0]
+            module = filter(None, string.split(directory, '/'))[0]
         except IndexError:
             module = None
 
@@ -443,7 +442,7 @@ def main(server, cfg, viewvc_link):
     if docroot is None and viewvc_link:
         docroot = viewvc_link + '/' + viewvc.docroot_magic_path
         
-    data = TemplateData({
+    data = ezt.TemplateData({
       'cfg' : cfg,
       'address' : cfg.general.address,
       'vsn' : viewvc.__version__,
@@ -474,3 +473,7 @@ def main(server, cfg, viewvc_link):
     exc_info = debug.GetExceptionData()
     server.header(status=exc_info['status'])
     debug.PrintException(server, exc_info) 
+
+class _item:
+  def __init__(self, **kw):
+    vars(self).update(kw)

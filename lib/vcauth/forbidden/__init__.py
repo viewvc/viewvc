@@ -12,13 +12,14 @@
 import vcauth
 import vclib
 import fnmatch
+import string
 
 class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   """A simple top-level module authorizer."""
   def __init__(self, username, params={}):
     forbidden = params.get('forbidden', '')
-    self.forbidden = map(lambda x: x.strip(),
-                         filter(None, forbidden.split(',')))
+    self.forbidden = map(string.strip,
+                         filter(None, string.split(forbidden, ',')))
 
   def check_root_access(self, rootname):
     return 1
