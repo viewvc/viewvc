@@ -3740,7 +3740,7 @@ def view_diff(request):
 
 
 def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
-                            uid=0, gid=0, typefrag=None, linkname='',
+                            uid=0, gid=0, typeflag=None, linkname='',
                             uname='viewvc', gname='viewvc',
                             devmajor=1, devminor=0, prefix=None,
                             magic='ustar', version='00', chksum=None):
@@ -3750,11 +3750,11 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
     else:
       mode = 0644
 
-  if not typefrag:
+  if not typeflag:
     if name[-1:] == '/':
-      typefrag = '5' # directory
+      typeflag = '5' # directory
     else:
-      typefrag = '0' # regular file
+      typeflag = '0' # regular file
 
   if not prefix:
     prefix = ''
@@ -3775,7 +3775,7 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
     '%011o' % mtime)
 
   block2 = struct.pack('c 100s 6s 2s 32s 32s 8s 8s 155s',
-    typefrag,
+    typeflag,
     linkname,
     magic,
     version,
