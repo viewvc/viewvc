@@ -1,6 +1,6 @@
 Version 1.1.19 (released ??-???-????)
 
-  * 
+  * preserve Subversion symlinks in generated tarballs (issue #487)
 
 Version 1.1.18 (released 28-Feb-2013)
 
