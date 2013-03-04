@@ -3502,7 +3502,7 @@ def view_diff(request):
 
 
 def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
-                            uid=0, gid=0, typefrag=None, linkname='',
+                            uid=0, gid=0, typeflag=None, linkname='',
                             uname='viewvc', gname='viewvc',
                             devmajor=1, devminor=0, prefix=None,
                             magic='ustar', version='00', chksum=None):
@@ -3512,40 +3512,49 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
     else:
       mode = 0644
 
-  if not typefrag:
-    if name[-1:] == '/':
-      typefrag = '5' # directory
+  if not typeflag:
+    if linkname:
+      typeflag = '2' # symbolic link
+    elif name[-1:] == '/':
+      typeflag = '5' # directory
     else:
-      typefrag = '0' # regular file
+      typeflag = '0' # regular file
 
   if not prefix:
     prefix = ''
 
-  # generate a GNU tar extension header for long names.
+  # generate a GNU tar extension header for a long name.
   if len(name) >= 100:
     generate_tarball_header(out, '././@LongLink', len(name),
-                            0644, 0, 0, 0, 'L')
+                            0, 0, 0, 0, 'L')
     out.write(name)
     out.write('\0' * (511 - ((len(name) + 511) % 512)))
 
+  # generate a GNU tar extension header for a long symlink name.
+  if len(linkname) >= 100:
+    generate_tarball_header(out, '././@LongLink', len(linkname),
+                            0, 0, 0, 0, 'K')
+    out.write(linkname)
+    out.write('\0' * (511 - ((len(linkname) + 511) % 512)))
+
   block1 = struct.pack('100s 8s 8s 8s 12s 12s',
-    name,
-    '%07o' % mode,
-    '%07o' % uid,
-    '%07o' % gid,
-    '%011o' % size,
-    '%011o' % mtime)
+                       name,
+                       '%07o' % mode,
+                       '%07o' % uid,
+                       '%07o' % gid,
+                       '%011o' % size,
+                       '%011o' % mtime)
 
   block2 = struct.pack('c 100s 6s 2s 32s 32s 8s 8s 155s',
-    typefrag,
-    linkname,
-    magic,
-    version,
-    uname,
-    gname,
-    '%07o' % devmajor,
-    '%07o' % devminor,
-    prefix)
+                       typeflag,
+                       linkname,
+                       magic,
+                       version,
+                       uname,
+                       gname,
+                       '%07o' % devmajor,
+                       '%07o' % devminor,
+                       prefix)
 
   if not chksum:
     dummy_chksum = '        '
@@ -3623,17 +3632,33 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     else:
       mode = 0644
 
-    ### FIXME: Read the whole file into memory?  Bad... better to do
-    ### 2 passes.
-    fp = request.repos.openfile(rep_path + [file.name], request.pathrev, {})[0]
-    contents = fp.read()
-    fp.close()
+    # Is this thing a symlink?
+    #
+    ### FIXME: A better solution would be to have vclib returning
+    ### symlinks with a new vclib.SYMLINK path type.
+    symlink_target = None
+    if hasattr(request.repos, 'get_symlink_target'):
+      symlink_target = request.repos.get_symlink_target(rep_path + [file.name],
+                                                        request.pathrev)
 
-    generate_tarball_header(out, tar_dir + file.name,
-                            len(contents), mode,
-                            file.date is not None and file.date or 0)
-    out.write(contents)
-    out.write('\0' * (511 - ((len(contents) + 511) % 512)))
+    # If the object is a symlink, generate the appropriate header.
+    # Otherwise, we're dealing with a regular file.
+    if symlink_target:
+      generate_tarball_header(out, tar_dir + file.name, 0, mode,
+                              file.date is not None and file.date or 0,
+                              typeflag='2', linkname=symlink_target)
+    else:
+      ### FIXME: Read the whole file into memory?  Bad... better to do
+      ### 2 passes.
+      fp = request.repos.openfile(rep_path + [file.name], request.pathrev, {})[0]
+      contents = fp.read()
+      fp.close()
+
+      generate_tarball_header(out, tar_dir + file.name,
+                              len(contents), mode,
+                              file.date is not None and file.date or 0)
+      out.write(contents)
+      out.write('\0' * (511 - ((len(contents) + 511) % 512)))
 
   # Recurse into subdirectories, skipping busted and unauthorized (or
   # configured-to-be-hidden) ones.
