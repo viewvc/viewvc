@@ -3767,23 +3767,23 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
     out.write('\0' * (511 - ((len(name) + 511) % 512)))
 
   block1 = struct.pack('100s 8s 8s 8s 12s 12s',
-    name,
-    '%07o' % mode,
-    '%07o' % uid,
-    '%07o' % gid,
-    '%011o' % size,
-    '%011o' % mtime)
+                       name,
+                       '%07o' % mode,
+                       '%07o' % uid,
+                       '%07o' % gid,
+                       '%011o' % size,
+                       '%011o' % mtime)
 
   block2 = struct.pack('c 100s 6s 2s 32s 32s 8s 8s 155s',
-    typeflag,
-    linkname,
-    magic,
-    version,
-    uname,
-    gname,
-    '%07o' % devmajor,
-    '%07o' % devminor,
-    prefix)
+                       typeflag,
+                       linkname,
+                       magic,
+                       version,
+                       uname,
+                       gname,
+                       '%07o' % devmajor,
+                       '%07o' % devminor,
+                       prefix)
 
   if not chksum:
     dummy_chksum = '        '
