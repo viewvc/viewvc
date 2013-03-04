@@ -923,3 +923,32 @@ class LocalSubversionRepository(vclib.Repository):
         return peg_revision, path
     finally:
       pass
+
+  def get_symlink_target(self, path_parts, rev):
+    """Return the target of the symbolic link versioned at PATH_PARTS
+    in REV, or None if that object is not a symlink."""
+
+    path = self._getpath(path_parts)
+    rev = self._getrev(rev)
+    path_type = self.itemtype(path_parts, rev)  # does auth-check
+    fsroot = self._getroot(rev)
+
+    # Symlinks must be files with the svn:special property set on them
+    # and with file contents which read "link SOME_PATH".
+    if path_type != vclib.FILE:
+      return None
+    props = fs.node_proplist(fsroot, path)
+    if not props.has_key(core.SVN_PROP_SPECIAL):
+      return None
+    pathspec = ''
+    ### FIXME: We're being a touch sloppy here, only checking the first line
+    ### of the file.
+    stream = fs.file_contents(fsroot, path)
+    try:
+      pathspec, eof = core.svn_stream_readline(stream, '\n')
+    finally:
+      core.svn_stream_close(stream)
+    if pathspec[:5] != 'link ':
+      return None
+    return pathspec[5:]
+
