@@ -735,3 +735,33 @@ class RemoteSubversionRepository(vclib.Repository):
         else:
           peg_revision = mid
       return peg_revision, path
+
+  def get_symlink_target(self, path_parts, rev):
+    """Return the target of the symbolic link versioned at PATH_PARTS
+    in REV, or None if that object is not a symlink."""
+
+    path = self._getpath(path_parts)
+    path_type = self.itemtype(path_parts, rev) # does auth-check
+    rev = self._getrev(rev)
+    url = self._geturl(path)
+
+    # Symlinks must be files with the svn:special property set on them
+    # and with file contents which read "link SOME_PATH".
+    if path_type != vclib.FILE:
+      return None
+    pairs = client.svn_client_proplist2(url, _rev2optrev(rev),
+                                        _rev2optrev(rev), 0, self.ctx)
+    props = pairs and pairs[0][1] or {}
+    if not props.has_key(core.SVN_PROP_SPECIAL):
+      return None
+    pathspec = ''
+    ### FIXME: We're being a touch sloppy here, first by grabbing the
+    ### whole file and then by checking only the first line
+    ### of it.
+    fp = SelfCleanFP(cat_to_tempfile(self, path, rev))
+    pathspec = fp.readline()
+    fp.close()
+    if pathspec[:5] != 'link ':
+      return None
+    return pathspec[5:]
+
