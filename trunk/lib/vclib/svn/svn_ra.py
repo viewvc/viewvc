@@ -131,7 +131,7 @@ class LogCollector:
     if this_path:
       self.path = this_path
     
-def temp_checkout(svnrepos, path, rev):
+def cat_to_tempfile(svnrepos, path, rev):
   """Check out file revision to temporary file"""
   temp = tempfile.mktemp()
   stream = core.svn_stream_from_aprfile(temp)
@@ -258,13 +258,10 @@ class RemoteSubversionRepository(vclib.Repository):
       raise vclib.Error("Path '%s' is not a file." % path)
     rev = self._getrev(rev)
     url = self._geturl(path)
-    tmp_file = tempfile.mktemp()
-    stream = core.svn_stream_from_aprfile(tmp_file)
     ### rev here should be the last history revision of the URL
-    client.svn_client_cat(core.Stream(stream), url, _rev2optrev(rev), self.ctx)
-    core.svn_stream_close(stream)
+    fp = SelfCleanFP(cat_to_tempfile(self, path, rev))
     lh_rev, c_rev = self._get_last_history_rev(path_parts, rev)
-    return SelfCleanFP(tmp_file), lh_rev
+    return fp, lh_rev
 
   def listdir(self, path_parts, rev, options):
     path = self._getpath(path_parts)
@@ -441,8 +438,8 @@ class RemoteSubversionRepository(vclib.Repository):
       return date
     
     try:
-      temp1 = temp_checkout(self, p1, r1)
-      temp2 = temp_checkout(self, p2, r2)
+      temp1 = cat_to_tempfile(self, p1, r1)
+      temp2 = cat_to_tempfile(self, p2, r2)
       info1 = p1, _date_from_rev(r1), r1
       info2 = p2, _date_from_rev(r2), r2
       return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args)
