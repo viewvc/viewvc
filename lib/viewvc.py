@@ -230,9 +230,12 @@ class Request:
         cfg.overlay_root_options(self.rootname)
         
         # Setup an Authorizer for this rootname and username
+        debug.t_start('setup-authorizer')
         self.auth = setup_authorizer(cfg, self.username)
+        debug.t_end('setup-authorizer')
 
         # Create the repository object
+        debug.t_start('select-repos')
         try:
           if roottype == 'cvs':
             self.rootpath = vclib.ccvs.canonicalize_rootpath(rootpath)
@@ -255,6 +258,7 @@ class Request:
             raise vclib.ReposNotFound()
         except vclib.ReposNotFound:
           pass
+        debug.t_end('select-repos')
       if self.repos is None:
         raise debug.ViewVCException(
           'The root "%s" is unknown. If you believe the value is '
@@ -262,7 +266,9 @@ class Request:
           % self.rootname, "404 Not Found")
 
     if self.repos:
+      debug.t_start('select-repos')
       self.repos.open()
+      debug.t_end('select-repos')
       type = self.repos.roottype()
       if type == vclib.SVN:
         self.roottype = 'svn'
@@ -392,7 +398,9 @@ class Request:
     if needs_redirect:
       self.server.redirect(self.get_url())
     else:
+      debug.t_start('view-func')
       self.view_func(self)
+      debug.t_end('view-func')
 
   def get_url(self, escape=0, partial=0, prefix=0, **args):
     """Constructs a link to another ViewVC page just like the get_link
