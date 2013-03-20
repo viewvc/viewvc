@@ -40,6 +40,23 @@ def expand_root_parent(parent_path):
   return roots
 
 
+def find_root_in_parent(parent_path, rootname):
+  """Search PARENT_PATH for a root named ROOTNAME, returning the
+  canonicalized ROOTPATH of the root if found; return None if no such
+  root is found."""
+
+  assert os.path.isabs(parent_path)
+  # Is PARENT_PATH itself a CVS repository?  If so, we allow ROOTNAME
+  # to be any subdir within it.  Otherwise, we expect
+  # PARENT_PATH/ROOTNAME to be a CVS repository.
+  rootpath = os.path.join(parent_path, rootname)
+  if os.path.exists(os.path.join(parent_path, "CVSROOT", "config")):
+    return canonicalize_rootpath(rootpath)
+  if os.path.exists(os.path.join(rootpath, "CVSROOT", "config")):
+    return canonicalize_rootpath(rootpath)
+  return None
+
+
 def CVSRepository(name, rootpath, authorizer, utilities, use_rcsparse):
   rootpath = canonicalize_rootpath(rootpath)
   if use_rcsparse:
