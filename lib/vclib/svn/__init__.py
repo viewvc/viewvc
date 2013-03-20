@@ -77,6 +77,20 @@ def expand_root_parent(parent_path):
   return roots
 
 
+def find_root_in_parent(parent_path, rootname):
+  """Search PARENT_PATH for a root named ROOTNAME, returning the
+  canonicalized ROOTPATH of the root if found; return None if no such
+  root is found."""
+  
+  if not re.search(_re_url, parent_path):
+    assert os.path.isabs(parent_path)
+    rootpath = os.path.join(parent_path, rootname)
+    format_path = os.path.join(rootpath, "format")
+    if os.path.exists(format_path):
+      return canonicalize_rootpath(rootpath)
+  return None
+
+
 def SubversionRepository(name, rootpath, authorizer, utilities, config_dir):
   rootpath = canonicalize_rootpath(rootpath)
   if re.search(_re_url, rootpath):
