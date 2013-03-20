@@ -4603,14 +4603,14 @@ def find_root_in_parents(cfg, rootname, roottype):
       continue
     pp = os.path.normpath(string.strip(pp[:pos]))
     
+    rootpath = None
     if roottype == 'cvs':
-      roots = vclib.ccvs.expand_root_parent(pp)
+      rootpath = vclib.ccvs.find_root_in_parent(pp, rootname)
     elif roottype == 'svn':
-      roots = vclib.svn.expand_root_parent(pp)
-    else:
-      roots = {}
-    if roots.has_key(rootname):
-      return roots[rootname]
+      rootpath = vclib.svn.find_root_in_parent(pp, rootname)
+
+    if rootpath is not None:
+      return rootpath
   return None
 
 def locate_root(cfg, rootname):
