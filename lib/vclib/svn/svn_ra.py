@@ -78,6 +78,40 @@ def client_log(url, start_rev, end_rev, log_limit, include_changes,
     client.svn_client_log2([url], start_rev, end_rev, log_limit,
                            include_changes, not cross_copies, cb_convert, ctx)
 
+
+def setup_client_ctx(config_dir):
+  # Ensure that the configuration directory exists.
+  core.svn_config_ensure(config_dir)
+
+  # Fetch the configuration (and 'config' bit thereof).
+  cfg = core.svn_config_get_config(config_dir)
+  config = cfg.get(core.SVN_CONFIG_CATEGORY_CONFIG)
+
+  # Here's the compat-sensitive part: try to use
+  # svn_cmdline_create_auth_baton(), and fall back to making our own
+  # if that fails.
+  try:
+    auth_baton = core.svn_cmdline_create_auth_baton(1, None, None, config_dir,
+                                                    1, 1, config, None)
+  except AttributeError:
+    auth_baton = core.svn_auth_open([
+      client.svn_client_get_simple_provider(),
+      client.svn_client_get_username_provider(),
+      client.svn_client_get_ssl_server_trust_file_provider(),
+      client.svn_client_get_ssl_client_cert_file_provider(),
+      client.svn_client_get_ssl_client_cert_pw_file_provider(),
+      ])
+    if config_dir is not None:
+      core.svn_auth_set_parameter(auth_baton,
+                                  core.SVN_AUTH_PARAM_CONFIG_DIR,
+                                  config_dir)
+
+  # Create, setup, and return the client context baton.
+  ctx = client.svn_client_create_context()
+  ctx.config = cfg
+  ctx.auth_baton = auth_baton
+  return ctx
+
 ### END COMPATABILITY CODE ###
 
 
@@ -192,21 +226,8 @@ class RemoteSubversionRepository(vclib.Repository):
 
   def open(self):
     # Setup the client context baton, complete with non-prompting authstuffs.
-    # TODO: svn_cmdline_setup_auth_baton() is mo' better (when available)
-    core.svn_config_ensure(self.config_dir)
-    self.ctx = client.svn_client_create_context()
-    self.ctx.auth_baton = core.svn_auth_open([
-      client.svn_client_get_simple_provider(),
-      client.svn_client_get_username_provider(),
-      client.svn_client_get_ssl_server_trust_file_provider(),
-      client.svn_client_get_ssl_client_cert_file_provider(),
-      client.svn_client_get_ssl_client_cert_pw_file_provider(),
-      ])
-    self.ctx.config = core.svn_config_get_config(self.config_dir)
-    if self.config_dir is not None:
-      core.svn_auth_set_parameter(self.ctx.auth_baton,
-                                  core.SVN_AUTH_PARAM_CONFIG_DIR,
-                                  self.config_dir)
+    self.ctx = setup_client_ctx(self.config_dir)
+    
     ra_callbacks = ra.svn_ra_callbacks_t()
     ra_callbacks.auth_baton = self.ctx.auth_baton
     self.ra_session = ra.svn_ra_open(self.rootpath, ra_callbacks, None,
