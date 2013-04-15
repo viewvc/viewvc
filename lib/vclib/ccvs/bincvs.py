@@ -149,6 +149,11 @@ class BaseCVSRepository(vclib.Repository):
                         % (string.join(path_parts, "/")))
     rcsfile = self.rcsfile(path_parts, 1)
     return os.access(rcsfile, os.X_OK)
+  
+  def filesize(self, path_parts, rev):
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
+    return -1
 
 
 class BinCVSRepository(BaseCVSRepository):

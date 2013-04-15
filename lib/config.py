@@ -407,6 +407,7 @@ class Config:
     self.options.generate_etags = 1
     self.options.svn_ignore_mimetype = 0
     self.options.svn_config_dir = None
+    self.options.max_filesize_kbytes = 512
     self.options.use_rcsparse = 0
     self.options.sort_by = 'file'
     self.options.sort_group_dirs = 1
