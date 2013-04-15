@@ -587,6 +587,13 @@ class LocalSubversionRepository(vclib.Repository):
     props = self.itemprops(path_parts, rev) # does authz-check
     return props.has_key(core.SVN_PROP_EXECUTABLE)
 
+  def filesize(self, path_parts, rev):
+    path = self._getpath(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file." % path)
+    fsroot = self._getroot(self._getrev(rev))
+    return fs.file_length(fsroot, path)   
+
   ##--- helpers ---##
 
   def _revinfo(self, rev, include_changed_paths=0):

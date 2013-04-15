@@ -207,7 +207,21 @@ class Repository:
 
     rev is the revision of the item to return information about
     """
+
+  def filesize(self, path_parts, rev):
+    """Return the size of a versioned file's contents if it can be
+    obtained without a brute force measurement; -1 otherwise.
+
+    NOTE: Callers that require a filesize answer when this function
+    returns -1 may obtain it by measuring the data returned via
+    openfile().
     
+    The path is specified as a list of components, relative to the root
+    of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+    rev is the revision of the item to return information about
+    """
+
     
 # ======================================================================
 class DirEntry:

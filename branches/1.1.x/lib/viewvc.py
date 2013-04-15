@@ -1846,6 +1846,15 @@ def calculate_mime_type(request, path_parts, rev):
       pass
   return guess_mime(path_parts[-1]), None
 
+def assert_viewable_filesize(cfg, filesize):
+  if cfg.options.max_filesize_kbytes \
+     and filesize != -1 \
+     and filesize > (1024 * cfg.options.max_filesize_kbytes):
+    raise debug.ViewVCException('Display of files larger than %d KB '
+                                'disallowed by configuration'
+                                % (cfg.options.max_filesize_kbytes),
+                                '403 Forbidden')
+  
 def markup_or_annotate(request, is_annotate):
   cfg = request.cfg
   path, rev = _orig_path(request, is_annotate and 'annotate' or 'revision')
@@ -1873,11 +1882,16 @@ def markup_or_annotate(request, is_annotate):
 
   # Not a viewable image.
   else:
-    blame_data = None
+    filesize = request.repos.filesize(path, rev)
+
+    # If configuration disallows display of large files, try to honor
+    # that request.
+    assert_viewable_filesize(cfg, filesize)
 
     # If this was an annotation request, try to annotate this file.
     # If something goes wrong, that's okay -- we'll gracefully revert
     # to a plain markup display.
+    blame_data = None
     if is_annotate:
       try:
         blame_source, revision = request.repos.annotate(path, rev, False)
@@ -1905,7 +1919,22 @@ def markup_or_annotate(request, is_annotate):
     if check_freshness(request, None, revision, weak=1):
       fp.close()
       return
-    file_lines = fp.readlines()
+
+    # If we're limiting by filesize but couldn't pull off the cheap
+    # check above, we'll try to do so line by line here (while
+    # building our file_lines array).
+    if cfg.options.max_filesize_kbytes and filesize == -1:
+      file_lines = []
+      filesize = 0
+      while 1:
+        line = fp.readline()
+        if not line:
+          break
+        filesize = filesize + len(line)
+        assert_viewable_filesize(cfg, filesize)
+        file_lines.append(line)
+    else:
+      file_lines = fp.readlines()
     fp.close()
 
     # Do we have a differing number of file content lines and
