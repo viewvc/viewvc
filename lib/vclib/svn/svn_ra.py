@@ -474,6 +474,15 @@ class RemoteSubversionRepository(vclib.Repository):
     props = self.itemprops(path_parts, rev) # does authz-check
     return props.has_key(core.SVN_PROP_EXECUTABLE)
   
+  def filesize(self, path_parts, rev):
+    path = self._getpath(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file." % path)
+    rev = self._getrev(rev)
+    dirents, locks = self._get_dirents(path_parts[:-1], rev)
+    dirent = dirents.get(path_parts[-1], None)
+    return dirent.size
+    
   def _getpath(self, path_parts):
     return '/'.join(path_parts)
 
