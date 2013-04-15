@@ -502,6 +502,15 @@
 ##
 #svn_ignore_mimetype = 0
 
+## max_filesize_kbytes: Limit ViewVC's processing of file contents in
+## "markup" and "annotate" views to only those files which are smaller
+## than this setting, expressed in kilobytes.  Set to 0 to disable
+## this safeguard.
+##
+## NOTE: The "co" and "tar" views are unaffected by this setting.
+## 
+#max_filesize_kbytes = 512
+
 ## svn_config_dir: Path of the Subversion runtime configuration
 ## directory ViewVC should consult for various things, including cached
 ## remote authentication credentials.  If unset, Subversion will use
