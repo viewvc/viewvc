@@ -3685,17 +3685,34 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
                               file.date is not None and file.date or 0,
                               typeflag='2', linkname=symlink_target)
     else:
-      ### FIXME: Read the whole file into memory?  Bad... better to do
-      ### 2 passes.
+      filesize = request.repos.filesize(rep_path + [file.name], request.pathrev)
+
+      if filesize == -1:
+        # Bummer.  We have to calculate the filesize manually.
+        fp = request.repos.openfile(rep_path + [file.name], request.pathrev, {})[0]
+        filesize = 0
+        while 1:
+          chunk = retry_read(fp)
+          if not chunk:
+            break
+          filesize = filesize + len(chunk)
+        fp.close()
+
+      # Write the tarball header...
+      generate_tarball_header(out, tar_dir + file.name, filesize, mode,
+                              file.date is not None and file.date or 0)
+      
+      # ...the file's contents ...
       fp = request.repos.openfile(rep_path + [file.name], request.pathrev, {})[0]
-      contents = fp.read()
+      while 1:
+        chunk = retry_read(fp)
+        if not chunk:
+          break
+        out.write(chunk)
       fp.close()
 
-      generate_tarball_header(out, tar_dir + file.name,
-                              len(contents), mode,
-                              file.date is not None and file.date or 0)
-      out.write(contents)
-      out.write('\0' * (511 - ((len(contents) + 511) % 512)))
+      # ... and then add the block padding.
+      out.write('\0' * (511 - (filesize + 511) % 512))
 
   # Recurse into subdirectories, skipping busted and unauthorized (or
   # configured-to-be-hidden) ones.
