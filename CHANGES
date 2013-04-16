@@ -3,6 +3,7 @@ Version 1.1.19 (released ??-???-????)
   * preserve Subversion symlinks in generated tarballs (issue #487)
   * improve root lookup performance (issue #523)
   * new 'max_filesize_kbytes' config option and handling (issue #524)
+  * reduce memory usage of tarball generation logic
 
 Version 1.1.18 (released 28-Feb-2013)
 
