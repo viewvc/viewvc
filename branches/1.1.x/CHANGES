@@ -4,6 +4,7 @@ Version 1.1.19 (released ??-???-????)
   * improve root lookup performance (issue #523)
   * new 'max_filesize_kbytes' config option and handling (issue #524)
   * reduce memory usage of tarball generation logic
+  * fix double compression of generated tarballs (issue #525)
 
 Version 1.1.18 (released 28-Feb-2013)
 
