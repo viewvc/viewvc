@@ -902,7 +902,7 @@ def get_view_template(cfg, view_name, language="en"):
   return template
 
 def get_writeready_server_file(request, content_type=None, encoding=None,
-                               content_length=None):
+                               content_length=None, allow_compress=True):
   """Return a file handle to a response body stream, after outputting
   any queued special headers (on REQUEST.server) and (optionally) a
   'Content-Type' header whose value is CONTENT_TYPE and character set
@@ -911,10 +911,14 @@ def get_writeready_server_file(request, content_type=None, encoding=None,
   If CONTENT_LENGTH is provided and compression is not in use, also
   generate a 'Content-Length' header for this response.
 
+  Callers my use ALLOW_COMPRESS to disable compression where it would
+  otherwise be allowed.  (Such as when transmitting an
+  already-compressed response.)
+
   After this function is called, it is too late to add new headers to
   the response."""
 
-  if request.gzip_compress_level:
+  if allow_compress and request.gzip_compress_level:
     request.server.addheader('Content-Encoding', 'gzip')
   elif content_length is not None:
     request.server.addheader('Content-Length', content_length)
@@ -926,7 +930,7 @@ def get_writeready_server_file(request, content_type=None, encoding=None,
   else:
     request.server.header()
 
-  if request.gzip_compress_level:
+  if allow_compress and request.gzip_compress_level:
     fp = gzip.GzipFile('', 'wb', request.gzip_compress_level,
                        request.server.file())
   else:
@@ -3736,6 +3740,10 @@ def download_tarball(request):
     raise debug.ViewVCException('Tarball generation is disabled',
                                  '403 Forbidden')
 
+  # If debugging, we just need to open up the specified tar path for
+  # writing.  Otherwise, we get a writeable server output stream --
+  # disabling any default compression thereupon -- and wrap that in
+  # our own gzip stream wrapper.
   if debug.TARFILE_PATH:
     fp = open(debug.TARFILE_PATH, 'w')
   else:    
@@ -3744,11 +3752,9 @@ def download_tarball(request):
       tarfile = "%s-%s" % (tarfile, request.path_parts[-1])
     request.server.addheader('Content-Disposition',
                              'attachment; filename="%s.tar.gz"' % (tarfile))
-    server_fp = get_writeready_server_file(request, 'application/x-gzip')
+    server_fp = get_writeready_server_file(request, 'application/x-gzip',
+                                           allow_compress=False)
     request.server.flush()
-    
-    # Try to use the Python gzip module, if available; otherwise,
-    # we'll use the configured 'gzip' binary.
     fp = gzip.GzipFile('', 'wb', 9, server_fp)
 
   ### FIXME: For Subversion repositories, we can get the real mtime of the
