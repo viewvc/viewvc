@@ -479,7 +479,7 @@ class RemoteSubversionRepository(vclib.Repository):
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % path)
     rev = self._getrev(rev)
-    dirents, locks = self._get_dirents(path_parts[:-1], rev)
+    dirents, locks = self._get_dirents(self._getpath(path_parts[:-1]), rev)
     dirent = dirents.get(path_parts[-1], None)
     return dirent.size
     
