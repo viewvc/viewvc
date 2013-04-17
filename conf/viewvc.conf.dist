@@ -706,8 +706,7 @@
 
 ## detect_encoding: Should we attempt to detect versioned file
 ## character encodings?  [Requires 'chardet' module, and is currently
-## used only by the syntax coloration logic -- if enabled -- for the
-## 'markup' and 'annotate' views; see 'enable_syntax_coloration'.]
+## used only for the 'markup' and 'annotate' views.]
 ##
 #detect_encoding = 0
 
