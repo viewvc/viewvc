@@ -1783,8 +1783,9 @@ def markup_stream(request, cfg, blame_data, file_lines, filename,
     # source text lines wrapped in (possibly dummy) vclib.Annotation
     # objects.
     lines = []
+    file_lines = transcode_text(''.join(file_lines), encoding).rstrip('\n').split('\n')
     for i in range(len(file_lines)):
-      line = transcode_text(file_lines[i].rstrip('\n\r'), encoding)
+      line = file_lines[i]
       line = sapi.escape(line.expandtabs(cfg.options.tabsize))
       line = markup_escaped_urls(line)
       if blame_data:
