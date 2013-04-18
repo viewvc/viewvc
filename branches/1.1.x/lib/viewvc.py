@@ -1668,7 +1668,7 @@ def detect_encoding(text_block):
                         ('\xff\xfe\0\0', 'utf-32'),
                         ('\0\0\xfe\xff', 'utf-32be'),
                         ]:
-    if text_block[:len(bom)] == bom
+    if text_block[:len(bom)] == bom:
       return encoding
 
   # If no recognized BOM, see if chardet can help us.
