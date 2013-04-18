@@ -1660,6 +1660,37 @@ def markup_escaped_urls(s):
   return re.sub(_re_rewrite_escaped_url, _url_repl, s)
 
 
+def detect_encoding(text_block):
+  # Does the TEXT_BLOCK start with a BOM?
+  for bom, encoding in [('\xef\xbb\xbf', 'utf-8'),
+                        ('\xff\xfe', 'utf-16'),
+                        ('\xfe\xff', 'utf-16be'),
+                        ('\xff\xfe\0\0', 'utf-32'),
+                        ('\0\0\xfe\xff', 'utf-32be'),
+                        ]:
+    if text_block[:len(bom)] == bom
+      return encoding
+
+  # If no recognized BOM, see if chardet can help us.
+  try:
+    import chardet
+    return chardet.detect(text_block).get('encoding')
+  except:
+    pass
+
+  # By default ... we have no idea.
+  return None
+  
+def transcode_text(text, encoding=None):
+  """If ENCODING is provided and not 'utf-8', transcode TEXT from
+  ENCODING to UTF-8."""
+
+  if not encoding or encoding == 'utf-8':
+    return text
+  return unicode(text, encoding,
+                 errors='replace').encode('utf-8',
+                                          errors='replace')
+
 def markup_stream(request, cfg, blame_data, file_lines, filename,
                   mime_type, encoding, colorize):
   """Return the contents of a versioned file as a list of
@@ -1729,9 +1760,28 @@ def markup_stream(request, cfg, blame_data, file_lines, filename,
   # If we aren't highlighting, just return an amalgamation of the
   # BLAME_DATA (if any) and the FILE_LINES.
   if not pygments_lexer:
+
+    # If allowed by configuration, try to detect the source encoding
+    # for this file.  We'll assemble a block of data from the file
+    # contents to do so... 1024 bytes should be enough.
+    if not encoding and cfg.options.detect_encoding:
+      block_size = 0
+      text_block = ''
+      for i in range(len(file_lines)):
+        text_block = text_block + file_lines[i]
+        if len(text_block) >= 1024:
+          break
+      encoding = detect_encoding(text_block)
+
+    # Built output data comprised of marked-up and possibly-transcoded
+    # source text lines wrapped in (possibly dummy) vclib.Annotation
+    # objects.
     lines = []
+    file_lines = transcode_text(string.join(file_lines, ''), encoding)
+    file_lines = string.rstrip(file_lines, '\n')
+    file_lines = string.split(file_lines, '\n')
     for i in range(len(file_lines)):
-      line = file_lines[i].rstrip('\n\r')
+      line = file_lines[i]
       line = sapi.escape(string.expandtabs(line, cfg.options.tabsize))
       line = markup_escaped_urls(line)
       if blame_data:
@@ -1755,7 +1805,7 @@ def markup_stream(request, cfg, blame_data, file_lines, filename,
       self.line_no = 0
     def write(self, buf):
       ### FIXME:  Don't bank on write() being called once per line
-      buf = markup_escaped_urls(buf.rstrip('\n\r'))
+      buf = markup_escaped_urls(string.rstrip(buf, '\n\r'))
       if self.has_blame_data:
         self.blame_data[self.line_no].text = buf
       else:
