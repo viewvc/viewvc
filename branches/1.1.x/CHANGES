@@ -6,6 +6,8 @@ Version 1.1.19 (released ??-???-????)
   * reduce memory usage of tarball generation logic
   * fix double compression of generated tarballs (issue #525)
   * expanded support for encoding detection and transcoding (issue #11)
+  * fix tab-to-space conversion bugs in markup, annotate, and diff views
+  * fix handling of trailing whitespace in diff view
 
 Version 1.1.18 (released 28-Feb-2013)
 

@@ -1782,8 +1782,9 @@ def markup_stream(request, cfg, blame_data, file_lines, filename,
     file_lines = string.split(file_lines, '\n')
     for i in range(len(file_lines)):
       line = file_lines[i]
-      line = sapi.escape(string.expandtabs(line, cfg.options.tabsize))
-      line = markup_escaped_urls(line)
+      if cfg.options.tabsize > 0:
+        line = string.expandtabs(lin, cfg.options.tabsize)
+      line = markup_escaped_urls(sapi.escape(line))
       if blame_data:
         blame_item = blame_data[i]
         blame_item.text = line
@@ -3118,7 +3119,9 @@ class DiffSource:
         return item
 
   def _format_text(self, text):
-    text = string.expandtabs(string.rstrip(text), self.cfg.options.tabsize)
+    text = string.rstrip(text, '\r\n')
+    if self.cfg.options.tabsize > 0:
+      text = string.expandtabs(text, self.cfg.options.tabsize)
     hr_breakable = self.cfg.options.hr_breakable
     
     # in the code below, "\x01" will be our stand-in for "&". We don't want
