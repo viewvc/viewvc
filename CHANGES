@@ -5,6 +5,7 @@ Version 1.1.19 (released ??-???-????)
   * new 'max_filesize_kbytes' config option and handling (issue #524)
   * reduce memory usage of tarball generation logic
   * fix double compression of generated tarballs (issue #525)
+  * expanded support for encoding detection and transcoding (issue #11)
 
 Version 1.1.18 (released 28-Feb-2013)
 
