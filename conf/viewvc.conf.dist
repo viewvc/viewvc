@@ -702,8 +702,9 @@
 ##
 #enable_syntax_coloration = 1
 
-## tabsize: The number of spaces into which tabstops are converted
-## when viewing file contents.
+## tabsize: The number of spaces into which horizontal tab characters
+## are converted when viewing file contents.  Set to 0 to preserve
+## tab characters.
 ##
 #tabsize = 8
 
