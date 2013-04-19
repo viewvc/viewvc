@@ -1846,7 +1846,7 @@ def make_time_string(date, cfg):
       else:
         tz = time.timezone
       tz = float(tz) / 3600.0
-      tz = str.format('{0:+06.2f}', tz).replace('.', ':')
+      tz = '{0:+06.2f}'.format(tz).replace('.', ':')
     else:
       tz = 'Z'
     return time.strftime('%Y-%m-%dT%H:%M:%S', tm) + tz
