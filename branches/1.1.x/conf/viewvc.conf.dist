@@ -686,6 +686,10 @@
 ##
 #use_localtime = 0
 
+## iso8601_dates: Display timestamps using a standard ISO-8601 format.
+##
+#iso8601_timestamps = 0
+
 ## short_log_len: The length (in characters) to which the most recent
 ## log entry should be truncated when shown in the directory view.
 ##

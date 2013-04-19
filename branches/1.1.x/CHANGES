@@ -10,6 +10,7 @@ Version 1.1.19 (released ??-???-????)
     - expanded support for encoding detection and transcoding (issue #11)
     - fix tab-to-space conversion bugs in markup, annotate, and diff views
     - fix handling of trailing whitespace in diff view
+  * add support for timestamp display in ISO8601 format (issue #46)
 
 Version 1.1.18 (released 28-Feb-2013)
 
