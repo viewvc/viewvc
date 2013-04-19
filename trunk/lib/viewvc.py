@@ -1836,10 +1836,23 @@ def make_time_string(date, cfg):
   if date is None:
     return None
   if cfg.options.use_localtime:
-    localtime = time.localtime(date)
-    return time.asctime(localtime) + ' ' + time.tzname[localtime[8]]
+    tm = time.localtime(date)
   else:
-    return time.asctime(time.gmtime(date)) + ' UTC'
+    tm = time.gmtime(date)
+  if cfg.options.iso8601_timestamps:
+    if cfg.options.use_localtime:
+      if tm[8] and time.daylight:
+        tz = time.altzone
+      else:
+        tz = time.timezone
+      tz = float(tz) / 3600.0
+      tz = str.format('{0:+06.2f}', tz).replace('.', ':')
+    else:
+      tz = 'Z'
+    return time.strftime('%Y-%m-%dT%H:%M:%S', tm) + tz
+  else:
+    return time.asctime(tm) + ' ' + \
+           (cfg.options.use_localtime and time.tzname[tm[8]] or 'UTC')
 
 def make_rss_time_string(date, cfg):
   """Returns formatted date string in UTC, formatted for RSS.
