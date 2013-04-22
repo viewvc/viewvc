@@ -14,6 +14,7 @@
 such as CVS.
 """
 
+import string
 import types
 
 
@@ -326,7 +327,7 @@ class ItemNotFound(Error):
     # use '/' rather than os.sep because this is for user consumption, and
     # it was defined using URL separators
     if type(path) in (types.TupleType, types.ListType):
-      path = '/'.join(path)
+      path = string.join(path, '/')
     Error.__init__(self, path)
 
 class InvalidRevision(Error):
