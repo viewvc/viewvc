@@ -5,6 +5,20 @@ Version 1.2.0 (released ??-???-????)
   * allow user-configurable cvsgraph display (issue #336)
   * allow rNNNN syntax for Subversion revision numbers (issue #441)
 
+Version 1.1.19 (released 22-Apr-2013)
+
+  * improve root lookup performance (issue #523)
+  * new 'max_filesize_kbytes' config option and handling (issue #524)
+  * tarball generation improvements:
+    - preserve Subversion symlinks in generated tarballs (issue #487)
+    - reduce memory usage of tarball generation logic
+    - fix double compression of generated tarballs (issue #525)
+  * file content handling improvements:
+    - expanded support for encoding detection and transcoding (issue #11)
+    - fix tab-to-space conversion bugs in markup, annotate, and diff views
+    - fix handling of trailing whitespace in diff view
+  * add support for timestamp display in ISO8601 format (issue #46)
+
 Version 1.1.18 (released 28-Feb-2013)
 
   * fix exception raised by BDB-backed SVN repositories (issue #519)
