@@ -47,7 +47,7 @@ def find_root_in_parent(parent_path, rootname):
   canonicalized ROOTPATH of the root if found; return None if no such
   root is found."""
   # Is PARENT_PATH itself a CVS repository?  If so, we allow ROOTNAME
-  # to be any subdir within it. Otherwise, we expect
+  # to be any subdir within it.  Otherwise, we expect
   # PARENT_PATH/ROOTNAME to be a CVS repository.
   assert os.path.isabs(parent_path)
   rootpath = os.path.join(parent_path, rootname)
