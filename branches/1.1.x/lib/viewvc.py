@@ -1783,7 +1783,7 @@ def markup_stream(request, cfg, blame_data, file_lines, filename,
     for i in range(len(file_lines)):
       line = file_lines[i]
       if cfg.options.tabsize > 0:
-        line = string.expandtabs(lin, cfg.options.tabsize)
+        line = string.expandtabs(line, cfg.options.tabsize)
       line = markup_escaped_urls(sapi.escape(line))
       if blame_data:
         blame_item = blame_data[i]
