@@ -23,6 +23,10 @@ def canonicalize_rootpath(rootpath):
   return os.path.normpath(rootpath)
 
 
+def _is_cvsroot(path):
+  return os.path.exists(os.path.join(path, "CVSROOT", "config"))
+
+
 def expand_root_parent(parent_path):
   # Each subdirectory of PARENT_PATH that contains a child
   # "CVSROOT/config" is added the set of returned roots.  Or, if the
@@ -33,8 +37,7 @@ def expand_root_parent(parent_path):
   subpaths = os.listdir(parent_path)
   for rootname in subpaths:
     rootpath = os.path.join(parent_path, rootname)
-    if os.path.exists(os.path.join(parent_path, "CVSROOT", "config")) \
-       or (os.path.exists(os.path.join(rootpath, "CVSROOT", "config"))):
+    if _is_cvsroot(parent_path) or _is_cvsroot(rootpath):
       roots[rootname] = canonicalize_rootpath(rootpath)
   return roots
 
@@ -43,16 +46,13 @@ def find_root_in_parent(parent_path, rootname):
   """Search PARENT_PATH for a root named ROOTNAME, returning the
   canonicalized ROOTPATH of the root if found; return None if no such
   root is found."""
+  # Is PARENT_PATH itself a CVS repository?  If so, we allow ROOTNAME
+  # to be any subdir within it. Otherwise, we expect
+  # PARENT_PATH/ROOTNAME to be a CVS repository.
   assert os.path.isabs(parent_path)
   rootpath = os.path.join(parent_path, rootname)
-
-  # Is PARENT_PATH itself a CVS repository?  If so, we allow ROOTNAME
-  # to be any subdir within it.
-  if os.path.exists(os.path.join(parent_path, "CVSROOT", "config")):
-    if os.path.exists(rootpath):
-      return canonicalize_rootpath(rootpath)
-  # Otherwise, we expect PARENT_PATH/ROOTNAME to be a CVS repository.
-  elif os.path.exists(os.path.join(rootpath, "CVSROOT", "config")):
+  if (_is_cvsroot(parent_path) and os.path.exists(rootpath)) \
+     or _is_cvsroot(rootpath):
     return canonicalize_rootpath(rootpath)
   return None
 
