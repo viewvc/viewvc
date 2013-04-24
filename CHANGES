@@ -1,9 +1,7 @@
-Version 1.2.0 (released ??-???-????)
+Version 1.1.20 (released 24-Apr-2013)
 
-  * bumped minimum support Python version to 2.4
-  * implemented support for property diffs (issue #383)
-  * allow user-configurable cvsgraph display (issue #336)
-  * allow rNNNN syntax for Subversion revision numbers (issue #441)
+  * fix tab-to-space handling regression in markup view
+  * fix regression in root lookup handling (issue #526)
 
 Version 1.1.19 (released 22-Apr-2013)
 
@@ -111,7 +109,7 @@ Version 1.1.7 (released 09-Sep-2010)
   * display Subversion revision properties in the revision view (issue #453)
   * fix exception in 'standalone.py -r REPOS' when run without a config file
   * fix standalone.py server root deployments (--script-alias='')
-  * add rudimentary Basic authentication support to standalone.py (issue #49)
+  * add Basic authentication support to standalone.py (Unix only) (issue #49)
   * fix obscure "unexpected NULL parent pool" Subversion bindings error
   * enable path info / link display in remote Subversion root revision view
   * fix vhost name case handling inconsistency (issue #466)
@@ -215,27 +213,6 @@ Version 1.1.0 (released 13-May-2009)
   * allow MIME type mapping overrides in ViewVC configuration (issue #401)
   * fix exception in rev-sorted remote Subversion directory views (issue #409)
   * allow setting of page sizes for log and dir views individually (issue #402)
-
-Version 1.0.13 (released 24-Oct-2012)
-
-  * security fix: escape "extra" diff info to avoid XSS attack (issue #515)
-  * security fix: remove user-reachable override of cvsdb row limit
-  * fix obscure "unexpected NULL parent pool" Subversion bindings error
-  * fix svndbadmin failure on deleted paths under Subversion 1.7 (issue #499)
-
-Version 1.0.12 (released 02-Jun-2010)
-
-  * fix exception caused by trying to HTML-escape non-string data (issue #454)
-
-Version 1.0.11 (released 29-Mar-2010)
-
-  * security fix: escape user-provided search_re input to avoid XSS attack
-
-Version 1.0.10 (released 10-Mar-2010)
-
-  * security fix: escape user-provided query form input to avoid XSS attack
-  * fix errors viewing remote Subversion paths with URI-unsafe characters
-  * fix regexp input validation (issue #426, #427, #440)
 
 Version 1.0.9 (released 11-Aug-2009)
 
