@@ -1,0 +1,28 @@
+The following people have commit access to the ViewVC sources.
+Note that this is not a full list of ViewVC's authors, however --
+for that, you'd need to look over the log messages to see all the
+patch contributors.
+
+If you have a question or comment, it's probably best to mail
+dev@viewvc.tigris.org, rather than mailing any of these people
+directly.
+
+        gstein   Greg Stein <gstein@lyra.org>
+        jpaint   Jay Painter <???>
+           akr   Tanaka Akira <???>
+       timcera   Tim Cera <???>
+          pefu   Peter Funk <???>
+       lbruand   Lucas Bruand <???>
+      cmpilato   C. Michael Pilato <cmpilato@collab.net>
+          rey4   Russell Yanofsky <rey4@columbia.edu>
+        mharig   Mark Harig <???>
+      northeye   Takuo Kitame <???>
+        jamesh   James Henstridge <???>
+          maxb   Max Bowsher <maxb1@ukf.net>
+            eh   Erik Hülsmann <e.huelsmann@gmx.net>
+       mhagger   Michael Haggerty <mhagger@alum.mit.edu>
+
+## Local Variables:
+## coding:utf-8
+## End:
+## vim:encoding=utf8
