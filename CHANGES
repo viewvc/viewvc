@@ -5,6 +5,11 @@ Version 1.2.0 (released ??-???-????)
   * allow user-configurable cvsgraph display (issue #336)
   * allow rNNNN syntax for Subversion revision numbers (issue #441)
 
+Version 1.1.20 (released 24-Apr-2013)
+
+  * fix tab-to-space handling regression in markup view
+  * fix regression in root lookup handling (issue #526)
+
 Version 1.1.19 (released 22-Apr-2013)
 
   * improve root lookup performance (issue #523)
