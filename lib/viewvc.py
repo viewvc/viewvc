@@ -1687,9 +1687,11 @@ def transcode_text(text, encoding=None):
 
   if not encoding or encoding == 'utf-8':
     return text
-  return unicode(text, encoding,
-                 errors='replace').encode('utf-8',
-                                          errors='replace')
+  try:
+    return unicode(text, encoding, 'replace').encode('utf-8', 'replace')
+  except:
+    pass
+  return text
 
 def markup_stream(request, cfg, blame_data, file_lines, filename,
                   mime_type, encoding, colorize):

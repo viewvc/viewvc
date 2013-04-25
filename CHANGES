@@ -1,6 +1,6 @@
 Version 1.1.21 (released ??-???-????)
 
-  * 
+  * fix markup/annotate exception with Python < 2.7 (issue #527)
 
 Version 1.1.20 (released 24-Apr-2013)
 
