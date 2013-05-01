@@ -889,7 +889,8 @@
 #port = 3306
 
 ## database_name: ViewVC database name.
-##database_name = ViewVC
+##
+#database_name = ViewVC
 
 ## user: Username of user with read/write privileges to the database
 ## specified by the 'database_name' configuration option.
