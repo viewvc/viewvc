@@ -1294,10 +1294,7 @@ class ViewVCHtmlFormatter:
     the number of visible characters in the result string, and a
     boolean flag indicating whether or not S was truncated.
     """
-    out = ''
-    out_len = 0
-    tokens = self.tokenize_text(s)
-    return tokens.get_result()
+    return self.tokenize_text(s).get_result(maxlen)
 
   def tokenize_text(self, s):
     """Return a ViewVCHtmlFormatterTokens object containing the tokens
