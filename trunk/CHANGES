@@ -5,6 +5,10 @@ Version 1.2.0 (released ??-???-????)
   * allow user-configurable cvsgraph display (issue #336)
   * allow rNNNN syntax for Subversion revision numbers (issue #441)
 
+Version 1.1.21 (released 13-Sep-2013)
+
+  * fix markup/annotate exception with Python < 2.7 (issue #527)
+
 Version 1.1.20 (released 24-Apr-2013)
 
   * fix tab-to-space handling regression in markup view
