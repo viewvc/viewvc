@@ -18,17 +18,14 @@ import os
 import os.path
 import sys
 import stat
+import string
 import re
 import time
-import calendar
 
 # ViewVC libs
+import compat
 import popen
-import vclib.ccvs
 
-def _path_join(path_parts):
-  return '/'.join(path_parts)
-  
 class BaseCVSRepository(vclib.Repository):
   def __init__(self, name, rootpath, authorizer, utilities):
     if not os.path.isdir(rootpath):
@@ -84,7 +81,7 @@ class BaseCVSRepository(vclib.Repository):
   def listdir(self, path_parts, rev, options):
     if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
       raise vclib.Error("Path '%s' is not a directory."
-                        % (_path_join(path_parts)))
+                        % (string.join(path_parts, "/")))
     
     # Only RCS files (*,v) and subdirs are returned.
     data = [ ]
@@ -141,14 +138,15 @@ class BaseCVSRepository(vclib.Repository):
     if root:
       ret = ret_file
     else:
-      ret = _path_join(ret_parts)
+      ret = string.join(ret_parts, "/")
     if v:
       ret = ret + ",v"
     return ret
 
   def isexecutable(self, path_parts, rev):
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts, "/")))
     rcsfile = self.rcsfile(path_parts, 1)
     return os.access(rcsfile, os.X_OK)
   
@@ -183,7 +181,8 @@ class BinCVSRepository(BaseCVSRepository):
         boolean. true to use the original keyword substitution values.
     """
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts, "/")))
     if not rev or rev == 'HEAD' or rev == 'MAIN':
       rev_flag = '-p'
     else:
@@ -257,7 +256,7 @@ class BinCVSRepository(BaseCVSRepository):
     """
     if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
       raise vclib.Error("Path '%s' is not a directory."
-                        % (_path_join(path_parts)))
+                        % (string.join(path_parts, "/")))
 
     subdirs = options.get('cvs_subdirs', 0)
     entries_to_fetch = []
@@ -294,7 +293,8 @@ class BinCVSRepository(BaseCVSRepository):
     """
 
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts, "/")))
     
     # Invoke rlog
     rcsfile = self.rcsfile(path_parts, 1)
@@ -339,7 +339,8 @@ class BinCVSRepository(BaseCVSRepository):
 
   def annotate(self, path_parts, rev=None, include_text=False):
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts, "/")))
                         
     from vclib.ccvs import blame
     source = blame.BlameSource(self.rcsfile(path_parts, 1), rev, include_text)
@@ -356,9 +357,11 @@ class BinCVSRepository(BaseCVSRepository):
       ignore_keyword_subst - boolean, ignore keyword substitution
     """
     if self.itemtype(path_parts1, rev1) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts1)))
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts1, "/")))
     if self.itemtype(path_parts2, rev2) != vclib.FILE:  # does auth-check
-      raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts2)))
+      raise vclib.Error("Path '%s' is not a file."
+                        % (string.join(path_parts2, "/")))
     
     args = vclib._diff_args(type, options)
     if options.get('ignore_keyword_subst', 0):
@@ -566,7 +569,7 @@ def _remove_tag(tag):
 
 def _revision_tuple(revision_string):
   """convert a revision number into a tuple of integers"""
-  t = tuple(map(int, revision_string.split('.')))
+  t = tuple(map(int, string.split(revision_string, '.')))
   if len(t) % 2 == 0:
     return t
   raise ValueError
@@ -574,7 +577,7 @@ def _revision_tuple(revision_string):
 def _tag_tuple(revision_string):
   """convert a revision number or branch number into a tuple of integers"""
   if revision_string:
-    t = map(int, revision_string.split('.'))
+    t = map(int, string.split(revision_string, '.'))
     l = len(t)
     if l == 1:
       return ()
@@ -719,7 +722,7 @@ def _parse_log_header(fp):
 
     if state == 1:
       if line[0] == '\t':
-        [ tag, rev ] = map(lambda x: x.strip(), line.split(':'))
+        [ tag, rev ] = map(string.strip, string.split(line, ':'))
         taginfo[tag] = rev
       else:
         # oops. this line isn't tag info. stop parsing tags.
@@ -727,7 +730,7 @@ def _parse_log_header(fp):
 
     if state == 2:
       if line[0] == '\t':
-        [ locker, rev ] = map(lambda x: x.strip(), line.split(':'))
+        [ locker, rev ] = map(string.strip, string.split(line, ':'))
         lockinfo[rev] = locker
       else:
         # oops. this line isn't lock info. stop parsing tags.
@@ -836,7 +839,7 @@ def _parse_log_entry(fp):
     return None, eof
 
   # parse out a time tuple for the local time
-  tm = vclib.ccvs.cvs_strptime(match.group(1))
+  tm = compat.cvs_strptime(match.group(1))
 
   # rlog seems to assume that two-digit years are 1900-based (so, "04"
   # comes out as "1904", not "2004").
@@ -847,7 +850,7 @@ def _parse_log_entry(fp):
       tm[0] = tm[0] + 100
     if tm[0] < EPOCH:
       raise ValueError, 'invalid year'
-  date = calendar.timegm(tm)
+  date = compat.timegm(tm)
 
   return Revision(rev, date,
                   # author, state, lines changed
