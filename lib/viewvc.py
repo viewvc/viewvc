@@ -1696,18 +1696,8 @@ def transcode_text(text, encoding=None):
     pass
   return text
 
-def markup_stream(request, cfg, blame_data, file_lines, filename,
-                  mime_type, encoding, colorize):
-  """Return the contents of a versioned file as a list of
-  vclib.Annotation objects, each representing one line of the file's
-  contents.  Use BLAME_DATA as the annotation information for the file
-  if provided.  Use FILE_LINES as the lines of file content text
-  themselves.  MIME_TYPE is the MIME content type of the file;
-  ENCODING is its character encoding.  If COLORIZE is true, attempt to
-  apply syntax coloration to the file contents, and use the
-  HTML-marked-up results as the text in the return vclib.Annotation
-  objects."""
-  
+def markup_file_contents(request, cfg, file_lines, filename,
+                         mime_type, encoding, colorize):
   # Nothing to mark up?  So be it.
   if not file_lines:
     return []
@@ -1762,8 +1752,8 @@ def markup_stream(request, cfg, blame_data, file_lines, filename,
       except ClassNotFound:
         pygments_lexer = None
         
-  # If we aren't highlighting, just return an amalgamation of the
-  # BLAME_DATA (if any) and the FILE_LINES.
+  # If we aren't highlighting, just return FILE_LINES, corrected for
+  # encoding (if possible).
   if not pygments_lexer:
 
     # If allowed by configuration, try to detect the source encoding
@@ -1781,51 +1771,51 @@ def markup_stream(request, cfg, blame_data, file_lines, filename,
     # Built output data comprised of marked-up and possibly-transcoded
     # source text lines wrapped in (possibly dummy) vclib.Annotation
     # objects.
-    lines = []
-    file_lines = transcode_text(''.join(file_lines), encoding).rstrip('\n').split('\n')
+    file_lines = transcode_text(''.join(file_lines),
+                                encoding).rstrip('\n').split('\n')
     for i in range(len(file_lines)):
       line = file_lines[i]
       if cfg.options.tabsize > 0:
         line = line.expandtabs(cfg.options.tabsize)
-      line = markup_escaped_urls(sapi.escape(line))
-      if blame_data:
-        blame_item = blame_data[i]
-        blame_item.text = line
-      else:
-        blame_item = vclib.Annotation(line, i + 1, None, None, None, None)
-        blame_item.diff_href = None
-      lines.append(blame_item)
-    return lines
-
+      file_lines[i] = markup_escaped_urls(sapi.escape(line))
+    return file_lines
+  
   # If we get here, we're highlighting something.
   class PygmentsSink:
-    def __init__(self, blame_data):
-      if blame_data:
-        self.has_blame_data = 1
-        self.blame_data = blame_data
-      else:
-        self.has_blame_data = 0
-        self.blame_data = []
-      self.line_no = 0
+    def __init__(self):
+      self.colorized_file_lines = []
+    
     def write(self, buf):
       ### FIXME:  Don't bank on write() being called once per line
-      buf = markup_escaped_urls(buf.rstrip('\n\r'))
-      if self.has_blame_data:
-        self.blame_data[self.line_no].text = buf
-      else:
-        item = vclib.Annotation(buf, self.line_no + 1,
-                                None, None, None, None)
-        item.diff_href = None
-        self.blame_data.append(item)
-      self.line_no = self.line_no + 1
+      self.colorized_file_lines.append(markup_escaped_urls(buf.rstrip('\n\r')))
 
-  ps = PygmentsSink(blame_data)
+  ps = PygmentsSink()
   highlight(''.join(file_lines), pygments_lexer,
             HtmlFormatter(nowrap=True,
                           classprefix="pygments-",
                           encoding='utf-8'), ps)
-  return ps.blame_data
+  return ps.colorized_file_lines
 
+def empty_blame_item(line, line_no):
+  blame_item = vclib.Annotation(line, line_no, None, None, None, None)
+  blame_item.diff_href = None
+  return blame_item
+  
+def merge_blame_data(file_lines, blame_data):
+  errorful = 0
+  if blame_data and (len(file_lines) != len(blame_data)):
+    errorful = 1
+    blame_data = None
+  if not blame_data:
+    new_blame_data = []
+  for i in range(len(file_lines)):
+    line = file_lines[i]
+    if blame_data:
+      blame_data[i].text = line
+    else:
+      new_blame_data.append(empty_blame_item(line, i + 1))
+  return blame_data or new_blame_data, errorful
+  
 def make_time_string(date, cfg):
   """Returns formatted date string in either local time or UTC.
 
@@ -2010,28 +2000,25 @@ def markup_or_annotate(request, is_annotate):
       file_lines = fp.readlines()
     fp.close()
 
-    # Do we have a differing number of file content lines and
-    # annotation items?  That's no good.  Call it an error and don't
-    # bother attempting the annotation display.
-    if blame_data and (len(file_lines) != len(blame_data)):
-      annotation = 'error'
-      blame_data = None
-
-    # Try to markup the file contents/annotation.  If we get an error
-    # and we were colorizing the stream, try once more without the
-    # colorization enabled.
+    # Try to colorize the file contents.
     colorize = cfg.options.enable_syntax_coloration
     try:
-      lines = markup_stream(request, cfg, blame_data, file_lines,
-                            path[-1], mime_type, encoding, colorize)
+      lines = markup_file_contents(request, cfg, file_lines, path[-1],
+                                   mime_type, encoding, colorize)
     except:
       if colorize:
-        lines = markup_stream(request, cfg, blame_data, file_lines,
-                              path[-1], mime_type, encoding, False)
+        lines = markup_file_contents(request, cfg, file_lines, path[-1],
+                                     mime_type, encoding, False)
       else:
         raise debug.ViewVCException('Error displaying file contents',
                                     '500 Internal Server Error')
 
+    # Now, try to match up the annotation data (if any) with the file
+    # lines.
+    lines, errorful = merge_blame_data(lines, blame_data)
+    if errorful:
+      annotation = 'error'
+        
   data = common_template_data(request, revision, mime_type)
   data.merge(TemplateData({
     'mime_type' : mime_type,
