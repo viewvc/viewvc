@@ -2123,6 +2123,18 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
   if roottype == "cvs" and sortby == "rev":
     sortby = "date"
 
+  def file_sort_sortby(file1, file2, sortby):
+    # sort according to sortby
+    if sortby == 'rev':
+      return s * revcmp(file1.rev, file2.rev)
+    elif sortby == 'date':
+      return s * cmp(file2.date, file1.date)        # latest date is first
+    elif sortby == 'log':
+      return s * cmp(file1.log, file2.log)
+    elif sortby == 'author':
+      return s * cmp(file1.author, file2.author)
+    return s * cmp(file1.name, file2.name)
+
   def file_sort_cmp(file1, file2, sortby=sortby, group_dirs=group_dirs, s=s):
     # if we're grouping directories together, sorting is pretty
     # simple.  a directory sorts "higher" than a non-directory, and
@@ -2131,7 +2143,7 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
       if file1.kind == vclib.DIR:
         if file2.kind == vclib.DIR:
           # two directories, no special handling.
-          pass
+          return file_sort_sortby(file1, file2, sortby)
         else:
           # file1 is a directory, it sorts first.
           return -1
@@ -2142,15 +2154,7 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
     # we should have data on these. if not, then it is because we requested
     # a specific tag and that tag is not present on the file.
     if file1.rev is not None and file2.rev is not None:
-      # sort according to sortby
-      if sortby == 'rev':
-        return s * revcmp(file1.rev, file2.rev)
-      elif sortby == 'date':
-        return s * cmp(file2.date, file1.date)        # latest date is first
-      elif sortby == 'log':
-        return s * cmp(file1.log, file2.log)
-      elif sortby == 'author':
-        return s * cmp(file1.author, file2.author)
+      return file_sort_sortby(file1, file2, sortby)
     elif file1.rev is not None:
       return -1
     elif file2.rev is not None:
