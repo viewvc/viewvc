@@ -99,14 +99,16 @@
        <td>&nbsp;[entries.ago]</td>
        <td>&nbsp;[entries.author]</td>
        [is cfg.options.show_logs "1"]
-         [if-any entries.short_log]
-           <td>&nbsp;[entries.short_log][is entries.pathtype "dir"][is roottype "cvs"]
-             <em>(from [entries.log_file]/[entries.log_rev])</em>[end][end]</td>
-         [else]
-           <td>&nbsp;</td>
+         <td>&nbsp;
+         [if-any entries.rev]
+           [if-any entries.short_log]
+             [entries.short_log][is entries.pathtype "dir"][is roottype "cvs"]
+             <em>(from [entries.log_file]/[entries.log_rev])</em>[end][end]
+           [end]
          [end]
-      [end]
-    [end]
+         </td>
+       [end]
+     [end]
   </tr>
 [end]
 </tbody>
