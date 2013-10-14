@@ -2,6 +2,7 @@ Version 1.1.22 (released ??-???-????)
 
   * minor directory sorting logic fix (re: show_subdir_lastmod)
   * cleanup template output when show_subdir_lastmod disabled (issue #532)
+  * pay attention to chardet's detection confidence
 
 Version 1.1.21 (released 13-Sep-2013)
 
