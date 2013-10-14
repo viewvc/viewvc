@@ -1664,6 +1664,11 @@ def markup_escaped_urls(s):
 
 
 def detect_encoding(text_block):
+  """Return the encoding used by TEXT_BLOCK as detected by the chardet
+  Python module.  (Currently, this is used only when syntax
+  highlighting is not enabled/available; otherwise, Pygments does this
+  work for us.)"""
+  
   # Does the TEXT_BLOCK start with a BOM?
   for bom, encoding in [('\xef\xbb\xbf', 'utf-8'),
                         ('\xff\xfe', 'utf-16'),
@@ -1677,7 +1682,16 @@ def detect_encoding(text_block):
   # If no recognized BOM, see if chardet can help us.
   try:
     import chardet
-    return chardet.detect(text_block).get('encoding')
+
+    # If chardet can confidently claimed a match, we'll use its
+    # findings.  (And if that match is 'ascii' -- which is a subset of
+    # utf-8 -- we'll just call it 'utf-8' and score a zero transform.)
+    resp = chardet.detect(text_block)
+    if resp.get('confidence') == 1.0:
+      encoding = resp.get('encoding')
+      if encoding is "ascii":
+        encoding = "utf-8"
+      return encoding
   except:
     pass
 
