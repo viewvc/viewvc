@@ -100,11 +100,13 @@
        <td>&nbsp;[entries.author]</td>
        [is cfg.options.show_logs "1"]
          <td>&nbsp;
-         [if-any entries.rev]
-           [if-any entries.short_log]
-             [entries.short_log][is entries.pathtype "dir"][is roottype "cvs"]
-             <em>(from [entries.log_file]/[entries.log_rev])</em>[end][end]
-           [end]
+         [if-any entries.short_log]
+           [if-any entries.log_rev]
+             <em>(from [entries.log_file]/[entries.log_rev])</em>
+             [entries.short_log]
+           [else][if-any entries.rev]
+             [entries.short_log]
+           [end][end]
          [end]
          </td>
        [end]
