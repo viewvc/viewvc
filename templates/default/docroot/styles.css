@@ -176,6 +176,10 @@ address { font-style: normal; display: inline; }
 #dirlist tr:hover {
   background-color: white;
 }
+.vc_dir_lastmod {
+  font-style: italic;
+  font-size: 90%;
+}
 
 
 /*** Log messages ***/
