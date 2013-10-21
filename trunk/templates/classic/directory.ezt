@@ -102,7 +102,7 @@
          <td>&nbsp;
          [if-any entries.short_log]
            [if-any entries.log_rev]
-             <span class="vc_dir_lastmod">(from [entries.log_file]/[entries.log_rev])</em></span>
+             <span class="vc_dir_lastmod">(from [entries.log_file]/[entries.log_rev])</span>
              [entries.short_log]
            [else][if-any entries.rev]
              [entries.short_log]
