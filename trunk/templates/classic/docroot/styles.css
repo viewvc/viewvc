@@ -79,6 +79,13 @@ form { margin: 0; }
 }
 
 
+/*** Directory View ***/
+.vc_dir_lastmod {
+  font-style: italic;
+  font-size: 90%;
+}
+
+
 /*** Log messages ***/
 .vc_log {
   /* unfortunately, white-space: pre-wrap isn't widely supported ... */

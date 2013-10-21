@@ -72,9 +72,13 @@
         <strong>[if-any entries.log_href]<a href="[entries.log_href]" title="Revision [entries.rev]">[entries.rev]</a>[else][entries.rev][end]</strong>
         ([entries.ago] ago)
         by <em>[entries.author]</em>:
-        [entries.log]
-        [is entries.pathtype "dir"][is roottype "cvs"]
-          <em>(from [entries.log_file]/[entries.log_rev])</em>
+      [end]
+      [if-any entries.log]
+        [if-any entries.log_rev]
+          <span class="vc_dir_lastmod">(from [entries.log_file]/[entries.log_rev])</span>
+          [entries.log]
+        [else][if-any entries.rev]
+          [entries.log]
         [end][end]
       [end]
     </td>
