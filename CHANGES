@@ -3,6 +3,7 @@ Version 1.1.22 (released ??-???-????)
   * minor directory sorting logic fix (re: show_subdir_lastmod)
   * fix display of show_subdir_lastmod details (issue #532)
   * pay attention to chardet's detection confidence
+  * linkify line numbers in markup/annotate view
 
 Version 1.1.21 (released 13-Sep-2013)
 
