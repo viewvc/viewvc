@@ -1,5 +1,6 @@
 
 import time
+import string
 import profile
 
 from vclib.ccvs import rcsparse
@@ -15,8 +16,8 @@ def lines_changed(delta):
   added = deleted = 0
   while idx < len(delta):
     op = delta[idx]
-    i = delta.find(' ', idx + 1)
-    j = delta.find('\n', i + 1)
+    i = string.find(delta, ' ', idx + 1)
+    j = string.find(delta, '\n', i + 1)
     line = int(delta[idx+1:i])
     count = int(delta[i+1:j])
     idx = j + 1
@@ -26,7 +27,7 @@ def lines_changed(delta):
       added = added + count
       # skip new text
       while count > 0:
-        nl = delta.find('\n', idx)
+        nl = string.find(delta, '\n', idx)
         assert nl > 0, 'missing a newline in the delta in the RCS file'
         idx = nl + 1
         count = count - 1
@@ -69,7 +70,7 @@ class FetchSink(rcsparse.Sink):
 
     if revision != self.head:
       added, deleted = lines_changed(text)
-      if revision.count('.') == 1:
+      if string.count(revision, '.') == 1:
         # on the trunk. reverse delta.
         changed = '+%d -%d' % (deleted, added)
         self.entries[self.base[revision]].changed = changed

@@ -23,6 +23,7 @@ import os
 import sys
 import sapi
 import threading
+import string
 
 if sys.platform == "win32":
   import win32popen
@@ -35,7 +36,7 @@ def popen(cmd, args, mode, capture_err=1):
   if sys.platform == "win32":
     command = win32popen.CommandLine(cmd, args)
 
-    if mode.find('r') >= 0:
+    if string.find(mode, 'r') >= 0:
       hStdIn = None
 
       if debug.SHOW_CHILD_PROCESSES:
@@ -84,7 +85,7 @@ def popen(cmd, args, mode, capture_err=1):
     # in the parent
 
     # close the descriptor that we don't need and return the other one.
-    if mode.find('r') >= 0:
+    if string.find(mode, 'r') >= 0:
       os.close(w)
       return _pipe(os.fdopen(r, mode), pid)
     os.close(r)
@@ -95,7 +96,7 @@ def popen(cmd, args, mode, capture_err=1):
   # we'll need /dev/null for the discarded I/O
   null = os.open('/dev/null', os.O_RDWR)
 
-  if mode.find('r') >= 0:
+  if string.find(mode, 'r') >= 0:
     # hook stdout/stderr to the "write" channel
     os.dup2(w, 1)
     # "close" stdin; the child shouldn't use it
@@ -124,7 +125,7 @@ def popen(cmd, args, mode, capture_err=1):
     os.execvp(cmd, (cmd,) + tuple(args))
   except:
     # aid debugging, if the os.execvp above fails for some reason:
-    print "<h2>exec failed:</h2><pre>", cmd, ' '.join(args), "</pre>"
+    print "<h2>exec failed:</h2><pre>", cmd, string.join(args), "</pre>"
     raise
 
   # crap. shouldn't be here.
