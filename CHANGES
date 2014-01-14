@@ -5,6 +5,13 @@ Version 1.2.0 (released ??-???-????)
   * allow user-configurable cvsgraph display (issue #336)
   * allow rNNNN syntax for Subversion revision numbers (issue #441)
 
+Version 1.1.22 (released 14-Jan-2014)
+
+  * minor directory sorting logic fix (re: show_subdir_lastmod)
+  * fix display of show_subdir_lastmod details (issue #532)
+  * pay attention to chardet's detection confidence
+  * linkify line numbers in markup/annotate view
+
 Version 1.1.21 (released 13-Sep-2013)
 
   * fix markup/annotate exception with Python < 2.7 (issue #527)
