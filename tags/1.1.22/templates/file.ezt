@@ -1,0 +1,127 @@
+[# ------------------------------------------------------------------------- ]
+[# CUSTOMIZE ME: To avoid displaying "binary garbage" -- the contents of     ]
+[# files with non-human-readable file formats -- change the value of the     ]
+[# hide_binary_garbage variable below to 1.                                  ]
+[# ------------------------------------------------------------------------- ]
+
+[define hide_binary_garbage]0[end]
+
+[# ------------------------------------------------------------------------- ]
+
+[# setup page definitions]
+  [is annotation "annotated"]
+    [define page_title]Annotation of /[where][end]
+  [else]
+    [define page_title]Contents of /[where][end]
+  [end]
+  [define help_href][docroot]/help_rootview.html[end]
+[# end]
+
+[include "include/header.ezt" "markup"]
+[include "include/file_header.ezt"]
+<hr />
+<div class="vc_summary">
+Revision [if-any revision_href]<a href="[revision_href]"><strong>[rev]</strong></a>[else]<strong>[rev]</strong>[end] -
+([is annotation "annotated"]<a href="[view_href]"><strong>hide annotations</strong></a>[else]<a href="[annotate_href]"><strong>show annotations</strong></a>[end])
+[if-any download_href](<a href="[download_href]"><strong>download</strong></a>)[end]
+[if-any download_text_href](<a href="[download_text_href]"><strong>as text</strong></a>)[end]
+
+[if-any vendor_branch] <em>(vendor branch)</em>[end]
+<br /><em>[if-any date][date][else](unknown date)[end]</em>
+      [if-any ago]([ago] ago)[end]
+      by <em>[if-any author][author][else](unknown author)[end]</em>
+[if-any orig_path]
+  <br />Original Path: <a href="[orig_href]"><em>[orig_path]</em></a>
+[end]
+
+[if-any branches]
+  <br />Branch: <strong>[branches]</strong>
+[end]
+[if-any tags]
+  <br />CVS Tags: <strong>[tags]</strong>
+[end]
+[if-any branch_points]
+  <br />Branch point for: <strong>[branch_points]</strong>
+[end]
+[is roottype "cvs"]
+  [if-any changed]
+    <br />Changes since <strong>[prev]: [changed] lines</strong>
+  [end]
+[end]
+[if-any mime_type]
+  <br />File MIME type: [mime_type]
+[end]
+[is roottype "svn"][if-any size]
+  <br />File size: [size] byte(s)
+[end][end]
+[if-any lockinfo]
+  <br />Lock status: <img src="[docroot]/images/lock.png" alt="Locked" width="16" height="16" /> [lockinfo]
+[end]
+[is annotation "binary"]
+  <br /><strong>Unable to calculate annotation data on binary file contents.</strong>
+[end]
+[is annotation "error"]
+  <br /><strong>Error occurred while calculating annotation data.</strong>
+[end]
+[is state "dead"]
+  <br /><strong><em>FILE REMOVED</em></strong>
+[end]
+[if-any log]
+  <pre class="vc_log">[log]</pre>
+[end]
+</div>
+
+[if-any prefer_markup][define hide_binary_garbage]0[end][end]
+[if-any image_src_href][define hide_binary_garbage]0[end][end]
+
+[is hide_binary_garbage "1"]
+<p><strong>This file's contents are not viewable.
+   [if-any download_href]Please <a href="[download_href]">download</a>
+   this version of the file in order to view it.[end]</strong></p>
+[else]
+
+[define last_rev]0[end]
+[define rowclass]vc_row_even[end]
+
+[if-any lines]
+
+<div id="vc_file">
+<table cellspacing="0" cellpadding="0">
+[for lines]
+  [is lines.rev last_rev]
+  [else]
+    [is lines.rev rev]
+      [define rowclass]vc_row_special[end]
+    [else]
+      [is rowclass "vc_row_even"]
+        [define rowclass]vc_row_odd[end]
+      [else]
+        [define rowclass]vc_row_even[end]
+      [end]
+    [end]
+  [end]
+
+  <tr class="[rowclass]" id="l[lines.line_number]">
+    <td class="vc_file_line_number"><a href="#l[lines.line_number]">[lines.line_number]</a></td>
+[is annotation "annotated"]
+    <td class="vc_file_line_author">[is lines.rev last_rev]&nbsp;[else][lines.author][end]</td>
+    <td class="vc_file_line_rev">[is lines.rev last_rev]&nbsp;[else][if-any lines.diff_href]<a href="[lines.diff_href]">[end][lines.rev][if-any lines.diff_href]</a>[end][end]</td>
+[end]
+    <td class="vc_file_line_text">[lines.text]</td>
+  </tr>
+  [define last_rev][lines.rev][end]
+[end]
+</table>
+</div>
+
+[else]
+[if-any image_src_href]
+<div id="vc_file_image">
+<img src="[image_src_href]" alt="" />
+</div>
+[end]
+[end]
+[end]
+
+[include "include/props.ezt"]
+[include "include/footer.ezt"]
