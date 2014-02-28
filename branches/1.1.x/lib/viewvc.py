@@ -4777,13 +4777,9 @@ def load_config(pathname=None, server=None):
   # See if the environment contains overrides to the configuration
   # path.  If we have a SERVER object, consult its environment; use
   # the OS environment otherwise.
-  env_pathname = None
-  if server is not None:
-    env_pathname = (server.getenv("VIEWVC_CONF_PATHNAME")
-                    or server.getenv("VIEWCVS_CONF_PATHNAME"))
-  else:
-    env_pathname = (os.environ.get("VIEWVC_CONF_PATHNAME")
-                    or os.environ.get("VIEWCVS_CONF_PATHNAME"))
+  env_get = server and server.getenv or os.environ.get
+  env_pathname = (env_get("VIEWVC_CONF_PATHNAME")
+                  or env_get("VIEWCVS_CONF_PATHNAME"))
 
   # Try to find the configuration pathname by searching these ordered
   # locations: the environment, the passed-in PATHNAME, the hard-coded
@@ -4796,7 +4792,7 @@ def load_config(pathname=None, server=None):
   # Load the configuration!
   cfg = config.Config()
   cfg.set_defaults()
-  cfg.load_config(pathname, server and server.getenv("HTTP_HOST"))
+  cfg.load_config(pathname, env_get("HTTP_HOST"))
 
   # Load mime types file(s), but reverse the order -- our
   # configuration uses a most-to-least preferred approach, but the
