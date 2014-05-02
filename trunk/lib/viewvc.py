@@ -1762,7 +1762,10 @@ def markup_file_contents(request, cfg, file_lines, filename,
     # file, try to guess the lexer based on the file's content.
     if not pygments_lexer and is_text(mime_type) and file_lines:
       try:
-        pygments_lexer = guess_lexer(file_lines[0])
+        pygments_lexer = guess_lexer(file_lines[0],
+                                     encoding=encoding,
+                                     tabsize=cfg.options.tabsize,
+                                     stripnl=False)
       except ClassNotFound:
         pygments_lexer = None
         
