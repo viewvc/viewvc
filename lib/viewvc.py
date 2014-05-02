@@ -1766,7 +1766,10 @@ def markup_stream(request, cfg, blame_data, file_lines, filename,
     # file, try to guess the lexer based on the file's content.
     if not pygments_lexer and is_text(mime_type) and file_lines:
       try:
-        pygments_lexer = guess_lexer(file_lines[0])
+        pygments_lexer = guess_lexer(file_lines[0],
+                                     encoding=encoding,
+                                     tabsize=cfg.options.tabsize,
+                                     stripnl=False)
       except ClassNotFound:
         pygments_lexer = None
         
@@ -1791,7 +1794,8 @@ def markup_stream(request, cfg, blame_data, file_lines, filename,
     # objects.
     lines = []
     file_lines = transcode_text(string.join(file_lines, ''), encoding)
-    file_lines = string.rstrip(file_lines, '\n')
+    if file_lines[-1] == '\n':
+      file_lines = file_lines[:-1]
     file_lines = string.split(file_lines, '\n')
     for i in range(len(file_lines)):
       line = file_lines[i]
