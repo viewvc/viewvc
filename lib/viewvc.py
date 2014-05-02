@@ -1785,10 +1785,10 @@ def markup_file_contents(request, cfg, file_lines, filename,
     # Built output data comprised of marked-up and possibly-transcoded
     # source text lines wrapped in (possibly dummy) vclib.Annotation
     # objects.
-    file_data = transcode_text(''.join(file_lines), encoding)
-    if file_data[-1] == '\n':
-      file_data = file_data[:-1]
-    file_lines = file_data.split('\n')
+    file_lines = transcode_text(''.join(file_lines), encoding)
+    if file_lines[-1] == '\n':
+      file_lines = file_lines[:-1]
+    file_lines = file_lines.split('\n')
     for i in range(len(file_lines)):
       line = file_lines[i]
       if cfg.options.tabsize > 0:
