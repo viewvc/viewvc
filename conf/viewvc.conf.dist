@@ -1146,6 +1146,14 @@
 ##
 #authzfile =
 
+## root_relative_authzfile: Specifies the location of the
+## authorization rules file using an path relative to the repository.
+##
+## Example:
+## root_relative_authzfile = conf/access
+##
+#root_relative_authzfile = 
+
 ## force_username_case: Like the AuthzForceUsernameCase httpd.conf
 ## directive, set this to "upper" or "lower" to force the normalization
 ## to upper- or lower-case, respectively, of incoming usernames prior

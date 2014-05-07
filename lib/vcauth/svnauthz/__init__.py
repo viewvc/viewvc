@@ -21,15 +21,18 @@ from ConfigParser import ConfigParser
 class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   """Subversion authz authorizer module"""
   
-  def __init__(self, username, params={}):
+  def __init__(self, root_lookup_func, username, params={}):
     self.rootpaths = { }  # {root -> { paths -> access boolean for USERNAME }}
+    self.root_lookup_func = root_lookup_func
     
-    # Get the authz file location from a passed-in parameter.
+    # Get the authz file location from exactly one of our related
+    # passed-in parameters.
     self.authz_file = params.get('authzfile')
-    if not self.authz_file:
+    self.rel_authz_file = params.get('root_relative_authzfile')
+    if not (self.authz_file or self.rel_authz_file):
       raise debug.ViewVCException("No authzfile configured")
-    if not os.path.exists(self.authz_file):
-      raise debug.ViewVCException("Configured authzfile file not found")
+    if self.authz_file and self.rel_authz_file:
+      raise debug.ViewVCException("Multiple authzfile locations defined")
 
     # See if the admin wants us to do case normalization of usernames.
     self.force_username_case = params.get('force_username_case')
@@ -43,6 +46,13 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
       raise debug.ViewVCException("Invalid value for force_username_case "
                                   "option")
 
+  def _get_authz_file(self, rootname):
+    if self.rel_authz_file:
+      roottype, rootpath = self.root_lookup_func(rootname)
+      return os.path.join(rootpath, self.rel_authz_file)
+    else:
+      return self.authz_file
+    
   def _get_paths_for_root(self, rootname):
     if self.rootpaths.has_key(rootname):
       return self.rootpaths[rootname]
@@ -55,7 +65,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     cp = ConfigParser()
     cp.optionxform = lambda x: x
     try:
-      cp.read(self.authz_file)
+      cp.read(self._get_authz_file(rootname))
     except:
       raise debug.ViewVCException("Unable to parse configured authzfile file")
 

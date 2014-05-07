@@ -19,11 +19,15 @@ import vclib
 class GenericViewVCAuthorizer:
   """Abstract class encapsulating version control authorization routines."""
   
-  def __init__(self, username=None, params={}):
+  def __init__(self, root_lookup_func=None, username=None, params={}):
     """Create a GenericViewVCAuthorizer object which will be used to
     validate that USERNAME has the permissions needed to view version
-    control repositories (in whole or in part).  PARAMS is a
-    dictionary of custom parameters for the authorizer."""
+    control repositories (in whole or in part).
+
+    ROOT_LOOKUP_FUNC is a function that maps a root name to a 2-tuple
+    containing the root's type and path.
+
+    PARAMS is a dictionary of custom parameters for the authorizer."""
     pass
 
   def check_root_access(self, rootname):

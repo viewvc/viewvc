@@ -829,8 +829,12 @@ def setup_authorizer(cfg, username, rootname=None):
     if fp:
       fp.close()
 
+  # Add a rootname mapping callback function to the parameters.
+  def _root_lookup_func(cb_rootname):
+    return locate_root(cfg, cb_rootname)
+
   # Finally, instantiate our Authorizer.
-  return my_auth.ViewVCAuthorizer(username, params)
+  return my_auth.ViewVCAuthorizer(_root_lookup_func, username, params)
 
 def check_freshness(request, mtime=None, etag=None, weak=0):
   cfg = request.cfg
