@@ -15,7 +15,7 @@ import fnmatch
 
 class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   """A simple top-level module authorizer."""
-  def __init__(self, username, params={}):
+  def __init__(self, root_lookup_func, username, params={}):
     forbidden = params.get('forbidden', '')
     self.forbidden = map(lambda x: x.strip(),
                          filter(None, forbidden.split(',')))
