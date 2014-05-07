@@ -26,7 +26,7 @@ def _split_regexp(restr):
 
 class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   """A simple regular-expression-based authorizer."""
-  def __init__(self, username, params={}):
+  def __init__(self, root_lookup_func, username, params={}):
     forbidden = params.get('forbiddenre', '')
     self.forbidden = map(lambda x: _split_regexp(x.strip()),
                          filter(None, forbidden.split(',')))
