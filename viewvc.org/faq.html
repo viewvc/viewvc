@@ -402,14 +402,25 @@ application/vnd.openxmlformats-officedocument.wordprocessingml.template     dotx
    svn"?</p>
 
 <p>ViewVC uses Subversion's Python bindings to interact with and pull
-   information out of your Subversion repositories.  These bindings
-   are not, however, generally provided as part of the ViewVC
-   distribution &mdash; you have to install them yourself some other
-   way.  (For more information, contact the <a
-   href="http://subversion.tigris.org">Subversion</a> community.)  The
-   error you see is Python being asked to import the Subversion Python
-   bindings and being unable to do so, typically because the bindings
-   modules aren't found in the Python library search path.</p>
+   information out of your Subversion repositories.  The error you see
+   is Python being asked to import the Subversion Python bindings and
+   being unable to do so.  This is a common situation.  These bindings
+   are not generally provided as part of the ViewVC distribution
+   &mdash; you have to install them yourself some other way.<p>
+
+<p>In general, using the search term "python" with either "svn" or
+   "subversion" in your system's package management tool will very
+   likely point you to the package you require.  For example, on
+   Ubuntu Linux use the following command to install the Subversion
+   Python bindings via the system's package management tool:</p>
+
+<blockquote><pre>$ sudo apt-get python-svn
+</pre></blockquote>
+
+<p>For more information, contact
+   the <a href="http://subversion.apache.org">Subversion</a>
+   community.</p>
+
 </div>
 
 <div id="remote-svn-access">
