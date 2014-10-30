@@ -185,7 +185,7 @@ class CheckinDatabase:
         
     def GetMetadataValue(self, name):
         sql = "SELECT value FROM metadata WHERE name=%s"
-        sql_args = (name)
+        sql_args = (name, )
         cursor = self.db.cursor()
         cursor.execute(sql, sql_args)
         try:
