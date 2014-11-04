@@ -4,6 +4,7 @@ Version 1.1.23 (released ??-???-????)
   * fix markup display of files with trailing blank lines (issue #533)
   * add support for root-relative svnauthz access files (issue #535)
   * fix cvsdb MySQL-python argument conversion error (issue #539)
+  * fix double-escaping of revision links (issue #541)
 
 Version 1.1.22 (released 14-Jan-2014)
 
