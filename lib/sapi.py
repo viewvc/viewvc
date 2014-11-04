@@ -347,6 +347,11 @@ class ModPythonServer(ThreadedServer):
     ThreadedServer.__init__(self)
     self.request = request
     self.headerSent = 0
+    # mod_python 3.3.1 and earlier add in the CGI variables by default.
+    try:
+      self.request.add_cgi_vars()
+    except AttributeError:
+      pass
     
   def addheader(self, name, value):
     self.request.headers_out.add(name, value)
