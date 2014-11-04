@@ -1,6 +1,6 @@
 Version 1.0.14 (released ??-???-????)
 
-  * 
+  * fix bug that prevented mod_python 3.4+ deployment (issue #540)
 
 Version 1.0.13 (released 24-Oct-2012)
 
