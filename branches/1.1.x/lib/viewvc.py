@@ -1380,7 +1380,7 @@ class LogFormatter:
           def revision_to_url(rev):
             return self.request.get_url(view_func=view_revision,
                                         params={'revision': rev},
-                                        escape=1)
+                                        escape=0)
           lf.add_formatter(_re_rewrite_svnrevref, lf.format_svnrevref,
                            revision_to_url)
 
