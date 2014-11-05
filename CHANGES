@@ -1,4 +1,4 @@
-Version 1.1.23 (released ??-???-????)
+Version 1.1.23 (released 04-Nov-2014)
 
   * fix annotate bug triggered by files with trailing blank lines (issue #533)
   * fix markup display of files with trailing blank lines (issue #533)
