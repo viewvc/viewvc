@@ -117,9 +117,5 @@ numbers, and not literal):
 
        http://viewvc.tigris.org/ds/viewForumSummary.do?dsForumId=4253
 
-19. Post a new release notification at Freecode.
-
-       https://freecode.com/projects/viewvc/releases/new
-
-20. Merge CHANGES for this release into the CHANGES file for newer
+19. Merge CHANGES for this release into the CHANGES file for newer
     release lines and commit.
