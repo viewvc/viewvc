@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>ViewVC Help: Query The Commit Database</title>
+  <link rel="stylesheet" href="help.css" type="text/css" />
+  <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon" />
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+</head>
+<body>
+  <div><a href="http://viewvc.org/index.html"><img src="images/viewvc-logo.png" alt="ViewVC logotype" /></a></div>
+  <table>
+    <col class="menu" />
+    <col />
+    <tr><td>
+       <h3>Help:</h3>
+       <a href="help_rootview.html">General</a><br />
+       <a href="help_dirview.html">Directory&nbsp;View</a><br />
+       <a href="help_log.html">Log&nbsp;View</a><br />
+       <strong>Query&nbsp;Database</strong>
+    </td><td>
+  
+    <h1>ViewVC Help: Query The Commit Database</h1>
+  
+    <p> 
+      Select your parameters for querying the CVS commit database in the
+      form at the top of the page.  You
+      can search for multiple matches by typing a comma-seperated list
+      into the text fields.  Regular expressions, and wildcards are also
+      supported.  Blank text input fields are treated as wildcards.
+    </p>
+    <p>
+      Any of the text entry fields can take a comma-seperated list of
+      search arguments.  For example, to search for all commits from
+      authors <em>jpaint</em> and <em>gstein</em>, just type: <code>jpaint,
+      gstein</code> in the <em>Author</em> input box.  If you are searching
+      for items containing spaces or quotes, you will need to quote your
+      request.  For example, the same search above with quotes is:
+      <code>"jpaint", "gstein"</code>.
+    </p>
+    <p>                           
+      Wildcard and regular expression searches are entered in a similar
+      way to the quoted requests.  You must quote any wildcard or
+      regular expression request, and a command character preceeds the
+      first quote.  The command character <code>l</code>(lowercase L) is for wildcard
+      searches, and the wildcard character is a percent (<code>%</code>).  The
+      command character for regular expressions is <code>r</code>, and is
+      passed directly to MySQL, so you'll need to refer to the MySQL
+      manual for the exact regex syntax.  It is very similar to Perl.  A
+      wildard search for all files with a <em>.py</em> extention is:
+      <code>l"%.py"</code> in the <em>File</em> input box.  The same search done
+      with a regular expression is: <code>r".*\.py"</code>.
+    </p>
+    <p>                  
+      All search types can be mixed, as long as they are seperated by
+      commas.
+    </p>                                                    
+    </td></tr></table>
+  <hr />
+  <address><a href="mailto:users@viewvc.tigris.org">ViewVC Users Mailinglist</a></address>
+  </body>
+</html>
