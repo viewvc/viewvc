@@ -1,12 +1,16 @@
+/*
+ * COLORS
+ * --------
+ * #739c3e;
+ * #94bd5e;
+ * #b2d388;
+ */
 body {
-    background-color: #b2d388;
-    color: black;
-    font-family: serif;
+    background-color: white;
+    color: #222;
+    font-family: Optima, Segoe, "Segoe UI", Candara, Calibri, Arial, sans-serif;
+    line-height: 1.6em;
     margin: 0;
-}
-#title {
-    background-color: #739c3e;
-    height: 70px;
 }
 img {
     border: none;
@@ -20,29 +24,13 @@ address {
     font-style: normal;
 }
 h2 {
-    background-color: #94bd5e;
-    padding: 2px 0.5em 2px 0.5em;
-    margin: 0;
-    border-bottom: dotted 1px rgb(180,193,205);
-    font-size: 110%;
-}
-h3 {
-    margin: 0;
-    font-size: 100%;
-    font-weight: bold;
-    border-bottom: dotted 1px rgb(180,193,205);
-}
-h4 {
-    padding: 2px 0.5em 2px 0.5em;
-    margin: 0;
-    font-size: 90%;
-    font-weight: bold;
+    color: #739c3e;
+    margin: 0.5em 0 0 0;
 }
 p, dl, td, th {
     padding: 0.5em;
     margin: 0;
     font-size: 94%;
-    line-height: 1.4em;
 }
 ul, ol {
     font-size: 90%;
@@ -59,44 +47,31 @@ blockquote {
     font-style: italic;
     margin: 0 0.5in 0 0.5in;
     padding: 5px;
-    border: 1px dotted black;
+    line-height: 1.2em;
 }
 :target {
     border: 2px solid red;
 }
-.imagecaptionbox {
-    display: inline-block;
-    text-align: center;
-    margin: 0 1em;
-    font-size: 70%;
-}
-.section {
-    background: white;
-    border-color: rgb(24,24,24);
-    border-width: 1px;
-    border-style: solid;
-    padding: 0;
-    margin-bottom: 0.5em;
-    clear: both;
-}
-.section-body {
-    padding: 0.5em 1em;
-}
-.section p, .section dl, .section ul, .section ol { 
-    padding: 0.5em 0;
+
+/*
+ * REGIONS
+ */
+#title {
+    background-color: #739c3e;
+    height: 70px;
 }
 #menu {
     font-family: sans-serif;
-    background: black;
-    color: white;
+    background: #222;
+    color: #b2d388;
 }
 #menu a, #menu a:visited {
-    background: black;
+    background: #222;
     color: white;
     text-decoration: none;
 }
 #menu a:hover {
-    background: black;
+    background: #222;
     color: white;
     text-decoration: underline;
 }
@@ -105,44 +80,49 @@ blockquote {
     background: rgb(90%,97%,99%);
     font-size: 80%;
 }
-#pagetable {
-    width: 100%;
+#content {
+    font-size: 1.1em;
+    padding: 1em 3em;
+    max-width: 980px;
 }
-#pagetable tr {
-    vertical-align: top;
-}
-#pagecolumn1 {
-    width: 200px;
-    padding: 1em 0 0 0;
-}
-#pagecolumn1 a, #pagecolumn1 a:visited {
-    color: rgb(0,0,164);
-    text-decoration: none;
-}
-#pagecolumn1 a:hover {
-    text-decoration: underline;
-}
-#pagecolumn2 {
-    padding: 1em 2em;
-}
-#pagecolumn2 a, #pagecolumn2 a:visited {
+#content a, #content a:visited {
     color: rgb(0,0,164);
     text-decoration: underline;
 }
-#pagecolumn2 a:hover {
+#content a:hover {
     background-color: rgb(180,193,205);
     text-decoration: underline;
 }
 #bookmarks {
-    background: #d8faad;
     padding-left: 0.5em;
     white-space: nowrap;
-    border-color: rgb(24,24,24);
-    border-style: solid;
-    border-width: 1px 2px 2px 1px;
+    margin-bottom: 2em;
+    line-height: 2.4em;
 }
 #bookmarks li {
     list-style-type: none;
+}
+
+/*
+ * CLASSES
+ */
+.imagecaptionbox {
+    display: inline-block;
+    text-align: center;
+    margin: 0 1em;
+    font-size: 70%;
+}
+.section {
+    background: white;
+    padding: 0;
+    margin-bottom: 0.5em;
+    clear: both;
+}
+.section-body {
+    padding: 0.5em 0;
+}
+.section p, .section dl, .section ul, .section ol { 
+    padding: 0.5em 0;
 }
 .notice {
     border: 1px solid black;
