@@ -5,6 +5,15 @@ Version 1.2.0 (released ??-???-????)
   * allow user-configurable cvsgraph display (issue #336)
   * allow rNNNN syntax for Subversion revision numbers (issue #441)
 
+Version 1.1.23 (released 04-Nov-2014)
+
+  * fix annotate bug triggered by files with trailing blank lines (issue #533)
+  * fix markup display of files with trailing blank lines (issue #533)
+  * add support for root-relative svnauthz access files (issue #535)
+  * fix cvsdb MySQL-python argument conversion error (issue #539)
+  * fix double-escaping of revision links (issue #541)
+  * fix bug that prevented mod_python 3.4+ deployment (issue #540)
+
 Version 1.1.22 (released 14-Jan-2014)
 
   * minor directory sorting logic fix (re: show_subdir_lastmod)
