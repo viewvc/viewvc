@@ -16,6 +16,7 @@
 # -----------------------------------------------------------------------
 
 import types
+import string
 import os
 import sys
 import re
@@ -33,10 +34,10 @@ server = None
 # into HTML attributes.
 def escape(s):
   s = str(s)
-  s = s.replace('&', '&amp;')
-  s = s.replace('>', '&gt;')
-  s = s.replace('<', '&lt;')
-  s = s.replace('"', "&quot;")
+  s = string.replace(s, '&', '&amp;')
+  s = string.replace(s, '>', '&gt;')
+  s = string.replace(s, '<', '&lt;')
+  s = string.replace(s, '"', "&quot;")
   return s
 
   
@@ -209,6 +210,9 @@ class WsgiServer(Server):
 
     global server
     server = self
+
+    global cgi
+    import cgi
 
   def addheader(self, name, value):
     self._headers.append((name, value))

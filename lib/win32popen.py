@@ -14,7 +14,7 @@
 #
 # -----------------------------------------------------------------------
 
-import os, sys, traceback, thread
+import os, sys, traceback, string, thread
 try:
   import win32api
 except ImportError, e:
@@ -40,9 +40,9 @@ def CommandLine(command, args):
   """Convert an executable path and a sequence of arguments into a command
   line that can be passed to CreateProcess"""
 
-  cmd = "\"" + command.replace("\"", "\"\"") + "\""
+  cmd = "\"" + string.replace(command, "\"", "\"\"") + "\""
   for arg in args:
-    cmd = cmd + " \"" + arg.replace("\"", "\"\"") + "\""
+    cmd = cmd + " \"" + string.replace(arg, "\"", "\"\"") + "\""
   return cmd
 
 def CreateProcess(cmd, hStdInput, hStdOutput, hStdError):
@@ -109,13 +109,13 @@ def CreatePipe(readInheritable, writeInheritable):
 
 def File2FileObject(pipe, mode):
   """Make a C stdio file object out of a win32 file handle"""
-  if mode.find('r') >= 0:
+  if string.find(mode, 'r') >= 0:
     wmode = os.O_RDONLY
-  elif mode.find('w') >= 0:
+  elif string.find(mode, 'w') >= 0:
     wmode = os.O_WRONLY
-  if mode.find('b') >= 0:
+  if string.find(mode, 'b') >= 0:
     wmode = wmode | os.O_BINARY
-  if mode.find('t') >= 0:
+  if string.find(mode, 't') >= 0:
     wmode = wmode | os.O_TEXT
   return os.fdopen(msvcrt.open_osfhandle(pipe.Detach(),wmode),mode)
 

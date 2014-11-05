@@ -11,11 +11,6 @@
 # -----------------------------------------------------------------------
 import os
 import os.path
-import time
-
-
-def cvs_strptime(timestr):
-  return time.strptime(timestr, '%Y/%m/%d %H:%M:%S')[:-1] + (0,)
 
 
 def canonicalize_rootpath(rootpath):
