@@ -3662,12 +3662,13 @@ class DiffDescription:
     self.changes.append(_item(diff_block_format='anchor', anchor=anchor_name))
 
   def get_content_diff(self, left, right):
+    cfg = self.request.cfg
     diff_options = {}
     if self.context != -1:
       diff_options['context'] = self.context
+    if self.human_readable or self.diff_format == 'u':
+      diff_options['funout'] = cfg.options.hr_funout      
     if self.human_readable:
-      cfg = self.request.cfg
-      diff_options['funout'] = cfg.options.hr_funout
       diff_options['ignore_white'] = cfg.options.hr_ignore_white
       diff_options['ignore_keyword_subst'] = \
                       cfg.options.hr_ignore_keyword_subst
