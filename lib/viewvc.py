@@ -2864,7 +2864,7 @@ def view_log(request):
     'rev_selected' : selected_rev,
     'diff_format' : diff_format,
     'logsort' : logsort,
-    'human_readable' : ezt.boolean(diff_format in ('h', 'l')),
+    'human_readable' : ezt.boolean(diff_format in ('f', 'h', 'l')),
     'log_pagestart' : None,
     'log_paging_action' : None,
     'log_paging_hidden_values' : [],
@@ -3526,8 +3526,9 @@ def view_diff(request):
     raise debug.ViewVCException('Diff format %s not understood'
                                  % format, '400 Bad Request')
 
-  if human_readable:
+  if human_readable or format == 'u':
     diff_options['funout'] = cfg.options.hr_funout
+  if human_readable:
     diff_options['ignore_white'] = cfg.options.hr_ignore_white
     diff_options['ignore_keyword_subst'] = cfg.options.hr_ignore_keyword_subst
   try:
