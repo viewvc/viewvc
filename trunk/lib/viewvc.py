@@ -2862,7 +2862,7 @@ def view_log(request):
     'rev_selected' : selected_rev,
     'diff_format' : diff_format,
     'logsort' : logsort,
-    'human_readable' : ezt.boolean(diff_format in ('h', 'l')),
+    'human_readable' : ezt.boolean(diff_format in ('f', 'h', 'l')),
     'log_pagestart' : None,
     'log_paging_action' : None,
     'log_paging_hidden_values' : [],
