@@ -1,6 +1,7 @@
 Version 1.1.24 (released ??-???-????)
 
-  *
+  * fix minor bug in human_readable boolean calculation
+  * allow hr_funout option to apply to unidiff diffs, too
 
 Version 1.1.23 (released 04-Nov-2014)
 
