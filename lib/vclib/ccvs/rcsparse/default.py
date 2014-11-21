@@ -87,6 +87,10 @@ class _TokenStream:
 
         # we stopped at the end of the buffer, so we may have a partial token
         buf = self.rcsfile.read(self.CHUNK_SIZE)
+        if buf == '':
+          # signal EOF by returning None as the token
+          del self.buf   # so we fail if get() is called again
+          return None
         lbuf = len(buf)
         idx = end = 0
 
