@@ -121,11 +121,11 @@ installation instructions.
    path in some of the files, and ViewVC cannot be moved to a 
    different path after the install.
 
-   Note: while 'root' is usually required to create /usr/local/viewvc,
+   NOTE: while 'root' is usually required to create /usr/local/viewvc,
    ViewVC does not have to be installed as root, nor does it run as root.
    It is just as valid to place ViewVC in a home directory, too.
 
-   Note: viewvc-install will create directories if needed. It will
+   NOTE: viewvc-install will create directories if needed. It will
    prompt before overwriting files that may have been modified (such
    as viewvc.conf), thus making it safe to install over the top of
    a previous installation. It will always overwrite program files,
@@ -235,7 +235,7 @@ APACHE CONFIGURATION
       Options +ExecCGI
       AddHandler cgi-script .cgi
      
-   Note: For this to work mod_cgi has to be loaded.  And for the .htaccess file
+   NOTE: For this to work mod_cgi has to be loaded.  And for the .htaccess file
    to be effective, "AllowOverride All" or "AllowOverride Options FileInfo"
    needs to have been specified for the directory.
    
@@ -254,7 +254,7 @@ APACHE CONFIGURATION
 
        SetEnv VIEWVC_CONF_PATHNAME /etc/viewvc.conf
    
-   Note: If you are using Mod_Python under Apache 1.3 the tarball generation
+   NOTE: If you are using Mod_Python under Apache 1.3 the tarball generation
    feature may not work because it uses multithreading.  This works fine
    under Apache 2.
    
@@ -274,7 +274,7 @@ APACHE CONFIGURATION
 
       WSGIApplicationGroup %{GLOBAL}
 
-   Note: WSGI support in ViewVC is at this time quite rudimentary,
+   NOTE: WSGI support in ViewVC is at this time quite rudimentary,
    bordering on downright experimental.  Your mileage may vary.
 
    -----------------------------------------
