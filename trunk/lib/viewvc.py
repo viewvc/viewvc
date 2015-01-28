@@ -1854,9 +1854,9 @@ def make_time_string(date, cfg):
   if cfg.options.iso8601_timestamps:
     if cfg.options.use_localtime:
       if tm[8] and time.daylight:
-        tz = time.altzone
+        tz = -time.altzone
       else:
-        tz = time.timezone
+        tz = -time.timezone
       tz = float(tz) / 3600.0
       tz = '{0:+06.2f}'.format(tz).replace('.', ':')
     else:
