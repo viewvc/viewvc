@@ -125,6 +125,12 @@ installation instructions.
    ViewVC does not have to be installed as root, nor does it run as root.
    It is just as valid to place ViewVC in a home directory, too.
 
+   NOTE: if your system uses a restrictive umask, you might need to
+   adjust the permissions of the directory structure that
+   viewvc-install creates so that, for example, the modules in the
+   lib/ subdirectory are actually readable by the main programs in the
+   bin/ subdirectory.
+
    NOTE: viewvc-install will create directories if needed. It will
    prompt before overwriting files that may have been modified (such
    as viewvc.conf), thus making it safe to install over the top of
