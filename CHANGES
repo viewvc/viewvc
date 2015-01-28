@@ -3,6 +3,7 @@ Version 1.1.24 (released ??-???-????)
   * fix minor bug in human_readable boolean calculation
   * allow hr_funout option to apply to unidiff diffs, too
   * fix infinite loop in rcsparse
+  * fix iso8601 timezone offset handling (issue #542)
 
 Version 1.1.23 (released 04-Nov-2014)
 
