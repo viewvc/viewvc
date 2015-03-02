@@ -217,6 +217,12 @@ class Request:
     elif cfg.options.root_as_url_component:
       needs_redirect = 1
 
+    # Take care of old-new roots mapping
+    for old_root, new_root in cfg.general.renamed_roots.iteritems():
+      if self.rootname == old_root:
+        self.rootname = new_root
+        needs_redirect = 1
+
     self.where = _path_join(path_parts)
     self.path_parts = path_parts
 
