@@ -156,6 +156,20 @@
 ##
 #root_parents =
 
+## renamed_roots: Specifies a mapping between the old names of version control
+## roots/repositories and their current names.
+##
+## When the name of a CVS or Subversion root has been changed (e.g. the project
+## name has been changed), existing external links to views of that root will
+## cease to resolve.  This mapping causes ViewVC to continue to recognize the
+## previous root name and automatically redirect the web browser to the appropriate
+## location in the renamed root.
+##
+## Example:
+## renamed_roots = old_root_name: new_root_name,
+##                 backrub: google,
+#renamed_roots = 
+
 ## default_root: This is the name of the default root.  Valid names
 ## include those explicitly listed in the cvs_roots and svn_roots
 ## configuration options, as well as those implicitly indicated by
