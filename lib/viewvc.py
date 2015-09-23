@@ -2485,12 +2485,16 @@ def view_directory(request):
     plain_tags = options['cvs_tags']
     plain_tags.sort(icmp)
     plain_tags.reverse()
-    data['plain_tags']= plain_tags
+    data['plain_tags'] = []
+    for plain_tag in plain_tags:
+      data['plain_tags'].append(_item(name=plain_tag,revision=None))
 
     branch_tags = options['cvs_branches']
     branch_tags.sort(icmp)
     branch_tags.reverse()
-    data['branch_tags']= branch_tags
+    data['branch_tags'] = []
+    for branch_tag in branch_tags:
+      data['branch_tags'].append(_item(name=branch_tag,revision=None))
     
     data['attic_showing'] = ezt.boolean(not hideattic)
     data['show_attic_href'] = request.get_url(params={'hideattic': 0},
@@ -2942,12 +2946,16 @@ def view_log(request):
     data['default_branch'] = prep_tags(request, branches)
 
   for tag, rev in tagitems:
+    rev_str = None
+    if rev.number:
+      rev_str = '.'.join(map(str, rev.number))
+
     if rev.co_rev:
       data['tags'].append(_item(rev=rev.co_rev.string, name=tag))
     if rev.is_branch:
-      data['branch_tags'].append(tag)
+      data['branch_tags'].append(_item(name=tag,revision=rev_str))
     else:
-      data['plain_tags'].append(tag)
+      data['plain_tags'].append(_item(name=tag,revision=rev_str))
 
   if cfg.options.log_pagesize:
     data['log_paging_action'], data['log_paging_hidden_values'] = \
