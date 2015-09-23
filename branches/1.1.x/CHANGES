@@ -5,6 +5,7 @@ Version 1.1.24 (released ??-???-????)
   * fix infinite loop in rcsparse
   * fix iso8601 timezone offset handling (issue #542)
   * add support for renamed roots (issue #544)
+  * fix minor buglet in viewvc-install error message
 
 Version 1.1.23 (released 04-Nov-2014)
 

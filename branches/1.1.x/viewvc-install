@@ -414,7 +414,7 @@ if __name__ == "__main__":
         if opt == '--clean-mode':
             arg = arg.lower()
             if arg not in ('true', 'false'):
-                usage_and_exit("Invalid value for --overwrite parameter.")
+                usage_and_exit("Invalid value for --clean-mode parameter.")
             CLEAN_MODE = arg
 
     # Print the header greeting.
