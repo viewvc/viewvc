@@ -8,17 +8,23 @@
   [if-any branch_tags]
     <optgroup label="Branches">
     [for branch_tags]
-      <option [is branch_tags.name pathrev]selected[define pathrev_selected][end][end]
-        value="[branch_tags.name]">[branch_tags.name][if-any branch_tags.revision] ([branch_tags.revision])[end]
-      </option>
+      [is branch_tags pathrev]
+        <option selected>[branch_tags]</option>
+        [define pathrev_selected][end]
+      [else]
+        <option>[branch_tags]</option>
+      [end]
     [end]
     </optgroup>
   [end]
   <optgroup label="Non-branch tags">
   [for plain_tags]
-    <option [is plain_tags.name pathrev]selected[define pathrev_selected][end][end]
-      value="[plain_tags.name]">[plain_tags.name][if-any plain_tags.revision] ([plain_tags.revision])[end]
-    </option>
+    [is plain_tags pathrev]
+      <option selected>[plain_tags]</option>
+      [define pathrev_selected][end]
+    [else]
+      <option>[plain_tags]</option>
+    [end]
   [end]
   </optgroup>
   [if-any pathrev_selected]

@@ -15,6 +15,7 @@
 # -----------------------------------------------------------------------
 
 import re
+import string
 
 
 def language(hdr):
@@ -39,7 +40,7 @@ def _parse(hdr, result):
     name = _re_token.match(hdr, pos)
     if not name:
       raise AcceptLanguageParseError()
-    a = result.item_class(name.group(1).lower())
+    a = result.item_class(string.lower(name.group(1)))
     pos = name.end()
     while 1:
       # are we looking at a parameter?
@@ -55,7 +56,7 @@ def _parse(hdr, result):
         # the "=" was probably missing
         continue
 
-      pname = match.group(1).lower()
+      pname = string.lower(match.group(1))
       if pname == 'q' or pname == 'qs':
         try:
           a.quality = float(match.group(2))
@@ -69,7 +70,7 @@ def _parse(hdr, result):
           # bad float literal
           pass
       elif pname == 'charset':
-        a.charset = match.group(2).lower()
+        a.charset = string.lower(match.group(2))
 
     result.append(a)
     if hdr[pos:pos+1] == ',':
