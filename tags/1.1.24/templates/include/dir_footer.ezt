@@ -1,0 +1,9 @@
+[# if you want to disable tarball generation remove the following: ]
+[if-any tarball_href]
+<hr/>
+<p style="margin:0;"><a href="[tarball_href]">Download GNU tarball</a></p>
+[end]
+
+[include "props.ezt"]
+[include "footer.ezt"]
+

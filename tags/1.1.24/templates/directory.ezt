@@ -1,0 +1,120 @@
+[include "include/dir_header.ezt"]
+
+<table cellspacing="1" cellpadding="2">
+<thead>
+<tr>
+  <th class="vc_header[is sortby "file"]_sort[end]" colspan="2">
+    [if-any sortby_file_href]<a href="[sortby_file_href]#dirlist">File</a>[else]File[end]
+    [is sortby "file"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
+    [end]
+  </th>
+  <th class="vc_header[is sortby "rev"]_sort[end]">
+   [if-any sortby_rev_href]<a href="[sortby_rev_href]#dirlist">Rev.</a>[else]Rev.[end]
+    [is sortby "rev"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
+    [end]
+  </th>
+  <th class="vc_header[is sortby "date"]_sort[end]">
+    [if-any sortby_date_href]<a href="[sortby_date_href]#dirlist">Age</a>[else]Age[end]
+    [is sortby "date"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
+    [end]
+  </th>
+  <th class="vc_header[is sortby "author"]_sort[end]">
+    [if-any sortby_author_href]<a href="[sortby_author_href]#dirlist">Author</a>[else]Author[end]
+    [is sortby "author"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
+    [end]
+  </th>
+[is cfg.options.show_logs "1"]
+  <th class="vc_header[is sortby "log"]_sort[end]">
+    [if-any sortby_log_href]<a href="[sortby_log_href]#dirlist">Last log entry</a>[else]Last log entry[end]
+    [is sortby "log"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
+    [end]
+  </th>
+[end]
+</tr>
+</thead>
+
+<tbody>
+[if-any up_href]
+  <tr class="vc_row_odd">
+    <td colspan="2">
+      <a href="[up_href]">
+      <img src="[docroot]/images/back_small.png" alt="" class="vc_icon"
+      />&nbsp;Parent&nbsp;Directory</a>
+    </td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    [is cfg.options.show_logs "1"]
+      <td>&nbsp;</td>
+    [end]
+  </tr>
+ [end]
+ [for entries]
+   <tr class="vc_row_[if-index entries even]even[else]odd[end]">
+     <td[if-any entries.graph_href][else] colspan="2"[end]>
+       [is entries.pathtype "dir"]
+       <a name="[entries.anchor]" href="[entries.view_href]" title="View directory contents">
+       [else]
+       <a name="[entries.anchor]" href="[entries.log_href]" title="View file revision log">
+       [end]
+       <img src="[docroot]/images/[is entries.pathtype "dir"]dir[else][is entries.state "dead"]broken[else]text[end][end].png" alt="" class="vc_icon" />
+       [entries.name][is entries.pathtype "dir"]/[end]</a>
+       [is entries.state "dead"](dead)[end]
+     </td>
+     [if-any entries.graph_href]
+       <td style="width:1%"><a href="[entries.graph_href]"
+       title="View Revision Graph"><img
+       src="[docroot]/images/cvsgraph_16x16.png"
+       alt="View Revision Graph" class="vc_icon" />
+       </a></td>
+     [end]
+     [if-any entries.errors]
+       <td colspan=[is cfg.options.show_logs "1"]4[else]3[end]>
+         [for entries.errors]<em>[entries.errors]</em>[end]
+       </td>
+     [else]
+       [is entries.pathtype "dir"]
+       <td>&nbsp;[if-any entries.rev]<a href="[entries.log_href]" title="View directory revision log"><strong>[entries.rev]</strong></a>[end]</td>
+       [else]
+       [define rev_href][if-any entries.prefer_markup][entries.view_href][else][if-any entries.download_href][entries.download_href][end][end][end]
+       <td style="white-space: nowrap;">&nbsp;[if-any entries.rev][if-any rev_href]<a href="[rev_href]" title="[if-any entries.prefer_markup]View[else]Download[end] file contents">[end]<strong>[entries.rev]</strong>[if-any rev_href]</a>[end][end]
+       [if-any entries.lockinfo]<img src="[docroot]/images/lock.png" alt="locked" class="vc_icon" title="Locked by [entries.lockinfo]" />[end]
+       </td>
+       [end]
+       <td>&nbsp;[entries.ago]</td>
+       <td>&nbsp;[entries.author]</td>
+       [is cfg.options.show_logs "1"]
+         <td>&nbsp;
+         [if-any entries.short_log]
+           [if-any entries.log_rev]
+             <em>(from [entries.log_file]/[entries.log_rev])</em>
+             [entries.short_log]
+           [else][if-any entries.rev]
+             [entries.short_log]
+           [end][end]
+         [end]
+         </td>
+       [end]
+     [end]
+  </tr>
+[end]
+</tbody>
+
+</table>
+
+[include "include/dir_footer.ezt"]
