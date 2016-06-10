@@ -105,7 +105,7 @@ def _compare_paths(path1, path2):
 
 
 def _rev2optrev(rev):
-  assert type(rev) is int
+  assert type(rev) in (int, long)
   rt = core.svn_opt_revision_t()
   rt.kind = core.svn_opt_revision_number
   rt.value.number = rev
