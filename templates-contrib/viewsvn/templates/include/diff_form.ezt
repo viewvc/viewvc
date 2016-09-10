@@ -1,0 +1,34 @@
+  <hr />
+  <p><a name="diff"></a>
+  This form allows you to request diffs between any two revisions of this file.
+  For each of the two "sides" of the diff,
+  enter a numeric revision.
+  </p>
+  <form method="get" action="[diff_select_action]" id="diff_select">
+
+  <table cellpadding="2" cellspacing="0" class="auto">
+  <tr>
+  <td>&nbsp;</td>
+  <td>
+  [for diff_select_hidden_values]<input type="hidden" name="[diff_select_hidden_values.name]" value="[diff_select_hidden_values.value]"/>[end]
+  Diffs between
+  <input type="text" size="12" name="r1"
+         value="[if-any rev_selected][rev_selected][else][first_revision][end]" />
+
+  and
+  <input type="text" size="12" name="r2" value="[last_revision]" />
+  </td>
+  </tr>
+  <tr>
+  <td>&nbsp;</td>
+  <td>
+  Type of Diff should be a
+  <select name="diff_format" onchange="submit()">
+    <option value="h" [is diff_format "h"]selected="selected"[end]>Colored Diff</option>
+    <option value="u" [is diff_format "u"]selected="selected"[end]>Unidiff</option>
+  </select>
+  <input type="submit" value="  Get Diffs  " />
+  </td>
+  </tr>
+  </table>
+  </form>

@@ -1,0 +1,7 @@
+[include "paging.ezt"]
+
+[is pathtype "file"]
+  [include "diff_form.ezt"]
+[end]
+
+[include "footer.ezt"]

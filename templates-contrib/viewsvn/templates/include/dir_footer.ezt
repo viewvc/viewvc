@@ -1,0 +1,28 @@
+[if-any where]
+  <table>
+    <tr>
+      <td style="text-align: right;">
+        [# 
+          Enable this section and replace protocoll://svnparentlocation with your SVN parent URL location
+          (e.g. https://server/svn) to enable direct TortoiseSVN checkouts. This works only if all your
+          repositories have the same location, e.g. if you use the SVNParentPath directive in mod_dav_svn
+        ]
+        <!--
+        <a href="tsvn:protocoll://svnparentlocation/[rootname]/[where]/" title="TortoiseSVN Checkout...">
+          <img src="[docroot]/images/tortoisesvn/checkout.png" alt="TortoiseSVN Checkout..."/>
+        </a>
+        &nbsp;
+        -->
+        [if-any tarball_href]
+        <a href="[tarball_href]" title="Download as GNU tarball">
+          <img src="[docroot]/images/download.png" alt="Download as GNU tarball"/>
+        </a>
+        [end]
+        &nbsp;
+      </td>
+    </tr>
+  </table>
+[end]
+
+[include "props.ezt"]
+[include "footer.ezt"]

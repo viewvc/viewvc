@@ -1,0 +1,27 @@
+<p style="margin:0;">
+<a href="[up_href]" title="Parent Directory" class="img"><img src="[docroot]/images/tortoisesvn/back_small.png" width="16" height="16" alt="Parent Directory" /></a>&nbsp;<a href="[up_href]">Parent Directory</a>
+
+[is view "markup"]
+  [if-any log_href] 
+    <a href="[log_href]" title="Revision Log" class="img"><img src="[docroot]/images/tortoisesvn/log.png" width="16" height="16" alt="Revision Log" /></a>&nbsp;<a href="[log_href]">Revision Log</a>
+  [end]
+[end]
+
+[is view "annotate"]
+  [if-any log_href] 
+    <a href="[log_href]" title="Revision Log" class="img"><img src="[docroot]/images/tortoisesvn/log.png" width="16" height="16" alt="Revision Log" /></a>&nbsp;<a href="[log_href]">Revision Log</a>
+  [end]
+[end]
+
+[is view "diff"]
+  [if-any log_href] 
+    <a href="[log_href]" title="Revision Log" class="img"><img src="[docroot]/images/tortoisesvn/log.png" width="16" height="16" alt="Revision Log" /></a>&nbsp;<a href="[log_href]">Revision Log</a>
+  [end]
+  <a href="[patch_href]" title="View Patch" class="img"><img src="[docroot]/images/tortoisesvn/patch.png" width="16" height="16" alt="View Patch" /></a>&nbsp;<a href="[patch_href]">Patch</a>
+[end]
+
+[is pathtype "file"]
+[else]
+  <a href="[view_href]" title="View Directory Listing" class="img"><img src="[docroot]/images/dir.png" width="16" height="16" alt="View Directory Listing" /></a>&nbsp;<a href="[view_href]">Directory Listing</a>
+[end]
+</p>

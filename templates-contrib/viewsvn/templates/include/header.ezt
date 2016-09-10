@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!-- ViewVC :: http://www.viewvc.org/ -->
+<head>
+  <title>[if-any rootname][[][rootname]][else]Subversion[end] [page_title]</title>
+  <meta name="generator" content="ViewVC [vsn]" />
+  [# set your favicon here ]
+  <!--
+  <link rel="shortcut icon" href="[docroot]/images/favicon-yourorganisation.ico" />
+  -->
+  <link rel="stylesheet" href="[docroot]/styles.css" type="text/css" />
+  [if-any rss_href]<link rel="alternate" type="application/rss+xml" title="RSS [[][rootname]][where]" href="[rss_href]" />[end]
+</head>
+<body>
+
+[is roottype "svn"][else][is page_title "Repository Listing"][else]
+<h1>
+Do not use this template set if you plan to view cvs repositories through ViewVC! 
+This template-set is heavily trimmed for Subversion needs. Special CVS features are 
+untested, possibly disabled or broken.
+</h1>
+[end][end]
+
+<div style="float: right; padding: 5px;">
+  [# insert your logo and link to your organisation here ]
+  <!--
+  <a href="http://www.yourorganisation.com" title="yourorganisation"><img src="[docroot]/images/logo-yourorganisation.png" alt="yourorganisation" /></a>
+  -->
+</div>
+
+<div class="vc_navheader">
+  <strong>[if-any roots_href]<a href="[roots_href]">[[]Repository Listing]</a> /[else]/[end]</strong>
+  [if-any nav_path]<strong>
+    [for nav_path]
+      [if-index nav_path last][else]
+        [if-any nav_path.href]<a href="[nav_path.href]">[end]
+      [end]
+      [if-index nav_path first]
+        [[][nav_path.name]]
+      [else]
+        [nav_path.name]
+      [end]
+      [if-index nav_path last][else]
+        [if-any nav_path.href]</a>[end]
+      [end]
+      [if-index nav_path last][else]/[end]
+    [end]
+    </strong>
+  [end]
+</div>
+
+<table>
+<tr>
+  <td>&nbsp;</td>
+  <td style="text-align: right;">[if-any username]Logged in as: <strong>[username]</strong>[end]</td>
+</tr>
+</table>
+
+<h1>[page_title]</h1>
+
+

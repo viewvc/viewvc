@@ -1,0 +1,53 @@
+[include "include/log_header.ezt"]
+
+[define first_revision][end]
+[define last_revision][end]
+
+[for entries]
+[if-index entries first][define first_revision][entries.rev][end][end]
+[if-index entries last][define last_revision][entries.rev][end][end]
+
+<div>
+  <hr />
+
+   <a name="rev[entries.rev]"></a>
+
+   Revision <a href="[entries.revision_href]"><strong>[entries.rev]</strong></a>&nbsp;
+   [is pathtype "file"]
+     [if-any entries.view_href]<a href="[entries.view_href]" title="View"><img src="[docroot]/images/text.png" alt="View"/></a>[end]
+   [else]
+     <a href="[entries.view_href]" title="Directory Listing"><img src="[docroot]/images/dir.png" alt="Directory Listing"/></a>
+   [end]
+   [if-any entries.download_href]<a href="[entries.download_href]" title="Download"><img src="[docroot]/images/download.png" alt="Download"/></a>[end]
+
+   [if-any entries.annotate_href]<a href="[entries.annotate_href]" title="Blame"><img src="[docroot]/images/tortoisesvn/blame.png" alt="Blame"/></a>[end]
+  <br />
+
+  [if-index entries last]Added[else]Modified[end]
+  
+  <em>[entries.date]</em> ([entries.ago] ago) by <em>[entries.author]</em>
+
+  [if-any entries.orig_path]
+    <br />Original Path: <a href="[entries.orig_href]"><em>[entries.orig_path]</em></a>
+  [end]
+
+  [if-any entries.size]
+  <br />File length: [entries.size] byte(s)
+  [end]
+
+  [if-any entries.copy_path]
+  <br />Copied from: <a href="[entries.copy_href]"><em>[entries.copy_path]</em></a> revision [entries.copy_rev]
+  [end]
+
+
+  [is pathtype "file"]
+   [if-any entries.prev]
+     <br />Diff to <a href="[entries.diff_to_prev_href]">previous [entries.prev]</a>
+   [end]
+ [end]
+
+<pre class="vc_log">[entries.log]</pre>
+</div>
+[end]
+
+[include "include/log_footer.ezt"]

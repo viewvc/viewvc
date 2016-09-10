@@ -1,0 +1,7 @@
+Template Set:  newvc
+Author(s):  C. Michael Pilato <cmpilato@red-bean.com>
+Compatibility:  ViewVC 1.1
+
+The "newvc" template set uses top navigation tabs to flip between
+various views of a file or directory, and aims for a clean-yet-modern
+look and feel.

@@ -1,0 +1,21 @@
+<form method="get" action="[pathrev_action]" style="display: inline">
+<div style="display: inline">
+[for pathrev_hidden_values]<input type="hidden" name="[pathrev_hidden_values.name]" value="[pathrev_hidden_values.value]"/>[end]
+  <input type="text" name="pathrev" value="[pathrev]" size="6"/>
+<input type="submit" value="Set" />
+</div>
+</form>
+
+[if-any pathrev]
+<form method="get" action="[pathrev_clear_action]" style="display: inline">
+<div style="display: inline">
+[for pathrev_clear_hidden_values]<input type="hidden" name="[pathrev_clear_hidden_values.name]" value="[pathrev_clear_hidden_values.value]"/>[end]
+[if-any lastrev]
+  [is pathrev lastrev][else]<input type="submit" value="Set to [lastrev]" />[end]
+  (<i>Current path doesn't exist after revision <strong>[lastrev]</strong></i>)
+[else]
+  <input type="submit" value="Clear" />
+[end]
+</div>
+</form>
+[end]

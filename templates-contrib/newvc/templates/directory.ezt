@@ -1,0 +1,139 @@
+[# setup page definitions]
+  [define page_title]Index of:[end]
+  [define help_href][docroot]/help_[if-any where]dir[else]root[end]view.html[end]
+[# end]
+[include "include/header.ezt" "directory"]
+
+[if-any where][else]
+  <!-- you may insert repository access instructions here -->
+[end]
+
+<table class="auto">
+[is picklist_len "0"][else][is picklist_len "1"][else]
+<tr>
+  <td>Jump to page:</td>
+  <td><form method="get" action="[dir_paging_action]">
+        [for dir_paging_hidden_values]<input type="hidden" name="[dir_paging_hidden_values.name]" value="[dir_paging_hidden_values.value]"/>[end]
+        <select name="dir_pagestart"  onchange="submit()">
+          [for picklist]
+            <option [is picklist.count dir_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] to [picklist.end]</option>
+          [end]
+        </select>
+        <input type="submit" value="Go" />
+      </form>
+  </td>
+</tr>
+[end][end]
+</table>
+
+<div id="vc_main_body">
+<!-- ************************************************************** -->
+
+<div id="vc_togglables">
+[is roottype "svn"]
+[if-any rev]r<a href="[revision_href]">[rev]</a>[end]
+[else]
+[is num_dead "0"]
+[else]
+  [if-any attic_showing]
+    <a href="[hide_attic_href]">Hide
+  [else]
+    <a href="[show_attic_href]">Show
+  [end]
+  dead files</a>
+[end]
+[end]
+</div>
+
+<table cellspacing="2" class="fixed" id="dirlist">
+<thead>
+<tr>
+  <th style="width: 200px" class="vc_header[is sortby "file"]_sort[end]">
+    <a href="[sortby_file_href]#dirlist">File
+    [is sortby "file"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
+    [end]
+    </a>
+  </th>
+  <th class="vc_header[is sortby "rev"]_sort[end]">
+    <a href="[sortby_rev_href]#dirlist">Last Change
+    [is sortby "rev"]
+      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
+        width="13" height="13"
+        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
+    [end]
+    </a>
+  </th>
+</tr>
+</thead>
+
+<tbody>
+[if-any up_href]
+  <tr class="vc_row_odd">
+    <td colspan="2">
+      <a href="[up_href]">
+      <img src="[docroot]/images/back_small.png" alt="" class="vc_icon"
+      />&nbsp;../</a>
+    </td>
+  </tr>
+ [end]
+[for entries]
+  [define click_href][is entries.pathtype "dir"][entries.view_href][else][if-any entries.prefer_markup][entries.view_href][else][entries.download_href][end][end][end]
+
+  <tr class="vc_row_[if-index entries even]even[else]odd[end]">
+    <td style="width: 200px" [if-any click_href]onclick="jumpTo('[click_href]')"[end]>
+    [if-any click_href]<a name="[entries.anchor]" href="[click_href]" title="[is entries.pathtype "dir"]View Directory Contents[else][if-any entries.prefer_markup]View[else]Download[end] File Contents[end]">[end]
+       <img src="[docroot]/images/[is entries.pathtype "dir"]dir[else][is entries.state "dead"]broken[else]text[end][end].png" alt="" class="vc_icon" />
+       [entries.name][is entries.pathtype "dir"]/[end][if-any click_href]</a>[end]
+       [is entries.state "dead"](dead)[end]
+    </td>
+
+    <td [if-any entries.log_href]onclick="jumpTo('[entries.log_href]')"[end]>
+      [if-any entries.rev]
+        <strong>[if-any entries.log_href]<a href="[entries.log_href]" title="Revision [entries.rev]">[entries.rev]</a>[else][entries.rev][end]</strong>
+        ([entries.ago] ago)
+        by <em>[entries.author]</em>:
+        [entries.log]
+        [is entries.pathtype "dir"][is roottype "cvs"]
+          <em>(from [entries.log_file]/[entries.log_rev])</em>
+        [end][end]
+      [end]
+    </td>
+  </tr>
+[end]
+</tbody>
+
+</table>
+
+<div id="vc_view_summary">
+[if-any search_re_action]
+<form class="inline" method="get" action="[search_re_action]">
+  <div class="inline">
+    [for search_re_hidden_values]<input type="hidden" name="[search_re_hidden_values.name]" value="[search_re_hidden_values.value]"/>[end]
+    <input type="text" name="search" value="[search_re]" />
+    <input type="submit" value="Search Files" />
+  </div>
+</form>
+[if-any search_re]
+<form class="inline" method="get" action="[search_re_action]">
+  <div class="inline">
+    [for search_re_hidden_values]<input type="hidden" name="[search_re_hidden_values.name]" value="[search_re_hidden_values.value]"/>[end]
+    <input type="submit" value="Show all files" />
+  </div>
+</form>
+[end]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[end]
+[include "include/pathrev_form.ezt"]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[files_shown] file[is files_shown "1"][else]s[end] shown
+</div>
+
+[include "include/props.ezt"]
+
+<!-- ************************************************************** -->
+</div>
+
+[include "include/footer.ezt"]
