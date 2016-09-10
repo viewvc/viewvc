@@ -1,0 +1,11 @@
+[# setup page definitions]
+  [define page_title]Graph of /[where][end]
+  [define help_href][docroot]/help_rootview.html[end]
+[# end]
+
+[include "include/header.ezt" "graph"]
+[include "include/file_header.ezt"]
+
+<hr />
+
+[include "include/footer.ezt"]

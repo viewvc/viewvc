@@ -1,0 +1,52 @@
+I.   INTRODUCTION
+
+
+ViewVC is a Subversion and CVS webbased repository viewer. Templates-viewsvn is
+a set of templates for a different look & feel.
+
+Warning:
+Do not use this template set if you plan to view cvs repositories through ViewVC! 
+This template-set is heavily trimmed for Subversion needs. Special CVS features are 
+untested, possibly disabled or broken.
+
+Please report enhancemants back to the ViewVC project or to me.
+jpeters7677@gmx.de
+
+
+
+
+II.  COMPATABILITY
+
+
+This template is compatible with ViewVC 1.0.x
+
+
+
+
+III. CREDITS
+
+
+Stylesheet color codes:
+Subversion Mailing List Archive
+http://svn.haxx.se/ 
+
+Images:
+All images in templates/docroot/images/tortoisesvn are licensed under the
+ToirtoiseSVN Icon license. See license.txt in this folder for more details.
+
+
+
+
+IV.  LINKS
+
+
+ViewVC:
+http://www.viewvc.org/
+
+Subversion:
+http://subversion.tigris.org/
+
+TortoiseSVN:
+http://tortoisesvn.net/
+
+

@@ -1,0 +1,60 @@
+[if-any search_re_form]
+  <hr />
+  [# this table holds the selectors on the left, and reset on the right ]
+  <table class="auto">
+        <tr>
+          <td>Show files containing the regular expression:</td>
+          <td>
+            <form method="get" action="[search_re_action]">
+              <div>
+                [search_re_hidden_values]
+                <input type="text" name="search" value="[search_re]" />
+                <input type="submit" value="Show" />
+              </div>
+            </form>
+          </td>
+        </tr>
+      [if-any search_re]
+        <tr>
+          <td>&nbsp;</td>
+          <td>
+            <form method="get" action="[search_tag_action]">
+              <div>
+                [search_tag_hidden_values]
+                <input type="submit" value="Show all files" />
+              </div>
+            </form>
+          </td>
+        </tr>
+    [end]
+  </table>
+[end]
+
+
+[if-any tarball_href]
+  [if-any where]
+    <table>
+      <tr>
+        <td style="text-align: right;">
+          [# 
+            Enable this section and replace protocoll://svnparentlocation with your SVN parent URL location
+            (e.g. https://server/svn) to enable direct TortoiseSVN checkouts. This works only if all your
+            repositories have the same location, e.g. if you use the SVNParentPath directive in mod_dav_svn
+          ]
+          <!--
+          <a href="tsvn:protocoll://svnparentlocation/[rootname]/[where]/" title="TortoiseSVN Checkout...">
+            <img src="[docroot]/images/tortoisesvn/checkout.png" alt="TortoiseSVN Checkout..."/>
+          </a>
+          &nbsp;
+          -->
+          [# if you want to disable tarball generation remove the following: ]
+          <a href="[tarball_href]" title="Download as GNU tarball">
+            <img src="[docroot]/images/download.png" alt="Download as GNU tarball"/>
+          </a>
+        </td>
+      </tr>
+    </table>
+  [end]
+[end]
+
+[include "footer.ezt"]
