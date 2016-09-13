@@ -29,6 +29,18 @@ The only hard software requirement for running ViewVC is a suitable version of P
 *   [ViewVC 1.1.x](https://raw.githubusercontent.com/viewvc/viewvc/1.1.x/INSTALL)
 *   [Unreleased bleeding edge (1.2-dev)](https://raw.githubusercontent.com/viewvc/viewvc/master/INSTALL)
 
+## Getting ViewVC
+
+Official ViewVC release archives are available for download at http://viewvc.org/downloads/.  To see what changes have been included in the release, see the [CHANGES](https://raw.githubusercontent.com/viewvc/viewvc/master/CHANGES) file.
+
+Un-official nightly builds are available at http://viewvc.org/nightly/
+
+## Upgrading
+
+We've tried to ensure that ViewVC URLs are stable, and that even when we deprecate a particular URL syntax, we continue to support the handling of it (using HTTP redirects to point browsers to the new form of that URL). We know that ViewVC URLs get bookmarked, and nobody likes when their bookmarked URLs suddenly stop working.
+
+Across patch releases of ViewVC (when only the Z component of version X.Y.Z changes), we do our best to keep the configuration file syntax and template data dictionary unchanged, too. This makes it much easier for folks who need to upgrade quickly to get security or other bug fixes. But across major and minor releases, all bets are off, and chances are good that we've done some major plumbing. When upgrading your ViewVC instance across major or minor version numbers, you'll almost certainly want to consult the "Upgrading HOWTO" document in the `docs/` directory of the release archive for tips on how to migrate your configuration files and any template customizations you've made into their new formats.
+
 ## License
 
 **Copyright © 1999-2016 The ViewCVS Group. All rights reserved.**
