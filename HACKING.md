@@ -51,7 +51,7 @@ please don't use `os.system()` or `os.popen()`.  Please use the module
 `lib/popen.py` that is included in the ViewVC distribution instead.
 
 You might also wish to consult the list of previously reported
-[security vulnerabilities](http://viewvc.org/security/) to get an idea
+[security vulnerabilities](./SECURITY.md) to get an idea
 of what kinds of bugs ViewVC has historically had in this area.  That
 knowledge could just help you to avoid introducing similar problems
 into future releases.
