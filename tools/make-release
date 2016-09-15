@@ -49,18 +49,18 @@ for PLATFORM in unix windows; do
 
   ### Various shifting, cleanup.  
 
-  # Remove some not useful directories
-  for JUNK in elemx \
-              misc \
+  # Remove some not useful stuff
+  for JUNK in .gitignore \
+              elemx \
               notes \
               tests \
               tools \
-              tparse \
-              viewcvs.sourceforge.net \
-              viewvc.org \
-              www; do
+              tparse; do
     if [ -d ${TARGET}/${JUNK} ]; then
-      echo "   Removing ${TARGET}/${JUNK}..."
+      echo "   Removing directory ${TARGET}/${JUNK}..."
+      rm -r ${TARGET}/${JUNK}
+    elif [ -f ${TARGET}/${JUNK} ]; then
+      echo "   Removing file ${TARGET}/${JUNK}..."
       rm -r ${TARGET}/${JUNK}
     fi
   done
