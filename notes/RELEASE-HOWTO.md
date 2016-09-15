@@ -114,7 +114,7 @@ Those steps are as follows:
 
 6.  Go into an empty directory and run the `make-release` script:
 
-        > $ tools/make-release viewvc-X.Y.Z tags/X.Y.Z
+    > $ tools/make-release viewvc-X.Y.Z tags/X.Y.Z
 
 7.  Verify the archive files:
 
