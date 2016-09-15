@@ -52,13 +52,7 @@ def bump_years(target_dir):
   year = time.strftime('%Y')
   long_date = time.strftime('%B %d, %Y')
   bump_years_recursive(target_dir, year)
-  sys.stdout.write("""\
-Copyright years bumped.  Don't forget to add the following line to
-the primary license file at '%s':
-
-  <li>%s &mdash; copyright years updated</li>
-  
-""" % (os.path.join(target_dir, 'LICENSE.html'), long_date))
+  sys.stdout.write("Copyright years bumped.\n\n")
     
 if __name__ == "__main__":
   try:
