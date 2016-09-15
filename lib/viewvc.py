@@ -14,7 +14,7 @@
 #
 # -----------------------------------------------------------------------
 
-__version__ = '1.1.25'
+__version__ = '1.1.26-dev'
 
 # this comes from our library; measure the startup time
 import debug
