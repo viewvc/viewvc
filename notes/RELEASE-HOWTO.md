@@ -134,3 +134,20 @@ Those steps are as follows:
 
 10. Copy the `CHANGES` entries for this release into the `CHANGES`
     file for newer release lines and commit.
+
+11. Edit the GitHub release (at https://github.com/viewvc/viewvc/releases/tag/X.Y.Z):
+
+    * Changing the release title to "ViewVC X.Y.Z"
+ 
+    * Copy the `CHANGES` entries for the release into the description:
+
+        ```
+        ChangeLog:
+         
+          * Did some stuff.
+          * Fixed some bugs.
+         ```
+         
+    * Attach the release archive files (tar.gz and zip) to the release.
+
+        
