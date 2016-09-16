@@ -41,7 +41,7 @@ Across patch releases of ViewVC (when only the Z component of version X.Y.Z chan
 
 ## Contributing
 
-Some notes for contributing to ViewVC's source code are include in our [HACKING.md](./HACKING.md) document.
+Some notes for contributing to ViewVC's source code are include in our [HACKING.md](./notes/HACKING.md) document.
 
 ## License
 
