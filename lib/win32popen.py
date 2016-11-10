@@ -184,7 +184,7 @@ def SpoolWorker(srcHandle, destHandle, outFiles, doneEvent):
         hr, data = win32file.ReadFile(srcHandle, buffer)
         #print >> SPOOL_ERROR, "ReadFile returned '%s', '%s'" % (str(hr), str(data)); SPOOL_ERROR.flush()
         if hr != 0:
-          raise "win32file.ReadFile returned %i, '%s'" % (hr, data)
+          raise Exception("win32file.ReadFile returned %i, '%s'" % (hr, data))
         elif len(data) == 0:
           break
       except pywintypes.error, e:
@@ -205,7 +205,7 @@ def SpoolWorker(srcHandle, destHandle, outFiles, doneEvent):
         hr, bytes = win32file.WriteFile(destHandle, data)
         #print >> SPOOL_ERROR, "WriteFile() passed %i bytes and returned %i, %i" % (len(data), hr, bytes); SPOOL_ERROR.flush()
         if hr != 0 or bytes != len(data):
-          raise "win32file.WriteFile() passed %i bytes and returned %i, %i" % (len(data), hr, bytes)
+          raise Exception("win32file.WriteFile() passed %i bytes and returned %i, %i" % (len(data), hr, bytes))
 
     srcHandle.Close()
 
