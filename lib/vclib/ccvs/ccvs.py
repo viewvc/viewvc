@@ -110,7 +110,7 @@ class CCVSRepository(BaseCVSRepository):
       filtered_revs.sort(_logsort_date_cmp)
     elif sortby == vclib.SORTBY_REV:
       filtered_revs.sort(_logsort_rev_cmp)
-      
+
     if len(filtered_revs) < first:
       return []
     if limit:
@@ -122,7 +122,7 @@ class CCVSRepository(BaseCVSRepository):
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts1)))
     if self.itemtype(path_parts2, rev2) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts2)))
-    
+
     temp1 = tempfile.mktemp()
     open(temp1, 'wb').write(self.openfile(path_parts1, rev1, {})[0].getvalue())
     temp2 = tempfile.mktemp()
@@ -213,20 +213,20 @@ class InfoSink(MatchingSink):
     if not self.saw_revision:
       #self.entry.errors.append("No revisions exist on %s" % (view_tag or "MAIN"))
       self.entry.absent = 1
-    
+
   def set_locker(self, rev, locker):
     self.lockinfo[rev] = locker
-    
+
   def define_revision(self, revision, date, author, state, branches, next):
     self.saw_revision = True
-    
+
     if self.perfect_match:
       return
 
     tag = self.find_tag
     rev = Revision(revision, date, author, state == "dead")
     rev.lockinfo = self.lockinfo.get(revision)
-    
+
     # perfect match if revision number matches tag number or if
     # revision is on trunk and tag points to trunk.  imperfect match
     # if tag refers to a branch and either a) this revision is the
@@ -266,7 +266,7 @@ class TreeSink(rcsparse.Sink):
     self.head = None
     self.default_branch = None
     self.lockinfo = { }
-    
+
   def set_head_revision(self, revision):
     self.head = revision
 
@@ -275,7 +275,7 @@ class TreeSink(rcsparse.Sink):
 
   def set_locker(self, rev, locker):
     self.lockinfo[rev] = locker
-    
+
   def define_tag(self, name, revision):
     # check !tags.has_key(tag_name)
     self.tags[name] = revision
