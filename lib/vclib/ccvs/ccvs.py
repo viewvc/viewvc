@@ -309,7 +309,7 @@ class TreeSink(rcsparse.Sink):
             added = added + count
             idx = idx + count
           elif command:
-            raise "error while parsing deltatext: %s" % command
+            raise vclib.Error("error while parsing deltatext: %s" % command)
 
     if len(rev.number) == 2:
       rev.next_changed = changed and "+%i -%i" % (deled, added)
