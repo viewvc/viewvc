@@ -114,8 +114,9 @@
 ## root_parents: Specifies a list of directories under which any
 ## number of repositories may reside.  You can specify multiple root
 ## parents separated by commas or new lines, each of which is of the
-## form "path: type" (where the type is either "cvs" or "svn", and
-## the path is an absolute filesystem path).
+## form "path [= context] : type" (where the type is either "cvs" or
+## "svn", the path is an absolute filesystem path, and the (optional)
+## context is prepended to each repository's name).
 ##
 ## Rather than force you to add a new entry to 'cvs_roots' or
 ## 'svn_roots' each time you create a new repository, ViewVC rewards
@@ -152,6 +153,8 @@
 ##
 ## Example:
 ## root_parents = /opt/svn: svn,
+##                /home/alice/svn = alice : svn
+##                /home/bob/svn = bob : svn
 ##                /opt/cvs: cvs
 ##
 #root_parents =

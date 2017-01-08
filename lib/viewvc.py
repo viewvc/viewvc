@@ -209,7 +209,23 @@ class Request:
     elif self.rootname is None:
       if cfg.options.root_as_url_component:
         if path_parts:
-          self.rootname = path_parts.pop(0)
+          roottype, rootpath, self.rootname, new_path_parts = \
+                  locate_root_from_path(cfg, path_parts)
+          if roottype is None:
+            # Perhaps the root name is candidate for renaming...
+            # Take care of old-new roots mapping
+            for old_root, new_root in cfg.general.renamed_roots.iteritems():
+              pp = _path_parts(old_root)
+              if _path_starts_with(path_parts, pp):
+                path_parts = path_parts[len(pp):]
+                self.rootname = new_root
+                needs_redirect = 1
+            if self.rootname is None:
+              # Not found; interpret whole path as root, to show as error
+              self.rootname = _path_join(path_parts)
+              path_parts = []
+          else:
+            path_parts = new_path_parts
         else:
           self.rootname = ""
       elif self.view_func != view_roots:
@@ -740,6 +756,13 @@ _legal_params = {
 
 def _path_join(path_parts):
   return '/'.join(path_parts)
+
+def _path_starts_with(path_parts, first_path_parts):
+  if not path_parts:
+    return False
+  if len(path_parts) < len(first_path_parts):
+    return False
+  return path_parts[0:len(first_path_parts)] == first_path_parts
 
 def _strip_suffix(suffix, path_parts, rev, pathtype, repos, view_func):
   """strip the suffix from a repository path if the resulting path
@@ -3952,7 +3975,9 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
   if request.path_parts:
     tar_dir = request.path_parts[-1] + '/'
   else:
-    tar_dir = request.rootname + '/'
+    # Don't handle context as a directory in the tar ball.
+    root_path_parts = _path_parts(request.rootname)
+    tar_dir = root_path_parts[-1] + '/'
   if reldir:
     tar_dir = tar_dir + _path_join(reldir) + '/'
 
@@ -4938,76 +4963,146 @@ def list_roots(request):
     
   return allroots
 
+def _parse_root_parent(pp):
+  """Parse a single root parent "directory [= context] : repo_type" string
+  and return as tuple."""
+
+  pos = pp.rfind(':')
+  if pos > 0:
+    repo_type = pp[pos+1:].strip()
+    pp = pp[:pos].strip()
+  else:
+    repo_type = None
+
+  pos = pp.rfind('=')
+  if pos > 0:
+    context = _path_parts(pp[pos+1:].strip())
+    pp = pp[:pos].strip()
+  else:
+    context = None
+
+  path = os.path.normpath(pp)
+  return path,context,repo_type
+
 def expand_root_parents(cfg):
   """Expand the configured root parents into individual roots."""
   
-  # Each item in root_parents is a "directory : repo_type" string.
+  # Each item in root_parents is a "directory [= context ] : repo_type" string.
   for pp in cfg.general.root_parents:
-    pos = pp.rfind(':')
-    if pos < 0:
+    path,context,repo_type = _parse_root_parent(pp)
+
+    if repo_type == 'cvs':
+      roots = vclib.ccvs.expand_root_parent(path)
+      if cfg.options.hide_cvsroot and roots.has_key('CVSROOT'):
+        del roots['CVSROOT']
+      if context:
+        fullroots = {}
+        for root, rootpath in roots.iteritems():
+          fullroots[_path_join(context + [root])] = rootpath
+        cfg.general.cvs_roots.update(fullroots)
+      else:
+        cfg.general.cvs_roots.update(roots)
+    elif repo_type == 'svn':
+      roots = vclib.svn.expand_root_parent(path)
+      if context:
+        fullroots = {}
+        for root, rootpath in roots.iteritems():
+          fullroots[_path_join(context + [root])] = rootpath
+        cfg.general.svn_roots.update(fullroots)
+      else:
+        cfg.general.svn_roots.update(roots)
+    elif repo_type == None:
       raise debug.ViewVCException(
         'The path "%s" in "root_parents" does not include a '
         'repository type.  Expected "cvs" or "svn".' % (pp))
-
-    repo_type = pp[pos+1:].strip()
-    pp = os.path.normpath(pp[:pos].strip())
-
-    if repo_type == 'cvs':
-      roots = vclib.ccvs.expand_root_parent(pp)
-      if cfg.options.hide_cvsroot and roots.has_key('CVSROOT'):
-        del roots['CVSROOT']
-      cfg.general.cvs_roots.update(roots)
-    elif repo_type == 'svn':
-      roots = vclib.svn.expand_root_parent(pp)
-      cfg.general.svn_roots.update(roots)
     else:
       raise debug.ViewVCException(
         'The path "%s" in "root_parents" has an unrecognized '
         'repository type ("%s").  Expected "cvs" or "svn".'
         % (pp, repo_type))
 
-def find_root_in_parents(cfg, rootname, roottype):
+def find_root_in_parents(cfg, path_parts, roottype):
   """Return the rootpath for configured ROOTNAME of ROOTTYPE."""
 
   # Easy out:  caller wants rootname "CVSROOT", and we're hiding those.
-  if rootname == 'CVSROOT' and cfg.options.hide_cvsroot:
+  if path_parts[-1] == 'CVSROOT' and cfg.options.hide_cvsroot:
     return None
-  
+
   for pp in cfg.general.root_parents:
-    pos = pp.rfind(':')
-    if pos < 0:
-      continue
-    repo_type = pp[pos+1:].strip()
+    path,context,repo_type = _parse_root_parent(pp)
+
     if repo_type != roottype:
       continue
-    pp = os.path.normpath(pp[:pos].strip())
-    
+    if context != None:
+      if not _path_starts_with(path_parts, context):
+        continue
+      rootidx = len(context)
+    else:
+      rootidx = 0
+
+    if len(path_parts) <= rootidx:
+      continue
+
+    rootname = path_parts[rootidx]
+    fullroot = _path_join(path_parts[0:rootidx+1])
+    remain = path_parts[rootidx+1:]
+
     rootpath = None
     if roottype == 'cvs':
-      rootpath = vclib.ccvs.find_root_in_parent(pp, rootname)
+      rootpath = vclib.ccvs.find_root_in_parent(path, rootname)
     elif roottype == 'svn':
-      rootpath = vclib.svn.find_root_in_parent(pp, rootname)
+      rootpath = vclib.svn.find_root_in_parent(path, rootname)
 
     if rootpath is not None:
-      return rootpath
-  return None
+      return fullroot, rootpath, remain
+  return None, None, None
+
+def locate_root_from_path(cfg, path_parts):
+  """Return a 4-tuple ROOTTYPE, ROOTPATH, ROOTNAME, REMAIN for path_parts."""
+  for rootname, rootpath in cfg.general.cvs_roots.iteritems():
+    pp = _path_parts(rootname)
+    if _path_starts_with(path_parts, pp):
+      return 'cvs', rootpath, rootname, path_parts[len(pp):]
+  for rootname, rootpath in cfg.general.svn_roots.iteritems():
+    pp = _path_parts(rootname)
+    if _path_starts_with(path_parts, pp):
+      return 'svn', rootpath, rootname, path_parts[len(pp):]
+  rootname, path_in_parent, remain = \
+          find_root_in_parents(cfg, path_parts, 'cvs')
+  if path_in_parent:
+    cfg.general.cvs_roots[rootname] = path_in_parent
+    return 'cvs', path_in_parent, rootname, remain
+  rootname, path_in_parent, remain = \
+          find_root_in_parents(cfg, path_parts, 'svn')
+  if path_in_parent:
+    cfg.general.svn_roots[rootname] = path_in_parent
+    return 'svn', path_in_parent, rootname, remain
+  return None, None, None, None
 
 def locate_root(cfg, rootname):
   """Return a 2-tuple ROOTTYPE, ROOTPATH for configured ROOTNAME."""
+  # First try a direct match
   if cfg.general.cvs_roots.has_key(rootname):
     return 'cvs', cfg.general.cvs_roots[rootname]
-  path_in_parent = find_root_in_parents(cfg, rootname, 'cvs')
-  if path_in_parent:
-    cfg.general.cvs_roots[rootname] = path_in_parent
-    return 'cvs', path_in_parent
   if cfg.general.svn_roots.has_key(rootname):
     return 'svn', cfg.general.svn_roots[rootname]
-  path_in_parent = find_root_in_parents(cfg, rootname, 'svn')
-  if path_in_parent:
-    cfg.general.svn_roots[rootname] = path_in_parent
-    return 'svn', path_in_parent
-  return None, None
-  
+
+  path_parts = _path_parts(rootname)
+  roottype, rootpath, rootname_dupl, remain = \
+          locate_root_from_path(cfg, path_parts)
+  if roottype != None:
+    if rootname_dupl != rootname:
+      raise debug.ViewVCException(
+        'Found root name "%s" doesn\'t match "%s"' \
+        % (rootname_dupl, rootname),
+        '500 Internal Server Error')
+    if len(remain) > 0:
+      raise debug.ViewVCException(
+        'Have remaining path "%s"' \
+        % (remain),
+        '500 Internal Server Error')
+  return roottype, rootpath
+
 def load_config(pathname=None, server=None):
   """Load the ViewVC configuration file.  SERVER is the server object
   that will be using this configuration.  Consult the environment for
