@@ -986,7 +986,7 @@ def nav_path(request):
     path_parts.append(part)
     is_last = len(path_parts) == len(request.path_parts)
 
-    item = _item(name=part, href=None)
+    item = _item(name=request.server.escape(part), href=None)
 
     if not is_last or (is_dir and request.view_func is not view_directory):
       item.href = request.get_url(view_func=view_directory,
