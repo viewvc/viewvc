@@ -6,6 +6,10 @@ Version 1.2.0 (released ??-???-????)
   * allow rNNNN syntax for Subversion revision numbers (issue #441)
   * display revision numbers in CVS tag/branch selector (issue #546)
 
+Version 1.1.26 (released 24-Jan-2017)
+
+  * security fix: escape nav_data name to avoid XSS attack
+
 Version 1.1.25 (released 15-Sep-2016)
 
   * fix _rev2optrev assertion on long input
@@ -254,6 +258,11 @@ Version 1.1.0 (released 13-May-2009)
   * allow MIME type mapping overrides in ViewVC configuration (issue #401)
   * fix exception in rev-sorted remote Subversion directory views (issue #409)
   * allow setting of page sizes for log and dir views individually (issue #402)
+
+Version 1.0.14 (released 24-Jan-2017)
+
+  * fix bug that prevented mod_python 3.4+ deployment (issue #540)
+  * security fix: escape nav_data name to avoid XSS attack
 
 Version 1.0.13 (released 24-Oct-2012)
 
