@@ -1,6 +1,6 @@
-Version 1.1.26 (released ??-???-????)
+Version 1.1.26 (released 24-Jan-2017)
 
-  * 
+  * security fix: escape nav_data name to avoid XSS attack
 
 Version 1.1.25 (released 15-Sep-2016)
 
