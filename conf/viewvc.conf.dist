@@ -44,6 +44,12 @@
 ##        associated with the concept of a single "project" among many housed
 ##        within a single repository.
 ##
+##    "context" - Contexts are a concept for grouping together several
+##        repositories, similar to using (sub)directories.  For a root name
+##        containing a slash (/), the context is defined as the part of the
+##        root name before the (last) slash.  A root name without a slash is
+##        said to have an empty or no context.
+##
 ##
 ## BASIC VIEWVC CONFIGURATION HINTS
 ##
@@ -91,7 +97,8 @@
 ##
 ## Example:
 ## cvs_roots = cvsroot: /opt/cvs/repos1,
-##             anotherroot: /usr/local/cvs/repos2
+##             anotherroot: /usr/local/cvs/repos2,
+##             somecontext/root: /usr/local/cvs/repos3
 ##
 #cvs_roots =
 
@@ -107,7 +114,8 @@
 ##
 ## Example:
 ## svn_roots = svnrepos: /opt/svn/,
-##             anotherrepos: /usr/local/svn/repos2
+##             anotherrepos: /usr/local/svn/repos2,
+##             somecontext/repos: /usr/local/svn/repos3
 ##
 #svn_roots =
 
@@ -116,7 +124,8 @@
 ## parents separated by commas or new lines, each of which is of the
 ## form "path [= context] : type" (where the type is either "cvs" or
 ## "svn", the path is an absolute filesystem path, and the (optional)
-## context is prepended to each repository's name).
+## context is prepended to each repository's name to determine the
+## final root name).
 ##
 ## Rather than force you to add a new entry to 'cvs_roots' or
 ## 'svn_roots' each time you create a new repository, ViewVC rewards
@@ -146,15 +155,15 @@
 ## root_parents option can, of course, clash with names you have
 ## defined in your cvs_roots or svn_roots configuration items.  If
 ## this occurs, you can either rename the offending repository on
-## disk, or grant new names to the clashing item in cvs_roots or
-## svn_roots.  Each parent path is processed sequentially, so the
-## names of repositories under later parent paths may override earlier
-## ones.
+## disk, grant new names to the clashing item in cvs_roots or
+## svn_roots, or use different contexts.  Each parent path is processed
+## sequentially, so the names of repositories under later parent paths
+## may override earlier ones.
 ##
 ## Example:
 ## root_parents = /opt/svn: svn,
-##                /home/alice/svn = alice : svn
-##                /home/bob/svn = bob : svn
+##                /home/alice/svn = alice : svn,
+##                /home/bob/svn = bob : svn,
 ##                /opt/cvs: cvs
 ##
 #root_parents =
@@ -171,6 +180,7 @@
 ## Example:
 ## renamed_roots = old_root_name: new_root_name,
 ##                 backrub: google,
+##                 context1/root1: context2/root2
 #renamed_roots = 
 
 ## default_root: This is the name of the default root.  Valid names
