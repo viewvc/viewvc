@@ -106,7 +106,7 @@ Those steps are as follows:
 
     * Commit and push those changes.
 
-        > $ git commit -m "Begin a new release cycle."; git push
+        > $ git commit -a -m "Begin a new release cycle."; git push
 
     * Remove the release branch.
 
@@ -127,8 +127,8 @@ Those steps are as follows:
     http://viewvc.org/downloads and update the website's
     `downloads/index.html` to list them.
 
-9.  Edit the Issues tracker's Milestones, adding a new Milestone for
-    the next patch release.
+9.  Edit the Issues tracker's Milestones, closing the Milestone for the current
+    release, and adding a new Milestone for the next patch release.
 
     > https://github.com/viewvc/viewvc/milestones
 
@@ -137,7 +137,7 @@ Those steps are as follows:
 
 11. Edit the GitHub release (at https://github.com/viewvc/viewvc/releases/tag/X.Y.Z):
 
-    * Changing the release title to "ViewVC X.Y.Z"
+    * Change the release title to "ViewVC X.Y.Z"
  
     * Copy the `CHANGES` entries for the release into the description:
 
