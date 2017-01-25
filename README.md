@@ -45,7 +45,7 @@ Some notes for contributing to ViewVC's source code are include in our [HACKING.
 
 ## License
 
-**Copyright © 1999-2016 The ViewCVS Group. All rights reserved.**
+**Copyright © 1999-2017 The ViewCVS Group. All rights reserved.**
 
 By using ViewVC, you agree to the terms and conditions set forth below:
 
