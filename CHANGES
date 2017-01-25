@@ -1,10 +1,13 @@
 Version 1.2.0 (released ??-???-????)
 
   * bumped minimum support Python version to 2.4
-  * implemented support for property diffs (issue #383)
-  * allow user-configurable cvsgraph display (issue #336)
-  * allow rNNNN syntax for Subversion revision numbers (issue #441)
-  * display revision numbers in CVS tag/branch selector (issue #546)
+  * implemented support for property diffs (Tigris #383)
+  * allow user-configurable cvsgraph display (Tigris #336)
+  * allow rNNNN syntax for Subversion revision numbers (Tigris #441)
+  * display revision numbers in CVS tag/branch selector (Tigris #546)
+  * allow roots to have optional context (issue #58)
+
+--- NOTE: Issue references below this point are from Tigris.org ---
 
 Version 1.1.26 (released 24-Jan-2017)
 
