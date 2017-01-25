@@ -68,6 +68,12 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     except:
       raise debug.ViewVCException("Unable to parse configured authzfile file")
 
+    # Ignore context; assume the authz file only has the repository URL's
+    # basename, just like mod_dav_svn requires it.
+    # Perhaps it's better to just use the repository directory's basename.
+    root_parts = rootname.split('/')
+    repo_name = root_parts[-1]
+
     # Figure out if there are any aliases for the current username
     aliases = []
     if cp.has_section('aliases'):
@@ -185,7 +191,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
         path = section
       else:
         name, path = section.split(':', 1)
-        if name == rootname:
+        if name == repo_name:
           root_sections.append(section)
         continue
 
