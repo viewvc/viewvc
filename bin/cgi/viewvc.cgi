@@ -48,6 +48,17 @@ else:
 
 #########################################################################
 #
+# Uncomment to disable robots. Helps to avoid useless load.
+#
+#
+#PATH_INFO = os.environ.get('PATH_INFO', '')
+#if PATH_INFO == '/robots.txt':
+#    print "Content-Type: text/plain\n\nUser-agent: *\nDisallow: /\n"
+#    sys.exit(0)
+
+
+#########################################################################
+#
 # If admins want nicer processes, here's the place to get them.
 #
 
