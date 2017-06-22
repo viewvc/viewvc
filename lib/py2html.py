@@ -388,6 +388,7 @@ def main(cmdline):
         else:
             break
     files = cmdline[len(options)+1:]
+    verbose = ('-v' in options)
 
     ### create converting object
 
@@ -522,7 +523,6 @@ def main(cmdline):
             except IOError:
                 pass
     else:
-        verbose = ('-v' in options)
         if verbose:
             print 'Py2HTML: working on',
         for f in files:
