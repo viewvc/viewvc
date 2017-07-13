@@ -2,9 +2,11 @@ Version 1.1.27 (released ??-???-????)
 
   * 
 
+--- NOTE: Issue references below this point are from Tigris.org ---
+
 Version 1.1.26 (released 24-Jan-2017)
 
-  * security fix: escape nav_data name to avoid XSS attack
+  * security fix: escape nav_data name [CVE-2017-5938]
 
 Version 1.1.25 (released 15-Sep-2016)
 
@@ -15,283 +17,281 @@ Version 1.1.24 (released 02-Oct-2015)
   * fix minor bug in human_readable boolean calculation
   * allow hr_funout option to apply to unidiff diffs, too
   * fix infinite loop in rcsparse
-  * fix iso8601 timezone offset handling (issue #542)
-  * add support for renamed roots (issue #544)
+  * fix iso8601 timezone offset handling (#542)
+  * add support for renamed roots (#544)
   * fix minor buglet in viewvc-install error message
 
 Version 1.1.23 (released 04-Nov-2014)
 
-  * fix annotate bug triggered by files with trailing blank lines (issue #533)
-  * fix markup display of files with trailing blank lines (issue #533)
-  * add support for root-relative svnauthz access files (issue #535)
-  * fix cvsdb MySQL-python argument conversion error (issue #539)
-  * fix double-escaping of revision links (issue #541)
-  * fix bug that prevented mod_python 3.4+ deployment (issue #540)
+  * fix annotate bug triggered by files with trailing blank lines (#533)
+  * fix markup display of files with trailing blank lines (#533)
+  * add support for root-relative svnauthz access files (#535)
+  * fix cvsdb MySQL-python argument conversion error (#539)
+  * fix double-escaping of revision links (#541)
+  * fix bug that prevented mod_python 3.4+ deployment (#540)
 
 Version 1.1.22 (released 14-Jan-2014)
 
   * minor directory sorting logic fix (re: show_subdir_lastmod)
-  * fix display of show_subdir_lastmod details (issue #532)
+  * fix display of show_subdir_lastmod details (#532)
   * pay attention to chardet's detection confidence
   * linkify line numbers in markup/annotate view
 
 Version 1.1.21 (released 13-Sep-2013)
 
-  * fix markup/annotate exception with Python < 2.7 (issue #527)
+  * fix markup/annotate exception with Python < 2.7 (#527)
 
 Version 1.1.20 (released 24-Apr-2013)
 
   * fix tab-to-space handling regression in markup view
-  * fix regression in root lookup handling (issue #526)
+  * fix regression in root lookup handling (#526)
 
 Version 1.1.19 (released 22-Apr-2013)
 
-  * improve root lookup performance (issue #523)
-  * new 'max_filesize_kbytes' config option and handling (issue #524)
+  * improve root lookup performance (#523)
+  * new 'max_filesize_kbytes' config option and handling (#524)
   * tarball generation improvements:
-    - preserve Subversion symlinks in generated tarballs (issue #487)
+    - preserve Subversion symlinks in generated tarballs (#487)
     - reduce memory usage of tarball generation logic
-    - fix double compression of generated tarballs (issue #525)
+    - fix double compression of generated tarballs (#525)
   * file content handling improvements:
-    - expanded support for encoding detection and transcoding (issue #11)
+    - expanded support for encoding detection and transcoding (#11)
     - fix tab-to-space conversion bugs in markup, annotate, and diff views
     - fix handling of trailing whitespace in diff view
-  * add support for timestamp display in ISO8601 format (issue #46)
+  * add support for timestamp display in ISO8601 format (#46)
 
 Version 1.1.18 (released 28-Feb-2013)
 
-  * fix exception raised by BDB-backed SVN repositories (issue #519)
+  * fix exception raised by BDB-backed SVN repositories (#519)
   * hide revision-less files when rcsparse is in use
-  * include branchpoints in branch views using rcsparse (issue #347)
+  * include branchpoints in branch views using rcsparse (#347)
   * miscellaneous cvsdb improvements:
-    - add --port option to make-database (issue #521)
-    - explicitly name columns in queries (issue #522)
+    - add --port option to make-database (#521)
+    - explicitly name columns in queries (#522)
     - update MySQL syntax to avoid discontinued "TYPE=" terms
 
 Version 1.1.17 (released 25-Oct-2012)
 
-  * fix exception caused by uninitialized variable usage (issue #516)
+  * fix exception caused by uninitialized variable usage (#516)
 
 Version 1.1.16 (released 24-Oct-2012)
 
-  * security fix: escape "extra" diff info to avoid XSS attack (issue #515)
-  * add 'binary_mime_types' configuration option and handling (issue #510)
-  * fix 'select for diffs' persistence across log pages (issue #512)
+  * security fix: escape "extra" diff info (#515) [CVE-2012-4533]
+  * add 'binary_mime_types' configuration option and handling (#510)
+  * fix 'select for diffs' persistence across log pages (#512)
   * remove lock status and filesize check on directories in remote SVN views
-  * fix bogus 'Annotation of' page title for non-annotated view (issue #514)
+  * fix bogus 'Annotation of' page title for non-annotated view (#514)
 
 Version 1.1.15 (released 22-Jun-2012)
 
-  * security fix: complete authz support for remote SVN views (issue #353)
-  * security fix: log msg leak in SVN revision view with unreadable copy source
+  * security fix: complete remote SVN authz support (#353) [CVE-2012-3356]
+  * security fix: log message leak with unreadable copy source [CVE-2012-3357]
   * fix several instances of incorrect information in remote SVN views
   * increase performance of some revision metadata lookups in remote SVN views
   * fix RSS feed regression introduced in 1.1.14
 
 Version 1.1.14 (released 12-Jun-2012)
 
-  * fix annotation of svn files with non-URI-safe paths (issue #504)
-  * handle file:/// Subversion rootpaths as local roots (issue #446)
-  * fix bug caused by trying to case-normalize anon usernames (issue #505)
-  * speed up log handling by reusing tokenization results (issue #506)
-  * add support for custom revision log markup rules (issue #246)
+  * fix annotation of svn files with non-URI-safe paths (#504)
+  * handle file:/// Subversion rootpaths as local roots (#446)
+  * fix bug caused by trying to case-normalize anon usernames (#505)
+  * speed up log handling by reusing tokenization results (#506)
+  * add support for custom revision log markup rules (#246)
 
 Version 1.1.13 (released 23-Jan-2012)
 
-  * fix svndbadmin failure on deleted paths under Subversion 1.7 (issue #499)
+  * fix svndbadmin failure on deleted paths under Subversion 1.7 (#499)
   * fix annotation of files in svn roots with non-URI-safe paths
   * fix stray annotation warning in markup display of images
-  * more gracefully handle attempts to display binary content (issue #501)
+  * more gracefully handle attempts to display binary content (#501)
 
 Version 1.1.12 (released 03-Nov-2011)
 
-  * fix path display in patch and certain diff views (issue #485)
-  * fix broken cvsdb glob searching (issue 486)
-  * allow svn revision specifiers to have leading r's (issue #441, #448) 
-  * allow environmental override of configuration location (issue #494)
-  * fix exception HTML-escaping non-string data under WSGI (issue #454)
-  * add links to root logs from roots view (issue #470)
-  * use Pygments lexer-guessing functionality (issue #495)
+  * fix path display in patch and certain diff views (#485)
+  * fix broken cvsdb glob searching (#486)
+  * allow svn revision specifiers to have leading r's (#441, #448) 
+  * allow environmental override of configuration location (#494)
+  * fix exception HTML-escaping non-string data under WSGI (#454)
+  * add links to root logs from roots view (#470)
+  * use Pygments lexer-guessing functionality (#495)
 
 Version 1.1.11 (released 17-May-2011)
 
-  * security fix: remove user-reachable override of cvsdb row limit
+  * security fix: remove override of cvsdb row limit [CVE-2009-5024]
   * fix broken standalone.py -c and -d options handling
   * add --help option to standalone.py
-  * fix stack trace when asked to checkout a directory (issue #478)
-  * improve memory usage and speed of revision log markup (issue #477)
-  * fix broken annotation view in CVS keyword-bearing files (issue #479)
-  * warn users when query results are incomplete (issue #433)
-  * avoid parsing errors on RCS newphrases in the admin section (issue #483)
-  * make rlog parsing code more robust in certain error cases (issue #444)
+  * fix stack trace when asked to checkout a directory (#478)
+  * improve memory usage and speed of revision log markup (#477)
+  * fix broken annotation view in CVS keyword-bearing files (#479)
+  * warn users when query results are incomplete (#433)
+  * avoid parsing errors on RCS newphrases in the admin section (#483)
+  * make rlog parsing code more robust in certain error cases (#444)
 
 Version 1.1.10 (released 15-Mar-2011)
 
-  * fix stack trace in Subversion revision info logic (issue #475, issue #476)
+  * fix stack trace in Subversion revision info logic (#475, #476)
 
 Version 1.1.9 (released 18-Feb-2011)
 
-  * vcauth universal access determinations (issue #425)
+  * vcauth universal access determinations (#425)
   * rework svn revision info cache for performance
   * make revision log "extra pages" count configurable
   * fix Subversion 1.4.x revision log compatibility code regression
   * display sanitized error when authzfile is malformed
-  * restore markup of URLs in file contents (issue #455)
-  * optionally display last-committed metadata in roots view (issue #457)
+  * restore markup of URLs in file contents (#455)
+  * optionally display last-committed metadata in roots view (#457)
 
 Version 1.1.8 (released 02-Dec-2010)
 
-  * fix slowness triggered by allow_compress=1 configuration (issue #467)
-  * allow use of 'fcrypt' for Windows standalone.py authn support (issue #471)
-  * yield more useful error on directory markup/annotate request (issue #472)
+  * fix slowness triggered by allow_compress=1 configuration (#467)
+  * allow use of 'fcrypt' for Windows standalone.py authn support (#471)
+  * yield more useful error on directory markup/annotate request (#472)
 
 Version 1.1.7 (released 09-Sep-2010)
 
-  * display Subversion revision properties in the revision view (issue #453)
+  * display Subversion revision properties in the revision view (#453)
   * fix exception in 'standalone.py -r REPOS' when run without a config file
   * fix standalone.py server root deployments (--script-alias='')
-  * add Basic authentication support to standalone.py (Unix only) (issue #49)
+  * add rudimentary Basic authentication support to standalone.py (#49)
   * fix obscure "unexpected NULL parent pool" Subversion bindings error
   * enable path info / link display in remote Subversion root revision view
-  * fix vhost name case handling inconsistency (issue #466)
+  * fix vhost name case handling inconsistency (#466)
   * use svn:mime-type property charset param as encoding hint
-  * markup Subversion revision references in log messages (issue #313)
-  * add rudimentary support for FastCGI-based deployments (issue #464)
+  * markup Subversion revision references in log messages (#313)
+  * add rudimentary support for FastCGI-based deployments (#464)
   * fix query script WSGI deployment
   * add configuration to fix query script cross-linking to ViewVC
 
 Version 1.1.6 (released 02-Jun-2010)
 
-  * add rudimentary support for WSGI-based deployments (issue #397)
-  * fix exception caused by trying to HTML-escape non-string data (issue #454)
-  * fix incorrect RSS feed Content-Type header (issue #449)
-  * fix RSS <title> encoding problem (issue #451)
-  * allow 'svndbadmin purge' to work on missing repositories (issue #452)
+  * add rudimentary support for WSGI-based deployments (#397)
+  * fix exception caused by trying to HTML-escape non-string data (#454)
+  * fix incorrect RSS feed Content-Type header (#449)
+  * fix RSS <title> encoding problem (#451)
+  * allow 'svndbadmin purge' to work on missing repositories (#452)
 
 Version 1.1.5 (released 29-Mar-2010)
 
-  * security fix: escape user-provided search_re input to avoid XSS attack
+  * security fix: escape user-provided search_re input [CVE-2010-0132]
 
 Version 1.1.4 (released 10-Mar-2010)
 
-  * security fix: escape user-provided query form input to avoid XSS attack
-  * fix standalone.py failure (when per-root options aren't used) (issue #445)
-  * fix annotate failure caused by ignored svn_config_dir (issue #447)
+  * security fix: escape user-provided query form input [CVE-2010-0736]
+  * fix standalone.py failure (when per-root options aren't used) (#445)
+  * fix annotate failure caused by ignored svn_config_dir (#447)
 
 Version 1.1.3 (released 22-Dec-2009)
 
-  * security fix: add root listing support of per-root authz config
-  * security fix: query.py requires 'forbidden' authorizer (or none) in config
-  * fix URL-ification of truncated log messages (issue #3)
-  * fix regexp input validation (issue #426, #427, #440)
+  * security fix: support per-root authz config in root listing [CVE-2010-0004]
+  * security fix: validate configured query.py authorizer [CVE-2010-0005]
+  * fix URL-ification of truncated log messages (#3)
+  * fix regexp input validation (#426, #427, #440)
   * add support for configurable tab-to-spaces conversion
   * fix not-a-sequence error in diff view
   * allow viewvc-install to work when templates-contrib is absent
   * minor template improvements/corrections
-  * expose revision metadata in diff view (issue #431)
-  * markup file/directory item property URLs and email addresses (issue #434)
+  * expose revision metadata in diff view (#431)
+  * markup file/directory item property URLs and email addresses (#434)
   * make ViewVC cross copies in Subversion history by default
-  * fix bug that caused standalone.py failure under Python 1.5.2 (issue #442)
-  * fix support for per-vhost overrides of authorizer parameters (issue #411)
+  * fix bug that caused standalone.py failure under Python 1.5.2 (#442)
+  * fix support for per-vhost overrides of authorizer parameters (#411)
   * fix root name identification in query.py interface
 
 Version 1.1.2 (released 11-Aug-2009)
 
-  * security fix: validate the 'view' parameter to avoid XSS attack
-  * security fix: avoid printing illegal parameter names and values
-  * add optional support for character encoding detection (issue #400)
-  * fix username case handling in svnauthz module (issue #419)
-  * fix cvsdbadmin/svnadmin rebuild error on missing repos (issue #420)
-  * don't drop leading blank lines from colorized file contents (issue #422)
+  * security fix: validate the 'view' parameter [CVE-2009-3618]
+  * security fix: avoid printing illegal parameter names/values [CVE-2009-3619]
+  * add optional support for character encoding detection (#400)
+  * fix username case handling in svnauthz module (#419)
+  * fix cvsdbadmin/svnadmin rebuild error on missing repos (#420)
+  * don't drop leading blank lines from colorized file contents (#422)
   * add file.ezt template logic for optionally hiding binary file contents
 
 Version 1.1.1 (released 03-Jun-2009)
 
-  * fix broken query form (missing required template variables) (issue #416)
-  * fix bug in cvsdb which caused rebuild operations to lose data (issue #417)
+  * fix broken query form (missing required template variables) (#416)
+  * fix bug in cvsdb which caused rebuild operations to lose data (#417)
   * fix cvsdb purge/rebuild repos lookup to error on missing repos
   * fix misleading file contents view page title
 
 Version 1.1.0 (released 13-May-2009)
 
-  * add support for full content diffs (issue #153)
+  * add support for full content diffs (#153)
   * make many more data dictionary items available to all views
   * various rcsparse and tparse module fixes
-  * add daemon mode to standalone.py (issue #235)
-  * rework helper application configuration options (issues #229, #62)
+  * add daemon mode to standalone.py (#235)
+  * rework helper application configuration options (#229, #62)
   * teach standalone.py to recognize Subversion repositories via -r option
   * now interpret relative paths in "viewvc.conf" as relative to that file
-  * add 'purge' subcommand to cvsdbadmin and svndbadmin (issue #271)
-  * fix orphaned data bug in cvsdbadmin/svndbadmin rebuild (issue #271)
-  * add support for query by log message (issues #22, #121)
-  * fix bug parsing 'svn blame' output with too-long author names (issue #221)
-  * fix default standalone.py port to be within private IANA range (issue #234)
+  * add 'purge' subcommand to cvsdbadmin and svndbadmin (#271)
+  * fix orphaned data bug in cvsdbadmin/svndbadmin rebuild (#271)
+  * add support for query by log message (#22, #121)
+  * fix bug parsing 'svn blame' output with too-long author names (#221)
+  * fix default standalone.py port to be within private IANA range (#234)
   * add unified configury of allowed views; checkout view disabled by default
-  * add support for ranges of revisions to svndbadmin (issue #224)
-  * make the query handling more forgiving of malformatted subdirs (issue #244)
-  * add support for per-root configuration overrides (issue #371)
-  * add support for optional email address mangling (issue #290)
-  * extensible path-based authorization subsystem (issue #268), supporting:
+  * add support for ranges of revisions to svndbadmin (#224)
+  * make the query handling more forgiving of malformatted subdirs (#244)
+  * add support for per-root configuration overrides (#371)
+  * add support for optional email address mangling (#290)
+  * extensible path-based authorization subsystem (#268), supporting:
     - Subversion authz files (new)
     - regexp-based path hiding (for compat with 1.0.x)
     - file glob top-level directory hiding (for compat with 1.0.x)
-  * allow default file view to be "markup" (issue #305)
-  * add support for displaying file/directory properties (issue #39)
+  * allow default file view to be "markup" (#305)
+  * add support for displaying file/directory properties (#39)
   * pagination improvements
   * add gzip output encoding support for template-driven pages
-  * fix cache control bugs (issue #259)
+  * fix cache control bugs (#259)
   * add RSS feed URL generation for file history
   * add support for remote creation of ViewVC checkins database
   * add integration with Pygments for syntax highlighting
-  * preserve executability of Subversion files in tarballs (issue #233)
-  * add ability to set Subversion runtime config dir (issue #351, issue #339)
-  * show RSS/query links only for roots found in commits database (issue #357)
-  * recognize Subversion svn:mime-type property values (issue #364)
+  * preserve executability of Subversion files in tarballs (#233)
+  * add ability to set Subversion runtime config dir (#351, #339)
+  * show RSS/query links only for roots found in commits database (#357)
+  * recognize Subversion svn:mime-type property values (#364)
   * hide CVS files when viewing tags/branches on which they don't exist
-  * allow hiding of errorful entries from the directory view (issue #105)
+  * allow hiding of errorful entries from the directory view (#105)
   * fix directory view sorting UI
-  * tolerate malformed Accept-Language headers (issue #396)
-  * allow MIME type mapping overrides in ViewVC configuration (issue #401)
-  * fix exception in rev-sorted remote Subversion directory views (issue #409)
-  * allow setting of page sizes for log and dir views individually (issue #402)
+  * tolerate malformed Accept-Language headers (#396)
+  * allow MIME type mapping overrides in ViewVC configuration (#401)
+  * fix exception in rev-sorted remote Subversion directory views (#409)
+  * allow setting of page sizes for log and dir views individually (#402)
 
 Version 1.0.9 (released 11-Aug-2009)
 
-  * security fix: validate the 'view' parameter to avoid XSS attack
-  * security fix: avoid printing illegal parameter names and values
+  * security fix: validate the 'view' parameter [CVE-2009-3618]
+  * security fix: avoid printing illegal parameter names/values [CVE-2009-3619]
 
 Version 1.0.8 (released 05-May-2009)
 
   * fix directory view sorting UI
-  * tolerate malformed Accept-Language headers (issue #396)
+  * tolerate malformed Accept-Language headers (#396)
   * fix directory log views in revision-less Subversion repositories
-  * fix exception in rev-sorted remote Subversion directory views (issue #409)
+  * fix exception in rev-sorted remote Subversion directory views (#409)
 
 Version 1.0.7 (released 14-Oct-2008)
 
-  * fix regression in the 'as text' download view (issue #373)
+  * fix regression in the 'as text' download view (#373)
 
 Version 1.0.6 (released 16-Sep-2008)
 
-  * security fix: ignore arbitrary user-provided MIME types (issue #354)
-  * fix bug in regexp search filter when used with sticky tag (issue #346)
-  * fix bug in handling of certain 'co' output (issue #348)
+  * security fix: validate content_type (#354) [CVE-2005-4831, CVE-2008-4325]
+  * fix bug in regexp search filter when used with sticky tag (#346)
+  * fix bug in handling of certain 'co' output (#348)
   * fix regexp search filter template bug
   * fix annotate code syntax error
-  * fix mod_python import cycle (issue #369)
+  * fix mod_python import cycle (#369)
 
 Version 1.0.5 (released 28-Feb-2008)
 
-  * security fix: omit commits of all-forbidden files from query results
-  * security fix: disallow direct URL navigation to hidden CVSROOT folder
-  * security fix: strip forbidden paths from revision view
-  * security fix: don't traverse log history thru forbidden locations
-  * security fix: honor forbiddenness via diff view path parameters
+  * security fix: query: omit commits of solely forbidden files [CVE-2008-1290]
+  * security fix: disallow navigation to hidden CVSROOT folder [CVE-2008-1291]
+  * security fix: multiple forbidden path exposures [CVE-2008-1292]
   * new 'forbiddenre' regexp-based path authorization feature
-  * fix root name conflict resolution inconsistencies (issue #287)
+  * fix root name conflict resolution inconsistencies (#287)
   * fix an oversight in the CVS 1.12.9 loginfo-handler support
-  * fix RSS feed content type to be more specific (issue #306)
-  * fix entity escaping problems in RSS feed data (issue #238)
+  * fix RSS feed content type to be more specific (#306)
+  * fix entity escaping problems in RSS feed data (#238)
   * fix bug in tarball generation for remote Subversion repositories
   * fix query interface file-count-limiting logic
   * fix query results plus/minus count to ignore forbidden files
@@ -299,31 +299,31 @@ Version 1.0.5 (released 28-Feb-2008)
 
 Version 1.0.4 (released 10-Apr-2007)
 
-  * fix some markup bugs in query views (issue #266)
-  * fix loginfo-handler's support for CVS 1.12.9 (issues #151, #257)
+  * fix some markup bugs in query views (#266)
+  * fix loginfo-handler's support for CVS 1.12.9 (#151, #257)
   * make viewvc-install able to run from an arbitrary location
   * update viewvc-install's output for readability
-  * fix bug writing commits to non-MyISAM databases (issue #262)
-  * allow long paths in generated tarballs (issue #12)
+  * fix bug writing commits to non-MyISAM databases (#262)
+  * allow long paths in generated tarballs (#12)
   * fix bug interpreting EZT substitute patterns
   * fix broken markup view disablement
   * fix broken directory view link generation in directory log view
   * fix Windows-specific viewvc-install bugs
-  * fix broke query result links for Subversion deleted items (issue #296)
+  * fix broke query result links for Subversion deleted items (#296)
   * fix some output XHTML validation buglets
-  * fix database query cache staleness problems (issue #180)
+  * fix database query cache staleness problems (#180)
 
 Version 1.0.3 (released 13-Oct-2006)
 
-  * fix bug in path shown for Subversion deleted-under-copy items (issue #265)
-  * security fix: declare charset for views to avoid IE UTF7 XSS attack
+  * security fix: declare charset for views [CVE-2006-5442]
+  * fix bug in path shown for Subversion deleted-under-copy items (#265)
 
 Version 1.0.2 (released 29-Sep-2006)
 
   * minor documentation fixes
-  * fix Subversion annotate functionality on Windows (issue #18)
-  * fix annotate assertions on uncanonicalized #include paths (issue #208)
-  * make RSS URL method match the method used to generate it (issue #245)
+  * fix Subversion annotate functionality on Windows (#18)
+  * fix annotate assertions on uncanonicalized #include paths (#208)
+  * make RSS URL method match the method used to generate it (#245)
   * fix Subversion annotation to run non-interactively, preventing hangs
   * fix bug in custom syntax highlighter fallback logic
   * fix bug in PHP CGI hack to avoid force-cgi-redirect errors
@@ -331,11 +331,11 @@ Version 1.0.2 (released 29-Sep-2006)
 Version 1.0.1 (released 20-Jul-2006)
 
   * fix exception on log page when use_pagesize is enabled
-  * fix an XHTML validation bug in the footer template (issue #239)
-  * fix handling of single-component CVS revision numbers (issue #237)
-  * fix bug in download-as-text URL link generation (issue #241)
-  * fix query.cgi bug, missing 'rss_href' template data item (issue #249)
-  * no longer omit empty Subversion directories from tarballs (issue #250)
+  * fix an XHTML validation bug in the footer template (#239)
+  * fix handling of single-component CVS revision numbers (#237)
+  * fix bug in download-as-text URL link generation (#241)
+  * fix query.cgi bug, missing 'rss_href' template data item (#249)
+  * no longer omit empty Subversion directories from tarballs (#250)
   * use actual modification time for Subversion directories in tarballs
 
 Version 1.0 (released 01-May-2006)
@@ -427,13 +427,13 @@ Version 1.0 (released 01-May-2006)
 
 Version 0.9.4 (released 17-Aug-2005)
 
-  * security fix: omit forbidden/hidden modules from query results.
+  * security fix: query: omit forbidden/hidden modules
 
 Version 0.9.3 (released 17-May-2005)
 
-  * security fix: disallow bad "content-type" input [CAN-2004-1062]
-  * security fix: disallow bad "sortby" and "cvsroot" input [CAN-2002-0771]
-  * security fix: omit forbidden/hidden modules from tarballs [CAN-2004-0915]
+  * security fix: disallow bad "content-type" input [CVE-2004-1062]
+  * security fix: disallow bad "sortby" and "cvsroot" input [CVE-2002-0771]
+  * security fix: omit forbidden/hidden modules from tarballs [CVE-2004-0915]
 
 Version 0.9.2 (released 15-Jan-2002)
 
