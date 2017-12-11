@@ -584,23 +584,5 @@ error: you can't see any files)
 
   * Does ViewVC find your RCS utilities? (edit rcs_dir)
 
-If something else happens or you can't get it to work:
-
-  * Check the ViewVC home page:
-
-       http://viewvc.org/
-
-  * Review the ViewVC mailing list archive to see if somebody else had
-    the same problem, and it was solved:
-
-       http://viewvc.tigris.org/servlets/SummarizeList?listName=users
-
-  * Check the ViewVC issue database to see if the problem you are
-    seeing is the result of a known bug:
-
-       http://viewvc.tigris.org/issues/query.cgi
- 
-  * Send mail to the ViewVC mailing list, users@viewvc.tigris.org.
-    NOTE: make sure you provide an accurate description of the problem
-    -- including the version of ViewVC you are using -- and any
-    relevant tracebacks or error logs.
+If all else fails, contact the ViewVC development community at
+https://github.com/viewvc/viewvc/.

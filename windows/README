@@ -31,7 +31,7 @@ For Subversion support, you'll need to have the Subversion Python
 bindings installed. Binaries are available from the Subversion website
 at:
 
-   http://subversion.tigris.org/servlets/ProjectDocumentList?folderID=91
+   http://subversion.apache.org/
 
 Note that if you use binaries, you have to be running the same version
 of python as the binaries were built for. For example, you cannot use
