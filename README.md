@@ -43,6 +43,10 @@ Across patch releases of ViewVC (when only the Z component of version X.Y.Z chan
 
 Some notes for contributing to ViewVC's source code are include in our [HACKING.md](./notes/HACKING.md) document.
 
+## Questions or Concerns?
+
+Feel free to use our Issue Tracker to ask questions, make feature requests, report bugs, etc.  In yesteryear, we had mailing lists for this kind of thing, but those have been discontinued.
+
 ## License
 
 **Copyright © 1999-2017 The ViewCVS Group. All rights reserved.**
