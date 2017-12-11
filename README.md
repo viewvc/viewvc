@@ -45,7 +45,7 @@ Some notes for contributing to ViewVC's source code are include in our [HACKING.
 
 ## Questions or Concerns?
 
-Feel free to use our Issue Tracker to ask questions, make feature requests, report bugs, etc.  In yesteryear, we had mailing lists for this kind of thing, but those have been discontinued.
+Feel free to use our [Issue Tracker](https://github.com/viewvc/viewvc/issues) to ask questions, make feature requests, report bugs, etc.  In yesteryear, we had mailing lists for this kind of thing, but those have been discontinued.
 
 ## License
 
