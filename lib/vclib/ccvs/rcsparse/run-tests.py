@@ -13,7 +13,7 @@
 #
 # This software consists of voluntary contributions made by many
 # individuals.  For exact contribution history, see the revision
-# history and logs, available at http://viewvc.tigris.org/.
+# history and logs, available at https://github.com/viewvc/viewvc/.
 # ====================================================================
 
 """Run tests of rcsparse code."""
