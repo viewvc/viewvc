@@ -158,8 +158,12 @@ class SvnRev:
 
         self.changes = []
         for path, change in editor.changes.items():
-            # skip non-file changes
-            if change.item_kind != svn.core.svn_node_file:
+            # skip non-file/dir changes
+            if change.item_kind is svn.core.svn_node_file:
+                node_type = 'File'
+            elif change.item_kind is svn.core.svn_node_dir:
+                node_type = 'Dir'
+            else:
                 continue
 
             # deal with the change types we handle
@@ -168,6 +172,8 @@ class SvnRev:
             base_path = change.base_path
             if change.base_path:
                 base_root = self._get_root_for_rev(change.base_rev)
+
+            plus, minus = (0, 0)
 
             # figure out what kind of change this is, and get a diff
             # object for it.  note that prior to 1.4 Subversion's
@@ -183,16 +189,17 @@ class SvnRev:
                 action = 'add'
             else:
                 action = 'change'
-
-            if action == 'remove':
-                diffobj = svn.fs.FileDiff(base_root, base_path, None, None)
-            else:
-                diffobj = svn.fs.FileDiff(base_root, base_path,
+                
+            if node_type == 'File':
+                if action == 'remove':
+                    diffobj = svn.fs.FileDiff(base_root, base_path, None, None)
+                else:
+                    diffobj = svn.fs.FileDiff(base_root, base_path,
                                           fsroot, change.path)
 
-            diff_fp = diffobj.get_pipe()
-            plus, minus = _get_diff_counts(diff_fp)
-            self.changes.append((path, action, plus, minus))
+                diff_fp = diffobj.get_pipe()
+                plus, minus = _get_diff_counts(diff_fp)
+            self.changes.append((path, action, plus, minus, node_type))
 
     def _get_root_for_rev(self, rev):
         """Fetch a revision root from a cache of such, or a fresh root
@@ -213,7 +220,7 @@ def handle_revision(db, command, repo, rev, verbose, force=0):
         if verbose: print "skipped (no changes)."
         return
 
-    for (path, action, plus, minus) in revision.changes:
+    for (path, action, plus, minus, node_type) in revision.changes:
         directory, file = os.path.split(path)
         commit = cvsdb.CreateCommit()
         commit.SetRepository(repo.path)
@@ -226,6 +233,7 @@ def handle_revision(db, command, repo, rev, verbose, force=0):
         commit.SetPlusCount(plus)
         commit.SetMinusCount(minus)
         commit.SetBranch(None)
+        commit.SetFileType(node_type)
 
         if action == 'add':
             commit.SetTypeAdd()

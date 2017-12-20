@@ -4597,6 +4597,11 @@ def build_commit(request, files, max_files, dir_strip, format):
     mime_type, encoding = calculate_mime_type(request, path_parts, exam_rev)
     prefer_markup = ezt.boolean(default_view(mime_type, cfg) == view_markup)
 
+    if request.roottype == 'svn':
+        revision_href = request.get_url(view_func=view_revision,
+                                        params={'rev': f.GetRevision()},
+                                        escape=1)
+
     # Update plus/minus line change count.
     plus = int(f.GetPlusCount())
     minus = int(f.GetMinusCount())
@@ -4607,21 +4612,30 @@ def build_commit(request, files, max_files, dir_strip, format):
     if max_files and num_allowed > max_files:
       continue
 
+    if f.GetFileType() == 'Dir':
+        settings = {    'filetype': 'Dir',
+                        'plus' : '',
+                        'minus' : '', 
+                        'view_href' : revision_href}
+    else:
+        settings = {'filetype' : 'File',
+                    'view_href' : view_href,
+                    'plus' : int(f.GetPlusCount()),
+                    'minus' : int(f.GetMinusCount()),}
+
     commit_files.append(_item(date=commit_time,
                               dir=request.server.escape(dirname),
                               file=request.server.escape(filename),
                               author=request.server.escape(f.GetAuthor()),
                               rev=rev,
                               branch=f.GetBranch(),
-                              plus=plus,
-                              minus=minus,
                               type=change_type,
                               dir_href=dir_href,
                               log_href=log_href,
-                              view_href=view_href,
                               download_href=download_href,
                               prefer_markup=prefer_markup,
-                              diff_href=diff_href))
+                              diff_href=diff_href,
+                              **settings))
 
   # No files survived authz checks?  Let's just pretend this
   # little commit didn't happen, shall we?

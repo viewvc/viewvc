@@ -309,15 +309,16 @@ class CheckinDatabase:
         plus_count = commit.GetPlusCount() or '0'
         minus_count = commit.GetMinusCount() or '0'
         description_id = self.GetDescriptionID(commit.GetDescription())
+        filetype = commit.GetFileType()
 
         sql = "REPLACE INTO %s" % (self.GetCommitsTable())
         sql = sql + \
               "  (type,ci_when,whoid,repositoryid,dirid,fileid,revision,"\
-              "   stickytag,branchid,addedlines,removedlines,descid)"\
-              "VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+              "   stickytag,branchid,addedlines,removedlines,descid,filetype)"\
+              "VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
         sql_args = (ci_type, ci_when, who_id, repository_id,
                     directory_id, file_id, revision, sticky_tag, branch_id,
-                    plus_count, minus_count, description_id)
+                    plus_count, minus_count, description_id, filetype)
 
         cursor = self.db.cursor()
         try:
@@ -337,6 +338,7 @@ class CheckinDatabase:
                             "\taddedlines   = %s\n"
                             "\tremovedlines = %s\n"
                             "\tdescid       = %s\n"
+                            "\tfiletype     = %s\n"
                             % ((str(e), ) + sql_args))
 
     def SQLQueryListString(self, field, query_entry_list):
@@ -484,7 +486,7 @@ class CheckinDatabase:
             
             (dbType, dbCI_When, dbAuthorID, dbRepositoryID, dbDirID,
              dbFileID, dbRevision, dbStickyTag, dbBranchID, dbAddedLines,
-             dbRemovedLines, dbDescID) = row
+             dbRemovedLines, dbDescID, dbFileType) = row
 
             commit = LazyCommit(self)
             if dbType == 'Add':
@@ -503,6 +505,7 @@ class CheckinDatabase:
             commit.SetPlusCount(dbAddedLines)
             commit.SetMinusCount(dbRemovedLines)
             commit.SetDescriptionID(dbDescID)
+            commit.SetFileType(dbFileType)
 
             query.AddCommit(commit)
 
@@ -634,6 +637,7 @@ class Commit:
         self.__description = ''
         self.__gmt_time = 0.0
         self.__type = Commit.CHANGE
+        self.__filetype = 'File'
 
     def SetRepository(self, repository):
         self.__repository = repository
@@ -681,6 +685,12 @@ class Commit:
 
     def GetBranch(self):
         return self.__branch
+
+    def SetFileType(self, filetype):
+        self.__filetype = filetype or ''
+
+    def GetFileType(self):
+        return self.__filetype
 
     def SetPlusCount(self, pluscount):
         self.__pluscount = pluscount
