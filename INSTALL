@@ -187,16 +187,24 @@ APACHE CONFIGURATION
    install location.
 
       <Directory <VIEWVC_INSTALLATION_DIRECTORY>>
-        Order allow,deny
-        Allow from all
+        # For Apache 2.4.x, use this:
+        Require all granted
+
+        # For Apache 2.2.x, use these instead:
+        # Order allow,deny
+        # Allow from all
       </Directory>
 
    For example, if ViewVC is installed in /usr/local/viewvc-1.0 on
    your system:
 
       <Directory /usr/local/viewvc-1.0>
-        Order allow,deny
-        Allow from all
+        # For Apache 2.4.x, use this:
+        Require all granted
+
+        # For Apache 2.2.x, use these instead:
+        # Order allow,deny
+        # Allow from all
       </Directory>
 
 3) Configure Apache to expose ViewVC to users at the URL of your choice.
