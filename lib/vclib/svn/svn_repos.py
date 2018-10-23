@@ -223,8 +223,8 @@ def _get_last_history_rev(fsroot, path):
   
 def temp_checkout(svnrepos, path, rev):
   """Check out file revision to temporary file"""
-  temp = tempfile.mktemp()
-  fp = open(temp, 'wb')
+  fd, temp = tempfile.mkstemp()
+  fp = os.fdopen(fd, 'wb')
   try:
     root = svnrepos._getroot(rev)
     stream = fs.file_contents(root, path)
