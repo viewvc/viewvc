@@ -180,7 +180,6 @@ class SelfCleanFP:
     self._fp = open(path, 'r')
     self._path = path
     self._eof = 0
-    self._closed = False
     
   def read(self, len=None):
     if len:
@@ -203,13 +202,16 @@ class SelfCleanFP:
     return lines
     
   def close(self):
-    self._closed = True
     self._fp.close()
-    os.remove(self._path)
+    if self._path:
+      try:
+        os.remove(self._path)
+        self._path = None
+      except OSError:
+        pass
 
   def __del__(self):
-    if not self._closed:
-      self.close()
+    self.close()
     
   def eof(self):
     return self._eof
