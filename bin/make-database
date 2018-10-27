@@ -15,11 +15,28 @@
 # MySQL 3.22 or later
 #
 # -----------------------------------------------------------------------
+#
+# INSTALL-TIME CONFIGURATION
+#
+# These values will be set during the installation process. During
+# development, they will remain None.
+#
 
-import os
+LIBRARY_DIR = None
+CONF_PATHNAME = None
+
+# Adjust sys.path to include our library directory
 import sys
-import popen2
+import os
+
+if LIBRARY_DIR:
+    sys.path.insert(0, LIBRARY_DIR)
+else:
+    sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
+
 import getopt
+
+import popen
 
 ## ------------------------------------------------------------------------
 ## Stuff common to all schemas
@@ -256,7 +273,7 @@ Options:
                       [Default: ViewVC]
 
   --help              Show this usage message.
-  
+
   --hostname=ARG      Use ARG as the hostname for the MySQL connection.
 
   --port=ARG          Use ARG as the port for the MySQL connection.
@@ -268,7 +285,7 @@ Options:
   --version=ARG       Create the database using the schema employed by
                       version ARG of ViewVC.  Valid values are:
                       [ "1.0" ]
-                            
+
 """ % (os.path.basename(sys.argv[0])))
   if errmsg is not None:
     stream.write("[ERROR] %s.\n" % (errmsg))
@@ -330,26 +347,18 @@ if __name__ == "__main__":
       dscript = dscript + DATABASE_SCRIPT_VERSION_1
 
     # Calculate command arguments.
-    cmd_args = "--user=%s --password=%s" % (username, password)
+    cmd_args = [("--user=%s" % username), ("--password=%s" % password)]
     if hostname or port:
-      cmd_args = cmd_args + " --protocol=TCP"
+      cmd_args = cmd_args.append("--protocol=TCP")
     if hostname:
-      cmd_args = cmd_args + " --host=%s" % (hostname)
+      cmd_args = cmd_args.append("--host=%s" % (hostname))
     if port:
-      cmd_args = cmd_args + " --port=%s" % (port)
-      
-    if sys.platform == "win32":
-      cmd = "mysql %s" % (cmd_args)
-      mysql = os.popen(cmd, "w") # popen2.Popen3 is not provided on windows
-      mysql.write(dscript)
-      status = mysql.close()
-    else:
-      cmd = "{ mysql %s ; } 2>&1" % (cmd_args)
-      pipes = popen2.Popen3(cmd)
-      pipes.tochild.write(dscript)
-      pipes.tochild.close()
-      print pipes.fromchild.read()
-      status = pipes.wait()
+      cmd_args = cmd_args.append("--port=%s" % (port))
+
+    cmd = "mysql"
+    mysql = popen.popen(cmd, cmd_args, "w")
+    mysql.write(dscript)
+    status = mysql.close()
 
     if status:
       print "[ERROR] The database did not create sucessfully."
@@ -360,4 +369,4 @@ if __name__ == "__main__":
   except KeyboardInterrupt:
     pass
   sys.exit(0)
-    
+
