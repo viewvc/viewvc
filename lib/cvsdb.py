@@ -200,7 +200,7 @@ class CheckinDatabase:
         cursor = self.db.cursor()
         try:
             cursor.execute(sql, sql_args)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Error setting metadata: '%s'\n"
                             "\tname  = %s\n"
                             "\tvalue = %s\n"
@@ -322,7 +322,7 @@ class CheckinDatabase:
         cursor = self.db.cursor()
         try:
             cursor.execute(sql, sql_args)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Error adding commit: '%s'\n"
                             "Values were:\n"
                             "\ttype         = %s\n"

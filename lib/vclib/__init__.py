@@ -15,6 +15,7 @@ such as CVS.
 """
 
 import types
+import io
 
 
 # item types returned by Repository.itemtype().
@@ -59,10 +60,10 @@ class Repository:
   def authorizer(self):
     """Return the vcauth.Authorizer object associated with this
     repository, or None if no such association has been made."""
-    
+
   def open(self):
     """Open a connection to the repository."""
-    
+
   def itemtype(self, path_parts, rev):
     """Return the type of the item (file or dir) at the given path and revision
 
@@ -121,7 +122,7 @@ class Repository:
 
     options is a dictionary of implementation specific options
     """
-  
+
   def itemlog(self, path_parts, rev, sortby, first, limit, options):
     """Retrieve an item's log information
 
@@ -140,7 +141,7 @@ class Repository:
 
     limit is the maximum number of returned Revisions, or 0 to return
     all available data
-    
+
     options is a dictionary of implementation specific options
     """
 
@@ -153,7 +154,7 @@ class Repository:
 
     rev is the revision of the item to return information about.
     """
-    
+
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     """Return a diff (in GNU diff format) of two file revisions
 
@@ -178,7 +179,7 @@ class Repository:
     the root of the repository. e.g. ["subdir1", "subdir2", "filename"]
 
     rev is the revision of the item to return information about.
-    
+
     If include_text is true, populate the Annotation objects' "text"
     members with the corresponding line of file content; otherwise,
     leave that member set to None."""
@@ -187,7 +188,7 @@ class Repository:
     """Return information about a global revision
 
     rev is the revision of the item to return information about
-    
+
     Return value is a 5-tuple containing: the date, author, log
     message, a list of ChangedPath items representing paths changed,
     and a dictionary mapping property names to property values for
@@ -214,14 +215,14 @@ class Repository:
     NOTE: Callers that require a filesize answer when this function
     returns -1 may obtain it by measuring the data returned via
     openfile().
-    
+
     The path is specified as a list of components, relative to the root
     of the repository. e.g. ["subdir1", "subdir2", "filename"]
 
     rev is the revision of the item to return information about
     """
 
-    
+
 # ======================================================================
 class DirEntry:
   """Instances represent items in a directory listing"""
@@ -342,7 +343,8 @@ class NonTextualFileContents(Error):
 # ======================================================================
 # Implementation code used by multiple vclib modules
 
-import popen
+import subprocess
+import sys
 import os
 import time
 
@@ -387,10 +389,18 @@ class _diff_fp:
     self.temp1 = temp1
     self.temp2 = temp2
     args = diff_opts[:]
+    args.insert(0, diff_cmd)
     if info1 and info2:
       args.extend(["-L", self._label(info1), "-L", self._label(info2)])
     args.extend([temp1, temp2])
-    self.fp = popen.popen(diff_cmd, args, "r")
+    self.proc = subprocess.Popen(args, stdout=subprocess.PIPE, bufsize=-1,
+                                 close_fds=(sys.platform != "win32"))
+    if (    not isinstance(self.proc.stdout, io.TextIOBase)
+        and isinstance(self.proc.stdout, io.BufferedIOBase)):
+        self.fp = io.TextIOWrapper(self.proc.stdout,
+                                   encoding='utf-8', errors='surrogateescape')
+    else:
+        self.fp = self.proc.stdout
 
   def read(self, bytes):
     return self.fp.read(bytes)
@@ -400,9 +410,13 @@ class _diff_fp:
 
   def close(self):
     try:
-      if self.fp:
+      if self.proc:
         self.fp.close()
-        self.fp = None
+        ret = self.proc.poll()
+        if ret is None:
+          # child process seems to be still running...
+          self.proc.terminate()
+        self.proc = None
     finally:
       try:
         if self.temp1:
@@ -416,7 +430,8 @@ class _diff_fp:
   def __del__(self):
     self.close()
 
-  def _label(self, (path, date, rev)):
+  def _label(self, info):
+    path, date, rev = info
     date = date and time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date))
     return "%s\t%s\t%s" % (path, date, rev)
 
@@ -429,7 +444,7 @@ def check_root_access(repos):
   if not auth:
     return 1
   return auth.check_root_access(repos.rootname())
-  
+
 def check_path_access(repos, path_parts, pathtype=None, rev=None):
   """Return 1 iff the associated username is permitted to read
   revision REV of the path PATH_PARTS (of type PATHTYPE) in repository

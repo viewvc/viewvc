@@ -16,7 +16,10 @@
 
 import sys
 import os
-import ConfigParser
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 import fnmatch
 
 
@@ -152,7 +155,7 @@ class Config:
     
     self.conf_path = os.path.isfile(pathname) and pathname or None
     self.base = os.path.dirname(pathname)
-    self.parser = ConfigParser.ConfigParser()
+    self.parser = configparser.ConfigParser()
     self.parser.optionxform = lambda x: x # don't case-normalize option names.
     self.parser.read(self.conf_path or [])
     
@@ -179,7 +182,7 @@ class Config:
         parts = [ ]
       fname = fname.replace('%lang%', language)
 
-      parser = ConfigParser.ConfigParser()
+      parser = configparser.ConfigParser()
       parser.optionxform = lambda x: x # don't case-normalize option names.
       parser.read(os.path.join(self.base, fname))
       for section in parser.sections():

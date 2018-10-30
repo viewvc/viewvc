@@ -30,20 +30,20 @@ import fnmatch
 import gzip
 import mimetypes
 import re
-import rfc822
+import email.utils
 import stat
 import struct
 import tempfile
 import time
 import types
 import urllib
+import subprocess
 
 # These modules come from our library (the stub has set up the path)
 from common import _item, _RCSDIFF_NO_CHANGES, _RCSDIFF_IS_BINARY, _RCSDIFF_ERROR, TemplateData
 import accept
 import config
 import ezt
-import popen
 import sapi
 import vcauth
 import vclib
@@ -888,7 +888,8 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
   if mtime is not None:
     try:
       request_mtime = request.server.getenv('HTTP_IF_MODIFIED_SINCE')
-      request_mtime = rfc822.mktime_tz(rfc822.parsedate_tz(request_mtime))
+      request_mtime = email.utils.mktime_tz(
+                              email.utils.parsedate_tz(request_mtime))
     except:
       request_mtime = None
 
@@ -904,7 +905,7 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
 
   # require revalidation after the configured amount of time
   if cfg and cfg.options.http_expiration_time >= 0:
-    expiration = rfc822.formatdate(time.time() +
+    expiration = email.utils.formatdate(time.time() +
                                    cfg.options.http_expiration_time)
     request.server.addheader('Expires', expiration)
     request.server.addheader('Cache-Control',
@@ -916,7 +917,7 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
     if etag is not None:
       request.server.addheader('ETag', etag)
     if mtime is not None:
-      request.server.addheader('Last-Modified', rfc822.formatdate(mtime))
+      request.server.addheader('Last-Modified', email.utils.formatdate(mtime))
   return isfresh
 
 def get_view_template(cfg, view_name, language="en"):
@@ -1277,7 +1278,7 @@ class ViewVCHtmlFormatter:
     """Return a 2-tuple containing:
          - the text represented by MatchObject MOBJ, formatted as an
            linkified URL created by substituting match groups 0-9 into
-           USERDATA (which is a format string that uses \N to
+           USERDATA (which is a format string that uses \\N to
            represent the substitution locations) and with no more than
            MAXLEN characters in the non-HTML-tag portions.  If MAXLEN
            is 0, there is no maximum.
@@ -3083,14 +3084,17 @@ def view_cvsgraph_image(request):
   #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib:/path/to/cvsgraph'
 
   rcsfile = request.repos.rcsfile(request.path_parts)
-  fp = popen.popen(cfg.utilities.cvsgraph or 'cvsgraph',
-                   ("-c", cfg.path(cfg.options.cvsgraph_conf),
-                    "-r", request.repos.rootpath,
-                    cvsgraph_extraopts(request),
-                    rcsfile), 'rb', 0)
+  proc = subprocess.Popen((cfg.utilities.cvsgraph or 'cvsgraph',
+                           "-c", cfg.path(cfg.options.cvsgraph_conf),
+                           "-r", request.repos.rootpath,
+                           cvsgraph_extraopts(request),
+                           rcsfile), stdout=subprocess.PIPE,
+                           close_fds=(sys.platform != "win32"))
   
-  copy_stream(fp, get_writeready_server_file(request, 'image/png'))
-  fp.close()
+  copy_stream(proc.stdout, get_writeready_server_file(request, 'image/png'))
+  ret = proc.poll()
+  if ret is None:
+    proc.kill()  
 
 def view_cvsgraph(request):
   "output a page containing an image rendered by cvsgraph"
@@ -3111,33 +3115,35 @@ def view_cvsgraph(request):
 
   # Create an image map
   rcsfile = request.repos.rcsfile(request.path_parts)
-  fp = popen.popen(cfg.utilities.cvsgraph or 'cvsgraph',
-                   ("-i",
-                    "-c", cfg.path(cfg.options.cvsgraph_conf),
-                    "-r", request.repos.rootpath,
-                    "-x", "x",
-                    "-3", request.get_url(view_func=view_log, params={},
-                                          escape=1),
-                    "-4", request.get_url(view_func=view, 
-                                          params={'revision': None},
-                                          escape=1, partial=1),
-                    "-5", request.get_url(view_func=view_diff,
-                                          params={'r1': None, 'r2': None},
-                                          escape=1, partial=1),
-                    "-6", request.get_url(view_func=view_directory,
-                                          where=up_where,
-                                          pathtype=vclib.DIR,
-                                          params={'pathrev': None},
-                                          escape=1, partial=1),
-                    cvsgraph_extraopts(request),
-                    rcsfile), 'rb', 0)
+  proc = subprocess.Popen((cfg.utilities.cvsgraph or 'cvsgraph',
+                           "-i",
+                           "-c", cfg.path(cfg.options.cvsgraph_conf),
+                           "-r", request.repos.rootpath,
+                           "-x", "x",
+                           "-3", request.get_url(view_func=view_log, params={},
+                                                 escape=1),
+                           "-4", request.get_url(view_func=view, 
+                                                 params={'revision': None},
+                                                 escape=1, partial=1),
+                           "-5", request.get_url(view_func=view_diff,
+                                                 params={'r1': None,
+                                                         'r2': None},
+                                                 escape=1, partial=1),
+                           "-6", request.get_url(view_func=view_directory,
+                                                 where=up_where,
+                                                 pathtype=vclib.DIR,
+                                                 params={'pathrev': None},
+                                                 escape=1, partial=1),
+                           cvsgraph_extraopts(request),
+                           rcsfile), stdout=subprocess.PIPE,
+                           close_fds=(sys.platform != "win32"))
 
   graph_action, graph_hidden_values = \
     request.get_form(view_func=view_cvsgraph, params={})
 
   data = common_template_data(request)
   data.merge(TemplateData({
-    'imagemap' : fp,
+    'imagemap' : proc.stdout,
     'imagesrc' : imagesrc,
     'graph_action' : graph_action,
     'graph_hidden_values' : graph_hidden_values,
@@ -3185,7 +3191,7 @@ def view_doc(request):
   # Stat the file to get content length and last-modified date.
   try:
     info = os.stat(filename)
-  except OSError, v:
+  except OSError as v:
     raise debug.ViewVCException('Static file "%s" not available (%s)'
                                  % (document, str(v)), '404 Not Found')
   content_length = str(info[stat.ST_SIZE])
@@ -3198,7 +3204,7 @@ def view_doc(request):
 
   try:
     fp = open(filename, "rb")
-  except IOError, v:
+  except IOError as v:
     raise debug.ViewVCException('Static file "%s" not available (%s)'
                                  % (document, str(v)), '404 Not Found')
 
@@ -3902,9 +3908,9 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
                             magic='ustar', version='00', chksum=None):
   if not mode:
     if name[-1:] == '/':
-      mode = 0755
+      mode = 0o0755
     else:
-      mode = 0644
+      mode = 0o0644
 
   if not typeflag:
     if linkname:
@@ -4024,9 +4030,9 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     # at the ,v file in CVS, but that's a layering violation we'd like
     # to avoid as much as possible.
     if request.repos.isexecutable(rep_path + [file.name], request.pathrev):
-      mode = 0755
+      mode = 0o0755
     else:
-      mode = 0644
+      mode = 0o0644
 
     # Is this thing a symlink?
     #
@@ -4121,12 +4127,12 @@ def download_tarball(request):
 
   if debug.TARFILE_PATH:
     request.server.header('')
-    print """
+    print("""
 <html>
 <body>
 <p>Tarball '%s' successfully generated!</p>
 </body>
-</html>""" % (debug.TARFILE_PATH)
+</html>""" % (debug.TARFILE_PATH))
 
 
 def view_revision(request):
@@ -5177,7 +5183,7 @@ def main(server, cfg):
       # build a Request object, which contains info about the HTTP request
       request = Request(server, cfg)
       request.run_viewvc()
-    except SystemExit, e:
+    except SystemExit as e:
       return
     except:
       view_error(server, cfg)

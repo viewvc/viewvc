@@ -35,8 +35,11 @@ else:
     sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
 
 import getopt
+import subprocess
 
-import popen
+if sys.version_info[0] >= 3:
+    def raw_input(prompt=''):
+        return input(prompt)
 
 ## ------------------------------------------------------------------------
 ## Stuff common to all schemas
@@ -341,7 +344,7 @@ if __name__ == "__main__":
     # Create the database.
     dscript = DATABASE_SCRIPT_COMMON.replace("<dbname>", dbname)
     if version == "1.0":
-      print BONSAI_COMPAT
+      print(BONSAI_COMPAT)
       dscript = dscript + DATABASE_SCRIPT_VERSION_0
     else:
       dscript = dscript + DATABASE_SCRIPT_VERSION_1
@@ -355,17 +358,31 @@ if __name__ == "__main__":
     if port:
       cmd_args = cmd_args.append("--port=%s" % (port))
 
-    cmd = "mysql"
-    mysql = popen.popen(cmd, cmd_args, "w")
-    mysql.write(dscript)
-    status = mysql.close()
+    cmd = ["mysql"]
+    mysql = subprocess.Popen(cmd + cmd_args, bufsize=-1, stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                             universal_newlines=True,
+                             close_fds=(sys.platform != "win32"))
+    mysql.stdin.write(dscript)
+    mysql.stdin.close()
+    status = mysql.poll()
+    if status is None:
+        if (    sys.version_info[0] >= 3
+            or (sys.version_info[0] == 2 and sys.version_info[1] > 6)):
+           try:
+               mysql.wait(300)
+           except subprocess.TimeoutExpired:
+               mysql.kill()
+               status = -1
+        else:
+           mysql.wait()
 
     if status:
-      print "[ERROR] The database did not create sucessfully."
+      print("[ERROR] The database did not create sucessfully.")
       sys.exit(1)
 
-    print "Database created successfully.  Don't forget to configure the "
-    print "[cvsdb] section of your viewvc.conf file."
+    print("Database created successfully.  Don't forget to configure the ")
+    print("[cvsdb] section of your viewvc.conf file.")
   except KeyboardInterrupt:
     pass
   sys.exit(0)
