@@ -1,247 +1,61 @@
 #!/usr/bin/env python
-"""ezt.py -- easy templating
+"""ezt.py -- EaZy Templating
 
-ezt templates are simply text files in whatever format you so desire
-(such as XML, HTML, etc.) which contain directives sprinkled
-throughout.  With these directives it is possible to generate the
-dynamic content from the ezt templates.
-
-These directives are enclosed in square brackets.  If you are a
-C-programmer, you might be familar with the #ifdef directives of the C
-preprocessor 'cpp'.  ezt provides a similar concept.  Additionally EZT
-has a 'for' directive, which allows it to iterate (repeat) certain
-subsections of the template according to sequence of data items
-provided by the application.
-
-The final rendering is performed by the method generate() of the Template
-class.  Building template instances can either be done using external
-EZT files (convention: use the suffix .ezt for such files):
-
-    >>> template = Template("../templates/log.ezt")
-
-or by calling the parse() method of a template instance directly with 
-a EZT template string:
-
-    >>> template = Template()
-    >>> template.parse('''<html><head>
-    ... <title>[title_string]</title></head>
-    ... <body><h1>[title_string]</h1>
-    ...    [for a_sequence] <p>[a_sequence]</p>
-    ...    [end] <hr />
-    ...    The [person] is [if-any state]in[else]out[end].
-    ... </body>
-    ... </html>
-    ... ''')
-
-The application should build a dictionary 'data' and pass it together
-with the output fileobject to the templates generate method:
-
-    >>> data = {'title_string' : "A Dummy Page",
-    ...         'a_sequence' : ['list item 1', 'list item 2', 'another element'],
-    ...         'person': "doctor",
-    ...         'state' : None }
-    >>> import sys
-    >>> template.generate(sys.stdout, data)
-    <html><head>
-    <title>A Dummy Page</title></head>
-    <body><h1>A Dummy Page</h1>
-     <p>list item 1</p>
-     <p>list item 2</p>
-     <p>another element</p>
-     <hr />
-    The doctor is out.
-    </body>
-    </html>
-
-Template syntax error reporting should be improved.  Currently it is 
-very sparse (template line numbers would be nice):
-
-    >>> Template().parse("[if-any where] foo [else] bar [end unexpected args]")
-    Traceback (innermost last):
-      File "<stdin>", line 1, in ?
-      File "ezt.py", line 220, in parse
-        self.program = self._parse(text)
-      File "ezt.py", line 275, in _parse
-        raise ArgCountSyntaxError(str(args[1:]))
-    ArgCountSyntaxError: ['unexpected', 'args']
-    >>> Template().parse("[if unmatched_end]foo[end]")
-    Traceback (innermost last):
-      File "<stdin>", line 1, in ?
-      File "ezt.py", line 206, in parse
-        self.program = self._parse(text)
-      File "ezt.py", line 266, in _parse
-        raise UnmatchedEndError()
-    UnmatchedEndError
-
-
-Directives
-==========
-
- Several directives allow the use of dotted qualified names refering to objects
- or attributes of objects contained in the data dictionary given to the 
- .generate() method.
-
- Qualified names
- ---------------
-
-   Qualified names have two basic forms: a variable reference, or a string
-   constant. References are a name from the data dictionary with optional
-   dotted attributes (where each intermediary is an object with attributes,
-   of course).
-
-   Examples:
-
-     [varname]
-
-     [ob.attr]
-
-     ["string"]
-
- Simple directives
- -----------------
-
-   [QUAL_NAME]
-
-   This directive is simply replaced by the value of the qualified name.
-   If the value is a number it's converted to a string before being 
-   outputted. If it is None, nothing is outputted. If it is a python file
-   object (i.e. any object with a "read" method), it's contents are
-   outputted. If it is a callback function (any callable python object
-   is assumed to be a callback function), it is invoked and passed an EZT
-   Context object as an argument.
-
-   [QUAL_NAME QUAL_NAME ...]
-
-   If the first value is a callback function, it is invoked with an EZT
-   Context object as a first argument, and the rest of the values as
-   additional arguments.
-
-   Otherwise, the first value defines a substitution format, specifying
-   constant text and indices of the additional arguments. The arguments
-   are substituted and the result is inserted into the output stream.
-
-   Example:
-     ["abc %0 def %1 ghi %0" foo bar.baz]
-
-   Note that the first value can be any type of qualified name -- a string
-   constant or a variable reference. Use %% to substitute a percent sign.
-   Argument indices are 0-based.
-
-   [include "filename"]  or [include QUAL_NAME]
-
-   This directive is replaced by content of the named include file. Note
-   that a string constant is more efficient -- the target file is compiled
-   inline. In the variable form, the target file is compiled and executed
-   at runtime.
-
- Block directives
- ----------------
-
-   [for QUAL_NAME] ... [end]
-   
-   The text within the [for ...] directive and the corresponding [end]
-   is repeated for each element in the sequence referred to by the
-   qualified name in the for directive.  Within the for block this
-   identifiers now refers to the actual item indexed by this loop
-   iteration.
-
-   [if-any QUAL_NAME [QUAL_NAME2 ...]] ... [else] ... [end]
-
-   Test if any QUAL_NAME value is not None or an empty string or list.
-   The [else] clause is optional.  CAUTION: Numeric values are
-   converted to string, so if QUAL_NAME refers to a numeric value 0,
-   the then-clause is substituted!
-
-   [if-index INDEX_FROM_FOR odd] ... [else] ... [end]
-   [if-index INDEX_FROM_FOR even] ... [else] ... [end]
-   [if-index INDEX_FROM_FOR first] ... [else] ... [end]
-   [if-index INDEX_FROM_FOR last] ... [else] ... [end]
-   [if-index INDEX_FROM_FOR NUMBER] ... [else] ... [end]
-
-   These five directives work similar to [if-any], but are only useful
-   within a [for ...]-block (see above).  The odd/even directives are
-   for example useful to choose different background colors for
-   adjacent rows in a table.  Similar the first/last directives might
-   be used to remove certain parts (for example "Diff to previous"
-   doesn't make sense, if there is no previous).
-
-   [is QUAL_NAME STRING] ... [else] ... [end]
-   [is QUAL_NAME QUAL_NAME] ... [else] ... [end]
-
-   The [is ...] directive is similar to the other conditional
-   directives above.  But it allows to compare two value references or
-   a value reference with some constant string.
-
-   [define VARIABLE] ... [end]
-
-   The [define ...] directive allows you to create and modify template
-   variables from within the template itself.  Essentially, any data
-   between inside the [define ...] and its matching [end] will be
-   expanded using the other template parsing and output generation
-   rules, and then stored as a string value assigned to the variable
-   VARIABLE.  The new (or changed) variable is then available for use
-   with other mechanisms such as [is ...] or [if-any ...], as long as
-   they appear later in the template.
-
-   [format STRING] ... [end]
-
-   The format directive controls how the values substituted into
-   templates are escaped before they are put into the output stream. It
-   has no effect on the literal text of the templates, only the output
-   from [QUAL_NAME ...] directives. STRING can be one of "raw" "html" 
-   "xml" or "uri". The "raw" mode leaves the output unaltered; the "html"
-   and "xml" modes escape special characters using entity escapes (like
-   &quot; and &gt;); the "uri" mode escapes characters using hexadecimal
-   escape sequences (like %20 and %7e).
-
-   [format CALLBACK]
- 
-   Python applications using EZT can provide custom formatters as callback
-   variables. "[format CALLBACK][QUAL_NAME][end]" is in most cases
-   equivalent to "[CALLBACK QUAL_NAME]"
+For documentation, please see: http://code.google.com/p/ezt/wiki/Syntax
 """
 #
-# Copyright (C) 2001-2007 Greg Stein. All Rights Reserved.
+# Copyright (C) 2001-2011 Greg Stein. All Rights Reserved.
 #
-# Redistribution and use in source and binary forms, with or without 
-# modification, are permitted provided that the following conditions are 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
 # met:
 #
-# * Redistributions of source code must retain the above copyright 
-#   notice, this list of conditions and the following disclaimer. 
+# * Redistributions of source code must retain the above copyright
+#   notice, this list of conditions and the following disclaimer.
 #
-# * Redistributions in binary form must reproduce the above copyright 
-#   notice, this list of conditions and the following disclaimer in the 
-#   documentation and/or other materials provided with the distribution. 
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the distribution.
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS 
-# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE 
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
 #
 # This software is maintained by Greg and is available at:
-#    http://svn.webdav.org/repos/projects/ezt/trunk/
+#    http://code.google.com/p/ezt/
 #
 
-import string
+__author__ = 'Greg Stein'
+__version__ = '1.0'
+__license__ = 'BSD'
+
 import re
-from types import StringType, IntType, FloatType, LongType, TupleType
 import os
-import cgi
+import sys
 import urllib
-try:
-  import cStringIO
-except ImportError:
-  import StringIO
-  cStringIO = StringIO
+
+if sys.version_info[0] >= 3:
+  # Python >=3.0
+  long = int
+  unicode = str
+  from io import StringIO
+  from urllib.parse import quote_plus as urllib_parse_quote_plus
+else:
+  # Python <3.0
+  from urllib import quote_plus as urllib_parse_quote_plus
+  try:
+    from cStringIO import StringIO
+  except ImportError:
+    from StringIO import StringIO
 
 #
 # Formatting types
@@ -249,25 +63,35 @@ except ImportError:
 FORMAT_RAW = 'raw'
 FORMAT_HTML = 'html'
 FORMAT_XML = 'xml'
-FORMAT_URI = 'uri'
+FORMAT_JS = 'js'
+FORMAT_URL = 'url'
 
 #
-# This regular expression matches three alternatives:
-#   expr: DIRECTIVE | BRACKET | COMMENT
-#   DIRECTIVE: '[' ITEM (whitespace ITEM)* ']
+# This regular expression matches four alternatives:
+#   expr: NEWLINE | DIRECTIVE | BRACKET | COMMENT
+#   DIRECTIVE: '[' ITEM (whitespace ARG)* ']
 #   ITEM: STRING | NAME
+#   ARG: STRING | NAME | NUMBER
 #   STRING: '"' (not-slash-or-dquote | '\' anychar)* '"'
-#   NAME: (alphanum | '_' | '-' | '.')+
+#   NAME: (alpha | '_') (alphanum | '_' | '-' | '.')*
+#   NUMBER: digit+
 #   BRACKET: '[[]'
 #   COMMENT: '[#' not-rbracket* ']'
 #
-# When used with the split() method, the return value will be composed of
-# non-matching text and the two paren groups (DIRECTIVE and BRACKET). Since
-# the COMMENT matches are not placed into a group, they are considered a
-# "splitting" value and simply dropped.
+# Note: the above BNR is a bit loose around ITEM/ARG/NAME/NUMBER. The
+#       important point is that the first value in a directive must
+#       start with '_' or an alpha character (no digits). This greatly
+#       helps to avoid simple errors like '[0]' in templates.
 #
-_item = r'(?:"(?:[^\\"]|\\.)*"|[-\w.]+)'
-_re_parse = re.compile(r'\[(%s(?: +%s)*)\]|(\[\[\])|\[#[^\]]*\]' % (_item, _item))
+# When used with the split() method, the return value will be composed of
+# non-matching text and the three paren groups (NEWLINE, DIRECTIVE and
+# BRACKET). Since the COMMENT matches are not placed into a group, they are
+# considered a "splitting" value and simply dropped.
+#
+_item = r'(?:"(?:[^\\"]|\\.)*"|[A-Za-z_][-\w.]*)'
+_arg = r'(?:"(?:[^\\"]|\\.)*"|[-\w.]+)'
+_re_parse = re.compile(r'(\r?\n)|\[(%s(?: +%s)*)\]|(\[\[\])|\[#[^\]]*\]' %
+                       (_item, _arg))
 
 _re_args = re.compile(r'"(?:[^\\"]|\\.)*"|[-\w.]+')
 
@@ -275,7 +99,7 @@ _re_args = re.compile(r'"(?:[^\\"]|\\.)*"|[-\w.]+')
 _block_cmd_specs = { 'if-index':2, 'for':1, 'is':2, 'define':1, 'format':1 }
 _block_cmds = _block_cmd_specs.keys()
 
-# two regular expresssions for compressing whitespace. the first is used to
+# two regular expressions for compressing whitespace. the first is used to
 # compress any whitespace including a newline into a single newline. the
 # second regex is used to compress runs of whitespace into a single space.
 _re_newline = re.compile('[ \t\r\f\v]*\n\\s*')
@@ -311,10 +135,11 @@ class Template:
       # assume the argument is a plain text string
       text_or_reader = _TextReader(text_or_reader)
 
-    self.program = self._parse(text_or_reader, base_format=base_format)
+    self.program = self._parse(text_or_reader,
+                               base_printer=_parse_format(base_format))
 
   def generate(self, fp, data):
-    if hasattr(data, '__getitem__') or callable(getattr(data, 'keys', None)):
+    if hasattr(data, '__getitem__') or hasattr(getattr(data, 'keys', None), '__call__'):
       # a dictionary-like object was passed. convert it to an
       # attribute-based object.
       class _data_ob:
@@ -322,13 +147,13 @@ class Template:
           vars(self).update(d)
       data = _data_ob(data)
 
-    ctx = Context(fp)
+    ctx = _context()
     ctx.data = data
-    ctx.for_iterators = { }
+    ctx.for_index = { }
     ctx.defines = { }
-    self._execute(self.program, ctx)
+    self._execute(self.program, fp, ctx)
 
-  def _parse(self, reader, for_names=None, file_args=(), base_format=None):
+  def _parse(self, reader, for_names=None, file_args=(), base_printer=None):
     """text -> string object containing the template.
 
     This is a private helper function doing the real work for method parse.
@@ -338,7 +163,8 @@ class Template:
     Note: comment directives [# ...] are automatically dropped by _re_parse.
     """
 
-    # parse the template program into: (TEXT DIRECTIVE BRACKET)* TEXT
+    filename = reader.filename()
+    # parse the template program into: (TEXT NEWLINE DIRECTIVE BRACKET)* TEXT
     parts = _re_parse.split(reader.text)
 
     program = [ ]
@@ -346,29 +172,45 @@ class Template:
     if not for_names:
       for_names = [ ]
 
-    if base_format:
-      program.append((self._cmd_format, _formatters[base_format]))
+    if base_printer is None:
+      base_printer = ()
+    printers = [ base_printer ]
 
+    one_newline_copied = False
+    line_number = 1
     for i in range(len(parts)):
       piece = parts[i]
-      which = i % 3  # discriminate between: TEXT DIRECTIVE BRACKET
+      which = i % 4  # discriminate between: TEXT NEWLINE DIRECTIVE BRACKET
       if which == 0:
         # TEXT. append if non-empty.
         if piece:
           if self.compress_whitespace:
-            piece = _re_whitespace.sub(' ', _re_newline.sub('\n', piece))
+            piece = _re_whitespace.sub(' ', piece)
           program.append(piece)
-      elif which == 2:
+          one_newline_copied = False
+      elif which == 1:
+        # NEWLINE. append unless compress_whitespace requested
+        if piece:
+          line_number += 1
+          if self.compress_whitespace:
+            if not one_newline_copied:
+              program.append('\n')
+              one_newline_copied = True
+          else:
+            program.append(piece)
+      elif which == 3:
         # BRACKET directive. append '[' if present.
         if piece:
           program.append('[')
+          one_newline_copied = False
       elif piece:
         # DIRECTIVE is present.
+        one_newline_copied = False
         args = _re_args.findall(piece)
         cmd = args[0]
         if cmd == 'else':
           if len(args) > 1:
-            raise ArgCountSyntaxError(str(args[1:]))
+            raise ArgCountSyntaxError(str(args[1:]), filename, line_number)
           ### check: don't allow for 'for' cmd
           idx = stack[-1][1]
           true_section = program[idx:]
@@ -376,23 +218,24 @@ class Template:
           stack[-1][3] = true_section
         elif cmd == 'end':
           if len(args) > 1:
-            raise ArgCountSyntaxError(str(args[1:]))
+            raise ArgCountSyntaxError(str(args[1:]), filename, line_number)
           # note: true-section may be None
           try:
-            cmd, idx, args, true_section = stack.pop()
+            cmd, idx, args, true_section, start_line_number = stack.pop()
           except IndexError:
-            raise UnmatchedEndError()
+            raise UnmatchedEndError(None, filename, line_number)
           else_section = program[idx:]
           if cmd == 'format':
-            program.append((self._cmd_end_format, None))
+            printers.pop()
           else:
             func = getattr(self, '_cmd_' + re.sub('-', '_', cmd))
-            program[idx:] = [ (func, (args, true_section, else_section)) ]
+            program[idx:] = [ (func, (args, true_section, else_section),
+                               filename, line_number) ]
             if cmd == 'for':
               for_names.pop()
         elif cmd in _block_cmds:
           if len(args) > _block_cmd_specs[cmd] + 1:
-            raise ArgCountSyntaxError(str(args[1:]))
+            raise ArgCountSyntaxError(str(args[1:]), filename, line_number)
           ### this assumes arg1 is always a ref unless cmd is 'define'
           if cmd != 'define':
             args[1] = _prepare_ref(args[1], for_names, file_args)
@@ -404,113 +247,154 @@ class Template:
             for_names.append(args[1][0])  # append the refname
           elif cmd == 'format':
             if args[1][0]:
-              # argument is a variable reference
-              formatter = args[1]
-            else:
-              # argument is a string constant referring to built-in formatter
-              formatter = _formatters.get(args[1][1])
-              if not formatter:
-                raise UnknownFormatConstantError(str(args[1:]))
-            program.append((self._cmd_format, formatter))
+              raise BadFormatConstantError(str(args[1:]), filename, line_number)
+            printers.append(_parse_format(args[1][1]))
 
           # remember the cmd, current pos, args, and a section placeholder
-          stack.append([cmd, len(program), args[1:], None])
-        elif cmd == 'include':
+          stack.append([cmd, len(program), args[1:], None, line_number])
+        elif cmd == 'include' or cmd == 'insertfile':
+          is_insertfile = (cmd == 'insertfile')
+          # extra arguments are meaningless when using insertfile
+          if is_insertfile and len(args) != 2:
+            raise ArgCountSyntaxError(str(args), filename, line_number)
           if args[1][0] == '"':
             include_filename = args[1][1:-1]
-            f_args = [ ]
-            for arg in args[2:]:
-              f_args.append(_prepare_ref(arg, for_names, file_args))
-            program.extend(self._parse(reader.read_other(include_filename),
-                                       for_names, f_args))
+            if is_insertfile:
+              program.append(reader.read_other(include_filename).text)
+            else:
+              f_args = [ ]
+              for arg in args[2:]:
+                f_args.append(_prepare_ref(arg, for_names, file_args))
+              program.extend(self._parse(reader.read_other(include_filename),
+                                         for_names, f_args, printers[-1]))
           else:
             if len(args) != 2:
-              raise ArgCountSyntaxError(str(args))
-            program.append((self._cmd_include,
+              raise ArgCountSyntaxError(str(args), filename, line_number)
+            if is_insertfile:
+              cmd = self._cmd_insertfile
+            else:
+              cmd = self._cmd_include
+            program.append((cmd,
                             (_prepare_ref(args[1], for_names, file_args),
-                             reader)))
+                             reader, printers[-1]), filename, line_number))
         elif cmd == 'if-any':
           f_args = [ ]
           for arg in args[1:]:
             f_args.append(_prepare_ref(arg, for_names, file_args))
-          stack.append(['if-any', len(program), f_args, None])
+          stack.append(['if-any', len(program), f_args, None, line_number])
         else:
           # implied PRINT command
-          f_args = [ ]
-          for arg in args:
-            f_args.append(_prepare_ref(arg, for_names, file_args))
-          program.append((self._cmd_print, f_args))
+          if len(args) > 1:
+            f_args = [ ]
+            for arg in args:
+              f_args.append(_prepare_ref(arg, for_names, file_args))
+            program.append((self._cmd_subst,
+                            (printers[-1], f_args[0], f_args[1:]),
+                            filename, line_number))
+          else:
+            valref = _prepare_ref(args[0], for_names, file_args)
+            program.append((self._cmd_print, (printers[-1], valref),
+                            filename, line_number))
 
     if stack:
-      ### would be nice to say which blocks...
-      raise UnclosedBlocksError()
+      raise UnclosedBlocksError('Block opened at line %s' % stack[-1][4],
+                                filename=filename)
     return program
 
-  def _execute(self, program, ctx):
+  def _execute(self, program, fp, ctx):
     """This private helper function takes a 'program' sequence as created
     by the method '_parse' and executes it step by step.  strings are written
     to the file object 'fp' and functions are called.
     """
     for step in program:
-      if isinstance(step, StringType):
-        ctx.fp.write(step)
+      if isinstance(step, str):
+        fp.write(step)
       else:
-        step[0](step[1], ctx)
+        method, method_args, filename, line_number = step
+        method(method_args, fp, ctx, filename, line_number)
 
-  def _cmd_print(self, valrefs, ctx):
-    value = _get_value(valrefs[0], ctx)
-    args = map(lambda valref, ctx=ctx: _get_value(valref, ctx), valrefs[1:])
-    try:
-      _write_value(value, args, ctx)
-    except TypeError:
-      raise Exception("Unprintable value type for '%s'" % (str(valrefs[0][0])))
+  def _cmd_print(self, transforms_valref, fp, ctx, filename, line_number):
+    (transforms, valref) = transforms_valref
+    value = _get_value(valref, ctx, filename, line_number)
+    # if the value has a 'read' attribute, then it is a stream: copy it
+    if hasattr(value, 'read'):
+      while 1:
+        chunk = value.read(16384)
+        if not chunk:
+          break
+        for t in transforms:
+          chunk = t(chunk)
+        fp.write(chunk)
+    else:
+      for t in transforms:
+        value = t(value)
+      fp.write(value)
 
-  def _cmd_format(self, formatter, ctx):
-    if type(formatter) is TupleType:
-      formatter = _get_value(formatter, ctx)
-    ctx.formatters.append(formatter)
+  def _cmd_subst(self, transforms_valref_args, fp, ctx, filename,
+                 line_number):
+    (transforms, valref, args) = transforms_valref_args
+    fmt = _get_value(valref, ctx, filename, line_number)
+    parts = _re_subst.split(fmt)
+    for i in range(len(parts)):
+      piece = parts[i]
+      if i%2 == 1 and piece != '%':
+        idx = int(piece)
+        if idx < len(args):
+          piece = _get_value(args[idx], ctx, filename, line_number)
+        else:
+          piece = '<undef>'
+      for t in transforms:
+        piece = t(piece)
+      fp.write(piece)
 
-  def _cmd_end_format(self, valref, ctx):
-    ctx.formatters.pop()
-
-  def _cmd_include(self, (valref, reader), ctx):
-    fname = _get_value(valref, ctx)
+  def _cmd_include(self, valref_reader_printer, fp, ctx, filename,
+                   line_number):
+    (valref, reader, printer) = valref_reader_printer
+    fname = _get_value(valref, ctx, filename, line_number)
     ### note: we don't have the set of for_names to pass into this parse.
-    ### I don't think there is anything to do but document it.
-    self._execute(self._parse(reader.read_other(fname)), ctx)
+    ### I don't think there is anything to do but document it
+    self._execute(self._parse(reader.read_other(fname), base_printer=printer),
+                  fp, ctx)
 
-  def _cmd_if_any(self, args, ctx):
+  def _cmd_insertfile(self, valref_reader_printer, fp, ctx, filename,
+                      line_number):
+    (valref, reader, printer) = valref_reader_printer
+    fname = _get_value(valref, ctx, filename, line_number)
+    fp.write(reader.read_other(fname).text)
+
+  def _cmd_if_any(self, args, fp, ctx, filename, line_number):
     "If any value is a non-empty string or non-empty list, then T else F."
     (valrefs, t_section, f_section) = args
     value = 0
     for valref in valrefs:
-      if _get_value(valref, ctx):
+      if _get_value(valref, ctx, filename, line_number):
         value = 1
         break
-    self._do_if(value, t_section, f_section, ctx)
+    self._do_if(value, t_section, f_section, fp, ctx)
 
-  def _cmd_if_index(self, args, ctx):
+  def _cmd_if_index(self, args, fp, ctx, filename, line_number):
     ((valref, value), t_section, f_section) = args
-    iterator = ctx.for_iterators[valref[0]]
+    list, idx = ctx.for_index[valref[0]]
     if value == 'even':
-      value = iterator.index % 2 == 0
+      value = idx % 2 == 0
     elif value == 'odd':
-      value = iterator.index % 2 == 1
+      value = idx % 2 == 1
     elif value == 'first':
-      value = iterator.index == 0
+      value = idx == 0
     elif value == 'last':
-      value = iterator.is_last()
+      value = idx == len(list)-1
     else:
-      value = iterator.index == int(value)
-    self._do_if(value, t_section, f_section, ctx)
+      value = idx == int(value)
+    self._do_if(value, t_section, f_section, fp, ctx)
 
-  def _cmd_is(self, args, ctx):
+  def _cmd_is(self, args, fp, ctx, filename, line_number):
     ((left_ref, right_ref), t_section, f_section) = args
-    value = _get_value(right_ref, ctx)
-    value = string.lower(_get_value(left_ref, ctx)) == string.lower(value)
-    self._do_if(value, t_section, f_section, ctx)
+    right_value = _get_value(right_ref, ctx, filename, line_number)
+    left_value = _get_value(left_ref, ctx, filename, line_number)
+    value = left_value.lower() == right_value.lower()
+    self._do_if(value, t_section, f_section, fp, ctx)
 
-  def _do_if(self, value, t_section, f_section, ctx):
+  def _do_if(self, value, t_section, f_section, fp, ctx):
     if t_section is None:
       t_section = f_section
       f_section = None
@@ -519,28 +403,26 @@ class Template:
     else:
       section = f_section
     if section is not None:
-      self._execute(section, ctx)
+      self._execute(section, fp, ctx)
 
-  def _cmd_for(self, args, ctx):
+  def _cmd_for(self, args, fp, ctx, filename, line_number):
     ((valref,), unused, section) = args
-    list = _get_value(valref, ctx)
-    if isinstance(list, StringType):
-      raise NeedSequenceError("The value of '%s' is not a sequence"
-                              % (valref[0]))
+    list = _get_value(valref, ctx, filename, line_number)
     refname = valref[0]
-    ctx.for_iterators[refname] = iterator = _iter(list)
-    for unused in iterator:
-      self._execute(section, ctx)
-    del ctx.for_iterators[refname]
+    if isinstance(list, str):
+      raise NeedSequenceError(refname, filename, line_number)
+    ctx.for_index[refname] = idx = [ list, 0 ]
+    for item in list:
+      self._execute(section, fp, ctx)
+      idx[1] = idx[1] + 1
+    del ctx.for_index[refname]
 
-  def _cmd_define(self, args, ctx):
+  def _cmd_define(self, args, fp, ctx, filename, line_number):
     ((name,), unused, section) = args
-    origfp = ctx.fp
-    ctx.fp = cStringIO.StringIO()
+    valfp = StringIO()
     if section is not None:
-      self._execute(section, ctx)
-    ctx.defines[name] = ctx.fp.getvalue()
-    ctx.fp = origfp
+      self._execute(section, valfp, ctx)
+    ctx.defines[name] = valfp.getvalue()
 
 def boolean(value):
   "Return a value suitable for [if-any bool_var] usage in a template."
@@ -553,14 +435,14 @@ def _prepare_ref(refname, for_names, file_args):
   """refname -> a string containing a dotted identifier. example:"foo.bar.bang"
   for_names -> a list of active for sequences.
 
-  Returns a `value reference', a 3-tuple made out of (refname, start, rest), 
+  Returns a `value reference', a 3-tuple made out of (refname, start, rest),
   for fast access later.
   """
   # is the reference a string constant?
   if refname[0] == '"':
     return None, refname[1:-1], None
 
-  parts = string.split(refname, '.')
+  parts = refname.split('.')
   start = parts[0]
   rest = parts[1:]
 
@@ -586,50 +468,50 @@ def _prepare_ref(refname, for_names, file_args):
         ### the 'argNNN' names
         if not rest:
           return start, start, [ ]
-        refname = start + '.' + string.join(rest, '.')
+        refname = start + '.' + '.'.join(rest)
 
   if for_names:
     # From last to first part, check if this reference is part of a for loop
     for i in range(len(parts), 0, -1):
-      name = string.join(parts[:i], '.')
+      name = '.'.join(parts[:i])
       if name in for_names:
         return refname, name, parts[i:]
 
   return refname, start, rest
 
-def _get_value((refname, start, rest), ctx):
-  """(refname, start, rest) -> a prepared `value reference' (see above).
+def _get_value(refname_start_rest, ctx, filename, line_number):
+  """refname_start_rest -> a prepared `value reference' (see above).
   ctx -> an execution context instance.
 
-  Does a name space lookup within the template name space.  Active 
-  for blocks take precedence over data dictionary members with the 
+  Does a name space lookup within the template name space.  Active
+  for blocks take precedence over data dictionary members with the
   same name.
   """
+  (refname, start, rest) = refname_start_rest
   if rest is None:
     # it was a string constant
     return start
 
   # get the starting object
-  if ctx.for_iterators.has_key(start):
-    ob = ctx.for_iterators[start].last_item
-  elif ctx.defines.has_key(start):
+  if start in ctx.for_index:
+    list, idx = ctx.for_index[start]
+    ob = list[idx]
+  elif start in ctx.defines:
     ob = ctx.defines[start]
   elif hasattr(ctx.data, start):
     ob = getattr(ctx.data, start)
   else:
-    raise UnknownReference(refname)
+    raise UnknownReference(refname, filename, line_number)
 
   # walk the rest of the dotted reference
   for attr in rest:
     try:
       ob = getattr(ob, attr)
     except AttributeError:
-      raise UnknownReference(refname)
+      raise UnknownReference(refname, filename, line_number)
 
   # make sure we return a string instead of some various Python types
-  if isinstance(ob, IntType) \
-         or isinstance(ob, LongType) \
-         or isinstance(ob, FloatType):
+  if isinstance(ob, (int, long, float)):
     return str(ob)
   if ob is None:
     return ''
@@ -637,74 +519,93 @@ def _get_value((refname, start, rest), ctx):
   # string or a sequence
   return ob
 
-def _print_formatted(formatters, ctx, chunk):
-  # print chunk to ctx.fp after running it sequentially through formatters
-  for formatter in formatters:
-    chunk = formatter(chunk)
-  ctx.fp.write(chunk)
-  
-def _write_value(value, args, ctx):
-  # value is a callback function, generates its own output
-  if callable(value):
-    apply(value, [ctx] + list(args))
-    return
+def _replace(s, replace_map):
+  for orig, repl in replace_map:
+    s = s.replace(orig, repl)
+  return s
 
-  # squirrel away formatters in case one of them recursively calls
-  # _write_value() -- we'll use them (in reverse order) to format our
-  # output.
-  formatters = ctx.formatters[:]
-  formatters.reverse()
+REPLACE_JS_MAP = (
+  ('\\', r'\\'), ('\t', r'\t'), ('\n', r'\n'), ('\r', r'\r'),
+  ('"', r'\x22'), ('\'', r'\x27'), ('&', r'\x26'),
+  ('<', r'\x3c'), ('>', r'\x3e'), ('=', r'\x3d'),
+)
 
+# Various unicode whitespace
+if sys.version_info[0] >= 3:
+  # Python >=3.0
+  REPLACE_JS_UNICODE_MAP = (
+    ('\u0085', r'\u0085'), ('\u2028', r'\u2028'), ('\u2029', r'\u2029')
+  )
+else:
+  # Python <3.0
+  REPLACE_JS_UNICODE_MAP = eval("((u'\u0085', r'\u0085'), (u'\u2028', r'\u2028'), (u'\u2029', r'\u2029'))")
+
+# Why not cgi.escape? It doesn't do single quotes which are occasionally
+# used to contain HTML attributes and event handler definitions (unfortunately)
+REPLACE_HTML_MAP = (
+  ('&', '&amp;'), ('<', '&lt;'), ('>', '&gt;'),
+  ('"', '&quot;'), ('\'', '&#39;'),
+)
+
+def _js_escape(s):
+  s = _replace(s, REPLACE_JS_MAP)
+  ### perhaps attempt to coerce the string to unicode and then replace?
+  if isinstance(s, unicode):
+    s = _replace(s, REPLACE_JS_UNICODE_MAP)
+  return s
+
+def _html_escape(s):
+  return _replace(s, REPLACE_HTML_MAP)
+
+def _url_escape(s):
+  ### quote_plus barfs on non-ASCII characters. According to
+  ### http://www.w3.org/International/O-URL-code.html URIs should be
+  ### UTF-8 encoded first.
+  if isinstance(s, unicode):
+    s = s.encode('utf8')
+  return urllib_parse_quote_plus(s)
+
+FORMATTERS = {
+  FORMAT_RAW: None,
+  FORMAT_HTML: _html_escape,
+  FORMAT_XML: _html_escape,   ### use the same quoting as HTML for now
+  FORMAT_JS: _js_escape,
+  FORMAT_URL: _url_escape,
+}
+
+def _parse_format(format_string=FORMAT_RAW):
+  format_funcs = []
   try:
-    # if the value has a 'read' attribute, then it is a stream: copy it
-    if hasattr(value, 'read'):
-      while 1:
-        chunk = value.read(16384)
-        if not chunk:
-          break
-        _print_formatted(formatters, ctx, chunk)
+    for fspec in format_string.split(','):
+      format_func = FORMATTERS[fspec]
+      if format_func is not None:
+        format_funcs.append(format_func)
+  except KeyError:
+    raise UnknownFormatConstantError(format_string)
+  return format_funcs
 
-    # value is a substitution pattern
-    elif args:
-      parts = _re_subst.split(value)
-      for i in range(len(parts)):
-        piece = parts[i]
-        if i%2 == 1 and piece != '%':
-          idx = int(piece)
-          if idx < len(args):
-            piece = args[idx]
-          else:
-            piece = '<undef>'
-        _print_formatted(formatters, ctx, piece)
-
-    # plain old value, write to output
-    else:
-      _print_formatted(formatters, ctx, value)
-
-  finally:
-    # restore our formatters
-    formatters.reverse()
-    ctx.formatters = formatters
-
-
-class Context:
+class _context:
   """A container for the execution context"""
-  def __init__(self, fp):
-    self.fp = fp
-    self.formatters = []
-  def write(self, value, args=()):
-    _write_value(value, args, self)
+
 
 class Reader:
-  "Abstract class which allows EZT to detect Reader objects."
+  """Abstract class which allows EZT to detect Reader objects."""
+  def filename(self):
+    return '(%s does not provide filename() method)' % repr(self)
 
 class _FileReader(Reader):
   """Reads templates from the filesystem."""
   def __init__(self, fname):
     self.text = open(fname, 'rb').read()
+    if sys.version_info[0] >= 3:
+      # Python >=3.0
+      self.text = self.text.decode()
     self._dir = os.path.dirname(fname)
+    self.fname = fname
   def read_other(self, relative):
     return _FileReader(os.path.join(self._dir, relative))
+  def filename(self):
+    return self.fname
 
 class _TextReader(Reader):
   """'Reads' a template from provided text."""
@@ -712,76 +613,25 @@ class _TextReader(Reader):
     self.text = text
   def read_other(self, relative):
     raise BaseUnavailableError()
+  def filename(self):
+    return '(text)'
 
-class _Iterator:
-  """Specialized iterator for EZT that counts items and can look ahead
-
-  Implements standard iterator interface and provides an is_last() method
-  and two public members:
-
-    index - integer index of the current item
-    last_item - last item returned by next()"""
-
-  def __init__(self, sequence):
-    self._iter = iter(sequence)
-
-  def next(self):
-    if hasattr(self, '_next_item'):
-      self.last_item = self._next_item
-      del self._next_item
-    else:
-      self.last_item = self._iter.next() # may raise StopIteration
-
-    if hasattr(self, 'index'):
-      self.index = self.index + 1
-    else:
-      self.index = 0
-
-    return self.last_item
-
-  def is_last(self):
-    """Return true if the current item is the last in the sequence"""
-    # the only way we can tell if the current item is last is to call next()
-    # and store the return value so it doesn't get lost
-    if not hasattr(self, '_next_item'):
-      try:
-        self._next_item = self._iter.next()
-      except StopIteration:
-        return 1
-    return 0
-
-  def __iter__(self):
-    return self
-
-class _OldIterator:
-  """Alternate implemention of _Iterator for old Pythons without iterators
-
-  This class implements the sequence protocol, instead of the iterator
-  interface, so it's really not an iterator at all. But it can be used in
-  python "for" loops as a drop-in replacement for _Iterator. It also provides
-  the is_last() method and "last_item" and "index" members described in the
-  _Iterator docstring."""
-
-  def __init__(self, sequence):
-    self._seq = sequence
-
-  def __getitem__(self, index):
-    self.last_item = self._seq[index] # may raise IndexError
-    self.index = index
-    return self.last_item
-
-  def is_last(self):
-    return self.index + 1 >= len(self._seq)
-
-try:
-  iter
-except NameError:
-  _iter = _OldIterator
-else:
-  _iter = _Iterator
 
 class EZTException(Exception):
   """Parent class of all EZT exceptions."""
+  def __init__(self, message=None, filename=None, line_number=None):
+    self.message = message
+    self.filename = filename
+    self.line_number = line_number
+  def __str__(self):
+    ret = []
+    if self.message is not None:
+      ret.append(self.message)
+    if self.filename is not None:
+      ret.append('in file ' + str(self.filename))
+    if self.line_number is not None:
+      ret.append('at line ' + str(self.line_number))
+    return ' '.join(ret)
 
 class ArgCountSyntaxError(EZTException):
   """A bracket directive got the wrong number of arguments."""
@@ -801,30 +651,12 @@ class UnmatchedEndError(EZTException):
 class BaseUnavailableError(EZTException):
   """Base location is unavailable, which disables includes."""
 
+class BadFormatConstantError(EZTException):
+  """Format specifiers must be string constants."""
+
 class UnknownFormatConstantError(EZTException):
   """The format specifier is an unknown value."""
 
-def _raw_formatter(s):
-  return s
-
-def _html_formatter(s):
-  return cgi.escape(s)
-
-def _xml_formatter(s):
-  s = s.replace('&', '&#x26;')
-  s = s.replace('<', '&#x3C;')
-  s = s.replace('>', '&#x3E;')
-  return s
-
-def _uri_formatter(s):
-  return urllib.quote(s)
-
-_formatters = {
-  FORMAT_RAW  : _raw_formatter,
-  FORMAT_HTML : _html_formatter,
-  FORMAT_XML  : _xml_formatter,
-  FORMAT_URI  : _uri_formatter,
-}
 
 # --- standard test environment ---
 def test_parse():
@@ -841,7 +673,7 @@ def test_parse():
          ['', '["a \\"b[foo]" c.d f]', None, '']
 
 def _test(argv):
-  import doctest, ezt           
+  import doctest, ezt
   verbose = "-v" in argv
   return doctest.testmod(ezt, verbose=verbose)
 
