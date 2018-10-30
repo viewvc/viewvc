@@ -19,10 +19,11 @@ Congratulations on getting this far. :-)
 
     In General:
 
-      * Python 2, version 2.4 or later (sorry, no 3.x support yet)
+      * Python 2, version 2.6 or later (sorry, no 3.x support yet, and
+        dropping support 2.5 and earlier to prepare support 3.x)
           (http://www.python.org/)
 
-    For CVS Support: 
+    For CVS Support:
 
       * RCS, Revision Control System
           (http://www.cs.purdue.edu/homes/trinkle/RCS/)
@@ -41,9 +42,12 @@ Congratulations on getting this far. :-)
 
       * a web server capable of running CGI programs
           (for example, Apache at http://httpd.apache.org/)
-      * MySQL 3.22 and MySQLdb 0.9.0 or later to create a commit database
-          (http://www.mysql.com/)
+      * MySQL(or MariaDB) 3.22 and MySQLdb(or mysqlclient-python) 0.9.0 or
+        later to create a commit database
+          (https://www.mysql.com/)
+          (https://mariadb.org/)
           (http://sourceforge.net/projects/mysql-python)
+          (https://github.com/PyMySQL/mysqlclient-python)
       * Pygments 0.9 or later, syntax highlighting engine
           (http://pygments.org)
       * CvsGraph 1.5.0 or later, graphical CVS revision tree generator
@@ -64,7 +68,7 @@ Congratulations on getting this far. :-)
     To start installing right away (on UNIX): type "./viewvc-install"
     in the current directory and answer the prompts.  When it
     finishes, edit the file viewvc.conf in the installation directory
-    to tell ViewVC the paths to your CVS and Subversion repositories. 
+    to tell ViewVC the paths to your CVS and Subversion repositories.
     Next, configure your web server (in the way appropriate to that browser)
     to run <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/viewvc.cgi.  The section
     `INSTALLING VIEWVC' below is still recommended reading.
@@ -117,8 +121,8 @@ installation instructions.
 2) Installation is handled by the ./viewvc-install script.  Run this
    script and you will be prompted for a installation root path.
    The default is /usr/local/viewvc-VERSION, where VERSION is
-   the version of this ViewVC release.  The installer sets the install 
-   path in some of the files, and ViewVC cannot be moved to a 
+   the version of this ViewVC release.  The installer sets the install
+   path in some of the files, and ViewVC cannot be moved to a
    different path after the install.
 
    NOTE: while 'root' is usually required to create /usr/local/viewvc,
@@ -137,7 +141,7 @@ installation instructions.
    a previous installation. It will always overwrite program files,
    however.
 
-3) Edit <VIEWVC_INSTALLATION_DIRECTORY>/viewvc.conf for your specific 
+3) Edit <VIEWVC_INSTALLATION_DIRECTORY>/viewvc.conf for your specific
    configuration.  In particular, examine the following configuration options:
 
       cvs_roots (for CVS)
@@ -154,11 +158,11 @@ installation instructions.
    then edit the files in <VIEWVC_INSTALLATION_DIRECTORY>/templates.
    You need knowledge about HTML to edit the templates.
 
-4) The CGI programs are in <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/.  You can 
-   symlink to this directory from somewhere in your published HTTP server 
-   path if your webserver is configured to follow symbolic links.  You can 
-   also copy the installed <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/*.cgi 
-   scripts after the install (unlike the other files in ViewVC, the scripts 
+4) The CGI programs are in <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/.  You can
+   symlink to this directory from somewhere in your published HTTP server
+   path if your webserver is configured to follow symbolic links.  You can
+   also copy the installed <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/*.cgi
+   scripts after the install (unlike the other files in ViewVC, the scripts
    under bin/ can be moved).
 
    If you are using Apache, then see below at the section titled
@@ -216,12 +220,12 @@ APACHE CONFIGURATION
    -----------------------------------
    METHOD A:  CGI mode via ScriptAlias
    -----------------------------------
-   The ScriptAlias directive is very useful for pointing 
+   The ScriptAlias directive is very useful for pointing
    directly to the viewvc.cgi script.  Simply insert a line containing
 
       ScriptAlias /viewvc <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/viewvc.cgi
 
-   into your httpd.conf file.  Choose the location in httpd.conf where 
+   into your httpd.conf file.  Choose the location in httpd.conf where
    also the other ScriptAlias lines reside.  Some examples:
 
       ScriptAlias /viewvc /usr/local/viewvc-1.0/bin/cgi/viewvc.cgi
@@ -230,48 +234,48 @@ APACHE CONFIGURATION
    ----------------------------------------
    METHOD B:  CGI mode in cgi-bin directory
    ----------------------------------------
-   Copy the CGI scripts from 
+   Copy the CGI scripts from
    <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/*.cgi
    to the /cgi-bin/ directory configured in your httpd.conf file.
 
    You can override configuration file location using:
 
        SetEnv VIEWVC_CONF_PATHNAME /etc/viewvc.conf
-   
+
    ------------------------------------------
    METHOD C:  CGI mode in ExecCGI'd directory
    ------------------------------------------
-   Copy the CGI scripts from 
+   Copy the CGI scripts from
    <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/*.cgi
    to the directory of your choosing in the Document Root adding the following
    Apache directives for the directory in httpd.conf or an .htaccess file:
 
       Options +ExecCGI
       AddHandler cgi-script .cgi
-     
+
    NOTE: For this to work mod_cgi has to be loaded.  And for the .htaccess file
    to be effective, "AllowOverride All" or "AllowOverride Options FileInfo"
    needs to have been specified for the directory.
-   
+
    ------------------------------------------
    METHOD D:  Using mod_python (if installed)
    ------------------------------------------
-   Copy the Python scripts and .htaccess file from 
+   Copy the Python scripts and .htaccess file from
    <VIEWVC_INSTALLATION_DIRECTORY>/bin/mod_python/
    to a directory being served by Apache.
-   
-   In httpd.conf, make sure that "AllowOverride All" or at least 
+
+   In httpd.conf, make sure that "AllowOverride All" or at least
    "AllowOverride FileInfo Options" are enabled for the directory
    you copied the files to.
 
    You can override configuration file location using:
 
        SetEnv VIEWVC_CONF_PATHNAME /etc/viewvc.conf
-   
+
    NOTE: If you are using Mod_Python under Apache 1.3 the tarball generation
    feature may not work because it uses multithreading.  This works fine
    under Apache 2.
-   
+
    ----------------------------------------
    METHOD E:  Using mod_wsgi (if installed)
    ----------------------------------------
@@ -419,15 +423,15 @@ there are some additional steps required to get the database working.
    Optionally, you can create a second user with read-only access to the
    database.
 
-3) Run the <VIEWVC_INSTALLATION_DIRECTORY>/bin/make-database script.  It will 
-   prompt you for your MySQL user, password, and the name of database you 
-   want to create.  The database name defaults to "ViewVC".  This script 
-   creates the database and sets up the empty tables.  If you run this on a 
+3) Run the <VIEWVC_INSTALLATION_DIRECTORY>/bin/make-database script.  It will
+   prompt you for your MySQL user, password, and the name of database you
+   want to create.  The database name defaults to "ViewVC".  This script
+   creates the database and sets up the empty tables.  If you run this on a
    existing ViewVC database, you will lose all your data!
 
-4) Edit your <VIEWVC_INSTALLATION_DIRECTORY>/viewvc.conf file.  
+4) Edit your <VIEWVC_INSTALLATION_DIRECTORY>/viewvc.conf file.
    There is a [cvsdb] section.  You will need to set:
-     
+
       enabled = 1        # Whether to enable query support in viewvc.cgi
       host =             # MySQL database server host
       port =             # MySQL database server port (default is 3306)
@@ -440,7 +444,7 @@ there are some additional steps required to get the database working.
    Note that it's pretty safe in this instance for your read-only user
    and your read-write user to be the same.
 
-5) At this point, you need to tell your version control system(s) to 
+5) At this point, you need to tell your version control system(s) to
    publish their commit information to the database.  This is done
    using utilities that ViewVC provides.
 
@@ -472,49 +476,49 @@ there are some additional steps required to get the database working.
       different command line in CVSROOT/loginfo:
 
         ALL <VIEWVC_INSTALLATION_DIRECTORY>/bin/loginfo-handler %{sVv}
-   
+
       If you have other scripts invoked by CVSROOT/loginfo, you will
       want to make sure to change any running under the "DEFAULT"
       keyword to "ALL" like the loginfo handler, and probably
       carefully read the execution rules for CVSROOT/loginfo from the
       CVS manual.
-   
+
       If you are running the Unix port of CVS-NT, the handler script
       need to know about it.  CVS-NT delivers commit information to
       loginfo scripts differently than the way mainstream CVS does.
       Your command line should look like this:
-      
+
         ALL <VIEWVC_INSTALLATION_DIRECTORY>/bin/loginfo-handler %{sVv} cvsnt
 
    To publish Subversion commits into the database:
-   
+
       To build a database of all the commits in the Subversion
       repository /home/svn, invoke: "./svndbadmin rebuild /home/svn".
       If you want to update the checkin database, invoke:
       "./svndbadmin update /home/svn".
-   
+
       To get real time updates, you will need to add a post-commit
       hook (for the repository example above, the script should go in
       /home/svn/hooks/post-commit).  The script should look something
       like this:
-   
+
         #!/bin/sh
         REPOS="$1"
         REV="$2"
         <VIEWVC_INSTALLATION_DIRECTORY>/bin/svndbadmin update \
             "$REPOS" "$REV"
-   
+
       If you allow revision property changes in your repository,
       create a post-revprop-change hook script which uses the same
       'svndbadmin update' command as the post-commit script, except
       with the addition of the --force option:
-   
+
         #!/bin/sh
         REPOS="$1"
         REV="$2"
         <VIEWVC_INSTALLATION_DIRECTORY>/bin/svndbadmin update --force \
             "$REPOS" "$REV"
-   
+
       This will make sure that the checkin database stays consistent
       when you change the svn:log, svn:author or svn:date revision
       properties.
@@ -543,9 +547,9 @@ WARNING: Under certain circumstances (many revisions of a file
 or many branches or both) CvsGraph can generate very huge images.
 Especially on thin clients these images may crash the Web-Browser.
 Currently there is no known way to avoid this behavior of CvsGraph.
-So you have been warned!  
+So you have been warned!
 
-Nevertheless, CvsGraph can be quite helpful on repositories with 
+Nevertheless, CvsGraph can be quite helpful on repositories with
 a reasonable number of revisions and branches.
 
 1) Install CvsGraph using your system's package manager or downloading
@@ -553,7 +557,7 @@ a reasonable number of revisions and branches.
 
 2) Set the 'use_cvsgraph' options in viewvc.conf to 1.
 
-3) You may also need to set the 'cvsgraph_path' option if the 
+3) You may also need to set the 'cvsgraph_path' option if the
    CvsGraph executable is not located on the system PATH.
 
 4) There is a file <VIEWVC_INSTALLATION_DIRECTORY>/cvsgraph.conf that
@@ -582,7 +586,7 @@ which doubles as a quick way to check what version of the Subversion
 Python binding you have:
 
    % python
-   Python 2.2.2 (#1, Oct 29 2002, 02:47:30) 
+   Python 2.2.2 (#1, Oct 29 2002, 02:47:30)
    [GCC 2.96 20000731 (Red Hat Linux 7.2 2.96-108.7.2)] on linux2
    Type "help", "copyright", "credits" or "license" for more information.
    >>> from svn.core import *
@@ -595,7 +599,7 @@ that is not in Python's default module search path (for example, on
 Linux systems the default is usually /usr/local/lib/svn-python).  You
 need to remedy this, either by adding this path to Python's module
 search path, or by relocating the bindings to some place in that
-search path.  
+search path.
 
 For example, you might want to create .pth file in your Python
 installation directory's site-packages area which tells Python where
@@ -623,7 +627,7 @@ If nothing seems to work:
     explain the malfunction
 
   * View the entries in the webserver's error.log
- 
+
 If ViewVC seems to work but doesn't show the expected result (Typical
 error: you can't see any files)
 
