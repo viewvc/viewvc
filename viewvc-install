@@ -107,7 +107,7 @@ def _escape(str):
     re.escape() is no good because it blindly puts backslashes in
     front of anything that is not a number or letter regardless of
     whether the resulting sequence will be interpreted."""
-    # Python 3: This is used only for bytes 
+    # Python 3: This is used only for bytes
     return str.replace(b"\\", b"\\\\")
 
 
@@ -116,8 +116,8 @@ def _actual_src_path(path):
     the ViewVC source directory."""
     return os.path.join(os.path.dirname(sys.argv[0]),
                         path.replace('/', os.sep))
-                 
-    
+
+
 def error(text, etype=None, evalue=None):
     """Print error TEXT to stderr, pretty printing the optional
     exception type and value (ETYPE and EVALUE, respective), and then
@@ -126,18 +126,18 @@ def error(text, etype=None, evalue=None):
     if etype:
         traceback.print_exception(etype, evalue, None, file=sys.stderr)
     sys.exit(1)
-    
+
 
 def replace_var(contents, var, value):
     """Replace instances of the variable VAR as found in file CONTENTS
     with VALUE."""
     # Python 3: contents is bytes here
-    pattern = re.compile(b'^' + var + rb'\s*=\s*.*$', re.MULTILINE)
+    pattern = re.compile(b'^' + var + br'\s*=\s*.*$', re.MULTILINE)
     if sys.version_info[0] >= 3 and isinstance(ROOT_DIR, str):
         root_dir = ROOT_DIR.encode('utf-8', 'surrogateescape')
-    else:   
-        root_dir = ROOT_DIR
-    repl = b'%s = rb"%s"' % (var, os.path.join(root_dir, value))
+        repl = b'%s = br"%s"' % (var, os.path.join(root_dir, value))
+    else:
+        repl = '%s = r"%s"' % (var, os.path.join(ROOT_DIR, value))
     return re.sub(pattern, _escape(repl), contents)
 
 
@@ -166,7 +166,7 @@ def install_file(src_path, dst_path, mode, subst_path_vars,
     CLEAN_MODE), prompt the user for how to deal with already existing
     files that differ from the to-be-installed version.  If COMPILE_IT
     is set, compile the file as a Python module."""
-    
+
     src_path = _actual_src_path(src_path)
     dst_path = os.path.join(ROOT_DIR, dst_path.replace('/', os.sep))
     destdir_path = DESTDIR + dst_path
@@ -180,7 +180,7 @@ def install_file(src_path, dst_path, mode, subst_path_vars,
     else:
         # If we're here, then the file already exists, and we've possibly
         # got to prompt the user for what to do about that.
-  
+
         # Collect ndiff output from ndiff
         sys.stdout = io.StringIO()
         ndiff_output = difflib.ndiff(destdir_path, src_path)
@@ -344,7 +344,7 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
              not ((fname[-3:] == '.py' and fname not in files) or
                         (fname[-4:] == '.pyc' and fname[:-1] not in files)):
             continue
-        
+
         # If we get here, there's cruft.
         delete = None
         if CLEAN_MODE == 'true':
@@ -372,7 +372,7 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
             os.unlink(os.path.join(destdir_path, fname))
         else:
             print("   preserved %s" % (os.path.join(dst_path, fname)))
-      
+
 
 
 def usage_and_exit(errstr=None):
@@ -390,7 +390,7 @@ Options:
 
     --destdir=DIR     Use DIR as the DESTDIR.  This is generally only used
                       by package maintainers.  If not provided, the script will
-                      prompt for this information. 
+                      prompt for this information.
 
     --clean-mode=     If 'true', overwrite existing ViewVC configuration files
                       found in the target directory, and purge Python modules
@@ -406,7 +406,7 @@ Options:
         sys.exit(1)
     else:
         sys.exit(0)
-        
+
 
 if __name__ == "__main__":
     # Option parsing.
@@ -443,7 +443,7 @@ Just hit [Enter] if a default is okay.
     if ROOT_DIR is None:
         if sys.platform == "win32":
             pf = os.getenv("ProgramFiles", "C:\\Program Files")
-            default = os.path.join(pf, "viewvc-" + version)    
+            default = os.path.join(pf, "viewvc-" + version)
         else:
             default = "/usr/local/viewvc-" + version
         temp = raw_input("Installation path [%s]: " % (default)).strip()
@@ -452,7 +452,7 @@ Just hit [Enter] if a default is okay.
             ROOT_DIR = temp
         else:
             ROOT_DIR = default
-            
+
     # Prompt for DESTDIR if none provided.
     if DESTDIR is None:
         default = ''
@@ -463,7 +463,7 @@ Just hit [Enter] if a default is okay.
             DESTDIR = temp
         else:
             DESTDIR = default
-                
+
     # Install the files.
     print("Installing ViewVC to %s%s:"
           % (ROOT_DIR, DESTDIR and " (DESTDIR = %s)" % (DESTDIR) or ""))
@@ -471,7 +471,7 @@ Just hit [Enter] if a default is okay.
         install_file(*args)
     for args in TREE_LIST:
         install_tree(*args)
-        
+
     # Print some final thoughts.
     print("""
 
@@ -485,10 +485,10 @@ overview of the remaining steps:
 
   2) Either configure an existing web server to run
      %s.
-     
+
      Or, copy %s to an
      already-configured cgi-bin directory.
-     
+
      Or, use the standalone server provided by this distribution at
      %s.
 """ % (os.path.join(ROOT_DIR, 'viewvc.conf'),
