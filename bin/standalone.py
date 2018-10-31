@@ -31,12 +31,15 @@ import os
 import os.path
 import stat
 import string
-import urllib
-import rfc822
 import socket
 import select
 import base64
-import BaseHTTPServer
+if sys.version_info[0] >= 3:
+  from urllib.parse import unquote as _unquote
+  import http.server as _http_server
+else:
+  from urllib import unquote as _unquote
+  import BaseHTTPServer as _http_server
 
 if LIBRARY_DIR:
   sys.path.insert(0, LIBRARY_DIR)
@@ -79,7 +82,7 @@ class Options:
 class StandaloneServer(sapi.CgiServer):
   """Custom sapi interface that uses a BaseHTTPRequestHandler HANDLER
   to generate output."""
-  
+
   def __init__(self, handler):
     sapi.CgiServer.__init__(self, inheritableOut = sys.platform != "win32")
     self.handler = handler
@@ -89,8 +92,8 @@ class StandaloneServer(sapi.CgiServer):
       self.headerSent = 1
       if status is None:
         statusCode = 200
-        statusText = 'OK'       
-      else:        
+        statusText = 'OK'
+      else:
         p = status.find(' ')
         if p < 0:
           statusCode = int(status)
@@ -115,9 +118,9 @@ class AuthenticationException(Exception):
   pass
 
 
-class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
   """Custom HTTP request handler for ViewVC."""
-  
+
   def do_GET(self):
     """Serve a GET request."""
     self.handle_request('GET')
@@ -171,7 +174,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
    and password.</p>
 </body>
 </html>""")
-      
+
   def is_viewvc(self):
     """Check whether self.path is, or is a child of, the ScriptAlias"""
     if not options.script_alias:
@@ -196,7 +199,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     except:
       pass
     return False
-    
+
   def run_viewvc(self):
     """Run ViewVC to field a single request."""
 
@@ -225,8 +228,8 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.username = username
 
     # Setup the environment in preparation of executing ViewVC's core code.
-    env = os.environ  
-    
+    env = os.environ
+
     scriptname = options.script_alias and '/' + options.script_alias or ''
 
     viewvc_url = self.server.url[:-1] + scriptname
@@ -244,7 +247,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         del env[k]
     for k in ('QUERY_STRING', 'REMOTE_HOST', 'CONTENT_LENGTH',
               'HTTP_USER_AGENT', 'HTTP_COOKIE'):
-      if env.has_key(k): 
+      if k in env:
         env[k] = ""
 
     # XXX Much of the following could be prepared ahead of time!
@@ -254,7 +257,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     env['SERVER_PROTOCOL'] = self.protocol_version
     env['SERVER_PORT'] = str(self.server.server_port)
     env['REQUEST_METHOD'] = self.command
-    uqrest = urllib.unquote(rest)
+    uqrest = _unquote(rest)
     env['PATH_INFO'] = uqrest
     env['SCRIPT_NAME'] = scriptname
     if query:
@@ -266,11 +269,15 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     env['REMOTE_ADDR'] = self.client_address[0]
     if self.username:
       env['REMOTE_USER'] = self.username
-    if self.headers.typeheader is None:
-      env['CONTENT_TYPE'] = self.headers.type
+    if sys.version_info[0] >= 3:
+        env['CONTENT_TYPE'] = self.headers.get_content_type()
+        length = self.headers.get('content-length', None)
     else:
-      env['CONTENT_TYPE'] = self.headers.typeheader
-    length = self.headers.getheader('content-length')
+      if self.headers.typeheader is None:
+        env['CONTENT_TYPE'] = self.headers.type
+      else:
+        env['CONTENT_TYPE'] = self.headers.typeheader
+      length = self.headers.get('content-length', None)
     if length:
       env['CONTENT_LENGTH'] = length
     accept = []
@@ -280,19 +287,28 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       else:
         accept = accept + line[7:].split(',')
     env['HTTP_ACCEPT'] = ','.join(accept)
-    ua = self.headers.getheader('user-agent')
+    if sys.version_info[0] >= 3:
+      ua = self.headers.get('user-agent', None)
+    else:
+      ua = self.headers.getheader('user-agent')
     if ua:
       env['HTTP_USER_AGENT'] = ua
-    modified = self.headers.getheader('if-modified-since')
+    if sys.version_info[0] >= 3:
+      modified = self.headers.get('if-modified-since', None)
+    else:
+      modified = self.headers.getheader('if-modified-since')
     if modified:
       env['HTTP_IF_MODIFIED_SINCE'] = modified
-    etag = self.headers.getheader('if-none-match')
+    if sys.version_info[0] >= 3:
+      etag = self.headers.get('if-none-match', None)
+    else:
+      etag = self.headers.getheader('if-none-match')
     if etag:
       env['HTTP_IF_NONE_MATCH'] = etag
     # AUTH_TYPE
     # REMOTE_IDENT
     # XXX Other HTTP_* headers
-      
+
     # Preserve state, because we execute script in current process:
     save_argv = sys.argv
     save_stdin = sys.stdin
@@ -310,7 +326,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     # But we no longer use pipe_cmds.  So at the very least, the
     # comment is stale.  Is the code okay, though?
     if sys.platform != "win32":
-      save_realstdout = os.dup(1) 
+      save_realstdout = os.dup(1)
     try:
       try:
         sys.stdout = self.wfile
@@ -327,20 +343,20 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
           os.close(save_realstdout)
         sys.stdout = save_stdout
         sys.stderr = save_stderr
-    except SystemExit, status:
+    except SystemExit as status:
       self.log_error("ViewVC exit status %s", str(status))
     else:
       self.log_error("ViewVC exited ok")
 
 
-class ViewVCHTTPServer(BaseHTTPServer.HTTPServer):
+class ViewVCHTTPServer(_http_server.HTTPServer):
   """Customized HTTP server for ViewVC."""
-  
+
   def __init__(self, host, port, callback):
     self.address = (host, port)
     self.url = 'http://%s:%d/' % (host, port)
     self.callback = callback
-    BaseHTTPServer.HTTPServer.__init__(self, self.address, self.handler)
+    _http_server.HTTPServer.__init__(self, self.address, self.handler)
 
   def serve_until_quit(self):
     self.quit = 0
@@ -350,7 +366,7 @@ class ViewVCHTTPServer(BaseHTTPServer.HTTPServer):
         self.handle_request()
 
   def server_activate(self):
-    BaseHTTPServer.HTTPServer.server_activate(self)
+    _http_server.HTTPServer.server_activate(self)
     if self.callback:
       self.callback(self)
 
@@ -358,7 +374,7 @@ class ViewVCHTTPServer(BaseHTTPServer.HTTPServer):
     # set SO_REUSEADDR (if available on this platform)
     if hasattr(socket, 'SOL_SOCKET') and hasattr(socket, 'SO_REUSEADDR'):
       self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    BaseHTTPServer.HTTPServer.server_bind(self)
+    _http_server.HTTPServer.server_bind(self)
 
 
 def serve(host, port, callback=None):
@@ -380,7 +396,7 @@ def serve(host, port, callback=None):
           cfg.general.cvs_roots[repo_name] = repo_path
         elif os.path.exists(os.path.join(repo_path, "format")):
           cfg.general.svn_roots[repo_name] = repo_path
-    elif cfg.general.cvs_roots.has_key("Development") and \
+    elif "Development" in cfg.general.cvs_roots and \
          not os.path.isdir(cfg.general.cvs_roots["Development"]):
       sys.stderr.write("*** No repository found. Please use the -r option.\n")
       sys.stderr.write("   Use --help for more info.\n")
@@ -416,7 +432,7 @@ def serve(host, port, callback=None):
     ViewVCHTTPServer(host, port, callback).serve_until_quit()
   except (KeyboardInterrupt, select.error):
     pass
-  print 'server stopped'
+  print('server stopped')
 
 
 def handle_config(config_file):
@@ -440,11 +456,11 @@ Options:
                              specified, ViewVC will look for a configuration
                              file in its installation tree, falling back to
                              built-in default values.
-                             
+
   --daemon (-d)              Background the server process.
 
   --help                     Show this usage message and exit.
-  
+
   --host=HOSTNAME (-h)       Listen on HOSTNAME.  Required for access from a
                              remote machine.  [default: %(host)s]
 
@@ -494,7 +510,7 @@ def main(argv):
                'repository=',
                'script-alias=',
                ]
-    
+
   opt_daemon = False
   opt_host = None
   opt_port = None
@@ -504,7 +520,7 @@ def main(argv):
   opt_repositories = []
 
   # Parse command-line options.
-  try:  
+  try:
     opts, args = getopt.getopt(argv[1:], short_opts, long_opts)
     for opt, val in opts:
       if opt in ['--help']:
@@ -523,7 +539,7 @@ def main(argv):
         opt_config_file = val
       elif opt in ['--htpasswd-file']:
         opt_htpasswd_file = val
-  except getopt.error, err:
+  except getopt.error as err:
     badusage(str(err))
 
   # Validate options that need validating.
@@ -558,14 +574,14 @@ def main(argv):
     if opt_script_alias is not None:
       options.script_alias = '/'.join(filter(None, opt_script_alias.split('/')))
     for repository in opt_repositories:
-      if not options.repositories.has_key('Development'):
+      if 'Development' not in options.repositories:
         rootname = 'Development'
       else:
         rootname = 'Repository%d' % (len(options.repositories.keys()) + 1)
       options.repositories[rootname] = repository
-  except BadUsage, err:
+  except BadUsage as err:
     badusage(str(err))
-      
+
   # Fork if we're in daemon mode.
   if opt_daemon:
     pid = os.fork()
@@ -574,7 +590,7 @@ def main(argv):
 
   # Finaly, start the server.
   def ready(server):
-    print 'server ready at %s%s' % (server.url, options.script_alias)
+    print('server ready at %s%s' % (server.url, options.script_alias))
   serve(options.host, options.port, ready)
 
 

@@ -39,7 +39,7 @@ def escape(s):
   s = s.replace('"', "&quot;")
   return s
 
-  
+
 class Server:
   def __init__(self):
     self.pageGlobals = {}
@@ -49,7 +49,7 @@ class Server:
 
   def escape(self, s):
     return escape(s)
-    
+
   def close(self):
     pass
 
@@ -81,19 +81,22 @@ class ThreadedServerProxy:
 
   def __init__(self):
     self.__dict__['servers'] = { }
-    global thread
-    import thread
+    global _thread
+    if sys.version_info[0] >= 3:
+        import _thread
+    else:
+        import thread as _thread
 
   def registerThread(self, server):
-    self.__dict__['servers'][thread.get_ident()] = server
+    self.__dict__['servers'][_thread.get_ident()] = server
 
   def unregisterThread(self):
-    del self.__dict__['servers'][thread.get_ident()]
+    del self.__dict__['servers'][_thread.get_ident()]
 
   def self(self):
     """This function bypasses the getattr and setattr trickery and returns
     the actual server object."""
-    return self.__dict__['servers'][thread.get_ident()]
+    return self.__dict__['servers'][_thread.get_ident()]
 
   def __getattr__(self, key):
     return getattr(self.self(), key)
@@ -156,7 +159,7 @@ class CgiServer(Server):
       for (name, value) in self.headers:
         extraheaders = extraheaders + '%s: %s\r\n' % (name, value)
 
-      # The only way ViewVC pages and error messages are visible under 
+      # The only way ViewVC pages and error messages are visible under
       # IIS is if a 200 error code is returned. Otherwise IIS instead
       # sends the static error page corresponding to the code number.
       if status is None or (status[:3] != '304' and self.iis):
@@ -250,7 +253,7 @@ class WsgiServer(Server):
   def file(self):
     return File(self)
 
-
+# Is ASP supports Python >= 3.x ?
 class AspServer(ThreadedServer):
   def __init__(self, Server, Request, Response, Application):
     ThreadedServer.__init__(self)
@@ -295,9 +298,9 @@ class AspServer(ThreadedServer):
   def params(self):
     p = {}
     for i in self.request.Form:
-      p[str(i)] = map(str, self.request.Form[i])
+      p[str(i)] = list(map(str, self.request.Form[i]))
     for i in self.request.QueryString:
-      p[str(i)] = map(str, self.request.QueryString[i])
+      p[str(i)] = list(map(str, self.request.QueryString[i]))
     return p
 
   def FieldStorage(self, fp=None, headers=None, outerboundary="",
@@ -307,7 +310,7 @@ class AspServer(ThreadedServer):
     # Subject "Re: Help! IIS and Python"
     # http://groups.google.com/groups?selm=3C7C0AB6.2090307%40mxm.dk
 
-    from StringIO import StringIO
+    from io import StringIO
     from cgi import FieldStorage
 
     environ = {}
@@ -348,12 +351,12 @@ class ModPythonServer(ThreadedServer):
       self.request.add_cgi_vars()
     except AttributeError:
       pass
-    
+
   def addheader(self, name, value):
     self.request.headers_out.add(name, value)
 
   def header(self, content_type=None, status=None):
-    if content_type is None: 
+    if content_type is None:
       self.request.content_type = 'text/html; charset=UTF-8'
     else:
       self.request.content_type = content_type
