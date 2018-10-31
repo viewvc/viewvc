@@ -76,9 +76,9 @@ def PrintException(server, exc_data):
   status = exc_data['status']
   msg = exc_data['msg']
   tb = exc_data['stacktrace']
-  
+
   server.header(status=status)
-  server.write("<h3>An Exception Has Occurred</h3>\n")
+  server.write(b"<h3>An Exception Has Occurred</h3>\n")
 
   s = ''
   if msg:
@@ -86,11 +86,16 @@ def PrintException(server, exc_data):
   if status:
     s = s + ('<h4>HTTP Response Status</h4>\n<p><pre>\n%s</pre></p><hr />\n'
              % status)
+  if sys.version_info[0] >= 3:
+    s = s.encode('utf-8')
   server.write(s)
 
-  server.write("<h4>Python Traceback</h4>\n<p><pre>")
-  server.write(server.escape(tb))
-  server.write("</pre></p>\n")
+  server.write(b"<h4>Python Traceback</h4>\n<p><pre>")
+  if sys.version_info[0] >= 3:
+    server.write(server.escape(tb).encode('utf-8'))
+  else:
+    server.write(server.escape(tb))
+  server.write(b"</pre></p>\n")
 
 
 def GetExceptionData():
@@ -102,15 +107,15 @@ def GetExceptionData():
     'msg' : None,
     'stacktrace' : None,
     }
-  
+
   try:
-    import traceback, string
+    import traceback
 
     if isinstance(exc, ViewVCException):
       exc_dict['msg'] = exc.msg
       exc_dict['status'] = exc.status
-    
-    tb = string.join(traceback.format_exception(exc_type, exc, exc_tb), '')
+
+    tb = ''.join(traceback.format_exception(exc_type, exc, exc_tb))
     exc_dict['stacktrace'] = tb
 
   finally:
@@ -143,61 +148,82 @@ if SHOW_CHILD_PROCESSES:
 
     if not server.pageGlobals.has_key('processes'):
       return
-    
+
     server.header()
     lastOut = None
     i = 0
 
     for k in server.pageGlobals['processes']:
       i = i + 1
-      server.write("<table>\n")
-      server.write("<tr><td colspan=\"2\">Child Process%i</td></tr>" % i)
-      server.write("<tr>\n  <td style=\"vertical-align:top\">Command Line</td>  <td><pre>")
-      server.write(server.escape(k.command))
-      server.write("</pre></td>\n</tr>\n")
-      server.write("<tr>\n  <td style=\"vertical-align:top\">Standard In:</td>  <td>")
+      server.write(b"<table>\n")
+      server.write(b"<tr><td colspan=\"2\">Child Process%i</td></tr>" % i)
+      server.write(b"<tr>\n  <td style=\"vertical-align:top\">Command Line</td>  <td><pre>")
+      if sys.version_info[0] >= 3:
+        server.write(server.escape(k.command).encode('utf-8'))
+      else:
+        server.write(server.escape(k.command))
+      server.write(b"</pre></td>\n</tr>\n")
+      server.write(b"<tr>\n  <td style=\"vertical-align:top\">Standard In:</td>  <td>")
 
       if k.debugIn is lastOut and not lastOut is None:
-        server.write("<em>Output from process %i</em>" % (i - 1))
+        server.write(b"<em>Output from process %i</em>" % (i - 1))
       elif k.debugIn:
-        server.write("<pre>")
-        server.write(server.escape(k.debugIn.getvalue()))
-        server.write("</pre>")
-        
-      server.write("</td>\n</tr>\n")
-      
-      if k.debugOut is k.debugErr:
-        server.write("<tr>\n  <td style=\"vertical-align:top\">Standard Out & Error:</td>  <td><pre>")
-        if k.debugOut:
-          server.write(server.escape(k.debugOut.getvalue()))
-        server.write("</pre></td>\n</tr>\n")
-        
-      else:
-        server.write("<tr>\n  <td style=\"vertical-align:top\">Standard Out:</td>  <td><pre>")
-        if k.debugOut:
-          server.write(server.escape(k.debugOut.getvalue()))
-        server.write("</pre></td>\n</tr>\n")
-        server.write("<tr>\n  <td style=\"vertical-align:top\">Standard Error:</td>  <td><pre>")
-        if k.debugErr:
-          server.write(server.escape(k.debugErr.getvalue()))
-        server.write("</pre></td>\n</tr>\n")
+        server.write(b"<pre>")
+        if sys.version_info[0] >= 3:
+          server.write(server.escape(k.debugIn.getvalue()).encode('utf-8'))
+        else:
+          server.write(server.escape(k.debugIn.getvalue()))
+        server.write(b"</pre>")
 
-      server.write("</table>\n")
+      server.write(b"</td>\n</tr>\n")
+
+      if k.debugOut is k.debugErr:
+        server.write(b"<tr>\n  <td style=\"vertical-align:top\">Standard Out & Error:</td>  <td><pre>")
+        if k.debugOut:
+          if sys.version_info[0] >= 3:
+            server.write(server.escape(k.debugOut.getvalue()).encode('utf-8'))
+          else:
+            server.write(server.escape(k.debugOut.getvalue()))
+        server.write(b"</pre></td>\n</tr>\n")
+
+      else:
+        server.write(b"<tr>\n  <td style=\"vertical-align:top\">Standard Out:</td>  <td><pre>")
+        if k.debugOut:
+          if sys.version_info[0] >= 3:
+            server.write(server.escape(k.debugOut.getvalue()).encode('utf-8'))
+          else:
+            server.write(server.escape(k.debugOut.getvalue()))
+        server.write(b"</pre></td>\n</tr>\n")
+        server.write(b"<tr>\n  <td style=\"vertical-align:top\">Standard Error:</td>  <td><pre>")
+        if k.debugErr:
+          if sys.version_info[0] >= 3:
+            server.write(server.escape(k.debugErr.getvalue()).encode('utf-8'))
+          else:
+            server.write(server.escape(k.debugErr.getvalue()))
+        server.write(b"</pre></td>\n</tr>\n")
+
+      server.write(b"</table>\n")
       server.flush()
       lastOut = k.debugOut
 
-    server.write("<table>\n")
-    server.write("<tr><td colspan=\"2\">Environment Variables</td></tr>")
+    server.write(b"<table>\n")
+    server.write(b"<tr><td colspan=\"2\">Environment Variables</td></tr>")
     for k, v in os.environ.items():
-      server.write("<tr>\n  <td style=\"vertical-align:top\"><pre>")
-      server.write(server.escape(k))
-      server.write("</pre></td>\n  <td style=\"vertical-align:top\"><pre>")
-      server.write(server.escape(v))
-      server.write("</pre></td>\n</tr>")
-    server.write("</table>")
-         
+      server.write(b"<tr>\n  <td style=\"vertical-align:top\"><pre>")
+      if sys.version_info[0] >= 3:
+        server.write(server.escape(k).encode('utf-8'))
+      else:
+        server.write(server.escape(k))
+      server.write(b"</pre></td>\n  <td style=\"vertical-align:top\"><pre>")
+      if sys.version_info[0] >= 3:
+        server.write(server.escape(v).encode('utf-8'))
+      else:
+        server.write(server.escape(v))
+      server.write(b"</pre></td>\n</tr>")
+    server.write(b"</table>")
+
 else:
 
   def DumpChildren(server):
     pass
-    
+
