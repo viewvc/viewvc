@@ -135,9 +135,9 @@ def replace_var(contents, var, value):
     pattern = re.compile(b'^' + var + br'\s*=\s*.*$', re.MULTILINE)
     if sys.version_info[0] >= 3 and isinstance(ROOT_DIR, str):
         root_dir = ROOT_DIR.encode('utf-8', 'surrogateescape')
-        repl = b'%s = br"%s"' % (var, os.path.join(root_dir, value))
     else:
-        repl = '%s = r"%s"' % (var, os.path.join(ROOT_DIR, value))
+        root_dir = ROOT_DIR
+    repl = b'%s = r"%s"' % (var, os.path.join(root_dir, value))
     return re.sub(pattern, _escape(repl), contents)
 
 
