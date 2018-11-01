@@ -42,7 +42,7 @@ class TemplateData:
     return self._items.__getitem__(key)
 
   def __setitem__(self, key, item):
-    assert self._items.has_key(key)
+    assert key in self._items
     return self._items.__setitem__(key, item)
 
   def __delitem__(self, key):
