@@ -41,10 +41,10 @@ __license__ = 'BSD'
 import re
 import os
 import sys
-import urllib
 
 if sys.version_info[0] >= 3:
   # Python >=3.0
+  import io
   long = int
   unicode = str
   from io import StringIO
@@ -307,11 +307,25 @@ class Template:
     to the file object 'fp' and functions are called.
     """
     for step in program:
-      if isinstance(step, str):
-        fp.write(step)
+      if sys.version_info[0] >= 3:
+        if isinstance(step, bytes):
+          if hasattr(fp, 'encoding'):
+            fp.write(step.decode(fp.encoding, 'surrogateescape'))
+          else:
+            fp.write(step)
+        elif isinstance(step, str):
+          if hasattr(fp, 'encoding'):
+            fp.write(step)
+          else:
+            fp.write(step.encode('utf-8'))
+        else:
+          method, method_args, filename, line_number = step
       else:
-        method, method_args, filename, line_number = step
-        method(method_args, fp, ctx, filename, line_number)
+        if isinstance(step, str):
+          fp.write(step)
+        else:
+          method, method_args, filename, line_number = step
+          method(method_args, fp, ctx, filename, line_number)
 
   def _cmd_print(self, transforms_valref, fp, ctx, filename, line_number):
     (transforms, valref) = transforms_valref
