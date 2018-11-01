@@ -13,6 +13,7 @@
 # viewvc: View CVS/SVN repositories via a web browser
 #
 # -----------------------------------------------------------------------
+from __future__ import print_function
 
 __version__ = '1.2-dev'
 
@@ -35,8 +36,11 @@ import stat
 import struct
 import tempfile
 import time
-import types
-import urllib
+import functools
+if sys.version_info[0] >= 3:
+  from urllib.parse import urlencode as _urlencode, quote as _quote
+else:
+  from urllib import urlencode as _urlencode, quote as _quote
 import subprocess
 
 # These modules come from our library (the stub has set up the path)
@@ -88,6 +92,12 @@ CHUNK_SIZE = 8192
 _URL_SAFE_CHARS = "/*~"
 
 
+# Python 3: workaround for cmp()
+if sys.version_info[0] >= 3:
+  def cmp(a, b):
+    return (a > b) - (a < b)
+
+
 class Request:
   def __init__(self, server, cfg):
     self.server = server
@@ -113,9 +123,7 @@ class Request:
     self.gzip_compress_level = 0
     if cfg.options.allow_compress:
       http_accept_encoding = os.environ.get("HTTP_ACCEPT_ENCODING", "")
-      if "gzip" in filter(None,
-                          map(lambda x: x.strip(),
-                              http_accept_encoding.split(','))):
+      if "gzip" in [x.strip() for x in http_accept_encoding.split(',')]:
         self.gzip_compress_level = 9  # make this configurable?
 
   def run_viewvc(self):
@@ -214,7 +222,7 @@ class Request:
           if roottype is None:
             # Perhaps the root name is candidate for renaming...
             # Take care of old-new roots mapping
-            for old_root, new_root in cfg.general.renamed_roots.iteritems():
+            for old_root, new_root in cfg.general.renamed_roots.items():
               pp = _path_parts(old_root)
               if _path_starts_with(path_parts, pp):
                 path_parts = path_parts[len(pp):]
@@ -234,7 +242,7 @@ class Request:
       needs_redirect = 1
 
     # Take care of old-new roots mapping
-    for old_root, new_root in cfg.general.renamed_roots.iteritems():
+    for old_root, new_root in cfg.general.renamed_roots.items():
       if self.rootname == old_root:
         self.rootname = new_root
         needs_redirect = 1
@@ -301,13 +309,13 @@ class Request:
       
     # If this is using an old-style 'rev' parameter, redirect to new hotness.
     # Subversion URLs will now use 'pathrev'; CVS ones use 'revision'.
-    if self.repos and self.query_dict.has_key('rev'):
+    if self.repos and 'rev' in self.query_dict:
       if self.roottype == 'svn' \
-             and not self.query_dict.has_key('pathrev') \
+             and 'pathrev' not in self.query_dict \
              and not self.view_func == view_revision:
         self.query_dict['pathrev'] = self.query_dict['rev']
         del self.query_dict['rev']
-      else: # elif not self.query_dict.has_key('revision'): ?
+      else: # elif 'revision' not in self.query_dict: ?
         self.query_dict['revision'] = self.query_dict['rev']
         del self.query_dict['rev']
       needs_redirect = 1
@@ -370,23 +378,23 @@ class Request:
         self.view_func = view_roots
       elif self.pathtype == vclib.DIR:
         # ViewCVS 0.9.2 used to put ?tarball=1 at the end of tarball urls
-        if self.query_dict.has_key('tarball'):
+        if 'tarball' in self.query_dict:
           self.view_func = download_tarball
-        elif self.query_dict.has_key('r1') and self.query_dict.has_key('r2'):
+        elif 'r1' in self.query_dict and 'r2' in self.query_dict:
           self.view_func = view_diff
         else:
           self.view_func = view_directory
       elif self.pathtype == vclib.FILE:
-        if self.query_dict.has_key('r1') and self.query_dict.has_key('r2'):
+        if 'r1' in self.query_dict and 'r2' in self.query_dict:
           self.view_func = view_diff
-        elif self.query_dict.has_key('annotate'):
+        elif 'annotate' in self.query_dict:
           self.view_func = view_annotate
-        elif self.query_dict.has_key('graph'):
-          if not self.query_dict.has_key('makeimage'):
+        elif 'graph' in self.query_dict:
+          if 'makeimage' not in self.query_dict:
             self.view_func = view_cvsgraph
           else: 
             self.view_func = view_cvsgraph_image
-        elif self.query_dict.has_key('revision') \
+        elif 'revision' in self.query_dict \
                  or cfg.options.default_file_view != "log":
           if cfg.options.default_file_view == "markup" \
              or self.query_dict.get('content-type', None) \
@@ -429,12 +437,12 @@ class Request:
     split into components.  If PREFIX is set, include the protocol and
     server name portions of the URL."""
 
-    url, params = apply(self.get_link, (), args)
-    qs = urllib.urlencode(params)
+    url, params = self.get_link(*(), **args)
+    qs = _urlencode(params)
     if qs:
-      result = urllib.quote(url, _URL_SAFE_CHARS) + '?' + qs
+      result = _quote(url, _URL_SAFE_CHARS) + '?' + qs
     else:
-      result = urllib.quote(url, _URL_SAFE_CHARS)
+      result = _quote(url, _URL_SAFE_CHARS)
 
     if partial:
       result = result + (qs and '&' or '?')
@@ -454,8 +462,8 @@ class Request:
     attributes representing stuff that should be in <input
     type=hidden> tags with the link parameters."""
 
-    url, params = apply(self.get_link, (), args)
-    action = self.server.escape(urllib.quote(url, _URL_SAFE_CHARS))
+    url, params = self.get_link(*(), **args)
+    action = self.server.escape(_quote(url, _URL_SAFE_CHARS))
     hidden_values = []
     for name, value in params.items():
       hidden_values.append(_item(name=self.server.escape(name),
@@ -532,7 +540,7 @@ class Request:
 
     # add 'pathrev' value to parameter list
     if (self.pathrev is not None
-        and not params.has_key('pathrev')
+        and 'pathrev' not in params
         and view_func is not view_revision
         and rootname == self.rootname):
       params['pathrev'] = self.pathrev
@@ -585,14 +593,14 @@ class Request:
 
     # set the view parameter
     view_code = _view_codes.get(view_func)
-    if view_code and not (params.has_key('view') and params['view'] is None):
+    if view_code and not ('view' in params and params['view'] is None):
       params['view'] = view_code
 
     # add sticky values to parameter list
     if sticky_vars:
       for name in _sticky_vars:
         value = self.query_dict.get(name)
-        if value is not None and not params.has_key(name):
+        if value is not None and name not in params:
           params[name] = value
 
     # remove null values from parameter list
@@ -606,7 +614,7 @@ def _path_parts(path):
   """Split up a repository path into a list of path components"""
   # clean it up. this removes duplicate '/' characters and any that may
   # exist at the front or end of the path.
-  return filter(None, path.split('/'))
+  return [pp for pp in path.split('/') if pp]
 
 def _normalize_path(path):
   """Collapse leading slashes in the script name
@@ -671,7 +679,7 @@ def _validate_regex(value):
 
 def _validate_view(value):
   # Return true iff VALUE is one of our allowed views.
-  return _views.has_key(value)
+  return value in _views
 
 def _validate_mimetype(value):
   # For security purposes, we only allow mimetypes from a predefined set
@@ -1028,11 +1036,11 @@ def nav_path(request):
 
 def prep_tags(request, tags):
   url, params = request.get_link(params={'pathrev': None})
-  params = urllib.urlencode(params)
+  params = _urlencode(params)
   if params:
-    url = urllib.quote(url, _URL_SAFE_CHARS) + '?' + params + '&pathrev='
+    url = _quote(url, _URL_SAFE_CHARS) + '?' + params + '&pathrev='
   else:
-    url = urllib.quote(url, _URL_SAFE_CHARS) + '?pathrev='
+    url = _quote(url, _URL_SAFE_CHARS) + '?pathrev='
   url = request.server.escape(url)
 
   links = [ ]
@@ -1223,7 +1231,7 @@ class ViewVCHtmlFormatter:
     """
     s = mobj.group(0)
     trunc_s = maxlen and s[:maxlen] or s
-    return '<a href="mailto:%s">%s</a>' % (urllib.quote(s),
+    return '<a href="mailto:%s">%s</a>' % (_quote(s),
                                            self._entity_encode(trunc_s)), \
            len(trunc_s)
 
@@ -1384,7 +1392,7 @@ class ViewVCHtmlFormatter:
     return ViewVCHtmlFormatterTokens(tokens)
 
   def _entity_encode(self, s):
-    return ''.join(map(lambda x: '&#%d;' % (ord(x)), s))
+    return ''.join(['&#%d;' % (ord(x)) for x in s])
 
 
 class LogFormatter:
@@ -1398,7 +1406,7 @@ class LogFormatter:
     cfg = self.request.cfg
     
     # Prefer the cache.
-    if self.cache.has_key((maxlen, htmlize)):
+    if (maxlen, htmlize) in self.cache:
       return self.cache[(maxlen, htmlize)]
     
     # If we are HTML-izing...
@@ -1431,7 +1439,7 @@ class LogFormatter:
         # Add custom rewrite handling per configuration.
         for rule in cfg.options.custom_log_formatting:
           rule = rule.replace('\\:', '\x01')          
-          regexp, format = map(lambda x: x.strip(), rule.split(':', 1))
+          regexp, format = [x.strip() for x in  rule.split(':', 1)]
           regexp = regexp.replace('\x01', ':')
           format = format.replace('\x01', ':')
           lf.add_formatter(re.compile(regexp), lf.format_custom_url, format)
@@ -1492,11 +1500,13 @@ def little_time(request):
     return 'very little time'
 
 def html_time(request, secs, extended=0):
-  secs = long(time.time()) - secs
+  if sys.version_info[0] >= 3:
+    secs = int(time.time()) - secs
+  else:
+    secs = long(time.time()) - secs
   if secs < 2:
     return little_time(request)
-  breaks = _time_desc.keys()
-  breaks.sort()
+  breaks = sorted(_time_desc.keys())
   i = 0
   while i < len(breaks):
     if secs < 2 * breaks[i]:
@@ -1596,9 +1606,8 @@ def common_template_data(request, revision=None, mime_type=None):
                                            params={}, escape=1)
     file_data = request.repos.listdir(request.path_parts[:-1],
                                       request.pathrev, {})
-    def _only_this_file(item):
-      return item.name == request.path_parts[-1]
-    entries = filter(_only_this_file, file_data)
+    entries =[item for item in file_data
+              if item.name == request.path_parts[-1]]
     if len(entries) == 1:
       request.repos.dirlogs(request.path_parts[:-1], request.pathrev,
                             entries, {})
@@ -1739,7 +1748,7 @@ def transcode_text(text, encoding=None):
   if not encoding or encoding == 'utf-8':
     return text
   try:
-    return unicode(text, encoding, 'replace').encode('utf-8', 'replace')
+    return text.decode(encoding, 'surrogateescape').encode('utf-8', 'surrogateescape')
   except:
     pass
   return text
@@ -1907,19 +1916,26 @@ def make_rss_time_string(date, cfg):
   return time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(date)) + ' UTC'
 
 def make_comma_sep_list_string(items):
-  return ', '.join(map(lambda x: x.name, items))
+  return ', '.join([x.name for x in items])
 
 def is_undisplayable(val):
-  try:
-    unicode(val)
-    return 0
-  except:
-    return 1
+  if sys.version_info[0] >= 3:
+    # XXX: must revise usage later
+    try:
+      str(val)
+      return 0
+    except:
+      return 1
+  else:
+    try:
+      unicode(val)
+      return 0
+    except:
+      return 1
 
 def get_itemprops(request, path_parts, rev):
   itemprops = request.repos.itemprops(path_parts, rev)
-  propnames = itemprops.keys()
-  propnames.sort()
+  propnames = sorted(itemprops.keys())
   props = []
   for name in propnames:
     # skip non-utf8 property names
@@ -1935,7 +1951,7 @@ def get_itemprops(request, path_parts, rev):
   return props
 
 def parse_mime_type(mime_type):
-  mime_parts = map(lambda x: x.strip(), mime_type.split(';'))
+  mime_parts = [x.strip() for x in mime_type.split(';')]
   type_subtype = mime_parts[0].lower()
   parameters = {}
   for part in mime_parts[1:]:
@@ -2156,8 +2172,8 @@ def view_annotate(request):
   markup_or_annotate(request, 1)
 
 def revcmp(rev1, rev2):
-  rev1 = map(int, rev1.split('.'))
-  rev2 = map(int, rev2.split('.'))
+  rev1 = list(map(int, rev1.split('.')))
+  rev2 = list(map(int, rev2.split('.')))
   return cmp(rev1, rev2)
 
 def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
@@ -2209,8 +2225,10 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
     # sort by file name
     return s * cmp(file1.name, file2.name)
 
-  file_data.sort(file_sort_cmp)
-
+  if sys.version_info[0] >= 3:
+    file_data.sort(key=functools.cmp_to_key(file_sort_cmp))
+  else:
+    file_data.sort(file_sort_cmp)
 def icmp(x, y):
   """case insensitive comparison"""
   return cmp(x.lower(), y.lower())
@@ -2225,8 +2243,10 @@ def view_roots(request):
   expand_root_parents(request.cfg)
   allroots = list_roots(request)
   if len(allroots):
-    rootnames = allroots.keys()
-    rootnames.sort(icmp)
+    if sys.version_info[0] >= 3:
+      rootnames = sorted(allroots.keys(), key=functools.cmp_to_key(icmp))
+    else:
+      rootnames = sorted(allroots.keys(), icmp)
     for rootname in rootnames:
       root_path, root_type, lastmod = allroots[rootname]
       href = request.get_url(view_func=view_directory,
@@ -2507,15 +2527,13 @@ def view_directory(request):
   # set cvs-specific fields
   if request.roottype == 'cvs':
     plain_tags = options['cvs_tags']
-    plain_tags.sort(icmp)
-    plain_tags.reverse()
+    plain_tags.sort(functools.cmp_to_key(icmp), reverse=True)
     data['plain_tags'] = []
     for plain_tag in plain_tags:
       data['plain_tags'].append(_item(name=plain_tag,revision=None))
 
     branch_tags = options['cvs_branches']
-    branch_tags.sort(icmp)
-    branch_tags.reverse()
+    branch_tags.sort(functools.cmp_to_key(icmp), reverse=True)
     data['branch_tags'] = []
     for branch_tag in branch_tags:
       data['branch_tags'].append(_item(name=branch_tag,revision=None))
@@ -2770,9 +2788,9 @@ def view_log(request):
       entry.tags = prep_tags(request, rev.tags)
       entry.branch_points = prep_tags(request, rev.branch_points)
 
-      entry.tag_names = map(lambda x: x.name, rev.tags)
-      if branch and not name_printed.has_key(branch):
-        entry.branch_names = map(lambda x: x.name, rev.branches)
+      entry.tag_names = [x.name for x in rev.tags]
+      if branch and branch not in name_printed:
+        entry.branch_names = [x.name for x in rev.branches]
         name_printed[branch] = 1
       else:
         entry.branch_names = [ ]
@@ -2955,9 +2973,7 @@ def view_log(request):
                                              params={}, escape=1)
 
   taginfo = options.get('cvs_tags', {})
-  tagitems = taginfo.items()
-  tagitems.sort()
-  tagitems.reverse()
+  tagitems = sorted(taginfo.items(), reverse=True)
 
   main = taginfo.get('MAIN')
   if main:
@@ -3065,7 +3081,7 @@ def cvsgraph_extraopts(request):
 
   # And tag limitation has a user-supplied value to mess with.
   if ('limittags' in request.cfg.options.allowed_cvsgraph_useropts) \
-     and request.query_dict.has_key('gmaxtag'):
+     and 'gmaxtag' in request.query_dict:
     ep = ep + ';rev_maxtags=' + request.query_dict['gmaxtag']
 
   return ep + ';'
@@ -3460,7 +3476,7 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2,
 
 def _get_diff_path_parts(request, query_key, rev, base_rev):
   repos = request.repos
-  if request.query_dict.has_key(query_key):
+  if query_key in request.query_dict:
     parts = _path_parts(request.query_dict[query_key])
   elif request.roottype == 'svn':
     try:
@@ -3725,7 +3741,8 @@ class DiffDescription:
     if self.human_readable:
       cfg = self.request.cfg
       diff_options['ignore_white'] = cfg.options.hr_ignore_white
-    for name in self._uniq(left.properties.keys() + right.properties.keys()):
+    for name in self._uniq(list(left.properties.keys())
+                           + list(right.properties.keys())):
       # Skip non-utf8 property names
       if is_undisplayable(name):
         continue
@@ -4159,8 +4176,7 @@ def view_revision(request):
   date_str = make_time_string(date, cfg)
 
   # Fix up the revprops list (rather like get_itemprops()).
-  propnames = revprops.keys()
-  propnames.sort()
+  propnames = sorted(revprops.keys())
   props = []
   for name in propnames:
     # skip non-utf8 property names
@@ -4729,12 +4745,12 @@ def view_query(request):
                  'all':1, 'explicit':1 }
 
   # parse various fields, validating or converting them
-  if not match_types.has_key(branch_match): branch_match = 'exact'
-  if not match_types.has_key(file_match): file_match = 'exact'
-  if not match_types.has_key(who_match): who_match = 'exact'
-  if not match_types.has_key(comment_match): comment_match = 'exact'
-  if not sort_types.has_key(querysort): querysort = 'date'
-  if not date_types.has_key(date): date = 'hours'
+  if branch_match not in match_types: branch_match = 'exact'
+  if file_match not in match_types: file_match = 'exact'
+  if who_match not in match_types: who_match = 'exact'
+  if comment_match not in match_types: comment_match = 'exact'
+  if querysort not in sort_types: querysort = 'date'
+  if date not in date_types: date = 'hours'
   mindate = parse_date(mindate)
   maxdate = parse_date(maxdate)
 
@@ -4999,11 +5015,11 @@ def expand_root_parents(cfg):
 
     if repo_type == 'cvs':
       roots = vclib.ccvs.expand_root_parent(path)
-      if cfg.options.hide_cvsroot and roots.has_key('CVSROOT'):
+      if cfg.options.hide_cvsroot and 'CVSROOT' in roots:
         del roots['CVSROOT']
       if context:
         fullroots = {}
-        for root, rootpath in roots.iteritems():
+        for root, rootpath in roots.items():
           fullroots[_path_join(context + [root])] = rootpath
         cfg.general.cvs_roots.update(fullroots)
       else:
@@ -5012,7 +5028,7 @@ def expand_root_parents(cfg):
       roots = vclib.svn.expand_root_parent(path)
       if context:
         fullroots = {}
-        for root, rootpath in roots.iteritems():
+        for root, rootpath in roots.items():
           fullroots[_path_join(context + [root])] = rootpath
         cfg.general.svn_roots.update(fullroots)
       else:
@@ -5065,11 +5081,11 @@ def find_root_in_parents(cfg, path_parts, roottype):
 
 def locate_root_from_path(cfg, path_parts):
   """Return a 4-tuple ROOTTYPE, ROOTPATH, ROOTNAME, REMAIN for path_parts."""
-  for rootname, rootpath in cfg.general.cvs_roots.iteritems():
+  for rootname, rootpath in cfg.general.cvs_roots.items():
     pp = _path_parts(rootname)
     if _path_starts_with(path_parts, pp):
       return 'cvs', rootpath, rootname, path_parts[len(pp):]
-  for rootname, rootpath in cfg.general.svn_roots.iteritems():
+  for rootname, rootpath in cfg.general.svn_roots.items():
     pp = _path_parts(rootname)
     if _path_starts_with(path_parts, pp):
       return 'svn', rootpath, rootname, path_parts[len(pp):]
@@ -5088,9 +5104,9 @@ def locate_root_from_path(cfg, path_parts):
 def locate_root(cfg, rootname):
   """Return a 2-tuple ROOTTYPE, ROOTPATH for configured ROOTNAME."""
   # First try a direct match
-  if cfg.general.cvs_roots.has_key(rootname):
+  if rootname in cfg.general.cvs_roots:
     return 'cvs', cfg.general.cvs_roots[rootname]
-  if cfg.general.svn_roots.has_key(rootname):
+  if rootname in cfg.general.svn_roots:
     return 'svn', cfg.general.svn_roots[rootname]
 
   path_parts = _path_parts(rootname)
@@ -5145,7 +5161,7 @@ def load_config(pathname=None, server=None):
   if cfg.general.mime_types_files:
     files = cfg.general.mime_types_files[:]
     files.reverse()
-    files = map(lambda x, y=pathname: os.path.join(os.path.dirname(y), x), files)
+    files = list(map(lambda x, y=pathname: os.path.join(os.path.dirname(y), x), files))
     mimetypes.init(files)
   
   debug.t_end('load-config')
