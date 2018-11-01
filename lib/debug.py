@@ -43,15 +43,14 @@ if SHOW_TIMES:
 
   def t_end(which):
     t = time.time() - _timers[which]
-    if _times.has_key(which):
+    if which in _times:
       _times[which] = _times[which] + t
     else:
       _times[which] = t
 
   def t_dump(out):
     out.write('<div>')
-    names = _times.keys()
-    names.sort()
+    names = sorted(_times.keys())
     for name in names:
       out.write('%s: %.6fs<br/>\n' % (name, _times[name]))
     out.write('</div>')
@@ -87,12 +86,12 @@ def PrintException(server, exc_data):
     s = s + ('<h4>HTTP Response Status</h4>\n<p><pre>\n%s</pre></p><hr />\n'
              % status)
   if sys.version_info[0] >= 3:
-    s = s.encode('utf-8')
+    s = s.encode('utf-8', 'xmlcharrefreplace')
   server.write(s)
 
   server.write(b"<h4>Python Traceback</h4>\n<p><pre>")
   if sys.version_info[0] >= 3:
-    server.write(server.escape(tb).encode('utf-8'))
+    server.write(server.escape(tb).encode('utf-8', 'xmlcharrefreplace'))
   else:
     server.write(server.escape(tb))
   server.write(b"</pre></p>\n")
@@ -138,7 +137,7 @@ if SHOW_CHILD_PROCESSES:
 
       import sapi
       if not sapi.server is None:
-        if not sapi.server.pageGlobals.has_key('processes'):
+        if 'processes' not in sapi.server.pageGlobals:
           sapi.server.pageGlobals['processes'] = [self]
         else:
           sapi.server.pageGlobals['processes'].append(self)
@@ -146,7 +145,7 @@ if SHOW_CHILD_PROCESSES:
   def DumpChildren(server):
     import os
 
-    if not server.pageGlobals.has_key('processes'):
+    if 'processes' not in server.pageGlobals:
       return
 
     server.header()
