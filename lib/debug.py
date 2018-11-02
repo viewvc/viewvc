@@ -60,7 +60,7 @@ else:
   t_start = t_end = t_dump = lambda *args: None
 
 
-class ViewVCException:
+class ViewVCException(Exception):
   def __init__(self, msg, status=None):
     self.msg = msg
     self.status = status
