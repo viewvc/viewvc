@@ -44,6 +44,7 @@ import sys
 
 if sys.version_info[0] >= 3:
   # Python >=3.0
+  PY3 = True
   import io
   long = int
   unicode = str
@@ -51,6 +52,7 @@ if sys.version_info[0] >= 3:
   from urllib.parse import quote_plus as urllib_parse_quote_plus
 else:
   # Python <3.0
+  PY3 = False
   from urllib import quote_plus as urllib_parse_quote_plus
   try:
     from cStringIO import StringIO
@@ -306,21 +308,27 @@ class Template:
     by the method '_parse' and executes it step by step.  strings are written
     to the file object 'fp' and functions are called.
     """
-    for step in program:
-      if sys.version_info[0] >= 3:
-        if isinstance(step, bytes):
-          if hasattr(fp, 'encoding'):
+    if PY3:
+      if hasattr(fp, 'encoding'):
+        for step in program:
+          if isinstance(step, bytes):
             fp.write(step.decode(fp.encoding, 'surrogateescape'))
-          else:
-            fp.write(step)
-        elif isinstance(step, str):
-          if hasattr(fp, 'encoding'):
+          elif isinstance(step, str):
             fp.write(step)
           else:
-            fp.write(step.encode('utf-8'))
-        else:
-          method, method_args, filename, line_number = step
+            method, method_args, filename, line_number = step
+            method(method_args, fp, ctx, filename, line_number)
       else:
+        for step in program:
+          if isinstance(step, bytes):
+            fp.write(step)
+          elif isinstance(step, str):
+            fp.write(step.encode('utf-8', 'surrogateescape'))
+          else:
+            method, method_args, filename, line_number = step
+            method(method_args, fp, ctx, filename, line_number)
+    else:
+      for step in program:
         if isinstance(step, str):
           fp.write(step)
         else:
@@ -332,6 +340,7 @@ class Template:
     value = _get_value(valref, ctx, filename, line_number)
     # if the value has a 'read' attribute, then it is a stream: copy it
     if hasattr(value, 'read'):
+      assert not PY3 or not hasattr(fp, 'encoding')
       while 1:
         chunk = value.read(16384)
         if not chunk:
@@ -342,7 +351,10 @@ class Template:
     else:
       for t in transforms:
         value = t(value)
-      fp.write(value)
+      if not PY3 or hasattr(fp, 'encoding'):
+        fp.write(value)
+      else:
+        fp.write(value.encode('utf-8', 'surrogateescape'))
 
   def _cmd_subst(self, transforms_valref_args, fp, ctx, filename,
                  line_number):
@@ -545,7 +557,7 @@ REPLACE_JS_MAP = (
 )
 
 # Various unicode whitespace
-if sys.version_info[0] >= 3:
+if PY3:
   # Python >=3.0
   REPLACE_JS_UNICODE_MAP = (
     ('\u0085', r'\u0085'), ('\u2028', r'\u2028'), ('\u2029', r'\u2029')
@@ -611,9 +623,9 @@ class _FileReader(Reader):
   """Reads templates from the filesystem."""
   def __init__(self, fname):
     self.text = open(fname, 'rb').read()
-    if sys.version_info[0] >= 3:
+    if PY3:
       # Python >=3.0
-      self.text = self.text.decode()
+      self.text = self.text.decode('utf-8', 'surrogateescape')
     self._dir = os.path.dirname(fname)
     self.fname = fname
   def read_other(self, relative):
