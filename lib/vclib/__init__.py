@@ -351,7 +351,7 @@ def _diff_args(type, options):
   """generate argument list to pass to diff or rcsdiff"""
   args = []
   if type == CONTEXT:
-    if options.has_key('context'):
+    if 'context' in options:
       if options['context'] is None:
         args.append('--context=-1')
       else:
@@ -359,7 +359,7 @@ def _diff_args(type, options):
     else:
       args.append('-c')
   elif type == UNIFIED:
-    if options.has_key('context'):
+    if 'context' in options:
       if options['context'] is None:
         args.append('--unified=-1')
       else:
