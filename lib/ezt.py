@@ -308,39 +308,18 @@ class Template:
     by the method '_parse' and executes it step by step.  strings are written
     to the file object 'fp' and functions are called.
     """
-    if PY3:
-      if hasattr(fp, 'encoding'):
-        for step in program:
-          if isinstance(step, bytes):
-            fp.write(step.decode(fp.encoding, 'surrogateescape'))
-          elif isinstance(step, str):
-            fp.write(step)
-          else:
-            method, method_args, filename, line_number = step
-            method(method_args, fp, ctx, filename, line_number)
+    for step in program:
+      if isinstance(step, str):
+        fp.write(step)
       else:
-        for step in program:
-          if isinstance(step, bytes):
-            fp.write(step)
-          elif isinstance(step, str):
-            fp.write(step.encode('utf-8', 'surrogateescape'))
-          else:
-            method, method_args, filename, line_number = step
-            method(method_args, fp, ctx, filename, line_number)
-    else:
-      for step in program:
-        if isinstance(step, str):
-          fp.write(step)
-        else:
-          method, method_args, filename, line_number = step
-          method(method_args, fp, ctx, filename, line_number)
+        method, method_args, filename, line_number = step
+        method(method_args, fp, ctx, filename, line_number)
 
   def _cmd_print(self, transforms_valref, fp, ctx, filename, line_number):
     (transforms, valref) = transforms_valref
     value = _get_value(valref, ctx, filename, line_number)
     # if the value has a 'read' attribute, then it is a stream: copy it
     if hasattr(value, 'read'):
-      assert not PY3 or not hasattr(fp, 'encoding')
       while 1:
         chunk = value.read(16384)
         if not chunk:
@@ -351,10 +330,7 @@ class Template:
     else:
       for t in transforms:
         value = t(value)
-      if not PY3 or hasattr(fp, 'encoding'):
-        fp.write(value)
-      else:
-        fp.write(value.encode('utf-8', 'surrogateescape'))
+      fp.write(value)
 
   def _cmd_subst(self, transforms_valref_args, fp, ctx, filename,
                  line_number):
@@ -622,10 +598,7 @@ class Reader:
 class _FileReader(Reader):
   """Reads templates from the filesystem."""
   def __init__(self, fname):
-    self.text = open(fname, 'rb').read()
-    if PY3:
-      # Python >=3.0
-      self.text = self.text.decode('utf-8', 'surrogateescape')
+    self.text = open(fname, 'r').read()
     self._dir = os.path.dirname(fname)
     self.fname = fname
   def read_other(self, relative):
