@@ -113,6 +113,9 @@ def GetExceptionData():
     if isinstance(exc, ViewVCException):
       exc_dict['msg'] = exc.msg
       exc_dict['status'] = exc.status
+    elif isinstance(exc, Exception):
+      exc_dict['msg'] = str(exc)
+      exc_dict['status'] = '500 Internal Server Error'
 
     tb = ''.join(traceback.format_exception(exc_type, exc, exc_tb))
     exc_dict['stacktrace'] = tb
