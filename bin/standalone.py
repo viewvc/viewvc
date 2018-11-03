@@ -35,9 +35,11 @@ import socket
 import select
 import base64
 if sys.version_info[0] >= 3:
+  PY3 = True
   from urllib.parse import unquote as _unquote
   import http.server as _http_server
 else:
+  PY3 = False
   from urllib import unquote as _unquote
   import BaseHTTPServer as _http_server
 
@@ -269,7 +271,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
     env['REMOTE_ADDR'] = self.client_address[0]
     if self.username:
       env['REMOTE_USER'] = self.username
-    if sys.version_info[0] >= 3:
+    if PY3:
         env['CONTENT_TYPE'] = self.headers.get_content_type()
         length = self.headers.get('content-length', None)
     else:
@@ -287,19 +289,19 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
       else:
         accept = accept + line[7:].split(',')
     env['HTTP_ACCEPT'] = ','.join(accept)
-    if sys.version_info[0] >= 3:
+    if PY3:
       ua = self.headers.get('user-agent', None)
     else:
       ua = self.headers.getheader('user-agent')
     if ua:
       env['HTTP_USER_AGENT'] = ua
-    if sys.version_info[0] >= 3:
+    if PY3:
       modified = self.headers.get('if-modified-since', None)
     else:
       modified = self.headers.getheader('if-modified-since')
     if modified:
       env['HTTP_IF_MODIFIED_SINCE'] = modified
-    if sys.version_info[0] >= 3:
+    if PY3:
       etag = self.headers.get('if-none-match', None)
     else:
       etag = self.headers.getheader('if-none-match')
