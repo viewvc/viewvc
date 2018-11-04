@@ -3989,48 +3989,55 @@ def view_diff(request):
 
 
 def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
-                            uid=0, gid=0, typeflag=None, linkname='',
-                            uname='viewvc', gname='viewvc',
+                            uid=0, gid=0, typeflag=None, linkname=b'',
+                            uname=b'viewvc', gname=b'viewvc',
                             devmajor=1, devminor=0, prefix=None,
-                            magic='ustar', version='00', chksum=None):
+                            magic=b'ustar', version=b'00', chksum=None):
+  if not isinstance(name, bytes):
+    name = name.encode('utf-8', 'surrogateescape')
+  if not isinstance(linkname, bytes):
+    linkname = linkname.encode('utf-8', 'surrogateescape')
+
   if not mode:
-    if name[-1:] == '/':
+    if name[-1:] == b'/':
       mode = 0o0755
     else:
       mode = 0o0644
 
   if not typeflag:
     if linkname:
-      typeflag = '2' # symbolic link
-    elif name[-1:] == '/':
-      typeflag = '5' # directory
+      typeflag = b'2' # symbolic link
+    elif name[-1:] == b'/':
+      typeflag = b'5' # directory
     else:
-      typeflag = '0' # regular file
+      typeflag = b'0' # regular file
 
   if not prefix:
-    prefix = ''
+    prefix = b''
+  elif not isinstance(prefix, bytes):
+    prefix = prefix.encode('utf-8', 'surrogateescape')
 
   # generate a GNU tar extension header for a long name.
   if len(name) >= 100:
-    generate_tarball_header(out, '././@LongLink', len(name),
-                            0, 0, 0, 0, 'L')
+    generate_tarball_header(out, b'././@LongLink', len(name),
+                            0, 0, 0, 0, b'L')
     out.write(name)
-    out.write('\0' * (511 - ((len(name) + 511) % 512)))
+    out.write(b'\0' * (511 - ((len(name) + 511) % 512)))
 
   # generate a GNU tar extension header for a long symlink name.
   if len(linkname) >= 100:
-    generate_tarball_header(out, '././@LongLink', len(linkname),
-                            0, 0, 0, 0, 'K')
+    generate_tarball_header(out, b'././@LongLink', len(linkname),
+                            0, 0, 0, 0, b'K')
     out.write(linkname)
-    out.write('\0' * (511 - ((len(linkname) + 511) % 512)))
+    out.write(b'\0' * (511 - ((len(linkname) + 511) % 512)))
 
   block1 = struct.pack('100s 8s 8s 8s 12s 12s',
                        name,
-                       '%07o' % mode,
-                       '%07o' % uid,
-                       '%07o' % gid,
-                       '%011o' % size,
-                       '%011o' % mtime)
+                       b'%07o' % mode,
+                       b'%07o' % uid,
+                       b'%07o' % gid,
+                       b'%011o' % size,
+                       b'%011o' % mtime)
 
   block2 = struct.pack('c 100s 6s 2s 32s 32s 8s 8s 155s',
                        typeflag,
@@ -4039,19 +4046,23 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
                        version,
                        uname,
                        gname,
-                       '%07o' % devmajor,
-                       '%07o' % devminor,
+                       b'%07o' % devmajor,
+                       b'%07o' % devminor,
                        prefix)
 
   if not chksum:
-    dummy_chksum = '        '
+    dummy_chksum = b'        '
     block = block1 + dummy_chksum + block2
     chksum = 0
-    for i in range(len(block)):
-      chksum = chksum + ord(block[i])
+    if PY3:
+      for i in range(len(block)):
+        chksum = chksum + block[i]
+    else:
+      for i in range(len(block)):
+        chksum = chksum + ord(block[i])
 
-  block = block1 + struct.pack('8s', '%07o' % chksum) + block2
-  block = block + '\0' * (512 - len(block))
+  block = block1 + struct.pack('8s', b'%07o' % chksum) + block2
+  block = block + b'\0' * (512 - len(block))
 
   out.write(block)
 
@@ -4103,6 +4114,10 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
   # Run through the files in this directory, skipping busted and
   # unauthorized ones.
   for file in entries:
+    if isinstance(file.name, str):
+      s_file_name = file.name
+    else:
+      s_file_name = file.name.decode('utf-8', 'surrogateescape')
     if file.kind != vclib.FILE:
       continue
     if cvs and (file.rev is None or file.dead):
@@ -4119,7 +4134,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     # Calculate the mode for the file.  Sure, we could look directly
     # at the ,v file in CVS, but that's a layering violation we'd like
     # to avoid as much as possible.
-    if request.repos.isexecutable(rep_path + [file.name], request.pathrev):
+    if request.repos.isexecutable(rep_path + [s_file_name], request.pathrev):
       mode = 0o0755
     else:
       mode = 0o0644
@@ -4130,21 +4145,23 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     ### symlinks with a new vclib.SYMLINK path type.
     symlink_target = None
     if hasattr(request.repos, 'get_symlink_target'):
-      symlink_target = request.repos.get_symlink_target(rep_path + [file.name],
-                                                        request.pathrev)
+      symlink_target = request.repos.get_symlink_target(
+                                  rep_path + [s_file_name], request.pathrev)
 
     # If the object is a symlink, generate the appropriate header.
     # Otherwise, we're dealing with a regular file.
     if symlink_target:
-      generate_tarball_header(out, tar_dir + file.name, 0, mode,
+      generate_tarball_header(out, tar_dir + s_file_name, 0, mode,
                               file.date is not None and file.date or 0,
                               typeflag='2', linkname=symlink_target)
     else:
-      filesize = request.repos.filesize(rep_path + [file.name], request.pathrev)
+      filesize = request.repos.filesize(rep_path + [s_file_name],
+                                        request.pathrev)
 
       if filesize == -1:
         # Bummer.  We have to calculate the filesize manually.
-        fp = request.repos.openfile(rep_path + [file.name], request.pathrev, {})[0]
+        fp = request.repos.openfile(rep_path + [s_file_name],
+                                    request.pathrev, {})[0]
         filesize = 0
         while 1:
           chunk = retry_read(fp)
@@ -4154,11 +4171,12 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
         fp.close()
 
       # Write the tarball header...
-      generate_tarball_header(out, tar_dir + file.name, filesize, mode,
+      generate_tarball_header(out, tar_dir + s_file_name, filesize, mode,
                               file.date is not None and file.date or 0)
 
       # ...the file's contents ...
-      fp = request.repos.openfile(rep_path + [file.name], request.pathrev, {})[0]
+      fp = request.repos.openfile(rep_path + [s_file_name],
+                                  request.pathrev, {})[0]
       while 1:
         chunk = retry_read(fp)
         if not chunk:
@@ -4167,19 +4185,23 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
       fp.close()
 
       # ... and then add the block padding.
-      out.write('\0' * (511 - (filesize + 511) % 512))
+      out.write(b'\0' * (511 - (filesize + 511) % 512))
 
   # Recurse into subdirectories, skipping busted and unauthorized (or
   # configured-to-be-hidden) ones.
   for file in entries:
+    if isinstance(file.name, str):
+      s_file_name = file.name
+    else:
+      s_file_name = file.name.decode('utf-8', 'surrogateescape')
     if file.errors or file.kind != vclib.DIR:
       continue
     if request.cfg.options.hide_cvsroot \
-       and is_cvsroot_path(request.roottype, rep_path + [file.name]):
+       and is_cvsroot_path(request.roottype, rep_path + [s_file_name]):
       continue
 
     mtime = request.roottype == 'svn' and file.date or None
-    generate_tarball(out, request, reldir + [file.name], stack, mtime)
+    generate_tarball(out, request, reldir + [s_file_name], stack, mtime)
 
   # Pop the current directory from the stack.
   del stack[-1:]
@@ -4196,7 +4218,7 @@ def download_tarball(request):
   # disabling any default compression thereupon -- and wrap that in
   # our own gzip stream wrapper.
   if debug.TARFILE_PATH:
-    fp = open(debug.TARFILE_PATH, 'w')
+    fp = open(debug.TARFILE_PATH, 'wb')
   else:
     tarfile = request.rootname
     if request.path_parts:
@@ -4212,7 +4234,7 @@ def download_tarball(request):
   ### top-level directory here.
   generate_tarball(fp, request, [], [])
 
-  fp.write('\0' * 1024)
+  fp.write(b'\0' * 1024)
   fp.close()
 
   if debug.TARFILE_PATH:
