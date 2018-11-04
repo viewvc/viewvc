@@ -212,7 +212,7 @@ class Config:
     for opt in parser.options(section):
       value = parser.get(section, opt)
       if opt in self._force_multi_value:
-        value = map(lambda x: x.strip(), filter(None, value.split(',')))
+        value = [x.strip() for x in [_f for _f in value.split(',') if _f]]
       else:
         try:
           value = int(value)
@@ -275,6 +275,8 @@ class Config:
       value = parser.get('vhosts', canon_vhost)
       patterns = map(lambda x: x.lower().strip(),
                      filter(None, value.split(',')))
+      patterns = [x.lower().strip()
+                  for x in [_f for _f in  value.split(',') if _f]]
       for pat in patterns:
         if fnmatch.fnmatchcase(vhost, pat):
           return canon_vhost
@@ -313,7 +315,7 @@ class Config:
       d = {}
       for option in parser.options(section):
         d[option] = parser.get(section, option)
-      return d.items()
+      return list(d.items())
 
   def get_authorizer_and_params_hack(self, rootname):
     """Return a 2-tuple containing the name and parameters of the
