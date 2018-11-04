@@ -800,12 +800,8 @@ def _strip_suffix(suffix, path_parts, rev, pathtype, repos, view_func):
 def _repos_pathtype(repos, path_parts, rev):
   """Return the type of a repository path, or None if the path doesn't
   exist"""
-  if not PY3 or not path_parts or isinstance(path_parts[0], bytes):
-    b_path_parts = path_parts
-  else:
-    b_path_parts = [p.encode('utf-8') for p in path_parts]
   try:
-    return repos.itemtype(b_path_parts, rev)
+    return repos.itemtype(path_parts, rev)
   except vclib.ItemNotFound:
     return None
 
@@ -1738,7 +1734,10 @@ def detect_encoding(text_block):
 
   # If no recognized BOM, see if chardet can help us.
   try:
-    import chardet
+    try:
+      import cchardet as chardet
+    except ImportError:
+      import chardet
 
     # If chardet can confidently claimed a match, we'll use its
     # findings.  (And if that match is 'ascii' -- which is a subset of
@@ -2078,9 +2077,19 @@ def markup_or_annotate(request, is_annotate):
           break
         filesize = filesize + len(line)
         assert_viewable_filesize(cfg, filesize)
-        file_lines.append(line)
+        if PY3:
+          file_lines.append(line.decode('utf-8', 'surrogate_escape'))
+        else:
+          file_lines.append(line)
     else:
-      file_lines = fp.readlines()
+      if PY3:
+        file_lines = []
+        line = fp.readline()
+        while line:
+          file_lines.append(line.decode('utf-8', 'surrogate_escape'))
+          line = fp.readline()
+      else:
+        file_lines = fp.readlines()
     fp.close()
 
     # Try to colorize the file contents.
@@ -2318,12 +2327,8 @@ def view_directory(request):
     options["cvs_subdirs"] = (cfg.options.show_subdir_lastmod and
                               cfg.options.show_logs)
   debug.t_start("listdir")
-  if PY3 and request.path_parts and isinstance(request.path_parts[0], str):
-    b_pp = [pp.encode('utf-8', 'surroageteescape')
-            for pp in request.path_parts]
-  else:
-    b_pp = request.path_parts
-  file_data = request.repos.listdir(b_pp, request.pathrev, options)
+  file_data = request.repos.listdir(request.path_parts, request.pathrev,
+                                    options)
   debug.t_end("listdir")
 
   # sort with directories first, and using the "sortby" criteria
@@ -2352,10 +2357,10 @@ def view_directory(request):
     sort_file_data(file_data, request.roottype, sortdir, sortby,
                    cfg.options.sort_group_dirs)
     # request dirlogs only for the slice of files in "this page"
-    request.repos.dirlogs(b_pp, request.pathrev,
+    request.repos.dirlogs(request.path_parts, request.pathrev,
                           file_data[dirlogs_first:dirlogs_last], options)
   else:
-    request.repos.dirlogs(b_pp, request.pathrev,
+    request.repos.dirlogs(request.path_parts, request.pathrev,
                           file_data, options)
     sort_file_data(file_data, request.roottype, sortdir, sortby,
                    cfg.options.sort_group_dirs)
@@ -2737,11 +2742,6 @@ def view_log(request):
   diff_format = request.query_dict.get('diff_format', cfg.options.diff_format)
   pathtype = request.pathtype
 
-  if PY3 and request.path_parts and isinstance(request.path_parts[0], str):
-    b_pp = [pp.encode('utf-8', 'surroageteescape')
-            for pp in request.path_parts]
-  else:
-    b_pp = request.path_parts
   if pathtype is vclib.DIR:
     if request.roottype == 'cvs':
       raise debug.ViewVCException('Unsupported feature: log view on CVS '
@@ -2775,7 +2775,7 @@ def view_log(request):
     total = cfg.options.log_pagesextra * cfg.options.log_pagesize
     first = log_pagestart - min(log_pagestart, total)
     last = log_pagestart + (total + cfg.options.log_pagesize) + 1
-  show_revs = request.repos.itemlog(b_pp, request.pathrev,
+  show_revs = request.repos.itemlog(request.path_parts, request.pathrev,
                                     sortby, first, last - first, options)
 
   # selected revision
@@ -3232,20 +3232,27 @@ def search_file(repos, path_parts, rev, search_re):
 
   # Read in each line of a checked-out file, and then use re.search to
   # search line.
-  if sys.version_info[0] < 3 or isinstance(pathparts[0], bytes):
-    b_path_parts = path_parts
-  else:
-    b_path_parts = [p.encode('utf-8') for p in path_parts]
-  fp = repos.openfile(b_path_parts, rev, {})[0]
+  fp = repos.openfile(path_parts, rev, {})[0]
   matches = 0
-  while 1:
-    line = fp.readline()
-    if not line:
-      break
-    if search_re.search(line):
-      matches = 1
-      fp.close()
-      break
+  if PY3:
+    while 1:
+      line = fp.readline()
+      if not line:
+        break
+      # XXX: Is there what can we do about file encoding?
+      if search_re.search(line.decode('utf-8', 'surrogateescape')):
+        matches = 1
+        fp.close()
+        break
+  else:
+    while 1:
+      line = fp.readline()
+      if not line:
+        break
+      if search_re.search(line):
+        matches = 1
+        fp.close()
+        break
   return matches
 
 def view_doc(request):
@@ -3652,6 +3659,8 @@ def view_patch(request):
                                                    rev1, rev2, sym1, sym2)
 
   server_fp = get_writeready_server_file(request, 'text/plain')
+  if PY3 and not hasattr(server_fp, 'encoding'):
+    server_fp = io.TextIOWrapper(server_fp, 'utf-8', 'surrogateescape')
   server_fp.write(headers)
   copy_stream(fp, server_fp)
   fp.close()
@@ -3876,7 +3885,11 @@ class DiffDescription:
 
   def _prop_lines(self, side, propname):
     val = side.properties.get(propname, '')
-    return val.splitlines()
+    # XXX: dirty hack for Python 3: we need bytes as return value
+    if PY3:
+      return val.encode('utf-8','surrogateescape').splitlines()
+    else:
+      return val.splitlines()
 
   def _prop_fp(self, left, right, propname, diff_options):
     fn_left = self._temp_file(left.properties.get(propname))
@@ -3894,7 +3907,10 @@ class DiffDescription:
     fd, fn = tempfile.mkstemp()
     fp = os.fdopen(fd, "wb")
     if val:
-      fp.write(val)
+      if not isinstance(val, bytes):
+        fp.write(val.encode('utf-8', 'surrogateescape'))
+      else:
+        fp.write(val)
     fp.close()
     return fn
 
@@ -4044,7 +4060,10 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
   rep_path = request.path_parts + reldir
   entries = request.repos.listdir(rep_path, request.pathrev, {})
   request.repos.dirlogs(rep_path, request.pathrev, entries, {})
-  entries.sort(lambda a, b: cmp(a.name, b.name))
+  if PY3:
+    entries.sort(key=functools.cmp_to_key(lambda a, b: cmp(a.name, b.name)))
+  else:
+    entries.sort(lambda a, b: cmp(a.name, b.name))
 
   # figure out corresponding path in tar file. everything gets put underneath
   # a single top level directory named after the repository directory being
