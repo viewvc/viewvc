@@ -2818,7 +2818,7 @@ def view_log(request):
     if PY3 and isinstance(rev.filename, bytes):
       s_filename = rev.filename.decode('utf-8', 'surrogateescape')
     else:
-      s_filename = rev.fliename
+      s_filename = rev.filename
     if PY3 and isinstance(rev.filename, str):
       b_filename = rev.filename.encode('utf-8', 'surrogateescape')
     else:
