@@ -360,6 +360,17 @@ class ViewVCHTTPServer(BaseHTTPServer.HTTPServer):
       self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     BaseHTTPServer.HTTPServer.server_bind(self)
 
+  def handle_error(self, request, client_address):
+    """Handle an error gracefully. use stderr instead of stdout
+    to avoid double fault.
+    """
+    print >>sys.stderr, '-'*40
+    print >>sys.stderr, 'Exception happened during processing of request from',
+    print >>sys.stderr, client_address
+    import traceback
+    traceback.print_exc()
+    print >>sys.stderr, '-'*40
+
 
 def serve(host, port, callback=None):
   """Start an HTTP server for HOST on PORT.  Call CALLBACK function
