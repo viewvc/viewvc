@@ -1523,12 +1523,12 @@ def html_time(request, secs, extended=0):
       break
     i = i + 1
   value = breaks[i - 1]
-  s = get_time_text(request, value, secs / value)
+  s = get_time_text(request, value, secs // value)
 
   if extended and i > 1:
     secs = secs % value
     value = breaks[i - 2]
-    ext = get_time_text(request, value, secs / value)
+    ext = get_time_text(request, value, secs // value)
     if ext:
       ### this is not i18n compatible. pass on it for now
       s = s + ', ' + ext
@@ -2618,7 +2618,7 @@ def paging(data, key, pagestart, local_name, pagesize):
     pick = _item(start=None, end=None, count=None, more=ezt.boolean(0))
     pick.start = getattr(data[key][i], local_name)
     pick.count = i
-    pick.page = (i / pagesize) + 1
+    pick.page = (i // pagesize) + 1
     try:
       pick.end = getattr(data[key][i+pagesize-1], local_name)
     except IndexError:
@@ -2649,7 +2649,7 @@ def paging_sws(data, key, pagestart, local_name, pagesize,
     pick = _item(start=None, end=None, count=None, more=ezt.boolean(0))
     pick.start = getattr(data[key][i], local_name)
     pick.count = offset + i
-    pick.page = (pick.count / pagesize) + 1
+    pick.page = (pick.count // pagesize) + 1
     try:
       pick.end = getattr(data[key][i+pagesize-1], local_name)
     except IndexError:
