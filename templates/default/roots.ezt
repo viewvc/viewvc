@@ -34,6 +34,11 @@
 
 </table>
 
+<div id="vc_view_summary">
+<div class="inline lpad">
+  [roots_shown] root[is roots_shown "1"][else]s[end] shown
+</div>
+</div>
 <!-- ************************************************************** -->
 </div>
 

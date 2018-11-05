@@ -2298,6 +2298,7 @@ def view_roots(request):
   data = common_template_data(request)
   data.merge(TemplateData({
     'roots' : roots,
+    'roots_shown' : len(roots), 
     }))
   generate_page(request, "roots", data)
 
@@ -2375,7 +2376,7 @@ def view_directory(request):
 
   # loop through entries creating rows and changing these values
   rows = [ ]
-  num_displayed = 0
+  dirs_displayed = files_displayed = 0
   num_dead = 0
 
   # set some values to be used inside loop
@@ -2424,6 +2425,8 @@ def view_directory(request):
          and is_cvsroot_path(request.roottype,
                              request.path_parts + [s_name]):
         continue
+    
+      dirs_displayed += 1
 
       row.view_href = request.get_url(view_func=view_directory,
                                       where=s_where_prefix+s_name,
@@ -2463,8 +2466,8 @@ def view_directory(request):
         num_dead = num_dead + 1
         if hideattic:
           continue
-
-      num_displayed = num_displayed + 1
+        
+      files_displayed += 1
 
       s_file_where = s_where_prefix + s_name
       if request.roottype == 'svn':
@@ -2519,7 +2522,8 @@ def view_directory(request):
     'sortby_log_href' :    request.get_url(params={'sortby': 'log',
                                                    'sortdir': None},
                                            escape=1),
-    'files_shown' : num_displayed,
+    'files_shown' : files_displayed,
+    'dirs_shown' : dirs_displayed,
     'num_dead' : num_dead,
     'youngest_rev' : None,
     'youngest_rev_href' : None,
