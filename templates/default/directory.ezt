@@ -132,6 +132,7 @@
 </div>
 [end]
 <div class="inline lpad">
+  [dirs_shown] director[is dirs_shown "1"]y[else]ies[end] and
   [files_shown] file[is files_shown "1"][else]s[end] shown
 </div>
 </div>
