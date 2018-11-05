@@ -1500,6 +1500,7 @@ def common_template_data(request, revision=None, mime_type=None):
     'download_href' : None,
     'download_text_href' : None,
     'graph_href': None,
+    'home_href': request.script_name or '/',
     'kv'  : request.kv,
     'lockinfo' : None,
     'log_href' : None,
