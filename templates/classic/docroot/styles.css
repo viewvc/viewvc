@@ -74,9 +74,6 @@ form { margin: 0; }
 .vc_row_odd {
   background-color: #f0f0f0;
 }
-.vc_row_special {
-  background-color: #ffff7f;
-}
 
 
 /*** Directory View ***/
@@ -125,13 +122,27 @@ form { margin: 0; }
   border-right-width: 1px;
   text-align: right;
 }
+.vc_annotation_group_even {
+  background-color: rgb(95%,95%,85%);
+}
+.vc_annotation_group_odd {
+  background-color: rgb(90%,90%,80%);
+}
+.vc_annotation_group_thisrev {
+  background-color: rgb(100%,100%,60%);
+}
 .vc_file_line_text {
   border-right-width: 0px;
-  background-color: white;
   font-family: monospace;
   text-align: left;
   white-space: pre;
   width: 100%;
+}
+.vc_row_even .vc_file_line_text {
+  background-color: #ffffff;
+}
+.vc_row_odd .vc_file_line_text {
+  background-color: #fafafa;
 }
 .pygments-c { color: #408080; font-style: italic } /* Comment */
 .pygments-err { border: 1px solid #FF0000 } /* Error */
