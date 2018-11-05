@@ -72,7 +72,7 @@
        [else]
        <a name="[entries.anchor]" href="[entries.log_href]" title="View file revision log">
        [end]
-       <img src="[docroot]/images/[is entries.pathtype "dir"]dir[else][is entries.state "dead"]broken[else]text[end][end].png" alt="" class="vc_icon" />
+       <img src="[docroot]/images/[is entries.pathtype "dir"]dir[else][is entries.state "dead"]broken[else][if-any entries.prefer_markup]text[else]binary[end][end][end].png" alt="" class="vc_icon" />
        [entries.name][is entries.pathtype "dir"]/[end]</a>
        [is entries.state "dead"](dead)[end]
      </td>
