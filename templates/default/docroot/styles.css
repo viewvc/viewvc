@@ -161,10 +161,10 @@ address { font-style: normal; display: inline; }
 
 /*** Table Rows ***/
 .vc_row_even {
-  background-color: rgb(95%,95%,95%);
+  background-color: rgb(98%,98%,98%);
 }
 .vc_row_odd {
-  background-color: rgb(90%,90%,90%);
+  background-color: rgb(96%,96%,96%);
 }
 
 
@@ -249,14 +249,26 @@ address { font-style: normal; display: inline; }
   border-right-width: 1px;
   text-align: right;
 }
+.vc_annotation_group_even {
+  background-color: rgb(95%,95%,85%);
+}
+.vc_annotation_group_odd {
+  background-color: rgb(90%,90%,80%);
+}
 .vc_file_line_text {
   border-right-width: 0px;
-  background-color: white;
   font-family: monospace;
   text-align: left;
   white-space: pre;
   width: 100%;
 }
+.vc_row_even .vc_file_line_text {
+  background-color: rgb(98%,98%,98%);
+}
+.vc_row_odd .vc_file_line_text {
+  background-color: rgb(96%,96%,96%);
+}
+
 .pygments-c { color: #408080; font-style: italic } /* Comment */
 .pygments-err { border: 1px solid #FF0000 } /* Error */
 .pygments-k { color: #008000; font-weight: bold } /* Keyword */
