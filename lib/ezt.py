@@ -318,8 +318,11 @@ class Template:
   def _cmd_print(self, transforms_valref, fp, ctx, filename, line_number):
     (transforms, valref) = transforms_valref
     value = _get_value(valref, ctx, filename, line_number)
+    # if value is callback function, generates its own output
+    if callable(value):
+      value(fp, ctx, filename, line_number)
     # if the value has a 'read' attribute, then it is a stream: copy it
-    if hasattr(value, 'read'):
+    elif hasattr(value, 'read'):
       while 1:
         chunk = value.read(16384)
         if not chunk:

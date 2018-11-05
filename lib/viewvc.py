@@ -1692,13 +1692,13 @@ class MarkupPipeWrapper:
     self.posttext = posttext
     self.htmlize = htmlize
 
-  def __call__(self, ctx):
+  def __call__(self, fp, ctx, filename, line_number):
     if self.pretext:
-      ctx.fp.write(self.pretext)
-    copy_stream(self.fp, ctx.fp, self.htmlize)
+      fp.write(self.pretext)
+    copy_stream(self.fp, fp, self.htmlize)
     self.fp.close()
     if self.posttext:
-      ctx.fp.write(self.posttext)
+      fp.write(self.posttext)
 
 _re_rewrite_escaped_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)'
                                      '(://[-a-zA-Z0-9%.~:_/]+)'
