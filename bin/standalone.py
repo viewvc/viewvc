@@ -382,12 +382,12 @@ class ViewVCHTTPServer(_http_server.HTTPServer):
     """Handle an error gracefully. use stderr instead of stdout
     to avoid double fault.
     """
-    print >>sys.stderr, '-'*40
-    print >>sys.stderr, 'Exception happened during processing of request from',
-    print >>sys.stderr, client_address
+    sys.stderr.write('-'*40 + '\n')
+    sys.stderr.write('Exception happened during processing of request from '
+                     '%s\n' % str(client_address))
     import traceback
     traceback.print_exc()
-    print >>sys.stderr, '-'*40
+    sys.stderr.write('-'*40 + '\n')
 
 
 def serve(host, port, callback=None):
