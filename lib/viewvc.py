@@ -1910,8 +1910,10 @@ def make_time_string(date, cfg):
         tz = -time.altzone
       else:
         tz = -time.timezone
-      tz = float(tz) / 3600.0
-      tz = '{0:+06.2f}'.format(tz).replace('.', ':')
+      if tz < 0:
+        tz = '-%02d:%02d' % (-tz // 3600, (-tz % 3600) // 60)
+      else:
+        tz = '+%02d:%02d' % (tz // 3600, (tz % 3600) // 60)
     else:
       tz = 'Z'
     return time.strftime('%Y-%m-%dT%H:%M:%S', tm) + tz
