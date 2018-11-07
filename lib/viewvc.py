@@ -2080,19 +2080,9 @@ def markup_or_annotate(request, is_annotate):
           break
         filesize = filesize + len(line)
         assert_viewable_filesize(cfg, filesize)
-        if PY3:
-          file_lines.append(line.decode('utf-8', 'surrogate_escape'))
-        else:
-          file_lines.append(line)
+        file_lines.append(line)
     else:
-      if PY3:
-        file_lines = []
-        line = fp.readline()
-        while line:
-          file_lines.append(line.decode('utf-8', 'surrogate_escape'))
-          line = fp.readline()
-      else:
-        file_lines = fp.readlines()
+      file_lines = fp.readlines()
     fp.close()
 
     # Try to colorize the file contents.
