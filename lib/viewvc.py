@@ -1768,7 +1768,7 @@ def transcode_text(text, encoding=None):
   return text
 
 def markup_file_contents(request, cfg, file_lines, filename,
-                         mime_type, encoding, colorize):
+                         mime_type, encoding, colorize): # -> List[str]
   # Nothing to mark up?  So be it.
   if not file_lines:
     return []
@@ -1845,10 +1845,13 @@ def markup_file_contents(request, cfg, file_lines, filename,
     # Built output data comprised of marked-up and possibly-transcoded
     # source text lines wrapped in (possibly dummy) vclib.Annotation
     # objects.
-    file_lines = transcode_text(''.join(file_lines), encoding)
-    if file_lines[-1] == '\n':
-      file_lines = file_lines[:-1]
-    file_lines = file_lines.split('\n')
+    if PY3:
+      file_lines = [l.decode(encoding, 'surrogateescape') for l in file_lines]
+    else:
+      file_lines = transcode_text(''.join(file_lines), encoding)
+      if file_lines[-1] == '\n':
+        file_lines = file_lines[:-1]
+      file_lines = file_lines.split('\n')
     for i in range(len(file_lines)):
       line = file_lines[i]
       if cfg.options.tabsize > 0:
@@ -1869,7 +1872,7 @@ def markup_file_contents(request, cfg, file_lines, filename,
   highlight(''.join(file_lines), pygments_lexer,
             HtmlFormatter(nowrap=True,
                           classprefix="pygments-",
-                          encoding='utf-8'), ps)
+                          encoding=(None if PY3 else 'utf-8')), ps)
   return ps.colorized_file_lines
 
 def empty_blame_item(line, line_no):
@@ -2084,6 +2087,7 @@ def markup_or_annotate(request, is_annotate):
     else:
       file_lines = fp.readlines()
     fp.close()
+    # Python 3: type of elements of file_lines is bytes, not str here
 
     # Try to colorize the file contents.
     colorize = cfg.options.enable_syntax_coloration
@@ -2097,6 +2101,7 @@ def markup_or_annotate(request, is_annotate):
       else:
         raise debug.ViewVCException('Error displaying file contents',
                                     '500 Internal Server Error')
+    # Python 3: now type of elements of lines is str
 
     # Now, try to match up the annotation data (if any) with the file
     # lines.
