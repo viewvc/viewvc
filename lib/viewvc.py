@@ -1846,6 +1846,8 @@ def markup_file_contents(request, cfg, file_lines, filename,
     # source text lines wrapped in (possibly dummy) vclib.Annotation
     # objects.
     if PY3:
+      if not encoding:
+        encoding='ascii'
       file_lines = [l.decode(encoding, 'surrogateescape') for l in file_lines]
     else:
       file_lines = transcode_text(''.join(file_lines), encoding)
@@ -1869,7 +1871,7 @@ def markup_file_contents(request, cfg, file_lines, filename,
       self.colorized_file_lines.append(markup_escaped_urls(buf.rstrip('\n\r')))
 
   ps = PygmentsSink()
-  highlight(''.join(file_lines), pygments_lexer,
+  highlight(b''.join(file_lines), pygments_lexer,
             HtmlFormatter(nowrap=True,
                           classprefix="pygments-",
                           encoding=(None if PY3 else 'utf-8')), ps)
