@@ -1759,10 +1759,11 @@ def transcode_text(text, encoding=None):
   """If ENCODING is provided and not 'utf-8', transcode TEXT from
   ENCODING to UTF-8."""
 
+  # for Python 2.x only
   if not encoding or encoding == 'utf-8':
     return text
   try:
-    return text.decode(encoding, 'surrogateescape').encode('utf-8', 'surrogateescape')
+    return text.decode(encoding, 'replace').encode('utf-8', 'replace')
   except:
     pass
   return text
