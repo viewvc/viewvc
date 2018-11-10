@@ -65,6 +65,8 @@
   </tr>
  [end]
  [for entries]
+   [define icon_file][is entries.pathtype "dir"]dir[else][is entries.state "dead"]broken[else][if-any entries.is_viewable_image]image[else][if-any entries.is_binary]binary[else]text[end][end][end][end].png[end]
+
    <tr class="vc_row_[if-index entries even]even[else]odd[end]">
      <td[if-any entries.graph_href][else] colspan="2"[end]>
        [is entries.pathtype "dir"]
@@ -72,7 +74,7 @@
        [else]
        <a name="[entries.anchor]" href="[entries.log_href]" title="View file revision log">
        [end]
-       <img src="[docroot]/images/[is entries.pathtype "dir"]dir[else][is entries.state "dead"]broken[else][if-any entries.prefer_markup]text[else]binary[end][end][end].png" alt="" class="vc_icon" />
+       <img src="[docroot]/images/[icon_file]" alt="" class="vc_icon" />
        [entries.name][is entries.pathtype "dir"]/[end]</a>
        [is entries.state "dead"](dead)[end]
      </td>

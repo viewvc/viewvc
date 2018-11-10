@@ -1061,6 +1061,8 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
      annotate_href
      revision_href
      prefer_markup
+     is_viewable_image
+     is_binary
      
   """
   
@@ -1121,7 +1123,9 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
                download_text_href=download_text_href,
                annotate_href=annotate_href,
                revision_href=revision_href,
-               prefer_markup=ezt.boolean(prefer_markup))
+               prefer_markup=ezt.boolean(prefer_markup),
+               is_viewable_image=ezt.boolean(is_viewable_image(mime_type)),
+               is_binary=ezt.boolean(is_binary_file))
 
 
 # Matches URLs
@@ -2322,7 +2326,8 @@ def view_directory(request):
                 log_file=None, log_rev=None, graph_href=None, mime_type=None,
                 date=None, ago=None, view_href=None, log_href=None,
                 revision_href=None, annotate_href=None, download_href=None,
-                download_text_href=None, prefer_markup=ezt.boolean(0))
+                download_text_href=None, prefer_markup=ezt.boolean(0),
+                is_viewable_image=ezt.boolean(0), is_binary=ezt.boolean(0))
     if request.roottype == 'cvs' and file.absent:
       continue
     if cfg.options.hide_errorful_entries and file.errors:
@@ -2406,6 +2411,8 @@ def view_directory(request):
       row.annotate_href = fvi.annotate_href
       row.revision_href = fvi.revision_href
       row.prefer_markup = fvi.prefer_markup
+      row.is_viewable_image = fvi.is_viewable_image
+      row.is_binary = fvi.is_binary
       row.log_href = request.get_url(view_func=view_log,
                                      where=file_where,
                                      pathtype=vclib.FILE,
