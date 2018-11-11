@@ -909,7 +909,7 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
   # if not available, then the document isn't fresh.
   if etag is not None:
     isfresh = (request_etag == etag)
-  elif mtime is not None:
+  elif mtime is not None and request_mtime is not None:
     isfresh = (request_mtime >= mtime)
   else:
     isfresh = 0
