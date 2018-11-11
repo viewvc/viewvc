@@ -339,7 +339,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
       finally:
         sys.argv = save_argv
         sys.stdin = save_stdin
-        sys.stdout.flush()
+        sys.stdout.closed or sys.stdout.flush()
         if sys.platform != "win32":
           os.dup2(save_realstdout, 1)
           os.close(save_realstdout)
