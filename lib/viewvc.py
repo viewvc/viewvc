@@ -617,8 +617,6 @@ def _path_parts(path):
   """Split up a repository path into a list of path components"""
   # clean it up. this removes duplicate '/' characters and any that may
   # exist at the front or end of the path.
-  if PY3 and isinstance(path, bytes):
-    path = path.decode('utf-8', 'surrogateescape')
   return [pp for pp in path.split('/') if pp]
 
 def _normalize_path(path):
@@ -768,10 +766,7 @@ _legal_params = {
   }
 
 def _path_join(path_parts):
-  if PY3 and path_parts and isinstance(path_parts[0], bytes):
-    return b'/'.join(path_parts).decode('utf-8', 'surrogateescape')
-  else:
-    return '/'.join(path_parts)
+  return '/'.join(path_parts)
 
 def _path_starts_with(path_parts, first_path_parts):
   if not path_parts:
@@ -2313,11 +2308,7 @@ def view_directory(request):
       rev = request.repos._getrev(request.pathrev)
     except vclib.InvalidRevision:
       raise debug.ViewVCException('Invalid revision', '404 Not Found')
-    if not PY3 or isinstance(request.where, bytes) or request.where is None:
-      b_where = request.where
-    else:
-      b_where = request.where.encode('utf-8', 'surrogateescape')
-    tree_rev = request.repos.created_rev(b_where, rev)
+    tree_rev = request.repos.created_rev(request.where, rev)
     if check_freshness(request, None, str(tree_rev), weak=1):
       return
 
@@ -2380,11 +2371,8 @@ def view_directory(request):
   num_dead = 0
 
   # set some values to be used inside loop
-  if PY3 and isinstance(request.where, bytes):
-    s_where = request.where.decode('utf-8', 'surrogateescape')
-  else:
-    s_where = request.where
-  s_where_prefix = s_where and s_where + '/'
+  where = request.where
+  where_prefix = where and where + '/'
 
   debug.t_start("row-building")
   for file in file_data:
@@ -2410,12 +2398,8 @@ def view_directory(request):
       row.short_log = lf.get(maxlen=cfg.options.short_log_len, htmlize=1)
       debug.t_end("dirview_logformat")
     row.lockinfo = file.lockinfo
-    if PY3 and isinstance(file.name, bytes):
-       s_name = file.name.decode('utf-8', 'surroageteescape')
-    else:
-       s_name = file.name
-    row.anchor = request.server.escape(s_name)
-    row.name = request.server.escape(s_name)
+    row.anchor = request.server.escape(file.name)
+    row.name = request.server.escape(file.name)
     row.pathtype = (file.kind == vclib.FILE and 'file') or \
                    (file.kind == vclib.DIR and 'dir')
     row.errors = file.errors
@@ -2423,13 +2407,13 @@ def view_directory(request):
     if file.kind == vclib.DIR:
       if cfg.options.hide_cvsroot \
          and is_cvsroot_path(request.roottype,
-                             request.path_parts + [s_name]):
+                             request.path_parts + [file.name]):
         continue
     
       dirs_displayed += 1
 
       row.view_href = request.get_url(view_func=view_directory,
-                                      where=s_where_prefix+s_name,
+                                      where=where_prefix+file.name,
                                       pathtype=vclib.DIR,
                                       params={},
                                       escape=1)
@@ -2442,15 +2426,12 @@ def view_directory(request):
       if request.roottype == 'cvs' and file.rev is not None:
         row.rev = None
         if cfg.options.show_logs:
-          if PY3 and isinstance(file.newest_file, bytes):
-            row.log_file = file.newest_file.decode('utf-8', 'surrogateescape')
-          else:
-            row.log_file = file.newest_file
+          row.log_file = file.newest_file
           row.log_rev = file.rev
 
       if request.roottype == 'svn':
         row.log_href = request.get_url(view_func=view_log,
-                                       where=s_where_prefix + s_name,
+                                       where=where_prefix + file.name,
                                        pathtype=vclib.DIR,
                                        params={},
                                        escape=1)
@@ -2459,7 +2440,7 @@ def view_directory(request):
       if searchstr is not None:
         if request.roottype == 'cvs' and (file.errors or file.dead):
           continue
-        if not search_file(request.repos, request.path_parts + [s_name],
+        if not search_file(request.repos, request.path_parts + [file.name],
                            request.pathrev, searchstr):
           continue
       if request.roottype == 'cvs' and file.dead:
@@ -2469,14 +2450,14 @@ def view_directory(request):
         
       files_displayed += 1
 
-      s_file_where = s_where_prefix + s_name
+      file_where = where_prefix + file.name
       if request.roottype == 'svn':
         row.size = file.size
 
       row.mime_type, encoding = calculate_mime_type(request,
-                                                    _path_parts(s_file_where),
+                                                    _path_parts(file_where),
                                                     file.rev)
-      fvi = get_file_view_info(request, s_file_where, file.rev, row.mime_type)
+      fvi = get_file_view_info(request, file_where, file.rev, row.mime_type)
       row.view_href = fvi.view_href
       row.download_href = fvi.download_href
       row.download_text_href = fvi.download_text_href
@@ -2484,13 +2465,13 @@ def view_directory(request):
       row.revision_href = fvi.revision_href
       row.prefer_markup = fvi.prefer_markup
       row.log_href = request.get_url(view_func=view_log,
-                                     where=s_file_where,
+                                     where=file_where,
                                      pathtype=vclib.FILE,
                                      params={},
                                      escape=1)
       if cfg.options.use_cvsgraph and request.roottype == 'cvs':
          row.graph_href = request.get_url(view_func=view_cvsgraph,
-                                          where=s_file_where,
+                                          where=file_where,
                                           pathtype=vclib.FILE,
                                           params={},
                                           escape=1)
@@ -2820,15 +2801,6 @@ def view_log(request):
     entry.diff_to_branch_href = None
     entry.diff_to_main_href = None
 
-    if PY3 and isinstance(rev.filename, bytes):
-      s_filename = rev.filename.decode('utf-8', 'surrogateescape')
-    else:
-      s_filename = rev.filename
-    if PY3 and isinstance(rev.filename, str):
-      b_filename = rev.filename.encode('utf-8', 'surrogateescape')
-    else:
-      b_filename = rev.filename
-
     if request.roottype == 'cvs':
       prev = rev.prev or rev.parent
       entry.prev = prev and prev.string
@@ -2864,12 +2836,9 @@ def view_log(request):
       entry.branches = entry.tags = entry.branch_points = [ ]
       entry.tag_names = entry.branch_names = [ ]
       entry.vendor_branch = None
-      if s_filename != request.where:
-        entry.orig_path = s_filename
-      if PY3 and isinstance(rev.copy_path, bytes):
-        entry.copy_path = rev.copy_path.decode('utf-8', 'surrogate_escape')
-      else:
-        entry.copy_path = rev.copy_path
+      if rev.filename != request.where:
+        entry.orig_path = rev.filename
+      entry.copy_path = rev.copy_path
       entry.copy_rev = rev.copy_rev
 
       if entry.orig_path:
@@ -2881,7 +2850,7 @@ def view_log(request):
 
       if rev.copy_path:
         entry.copy_href = request.get_url(view_func=view_log,
-                                          where=entry.copy_path,
+                                          where=rev.copy_path,
                                           pathtype=vclib.FILE,
                                           params={'pathrev': rev.copy_rev},
                                           escape=1)
@@ -2901,7 +2870,7 @@ def view_log(request):
                                             params={'revision': rev.string},
                                             escape=1)
       entry.view_href = request.get_url(view_func=view_directory,
-                                        where=s_filename,
+                                        where=rev.filename,
                                         pathtype=vclib.DIR,
                                         params={'pathrev': rev.string},
                                         escape=1)
@@ -4119,10 +4088,6 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
   # Run through the files in this directory, skipping busted and
   # unauthorized ones.
   for file in entries:
-    if isinstance(file.name, str):
-      s_file_name = file.name
-    else:
-      s_file_name = file.name.decode('utf-8', 'surrogateescape')
     if file.kind != vclib.FILE:
       continue
     if cvs and (file.rev is None or file.dead):
@@ -4139,7 +4104,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     # Calculate the mode for the file.  Sure, we could look directly
     # at the ,v file in CVS, but that's a layering violation we'd like
     # to avoid as much as possible.
-    if request.repos.isexecutable(rep_path + [s_file_name], request.pathrev):
+    if request.repos.isexecutable(rep_path + [file.name], request.pathrev):
       mode = 0o0755
     else:
       mode = 0o0644
@@ -4150,23 +4115,21 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     ### symlinks with a new vclib.SYMLINK path type.
     symlink_target = None
     if hasattr(request.repos, 'get_symlink_target'):
-      symlink_target = request.repos.get_symlink_target(
-                                  rep_path + [s_file_name], request.pathrev)
+      symlink_target = request.repos.get_symlink_target(rep_path + [file.name],
+                                                        request.pathrev)
 
     # If the object is a symlink, generate the appropriate header.
     # Otherwise, we're dealing with a regular file.
     if symlink_target:
-      generate_tarball_header(out, tar_dir + s_file_name, 0, mode,
+      generate_tarball_header(out, tar_dir + file.name, 0, mode,
                               file.date is not None and file.date or 0,
                               typeflag='2', linkname=symlink_target)
     else:
-      filesize = request.repos.filesize(rep_path + [s_file_name],
-                                        request.pathrev)
+      filesize = request.repos.filesize(rep_path + [file.name], request.pathrev)
 
       if filesize == -1:
         # Bummer.  We have to calculate the filesize manually.
-        fp = request.repos.openfile(rep_path + [s_file_name],
-                                    request.pathrev, {})[0]
+        fp = request.repos.openfile(rep_path + [file.name], request.pathrev, {})[0]
         filesize = 0
         while 1:
           chunk = retry_read(fp)
@@ -4176,12 +4139,11 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
         fp.close()
 
       # Write the tarball header...
-      generate_tarball_header(out, tar_dir + s_file_name, filesize, mode,
+      generate_tarball_header(out, tar_dir + file.name, filesize, mode,
                               file.date is not None and file.date or 0)
 
       # ...the file's contents ...
-      fp = request.repos.openfile(rep_path + [s_file_name],
-                                  request.pathrev, {})[0]
+      fp = request.repos.openfile(rep_path + [file.name], request.pathrev, {})[0]
       while 1:
         chunk = retry_read(fp)
         if not chunk:
@@ -4195,18 +4157,14 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
   # Recurse into subdirectories, skipping busted and unauthorized (or
   # configured-to-be-hidden) ones.
   for file in entries:
-    if isinstance(file.name, str):
-      s_file_name = file.name
-    else:
-      s_file_name = file.name.decode('utf-8', 'surrogateescape')
     if file.errors or file.kind != vclib.DIR:
       continue
     if request.cfg.options.hide_cvsroot \
-       and is_cvsroot_path(request.roottype, rep_path + [s_file_name]):
+       and is_cvsroot_path(request.roottype, rep_path + [file.name]):
       continue
 
     mtime = request.roottype == 'svn' and file.date or None
-    generate_tarball(out, request, reldir + [s_file_name], stack, mtime)
+    generate_tarball(out, request, reldir + [file.name], stack, mtime)
 
   # Pop the current directory from the stack.
   del stack[-1:]
