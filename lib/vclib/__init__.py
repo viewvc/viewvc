@@ -14,6 +14,7 @@
 such as CVS.
 """
 
+import sys
 import io
 
 
@@ -260,8 +261,12 @@ class Revision:
     self.size = size
     self.lockinfo = lockinfo
 
-  def __cmp__(self, other):
-    return cmp(self.number, other.number)
+  if sys.version_info[0] >= 3:
+    def __lt__(self, other):
+      return (self.number < other.number)
+  else:
+    def __cmp__(self, other):
+      return cmp(self.number, other.number)
 
 class Annotation:
   """Instances represent per-line file annotation information"""
