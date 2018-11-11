@@ -12,7 +12,6 @@
 
 import sys
 import time
-import types
 import re
 import calendar
 import MySQLdb
@@ -43,7 +42,7 @@ _re_datetime = re.compile('([0-9]{4})-([0-9][0-9])-([0-9][0-9]) '
 def TicksFromDateTime(datetime):
   """Return a unix timestamp from a MySQL DATETIME value"""
 
-  if type(datetime) == types.StringType:
+  if isinstance(datetime, str):
     # datetime is a MySQL DATETIME string
     matches = _re_datetime.match(datetime).groups()
     t = tuple(map(int, matches)) + (0, 0, 0)
