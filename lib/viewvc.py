@@ -4123,7 +4123,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     if symlink_target:
       generate_tarball_header(out, tar_dir + file.name, 0, mode,
                               file.date is not None and file.date or 0,
-                              typeflag='2', linkname=symlink_target)
+                              typeflag=b'2', linkname=symlink_target)
     else:
       filesize = request.repos.filesize(rep_path + [file.name], request.pathrev)
 
