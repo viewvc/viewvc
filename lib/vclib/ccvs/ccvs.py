@@ -10,18 +10,28 @@
 #
 # -----------------------------------------------------------------------
 
+import sys
 import os
 import re
-import cStringIO
 import tempfile
+if sys.version_info[0] >= 3:
+  PY3 = True
+  from io import StringIO, BytesIO
+  import functools
+  # Python 3: workaround for cmp()
+  def cmp(a, b):
+    return (a > b) - (a < b)
+else:
+  PY3 = False
+  from cStringIO import StringIO
 
 import vclib
-import rcsparse
-import blame
+from . import rcsparse
+from . import blame
 
 ### The functionality shared with bincvs should probably be moved to a
 ### separate module
-from bincvs import BaseCVSRepository, Revision, Tag, _file_log, _log_path, _logsort_date_cmp, _logsort_rev_cmp, _path_join
+from .bincvs import BaseCVSRepository, Revision, Tag, _file_log, _log_path, _logsort_date_cmp, _logsort_rev_cmp, _path_join
 
 
 class CCVSRepository(BaseCVSRepository):
@@ -65,10 +75,15 @@ class CCVSRepository(BaseCVSRepository):
       if path:
         entry.path = path
         try:
-          rcsparse.parse(open(path, 'rb'), InfoSink(entry, rev, alltags))
-        except IOError, e:
+          if PY3:
+            rcsparse.parse(open(path, 'r',
+                                encoding='ascii', errors='surrogateescape'),
+                           InfoSink(entry, rev, alltags))
+          else:
+            rcsparse.parse(open(path, 'r'), InfoSink(entry, rev, alltags))
+        except IOError as e:
           entry.errors.append("rcsparse error: %s" % e)
-        except RuntimeError, e:
+        except RuntimeError as e:
           entry.errors.append("rcsparse error: %s" % e)
         except rcsparse.RCSStopParser:
           pass
@@ -98,18 +113,29 @@ class CCVSRepository(BaseCVSRepository):
 
     path = self.rcsfile(path_parts, 1)
     sink = TreeSink()
-    rcsparse.parse(open(path, 'rb'), sink)
-    filtered_revs = _file_log(sink.revs.values(), sink.tags, sink.lockinfo,
-                              sink.default_branch, rev)
+    if PY3:
+      rcsparse.parse(open(path, 'r', encoding='ascii',
+                          errors='surrogateescape'),
+                     sink)
+    else:
+      rcsparse.parse(open(path, 'rb'), sink)
+    filtered_revs = _file_log(list(sink.revs.values()), sink.tags,
+                              sink.lockinfo, sink.default_branch, rev)
     for rev in filtered_revs:
       if rev.prev and len(rev.number) == 2:
         rev.changed = rev.prev.next_changed
     options['cvs_tags'] = sink.tags
 
     if sortby == vclib.SORTBY_DATE:
-      filtered_revs.sort(_logsort_date_cmp)
+      if PY3:
+        filtered_revs.sort(key=functools.cmp_to_key(_logsort_date_cmp))
+      else:
+        filtered_revs.sort(_logsort_date_cmp)
     elif sortby == vclib.SORTBY_REV:
-      filtered_revs.sort(_logsort_rev_cmp)
+      if PY3:
+        filtered_revs.sort(key=functools.cmp_to_key(_logsort_rev_cmp))
+      else:
+        filtered_revs.sort(_logsort_rev_cmp)
 
     if len(filtered_revs) < first:
       return []
@@ -153,9 +179,19 @@ class CCVSRepository(BaseCVSRepository):
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
     path = self.rcsfile(path_parts, 1)
     sink = COSink(rev)
-    rcsparse.parse(open(path, 'rb'), sink)
+    if PY3:
+      rcsparse.parse(open(path, 'r', encoding='ascii',
+                          errors='surrogateescape'),
+                     sink)
+    else:
+      rcsparse.parse(open(path, 'rb'), sink)
     revision = sink.last and sink.last.string
-    return cStringIO.StringIO('\n'.join(sink.sstext.text)), revision
+    if PY3:
+      return BytesIO('\n'.join(sink.sstext.text).encode('ascii',
+                                                        'surrogateescape')),\
+             revision
+    else:
+      return StringIO('\n'.join(sink.sstext.text)), revision
 
 class MatchingSink(rcsparse.Sink):
   """Superclass for sinks that search for revisions based on tag or number"""
@@ -355,7 +391,7 @@ class StreamText:
         count      = int(amatch.group(2))
         add_lines_remaining = count
       else:
-        raise RuntimeError, 'Error parsing diff commands'
+        raise RuntimeError('Error parsing diff commands')
 
 def secondnextdot(s, start):
   # find the position the second dot after the start index.

@@ -16,13 +16,13 @@ import string
 # package will recognize this and switch over to the default parser.
 from mx import TextTools
 
-import common
+from . import common
 
 
 # for convenience
 _tt = TextTools
 
-_idchar_list = map(chr, range(33, 127)) + map(chr, range(160, 256))
+_idchar_list = list(map(chr, list(range(33, 127)))) + list(map(chr, list(range(160, 256))))
 _idchar_list.remove('$')
 _idchar_list.remove(',')
 #_idchar_list.remove('.')   # leave as part of 'num' symbol
@@ -317,7 +317,7 @@ class _mxTokenStream:
 #  _get = get
 #  def get(self):
     token = self._get()
-    print 'T:', `token`
+    print('T:', repr(token))
     return token
 
   def match(self, match):
@@ -338,7 +338,7 @@ class _mxTokenStream:
       action = self._parse_more()
       if action == _EOF:
         ### fix this
-        raise RuntimeError, 'EOF hit while expecting tokens'
+        raise RuntimeError('EOF hit while expecting tokens')
     result = self.tokens[-count:]
     del self.tokens[-count:]
     return result

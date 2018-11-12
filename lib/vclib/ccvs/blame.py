@@ -29,7 +29,7 @@
 import re
 import time
 import math
-import rcsparse
+from . import rcsparse
 import vclib
 
 class CVSParser(rcsparse.Sink):
@@ -151,7 +151,7 @@ class CVSParser(rcsparse.Sink):
           add_lines_remaining = count
           lines_added_now = lines_added_now + count
         else:
-          raise RuntimeError, 'Error parsing diff commands'
+          raise RuntimeError('Error parsing diff commands')
 
       self.lines_added[revision]   = self.lines_added[revision]   + lines_added_now
       self.lines_removed[revision] = self.lines_removed[revision] + lines_removed_now
@@ -262,10 +262,10 @@ class CVSParser(rcsparse.Sink):
 
     # CheckHidden(rcs_pathname)
     try:
-      rcsfile = open(rcs_pathname, 'rb')
+      rcsfile = open(rcs_pathname, 'r')
     except:
-      raise RuntimeError, ('error: %s appeared to be under CVS control, ' +
-              'but the RCS file is inaccessible.') % rcs_pathname
+      raise RuntimeError(('error: %s appeared to be under CVS control, ' +
+              'but the RCS file is inaccessible.') % rcs_pathname)
 
     rcsparse.parse(rcsfile, self)
     rcsfile.close()
@@ -277,7 +277,7 @@ class CVSParser(rcsparse.Sink):
       # Symbolic tag or specific revision number specified.
       revision = self.map_tag_to_revision(opt_rev)
       if revision == '':
-        raise RuntimeError, 'error: -r: No such revision: ' + opt_rev
+        raise RuntimeError('error: -r: No such revision: ' + opt_rev)
 
     # The primordial revision is not always 1.1!  Go find it.
     primordial = revision
@@ -320,7 +320,7 @@ class CVSParser(rcsparse.Sink):
           skip       = count
           line_count = line_count + count
         else:
-          raise RuntimeError, 'error: illegal RCS file'
+          raise RuntimeError('error: illegal RCS file')
 
       rev = self.prev_revision.get(rev)
 
@@ -372,7 +372,7 @@ class CVSParser(rcsparse.Sink):
               del self.revision_map[start_line:start_line + count]
               skip = count
             else:
-              raise RuntimeError, 'Error parsing diff commands'
+              raise RuntimeError('Error parsing diff commands')
 
       else:
         # Revisions on a branch are arranged backwards from those on
@@ -405,7 +405,7 @@ class CVSParser(rcsparse.Sink):
                       temp + self.revision_map[start_line + adjust:])
               adjust = adjust + skip
             else:
-              raise RuntimeError, 'Error parsing diff commands'
+              raise RuntimeError('Error parsing diff commands')
 
       last_revision = revision
 
@@ -420,7 +420,7 @@ class BlameSource:
     count = len(parser.revision_map)
     lines = parser.extract_revision(revision)
     if len(lines) != count:
-      raise RuntimeError, 'Internal consistency error'
+      raise RuntimeError('Internal consistency error')
 
     # set up some state variables
     self.revision = revision

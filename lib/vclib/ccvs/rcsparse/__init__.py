@@ -21,15 +21,15 @@ parse() to parse the file.
 # Make the "Sink" class and the various exception classes visible in this
 # scope.  That way, applications never need to import any of the
 # sub-packages.
-from common import *
+from .common import *
 
 try:
   from tparse import parse
 except ImportError:
   try:
-    from texttools import Parser
+    from .texttools import Parser
   except ImportError:
-    from default import Parser
+    from .default import Parser
 
   def parse(file, sink):
     """Parse an RCS file.

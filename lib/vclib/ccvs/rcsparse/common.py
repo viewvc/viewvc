@@ -357,20 +357,20 @@ class _Parser:
     self.ts.match(';')
 
     # Convert date into standard UNIX time format (seconds since epoch)
-    date_fields = string.split(date, '.')
+    date_fields = date.split('.')
     # According to rcsfile(5): the year "contains just the last two
     # digits of the year for years from 1900 through 1999, and all the
     # digits of years thereafter".
     if len(date_fields[0]) == 2:
       date_fields[0] = '19' + date_fields[0]
-    date_fields = map(string.atoi, date_fields)
+    date_fields = [int(x) for x in date_fields]
     EPOCH = 1970
     if date_fields[0] < EPOCH:
-      raise ValueError, 'invalid year for revision %s' % (revision,)
+      raise ValueError('invalid year for revision %s' % (revision,))
     try:
       timestamp = calendar.timegm(tuple(date_fields) + (0, 0, 0,))
-    except ValueError, e:
-      raise ValueError, 'invalid date for revision %s: %s' % (revision, e,)
+    except ValueError as e:
+      raise ValueError('invalid date for revision %s: %s' % (revision, e,))
 
     # Parse author
     ### NOTE: authors containing whitespace are violations of the
@@ -442,7 +442,7 @@ class _Parser:
         break
       text, sym2, log, sym1 = self.ts.mget(4)
       if sym1 != 'log':
-        print `text[:100], sym2[:100], log[:100], sym1[:100]`
+        print(repr((text[:100], sym2[:100], log[:100], sym1[:100])))
         raise RCSExpected(sym1, 'log')
       if sym2 != 'text':
         raise RCSExpected(sym2, 'text')
