@@ -1051,7 +1051,10 @@ def prep_tags(request, tags):
   links = [ ]
   for tag in tags:
     links.append(_item(name=tag.name, href=url+tag.name))
-  links.sort(lambda a, b: cmp(a.name, b.name))
+  if PY3:
+    links.sort(key=functools.cmp_to_key(lambda a, b: cmp(a.name, b.name)))
+  else:
+    links.sort(lambda a, b: cmp(a.name, b.name))
   return links
 
 def guess_mime(filename):
@@ -2551,13 +2554,19 @@ def view_directory(request):
   # set cvs-specific fields
   if request.roottype == 'cvs':
     plain_tags = options['cvs_tags']
-    plain_tags.sort(functools.cmp_to_key(icmp), reverse=True)
+    if PY3:
+      plain_tags.sort(key=functools.cmp_to_key(icmp), reverse=True)
+    else:
+      plain_tags.sort(icmp, True)
     data['plain_tags'] = []
     for plain_tag in plain_tags:
       data['plain_tags'].append(_item(name=plain_tag,revision=None))
 
     branch_tags = options['cvs_branches']
-    branch_tags.sort(functools.cmp_to_key(icmp), reverse=True)
+    if PY3:
+      branch_tags.sort(key=functools.cmp_to_key(icmp), reverse=True)
+    else:
+      branch_tags.sort(icmp, True)
     data['branch_tags'] = []
     for branch_tag in branch_tags:
       data['branch_tags'].append(_item(name=branch_tag,revision=None))
