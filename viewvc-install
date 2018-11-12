@@ -30,6 +30,8 @@ except AttributeError:
     class PathLike(object):
         pass
 
+PY3 = (sys.version_info[0] >= 3)
+
 # Get access to our library modules.
 sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), 'lib'))
 
@@ -131,8 +133,11 @@ def error(text, etype=None, evalue=None):
 def replace_var(contents, var, value):
     """Replace instances of the variable VAR as found in file CONTENTS
     with VALUE."""
-    # Python 3: contents is bytes here
-    pattern = re.compile(b'^' + var + br'\s*=\s*.*$', re.MULTILINE)
+    if PY3:
+        # Python 3: contents is bytes here
+        pattern = re.compile(b'^' + var + br'\s*=\s*.*$', re.MULTILINE)
+    else:
+        pattern = re.compile('^' + var + r'\s*=\s*.*$', re.MULTILINE)
     if sys.version_info[0] >= 3 and isinstance(ROOT_DIR, str):
         root_dir = ROOT_DIR.encode('utf-8', 'surrogateescape')
     else:
