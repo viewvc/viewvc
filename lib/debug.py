@@ -119,8 +119,12 @@ def GetExceptionData():
       exc_dict['msg'] = str(exc)
       exc_dict['status'] = '500 Internal Server Error'
 
-    tb = ''.join(traceback.format_exception(exc_type, exc, exc_tb))
-    exc_dict['stacktrace'] = tb
+    # Build a string from the formatted exception, but skipping the
+    # first line.
+    formatted = traceback.format_exception(exc_type, exc, exc_tb)
+    if exc_tb is not None:
+      formatted = formatted[1:]
+    exc_dict['stacktrace'] = ''.join(formatted)
 
   finally:
     # prevent circular reference. sys.exc_info documentation warns

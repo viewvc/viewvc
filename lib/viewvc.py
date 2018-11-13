@@ -64,6 +64,11 @@ except (SyntaxError, ImportError):
 
 debug.t_end('imports')
 
+# Initialize the system tracebacklimit value to 0, meaning stack
+# traces will carry only the top-level exception string.  This can be
+# overridden via configuration.
+sys.tracebacklimit = 0
+
 #########################################################################
 
 checkout_magic_path = '*checkout*'
@@ -5232,6 +5237,9 @@ def load_config(pathname=None, server=None):
   cfg.set_defaults()
   cfg.load_config(pathname, env_get("HTTP_HOST"))
 
+  # Apply the stacktrace configuration immediately.
+  sys.tracebacklimit = cfg.options.stacktraces and 1000 or 0
+
   # Load mime types file(s), but reverse the order -- our
   # configuration uses a most-to-least preferred approach, but the
   # 'mimetypes' package wants things the other way around.
@@ -5252,22 +5260,20 @@ def view_error(server, cfg):
     exc_dict['msg'] = server.escape(exc_dict['msg'])
   if exc_dict['stacktrace']:
     exc_dict['stacktrace'] = server.escape(exc_dict['stacktrace'])
-  handled = 0
 
-  # use the configured error template if possible
+  # Use the configured error template if possible.
   try:
     if cfg and not server.headerSent:
       server.header(status=status)
       template = get_view_template(cfg, "error")
       template.generate(server.file(), exc_dict)
-      handled = 1
+      return
   except:
     pass
 
-  # but fallback to the old exception printer if no configuration is
-  # available, or if something went wrong
-  if not handled:
-    debug.PrintException(server, exc_dict)
+  # Fallback to the old exception printer if no configuration is
+  # available, or if something went wrong.
+  debug.PrintException(server, exc_dict)
 
 def main(server, cfg):
   try:
