@@ -1,5 +1,6 @@
 Version 1.1.27 (released ??-???-????)
 
+  * suppress stack traces (with option to show) (#140)
   * distinguish text/binary/image files by icons (#166, #175)
   * colorize alternating file content lines (#167)
   * link to the instance root from the ViewVC logo (#168)
