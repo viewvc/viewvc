@@ -58,7 +58,7 @@ for filename in filelist:
     sys.stderr.write('%s: ' % (filename,))
     f = StringIO()
     try:
-        parse(open(filename, 'rt'), LoggingSink(f))
+        parse(open(filename, 'rb'), LoggingSink(f))
     except Exception as e:
         sys.stderr.write('Error parsing file: %s!\n' % (e,))
         raise
@@ -67,7 +67,7 @@ for filename in filelist:
         output = f.getvalue()
 
         expected_output_filename = filename[:-2] + '.out'
-        expected_output = open(expected_output_filename, 'rt').read()
+        expected_output = open(expected_output_filename, 'r').read()
 
         if output == expected_output:
             sys.stderr.write('OK\n')

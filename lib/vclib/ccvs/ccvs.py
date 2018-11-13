@@ -75,12 +75,7 @@ class CCVSRepository(BaseCVSRepository):
       if path:
         entry.path = path
         try:
-          if PY3:
-            rcsparse.parse(open(path, 'r',
-                                encoding='ascii', errors='surrogateescape'),
-                           InfoSink(entry, rev, alltags))
-          else:
-            rcsparse.parse(open(path, 'r'), InfoSink(entry, rev, alltags))
+          rcsparse.parse(open(path, 'rb'), InfoSink(entry, rev, alltags))
         except IOError as e:
           entry.errors.append("rcsparse error: %s" % e)
         except RuntimeError as e:
@@ -113,12 +108,7 @@ class CCVSRepository(BaseCVSRepository):
 
     path = self.rcsfile(path_parts, 1)
     sink = TreeSink()
-    if PY3:
-      rcsparse.parse(open(path, 'r', encoding='ascii',
-                          errors='surrogateescape'),
-                     sink)
-    else:
-      rcsparse.parse(open(path, 'rb'), sink)
+    rcsparse.parse(open(path, 'rb'), sink)
     filtered_revs = _file_log(list(sink.revs.values()), sink.tags,
                               sink.lockinfo, sink.default_branch, rev)
     for rev in filtered_revs:
@@ -179,17 +169,10 @@ class CCVSRepository(BaseCVSRepository):
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
     path = self.rcsfile(path_parts, 1)
     sink = COSink(rev)
-    if PY3:
-      rcsparse.parse(open(path, 'r', encoding='ascii',
-                          errors='surrogateescape'),
-                     sink)
-    else:
-      rcsparse.parse(open(path, 'rb'), sink)
+    rcsparse.parse(open(path, 'rb'), sink)
     revision = sink.last and sink.last.string
     if PY3:
-      return BytesIO('\n'.join(sink.sstext.text).encode('ascii',
-                                                        'surrogateescape')),\
-             revision
+      return BytesIO(b'\n'.join(sink.sstext.text)), revision
     else:
       return StringIO('\n'.join(sink.sstext.text)), revision
 
@@ -353,21 +336,21 @@ class TreeSink(rcsparse.Sink):
       rev.changed = changed and "+%i -%i" % (added, deled)
 
 class StreamText:
-  d_command = re.compile('^d(\d+)\\s(\\d+)')
-  a_command = re.compile('^a(\d+)\\s(\\d+)')
+  d_command = re.compile(br'^d(\d+)\s(\d+)')
+  a_command = re.compile(br'^a(\d+)\s(\d+)')
 
   def __init__(self, text):
-    self.text = text.split('\n')
+    self.text = text.split(b'\n')
 
   def command(self, cmd):
     adjust = 0
     add_lines_remaining = 0
-    diffs = cmd.split('\n')
-    if diffs[-1] == "":
+    diffs = cmd.split(b'\n')
+    if diffs[-1] == b"":
       del diffs[-1]
     if len(diffs) == 0:
       return
-    if diffs[0] == "":
+    if diffs[0] == b"":
       del diffs[0]
     for command in diffs:
       if add_lines_remaining > 0:
@@ -413,6 +396,8 @@ class COSink(MatchingSink):
       raise vclib.InvalidRevision(self.find)
 
   def set_revision_info(self, revision, log, text):
+    if PY3:
+      text = text.encode('ascii', 'surrogateescape')
     tag = self.find_tag
     rev = Revision(revision)
 
