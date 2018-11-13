@@ -109,9 +109,13 @@ def GetExceptionData():
     if isinstance(exc, ViewVCException):
       exc_dict['msg'] = exc.msg
       exc_dict['status'] = exc.status
-    
-    tb = string.join(traceback.format_exception(exc_type, exc, exc_tb), '')
-    exc_dict['stacktrace'] = tb
+
+    # Build a string from the formatted exception, but skipping the
+    # first line.
+    formatted = traceback.format_exception(exc_type, exc, exc_tb)
+    if exc_tb is not None:
+      formatted = formatted[1:]
+    exc_dict['stacktrace'] = string.join(formatted, '')
 
   finally:
     # prevent circular reference. sys.exc_info documentation warns

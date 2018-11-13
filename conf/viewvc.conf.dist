@@ -832,6 +832,14 @@
 ##
 #limit_changes = 100
 
+## stacktraces: If set, exception stack traces will be displayed in full
+## (where so dictated by the templating system).  Otherwise, only the
+## top-most exception will be display.  Stack traces can carry system
+## paths, revealing information about the server that administrators
+## would prefer not to share.
+##
+#stacktraces = 0
+
 ##---------------------------------------------------------------------------
 [templates]
 
