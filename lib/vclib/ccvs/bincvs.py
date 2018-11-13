@@ -342,9 +342,10 @@ class BinCVSRepository(BaseCVSRepository):
       return filtered_revs[first:first+limit]
     return filtered_revs
 
-  def rcs_popen(self, rcs_cmd, rcs_args, mode, capture_err=1):
+  def rcs_popen(self, rcs_cmd, rcs_args, mode, capture_err=1, encoding='ascii'):
     # as we use this function as "r" mode only, we don't care stdin
     # to communicate child process.
+    ### FIXME: for Python 3, more appropriate default encoding value is needed
     if self.utilities.cvsnt:
       cmd = self.utilities.cvsnt
       args = ['rcsfile', rcs_cmd]
@@ -352,12 +353,28 @@ class BinCVSRepository(BaseCVSRepository):
     else:
       cmd = os.path.join(self.utilities.rcs_dir, rcs_cmd)
       args = rcs_args
-    prc = subprocess.Popen([cmd] + list(args), bufsize = -1,
-                           stdout=subprocess.PIPE,
-                           stderr=(subprocess.STDOUT if capture_err else None),
-                           universal_newlines=('t' in mode),
-                           close_fds=(sys.platform != "win32"))
-    return prc.stdout
+    stderr = subprocess.STDOUT if capture_err else None
+    txtmode = ('t' in mode) or ('b' not in mode)
+    if PY3:
+      if txtmode:
+          proc = subprocess.Popen([cmd] + list(args), bufsize = -1,
+                                  stdout=subprocess.PIPE,
+                                  stderr=stderr,
+                                  encoding=encoding,
+                                  errors='surrogateescape',
+                                  close_fds=(sys.platform != "win32"))
+      else:
+          proc = subprocess.Popen([cmd] + list(args), bufsize = -1,
+                                  stdout=subprocess.PIPE,
+                                  stderr=stderr,
+                                  close_fds=(sys.platform != "win32"))
+    else:
+      proc = subprocess.Popen([cmd] + list(args), bufsize = -1,
+                              stdout=subprocess.PIPE,
+                              stderr=stderr,
+                              universal_newlines=txtmode,
+                              close_fds=(sys.platform != "win32"))
+    return proc.stdout
 
   def annotate(self, path_parts, rev=None, include_text=False):
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
