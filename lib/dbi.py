@@ -59,4 +59,11 @@ def TicksFromDateTime(datetime):
     return time.mktime(t[:8] + (-1,))
     
 def connect(host, port, user, passwd, db):
-    return MySQLdb.connect(host=host, port=port, user=user, passwd=passwd, db=db)
+    if sys.version_info[0] >= 3:
+        # on Python 3, mysqlclient supports only utf-8 connection.
+        # (https://github.com/PyMySQL/mysqlclient-python/issues/210)
+        # however, it seems to use charset 'latin-1' by default (only me?)
+        return MySQLdb.connect(host=host, port=port, user=user,
+                               passwd=passwd, db=db, charset='utf8')
+    else:
+        return MySQLdb.connect(host=host, port=port, user=user, passwd=passwd, db=db)

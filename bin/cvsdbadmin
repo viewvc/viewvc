@@ -51,8 +51,8 @@ def UpdateFile(db, repository, path, update, quiet_level):
             commit_list = cvsdb.GetUnrecordedCommitList(repository, path, db)
         else:
             commit_list = cvsdb.GetCommitListFromRCSFile(repository, path)
-    except cvsdb.error, e:
-        print '[ERROR] %s' % (e)
+    except Exception as e:
+        print('[ERROR] %s' % (e))
         return
 
     file = '/'.join(path)
@@ -60,11 +60,11 @@ def UpdateFile(db, repository, path, update, quiet_level):
     if update:
         if quiet_level < 1 or (quiet_level < 2 and len(commit_list)):
             printing = 1
-            print '[%s [%d new commits]]' % (file, len(commit_list)),
+            print('[%s [%d new commits]]' % (file, len(commit_list)), end=' ')
     else:
         if quiet_level < 2:
             printing = 1
-            print '[%s [%d commits]]' % (file, len(commit_list)),
+            print('[%s [%d commits]]' % (file, len(commit_list)), end=' ')
 
     ## add the commits into the database
     for commit in commit_list:
@@ -73,7 +73,7 @@ def UpdateFile(db, repository, path, update, quiet_level):
             sys.stdout.write('.')
         sys.stdout.flush()
     if printing:
-        print
+        print()
 
 
 def RecurseUpdate(db, repository, directory, update, quiet_level):
@@ -100,15 +100,15 @@ def RootPath(path, quiet_level):
         if os.path.exists(os.path.join(p, 'CVSROOT')):
             root = p
             if quiet_level < 2:
-                print "Using repository root `%s'" % root
+                print("Using repository root `%s'" % root)
             break
 
         p, pdir = os.path.split(p)
         if not pdir:
             del path_parts[:]
             if quiet_level < 1:
-                print "Using repository root `%s'" % root
-                print "Warning: CVSROOT directory not found."
+                print("Using repository root `%s'" % root)
+                print("Warning: CVSROOT directory not found.")
             break
 
         path_parts.append(pdir)
@@ -175,10 +175,10 @@ if __name__ == '__main__':
 
         if command in ('rebuild', 'purge'):
             if quiet_level < 2:
-                print "Purging existing data for repository root `%s'" % root
+                print("Purging existing data for repository root `%s'" % root)
             try:
                 db.PurgeRepository(root)
-            except cvsdb.UnknownRepositoryError, e:
+            except cvsdb.UnknownRepositoryError as e:
                 if command == 'purge':
                     sys.stderr.write("ERROR: " + str(e) + "\n")
                     sys.exit(1)
@@ -189,7 +189,7 @@ if __name__ == '__main__':
             RecurseUpdate(db, repository, path_parts,
                           command == 'update', quiet_level)
     except KeyboardInterrupt:
-        print
-        print '** break **'
+        print()
+        print('** break **')
         
     sys.exit(0)
