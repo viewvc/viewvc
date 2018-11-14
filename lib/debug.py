@@ -17,6 +17,8 @@
 
 import sys
 
+PY3 = (sys.version_info[0]) >= 3)
+
 # Set to non-zero to track and print processing times
 SHOW_TIMES = 0
 
@@ -85,12 +87,12 @@ def PrintException(server, exc_data):
   if status:
     s = s + ('<h4>HTTP Response Status</h4>\n<p><pre>\n%s</pre></p><hr />\n'
              % status)
-  if sys.version_info[0] >= 3:
+  if PY3:
     s = s.encode('utf-8', 'xmlcharrefreplace')
   server.write(s)
 
   server.write(b"<h4>Python Traceback</h4>\n<p><pre>")
-  if sys.version_info[0] >= 3:
+  if PY3:
     server.write(server.escape(tb).encode('utf-8', 'xmlcharrefreplace'))
   else:
     server.write(server.escape(tb))
@@ -160,7 +162,7 @@ if SHOW_CHILD_PROCESSES:
       server.write(b"<table>\n")
       server.write(b"<tr><td colspan=\"2\">Child Process%i</td></tr>" % i)
       server.write(b"<tr>\n  <td style=\"vertical-align:top\">Command Line</td>  <td><pre>")
-      if sys.version_info[0] >= 3:
+      if PY3:
         server.write(server.escape(k.command).encode('utf-8'))
       else:
         server.write(server.escape(k.command))
@@ -171,7 +173,7 @@ if SHOW_CHILD_PROCESSES:
         server.write(b"<em>Output from process %i</em>" % (i - 1))
       elif k.debugIn:
         server.write(b"<pre>")
-        if sys.version_info[0] >= 3:
+        if PY3:
           server.write(server.escape(k.debugIn.getvalue()).encode('utf-8'))
         else:
           server.write(server.escape(k.debugIn.getvalue()))
@@ -182,7 +184,7 @@ if SHOW_CHILD_PROCESSES:
       if k.debugOut is k.debugErr:
         server.write(b"<tr>\n  <td style=\"vertical-align:top\">Standard Out & Error:</td>  <td><pre>")
         if k.debugOut:
-          if sys.version_info[0] >= 3:
+          if PY3:
             server.write(server.escape(k.debugOut.getvalue()).encode('utf-8'))
           else:
             server.write(server.escape(k.debugOut.getvalue()))
@@ -191,14 +193,14 @@ if SHOW_CHILD_PROCESSES:
       else:
         server.write(b"<tr>\n  <td style=\"vertical-align:top\">Standard Out:</td>  <td><pre>")
         if k.debugOut:
-          if sys.version_info[0] >= 3:
+          if PY3:
             server.write(server.escape(k.debugOut.getvalue()).encode('utf-8'))
           else:
             server.write(server.escape(k.debugOut.getvalue()))
         server.write(b"</pre></td>\n</tr>\n")
         server.write(b"<tr>\n  <td style=\"vertical-align:top\">Standard Error:</td>  <td><pre>")
         if k.debugErr:
-          if sys.version_info[0] >= 3:
+          if PY3:
             server.write(server.escape(k.debugErr.getvalue()).encode('utf-8'))
           else:
             server.write(server.escape(k.debugErr.getvalue()))
@@ -212,12 +214,12 @@ if SHOW_CHILD_PROCESSES:
     server.write(b"<tr><td colspan=\"2\">Environment Variables</td></tr>")
     for k, v in os.environ.items():
       server.write(b"<tr>\n  <td style=\"vertical-align:top\"><pre>")
-      if sys.version_info[0] >= 3:
+      if PY3:
         server.write(server.escape(k).encode('utf-8'))
       else:
         server.write(server.escape(k))
       server.write(b"</pre></td>\n  <td style=\"vertical-align:top\"><pre>")
-      if sys.version_info[0] >= 3:
+      if PY3:
         server.write(server.escape(v).encode('utf-8'))
       else:
         server.write(server.escape(v))
