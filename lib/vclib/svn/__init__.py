@@ -20,18 +20,22 @@ import urllib
 _re_url = re.compile('^(http|https|file|svn|svn\+[^:]+)://')
 
 def _canonicalize_path(path):
-  import svn.core
   try:
+    import svn.core
     return svn.core.svn_path_canonicalize(path)
-  except AttributeError: # svn_path_canonicalize() appeared in 1.4.0 bindings
-    # There's so much more that we *could* do here, but if we're
-    # here at all its because there's a really old Subversion in
-    # place, and those older Subversion versions cared quite a bit
-    # less about the specifics of path canonicalization.
-    if re.search(_re_url, path):
-      return path.rstrip('/')
-    else:
-      return os.path.normpath(path)
+  except (AttributeError, ImportError):
+    # svn_path_canonicalize() appeared in 1.4.0 bindings
+    # and it may be not available swig Python binding.
+    pass
+
+  # There's so much more that we *could* do here, but if we're
+  # here at all its because there's a really old Subversion in
+  # place, and those older Subversion versions cared quite a bit
+  # less about the specifics of path canonicalization.
+  if re.search(_re_url, path):
+    return path.rstrip('/')
+  else:
+    return os.path.normpath(path)
 
 
 def canonicalize_rootpath(rootpath):
