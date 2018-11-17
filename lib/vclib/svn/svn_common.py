@@ -176,8 +176,6 @@ class SubversionRepository(vclib.Repository):
     in REV, or None if that object is not a symlink."""
     raise UnsupportedFeature()
 
-  ## commonly used helper method
-
   def _getrev(self, rev):
     if rev is None or rev == 'HEAD':
       return self.youngest
@@ -191,4 +189,3 @@ class SubversionRepository(vclib.Repository):
     if (rev < 0) or (rev > self.youngest):
       raise vclib.InvalidRevision(rev)
     return rev
-
