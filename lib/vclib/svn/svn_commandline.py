@@ -20,6 +20,7 @@ import subprocess
 if sys.version_info[0] >= 3:
   PY3 = True
   from urllib.parse import quote as _quote
+  long = int
 else:
   from urllib import quote as _quote
 
@@ -152,7 +153,7 @@ class CmdLineSubversionRepository(SubversionRepository):
     # get head revison of root
     et = self.svn_cmd_xml('propget', ['--revprop', '-r', 'HEAD',
                           SVN_PROP_REVISION_DATE, self.rootpath])
-    self.youngest = int(et.find('revprops').attrib['rev'])
+    self.youngest = long(et.find('revprops').attrib['rev'])
     self._dirent_cache = { }
     self._revinfo_cache = { }
 
@@ -165,8 +166,8 @@ class CmdLineSubversionRepository(SubversionRepository):
     if not len(path_parts):
       pathtype = vclib.DIR
     else:
-      url = self._geturl(_getpath(path_parts))
       rev = self._getrev(rev)
+      url = self._geturl(_getpath(path_parts)) + ('@%s' % rev)
       try:
         if self.svn_version >= (1, 9, 0):
           kind = self.svn_cmd('info', ['--depth=empty', '-r%s' % rev,
@@ -192,7 +193,7 @@ class CmdLineSubversionRepository(SubversionRepository):
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % path)
     rev = self._getrev(rev)
-    url = self._geturl(path)
+    url = self._geturl(path) + ('@%s' % rev)
     if self.svn_version >= (1, 9, 0):
       # we can use --ignore-keywords, which is useful to make a diff
       # by using our internal function
@@ -228,7 +229,17 @@ class CmdLineSubversionRepository(SubversionRepository):
     raise vclib.UnsupportedFeature()
 
   def itemprops(self, path_parts, rev):
-    raise vclib.UnsupportedFeature()
+    path = _getpath(path_parts)
+    path_type = self.itemtype(path_parts, rev) # does auth-check
+    rev = self._getrev(rev)
+    url = self._geturl(path) + ('@%s' % rev)
+
+    et = self.svn_cmd_xml('proplist', ['--depth=empty', '-r%d' % rev,
+                                       '-v', url])
+    props = {}
+    for prop in et.findall('./target/property'):
+      props[prop.attrib['name']] = prop.text
+    return props
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     raise vclib.UnsupportedFeature()
@@ -240,10 +251,17 @@ class CmdLineSubversionRepository(SubversionRepository):
     raise vclib.UnsupportedFeature()
 
   def isexecutable(self, path_parts, rev):
-    raise vclib.UnsupportedFeature()
+    props = self.itemprops(path_parts, rev) # does authz-check
+    return props.has_key(SVN_PROP_EXECUTABLE)
 
   def filesize(self, path_parts, rev):
-    raise vclib.UnsupportedFeature()
+    path = _getpath(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file." % path)
+    rev = self._getrev(rev)
+    dirents = self._get_dirents(_getpath(path_parts[:-1]), rev)
+    dirent = dirents.get(path_parts[-1], None)
+    return long(dirent.find('size').text)
 
   def get_location(self, path, rev, old_rev):
     raise UnsupportedFeature()
@@ -325,7 +343,7 @@ class CmdLineSubversionRepository(SubversionRepository):
     assert len(et._root._children) == 1
     # et._root is element <log>, and its only child is element <logentry>
     # with 'revision attribute'
-    return int(et._root._children[0].attrib['revision']), int(last_changed_rev)
+    return long(et._root._children[0].attrib['revision']), long(last_changed_rev)
 
   def _do_svn_cmd(self, cmd, args, cfg=None):
     """execute svn commandline utility and returns its proces object"""
