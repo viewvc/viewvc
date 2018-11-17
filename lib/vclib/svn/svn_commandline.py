@@ -59,8 +59,8 @@ svn_node_unknown = 'unknown'
 
 
 class ProcessReadPipe(object):
-  """child process pipe which cares child's return code. return code is
-     other than 0, readed code is incomplete or invalid."""
+  """child process pipe which cares child's return code. if return code is
+     other than 0, readed file content is incomplete or invalid."""
 
   def __init__(self, proc):
     assert isinstance(proc, subprocess.Popen)
@@ -205,7 +205,21 @@ class CmdLineSubversionRepository(SubversionRepository):
     return fp, lh_rev
 
   def listdir(self, path_parts, rev, options):
-    raise vclib.UnsupportedFeature()
+    path = _getpath(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
+      raise vclib.Error("Path '%s' is not a directory." % path)
+    rev = self._getrev(rev)
+    entries = []
+    dirents = self._get_dirents(path, rev)
+    for name, entry in dirents.items():
+      if entry.attrib['kind'] == svn_node_dir:
+        kind = vclib.DIR
+      elif entry.attrib['kind'] == svn_node_file:
+        kind = vclib.FILE
+      else:
+        kind = None
+      entries.append(vclib.DirEntry(name, kind))
+    return entries
 
   def dirlogs(self, path_parts, rev, entries, options):
     raise vclib.UnsupportedFeature()
@@ -248,6 +262,41 @@ class CmdLineSubversionRepository(SubversionRepository):
     path = self.rootpath + '/' + _quote(path)
     return _canonicalize_path(path)
 
+  def _get_dirents(self, path, rev):
+    """Return a 2-type of dirents and locks, possibly reading/writing
+    from a local cache of that information.  This functions performs
+    authz checks, stripping out unreadable dirents."""
+
+    dir_url = self._geturl(path)
+    path_parts = _path_parts(path)
+    if path:
+      key = str(rev) + '/' + path
+    else:
+      key = str(rev)
+
+    # Ensure that the cache gets filled...
+    dirents = self._dirent_cache.get(key)
+    if not dirents:
+      tmp_dirents = self.list_directory(dir_url, rev, rev)
+      dirents = {}
+      # tmp_dirents._root is <lists> tmp_dirents._root._children is [<list>]
+      for entry in tmp_dirents.findall('./list/entry'):
+        kind = entry.attrib['kind']
+        name = entry.find('name').text
+        dirent_parts = path_parts + [name]
+        if (kind == svn_node_dir or kind == svn_node_file) \
+           and vclib.check_path_access(self, dirent_parts,
+                                       kind == svn_node_dir \
+                                         and vclib.DIR or vclib.FILE, rev):
+          lh_rev, c_rev = self._get_last_history_rev(dirent_parts, rev)
+        entry.append(xml.etree.ElementTree.Element('created_rev',
+                                                   text=str(lh_rev)))
+        dirents[name] = entry
+      self._dirent_cache[key] = dirents
+
+    # ...then return the goodies from the cache.
+    return dirents
+
   def _get_last_history_rev(self, path_parts, rev):
     """Return the a 2-tuple which contains:
          - the last interesting revision equal to or older than REV in
@@ -257,6 +306,7 @@ class CmdLineSubversionRepository(SubversionRepository):
     path = _getpath(path_parts)
     url = self._geturl(_getpath(path_parts))
     rev = self._getrev(rev)
+    url = url + ('@%s' % rev)
     if self.svn_version >= (1, 9, 0):
       last_changed_rev = self.svn_cmd('info', ['--depth=empty', '-r%s' % rev,
                                       '--show-item=last-changed-revision',
@@ -326,4 +376,9 @@ class CmdLineSubversionRepository(SubversionRepository):
       version = version[:-1]
     version = tuple([int(x) for x in version.split(b'.')])
     return version
+
+  def list_directory(self, url, peg_rev, rev):
+    # xml output always contains lock information
+    url = url + ("@%s" % peg_rev)
+    return self.svn_cmd_xml('ls', ['-r%s' % rev, url])
 
