@@ -25,8 +25,8 @@ else:
 
 import vclib
 from . import _canonicalize_path
-from .common import SubversionRepository, Revision, SVNChangedPath, \
-                    _compare_paths, _path_parts, _getpath, _cleanup_path
+from .svn_common import SubversionRepository, Revision, SVNChangedPath, \
+                        _compare_paths, _path_parts, _getpath, _cleanup_path
 
 PY3 = (sys.version_info[0] >= 3)
 
@@ -48,6 +48,99 @@ SVN_PROP_REVISION_DATE = SVN_PROP_PREFIX + "date"
 SVN_PROP_SPECIAL = SVN_PROP_PREFIX + "special"
 SVN_PROP_EXECUTABLE = SVN_PROP_PREFIX + "executable"
 
+# we don't use svn_node_kind_t in this module, however, we need symbols
+# to handle node type infomation in xml tree
+# (bringing from subversion/libsvn_subr/types.c on subversion 1.11.0)
+svn_node_none = 'none'
+svn_node_file = 'file'
+svn_node_dir = 'dir'
+svn_node_symlink = 'symlink'
+svn_node_unknown = 'unknown'
+
+
+class ProcessReadPipe(object):
+  """child process pipe which cares child's return code. return code is
+     other than 0, readed code is incomplete or invalid."""
+
+  def __init__(self, proc):
+    assert isinstance(proc, subprocess.Popen)
+    rc = proc.poll()
+    if rc:
+      try:
+        errout = proc.stderr.read()
+      except Exception:
+        pass
+      raise SvnCommandError(errout, cmd, rc)
+    self.proc = proc
+    self._eof = 0
+
+  def read(self, len=None):
+    if len:
+      chunk = self.proc.stdout.read(len)
+    else:
+      chunk = self.proc.stdout.read()
+    if self.proc.returncode is None:
+      rc = self.proc.poll()
+      if rc:
+        try:
+          errout = self.proc.stderr.read()
+        except Exception:
+          pass
+        self._eof = 1
+        raise SvnCommandError(errout, cmd, rc)
+    if chunk == '':
+      self._eof = 1
+    return chunk
+
+  def readline(self):
+    chunk = self.proc.stdout.readline()
+    if self.proc.returncode is None:
+      rc = self.proc.poll()
+      if rc:
+        try:
+          errout = self.proc.stderr.read()
+        except Exception:
+          pass
+        self._eof = 1
+        raise SvnCommandError(errout, cmd, rc)
+    if chunk == '':
+      self._eof = 1
+    return chunk
+
+  def readlines(self):
+    chunk = self.proc.stdout.readlines()
+    if self.proc.returncode is None:
+      rc = self.proc.poll()
+      if rc:
+        try:
+          errout = self.proc.stderr.read()
+        except Exception:
+          pass
+        self._eof = 1
+        raise SvnCommandError(errout, cmd, rc)
+    self._eof = 1
+    return chunk
+
+  def close(self):
+    self.proc.stdout.close()
+    if self.proc.returncode is None:
+       # may be last chance to tell the data is invalid or incomplete
+      rc = self.proc.poll()
+      if rc:
+        try:
+          errout = self.proc.stderr.read()
+        except Exception:
+          pass
+        self._eof = 1
+        raise SvnCommandError(errout, cmd, rc)
+
+  def __del__(self):
+    try:
+       self.close()
+    except SvnCommandError:
+       raise
+    except:
+      pass
 
 class CmdLineSubversionRepository(SubversionRepository):
   def __init__(self, name, rootpath, authorizer, utilities, config_dir):
@@ -56,7 +149,6 @@ class CmdLineSubversionRepository(SubversionRepository):
     self.svn_version = self.get_svn_version()
 
   def open(self):
-
     # get head revison of root
     et = self.svn_cmd_xml('propget', ['--revprop', '-r', 'HEAD',
                           SVN_PROP_REVISION_DATE, self.rootpath])
@@ -76,7 +168,7 @@ class CmdLineSubversionRepository(SubversionRepository):
       url = self._geturl(_getpath(path_parts))
       rev = self._getrev(rev)
       try:
-        if self.svn_version >= (1, 9, 0) and False:
+        if self.svn_version >= (1, 9, 0):
           kind = self.svn_cmd('info', ['--depth=empty', '-r%s' % rev,
                                        '--show-item=kind', '--no-newline',
                                        url])
@@ -95,9 +187,22 @@ class CmdLineSubversionRepository(SubversionRepository):
       raise vclib.ItemNotFound(path_parts)
     return pathtype
 
-
   def openfile(self, path_parts, rev, options):
-    raise vclib.UnsupportedFeature()
+    path = _getpath(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file." % path)
+    rev = self._getrev(rev)
+    url = self._geturl(path)
+    if self.svn_version >= (1, 9, 0):
+      # we can use --ignore-keywords, which is useful to make a diff
+      # by using our internal function
+      proc = self._do_svn_cmd('cat', ['-r%s' % rev, '--ignore-keywords', url])
+    else:
+      proc = self._do_svn_cmd('cat', ['-r%s' % rev, url])
+    ### rev here should be the last history revision of the URL
+    fp = ProcessReadPipe(proc)
+    lh_rev, c_rev = self._get_last_history_rev(path_parts, rev)
+    return fp, lh_rev
 
   def listdir(self, path_parts, rev, options):
     raise vclib.UnsupportedFeature()
@@ -126,9 +231,6 @@ class CmdLineSubversionRepository(SubversionRepository):
   def filesize(self, path_parts, rev):
     raise vclib.UnsupportedFeature()
 
-  def get_youngest_revision(self):
-    return self.youngest
-
   def get_location(self, path, rev, old_rev):
     raise UnsupportedFeature()
 
@@ -145,6 +247,35 @@ class CmdLineSubversionRepository(SubversionRepository):
       return self.rootpath
     path = self.rootpath + '/' + _quote(path)
     return _canonicalize_path(path)
+
+  def _get_last_history_rev(self, path_parts, rev):
+    """Return the a 2-tuple which contains:
+         - the last interesting revision equal to or older than REV in
+           the history of PATH_PARTS.
+         - the created_rev of of PATH_PARTS as of REV."""
+
+    path = _getpath(path_parts)
+    url = self._geturl(_getpath(path_parts))
+    rev = self._getrev(rev)
+    if self.svn_version >= (1, 9, 0):
+      last_changed_rev = self.svn_cmd('info', ['--depth=empty', '-r%s' % rev,
+                                      '--show-item=last-changed-revision',
+                                      '--no-newline', url])
+    else:
+      et = self.svn_cmd_xml('info', ['--depth=empty', '-r%s' % rev, url])
+      last_changed_rev = et.find('entry').attrib['last-changed-revision']
+
+    # Now, this object might not have been directly edited since the
+    # last-changed-rev, but it might have been the child of a copy.
+    # To determine this, we'll run a potentially no-op log between
+    # LAST_CHANGED_REV and REV.
+    revopt = "-r%s:%s" % (rev, last_changed_rev)
+    et = self.svn_cmd_xml('log', [revopt, '-l', '1', '-v', '--stop-on-copy',
+                                  url])
+    assert len(et._root._children) == 1
+    # et._root is element <log>, and its only child is element <logentry>
+    # with 'revision attribute'
+    return int(et._root._children[0].attrib['revision']), int(last_changed_rev)
 
   def _do_svn_cmd(self, cmd, args, cfg=None):
     """execute svn commandline utility and returns its proces object"""
@@ -172,10 +303,6 @@ class CmdLineSubversionRepository(SubversionRepository):
         pass
       raise SvnCommandError(errout, cmd, rc)
     return text
-
-  def svn_cmd_fp(self, cmd, args, cfg=None):
-    proc = self._do_svn_cmd(cmd, args, cfg)
-    return proc.stdout
 
   def svn_cmd_xml(self, cmd, args, cfg=None):
     proc = self._do_svn_cmd(cmd, list(args) + ['--xml'], cfg)
