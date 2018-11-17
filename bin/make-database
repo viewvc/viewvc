@@ -330,7 +330,7 @@ if __name__ == "__main__":
       dscript = dscript + DATABASE_SCRIPT_VERSION_1
 
     # Calculate command arguments.
-    cmd_args = "--user=%s --password=%s" % (username, password)
+    cmd_args = "--user='%s' --password='%s'" % (username, password)
     if hostname or port:
       cmd_args = cmd_args + " --protocol=TCP"
     if hostname:
