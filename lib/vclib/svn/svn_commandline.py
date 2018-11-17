@@ -19,6 +19,7 @@ import xml.etree.ElementTree
 import subprocess
 if sys.version_info[0] >= 3:
   PY3 = True
+  import functools
   from urllib.parse import quote as _quote
   long = int
 else:
@@ -52,11 +53,19 @@ SVN_PROP_EXECUTABLE = SVN_PROP_PREFIX + "executable"
 # we don't use svn_node_kind_t in this module, however, we need symbols
 # to handle node type infomation in xml tree
 # (bringing from subversion/libsvn_subr/types.c on subversion 1.11.0)
+# svn_node_kind_t
 svn_node_none = 'none'
 svn_node_file = 'file'
 svn_node_dir = 'dir'
 svn_node_symlink = 'symlink'
 svn_node_unknown = 'unknown'
+# svn_tristate_t
+svn_tristate_true = 'true'
+svn_tristate_false = 'false'
+# svn_tristate__to_word() returns NULL for svn_tristate_unknown and
+# for unknown value, however we will see it through the xml output
+# if exists. so it can be ''
+svn_tristate_unknown = ''
 
 
 class ProcessReadPipe(object):
@@ -223,7 +232,32 @@ class CmdLineSubversionRepository(SubversionRepository):
     return entries
 
   def dirlogs(self, path_parts, rev, entries, options):
-    raise vclib.UnsupportedFeature()
+    path = _getpath(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
+      raise vclib.Error("Path '%s' is not a directory." % path)
+    rev = self._getrev(rev)
+    dirents = self._get_dirents(path, rev)
+    for entry in entries:
+      entry_path_parts = path_parts + [entry.name]
+      dirent = dirents.get(entry.name, None)
+      # dirents is authz-sanitized, so ensure the entry is found therein.
+      if dirent is None:
+        continue
+      # Get authz-sanitized revision metadata.
+      created_rev_elm = dirent.find('created_rev')
+      assert created_rev_elm is not None
+      entry.rev = created_rev_elm.text
+      entry.date, entry.author, entry.log, revprops, changes = \
+                  self._revinfo(long(entry.rev))
+      size_elm = dirent.find('size')
+      if size_elm is not None:
+        entry.size = long(dirent.find('size').text)
+      else:
+        entry.size = None
+      entry.lockinfo = None
+      lockinfo = dirent.find('lock')
+      if lockinfo is not None:
+        entry.lockinfo = lockinfo.find('owner').text
 
   def itemlog(self, path_parts, rev, sortby, first, limit, options):
     raise vclib.UnsupportedFeature()
@@ -267,7 +301,8 @@ class CmdLineSubversionRepository(SubversionRepository):
     raise UnsupportedFeature()
 
   def created_rev(self, path, rev):
-    raise UnsupportedFeature()
+    lh_rev, c_rev = self._get_last_history_rev(_path_parts(path), rev)
+    return lh_rev
 
   def get_symlink_target(self, path_parts, rev):
     raise UnsupportedFeature()
@@ -307,9 +342,10 @@ class CmdLineSubversionRepository(SubversionRepository):
                                        kind == svn_node_dir \
                                          and vclib.DIR or vclib.FILE, rev):
           lh_rev, c_rev = self._get_last_history_rev(dirent_parts, rev)
-        entry.append(xml.etree.ElementTree.Element('created_rev',
-                                                   text=str(lh_rev)))
-        dirents[name] = entry
+          elm = xml.etree.ElementTree.Element('created_rev')
+          elm.text = str(lh_rev)
+          entry.append(elm)
+          dirents[name] = entry
       self._dirent_cache[key] = dirents
 
     # ...then return the goodies from the cache.
@@ -343,7 +379,139 @@ class CmdLineSubversionRepository(SubversionRepository):
     assert len(et._root._children) == 1
     # et._root is element <log>, and its only child is element <logentry>
     # with 'revision attribute'
-    return long(et._root._children[0].attrib['revision']), long(last_changed_rev)
+    return (long(et._root._children[0].attrib['revision']),
+            long(last_changed_rev))
+
+  def _revinfo_fetch(self, rev, include_changed_paths=0):
+    need_changes = include_changed_paths or self.auth
+    revopt = "-r%s" % rev
+    if need_changes:
+      et = self.svn_cmd_xml('log', [revopt, '-l', '1', '-v', '--stop-on-copy',
+                                    '--with-all-revprops', self.rootpath])
+    else:
+      et = self.svn_cmd_xml('log', [revopt, '-l', '1', '--stop-on-copy',
+                                    '--with-all-revprops', self.rootpath])
+    log_entry = et.find('./logentry')
+    revison = long(log_entry.attrib['revision'])
+    msg = log_entry.find('msg').text
+    author = log_entry.find('author').text
+    date = log_entry.find('date').text
+    revprops = { SVN_PROP_REVISION_LOG : msg,
+                 SVN_PROP_REVISION_AUTHOR : author,
+                 SVN_PROP_REVISION_DATE : date }
+    for prop in log_entry.findall('revprops/property'):
+      revprops[prop.attrib['name']] = prop.text
+
+    # Easy out: if we won't use the changed-path info, just return a
+    # changes-less tuple.
+    if not need_changes:
+      return [date, author, msg, revprops, None]
+
+    action_map = { 'D' : vclib.DELETED,
+                   'A' : vclib.ADDED,
+                   'R' : vclib.REPLACED,
+                   'M' : vclib.MODIFIED,
+                   }
+
+    paths = log_entry.findall('paths/path')
+    if PY3:
+      paths.sort(key=functools.cmp_to_key(
+                          lambda a, b: _compare_paths(a.text, b.text)))
+    else:
+      paths.sort(lambda a, b: _compare_paths(a.text, b.text))
+
+    # If we get this far, our caller needs changed-paths, or we need
+    # them for authz-related sanitization.
+    changes = []
+    found_readable = found_unreadable = 0
+    for change in paths:
+      path = change.text
+      # svn_log_changed_path_t (which we might get instead of the
+      # svn_log_changed_path2_t we'd prefer) doesn't have the
+      # 'node_kind' member.
+      pathtype = None
+      if 'kind' in change.attrib:
+        if change.attrib['kind'] == svn_node_dir:
+          pathtype = vclib.DIR
+        elif change.attrib['kind'] == svn_node_file:
+          pathtype = vclib.FILE
+
+      # svn_log_changed_path2_t only has the 'text_modified' and
+      # 'props_modified' bits in Subversion 1.7 and beyond.  And
+      # svn_log_changed_path_t is without.
+      text_modified = props_modified = 0
+      if 'text-mods' in change.attrib:
+        if change.attrib['text-mods'] == svn_tristate_true:
+          text_modified = 1
+      if 'prop-mods' in change.attrib:
+        if change.attrib['prop-mods'] == svn_tristate_true:
+          props_modified = 1
+
+      # Wrong, diddily wrong wrong wrong.  Can you say,
+      # "Manufacturing data left and right because it hurts to
+      # figure out the right stuff?"
+      action = action_map.get(change.attrib['action'], vclib.MODIFIED)
+      if 'copyfrom-path' in change.attrib and 'copyfrom-rev' in change.attrib:
+        is_copy = 1
+        base_path = change.attrib['copyfrom-path']
+        base_rev = change.attrib['copyfrom-rev']
+      elif action == vclib.ADDED or action == vclib.REPLACED:
+        is_copy = 0
+        base_path = base_rev = None
+      else:
+        is_copy = 0
+        base_path = path
+        base_rev = revision - 1
+
+      # Check authz rules (sadly, we have to lie about the path type)
+      parts = _path_parts(path)
+      if vclib.check_path_access(self, parts, vclib.FILE, revision):
+        if is_copy and base_path and (base_path != path):
+          parts = _path_parts(base_path)
+          if not vclib.check_path_access(self, parts, vclib.FILE, base_rev):
+            is_copy = 0
+            base_path = None
+            base_rev = None
+            found_unreadable = 1
+        changes.append(SVNChangedPath(path, revision, pathtype, base_path,
+                                      base_rev, action, is_copy,
+                                      text_modified, props_modified))
+        found_readable = 1
+      else:
+        found_unreadable = 1
+
+      # If our caller doesn't want changed-path stuff, and we have
+      # the info we need to make an authz determination already,
+      # quit this loop and get on with it.
+      if (not include_changed_paths) and found_unreadable and found_readable:
+        break
+
+    # Filter unreadable information.
+    if found_unreadable:
+      msg = None
+      if not found_readable:
+        author = None
+        date = None
+
+    # Drop unrequested changes.
+    if not include_changed_paths:
+      changes = None
+
+    return [date, author, msg, revprops, changes]
+
+  def _revinfo(self, rev, include_changed_paths=0):
+    """Internal-use, cache-friendly revision information harvester."""
+
+    # Consult the revinfo cache first.  If we don't have cached info,
+    # or our caller wants changed paths and we don't have those for
+    # this revision, go do the real work.
+    rev = self._getrev(rev)
+    cached_info = self._revinfo_cache.get(rev)
+    if not cached_info \
+       or (include_changed_paths and cached_info[4] is None):
+      cached_info = self._revinfo_fetch(rev, include_changed_paths)
+      self._revinfo_cache[rev] = cached_info
+    return cached_info
 
   def _do_svn_cmd(self, cmd, args, cfg=None):
     """execute svn commandline utility and returns its proces object"""
