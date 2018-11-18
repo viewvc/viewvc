@@ -15,6 +15,7 @@ via commandline client 'svn'.
 """
 
 import sys
+import re
 import xml.etree.ElementTree
 import subprocess
 if sys.version_info[0] >= 3:
@@ -23,6 +24,7 @@ if sys.version_info[0] >= 3:
   from urllib.parse import quote as _quote
   long = int
 else:
+  PY3 = False
   from urllib import quote as _quote
 
 import vclib
@@ -30,17 +32,6 @@ from . import _canonicalize_path
 from .svn_common import SubversionRepository, Revision, SVNChangedPath, \
                         _compare_paths, _path_parts, _getpath, _cleanup_path
 
-PY3 = (sys.version_info[0] >= 3)
-
-
-class SvnCommandError(vclib.Error):
-  def __init__(self, errout, cmd, retcode):
-    self.errout = errout
-    self.cmd = cmd
-    self.retcode = retcode
-    vclib.Error.__init__(self,
-                         ('svn %s exit with code %d: %s'
-                          %  (cmd, retcode, errout)))
 
 # here's a constants that cannot be retrived from library...
 SVN_PROP_PREFIX = "svn:"
@@ -67,6 +58,31 @@ svn_tristate_false = 'false'
 # if exists. so it can be ''
 svn_tristate_unknown = ''
 
+# from svn_error_code.h
+SVN_ERR_FS_NOT_FOUND = 160013
+SVN_ERR_CLIENT_UNRELATED_RESOURCES = 195012
+
+
+_re_svnerr = re.compile(r'svn: E(?P<errno>[0-9]+): (?P<msg>.*)$')
+
+class SvnCommandError(vclib.Error):
+  def __init__(self, errout, cmd, retcode):
+    if errout[-1:] == '\n':
+      errout = errout[:-1]
+    self.cmd = cmd
+    self.retcode = retcode
+    # try to extract Subversion error number
+    m = _re_svnerr.match(errout)
+    if m:
+      self.err_code = int(m.group('errno'))
+      self.msg = m.group('msg')
+      vclib.Error.__init__(self, ('svn %s: E%s: %s'
+                                  %  (cmd, self.err_code, self.msg)))
+    else:
+      self.err_code = None
+      self.msg = errout
+      vclib.Error.__init__(self, ('svn %s exit with code %d: %s'
+                                  %  (cmd, retcode, self.msg)))
 
 class ProcessReadPipe(object):
   """child process pipe which cares child's return code. if return code is
@@ -152,6 +168,10 @@ class ProcessReadPipe(object):
     except:
       pass
 
+  def eof(self):
+    return self._eof
+
+
 class CmdLineSubversionRepository(SubversionRepository):
   def __init__(self, name, rootpath, authorizer, utilities, config_dir):
     SubversionRepository.__init__(self, name, rootpath, authorizer, utilities,
@@ -183,7 +203,7 @@ class CmdLineSubversionRepository(SubversionRepository):
                                        '--show-item=kind', '--no-newline',
                                        url])
         else:
-          et = self.svn_cmd_xml('info', ['--depth=empty', '-r%d' %rev, url])
+          et = self.svn_cmd_xml('info', ['--depth=empty', '-r%d' % rev, url])
           kind = et.find('entry').attrib['kind']
         if kind == 'file':
           pathtype = vclib.FILE
@@ -282,7 +302,7 @@ class CmdLineSubversionRepository(SubversionRepository):
     raise vclib.UnsupportedFeature()
 
   def revinfo(self, rev):
-    raise vclib.UnsupportedFeature()
+    return self._revinfo(rev, 1)
 
   def isexecutable(self, path_parts, rev):
     props = self.itemprops(path_parts, rev) # does authz-check
@@ -298,7 +318,20 @@ class CmdLineSubversionRepository(SubversionRepository):
     return long(dirent.find('size').text)
 
   def get_location(self, path, rev, old_rev):
-    raise UnsupportedFeature()
+    rev = self._getrev(rev)
+    old_rev = self._getrev(old_rev)
+    url = self._geturl(path) + ('@%s' % rev)
+    try:
+      et = self.svn_cmd_xml('info', ['--depth=empty', '-r%d' % old_rev, url])
+    except SvnCommandError, e:
+      if e.err_code in (SVN_ERR_FS_NOT_FOUND,
+                        SVN_ERR_CLIENT_UNRELATED_RESOURCES):
+        raise vclib.ItemNotFound(path)
+      raise
+    old_url = et.find('./entry/url').text
+    if old_url[:len(self.rootpath)] != self.rootpath:
+       raise vclib.ItemNotFound(path)
+    return _cleanup_path(old_url[len(self.rootpath):])
 
   def created_rev(self, path, rev):
     lh_rev, c_rev = self._get_last_history_rev(_path_parts(path), rev)
@@ -531,12 +564,14 @@ class CmdLineSubversionRepository(SubversionRepository):
     proc = self._do_svn_cmd(cmd, args, cfg)
     text = proc.stdout.read()
     proc.stdout.close()
-    rc = proc.poll()
+    try:
+      errout = proc.stderr.read()
+    except Exception:
+      pass
+    proc.stdout.close()
+    proc.stderr.close()
+    rc = proc.wait()
     if rc:
-      try:
-        errout = proc.stderr.read()
-      except Exception:
-        pass
       raise SvnCommandError(errout, cmd, rc)
     return text
 
@@ -549,18 +584,29 @@ class CmdLineSubversionRepository(SubversionRepository):
         errout = proc.stderr.read()
       except Exception:
         pass
-      rc = proc.poll()
+      proc.stdout.close()
+      proc.stderr.close()
+      rc = proc.wait()
       if rc:
         raise SvnCommandError(errout, cmd, rc)
       else:
         raise
+    try:
+      errout = proc.stderr.read()
+    except Exception:
+      pass
+    proc.stdout.close()
+    proc.stderr.close()
+    rc = proc.wait()
+    if rc:
+      raise SvnCommandError(errout, cmd, rc)
     return et
 
   def get_svn_version(self):
     version = self.svn_cmd('--version', ['--quiet'])
-    if version and version[-1:] == b'\n':
+    if version and version[-1:] == '\n':
       version = version[:-1]
-    version = tuple([int(x) for x in version.split(b'.')])
+    version = tuple([int(x) for x in version.split('.')])
     return version
 
   def list_directory(self, url, peg_rev, rev):
