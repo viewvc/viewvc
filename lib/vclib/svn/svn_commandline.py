@@ -529,7 +529,7 @@ class CmdLineSubversionRepository(SubversionRepository):
 
   def isexecutable(self, path_parts, rev):
     props = self.itemprops(path_parts, rev) # does authz-check
-    return props.has_key(SVN_PROP_EXECUTABLE)
+    return SVN_PROP_EXECUTABLE in props
 
   def filesize(self, path_parts, rev):
     path = _getpath(path_parts)
