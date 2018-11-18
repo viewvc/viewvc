@@ -16,6 +16,9 @@ via commandline client 'svn'.
 
 import sys
 import re
+import tempfile
+import time
+import calendar
 import xml.etree.ElementTree
 import subprocess
 if sys.version_info[0] >= 3:
@@ -28,7 +31,7 @@ else:
   from urllib import quote as _quote
 
 import vclib
-from . import _canonicalize_path
+from . import _canonicalize_path, _re_url
 from .svn_common import SubversionRepository, Revision, SVNChangedPath, \
                         _compare_paths, _path_parts, _getpath, _cleanup_path
 
@@ -62,6 +65,25 @@ svn_tristate_unknown = ''
 SVN_ERR_FS_NOT_FOUND = 160013
 SVN_ERR_CLIENT_UNRELATED_RESOURCES = 195012
 
+# chunk size to copy stream
+# (cf. SVN__STREAM_CHUNK_SIZE on Subversion 1.11.0 = 16384)
+CHUNK_SIZE = 16384
+
+_re_iso8601 = re.compile(r'(?P<ts>[0-9]+-[01][0-9]-[0-3][0-9]T[0-2][0-9]:[0-5][0-9]:[0-6][0-9])(?P<subsec>.[0-9]+)?Z')
+
+def _datestr_to_date(datestr, is_float=False):
+  # assumed date string from xml output only
+  m = _re_iso8601.match(datestr)
+  if m:
+    ts = calendar.timegm(time.strptime(m.group('ts'), '%Y-%m-%dT%H:%M:%S'))
+    subsec = float(m.group('subsec'))
+    if is_float:
+      return float(ts) + subsec
+    else:
+      return ts
+  else:
+    # unknown format
+    return None
 
 _re_svnerr = re.compile(r'svn: E(?P<errno>[0-9]+): (?P<msg>.*)$')
 
@@ -174,6 +196,16 @@ class ProcessReadPipe(object):
 
 class CmdLineSubversionRepository(SubversionRepository):
   def __init__(self, name, rootpath, authorizer, utilities, config_dir):
+    if not re.search(_re_url, parent_path):
+      if not (os.path.isdir(rootpath) \
+              and os.path.isfile(os.path.join(rootpath, 'format'))):
+        raise vclib.ReposNotFound(name)
+      # we can't handle local path through this driver
+      if rootpath[0:1] == '/':
+        rootpath = 'file://' + rootpath
+      else:
+        rootpath = 'file:///' + rootpath
+
     SubversionRepository.__init__(self, name, rootpath, authorizer, utilities,
                                   config_dir)
     self.svn_version = self.get_svn_version()
@@ -217,7 +249,7 @@ class CmdLineSubversionRepository(SubversionRepository):
       raise vclib.ItemNotFound(path_parts)
     return pathtype
 
-  def openfile(self, path_parts, rev, options):
+  def openfile(self, path_parts, rev, options, without_revision=False):
     path = _getpath(path_parts)
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % path)
@@ -229,8 +261,10 @@ class CmdLineSubversionRepository(SubversionRepository):
       proc = self._do_svn_cmd('cat', ['-r%s' % rev, '--ignore-keywords', url])
     else:
       proc = self._do_svn_cmd('cat', ['-r%s' % rev, url])
-    ### rev here should be the last history revision of the URL
     fp = ProcessReadPipe(proc)
+    if without_revision:
+      return fp
+    ### rev here should be the last history revision of the URL
     lh_rev, c_rev = self._get_last_history_rev(path_parts, rev)
     return fp, lh_rev
 
@@ -280,9 +314,118 @@ class CmdLineSubversionRepository(SubversionRepository):
         entry.lockinfo = lockinfo.find('owner').text
 
   def itemlog(self, path_parts, rev, sortby, first, limit, options):
-    raise vclib.UnsupportedFeature()
+    assert sortby == vclib.SORTBY_DEFAULT or sortby == vclib.SORTBY_REV
+    path_type = self.itemtype(path_parts, rev) # does auth-check
+    path = _getpath(path_parts)
+    rev = self._getrev(rev)
+    url = self._geturl(path) + ('@%s' % rev)
 
-  def itemprops(self, path_parts, rev):
+    # If this is a file, fetch the lock status and size (as of REV)
+    # for this item.
+    lockinfo = size_in_rev = None
+    if path_type == vclib.FILE:
+      basename = path_parts[-1]
+      list_url = self._geturl(_getpath(path_parts[:-1]))
+      dirents = list_directory(list_url, rev, rev)
+      lock_elm =dirents[basename].find('lock')
+      if lock_elm is not None:
+        lockinfo = lock_elm.find('owner').text
+      if dirents.has_key(basename):
+        size_in_rev = long(dirents[basename].find('size').text)
+
+    # Special handling for the 'svn_latest_log' scenario.
+    ### FIXME: Don't like this hack.  We should just introduce
+    ### something more direct in the vclib API.
+    if options.get('svn_latest_log', 0):
+      dir_lh_rev, dir_c_rev = self._get_last_history_rev(path_parts, rev)
+      date, author, log, revprops, changes = self._revinfo(dir_lh_rev)
+      return [vclib.Revision(dir_lh_rev, str(dir_lh_rev), date, author,
+                             None, log, size_in_rev, lockinfo)]
+
+    revopt = "-r%s:1" % rev
+    log_limit = 0
+    if limit:
+      log_limit = first + limit
+    args = [revopt, '-l', str(log_limit), '-v', '--with-all-revprops']
+    if not options.get('svn_cross_copies', 0):
+      args.append('--stop-on-copy')
+    args.append(url)
+    et = self.svn_cmd_xml('log', args)
+
+    revs = []
+    show_all_logs = options.get('svn_show_all_dir_logs', 0)
+
+    if not path:
+      orig_path = '/'
+    else:
+      orig_path = path[0] == '/' and path or '/' + path
+    copyfrom_rev = None
+    copyfrom_path = None
+    # parse and filter log (borrowed from LogCollector.add_log())
+    for log_entry in et.findall('./logentry'):
+
+      revison = long(log_entry.attrib['revision'])
+      msg = log_entry.find('msg').text
+      author = log_entry.find('author').text
+      datestr = log_entry.find('date').text
+      revprops = { SVN_PROP_REVISION_LOG : msg,
+                   SVN_PROP_REVISION_AUTHOR : author,
+                   SVN_PROP_REVISION_DATE : datestr }
+      for prop in log_entry.findall('revprops/property'):
+        revprops[prop.attrib['name']] = prop.text
+      date = _datestr_to_date(datestr)
+
+      paths = log_entry.findall('paths/path')
+
+      if PY3:
+        paths.sort(key=functools.cmp_to_key(
+                                lambda a, b: _compare_paths(a.text, b.text)))
+      else:
+        paths.sort(lambda a, b: _compare_paths(a.text, b.text))
+      this_path = None
+      for path_elm in paths:
+        if path_elm.text == this_path:
+          this_path = orig_path
+          if 'copyfrom-path' in path_elm.attrib:
+            this_path = path_elm.attrib['copyfrom-path']
+          break
+      for path_elm in paths:
+        if path_elm.text != orig_path:
+          # If a parent of our path was copied, our "next previous"
+          # (huh?) path will exist elsewhere (under the copy source).
+          if (orig_path.rfind(path_elm.text) == 0) and \
+                 orig_path[len(path_elm.text)] == '/':
+            if 'copyfrom-path' in path_elm.attrib:
+              this_path = path_elm.attrib['copyfrom-path'] \
+                                + orig_path[len(path_elm.text):]
+      if self.show_all_logs or this_path:
+        if vclib.check_path_access(self, _path_parts(orig_path[1:]),
+                                   path_type, revision):
+          entry = Revision(revision, date, author, msg, None, lockinfo,
+                           orig_path[1:], None, None)
+          revs.append(entry)
+        else:
+          break
+      if this_path:
+        orig_path = this_path
+    revs.sort()
+    prev = None
+    for rev in revs:
+      # Swap out revision info with stuff from the cache (which is
+      # authz-sanitized).
+      rev.date, rev.author, rev.log, revprops, changes \
+                = self._revinfo(rev.number)
+      rev.prev = prev
+      prev = rev
+    revs.reverse()
+
+    if len(revs) < first:
+      return []
+    if limit:
+      return revs[first:first+limit]
+    return revs
+
+  def itemprops(self, path_parts, rev, with_path_type=False):
     path = _getpath(path_parts)
     path_type = self.itemtype(path_parts, rev) # does auth-check
     rev = self._getrev(rev)
@@ -293,10 +436,36 @@ class CmdLineSubversionRepository(SubversionRepository):
     props = {}
     for prop in et.findall('./target/property'):
       props[prop.attrib['name']] = prop.text
-    return props
+    if with_path_type:
+      return props, path_type
+    else:
+      return props
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
-    raise vclib.UnsupportedFeature()
+    p1 = _getpath(path_parts1)
+    p2 = _getpath(path_parts2)
+    r1 = self._getrev(rev1)
+    r2 = self._getrev(rev2)
+    # self.temp_checkout() does check access, through self.openfile() call,
+    # so we don't need it here.
+
+    args = vclib._diff_args(type, options)
+
+    def _date_from_rev(rev):
+      date, author, msg, revprops, changes = self._revinfo(rev)
+      return date
+
+    try:
+      temp1 = self.temp_checkout(path_parts1, rev1, options)
+      temp2 = self.temp_checkout(path_parts2, rev2, options)
+      info1 = p1, _date_from_rev(r1), r1
+      info2 = p2, _date_from_rev(r2), r2
+      return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args)
+    except SvnCommandError as e:
+      if e.err_code in (SVN_ERR_FS_NOT_FOUND,
+                        SVN_ERR_CLIENT_UNRELATED_RESOURCES):
+        raise vclib.ItemNotFound(path)
+      raise
 
   def annotate(self, path_parts, rev, include_text=False):
     raise vclib.UnsupportedFeature()
@@ -338,7 +507,25 @@ class CmdLineSubversionRepository(SubversionRepository):
     return lh_rev
 
   def get_symlink_target(self, path_parts, rev):
-    raise UnsupportedFeature()
+    path = _getpath(path_parts)
+    props, path_type = self.itemprops(path_parts, rev) # does authz-check
+    rev = self._getrev(rev)
+
+    # Symlinks must be files with the svn:special property set on them
+    # and with file contents which read "link SOME_PATH".
+    if path_type != vclib.FILE or SVN_PROP_SPECIAL not in props:
+      return None
+    pathspec = ''
+    ### FIXME: We're being a touch sloppy here, first by grabbing the
+    ### whole file and then by checking only the first line
+    ### of it.
+    fp = self.openfile(path_parts, rev, None, without_revision=True)
+    pathspec = fp.readline()
+    fp.close()
+    if pathspec[:5] != 'link ':
+      return None
+    return pathspec[5:]
+
 
   ### helper functions ###
 
@@ -428,12 +615,13 @@ class CmdLineSubversionRepository(SubversionRepository):
     revison = long(log_entry.attrib['revision'])
     msg = log_entry.find('msg').text
     author = log_entry.find('author').text
-    date = log_entry.find('date').text
+    datestr = log_entry.find('date').text
     revprops = { SVN_PROP_REVISION_LOG : msg,
                  SVN_PROP_REVISION_AUTHOR : author,
-                 SVN_PROP_REVISION_DATE : date }
+                 SVN_PROP_REVISION_DATE : datestr }
     for prop in log_entry.findall('revprops/property'):
       revprops[prop.attrib['name']] = prop.text
+    date = _datestr_to_date(datestr)
 
     # Easy out: if we won't use the changed-path info, just return a
     # changes-less tuple.
@@ -613,4 +801,25 @@ class CmdLineSubversionRepository(SubversionRepository):
     # xml output always contains lock information
     url = url + ("@%s" % peg_rev)
     return self.svn_cmd_xml('ls', ['-r%s' % rev, url])
+
+  def temp_checkout(self, path_parts, rev, options):
+    """Check out file revision to temporary file"""
+    fd, temp = tempfile.mkstemp()
+    ofp = os.fdopen(fd, 'wb')
+    try:
+      ifp = self.openfile(path_parts, rev, options, without_revision=True)
+      try:
+        while True:
+          chunk = ifp.read(CHUNK_SIZE)
+          if not len(chunk):
+            break
+          ofp.write(chunk)
+      finally:
+        ifp.close()
+    except:
+      os.remove(temp)
+      raise
+    finally:
+      ofp.close()
+    return temp
 
