@@ -15,6 +15,8 @@ via commandline client 'svn'.
 """
 
 import sys
+import os
+import os.path
 import re
 import tempfile
 import time
@@ -196,7 +198,7 @@ class ProcessReadPipe(object):
 
 class CmdLineSubversionRepository(SubversionRepository):
   def __init__(self, name, rootpath, authorizer, utilities, config_dir):
-    if not re.search(_re_url, parent_path):
+    if not _re_url.search(rootpath):
       if not (os.path.isdir(rootpath) \
               and os.path.isfile(os.path.join(rootpath, 'format'))):
         raise vclib.ReposNotFound(name)
@@ -325,13 +327,13 @@ class CmdLineSubversionRepository(SubversionRepository):
     lockinfo = size_in_rev = None
     if path_type == vclib.FILE:
       basename = path_parts[-1]
-      list_url = self._geturl(_getpath(path_parts[:-1]))
-      dirents = list_directory(list_url, rev, rev)
-      lock_elm =dirents[basename].find('lock')
+      list_path = _getpath(path_parts[:-1])
+      dirents = self._get_dirents(list_path, rev)
+      lock_elm = dirents[basename].find('lock')
       if lock_elm is not None:
         lockinfo = lock_elm.find('owner').text
-      if dirents.has_key(basename):
-        size_in_rev = long(dirents[basename].find('size').text)
+      assert dirents[basename].find('size') is not None
+      size_in_rev = long(dirents[basename].findtext('size'))
 
     # Special handling for the 'svn_latest_log' scenario.
     ### FIXME: Don't like this hack.  We should just introduce
@@ -346,7 +348,10 @@ class CmdLineSubversionRepository(SubversionRepository):
     log_limit = 0
     if limit:
       log_limit = first + limit
-    args = [revopt, '-l', str(log_limit), '-v', '--with-all-revprops']
+    if log_limit:
+      args = [revopt, '-l', str(log_limit), '-v', '--with-all-revprops']
+    else:
+      args = [revopt, '-v', '--with-all-revprops']
     if not options.get('svn_cross_copies', 0):
       args.append('--stop-on-copy')
     args.append(url)
@@ -364,7 +369,7 @@ class CmdLineSubversionRepository(SubversionRepository):
     # parse and filter log (borrowed from LogCollector.add_log())
     for log_entry in et.findall('./logentry'):
 
-      revison = long(log_entry.attrib['revision'])
+      revision = long(log_entry.attrib['revision'])
       msg = log_entry.find('msg').text
       author = log_entry.find('author').text
       datestr = log_entry.find('date').text
@@ -398,7 +403,7 @@ class CmdLineSubversionRepository(SubversionRepository):
             if 'copyfrom-path' in path_elm.attrib:
               this_path = path_elm.attrib['copyfrom-path'] \
                                 + orig_path[len(path_elm.text):]
-      if self.show_all_logs or this_path:
+      if show_all_logs or this_path:
         if vclib.check_path_access(self, _path_parts(orig_path[1:]),
                                    path_type, revision):
           entry = Revision(revision, date, author, msg, None, lockinfo,
@@ -468,7 +473,56 @@ class CmdLineSubversionRepository(SubversionRepository):
       raise
 
   def annotate(self, path_parts, rev, include_text=False):
-    raise vclib.UnsupportedFeature()
+    path = _getpath(path_parts)
+    if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+      raise vclib.Error("Path '%s' is not a file." % path)
+    rev = self._getrev(rev)
+    url = self._geturl(path) + ('@%s' % rev)
+
+    # Examine logs for the file to determine the oldest revision we are
+    # permitted to see.
+    log_options = {
+      'svn_cross_copies' : 1,
+      'svn_show_all_dir_logs' : 1,
+      }
+    revs = self.itemlog(path_parts, rev, vclib.SORTBY_REV, 0, 0, log_options)
+    oldest_rev = revs[-1].number
+
+    revopt = "-r%s:%s" % (oldest_rev, rev)
+    et = self.svn_cmd_xml('blame', [revopt, url])
+
+    # Now calculate the annotation data.  Note that we'll not
+    # inherently trust the provided author and date, because authz
+    # rules might necessitate that we strip that information out.
+    blame_data = []
+
+    if include_text:
+      fp = self.openfile(path_parts, rev, options, without_revision=True)
+    for entry in et.findall('./target/entry'):
+      line_no = long(entry.attrib['line-number'])
+      commit_elm = entry.find('commit')
+      revision = long(commit_elm.attrib['revision'])
+      author = commit_elm.findtext('author')
+      date = _datestr_to_date(commit_elm.findtext('date'))
+      line = fp.readline() if include_text else None
+
+      prev_rev = None
+      if revision > 1:
+        prev_rev = revision - 1
+
+      # If we have an invalid revision, clear the date and author
+      # values.  Otherwise, if we have authz filtering to do, use the
+      # revinfo cache to do so.
+      if revision < 0:
+        date = author = None
+      elif self.auth:
+        date, author, msg, revprops, changes = self._revinfo(revision)
+
+      blame_data.append(vclib.Annotation(line, line_no + 1, revision, prev_rev,
+                                         author, date))
+    if include_text:
+      fp.close()
+    return blame_data, rev
 
   def revinfo(self, rev):
     return self._revinfo(rev, 1)
@@ -508,7 +562,8 @@ class CmdLineSubversionRepository(SubversionRepository):
 
   def get_symlink_target(self, path_parts, rev):
     path = _getpath(path_parts)
-    props, path_type = self.itemprops(path_parts, rev) # does authz-check
+    # does authz-check
+    props, path_type = self.itemprops(path_parts, rev, with_path_type=True)
     rev = self._getrev(rev)
 
     # Symlinks must be files with the svn:special property set on them
@@ -612,7 +667,7 @@ class CmdLineSubversionRepository(SubversionRepository):
       et = self.svn_cmd_xml('log', [revopt, '-l', '1', '--stop-on-copy',
                                     '--with-all-revprops', self.rootpath])
     log_entry = et.find('./logentry')
-    revison = long(log_entry.attrib['revision'])
+    revision = long(log_entry.attrib['revision'])
     msg = log_entry.find('msg').text
     author = log_entry.find('author').text
     datestr = log_entry.find('date').text
@@ -764,7 +819,7 @@ class CmdLineSubversionRepository(SubversionRepository):
     return text
 
   def svn_cmd_xml(self, cmd, args, cfg=None):
-    proc = self._do_svn_cmd(cmd, list(args) + ['--xml'], cfg)
+    proc = self._do_svn_cmd(cmd, ['--xml'] + list(args), cfg)
     try:
       et = xml.etree.ElementTree.parse(proc.stdout)
     except:
