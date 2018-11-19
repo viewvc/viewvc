@@ -813,7 +813,10 @@ class CmdLineSubversionRepository(SubversionRepository):
       pass
     proc.stdout.close()
     proc.stderr.close()
-    rc = proc.wait()
+    if errout:
+      rc = proc.wait()
+    else:
+      rc = proc.poll()
     if rc:
       raise SvnCommandError(errout, cmd, rc)
     return text
@@ -840,7 +843,10 @@ class CmdLineSubversionRepository(SubversionRepository):
       pass
     proc.stdout.close()
     proc.stderr.close()
-    rc = proc.wait()
+    if errout:
+      rc = proc.wait()
+    else:
+      rc = proc.poll()
     if rc:
       raise SvnCommandError(errout, cmd, rc)
     return et
