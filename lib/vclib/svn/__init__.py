@@ -17,31 +17,50 @@ import os.path
 import re
 import urllib
 
+from vclib import ReposNotFound
+
+MODULE_SWIG_BINDINGS = 'swig_py'
+MODULE_COMMAND_LINE  = 'cmdline'
+access_module          = None
+default_access_module  = MODULE_SWIG_BINDINGS
+fallback_access_module = MODULE_COMMAND_LINE
+
 _re_url = re.compile('^(http|https|file|svn|svn\+[^:]+)://')
 
 def _canonicalize_path(path):
-  try:
-    import svn.core
-    return svn.core.svn_path_canonicalize(path)
-  except (AttributeError, ImportError):
-    # svn_path_canonicalize() appeared in 1.4.0 bindings
-    # and it may be not available swig Python binding.
-    pass
+  global access_module, _canonicalize_path
+  if (   access_module == MODULE_SWIG_BINDINGS
+      or (    access_module is None
+          and default_access_module == MODULE_SWIG_BINDINGS)):
+    try:
+      import svn.core
+      access_module = MODULE_SWIG_BINDINGS
+      _canonicalize_path = svn.core.svn_path_canonicalize
+      return svn.core.svn_path_canonicalize(path)
+    except AttributeError:
+      # svn_path_canonicalize() appeared in 1.4.0 bindings
+      pass
+    except ImportError:
+      # and it may be not available swig Python binding.
+      # use (experimental) fallback implementation
+      access_module = fallback_access_module
 
   # There's so much more that we *could* do here, but if we're
   # here at all its because there's a really old Subversion in
   # place, and those older Subversion versions cared quite a bit
   # less about the specifics of path canonicalization.
-  if re.search(_re_url, path):
-    return path.rstrip('/')
-  else:
-    return os.path.normpath(path)
-
+  def _canonicalize_path_internal(path):
+    if _re_url.search(path):
+      return path.rstrip('/')
+    else:
+      return os.path.normpath(path)
+  _canonicalize_path = _canonicalize_path_internal
+  return _canonicalize_path_internal(path)
 
 def canonicalize_rootpath(rootpath):
   # Try to canonicalize the rootpath using Subversion semantics.
   rootpath = _canonicalize_path(rootpath)
-  
+
   # ViewVC's support for local repositories is more complete and more
   # performant than its support for remote ones, so if we're on a
   # Unix-y system and we have a file:/// URL, convert it to a local
@@ -85,7 +104,7 @@ def find_root_in_parent(parent_path, rootname):
   """Search PARENT_PATH for a root named ROOTNAME, returning the
   canonicalized ROOTPATH of the root if found; return None if no such
   root is found."""
-  
+
   if not re.search(_re_url, parent_path):
     assert os.path.isabs(parent_path)
     rootpath = os.path.join(parent_path, rootname)
@@ -97,11 +116,20 @@ def find_root_in_parent(parent_path, rootname):
 
 def SubversionRepository(name, rootpath, authorizer, utilities, config_dir):
   rootpath = canonicalize_rootpath(rootpath)
-  if re.search(_re_url, rootpath):
-    import svn_ra
-    return svn_ra.RemoteSubversionRepository(name, rootpath, authorizer,
-                                             utilities, config_dir)
-  else:
-    import svn_repos
-    return svn_repos.LocalSubversionRepository(name, rootpath, authorizer,
+  if access_module == MODULE_SWIG_BINDINGS:
+    if re.search(_re_url, rootpath):
+      import svn_ra
+      return svn_ra.RemoteSubversionRepository(name, rootpath, authorizer,
                                                utilities, config_dir)
+    else:
+      import svn_repos
+      return svn_repos.LocalSubversionRepository(name, rootpath, authorizer,
+                                                 utilities, config_dir)
+  elif access_module == MODULE_COMMAND_LINE:
+    import svn_commandline
+    return svn_commandline.CmdLineSubversionRepository(name, rootpath,
+                                                       authorizer,
+                                                       utilities, config_dir)
+  else:
+    raise ReposNotFound('no module to access Subversion Repository is'
+                        'available')
