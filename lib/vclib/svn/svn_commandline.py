@@ -33,8 +33,8 @@ else:
   from urllib import quote as _quote
 
 import vclib
-from . import _canonicalize_path, _re_url
-from .svn_common import SubversionRepository, Revision, SVNChangedPath, \
+from __init__ import _canonicalize_path, _re_url
+from svn_common import SubversionRepository, Revision, SVNChangedPath, \
                         _compare_paths, _path_parts, _getpath, _cleanup_path
 
 
