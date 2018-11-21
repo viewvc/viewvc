@@ -508,7 +508,10 @@ class CmdLineSubversionRepository(SubversionRepository):
       revision = long(commit_elm.attrib['revision'])
       author = commit_elm.findtext('author')
       date = _datestr_to_date(commit_elm.findtext('date'))
-      line = fp.readline() if include_text else None
+      if include_test:
+        line = fp.readline()
+      else:
+        line = None
 
       prev_rev = None
       if revision > 1:
