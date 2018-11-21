@@ -17,7 +17,7 @@
 
 import sys
 
-PY3 = (sys.version_info[0]) >= 3)
+PY3 = (sys.version_info[0] >= 3)
 
 # Set to non-zero to track and print processing times
 SHOW_TIMES = 0
