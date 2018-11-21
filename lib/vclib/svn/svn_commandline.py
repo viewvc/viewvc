@@ -78,15 +78,12 @@ def _datestr_to_date(datestr, is_float=False):
   m = _re_iso8601.match(datestr)
   if m:
     ts = calendar.timegm(time.strptime(m.group('ts'), '%Y-%m-%dT%H:%M:%S'))
-    subsec = m.group('subsec')
-    if subsec is None:
-      subsec = 0.0
-    else:
-      subsec = float(subsec)
     if is_float:
-      return float(ts) + subsec
-    else:
-      return ts
+      ts = float(ts)
+      subsec = m.group('subsec')
+      if subsec is not None:
+        ts += float(subsec)
+    return ts
   else:
     # unknown format
     return None
