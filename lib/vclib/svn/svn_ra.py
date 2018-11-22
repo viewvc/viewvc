@@ -18,8 +18,15 @@ import os
 import re
 import tempfile
 import time
-import urllib
-from svn_repos import Revision, SVNChangedPath, _datestr_to_date, \
+if sys.version_info[0] >= 3:
+  PY3 = True
+  import functools
+  from urllib.parse import quote as _quote
+else:
+  PY3 = False
+  from urllib import quote as _quote
+
+from .svn_repos import Revision, SVNChangedPath, _datestr_to_date, \
                       _compare_paths, _path_parts, _cleanup_path, \
                       _rev2optrev, _fix_subversion_exception, \
                       _split_revprops, _canonicalize_path
@@ -28,7 +35,7 @@ from svn import core, delta, client, wc, ra
 
 ### Require Subversion 1.3.1 or better. (for svn_ra_get_locations support)
 if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 3, 1):
-  raise Exception, "Version requirement not met (needs 1.3.1 or better)"
+  raise Exception("Version requirement not met (needs 1.3.1 or better)")
 
 
 ### BEGIN COMPATABILITY CODE ###
@@ -137,8 +144,12 @@ class LogCollector:
     msg, author, date, revprops = _split_revprops(log_entry.revprops)
     
     # Changed paths have leading slashes
-    changed_paths = paths.keys()
-    changed_paths.sort(lambda a, b: _compare_paths(a, b))
+    changed_paths = list(paths.keys())
+    if PY3:
+      changed_paths.sort(key=functools.cmp_to_key(
+                               lambda a, b: _compare_paths(a, b)))
+    else:
+      changed_paths.sort(lambda a, b: _compare_paths(a, b))
     this_path = None
     if self.path in changed_paths:
       this_path = self.path
@@ -178,7 +189,7 @@ def cat_to_tempfile(svnrepos, path, rev):
 
 class SelfCleanFP:
   def __init__(self, path):
-    self._fp = open(path, 'r')
+    self._fp = open(path, 'rb')
     self._path = path
     self._eof = 0
     
@@ -187,13 +198,13 @@ class SelfCleanFP:
       chunk = self._fp.read(len)
     else:
       chunk = self._fp.read()
-    if chunk == '':
+    if chunk == b'':
       self._eof = 1
     return chunk
   
   def readline(self):
     chunk = self._fp.readline()
-    if chunk == '':
+    if chunk == b'':
       self._eof = 1
     return chunk
 
@@ -326,7 +337,7 @@ class RemoteSubversionRepository(vclib.Repository):
       entry.rev = str(dirent.created_rev)
       entry.size = dirent.size
       entry.lockinfo = None
-      if locks.has_key(entry.name):
+      if entry.name in locks:
         entry.lockinfo = locks[entry.name].owner
 
   def itemlog(self, path_parts, rev, sortby, first, limit, options):
@@ -344,9 +355,9 @@ class RemoteSubversionRepository(vclib.Repository):
       list_url = self._geturl(self._getpath(path_parts[:-1]))
       dirents, locks = list_directory(list_url, _rev2optrev(rev),
                                       _rev2optrev(rev), 0, self.ctx)
-      if locks.has_key(basename):
+      if basename in locks:
         lockinfo = locks[basename].owner
-      if dirents.has_key(basename):
+      if basename in dirents:
         size_in_rev = dirents[basename].size
     
     # Special handling for the 'svn_latest_log' scenario.
@@ -470,7 +481,7 @@ class RemoteSubversionRepository(vclib.Repository):
       info1 = p1, _date_from_rev(r1), r1
       info2 = p2, _date_from_rev(r2), r2
       return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args)
-    except core.SubversionException, e:
+    except core.SubversionException as e:
       _fix_subversion_exception(e)
       if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
         raise vclib.InvalidRevision
@@ -478,7 +489,7 @@ class RemoteSubversionRepository(vclib.Repository):
 
   def isexecutable(self, path_parts, rev):
     props = self.itemprops(path_parts, rev) # does authz-check
-    return props.has_key(core.SVN_PROP_EXECUTABLE)
+    return core.SVN_PROP_EXECUTABLE in props
   
   def filesize(self, path_parts, rev):
     path = self._getpath(path_parts)
@@ -509,7 +520,7 @@ class RemoteSubversionRepository(vclib.Repository):
   def _geturl(self, path=None):
     if not path:
       return self.rootpath
-    path = self.rootpath + '/' + urllib.quote(path)
+    path = self.rootpath + '/' + _quote(path)
     return _canonicalize_path(path)
 
   def _get_dirents(self, path, rev):
@@ -604,11 +615,14 @@ class RemoteSubversionRepository(vclib.Repository):
       # hash, and in Subversion 1.6, it's offered but broken.
       try: 
         changed_paths = log_entry.changed_paths2
-        paths = (changed_paths or {}).keys()
+        paths = list((changed_paths or {}).keys())
       except:
         changed_paths = log_entry.changed_paths
-        paths = (changed_paths or {}).keys()
-      paths.sort(lambda a, b: _compare_paths(a, b))
+        paths = list((changed_paths or {}).keys())
+      if PY3:
+        paths.sort(key=functools.cmp_to_key(lambda a, b: _compare_paths(a, b)))
+      else:
+        paths.sort(lambda a, b: _compare_paths(a, b))
 
       # If we get this far, our caller needs changed-paths, or we need
       # them for authz-related sanitization.
@@ -718,7 +732,7 @@ class RemoteSubversionRepository(vclib.Repository):
   def get_location(self, path, rev, old_rev):
     try:
       results = ra.get_locations(self.ra_session, path, rev, [old_rev])
-    except core.SubversionException, e:
+    except core.SubversionException as e:
       _fix_subversion_exception(e)
       if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
         raise vclib.ItemNotFound(path)
@@ -763,7 +777,7 @@ class RemoteSubversionRepository(vclib.Repository):
     else:
       direction = 1
       while peg_revision != limit_revision:
-        mid = (peg_revision + 1 + limit_revision) / 2
+        mid = (peg_revision + 1 + limit_revision) // 2
         try:
           path = self.get_location(path, peg_revision, mid)
         except vclib.ItemNotFound:
@@ -788,7 +802,7 @@ class RemoteSubversionRepository(vclib.Repository):
     pairs = client.svn_client_proplist2(url, _rev2optrev(rev),
                                         _rev2optrev(rev), 0, self.ctx)
     props = pairs and pairs[0][1] or {}
-    if not props.has_key(core.SVN_PROP_SPECIAL):
+    if core.SVN_PROP_SPECIAL not in props:
       return None
     pathspec = ''
     ### FIXME: We're being a touch sloppy here, first by grabbing the
