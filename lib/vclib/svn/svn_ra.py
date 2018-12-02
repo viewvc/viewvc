@@ -179,12 +179,11 @@ class LogCollector:
 def cat_to_tempfile(svnrepos, path, rev):
   """Check out file revision to temporary file"""
   fd, temp = tempfile.mkstemp()
-  os.close(fd)
-  stream = core.svn_stream_from_aprfile(temp)
+  fp = os.fdopen(fd, 'wb')
   url = svnrepos._geturl(path)
-  client.svn_client_cat(core.Stream(stream), url, _rev2optrev(rev),
+  client.svn_client_cat(fp, url, _rev2optrev(rev),
                         svnrepos.ctx)
-  core.svn_stream_close(stream)
+  fp.close()
   return temp
 
 class SelfCleanFP:
