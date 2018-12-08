@@ -353,7 +353,10 @@ class BinCVSRepository(BaseCVSRepository):
     else:
       cmd = os.path.join(self.utilities.rcs_dir, rcs_cmd)
       args = rcs_args
-    stderr = subprocess.STDOUT if capture_err else None
+    if os.versioninfo[:2] >= (3, 3):
+      stderr = subprocess.STDOUT if capture_err else subprocess.DEVNULL
+    else:
+      stderr = subprocess.STDOUT if capture_err else None
     txtmode = ('t' in mode) or ('b' not in mode)
     if PY3:
       if txtmode:
