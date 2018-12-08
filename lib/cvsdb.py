@@ -251,6 +251,8 @@ class CheckinDatabase:
         return self.get("repositories", "repository", id)
 
     def SQLGetDescriptionID(self, description, auto_set = 1):
+        if PY3:
+            description = reencode(description)
         ## lame string hash, blame Netscape -JMP
         hash = len(description)
 
