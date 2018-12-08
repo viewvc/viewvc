@@ -357,15 +357,11 @@ class BinCVSRepository(BaseCVSRepository):
     txtmode = ('t' in mode) or ('b' not in mode)
     if PY3:
       if txtmode:
-          # work arround: as MySQLdb for Python 3 supports only utf-8 charset
-          # to connect db server and it doesn't allow surrogates to encode
-          # utf-8, use 'xmlcharrefreplace' errors handler instead of
-          # 'surrogateescape'.
           proc = subprocess.Popen([cmd] + list(args), bufsize = -1,
                                   stdout=subprocess.PIPE,
                                   stderr=stderr,
                                   encoding=encoding,
-                                  errors='xmlcharrefreplace',
+                                  errors='surrogateescape',
                                   close_fds=(sys.platform != "win32"))
       else:
           proc = subprocess.Popen([cmd] + list(args), bufsize = -1,
