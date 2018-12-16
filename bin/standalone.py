@@ -79,7 +79,7 @@ class Options:
 class StandaloneServer(sapi.CgiServer):
   """Custom sapi interface that uses a BaseHTTPRequestHandler HANDLER
   to generate output."""
-  
+
   def __init__(self, handler):
     sapi.CgiServer.__init__(self, inheritableOut = sys.platform != "win32")
     self.handler = handler
@@ -89,8 +89,8 @@ class StandaloneServer(sapi.CgiServer):
       self.headerSent = 1
       if status is None:
         statusCode = 200
-        statusText = 'OK'       
-      else:        
+        statusText = 'OK'
+      else:
         p = status.find(' ')
         if p < 0:
           statusCode = int(status)
@@ -117,7 +117,7 @@ class AuthenticationException(Exception):
 
 class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
   """Custom HTTP request handler for ViewVC."""
-  
+
   def do_GET(self):
     """Serve a GET request."""
     self.handle_request('GET')
@@ -135,7 +135,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       # non-empty script_alias, automatically redirect to the
       # script_alias.  Otherwise, just return a 404 and shrug.
       if (not self.path or self.path == "/") and options.script_alias:
-        new_url = self.server.url + options.script_alias + '/'
+        new_url = options.script_alias + '/'
         self.send_response(301, "Moved Permanently")
         self.send_header("Content-type", "text/html")
         self.send_header("Location", new_url)
@@ -171,7 +171,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
    and password.</p>
 </body>
 </html>""")
-      
+
   def is_viewvc(self):
     """Check whether self.path is, or is a child of, the ScriptAlias"""
     if not options.script_alias:
@@ -196,7 +196,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     except:
       pass
     return False
-    
+
   def run_viewvc(self):
     """Run ViewVC to field a single request."""
 
@@ -225,11 +225,10 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.username = username
 
     # Setup the environment in preparation of executing ViewVC's core code.
-    env = os.environ  
-    
+    env = os.environ
+
     scriptname = options.script_alias and '/' + options.script_alias or ''
 
-    viewvc_url = self.server.url[:-1] + scriptname
     rest = self.path[len(scriptname):]
     i = rest.rfind('?')
     if i >= 0:
@@ -244,7 +243,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         del env[k]
     for k in ('QUERY_STRING', 'REMOTE_HOST', 'CONTENT_LENGTH',
               'HTTP_USER_AGENT', 'HTTP_COOKIE'):
-      if env.has_key(k): 
+      if env.has_key(k):
         env[k] = ""
 
     # XXX Much of the following could be prepared ahead of time!
@@ -292,7 +291,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     # AUTH_TYPE
     # REMOTE_IDENT
     # XXX Other HTTP_* headers
-      
+
     # Preserve state, because we execute script in current process:
     save_argv = sys.argv
     save_stdin = sys.stdin
@@ -310,7 +309,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     # But we no longer use pipe_cmds.  So at the very least, the
     # comment is stale.  Is the code okay, though?
     if sys.platform != "win32":
-      save_realstdout = os.dup(1) 
+      save_realstdout = os.dup(1)
     try:
       try:
         sys.stdout = self.wfile
@@ -335,10 +334,9 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 class ViewVCHTTPServer(BaseHTTPServer.HTTPServer):
   """Customized HTTP server for ViewVC."""
-  
+
   def __init__(self, host, port, callback):
     self.address = (host, port)
-    self.url = 'http://%s:%d/' % (host, port)
     self.callback = callback
     BaseHTTPServer.HTTPServer.__init__(self, self.address, self.handler)
 
@@ -451,11 +449,11 @@ Options:
                              specified, ViewVC will look for a configuration
                              file in its installation tree, falling back to
                              built-in default values.
-                             
+
   --daemon (-d)              Background the server process.
 
   --help                     Show this usage message and exit.
-  
+
   --host=HOSTNAME (-h)       Listen on HOSTNAME.  Required for access from a
                              remote machine.  [default: %(host)s]
 
@@ -505,7 +503,7 @@ def main(argv):
                'repository=',
                'script-alias=',
                ]
-    
+
   opt_daemon = False
   opt_host = None
   opt_port = None
@@ -515,7 +513,7 @@ def main(argv):
   opt_repositories = []
 
   # Parse command-line options.
-  try:  
+  try:
     opts, args = getopt.getopt(argv[1:], short_opts, long_opts)
     for opt, val in opts:
       if opt in ['--help']:
@@ -576,7 +574,7 @@ def main(argv):
       options.repositories[rootname] = repository
   except BadUsage, err:
     badusage(str(err))
-      
+
   # Fork if we're in daemon mode.
   if opt_daemon:
     pid = os.fork()
@@ -585,7 +583,7 @@ def main(argv):
 
   # Finaly, start the server.
   def ready(server):
-    print 'server ready at %s%s' % (server.url, options.script_alias)
+    print 'server ready at http://%s:%s/%s' % (server.address[0], server.address[1], options.script_alias)
   serve(options.host, options.port, ready)
 
 
