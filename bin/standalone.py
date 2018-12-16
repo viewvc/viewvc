@@ -183,6 +183,8 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       return 1
     if self.path[:alias_len+2] == '/' + options.script_alias + '?':
       return 1
+    if self.path == '/robots.txt':
+      return 1
     return 0
 
   def validate_password(self, htpasswd_file, username, password):
@@ -223,6 +225,16 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       if not self.validate_password(options.htpasswd_file, username, password):
         raise AuthenticationException()
       self.username = username
+
+    # Handle /robots.txt request (after authentication)
+    # TODO: If robots.txt exists in docroot, pass that through instead, else print this:
+    if self.path == '/robots.txt':
+      self.send_response(200, 'OK')
+      self.send_header('Content-type', 'text/plain')
+      self.end_headers()
+      self.wfile.write('User-agent: *\n')
+      self.wfile.write('Disallow: /\n')
+      return
 
     # Setup the environment in preparation of executing ViewVC's core code.
     env = os.environ
