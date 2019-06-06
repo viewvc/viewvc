@@ -2,7 +2,7 @@ Version 1.1.28 (released ??-???-????)
 
   * 
 
-Version 1.1.27 (released 06-Sun-2019)
+Version 1.1.27 (released 06-Jun-2019)
 
   * suppress stack traces (with option to show) (#140)
   * distinguish text/binary/image files by icons (#166, #175)
