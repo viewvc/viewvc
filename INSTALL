@@ -210,88 +210,98 @@ APACHE CONFIGURATION
 
 3) Configure Apache to expose ViewVC to users at the URL of your choice.
 
-   ViewVC provides several different ways to do this, depending on the
-   Apache modules that you have installed:
+   ViewVC provides several different ways to do this.  Choose one of
+   the following methods:
 
-   -----------------------------------------
-   CGI Script (requires mod_cgi or mod_cgid)
-   -----------------------------------------
+   -----------------------------------
+   METHOD A:  CGI mode via ScriptAlias
+   -----------------------------------
+   The ScriptAlias directive is very useful for pointing 
+   directly to the viewvc.cgi script.  Simply insert a line containing
 
-   The typical installation of ViewVC has it running as a CGI script under
-   Apache, but there are several different ways to make this happen.
-
-   One of the easiest ways to use the ScriptAlias directive, which handles
-   both the recognition of the ViewVC CGI program as an executable script
-   and its exposure at a given URL.  You do this as simply as:
-
-      # Expose the ViewVC script.
       ScriptAlias /viewvc <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/viewvc.cgi
 
-   Another approach is to copy the ViewVC CGI scripts (everything in the
-   <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/ directory) into your server's
-   default /cgi-bin/ directory.  This will automatically expose ViewVC
-   in the URL space.  You'll probably need to specify the location of your
-   viewvc.conf files in this scenario using the SetEnv directive:
-   
-      SetEnv VIEWVC_CONF_PATHNAME /etc/viewvc.conf
+   into your httpd.conf file.  Choose the location in httpd.conf where 
+   also the other ScriptAlias lines reside.  Some examples:
 
-   Finally, you could copy the ViewVC CGI scripts as above into some other
-   directory on your server and configure Apache to execute CGI scripts
-   found in that directory.  Add these directives:
+      ScriptAlias /viewvc /usr/local/viewvc-1.0/bin/cgi/viewvc.cgi
+      ScriptAlias /query /usr/local/viewvc-1.0/bin/cgi/query.cgi
+
+   ----------------------------------------
+   METHOD B:  CGI mode in cgi-bin directory
+   ----------------------------------------
+   Copy the CGI scripts from 
+   <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/*.cgi
+   to the /cgi-bin/ directory configured in your httpd.conf file.
+
+   You can override configuration file location using:
+
+       SetEnv VIEWVC_CONF_PATHNAME /etc/viewvc.conf
+   
+   ------------------------------------------
+   METHOD C:  CGI mode in ExecCGI'd directory
+   ------------------------------------------
+   Copy the CGI scripts from 
+   <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/*.cgi
+   to the directory of your choosing in the Document Root adding the following
+   Apache directives for the directory in httpd.conf or an .htaccess file:
 
       Options +ExecCGI
       AddHandler cgi-script .cgi
-
-   either to a <Directory> block for that directory, or to a .htaccess file
-   dropped into the directory itself.  (In this latter situation, you'll need
-   to specify "AllowOverride All" or "AllowOverride Options FileInfo"
-   for that directory so that .htaccess file gets recognized at all.)
+     
+   NOTE: For this to work mod_cgi has to be loaded.  And for the .htaccess file
+   to be effective, "AllowOverride All" or "AllowOverride Options FileInfo"
+   needs to have been specified for the directory.
    
-   --------------------------------------
-   ModPython script (requires mod_python)
-   --------------------------------------
-
-   To use a mod_python-based installation of ViewVC, copy the Python scripts
-   and .htaccess file from  <VIEWVC_INSTALLATION_DIRECTORY>/bin/mod_python/
-   to a directory being served by Apache.  In httpd.conf, make sure that
-   "AllowOverride All" (or at least "AllowOverride FileInfo Options") are
-   enabled for the directory you copied the files to.
-
-   You can then override configuration file location using:
-
-      SetEnv VIEWVC_CONF_PATHNAME /etc/viewvc.conf
+   ------------------------------------------
+   METHOD D:  Using mod_python (if installed)
+   ------------------------------------------
+   Copy the Python scripts and .htaccess file from 
+   <VIEWVC_INSTALLATION_DIRECTORY>/bin/mod_python/
+   to a directory being served by Apache.
    
-   NOTE: If you are using mod_python under Apache 1.3 the tarball generation
+   In httpd.conf, make sure that "AllowOverride All" or at least 
+   "AllowOverride FileInfo Options" are enabled for the directory
+   you copied the files to.
+
+   You can override configuration file location using:
+
+       SetEnv VIEWVC_CONF_PATHNAME /etc/viewvc.conf
+   
+   NOTE: If you are using Mod_Python under Apache 1.3 the tarball generation
    feature may not work because it uses multithreading.  This works fine
    under Apache 2.
    
-   -------------------------------
-   WSGI Script (requires mod_wsgi)
-   -------------------------------
+   ----------------------------------------
+   METHOD E:  Using mod_wsgi (if installed)
+   ----------------------------------------
+   Copy the Python scripts file from
+   <VIEWVC_INSTALLATION_DIRECTORY>/bin/wsgi/
+   to the directory of your choosing.  Modify httpd.conf with the
+   following directives:
 
-   To use a mod_wsgi-based installation of ViewVC, copy the Python scripts
-   from <VIEWVC_INSTALLATION_DIRECTORY>/bin/wsgi/ to the directory of your
-   choosing.  As in the common CGI scenario, you can both declare the
-   ViewVC WSGI script as a runnable script and expose it at a particular
-   URL using a single WSGIScriptAlias directive:
-
-      # Expose the ViewVC script.
       WSGIScriptAlias /viewvc <VIEWVC_INSTALLATION_DIRECTORY>/bin/wsgi/viewvc.wsgi
+      WSGIScriptAlias /query <VIEWVC_INSTALLATION_DIRECTORY>/bin/wsgi/query.wsgi
 
    You'll probably also need the following directive because of the
    not-quite-sanctioned way that ViewVC manipulates Python objects.
 
       WSGIApplicationGroup %{GLOBAL}
 
-   NOTE: WSGI support in ViewVC is at quite rudimentary, bordering on
-   downright experimental.  Your mileage may vary.
+   NOTE: WSGI support in ViewVC is at this time quite rudimentary,
+   bordering on downright experimental.  Your mileage may vary.
 
-   -----------------------------------
-   FastCGI Script (requires mod_fcgid)
-   -----------------------------------
+   -----------------------------------------
+   METHOD F:  Using mod_fcgid (if installed)
+   -----------------------------------------
 
-   This uses ViewVC's WSGI support (from above) but with FastCGI, and is
-   a somewhat hybrid approach of several of the above methods.
+   This uses ViewVC's WSGI support (from above), but supports using FastCGI,
+   and is a somewhat hybrid approach of several of the above methods.
+
+   Especially if fcgi is already being used for other purposes, e.g. PHP,
+   also using fcgi can prevent the need for including additional modules
+   (e.g. mod_python or mod_wsgi) within Apache, which may help lessen Apache's
+   memory usage and/or help improve performance.
 
    This depends on mod_fcgid:
 
@@ -302,12 +312,11 @@ APACHE CONFIGURATION
       http://pypi.python.org/pypi/flup
       http://trac.saddi.com/flup
 
-   To expose ViewVC at a URL, use the same ScriptAlias direcive as is used
-   in the CGI scenario, but The following are some example httpd.conf fragments you can use to
+   The following are some example httpd.conf fragments you can use to
    support this configuration:
 
-      # Expose the ViewVC script.
-      ScriptAlias /viewvc <VIEWVC_INSTALLATION_DIRECTORY>/bin/wsgi/viewvc.fcgi
+      ScriptAlias /viewvc /usr/local/viewvc/bin/wsgi/viewvc.fcgi
+      ScriptAlias /query /usr/local/viewvc/bin/wsgi/query.fcgi
 
 4) [Optional] Provide direct access to icons, stylesheets, etc.
 
