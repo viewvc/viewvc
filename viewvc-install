@@ -323,6 +323,10 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
                          set_paths, prompt_replace, compile_it)
 
     # Check for .py and .pyc files that don't belong in installation.
+    # (Of course, if we didn't end up actually creating/populating
+    # destdir_path, we can skip this altogether.)
+    if not os.path.exists(destdir_path):
+        return
     for fname in os.listdir(destdir_path):
         if not os.path.isfile(os.path.join(destdir_path, fname)) or \
              not ((fname[-3:] == '.py' and fname not in files) or
