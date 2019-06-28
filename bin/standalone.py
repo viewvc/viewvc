@@ -331,6 +331,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
       save_realstdout = os.dup(1)
     try:
       try:
+        sys.argv = []
         sys.stdout = self.wfile
         if sys.platform != "win32":
           os.dup2(self.wfile.fileno(), 1)
