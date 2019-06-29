@@ -35,8 +35,11 @@ else:
     sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
 
 import getopt
+import subprocess
 
-import popen
+if sys.version_info[0] >= 3:
+    def raw_input(prompt=''):
+        return input(prompt)
 
 ## ------------------------------------------------------------------------
 ## Stuff common to all schemas
@@ -341,7 +344,7 @@ if __name__ == "__main__":
     # Create the database.
     dscript = DATABASE_SCRIPT_COMMON.replace("<dbname>", dbname)
     if version == "1.0":
-      print BONSAI_COMPAT
+      print(BONSAI_COMPAT)
       dscript = dscript + DATABASE_SCRIPT_VERSION_0
     else:
       dscript = dscript + DATABASE_SCRIPT_VERSION_1
@@ -355,17 +358,30 @@ if __name__ == "__main__":
     if port:
       cmd_args = cmd_args.append("--port=%s" % (port))
 
-    cmd = "mysql"
-    mysql = popen.popen(cmd, cmd_args, "w")
-    mysql.write(dscript)
-    status = mysql.close()
-
+    cmd = ["mysql"]
+    mysql = subprocess.Popen(cmd + cmd_args, bufsize=-1, stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                             universal_newlines=True,
+                             close_fds=(sys.platform != "win32"))
+    if ( sys.version_info[0] >= 3 and sys.version_info[1] >= 3):
+      try:
+        stdout_data = mysql.communicate(input=dscript, timeout=300)[0]
+        status = mysql.returncode
+      except subprocess.TimeoutExpired:
+        mysql.kill()
+        stdout_data = mysql.communicate()[0]
+        stdout_data += '\n[ERROR] Timeout expired while calling mysql process'
+        status = -1
+    else:
+      stdout_data = mysql.communicate(input=dscript)[0]
+      status = mysql.returncode
+    print(stdout_data)
     if status:
-      print "[ERROR] The database did not create sucessfully."
+      print("[ERROR] The database did not create sucessfully.")
       sys.exit(1)
 
-    print "Database created successfully.  Don't forget to configure the "
-    print "[cvsdb] section of your viewvc.conf file."
+    print("Database created successfully.  Don't forget to configure the ")
+    print("[cvsdb] section of your viewvc.conf file.")
   except KeyboardInterrupt:
     pass
   sys.exit(0)
