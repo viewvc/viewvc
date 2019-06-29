@@ -363,20 +363,19 @@ if __name__ == "__main__":
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                              universal_newlines=True,
                              close_fds=(sys.platform != "win32"))
-    mysql.stdin.write(dscript)
-    mysql.stdin.close()
-    status = mysql.poll()
-    if status is None:
-        if (    sys.version_info[0] >= 3
-            or (sys.version_info[0] == 2 and sys.version_info[1] > 6)):
-           try:
-               mysql.wait(300)
-           except subprocess.TimeoutExpired:
-               mysql.kill()
-               status = -1
-        else:
-           mysql.wait()
-
+    if ( sys.version_info[0] >= 3 and sys.version_info[1] >= 3):
+      try:
+        stdout_data = mysql.communicate(input=dscript, timeout=300)[0]
+        status = mysql.returncode
+      except subprocess.TimeoutExpired:
+        mysql.kill()
+        stdout_data = mysql.communicate()[0]
+        stdout_data += '\n[ERROR] Timeout expired while calling mysql process'
+        status = -1
+    else:
+      stdout_data = mysql.communicate(input=dscript)[0]
+      status = mysql.returncode
+    print(stdout_data)
     if status:
       print("[ERROR] The database did not create sucessfully.")
       sys.exit(1)
