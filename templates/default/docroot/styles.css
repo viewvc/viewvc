@@ -143,6 +143,7 @@ address { font-style: normal; display: inline; }
   font-size: 85%;
   text-align: right;
   margin-top: 5px;
+  padding-top: 15px;
 }
 
 
@@ -161,10 +162,10 @@ address { font-style: normal; display: inline; }
 
 /*** Table Rows ***/
 .vc_row_even {
-  background-color: rgb(95%,95%,95%);
+  background-color: rgb(98%,98%,98%);
 }
 .vc_row_odd {
-  background-color: rgb(90%,90%,90%);
+  background-color: rgb(96%,96%,96%);
 }
 
 
@@ -249,13 +250,31 @@ address { font-style: normal; display: inline; }
   border-right-width: 1px;
   text-align: right;
 }
+.vc_annotation_group_even {
+  background-color: rgb(95%,95%,85%);
+}
+.vc_annotation_group_odd {
+  background-color: rgb(90%,90%,80%);
+}
+.vc_annotation_group_thisrev {
+  background-color: rgb(100%,100%,60%);
+}
 .vc_file_line_text {
   border-right-width: 0px;
-  background-color: white;
   font-family: monospace;
   text-align: left;
-  white-space: pre;
+  white-space: -moz-pre-wrap; /* Mozilla based browsers */
+  white-space: -pre-wrap;     /* Opera 4 - 6 */
+  white-space: -o-pre-wrap;   /* Opera >= 7 */
+  white-space: pre-wrap;      /* CSS3 */
+  word-break: break-all;      /* IE 5.5+ */
   width: 100%;
+}
+.vc_row_even .vc_file_line_text {
+  background-color: rgb(98%,98%,98%);
+}
+.vc_row_odd .vc_file_line_text {
+  background-color: rgb(96%,96%,96%);
 }
 .pygments-c { color: #408080; font-style: italic } /* Comment */
 .pygments-err { border: 1px solid #FF0000 } /* Error */
@@ -322,7 +341,11 @@ address { font-style: normal; display: inline; }
 .vc_diff_plusminus { width: 1em; }
 .vc_diff_remove, .vc_diff_add, .vc_diff_changes1, .vc_diff_changes2 { 
   font-family: monospace; 
-  white-space: pre; 
+  white-space: -moz-pre-wrap; /* Mozilla based browsers */
+  white-space: -pre-wrap;     /* Opera 4 - 6 */
+  white-space: -o-pre-wrap;   /* Opera >= 7 */
+  white-space: pre-wrap;      /* CSS3 */
+  word-break: break-all;      /* IE 5.5+ */
 }
 .vc_diff_remove { background: rgb(100%,60%,60%); }
 .vc_diff_add { background: rgb(60%,100%,60%); }
@@ -357,7 +380,7 @@ table.vc_idiff tbody {
   white-space: -pre-wrap;     /* Opera 4 - 6 */
   white-space: -o-pre-wrap;   /* Opera >= 7 */
   white-space: pre-wrap;      /* CSS3 */
-  word-wrap: break-word;      /* IE 5.5+ */
+  word-break: break-all;      /* IE 5.5+ */
 }
 table.vc_idiff tbody th {
   background-color:#e0e0e0;

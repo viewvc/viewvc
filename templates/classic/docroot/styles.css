@@ -74,9 +74,6 @@ form { margin: 0; }
 .vc_row_odd {
   background-color: #f0f0f0;
 }
-.vc_row_special {
-  background-color: #ffff7f;
-}
 
 
 /*** Directory View ***/
@@ -125,13 +122,31 @@ form { margin: 0; }
   border-right-width: 1px;
   text-align: right;
 }
+.vc_annotation_group_even {
+  background-color: rgb(95%,95%,85%);
+}
+.vc_annotation_group_odd {
+  background-color: rgb(90%,90%,80%);
+}
+.vc_annotation_group_thisrev {
+  background-color: rgb(100%,100%,60%);
+}
 .vc_file_line_text {
   border-right-width: 0px;
-  background-color: white;
   font-family: monospace;
   text-align: left;
-  white-space: pre;
+  white-space: -moz-pre-wrap; /* Mozilla based browsers */
+  white-space: -pre-wrap;     /* Opera 4 - 6 */
+  white-space: -o-pre-wrap;   /* Opera >= 7 */
+  white-space: pre-wrap;      /* CSS3 */
+  word-break: break-all;      /* IE 5.5+ */
   width: 100%;
+}
+.vc_row_even .vc_file_line_text {
+  background-color: #ffffff;
+}
+.vc_row_odd .vc_file_line_text {
+  background-color: #fafafa;
 }
 .pygments-c { color: #408080; font-style: italic } /* Comment */
 .pygments-err { border: 1px solid #FF0000 } /* Error */
@@ -264,7 +279,7 @@ table.vc_idiff tbody {
   white-space: -pre-wrap;     /* Opera 4 - 6 */
   white-space: -o-pre-wrap;   /* Opera >= 7 */
   white-space: pre-wrap;      /* CSS3 */
-  word-wrap: break-word;      /* IE 5.5+ */
+  word-break: break-all;      /* IE 5.5+ */
 }
 table.vc_idiff tbody th {
   background-color:#e0e0e0;

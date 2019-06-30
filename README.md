@@ -47,6 +47,10 @@ Some notes for contributing to ViewVC's source code are include in our [HACKING.
 
 Feel free to use our [Issue Tracker](https://github.com/viewvc/viewvc/issues) to ask questions, make feature requests, report bugs, etc.  In yesteryear, we had mailing lists for this kind of thing, but those have been discontinued.
 
+## ViewVC Docker Images
+
+GitHub user @cmanley has graciously assembled Docker images for running ViewVC.  See his work at https://github.com/cmanley/viewvc-docker.
+
 ## License
 
 **Copyright © 1999-2017 The ViewCVS Group. All rights reserved.**

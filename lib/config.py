@@ -1,6 +1,6 @@
 # -*-python-*-
 #
-# Copyright (C) 1999-2018 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2019 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -443,6 +443,7 @@ class Config:
     self.options.log_pagesize = 0
     self.options.log_pagesextra = 3
     self.options.limit_changes = 100
+    self.options.stacktraces = 0
 
     self.templates.diff = None
     self.templates.directory = None

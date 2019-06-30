@@ -23,7 +23,7 @@
 </div>
 
 <div id="vc_logo">
-<a href="http://www.viewvc.org/"><img src="[docroot]/images/viewvc-logo.png" alt="ViewVC logotype" width="240" height="70" /></a>
+<a href="[home_href]"><img src="[docroot]/images/viewvc-logo.png" alt="ViewVC logotype" width="240" height="70" /></a>
 </div>
 
 <div id="vc_view_selection_group">

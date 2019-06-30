@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-python-*-
 #
-# Copyright (C) 1999-2018 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2019 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -313,6 +313,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       save_realstdout = os.dup(1) 
     try:
       try:
+        sys.argv = []
         sys.stdout = self.wfile
         if sys.platform != "win32":
           os.dup2(self.wfile.fileno(), 1)
@@ -359,6 +360,17 @@ class ViewVCHTTPServer(BaseHTTPServer.HTTPServer):
     if hasattr(socket, 'SOL_SOCKET') and hasattr(socket, 'SO_REUSEADDR'):
       self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     BaseHTTPServer.HTTPServer.server_bind(self)
+
+  def handle_error(self, request, client_address):
+    """Handle an error gracefully. use stderr instead of stdout
+    to avoid double fault.
+    """
+    sys.stderr.write('-'*40 + '\n')
+    sys.stderr.write('Exception happened during processing of request from '
+                     '%s\n' % str(client_address))
+    import traceback
+    traceback.print_exc()
+    sys.stderr.write('-'*40 + '\n')
 
 
 def serve(host, port, callback=None):

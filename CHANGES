@@ -7,6 +7,16 @@ Version 1.2.0 (released ??-???-????)
   * display revision numbers in CVS tag/branch selector (Tigris #546)
   * allow roots to have optional context (#58)
 
+Version 1.1.27 (released 06-Jun-2019)
+
+  * suppress stack traces (with option to show) (#140)
+  * distinguish text/binary/image files by icons (#166, #175)
+  * colorize alternating file content lines (#167)
+  * link to the instance root from the ViewVC logo (#168)
+  * display directory and root counts, too (#169)
+  * fix double fault error in standalone.py (#157)
+  * support timezone offsets with minutes piece (#176)
+
 --- NOTE: Issue references below this point are from Tigris.org ---
 
 Version 1.1.26 (released 24-Jan-2017)

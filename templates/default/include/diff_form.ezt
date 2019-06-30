@@ -1,5 +1,5 @@
 
-<div style="border-bottom: solid 1px black;">
+<div>
 <p id="diff">This form allows you to request diffs between any two
   revisions of this file.
   For each of the two "sides" of the diff,

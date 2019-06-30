@@ -143,6 +143,13 @@ td {
       Valid only when <var>pathtype</var> is <tt>file</tt>.</td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">home_href</td>
+  <td>String</td>
+  <td>URL of the root of ViewVC instance.  Depending on configuration,
+      this could be a link to either the root directory of
+      the <tt>default_root</tt> or to the roots listing.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">kv</td>
   <td>Object</td>
   <td>Representation of the object used by ViewVC for user-defined
@@ -1116,6 +1123,11 @@ td {
   <td>Hidden field name/value pairs for the page selection form.</td>
 </tr>
 <tr class="varlevel1">
+  <td class="varname">dirs_shown</td>
+  <td>String</td>
+  <td>Number of directories displayed.</td>
+</tr>
+<tr class="varlevel1">
   <td class="varname">entries</td>
   <td>List</td>
   <td>Set of objects which represent the entries of this directory.</td>
@@ -1167,6 +1179,19 @@ td {
   <td>String</td>
   <td>URL of the ViewVC revision graph view for the directory
       entry.</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">entries.is_binary</td>
+  <td>Boolean</td>
+  <td>Indicates whether the file's contents are not deemed to be
+      "human-readable".</td>
+</tr>
+<tr class="varlevel2">
+  <td class="varname">entries.is_viewable_image</td>
+  <td>Boolean</td>
+  <td>Indicates whether the file is a web-friendly image that can be
+      expected to display in-browser without additional plugins (JPEG,
+      GIF, or PNG).</td>
 </tr>
 <tr class="varlevel2">
   <td class="varname">entries.lockinfo</td>
@@ -2388,6 +2413,11 @@ td {
   <td>String</td>
   <td>Version control type of a configured repository.  Valid
       values: <tt>cvs</tt>, <tt>svn</tt>.</td>
+</tr>
+<tr class="varlevel1">
+  <td class="varname">roots_shown</td>
+  <td>List</td>
+  <td>Number of repositories displayed.</td>
 </tr>
 </tbody>
 </table>

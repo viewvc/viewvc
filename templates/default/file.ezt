@@ -115,7 +115,7 @@
 [else]
 
 [define last_rev]0[end]
-[define rowclass]vc_row_odd[end]
+[define annotation_group]odd[end]
 
 [if-any lines]
 <div id="vc_file">
@@ -131,14 +131,14 @@
 [for lines]
   [is lines.rev last_rev]
   [else]
-    [is rowclass "vc_row_even"]
-      [define rowclass]vc_row_odd[end]
+    [is annotation_group "even"]
+      [define annotation_group]odd[end]
     [else]
-      [define rowclass]vc_row_even[end]
+      [define annotation_group]even[end]
     [end]
   [end]
 
-  <tr class="[rowclass]" id="l[lines.line_number]">
+  <tr class="vc_row_[if-index lines even]even[else]odd[end] vc_annotation_group_[annotation_group] [is lines.rev rev]vc_annotation_group_thisrev[end]" id="l[lines.line_number]">
     <td class="vc_file_line_number"><a href="#l[lines.line_number]">[lines.line_number]</a></td>
 [is annotation "annotated"]
     <td class="vc_file_line_author">[is lines.rev last_rev]&nbsp;[else][lines.author][end]</td>

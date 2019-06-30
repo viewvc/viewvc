@@ -1,6 +1,6 @@
 # -*-python-*-
 #
-# Copyright (C) 1999-2018 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2019 The ViewCVS Group. All Rights Reserved.
 #
 # By using this file, you agree to the terms and conditions set forth in
 # the LICENSE.html file which can be found at the top level of the ViewVC
@@ -56,6 +56,11 @@ except (SyntaxError, ImportError):
   idiff = None
 
 debug.t_end('imports')
+
+# Initialize the system tracebacklimit value to 0, meaning stack
+# traces will carry only the top-level exception string.  This can be
+# overridden via configuration.
+sys.tracebacklimit = 0
 
 #########################################################################
 
@@ -1090,6 +1095,8 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
      annotate_href
      revision_href
      prefer_markup
+     is_viewable_image
+     is_binary
      
   """
   
@@ -1150,7 +1157,9 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
                download_text_href=download_text_href,
                annotate_href=annotate_href,
                revision_href=revision_href,
-               prefer_markup=ezt.boolean(prefer_markup))
+               prefer_markup=ezt.boolean(prefer_markup),
+               is_viewable_image=ezt.boolean(is_viewable_image(mime_type)),
+               is_binary=ezt.boolean(is_binary_file))
 
 
 # Matches URLs
@@ -1529,6 +1538,7 @@ def common_template_data(request, revision=None, mime_type=None):
     'download_href' : None,
     'download_text_href' : None,
     'graph_href': None,
+    'home_href': request.script_name or '/',
     'kv'  : request.kv,
     'lockinfo' : None,
     'log_href' : None,
@@ -1886,8 +1896,10 @@ def make_time_string(date, cfg):
         tz = -time.altzone
       else:
         tz = -time.timezone
-      tz = float(tz) / 3600.0
-      tz = '{0:+06.2f}'.format(tz).replace('.', ':')
+      if tz < 0:
+        tz = '-%02d:%02d' % (-tz // 3600, (-tz % 3600) // 60)
+      else:
+        tz = '+%02d:%02d' % (tz // 3600, (tz % 3600) // 60)
     else:
       tz = 'Z'
     return time.strftime('%Y-%m-%dT%H:%M:%S', tm) + tz
@@ -2252,6 +2264,7 @@ def view_roots(request):
   data = common_template_data(request)
   data.merge(TemplateData({
     'roots' : roots,
+    'roots_shown' : len(roots), 
     }))
   generate_page(request, "roots", data)
 
@@ -2325,7 +2338,7 @@ def view_directory(request):
 
   # loop through entries creating rows and changing these values
   rows = [ ]
-  num_displayed = 0
+  dirs_displayed = files_displayed = 0
   num_dead = 0
   
   # set some values to be used inside loop
@@ -2338,7 +2351,8 @@ def view_directory(request):
                 log_file=None, log_rev=None, graph_href=None, mime_type=None,
                 date=None, ago=None, view_href=None, log_href=None,
                 revision_href=None, annotate_href=None, download_href=None,
-                download_text_href=None, prefer_markup=ezt.boolean(0))
+                download_text_href=None, prefer_markup=ezt.boolean(0),
+                is_viewable_image=ezt.boolean(0), is_binary=ezt.boolean(0))
     if request.roottype == 'cvs' and file.absent:
       continue
     if cfg.options.hide_errorful_entries and file.errors:
@@ -2368,6 +2382,8 @@ def view_directory(request):
                              request.path_parts + [file.name]):
         continue
     
+      dirs_displayed += 1
+
       row.view_href = request.get_url(view_func=view_directory,
                                       where=where_prefix+file.name,
                                       pathtype=vclib.DIR,
@@ -2404,7 +2420,7 @@ def view_directory(request):
         if hideattic:
           continue
         
-      num_displayed = num_displayed + 1
+      files_displayed += 1
 
       file_where = where_prefix + file.name
       if request.roottype == 'svn': 
@@ -2420,6 +2436,8 @@ def view_directory(request):
       row.annotate_href = fvi.annotate_href
       row.revision_href = fvi.revision_href
       row.prefer_markup = fvi.prefer_markup
+      row.is_viewable_image = fvi.is_viewable_image
+      row.is_binary = fvi.is_binary
       row.log_href = request.get_url(view_func=view_log,
                                      where=file_where,
                                      pathtype=vclib.FILE,
@@ -2459,7 +2477,8 @@ def view_directory(request):
     'sortby_log_href' :    request.get_url(params={'sortby': 'log',
                                                    'sortdir': None},
                                            escape=1),
-    'files_shown' : num_displayed,
+    'files_shown' : files_displayed,
+    'dirs_shown' : dirs_displayed,
     'num_dead' : num_dead,
     'youngest_rev' : None,
     'youngest_rev_href' : None,
@@ -5133,6 +5152,9 @@ def load_config(pathname=None, server=None):
   cfg.set_defaults()
   cfg.load_config(pathname, env_get("HTTP_HOST"))
 
+  # Apply the stacktrace configuration immediately.
+  sys.tracebacklimit = cfg.options.stacktraces and 1000 or 0
+
   # Load mime types file(s), but reverse the order -- our
   # configuration uses a most-to-least preferred approach, but the
   # 'mimetypes' package wants things the other way around.
@@ -5141,7 +5163,7 @@ def load_config(pathname=None, server=None):
     files.reverse()
     files = map(lambda x, y=pathname: os.path.join(os.path.dirname(y), x), files)
     mimetypes.init(files)
-  
+
   debug.t_end('load-config')
   return cfg
 
@@ -5153,22 +5175,20 @@ def view_error(server, cfg):
     exc_dict['msg'] = server.escape(exc_dict['msg'])
   if exc_dict['stacktrace']:
     exc_dict['stacktrace'] = server.escape(exc_dict['stacktrace'])
-  handled = 0
-  
-  # use the configured error template if possible
+
+  # Use the configured error template if possible.
   try:
     if cfg and not server.headerSent:
       server.header(status=status)
       template = get_view_template(cfg, "error")
       template.generate(server.file(), exc_dict)
-      handled = 1
+      return
   except:
     pass
 
-  # but fallback to the old exception printer if no configuration is
-  # available, or if something went wrong
-  if not handled:
-    debug.PrintException(server, exc_dict)
+  # Fallback to the old exception printer if no configuration is
+  # available, or if something went wrong.
+  debug.PrintException(server, exc_dict)
 
 def main(server, cfg):
   try:
