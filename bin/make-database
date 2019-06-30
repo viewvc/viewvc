@@ -293,8 +293,9 @@ Options:
 
   --password=ARG      Use ARG as the password for the MySQL connection.
 
-  --timeout=ARG       Use ARG as the timeout for waiting MySQL to create
-                      database.
+  --timeout=ARG       Use ARG as the timeout in sec for waiting MySQL
+                      to create database if timeout feature is available.
+                      [Default: 300]
 
   --username=ARG      Use ARG as the username for the MySQL connection.
 
