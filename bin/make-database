@@ -15,11 +15,41 @@
 # MySQL 3.22 or later
 #
 # -----------------------------------------------------------------------
+#
+# INSTALL-TIME CONFIGURATION
+#
+# These values will be set during the installation process. During
+# development, they will remain None.
+#
 
-import os
+LIBRARY_DIR = None
+CONF_PATHNAME = None
+
+# Adjust sys.path to include our library directory
 import sys
-import popen2
+import os
+
+if LIBRARY_DIR:
+  sys.path.insert(0, LIBRARY_DIR)
+else:
+  sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
+
 import getopt
+
+if sys.hexversion >= 0x3030000:
+  import subprocess
+  subprocess.has_timeout = True
+else:
+  try:
+    import subprocess32 as subprocess
+    subprocess.has_timeout = True
+  except ImportError:
+    import subprocess
+    subprocess.has_timeout = False
+
+if sys.version_info[0] >= 3:
+    def raw_input(prompt=''):
+        return input(prompt)
 
 ## ------------------------------------------------------------------------
 ## Stuff common to all schemas
@@ -256,19 +286,23 @@ Options:
                       [Default: ViewVC]
 
   --help              Show this usage message.
-  
+
   --hostname=ARG      Use ARG as the hostname for the MySQL connection.
 
   --port=ARG          Use ARG as the port for the MySQL connection.
 
   --password=ARG      Use ARG as the password for the MySQL connection.
 
+  --timeout=ARG       Use ARG as the timeout in sec for waiting MySQL
+                      to create database if timeout feature is available.
+                      [Default: 300]
+
   --username=ARG      Use ARG as the username for the MySQL connection.
 
   --version=ARG       Create the database using the schema employed by
                       version ARG of ViewVC.  Valid values are:
                       [ "1.0" ]
-                            
+
 """ % (os.path.basename(sys.argv[0])))
   if errmsg is not None:
     stream.write("[ERROR] %s.\n" % (errmsg))
@@ -280,6 +314,7 @@ if __name__ == "__main__":
   try:
     # Parse the command-line options, if any.
     dbname = version = hostname = port = username = password = None
+    timeout = 300
     opts, args = getopt.getopt(sys.argv[1:], '', [ 'dbname=',
                                                    'help',
                                                    'hostname=',
@@ -287,6 +322,7 @@ if __name__ == "__main__":
                                                    'password=',
                                                    'username=',
                                                    'version=',
+                                                   'timeout=',
                                                    ])
     if len(args) > 0:
       usage_and_exit("Unexpected command-line parameters")
@@ -308,6 +344,8 @@ if __name__ == "__main__":
           version = value
         else:
           usage_and_exit("Invalid version specified")
+      elif subprocess.has_timeout and name == '--timeout':
+        timeout = int(value)
 
     # Prompt for information not provided via command-line options.
     if hostname is None:
@@ -324,40 +362,45 @@ if __name__ == "__main__":
     # Create the database.
     dscript = DATABASE_SCRIPT_COMMON.replace("<dbname>", dbname)
     if version == "1.0":
-      print BONSAI_COMPAT
+      print(BONSAI_COMPAT)
       dscript = dscript + DATABASE_SCRIPT_VERSION_0
     else:
       dscript = dscript + DATABASE_SCRIPT_VERSION_1
 
     # Calculate command arguments.
-    cmd_args = "--user=%s --password=%s" % (username, password)
+    cmd_args = [("--user=%s" % username), ("--password=%s" % password)]
     if hostname or port:
-      cmd_args = cmd_args + " --protocol=TCP"
+      cmd_args.append("--protocol=TCP")
     if hostname:
-      cmd_args = cmd_args + " --host=%s" % (hostname)
+      cmd_args.append("--host=%s" % hostname)
     if port:
-      cmd_args = cmd_args + " --port=%s" % (port)
-      
-    if sys.platform == "win32":
-      cmd = "mysql %s" % (cmd_args)
-      mysql = os.popen(cmd, "w") # popen2.Popen3 is not provided on windows
-      mysql.write(dscript)
-      status = mysql.close()
-    else:
-      cmd = "{ mysql %s ; } 2>&1" % (cmd_args)
-      pipes = popen2.Popen3(cmd)
-      pipes.tochild.write(dscript)
-      pipes.tochild.close()
-      print pipes.fromchild.read()
-      status = pipes.wait()
+      cmd_args.append("--port=%s" % port)
 
+    cmd = ["mysql"]
+    mysql = subprocess.Popen(cmd + cmd_args, bufsize=-1, stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                             universal_newlines=True,
+                             close_fds=(sys.platform != "win32"))
+    if (subprocess.has_timeout):
+      try:
+        stdout_data = mysql.communicate(input=dscript, timeout=timeout)[0]
+        status = mysql.returncode
+      except subprocess.TimeoutExpired:
+        mysql.kill()
+        stdout_data = mysql.communicate()[0]
+        stdout_data += '\n[ERROR] Timeout expired while calling mysql process'
+        status = -1
+    else:
+      stdout_data = mysql.communicate(input=dscript)[0]
+      status = mysql.returncode
+    print(stdout_data)
     if status:
-      print "[ERROR] The database did not create sucessfully."
+      print("[ERROR] The database did not create sucessfully.")
       sys.exit(1)
 
-    print "Database created successfully.  Don't forget to configure the "
-    print "[cvsdb] section of your viewvc.conf file."
+    print("Database created successfully.  Don't forget to configure the ")
+    print("[cvsdb] section of your viewvc.conf file.")
   except KeyboardInterrupt:
     pass
   sys.exit(0)
-    
+
