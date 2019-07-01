@@ -3833,8 +3833,8 @@ class DiffDescription:
 
   def _temp_file(self, val):
     '''Create a temporary file with content from val'''
-    fn = tempfile.mktemp()
-    fp = open(fn, "wb")
+    fd, fn = tempfile.mkstemp()
+    fp = os.fdopen(fd, "wb")
     if val:
       fp.write(val)
     fp.close()
