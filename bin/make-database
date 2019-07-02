@@ -76,7 +76,7 @@ CREATE TABLE branches (
 DROP TABLE IF EXISTS checkins;
 CREATE TABLE checkins (
   type enum('Change','Add','Remove'),
-  ci_when datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+  ci_when datetime DEFAULT '1000-01-01 00:00:00' NOT NULL,
   whoid mediumint(9) DEFAULT '0' NOT NULL,
   repositoryid mediumint(9) DEFAULT '0' NOT NULL,
   dirid mediumint(9) DEFAULT '0' NOT NULL,
@@ -168,7 +168,7 @@ CREATE TABLE branches (
 DROP TABLE IF EXISTS commits;
 CREATE TABLE commits (
   type enum('Change','Add','Remove'),
-  ci_when datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+  ci_when datetime DEFAULT '1000-01-01 00:00:00' NOT NULL,
   whoid mediumint(9) DEFAULT '0' NOT NULL,
   repositoryid mediumint(9) DEFAULT '0' NOT NULL,
   dirid mediumint(9) DEFAULT '0' NOT NULL,
