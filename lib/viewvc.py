@@ -15,7 +15,7 @@
 # -----------------------------------------------------------------------
 from __future__ import print_function
 
-__version__ = '1.2-dev'
+__version__ = '1.3-dev'
 
 # this comes from our library; measure the startup time
 import debug
