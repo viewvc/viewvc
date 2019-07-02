@@ -26,7 +26,7 @@ The only hard software requirement for running ViewVC is a suitable version of P
 
 *   [ViewVC 1.2.x](https://raw.githubusercontent.com/viewvc/viewvc/1.2.x/INSTALL)
 *   [ViewVC 1.1.x (security fixes only)](https://raw.githubusercontent.com/viewvc/viewvc/1.1.x/INSTALL)
-*   [Unreleased bleeding edge (1.2-dev)](https://raw.githubusercontent.com/viewvc/viewvc/master/INSTALL)
+*   [Unreleased bleeding edge (1.3-dev)](https://raw.githubusercontent.com/viewvc/viewvc/master/INSTALL)
 
 ## Getting ViewVC
 
