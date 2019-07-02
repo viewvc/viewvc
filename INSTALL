@@ -19,7 +19,7 @@ Congratulations on getting this far. :-)
 
     In General:
 
-      * Python 2, version 2.4 or later (sorry, no 3.x support yet)
+      * Python 2, version 2.7 or later (sorry, no 3.x support yet)
           (http://www.python.org/)
 
     For CVS Support: 
@@ -196,10 +196,10 @@ APACHE CONFIGURATION
         # Allow from all
       </Directory>
 
-   For example, if ViewVC is installed in /usr/local/viewvc-1.0 on
+   For example, if ViewVC is installed in /usr/local/viewvc-1.2 on
    your system:
 
-      <Directory /usr/local/viewvc-1.0>
+      <Directory /usr/local/viewvc-1.2>
         # For Apache 2.4.x, use this:
         Require all granted
 
@@ -224,8 +224,8 @@ APACHE CONFIGURATION
    into your httpd.conf file.  Choose the location in httpd.conf where 
    also the other ScriptAlias lines reside.  Some examples:
 
-      ScriptAlias /viewvc /usr/local/viewvc-1.0/bin/cgi/viewvc.cgi
-      ScriptAlias /query /usr/local/viewvc-1.0/bin/cgi/query.cgi
+      ScriptAlias /viewvc /usr/local/viewvc-1.2/bin/cgi/viewvc.cgi
+      ScriptAlias /query /usr/local/viewvc-1.2/bin/cgi/query.cgi
 
    ----------------------------------------
    METHOD B:  CGI mode in cgi-bin directory
