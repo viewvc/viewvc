@@ -51,6 +51,7 @@ for PLATFORM in unix windows; do
 
   # Remove some not useful stuff
   for JUNK in .gitignore \
+              README.md \
               elemx \
               notes \
               tests \
