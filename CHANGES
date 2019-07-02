@@ -7,6 +7,7 @@ Version 1.2.0 (released ??-???-????)
   * display revision numbers in CVS tag/branch selector (Tigris #546)
   * allow roots to have optional context (#58)
   * use a more secure temporary file generator (#159)
+  * fix problems with make-database and special characters (#141, #182)
 
 Version 1.1.27 (released 06-Jun-2019)
 
