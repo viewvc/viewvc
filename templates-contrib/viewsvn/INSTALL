@@ -99,7 +99,6 @@ show_logs = 1
 show_log_in_markup = 1
 cross_copies = 0
 use_localtime = 1
-py2html_path = .
 short_log_len = 80
 use_enscript = 0
 enscript_path =
