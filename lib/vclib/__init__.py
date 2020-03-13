@@ -14,7 +14,6 @@
 such as CVS.
 """
 
-import types
 import io
 
 
@@ -326,7 +325,7 @@ class ItemNotFound(Error):
   def __init__(self, path):
     # use '/' rather than os.sep because this is for user consumption, and
     # it was defined using URL separators
-    if type(path) in (types.TupleType, types.ListType):
+    if isinstance(path, tuple) or isinstance(path, list):
       path = '/'.join(path)
     Error.__init__(self, path)
 
