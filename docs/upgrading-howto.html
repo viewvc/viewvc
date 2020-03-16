@@ -79,9 +79,71 @@ td {
 
 <p>This section discusses how to upgrade ViewVC 1.1.x to ViewVC 1.2.x.</p>
 
-<p>### TODO ###</p>
+<div class="h3">
+<h3>Minimum Python Version Changed</h3>
+
+<p>ViewVC 1.2 requires Python 2, with a minimum version of Python
+   2.4.  Sorry, there's no Python 3 support yet.</p>
+
+<p>As of January 1, 2020, Python 2 is essentially unsupported (and
+   Python 1 support has long, long since disappeared), but moving
+   forward with Python 3 has proven to be a significant challenge for
+   ViewVC.  A key dependency of ViewVC's support for Subversion
+   repositories &mdash; Subversion's own Python language API bindings
+   &mdash; have not at the time of this release yet achieved Python 3
+   support.  So ViewVC 1.2 is a (hopefully short-lived) release line
+   aimed at getting into users' hands previously unreleased features
+   and improvements that have been collecting over the past decade
+   before the project takes up Python 3 as a requirement.</p>
+
 </div>
 
+<div class="h3">
+<h3>Repository Contexts Introduced</h3>
+
+<p>When configuration ViewVC to serve up CVS and Subversion "roots"
+   (repositories), administrators may now specify contexts for those
+   roots.  Contexts are a concept for grouping together in the ViewVC
+   URL namespace several repositories, similar to using
+   subdirectories.</p>
+
+<p>By default, ViewVC uses a flat namespace for roots, presenting in
+   its root listing (for example) all roots as if they were siblings
+   of one another.  This has historically presented problems for
+   organizations which might have multiple roots with the same name
+   (for example, when presenting many projects' repositories where
+   each project has its own repository named "private").  With root
+   contexts, administrators can disambiguate these same-named roots by
+   assigning them different contexts (such as the project's name).</p>
+
+<p>### MORE WORK NEEDED ###</p>
+
+</div>
+
+<div class="h3">
+<h3>Standalone Query Interface Removed</h3>
+
+<p>ViewVC has offered since ViewVC 1.1 an integrated commits database
+   query view as part of the regular ViewVC browsing experience.  At
+   that time, the old standalone, non-integrated query script was
+   essentially end-of-lifed, left to support only CVS installations
+   and the original access control (via the <tt>forbidden</tt>
+   authorizer).  ViewVC 1.2 has dropped this standalone query form
+   altogether.</p>
+
+</div>
+
+<div class="h3">
+<h3>Standalone Server GUI Removed</h3>
+
+<p>The standalone.py server program shipped with ViewVC no longer
+   supports the <tt>--gui</tt> option which popped up a Tcl/Tk
+   configuration interface.  Users are encouraged to point the server
+   to a configuration file using the <tt>--config-file</tt> option
+   instead.</p>
+
+</div>
+</div>
 
 <div class="h2">
 <h2 id="sec-from-1-0">Upgrading From ViewVC 1.0</h2>
