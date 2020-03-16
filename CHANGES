@@ -1,6 +1,7 @@
 Version 1.2.0 (released ??-???-????)
 
   * bumped minimum support Python version to 2.7
+  * drop the standalone query interface (#206)
   * implemented support for property diffs (Tigris #383)
   * allow user-configurable cvsgraph display (Tigris #336)
   * allow rNNNN syntax for Subversion revision numbers (Tigris #441)

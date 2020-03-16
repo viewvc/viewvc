@@ -46,13 +46,9 @@ CLEAN_MODE = None
 ##           boolean -- compile?)
 FILE_INFO_LIST = [
     ("bin/cgi/viewvc.cgi",        "bin/cgi/viewvc.cgi",        0755, 1, 0, 0),
-    ("bin/cgi/query.cgi",         "bin/cgi/query.cgi",         0755, 1, 0, 0),
     ("bin/wsgi/viewvc.wsgi",      "bin/wsgi/viewvc.wsgi",      0755, 1, 0, 0),
     ("bin/wsgi/viewvc.fcgi",      "bin/wsgi/viewvc.fcgi",      0755, 1, 0, 0),
-    ("bin/wsgi/query.wsgi",       "bin/wsgi/query.wsgi",       0755, 1, 0, 0),
-    ("bin/wsgi/query.fcgi",       "bin/wsgi/query.fcgi",       0755, 1, 0, 0),
     ("bin/mod_python/viewvc.py",  "bin/mod_python/viewvc.py",  0755, 1, 0, 0),
-    ("bin/mod_python/query.py",   "bin/mod_python/query.py",   0755, 1, 0, 0),
     ("bin/mod_python/handler.py", "bin/mod_python/handler.py", 0755, 1, 0, 0),
     ("bin/mod_python/.htaccess",  "bin/mod_python/.htaccess",  0755, 0, 0, 0),
     ("bin/standalone.py",         "bin/standalone.py",         0755, 1, 0, 0),
@@ -70,7 +66,6 @@ FILE_INFO_LIST = [
 if sys.platform == "win32":
   FILE_INFO_LIST.extend([
     ("bin/asp/viewvc.asp",        "bin/asp/viewvc.asp",        0755, 1, 0, 0),
-    ("bin/asp/query.asp",         "bin/asp/query.asp",         0755, 1, 0, 0),
   ])
 
 

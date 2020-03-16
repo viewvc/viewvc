@@ -451,7 +451,6 @@ class Config:
     self.templates.file = None
     self.templates.graph = None
     self.templates.log = None
-    self.templates.query = None
     self.templates.query_form = None
     self.templates.query_results = None
     self.templates.roots = None
@@ -467,8 +466,6 @@ class Config:
     self.cvsdb.row_limit = 1000
     self.cvsdb.rss_row_limit = 100
     self.cvsdb.check_database_for_root = 0
-
-    self.query.viewvc_base_url = None
     
 def _startswith(somestr, substr):
   return somestr[:len(substr)] == substr

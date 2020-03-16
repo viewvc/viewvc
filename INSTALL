@@ -225,7 +225,6 @@ APACHE CONFIGURATION
    also the other ScriptAlias lines reside.  Some examples:
 
       ScriptAlias /viewvc /usr/local/viewvc-1.2/bin/cgi/viewvc.cgi
-      ScriptAlias /query /usr/local/viewvc-1.2/bin/cgi/query.cgi
 
    ----------------------------------------
    METHOD B:  CGI mode in cgi-bin directory
@@ -281,7 +280,6 @@ APACHE CONFIGURATION
    following directives:
 
       WSGIScriptAlias /viewvc <VIEWVC_INSTALLATION_DIRECTORY>/bin/wsgi/viewvc.wsgi
-      WSGIScriptAlias /query <VIEWVC_INSTALLATION_DIRECTORY>/bin/wsgi/query.wsgi
 
    You'll probably also need the following directive because of the
    not-quite-sanctioned way that ViewVC manipulates Python objects.
@@ -316,7 +314,6 @@ APACHE CONFIGURATION
    support this configuration:
 
       ScriptAlias /viewvc /usr/local/viewvc/bin/wsgi/viewvc.fcgi
-      ScriptAlias /query /usr/local/viewvc/bin/wsgi/query.fcgi
 
 4) [Optional] Provide direct access to icons, stylesheets, etc.
 
