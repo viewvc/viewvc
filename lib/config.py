@@ -112,6 +112,7 @@ class Config:
     # Configuration values with multiple, comma-separated values.
     'allowed_views',
     'binary_mime_types',
+    'dir_ignored_files',
     'custom_log_formatting',
     'cvs_roots',
     'kv_files',
@@ -403,6 +404,7 @@ class Config:
     self.options.custom_log_formatting = []
     self.options.default_file_view = "log"
     self.options.binary_mime_types = []
+    self.options.dir_ignored_files = []
     self.options.http_expiration_time = 600
     self.options.generate_etags = 1
     self.options.svn_ignore_mimetype = 0

@@ -1083,6 +1083,15 @@ def is_binary_file_mime_type(mime_type, cfg):
         return True
   return False
   
+def is_dir_ignored_file(file_name, cfg):
+  """Return True if FILE_NAME is set and matches one of the file names
+  or extensions to be ignored in directory listing per CFG."""
+  if file_name:
+    for pattern in cfg.options.dir_ignored_files:
+      if fnmatch.fnmatch(file_name, pattern):
+        return True
+  return False
+
 def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
   """Return an object holding common hrefs and a viewability flag used
   for various views of FILENAME at revision REV whose MIME type is
@@ -2347,6 +2356,8 @@ def view_directory(request):
 
   debug.t_start("row-building")
   for file in file_data:
+    if is_dir_ignored_file(file.name, cfg):
+      continue
     row = _item(author=None, log=None, short_log=None, state=None, size=None,
                 log_file=None, log_rev=None, graph_href=None, mime_type=None,
                 date=None, ago=None, view_href=None, log_href=None,

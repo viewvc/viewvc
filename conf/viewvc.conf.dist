@@ -410,11 +410,12 @@
 ##
 #allowed_views = annotate, diff, markup, roots
 
-## Comma-delimited list of MIME content types (with support for fnmatch-
-## style glob characters) which are considered not-human-readable and for
-## which ViewVC will neither generate links to, nor support the direct
-## display of, non-checkout views which carry the file's content (the
-## 'markup', 'annotate', 'diff', and 'patch' views).
+## binary_mime_types: Comma-delimited list of MIME content types (with
+## support for fnmatch- style glob characters) which are considered
+## not-human-readable and for which ViewVC will neither generate links
+## to, nor support the direct display of, non-checkout views which
+## carry the file's content (the 'markup', 'annotate', 'diff', and
+## 'patch' views).
 ##
 ## NOTE: Handling of this option is given priority over ViewVC's
 ## longstanding support for showing web-friendly file formats -- even
@@ -425,8 +426,16 @@
 ## Example:
 ## binary_mime_types = application/octet-stream, image/*, application/pdf, 
 ##                     application/vnd*, application/msword, audio/*
-#
+##
 #binary_mime_types =
+
+## dir_ignored_files: Comma-delimited list of file names or extensions
+## to be ignored within directory view.
+##
+## Example:
+## dir_ignored_files = file1, image.jpg, *.doc, documents.*
+##
+#dir_ignored_files = 
 
 ## authorizer: The name of the ViewVC authorizer plugin to use when
 ## authorizing access to repository contents.  This value must be the
