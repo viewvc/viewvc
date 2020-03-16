@@ -94,10 +94,10 @@ def find_root_in_parent(parent_path, rootname):
 def SubversionRepository(name, rootpath, authorizer, utilities, config_dir):
   rootpath = canonicalize_rootpath(rootpath)
   if re.search(_re_url, rootpath):
-    import svn_ra
+    from . import svn_ra
     return svn_ra.RemoteSubversionRepository(name, rootpath, authorizer,
                                              utilities, config_dir)
   else:
-    import svn_repos
+    from . import svn_repos
     return svn_repos.LocalSubversionRepository(name, rootpath, authorizer,
                                                utilities, config_dir)

@@ -12,21 +12,31 @@
 
 "Version Control lib driver for locally accessible Subversion repositories"
 
+import sys
 import vclib
 import os
 import os.path
-import cStringIO
 import time
 import tempfile
-import popen
 import re
-import urllib
+
+if sys.version_info[0] >= 3:
+  PY3 = True
+  from io import StringIO
+  from urllib.parse import quote as _quote
+  long = int
+else:
+  PY3 = False
+  from cStringIO import StringIO
+  from urllib import quote as _quote
+
+
 from svn import fs, repos, core, client, delta
 
 
 ### Require Subversion 1.3.1 or better.
 if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 3, 1):
-  raise Exception, "Version requirement not met (needs 1.3.1 or better)"
+  raise Exception("Version requirement not met (needs 1.3.1 or better)")
 
 
 ### Pre-1.5 Subversion doesn't have SVN_ERR_CEASE_INVOCATION
@@ -55,7 +65,7 @@ def _allow_all(root, path, pool):
 
 
 def _path_parts(path):
-  return filter(None, path.split('/'))
+  return [p for p in path.split('/') if p]
 
 
 def _cleanup_path(path):
@@ -66,6 +76,11 @@ def _cleanup_path(path):
 def _fs_path_join(base, relative):
   return _cleanup_path(base + '/' + relative)
 
+
+if PY3:
+  #  workaround for cmp()
+  def cmp(a, b):
+    return (a > b) - (a < b)
 
 def _compare_paths(path1, path2):
   path1_len = len (path1);
@@ -105,7 +120,10 @@ def _compare_paths(path1, path2):
 
 
 def _rev2optrev(rev):
-  assert type(rev) in (int, long)
+  if PY3:
+    assert isinstance(rev, int)
+  else:
+    assert isinstance(rev, (int, long))
   rt = core.svn_opt_revision_t()
   rt.kind = core.svn_opt_revision_number
   rt.value.number = rev
@@ -117,8 +135,8 @@ def _rootpath2url(rootpath, path):
   drive, rootpath = os.path.splitdrive(rootpath)
   if os.sep != '/':
     rootpath = rootpath.replace(os.sep, '/')
-  rootpath = urllib.quote(rootpath)
-  path = urllib.quote(path)
+  rootpath = _quote(rootpath)
+  path = _quote(path)
   if drive:
     url = 'file:///' + drive + rootpath + '/' + path
   else:
@@ -137,7 +155,7 @@ def _split_revprops(revprops):
   for prop in core.SVN_PROP_REVISION_LOG, \
               core.SVN_PROP_REVISION_AUTHOR, \
               core.SVN_PROP_REVISION_DATE:
-    if revprops.has_key(prop):
+    if prop in revprops:
       special_props.append(revprops[prop])
       del(revprops[prop])
     else:
@@ -149,7 +167,7 @@ def _split_revprops(revprops):
 
 def _datestr_to_date(datestr):
   try:
-    return core.svn_time_from_cstring(datestr) / 1000000
+    return core.svn_time_from_cstring(datestr) // 1000000
   except:
     return None
 
@@ -191,7 +209,7 @@ class NodeHistory:
     if not self.show_all_logs:
       rev_root = fs.revision_root(self.fs_ptr, revision)
       changed_paths = fs.paths_changed(rev_root)
-      paths = changed_paths.keys()
+      paths = list(changed_paths.keys())
       if path not in paths:
         # Look for a copied parent
         test_path = path
@@ -249,7 +267,7 @@ class FileContentsPipe:
     chunk = None
     if not self._eof:
       if len is None:
-        buffer = cStringIO.StringIO()
+        buffer = StringIO()
         try:
           while 1:
             hunk = core.svn_stream_read(self._stream, 8192)
@@ -269,9 +287,9 @@ class FileContentsPipe:
   def readline(self):
     chunk = None
     if not self._eof:
-      chunk, self._eof = core.svn_stream_readline(self._stream, '\n')
+      chunk, self._eof = core.svn_stream_readline(self._stream, b'\n')
       if not self._eof:
-        chunk = chunk + '\n'
+        chunk = chunk + b'\n'
     if not chunk:
       self._eof = 1
     return chunk
@@ -308,7 +326,7 @@ class BlameSource:
       ### pass 1 here instead and do filtering later?
       client.blame2(local_url, _rev2optrev(rev), _rev2optrev(first_rev),
                     _rev2optrev(rev), self._blame_cb, ctx)
-    except core.SubversionException, e:
+    except core.SubversionException as e:
       _fix_subversion_exception(e)
       if e.apr_err == core.SVN_ERR_CLIENT_IS_BINARY_FILE:
         raise vclib.NonTextualFileContents
@@ -558,7 +576,7 @@ class LocalSubversionRepository(vclib.Repository):
       info1 = p1, _date_from_rev(r1), r1
       info2 = p2, _date_from_rev(r2), r2
       return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args)
-    except core.SubversionException, e:
+    except core.SubversionException as e:
       _fix_subversion_exception(e)
       if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
         raise vclib.InvalidRevision
@@ -566,7 +584,7 @@ class LocalSubversionRepository(vclib.Repository):
 
   def isexecutable(self, path_parts, rev):
     props = self.itemprops(path_parts, rev) # does authz-check
-    return props.has_key(core.SVN_PROP_EXECUTABLE)
+    return core.SVN_PROP_EXECUTABLE in props
 
   def filesize(self, path_parts, rev):
     path = self._getpath(path_parts)
@@ -607,7 +625,7 @@ class LocalSubversionRepository(vclib.Repository):
             replace_check_path = path
             if change.base_path and change.base_rev:
               replace_check_path = change.base_path
-            if changedpaths.has_key(replace_check_path) \
+            if replace_check_path in changedpaths \
                and changedpaths[replace_check_path].action == vclib.DELETED:
               action = vclib.REPLACED
         else:
@@ -648,7 +666,7 @@ class LocalSubversionRepository(vclib.Repository):
           found_readable = 1
         else:
           found_unreadable = 1
-      return found_readable, found_unreadable, changedpaths.values()
+      return found_readable, found_unreadable, list(changedpaths.values())
 
     def _get_change_copyinfo(fsroot, path, change):
       # If we know the copyfrom info, return it...
@@ -673,7 +691,7 @@ class LocalSubversionRepository(vclib.Repository):
         changes = fs.paths_changed2(fsroot)
       else:
         changes = fs.paths_changed(fsroot)
-      paths = changes.keys()
+      paths = list(changes.keys())
       for path in paths:
         change = changes[path]
         pathtype = None
@@ -801,7 +819,7 @@ class LocalSubversionRepository(vclib.Repository):
     try:
       repos.svn_repos_history(self.fs_ptr, path, history.add_history,
                               1, rev, options.get('svn_cross_copies', 0))
-    except core.SubversionException, e:
+    except core.SubversionException as e:
       _fix_subversion_exception(e)
       if e.apr_err != _SVN_ERR_CEASE_INVOCATION:
         raise
@@ -861,7 +879,7 @@ class LocalSubversionRepository(vclib.Repository):
     try:
       results = repos.svn_repos_trace_node_locations(self.fs_ptr, path,
                                                      rev, [old_rev], _allow_all)
-    except core.SubversionException, e:
+    except core.SubversionException as e:
       _fix_subversion_exception(e)
       if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
         raise vclib.ItemNotFound(path)
@@ -908,10 +926,10 @@ class LocalSubversionRepository(vclib.Repository):
       else:
         orig_id = fs.node_id(self._getroot(peg_revision), path)
         while peg_revision != limit_revision:
-          mid = (peg_revision + 1 + limit_revision) / 2
+          mid = (peg_revision + 1 + limit_revision) // 2
           try:
             mid_id = fs.node_id(self._getroot(mid), path)
-          except core.SubversionException, e:
+          except core.SubversionException as e:
             _fix_subversion_exception(e)
             if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
               cmp = -1
@@ -945,14 +963,14 @@ class LocalSubversionRepository(vclib.Repository):
     if path_type != vclib.FILE:
       return None
     props = fs.node_proplist(fsroot, path)
-    if not props.has_key(core.SVN_PROP_SPECIAL):
+    if core.SVN_PROP_SPECIAL not in props:
       return None
     pathspec = ''
     ### FIXME: We're being a touch sloppy here, only checking the first line
     ### of the file.
     stream = fs.file_contents(fsroot, path)
     try:
-      pathspec, eof = core.svn_stream_readline(stream, '\n')
+      pathspec, eof = core.svn_stream_readline(stream, b'\n')
     finally:
       core.svn_stream_close(stream)
     if pathspec[:5] != 'link ':

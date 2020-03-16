@@ -54,13 +54,13 @@ def debug(text):
             text = [text]
         for line in text:
             line = line.rstrip('\n\r')
-            print 'DEBUG(viewvc-loginfo):', line
+            print('DEBUG(viewvc-loginfo):', line)
 
 def warning(text):
-    print 'WARNING(viewvc-loginfo):', text
+    print('WARNING(viewvc-loginfo):', text)
 
 def error(text):
-    print 'ERROR(viewvc-loginfo):', text
+    print('ERROR(viewvc-loginfo):', text)
     sys.exit(1)
 
 _re_revisions = re.compile(                            
@@ -226,7 +226,7 @@ def ProcessLoginfo(rootpath, directory, files):
                                           cfg.utilities, 0)
 
     # split up the directory components
-    dirpath = filter(None, os.path.normpath(directory).split(os.sep))
+    dirpath = [p for p in os.path.normpath(directory).split(os.sep) if p]
 
     ## build a list of Commit objects
     commit_list = []
@@ -263,7 +263,7 @@ if __name__ == '__main__':
 
     argc = len(sys.argv)
     debug('Got %d arguments:' % (argc))
-    debug(map(lambda x: '   ' + x, sys.argv))
+    debug(['   ' + x for x in sys.argv])
     
     # if we have more than 3 arguments, we are likely using the
     # newer loginfo format introduced in CVS 1.12:
@@ -301,7 +301,7 @@ if __name__ == '__main__':
         directory, files = fun(arg, repository)
     
     debug('Discarded from stdin:')
-    debug(map(lambda x: '   ' + x, sys.stdin.readlines())) # consume stdin
+    debug(['   ' + x for x in sys.stdin.readlines()]) # consume stdin
 
     repository = cvsdb.CleanRepository(repository)
 
