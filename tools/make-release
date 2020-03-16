@@ -52,11 +52,9 @@ for PLATFORM in unix windows; do
   # Remove some not useful stuff
   for JUNK in .gitignore \
               README.md \
-              elemx \
               notes \
-              tests \
               tools \
-              tparse; do
+              misc; do
     if [ -d ${TARGET}/${JUNK} ]; then
       echo "   Removing directory ${TARGET}/${JUNK}..."
       rm -r ${TARGET}/${JUNK}
