@@ -49,11 +49,17 @@ for PLATFORM in unix windows; do
 
   ### Various shifting, cleanup.  
 
-  # Remove some not useful stuff
+  # Remove some not useful stuff (which unfortunately needs to be the
+  # union of all things ignorable from all versions for which we need
+  # to support release-making).
   for JUNK in .gitignore \
+              .github \
               README.md \
               notes \
               tools \
+              elemx \
+              tparse \
+              tests \
               misc; do
     if [ -d ${TARGET}/${JUNK} ]; then
       echo "   Removing directory ${TARGET}/${JUNK}..."
