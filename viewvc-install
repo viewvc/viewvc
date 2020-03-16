@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- Mode: python -*-
 #
 # Copyright (C) 1999-2020 The ViewCVS Group. All Rights Reserved.
@@ -188,7 +188,7 @@ def install_file(src_path, dst_path, mode, subst_path_vars,
 
         # Collect ndiff output from ndiff
         sys.stdout = io.StringIO()
-        ndiff_output = difflib.ndiff(destdir_path, src_path)
+        ndiff_output = ''.join(difflib.ndiff(destdir_path, src_path))
 
         # Return everything to normal
         sys.stdout = sys.__stdout__
