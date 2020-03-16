@@ -15,7 +15,7 @@
 #
 # -----------------------------------------------------------------------
 
-from __future__ import print_function
+
 import os
 import sys
 import re
@@ -222,12 +222,11 @@ def install_file(src_path, dst_path, mode, subst_path_vars,
                 while 1:
                     name, ext = os.path.splitext(src_path)
                     if ext in BINARY_FILE_EXTS:
-                        temp = raw_input("Do you want to [O]verwrite or "
-                                         "[D]o not overwrite? ")
+                        temp = input("Do you want to [O]verwrite or "
+                                     "[D]o not overwrite? ")
                     else:
-                        temp = raw_input("Do you want to [O]verwrite, [D]o "
-                                         "not overwrite, or [V]iew "
-                                         "differences? ")
+                        temp = input("Do you want to [O]verwrite, [D]o "
+                                     "not overwrite, or [V]iew differences? ")
                     if len(temp) == 0:
                         continue
                     temp = temp[0].lower()
@@ -235,7 +234,7 @@ def install_file(src_path, dst_path, mode, subst_path_vars,
                         print("""
 ---------------------------------------------------------------------------""")
                         print('\n'.join(diff_lines) + '\n')
-                        print ("""
+                        print("""
 LEGEND
    A leading '- ' indicates line to remove from installed file
    A leading '+ ' indicates line to add to installed file
@@ -364,8 +363,8 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
             print("File %s does not belong in ViewVC %s." \
                   % (dst_path, version))
             while 1:
-                temp = raw_input("Do you want to [D]elete it, or [L]eave "
-                                 "it as is? ")
+                temp = input("Do you want to [D]elete it, or [L]eave "
+                             "it as is? ")
                 temp = temp[0].lower()
                 if temp == "l":
                     delete = 0
@@ -455,7 +454,7 @@ Just hit [Enter] if a default is okay.
             default = os.path.join(pf, "viewvc-" + version)
         else:
             default = "/usr/local/viewvc-" + version
-        temp = raw_input("Installation path [%s]: " % (default)).strip()
+        temp = input("Installation path [%s]: " % (default)).strip()
         print()
         if len(temp):
             ROOT_DIR = temp
@@ -465,8 +464,8 @@ Just hit [Enter] if a default is okay.
     # Prompt for DESTDIR if none provided.
     if DESTDIR is None:
         default = ''
-        temp = raw_input("DESTDIR path (generally only used by package "
-                         "maintainers) [%s]: " % (default)).strip()
+        temp = input("DESTDIR path (generally only used by package "
+                     "maintainers) [%s]: " % (default)).strip()
         print()
         if len(temp):
             DESTDIR = temp

@@ -13,7 +13,6 @@
 # viewvc: View CVS/SVN repositories via a web browser
 #
 # -----------------------------------------------------------------------
-from __future__ import print_function
 
 __version__ = '1.3-dev'
 

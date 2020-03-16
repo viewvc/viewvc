@@ -152,7 +152,7 @@ class _LanguageSelector:
       # check this tag against the requests from the user
       for want in self.requested:
         qvalue = want.matches(tag)
-        #print 'have %s. want %s. qvalue=%s' % (tag, want.name, qvalue)
+        #print('have %s. want %s. qvalue=%s' % (tag, want.name, qvalue))
         if qvalue is not None and len(want.name) > longest:
           # we have a match and it is longer than any we may have had.
           # the final qvalue should be from this tag.
@@ -183,7 +183,7 @@ class _LanguageSelector:
       # remove non-best matches
       while matches[0][0] != qvalue:
         del matches[0]
-      #print "non-deterministic choice", matches
+      #print("non-deterministic choice", matches)
 
       # sequence through self.requested, in order
       for want in self.requested:

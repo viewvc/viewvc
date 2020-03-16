@@ -47,10 +47,6 @@ else:
     import subprocess
     subprocess.has_timeout = False
 
-if sys.version_info[0] >= 3:
-    def raw_input(prompt=''):
-        return input(prompt)
-
 ## ------------------------------------------------------------------------
 ## Stuff common to all schemas
 ##
@@ -349,15 +345,15 @@ if __name__ == "__main__":
 
     # Prompt for information not provided via command-line options.
     if hostname is None:
-      hostname = raw_input("MySQL Hostname (leave blank for default): ")
+      hostname = input("MySQL Hostname (leave blank for default): ")
     if port is None:
-      port = raw_input("MySQL Port (leave blank for default): ")
+      port = input("MySQL Port (leave blank for default): ")
     if username is None:
-      username = raw_input("MySQL User: ")
+      username = input("MySQL User: ")
     if password is None:
-      password = raw_input("MySQL Password: ")
+      password = input("MySQL Password: ")
     if dbname is None:
-      dbname = raw_input("ViewVC Database Name [default: ViewVC]: ") or "ViewVC"
+      dbname = input("ViewVC Database Name [default: ViewVC]: ") or "ViewVC"
 
     # Create the database.
     dscript = DATABASE_SCRIPT_COMMON.replace("<dbname>", dbname)

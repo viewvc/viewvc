@@ -34,7 +34,6 @@ SPOOL_BYTES = 4096
 
 # File object to write error messages
 SPOOL_ERROR = sys.stderr
-#SPOOL_ERROR = open("m:/temp/error.txt", "wt")
 
 def CommandLine(command, args):
   """Convert an executable path and a sequence of arguments into a command
@@ -180,30 +179,22 @@ def SpoolWorker(srcHandle, destHandle, outFiles, doneEvent):
 
     while 1:
       try:
-        #print >> SPOOL_ERROR, "Calling ReadFile..."; SPOOL_ERROR.flush()
         hr, data = win32file.ReadFile(srcHandle, buffer)
-        #print >> SPOOL_ERROR, "ReadFile returned '%s', '%s'" % (str(hr), str(data)); SPOOL_ERROR.flush()
         if hr != 0:
           raise Exception("win32file.ReadFile returned %i, '%s'" % (hr, data))
         elif len(data) == 0:
           break
       except pywintypes.error, e:
-        #print >> SPOOL_ERROR, "ReadFile threw '%s'" % str(e); SPOOL_ERROR.flush()
         if e.args[0] == winerror.ERROR_BROKEN_PIPE:
           break
         else:
           raise e
 
-      #print >> SPOOL_ERROR, "Writing to %i file objects..." % len(outFiles); SPOOL_ERROR.flush()
       for f in outFiles:
         f.write(data)
-      #print >> SPOOL_ERROR, "Done writing to file objects."; SPOOL_ERROR.flush()
 
-      #print >> SPOOL_ERROR, "Writing to destination %s" % str(destHandle); SPOOL_ERROR.flush()
       if destHandle:
-        #print >> SPOOL_ERROR, "Calling WriteFile..."; SPOOL_ERROR.flush()
         hr, bytes = win32file.WriteFile(destHandle, data)
-        #print >> SPOOL_ERROR, "WriteFile() passed %i bytes and returned %i, %i" % (len(data), hr, bytes); SPOOL_ERROR.flush()
         if hr != 0 or bytes != len(data):
           raise Exception("win32file.WriteFile() passed %i bytes and returned %i, %i" % (len(data), hr, bytes))
 

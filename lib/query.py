@@ -202,7 +202,7 @@ def listparse_string(str):
                 continue
 
             else:
-                print "format error"
+                print("format error")
                 sys.exit(1)
 
     if cmd or temp:

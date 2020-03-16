@@ -124,7 +124,7 @@ def popen(cmd, args, mode, capture_err=1):
     os.execvp(cmd, (cmd,) + tuple(args))
   except:
     # aid debugging, if the os.execvp above fails for some reason:
-    print "<h2>exec failed:</h2><pre>", cmd, ' '.join(args), "</pre>"
+    print("<h2>exec failed:</h2><pre>", cmd, ' '.join(args), "</pre>")
     raise
 
   # crap. shouldn't be here.

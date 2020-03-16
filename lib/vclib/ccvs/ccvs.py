@@ -422,5 +422,4 @@ class COSink(MatchingSink):
       rev = None
 
     if rev:
-      #print "tag =", tag.number, "rev =", rev.number, "<br>"
       self.last = rev
