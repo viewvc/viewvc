@@ -47,7 +47,7 @@ Congratulations on getting this far. :-)
       * Pygments 0.9 or later, syntax highlighting engine
           (http://pygments.org)
       * CvsGraph 1.5.0 or later, graphical CVS revision tree generator
-          (http://www.akhphd.au.dk/~bertho/cvsgraph/)
+          (formerly at http://www.akhphd.au.dk/~bertho/cvsgraph/)
 
   Quick sanity check:
 
