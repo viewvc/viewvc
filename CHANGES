@@ -1,4 +1,4 @@
-Version 1.2.0 (released ??-???-????)
+Version 1.2.0 (released 17-Mar-2020)
 
   * bumped minimum supported Python version to 2.4
   * implemented support for property diffs (Tigris #383)
