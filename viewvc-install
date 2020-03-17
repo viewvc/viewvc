@@ -77,7 +77,6 @@ if sys.platform == "win32":
 TREE_LIST = [
     ("lib",                       "lib",                       0, 0),
     ("templates",                 "templates",                 0, 1),
-    ("templates-contrib",         "templates-contrib",         1, 1),
     ]
 
 

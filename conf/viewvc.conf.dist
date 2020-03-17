@@ -660,7 +660,7 @@
 ## Example:
 ## template_dir = templates/classic
 ## template_dir = templates/default
-## template_dir = templates-contrib/custom/templates
+## template_dir = /opt/custom-viewvc-templates/templates
 #
 #template_dir = templates/default
 
