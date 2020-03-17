@@ -30,9 +30,10 @@ follows:
     * `docs/template-authoring-guide.html`:  Update to reflect new release.
     * `docs/url-reference.html`:  Update to reflect new release.
 
-5.  Commit those changes.
+5.  Commit and push those changes.
 
-    > $ git commit -a -m "Begin new release stream for X.Y."
+    > $ git commit -a -m "Begin new release stream for X.Y."  
+    > $ git push
 
 ## Release Process
 
