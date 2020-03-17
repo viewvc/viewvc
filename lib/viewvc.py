@@ -752,11 +752,14 @@ _legal_params = {
   'orig_pathrev'  : None,
   'orig_view'     : None,
 
-  # deprecated
+  # deprecated - these are no longer used, but kept around so that
+  # bookmarked URLs still "work" (for some definition thereof) after a
+  # ViewVC upgrade.
   'parent'        : _re_validate_boolint,
   'rev'           : _re_validate_revnum,
   'tarball'       : _re_validate_boolint,
   'hidecvsroot'   : _re_validate_boolint,
+  'limit'         : _re_validate_number,
   }
 
 def _path_join(path_parts):
