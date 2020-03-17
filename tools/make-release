@@ -54,9 +54,9 @@ for PLATFORM in unix windows; do
   # of what to ignore.  Failing that, we'll use a hard-coded
   # historical list.
   JUNK_FILES=".gitignore notes tests tools misc elemx tparse"
-  if [ -f "${TARBALL}/tools/release-ignores" ]; then
+  if [ -f "${TARGET}/tools/release-ignores" ]; then
       echo "   Found release-specific ignorables file."
-      JUNK_FILES=`cat "${TARBALL}/tools/release-ignores"`
+      JUNK_FILES=`cat "${TARGET}/tools/release-ignores"`
   fi
   for JUNK in ${JUNK_FILES}; do
     if [ -d ${TARGET}/${JUNK} ]; then
