@@ -2543,14 +2543,14 @@ def view_directory(request):
     plain_tags.reverse()
     data['plain_tags'] = []
     for plain_tag in plain_tags:
-      data['plain_tags'].append(_item(name=plain_tag,revision=None))
+      data['plain_tags'].append(_item(name=plain_tag, revision=None))
 
     branch_tags = options['cvs_branches']
     branch_tags.sort(icmp)
     branch_tags.reverse()
     data['branch_tags'] = []
     for branch_tag in branch_tags:
-      data['branch_tags'].append(_item(name=branch_tag,revision=None))
+      data['branch_tags'].append(_item(name=branch_tag, revision=None))
     
     data['attic_showing'] = ezt.boolean(not hideattic)
     data['show_attic_href'] = request.get_url(params={'hideattic': 0},
@@ -3009,9 +3009,9 @@ def view_log(request):
     if rev.co_rev:
       data['tags'].append(_item(rev=rev.co_rev.string, name=tag))
     if rev.is_branch:
-      data['branch_tags'].append(_item(name=tag,revision=rev_str))
+      data['branch_tags'].append(_item(name=tag, revision=rev_str))
     else:
-      data['plain_tags'].append(_item(name=tag,revision=rev_str))
+      data['plain_tags'].append(_item(name=tag, revision=rev_str))
 
   if cfg.options.log_pagesize:
     data['log_paging_action'], data['log_paging_hidden_values'] = \
