@@ -53,32 +53,32 @@ import fnmatch
 #         PER-ROOT          PER-VHOST            BASE
 #       
 #                         ,-----------.     ,-----------.
-#                         | vhost-*/  |     |           |
+#                         | vhost-*|  |     |           |
 #                         |  general  | --> |  general  |
 #                         |           |     |           |
 #                         `-----------'     `-----------'
 #       ,-----------.     ,-----------.     ,-----------.
-#       |  root-*/  |     | vhost-*/  |     |           |
+#       |  root-*|  |     | vhost-*|  |     |           |
 #       |  options  | --> |  options  | --> |  options  |
 #       |           |     |           |     |           |
 #       `-----------'     `-----------'     `-----------'
 #       ,-----------.     ,-----------.     ,-----------.
-#       |  root-*/  |     | vhost-*/  |     |           |
+#       |  root-*|  |     | vhost-*|  |     |           |
 #       | templates | --> | templates | --> | templates |
 #       |           |     |           |     |           |
 #       `-----------'     `-----------'     `-----------'
 #       ,-----------.     ,-----------.     ,-----------.
-#       |  root-*/  |     | vhost-*/  |     |           |
+#       |  root-*|  |     | vhost-*|  |     |           |
 #       | utilities | --> | utilities | --> | utilities |
 #       |           |     |           |     |           |
 #       `-----------'     `-----------'     `-----------'
 #                         ,-----------.     ,-----------.
-#                         | vhost-*/  |     |           |
+#                         | vhost-*|  |     |           |
 #                         |   cvsdb   | --> |   cvsdb   |
 #                         |           |     |           |
 #                         `-----------'     `-----------'
 #       ,-----------.     ,-----------.     ,-----------.
-#       |  root-*/  |     | vhost-*/  |     |           |
+#       |  root-*|  |     | vhost-*|  |     |           |
 #       |  authz-*  | --> |  authz-*  | --> |  authz-*  |
 #       |           |     |           |     |           |
 #       `-----------'     `-----------'     `-----------'
@@ -245,7 +245,7 @@ class Config:
     at all, return None.  And if it's an override section but not an
     allowed one, raise IllegalOverrideSection."""
 
-    cv = '%s-%s/' % (sectype, secspec)
+    cv = '%s-%s|' % (sectype, secspec)
     lcv = len(cv)
     if section[:lcv] != cv:
       return None
@@ -335,7 +335,7 @@ class Config:
     # Figure out the authorizer by searching first for a per-root
     # override, then falling back to the base/vhost configuration.
     authorizer = None
-    root_options_section = 'root-%s/options' % (rootname)
+    root_options_section = 'root-%s|options' % (rootname)
     if self.parser.has_section(root_options_section) \
        and self.parser.has_option(root_options_section, 'authorizer'):
       authorizer = self.parser.get(root_options_section, 'authorizer')
@@ -354,7 +354,7 @@ class Config:
       sub_config = getattr(self, authz_section)
       for attr in dir(sub_config):
         params[attr] = getattr(sub_config, attr)
-    root_authz_section = 'root-%s/authz-%s' % (rootname, authorizer)
+    root_authz_section = 'root-%s|authz-%s' % (rootname, authorizer)
     for section in self.parser.sections():
       if section == root_authz_section:
         for key, value in self._get_parser_items(self.parser, section):

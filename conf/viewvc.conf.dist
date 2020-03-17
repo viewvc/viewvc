@@ -444,7 +444,7 @@
 ## and which implements a ViewVCAuthorizer class (as a subclass of
 ## vcauth.GenericViewVCAuthorizer).  You can provide custom parameters
 ## to the authorizer module by defining configuration sections named
-## authz-MODULENAME and adding the parameter keys and values there.
+## "authz-MODULENAME" and adding the parameter keys and values there.
 ##
 ## ViewVC provides the following modules:
 ##   svnauthz    - based on Subversion authz files
@@ -1020,7 +1020,7 @@
 ##
 ## After you've named and defined your vhosts, you may then create new
 ## configuration sections whose names are of the form
-## vhost-VHOSTNAME/CONFIGSECTION.  VHOSTNAME here is the canonical name
+## "vhost-VHOSTNAME|CONFIGSECTION".  VHOSTNAME here is the canonical name
 ## of one of the virtual hosts you defined under the [vhosts] section.
 ## Inside those configuration sections, you override the standard
 ## ViewVC options typically found in the base configuration section
@@ -1038,29 +1038,29 @@
 ##
 ## Here is an example:
 ##
-## [vhosts]
-## libs = libs.yourdomain.*, *.yourlibs.*
-## gui = guiproject.yourdomain.*
+##    [vhosts]
+##    libs = libs.yourdomain.*, *.yourlibs.*
+##    gui = guiproject.yourdomain.*
 ##
-## [vhost-libs/general]
-## cvs_roots = 
-## svn_roots = svnroot: /var/svn/libs-repos
-## default_root = svnroot
+##    [vhost-libs|general]
+##    cvs_roots = 
+##    svn_roots = svnroot: /var/svn/libs-repos
+##    default_root = svnroot
 ##
-## [vhost-libs/options]
-## show_logs = 1
+##    [vhost-libs|options]
+##    show_logs = 1
 ##
-## [vhost-gui/general]
-## cvs_roots = cvsroot: /var/cvs/guiproject
-## svn_roots = 
-## default_root = cvsroot
+##    [vhost-gui|general]
+##    cvs_roots = cvsroot: /var/cvs/guiproject
+##    svn_roots = 
+##    default_root = cvsroot
 ##
 
 ##---------------------------------------------------------------------------
 ## ViewVC recognizes per-root configuration overrides, too.  To
 ## override the value of a configuration parameter only for a single
 ## root, create a configuration section whose names is of the form
-## root-ROOTNAME/CONFIGSECTION.  ROOTNAME here is the name of the root
+## "root-ROOTNAME|CONFIGSECTION".  ROOTNAME here is the name of the root
 ## as defined explicitly in cvs_roots or svn_roots or implicitly as the
 ## basename of a root path in root_parents.  Options found in this new
 ## configuration section override for this one root the corresponding
@@ -1082,12 +1082,19 @@
 ## Here is an example showing how to enable Subversion authz-based
 ## authorization for only the single root named "svnroot":
 ## 
-## [root-svnroot/options]
-## authorizer = svnauthz
+##    [root-svnroot|options]
+##    authorizer = svnauthz
 ##
-## [root-svnroot/authz-svnauthz]
-## authzfile = /path/to/authzfile
+##    [root-svnroot|authz-svnauthz]
+##    authzfile = /path/to/authzfile
 ##
+## If your root names include context, you can specify that, too:
+##
+##    [root-project/svnroot|options]
+##    authorizer = svnauthz
+##
+##    [root-project/svnroot|authz-svnauthz]
+##    authzfile = /path/to/authzfile
 
 ##---------------------------------------------------------------------------
 [authz-forbidden]

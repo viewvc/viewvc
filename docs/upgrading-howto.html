@@ -41,6 +41,7 @@ td {
 
 <h1>Upgrading ViewVC</h1>
 
+<!-- ************************************************************************ -->
 <div class="h2">
 <h2 id="introduction">Introduction</h2>
 
@@ -63,6 +64,7 @@ td {
 
 </div>
 
+<!-- ************************************************************************ -->
 <div class="h2">
 <h2 id="toc">Table of Contents</h2>
 <ul class="toc-list">
@@ -74,11 +76,13 @@ td {
 </ul>
 </div>
 
+<!-- ************************************************************************ -->
 <div class="h2">
 <h2 id="sec-from-1-1">Upgrading From ViewVC 1.1</h2>
 
 <p>This section discusses how to upgrade ViewVC 1.1.x to ViewVC 1.2.x.</p>
 
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>Minimum Python Version Changed</h3>
 
@@ -98,6 +102,7 @@ td {
 
 </div>
 
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>Repository Contexts Introduced</h3>
 
@@ -105,7 +110,8 @@ td {
    (repositories), administrators may now specify contexts for those
    roots.  Contexts are a concept for grouping together in the ViewVC
    URL namespace several repositories, similar to using
-   subdirectories.</p>
+   subdirectories.  In fact, they look just like parents directories
+   in the configuration file.</p>
 
 <p>By default, ViewVC uses a flat namespace for roots, presenting in
    its root listing (for example) all roots as if they were siblings
@@ -116,10 +122,55 @@ td {
    contexts, administrators can disambiguate these same-named roots by
    assigning them different contexts (such as the project's name).</p>
 
-<p>### MORE WORK NEEDED ###</p>
+<p>For example, "project1" and "project2" in the configured root names
+   are bits of context:</p>
+
+<blockquote><pre>svn_roots = project1/code: /opt/svn/project1/code,
+            project1/private: /opt/svn/project1/private,
+            project2/code: /opt/svn/project2/code,
+            project2/private: /opt/svn/project2/private
+</pre></blockquote>
+
+<p>These repositories will appear with their full context-bearing
+   names in the root listing view.</p>
+
+<p>As a result of this feature introduction, the syntax of
+   configuration section overrides was slightly modified.
+   See <a href="#12_config_section_syntax_change">Configuration
+   Override Section Syntax Change</a> for details.</p>
 
 </div>
 
+<!-- ------------------------------------------------------------------------ -->
+<div class="h3" id="12_config_section_syntax_change">
+<h3>Configuration Override Section Syntax Change</h3>
+
+<p>ViewVC 1.2 changes the syntax of so-called configuration override
+   sections from using a slash character (<tt>/</tt>) as the
+   hierarchical separator to a pipe character (<tt>|</tt>).  This
+   allows references to root names that carry context in a more
+   obvious way.  Administrators should replace the slash characters in
+   any viewvc.conf section names with pipe characters.  For example:</p>
+
+<blockquote><pre>[root-project1/options]
+authorizer = forbidden
+
+[root-project1/authz-forbidden]
+forbidden = private    
+</pre></blockquote>
+
+<p>&hellip;should now be changed to:</p>
+
+<blockquote><pre>[root-project1|options]
+authorizer = forbidden
+
+[root-project1|authz-forbidden]
+forbidden = private    
+</pre></blockquote> 
+
+</div>
+
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>Standalone Query Interface Removed</h3>
 
@@ -133,6 +184,7 @@ td {
 
 </div>
 
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>Standalone Server GUI Removed</h3>
 
@@ -145,11 +197,13 @@ td {
 </div>
 </div>
 
+<!-- ************************************************************************ -->
 <div class="h2">
 <h2 id="sec-from-1-0">Upgrading From ViewVC 1.0</h2>
 
 <p>This section discusses how to upgrade ViewVC 1.0.x to ViewVC 1.1.x.</p>
 
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>root_as_url_component Now Enabled by Default</h3>
     
@@ -180,6 +234,7 @@ td {
 
 </div>
 
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>Path-Based Authorization / Forbidden Modules</h3>
     
@@ -253,6 +308,7 @@ td {
 
 </div>
 
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>Syntax Highlighting</h3>
 
@@ -293,6 +349,7 @@ td {
 
 </div>
 
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>Checkin Database</h3>
 
@@ -317,14 +374,12 @@ td {
 <p>In other words, where you once did this:</p>
 
 <blockquote><pre>$ svndbadmin rebuild /path/to/repository 1234
-</pre>
-</blockquote>
+</pre></blockquote>
 
 <p>you now need to do this:</p>
 
 <blockquote><pre>$ svndbadmin update /path/to/repository 1234 --force
-</pre>
-</blockquote>
+</pre></blockquote>
 
 <p>To enhance the performance of the new "purge" operation, ViewVC 1.1
    introduces some slight changes to the checkin database schema.  If
@@ -341,6 +396,7 @@ td {
 
 </div>
 
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>Configuration Options</h3>
 
@@ -421,8 +477,7 @@ all = viewvc.*
 
 [all-options]
 allowed_views = annotate, diff, markup, tar
-</pre>
-</blockquote>
+</pre></blockquote>
 
 <p>This now needs to be written like so:</p>
 
@@ -431,8 +486,7 @@ all = viewvc.*
 
 [vhost-all/options]
 allowed_views = annotate, diff, markup, tar
-</pre>
-</blockquote>
+</pre></blockquote>
 
 <p>The following is a grab-bag of additional new options:</p>
 
@@ -443,6 +497,7 @@ allowed_views = annotate, diff, markup, tar
 
 </div>
 
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>Templates</h3>
     
@@ -748,11 +803,13 @@ allowed_views = annotate, diff, markup, tar
 </div>
 </div>
 
+<!-- ************************************************************************ -->
 <div class="h2">
 <h2 id="sec-from-0-9">Upgrading From ViewCVS 0.9</h2>
 
 <p>This section discusses how to upgrade ViewCVS 0.9 to ViewVC 1.0.</p>
 
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>CGI Stubs</h3>
     
@@ -766,6 +823,7 @@ allowed_views = annotate, diff, markup, tar
 
 </div>
 
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>Checkin Database</h3>
     
@@ -779,6 +837,7 @@ allowed_views = annotate, diff, markup, tar
 
 </div>
 
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>"checkout_magic" Option</h3>
 
@@ -796,6 +855,7 @@ allowed_views = annotate, diff, markup, tar
 
 </div>
 
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>Configuration Options</h3>
 
@@ -844,6 +904,7 @@ allowed_views = annotate, diff, markup, tar
 
 </div>
 
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>Templates</h3>
     
@@ -1651,6 +1712,7 @@ allowed_views = annotate, diff, markup, tar
 
 </div>
 
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>Template Arrangement</h3>
     
@@ -1672,11 +1734,13 @@ allowed_views = annotate, diff, markup, tar
 </div>
 </div>
 
+<!-- ************************************************************************ -->
 <div class="h2">
 <h2 id="sec-from-0-8">Upgrading From ViewCVS 0.8</h2>
 
 <p>This section discusses how to upgrade ViewCVS 0.8 to ViewCVS 0.9.x.</p>
     
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>Configuration Options</h3>
 
@@ -1733,6 +1797,7 @@ allowed_views = annotate, diff, markup, tar
 
 </div>
 
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>Template Variables</h3>
 
