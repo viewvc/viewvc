@@ -21,15 +21,12 @@
 
 import os
 import sys
-import sapi
 import threading
 
 if sys.platform == "win32":
   import win32popen
   import win32event
   import win32process
-  import debug
-  import StringIO
 
 def popen(cmd, args, mode, capture_err=1):
   if sys.platform == "win32":
@@ -37,41 +34,17 @@ def popen(cmd, args, mode, capture_err=1):
 
     if mode.find('r') >= 0:
       hStdIn = None
-
-      if debug.SHOW_CHILD_PROCESSES:
-        dbgIn, dbgOut = None, StringIO.StringIO()
-
-        handle, hStdOut = win32popen.MakeSpyPipe(0, 1, (dbgOut,))
-
-        if capture_err:
-          hStdErr = hStdOut
-          dbgErr = dbgOut
-        else:
-          dbgErr = StringIO.StringIO()
-          x, hStdErr = win32popen.MakeSpyPipe(None, 1, (dbgErr,))
+      handle, hStdOut = win32popen.CreatePipe(0, 1)
+      if capture_err:
+        hStdErr = hStdOut
       else:
-        handle, hStdOut = win32popen.CreatePipe(0, 1)
-        if capture_err:
-          hStdErr = hStdOut
-        else:
-          hStdErr = win32popen.NullFile(1)
-
+        hStdErr = win32popen.NullFile(1)
     else:
-      if debug.SHOW_CHILD_PROCESSES:
-        dbgIn, dbgOut, dbgErr = StringIO.StringIO(), StringIO.StringIO(), StringIO.StringIO()
-        hStdIn, handle = win32popen.MakeSpyPipe(1, 0, (dbgIn,))
-        x, hStdOut = win32popen.MakeSpyPipe(None, 1, (dbgOut,))
-        x, hStdErr = win32popen.MakeSpyPipe(None, 1, (dbgErr,))
-      else:
-        hStdIn, handle = win32popen.CreatePipe(0, 1)
-        hStdOut = None
-        hStdErr = None
+      hStdIn, handle = win32popen.CreatePipe(0, 1)
+      hStdOut = None
+      hStdErr = None
 
     phandle, pid, thandle, tid = win32popen.CreateProcess(command, hStdIn, hStdOut, hStdErr)
-
-    if debug.SHOW_CHILD_PROCESSES:
-      debug.Process(command, dbgIn, dbgOut, dbgErr)
-
     return _pipe(win32popen.File2FileObject(handle, mode), phandle)
 
   # flush the stdio buffers since we are about to change the FD under them

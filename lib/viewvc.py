@@ -5215,8 +5215,6 @@ def main(server, cfg):
       return
     except:
       view_error(server, cfg)
-
   finally:
     debug.t_end('main')
     debug.t_dump(server.file())
-    debug.DumpChildren(server)
