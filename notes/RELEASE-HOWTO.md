@@ -28,7 +28,6 @@ follows:
     * `lib/viewvc.py`:  Update the `__version__` value.
     * `docs/upgrading-howto.html`:  Add stub section for new release.
     * `docs/template-authoring-guide.html`:  Update to reflect new release.
-    * `docs/release-notes/X.Y.0.html`:  Add a new stub file.
 
 5.  Commit those changes.
 
