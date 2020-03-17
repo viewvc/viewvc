@@ -62,6 +62,16 @@ td {
    version.  This way you can easily test several versions and switch
    back if your users start to complain.</p>
 
+<p>Please note that <em>every</em> ViewVC release&mdash;even patch
+   releases&mdash;may deliver a new feature, a new configuration
+   option, a new template data dictionary item.  But we try to avoid
+   introducing changes that would cause an existing ViewVC
+   installation to stop functioning, or to function wildly different,
+   in mere patch releases.  That's why this document offers guidance
+   for upgrades only across major and minor release lines of ViewVC.
+   For patch release upgrades, your best bet is to carefully examine
+   the distributed configuration file templates
+   (<code>viewvc.conf.dist<code>, etc.).
 </div>
 
 <!-- ************************************************************************ -->
@@ -81,65 +91,6 @@ td {
 <h2 id="sec-from-1-1">Upgrading From ViewVC 1.1</h2>
 
 <p>This section discusses how to upgrade ViewVC 1.1.x to ViewVC 1.2.x.</p>
-
-<!-- ------------------------------------------------------------------------ -->
-<div class="h3">
-<h3>Minimum Python Version Changed</h3>
-
-<p>ViewVC 1.2 requires Python 2, with a minimum version of Python
-   2.4.  Sorry, there's no Python 3 support yet.</p>
-
-<p>As of January 1, 2020, Python 2 is essentially unsupported (and
-   Python 1 support has long, long since disappeared), but moving
-   forward with Python 3 has proven to be a significant challenge for
-   ViewVC.  A key dependency of ViewVC's support for Subversion
-   repositories &mdash; Subversion's own Python language API bindings
-   &mdash; have not at the time of this release yet achieved Python 3
-   support.  So ViewVC 1.2 is a (hopefully short-lived) release line
-   aimed at getting into users' hands previously unreleased features
-   and improvements that have been collecting over the past decade
-   before the project takes up Python 3 as a requirement.</p>
-
-</div>
-
-<!-- ------------------------------------------------------------------------ -->
-<div class="h3">
-<h3>Repository Contexts Introduced</h3>
-
-<p>When configuration ViewVC to serve up CVS and Subversion "roots"
-   (repositories), administrators may now specify contexts for those
-   roots.  Contexts are a concept for grouping together in the ViewVC
-   URL namespace several repositories, similar to using
-   subdirectories.  In fact, they look just like parents directories
-   in the configuration file.</p>
-
-<p>By default, ViewVC uses a flat namespace for roots, presenting in
-   its root listing (for example) all roots as if they were siblings
-   of one another.  This has historically presented problems for
-   organizations which might have multiple roots with the same name
-   (for example, when presenting many projects' repositories where
-   each project has its own repository named "private").  With root
-   contexts, administrators can disambiguate these same-named roots by
-   assigning them different contexts (such as the project's name).</p>
-
-<p>For example, "project1" and "project2" in the configured root names
-   are bits of context:</p>
-
-<blockquote><pre>svn_roots = project1/code: /opt/svn/project1/code,
-            project1/private: /opt/svn/project1/private,
-            project2/code: /opt/svn/project2/code,
-            project2/private: /opt/svn/project2/private
-</pre></blockquote>
-
-<p>These repositories will appear with their full context-bearing
-   names in the root listing view.</p>
-
-<p>As a result of this feature introduction, the syntax of
-   configuration section overrides was slightly modified.
-   See <a href="#12_config_section_syntax_change">Configuration
-   Override Section Syntax Change</a> for details.</p>
-
-</div>
 
 <!-- ------------------------------------------------------------------------ -->
 <div class="h3" id="12_config_section_syntax_change">
@@ -172,27 +123,431 @@ forbidden = private
 
 <!-- ------------------------------------------------------------------------ -->
 <div class="h3">
-<h3>Standalone Query Interface Removed</h3>
+<h3>Templates</h3>
+    
+<p>This section describes template variable changes introduced in this
+   release.  See the <a href="./template-authoring-guide.html">Template
+   Authoring Guide</a> for the current set of variables available to
+   each templates.</p>
 
-<p>ViewVC has offered since ViewVC 1.1 an integrated commits database
-   query view as part of the regular ViewVC browsing experience.  At
-   that time, the old standalone, non-integrated query script was
-   essentially end-of-lifed, left to support only CVS installations
-   and the original access control (via the <tt>forbidden</tt>
-   authorizer).  ViewVC 1.2 has dropped this standalone query form
-   altogether.</p>
+<p>ViewVC 1.2 ships with two supported template sets now, "default"
+   (which is based on the ViewVC 1.1 "viewsvn" contributed template)
+   and "classic" (which derives from the ViewVC 1.1 default template).
+   As such, the default value of the <tt>template_dir</tt>
+   configuration option is now "templates/default" rather than merely
+   "templates".</p>
 
-</div>
-
-<!-- ------------------------------------------------------------------------ -->
-<div class="h3">
-<h3>Standalone Server GUI Removed</h3>
-
-<p>The standalone.py server program shipped with ViewVC no longer
-   supports the <tt>--gui</tt> option which popped up a Tcl/Tk
-   configuration interface.  Users are encouraged to point the server
-   to a configuration file using the <tt>--config-file</tt> option
-   instead.</p>
+<table>
+<thead>
+<tr>
+  <th>Variable</th>
+  <th>Location</th>
+  <th>Changes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="added">
+  <td class="varname">home_href</td>
+  <td><em>all templates</em></td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">gbbox</td>
+  <td>graph.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">gflip</td>
+  <td>graph.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">gleft</td>
+  <td>graph.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">gmaxtag</td>
+  <td>graph.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">graph_action</td>
+  <td>graph.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">graph_hidden_values</td>
+  <td>graph.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">gshow</td>
+  <td>graph.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">opt_gbbox</td>
+  <td>graph.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">opt_gflip</td>
+  <td>graph.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">opt_gleft</td>
+  <td>graph.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">opt_gmaxtag</td>
+  <td>graph.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">opt_gshow</td>
+  <td>graph.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">dirs_shown</td>
+  <td>directory.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">entries.is_binary</td>
+  <td>directory.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">entries.is_viewable_image</td>
+  <td>directory.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">row_limit_reached</td>
+  <td>directory.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">roots.ago</td>
+  <td>roots.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">roots.author</td>
+  <td>roots.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">roots.date</td>
+  <td>roots.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">roots.log</td>
+  <td>roots.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">roots.log_href</td>
+  <td>roots.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">roots.rev</td>
+  <td>roots.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">roots.short_log</td>
+  <td>roots.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">roots_shown</td>
+  <td>roots.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">changes</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.changes</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">changes.have_left</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.changes.have_left</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">changes.have_right</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.changes.have_right</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">changes.left</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.changes.left</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">changes.line_info_extra</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.changes.line_info_extra</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">changes.line_info_left</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.changes.line_info_left</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">changes.line_info_right</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.changes.line_info_right</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">changes.line_number</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.changes.line_number</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">changes.right</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.changes.right</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">changes.type</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.changes.type</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.anchor</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.changes.columns.line_number</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.changes.columns.segments.text</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.changes.columns.segments.type</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.changes.columns.segments</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.changes.columns</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.changes.gap</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.changes.segments.text</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.changes.segments.type</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.changes.segments</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.diff_block_format</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.left.ago</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.left.author</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.left.log</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.left.size</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.right.ago</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.right.author</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.right.log</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">diffs.right.size</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="added">
+  <td class="varname">hide_legend</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">left</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.left</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">left.annotate_href</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.left.annotate_href</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">left.date</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.left.date</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">left.download_href</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.left.download_href</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">left.download_text_href</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.left.download_text_href</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">left.path</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.left.path</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">left.prefer_markup</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.left.prefer_markup</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">left.rev</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.left.rev</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">left.revision_href</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.left.revision_href</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">left.tag</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.left.tag</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">left.view_href</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.left.view_href</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">right</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.right</td>
+</tr>
+<tr class="added">
+  <td class="varname">patch_href</td>
+  <td>diff.ezt</td>
+  <td>added</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">raw_diff</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.changes.raw</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">right.annotate_href</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.right.annotate_href</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">right.date</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.right.date</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">right.download_href</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.right.download_href</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">right.download_text_href</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.right.download_text_href</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">right.path</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.right.path</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">right.prefer_markup</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.right.prefer_markup</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">right.rev</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.right.rev</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">right.revision_href</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.right.revision_href</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">right.tag</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.right.tag</td>
+</tr>
+<tr class="renamed">
+  <td class="varname">right.view_href</td>
+  <td>diff.ezt</td>
+  <td>renamed to diffs.right.view_href</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 </div>
