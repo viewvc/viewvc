@@ -427,8 +427,10 @@ class LocalSubversionRepository(vclib.Repository):
         kind = vclib.DIR
       elif entry.kind == core.svn_node_file:
         kind = vclib.FILE
-      if vclib.check_path_access(self, path_parts + [entry.name], kind, rev):
-        entries.append(vclib.DirEntry(entry.name, kind))
+      ent_path = entry.name.decode('utf-8', 'surrogateescape')
+      if vclib.check_path_access(self,
+                                 path_parts + [ent_path], kind, rev):
+        entries.append(vclib.DirEntry(ent_path, kind))
     return entries
 
   def dirlogs(self, path_parts, rev, entries, options):
@@ -438,7 +440,8 @@ class LocalSubversionRepository(vclib.Repository):
     fsroot = self._getroot(self._getrev(rev))
     rev = self._getrev(rev)
     for entry in entries:
-      entry_path_parts = path_parts + [entry.name]
+      ent_path = entry.name.decode('utf-8', 'surrogateescape')
+      entry_path_parts = path_parts + [ent_path]
       if not vclib.check_path_access(self, entry_path_parts, entry.kind, rev):
         continue
       path = self._getpath(entry_path_parts)
