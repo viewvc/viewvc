@@ -93,6 +93,26 @@ td {
 <p>This section discusses how to upgrade ViewVC 1.1.x to ViewVC 1.2.x.</p>
 
 <!-- ------------------------------------------------------------------------ -->
+<div class="h3">
+<h3>Minimum Python Version Changed</h3>
+
+<p>ViewVC 1.2 requires Python 2, with a minimum version of Python
+   2.4.  Sorry, there's no Python 3 support yet.</p>
+
+<p>As of January 1, 2020, Python 2 is essentially unsupported (and
+   Python 1 support has long, long since disappeared), but moving
+   forward with Python 3 has proven to be a significant challenge for
+   ViewVC.  A key dependency of ViewVC's support for Subversion
+   repositories &mdash; Subversion's own Python language API bindings
+   &mdash; have not at the time of this release yet achieved Python 3
+   support.  So ViewVC 1.2 is a (hopefully short-lived) release line
+   aimed at getting into users' hands previously unreleased features
+   and improvements that have been collecting over the past decade
+   before the project takes up Python 3 as a requirement.</p>
+
+</div>
+
+<!-- ------------------------------------------------------------------------ -->
 <div class="h3" id="12_config_section_syntax_change">
 <h3>Configuration Override Section Syntax Change</h3>
 
