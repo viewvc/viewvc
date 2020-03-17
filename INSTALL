@@ -196,10 +196,10 @@ APACHE CONFIGURATION
         # Allow from all
       </Directory>
 
-   For example, if ViewVC is installed in /usr/local/viewvc-1.2 on
+   For example, if ViewVC is installed in /usr/local/viewvc-1.3 on
    your system:
 
-      <Directory /usr/local/viewvc-1.2>
+      <Directory /usr/local/viewvc-1.3>
         # For Apache 2.4.x, use this:
         Require all granted
 
@@ -224,7 +224,7 @@ APACHE CONFIGURATION
    into your httpd.conf file.  Choose the location in httpd.conf where 
    also the other ScriptAlias lines reside.  Some examples:
 
-      ScriptAlias /viewvc /usr/local/viewvc-1.2/bin/cgi/viewvc.cgi
+      ScriptAlias /viewvc /usr/local/viewvc-1.3/bin/cgi/viewvc.cgi
 
    ----------------------------------------
    METHOD B:  CGI mode in cgi-bin directory

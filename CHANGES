@@ -1,16 +1,6 @@
-Version 1.2.0 (released ??-???-????)
+Version 1.3.0 (released ??-???-????)
 
-  * bumped minimum supported Python version to 2.4
-  * implemented support for property diffs (Tigris #383)
-  * allow user-configurable cvsgraph display (Tigris #336)
-  * allow rNNNN syntax for Subversion revision numbers (Tigris #441)
-  * display revision numbers in CVS tag/branch selector (Tigris #546)
-  * allow roots to have optional context (#58)
-  * use a more secure temporary file generator (#159)
-  * fix problems with make-database and special characters (#141, #182)
-  * fix bogus default ci_when value in cvsdb (#200)
-  * standalone query interface removed (#206)
-  * GUI support (--gui) removed from standalone.py
+  * 
 
 Version 1.1.27 (released 06-Jun-2019)
 
