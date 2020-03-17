@@ -4,21 +4,26 @@ ViewVC is a browser interface for CVS and Subversion version control repositorie
 
 ## Features
 
-*   Support for filesystem-accessible CVS and Subversion repositories.
-*   Support for path-based authorization, including parsing and honoring Subversion authz configuration files.
-*   RSS feed generation for tracking changes to repositories or individual items within repositories.
-*   Individually configurable virtual host support.
-*   Line-based annotation/blame display.
-*   Revision graph capabilities (via integration with [CvsGraph](http://www.akhphd.au.dk/~bertho/cvsgraph/)) (_CVS only_).
-*   Syntax highlighting support.
-*   [Bonsai](http://www.mozilla.org/projects/bonsai/)-like repository query facilities.
+*   Support CVS and Subversion repositories.
+    - Filesystem-accessible CVS repositories (with limited CVSNT support).
+    - Filesystem-accessible and remote Subversion repositories.
+*   Path-based authorization, including Subversion access file support.
 *   Template-driven output generation.
+*   Line-based annotation/blame display.
+*   Syntax highlighting support.
 *   Colorized, side-by-side differences.
-*   Tarball generation (by tag/branch for CVS, by revision for Subversion).
+*   Revision graph capabilities (via integration with `cvsgraph`) (_CVS only_).
+*   Individually configurable virtual host support.
+*   Tarball generation.
+    - By tag/branch for CVS.
+    - By revision and (sub)directory for Subversion.
+*   Optional commits database and query interface.
+    - Supports file-based commits for both CVS and Subversion.
+    - RSS feed generation for committed changes.
 *   Localization support based on the Accept-Language request header.
+*   Regexp-based file filtering.
 *   Ability to run either as CGI script or as a standalone server.
-*   Regexp-based file searching.
-*   INI-like configuration file (as opposed to requiring actual code tweaks).
+*   File-based configuration (no code tweaks required)!
 
 ## Requirements
 
