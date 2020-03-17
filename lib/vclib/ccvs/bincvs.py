@@ -353,7 +353,7 @@ class BinCVSRepository(BaseCVSRepository):
     else:
       cmd = os.path.join(self.utilities.rcs_dir, rcs_cmd)
       args = rcs_args
-    if os.versioninfo[:2] >= (3, 3):
+    if sys.hexversion >= 0x3030000:
       stderr = subprocess.STDOUT if capture_err else subprocess.DEVNULL
     else:
       stderr = subprocess.STDOUT if capture_err else None
