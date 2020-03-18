@@ -17,6 +17,8 @@
 
 import sys
 
+PY3 = (sys.version_info[0] >= 3)
+
 # Set to non-zero to track and print processing times
 SHOW_TIMES = 0
 
@@ -43,15 +45,14 @@ if SHOW_TIMES:
 
   def t_end(which):
     t = time.time() - _timers[which]
-    if _times.has_key(which):
+    if which in _times:
       _times[which] = _times[which] + t
     else:
       _times[which] = t
 
   def t_dump(out):
     out.write('<div>')
-    names = _times.keys()
-    names.sort()
+    names = sorted(_times.keys())
     for name in names:
       out.write('%s: %.6fs<br/>\n' % (name, _times[name]))
     out.write('</div>')
@@ -61,7 +62,7 @@ else:
   t_start = t_end = t_dump = lambda *args: None
 
 
-class ViewVCException:
+class ViewVCException(Exception):
   def __init__(self, msg, status=None):
     self.msg = msg
     self.status = status
@@ -78,7 +79,7 @@ def PrintException(server, exc_data):
   tb = exc_data['stacktrace']
 
   server.header(status=status)
-  server.write("<h3>An Exception Has Occurred</h3>\n")
+  server.write(b"<h3>An Exception Has Occurred</h3>\n")
 
   s = ''
   if msg:
@@ -86,11 +87,16 @@ def PrintException(server, exc_data):
   if status:
     s = s + ('<h4>HTTP Response Status</h4>\n<p><pre>\n%s</pre></p><hr />\n'
              % status)
+  if PY3:
+    s = s.encode('utf-8', 'xmlcharrefreplace')
   server.write(s)
 
-  server.write("<h4>Python Traceback</h4>\n<p><pre>")
-  server.write(server.escape(tb))
-  server.write("</pre></p>\n")
+  server.write(b"<h4>Python Traceback</h4>\n<p><pre>")
+  if PY3:
+    server.write(server.escape(tb).encode('utf-8', 'xmlcharrefreplace'))
+  else:
+    server.write(server.escape(tb))
+  server.write(b"</pre></p>\n")
 
 
 def GetExceptionData():
@@ -104,7 +110,7 @@ def GetExceptionData():
     }
 
   try:
-    import traceback, string
+    import traceback
 
     if isinstance(exc, ViewVCException):
       exc_dict['msg'] = exc.msg
@@ -115,7 +121,7 @@ def GetExceptionData():
     formatted = traceback.format_exception(exc_type, exc, exc_tb)
     if exc_tb is not None:
       formatted = formatted[1:]
-    exc_dict['stacktrace'] = string.join(formatted, '')
+    exc_dict['stacktrace'] = ''.join(formatted)
 
   finally:
     # prevent circular reference. sys.exc_info documentation warns
@@ -137,7 +143,7 @@ if SHOW_CHILD_PROCESSES:
 
       import sapi
       if not sapi.server is None:
-        if not sapi.server.pageGlobals.has_key('processes'):
+        if 'processes' not in sapi.server.pageGlobals:
           sapi.server.pageGlobals['processes'] = [self]
         else:
           sapi.server.pageGlobals['processes'].append(self)
@@ -145,7 +151,7 @@ if SHOW_CHILD_PROCESSES:
   def DumpChildren(server):
     import os
 
-    if not server.pageGlobals.has_key('processes'):
+    if 'processes' not in server.pageGlobals:
       return
 
     server.header()
@@ -154,51 +160,72 @@ if SHOW_CHILD_PROCESSES:
 
     for k in server.pageGlobals['processes']:
       i = i + 1
-      server.write("<table>\n")
-      server.write("<tr><td colspan=\"2\">Child Process%i</td></tr>" % i)
-      server.write("<tr>\n  <td style=\"vertical-align:top\">Command Line</td>  <td><pre>")
-      server.write(server.escape(k.command))
-      server.write("</pre></td>\n</tr>\n")
-      server.write("<tr>\n  <td style=\"vertical-align:top\">Standard In:</td>  <td>")
+      server.write(b"<table>\n")
+      server.write(b"<tr><td colspan=\"2\">Child Process%i</td></tr>" % i)
+      server.write(b"<tr>\n  <td style=\"vertical-align:top\">Command Line</td>  <td><pre>")
+      if PY3:
+        server.write(server.escape(k.command).encode('utf-8'))
+      else:
+        server.write(server.escape(k.command))
+      server.write(b"</pre></td>\n</tr>\n")
+      server.write(b"<tr>\n  <td style=\"vertical-align:top\">Standard In:</td>  <td>")
 
       if k.debugIn is lastOut and not lastOut is None:
-        server.write("<em>Output from process %i</em>" % (i - 1))
+        server.write(b"<em>Output from process %i</em>" % (i - 1))
       elif k.debugIn:
-        server.write("<pre>")
-        server.write(server.escape(k.debugIn.getvalue()))
-        server.write("</pre>")
+        server.write(b"<pre>")
+        if PY3:
+          server.write(server.escape(k.debugIn.getvalue()).encode('utf-8'))
+        else:
+          server.write(server.escape(k.debugIn.getvalue()))
+        server.write(b"</pre>")
 
-      server.write("</td>\n</tr>\n")
+      server.write(b"</td>\n</tr>\n")
 
       if k.debugOut is k.debugErr:
-        server.write("<tr>\n  <td style=\"vertical-align:top\">Standard Out & Error:</td>  <td><pre>")
+        server.write(b"<tr>\n  <td style=\"vertical-align:top\">Standard Out & Error:</td>  <td><pre>")
         if k.debugOut:
-          server.write(server.escape(k.debugOut.getvalue()))
-        server.write("</pre></td>\n</tr>\n")
+          if PY3:
+            server.write(server.escape(k.debugOut.getvalue()).encode('utf-8'))
+          else:
+            server.write(server.escape(k.debugOut.getvalue()))
+        server.write(b"</pre></td>\n</tr>\n")
 
       else:
-        server.write("<tr>\n  <td style=\"vertical-align:top\">Standard Out:</td>  <td><pre>")
+        server.write(b"<tr>\n  <td style=\"vertical-align:top\">Standard Out:</td>  <td><pre>")
         if k.debugOut:
-          server.write(server.escape(k.debugOut.getvalue()))
-        server.write("</pre></td>\n</tr>\n")
-        server.write("<tr>\n  <td style=\"vertical-align:top\">Standard Error:</td>  <td><pre>")
+          if PY3:
+            server.write(server.escape(k.debugOut.getvalue()).encode('utf-8'))
+          else:
+            server.write(server.escape(k.debugOut.getvalue()))
+        server.write(b"</pre></td>\n</tr>\n")
+        server.write(b"<tr>\n  <td style=\"vertical-align:top\">Standard Error:</td>  <td><pre>")
         if k.debugErr:
-          server.write(server.escape(k.debugErr.getvalue()))
-        server.write("</pre></td>\n</tr>\n")
+          if PY3:
+            server.write(server.escape(k.debugErr.getvalue()).encode('utf-8'))
+          else:
+            server.write(server.escape(k.debugErr.getvalue()))
+        server.write(b"</pre></td>\n</tr>\n")
 
-      server.write("</table>\n")
+      server.write(b"</table>\n")
       server.flush()
       lastOut = k.debugOut
 
-    server.write("<table>\n")
-    server.write("<tr><td colspan=\"2\">Environment Variables</td></tr>")
+    server.write(b"<table>\n")
+    server.write(b"<tr><td colspan=\"2\">Environment Variables</td></tr>")
     for k, v in os.environ.items():
-      server.write("<tr>\n  <td style=\"vertical-align:top\"><pre>")
-      server.write(server.escape(k))
-      server.write("</pre></td>\n  <td style=\"vertical-align:top\"><pre>")
-      server.write(server.escape(v))
-      server.write("</pre></td>\n</tr>")
-    server.write("</table>")
+      server.write(b"<tr>\n  <td style=\"vertical-align:top\"><pre>")
+      if PY3:
+        server.write(server.escape(k).encode('utf-8'))
+      else:
+        server.write(server.escape(k))
+      server.write(b"</pre></td>\n  <td style=\"vertical-align:top\"><pre>")
+      if PY3:
+        server.write(server.escape(v).encode('utf-8'))
+      else:
+        server.write(server.escape(v))
+      server.write(b"</pre></td>\n</tr>")
+    server.write(b"</table>")
 
 else:
 

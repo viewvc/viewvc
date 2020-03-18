@@ -10,18 +10,28 @@
 #
 # -----------------------------------------------------------------------
 
+import sys
 import os
 import re
-import cStringIO
 import tempfile
+if sys.version_info[0] >= 3:
+  PY3 = True
+  from io import StringIO, BytesIO
+  import functools
+  # Python 3: workaround for cmp()
+  def cmp(a, b):
+    return (a > b) - (a < b)
+else:
+  PY3 = False
+  from cStringIO import StringIO
 
 import vclib
-import rcsparse
-import blame
+from . import rcsparse
+from . import blame
 
 ### The functionality shared with bincvs should probably be moved to a
 ### separate module
-from bincvs import BaseCVSRepository, Revision, Tag, _file_log, _log_path, _logsort_date_cmp, _logsort_rev_cmp, _path_join
+from .bincvs import BaseCVSRepository, Revision, Tag, _file_log, _log_path, _logsort_date_cmp, _logsort_rev_cmp, _path_join
 
 
 class CCVSRepository(BaseCVSRepository):
@@ -66,9 +76,9 @@ class CCVSRepository(BaseCVSRepository):
         entry.path = path
         try:
           rcsparse.parse(open(path, 'rb'), InfoSink(entry, rev, alltags))
-        except IOError, e:
+        except IOError as e:
           entry.errors.append("rcsparse error: %s" % e)
-        except RuntimeError, e:
+        except RuntimeError as e:
           entry.errors.append("rcsparse error: %s" % e)
         except rcsparse.RCSStopParser:
           pass
@@ -99,17 +109,23 @@ class CCVSRepository(BaseCVSRepository):
     path = self.rcsfile(path_parts, 1)
     sink = TreeSink()
     rcsparse.parse(open(path, 'rb'), sink)
-    filtered_revs = _file_log(sink.revs.values(), sink.tags, sink.lockinfo,
-                              sink.default_branch, rev)
+    filtered_revs = _file_log(list(sink.revs.values()), sink.tags,
+                              sink.lockinfo, sink.default_branch, rev)
     for rev in filtered_revs:
       if rev.prev and len(rev.number) == 2:
         rev.changed = rev.prev.next_changed
     options['cvs_tags'] = sink.tags
 
     if sortby == vclib.SORTBY_DATE:
-      filtered_revs.sort(_logsort_date_cmp)
+      if PY3:
+        filtered_revs.sort(key=functools.cmp_to_key(_logsort_date_cmp))
+      else:
+        filtered_revs.sort(_logsort_date_cmp)
     elif sortby == vclib.SORTBY_REV:
-      filtered_revs.sort(_logsort_rev_cmp)
+      if PY3:
+        filtered_revs.sort(key=functools.cmp_to_key(_logsort_rev_cmp))
+      else:
+        filtered_revs.sort(_logsort_rev_cmp)
 
     if len(filtered_revs) < first:
       return []
@@ -155,7 +171,10 @@ class CCVSRepository(BaseCVSRepository):
     sink = COSink(rev)
     rcsparse.parse(open(path, 'rb'), sink)
     revision = sink.last and sink.last.string
-    return cStringIO.StringIO('\n'.join(sink.sstext.text)), revision
+    if PY3:
+      return BytesIO(b'\n'.join(sink.sstext.text)), revision
+    else:
+      return StringIO('\n'.join(sink.sstext.text)), revision
 
 class MatchingSink(rcsparse.Sink):
   """Superclass for sinks that search for revisions based on tag or number"""
@@ -317,21 +336,21 @@ class TreeSink(rcsparse.Sink):
       rev.changed = changed and "+%i -%i" % (added, deled)
 
 class StreamText:
-  d_command = re.compile('^d(\d+)\\s(\\d+)')
-  a_command = re.compile('^a(\d+)\\s(\\d+)')
+  d_command = re.compile(br'^d(\d+)\s(\d+)')
+  a_command = re.compile(br'^a(\d+)\s(\d+)')
 
   def __init__(self, text):
-    self.text = text.split('\n')
+    self.text = text.split(b'\n')
 
   def command(self, cmd):
     adjust = 0
     add_lines_remaining = 0
-    diffs = cmd.split('\n')
-    if diffs[-1] == "":
+    diffs = cmd.split(b'\n')
+    if diffs[-1] == b"":
       del diffs[-1]
     if len(diffs) == 0:
       return
-    if diffs[0] == "":
+    if diffs[0] == b"":
       del diffs[0]
     for command in diffs:
       if add_lines_remaining > 0:
@@ -355,7 +374,7 @@ class StreamText:
         count      = int(amatch.group(2))
         add_lines_remaining = count
       else:
-        raise RuntimeError, 'Error parsing diff commands'
+        raise RuntimeError('Error parsing diff commands')
 
 def secondnextdot(s, start):
   # find the position the second dot after the start index.
@@ -377,6 +396,8 @@ class COSink(MatchingSink):
       raise vclib.InvalidRevision(self.find)
 
   def set_revision_info(self, revision, log, text):
+    if PY3:
+      text = text.encode('ascii', 'surrogateescape')
     tag = self.find_tag
     rev = Revision(revision)
 

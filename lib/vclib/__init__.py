@@ -14,7 +14,8 @@
 such as CVS.
 """
 
-import types
+import sys
+import io
 
 
 # item types returned by Repository.itemtype().
@@ -260,8 +261,12 @@ class Revision:
     self.size = size
     self.lockinfo = lockinfo
 
-  def __cmp__(self, other):
-    return cmp(self.number, other.number)
+  if sys.version_info[0] >= 3:
+    def __lt__(self, other):
+      return (self.number < other.number)
+  else:
+    def __cmp__(self, other):
+      return cmp(self.number, other.number)
 
 class Annotation:
   """Instances represent per-line file annotation information"""
@@ -325,7 +330,7 @@ class ItemNotFound(Error):
   def __init__(self, path):
     # use '/' rather than os.sep because this is for user consumption, and
     # it was defined using URL separators
-    if type(path) in (types.TupleType, types.ListType):
+    if isinstance(path, tuple) or isinstance(path, list):
       path = '/'.join(path)
     Error.__init__(self, path)
 
@@ -342,7 +347,8 @@ class NonTextualFileContents(Error):
 # ======================================================================
 # Implementation code used by multiple vclib modules
 
-import popen
+import subprocess
+import sys
 import os
 import time
 
@@ -350,7 +356,7 @@ def _diff_args(type, options):
   """generate argument list to pass to diff or rcsdiff"""
   args = []
   if type == CONTEXT:
-    if options.has_key('context'):
+    if 'context' in options:
       if options['context'] is None:
         args.append('--context=-1')
       else:
@@ -358,7 +364,7 @@ def _diff_args(type, options):
     else:
       args.append('-c')
   elif type == UNIFIED:
-    if options.has_key('context'):
+    if 'context' in options:
       if options['context'] is None:
         args.append('--unified=-1')
       else:
@@ -387,10 +393,18 @@ class _diff_fp:
     self.temp1 = temp1
     self.temp2 = temp2
     args = diff_opts[:]
+    args.insert(0, diff_cmd)
     if info1 and info2:
       args.extend(["-L", self._label(info1), "-L", self._label(info2)])
     args.extend([temp1, temp2])
-    self.fp = popen.popen(diff_cmd, args, "r")
+    self.proc = subprocess.Popen(args, stdout=subprocess.PIPE, bufsize=-1,
+                                 close_fds=(sys.platform != "win32"))
+    if (    not isinstance(self.proc.stdout, io.TextIOBase)
+        and isinstance(self.proc.stdout, io.BufferedIOBase)):
+        self.fp = io.TextIOWrapper(self.proc.stdout,
+                                   encoding='utf-8', errors='surrogateescape')
+    else:
+        self.fp = self.proc.stdout
 
   def read(self, bytes):
     return self.fp.read(bytes)
@@ -400,9 +414,13 @@ class _diff_fp:
 
   def close(self):
     try:
-      if self.fp:
+      if self.proc:
         self.fp.close()
-        self.fp = None
+        ret = self.proc.poll()
+        if ret is None:
+          # child process seems to be still running...
+          self.proc.terminate()
+        self.proc = None
     finally:
       try:
         if self.temp1:
@@ -416,7 +434,8 @@ class _diff_fp:
   def __del__(self):
     self.close()
 
-  def _label(self, (path, date, rev)):
+  def _label(self, info):
+    path, date, rev = info
     date = date and time.strftime('%Y/%m/%d %H:%M:%S', time.gmtime(date))
     return "%s\t%s\t%s" % (path, date, rev)
 

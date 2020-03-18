@@ -19,6 +19,18 @@ import re
 import vclib
 import dbi
 
+if sys.version_info[0] >= 3:
+    PY3 = True
+    _re_escaped = re.compile('[\udc00-\udcff]')
+    def reencode(s, encoding='utf-8', errors='backslashreplace'):
+        if _re_escaped.search(s):
+            return s.encode('utf-8',
+                            'surrogateescape').decode(encoding, errors)
+        else:
+            return s
+else:
+    PY3 = False
+
 ## Current commits database schema version number.
 ##
 ## Version 0 was the original Bonsai-compatible version.
@@ -70,6 +82,8 @@ class CheckinDatabase:
                                        "software." % (self._version))
 
     def sql_get_id(self, table, column, value, auto_set):
+        if PY3:
+            value = reencode(value)
         sql = "SELECT id FROM %s WHERE %s=%%s" % (table, column)
         sql_args = (value, )
 
@@ -200,7 +214,7 @@ class CheckinDatabase:
         cursor = self.db.cursor()
         try:
             cursor.execute(sql, sql_args)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Error setting metadata: '%s'\n"
                             "\tname  = %s\n"
                             "\tvalue = %s\n"
@@ -237,6 +251,8 @@ class CheckinDatabase:
         return self.get("repositories", "repository", id)
 
     def SQLGetDescriptionID(self, description, auto_set = 1):
+        if PY3:
+            description = reencode(description)
         ## lame string hash, blame Netscape -JMP
         hash = len(description)
 
@@ -322,7 +338,7 @@ class CheckinDatabase:
         cursor = self.db.cursor()
         try:
             cursor.execute(sql, sql_args)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Error adding commit: '%s'\n"
                             "Values were:\n"
                             "\ttype         = %s\n"
@@ -343,7 +359,10 @@ class CheckinDatabase:
         sqlList = []
 
         for query_entry in query_entry_list:
-            data = query_entry.data
+            if PY3:
+                data = reencode(query_entry.data)
+            else:
+                data = query_entry.data
             ## figure out the correct match type
             if query_entry.match == "exact":
                 match = "="

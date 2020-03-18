@@ -13,6 +13,7 @@
 # viewvc: View CVS/SVN repositories via a web browser
 #
 # -----------------------------------------------------------------------
+from __future__ import print_function
 
 __version__ = '1.3.0-dev'
 
@@ -30,20 +31,26 @@ import fnmatch
 import gzip
 import mimetypes
 import re
-import rfc822
+import email.utils
 import stat
 import struct
 import tempfile
 import time
-import types
-import urllib
+import functools
+if sys.version_info[0] >= 3:
+  PY3 = True
+  import io
+  from urllib.parse import urlencode as _urlencode, quote as _quote
+else:
+  PY3 = False
+  from urllib import urlencode as _urlencode, quote as _quote
+import subprocess
 
 # These modules come from our library (the stub has set up the path)
 from common import _item, _RCSDIFF_NO_CHANGES, _RCSDIFF_IS_BINARY, _RCSDIFF_ERROR, TemplateData
 import accept
 import config
 import ezt
-import popen
 import sapi
 import vcauth
 import vclib
@@ -93,6 +100,12 @@ CHUNK_SIZE = 8192
 _URL_SAFE_CHARS = "/*~"
 
 
+# Python 3: workaround for cmp()
+if PY3:
+  def cmp(a, b):
+    return (a > b) - (a < b)
+
+
 class Request:
   def __init__(self, server, cfg):
     self.server = server
@@ -118,9 +131,7 @@ class Request:
     self.gzip_compress_level = 0
     if cfg.options.allow_compress:
       http_accept_encoding = os.environ.get("HTTP_ACCEPT_ENCODING", "")
-      if "gzip" in filter(None,
-                          map(lambda x: x.strip(),
-                              http_accept_encoding.split(','))):
+      if "gzip" in [x.strip() for x in http_accept_encoding.split(',')]:
         self.gzip_compress_level = 9  # make this configurable?
 
   def run_viewvc(self):
@@ -219,7 +230,7 @@ class Request:
           if roottype is None:
             # Perhaps the root name is candidate for renaming...
             # Take care of old-new roots mapping
-            for old_root, new_root in cfg.general.renamed_roots.iteritems():
+            for old_root, new_root in cfg.general.renamed_roots.items():
               pp = _path_parts(old_root)
               if _path_starts_with(path_parts, pp):
                 path_parts = path_parts[len(pp):]
@@ -239,7 +250,7 @@ class Request:
       needs_redirect = 1
 
     # Take care of old-new roots mapping
-    for old_root, new_root in cfg.general.renamed_roots.iteritems():
+    for old_root, new_root in cfg.general.renamed_roots.items():
       if self.rootname == old_root:
         self.rootname = new_root
         needs_redirect = 1
@@ -306,13 +317,13 @@ class Request:
 
     # If this is using an old-style 'rev' parameter, redirect to new hotness.
     # Subversion URLs will now use 'pathrev'; CVS ones use 'revision'.
-    if self.repos and self.query_dict.has_key('rev'):
+    if self.repos and 'rev' in self.query_dict:
       if self.roottype == 'svn' \
-             and not self.query_dict.has_key('pathrev') \
+             and 'pathrev' not in self.query_dict \
              and not self.view_func == view_revision:
         self.query_dict['pathrev'] = self.query_dict['rev']
         del self.query_dict['rev']
-      else: # elif not self.query_dict.has_key('revision'): ?
+      else: # elif 'revision' not in self.query_dict: ?
         self.query_dict['revision'] = self.query_dict['rev']
         del self.query_dict['rev']
       needs_redirect = 1
@@ -375,23 +386,23 @@ class Request:
         self.view_func = view_roots
       elif self.pathtype == vclib.DIR:
         # ViewCVS 0.9.2 used to put ?tarball=1 at the end of tarball urls
-        if self.query_dict.has_key('tarball'):
+        if 'tarball' in self.query_dict:
           self.view_func = download_tarball
-        elif self.query_dict.has_key('r1') and self.query_dict.has_key('r2'):
+        elif 'r1' in self.query_dict and 'r2' in self.query_dict:
           self.view_func = view_diff
         else:
           self.view_func = view_directory
       elif self.pathtype == vclib.FILE:
-        if self.query_dict.has_key('r1') and self.query_dict.has_key('r2'):
+        if 'r1' in self.query_dict and 'r2' in self.query_dict:
           self.view_func = view_diff
-        elif self.query_dict.has_key('annotate'):
+        elif 'annotate' in self.query_dict:
           self.view_func = view_annotate
-        elif self.query_dict.has_key('graph'):
-          if not self.query_dict.has_key('makeimage'):
+        elif 'graph' in self.query_dict:
+          if 'makeimage' not in self.query_dict:
             self.view_func = view_cvsgraph
           else:
             self.view_func = view_cvsgraph_image
-        elif self.query_dict.has_key('revision') \
+        elif 'revision' in self.query_dict \
                  or cfg.options.default_file_view != "log":
           if cfg.options.default_file_view == "markup" \
              or self.query_dict.get('content-type', None) \
@@ -434,12 +445,12 @@ class Request:
     split into components.  If PREFIX is set, include the protocol and
     server name portions of the URL."""
 
-    url, params = apply(self.get_link, (), args)
-    qs = urllib.urlencode(params)
+    url, params = self.get_link(*(), **args)
+    qs = _urlencode(params)
     if qs:
-      result = urllib.quote(url, _URL_SAFE_CHARS) + '?' + qs
+      result = _quote(url, _URL_SAFE_CHARS) + '?' + qs
     else:
-      result = urllib.quote(url, _URL_SAFE_CHARS)
+      result = _quote(url, _URL_SAFE_CHARS)
 
     if partial:
       result = result + (qs and '&' or '?')
@@ -459,8 +470,8 @@ class Request:
     attributes representing stuff that should be in <input
     type=hidden> tags with the link parameters."""
 
-    url, params = apply(self.get_link, (), args)
-    action = self.server.escape(urllib.quote(url, _URL_SAFE_CHARS))
+    url, params = self.get_link(*(), **args)
+    action = self.server.escape(_quote(url, _URL_SAFE_CHARS))
     hidden_values = []
     for name, value in params.items():
       hidden_values.append(_item(name=self.server.escape(name),
@@ -537,7 +548,7 @@ class Request:
 
     # add 'pathrev' value to parameter list
     if (self.pathrev is not None
-        and not params.has_key('pathrev')
+        and 'pathrev' not in params
         and view_func is not view_revision
         and rootname == self.rootname):
       params['pathrev'] = self.pathrev
@@ -590,18 +601,18 @@ class Request:
 
     # set the view parameter
     view_code = _view_codes.get(view_func)
-    if view_code and not (params.has_key('view') and params['view'] is None):
+    if view_code and not ('view' in params and params['view'] is None):
       params['view'] = view_code
 
     # add sticky values to parameter list
     if sticky_vars:
       for name in _sticky_vars:
         value = self.query_dict.get(name)
-        if value is not None and not params.has_key(name):
+        if value is not None and name not in params:
           params[name] = value
 
     # remove null values from parameter list
-    for name, value in params.items():
+    for name, value in list(params.items()):
       if value is None:
         del params[name]
 
@@ -611,7 +622,7 @@ def _path_parts(path):
   """Split up a repository path into a list of path components"""
   # clean it up. this removes duplicate '/' characters and any that may
   # exist at the front or end of the path.
-  return filter(None, path.split('/'))
+  return [pp for pp in path.split('/') if pp]
 
 def _normalize_path(path):
   """Collapse leading slashes in the script name
@@ -676,7 +687,7 @@ def _validate_regex(value):
 
 def _validate_view(value):
   # Return true iff VALUE is one of our allowed views.
-  return _views.has_key(value)
+  return value in _views
 
 def _validate_mimetype(value):
   # For security purposes, we only allow mimetypes from a predefined set
@@ -896,7 +907,8 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
   if mtime is not None:
     try:
       request_mtime = request.server.getenv('HTTP_IF_MODIFIED_SINCE')
-      request_mtime = rfc822.mktime_tz(rfc822.parsedate_tz(request_mtime))
+      request_mtime = email.utils.mktime_tz(
+                              email.utils.parsedate_tz(request_mtime))
     except:
       request_mtime = None
 
@@ -905,14 +917,14 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
   # if not available, then the document isn't fresh.
   if etag is not None:
     isfresh = (request_etag == etag)
-  elif mtime is not None:
+  elif mtime is not None and request_mtime is not None:
     isfresh = (request_mtime >= mtime)
   else:
     isfresh = 0
 
   # require revalidation after the configured amount of time
   if cfg and cfg.options.http_expiration_time >= 0:
-    expiration = rfc822.formatdate(time.time() +
+    expiration = email.utils.formatdate(time.time() +
                                    cfg.options.http_expiration_time)
     request.server.addheader('Expires', expiration)
     request.server.addheader('Cache-Control',
@@ -924,7 +936,7 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
     if etag is not None:
       request.server.addheader('ETag', etag)
     if mtime is not None:
-      request.server.addheader('Last-Modified', rfc822.formatdate(mtime))
+      request.server.addheader('Last-Modified', email.utils.formatdate(mtime))
   return isfresh
 
 def get_view_template(cfg, view_name, language="en"):
@@ -987,6 +999,8 @@ def get_writeready_server_file(request, content_type=None, encoding=None,
 
 def generate_page(request, view_name, data, content_type=None):
   server_fp = get_writeready_server_file(request, content_type)
+  if PY3 and not hasattr(server_fp, 'encoding'):
+    server_fp = io.TextIOWrapper(server_fp, 'utf-8', 'surrogateescape')
   template = get_view_template(request.cfg, view_name, request.language)
   template.generate(server_fp, data)
 
@@ -1035,17 +1049,20 @@ def nav_path(request):
 
 def prep_tags(request, tags):
   url, params = request.get_link(params={'pathrev': None})
-  params = urllib.urlencode(params)
+  params = _urlencode(params)
   if params:
-    url = urllib.quote(url, _URL_SAFE_CHARS) + '?' + params + '&pathrev='
+    url = _quote(url, _URL_SAFE_CHARS) + '?' + params + '&pathrev='
   else:
-    url = urllib.quote(url, _URL_SAFE_CHARS) + '?pathrev='
+    url = _quote(url, _URL_SAFE_CHARS) + '?pathrev='
   url = request.server.escape(url)
 
   links = [ ]
   for tag in tags:
     links.append(_item(name=tag.name, href=url+tag.name))
-  links.sort(lambda a, b: cmp(a.name, b.name))
+  if PY3:
+    links.sort(key=functools.cmp_to_key(lambda a, b: cmp(a.name, b.name)))
+  else:
+    links.sort(lambda a, b: cmp(a.name, b.name))
   return links
 
 def guess_mime(filename):
@@ -1243,7 +1260,7 @@ class ViewVCHtmlFormatter:
     """
     s = mobj.group(0)
     trunc_s = maxlen and s[:maxlen] or s
-    return '<a href="mailto:%s">%s</a>' % (urllib.quote(s),
+    return '<a href="mailto:%s">%s</a>' % (_quote(s),
                                            self._entity_encode(trunc_s)), \
            len(trunc_s)
 
@@ -1298,7 +1315,7 @@ class ViewVCHtmlFormatter:
     """Return a 2-tuple containing:
          - the text represented by MatchObject MOBJ, formatted as an
            linkified URL created by substituting match groups 0-9 into
-           USERDATA (which is a format string that uses \N to
+           USERDATA (which is a format string that uses \\N to
            represent the substitution locations) and with no more than
            MAXLEN characters in the non-HTML-tag portions.  If MAXLEN
            is 0, there is no maximum.
@@ -1404,7 +1421,7 @@ class ViewVCHtmlFormatter:
     return ViewVCHtmlFormatterTokens(tokens)
 
   def _entity_encode(self, s):
-    return ''.join(map(lambda x: '&#%d;' % (ord(x)), s))
+    return ''.join(['&#%d;' % (ord(x)) for x in s])
 
 
 class LogFormatter:
@@ -1418,7 +1435,7 @@ class LogFormatter:
     cfg = self.request.cfg
 
     # Prefer the cache.
-    if self.cache.has_key((maxlen, htmlize)):
+    if (maxlen, htmlize) in self.cache:
       return self.cache[(maxlen, htmlize)]
 
     # If we are HTML-izing...
@@ -1451,7 +1468,7 @@ class LogFormatter:
         # Add custom rewrite handling per configuration.
         for rule in cfg.options.custom_log_formatting:
           rule = rule.replace('\\:', '\x01')
-          regexp, format = map(lambda x: x.strip(), rule.split(':', 1))
+          regexp, format = [x.strip() for x in  rule.split(':', 1)]
           regexp = regexp.replace('\x01', ':')
           format = format.replace('\x01', ':')
           lf.add_formatter(re.compile(regexp), lf.format_custom_url, format)
@@ -1512,23 +1529,25 @@ def little_time(request):
     return 'very little time'
 
 def html_time(request, secs, extended=0):
-  secs = long(time.time()) - secs
+  if PY3:
+    secs = int(time.time()) - secs
+  else:
+    secs = long(time.time()) - secs
   if secs < 2:
     return little_time(request)
-  breaks = _time_desc.keys()
-  breaks.sort()
+  breaks = sorted(_time_desc.keys())
   i = 0
   while i < len(breaks):
     if secs < 2 * breaks[i]:
       break
     i = i + 1
   value = breaks[i - 1]
-  s = get_time_text(request, value, secs / value)
+  s = get_time_text(request, value, secs // value)
 
   if extended and i > 1:
     secs = secs % value
     value = breaks[i - 2]
-    ext = get_time_text(request, value, secs / value)
+    ext = get_time_text(request, value, secs // value)
     if ext:
       ### this is not i18n compatible. pass on it for now
       s = s + ', ' + ext
@@ -1617,9 +1636,8 @@ def common_template_data(request, revision=None, mime_type=None):
                                            params={}, escape=1)
     file_data = request.repos.listdir(request.path_parts[:-1],
                                       request.pathrev, {})
-    def _only_this_file(item):
-      return item.name == request.path_parts[-1]
-    entries = filter(_only_this_file, file_data)
+    entries =[item for item in file_data
+              if item.name == request.path_parts[-1]]
     if len(entries) == 1:
       request.repos.dirlogs(request.path_parts[:-1], request.pathrev,
                             entries, {})
@@ -1694,13 +1712,13 @@ class MarkupPipeWrapper:
     self.posttext = posttext
     self.htmlize = htmlize
 
-  def __call__(self, ctx):
+  def __call__(self, fp, ctx, filename, line_number):
     if self.pretext:
-      ctx.fp.write(self.pretext)
-    copy_stream(self.fp, ctx.fp, self.htmlize)
+      fp.write(self.pretext)
+    copy_stream(self.fp, fp, self.htmlize)
     self.fp.close()
     if self.posttext:
-      ctx.fp.write(self.posttext)
+      fp.write(self.posttext)
 
 _re_rewrite_escaped_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)'
                                      '(://[-a-zA-Z0-9%.~:_/]+)'
@@ -1736,7 +1754,10 @@ def detect_encoding(text_block):
 
   # If no recognized BOM, see if chardet can help us.
   try:
-    import chardet
+    try:
+      import cchardet as chardet
+    except ImportError:
+      import chardet
 
     # If chardet can confidently claimed a match, we'll use its
     # findings.  (And if that match is 'ascii' -- which is a subset of
@@ -1757,16 +1778,17 @@ def transcode_text(text, encoding=None):
   """If ENCODING is provided and not 'utf-8', transcode TEXT from
   ENCODING to UTF-8."""
 
+  # for Python 2.x only
   if not encoding or encoding == 'utf-8':
     return text
   try:
-    return unicode(text, encoding, 'replace').encode('utf-8', 'replace')
+    return text.decode(encoding, 'replace').encode('utf-8', 'replace')
   except:
     pass
   return text
 
 def markup_file_contents(request, cfg, file_lines, filename,
-                         mime_type, encoding, colorize):
+                         mime_type, encoding, colorize): # -> List[str]
   # Nothing to mark up?  So be it.
   if not file_lines:
     return []
@@ -1843,10 +1865,15 @@ def markup_file_contents(request, cfg, file_lines, filename,
     # Built output data comprised of marked-up and possibly-transcoded
     # source text lines wrapped in (possibly dummy) vclib.Annotation
     # objects.
-    file_lines = transcode_text(''.join(file_lines), encoding)
-    if file_lines[-1] == '\n':
-      file_lines = file_lines[:-1]
-    file_lines = file_lines.split('\n')
+    if PY3:
+      if not encoding:
+        encoding='ascii'
+      file_lines = [l.decode(encoding, 'surrogateescape') for l in file_lines]
+    else:
+      file_lines = transcode_text(''.join(file_lines), encoding)
+      if file_lines[-1] == '\n':
+        file_lines = file_lines[:-1]
+      file_lines = file_lines.split('\n')
     for i in range(len(file_lines)):
       line = file_lines[i]
       if cfg.options.tabsize > 0:
@@ -1864,10 +1891,10 @@ def markup_file_contents(request, cfg, file_lines, filename,
       self.colorized_file_lines.append(markup_escaped_urls(buf.rstrip('\n\r')))
 
   ps = PygmentsSink()
-  highlight(''.join(file_lines), pygments_lexer,
+  highlight(b''.join(file_lines), pygments_lexer,
             HtmlFormatter(nowrap=True,
                           classprefix="pygments-",
-                          encoding='utf-8'), ps)
+                          encoding=(None if PY3 else 'utf-8')), ps)
   return ps.colorized_file_lines
 
 def empty_blame_item(line, line_no):
@@ -1930,19 +1957,26 @@ def make_rss_time_string(date, cfg):
   return time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(date)) + ' UTC'
 
 def make_comma_sep_list_string(items):
-  return ', '.join(map(lambda x: x.name, items))
+  return ', '.join([x.name for x in items])
 
 def is_undisplayable(val):
-  try:
-    unicode(val)
-    return 0
-  except:
-    return 1
+  if PY3:
+    # XXX: must revise usage later
+    try:
+      str(val)
+      return 0
+    except:
+      return 1
+  else:
+    try:
+      unicode(val)
+      return 0
+    except:
+      return 1
 
 def get_itemprops(request, path_parts, rev):
   itemprops = request.repos.itemprops(path_parts, rev)
-  propnames = itemprops.keys()
-  propnames.sort()
+  propnames = sorted(itemprops.keys())
   props = []
   for name in propnames:
     # skip non-utf8 property names
@@ -1958,7 +1992,7 @@ def get_itemprops(request, path_parts, rev):
   return props
 
 def parse_mime_type(mime_type):
-  mime_parts = map(lambda x: x.strip(), mime_type.split(';'))
+  mime_parts = [x.strip() for x in mime_type.split(';')]
   type_subtype = mime_parts[0].lower()
   parameters = {}
   for part in mime_parts[1:]:
@@ -2075,6 +2109,7 @@ def markup_or_annotate(request, is_annotate):
     else:
       file_lines = fp.readlines()
     fp.close()
+    # Python 3: type of elements of file_lines is bytes, not str here
 
     # Try to colorize the file contents.
     colorize = cfg.options.enable_syntax_coloration
@@ -2088,6 +2123,7 @@ def markup_or_annotate(request, is_annotate):
       else:
         raise debug.ViewVCException('Error displaying file contents',
                                     '500 Internal Server Error')
+    # Python 3: now type of elements of lines is str
 
     # Now, try to match up the annotation data (if any) with the file
     # lines.
@@ -2179,8 +2215,8 @@ def view_annotate(request):
   markup_or_annotate(request, 1)
 
 def revcmp(rev1, rev2):
-  rev1 = map(int, rev1.split('.'))
-  rev2 = map(int, rev2.split('.'))
+  rev1 = list(map(int, rev1.split('.')))
+  rev2 = list(map(int, rev2.split('.')))
   return cmp(rev1, rev2)
 
 def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
@@ -2232,7 +2268,10 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
     # sort by file name
     return s * cmp(file1.name, file2.name)
 
-  file_data.sort(file_sort_cmp)
+  if PY3:
+    file_data.sort(key=functools.cmp_to_key(file_sort_cmp))
+  else:
+    file_data.sort(file_sort_cmp)
 
 def icmp(x, y):
   """case insensitive comparison"""
@@ -2248,8 +2287,10 @@ def view_roots(request):
   expand_root_parents(request.cfg)
   allroots = list_roots(request)
   if len(allroots):
-    rootnames = allroots.keys()
-    rootnames.sort(icmp)
+    if PY3:
+      rootnames = sorted(allroots.keys(), key=functools.cmp_to_key(icmp))
+    else:
+      rootnames = sorted(allroots.keys(), icmp)
     for rootname in rootnames:
       root_path, root_type, lastmod = allroots[rootname]
       href = request.get_url(view_func=view_directory,
@@ -2539,15 +2580,19 @@ def view_directory(request):
   # set cvs-specific fields
   if request.roottype == 'cvs':
     plain_tags = options['cvs_tags']
-    plain_tags.sort(icmp)
-    plain_tags.reverse()
+    if PY3:
+      plain_tags.sort(key=functools.cmp_to_key(icmp), reverse=True)
+    else:
+      plain_tags.sort(icmp, True)
     data['plain_tags'] = []
     for plain_tag in plain_tags:
       data['plain_tags'].append(_item(name=plain_tag, revision=None))
 
     branch_tags = options['cvs_branches']
-    branch_tags.sort(icmp)
-    branch_tags.reverse()
+    if PY3:
+      branch_tags.sort(key=functools.cmp_to_key(icmp), reverse=True)
+    else:
+      branch_tags.sort(icmp, True)
     data['branch_tags'] = []
     for branch_tag in branch_tags:
       data['branch_tags'].append(_item(name=branch_tag, revision=None))
@@ -2594,7 +2639,7 @@ def paging(data, key, pagestart, local_name, pagesize):
     pick = _item(start=None, end=None, count=None, more=ezt.boolean(0))
     pick.start = getattr(data[key][i], local_name)
     pick.count = i
-    pick.page = (i / pagesize) + 1
+    pick.page = (i // pagesize) + 1
     try:
       pick.end = getattr(data[key][i+pagesize-1], local_name)
     except IndexError:
@@ -2625,7 +2670,7 @@ def paging_sws(data, key, pagestart, local_name, pagesize,
     pick = _item(start=None, end=None, count=None, more=ezt.boolean(0))
     pick.start = getattr(data[key][i], local_name)
     pick.count = offset + i
-    pick.page = (pick.count / pagesize) + 1
+    pick.page = (pick.count // pagesize) + 1
     try:
       pick.end = getattr(data[key][i+pagesize-1], local_name)
     except IndexError:
@@ -2802,9 +2847,9 @@ def view_log(request):
       entry.tags = prep_tags(request, rev.tags)
       entry.branch_points = prep_tags(request, rev.branch_points)
 
-      entry.tag_names = map(lambda x: x.name, rev.tags)
-      if branch and not name_printed.has_key(branch):
-        entry.branch_names = map(lambda x: x.name, rev.branches)
+      entry.tag_names = [x.name for x in rev.tags]
+      if branch and branch not in name_printed:
+        entry.branch_names = [x.name for x in rev.branches]
         name_printed[branch] = 1
       else:
         entry.branch_names = [ ]
@@ -2987,9 +3032,7 @@ def view_log(request):
                                              params={}, escape=1)
 
   taginfo = options.get('cvs_tags', {})
-  tagitems = taginfo.items()
-  tagitems.sort()
-  tagitems.reverse()
+  tagitems = sorted(taginfo.items(), reverse=True)
 
   main = taginfo.get('MAIN')
   if main:
@@ -3097,7 +3140,7 @@ def cvsgraph_extraopts(request):
 
   # And tag limitation has a user-supplied value to mess with.
   if ('limittags' in request.cfg.options.allowed_cvsgraph_useropts) \
-     and request.query_dict.has_key('gmaxtag'):
+     and 'gmaxtag' in request.query_dict:
     ep = ep + ';rev_maxtags=' + request.query_dict['gmaxtag']
 
   return ep + ';'
@@ -3115,15 +3158,17 @@ def view_cvsgraph_image(request):
   # accordingly.  Do the same in view_cvsgraph().
   #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib:/path/to/cvsgraph'
 
-  rcsfile = request.repos.rcsfile(request.path_parts)
-  fp = popen.popen(cfg.utilities.cvsgraph or 'cvsgraph',
-                   ("-c", cfg.path(cfg.options.cvsgraph_conf),
-                    "-r", request.repos.rootpath,
-                    cvsgraph_extraopts(request),
-                    rcsfile), 'rb', 0)
+  proc = subprocess.Popen((cfg.utilities.cvsgraph or 'cvsgraph',
+                           "-c", cfg.path(cfg.options.cvsgraph_conf),
+                           "-r", request.repos.rootpath,
+                           cvsgraph_extraopts(request),
+                           rcsfile), stdout=subprocess.PIPE,
+                           close_fds=(sys.platform != "win32"))
 
-  copy_stream(fp, get_writeready_server_file(request, 'image/png'))
-  fp.close()
+  copy_stream(proc.stdout, get_writeready_server_file(request, 'image/png'))
+  ret = proc.poll()
+  if ret is None:
+    proc.kill()
 
 def view_cvsgraph(request):
   "output a page containing an image rendered by cvsgraph"
@@ -3144,33 +3189,35 @@ def view_cvsgraph(request):
 
   # Create an image map
   rcsfile = request.repos.rcsfile(request.path_parts)
-  fp = popen.popen(cfg.utilities.cvsgraph or 'cvsgraph',
-                   ("-i",
-                    "-c", cfg.path(cfg.options.cvsgraph_conf),
-                    "-r", request.repos.rootpath,
-                    "-x", "x",
-                    "-3", request.get_url(view_func=view_log, params={},
-                                          escape=1),
-                    "-4", request.get_url(view_func=view,
-                                          params={'revision': None},
-                                          escape=1, partial=1),
-                    "-5", request.get_url(view_func=view_diff,
-                                          params={'r1': None, 'r2': None},
-                                          escape=1, partial=1),
-                    "-6", request.get_url(view_func=view_directory,
-                                          where=up_where,
-                                          pathtype=vclib.DIR,
-                                          params={'pathrev': None},
-                                          escape=1, partial=1),
-                    cvsgraph_extraopts(request),
-                    rcsfile), 'rb', 0)
+  proc = subprocess.Popen((cfg.utilities.cvsgraph or 'cvsgraph',
+                           "-i",
+                           "-c", cfg.path(cfg.options.cvsgraph_conf),
+                           "-r", request.repos.rootpath,
+                           "-x", "x",
+                           "-3", request.get_url(view_func=view_log, params={},
+                                                 escape=1),
+                           "-4", request.get_url(view_func=view,
+                                                 params={'revision': None},
+                                                 escape=1, partial=1),
+                           "-5", request.get_url(view_func=view_diff,
+                                                 params={'r1': None,
+                                                         'r2': None},
+                                                 escape=1, partial=1),
+                           "-6", request.get_url(view_func=view_directory,
+                                                 where=up_where,
+                                                 pathtype=vclib.DIR,
+                                                 params={'pathrev': None},
+                                                 escape=1, partial=1),
+                           cvsgraph_extraopts(request),
+                           rcsfile), stdout=subprocess.PIPE,
+                           close_fds=(sys.platform != "win32"))
 
   graph_action, graph_hidden_values = \
     request.get_form(view_func=view_cvsgraph, params={})
 
   data = common_template_data(request)
   data.merge(TemplateData({
-    'imagemap' : fp,
+    'imagemap' : proc.stdout,
     'imagesrc' : imagesrc,
     'graph_action' : graph_action,
     'graph_hidden_values' : graph_hidden_values,
@@ -3195,14 +3242,25 @@ def search_file(repos, path_parts, rev, search_re):
   # search line.
   fp = repos.openfile(path_parts, rev, {})[0]
   matches = 0
-  while 1:
-    line = fp.readline()
-    if not line:
-      break
-    if search_re.search(line):
-      matches = 1
-      fp.close()
-      break
+  if PY3:
+    while 1:
+      line = fp.readline()
+      if not line:
+        break
+      # XXX: Is there what can we do about file encoding?
+      if search_re.search(line.decode('utf-8', 'surrogateescape')):
+        matches = 1
+        fp.close()
+        break
+  else:
+    while 1:
+      line = fp.readline()
+      if not line:
+        break
+      if search_re.search(line):
+        matches = 1
+        fp.close()
+        break
   return matches
 
 def view_doc(request):
@@ -3218,7 +3276,7 @@ def view_doc(request):
   # Stat the file to get content length and last-modified date.
   try:
     info = os.stat(filename)
-  except OSError, v:
+  except OSError as v:
     raise debug.ViewVCException('Static file "%s" not available (%s)'
                                  % (document, str(v)), '404 Not Found')
   content_length = str(info[stat.ST_SIZE])
@@ -3231,7 +3289,7 @@ def view_doc(request):
 
   try:
     fp = open(filename, "rb")
-  except IOError, v:
+  except IOError as v:
     raise debug.ViewVCException('Static file "%s" not available (%s)'
                                  % (document, str(v)), '404 Not Found')
 
@@ -3487,7 +3545,7 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2,
 
 def _get_diff_path_parts(request, query_key, rev, base_rev):
   repos = request.repos
-  if request.query_dict.has_key(query_key):
+  if query_key in request.query_dict:
     parts = _path_parts(request.query_dict[query_key])
   elif request.roottype == 'svn':
     try:
@@ -3609,6 +3667,8 @@ def view_patch(request):
                                                    rev1, rev2, sym1, sym2)
 
   server_fp = get_writeready_server_file(request, 'text/plain')
+  if PY3 and not hasattr(server_fp, 'encoding'):
+    server_fp = io.TextIOWrapper(server_fp, 'utf-8', 'surrogateescape')
   server_fp.write(headers)
   copy_stream(fp, server_fp)
   fp.close()
@@ -3752,7 +3812,8 @@ class DiffDescription:
     if self.human_readable:
       cfg = self.request.cfg
       diff_options['ignore_white'] = cfg.options.hr_ignore_white
-    for name in self._uniq(left.properties.keys() + right.properties.keys()):
+    for name in self._uniq(list(left.properties.keys())
+                           + list(right.properties.keys())):
       # Skip non-utf8 property names
       if is_undisplayable(name):
         continue
@@ -3832,7 +3893,11 @@ class DiffDescription:
 
   def _prop_lines(self, side, propname):
     val = side.properties.get(propname, '')
-    return val.splitlines()
+    # XXX: dirty hack for Python 3: we need bytes as return value
+    if PY3:
+      return val.encode('utf-8','surrogateescape').splitlines()
+    else:
+      return val.splitlines()
 
   def _prop_fp(self, left, right, propname, diff_options):
     fn_left = self._temp_file(left.properties.get(propname))
@@ -3850,7 +3915,10 @@ class DiffDescription:
     fd, fn = tempfile.mkstemp()
     fp = os.fdopen(fd, "wb")
     if val:
-      fp.write(val)
+      if not isinstance(val, bytes):
+        fp.write(val.encode('utf-8', 'surrogateescape'))
+      else:
+        fp.write(val)
     fp.close()
     return fn
 
@@ -3929,48 +3997,55 @@ def view_diff(request):
 
 
 def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
-                            uid=0, gid=0, typeflag=None, linkname='',
-                            uname='viewvc', gname='viewvc',
+                            uid=0, gid=0, typeflag=None, linkname=b'',
+                            uname=b'viewvc', gname=b'viewvc',
                             devmajor=1, devminor=0, prefix=None,
-                            magic='ustar', version='00', chksum=None):
+                            magic=b'ustar', version=b'00', chksum=None):
+  if not isinstance(name, bytes):
+    name = name.encode('utf-8', 'surrogateescape')
+  if not isinstance(linkname, bytes):
+    linkname = linkname.encode('utf-8', 'surrogateescape')
+
   if not mode:
-    if name[-1:] == '/':
-      mode = 0755
+    if name[-1:] == b'/':
+      mode = 0o0755
     else:
-      mode = 0644
+      mode = 0o0644
 
   if not typeflag:
     if linkname:
-      typeflag = '2' # symbolic link
-    elif name[-1:] == '/':
-      typeflag = '5' # directory
+      typeflag = b'2' # symbolic link
+    elif name[-1:] == b'/':
+      typeflag = b'5' # directory
     else:
-      typeflag = '0' # regular file
+      typeflag = b'0' # regular file
 
   if not prefix:
-    prefix = ''
+    prefix = b''
+  elif not isinstance(prefix, bytes):
+    prefix = prefix.encode('utf-8', 'surrogateescape')
 
   # generate a GNU tar extension header for a long name.
   if len(name) >= 100:
-    generate_tarball_header(out, '././@LongLink', len(name),
-                            0, 0, 0, 0, 'L')
+    generate_tarball_header(out, b'././@LongLink', len(name),
+                            0, 0, 0, 0, b'L')
     out.write(name)
-    out.write('\0' * (511 - ((len(name) + 511) % 512)))
+    out.write(b'\0' * (511 - ((len(name) + 511) % 512)))
 
   # generate a GNU tar extension header for a long symlink name.
   if len(linkname) >= 100:
-    generate_tarball_header(out, '././@LongLink', len(linkname),
-                            0, 0, 0, 0, 'K')
+    generate_tarball_header(out, b'././@LongLink', len(linkname),
+                            0, 0, 0, 0, b'K')
     out.write(linkname)
-    out.write('\0' * (511 - ((len(linkname) + 511) % 512)))
+    out.write(b'\0' * (511 - ((len(linkname) + 511) % 512)))
 
   block1 = struct.pack('100s 8s 8s 8s 12s 12s',
                        name,
-                       '%07o' % mode,
-                       '%07o' % uid,
-                       '%07o' % gid,
-                       '%011o' % size,
-                       '%011o' % mtime)
+                       b'%07o' % mode,
+                       b'%07o' % uid,
+                       b'%07o' % gid,
+                       b'%011o' % size,
+                       b'%011o' % mtime)
 
   block2 = struct.pack('c 100s 6s 2s 32s 32s 8s 8s 155s',
                        typeflag,
@@ -3979,19 +4054,23 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
                        version,
                        uname,
                        gname,
-                       '%07o' % devmajor,
-                       '%07o' % devminor,
+                       b'%07o' % devmajor,
+                       b'%07o' % devminor,
                        prefix)
 
   if not chksum:
-    dummy_chksum = '        '
+    dummy_chksum = b'        '
     block = block1 + dummy_chksum + block2
     chksum = 0
-    for i in range(len(block)):
-      chksum = chksum + ord(block[i])
+    if PY3:
+      for i in range(len(block)):
+        chksum = chksum + block[i]
+    else:
+      for i in range(len(block)):
+        chksum = chksum + ord(block[i])
 
-  block = block1 + struct.pack('8s', '%07o' % chksum) + block2
-  block = block + '\0' * (512 - len(block))
+  block = block1 + struct.pack('8s', b'%07o' % chksum) + block2
+  block = block + b'\0' * (512 - len(block))
 
   out.write(block)
 
@@ -4000,7 +4079,10 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
   rep_path = request.path_parts + reldir
   entries = request.repos.listdir(rep_path, request.pathrev, {})
   request.repos.dirlogs(rep_path, request.pathrev, entries, {})
-  entries.sort(lambda a, b: cmp(a.name, b.name))
+  if PY3:
+    entries.sort(key=functools.cmp_to_key(lambda a, b: cmp(a.name, b.name)))
+  else:
+    entries.sort(lambda a, b: cmp(a.name, b.name))
 
   # figure out corresponding path in tar file. everything gets put underneath
   # a single top level directory named after the repository directory being
@@ -4057,9 +4139,9 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     # at the ,v file in CVS, but that's a layering violation we'd like
     # to avoid as much as possible.
     if request.repos.isexecutable(rep_path + [file.name], request.pathrev):
-      mode = 0755
+      mode = 0o0755
     else:
-      mode = 0644
+      mode = 0o0644
 
     # Is this thing a symlink?
     #
@@ -4075,7 +4157,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     if symlink_target:
       generate_tarball_header(out, tar_dir + file.name, 0, mode,
                               file.date is not None and file.date or 0,
-                              typeflag='2', linkname=symlink_target)
+                              typeflag=b'2', linkname=symlink_target)
     else:
       filesize = request.repos.filesize(rep_path + [file.name], request.pathrev)
 
@@ -4104,7 +4186,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
       fp.close()
 
       # ... and then add the block padding.
-      out.write('\0' * (511 - (filesize + 511) % 512))
+      out.write(b'\0' * (511 - (filesize + 511) % 512))
 
   # Recurse into subdirectories, skipping busted and unauthorized (or
   # configured-to-be-hidden) ones.
@@ -4133,7 +4215,7 @@ def download_tarball(request):
   # disabling any default compression thereupon -- and wrap that in
   # our own gzip stream wrapper.
   if debug.TARFILE_PATH:
-    fp = open(debug.TARFILE_PATH, 'w')
+    fp = open(debug.TARFILE_PATH, 'wb')
   else:
     tarfile = request.rootname
     if request.path_parts:
@@ -4149,17 +4231,17 @@ def download_tarball(request):
   ### top-level directory here.
   generate_tarball(fp, request, [], [])
 
-  fp.write('\0' * 1024)
+  fp.write(b'\0' * 1024)
   fp.close()
 
   if debug.TARFILE_PATH:
     request.server.header('')
-    print """
+    print("""
 <html>
 <body>
 <p>Tarball '%s' successfully generated!</p>
 </body>
-</html>""" % (debug.TARFILE_PATH)
+</html>""" % (debug.TARFILE_PATH))
 
 
 def view_revision(request):
@@ -4186,8 +4268,7 @@ def view_revision(request):
   date_str = make_time_string(date, cfg)
 
   # Fix up the revprops list (rather like get_itemprops()).
-  propnames = revprops.keys()
-  propnames.sort()
+  propnames = sorted(revprops.keys())
   props = []
   for name in propnames:
     # skip non-utf8 property names
@@ -4205,7 +4286,10 @@ def view_revision(request):
   # Sort the changes list by path.
   def changes_sort_by_path(a, b):
     return cmp(a.path_parts, b.path_parts)
-  changes.sort(changes_sort_by_path)
+  if PY3:
+    changes.sort(key=functools.cmp_to_key(changes_sort_by_path))
+  else:
+    changes.sort(changes_sort_by_path)
 
   # Handle limit_changes parameter
   cfg_limit_changes = cfg.options.limit_changes
@@ -4756,12 +4840,12 @@ def view_query(request):
                  'all':1, 'explicit':1 }
 
   # parse various fields, validating or converting them
-  if not match_types.has_key(branch_match): branch_match = 'exact'
-  if not match_types.has_key(file_match): file_match = 'exact'
-  if not match_types.has_key(who_match): who_match = 'exact'
-  if not match_types.has_key(comment_match): comment_match = 'exact'
-  if not sort_types.has_key(querysort): querysort = 'date'
-  if not date_types.has_key(date): date = 'hours'
+  if branch_match not in match_types: branch_match = 'exact'
+  if file_match not in match_types: file_match = 'exact'
+  if who_match not in match_types: who_match = 'exact'
+  if comment_match not in match_types: comment_match = 'exact'
+  if querysort not in sort_types: querysort = 'date'
+  if date not in date_types: date = 'hours'
   mindate = parse_date(mindate)
   maxdate = parse_date(maxdate)
 
@@ -5026,11 +5110,11 @@ def expand_root_parents(cfg):
 
     if repo_type == 'cvs':
       roots = vclib.ccvs.expand_root_parent(path)
-      if cfg.options.hide_cvsroot and roots.has_key('CVSROOT'):
+      if cfg.options.hide_cvsroot and 'CVSROOT' in roots:
         del roots['CVSROOT']
       if context:
         fullroots = {}
-        for root, rootpath in roots.iteritems():
+        for root, rootpath in roots.items():
           fullroots[_path_join(context + [root])] = rootpath
         cfg.general.cvs_roots.update(fullroots)
       else:
@@ -5039,7 +5123,7 @@ def expand_root_parents(cfg):
       roots = vclib.svn.expand_root_parent(path)
       if context:
         fullroots = {}
-        for root, rootpath in roots.iteritems():
+        for root, rootpath in roots.items():
           fullroots[_path_join(context + [root])] = rootpath
         cfg.general.svn_roots.update(fullroots)
       else:
@@ -5092,11 +5176,11 @@ def find_root_in_parents(cfg, path_parts, roottype):
 
 def locate_root_from_path(cfg, path_parts):
   """Return a 4-tuple ROOTTYPE, ROOTPATH, ROOTNAME, REMAIN for path_parts."""
-  for rootname, rootpath in cfg.general.cvs_roots.iteritems():
+  for rootname, rootpath in cfg.general.cvs_roots.items():
     pp = _path_parts(rootname)
     if _path_starts_with(path_parts, pp):
       return 'cvs', rootpath, rootname, path_parts[len(pp):]
-  for rootname, rootpath in cfg.general.svn_roots.iteritems():
+  for rootname, rootpath in cfg.general.svn_roots.items():
     pp = _path_parts(rootname)
     if _path_starts_with(path_parts, pp):
       return 'svn', rootpath, rootname, path_parts[len(pp):]
@@ -5115,9 +5199,9 @@ def locate_root_from_path(cfg, path_parts):
 def locate_root(cfg, rootname):
   """Return a 2-tuple ROOTTYPE, ROOTPATH for configured ROOTNAME."""
   # First try a direct match
-  if cfg.general.cvs_roots.has_key(rootname):
+  if rootname in cfg.general.cvs_roots:
     return 'cvs', cfg.general.cvs_roots[rootname]
-  if cfg.general.svn_roots.has_key(rootname):
+  if rootname in cfg.general.svn_roots:
     return 'svn', cfg.general.svn_roots[rootname]
 
   path_parts = _path_parts(rootname)
@@ -5175,7 +5259,7 @@ def load_config(pathname=None, server=None):
   if cfg.general.mime_types_files:
     files = cfg.general.mime_types_files[:]
     files.reverse()
-    files = map(lambda x, y=pathname: os.path.join(os.path.dirname(y), x), files)
+    files = list(map(lambda x, y=pathname: os.path.join(os.path.dirname(y), x), files))
     mimetypes.init(files)
 
   debug.t_end('load-config')
@@ -5211,7 +5295,7 @@ def main(server, cfg):
       # build a Request object, which contains info about the HTTP request
       request = Request(server, cfg)
       request.run_viewvc()
-    except SystemExit, e:
+    except SystemExit as e:
       return
     except:
       view_error(server, cfg)

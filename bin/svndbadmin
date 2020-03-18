@@ -33,6 +33,7 @@
 #
 # -----------------------------------------------------------------------
 #
+from __future__ import print_function
 
 #########################################################################
 #
@@ -56,7 +57,6 @@ else:
 
 #########################################################################
 
-import os
 import re
 
 import svn.core
@@ -207,10 +207,12 @@ def handle_revision(db, command, repo, rev, verbose, force=0):
     revision = repo[rev]
     committed = 0
 
-    if verbose: print "Building commit info for revision %d..." % (rev),
+    if verbose:
+        print("Building commit info for revision {0!s}...".format(rev),
+              end='')
 
     if not revision.changes:
-        if verbose: print "skipped (no changes)."
+        if verbose: print("skipped (no changes).")
         return
 
     for (path, action, plus, minus) in revision.changes:
@@ -245,9 +247,9 @@ def handle_revision(db, command, repo, rev, verbose, force=0):
 
     if verbose:
         if committed:
-            print "done."
+            print("done.")
         else:
-            print "skipped (already recorded)."
+            print("skipped (already recorded).")
 
 def main(command, repository, revs=[], verbose=0, force=0):
     cfg = viewvc.load_config(CONF_PATHNAME)
@@ -256,10 +258,11 @@ def main(command, repository, revs=[], verbose=0, force=0):
     # Purge what must be purged.
     if command in ('rebuild', 'purge'):
         if verbose:
-            print "Purging commit info for repository root `%s'" % repository
+            print("Purging commit info "
+                  "for repository root `{0!s}'".format(repository))
         try:
             db.PurgeRepository(repository)
-        except cvsdb.UnknownRepositoryError, e:
+        except cvsdb.UnknownRepositoryError as e:
             if command == 'purge':
                 sys.stderr.write("ERROR: " + str(e) + "\n")
                 sys.exit(1)
@@ -289,7 +292,7 @@ def _rev2int(r):
     else:
         r = int(r)
         if r < 0:
-            raise ValueError, "invalid revision '%d'" % (r)
+            raise ValueError("invalid revision '%d'" % (r))
     return r
 
 def usage():
@@ -359,7 +362,7 @@ if __name__ == '__main__':
         try:
             revs = map(lambda x: _rev2int(x), sys.argv[3].split(':'))
             if len(revs) > 2:
-                raise ValueError, "too many revisions in range"
+                raise ValueError("too many revisions in range")
             if len(revs) == 1:
                 revs.append(revs[0])
         except ValueError:
@@ -374,6 +377,6 @@ if __name__ == '__main__':
         repository = cvsdb.CleanRepository(os.path.abspath(repository))
         main(command, repository, revs, verbose, force)
     except KeyboardInterrupt:
-        print
-        print '** break **'
+        print()
+        print('** break **')
     sys.exit(0)
