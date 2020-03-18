@@ -420,29 +420,6 @@ def serve(host, port, callback=None):
     # always use default docroot location
     cfg.options.docroot = None
 
-    # if cvsnt isn't found, fall back to rcs
-    if (cfg.conf_path is None and cfg.utilities.cvsnt):
-      import popen
-      cvsnt_works = 0
-      try:
-        fp = popen.popen(cfg.utilities.cvsnt, ['--version'], 'rt')
-        try:
-          while 1:
-            line = fp.readline()
-            if not line:
-              break
-            if line.find("Concurrent Versions System (CVSNT)") >= 0:
-              cvsnt_works = 1
-              while fp.read(4096):
-                pass
-              break
-        finally:
-          fp.close()
-      except:
-        pass
-      if not cvsnt_works:
-        cfg.utilities.cvsnt = None
-
     ViewVCHTTPServer(host, port, callback).serve_until_quit()
   except (KeyboardInterrupt, select.error):
     pass
