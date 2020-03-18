@@ -28,12 +28,12 @@ import vclib.ccvs
 
 def _path_join(path_parts):
   return '/'.join(path_parts)
-  
+
 class BaseCVSRepository(vclib.Repository):
   def __init__(self, name, rootpath, authorizer, utilities):
     if not os.path.isdir(rootpath):
-      raise vclib.ReposNotFound(name) 
-   
+      raise vclib.ReposNotFound(name)
+
     self.name = name
     self.rootpath = rootpath
     self.auth = authorizer
@@ -59,7 +59,7 @@ class BaseCVSRepository(vclib.Repository):
 
   def authorizer(self):
     return self.auth
-  
+
   def itemtype(self, path_parts, rev):
     basepath = self._getpath(path_parts)
     kind = None
@@ -80,12 +80,12 @@ class BaseCVSRepository(vclib.Repository):
   def itemprops(self, path_parts, rev):
     self.itemtype(path_parts, rev)  # does auth-check
     return {}  # CVS doesn't support properties
-  
+
   def listdir(self, path_parts, rev, options):
     if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
       raise vclib.Error("Path '%s' is not a directory."
                         % (_path_join(path_parts)))
-    
+
     # Only RCS files (*,v) and subdirs are returned.
     data = [ ]
     full_name = self._getpath(path_parts)
@@ -121,7 +121,7 @@ class BaseCVSRepository(vclib.Repository):
           data.append(CVSDirEntry(name, kind, errors, 1))
 
     return data
-    
+
   def _getpath(self, path_parts):
     return apply(os.path.join, (self.rootpath,) + tuple(path_parts))
 
@@ -151,7 +151,7 @@ class BaseCVSRepository(vclib.Repository):
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
     rcsfile = self.rcsfile(path_parts, 1)
     return os.access(rcsfile, os.X_OK)
-  
+
   def filesize(self, path_parts, rev):
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
@@ -195,7 +195,7 @@ class BinCVSRepository(BaseCVSRepository):
     full_name = self.rcsfile(path_parts, root=1, v=0)
     used_rlog = 0
     tip_rev = None  # used only if we have to fallback to using rlog
-    fp = self.rcs_popen('co', (kv_flag, rev_flag, full_name), 'rb') 
+    fp = self.rcs_popen('co', (kv_flag, rev_flag, full_name), 'rb')
     try:
       filename, revision = _parse_co_header(fp)
     except COMissingRevision:
@@ -209,14 +209,14 @@ class BinCVSRepository(BaseCVSRepository):
         used_rlog = 1
       if not tip_rev:
         raise vclib.Error("Unable to find valid revision")
-      fp = self.rcs_popen('co', ('-p' + tip_rev.string, full_name), 'rb') 
+      fp = self.rcs_popen('co', ('-p' + tip_rev.string, full_name), 'rb')
       filename, revision = _parse_co_header(fp)
-      
+
     if filename is None:
       # CVSNT's co exits without any output if a dead revision is requested.
       # Bug at http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=190
       # As a workaround, we invoke rlog to find the first non-dead revision
-      # that precedes it and check out that revision instead.  Of course, 
+      # that precedes it and check out that revision instead.  Of course,
       # if we've already invoked rlog above, we just reuse its output.
       if not used_rlog:
         tip_rev = self._get_tip_revision(full_name + ',v', rev)
@@ -225,7 +225,7 @@ class BinCVSRepository(BaseCVSRepository):
         raise vclib.Error(
           'Could not find non-dead revision preceding "%s"' % rev)
       fp = self.rcs_popen('co', ('-p' + tip_rev.undead.string,
-                                 full_name), 'rb') 
+                                 full_name), 'rb')
       filename, revision = _parse_co_header(fp)
 
     if filename is None:
@@ -295,7 +295,7 @@ class BinCVSRepository(BaseCVSRepository):
 
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
-    
+
     # Invoke rlog
     rcsfile = self.rcsfile(path_parts, 1)
     if rev and options.get('cvs_pass_rev', 0):
@@ -340,14 +340,14 @@ class BinCVSRepository(BaseCVSRepository):
   def annotate(self, path_parts, rev=None, include_text=False):
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
-                        
+
     from vclib.ccvs import blame
     source = blame.BlameSource(self.rcsfile(path_parts, 1), rev, include_text)
     return source, source.revision
 
   def revinfo(self, rev):
     raise vclib.UnsupportedFeature
-  
+
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     """see vclib.Repository.rawdiff docstring
 
@@ -359,7 +359,7 @@ class BinCVSRepository(BaseCVSRepository):
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts1)))
     if self.itemtype(path_parts2, rev2) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts2)))
-    
+
     args = vclib._diff_args(type, options)
     if options.get('ignore_keyword_subst', 0):
       args.append('-kk')
@@ -368,7 +368,7 @@ class BinCVSRepository(BaseCVSRepository):
     if path_parts1 != path_parts2:
       raise NotImplementedError, "cannot diff across paths in cvs"
     args.extend(['-r' + rev1, '-r' + rev2, rcsfile])
-    
+
     fp = self.rcs_popen('rcsdiff', args, 'rt')
 
     # Eat up the non-GNU-diff-y headers.
@@ -377,7 +377,7 @@ class BinCVSRepository(BaseCVSRepository):
       if not line or line[0:5] == 'diff ':
         break
     return fp
-  
+
 
 class CVSDirEntry(vclib.DirEntry):
   def __init__(self, name, kind, errors, in_attic, absent=0):
@@ -439,9 +439,9 @@ def _match_revs_tags(revlist, taglist):
       example: if revision is 1.2.3.4, parent is 1.2
 
     "undead"
-      If the revision is dead, then this is a reference to the first 
+      If the revision is dead, then this is a reference to the first
       previous revision which isn't dead, otherwise it's a reference
-      to itself. If all the previous revisions are dead it's None. 
+      to itself. If all the previous revisions are dead it's None.
 
     "branch_number"
       tuple representing branch number or empty tuple if on trunk
@@ -653,7 +653,7 @@ def _parse_co_header(fp):
       pass
     else:
       break
-    
+
   raise COMalformedOutput, "Unable to find revision in co output stream"
 
 # if your rlog doesn't use 77 '=' characters, then this must change
@@ -674,7 +674,7 @@ _EOF_ERROR = 'error message found'      # rlog issued an error
 #   ^rlog\: (.*)(?:\:\d+)?\: (.*)$
 #
 # But for some reason the windows version of rlog omits the "rlog: " prefix
-# for the first error message when the standard error stream has been 
+# for the first error message when the standard error stream has been
 # redirected to a file or pipe. (the prefix is present in subsequent errors
 # and when rlog is run from the console). So the expression below is more
 # complicated
@@ -703,7 +703,7 @@ def _parse_log_header(fp):
   Returns: filename, default branch, tag dictionary, lock dictionary,
   rlog error message, and eof flag
   """
-  
+
   filename = head = branch = msg = ""
   taginfo = { }   # tag name => number
   lockinfo = { }  # revision => locker
@@ -732,7 +732,7 @@ def _parse_log_header(fp):
       else:
         # oops. this line isn't lock info. stop parsing tags.
         state = 0
-      
+
     if state == 0:
       if line[:9] == 'RCS file:':
         filename = line[10:-1]
@@ -900,7 +900,7 @@ def _file_log(revs, taginfo, lockinfo, cur_branch, filter):
     except ValueError:
       view_tag = None
     else:
-      tags.append(view_tag)  
+      tags.append(view_tag)
 
   # Match up tags and revisions
   _match_revs_tags(revs, tags)
@@ -908,13 +908,13 @@ def _file_log(revs, taginfo, lockinfo, cur_branch, filter):
   # Match up lockinfo and revision
   for rev in revs:
     rev.lockinfo = lockinfo.get(rev.string)
-      
+
   # Add artificial ViewVC tag HEAD, which acts like a non-branch tag pointing
   # at the latest revision on the MAIN branch. The HEAD revision doesn't have
   # anything to do with the "head" revision number specified in the RCS file
   # and in rlog output. HEAD refers to the revision that the CVS and RCS co
   # commands will check out by default, whereas the "head" field just refers
-  # to the highest revision on the trunk.  
+  # to the highest revision on the trunk.
   taginfo['HEAD'] = _add_tag('HEAD', taginfo['MAIN'].co_rev)
 
   # Determine what revisions to return
@@ -952,7 +952,7 @@ def _file_log(revs, taginfo, lockinfo, cur_branch, filter):
       _remove_tag(view_tag)
   else:
     filtered_revs = revs
-  
+
   return filtered_revs
 
 def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
@@ -1002,7 +1002,7 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
         = _parse_log_header(rlog)
 
       if eof == _EOF_LOG:
-        # the rlog output ended early. this can happen on errors that rlog 
+        # the rlog output ended early. this can happen on errors that rlog
         # thinks are so serious that it stops parsing the current file and
         # refuses to parse any of the files that come after it. one of the
         # errors that triggers this obnoxious behavior looks like:
@@ -1050,8 +1050,8 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
         eof = _EOF_FILE
 
       # we don't care about the specific values -- just the keys and whether
-      # the values point to branches or revisions. this the fastest way to 
-      # merge the set of keys and keep values that allow us to make the 
+      # the values point to branches or revisions. this the fastest way to
+      # merge the set of keys and keep values that allow us to make the
       # distinction between branch tags and normal tags
       alltags.update(taginfo)
 
@@ -1096,7 +1096,7 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
         file.dead = 0
         #file.errors.append("No revisions exist on %s" % (view_tag or "MAIN"))
         file.absent = 1
-        
+
       # done with this file now, skip the rest of this file's revisions
       if not eof:
         _skip_file(rlog)
@@ -1209,7 +1209,7 @@ def _newest_file(dirpath):
   newest_time = 0
 
   ### FIXME:  This sucker is leaking unauthorized paths! ###
-  
+
   for subfile in os.listdir(dirpath):
     ### filter CVS locks? stale NFS handles?
     if subfile[-2:] != ',v':

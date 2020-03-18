@@ -39,7 +39,7 @@ def escape(s):
   s = s.replace('"', "&quot;")
   return s
 
-  
+
 class Server:
   def __init__(self):
     self.pageGlobals = {}
@@ -49,7 +49,7 @@ class Server:
 
   def escape(self, s):
     return escape(s)
-    
+
   def close(self):
     pass
 
@@ -156,7 +156,7 @@ class CgiServer(Server):
       for (name, value) in self.headers:
         extraheaders = extraheaders + '%s: %s\r\n' % (name, value)
 
-      # The only way ViewVC pages and error messages are visible under 
+      # The only way ViewVC pages and error messages are visible under
       # IIS is if a 200 error code is returned. Otherwise IIS instead
       # sends the static error page corresponding to the code number.
       if status is None or (status[:3] != '304' and self.iis):
@@ -348,12 +348,12 @@ class ModPythonServer(ThreadedServer):
       self.request.add_cgi_vars()
     except AttributeError:
       pass
-    
+
   def addheader(self, name, value):
     self.request.headers_out.add(name, value)
 
   def header(self, content_type=None, status=None):
-    if content_type is None: 
+    if content_type is None:
       self.request.content_type = 'text/html; charset=UTF-8'
     else:
       self.request.content_type = content_type

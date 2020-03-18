@@ -136,7 +136,7 @@ class _mxTokenStream:
     #  \         4     6          12    14              /
     #   \_______/_____/            \    /              /
     #    \                           13               /
-    #     \__________________________________________/                    
+    #     \__________________________________________/
     #
     # #1: Skip over any whitespace.
     # #2: If now EOF, exit with code _E_COMPLETE.

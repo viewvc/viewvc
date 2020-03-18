@@ -63,7 +63,7 @@ def link_includes(text, repos, path_parts, include_url):
       return '#%sinclude%s<a href="%s">"%s"</a>' % \
              (match.group(1), match.group(2),
               include_url.replace('/WHERE/', include_path), incfile)
-    
+
   return text
 
 

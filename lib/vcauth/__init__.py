@@ -14,7 +14,7 @@
 
 class GenericViewVCAuthorizer:
   """Abstract class encapsulating version control authorization routines."""
-  
+
   def __init__(self, root_lookup_func=None, username=None, params={}):
     """Create a GenericViewVCAuthorizer object which will be used to
     validate that USERNAME has the permissions needed to view version
@@ -37,7 +37,7 @@ class GenericViewVCAuthorizer:
     None if no such determination can be made (perhaps because the
     cost of making it is too great)."""
     pass
-    
+
   def check_path_access(self, rootname, path_parts, pathtype, rev=None):
     """Return 1 iff the associated username is permitted to read
     revision REV of the path PATH_PARTS (of type PATHTYPE) in
@@ -45,7 +45,7 @@ class GenericViewVCAuthorizer:
     pass
 
 
-
+
 ##############################################################################
 
 class ViewVCAuthorizer(GenericViewVCAuthorizer):
@@ -55,6 +55,6 @@ class ViewVCAuthorizer(GenericViewVCAuthorizer):
 
   def check_universal_access(self, rootname):
     return 1
-    
+
   def check_path_access(self, rootname, path_parts, pathtype, rev=None):
     return 1

@@ -37,7 +37,7 @@ class TemplateData:
 
   def __init__(self, initial_data={}):
     self._items = initial_data
-    
+
   def __getitem__(self, key):
     return self._items.__getitem__(key)
 
@@ -55,6 +55,6 @@ class TemplateData:
     """Merge the data in TemplataData instance TEMPLATA_DATA into this
     instance.  Avoid the temptation to use this conditionally in your
     code -- it rather defeats the purpose of this class."""
-    
+
     assert isinstance(template_data, TemplateData)
     self._items.update(template_data._items)

@@ -19,7 +19,7 @@ EZT files (convention: use the suffix .ezt for such files):
 
     >>> template = Template("../templates/log.ezt")
 
-or by calling the parse() method of a template instance directly with 
+or by calling the parse() method of a template instance directly with
 a EZT template string:
 
     >>> template = Template()
@@ -53,7 +53,7 @@ with the output fileobject to the templates generate method:
     </body>
     </html>
 
-Template syntax error reporting should be improved.  Currently it is 
+Template syntax error reporting should be improved.  Currently it is
 very sparse (template line numbers would be nice):
 
     >>> Template().parse("[if-any where] foo [else] bar [end unexpected args]")
@@ -78,7 +78,7 @@ Directives
 ==========
 
  Several directives allow the use of dotted qualified names refering to objects
- or attributes of objects contained in the data dictionary given to the 
+ or attributes of objects contained in the data dictionary given to the
  .generate() method.
 
  Qualified names
@@ -103,7 +103,7 @@ Directives
    [QUAL_NAME]
 
    This directive is simply replaced by the value of the qualified name.
-   If the value is a number it's converted to a string before being 
+   If the value is a number it's converted to a string before being
    outputted. If it is None, nothing is outputted. If it is a python file
    object (i.e. any object with a "read" method), it's contents are
    outputted. If it is a callback function (any callable python object
@@ -138,7 +138,7 @@ Directives
  ----------------
 
    [for QUAL_NAME] ... [end]
-   
+
    The text within the [for ...] directive and the corresponding [end]
    is repeated for each element in the sequence referred to by the
    qualified name in the for directive.  Within the for block this
@@ -188,14 +188,14 @@ Directives
    The format directive controls how the values substituted into
    templates are escaped before they are put into the output stream. It
    has no effect on the literal text of the templates, only the output
-   from [QUAL_NAME ...] directives. STRING can be one of "raw" "html" 
+   from [QUAL_NAME ...] directives. STRING can be one of "raw" "html"
    "xml" or "uri". The "raw" mode leaves the output unaltered; the "html"
    and "xml" modes escape special characters using entity escapes (like
    &quot; and &gt;); the "uri" mode escapes characters using hexadecimal
    escape sequences (like %20 and %7e).
 
    [format CALLBACK]
- 
+
    Python applications using EZT can provide custom formatters as callback
    variables. "[format CALLBACK][QUAL_NAME][end]" is in most cases
    equivalent to "[CALLBACK QUAL_NAME]"
@@ -203,27 +203,27 @@ Directives
 #
 # Copyright (C) 2001-2007 Greg Stein. All Rights Reserved.
 #
-# Redistribution and use in source and binary forms, with or without 
-# modification, are permitted provided that the following conditions are 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
 # met:
 #
-# * Redistributions of source code must retain the above copyright 
-#   notice, this list of conditions and the following disclaimer. 
+# * Redistributions of source code must retain the above copyright
+#   notice, this list of conditions and the following disclaimer.
 #
-# * Redistributions in binary form must reproduce the above copyright 
-#   notice, this list of conditions and the following disclaimer in the 
-#   documentation and/or other materials provided with the distribution. 
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the distribution.
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS 
-# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE 
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
 #
@@ -553,7 +553,7 @@ def _prepare_ref(refname, for_names, file_args):
   """refname -> a string containing a dotted identifier. example:"foo.bar.bang"
   for_names -> a list of active for sequences.
 
-  Returns a `value reference', a 3-tuple made out of (refname, start, rest), 
+  Returns a `value reference', a 3-tuple made out of (refname, start, rest),
   for fast access later.
   """
   # is the reference a string constant?
@@ -601,8 +601,8 @@ def _get_value((refname, start, rest), ctx):
   """(refname, start, rest) -> a prepared `value reference' (see above).
   ctx -> an execution context instance.
 
-  Does a name space lookup within the template name space.  Active 
-  for blocks take precedence over data dictionary members with the 
+  Does a name space lookup within the template name space.  Active
+  for blocks take precedence over data dictionary members with the
   same name.
   """
   if rest is None:
@@ -642,7 +642,7 @@ def _print_formatted(formatters, ctx, chunk):
   for formatter in formatters:
     chunk = formatter(chunk)
   ctx.fp.write(chunk)
-  
+
 def _write_value(value, args, ctx):
   # value is a callback function, generates its own output
   if callable(value):
@@ -841,7 +841,7 @@ def test_parse():
          ['', '["a \\"b[foo]" c.d f]', None, '']
 
 def _test(argv):
-  import doctest, ezt           
+  import doctest, ezt
   verbose = "-v" in argv
   return doctest.testmod(ezt, verbose=verbose)
 

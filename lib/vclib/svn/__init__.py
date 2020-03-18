@@ -37,7 +37,7 @@ def _canonicalize_path(path):
 def canonicalize_rootpath(rootpath):
   # Try to canonicalize the rootpath using Subversion semantics.
   rootpath = _canonicalize_path(rootpath)
-  
+
   # ViewVC's support for local repositories is more complete and more
   # performant than its support for remote ones, so if we're on a
   # Unix-y system and we have a file:/// URL, convert it to a local
@@ -81,7 +81,7 @@ def find_root_in_parent(parent_path, rootname):
   """Search PARENT_PATH for a root named ROOTNAME, returning the
   canonicalized ROOTPATH of the root if found; return None if no such
   root is found."""
-  
+
   if not re.search(_re_url, parent_path):
     assert os.path.isabs(parent_path)
     rootpath = os.path.join(parent_path, rootname)

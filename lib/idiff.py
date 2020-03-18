@@ -70,7 +70,7 @@ def _mdiff_split(flag, (line_number, text)):
 
     pos = m.end()
 
-  return _item(segments=segments, line_number=line_number)  
+  return _item(segments=segments, line_number=line_number)
 
 def unified(fromlines, tolines, context):
   """Generate unified diff"""
@@ -165,13 +165,13 @@ def _differ_split(row, guide):
   line, left_number, right_number, gap = row
 
   if left_number and right_number:
-    type = "" 
+    type = ""
   elif left_number:
     type = "remove"
   elif right_number:
     type = "add"
 
-  segments = []  
+  segments = []
   pos = 2
 
   if guide:

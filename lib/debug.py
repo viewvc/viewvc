@@ -76,7 +76,7 @@ def PrintException(server, exc_data):
   status = exc_data['status']
   msg = exc_data['msg']
   tb = exc_data['stacktrace']
-  
+
   server.header(status=status)
   server.write("<h3>An Exception Has Occurred</h3>\n")
 
@@ -102,7 +102,7 @@ def GetExceptionData():
     'msg' : None,
     'stacktrace' : None,
     }
-  
+
   try:
     import traceback, string
 
@@ -147,7 +147,7 @@ if SHOW_CHILD_PROCESSES:
 
     if not server.pageGlobals.has_key('processes'):
       return
-    
+
     server.header()
     lastOut = None
     i = 0
@@ -167,15 +167,15 @@ if SHOW_CHILD_PROCESSES:
         server.write("<pre>")
         server.write(server.escape(k.debugIn.getvalue()))
         server.write("</pre>")
-        
+
       server.write("</td>\n</tr>\n")
-      
+
       if k.debugOut is k.debugErr:
         server.write("<tr>\n  <td style=\"vertical-align:top\">Standard Out & Error:</td>  <td><pre>")
         if k.debugOut:
           server.write(server.escape(k.debugOut.getvalue()))
         server.write("</pre></td>\n</tr>\n")
-        
+
       else:
         server.write("<tr>\n  <td style=\"vertical-align:top\">Standard Out:</td>  <td><pre>")
         if k.debugOut:
@@ -199,9 +199,9 @@ if SHOW_CHILD_PROCESSES:
       server.write(server.escape(v))
       server.write("</pre></td>\n</tr>")
     server.write("</table>")
-         
+
 else:
 
   def DumpChildren(server):
     pass
-    
+

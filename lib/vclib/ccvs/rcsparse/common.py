@@ -118,7 +118,7 @@ class Sink:
     Parameter: COMMENT is a string containing the comment.  This may be
     multi-line.
 
-    This field does not seem to be used by CVS.    
+    This field does not seem to be used by CVS.
     """
     pass
 

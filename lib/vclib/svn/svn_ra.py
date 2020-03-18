@@ -44,7 +44,7 @@ def list_directory(url, peg_rev, rev, flag, ctx):
   except TypeError: # 1.4.x bindings are goofed
     dirents = client.svn_client_ls3(None, url, peg_rev, rev, flag, ctx)
     locks = {}
-  return dirents, locks  
+  return dirents, locks
 
 def get_directory_props(ra_session, path, rev):
   try:
@@ -116,7 +116,7 @@ def setup_client_ctx(config_dir):
 
 
 class LogCollector:
-  
+
   def __init__(self, path, show_all_logs, lockinfo, access_check_func):
     # This class uses leading slashes for paths internally
     if not path:
@@ -128,14 +128,14 @@ class LogCollector:
     self.lockinfo = lockinfo
     self.access_check_func = access_check_func
     self.done = False
-    
+
   def add_log(self, log_entry, pool):
     if self.done:
       return
     paths = log_entry.changed_paths
     revision = log_entry.revision
     msg, author, date, revprops = _split_revprops(log_entry.revprops)
-    
+
     # Changed paths have leading slashes
     changed_paths = paths.keys()
     changed_paths.sort(lambda a, b: _compare_paths(a, b))
@@ -164,7 +164,7 @@ class LogCollector:
         self.done = True
     if this_path:
       self.path = this_path
-    
+
 def cat_to_tempfile(svnrepos, path, rev):
   """Check out file revision to temporary file"""
   fd, temp = tempfile.mkstemp()
@@ -180,7 +180,7 @@ class SelfCleanFP:
     self._fp = open(path, 'r')
     self._path = path
     self._eof = 0
-    
+
   def read(self, len=None):
     if len:
       chunk = self._fp.read(len)
@@ -189,7 +189,7 @@ class SelfCleanFP:
     if chunk == '':
       self._eof = 1
     return chunk
-  
+
   def readline(self):
     chunk = self._fp.readline()
     if chunk == '':
@@ -200,14 +200,14 @@ class SelfCleanFP:
     lines = self._fp.readlines()
     self._eof = 1
     return lines
-    
+
   def close(self):
     self._fp.close()
     os.remove(self._path)
 
   def __del__(self):
     self.close()
-    
+
   def eof(self):
     return self._eof
 
@@ -227,7 +227,7 @@ class RemoteSubversionRepository(vclib.Repository):
   def open(self):
     # Setup the client context baton, complete with non-prompting authstuffs.
     self.ctx = setup_client_ctx(self.config_dir)
-    
+
     ra_callbacks = ra.svn_ra_callbacks_t()
     ra_callbacks.auth_baton = self.ctx.auth_baton
     self.ra_session = ra.svn_ra_open(self.rootpath, ra_callbacks, None,
@@ -239,7 +239,7 @@ class RemoteSubversionRepository(vclib.Repository):
     # See if a universal read access determination can be made.
     if self.auth and self.auth.check_universal_access(self.name) == 1:
       self.auth = None
-    
+
   def rootname(self):
     return self.name
 
@@ -251,7 +251,7 @@ class RemoteSubversionRepository(vclib.Repository):
 
   def authorizer(self):
     return self.auth
-  
+
   def itemtype(self, path_parts, rev):
     pathtype = None
     if not len(path_parts):
@@ -324,7 +324,7 @@ class RemoteSubversionRepository(vclib.Repository):
         entry.lockinfo = locks[entry.name].owner
 
   def itemlog(self, path_parts, rev, sortby, first, limit, options):
-    assert sortby == vclib.SORTBY_DEFAULT or sortby == vclib.SORTBY_REV   
+    assert sortby == vclib.SORTBY_DEFAULT or sortby == vclib.SORTBY_REV
     path_type = self.itemtype(path_parts, rev) # does auth-check
     path = self._getpath(path_parts)
     rev = self._getrev(rev)
@@ -342,7 +342,7 @@ class RemoteSubversionRepository(vclib.Repository):
         lockinfo = locks[basename].owner
       if dirents.has_key(basename):
         size_in_rev = dirents[basename].size
-    
+
     # Special handling for the 'svn_latest_log' scenario.
     ### FIXME: Don't like this hack.  We should just introduce
     ### something more direct in the vclib API.
@@ -355,7 +355,7 @@ class RemoteSubversionRepository(vclib.Repository):
     def _access_checker(check_path, check_rev):
       return vclib.check_path_access(self, _path_parts(check_path),
                                      path_type, check_rev)
-      
+
     # It's okay if we're told to not show all logs on a file -- all
     # the revisions should match correctly anyway.
     lc = LogCollector(path, options.get('svn_show_all_dir_logs', 0),
@@ -393,7 +393,7 @@ class RemoteSubversionRepository(vclib.Repository):
     pairs = client.svn_client_proplist2(url, _rev2optrev(rev),
                                         _rev2optrev(rev), 0, self.ctx)
     return pairs and pairs[0][1] or {}
-  
+
   def annotate(self, path_parts, rev, include_text=False):
     path = self._getpath(path_parts)
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
@@ -434,14 +434,14 @@ class RemoteSubversionRepository(vclib.Repository):
         line = None
       blame_data.append(vclib.Annotation(line, line_no + 1, revision, prev_rev,
                                          author, date))
-      
+
     client.blame2(url, _rev2optrev(rev), _rev2optrev(oldest_rev),
                   _rev2optrev(rev), _blame_cb, self.ctx)
     return blame_data, rev
 
   def revinfo(self, rev):
     return self._revinfo(rev, 1)
-    
+
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     p1 = self._getpath(path_parts1)
     p2 = self._getpath(path_parts2)
@@ -457,7 +457,7 @@ class RemoteSubversionRepository(vclib.Repository):
     def _date_from_rev(rev):
       date, author, msg, revprops, changes = self._revinfo(rev)
       return date
-    
+
     try:
       temp1 = cat_to_tempfile(self, p1, r1)
       temp2 = cat_to_tempfile(self, p2, r2)
@@ -473,7 +473,7 @@ class RemoteSubversionRepository(vclib.Repository):
   def isexecutable(self, path_parts, rev):
     props = self.itemprops(path_parts, rev) # does authz-check
     return props.has_key(core.SVN_PROP_EXECUTABLE)
-  
+
   def filesize(self, path_parts, rev):
     path = self._getpath(path_parts)
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
@@ -482,7 +482,7 @@ class RemoteSubversionRepository(vclib.Repository):
     dirents, locks = self._get_dirents(self._getpath(path_parts[:-1]), rev)
     dirent = dirents.get(path_parts[-1], None)
     return dirent.size
-    
+
   def _getpath(self, path_parts):
     return '/'.join(path_parts)
 
@@ -512,7 +512,7 @@ class RemoteSubversionRepository(vclib.Repository):
     authz checks, stripping out unreadable dirents."""
 
     dir_url = self._geturl(path)
-    path_parts = _path_parts(path)    
+    path_parts = _path_parts(path)
     if path:
       key = str(rev) + '/' + path
     else:
@@ -526,7 +526,7 @@ class RemoteSubversionRepository(vclib.Repository):
       dirents = {}
       for name, dirent in tmp_dirents.items():
         dirent_parts = path_parts + [name]
-        kind = dirent.kind 
+        kind = dirent.kind
         if (kind == core.svn_node_dir or kind == core.svn_node_file) \
            and vclib.check_path_access(self, dirent_parts,
                                        kind == core.svn_node_dir \
@@ -545,7 +545,7 @@ class RemoteSubversionRepository(vclib.Repository):
          - the last interesting revision equal to or older than REV in
            the history of PATH_PARTS.
          - the created_rev of of PATH_PARTS as of REV."""
-    
+
     path = self._getpath(path_parts)
     url = self._geturl(self._getpath(path_parts))
     optrev = _rev2optrev(rev)
@@ -570,17 +570,17 @@ class RemoteSubversionRepository(vclib.Repository):
       return revs[0].number, last_changed_rev
     else:
       return last_changed_rev, last_changed_rev
-    
+
   def _revinfo_fetch(self, rev, include_changed_paths=0):
     need_changes = include_changed_paths or self.auth
     revs = []
-    
+
     def _log_cb(log_entry, pool, retval=revs):
       # If Subversion happens to call us more than once, we choose not
       # to care.
       if retval:
         return
-      
+
       revision = log_entry.revision
       msg, author, date, revprops = _split_revprops(log_entry.revprops)
       action_map = { 'D' : vclib.DELETED,
@@ -596,7 +596,7 @@ class RemoteSubversionRepository(vclib.Repository):
 
       # Subversion 1.5 and earlier didn't offer the 'changed_paths2'
       # hash, and in Subversion 1.6, it's offered but broken.
-      try: 
+      try:
         changed_paths = log_entry.changed_paths2
         paths = (changed_paths or {}).keys()
       except:
@@ -613,14 +613,14 @@ class RemoteSubversionRepository(vclib.Repository):
 
         # svn_log_changed_path_t (which we might get instead of the
         # svn_log_changed_path2_t we'd prefer) doesn't have the
-        # 'node_kind' member.        
+        # 'node_kind' member.
         pathtype = None
         if hasattr(change, 'node_kind'):
           if change.node_kind == core.svn_node_dir:
             pathtype = vclib.DIR
           elif change.node_kind == core.svn_node_file:
             pathtype = vclib.FILE
-            
+
         # svn_log_changed_path2_t only has the 'text_modified' and
         # 'props_modified' bits in Subversion 1.7 and beyond.  And
         # svn_log_changed_path_t is without.
@@ -631,7 +631,7 @@ class RemoteSubversionRepository(vclib.Repository):
         if hasattr(change, 'props_modified'):
           if change.props_modified == core.svn_tristate_true:
             props_modified = 1
-            
+
         # Wrong, diddily wrong wrong wrong.  Can you say,
         # "Manufacturing data left and right because it hurts to
         # figure out the right stuff?"
@@ -708,7 +708,7 @@ class RemoteSubversionRepository(vclib.Repository):
 
   def get_youngest_revision(self):
     return self.youngest
-  
+
   def get_location(self, path, rev, old_rev):
     try:
       results = ra.get_locations(self.ra_session, path, rev, [old_rev])
@@ -727,7 +727,7 @@ class RemoteSubversionRepository(vclib.Repository):
     if not vclib.check_path_access(self, old_path_parts, vclib.FILE, old_rev):
       raise vclib.ItemNotFound(path)
     return old_path
-  
+
   def created_rev(self, path, rev):
     lh_rev, c_rev = self._get_last_history_rev(_path_parts(path), rev)
     return lh_rev
@@ -737,7 +737,7 @@ class RemoteSubversionRepository(vclib.Repository):
     revision older than, or equal to, LIMIT_REVISION in which path
     exists.  Return that revision, and the path at which PATH exists in
     that revision."""
-    
+
     # Here's the plan, man.  In the trivial case (where PEG_REVISION is
     # the same as LIMIT_REVISION), this is a no-brainer.  If
     # LIMIT_REVISION is older than PEG_REVISION, we can use Subversion's

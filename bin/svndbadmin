@@ -150,7 +150,7 @@ class SvnRev:
 
         # get a root for the current revisions
         fsroot = self._get_root_for_rev(rev)
-        
+
         # find changes in the revision
         editor = svn.repos.ChangeCollector(repo.fs, fsroot)
         e_ptr, e_baton = svn.delta.make_editor(editor)
@@ -314,7 +314,7 @@ Usage: 1. %s [-v] rebuild REPOS-PATH
     the database.  If a range is specified, the revisions will be
     processed in ascending order, and you may specify "HEAD" to
     indicate "the youngest revision currently in the repository".
-    
+
 3.  Purge information specific to the repository located at REPOS-PATH
     from the database.
 
@@ -339,7 +339,7 @@ if __name__ == '__main__':
         del args[index]
     except ValueError:
         pass
-        
+
     if len(args) < 3:
         usage()
 

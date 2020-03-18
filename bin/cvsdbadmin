@@ -38,7 +38,7 @@ else:
   sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
 
 #########################################################################
-  
+
 import os
 import cvsdb
 import viewvc
@@ -191,5 +191,5 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print
         print '** break **'
-        
+
     sys.exit(0)

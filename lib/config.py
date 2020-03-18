@@ -51,7 +51,7 @@ import fnmatch
 # Here's a diagram of the valid overlays/overrides:
 #
 #         PER-ROOT          PER-VHOST            BASE
-#       
+#
 #                         ,-----------.     ,-----------.
 #                         | vhost-*|  |     |           |
 #                         |  general  | --> |  general  |
@@ -150,13 +150,13 @@ class Config:
     settings there as overrides to the built-in default values.  If
     VHOST is provided, also process the configuration overrides
     specific to that virtual host."""
-    
+
     self.conf_path = os.path.isfile(pathname) and pathname or None
     self.base = os.path.dirname(pathname)
     self.parser = ConfigParser.ConfigParser()
     self.parser.optionxform = lambda x: x # don't case-normalize option names.
     self.parser.read(self.conf_path or [])
-    
+
     for section in self.parser.sections():
       if self._is_allowed_section(section, self._base_sections):
         self._process_section(self.parser, section, section)
@@ -168,7 +168,7 @@ class Config:
     """Process the key/value (kv) files specified in the
     configuration, merging their values into the configuration as
     dotted heirarchical items."""
-    
+
     kv = _sub_config()
 
     for fname in self.general.kv_files:
@@ -228,7 +228,7 @@ class Config:
     """Return 1 iff SECTION is an allowed section, defined as being
     explicitly present in the ALLOWED_SECTIONS list or present in the
     form 'someprefix-*' in that list."""
-    
+
     for allowed_section in allowed_sections:
       if allowed_section[-1] == '*':
         if _startswith(section, allowed_section[:-1]):
@@ -284,7 +284,7 @@ class Config:
     set.  This is a destructive change to the configuration."""
 
     did_overlay = 0
-    
+
     if not self.conf_path:
       return
 
@@ -374,7 +374,7 @@ class Config:
         for attr in dir(sub_config):
           params[attr] = getattr(sub_config, attr)
     return params
-  
+
   def set_defaults(self):
     "Set some default values in the configuration."
 
@@ -464,11 +464,11 @@ class Config:
     self.cvsdb.user = ''
     self.cvsdb.passwd = ''
     self.cvsdb.readonly_user = ''
-    self.cvsdb.readonly_passwd = '' 
+    self.cvsdb.readonly_passwd = ''
     self.cvsdb.row_limit = 1000
     self.cvsdb.rss_row_limit = 100
     self.cvsdb.check_database_for_root = 0
-    
+
 def _startswith(somestr, substr):
   return somestr[:len(substr)] == substr
 
@@ -492,7 +492,7 @@ class IllegalOverrideSection(ViewVCConfigurationError):
   def __str__(self):
     return "malformed configuration: illegal %s override section: %s" \
            % (self.override_type, self.section_name)
-  
+
 class MalformedRoot(ViewVCConfigurationError):
   def __init__(self, config_name, value_given):
     Exception.__init__(self, config_name, value_given)
