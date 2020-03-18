@@ -139,7 +139,7 @@ def make_html(root, rcs_path):
 def main():
   import sys
   if len(sys.argv) != 3:
-    print 'USAGE: %s cvsroot rcs-file' % sys.argv[0]
+    print('USAGE: %s cvsroot rcs-file' % sys.argv[0])
     sys.exit(1)
   make_html(sys.argv[1], sys.argv[2])
 
