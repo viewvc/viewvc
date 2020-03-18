@@ -15,9 +15,13 @@
 import calendar
 import string
 import sys
-PY3 = (sys.version_info[0] >= 3)
 
-DIGITS = string.digits.encode('ascii') if PY3 else string.digits
+DIGITS = string.digits.encode('ascii')
+
+def ascii_decode(s):
+  if s is None:
+    return None
+  return s.decode('ascii', 'surrogateescape')
 
 class Sink:
   """Interface to be implemented by clients.  The RCS parser calls this as
@@ -273,16 +277,14 @@ class _Parser:
       # on the floor.
       pass
     else:
-      if PY3:
-        rev = rev.decode('ascii', 'surrogateescape')
+      rev = ascii_decode(rev)
       self.sink.set_head_revision(rev)
       self.ts.match(b';')
 
   def _parse_admin_branch(self, token):
     branch = self.ts.get()
     if branch != b';':
-      if PY3:
-        branch = branch.decode('ascii', 'surrogateescape')
+      branch = ascii_decode(branch)
       self.sink.set_principal_branch(branch)
       self.ts.match(b';')
 
@@ -298,9 +300,8 @@ class _Parser:
         break
       self.ts.match(b':')
       tag_rev = self.ts.get()
-      if PY3:
-        tag_name = tag_name.decode('ascii', 'surrogateescape')
-        tag_rev = tag_rev.decode('ascii', 'surrogateescape')
+      tag_name = ascii_decode(tag_name)
+      tag_rev = ascii_decode(tag_rev)
       self.sink.define_tag(tag_name, tag_rev)
 
   def _parse_admin_locks(self, token):
@@ -310,9 +311,8 @@ class _Parser:
         break
       self.ts.match(b':')
       rev = self.ts.get()
-      if PY3:
-        rev = rev.decode('ascii', 'surrogateescape')
-        locker = locker.decode('ascii', 'surrogateescape')
+      rev = ascii_decode(rev)
+      locker = ascii_decode(locker)
       self.sink.set_locker(rev, locker)
 
   def _parse_admin_strict(self, token):
@@ -320,16 +320,12 @@ class _Parser:
     self.ts.match(b';')
 
   def _parse_admin_comment(self, token):
-    if PY3:
-        self.sink.set_comment(self.ts.get().decode('ascii', 'surrogateescape'))
-    else:
-        self.sink.set_comment(self.ts.get())
+    self.sink.set_comment(ascii_decode(self.ts.get()))
     self.ts.match(b';')
 
   def _parse_admin_expand(self, token):
     expand_mode = self.ts.get()
-    if PY3:
-        expand_mode = expand_mode.decode('ascii', 'surrogateescape')
+    expand_mode = ascii_decode(expand_mode)
     self.sink.set_expansion(expand_mode)
     self.ts.match(b';')
 
@@ -376,10 +372,7 @@ class _Parser:
     self.ts.match(b';')
 
     # Convert date into standard UNIX time format (seconds since epoch)
-    if PY3:
-      date_fields = date.decode('ascii','surrogateescape').split('.')
-    else:
-      date_fields = date.split('.')
+    date_fields = ascii_decode(date).split('.')
     # According to rcsfile(5): the year "contains just the last two
     # digits of the year for years from 1900 through 1999, and all the
     # digits of years thereafter".
@@ -438,15 +431,11 @@ class _Parser:
       # consume everything up to the semicolon
       self._read_until_semicolon()
 
-    if PY3:
-      revision = revision.decode('ascii', 'surrogateescape')
-      if author is not None:
-        author = author.decode('ascii', 'surrogateescape')
-      if state is not None:
-        state = state.decode('ascii', 'surrogateescape')
-      branches = [b.decode('ascii', 'surrogateescape') for b in branches]
-      if next is not None:
-        next = next.decode('ascii', 'surrogateescape')
+    revision = ascii_decode(revision)
+    author = ascii_decode(author)
+    state = ascii_decode(state)
+    branches = [ascii_decode(b) for b in branches]
+    next = ascii_decode(next)
     self.sink.define_revision(revision, timestamp, author, state, branches,
                               next)
 
@@ -463,11 +452,7 @@ class _Parser:
 
   def parse_rcs_description(self):
     self.ts.match(b'desc')
-    if PY3:
-      self.sink.set_description(self.ts.get().decode('ascii',
-                                                     'surrogateescape'))
-    else:
-      self.sink.set_description(self.ts.get())
+    self.sink.set_description(ascii_decode(self.ts.get()))
 
   def parse_rcs_deltatext(self):
     while 1:
@@ -482,10 +467,9 @@ class _Parser:
       if sym2 != b'text':
         raise RCSExpected(sym2, b'text')
       ### need to add code to chew up "newphrase"
-      if PY3:
-        revision = revision.decode('ascii', 'surrogateescape')
-        log = log.decode('ascii', 'surrogateescape')
-        text = text.decode('ascii', 'surrogateescape')
+      revision = ascii_decode(revision)
+      log = ascii_decode(log)
+      text = ascii_decode(text)
       self.sink.set_revision_info(revision, log, text)
 
   def parse(self, file, sink):

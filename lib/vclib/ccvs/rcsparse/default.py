@@ -19,12 +19,7 @@ import sys
 import string
 from . import common
 
-if sys.version_info[0] >= 3:
-  PY3 = True
-  WHITESPACE = string.whitespace.encode('ascii')
-else:
-  PY3 = False
-  WHITESPACE = string.whitespace
+WHITESPACE = string.whitespace.encode('ascii')
 
 class _TokenStream:
   token_term = WHITESPACE + b";:"
@@ -147,10 +142,7 @@ class _TokenStream:
 #  _get = get
 #  def get(self):
     token = self._get()
-    if PY3:
-      print('T:', repr(token.decode('ascii','surrogateescape')))
-    else:
-      print('T:', repr(token))
+    print('T:', repr(token.decode('ascii','surrogateescape')))
     return token
 
   def match(self, match):

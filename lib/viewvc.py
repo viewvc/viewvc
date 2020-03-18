@@ -37,13 +37,8 @@ import struct
 import tempfile
 import time
 import functools
-if sys.version_info[0] >= 3:
-  PY3 = True
-  import io
-  from urllib.parse import urlencode as _urlencode, quote as _quote
-else:
-  PY3 = False
-  from urllib import urlencode as _urlencode, quote as _quote
+import io
+from urllib.parse import urlencode as _urlencode, quote as _quote
 import subprocess
 
 # These modules come from our library (the stub has set up the path)
@@ -101,9 +96,8 @@ _URL_SAFE_CHARS = "/*~"
 
 
 # Python 3: workaround for cmp()
-if PY3:
-  def cmp(a, b):
-    return (a > b) - (a < b)
+def cmp(a, b):
+  return (a > b) - (a < b)
 
 
 class Request:
@@ -999,7 +993,7 @@ def get_writeready_server_file(request, content_type=None, encoding=None,
 
 def generate_page(request, view_name, data, content_type=None):
   server_fp = get_writeready_server_file(request, content_type)
-  if PY3 and not hasattr(server_fp, 'encoding'):
+  if not hasattr(server_fp, 'encoding'):
     server_fp = io.TextIOWrapper(server_fp, 'utf-8', 'surrogateescape')
   template = get_view_template(request.cfg, view_name, request.language)
   template.generate(server_fp, data)
@@ -1059,10 +1053,7 @@ def prep_tags(request, tags):
   links = [ ]
   for tag in tags:
     links.append(_item(name=tag.name, href=url+tag.name))
-  if PY3:
-    links.sort(key=functools.cmp_to_key(lambda a, b: cmp(a.name, b.name)))
-  else:
-    links.sort(lambda a, b: cmp(a.name, b.name))
+  links.sort(key=functools.cmp_to_key(lambda a, b: cmp(a.name, b.name)))
   return links
 
 def guess_mime(filename):
@@ -1529,10 +1520,7 @@ def little_time(request):
     return 'very little time'
 
 def html_time(request, secs, extended=0):
-  if PY3:
-    secs = int(time.time()) - secs
-  else:
-    secs = long(time.time()) - secs
+  secs = int(time.time()) - secs
   if secs < 2:
     return little_time(request)
   breaks = sorted(_time_desc.keys())
@@ -1865,15 +1853,9 @@ def markup_file_contents(request, cfg, file_lines, filename,
     # Built output data comprised of marked-up and possibly-transcoded
     # source text lines wrapped in (possibly dummy) vclib.Annotation
     # objects.
-    if PY3:
-      if not encoding:
-        encoding='ascii'
-      file_lines = [l.decode(encoding, 'surrogateescape') for l in file_lines]
-    else:
-      file_lines = transcode_text(''.join(file_lines), encoding)
-      if file_lines[-1] == '\n':
-        file_lines = file_lines[:-1]
-      file_lines = file_lines.split('\n')
+    if not encoding:
+      encoding='ascii'
+    file_lines = [l.decode(encoding, 'surrogateescape') for l in file_lines]
     for i in range(len(file_lines)):
       line = file_lines[i]
       if cfg.options.tabsize > 0:
@@ -1894,7 +1876,7 @@ def markup_file_contents(request, cfg, file_lines, filename,
   highlight(b''.join(file_lines), pygments_lexer,
             HtmlFormatter(nowrap=True,
                           classprefix="pygments-",
-                          encoding=(None if PY3 else 'utf-8')), ps)
+                          encoding=None), ps)
   return ps.colorized_file_lines
 
 def empty_blame_item(line, line_no):
@@ -1960,19 +1942,12 @@ def make_comma_sep_list_string(items):
   return ', '.join([x.name for x in items])
 
 def is_undisplayable(val):
-  if PY3:
-    # XXX: must revise usage later
-    try:
-      str(val)
-      return 0
-    except:
-      return 1
-  else:
-    try:
-      unicode(val)
-      return 0
-    except:
-      return 1
+  # FIXME: must revise usage later
+  try:
+    str(val)
+    return 0
+  except:
+    return 1
 
 def get_itemprops(request, path_parts, rev):
   itemprops = request.repos.itemprops(path_parts, rev)
@@ -2268,10 +2243,7 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
     # sort by file name
     return s * cmp(file1.name, file2.name)
 
-  if PY3:
-    file_data.sort(key=functools.cmp_to_key(file_sort_cmp))
-  else:
-    file_data.sort(file_sort_cmp)
+  file_data.sort(key=functools.cmp_to_key(file_sort_cmp))
 
 def icmp(x, y):
   """case insensitive comparison"""
@@ -2287,10 +2259,7 @@ def view_roots(request):
   expand_root_parents(request.cfg)
   allroots = list_roots(request)
   if len(allroots):
-    if PY3:
-      rootnames = sorted(allroots.keys(), key=functools.cmp_to_key(icmp))
-    else:
-      rootnames = sorted(allroots.keys(), icmp)
+    rootnames = sorted(allroots.keys(), key=functools.cmp_to_key(icmp))
     for rootname in rootnames:
       root_path, root_type, lastmod = allroots[rootname]
       href = request.get_url(view_func=view_directory,
@@ -2580,19 +2549,13 @@ def view_directory(request):
   # set cvs-specific fields
   if request.roottype == 'cvs':
     plain_tags = options['cvs_tags']
-    if PY3:
-      plain_tags.sort(key=functools.cmp_to_key(icmp), reverse=True)
-    else:
-      plain_tags.sort(icmp, True)
+    plain_tags.sort(key=functools.cmp_to_key(icmp), reverse=True)
     data['plain_tags'] = []
     for plain_tag in plain_tags:
       data['plain_tags'].append(_item(name=plain_tag, revision=None))
 
     branch_tags = options['cvs_branches']
-    if PY3:
-      branch_tags.sort(key=functools.cmp_to_key(icmp), reverse=True)
-    else:
-      branch_tags.sort(icmp, True)
+    branch_tags.sort(key=functools.cmp_to_key(icmp), reverse=True)
     data['branch_tags'] = []
     for branch_tag in branch_tags:
       data['branch_tags'].append(_item(name=branch_tag, revision=None))
@@ -3242,25 +3205,15 @@ def search_file(repos, path_parts, rev, search_re):
   # search line.
   fp = repos.openfile(path_parts, rev, {})[0]
   matches = 0
-  if PY3:
-    while 1:
-      line = fp.readline()
-      if not line:
-        break
-      # XXX: Is there what can we do about file encoding?
-      if search_re.search(line.decode('utf-8', 'surrogateescape')):
-        matches = 1
-        fp.close()
-        break
-  else:
-    while 1:
-      line = fp.readline()
-      if not line:
-        break
-      if search_re.search(line):
-        matches = 1
-        fp.close()
-        break
+  while 1:
+    line = fp.readline()
+    if not line:
+      break
+    # FIXME: Is there what can we do about file encoding?
+    if search_re.search(line.decode('utf-8', 'surrogateescape')):
+      matches = 1
+      fp.close()
+      break
   return matches
 
 def view_doc(request):
@@ -3667,7 +3620,7 @@ def view_patch(request):
                                                    rev1, rev2, sym1, sym2)
 
   server_fp = get_writeready_server_file(request, 'text/plain')
-  if PY3 and not hasattr(server_fp, 'encoding'):
+  if not hasattr(server_fp, 'encoding'):
     server_fp = io.TextIOWrapper(server_fp, 'utf-8', 'surrogateescape')
   server_fp.write(headers)
   copy_stream(fp, server_fp)
@@ -3893,11 +3846,8 @@ class DiffDescription:
 
   def _prop_lines(self, side, propname):
     val = side.properties.get(propname, '')
-    # XXX: dirty hack for Python 3: we need bytes as return value
-    if PY3:
-      return val.encode('utf-8','surrogateescape').splitlines()
-    else:
-      return val.splitlines()
+    # FIXME: dirty hack for Python 3: we need bytes as return value
+    return val.encode('utf-8','surrogateescape').splitlines()
 
   def _prop_fp(self, left, right, propname, diff_options):
     fn_left = self._temp_file(left.properties.get(propname))
@@ -4062,12 +4012,8 @@ def generate_tarball_header(out, name, size=0, mode=None, mtime=0,
     dummy_chksum = b'        '
     block = block1 + dummy_chksum + block2
     chksum = 0
-    if PY3:
-      for i in range(len(block)):
-        chksum = chksum + block[i]
-    else:
-      for i in range(len(block)):
-        chksum = chksum + ord(block[i])
+    for i in range(len(block)):
+      chksum = chksum + block[i]
 
   block = block1 + struct.pack('8s', b'%07o' % chksum) + block2
   block = block + b'\0' * (512 - len(block))
@@ -4079,10 +4025,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
   rep_path = request.path_parts + reldir
   entries = request.repos.listdir(rep_path, request.pathrev, {})
   request.repos.dirlogs(rep_path, request.pathrev, entries, {})
-  if PY3:
-    entries.sort(key=functools.cmp_to_key(lambda a, b: cmp(a.name, b.name)))
-  else:
-    entries.sort(lambda a, b: cmp(a.name, b.name))
+  entries.sort(key=functools.cmp_to_key(lambda a, b: cmp(a.name, b.name)))
 
   # figure out corresponding path in tar file. everything gets put underneath
   # a single top level directory named after the repository directory being
@@ -4286,10 +4229,7 @@ def view_revision(request):
   # Sort the changes list by path.
   def changes_sort_by_path(a, b):
     return cmp(a.path_parts, b.path_parts)
-  if PY3:
-    changes.sort(key=functools.cmp_to_key(changes_sort_by_path))
-  else:
-    changes.sort(changes_sort_by_path)
+  changes.sort(key=functools.cmp_to_key(changes_sort_by_path))
 
   # Handle limit_changes parameter
   cfg_limit_changes = cfg.options.limit_changes
@@ -5303,4 +5243,3 @@ def main(server, cfg):
   finally:
     debug.t_end('main')
     debug.t_dump(server.file())
-    debug.DumpChildren(server)

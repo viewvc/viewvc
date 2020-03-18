@@ -82,10 +82,7 @@ class ThreadedServerProxy:
   def __init__(self):
     self.__dict__['servers'] = { }
     global _thread
-    if sys.version_info[0] >= 3:
-        import _thread
-    else:
-        import thread as _thread
+    import _thread
 
   def registerThread(self, server):
     self.__dict__['servers'][_thread.get_ident()] = server

@@ -238,23 +238,11 @@ __license__ = 'BSD'
 import re
 import os
 import sys
-
-if sys.version_info[0] >= 3:
-  # Python >=3.0
-  PY3 = True
-  import io
-  long = int
-  unicode = str
-  from io import StringIO
-  from urllib.parse import quote_plus as urllib_parse_quote_plus
-else:
-  # Python <3.0
-  PY3 = False
-  from urllib import quote_plus as urllib_parse_quote_plus
-  try:
-    from cStringIO import StringIO
-  except ImportError:
-    from StringIO import StringIO
+import io
+long = int
+unicode = str
+from io import StringIO
+from urllib.parse import quote_plus as urllib_parse_quote_plus
 
 #
 # Formatting types
@@ -733,14 +721,9 @@ REPLACE_JS_MAP = (
 )
 
 # Various unicode whitespace
-if PY3:
-  # Python >=3.0
-  REPLACE_JS_UNICODE_MAP = (
-    ('\u0085', r'\u0085'), ('\u2028', r'\u2028'), ('\u2029', r'\u2029')
-  )
-else:
-  # Python <3.0
-  REPLACE_JS_UNICODE_MAP = eval("((u'\u0085', r'\u0085'), (u'\u2028', r'\u2028'), (u'\u2029', r'\u2029'))")
+REPLACE_JS_UNICODE_MAP = (
+  ('\u0085', r'\u0085'), ('\u2028', r'\u2028'), ('\u2029', r'\u2029')
+)
 
 # Why not cgi.escape? It doesn't do single quotes which are occasionally
 # used to contain HTML attributes and event handler definitions (unfortunately)

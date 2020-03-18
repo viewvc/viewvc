@@ -18,7 +18,6 @@ import sys
 from mx import TextTools
 
 from . import common
-PY3 = (sys.version_info[0] >= 3)
 
 
 # for convenience
@@ -319,10 +318,7 @@ class _mxTokenStream:
 #  _get = get
 #  def get(self):
     token = self._get()
-    if PY3:
-      print('T:', repr(token.decode('ascii', 'surrogateescape')))
-    else:
-      print('T:', repr(token))
+    print('T:', repr(token.decode('ascii', 'surrogateescape')))
     return token
 
   def match(self, match):

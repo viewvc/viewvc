@@ -261,12 +261,8 @@ class Revision:
     self.size = size
     self.lockinfo = lockinfo
 
-  if sys.version_info[0] >= 3:
-    def __lt__(self, other):
-      return (self.number < other.number)
-  else:
-    def __cmp__(self, other):
-      return cmp(self.number, other.number)
+  def __lt__(self, other):
+    return (self.number < other.number)
 
 class Annotation:
   """Instances represent per-line file annotation information"""
@@ -390,6 +386,7 @@ class _diff_fp:
   on close"""
 
   def __init__(self, temp1, temp2, info1=None, info2=None, diff_cmd='diff', diff_opts=[]):
+    self.readable = True
     self.temp1 = temp1
     self.temp2 = temp2
     args = diff_opts[:]

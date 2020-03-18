@@ -18,13 +18,8 @@ import os
 import re
 import tempfile
 import time
-if sys.version_info[0] >= 3:
-  PY3 = True
-  import functools
-  from urllib.parse import quote as _quote
-else:
-  PY3 = False
-  from urllib import quote as _quote
+import functools
+from urllib.parse import quote as _quote
 
 from .svn_repos import Revision, SVNChangedPath, _datestr_to_date, \
                       _compare_paths, _path_parts, _cleanup_path, \
@@ -145,11 +140,8 @@ class LogCollector:
 
     # Changed paths have leading slashes
     changed_paths = list(paths.keys())
-    if PY3:
-      changed_paths.sort(key=functools.cmp_to_key(
-                               lambda a, b: _compare_paths(a, b)))
-    else:
-      changed_paths.sort(lambda a, b: _compare_paths(a, b))
+    changed_paths.sort(key=functools.cmp_to_key(
+                             lambda a, b: _compare_paths(a, b)))
     this_path = None
     if self.path in changed_paths:
       this_path = self.path
@@ -188,6 +180,7 @@ def cat_to_tempfile(svnrepos, path, rev):
 
 class SelfCleanFP:
   def __init__(self, path):
+    self.readable = True
     self._fp = open(path, 'rb')
     self._path = path
     self._eof = 0
@@ -618,10 +611,7 @@ class RemoteSubversionRepository(vclib.Repository):
       except:
         changed_paths = log_entry.changed_paths
         paths = list((changed_paths or {}).keys())
-      if PY3:
-        paths.sort(key=functools.cmp_to_key(lambda a, b: _compare_paths(a, b)))
-      else:
-        paths.sort(lambda a, b: _compare_paths(a, b))
+      paths.sort(key=functools.cmp_to_key(lambda a, b: _compare_paths(a, b)))
 
       # If we get this far, our caller needs changed-paths, or we need
       # them for authz-related sanitization.

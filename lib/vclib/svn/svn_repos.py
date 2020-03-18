@@ -19,19 +19,11 @@ import os.path
 import time
 import tempfile
 import re
-
-if sys.version_info[0] >= 3:
-  PY3 = True
-  from io import StringIO
-  from urllib.parse import quote as _quote
-  long = int
-else:
-  PY3 = False
-  from cStringIO import StringIO
-  from urllib import quote as _quote
-
-
+from io import StringIO
+from urllib.parse import quote as _quote
 from svn import fs, repos, core, client, delta
+
+long = int
 
 
 ### Require Subversion 1.3.1 or better.
@@ -77,10 +69,9 @@ def _fs_path_join(base, relative):
   return _cleanup_path(base + '/' + relative)
 
 
-if PY3:
-  #  workaround for cmp()
-  def cmp(a, b):
-    return (a > b) - (a < b)
+# Python 3 workaround for cmp()
+def cmp(a, b):
+  return (a > b) - (a < b)
 
 def _compare_paths(path1, path2):
   path1_len = len (path1);
@@ -120,10 +111,7 @@ def _compare_paths(path1, path2):
 
 
 def _rev2optrev(rev):
-  if PY3:
-    assert isinstance(rev, int)
-  else:
-    assert isinstance(rev, (int, long))
+  assert isinstance(rev, int)
   rt = core.svn_opt_revision_t()
   rt.kind = core.svn_opt_revision_number
   rt.value.number = rev
@@ -260,6 +248,7 @@ def temp_checkout(svnrepos, path, rev):
 
 class FileContentsPipe:
   def __init__(self, root, path):
+    self.readable = True
     self._stream = fs.file_contents(root, path)
     self._eof = 0
 

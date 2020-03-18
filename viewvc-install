@@ -30,8 +30,6 @@ except AttributeError:
     class PathLike(object):
         pass
 
-PY3 = (sys.version_info[0] >= 3)
-
 # Get access to our library modules.
 sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), 'lib'))
 
@@ -127,12 +125,8 @@ def error(text, etype=None, evalue=None):
 def replace_var(contents, var, value):
     """Replace instances of the variable VAR as found in file CONTENTS
     with VALUE."""
-    if PY3:
-        # Python 3: contents is bytes here
-        pattern = re.compile(b'^' + var + br'\s*=\s*.*$', re.MULTILINE)
-    else:
-        pattern = re.compile('^' + var + r'\s*=\s*.*$', re.MULTILINE)
-    if sys.version_info[0] >= 3 and isinstance(ROOT_DIR, str):
+    pattern = re.compile(b'^' + var + br'\s*=\s*.*$', re.MULTILINE)
+    if isinstance(ROOT_DIR, str):
         root_dir = ROOT_DIR.encode('utf-8', 'surrogateescape')
     else:
         root_dir = ROOT_DIR
@@ -144,10 +138,7 @@ def replace_paths(contents):
     """Replace all ViewVC path placeholders found in file CONTENTS."""
     # Python 3: contents is bytes here
     if contents[:2] == b'#!':
-        if sys.version_info[0] >= 3:
-            shbang = b'#!' + sys.executable.encode('utf-8', 'surrogateescape')
-        else:
-            shbang = b'#!' + sys.executable
+        shbang = b'#!' + sys.executable.encode('utf-8', 'surrogateescape')
         contents = re.sub(b'^#![^\n]*', _escape(shbang), contents)
     contents = replace_var(contents, b'LIBRARY_DIR', b'lib')
     contents = replace_var(contents, b'CONF_PATHNAME', b'viewvc.conf')
@@ -216,12 +207,12 @@ def install_file(src_path, dst_path, mode, subst_path_vars,
                 while 1:
                     name, ext = os.path.splitext(src_path)
                     if ext in BINARY_FILE_EXTS:
-                        temp = raw_input("Do you want to [O]verwrite or "
-                                         "[D]o not overwrite? ")
+                        temp = input("Do you want to [O]verwrite or "
+                                     "[D]o not overwrite? ")
                     else:
-                        temp = raw_input("Do you want to [O]verwrite, [D]o "
-                                         "not overwrite, or [V]iew "
-                                         "differences? ")
+                        temp = input("Do you want to [O]verwrite, [D]o "
+                                     "not overwrite, or [V]iew "
+                                     "differences? ")
                     if len(temp) == 0:
                         continue
                     temp = temp[0].lower()
@@ -358,8 +349,8 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
             print("File %s does not belong in ViewVC %s." \
                   % (dst_path, version))
             while 1:
-                temp = raw_input("Do you want to [D]elete it, or [L]eave "
-                                 "it as is? ")
+                temp = input("Do you want to [D]elete it, or [L]eave "
+                             "it as is? ")
                 temp = temp[0].lower()
                 if temp == "l":
                     delete = 0
@@ -449,7 +440,7 @@ Just hit [Enter] if a default is okay.
             default = os.path.join(pf, "viewvc-" + version)
         else:
             default = "/usr/local/viewvc-" + version
-        temp = raw_input("Installation path [%s]: " % (default)).strip()
+        temp = input("Installation path [%s]: " % (default)).strip()
         print()
         if len(temp):
             ROOT_DIR = temp
@@ -459,8 +450,8 @@ Just hit [Enter] if a default is okay.
     # Prompt for DESTDIR if none provided.
     if DESTDIR is None:
         default = ''
-        temp = raw_input("DESTDIR path (generally only used by package "
-                         "maintainers) [%s]: " % (default)).strip()
+        temp = input("DESTDIR path (generally only used by package "
+                     "maintainers) [%s]: " % (default)).strip()
         print()
         if len(temp):
             DESTDIR = temp

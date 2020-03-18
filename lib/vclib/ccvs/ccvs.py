@@ -14,17 +14,8 @@ import sys
 import os
 import re
 import tempfile
-if sys.version_info[0] >= 3:
-  PY3 = True
-  from io import StringIO, BytesIO
-  import functools
-  # Python 3: workaround for cmp()
-  def cmp(a, b):
-    return (a > b) - (a < b)
-else:
-  PY3 = False
-  from cStringIO import StringIO
-
+from io import StringIO, BytesIO
+import functools
 import vclib
 from . import rcsparse
 from . import blame
@@ -117,15 +108,9 @@ class CCVSRepository(BaseCVSRepository):
     options['cvs_tags'] = sink.tags
 
     if sortby == vclib.SORTBY_DATE:
-      if PY3:
-        filtered_revs.sort(key=functools.cmp_to_key(_logsort_date_cmp))
-      else:
-        filtered_revs.sort(_logsort_date_cmp)
+      filtered_revs.sort(key=functools.cmp_to_key(_logsort_date_cmp))
     elif sortby == vclib.SORTBY_REV:
-      if PY3:
-        filtered_revs.sort(key=functools.cmp_to_key(_logsort_rev_cmp))
-      else:
-        filtered_revs.sort(_logsort_rev_cmp)
+      filtered_revs.sort(key=functools.cmp_to_key(_logsort_rev_cmp))
 
     if len(filtered_revs) < first:
       return []
@@ -171,10 +156,7 @@ class CCVSRepository(BaseCVSRepository):
     sink = COSink(rev)
     rcsparse.parse(open(path, 'rb'), sink)
     revision = sink.last and sink.last.string
-    if PY3:
-      return BytesIO(b'\n'.join(sink.sstext.text)), revision
-    else:
-      return StringIO('\n'.join(sink.sstext.text)), revision
+    return BytesIO(b'\n'.join(sink.sstext.text)), revision
 
 class MatchingSink(rcsparse.Sink):
   """Superclass for sinks that search for revisions based on tag or number"""
@@ -396,8 +378,7 @@ class COSink(MatchingSink):
       raise vclib.InvalidRevision(self.find)
 
   def set_revision_info(self, revision, log, text):
-    if PY3:
-      text = text.encode('ascii', 'surrogateescape')
+    text = text.encode('ascii', 'surrogateescape')
     tag = self.find_tag
     rev = Revision(revision)
 

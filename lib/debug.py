@@ -17,13 +17,8 @@
 
 import sys
 
-PY3 = (sys.version_info[0] >= 3)
-
 # Set to non-zero to track and print processing times
 SHOW_TIMES = 0
-
-# Set to non-zero to display child process info
-SHOW_CHILD_PROCESSES = 0
 
 # Set to a server-side path to force the tarball view to generate the
 # tarball as a file on the server, instead of transmitting the data
@@ -87,15 +82,11 @@ def PrintException(server, exc_data):
   if status:
     s = s + ('<h4>HTTP Response Status</h4>\n<p><pre>\n%s</pre></p><hr />\n'
              % status)
-  if PY3:
-    s = s.encode('utf-8', 'xmlcharrefreplace')
+  s = s.encode('utf-8', 'xmlcharrefreplace')
   server.write(s)
 
   server.write(b"<h4>Python Traceback</h4>\n<p><pre>")
-  if PY3:
-    server.write(server.escape(tb).encode('utf-8', 'xmlcharrefreplace'))
-  else:
-    server.write(server.escape(tb))
+  server.write(server.escape(tb).encode('utf-8', 'xmlcharrefreplace'))
   server.write(b"</pre></p>\n")
 
 
@@ -131,104 +122,3 @@ def GetExceptionData():
     del exc_tb
 
   return exc_dict
-
-
-if SHOW_CHILD_PROCESSES:
-  class Process:
-    def __init__(self, command, inStream, outStream, errStream):
-      self.command = command
-      self.debugIn = inStream
-      self.debugOut = outStream
-      self.debugErr = errStream
-
-      import sapi
-      if not sapi.server is None:
-        if 'processes' not in sapi.server.pageGlobals:
-          sapi.server.pageGlobals['processes'] = [self]
-        else:
-          sapi.server.pageGlobals['processes'].append(self)
-
-  def DumpChildren(server):
-    import os
-
-    if 'processes' not in server.pageGlobals:
-      return
-
-    server.header()
-    lastOut = None
-    i = 0
-
-    for k in server.pageGlobals['processes']:
-      i = i + 1
-      server.write(b"<table>\n")
-      server.write(b"<tr><td colspan=\"2\">Child Process%i</td></tr>" % i)
-      server.write(b"<tr>\n  <td style=\"vertical-align:top\">Command Line</td>  <td><pre>")
-      if PY3:
-        server.write(server.escape(k.command).encode('utf-8'))
-      else:
-        server.write(server.escape(k.command))
-      server.write(b"</pre></td>\n</tr>\n")
-      server.write(b"<tr>\n  <td style=\"vertical-align:top\">Standard In:</td>  <td>")
-
-      if k.debugIn is lastOut and not lastOut is None:
-        server.write(b"<em>Output from process %i</em>" % (i - 1))
-      elif k.debugIn:
-        server.write(b"<pre>")
-        if PY3:
-          server.write(server.escape(k.debugIn.getvalue()).encode('utf-8'))
-        else:
-          server.write(server.escape(k.debugIn.getvalue()))
-        server.write(b"</pre>")
-
-      server.write(b"</td>\n</tr>\n")
-
-      if k.debugOut is k.debugErr:
-        server.write(b"<tr>\n  <td style=\"vertical-align:top\">Standard Out & Error:</td>  <td><pre>")
-        if k.debugOut:
-          if PY3:
-            server.write(server.escape(k.debugOut.getvalue()).encode('utf-8'))
-          else:
-            server.write(server.escape(k.debugOut.getvalue()))
-        server.write(b"</pre></td>\n</tr>\n")
-
-      else:
-        server.write(b"<tr>\n  <td style=\"vertical-align:top\">Standard Out:</td>  <td><pre>")
-        if k.debugOut:
-          if PY3:
-            server.write(server.escape(k.debugOut.getvalue()).encode('utf-8'))
-          else:
-            server.write(server.escape(k.debugOut.getvalue()))
-        server.write(b"</pre></td>\n</tr>\n")
-        server.write(b"<tr>\n  <td style=\"vertical-align:top\">Standard Error:</td>  <td><pre>")
-        if k.debugErr:
-          if PY3:
-            server.write(server.escape(k.debugErr.getvalue()).encode('utf-8'))
-          else:
-            server.write(server.escape(k.debugErr.getvalue()))
-        server.write(b"</pre></td>\n</tr>\n")
-
-      server.write(b"</table>\n")
-      server.flush()
-      lastOut = k.debugOut
-
-    server.write(b"<table>\n")
-    server.write(b"<tr><td colspan=\"2\">Environment Variables</td></tr>")
-    for k, v in os.environ.items():
-      server.write(b"<tr>\n  <td style=\"vertical-align:top\"><pre>")
-      if PY3:
-        server.write(server.escape(k).encode('utf-8'))
-      else:
-        server.write(server.escape(k))
-      server.write(b"</pre></td>\n  <td style=\"vertical-align:top\"><pre>")
-      if PY3:
-        server.write(server.escape(v).encode('utf-8'))
-      else:
-        server.write(server.escape(v))
-      server.write(b"</pre></td>\n</tr>")
-    server.write(b"</table>")
-
-else:
-
-  def DumpChildren(server):
-    pass
-

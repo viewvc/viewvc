@@ -34,14 +34,8 @@ import string
 import socket
 import select
 import base64
-if sys.version_info[0] >= 3:
-  PY3 = True
-  from urllib.parse import unquote as _unquote
-  import http.server as _http_server
-else:
-  PY3 = False
-  from urllib import unquote as _unquote
-  import BaseHTTPServer as _http_server
+from urllib.parse import unquote as _unquote
+import http.server as _http_server
 
 if LIBRARY_DIR:
   sys.path.insert(0, LIBRARY_DIR)
@@ -271,15 +265,8 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
     env['REMOTE_ADDR'] = self.client_address[0]
     if self.username:
       env['REMOTE_USER'] = self.username
-    if PY3:
-        env['CONTENT_TYPE'] = self.headers.get_content_type()
-        length = self.headers.get('content-length', None)
-    else:
-      if self.headers.typeheader is None:
-        env['CONTENT_TYPE'] = self.headers.type
-      else:
-        env['CONTENT_TYPE'] = self.headers.typeheader
-      length = self.headers.get('content-length', None)
+    env['CONTENT_TYPE'] = self.headers.get_content_type()
+    length = self.headers.get('content-length', None)
     if length:
       env['CONTENT_LENGTH'] = length
     accept = []
@@ -289,22 +276,13 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
       else:
         accept = accept + line[7:].split(',')
     env['HTTP_ACCEPT'] = ','.join(accept)
-    if PY3:
-      ua = self.headers.get('user-agent', None)
-    else:
-      ua = self.headers.getheader('user-agent')
+    ua = self.headers.get('user-agent', None)
     if ua:
       env['HTTP_USER_AGENT'] = ua
-    if PY3:
-      modified = self.headers.get('if-modified-since', None)
-    else:
-      modified = self.headers.getheader('if-modified-since')
+    modified = self.headers.get('if-modified-since', None)
     if modified:
       env['HTTP_IF_MODIFIED_SINCE'] = modified
-    if PY3:
-      etag = self.headers.get('if-none-match', None)
-    else:
-      etag = self.headers.getheader('if-none-match')
+    etag = self.headers.get('if-none-match', None)
     if etag:
       env['HTTP_IF_NONE_MATCH'] = etag
     # AUTH_TYPE

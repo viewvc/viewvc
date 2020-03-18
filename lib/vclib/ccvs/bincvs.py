@@ -22,18 +22,17 @@ import re
 import time
 import calendar
 import subprocess
-
-# ViewVC libs
 import vclib.ccvs
+import functools
 
-if sys.version_info[0] >= 3:
-  PY3 = True
-  import functools
-  # Python 3: workaround for cmp()
-  def cmp(a, b):
-    return (a > b) - (a < b)
-else:
-  PY3 = False
+# Python 3: workaround for cmp()
+def cmp(a, b):
+  return (a > b) - (a < b)
+
+def enc_decode(s, encoding='utf-8'):
+  if s is None:
+    return None
+  return s.decode(encoding, 'surrogateescape')
 
 def _path_join(path_parts):
   return '/'.join(path_parts)
@@ -326,15 +325,9 @@ class BinCVSRepository(BaseCVSRepository):
 
     options['cvs_tags'] = tags
     if sortby == vclib.SORTBY_DATE:
-      if PY3:
-        filtered_revs.sort(key=functools.cmp_to_key(_logsort_date_cmp))
-      else:
-        filtered_revs.sort(_logsort_date_cmp)
+      filtered_revs.sort(key=functools.cmp_to_key(_logsort_date_cmp))
     elif sortby == vclib.SORTBY_REV:
-      if PY3:
-        filtered_revs.sort(key=functools.cmp_to_key(_logsort_rev_cmp))
-      else:
-        filtered_revs.sort(_logsort_rev_cmp)
+      filtered_revs.sort(key=functools.cmp_to_key(_logsort_rev_cmp))
 
     if len(filtered_revs) < first:
       return []
@@ -353,29 +346,19 @@ class BinCVSRepository(BaseCVSRepository):
     else:
       cmd = os.path.join(self.utilities.rcs_dir, rcs_cmd)
       args = rcs_args
-    if os.versioninfo[:2] >= (3, 3):
-      stderr = subprocess.STDOUT if capture_err else subprocess.DEVNULL
-    else:
-      stderr = subprocess.STDOUT if capture_err else None
+    stderr = subprocess.STDOUT if capture_err else subprocess.DEVNULL
     txtmode = ('t' in mode) or ('b' not in mode)
-    if PY3:
-      if txtmode:
-          proc = subprocess.Popen([cmd] + list(args), bufsize = -1,
-                                  stdout=subprocess.PIPE,
-                                  stderr=stderr,
-                                  encoding=encoding,
-                                  errors='surrogateescape',
-                                  close_fds=(sys.platform != "win32"))
-      else:
-          proc = subprocess.Popen([cmd] + list(args), bufsize = -1,
-                                  stdout=subprocess.PIPE,
-                                  stderr=stderr,
-                                  close_fds=(sys.platform != "win32"))
+    if txtmode:
+      proc = subprocess.Popen([cmd] + list(args), bufsize = -1,
+                              stdout=subprocess.PIPE,
+                              stderr=stderr,
+                              encoding=encoding,
+                              errors='surrogateescape',
+                              close_fds=(sys.platform != "win32"))
     else:
       proc = subprocess.Popen([cmd] + list(args), bufsize = -1,
                               stdout=subprocess.PIPE,
                               stderr=stderr,
-                              universal_newlines=txtmode,
                               close_fds=(sys.platform != "win32"))
     return proc.stdout
 
@@ -645,18 +628,11 @@ class COMissingRevision(vclib.Error):
   pass
 
 ### suck up other warnings in _re_co_warning?
-if PY3:
-  _re_co_filename = re.compile(br'^(.*),v\s+-->\s+(?:(?:standard output)|(?:stdout))\s*\n?$')
-  _re_co_warning = re.compile(br'^.*co: .*,v: warning: Unknown phrases like .*\n$')
-  _re_co_missing_rev = re.compile(br'^.*co: .*,v: revision.*absent\n$')
-  _re_co_side_branches = re.compile(br'^.*co: .*,v: no side branches present for [\d\.]+\n$')
-  _re_co_revision = re.compile(br'^revision\s+([\d\.]+)\s*\n$')
-else:
-  _re_co_filename = re.compile(r'^(.*),v\s+-->\s+(?:(?:standard output)|(?:stdout))\s*\n?$')
-  _re_co_warning = re.compile(r'^.*co: .*,v: warning: Unknown phrases like .*\n$')
-  _re_co_missing_rev = re.compile(r'^.*co: .*,v: revision.*absent\n$')
-  _re_co_side_branches = re.compile(r'^.*co: .*,v: no side branches present for [\d\.]+\n$')
-  _re_co_revision = re.compile(r'^revision\s+([\d\.]+)\s*\n$')
+_re_co_filename = re.compile(br'^(.*),v\s+-->\s+(?:(?:standard output)|(?:stdout))\s*\n?$')
+_re_co_warning = re.compile(br'^.*co: .*,v: warning: Unknown phrases like .*\n$')
+_re_co_missing_rev = re.compile(br'^.*co: .*,v: revision.*absent\n$')
+_re_co_side_branches = re.compile(br'^.*co: .*,v: no side branches present for [\d\.]+\n$')
+_re_co_revision = re.compile(br'^revision\s+([\d\.]+)\s*\n$')
 
 def _parse_co_header(fp, encoding='utf-8'):
   """Parse RCS co header.
@@ -697,10 +673,7 @@ def _parse_co_header(fp, encoding='utf-8'):
     # look for a revision.
     match = _re_co_revision.match(line)
     if match:
-      if PY3:
-        return filename.decode(encoding, 'surrogateescape'), match.group(1).decode(encoding, 'surrogateescape')
-      else:
-        return filename, match.group(1)
+      return enc_decode(filename, encoding), enc_decode(match.group(1), encoding)
     elif _re_co_missing_rev.match(line) or _re_co_side_branches.match(line):
       raise COMissingRevision("Got missing revision error from co output stream")
     elif _re_co_warning.match(line):

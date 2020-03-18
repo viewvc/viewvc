@@ -21,10 +21,7 @@
 import sys
 import os
 import glob
-if sys.version_info[0] >= 3:
-  from io import StringIO
-else:
-  from cStringIO import StringIO
+from io import StringIO
 from difflib import Differ
 
 # Since there is nontrivial logic in __init__.py, we have to import
