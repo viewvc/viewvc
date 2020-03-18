@@ -407,7 +407,7 @@ def serve(host, port, callback=None):
       import popen
       cvsnt_works = 0
       try:
-        fp = popen.popen(cfg.utilities.cvsnt, ['--version'], 'rt')
+        fp = popen.popen(cfg.utilities.cvsnt, ['--version'], True)
         try:
           while 1:
             line = fp.readline()

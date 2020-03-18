@@ -390,7 +390,7 @@ class _diff_fp:
     if info1 and info2:
       args.extend(["-L", self._label(info1), "-L", self._label(info2)])
     args.extend([temp1, temp2])
-    self.fp = popen.popen(diff_cmd, args, "r")
+    self.fp = popen.popen(diff_cmd, args, True)
 
   def read(self, bytes):
     return self.fp.read(bytes)

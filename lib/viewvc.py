@@ -3120,7 +3120,7 @@ def view_cvsgraph_image(request):
                    ("-c", cfg.path(cfg.options.cvsgraph_conf),
                     "-r", request.repos.rootpath,
                     cvsgraph_extraopts(request),
-                    rcsfile), 'rb', 0)
+                    rcsfile))
   
   copy_stream(fp, get_writeready_server_file(request, 'image/png'))
   fp.close()
@@ -3163,7 +3163,7 @@ def view_cvsgraph(request):
                                           params={'pathrev': None},
                                           escape=1, partial=1),
                     cvsgraph_extraopts(request),
-                    rcsfile), 'rb', 0)
+                    rcsfile))
 
   graph_action, graph_hidden_values = \
     request.get_form(view_func=view_cvsgraph, params={})
