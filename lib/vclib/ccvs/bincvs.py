@@ -170,7 +170,7 @@ class BinCVSRepository(BaseCVSRepository):
   def _get_tip_revision(self, rcs_file, rev=None):
     """Get the (basically) youngest revision (filtered by REV)."""
     args = rcs_file,
-    fp = self.rcs_popen('rlog', args, 'rt', 0)
+    fp = self.rcs_popen('rlog', args, True, False)
     filename, default_branch, tags, lockinfo, msg, eof = _parse_log_header(fp)
     revs = []
     while not eof:
@@ -203,7 +203,7 @@ class BinCVSRepository(BaseCVSRepository):
     full_name = self.rcsfile(path_parts, root=1, v=0)
     used_rlog = 0
     tip_rev = None  # used only if we have to fallback to using rlog
-    fp = self.rcs_popen('co', (kv_flag, rev_flag, full_name), 'rb')
+    fp = self.rcs_popen('co', (kv_flag, rev_flag, full_name)) 
     try:
       filename, revision = _parse_co_header(fp)
     except COMissingRevision:
@@ -217,7 +217,7 @@ class BinCVSRepository(BaseCVSRepository):
         used_rlog = 1
       if not tip_rev:
         raise vclib.Error("Unable to find valid revision")
-      fp = self.rcs_popen('co', ('-p' + tip_rev.string, full_name), 'rb')
+      fp = self.rcs_popen('co', ('-p' + tip_rev.string, full_name))
       filename, revision = _parse_co_header(fp)
 
     if filename is None:
@@ -232,8 +232,7 @@ class BinCVSRepository(BaseCVSRepository):
       if not (tip_rev and tip_rev.undead):
         raise vclib.Error(
           'Could not find non-dead revision preceding "%s"' % rev)
-      fp = self.rcs_popen('co', ('-p' + tip_rev.undead.string,
-                                 full_name), 'rb')
+      fp = self.rcs_popen('co', ('-p' + tip_rev.undead.string, full_name)) 
       filename, revision = _parse_co_header(fp)
 
     if filename is None:
@@ -311,7 +310,7 @@ class BinCVSRepository(BaseCVSRepository):
     else:
       args = rcsfile,
 
-    fp = self.rcs_popen('rlog', args, 'rt', 0)
+    fp = self.rcs_popen('rlog', args, True, False)
     filename, default_branch, tags, lockinfo, msg, eof = _parse_log_header(fp)
 
     # Retrieve revision objects
@@ -335,7 +334,7 @@ class BinCVSRepository(BaseCVSRepository):
       return filtered_revs[first:first+limit]
     return filtered_revs
 
-  def rcs_popen(self, rcs_cmd, rcs_args, mode, capture_err=1, encoding='ascii'):
+  def rcs_popen(self, rcs_cmd, rcs_args, is_text=False, capture_err=True, encoding='ascii'):
     # as we use this function as "r" mode only, we don't care stdin
     # to communicate child process.
     ### FIXME: for Python 3, more appropriate default encoding value is needed
@@ -347,8 +346,7 @@ class BinCVSRepository(BaseCVSRepository):
       cmd = os.path.join(self.utilities.rcs_dir, rcs_cmd)
       args = rcs_args
     stderr = subprocess.STDOUT if capture_err else subprocess.DEVNULL
-    txtmode = ('t' in mode) or ('b' not in mode)
-    if txtmode:
+    if is_text:
       proc = subprocess.Popen([cmd] + list(args), bufsize = -1,
                               stdout=subprocess.PIPE,
                               stderr=stderr,
@@ -393,8 +391,8 @@ class BinCVSRepository(BaseCVSRepository):
     if path_parts1 != path_parts2:
       raise NotImplementedError("cannot diff across paths in cvs")
     args.extend(['-r' + rev1, '-r' + rev2, rcsfile])
-
-    fp = self.rcs_popen('rcsdiff', args, 'rt')
+    
+    fp = self.rcs_popen('rcsdiff', args, True)
 
     # Eat up the non-GNU-diff-y headers.
     while 1:
@@ -1019,7 +1017,7 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
       # fetch the latest revision on the default branch
       args.append('-r')
     args.extend([x.path for x in chunk])
-    rlog = repos.rcs_popen('rlog', args, 'rt')
+    rlog = repos.rcs_popen('rlog', args, True)
 
     # consume each file found in the resulting log
     chunk_idx = 0

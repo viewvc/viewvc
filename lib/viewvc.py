@@ -38,6 +38,7 @@ import tempfile
 import time
 import functools
 import io
+import popen
 from urllib.parse import urlencode as _urlencode, quote as _quote
 import subprocess
 
@@ -3122,17 +3123,13 @@ def view_cvsgraph_image(request):
   #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib:/path/to/cvsgraph'
 
   rcsfile = request.repos.rcsfile(request.path_parts)
-  proc = subprocess.Popen((cfg.utilities.cvsgraph or 'cvsgraph',
-                           "-c", cfg.path(cfg.options.cvsgraph_conf),
-                           "-r", request.repos.rootpath,
-                           cvsgraph_extraopts(request),
-                           rcsfile), stdout=subprocess.PIPE,
-                           close_fds=(sys.platform != "win32"))
-
-  copy_stream(proc.stdout, get_writeready_server_file(request, 'image/png'))
-  ret = proc.poll()
-  if ret is None:
-    proc.kill()
+  fp = popen.popen(cfg.utilities.cvsgraph or 'cvsgraph',
+                   ("-c", cfg.path(cfg.options.cvsgraph_conf),
+                    "-r", request.repos.rootpath,
+                    cvsgraph_extraopts(request),
+                    rcsfile))
+  copy_stream(fp, get_writeready_server_file(request, 'image/png'))
+  fp.close()
 
 def view_cvsgraph(request):
   "output a page containing an image rendered by cvsgraph"
@@ -3153,35 +3150,33 @@ def view_cvsgraph(request):
 
   # Create an image map
   rcsfile = request.repos.rcsfile(request.path_parts)
-  proc = subprocess.Popen((cfg.utilities.cvsgraph or 'cvsgraph',
-                           "-i",
-                           "-c", cfg.path(cfg.options.cvsgraph_conf),
-                           "-r", request.repos.rootpath,
-                           "-x", "x",
-                           "-3", request.get_url(view_func=view_log, params={},
-                                                 escape=1),
-                           "-4", request.get_url(view_func=view,
-                                                 params={'revision': None},
-                                                 escape=1, partial=1),
-                           "-5", request.get_url(view_func=view_diff,
-                                                 params={'r1': None,
-                                                         'r2': None},
-                                                 escape=1, partial=1),
-                           "-6", request.get_url(view_func=view_directory,
-                                                 where=up_where,
-                                                 pathtype=vclib.DIR,
-                                                 params={'pathrev': None},
-                                                 escape=1, partial=1),
-                           cvsgraph_extraopts(request),
-                           rcsfile), stdout=subprocess.PIPE,
-                           close_fds=(sys.platform != "win32"))
+  fp = popen.popen(cfg.utilities.cvsgraph or 'cvsgraph',
+                   ("-i",
+                    "-c", cfg.path(cfg.options.cvsgraph_conf),
+                    "-r", request.repos.rootpath,
+                    "-x", "x",
+                    "-3", request.get_url(view_func=view_log, params={},
+                                          escape=1),
+                    "-4", request.get_url(view_func=view, 
+                                          params={'revision': None},
+                                          escape=1, partial=1),
+                    "-5", request.get_url(view_func=view_diff,
+                                          params={'r1': None, 'r2': None},
+                                          escape=1, partial=1),
+                    "-6", request.get_url(view_func=view_directory,
+                                          where=up_where,
+                                          pathtype=vclib.DIR,
+                                          params={'pathrev': None},
+                                          escape=1, partial=1),
+                    cvsgraph_extraopts(request),
+                    rcsfile))
 
   graph_action, graph_hidden_values = \
     request.get_form(view_func=view_cvsgraph, params={})
 
   data = common_template_data(request)
   data.merge(TemplateData({
-    'imagemap' : proc.stdout,
+    'imagemap' : fp,
     'imagesrc' : imagesrc,
     'graph_action' : graph_action,
     'graph_hidden_values' : graph_hidden_values,
@@ -5240,7 +5235,6 @@ def main(server, cfg):
       return
     except:
       view_error(server, cfg)
-
   finally:
     debug.t_end('main')
     debug.t_dump(server.file())
