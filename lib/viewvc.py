@@ -3121,6 +3121,7 @@ def view_cvsgraph_image(request):
   # accordingly.  Do the same in view_cvsgraph().
   #os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib:/path/to/cvsgraph'
 
+  rcsfile = request.repos.rcsfile(request.path_parts)
   proc = subprocess.Popen((cfg.utilities.cvsgraph or 'cvsgraph',
                            "-c", cfg.path(cfg.options.cvsgraph_conf),
                            "-r", request.repos.rootpath,
