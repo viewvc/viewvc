@@ -14,8 +14,6 @@
 #
 # -----------------------------------------------------------------------
 
-from __future__ import generators
-
 import difflib
 import sys
 import re

@@ -263,7 +263,7 @@ if __name__ == '__main__':
 
     argc = len(sys.argv)
     debug('Got %d arguments:' % (argc))
-    debug(map(lambda x: '   ' + x, sys.argv))
+    debug(['   ' + x for x in sys.argv])
 
     # if we have more than 3 arguments, we are likely using the
     # newer loginfo format introduced in CVS 1.12:

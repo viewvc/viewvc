@@ -15,7 +15,7 @@
 #
 # -----------------------------------------------------------------------
 
-from __future__ import print_function
+
 import os
 import sys
 import re
@@ -220,7 +220,7 @@ def install_file(src_path, dst_path, mode, subst_path_vars,
                         print("""
 ---------------------------------------------------------------------------""")
                         print('\n'.join(diff_lines) + '\n')
-                        print ("""
+                        print("""
 LEGEND
    A leading '- ' indicates line to remove from installed file
    A leading '+ ' indicates line to add to installed file

@@ -377,6 +377,5 @@ if __name__ == '__main__':
         repository = cvsdb.CleanRepository(os.path.abspath(repository))
         main(command, repository, revs, verbose, force)
     except KeyboardInterrupt:
-        print()
-        print('** break **')
+        print('\n** break **')
     sys.exit(0)
