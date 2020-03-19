@@ -1795,12 +1795,13 @@ def markup_file_contents(request, cfg, file_lines, filename,
                                 get_lexer_for_mimetype, \
                                 get_lexer_for_filename, \
                                 guess_lexer
-    if not encoding:
-      encoding = 'guess'
+    pygments_encoding = encoding
+    if not pygments_encoding:
+      pygments_encoding = 'guess'
       if cfg.options.detect_encoding:
         try:
           import chardet
-          encoding = 'chardet'
+          pygments_encoding = 'chardet'
         except (SyntaxError, ImportError):
           pass
 
@@ -1808,7 +1809,7 @@ def markup_file_contents(request, cfg, file_lines, filename,
     if mime_type:
       try:
         pygments_lexer = get_lexer_for_mimetype(mime_type,
-                                                encoding=encoding,
+                                                encoding=pygments_encoding,
                                                 tabsize=cfg.options.tabsize,
                                                 stripnl=False)
       except ClassNotFound:
@@ -1818,7 +1819,7 @@ def markup_file_contents(request, cfg, file_lines, filename,
     if not pygments_lexer:
       try:
         pygments_lexer = get_lexer_for_filename(filename,
-                                                encoding=encoding,
+                                                encoding=pygments_encoding,
                                                 tabsize=cfg.options.tabsize,
                                                 stripnl=False)
       except ClassNotFound:
@@ -1829,7 +1830,7 @@ def markup_file_contents(request, cfg, file_lines, filename,
     if not pygments_lexer and is_text(mime_type) and file_lines:
       try:
         pygments_lexer = guess_lexer(file_lines[0],
-                                     encoding=encoding,
+                                     encoding=pygments_encoding,
                                      tabsize=cfg.options.tabsize,
                                      stripnl=False)
       except ClassNotFound:
