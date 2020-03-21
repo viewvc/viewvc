@@ -1961,7 +1961,7 @@ def get_itemprops(request, path_parts, rev):
     if is_undisplayable(name):
       continue
     lf = LogFormatter(request, itemprops[name].decode(request.repos.encoding,
-                                                      'xmlcharreplace'))
+                                                      'xmlcharrefreplace'))
     value = lf.get(maxlen=0, htmlize=1)
     undisplayable = is_undisplayable(itemprops[name])
     if undisplayable:

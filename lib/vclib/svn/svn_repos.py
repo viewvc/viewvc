@@ -592,7 +592,7 @@ class LocalSubversionRepository(vclib.Repository):
 
   def _to_txt(self, s):
     """Internal-use, convert bytes as user visible text str."""
-    return s.decode(self.encoding, 'xmlcharreplace')
+    return s.decode(self.encoding, 'xmlcharrefreplace')
 
   def _to_str(self, s):
     """Internal-use, convert bytes without lose information"""
