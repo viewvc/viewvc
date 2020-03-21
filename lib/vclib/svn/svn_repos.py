@@ -354,7 +354,8 @@ class SVNChangedPath(vclib.ChangedPath):
 
 
 class LocalSubversionRepository(vclib.Repository):
-  def __init__(self, name, rootpath, authorizer, utilities, config_dir):
+  def __init__(self, name, rootpath, authorizer, utilities, config_dir,
+               encoding):
     if not (os.path.isdir(rootpath) \
             and os.path.isfile(os.path.join(rootpath, 'format'))):
       raise vclib.ReposNotFound(name)
@@ -365,6 +366,7 @@ class LocalSubversionRepository(vclib.Repository):
     self.auth = authorizer
     self.diff_cmd = utilities.diff or 'diff'
     self.config_dir = config_dir or None
+    self.encoding = encoding
 
     # See if this repository is even viewable, authz-wise.
     if not vclib.check_root_access(self):

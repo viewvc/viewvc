@@ -119,7 +119,8 @@ def setup_client_ctx(config_dir):
 
 class LogCollector:
 
-  def __init__(self, path, show_all_logs, lockinfo, access_check_func):
+  def __init__(self, path, show_all_logs, lockinfo, access_check_func,
+               encoding='utf-8'):
     # This class uses leading slashes for paths internally
     if not path:
       self.path = '/'
@@ -130,6 +131,7 @@ class LogCollector:
     self.lockinfo = lockinfo
     self.access_check_func = access_check_func
     self.done = False
+    self.encoding = encoding
 
   def add_log(self, log_entry, pool):
     if self.done:
@@ -222,12 +224,14 @@ class SelfCleanFP:
 
 
 class RemoteSubversionRepository(vclib.Repository):
-  def __init__(self, name, rootpath, authorizer, utilities, config_dir):
+  def __init__(self, name, rootpath, authorizer, utilities, config_dir,
+               encoding):
     self.name = name
     self.rootpath = rootpath
     self.auth = authorizer
     self.diff_cmd = utilities.diff or 'diff'
     self.config_dir = config_dir or None
+    self.encoding = encoding
 
     # See if this repository is even viewable, authz-wise.
     if not vclib.check_root_access(self):

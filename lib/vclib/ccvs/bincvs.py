@@ -38,7 +38,7 @@ def _path_join(path_parts):
   return '/'.join(path_parts)
 
 class BaseCVSRepository(vclib.Repository):
-  def __init__(self, name, rootpath, authorizer, utilities):
+  def __init__(self, name, rootpath, authorizer, utilities, encoding):
     if not os.path.isdir(rootpath):
       raise vclib.ReposNotFound(name)
 
@@ -46,6 +46,7 @@ class BaseCVSRepository(vclib.Repository):
     self.rootpath = rootpath
     self.auth = authorizer
     self.utilities = utilities
+    self.encoding = encoding
 
     # See if this repository is even viewable, authz-wise.
     if not vclib.check_root_access(self):
@@ -205,7 +206,7 @@ class BinCVSRepository(BaseCVSRepository):
     tip_rev = None  # used only if we have to fallback to using rlog
     fp = self.rcs_popen('co', (kv_flag, rev_flag, full_name)) 
     try:
-      filename, revision = _parse_co_header(fp)
+      filename, revision = _parse_co_header(fp, self.encoding)
     except COMissingRevision:
       # We got a "revision X.Y.Z absent" error from co.  This could be
       # because we were asked to find a tip of a branch, which co
@@ -218,7 +219,7 @@ class BinCVSRepository(BaseCVSRepository):
       if not tip_rev:
         raise vclib.Error("Unable to find valid revision")
       fp = self.rcs_popen('co', ('-p' + tip_rev.string, full_name))
-      filename, revision = _parse_co_header(fp)
+      filename, revision = _parse_co_header(fp, self.encodig)
 
     if filename is None:
       # CVSNT's co exits without any output if a dead revision is requested.
@@ -233,7 +234,7 @@ class BinCVSRepository(BaseCVSRepository):
         raise vclib.Error(
           'Could not find non-dead revision preceding "%s"' % rev)
       fp = self.rcs_popen('co', ('-p' + tip_rev.undead.string, full_name)) 
-      filename, revision = _parse_co_header(fp)
+      filename, revision = _parse_co_header(fp, self.encoding)
 
     if filename is None:
       raise vclib.Error('Missing output from co (filename = "%s")' % full_name)
@@ -334,10 +335,9 @@ class BinCVSRepository(BaseCVSRepository):
       return filtered_revs[first:first+limit]
     return filtered_revs
 
-  def rcs_popen(self, rcs_cmd, rcs_args, is_text=False, capture_err=True, encoding='ascii'):
+  def rcs_popen(self, rcs_cmd, rcs_args, is_text=False, capture_err=True):
     # as we use this function as "r" mode only, we don't care stdin
     # to communicate child process.
-    ### FIXME: for Python 3, more appropriate default encoding value is needed
     if self.utilities.cvsnt:
       cmd = self.utilities.cvsnt
       args = ['rcsfile', rcs_cmd]
@@ -350,7 +350,7 @@ class BinCVSRepository(BaseCVSRepository):
       proc = subprocess.Popen([cmd] + list(args), bufsize = -1,
                               stdout=subprocess.PIPE,
                               stderr=stderr,
-                              encoding=encoding,
+                              encoding=self.encoding,
                               errors='surrogateescape',
                               close_fds=(sys.platform != "win32"))
     else:
