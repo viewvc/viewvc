@@ -1943,10 +1943,11 @@ def make_rss_time_string(date, cfg):
 def make_comma_sep_list_string(items):
   return ', '.join([x.name for x in items])
 
-def is_undisplayable(val):
-  # FIXME: must revise usage later
+def is_undisplayable(val, encodig='utf-8'):
+  # FIXME: must revise usage later (hopefully, we can display val
+  # with encodings other than utf-8 ...)
   try:
-    str(val)
+    val.decode(encoding, 'strict')
     return 0
   except:
     return 1
@@ -1959,12 +1960,13 @@ def get_itemprops(request, path_parts, rev):
     # skip non-utf8 property names
     if is_undisplayable(name):
       continue
-    lf = LogFormatter(request, itemprops[name])
+    lf = LogFormatter(request, itemprops[name].decode(request.repos.encoding,
+                                                      'xmlcharreplace'))
     value = lf.get(maxlen=0, htmlize=1)
-    undisplayable = is_undisplayable(value)
+    undisplayable = is_undisplayable(itemprops[name])
     if undisplayable:
       value = None
-    props.append(_item(name=name, value=value,
+    props.append(_item(name=name.decode('utf-8'), value=value,
                        undisplayable=ezt.boolean(undisplayable)))
   return props
 
