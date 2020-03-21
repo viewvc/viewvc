@@ -429,7 +429,7 @@ class LocalSubversionRepository(vclib.Repository):
         kind = vclib.DIR
       elif entry.kind == core.svn_node_file:
         kind = vclib.FILE
-      ent_path = entry.name.decode('utf-8', 'surrogateescape')
+      ent_path = self._to_str(entry.name)
       if vclib.check_path_access(self,
                                  path_parts + [ent_path], kind, rev):
         entries.append(vclib.DirEntry(ent_path, kind))
@@ -442,7 +442,7 @@ class LocalSubversionRepository(vclib.Repository):
     fsroot = self._getroot(self._getrev(rev))
     rev = self._getrev(rev)
     for entry in entries:
-      ent_path = entry.name.decode('utf-8', 'surrogateescape')
+      ent_path = entry.name
       entry_path_parts = path_parts + [ent_path]
       if not vclib.check_path_access(self, entry_path_parts, entry.kind, rev):
         continue
@@ -451,8 +451,8 @@ class LocalSubversionRepository(vclib.Repository):
       date, author, msg, revprops, changes = self._revinfo(entry_rev)
       entry.rev = str(entry_rev)
       entry.date = date
-      entry.author = author
-      entry.log = msg
+      entry.author = self._to_txt(author)
+      entry.log = self._to_txt(msg)
       if entry.kind == vclib.FILE:
         entry.size = fs.file_length(fsroot, path)
       lock = fs.get_lock(self.fs_ptr, path)
@@ -546,7 +546,8 @@ class LocalSubversionRepository(vclib.Repository):
     return source, youngest_rev
 
   def revinfo(self, rev):
-    return self._revinfo(rev, 1)
+    date, author, msg, revprops, changes = self._revinfo(rev, 1)
+    return date, self._to_txt(author), self._to_txt(msg), revprops, changes
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     p1 = self._getpath(path_parts1)
@@ -588,6 +589,14 @@ class LocalSubversionRepository(vclib.Repository):
     return fs.file_length(fsroot, path)
 
   ##--- helpers ---##
+
+  def _to_txt(self, s):
+    """Internal-use, convert bytes as user visible text str."""
+    return s.decode(self.encoding, 'xmlcharreplace')
+
+  def _to_str(self, s):
+    """Internal-use, convert bytes without lose information"""
+    return s.decode('utf-8', 'surrogateescape')
 
   def _revinfo(self, rev, include_changed_paths=0):
     """Internal-use, cache-friendly revision information harvester."""
@@ -790,7 +799,8 @@ class LocalSubversionRepository(vclib.Repository):
       size = fs.file_length(rev_root, path)
     else:
       size = None
-    return Revision(rev, date, author, msg, size, lockinfo, path,
+    return Revision(rev, date, self._to_txt(author), self._to_txt(msg), size,
+                    lockinfo, path,
                     copyfrom_path and _cleanup_path(copyfrom_path),
                     copyfrom_rev)
 
