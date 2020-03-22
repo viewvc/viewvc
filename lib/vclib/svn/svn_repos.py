@@ -528,7 +528,13 @@ class LocalSubversionRepository(vclib.Repository):
     path_type = self.itemtype(path_parts, rev)  # does auth-check
     rev = self._getrev(rev)
     fsroot = self._getroot(rev)
-    return fs.node_proplist(fsroot, path)
+    proptable = fs.node_proplist(fsroot, path)
+    propdict = {}
+    for propname in proptable.keys():
+      # A property name should be a valid UTF-8 string,  however we can
+      # encounter invalid data...
+      propdict[self._to_str(propname)] = proptable[propname]
+    return propdict
 
   def annotate(self, path_parts, rev, include_text=False):
     path = self._getpath(path_parts)
