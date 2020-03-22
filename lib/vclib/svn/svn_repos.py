@@ -306,11 +306,13 @@ class FileContentsPipe:
 
 
 class BlameSource:
-  def __init__(self, local_url, rev, first_rev, include_text, config_dir):
+  def __init__(self, local_url, rev, first_rev, include_text, config_dir,
+               encoding):
     self.idx = -1
     self.first_rev = first_rev
     self.blame_data = []
     self.include_text = include_text
+    self.encoding = encoding
 
     ctx = client.svn_client_create_context()
     core.svn_config_ensure(config_dir)
@@ -333,6 +335,10 @@ class BlameSource:
       prev_rev = rev - 1
     if not self.include_text:
       text = None
+    try:
+      author = author.decode(self.encoding, 'xmlcharrefreplace')
+    except:
+      author = author.decode(self.encoding, 'backslashreplace')
     self.blame_data.append(vclib.Annotation(text, line_no + 1, rev,
                                             prev_rev, author, None))
 
@@ -554,7 +560,8 @@ class LocalSubversionRepository(vclib.Repository):
     youngest_rev, youngest_path = history[0]
     oldest_rev, oldest_path = history[-1]
     source = BlameSource(_rootpath2url(self.rootpath, path), youngest_rev,
-                         oldest_rev, include_text, self.config_dir)
+                         oldest_rev, include_text, self.config_dir,
+                         self.encoding)
     return source, youngest_rev
 
   def revinfo(self, rev):
