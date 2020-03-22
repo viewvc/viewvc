@@ -59,10 +59,16 @@ def _allow_all(root, path, pool):
 def _path_parts(path):
   return [p for p in path.split('/') if p]
 
+def _path_parts_bytes(bytes_path):
+  return [p for p in bytes_path.split(b'/') if p]
 
 def _cleanup_path(path):
   """Return a cleaned-up Subversion filesystem path"""
   return '/'.join(_path_parts(path))
+
+def _cleanup_path_bytes(bytes_path):
+  """Return a cleaned-up Subversion filesystem path"""
+  return b'/'.join(_path_parts_bytes(bytes_path))
 
 
 def _fs_path_join(base, relative):
@@ -214,7 +220,7 @@ class NodeHistory:
               break
         if not found:
           return
-    self.histories.append([revision, _cleanup_path(path)])
+    self.histories.append([revision, _cleanup_path_bytes(path)])
     if self.limit and len(self.histories) == self.limit:
       raise core.SubversionException("", _SVN_ERR_CEASE_INVOCATION)
 
@@ -626,11 +632,12 @@ class LocalSubversionRepository(vclib.Repository):
       # authorization and converting them into ChangedPath objects.
       found_readable = found_unreadable = 0
       for path in changes.keys():
+        spath = self._to_str(path)
         change = changes[path]
         if change.path:
-          change.path = _cleanup_path(change.path)
+          change.path = _cleanup_path_bytes(change.path)
         if change.base_path:
-          change.base_path = _cleanup_path(change.base_path)
+          change.base_path = _cleanup_path_bytes(change.base_path)
         is_copy = 0
         if not hasattr(change, 'action'): # new to subversion 1.4.0
           action = vclib.MODIFIED
@@ -664,21 +671,25 @@ class LocalSubversionRepository(vclib.Repository):
         else:
           pathtype = None
 
-        parts = _path_parts(path)
+        parts = _path_parts(spath)
         if vclib.check_path_access(self, parts, pathtype, rev):
           if is_copy and change.base_path and (change.base_path != path):
-            parts = _path_parts(change.base_path)
+            parts = _path_parts(self._to_str(change.base_path))
             if not vclib.check_path_access(self, parts, pathtype,
                                            change.base_rev):
               is_copy = 0
               change.base_path = None
               change.base_rev = None
               found_unreadable = 1
-          changedpaths[path] = SVNChangedPath(path, rev, pathtype,
-                                              change.base_path,
-                                              change.base_rev, action,
-                                              is_copy, change.text_changed,
-                                              change.prop_changes)
+          if change.base_path:
+            base_path = self._to_str(change.base_path)
+          else:
+            base_path = None
+          changedpaths[spath] = SVNChangedPath(spath, rev, pathtype,
+                                               base_path,
+                                               change.base_rev, action,
+                                               is_copy, change.text_changed,
+                                               change.prop_changes)
           found_readable = 1
         else:
           found_unreadable = 1
@@ -812,10 +823,12 @@ class LocalSubversionRepository(vclib.Repository):
       size = fs.file_length(rev_root, path)
     else:
       size = None
+    if copyfrom_path:
+      copyfrom_path = _cleanup_path(self._to_str(copyfrom_path))
+    else:
+      copyfrom_path = None
     return Revision(rev, date, self._to_txt(author), self._to_txt(msg), size,
-                    lockinfo, path,
-                    copyfrom_path and _cleanup_path(copyfrom_path),
-                    copyfrom_rev)
+                    lockinfo, path, copyfrom_path, copyfrom_rev)
 
   def _get_history(self, path, rev, path_type, limit=0, options={}):
     if self.youngest == 0:
@@ -844,6 +857,7 @@ class LocalSubversionRepository(vclib.Repository):
     # Now, iterate over those history items, checking for changes of
     # location, pruning as necessitated by authz rules.
     for hist_rev, hist_path in history:
+      hist_path = self._to_str(hist_path)
       path_parts = _path_parts(hist_path)
       if not vclib.check_path_access(self, path_parts, path_type, hist_rev):
         break
@@ -906,7 +920,7 @@ class LocalSubversionRepository(vclib.Repository):
     except KeyError:
       raise vclib.ItemNotFound(path)
 
-    return _cleanup_path(old_path)
+    return _cleanup_path(self._to_str(old_path))
 
   def created_rev(self, full_name, rev):
     return fs.node_created_rev(self._getroot(rev), full_name)
