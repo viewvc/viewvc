@@ -1962,11 +1962,12 @@ def get_itemprops(request, path_parts, rev):
     # skip non-utf8 property names
     if is_undisplayable(name, 'utf-8'):
       continue
-    lf = LogFormatter(request, itemprops[name].decode(request.repos.encoding,
-                                                      'xmlcharrefreplace'))
-    value = lf.get(maxlen=0, htmlize=1)
     undisplayable = is_undisplayable(itemprops[name])
-    if undisplayable:
+    if not undisplayable:
+      lf = LogFormatter(request, itemprops[name].decode(request.repos.encoding,
+                                                        'backslashreplace'))
+      value = lf.get(maxlen=0, htmlize=1)
+    else:
       value = None
     props.append(_item(name=name, value=value,
                        undisplayable=ezt.boolean(undisplayable)))
@@ -4216,13 +4217,15 @@ def view_revision(request):
   props = []
   for name in propnames:
     # skip non-utf8 property names
-    if is_undisplayable(name):
+    if is_undisplayable(name, 'utf-8'):
       continue
-    lf = LogFormatter(request, revprops[name])
-    value = lf.get(maxlen=0, htmlize=1)
-    # note non-utf8 property values
-    undisplayable = is_undisplayable(value)
-    if undisplayable:
+    undisplayable = is_undisplayable(revprops[name])
+    if not undisplayable:
+      lf = LogFormatter(request, revprops[name].decode(request.repos.encoding,
+                                                       'backslashreplace'))
+      value = lf.get(maxlen=0, htmlize=1)
+    else:
+      # note non-utf8 property values
       value = None
     props.append(_item(name=name, value=value,
                        undisplayable=ezt.boolean(undisplayable)))

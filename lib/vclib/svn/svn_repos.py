@@ -565,7 +565,10 @@ class LocalSubversionRepository(vclib.Repository):
     return source, youngest_rev
 
   def revinfo(self, rev):
-    date, author, msg, revprops, changes = self._revinfo(rev, 1)
+    date, author, msg, _revprops, changes = self._revinfo(rev, 1)
+    revprops = {}
+    for propname in _revprops.keys():
+      revprops[self._to_str(propname)] = _revprops[propname]
     return date, self._to_txt(author), self._to_txt(msg), revprops, changes
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
