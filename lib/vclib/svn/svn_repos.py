@@ -143,25 +143,48 @@ def _rootpath2url(rootpath, path):
   return _canonicalize_path(url)
 
 
+# Given raw bytestring Subversion property (versioned or unversioned)
+# NAME and VALUE, return a 2-tuple of the same but readied for Python
+# 3 usage.  If NAME can't be stringfied (that is, converted to a
+# Unicode string), both the returned NAME and VALUE will be None.
+# Otherwise, NAME will be a Unicode string and VALUE will be a Unicode
+# string of it could be stringified or a bytestring if it couldn't.
+def _normalize_property(name, value, encoding_hint=None):
+  try:
+    name = name.decode('utf-8')
+  except UnicodeDecodeError:
+    return None, None
+  try:
+    value = value.decode('utf-8')
+  except UnicodeDecodeError:
+    if encoding_hint:
+      try:
+        value = value.decode(encoding_hint)
+      except UnicodeDecodeError:
+        pass
+  return name, value
+
+
 # Given a dictionary REVPROPS of revision properties, pull special
 # ones out of them and return a 4-tuple containing the log message,
 # the author, the date (converted from the date string property), and
 # a dictionary of any/all other revprops.
-def _split_revprops(revprops):
+def _split_revprops(revprops, encoding_hint=None):
   if not revprops:
     return None, None, None, {}
-  special_props = []
-  for prop in core.SVN_PROP_REVISION_LOG, \
-              core.SVN_PROP_REVISION_AUTHOR, \
-              core.SVN_PROP_REVISION_DATE:
-    if prop in revprops:
-      special_props.append(revprops[prop])
-      del(revprops[prop])
-    else:
-      special_props.append(None)
-  msg, author, datestr = tuple(special_props)
-  date = _datestr_to_date(datestr)
-  return msg, author, date, revprops
+  msg = author = date = None
+  other_props = {}
+  for prop in revprops:
+    pname, pval = _normalize_property(prop, revprops[prop], encoding_hint)
+    if pname == core.SVN_PROP_REVISION_LOG.decode('utf-8'):
+      msg = pval
+    elif pname == core.SVN_PROP_REVISION_AUTHOR.decode('utf-8'):
+      author = pval
+    elif pname == core.SVN_PROP_REVISION_DATE.decode('utf-8'):
+      date = _datestr_to_date(pval)
+    elif pname is not None:
+      other_props[pname] = pval
+  return msg, author, date, other_props
 
 
 def _datestr_to_date(datestr):
@@ -469,8 +492,8 @@ class LocalSubversionRepository(vclib.Repository):
       date, author, msg, revprops, changes = self._revinfo(entry_rev)
       entry.rev = str(entry_rev)
       entry.date = date
-      entry.author = self._to_txt(author)
-      entry.log = self._to_txt(msg)
+      entry.author = author
+      entry.log = msg
       if entry.kind == vclib.FILE:
         entry.size = fs.file_length(fsroot, path)
       lock = fs.get_lock(self.fs_ptr, path)
@@ -548,26 +571,11 @@ class LocalSubversionRepository(vclib.Repository):
     fsroot = self._getroot(rev)
     proptable = fs.node_proplist(fsroot, path)
     propdict = {}
-    for propname in proptable.keys():
-      prop_name = prop_value = None
-      # A property name should be a valid UTF-8 string, however we can
-      # encounter invalid data...
-      try:
-        prop_name = propname.decode('utf-8')
-      except UnicodeDecodeError:
-        continue
-      # A property value can be anything.  If it's the typical UTF-8
-      # data, we'll convert to a string.  Otherwise, we'll see if we
-      # can get a string using the repository encoding hint.  Failing
-      # that, we return it as-is (bytes).
-      try:
-        prop_value = proptable[propname].decode('utf-8')
-      except UnicodeDecodeError:
-        try:
-          prop_value = proptable[propname].decode(self.encoding)
-        except UnicodeDecodeError:
-          pass
-      propdict[prop_name] = prop_value
+    for pname in proptable.keys():
+      pvalue = proptable[pname]
+      pname, pvalue = _normalize_property(pname, pvalue, self.encoding)
+      if pname:
+        propdict[pname] = pvalue
     return propdict
 
   def annotate(self, path_parts, rev, include_text=False):
@@ -587,11 +595,7 @@ class LocalSubversionRepository(vclib.Repository):
     return source, youngest_rev
 
   def revinfo(self, rev):
-    date, author, msg, _revprops, changes = self._revinfo(rev, 1)
-    revprops = {}
-    for propname in _revprops.keys():
-      revprops[_to_str(propname)] = _revprops[propname]
-    return date, self._to_txt(author), self._to_txt(msg), revprops, changes
+    return self._revinfo(rev, 1)
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     p1 = self._getpath(path_parts1)
@@ -857,7 +861,7 @@ class LocalSubversionRepository(vclib.Repository):
       copyfrom_path = _cleanup_path(_to_str(copyfrom_path))
     else:
       copyfrom_path = None
-    return Revision(rev, date, self._to_txt(author), self._to_txt(msg), size,
+    return Revision(rev, date, author, msg, size,
                     lockinfo, path, copyfrom_path, copyfrom_rev)
 
   def _get_history(self, path, rev, path_type, limit=0, options={}):
@@ -1037,4 +1041,3 @@ class LocalSubversionRepository(vclib.Repository):
     if pathspec[:5] != 'link ':
       return None
     return pathspec[5:]
-

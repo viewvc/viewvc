@@ -25,7 +25,7 @@ from .svn_repos import Revision, SVNChangedPath, _datestr_to_date, _to_str, \
                       _compare_paths, _path_parts, _cleanup_path, \
                       _path_parts_bytes, _cleanup_path_bytes, \
                       _rev2optrev, _fix_subversion_exception, \
-                      _split_revprops, _canonicalize_path
+                      _normalize_property, _split_revprops, _canonicalize_path
 from svn import core, delta, client, wc, ra
 
 
@@ -425,24 +425,11 @@ class RemoteSubversionRepository(vclib.Repository):
                                         _rev2optrev(rev), 0, self.ctx)
     propdict = {}
     if pairs:
-      for propname in pairs[0][1].keys():
-        propvalue = pairs[0][1][propname]
-        # A property name should be a valid UTF-8 string,  however we can
-        # encounter invalid data...
-        try:
-          propname = propname.decode('utf-8')
-        except UnicodeDecodeError:
-          continue
-        # A property value can be anything.  But if it's the typical
-        # UTF-8 data, we'll convert to a string.
-        try:
-          propvalue = propvalue.decode('utf-8')
-        except UnicodeDecodeError:
-          try:
-            propvalue = propvalue.decode(self.encoding)
-          except UnicodeDecodeError:
-            pass
-        propdict[propname] = propvalue
+      for pname in pairs[0][1].keys():
+        pvalue = pairs[0][1][prop]
+        pname, pvalue = _normalize_property(pname, pvalue, self.encoding)
+        if pname:
+          propdict[pname] = pvalue
     return propdict
 
   def annotate(self, path_parts, rev, include_text=False):
@@ -476,31 +463,22 @@ class RemoteSubversionRepository(vclib.Repository):
       # values.  Otherwise, if we have authz filtering to do, use the
       # revinfo cache to do so.
       if revision < 0:
-        date = s_author = None
+        date = author = None
       elif self.auth:
-        date, b_author, msg, revprops, changes = self._revinfo(revision)
-      else:
-        b_author = author
-      if b_author:
-        try:
-          s_author = self._to_txt(b_author)
-        except:
-          s_author = "(can't display)"
-      else:
-        s_author = None
+        date, author, msg, revprops, changes = self._revinfo(revision)
+
       # Strip text if the caller doesn't want it.
       if not include_text:
         line = None
       blame_data.append(vclib.Annotation(line, line_no + 1, revision, prev_rev,
-                                         s_author, date))
+                                         author, date))
 
     client.blame2(url, _rev2optrev(rev), _rev2optrev(oldest_rev),
                   _rev2optrev(rev), _blame_cb, self.ctx)
     return blame_data, rev
 
   def revinfo(self, rev):
-    date, author, msg, revprops, changes = self._revinfo(rev, 1)
-    return date, self._to_txt(author), self._to_txt(msg), revprops, changes
+    return  self._revinfo(rev, 1)
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     p1 = self._getpath(path_parts1)
