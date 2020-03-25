@@ -26,9 +26,16 @@ from svn import fs, repos, core, client, delta
 long = int
 
 
-### Require Subversion 1.3.1 or better.
-if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 3, 1):
-  raise Exception("Version requirement not met (needs 1.3.1 or better)")
+### Verify that we have an acceptable version of Subversion.
+MIN_SUBVERSION_VERSION = (1, 14, 0)
+HAS_SUBVERSION_VERSION = (core.SVN_VER_MAJOR,
+                          core.SVN_VER_MINOR,
+                          core.SVN_VER_PATCH)
+if HAS_SUBVERSION_VERSION < MIN_SUBVERSION_VERSION:
+  found_ver = '.'.join([str(x) for x in HAS_SUBVERSION_VERSION])
+  needs_ver = '.'.join([str(x) for x in MIN_SUBVERSION_VERSION])
+  raise Exception("Subversion version %s is required (%s found)"
+                  % (needs_ver, found_ver))
 
 
 ### Pre-1.5 Subversion doesn't have SVN_ERR_CEASE_INVOCATION

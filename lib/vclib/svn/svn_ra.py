@@ -29,9 +29,16 @@ from .svn_repos import Revision, SVNChangedPath, _datestr_to_date, _to_str, \
 from svn import core, delta, client, wc, ra
 
 
-### Require Subversion 1.3.1 or better. (for svn_ra_get_locations support)
-if (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH) < (1, 3, 1):
-  raise Exception("Version requirement not met (needs 1.3.1 or better)")
+### Verify that we have an acceptable version of Subversion.
+MIN_SUBVERSION_VERSION = (1, 14, 0)
+HAS_SUBVERSION_VERSION = (core.SVN_VER_MAJOR,
+                          core.SVN_VER_MINOR,
+                          core.SVN_VER_PATCH)
+if HAS_SUBVERSION_VERSION < MIN_SUBVERSION_VERSION:
+  found_ver = '.'.join([str(x) for x in HAS_SUBVERSION_VERSION])
+  needs_ver = '.'.join([str(x) for x in MIN_SUBVERSION_VERSION])
+  raise Exception("Subversion version %s is required (%s found)"
+                  % (needs_ver, found_ver))
 
 
 ### BEGIN COMPATABILITY CODE ###
