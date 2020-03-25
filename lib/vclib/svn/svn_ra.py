@@ -21,8 +21,9 @@ import time
 import functools
 from urllib.parse import quote as _quote
 
-from .svn_repos import Revision, SVNChangedPath, _datestr_to_date, \
+from .svn_repos import Revision, SVNChangedPath, _datestr_to_date, _to_str, \
                       _compare_paths, _path_parts, _cleanup_path, \
+                      _path_parts_bytes, _cleanup_path_bytes, \
                       _rev2optrev, _fix_subversion_exception, \
                       _split_revprops, _canonicalize_path
 from svn import core, delta, client, wc, ra
@@ -139,26 +140,35 @@ class LogCollector:
     paths = log_entry.changed_paths
     revision = log_entry.revision
     msg, author, date, revprops = _split_revprops(log_entry.revprops)
+    try:
+      msg = msg.decode(self.encoding, 'xmlcharreplace')
+    except TypeError:
+      msg = msg.decode(self.encoding, 'backslashreplace')
+    try:
+      author = author.decode(self.encoding, 'xmlcharreplace')
+    except TypeError:
+      author = author.decode(self.encoding, 'backslashreplace')
 
     # Changed paths have leading slashes
-    changed_paths = list(paths.keys())
+    changed_paths = [_to_str(p) for p in paths.keys()]
     changed_paths.sort(key=functools.cmp_to_key(
                              lambda a, b: _compare_paths(a, b)))
     this_path = None
     if self.path in changed_paths:
       this_path = self.path
-      change = paths[self.path]
+      change = paths[self.path.encode('utf-8', 'surrogateescape')]
       if change.copyfrom_path:
-        this_path = change.copyfrom_path
+        this_path = _to_str(change.copyfrom_path)
     for changed_path in changed_paths:
       if changed_path != self.path:
         # If a parent of our path was copied, our "next previous"
         # (huh?) path will exist elsewhere (under the copy source).
         if (self.path.rfind(changed_path) == 0) and \
                self.path[len(changed_path)] == '/':
-          change = paths[changed_path]
+          change = paths[changed_path.encode('utf-8', 'surrogateescape')]
           if change.copyfrom_path:
-            this_path = change.copyfrom_path + self.path[len(changed_path):]
+            this_path = (  _to_str(change.copyfrom_path)
+                         + self.path[len(changed_path):])
     if self.show_all_logs or this_path:
       if self.access_check_func is None \
          or self.access_check_func(self.path[1:], revision):
@@ -328,8 +338,10 @@ class RemoteSubversionRepository(vclib.Repository):
       if dirent is None:
         continue
       # Get authz-sanitized revision metadata.
-      entry.date, entry.author, entry.log, revprops, changes = \
+      entry.date, author, log, revprops, changes = \
                   self._revinfo(dirent.created_rev)
+      entry.author = self._to_txt(author)
+      entry.log = self._to_txt(log)
       entry.rev = str(dirent.created_rev)
       entry.size = dirent.size
       entry.lockinfo = None
@@ -347,7 +359,7 @@ class RemoteSubversionRepository(vclib.Repository):
     # for this item.
     lockinfo = size_in_rev = None
     if path_type == vclib.FILE:
-      basename = path_parts[-1]
+      basename = path_parts[-1].encode(self.encoding, 'surrogateescape')
       list_url = self._geturl(self._getpath(path_parts[:-1]))
       dirents, locks = list_directory(list_url, _rev2optrev(rev),
                                       _rev2optrev(rev), 0, self.ctx)
@@ -362,8 +374,9 @@ class RemoteSubversionRepository(vclib.Repository):
     if options.get('svn_latest_log', 0):
       dir_lh_rev, dir_c_rev = self._get_last_history_rev(path_parts, rev)
       date, author, log, revprops, changes = self._revinfo(dir_lh_rev)
-      return [vclib.Revision(dir_lh_rev, str(dir_lh_rev), date, author,
-                             None, log, size_in_rev, lockinfo)]
+      return [vclib.Revision(dir_lh_rev, str(dir_lh_rev), date,
+                             self._to_txt(author), None,
+                             self._to_txt(log), size_in_rev, lockinfo)]
 
     def _access_checker(check_path, check_rev):
       return vclib.check_path_access(self, _path_parts(check_path),
@@ -386,8 +399,11 @@ class RemoteSubversionRepository(vclib.Repository):
     for rev in revs:
       # Swap out revision info with stuff from the cache (which is
       # authz-sanitized).
-      rev.date, rev.author, rev.log, revprops, changes \
+      rev.date, b_author, b_log, revprops, changes \
                 = self._revinfo(rev.number)
+      rev.author = (self._to_txt(b_author) if isinstance(b_author, bytes)
+                                           else b_author)
+      rev.log = self._to_txt(b_log) if isinstance(b_log, bytes) else b_log
       rev.prev = prev
       prev = rev
     revs.reverse()
@@ -405,7 +421,11 @@ class RemoteSubversionRepository(vclib.Repository):
     url = self._geturl(path)
     pairs = client.svn_client_proplist2(url, _rev2optrev(rev),
                                         _rev2optrev(rev), 0, self.ctx)
-    return pairs and pairs[0][1] or {}
+    props = {}
+    if pairs:
+      for prop in pairs[0][1].keys():
+        props[_to_str(prop)] = pairs[0][1][prop]
+    return props
 
   def annotate(self, path_parts, rev, include_text=False):
     path = self._getpath(path_parts)
@@ -438,22 +458,31 @@ class RemoteSubversionRepository(vclib.Repository):
       # values.  Otherwise, if we have authz filtering to do, use the
       # revinfo cache to do so.
       if revision < 0:
-        date = author = None
+        date = s_author = None
       elif self.auth:
-        date, author, msg, revprops, changes = self._revinfo(revision)
-
+        date, b_author, msg, revprops, changes = self._revinfo(revision)
+      else:
+        b_author = author
+      if b_author:
+        try:
+          s_author = self._to_txt(b_author)
+        except:
+          s_author = "(can't display)"
+      else:
+        s_author = None
       # Strip text if the caller doesn't want it.
       if not include_text:
         line = None
       blame_data.append(vclib.Annotation(line, line_no + 1, revision, prev_rev,
-                                         author, date))
+                                         s_author, date))
 
     client.blame2(url, _rev2optrev(rev), _rev2optrev(oldest_rev),
                   _rev2optrev(rev), _blame_cb, self.ctx)
     return blame_data, rev
 
   def revinfo(self, rev):
-    return self._revinfo(rev, 1)
+    date, author, msg, revprops, changes = self._revinfo(rev, 1)
+    return date, self._to_txt(author), self._to_txt(msg), revprops, changes
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     p1 = self._getpath(path_parts1)
@@ -495,6 +524,17 @@ class RemoteSubversionRepository(vclib.Repository):
     dirents, locks = self._get_dirents(self._getpath(path_parts[:-1]), rev)
     dirent = dirents.get(path_parts[-1], None)
     return dirent.size
+
+  def _to_txt(self, s, encoding=None, errors=None):
+    """Internal-use, convert bytes as user visible text str."""
+    if encoding is None:
+        encoding = self.encoding
+    if errors is None:
+        errors = 'xmlcharrefreplace'
+    try:
+          return s.decode(encoding, errors)
+    except (UnicodeDecodeError, TypeError):
+      return s.decode(encoding, 'backslashreplace')
 
   def _getpath(self, path_parts):
     return '/'.join(path_parts)
@@ -538,7 +578,7 @@ class RemoteSubversionRepository(vclib.Repository):
                                           _rev2optrev(rev), 0, self.ctx)
       dirents = {}
       for name, dirent in tmp_dirents.items():
-        dirent_parts = path_parts + [name]
+        dirent_parts = path_parts + [_to_str(name)]
         kind = dirent.kind
         if (kind == core.svn_node_dir or kind == core.svn_node_file) \
            and vclib.check_path_access(self, dirent_parts,
@@ -546,7 +586,7 @@ class RemoteSubversionRepository(vclib.Repository):
                                          and vclib.DIR or vclib.FILE, rev):
           lh_rev, c_rev = self._get_last_history_rev(dirent_parts, rev)
           dirent.created_rev = lh_rev
-          dirents[name] = dirent
+          dirents[_to_str(name)] = dirent
       dirents_locks = [dirents, locks]
       self._dirent_cache[key] = dirents_locks
 
@@ -615,7 +655,7 @@ class RemoteSubversionRepository(vclib.Repository):
       except:
         changed_paths = log_entry.changed_paths
         paths = list((changed_paths or {}).keys())
-      paths.sort(key=functools.cmp_to_key(lambda a, b: _compare_paths(a, b)))
+      paths.sort(key=functools.cmp_to_key(lambda a, b: _compare_paths(_to_str(a), _to_str(b))))
 
       # If we get this far, our caller needs changed-paths, or we need
       # them for authz-related sanitization.
@@ -662,17 +702,18 @@ class RemoteSubversionRepository(vclib.Repository):
           base_rev = revision - 1
 
         # Check authz rules (sadly, we have to lie about the path type)
-        parts = _path_parts(path)
+        parts = _path_parts(_to_str(path))
         if vclib.check_path_access(self, parts, vclib.FILE, revision):
           if is_copy and base_path and (base_path != path):
-            parts = _path_parts(base_path)
+            parts = _path_parts(_to_str(base_path))
             if not vclib.check_path_access(self, parts, vclib.FILE, base_rev):
               is_copy = 0
               base_path = None
               base_rev = None
               found_unreadable = 1
-          changes.append(SVNChangedPath(path, revision, pathtype, base_path,
-                                        base_rev, action, is_copy,
+          changes.append(SVNChangedPath(_to_str(path), revision, pathtype,
+                                        _to_str(base_path), base_rev,
+                                        action, is_copy,
                                         text_modified, props_modified))
           found_readable = 1
         else:
@@ -734,7 +775,7 @@ class RemoteSubversionRepository(vclib.Repository):
       old_path = results[old_rev]
     except KeyError:
       raise vclib.ItemNotFound(path)
-    old_path = _cleanup_path(old_path)
+    old_path = _cleanup_path(_to_str(old_path))
     old_path_parts = _path_parts(old_path)
     # Check access (lying about path types)
     if not vclib.check_path_access(self, old_path_parts, vclib.FILE, old_rev):
