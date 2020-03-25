@@ -57,6 +57,8 @@ def _allow_all(root, path, pool):
 
 def _to_str(bs):
   """Convert Subversion internal objects represented in bytes into str"""
+  if bs is None:
+    return bs
   return bs.decode('utf-8', 'surrogateescape')
 
 def _path_parts(path):
@@ -338,10 +340,11 @@ class BlameSource:
       prev_rev = rev - 1
     if not self.include_text:
       text = None
-    try:
-      author = author.decode(self.encoding, 'xmlcharrefreplace')
-    except:
-      author = author.decode(self.encoding, 'backslashreplace')
+    if author is not None:
+      try:
+        author = author.decode(self.encoding, 'xmlcharrefreplace')
+      except:
+        author = author.decode(self.encoding, 'backslashreplace')
     self.blame_data.append(vclib.Annotation(text, line_no + 1, rev,
                                             prev_rev, author, None))
 
@@ -633,6 +636,8 @@ class LocalSubversionRepository(vclib.Repository):
 
   def _to_txt(self, s, encoding=None, errors=None):
     """Internal-use, convert bytes as user visible text str."""
+    if s is None:
+      return s
     if encoding is None:
       encoding = self.encoding
     if errors is None:

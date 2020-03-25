@@ -140,14 +140,16 @@ class LogCollector:
     paths = log_entry.changed_paths
     revision = log_entry.revision
     msg, author, date, revprops = _split_revprops(log_entry.revprops)
-    try:
-      msg = msg.decode(self.encoding, 'xmlcharreplace')
-    except TypeError:
-      msg = msg.decode(self.encoding, 'backslashreplace')
-    try:
-      author = author.decode(self.encoding, 'xmlcharreplace')
-    except TypeError:
-      author = author.decode(self.encoding, 'backslashreplace')
+    if msg is not None:
+      try:
+        msg = msg.decode(self.encoding, 'xmlcharreplace')
+      except TypeError:
+        msg = msg.decode(self.encoding, 'backslashreplace')
+    if author is not None:
+      try:
+        author = author.decode(self.encoding, 'xmlcharreplace')
+      except TypeError:
+        author = author.decode(self.encoding, 'backslashreplace')
 
     # Changed paths have leading slashes
     changed_paths = [_to_str(p) for p in paths.keys()]
@@ -543,12 +545,14 @@ class RemoteSubversionRepository(vclib.Repository):
 
   def _to_txt(self, s, encoding=None, errors=None):
     """Internal-use, convert bytes as user visible text str."""
+    if s is None:
+      return s
     if encoding is None:
         encoding = self.encoding
     if errors is None:
         errors = 'xmlcharrefreplace'
     try:
-          return s.decode(encoding, errors)
+      return s.decode(encoding, errors)
     except (UnicodeDecodeError, TypeError):
       return s.decode(encoding, 'backslashreplace')
 
