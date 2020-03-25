@@ -55,6 +55,9 @@ def _allow_all(root, path, pool):
   """Generic authz_read_func that permits access to all paths"""
   return 1
 
+def _to_str(bs):
+  """Convert Subversion internal objects represented in bytes into str"""
+  return bs.decode('utf-8', 'surrogateescape')
 
 def _path_parts(path):
   return [p for p in path.split('/') if p]
@@ -441,7 +444,7 @@ class LocalSubversionRepository(vclib.Repository):
         kind = vclib.DIR
       elif entry.kind == core.svn_node_file:
         kind = vclib.FILE
-      ent_path = self._to_str(entry.name)
+      ent_path = _to_str(entry.name)
       if vclib.check_path_access(self,
                                  path_parts + [ent_path], kind, rev):
         entries.append(vclib.DirEntry(ent_path, kind))
@@ -545,7 +548,7 @@ class LocalSubversionRepository(vclib.Repository):
     for propname in proptable.keys():
       # A property name should be a valid UTF-8 string,  however we can
       # encounter invalid data...
-      propdict[self._to_str(propname)] = proptable[propname]
+      propdict[_to_str(propname)] = proptable[propname]
     return propdict
 
   def annotate(self, path_parts, rev, include_text=False):
@@ -568,7 +571,7 @@ class LocalSubversionRepository(vclib.Repository):
     date, author, msg, _revprops, changes = self._revinfo(rev, 1)
     revprops = {}
     for propname in _revprops.keys():
-      revprops[self._to_str(propname)] = _revprops[propname]
+      revprops[_to_str(propname)] = _revprops[propname]
     return date, self._to_txt(author), self._to_txt(msg), revprops, changes
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
@@ -623,10 +626,6 @@ class LocalSubversionRepository(vclib.Repository):
     except (UnicodeDecodeError, TypeError):
       return s.decode(encoding, 'backslashreplace')
 
-  def _to_str(self, s):
-    """Internal-use, convert bytes without lose information"""
-    return s.decode('utf-8', 'surrogateescape')
-
   def _revinfo(self, rev, include_changed_paths=0):
     """Internal-use, cache-friendly revision information harvester."""
 
@@ -642,7 +641,7 @@ class LocalSubversionRepository(vclib.Repository):
       # authorization and converting them into ChangedPath objects.
       found_readable = found_unreadable = 0
       for path in changes.keys():
-        spath = self._to_str(path)
+        spath = _to_str(path)
         change = changes[path]
         if change.path:
           change.path = _cleanup_path_bytes(change.path)
@@ -684,7 +683,7 @@ class LocalSubversionRepository(vclib.Repository):
         parts = _path_parts(spath)
         if vclib.check_path_access(self, parts, pathtype, rev):
           if is_copy and change.base_path and (change.base_path != path):
-            parts = _path_parts(self._to_str(change.base_path))
+            parts = _path_parts(_to_str(change.base_path))
             if not vclib.check_path_access(self, parts, pathtype,
                                            change.base_rev):
               is_copy = 0
@@ -692,7 +691,7 @@ class LocalSubversionRepository(vclib.Repository):
               change.base_rev = None
               found_unreadable = 1
           if change.base_path:
-            base_path = self._to_str(change.base_path)
+            base_path = _to_str(change.base_path)
           else:
             base_path = None
           changedpaths[spath] = SVNChangedPath(spath, rev, pathtype,
@@ -834,7 +833,7 @@ class LocalSubversionRepository(vclib.Repository):
     else:
       size = None
     if copyfrom_path:
-      copyfrom_path = _cleanup_path(self._to_str(copyfrom_path))
+      copyfrom_path = _cleanup_path(_to_str(copyfrom_path))
     else:
       copyfrom_path = None
     return Revision(rev, date, self._to_txt(author), self._to_txt(msg), size,
@@ -867,7 +866,7 @@ class LocalSubversionRepository(vclib.Repository):
     # Now, iterate over those history items, checking for changes of
     # location, pruning as necessitated by authz rules.
     for hist_rev, hist_path in history:
-      hist_path = self._to_str(hist_path)
+      hist_path = _to_str(hist_path)
       path_parts = _path_parts(hist_path)
       if not vclib.check_path_access(self, path_parts, path_type, hist_rev):
         break
@@ -930,7 +929,7 @@ class LocalSubversionRepository(vclib.Repository):
     except KeyError:
       raise vclib.ItemNotFound(path)
 
-    return _cleanup_path(self._to_str(old_path))
+    return _cleanup_path(_to_str(old_path))
 
   def created_rev(self, full_name, rev):
     return fs.node_created_rev(self._getroot(rev), full_name)
