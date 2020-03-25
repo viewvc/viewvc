@@ -421,11 +421,27 @@ class RemoteSubversionRepository(vclib.Repository):
     url = self._geturl(path)
     pairs = client.svn_client_proplist2(url, _rev2optrev(rev),
                                         _rev2optrev(rev), 0, self.ctx)
-    props = {}
+    propdict = {}
     if pairs:
-      for prop in pairs[0][1].keys():
-        props[_to_str(prop)] = pairs[0][1][prop]
-    return props
+      for propname in pairs[0][1].keys():
+        propvalue = pairs[0][1][propname]
+        # A property name should be a valid UTF-8 string,  however we can
+        # encounter invalid data...
+        try:
+          propname = propname.decode('utf-8')
+        except UnicodeDecodeError:
+          continue
+        # A property value can be anything.  But if it's the typical
+        # UTF-8 data, we'll convert to a string.
+        try:
+          propvalue = propvalue.decode('utf-8')
+        except UnicodeDecodeError:
+          try:
+            propvalue = propvalue.decode(self.encoding)
+          except UnicodeDecodeError:
+            pass
+        propdict[propname] = propvalue
+    return propdict
 
   def annotate(self, path_parts, rev, include_text=False):
     path = self._getpath(path_parts)

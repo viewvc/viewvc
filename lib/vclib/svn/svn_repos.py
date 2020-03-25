@@ -546,9 +546,25 @@ class LocalSubversionRepository(vclib.Repository):
     proptable = fs.node_proplist(fsroot, path)
     propdict = {}
     for propname in proptable.keys():
-      # A property name should be a valid UTF-8 string,  however we can
+      prop_name = prop_value = None
+      # A property name should be a valid UTF-8 string, however we can
       # encounter invalid data...
-      propdict[_to_str(propname)] = proptable[propname]
+      try:
+        prop_name = propname.decode('utf-8')
+      except UnicodeDecodeError:
+        continue
+      # A property value can be anything.  If it's the typical UTF-8
+      # data, we'll convert to a string.  Otherwise, we'll see if we
+      # can get a string using the repository encoding hint.  Failing
+      # that, we return it as-is (bytes).
+      try:
+        prop_value = proptable[propname].decode('utf-8')
+      except UnicodeDecodeError:
+        try:
+          prop_value = proptable[propname].decode(self.encoding)
+        except UnicodeDecodeError:
+          pass
+      propdict[prop_name] = prop_value
     return propdict
 
   def annotate(self, path_parts, rev, include_text=False):
@@ -618,11 +634,11 @@ class LocalSubversionRepository(vclib.Repository):
   def _to_txt(self, s, encoding=None, errors=None):
     """Internal-use, convert bytes as user visible text str."""
     if encoding is None:
-        encoding = self.encoding
+      encoding = self.encoding
     if errors is None:
-        errors = 'xmlcharrefreplace'
+      errors = 'xmlcharrefreplace'
     try:
-          return s.decode(encoding, errors)
+      return s.decode(encoding, errors)
     except (UnicodeDecodeError, TypeError):
       return s.decode(encoding, 'backslashreplace')
 

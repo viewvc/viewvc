@@ -153,6 +153,11 @@ class Repository:
     of the repository. e.g. ["subdir1", "subdir2", "filename"]
 
     rev is the revision of the item to return information about.
+
+    Returned property names are Python strings, and if the
+    implementation can't provide that for a given property name, it is
+    omitted from the return value.  Property values are either strings
+    or bytestrings, as appropriate (preferring strings).
     """
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):

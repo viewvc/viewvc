@@ -1959,13 +1959,9 @@ def get_itemprops(request, path_parts, rev):
   propnames = sorted(itemprops.keys())
   props = []
   for name in propnames:
-    # skip non-utf8 property names
-    if is_undisplayable(name, 'utf-8'):
-      continue
-    undisplayable = is_undisplayable(itemprops[name])
+    undisplayable = not isinstance(itemprops[name], str)
     if not undisplayable:
-      lf = LogFormatter(request, itemprops[name].decode(request.repos.encoding,
-                                                        'backslashreplace'))
+      lf = LogFormatter(request, itemprops[name])
       value = lf.get(maxlen=0, htmlize=1)
     else:
       value = None
