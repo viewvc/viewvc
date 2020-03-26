@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# -*-python-*-
 """ezt.py -- easy templating
 
 ezt templates are simply text files in whatever format you so desire

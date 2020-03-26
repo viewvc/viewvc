@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*-python-*-
 #
 # Copyright (C) 1999-2020 The ViewCVS Group. All Rights Reserved.
