@@ -24,7 +24,8 @@ from urllib.parse import quote as _quote
 from .svn_repos import Revision, SVNChangedPath, _datestr_to_date, _to_str, \
                       _compare_paths, _path_parts, _cleanup_path, \
                       _path_parts_bytes, _cleanup_path_bytes, _rev2optrev, \
-                      _normalize_property, _split_revprops
+                      _normalize_property_value, _normalize_property, \
+                      _split_revprops
 from svn import core, delta, client, wc, ra
 
 
@@ -88,16 +89,6 @@ class LogCollector:
     paths = log_entry.changed_paths
     revision = log_entry.revision
     msg, author, date, revprops = _split_revprops(log_entry.revprops)
-    if msg is not None:
-      try:
-        msg = msg.decode(self.encoding, 'xmlcharreplace')
-      except TypeError:
-        msg = msg.decode(self.encoding, 'backslashreplace')
-    if author is not None:
-      try:
-        author = author.decode(self.encoding, 'xmlcharreplace')
-      except TypeError:
-        author = author.decode(self.encoding, 'backslashreplace')
 
     # Changed paths have leading slashes
     changed_paths = [_to_str(p) for p in paths.keys()]
@@ -288,10 +279,8 @@ class RemoteSubversionRepository(vclib.Repository):
       if dirent is None:
         continue
       # Get authz-sanitized revision metadata.
-      entry.date, author, log, revprops, changes = \
+      entry.date, entry.author, entry.log, revprops, changes = \
                   self._revinfo(dirent.created_rev)
-      entry.author = self._to_txt(author)
-      entry.log = self._to_txt(log)
       entry.rev = str(dirent.created_rev)
       entry.size = dirent.size
       entry.lockinfo = None
@@ -325,8 +314,7 @@ class RemoteSubversionRepository(vclib.Repository):
       dir_lh_rev, dir_c_rev = self._get_last_history_rev(path_parts, rev)
       date, author, log, revprops, changes = self._revinfo(dir_lh_rev)
       return [vclib.Revision(dir_lh_rev, str(dir_lh_rev), date,
-                             self._to_txt(author), None,
-                             self._to_txt(log), size_in_rev, lockinfo)]
+                             author, None, log, size_in_rev, lockinfo)]
 
     def _access_checker(check_path, check_rev):
       return vclib.check_path_access(self, _path_parts(check_path),
@@ -349,11 +337,8 @@ class RemoteSubversionRepository(vclib.Repository):
     for rev in revs:
       # Swap out revision info with stuff from the cache (which is
       # authz-sanitized).
-      rev.date, b_author, b_log, revprops, changes \
+      rev.date, rev.author, rev.log, revprops, changes \
                 = self._revinfo(rev.number)
-      rev.author = (self._to_txt(b_author) if isinstance(b_author, bytes)
-                                           else b_author)
-      rev.log = self._to_txt(b_log) if isinstance(b_log, bytes) else b_log
       rev.prev = prev
       prev = rev
     revs.reverse()
@@ -374,7 +359,7 @@ class RemoteSubversionRepository(vclib.Repository):
     propdict = {}
     if pairs:
       for pname in pairs[0][1].keys():
-        pvalue = pairs[0][1][prop]
+        pvalue = pairs[0][1][pname]
         pname, pvalue = _normalize_property(pname, pvalue, self.encoding)
         if pname:
           propdict[pname] = pvalue
@@ -414,6 +399,8 @@ class RemoteSubversionRepository(vclib.Repository):
         date = author = None
       elif self.auth:
         date, author, msg, revprops, changes = self._revinfo(revision)
+      else:
+        author = _normalize_property_value(author, self.encoding)
 
       # Strip text if the caller doesn't want it.
       if not include_text:
@@ -467,19 +454,6 @@ class RemoteSubversionRepository(vclib.Repository):
     dirents, locks = self._get_dirents(self._getpath(path_parts[:-1]), rev)
     dirent = dirents.get(path_parts[-1], None)
     return dirent.size
-
-  def _to_txt(self, s, encoding=None, errors=None):
-    """Internal-use, convert bytes as user visible text str."""
-    if s is None:
-      return s
-    if encoding is None:
-        encoding = self.encoding
-    if errors is None:
-        errors = 'xmlcharrefreplace'
-    try:
-      return s.decode(encoding, errors)
-    except (UnicodeDecodeError, TypeError):
-      return s.decode(encoding, 'backslashreplace')
 
   def _getpath(self, path_parts):
     return '/'.join(path_parts)

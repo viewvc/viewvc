@@ -43,7 +43,7 @@ def _allow_all(root, path, pool):
   return 1
 
 def _to_str(bs):
-  """Convert Subversion internal objects represented in bytes into str"""
+  """Convert Subversion internal path objects represented in bytes into str"""
   if bs is None:
     return bs
   return bs.decode('utf-8', 'surrogateescape')
@@ -136,11 +136,7 @@ def _rootpath2url(rootpath, path):
 # Unicode string), both the returned NAME and VALUE will be None.
 # Otherwise, NAME will be a Unicode string and VALUE will be a Unicode
 # string of it could be stringified or a bytestring if it couldn't.
-def _normalize_property(name, value, encoding_hint=None):
-  try:
-    name = name.decode('utf-8')
-  except UnicodeDecodeError:
-    return None, None
+def _normalize_property_value(value, encoding_hint=None):
   try:
     value = value.decode('utf-8')
   except UnicodeDecodeError:
@@ -149,6 +145,14 @@ def _normalize_property(name, value, encoding_hint=None):
         value = value.decode(encoding_hint)
       except UnicodeDecodeError:
         pass
+  return value
+
+def _normalize_property(name, value, encoding_hint=None):
+  try:
+    name = name.decode('utf-8')
+  except UnicodeDecodeError:
+    return None, None
+  value = _normalize_property_value(value, encoding_hint)
   return name, value
 
 
@@ -622,19 +626,6 @@ class LocalSubversionRepository(vclib.Repository):
     return fs.file_length(fsroot, path)
 
   ##--- helpers ---##
-
-  def _to_txt(self, s, encoding=None, errors=None):
-    """Internal-use, convert bytes as user visible text str."""
-    if s is None:
-      return s
-    if encoding is None:
-      encoding = self.encoding
-    if errors is None:
-      errors = 'xmlcharrefreplace'
-    try:
-      return s.decode(encoding, errors)
-    except (UnicodeDecodeError, TypeError):
-      return s.decode(encoding, 'backslashreplace')
 
   def _revinfo(self, rev, include_changed_paths=0):
     """Internal-use, cache-friendly revision information harvester."""
