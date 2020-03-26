@@ -486,7 +486,7 @@ class LocalSubversionRepository(vclib.Repository):
       if entry.kind == vclib.FILE:
         entry.size = fs.file_length(fsroot, path)
       lock = fs.get_lock(self.fs_ptr, path)
-      entry.lockinfo = lock and lock.owner or None
+      entry.lockinfo = lock and _to_str(lock.owner) or None
 
   def itemlog(self, path_parts, rev, sortby, first, limit, options):
     """see vclib.Repository.itemlog docstring
@@ -517,7 +517,7 @@ class LocalSubversionRepository(vclib.Repository):
     try:
       lock = fs.get_lock(self.fs_ptr, path)
       if lock:
-        lockinfo = lock.owner
+        lockinfo = _to_str(lock.owner)
     except NameError:
       pass
 
