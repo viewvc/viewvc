@@ -23,9 +23,8 @@ from urllib.parse import quote as _quote
 
 from .svn_repos import Revision, SVNChangedPath, _datestr_to_date, _to_str, \
                       _compare_paths, _path_parts, _cleanup_path, \
-                      _path_parts_bytes, _cleanup_path_bytes, _rev2optrev, \
-                      _normalize_property_value, _normalize_property, \
-                      _split_revprops
+                      _rev2optrev, _normalize_property_value, \
+                      _normalize_property, _split_revprops
 from svn import core, delta, client, wc, ra
 
 

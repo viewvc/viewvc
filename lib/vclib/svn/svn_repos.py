@@ -49,19 +49,18 @@ def _to_str(bs):
   return bs.decode('utf-8', 'surrogateescape')
 
 def _path_parts(path):
-  return [p for p in path.split('/') if p]
-
-def _path_parts_bytes(bytes_path):
-  return [p for p in bytes_path.split(b'/') if p]
+  """Return a list of PATH's components (using '/' as the delimiter).
+  PATH may be of type str or bytes, and the returned value will carry
+  the same type."""
+  splitchar = isinstance(path, bytes) and b'/' or '/'
+  return [p for p in path.split(splitchar) if p]
 
 def _cleanup_path(path):
-  """Return a cleaned-up Subversion filesystem path"""
-  return '/'.join(_path_parts(path))
-
-def _cleanup_path_bytes(bytes_path):
-  """Return a cleaned-up Subversion filesystem path"""
-  return b'/'.join(_path_parts_bytes(bytes_path))
-
+  """Return a cleaned-up Subversion filesystem path.  PATH may be of
+  type str or bytes, and the returned value will carry the same
+  type."""
+  splitchar = isinstance(path, bytes) and b'/' or '/'
+  return splitchar.join(_path_parts(path))
 
 def _fs_path_join(base, relative):
   return _cleanup_path(base + '/' + relative)
@@ -239,7 +238,7 @@ class NodeHistory:
               break
         if not found:
           return
-    self.histories.append([revision, _cleanup_path_bytes(path)])
+    self.histories.append([revision, _cleanup_path(path)])
     if self.limit and len(self.histories) == self.limit:
       raise core.SubversionException("", core.SVN_ERR_CEASE_INVOCATION)
 
@@ -645,9 +644,9 @@ class LocalSubversionRepository(vclib.Repository):
         spath = _to_str(path)
         change = changes[path]
         if change.path:
-          change.path = _cleanup_path_bytes(change.path)
+          change.path = _cleanup_path(change.path)
         if change.base_path:
-          change.base_path = _cleanup_path_bytes(change.base_path)
+          change.base_path = _cleanup_path(change.base_path)
         is_copy = 0
         if not hasattr(change, 'action'): # new to subversion 1.4.0
           action = vclib.MODIFIED
