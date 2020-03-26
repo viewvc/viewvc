@@ -995,7 +995,7 @@ def get_writeready_server_file(request, content_type=None, encoding=None,
   return fp
 
 def generate_page(request, view_name, data, content_type=None):
-  server_fp = get_writeready_server_file(request, content_type)
+  server_fp = get_writeready_server_file(request, content_type, 'utf-8')
   if not hasattr(server_fp, 'encoding'):
     server_fp = io.TextIOWrapper(server_fp, 'utf-8', 'surrogateescape')
   template = get_view_template(request.cfg, view_name, request.language)
