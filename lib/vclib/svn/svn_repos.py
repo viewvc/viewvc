@@ -38,26 +38,6 @@ if HAS_SUBVERSION_VERSION < MIN_SUBVERSION_VERSION:
                   % (needs_ver, found_ver))
 
 
-### Pre-1.5 Subversion doesn't have SVN_ERR_CEASE_INVOCATION
-try:
-  _SVN_ERR_CEASE_INVOCATION = core.SVN_ERR_CEASE_INVOCATION
-except:
-  _SVN_ERR_CEASE_INVOCATION = core.SVN_ERR_CANCELLED
-
-### Pre-1.5 SubversionException's might not have the .msg and .apr_err members
-def _fix_subversion_exception(e):
-  if not hasattr(e, 'apr_err'):
-    e.apr_err = e[1]
-  if not hasattr(e, 'message'):
-    e.message = e[0]
-
-### Pre-1.4 Subversion doesn't have svn_path_canonicalize()
-def _canonicalize_path(path):
-  try:
-    return core.svn_path_canonicalize(path)
-  except AttributeError:
-    return path
-
 def _allow_all(root, path, pool):
   """Generic authz_read_func that permits access to all paths"""
   return 1
@@ -147,7 +127,7 @@ def _rootpath2url(rootpath, path):
     url = 'file:///' + drive + rootpath + '/' + path
   else:
     url = 'file://' + rootpath + '/' + path
-  return _canonicalize_path(url)
+  return core.svn_path_canonicalize(url)
 
 
 # Given raw bytestring Subversion property (versioned or unversioned)
@@ -257,7 +237,7 @@ class NodeHistory:
           return
     self.histories.append([revision, _cleanup_path_bytes(path)])
     if self.limit and len(self.histories) == self.limit:
-      raise core.SubversionException("", _SVN_ERR_CEASE_INVOCATION)
+      raise core.SubversionException("", core.SVN_ERR_CEASE_INVOCATION)
 
   def __getitem__(self, idx):
     return self.histories[idx]
@@ -359,7 +339,6 @@ class BlameSource:
       client.blame2(local_url, _rev2optrev(rev), _rev2optrev(first_rev),
                     _rev2optrev(rev), self._blame_cb, ctx)
     except core.SubversionException as e:
-      _fix_subversion_exception(e)
       if e.apr_err == core.SVN_ERR_CLIENT_IS_BINARY_FILE:
         raise vclib.NonTextualFileContents
       raise
@@ -627,7 +606,6 @@ class LocalSubversionRepository(vclib.Repository):
       info2 = p2, _date_from_rev(r2), r2
       return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args)
     except core.SubversionException as e:
-      _fix_subversion_exception(e)
       if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
         raise vclib.InvalidRevision
       raise
@@ -891,8 +869,7 @@ class LocalSubversionRepository(vclib.Repository):
       repos.svn_repos_history(self.fs_ptr, path, history.add_history,
                               1, rev, options.get('svn_cross_copies', 0))
     except core.SubversionException as e:
-      _fix_subversion_exception(e)
-      if e.apr_err != _SVN_ERR_CEASE_INVOCATION:
+      if e.apr_err != core.SVN_ERR_CEASE_INVOCATION:
         raise
 
     # Now, iterate over those history items, checking for changes of
@@ -952,7 +929,6 @@ class LocalSubversionRepository(vclib.Repository):
       results = repos.svn_repos_trace_node_locations(self.fs_ptr, path,
                                                      rev, [old_rev], _allow_all)
     except core.SubversionException as e:
-      _fix_subversion_exception(e)
       if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
         raise vclib.ItemNotFound(path)
       raise
@@ -1002,7 +978,6 @@ class LocalSubversionRepository(vclib.Repository):
           try:
             mid_id = fs.node_id(self._getroot(mid), path)
           except core.SubversionException as e:
-            _fix_subversion_exception(e)
             if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
               cmp = -1
             else:

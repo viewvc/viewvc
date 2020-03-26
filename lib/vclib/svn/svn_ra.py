@@ -23,9 +23,8 @@ from urllib.parse import quote as _quote
 
 from .svn_repos import Revision, SVNChangedPath, _datestr_to_date, _to_str, \
                       _compare_paths, _path_parts, _cleanup_path, \
-                      _path_parts_bytes, _cleanup_path_bytes, \
-                      _rev2optrev, _fix_subversion_exception, \
-                      _normalize_property, _split_revprops, _canonicalize_path
+                      _path_parts_bytes, _cleanup_path_bytes, _rev2optrev, \
+                      _normalize_property, _split_revprops
 from svn import core, delta, client, wc, ra
 
 
@@ -41,52 +40,13 @@ if HAS_SUBVERSION_VERSION < MIN_SUBVERSION_VERSION:
                   % (needs_ver, found_ver))
 
 
-### BEGIN COMPATABILITY CODE ###
-
-try:
-  SVN_INVALID_REVNUM = core.SVN_INVALID_REVNUM
-except AttributeError: # The 1.4.x bindings are missing core.SVN_INVALID_REVNUM
-  SVN_INVALID_REVNUM = -1
-
-def list_directory(url, peg_rev, rev, flag, ctx):
-  try:
-    dirents, locks = client.svn_client_ls3(url, peg_rev, rev, flag, ctx)
-  except TypeError: # 1.4.x bindings are goofed
-    dirents = client.svn_client_ls3(None, url, peg_rev, rev, flag, ctx)
-    locks = {}
-  return dirents, locks
-
-def get_directory_props(ra_session, path, rev):
-  try:
-    dirents, fetched_rev, props = ra.svn_ra_get_dir(ra_session, path, rev)
-  except ValueError: # older bindings are goofed
-    props = ra.svn_ra_get_dir(ra_session, path, rev)
-  return props
-
 def client_log(url, start_rev, end_rev, log_limit, include_changes,
                cross_copies, cb_func, ctx):
   include_changes = include_changes and 1 or 0
   cross_copies = cross_copies and 1 or 0
-  try:
-    client.svn_client_log4([url], start_rev, start_rev, end_rev,
-                           log_limit, include_changes, not cross_copies,
-                           0, None, cb_func, ctx)
-  except AttributeError:
-    # Wrap old svn_log_message_receiver_t interface with a
-    # svn_log_entry_t one.
-    def cb_convert(paths, revision, author, date, message, pool):
-      class svn_log_entry_t:
-        pass
-      log_entry = svn_log_entry_t()
-      log_entry.changed_paths = paths
-      log_entry.revision = revision
-      log_entry.revprops = { core.SVN_PROP_REVISION_LOG : message,
-                             core.SVN_PROP_REVISION_AUTHOR : author,
-                             core.SVN_PROP_REVISION_DATE : date,
-                             }
-      cb_func(log_entry, pool)
-    client.svn_client_log2([url], start_rev, end_rev, log_limit,
-                           include_changes, not cross_copies, cb_convert, ctx)
+  client.svn_client_log4([url], start_rev, start_rev, end_rev,
+                         log_limit, include_changes, not cross_copies,
+                         0, None, cb_func, ctx)
 
 
 def setup_client_ctx(config_dir):
@@ -97,33 +57,14 @@ def setup_client_ctx(config_dir):
   cfg = core.svn_config_get_config(config_dir)
   config = cfg.get(core.SVN_CONFIG_CATEGORY_CONFIG)
 
-  # Here's the compat-sensitive part: try to use
-  # svn_cmdline_create_auth_baton(), and fall back to making our own
-  # if that fails.
-  try:
-    auth_baton = core.svn_cmdline_create_auth_baton(1, None, None, config_dir,
-                                                    1, 1, config, None)
-  except AttributeError:
-    auth_baton = core.svn_auth_open([
-      client.svn_client_get_simple_provider(),
-      client.svn_client_get_username_provider(),
-      client.svn_client_get_ssl_server_trust_file_provider(),
-      client.svn_client_get_ssl_client_cert_file_provider(),
-      client.svn_client_get_ssl_client_cert_pw_file_provider(),
-      ])
-    if config_dir is not None:
-      core.svn_auth_set_parameter(auth_baton,
-                                  core.SVN_AUTH_PARAM_CONFIG_DIR,
-                                  config_dir)
+  auth_baton = core.svn_cmdline_create_auth_baton(1, None, None, config_dir,
+                                                  1, 1, config, None)
 
   # Create, setup, and return the client context baton.
   ctx = client.svn_client_create_context()
   ctx.config = cfg
   ctx.auth_baton = auth_baton
   return ctx
-
-### END COMPATABILITY CODE ###
-
 
 class LogCollector:
 
@@ -370,8 +311,8 @@ class RemoteSubversionRepository(vclib.Repository):
     if path_type == vclib.FILE:
       basename = path_parts[-1].encode(self.encoding, 'surrogateescape')
       list_url = self._geturl(self._getpath(path_parts[:-1]))
-      dirents, locks = list_directory(list_url, _rev2optrev(rev),
-                                      _rev2optrev(rev), 0, self.ctx)
+      dirents, locks = client.svn_client_ls3(list_url, _rev2optrev(rev),
+                                             _rev2optrev(rev), 0, self.ctx)
       if basename in locks:
         lockinfo = locks[basename].owner
       if basename in dirents:
@@ -510,7 +451,6 @@ class RemoteSubversionRepository(vclib.Repository):
       info2 = p2, _date_from_rev(r2), r2
       return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args)
     except core.SubversionException as e:
-      _fix_subversion_exception(e)
       if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
         raise vclib.InvalidRevision
       raise
@@ -562,7 +502,7 @@ class RemoteSubversionRepository(vclib.Repository):
     if not path:
       return self.rootpath
     path = self.rootpath + '/' + _quote(path)
-    return _canonicalize_path(path)
+    return core.svn_path_canonicalize(path)
 
   def _get_dirents(self, path, rev):
     """Return a 2-type of dirents and locks, possibly reading/writing
@@ -579,8 +519,8 @@ class RemoteSubversionRepository(vclib.Repository):
     # Ensure that the cache gets filled...
     dirents_locks = self._dirent_cache.get(key)
     if not dirents_locks:
-      tmp_dirents, locks = list_directory(dir_url, _rev2optrev(rev),
-                                          _rev2optrev(rev), 0, self.ctx)
+      tmp_dirents, locks = client.svn_client_ls3(dir_url, _rev2optrev(rev),
+                                                 _rev2optrev(rev), 0, self.ctx)
       dirents = {}
       for name, dirent in tmp_dirents.items():
         dirent_parts = path_parts + [_to_str(name)]
@@ -772,7 +712,6 @@ class RemoteSubversionRepository(vclib.Repository):
     try:
       results = ra.get_locations(self.ra_session, path, rev, [old_rev])
     except core.SubversionException as e:
-      _fix_subversion_exception(e)
       if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
         raise vclib.ItemNotFound(path)
       raise

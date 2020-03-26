@@ -21,19 +21,7 @@ _re_url = re.compile('^(http|https|file|svn|svn\+[^:]+)://')
 
 def _canonicalize_path(path):
   import svn.core
-  try:
-    return svn.core.svn_path_canonicalize(path).decode('utf-8',
-                                                       'surrogateescpe')
-  except AttributeError: # svn_path_canonicalize() appeared in 1.4.0 bindings
-    # There's so much more that we *could* do here, but if we're
-    # here at all its because there's a really old Subversion in
-    # place, and those older Subversion versions cared quite a bit
-    # less about the specifics of path canonicalization.
-    if re.search(_re_url, path):
-      return path.rstrip('/')
-    else:
-      return os.path.normpath(path)
-
+  return svn.core.svn_path_canonicalize(path).decode('utf-8', 'surrogateescpe')
 
 def canonicalize_rootpath(rootpath):
   # Try to canonicalize the rootpath using Subversion semantics.
