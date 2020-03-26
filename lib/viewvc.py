@@ -273,7 +273,8 @@ class Request:
                                                   self.rootpath,
                                                   self.auth,
                                                   cfg.utilities,
-                                                  cfg.options.use_rcsparse)
+                                                  cfg.options.use_rcsparse,
+                                                  cfg.options.default_encoding)
             # required so that spawned rcs programs correctly expand
             # $CVSHeader$
             os.environ['CVSROOT'] = self.rootpath
@@ -283,7 +284,8 @@ class Request:
                                                         self.rootpath,
                                                         self.auth,
                                                         cfg.utilities,
-                                                        cfg.options.svn_config_dir)
+                                                        cfg.options.svn_config_dir,
+                                                        cfg.options.default_encoding)
           else:
             raise vclib.ReposNotFound()
         except vclib.ReposNotFound:
@@ -4988,7 +4990,8 @@ def list_roots(request):
     try:
       repos = vclib.svn.SubversionRepository(root, cfg.general.svn_roots[root],
                                              auth, cfg.utilities,
-                                             cfg.options.svn_config_dir)
+                                             cfg.options.svn_config_dir,
+                                             cfg.options.default_encoding)
       lastmod = None
       if cfg.options.show_roots_lastmod:
         try:
@@ -5013,7 +5016,8 @@ def list_roots(request):
     auth = setup_authorizer(cfg, request.username, root)
     try:
       vclib.ccvs.CVSRepository(root, cfg.general.cvs_roots[root], auth,
-                               cfg.utilities, cfg.options.use_rcsparse)
+                               cfg.utilities, cfg.options.use_rcsparse,
+                               cfg.options.default_encoding)
     except vclib.ReposNotFound:
       continue
     allroots[root] = [cfg.general.cvs_roots[root], 'cvs', None]

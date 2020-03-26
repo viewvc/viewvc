@@ -745,9 +745,18 @@
 ##
 #tabsize = 8
 
-## detect_encoding: Should we attempt to detect versioned file
-## character encodings?  [Requires 'chardet' module, and is currently
-## used only for the 'markup' and 'annotate' views.]
+## default_encoding: The default character encoding to assume for
+## repository content whose encoding is not dictated by the version
+## control system itself.  For example, Subversion stores versioned
+## paths, property names, and its own reserved property values using
+## the UTF-8 encoding.  CVS makes no such promises.  Of course, file
+## content versioned in these systems can use any arbitrary encoding.
+##
+#default_encoding = utf-8
+
+## detect_encoding: Should we attempt to automatically detect
+## versioned file character encodings?  [Requires 'chardet' module,
+## and is currently used only for the 'markup' and 'annotate' views.]
 ##
 #detect_encoding = 0
 

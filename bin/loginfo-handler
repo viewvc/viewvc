@@ -223,7 +223,8 @@ def ProcessLoginfo(rootpath, directory, files):
     cfg = viewvc.load_config(CONF_PATHNAME)
     db = cvsdb.ConnectDatabase(cfg)
     repository = vclib.ccvs.CVSRepository(None, rootpath, None,
-                                          cfg.utilities, 0)
+                                          cfg.utilities, 0,
+                                          cfg.options.default_encoding)
 
     # split up the directory components
     dirpath = [p for p in os.path.normpath(directory).split(os.sep) if p]
