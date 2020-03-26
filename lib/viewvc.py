@@ -2378,7 +2378,7 @@ def view_directory(request):
       if request.roottype == 'cvs' and file.rev is not None:
         row.rev = None
         if cfg.options.show_logs:
-          row.log_file = file.newest_file
+          row.log_file = request.server.escape(file.newest_file)
           row.log_rev = file.rev
 
       if request.roottype == 'svn':
