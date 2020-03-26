@@ -1,6 +1,6 @@
-Version 1.2.1 (released ??-???-????)
+Version 1.2.1 (released 26-Mar-2020)
 
-  *
+  * security fix: escape subdir lastmod file name (#211) [CVE-????-????]
 
 Version 1.2.0 (released 17-Mar-2020)
 
