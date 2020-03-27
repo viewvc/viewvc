@@ -33,7 +33,6 @@
 #
 # -----------------------------------------------------------------------
 #
-from __future__ import print_function
 
 #########################################################################
 #
@@ -58,15 +57,25 @@ else:
 #########################################################################
 
 import re
-
+import cvsdb
+import viewvc
+import vclib
 import svn.core
 import svn.repos
 import svn.fs
 import svn.delta
 
-import cvsdb
-import viewvc
-import vclib
+
+def _print(s, end='\n'):
+    print(s, end=end, flush=True)
+
+
+def _to_str(bs):
+  """Convert Subversion UTF-8 objects represented in bytes into str"""
+  if bs is None:
+    return bs
+  return bs.decode('utf-8', 'surrogateescape')
+
 
 class SvnRepo:
     """Class used to manage a connection to a SVN repository."""
@@ -84,7 +93,7 @@ class SvnRepo:
         rev = SvnRev(self, rev)
         return rev
 
-_re_diff_change_command = re.compile('(\d+)(?:,(\d+))?([acd])(\d+)(?:,(\d+))?')
+_re_diff_change_command = re.compile(b'(\d+)(?:,(\d+))?([acd])(\d+)(?:,(\d+))?')
 
 def _get_diff_counts(diff_fp):
     """Calculate the plus/minus counts by parsing the output of a
@@ -138,9 +147,12 @@ class SvnRev:
 
         # revision properties ...
         revprops = svn.fs.revision_proplist(repo.fs, rev)
-        self.author = str(revprops.get(svn.core.SVN_PROP_REVISION_AUTHOR,''))
-        self.date = str(revprops.get(svn.core.SVN_PROP_REVISION_DATE, ''))
-        self.log = str(revprops.get(svn.core.SVN_PROP_REVISION_LOG, ''))
+        self.author = _to_str(
+            revprops.get(svn.core.SVN_PROP_REVISION_AUTHOR, b''))
+        self.date = _to_str(
+            revprops.get(svn.core.SVN_PROP_REVISION_DATE, b''))
+        self.log = _to_str(
+            revprops.get(svn.core.SVN_PROP_REVISION_LOG, b''))
 
         # convert the date string to seconds since epoch ...
         try:
@@ -192,12 +204,12 @@ class SvnRev:
 
             diff_fp = diffobj.get_pipe()
             plus, minus = _get_diff_counts(diff_fp)
-            self.changes.append((path, action, plus, minus))
+            self.changes.append((_to_str(path), action, plus, minus))
 
     def _get_root_for_rev(self, rev):
         """Fetch a revision root from a cache of such, or a fresh root
         (which is then cached for later use."""
-        if not self.rev_roots.has_key(rev):
+        if not rev in self.rev_roots:
             self.rev_roots[rev] = svn.fs.revision_root(self.repo.fs, rev)
         return self.rev_roots[rev]
 
@@ -208,11 +220,11 @@ def handle_revision(db, command, repo, rev, verbose, force=0):
     committed = 0
 
     if verbose:
-        print("Building commit info for revision {0!s}...".format(rev),
-              end='')
+        _print(f"Building commit info for revision {rev}...", end='')
 
     if not revision.changes:
-        if verbose: print("skipped (no changes).")
+        if verbose:
+            _print("skipped (no changes).")
         return
 
     for (path, action, plus, minus) in revision.changes:
@@ -247,9 +259,9 @@ def handle_revision(db, command, repo, rev, verbose, force=0):
 
     if verbose:
         if committed:
-            print("done.")
+            _print("done.")
         else:
-            print("skipped (already recorded).")
+            _print("skipped (already recorded).")
 
 def main(command, repository, revs=[], verbose=0, force=0):
     cfg = viewvc.load_config(CONF_PATHNAME)
@@ -258,8 +270,7 @@ def main(command, repository, revs=[], verbose=0, force=0):
     # Purge what must be purged.
     if command in ('rebuild', 'purge'):
         if verbose:
-            print("Purging commit info "
-                  "for repository root `{0!s}'".format(repository))
+            _print(f"Purging commit info for repository root `{repository}'")
         try:
             db.PurgeRepository(repository)
         except cvsdb.UnknownRepositoryError as e:
@@ -270,8 +281,7 @@ def main(command, repository, revs=[], verbose=0, force=0):
     # Record what must be recorded.
     if command in ('rebuild', 'update'):
         if not os.path.exists(repository):
-            sys.stderr.write('ERROR: could not find repository %s\n'
-                             % (repository))
+            sys.stderr.write(f"ERROR: could not find repository {repository}\n")
             sys.exit(1)
         repo = SvnRepo(repository)
         if command == 'rebuild' or (command == 'update' and not revs):
@@ -366,8 +376,8 @@ if __name__ == '__main__':
             if len(revs) == 1:
                 revs.append(revs[0])
         except ValueError:
-            sys.stderr.write('ERROR: invalid revision specification "%s"\n' \
-                             % sys.argv[3])
+            sys.stderr.write(f'ERROR: invalid revision specification '
+                             f'"sys.argv[3]"\n')
             usage()
     else:
         rev = None
@@ -377,5 +387,5 @@ if __name__ == '__main__':
         repository = cvsdb.CleanRepository(os.path.abspath(repository))
         main(command, repository, revs, verbose, force)
     except KeyboardInterrupt:
-        print('\n** break **')
+        _print('\n** break **')
     sys.exit(0)

@@ -401,7 +401,7 @@ def serve(host, port, callback=None):
     ViewVCHTTPServer(host, port, callback).serve_until_quit()
   except (KeyboardInterrupt, select.error):
     pass
-  print('server stopped')
+  print('server stopped', flush=True)
 
 
 def handle_config(config_file):
@@ -559,7 +559,7 @@ def main(argv):
 
   # Finaly, start the server.
   def ready(server):
-    print('server ready at %s%s' % (server.url, options.script_alias))
+    print(f'server ready at {server.url}{options.script_alias}', flush=True)
   serve(options.host, options.port, ready)
 
 
