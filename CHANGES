@@ -1,6 +1,6 @@
 Version 1.3.0 (released ??-???-????)
 
-  * 
+  * make-database now requires --force to destroy existing DB (#212)
 
 Version 1.1.27 (released 06-Jun-2019)
 

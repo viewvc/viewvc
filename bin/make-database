@@ -52,10 +52,16 @@ if sys.version_info[0] >= 3:
         return input(prompt)
 
 ## ------------------------------------------------------------------------
+## Initial database drop (when --force) is used.
+##
+DATABASE_DROP="""\
+DROP DATABASE IF EXISTS <dbname>;
+"""
+
+## ------------------------------------------------------------------------
 ## Stuff common to all schemas
 ##
 DATABASE_SCRIPT_COMMON="""\
-DROP DATABASE IF EXISTS <dbname>;
 CREATE DATABASE <dbname>;
 
 USE <dbname>;
@@ -285,6 +291,9 @@ Options:
   --dbname=ARG        Use ARG as the ViewVC database name to create.
                       [Default: ViewVC]
 
+  --force             Force the recreation of the database, dropping
+                      any existing database of the specified name.
+
   --help              Show this usage message.
 
   --hostname=ARG      Use ARG as the hostname for the MySQL connection.
@@ -314,8 +323,10 @@ if __name__ == "__main__":
   try:
     # Parse the command-line options, if any.
     dbname = version = hostname = port = username = password = None
+    force = False
     timeout = 300
     opts, args = getopt.getopt(sys.argv[1:], '', [ 'dbname=',
+                                                   'force',
                                                    'help',
                                                    'hostname=',
                                                    'port=',
@@ -331,6 +342,8 @@ if __name__ == "__main__":
         usage_and_exit(0)
       elif name == '--dbname':
         dbname = value
+      elif name == '--force':
+        force = True
       elif name == '--hostname':
         hostname = value
       elif name == '--port':
@@ -359,14 +372,6 @@ if __name__ == "__main__":
     if dbname is None:
       dbname = raw_input("ViewVC Database Name [default: ViewVC]: ") or "ViewVC"
 
-    # Create the database.
-    dscript = DATABASE_SCRIPT_COMMON.replace("<dbname>", dbname)
-    if version == "1.0":
-      print(BONSAI_COMPAT)
-      dscript = dscript + DATABASE_SCRIPT_VERSION_0
-    else:
-      dscript = dscript + DATABASE_SCRIPT_VERSION_1
-
     # Calculate command arguments.
     cmd_args = [("--user=%s" % username), ("--password=%s" % password)]
     if hostname or port:
@@ -376,8 +381,18 @@ if __name__ == "__main__":
     if port:
       cmd_args.append("--port=%s" % port)
 
-    cmd = ["mysql"]
-    mysql = subprocess.Popen(cmd + cmd_args, bufsize=-1, stdin=subprocess.PIPE,
+    # Create the database.
+    dscript = force and DATABASE_DROP or ''
+    dscript = dscript + DATABASE_SCRIPT_COMMON
+    if version == "1.0":
+      print(BONSAI_COMPAT)
+      dscript = dscript + DATABASE_SCRIPT_VERSION_0
+    else:
+      dscript = dscript + DATABASE_SCRIPT_VERSION_1
+    dscript = dscript.replace("<dbname>", dbname)  
+
+    cmdline = ["mysql"] + cmd_args
+    mysql = subprocess.Popen(cmdline, bufsize=-1, stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                              universal_newlines=True,
                              close_fds=(sys.platform != "win32"))
