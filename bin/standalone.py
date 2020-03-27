@@ -84,7 +84,7 @@ class StandaloneServer(sapi.CgiServer):
     sapi.CgiServer.__init__(self, inheritableOut = sys.platform != "win32")
     self.handler = handler
 
-  def header(self, content_type='text/html', status=None):
+  def header(self, content_type='text/html; charset=UTF-8', status=None):
     if not self.headerSent:
       self.headerSent = 1
       if status is None:
