@@ -32,7 +32,7 @@
 
   * **Vulnerable Version(s)**: 0.9.2 - 0.9.4, 1.0.0 - 1.0.5
   * **Fixed Version(s)**: 1.0.6
-  * **Issue(s)**: <a href="http://viewvc.tigris.org/issues/show_bug.cgi?id=354">354</a>
+  * **Issue(s)**: <a href="http://viewvc.tigris.org/issues/show_bug.cgi?id=354">Tigris 354</a>
   * **Description**: viewcvs in ViewCVS 0.9.2 allows remote attackers to set the Content-Type header to arbitrary values via the `content-type` parameter, which can be leveraged for cross-site scripting (XSS) and other attacks, as demonstrated using (1) "text/html", or (2) "image/jpeg" with an image that is rendered as HTML by Internet Explorer, a different vulnerability than CVE-2004-1062. NOTE: it was later reported that 0.9.4 is also affected.
 
 ### [CVE-2006-5442](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2006-5442)
@@ -67,7 +67,7 @@
 
   * **Vulnerable Version(s)**: 0.9.2 - 0.9.4, 1.0.0 - 1.0.5
   * **Fixed Version(s)**: 1.0.6
-  * **Issue(s)**: <a href="http://viewvc.tigris.org/issues/show_bug.cgi?id=354">354</a>
+  * **Issue(s)**: <a href="http://viewvc.tigris.org/issues/show_bug.cgi?id=354">Tigris 354</a>
   * **Description**: `lib/viewvc.py` in ViewVC 1.0.5 uses the `content-type` parameter in the HTTP request for the Content-Type header in the HTTP response, which allows remote attackers to cause content to be misinterpreted by the browser via a `content-type` parameter that is inconsistent with the requested object. NOTE: this issue might not be a vulnerability, since it requires attacker access to the repository that is being viewed.
 
 ### [CVE-2009-3618](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2009-3618)
@@ -137,5 +137,14 @@
 
   * **Vulnerable Version(s)**: 1.0.0 - 1.0.12, 1.1.0 - 1.1.15
   * **Fixed Version(s)**: 1.0.13, 1.1.16
-  * **Issue(s)**: <a href="http://viewvc.tigris.org/issues/show_bug.cgi?id=515">515</a>
+  * **Issue(s)**: <a href="http://viewvc.tigris.org/issues/show_bug.cgi?id=515">Tigris 515</a>
   * **Description**: Cross-site scripting (XSS) vulnerability in the "extra" details in the `DiffSource._get_row` function in `lib/viewvc.py` in ViewVC 1.0.x before 1.0.13 and 1.1.x before 1.1.16 allows remote authenticated users with repository commit access to inject arbitrary web script or HTML via the "function name" line.
+
+### [CVE-2020-5283](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-5283)
+
+  * **Vulnerable Version(s)**: 1.0.0 - 1.0.12, 1.1.0 - 1.1.27, 1.2.0
+  * **Fixed Version(s)**: 1.1.28, 1.2.1
+  * **Issue(s)**: <a href="https://github.com/viewvc/viewvc/issues/211">211</a>
+  * **Description**: Cross-site scripting (XSS) vulnerability ViewVC 1.0.x, ViewVC 1.0.x before 1.1.28, and ViewVC 1.2.0, allows remote authenticated users with repository commit access to add versioned files with names that render as web script or HTML via the CVS subdirectory last-modified feature of the directory view.
+
+
