@@ -4,7 +4,7 @@ Version 1.2.2 (released ??-???-????)
 
 Version 1.2.1 (released 26-Mar-2020)
 
-  * security fix: escape subdir lastmod file name (#211) [CVE-????-????]
+  * security fix: escape subdir lastmod file name (#211) [CVE-2020-5283]
 
 Version 1.2.0 (released 17-Mar-2020)
 
@@ -22,7 +22,7 @@ Version 1.2.0 (released 17-Mar-2020)
 
 Version 1.1.28 (released 26-Mar-2020)
 
-  * security fix: escape subdir lastmod file name (#211) [CVE-????-????]
+  * security fix: escape subdir lastmod file name (#211) [CVE-2020-5283]
   * fix standalone.py first request failure (#195)
 
 Version 1.1.27 (released 06-Jun-2019)
