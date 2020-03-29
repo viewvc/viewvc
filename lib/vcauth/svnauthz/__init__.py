@@ -19,11 +19,11 @@ from ConfigParser import ConfigParser
 
 class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   """Subversion authz authorizer module"""
-  
+
   def __init__(self, root_lookup_func, username, params={}):
     self.rootpaths = { }  # {root -> { paths -> access boolean for USERNAME }}
     self.root_lookup_func = root_lookup_func
-    
+
     # Get the authz file location from exactly one of our related
     # passed-in parameters.
     self.authz_file = params.get('authzfile')
@@ -51,13 +51,13 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
       return os.path.join(rootpath, self.rel_authz_file)
     else:
       return self.authz_file
-    
+
   def _get_paths_for_root(self, rootname):
     if self.rootpaths.has_key(rootname):
       return self.rootpaths[rootname]
 
     paths_for_root = { }
-    
+
     # Parse the authz file, replacing ConfigParser's optionxform()
     # method with something that won't futz with the case of the
     # option names.
@@ -89,24 +89,24 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
 
       def _process_group(groupname):
         """Inline function to handle groups within groups.
-        
+
         For a group to be within another group in SVN, the group
         definitions must be in the correct order in the config file.
         ie. If group A is a member of group B then group A must be
         defined before group B in the [groups] section.
-        
+
         Unfortunately, the ConfigParser class provides no way of
         finding the order in which groups were defined so, for reasons
         of practicality, this function lets you get away with them
         being defined in the wrong order.  Recursion is guarded
         against though."""
-        
+
         # If we already know the user is part of this already-
         # processed group, return that fact.
         if groupname in groups:
           return 1
         # Otherwise, ensure we don't process a group twice.
-        if groupname in all_groups:          
+        if groupname in all_groups:
           return 0
         # Store the group name in a global list so it won't be processed again
         all_groups.append(groupname)
@@ -127,7 +127,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
         if group_member:
           groups.append(groupname)
         return group_member
-      
+
       # Process the groups
       for group in cp.options('groups'):
         _process_group(group)
@@ -145,13 +145,13 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
              or (self.username is None and userspec == "$anonymous") \
              or (userspec[0:1] == "@" and userspec[1:] in groups) \
              or (userspec[0:1] == "&" and userspec[1:] in aliases)
-      
+
     def _process_access_section(section):
       """Inline function for determining user access in a single
       config secction.  Return a two-tuple (ALLOW, DENY) containing
       the access determination for USERNAME in a given authz file
       SECTION (if any)."""
-  
+
       # Figure if this path is explicitly allowed or denied to USERNAME.
       allow = deny = 0
       for user in cp.options(section):
@@ -166,7 +166,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
           if allow:
             break
       return allow, deny
-    
+
     # Read the other (non-"groups") sections, and figure out in which
     # repositories USERNAME or his groups have read rights.  We'll
     # first check groups that have no specific repository designation,
@@ -178,7 +178,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
       # Skip the "groups" section -- we handled that already.
       if section == 'groups':
         continue
-      
+
       if section == 'aliases':
         continue
 
@@ -197,7 +197,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
 
       # Check for a specific access determination.
       allow, deny = _process_access_section(section)
-          
+
       # If we got an explicit access determination for this path and this
       # USERNAME, record it.
       if allow or deny:
@@ -210,10 +210,10 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
 
       # Get the path again.
       name, path = section.split(':', 1)
-      
+
       # Check for a specific access determination.
       allow, deny = _process_access_section(section)
-                
+
       # If we got an explicit access determination for this path and this
       # USERNAME, record it.
       if allow or deny:
@@ -231,14 +231,14 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
         break
     if not root_is_readable:
       paths_for_root = None
-      
+
     self.rootpaths[rootname] = paths_for_root
     return paths_for_root
 
   def check_root_access(self, rootname):
     paths = self._get_paths_for_root(rootname)
     return (paths is not None) and 1 or 0
-  
+
   def check_universal_access(self, rootname):
     paths = self._get_paths_for_root(rootname)
     if not paths: # None or empty.
@@ -268,7 +268,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
 
     # Anything else is indeterminable.
     return None
-    
+
   def check_path_access(self, rootname, path_parts, pathtype, rev=None):
     # Crawl upward from the path represented by PATH_PARTS toward to
     # the root of the repository, looking for an explicitly grant or

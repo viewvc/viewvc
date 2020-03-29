@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*-python-*-
 #
 # Copyright (C) 1999-2020 The ViewCVS Group. All Rights Reserved.
@@ -63,7 +63,7 @@ def link_includes(text, repos, path_parts, include_url):
       return '#%sinclude%s<a href="%s">"%s"</a>' % \
              (match.group(1), match.group(2),
               include_url.replace('/WHERE/', include_path), incfile)
-    
+
   return text
 
 
@@ -139,7 +139,7 @@ def make_html(root, rcs_path):
 def main():
   import sys
   if len(sys.argv) != 3:
-    print 'USAGE: %s cvsroot rcs-file' % sys.argv[0]
+    print('USAGE: %s cvsroot rcs-file' % sys.argv[0])
     sys.exit(1)
   make_html(sys.argv[1], sys.argv[2])
 

@@ -53,11 +53,15 @@ class LoggingSink:
 
 if __name__ == '__main__':
   # Since there is nontrivial logic in __init__.py, we have to import
-  # parse() via that file.  First make sure that the directory
+  # parse() via that file.  However, __init__.py uses relative import
+  # for the package now, so we must import it as a package:
   # containing this script is in the path:
-  sys.path.insert(0, os.path.dirname(sys.argv[0]))
 
-  from __init__ import parse
+  p_dir, p_name = os.path.split(os.path.dirname(os.path.abspath(sys.argv[0])))
+  sys.path.insert(0, p_dir)
+  rcsparse = __import__(p_name)
+
+  parse = rcsparse.parse
 
   if sys.argv[1:]:
     for path in sys.argv[1:]:

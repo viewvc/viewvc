@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*-python-*-
 #
 # Copyright (C) 1999-2020 The ViewCVS Group. All Rights Reserved.
@@ -48,26 +48,26 @@ import vclib.ccvs
 DEBUG_FLAG = 0
 
 ## output functions
-def debug(text):        
+def debug(text):
     if DEBUG_FLAG:
         if type(text) != (type([])):
             text = [text]
         for line in text:
             line = line.rstrip('\n\r')
-            print 'DEBUG(viewvc-loginfo):', line
+            print('DEBUG(viewvc-loginfo):', line)
 
 def warning(text):
-    print 'WARNING(viewvc-loginfo):', text
+    print('WARNING(viewvc-loginfo):', text)
 
 def error(text):
-    print 'ERROR(viewvc-loginfo):', text
+    print('ERROR(viewvc-loginfo):', text)
     sys.exit(1)
 
-_re_revisions = re.compile(                            
+_re_revisions = re.compile(
     r",(?P<old>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and first revision
     r",(?P<new>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and second revision
     r"(?:$| )"                                     # space or end of string
-)    
+)
 
 def Cvs1Dot12ArgParse(args):
     """CVS 1.12 introduced a new loginfo format while provides the various
@@ -85,7 +85,7 @@ def Cvs1Dot12ArgParse(args):
             files.append(args[0:3])
             args = args[3:]
         return directory, files
-  
+
 def HeuristicArgParse(s, repository):
     """Older versions of CVS (except for CVSNT) do not escape spaces in file
     and directory names that are passed to the loginfo handler. Since the input
@@ -93,8 +93,8 @@ def HeuristicArgParse(s, repository):
     function attempts to guess intelligently which spaces are separators and
     which are part of file or directory names. It disambiguates spaces in
     filenames from the separator spaces between files by assuming that every
-    space which is preceded by two well-formed revision numbers is in fact a 
-    separator. It disambiguates the first separator space from spaces in the 
+    space which is preceded by two well-formed revision numbers is in fact a
+    separator. It disambiguates the first separator space from spaces in the
     directory name by choosing the longest possible directory name that
     actually exists in the repository"""
 
@@ -113,10 +113,10 @@ def HeuristicArgParse(s, repository):
         m = _re_revisions.search(s, start)
 
         if start == 0:
-            if m is None: 
+            if m is None:
                 error('Argument "%s" does not contain any revision numbers' \
                       % s)
-        
+
             directory, filename = FindLongestDirectory(s[:m.start()],
                                                        repository)
             if directory is None:
@@ -130,18 +130,18 @@ def HeuristicArgParse(s, repository):
                 warning('Failed to interpret past position %i in the loginfo '
                         'argument, leftover string is "%s"' \
                         % start, pos[start:])
-            
+
             filename = s[start:m.start()]
-            
+
         old_version, new_version = m.group('old', 'new')
 
         file_data_list.append((filename, old_version, new_version))
 
-        debug('File "%s", old revision %s, new revision %s' 
+        debug('File "%s", old revision %s, new revision %s'
             % (filename, old_version, new_version))
 
         start = m.end()
-        
+
         if start == len(s): break
 
     return directory, file_data_list
@@ -152,16 +152,16 @@ def FindLongestDirectory(s, repository):
     possible directory name that actually exists"""
 
     parts = s.split()
-    
+
     for i in range(len(parts)-1, 0, -1):
         directory = ' '.join(parts[:i])
         filename = ' '.join(parts[i:])
         if os.path.isdir(os.path.join(repository, directory)):
             return directory, filename
-    
+
     return None, None
 
-_re_cvsnt_revisions = re.compile(                            
+_re_cvsnt_revisions = re.compile(
     r"(?P<filename>.*)"                            # comma and first revision
     r",(?P<old>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and first revision
     r",(?P<new>(?:\d+\.\d+)(?:\.\d+\.\d+)*|NONE)"  # comma and second revision
@@ -169,7 +169,7 @@ _re_cvsnt_revisions = re.compile(
 )
 
 def CvsNtArgParse(s, repository):
-    """CVSNT escapes all spaces in filenames and directory names with 
+    """CVSNT escapes all spaces in filenames and directory names with
     backslashes"""
 
     if s[-18:] == r' -\ New\ directory':
@@ -180,7 +180,7 @@ def CvsNtArgParse(s, repository):
 
     file_data_list = []
     directory, pos = NextFile(s)
-    
+
     debug('Directory name is "%s"' % directory)
 
     while 1:
@@ -223,10 +223,11 @@ def ProcessLoginfo(rootpath, directory, files):
     cfg = viewvc.load_config(CONF_PATHNAME)
     db = cvsdb.ConnectDatabase(cfg)
     repository = vclib.ccvs.CVSRepository(None, rootpath, None,
-                                          cfg.utilities, 0)
+                                          cfg.utilities, 0,
+                                          cfg.options.default_encoding)
 
     # split up the directory components
-    dirpath = filter(None, os.path.normpath(directory).split(os.sep))
+    dirpath = [p for p in os.path.normpath(directory).split(os.sep) if p]
 
     ## build a list of Commit objects
     commit_list = []
@@ -263,11 +264,11 @@ if __name__ == '__main__':
 
     argc = len(sys.argv)
     debug('Got %d arguments:' % (argc))
-    debug(map(lambda x: '   ' + x, sys.argv))
-    
+    debug(['   ' + x for x in sys.argv])
+
     # if we have more than 3 arguments, we are likely using the
     # newer loginfo format introduced in CVS 1.12:
-    # 
+    #
     #    ALL <path>/bin/loginfo-handler %p %{sVv}
     if argc > 3:
         directory, files = Cvs1Dot12ArgParse(sys.argv[1:])
@@ -279,7 +280,7 @@ if __name__ == '__main__':
             # if there are no arguments, read version information from
             # first line of input like old versions of ViewCVS did
             arg = sys.stdin.readline().rstrip()
-    
+
         if len(sys.argv) > 2:
             # if there is a second argument it indicates which parser
             # should be used to interpret the version information
@@ -297,11 +298,11 @@ if __name__ == '__main__':
                 fun = CvsNtArgParse
             else:
                 fun = HeuristicArgParse
-        
+
         directory, files = fun(arg, repository)
-    
+
     debug('Discarded from stdin:')
-    debug(map(lambda x: '   ' + x, sys.stdin.readlines())) # consume stdin
+    debug(['   ' + x for x in sys.stdin.readlines()]) # consume stdin
 
     repository = cvsdb.CleanRepository(repository)
 

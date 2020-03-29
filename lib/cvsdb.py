@@ -19,6 +19,14 @@ import re
 import vclib
 import dbi
 
+_re_escaped = re.compile('[\udc00-\udcff]')
+def reencode(s, encoding='utf-8', errors='backslashreplace'):
+    if _re_escaped.search(s):
+        return s.encode('utf-8',
+                        'surrogateescape').decode(encoding, errors)
+    else:
+        return s
+
 ## Current commits database schema version number.
 ##
 ## Version 0 was the original Bonsai-compatible version.
@@ -70,9 +78,10 @@ class CheckinDatabase:
                                        "software." % (self._version))
 
     def sql_get_id(self, table, column, value, auto_set):
+        value = reencode(value)
         sql = "SELECT id FROM %s WHERE %s=%%s" % (table, column)
         sql_args = (value, )
-        
+
         cursor = self.db.cursor()
         cursor.execute(sql, sql_args)
         try:
@@ -82,7 +91,7 @@ class CheckinDatabase:
                 return None
         else:
             return str(int(id))
-   
+
         ## insert the new identifier
         sql = "INSERT INTO %s(%s) VALUES(%%s)" % (table, column)
         sql_args = (value, )
@@ -152,7 +161,7 @@ class CheckinDatabase:
 
         temp2[id] = value
         return value
-        
+
     def get_list(self, table, field_index):
         sql = "SELECT * FROM %s" % (table)
         cursor = self.db.cursor()
@@ -169,7 +178,7 @@ class CheckinDatabase:
 
     def GetCommitsTable(self):
         return self._version >= 1 and 'commits' or 'checkins'
-        
+
     def GetTableList(self):
         sql = "SHOW TABLES"
         cursor = self.db.cursor()
@@ -181,7 +190,7 @@ class CheckinDatabase:
                 break
             list.append(row[0])
         return list
-        
+
     def GetMetadataValue(self, name):
         sql = "SELECT value FROM metadata WHERE name=%s"
         sql_args = (name, )
@@ -192,7 +201,7 @@ class CheckinDatabase:
         except TypeError:
             return None
         return value
-        
+
     def SetMetadataValue(self, name, value):
         assert(self._version > 0)
         sql = "REPLACE INTO metadata (name, value) VALUES (%s, %s)"
@@ -200,12 +209,12 @@ class CheckinDatabase:
         cursor = self.db.cursor()
         try:
             cursor.execute(sql, sql_args)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Error setting metadata: '%s'\n"
                             "\tname  = %s\n"
                             "\tvalue = %s\n"
                             % (str(e), name, value))
-        
+
     def GetBranchID(self, branch, auto_set = 1):
         return self.get_id("branches", "branch", branch, auto_set)
 
@@ -223,13 +232,13 @@ class CheckinDatabase:
 
     def GetFile(self, id):
         return self.get("files", "file", id)
-    
+
     def GetAuthorID(self, author, auto_set = 1):
         return self.get_id("people", "who", author, auto_set)
 
     def GetAuthor(self, id):
         return self.get("people", "who", id)
-    
+
     def GetRepositoryID(self, repository, auto_set = 1):
         return self.get_id("repositories", "repository", repository, auto_set)
 
@@ -237,12 +246,13 @@ class CheckinDatabase:
         return self.get("repositories", "repository", id)
 
     def SQLGetDescriptionID(self, description, auto_set = 1):
+        description = reencode(description)
         ## lame string hash, blame Netscape -JMP
         hash = len(description)
 
         sql = "SELECT id FROM descs WHERE hash=%s AND description=%s"
         sql_args = (hash, description)
-        
+
         cursor = self.db.cursor()
         cursor.execute(sql, sql_args)
         try:
@@ -256,7 +266,7 @@ class CheckinDatabase:
         sql = "INSERT INTO descs (hash,description) values (%s,%s)"
         sql_args = (hash, description)
         cursor.execute(sql, sql_args)
-        
+
         return self.GetDescriptionID(description, 0)
 
     def GetDescriptionID(self, description, auto_set = 1):
@@ -322,7 +332,7 @@ class CheckinDatabase:
         cursor = self.db.cursor()
         try:
             cursor.execute(sql, sql_args)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Error adding commit: '%s'\n"
                             "Values were:\n"
                             "\ttype         = %s\n"
@@ -343,7 +353,7 @@ class CheckinDatabase:
         sqlList = []
 
         for query_entry in query_entry_list:
-            data = query_entry.data
+            data = reencode(query_entry.data)
             ## figure out the correct match type
             if query_entry.match == "exact":
                 match = "="
@@ -396,26 +406,26 @@ class CheckinDatabase:
                               "(%s.dirid=dirs.id)" % (commits_table)))
             temp = self.SQLQueryListString("dirs.dir", query.directory_list)
             condList.append(temp)
-            
+
         if len(query.file_list):
             tableList.append(("files",
                               "(%s.fileid=files.id)" % (commits_table)))
             temp = self.SQLQueryListString("files.file", query.file_list)
             condList.append(temp)
-            
+
         if len(query.author_list):
             tableList.append(("people",
                               "(%s.whoid=people.id)" % (commits_table)))
             temp = self.SQLQueryListString("people.who", query.author_list)
             condList.append(temp)
-            
+
         if len(query.comment_list):
             tableList.append(("descs",
                               "(%s.descid=descs.id)" % (commits_table)))
             temp = self.SQLQueryListString("descs.description",
                                            query.comment_list)
             condList.append(temp)
-            
+
         if query.from_date:
             temp = "(%s.ci_when>=\"%s\")" \
                    % (commits_table, str(query.from_date))
@@ -465,14 +475,14 @@ class CheckinDatabase:
               % (commits_table, tables, conditions, order_by, limit)
 
         return sql
-    
+
     def RunQuery(self, query):
         sql = self.CreateSQLQueryString(query, 1)
         cursor = self.db.cursor()
         cursor.execute(sql)
         query.SetExecuted()
         row_count = 0
-        
+
         while 1:
             row = cursor.fetchone()
             if not row:
@@ -481,7 +491,7 @@ class CheckinDatabase:
             if query.limit and (row_count > query.limit):
                 query.SetLimitReached()
                 break
-            
+
             (dbType, dbCI_When, dbAuthorID, dbRepositoryID, dbDirID,
              dbFileID, dbRevision, dbStickyTag, dbBranchID, dbAddedLines,
              dbRemovedLines, dbDescID) = row
@@ -550,7 +560,7 @@ class CheckinDatabase:
             sql_args = (value, value)
         cursor = self.db.cursor()
         cursor.execute(sql, sql_args)
-        
+
     def sql_purge(self, table, key, fkey, ftable):
         sql = "DELETE FROM %s WHERE %s NOT IN (SELECT %s FROM %s)" \
               % (table, key, fkey, ftable)
@@ -605,7 +615,7 @@ class CheckinDatabase:
         self._get_cache = {}
         self._get_id_cache = {}
         self._desc_id_cache = {}
-        
+
 
 class DatabaseVersionError(Exception):
     pass
@@ -621,7 +631,7 @@ class Commit:
     CHANGE = 0
     ADD = 1
     REMOVE = 2
-    
+
     def __init__(self):
         self.__directory = ''
         self.__file = ''
@@ -640,7 +650,7 @@ class Commit:
 
     def GetRepository(self):
         return self.__repository
-        
+
     def SetDirectory(self, dir):
         self.__directory = dir
 
@@ -652,7 +662,7 @@ class Commit:
 
     def GetFile(self):
         return self.__file
-        
+
     def SetRevision(self, revision):
         self.__revision = revision
 
@@ -795,7 +805,7 @@ class CheckinDatabaseQuery:
     def __init__(self):
         ## sorting
         self.sort = "date"
-        
+
         ## repository to query
         self.repository_list = []
         self.branch_list = []
@@ -811,7 +821,7 @@ class CheckinDatabaseQuery:
         ## limit on number of rows to return
         self.limit = None
         self.limit_reached = 0
-        
+
         ## list of commits -- filled in by CVS query
         self.commit_list = []
 
@@ -852,7 +862,7 @@ class CheckinDatabaseQuery:
     def SetFromDateHoursAgo(self, hours_ago):
         ticks = time.time() - (3600 * hours_ago)
         self.from_date = dbi.DateTimeFromTicks(ticks)
-        
+
     def SetFromDateDaysAgo(self, days_ago):
         ticks = time.time() - (86400 * days_ago)
         self.from_date = dbi.DateTimeFromTicks(ticks)
@@ -880,14 +890,14 @@ class CheckinDatabaseQuery:
     def GetCommitList(self):
         assert self.executed
         return self.commit_list
-        
+
 
 ##
 ## entrypoints
 ##
 def CreateCommit():
     return Commit()
-    
+
 def CreateCheckinQuery():
     return CheckinDatabaseQuery()
 

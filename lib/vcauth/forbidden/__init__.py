@@ -29,7 +29,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     if not self.forbidden:
       return 1
     return None
-    
+
   def check_path_access(self, rootname, path_parts, pathtype, rev=None):
     # No path?  No problem.
     if not path_parts:

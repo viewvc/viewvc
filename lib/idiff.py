@@ -14,8 +14,6 @@
 #
 # -----------------------------------------------------------------------
 
-from __future__ import generators
-
 import difflib
 import sys
 import re
@@ -29,8 +27,8 @@ def sidebyside(fromlines, tolines, context):
 
   ### for some reason mdiff chokes on \n's in input lines
   line_strip = lambda line: line.rstrip("\n")
-  fromlines = map(line_strip, fromlines)
-  tolines = map(line_strip, tolines)
+  fromlines = list(map(line_strip, fromlines))
+  tolines = list(map(line_strip, tolines))
   had_changes = 0
 
   gap = False
@@ -48,8 +46,9 @@ def sidebyside(fromlines, tolines, context):
 
 _re_mdiff = re.compile("\0([+-^])(.*?)\1")
 
-def _mdiff_split(flag, (line_number, text)):
+def _mdiff_split(flag, line_number_text):
   """Break up row from mdiff output into segments"""
+  line_number, text = line_number_text
   segments = []
   pos = 0
   while True:
@@ -70,7 +69,7 @@ def _mdiff_split(flag, (line_number, text)):
 
     pos = m.end()
 
-  return _item(segments=segments, line_number=line_number)  
+  return _item(segments=segments, line_number=line_number)
 
 def unified(fromlines, tolines, context):
   """Generate unified diff"""
@@ -165,13 +164,13 @@ def _differ_split(row, guide):
   line, left_number, right_number, gap = row
 
   if left_number and right_number:
-    type = "" 
+    type = ""
   elif left_number:
     type = "remove"
   elif right_number:
     type = "add"
 
-  segments = []  
+  segments = []
   pos = 2
 
   if guide:

@@ -16,7 +16,10 @@
 
 import sys
 import os
-import ConfigParser
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 import fnmatch
 
 
@@ -51,7 +54,7 @@ import fnmatch
 # Here's a diagram of the valid overlays/overrides:
 #
 #         PER-ROOT          PER-VHOST            BASE
-#       
+#
 #                         ,-----------.     ,-----------.
 #                         | vhost-*|  |     |           |
 #                         |  general  | --> |  general  |
@@ -150,13 +153,13 @@ class Config:
     settings there as overrides to the built-in default values.  If
     VHOST is provided, also process the configuration overrides
     specific to that virtual host."""
-    
+
     self.conf_path = os.path.isfile(pathname) and pathname or None
     self.base = os.path.dirname(pathname)
-    self.parser = ConfigParser.ConfigParser()
+    self.parser = configparser.ConfigParser()
     self.parser.optionxform = lambda x: x # don't case-normalize option names.
     self.parser.read(self.conf_path or [])
-    
+
     for section in self.parser.sections():
       if self._is_allowed_section(section, self._base_sections):
         self._process_section(self.parser, section, section)
@@ -168,7 +171,7 @@ class Config:
     """Process the key/value (kv) files specified in the
     configuration, merging their values into the configuration as
     dotted heirarchical items."""
-    
+
     kv = _sub_config()
 
     for fname in self.general.kv_files:
@@ -180,7 +183,7 @@ class Config:
         parts = [ ]
       fname = fname.replace('%lang%', language)
 
-      parser = ConfigParser.ConfigParser()
+      parser = configparser.ConfigParser()
       parser.optionxform = lambda x: x # don't case-normalize option names.
       parser.read(os.path.join(self.base, fname))
       for section in parser.sections():
@@ -210,7 +213,7 @@ class Config:
     for opt in parser.options(section):
       value = parser.get(section, opt)
       if opt in self._force_multi_value:
-        value = map(lambda x: x.strip(), filter(None, value.split(',')))
+        value = [x.strip() for x in [_f for _f in value.split(',') if _f]]
       else:
         try:
           value = int(value)
@@ -228,7 +231,7 @@ class Config:
     """Return 1 iff SECTION is an allowed section, defined as being
     explicitly present in the ALLOWED_SECTIONS list or present in the
     form 'someprefix-*' in that list."""
-    
+
     for allowed_section in allowed_sections:
       if allowed_section[-1] == '*':
         if _startswith(section, allowed_section[:-1]):
@@ -273,6 +276,8 @@ class Config:
       value = parser.get('vhosts', canon_vhost)
       patterns = map(lambda x: x.lower().strip(),
                      filter(None, value.split(',')))
+      patterns = [x.lower().strip()
+                  for x in [_f for _f in  value.split(',') if _f]]
       for pat in patterns:
         if fnmatch.fnmatchcase(vhost, pat):
           return canon_vhost
@@ -284,7 +289,7 @@ class Config:
     set.  This is a destructive change to the configuration."""
 
     did_overlay = 0
-    
+
     if not self.conf_path:
       return
 
@@ -311,7 +316,7 @@ class Config:
       d = {}
       for option in parser.options(section):
         d[option] = parser.get(section, option)
-      return d.items()
+      return list(d.items())
 
   def get_authorizer_and_params_hack(self, rootname):
     """Return a 2-tuple containing the name and parameters of the
@@ -374,7 +379,7 @@ class Config:
         for attr in dir(sub_config):
           params[attr] = getattr(sub_config, attr)
     return params
-  
+
   def set_defaults(self):
     "Set some default values in the configuration."
 
@@ -437,6 +442,7 @@ class Config:
     self.options.enable_syntax_coloration = 1
     self.options.tabsize = 8
     self.options.detect_encoding = 0
+    self.options.default_encoding = 'utf-8'
     self.options.use_cvsgraph = 0
     self.options.cvsgraph_conf = "cvsgraph.conf"
     self.options.allowed_cvsgraph_useropts = []
@@ -464,11 +470,11 @@ class Config:
     self.cvsdb.user = ''
     self.cvsdb.passwd = ''
     self.cvsdb.readonly_user = ''
-    self.cvsdb.readonly_passwd = '' 
+    self.cvsdb.readonly_passwd = ''
     self.cvsdb.row_limit = 1000
     self.cvsdb.rss_row_limit = 100
     self.cvsdb.check_database_for_root = 0
-    
+
 def _startswith(somestr, substr):
   return somestr[:len(substr)] == substr
 
@@ -492,7 +498,7 @@ class IllegalOverrideSection(ViewVCConfigurationError):
   def __str__(self):
     return "malformed configuration: illegal %s override section: %s" \
            % (self.override_type, self.section_name)
-  
+
 class MalformedRoot(ViewVCConfigurationError):
   def __init__(self, config_name, value_given):
     Exception.__init__(self, config_name, value_given)

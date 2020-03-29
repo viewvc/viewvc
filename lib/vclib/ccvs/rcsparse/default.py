@@ -15,11 +15,14 @@
 #
 # -----------------------------------------------------------------------
 
+import sys
 import string
-import common
+from . import common
+
+WHITESPACE = string.whitespace.encode('ascii')
 
 class _TokenStream:
-  token_term = string.whitespace + ";:"
+  token_term = WHITESPACE + b";:"
   try:
     token_term = frozenset(token_term)
   except NameError:
@@ -36,8 +39,8 @@ class _TokenStream:
     self.rcsfile = file
     self.idx = 0
     self.buf = self.rcsfile.read(self.CHUNK_SIZE)
-    if self.buf == '':
-      raise RuntimeError, 'EOF'
+    if self.buf == b'':
+      raise RuntimeError('EOF')
 
   def get(self):
     "Get the next token from the RCS file."
@@ -54,26 +57,26 @@ class _TokenStream:
     while 1:
       if idx == lbuf:
         buf = self.rcsfile.read(self.CHUNK_SIZE)
-        if buf == '':
+        if buf == b'':
           # signal EOF by returning None as the token
           del self.buf   # so we fail if get() is called again
           return None
         lbuf = len(buf)
         idx = 0
 
-      if buf[idx] not in string.whitespace:
+      if buf[idx] not in WHITESPACE:
         break
 
       idx = idx + 1
 
-    if buf[idx] in ';:':
+    if buf[idx] in b';:':
       self.buf = buf
       self.idx = idx + 1
-      return buf[idx]
+      return buf[idx:idx+1]
 
-    if buf[idx] != '@':
+    if buf[idx:idx+1] != b'@':
       end = idx + 1
-      token = ''
+      token = b''
       while 1:
         # find token characters in the current buffer
         while end < lbuf and buf[end] not in self.token_term:
@@ -87,7 +90,7 @@ class _TokenStream:
 
         # we stopped at the end of the buffer, so we may have a partial token
         buf = self.rcsfile.read(self.CHUNK_SIZE)
-        if buf == '':
+        if buf == b'':
           # signal EOF by returning None as the token
           del self.buf   # so we fail if get() is called again
           return None
@@ -108,10 +111,10 @@ class _TokenStream:
       if idx == lbuf:
         idx = 0
         buf = self.rcsfile.read(self.CHUNK_SIZE)
-        if buf == '':
-          raise RuntimeError, 'EOF'
+        if buf == b'':
+          raise RuntimeError('EOF')
         lbuf = len(buf)
-      i = string.find(buf, '@', idx)
+      i = buf.find(b'@', idx)
       if i == -1:
         chunks.append(buf[idx:])
         idx = lbuf
@@ -119,12 +122,12 @@ class _TokenStream:
       if i == lbuf - 1:
         chunks.append(buf[idx:i])
         idx = 0
-        buf = '@' + self.rcsfile.read(self.CHUNK_SIZE)
-        if buf == '@':
-          raise RuntimeError, 'EOF'
+        buf = b'@' + self.rcsfile.read(self.CHUNK_SIZE)
+        if buf == b'@':
+          raise RuntimeError('EOF')
         lbuf = len(buf)
         continue
-      if buf[i + 1] == '@':
+      if buf[i + 1:i + 2] == b'@':
         chunks.append(buf[idx:i+1])
         idx = i + 2
         continue
@@ -134,12 +137,12 @@ class _TokenStream:
       self.buf = buf
       self.idx = i + 1
 
-      return string.join(chunks, '')
+      return b''.join(chunks)
 
 #  _get = get
 #  def get(self):
     token = self._get()
-    print 'T:', `token`
+    print('T:', repr(token.decode('ascii','surrogateescape')))
     return token
 
   def match(self, match):

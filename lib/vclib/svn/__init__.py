@@ -15,29 +15,18 @@
 import os
 import os.path
 import re
-import urllib
+import urllib.parse
 
 _re_url = re.compile('^(http|https|file|svn|svn\+[^:]+)://')
 
 def _canonicalize_path(path):
   import svn.core
-  try:
-    return svn.core.svn_path_canonicalize(path)
-  except AttributeError: # svn_path_canonicalize() appeared in 1.4.0 bindings
-    # There's so much more that we *could* do here, but if we're
-    # here at all its because there's a really old Subversion in
-    # place, and those older Subversion versions cared quite a bit
-    # less about the specifics of path canonicalization.
-    if re.search(_re_url, path):
-      return path.rstrip('/')
-    else:
-      return os.path.normpath(path)
-
+  return svn.core.svn_path_canonicalize(path).decode('utf-8', 'surrogateescpe')
 
 def canonicalize_rootpath(rootpath):
   # Try to canonicalize the rootpath using Subversion semantics.
   rootpath = _canonicalize_path(rootpath)
-  
+
   # ViewVC's support for local repositories is more complete and more
   # performant than its support for remote ones, so if we're on a
   # Unix-y system and we have a file:/// URL, convert it to a local
@@ -51,9 +40,9 @@ def canonicalize_rootpath(rootpath):
                           ]:
       return '/'
     if rootpath_lower.startswith('file://localhost/'):
-      rootpath = os.path.normpath(urllib.unquote(rootpath[16:]))
+      rootpath = os.path.normpath(urllib.parse.unquote(rootpath[16:]))
     elif rootpath_lower.startswith('file:///'):
-      rootpath = os.path.normpath(urllib.unquote(rootpath[7:]))
+      rootpath = os.path.normpath(urllib.parse.unquote(rootpath[7:]))
 
   # Ensure that we have an absolute path (or URL), and return.
   if not re.search(_re_url, rootpath):
@@ -81,7 +70,7 @@ def find_root_in_parent(parent_path, rootname):
   """Search PARENT_PATH for a root named ROOTNAME, returning the
   canonicalized ROOTPATH of the root if found; return None if no such
   root is found."""
-  
+
   if not re.search(_re_url, parent_path):
     assert os.path.isabs(parent_path)
     rootpath = os.path.join(parent_path, rootname)
@@ -91,13 +80,14 @@ def find_root_in_parent(parent_path, rootname):
   return None
 
 
-def SubversionRepository(name, rootpath, authorizer, utilities, config_dir):
+def SubversionRepository(name, rootpath, authorizer, utilities, config_dir,
+                         encoding='utf-8'):
   rootpath = canonicalize_rootpath(rootpath)
   if re.search(_re_url, rootpath):
-    import svn_ra
+    from . import svn_ra
     return svn_ra.RemoteSubversionRepository(name, rootpath, authorizer,
-                                             utilities, config_dir)
+                                             utilities, config_dir, encoding)
   else:
-    import svn_repos
+    from . import svn_repos
     return svn_repos.LocalSubversionRepository(name, rootpath, authorizer,
-                                               utilities, config_dir)
+                                               utilities, config_dir, encoding)

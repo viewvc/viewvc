@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*-python-*-
 #
 # Copyright (C) 1999-2020 The ViewCVS Group. All Rights Reserved.
@@ -47,9 +47,12 @@ else:
     import subprocess
     subprocess.has_timeout = False
 
-if sys.version_info[0] >= 3:
-    def raw_input(prompt=''):
-        return input(prompt)
+## ------------------------------------------------------------------------
+## Initial database drop (when --force) is used.
+##
+DATABASE_DROP="""\
+DROP DATABASE IF EXISTS <dbname>;
+"""
 
 ## ------------------------------------------------------------------------
 ## Initial database drop (when --force) is used.
@@ -362,15 +365,15 @@ if __name__ == "__main__":
 
     # Prompt for information not provided via command-line options.
     if hostname is None:
-      hostname = raw_input("MySQL Hostname (leave blank for default): ")
+      hostname = input("MySQL Hostname (leave blank for default): ")
     if port is None:
-      port = raw_input("MySQL Port (leave blank for default): ")
+      port = input("MySQL Port (leave blank for default): ")
     if username is None:
-      username = raw_input("MySQL User: ")
+      username = input("MySQL User: ")
     if password is None:
-      password = raw_input("MySQL Password: ")
+      password = input("MySQL Password: ")
     if dbname is None:
-      dbname = raw_input("ViewVC Database Name [default: ViewVC]: ") or "ViewVC"
+      dbname = input("ViewVC Database Name [default: ViewVC]: ") or "ViewVC"
 
     # Calculate command arguments.
     cmd_args = [("--user=%s" % username), ("--password=%s" % password)]

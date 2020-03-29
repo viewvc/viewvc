@@ -14,39 +14,39 @@
 
 import time
 
-from __init__ import parse
-import common
+from .__init__ import parse
+from . import common
 
 
 class DebugSink(common.Sink):
   def set_head_revision(self, revision):
-    print 'head:', revision
+    print('head:', revision)
 
   def set_principal_branch(self, branch_name):
-    print 'branch:', branch_name
+    print('branch:', branch_name)
 
   def define_tag(self, name, revision):
-    print 'tag:', name, '=', revision
+    print('tag:', name, '=', revision)
 
   def set_comment(self, comment):
-    print 'comment:', comment
+    print('comment:', comment)
 
   def set_description(self, description):
-    print 'description:', description
+    print('description:', description)
 
   def define_revision(self, revision, timestamp, author, state,
                       branches, next):
-    print 'revision:', revision
-    print '    timestamp:', timestamp
-    print '    author:', author
-    print '    state:', state
-    print '    branches:', branches
-    print '    next:', next
+    print('revision:', revision)
+    print('    timestamp:', timestamp)
+    print('    author:', author)
+    print('    state:', state)
+    print('    branches:', branches)
+    print('    next:', next)
 
   def set_revision_info(self, revision, log, text):
-    print 'revision:', revision
-    print '    log:', log
-    print '    text:', text[:100], '...'
+    print('revision:', revision)
+    print('    log:', log)
+    print('    text:', text[:100], '...')
 
 
 class DumpSink(common.Sink):
@@ -62,32 +62,32 @@ class DumpSink(common.Sink):
     import sha
 
   def set_head_revision(self, revision):
-    print revision
+    print(revision)
 
   def set_principal_branch(self, branch_name):
-    print branch_name
+    print(branch_name)
 
   def define_tag(self, name, revision):
-    print name, revision
+    print(name, revision)
 
   def set_comment(self, comment):
-    print comment
+    print(comment)
 
   def set_description(self, description):
-    print description
+    print(description)
 
   def define_revision(self, revision, timestamp, author, state,
                       branches, next):
-    print revision, timestamp, author, state, branches, next
+    print(revision, timestamp, author, state, branches, next)
 
   def set_revision_info(self, revision, log, text):
-    print revision, sha.new(log).hexdigest(), sha.new(text).hexdigest()
+    print(revision, sha.new(log).hexdigest(), sha.new(text).hexdigest())
 
   def tree_completed(self):
-    print 'tree_completed'
+    print('tree_completed')
 
   def parse_completed(self):
-    print 'parse_completed'
+    print('parse_completed')
 
 
 def dump_file(fname):
@@ -99,15 +99,15 @@ def time_file(fname):
   t = time.time()
   parse(f, s)
   t = time.time() - t
-  print t
+  print(t)
 
 def _usage():
-  print 'This is normally a module for importing, but it has a couple'
-  print 'features for testing as an executable script.'
-  print 'USAGE: %s COMMAND filename,v' % sys.argv[0]
-  print '  where COMMAND is one of:'
-  print '    dump: filename is "dumped" to stdout'
-  print '    time: filename is parsed with the time written to stdout'
+  print('This is normally a module for importing, but it has a couple')
+  print('features for testing as an executable script.')
+  print('USAGE: %s COMMAND filename,v' % sys.argv[0])
+  print('  where COMMAND is one of:')
+  print('    dump: filename is "dumped" to stdout')
+  print('    time: filename is parsed with the time written to stdout')
   sys.exit(1)
 
 if __name__ == '__main__':

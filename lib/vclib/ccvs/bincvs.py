@@ -21,23 +21,32 @@ import stat
 import re
 import time
 import calendar
-
-# ViewVC libs
-import popen
+import subprocess
 import vclib.ccvs
+import functools
+
+# Python 3: workaround for cmp()
+def cmp(a, b):
+  return (a > b) - (a < b)
+
+def enc_decode(s, encoding='utf-8'):
+  if s is None:
+    return None
+  return s.decode(encoding, 'surrogateescape')
 
 def _path_join(path_parts):
   return '/'.join(path_parts)
-  
+
 class BaseCVSRepository(vclib.Repository):
-  def __init__(self, name, rootpath, authorizer, utilities):
+  def __init__(self, name, rootpath, authorizer, utilities, encoding):
     if not os.path.isdir(rootpath):
-      raise vclib.ReposNotFound(name) 
-   
+      raise vclib.ReposNotFound(name)
+
     self.name = name
     self.rootpath = rootpath
     self.auth = authorizer
     self.utilities = utilities
+    self.encoding = encoding
 
     # See if this repository is even viewable, authz-wise.
     if not vclib.check_root_access(self):
@@ -59,7 +68,7 @@ class BaseCVSRepository(vclib.Repository):
 
   def authorizer(self):
     return self.auth
-  
+
   def itemtype(self, path_parts, rev):
     basepath = self._getpath(path_parts)
     kind = None
@@ -80,12 +89,12 @@ class BaseCVSRepository(vclib.Repository):
   def itemprops(self, path_parts, rev):
     self.itemtype(path_parts, rev)  # does auth-check
     return {}  # CVS doesn't support properties
-  
+
   def listdir(self, path_parts, rev, options):
     if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
       raise vclib.Error("Path '%s' is not a directory."
                         % (_path_join(path_parts)))
-    
+
     # Only RCS files (*,v) and subdirs are returned.
     data = [ ]
     full_name = self._getpath(path_parts)
@@ -121,9 +130,9 @@ class BaseCVSRepository(vclib.Repository):
           data.append(CVSDirEntry(name, kind, errors, 1))
 
     return data
-    
+
   def _getpath(self, path_parts):
-    return apply(os.path.join, (self.rootpath,) + tuple(path_parts))
+    return os.path.join(*((self.rootpath,) + tuple(path_parts)))
 
   def _atticpath(self, path_parts):
     return path_parts[:-1] + ['Attic'] + path_parts[-1:]
@@ -151,7 +160,7 @@ class BaseCVSRepository(vclib.Repository):
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
     rcsfile = self.rcsfile(path_parts, 1)
     return os.access(rcsfile, os.X_OK)
-  
+
   def filesize(self, path_parts, rev):
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
@@ -162,7 +171,7 @@ class BinCVSRepository(BaseCVSRepository):
   def _get_tip_revision(self, rcs_file, rev=None):
     """Get the (basically) youngest revision (filtered by REV)."""
     args = rcs_file,
-    fp = self.rcs_popen('rlog', args, 'rt', 0)
+    fp = self.rcs_popen('rlog', args, True, False)
     filename, default_branch, tags, lockinfo, msg, eof = _parse_log_header(fp)
     revs = []
     while not eof:
@@ -195,9 +204,9 @@ class BinCVSRepository(BaseCVSRepository):
     full_name = self.rcsfile(path_parts, root=1, v=0)
     used_rlog = 0
     tip_rev = None  # used only if we have to fallback to using rlog
-    fp = self.rcs_popen('co', (kv_flag, rev_flag, full_name), 'rb') 
+    fp = self.rcs_popen('co', (kv_flag, rev_flag, full_name)) 
     try:
-      filename, revision = _parse_co_header(fp)
+      filename, revision = _parse_co_header(fp, self.encoding)
     except COMissingRevision:
       # We got a "revision X.Y.Z absent" error from co.  This could be
       # because we were asked to find a tip of a branch, which co
@@ -209,14 +218,14 @@ class BinCVSRepository(BaseCVSRepository):
         used_rlog = 1
       if not tip_rev:
         raise vclib.Error("Unable to find valid revision")
-      fp = self.rcs_popen('co', ('-p' + tip_rev.string, full_name), 'rb') 
-      filename, revision = _parse_co_header(fp)
-      
+      fp = self.rcs_popen('co', ('-p' + tip_rev.string, full_name))
+      filename, revision = _parse_co_header(fp, self.encodig)
+
     if filename is None:
       # CVSNT's co exits without any output if a dead revision is requested.
       # Bug at http://www.cvsnt.org/cgi-bin/bugzilla/show_bug.cgi?id=190
       # As a workaround, we invoke rlog to find the first non-dead revision
-      # that precedes it and check out that revision instead.  Of course, 
+      # that precedes it and check out that revision instead.  Of course,
       # if we've already invoked rlog above, we just reuse its output.
       if not used_rlog:
         tip_rev = self._get_tip_revision(full_name + ',v', rev)
@@ -224,9 +233,8 @@ class BinCVSRepository(BaseCVSRepository):
       if not (tip_rev and tip_rev.undead):
         raise vclib.Error(
           'Could not find non-dead revision preceding "%s"' % rev)
-      fp = self.rcs_popen('co', ('-p' + tip_rev.undead.string,
-                                 full_name), 'rb') 
-      filename, revision = _parse_co_header(fp)
+      fp = self.rcs_popen('co', ('-p' + tip_rev.undead.string, full_name)) 
+      filename, revision = _parse_co_header(fp, self.encoding)
 
     if filename is None:
       raise vclib.Error('Missing output from co (filename = "%s")' % full_name)
@@ -295,7 +303,7 @@ class BinCVSRepository(BaseCVSRepository):
 
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
-    
+
     # Invoke rlog
     rcsfile = self.rcsfile(path_parts, 1)
     if rev and options.get('cvs_pass_rev', 0):
@@ -303,7 +311,7 @@ class BinCVSRepository(BaseCVSRepository):
     else:
       args = rcsfile,
 
-    fp = self.rcs_popen('rlog', args, 'rt', 0)
+    fp = self.rcs_popen('rlog', args, True, False)
     filename, default_branch, tags, lockinfo, msg, eof = _parse_log_header(fp)
 
     # Retrieve revision objects
@@ -317,9 +325,9 @@ class BinCVSRepository(BaseCVSRepository):
 
     options['cvs_tags'] = tags
     if sortby == vclib.SORTBY_DATE:
-      filtered_revs.sort(_logsort_date_cmp)
+      filtered_revs.sort(key=functools.cmp_to_key(_logsort_date_cmp))
     elif sortby == vclib.SORTBY_REV:
-      filtered_revs.sort(_logsort_rev_cmp)
+      filtered_revs.sort(key=functools.cmp_to_key(_logsort_rev_cmp))
 
     if len(filtered_revs) < first:
       return []
@@ -327,7 +335,9 @@ class BinCVSRepository(BaseCVSRepository):
       return filtered_revs[first:first+limit]
     return filtered_revs
 
-  def rcs_popen(self, rcs_cmd, rcs_args, mode, capture_err=1):
+  def rcs_popen(self, rcs_cmd, rcs_args, is_text=False, capture_err=True):
+    # as we use this function as "r" mode only, we don't care stdin
+    # to communicate child process.
     if self.utilities.cvsnt:
       cmd = self.utilities.cvsnt
       args = ['rcsfile', rcs_cmd]
@@ -335,19 +345,32 @@ class BinCVSRepository(BaseCVSRepository):
     else:
       cmd = os.path.join(self.utilities.rcs_dir, rcs_cmd)
       args = rcs_args
-    return popen.popen(cmd, args, mode, capture_err)
+    stderr = subprocess.STDOUT if capture_err else subprocess.DEVNULL
+    if is_text:
+      proc = subprocess.Popen([cmd] + list(args), bufsize = -1,
+                              stdout=subprocess.PIPE,
+                              stderr=stderr,
+                              encoding=self.encoding,
+                              errors='surrogateescape',
+                              close_fds=(sys.platform != "win32"))
+    else:
+      proc = subprocess.Popen([cmd] + list(args), bufsize = -1,
+                              stdout=subprocess.PIPE,
+                              stderr=stderr,
+                              close_fds=(sys.platform != "win32"))
+    return proc.stdout
 
   def annotate(self, path_parts, rev=None, include_text=False):
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
-                        
+
     from vclib.ccvs import blame
     source = blame.BlameSource(self.rcsfile(path_parts, 1), rev, include_text)
     return source, source.revision
 
   def revinfo(self, rev):
     raise vclib.UnsupportedFeature
-  
+
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
     """see vclib.Repository.rawdiff docstring
 
@@ -359,17 +382,17 @@ class BinCVSRepository(BaseCVSRepository):
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts1)))
     if self.itemtype(path_parts2, rev2) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts2)))
-    
+
     args = vclib._diff_args(type, options)
     if options.get('ignore_keyword_subst', 0):
       args.append('-kk')
 
     rcsfile = self.rcsfile(path_parts1, 1)
     if path_parts1 != path_parts2:
-      raise NotImplementedError, "cannot diff across paths in cvs"
+      raise NotImplementedError("cannot diff across paths in cvs")
     args.extend(['-r' + rev1, '-r' + rev2, rcsfile])
     
-    fp = self.rcs_popen('rcsdiff', args, 'rt')
+    fp = self.rcs_popen('rcsdiff', args, True)
 
     # Eat up the non-GNU-diff-y headers.
     while 1:
@@ -377,7 +400,7 @@ class BinCVSRepository(BaseCVSRepository):
       if not line or line[0:5] == 'diff ':
         break
     return fp
-  
+
 
 class CVSDirEntry(vclib.DirEntry):
   def __init__(self, name, kind, errors, in_attic, absent=0):
@@ -439,9 +462,9 @@ def _match_revs_tags(revlist, taglist):
       example: if revision is 1.2.3.4, parent is 1.2
 
     "undead"
-      If the revision is dead, then this is a reference to the first 
+      If the revision is dead, then this is a reference to the first
       previous revision which isn't dead, otherwise it's a reference
-      to itself. If all the previous revisions are dead it's None. 
+      to itself. If all the previous revisions are dead it's None.
 
     "branch_number"
       tuple representing branch number or empty tuple if on trunk
@@ -487,7 +510,7 @@ def _match_revs_tags(revlist, taglist):
 
   # loop through revisions, setting properties and storing state in "history"
   for rev in revlist:
-    depth = len(rev.number) / 2 - 1
+    depth = len(rev.number) // 2 - 1
 
     # set "prev" and "next" properties
     rev.prev = rev.next = None
@@ -574,7 +597,7 @@ def _revision_tuple(revision_string):
 def _tag_tuple(revision_string):
   """convert a revision number or branch number into a tuple of integers"""
   if revision_string:
-    t = map(int, revision_string.split('.'))
+    t = [int(x) for x in revision_string.split('.')]
     l = len(t)
     if l == 1:
       return ()
@@ -603,19 +626,21 @@ class COMissingRevision(vclib.Error):
   pass
 
 ### suck up other warnings in _re_co_warning?
-_re_co_filename = re.compile(r'^(.*),v\s+-->\s+(?:(?:standard output)|(?:stdout))\s*\n?$')
-_re_co_warning = re.compile(r'^.*co: .*,v: warning: Unknown phrases like .*\n$')
-_re_co_missing_rev = re.compile(r'^.*co: .*,v: revision.*absent\n$')
-_re_co_side_branches = re.compile(r'^.*co: .*,v: no side branches present for [\d\.]+\n$')
-_re_co_revision = re.compile(r'^revision\s+([\d\.]+)\s*\n$')
+_re_co_filename = re.compile(br'^(.*),v\s+-->\s+(?:(?:standard output)|(?:stdout))\s*\n?$')
+_re_co_warning = re.compile(br'^.*co: .*,v: warning: Unknown phrases like .*\n$')
+_re_co_missing_rev = re.compile(br'^.*co: .*,v: revision.*absent\n$')
+_re_co_side_branches = re.compile(br'^.*co: .*,v: no side branches present for [\d\.]+\n$')
+_re_co_revision = re.compile(br'^revision\s+([\d\.]+)\s*\n$')
 
-def _parse_co_header(fp):
+def _parse_co_header(fp, encoding='utf-8'):
   """Parse RCS co header.
 
   fp is a file (pipe) opened for reading the co standard error stream.
 
   Returns: (filename, revision) or (None, None) if output is empty
   """
+
+  # Python 3: in this context, fp is raw mode.
 
   # header from co:
   #
@@ -634,7 +659,7 @@ def _parse_co_header(fp):
     return None, None
   match = _re_co_filename.match(line)
   if not match:
-    raise COMalformedOutput, "Unable to find filename in co output stream"
+    raise COMalformedOutput("Unable to find filename in co output stream")
   filename = match.group(1)
 
   # look through subsequent lines for a revision.  we might encounter
@@ -646,15 +671,15 @@ def _parse_co_header(fp):
     # look for a revision.
     match = _re_co_revision.match(line)
     if match:
-      return filename, match.group(1)
+      return enc_decode(filename, encoding), enc_decode(match.group(1), encoding)
     elif _re_co_missing_rev.match(line) or _re_co_side_branches.match(line):
-      raise COMissingRevision, "Got missing revision error from co output stream"
+      raise COMissingRevision("Got missing revision error from co output stream")
     elif _re_co_warning.match(line):
       pass
     else:
       break
-    
-  raise COMalformedOutput, "Unable to find revision in co output stream"
+
+  raise COMalformedOutput("Unable to find revision in co output stream")
 
 # if your rlog doesn't use 77 '=' characters, then this must change
 LOG_END_MARKER = '=' * 77 + '\n'
@@ -674,7 +699,7 @@ _EOF_ERROR = 'error message found'      # rlog issued an error
 #   ^rlog\: (.*)(?:\:\d+)?\: (.*)$
 #
 # But for some reason the windows version of rlog omits the "rlog: " prefix
-# for the first error message when the standard error stream has been 
+# for the first error message when the standard error stream has been
 # redirected to a file or pipe. (the prefix is present in subsequent errors
 # and when rlog is run from the console). So the expression below is more
 # complicated
@@ -703,7 +728,7 @@ def _parse_log_header(fp):
   Returns: filename, default branch, tag dictionary, lock dictionary,
   rlog error message, and eof flag
   """
-  
+
   filename = head = branch = msg = ""
   taginfo = { }   # tag name => number
   lockinfo = { }  # revision => locker
@@ -719,7 +744,7 @@ def _parse_log_header(fp):
 
     if state == 1:
       if line[0] == '\t':
-        [ tag, rev ] = map(lambda x: x.strip(), line.split(':'))
+        [ tag, rev ] = [x.strip() for x in line.split(':')]
         taginfo[tag] = rev
       else:
         # oops. this line isn't tag info. stop parsing tags.
@@ -727,12 +752,12 @@ def _parse_log_header(fp):
 
     if state == 2:
       if line[0] == '\t':
-        [ locker, rev ] = map(lambda x: x.strip(), line.split(':'))
+        [ locker, rev ] = [x.strip() for x in line.split(':')]
         lockinfo[rev] = locker
       else:
         # oops. this line isn't lock info. stop parsing tags.
         state = 0
-      
+
     if state == 0:
       if line[:9] == 'RCS file:':
         filename = line[10:-1]
@@ -846,7 +871,7 @@ def _parse_log_entry(fp):
     if (tm[0] - 1900) < 70:
       tm[0] = tm[0] + 100
     if tm[0] < EPOCH:
-      raise ValueError, 'invalid year'
+      raise ValueError('invalid year')
   date = calendar.timegm(tm)
 
   return Revision(rev, date,
@@ -890,7 +915,7 @@ def _file_log(revs, taginfo, lockinfo, cur_branch, filter):
   # Create tag objects
   for name, num in taginfo.items():
     taginfo[name] = Tag(name, num)
-  tags = taginfo.values()
+  tags = list(taginfo.values())
 
   # Set view_tag to a Tag object in order to filter results. We can filter by
   # revision number or branch number
@@ -900,7 +925,7 @@ def _file_log(revs, taginfo, lockinfo, cur_branch, filter):
     except ValueError:
       view_tag = None
     else:
-      tags.append(view_tag)  
+      tags.append(view_tag)
 
   # Match up tags and revisions
   _match_revs_tags(revs, tags)
@@ -908,13 +933,13 @@ def _file_log(revs, taginfo, lockinfo, cur_branch, filter):
   # Match up lockinfo and revision
   for rev in revs:
     rev.lockinfo = lockinfo.get(rev.string)
-      
+
   # Add artificial ViewVC tag HEAD, which acts like a non-branch tag pointing
   # at the latest revision on the MAIN branch. The HEAD revision doesn't have
   # anything to do with the "head" revision number specified in the RCS file
   # and in rlog output. HEAD refers to the revision that the CVS and RCS co
   # commands will check out by default, whereas the "head" field just refers
-  # to the highest revision on the trunk.  
+  # to the highest revision on the trunk.
   taginfo['HEAD'] = _add_tag('HEAD', taginfo['MAIN'].co_rev)
 
   # Determine what revisions to return
@@ -952,7 +977,7 @@ def _file_log(revs, taginfo, lockinfo, cur_branch, filter):
       _remove_tag(view_tag)
   else:
     filtered_revs = revs
-  
+
   return filtered_revs
 
 def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
@@ -991,8 +1016,8 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
       #       we'll search the output for the appropriate revision
       # fetch the latest revision on the default branch
       args.append('-r')
-    args.extend(map(lambda x: x.path, chunk))
-    rlog = repos.rcs_popen('rlog', args, 'rt')
+    args.extend([x.path for x in chunk])
+    rlog = repos.rcs_popen('rlog', args, True)
 
     # consume each file found in the resulting log
     chunk_idx = 0
@@ -1002,7 +1027,7 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
         = _parse_log_header(rlog)
 
       if eof == _EOF_LOG:
-        # the rlog output ended early. this can happen on errors that rlog 
+        # the rlog output ended early. this can happen on errors that rlog
         # thinks are so serious that it stops parsing the current file and
         # refuses to parse any of the files that come after it. one of the
         # errors that triggers this obnoxious behavior looks like:
@@ -1041,7 +1066,7 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
       tag = None
       if view_tag == 'MAIN' or view_tag == 'HEAD':
         tag = Tag(None, default_branch)
-      elif taginfo.has_key(view_tag):
+      elif view_tag in taginfo:
         tag = Tag(None, taginfo[view_tag])
       elif view_tag and (eof != _EOF_FILE):
         # the tag wasn't found, so skip this file (unless we already
@@ -1050,8 +1075,8 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
         eof = _EOF_FILE
 
       # we don't care about the specific values -- just the keys and whether
-      # the values point to branches or revisions. this the fastest way to 
-      # merge the set of keys and keep values that allow us to make the 
+      # the values point to branches or revisions. this the fastest way to
+      # merge the set of keys and keep values that allow us to make the
       # distinction between branch tags and normal tags
       alltags.update(taginfo)
 
@@ -1096,7 +1121,7 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
         file.dead = 0
         #file.errors.append("No revisions exist on %s" % (view_tag or "MAIN"))
         file.absent = 1
-        
+
       # done with this file now, skip the rest of this file's revisions
       if not eof:
         _skip_file(rlog)
@@ -1150,7 +1175,7 @@ else:
   def _check_path(pathname):
     try:
       info = os.stat(pathname)
-    except os.error, e:
+    except os.error as e:
       return None, ["stat error: %s" % e]
 
     kind = None
@@ -1209,7 +1234,7 @@ def _newest_file(dirpath):
   newest_time = 0
 
   ### FIXME:  This sucker is leaking unauthorized paths! ###
-  
+
   for subfile in os.listdir(dirpath):
     ### filter CVS locks? stale NFS handles?
     if subfile[-2:] != ',v':
