@@ -401,7 +401,7 @@ class _diff_fp:
     args.extend([temp1, temp2])
     self.proc = subprocess.Popen(args, stdout=subprocess.PIPE, bufsize=-1,
                                  close_fds=(sys.platform != "win32"))
-    if (    not isinstance(self.proc.stdout, io.TextIOBase)
+    if (not isinstance(self.proc.stdout, io.TextIOBase)
         and isinstance(self.proc.stdout, io.BufferedIOBase)):
         self.fp = io.TextIOWrapper(self.proc.stdout,
                                    encoding='utf-8', errors='surrogateescape')

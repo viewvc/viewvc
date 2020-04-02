@@ -113,6 +113,15 @@ class File:
     self.softspace = 0
     self.server = server
 
+  def readable(self):
+    return False
+
+  def writable(self):
+    return True
+
+  def seekable(self):
+    return False
+
   def write(self, s):
     self.server.write(s)
 
