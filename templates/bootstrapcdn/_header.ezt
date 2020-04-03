@@ -54,7 +54,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <a class="navbar-brand" href="[home_href]">
         <img
-          src="[docroot]/images/viewvc-logo-trans.png"
+          src="[docroot]/viewvc-logo-trans.png"
           alt="ViewVC logotype"
           />
       </a>

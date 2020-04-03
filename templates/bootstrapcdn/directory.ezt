@@ -2,7 +2,7 @@
   [define page_title]Index of:[end]
   [define help_href][docroot]/help_[if-any where]dir[else]root[end]view.html[end]
 [# end]
-[include "include/header.ezt" "directory"]
+[include "_header.ezt" "directory"]
 
 [if-any where][else]
   <!-- you may insert repository access instructions here -->
@@ -13,7 +13,7 @@
 
 <div id="vc_togglables">
 <div class="inline">
-[include "include/pathrev_form.ezt"]
+[include "_pathrev_form.ezt"]
 </div>
 [is roottype "svn"]
 <div class="inline lpad">
@@ -28,18 +28,14 @@
   <th style="width: 200px" class="vc_header[is sortby "file"]_sort[end]">
     <a href="[sortby_file_href]#dirlist">File
     [is sortby "file"]
-      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
-        width="13" height="13"
-        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
+    <i class="fa fa-sort-[is sortdir "up"]up[else]down[end]"></i>
     [end]
     </a>
   </th>
   <th class="vc_header[is sortby "rev"]_sort[end]">
     <a href="[sortby_rev_href]#dirlist">Last Change
     [is sortby "rev"]
-      <img class="vc_sortarrow" alt="[is sortdir "down"](rev)[end]"
-        width="13" height="13"
-        src="[docroot]/images/[is sortdir "up"]up[else]down[end].png" />
+    <i class="fa fa-sort-[is sortdir "up"]up[else]down[end]"></i>
     [end]
     </a>
   </th>
@@ -51,8 +47,8 @@
   <tr class="vc_row_odd">
     <td colspan="2">
       <a href="[up_href]">
-      <img src="[docroot]/images/back_small.png" alt="" class="vc_icon"
-      />&nbsp;../</a>
+      <i class="fa fa-fw fa-folder-open"></i>
+      &nbsp;../</a>
     </td>
   </tr>
  [end]
@@ -63,8 +59,9 @@
   <tr class="vc_row_[if-index entries even]even[else]odd[end]">
     <td style="width: 200px" [if-any click_href]onclick="jumpTo('[click_href]')"[end]>
     [if-any click_href]<a name="[entries.anchor]" href="[click_href]" title="[is entries.pathtype "dir"]View Directory Contents[else][if-any entries.prefer_markup]View[else]Download[end] File Contents[end]">[end]
-       <img src="[docroot]/images/[icon_file]" alt="" class="vc_icon" />
-       [entries.name][is entries.pathtype "dir"]/[end][if-any click_href]</a>[end][if-any entries.lockinfo]<img src="[docroot]/images/lock-icon.gif" alt="locked" class="vc_overlay" title="Locked by [entries.lockinfo]" />[end]
+       <i class="fa fa-fw fa-[is entries.pathtype "dir"]folder[else][if-any entries.is_viewable_image]file-image-o[else][if-any entries.is_binary]file-o[else]file-text-o[end][end][end]"></i>
+       [entries.name][is entries.pathtype "dir"]/[end][if-any click_href]</a>[end]
+       [if-any entries.lockinfo]<i class="fa fa-lock" title="Locked by [entries.lockinfo]" />[end]
        [is entries.state "dead"](dead)[end]
     </td>
 
@@ -138,9 +135,9 @@
 </div>
 </div>
 
-[include "include/props.ezt"]
+[include "_props.ezt"]
 
 <!-- ************************************************************** -->
 </div>
 
-[include "include/footer.ezt"]
+[include "_footer.ezt"]
