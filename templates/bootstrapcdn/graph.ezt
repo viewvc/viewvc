@@ -1,0 +1,89 @@
+[# setup page definitions]
+  [define page_title]Graph of:[end]
+  [define help_href][docroot]/help_rootview.html[end]
+[# end]
+
+[include "include/header.ezt" "graph"]
+
+<div style="text-align:center;">
+[imagemap]
+<img usemap="#MyMapName"
+  src="[imagesrc]" 
+  alt="Revisions of [where]" />
+</div>
+
+[define graph_disp_opts][end]
+[if-any opt_gflip][define graph_disp_opts]1[end][end]
+[if-any opt_gbbox][define graph_disp_opts]1[end][end]
+[if-any opt_gleft][define graph_disp_opts]1[end][end]
+
+[define graph_user_opts][end]
+[if-any graph_disp_opts][define graph_user_opts]1[end][end]
+[if-any opt_gshow][define graph_user_opts]1[end][end]
+[if-any opt_gmaxtag][define graph_user_opts]1[end][end]
+
+[if-any graph_user_opts]
+
+<form method="get" action="[graph_action]">
+<div class="vc_graph_form">
+[for graph_hidden_values]<input type="hidden" name="[graph_hidden_values.name]" value="[graph_hidden_values.value]"/>[end]
+
+[is graph_disp_opts "1"]
+<p><strong>Graph display options:</strong></p>
+<table class="auto">
+[if-any opt_gflip]
+  <tr>
+  <td><input id="gflip" type="checkbox" name="gflip" value="1"[if-any gflip] checked="checked"[end] /></td>
+  <td style="text-align: left;"><label for="gflip">Flip the graph</label></td>
+  </tr>
+[end]
+[if-any opt_gbbox]
+  <tr>
+  <td><input id="gbbox" type="checkbox" name="gbbox" value="1"[if-any gbbox] checked="checked"[end] /></td>
+  <td style="text-align: left;"><label for="gbbox">Add a branch box at the tip of each branch</label></td>
+  </tr>
+[end]
+[if-any opt_gleft]
+  <tr>
+  <td><input id="gleft" type="checkbox" name="gleft" value="1"[if-any gleft] checked="checked"[end] /></td>
+  <td style="text-align: left;"><label for="gleft">Draw tree left-to-right (instead of top-to-bottom)</label></td>
+  </tr>
+[end]
+</table>
+[end]
+
+[if-any opt_gshow]
+<p><strong>Revision display options:</strong></p>
+<table class="auto">
+  <tr>
+  <td><input id="gshow_all" type="radio" name="gshow" value="all"[is gshow "all"] checked="checked"[end] /></td>
+  <td style="text-align: left;"><label for="gshow_all">Show all revisions</label></td>
+  </tr>
+  <tr>
+  <td><input id="gshow_inittagged" type="radio" name="gshow" value="inittagged"[is gshow "inittagged"] checked="checked"[end] /></td>
+  <td style="text-align: left;"><label for="gshow_inittagged">Show only tagged and initial untagged revisions</label></td>
+  </tr>
+  <tr>
+  <td><input id="gshow_tagged" type="radio" name="gshow" value="tagged"[is gshow "tagged"] checked="checked"[end] /></td>
+  <td style="text-align: left;"><label for="gshow_tagged">Show only tagged revisions</label></td>
+  </tr>
+</table>
+[end]
+
+[if-any opt_gmaxtag]
+<p><strong>Tag limitation:</strong></p>
+<table class="auto">
+  <tr>
+  <td><input id="gmaxtag" type="text" size="3" name="gmaxtag" value="[gmaxtag]" /></td>
+  <td style="text-align: left;"><label for="gmaxtag">Maximum number of tags to display (0=all)</label></td>
+  </tr>
+</table>
+[end]
+
+<input type="submit" value="Refresh" />
+
+</div>
+</form>
+[end]
+
+[include "include/footer.ezt"]
