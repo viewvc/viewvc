@@ -1,0 +1,168 @@
+[# ------------------------------------------------------------------------- ]
+[# CUSTOMIZE ME: To avoid displaying "binary garbage" -- the contents of     ]
+[# files with non-human-readable file formats -- change the value of the     ]
+[# hide_binary_garbage variable below to 1.                                  ]
+[# ------------------------------------------------------------------------- ]
+
+[define hide_binary_garbage]0[end]
+
+[# ------------------------------------------------------------------------- ]
+
+[# setup page definitions]
+  [is annotation "annotated"]
+    [define page_title]Annotation of:[end]
+  [else]
+    [define page_title]Contents of:[end]
+  [end]
+  [define help_href][docroot]/help_rootview.html[end]
+[# end]
+[include "include/header.ezt" "annotate"]
+
+<table class="auto">
+<tr>
+<td>Revision:</td>
+<td><strong>[if-any revision_href]<a href="[revision_href]">[rev]</a>[else][rev][end]</strong> [if-any vendor_branch] <em>(vendor branch)</em>[end]</td> 
+</tr>
+<tr>
+<tr>
+<td>Committed:</td>
+<td>[if-any date]<em>[date]</em> [end][if-any ago]([ago] ago) [end][if-any author]by <em>[author]</em>[end]</td>
+</tr>
+[if-any mime_type]
+<tr>
+<td>Content type:</td>
+<td>[mime_type]</td>
+</tr>
+[end]
+[if-any orig_path]
+<tr>
+<td>Original Path:</td>
+<td><strong><a href="[orig_href]"><em>[orig_path]</em></a></strong></td>
+</tr>
+[end]
+[if-any branches]
+<tr>
+<td>Branch:</td>
+<td><strong>[branches]</strong></td>
+</tr>
+[end]
+[if-any tags]
+<tr>
+<td>CVS Tags:</td>
+<td><strong>[tags]</strong></td>
+</tr>
+[end]
+[if-any branch_points]
+<tr>
+<td>Branch point for:</td>
+<td><strong>[branch_points]</strong></td>
+</tr>
+[end]
+[is roottype "cvs"][if-any changed]
+<tr>
+<td>Changes since <strong>[prev]</strong>:</td>
+<td><strong>[changed] lines</strong></td>
+</tr>
+[end][end]
+[is roottype "svn"][if-any size]
+<tr>
+<td>File size:</td>
+<td>[size] byte(s)</td>
+</tr>
+[end][end]
+[if-any lockinfo]
+<td>Lock status:</td>
+<td>[lockinfo]</td>
+[end]
+[is state "dead"]
+<tr>
+<td>State:</td>
+<td><strong><em>FILE REMOVED</em></strong></td>
+</tr>
+[end]
+[if-any annotation]
+[is annotation "binary"]
+<tr>
+<td colspan="2"><strong>Unable to calculate annotation data on binary file contents.</strong></td>
+</tr>
+[end]
+[is annotation "error"]
+<tr>
+<td colspan="2"><strong>Error occurred while calculating annotation data.</strong></td>
+</tr>
+[end]
+[end]
+[if-any log]
+<tr>
+<td>Log Message:</td>
+<td><pre class="vc_log">[log]</pre></td>
+</tr>
+[end]
+</table>
+
+<div id="vc_main_body">
+<!-- ************************************************************** -->
+
+<h2>File Contents</h2>
+
+[if-any prefer_markup][define hide_binary_garbage]0[end][end]
+[if-any image_src_href][define hide_binary_garbage]0[end][end]
+
+[is hide_binary_garbage "1"]
+<p class="vc_notice">This file's contents are not viewable.
+   [if-any download_href]Please <a href="[download_href]">download</a>
+   this version of the file in order to view it.[end]</p>
+[else]
+
+[define last_rev]0[end]
+[define annotation_group]odd[end]
+
+[if-any lines]
+<div id="vc_file">
+<table cellspacing="0" cellpadding="0">
+<tr>
+<th class="vc_header">#</th>
+[is annotation "annotated"]
+<th class="vc_header">User</th>
+<th class="vc_header">Rev</th>
+[end]
+<th class="vc_header">Content</th>
+</tr>
+[for lines]
+  [is lines.rev last_rev]
+  [else]
+    [is annotation_group "even"]
+      [define annotation_group]odd[end]
+    [else]
+      [define annotation_group]even[end]
+    [end]
+  [end]
+
+  <tr class="vc_row_[if-index lines even]even[else]odd[end] vc_annotation_group_[annotation_group] [is lines.rev rev]vc_annotation_group_thisrev[end]" id="l[lines.line_number]">
+    <td class="vc_file_line_number"><a href="#l[lines.line_number]">[lines.line_number]</a></td>
+[is annotation "annotated"]
+    <td class="vc_file_line_author">[is lines.rev last_rev]&nbsp;[else][lines.author][end]</td>
+    <td class="vc_file_line_rev">[is lines.rev last_rev]&nbsp;[else][if-any lines.diff_href]<a href="[lines.diff_href]">[end][lines.rev][if-any lines.diff_href]</a>[end][end]</td>
+[end]
+    <td class="vc_file_line_text">[lines.text]</td>
+  </tr>
+  [define last_rev][lines.rev][end]
+[end]
+</table>
+</div>
+
+[else]
+[if-any image_src_href]
+<div id="vc_file_image">
+<img src="[image_src_href]" alt="" />
+</div>
+[end]
+[end]
+[end]
+
+[include "include/props.ezt"]
+
+<!-- ************************************************************** -->
+</div>
+
+[include "include/footer.ezt"]

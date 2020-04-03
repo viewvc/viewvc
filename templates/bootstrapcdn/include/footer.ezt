@@ -1,0 +1,13 @@
+  </div> <!-- vc_view_main -->
+  <p id="vc_footer">
+[if-any cfg.general.address]
+    Administered by <address><a href="mailto:[cfg.general.address]"
+      >[cfg.general.address]</a></address> |
+[end]
+    Powered by <a href="http://viewvc.org/">ViewVC [vsn]</a>
+[if-any rss_href]
+    <a href="[rss_href]" title="RSS 2.0 feed"><i class="fa fa-rss"></i></a>
+[end]
+  </div> <!-- vc_footer -->
+</body>
+</html>

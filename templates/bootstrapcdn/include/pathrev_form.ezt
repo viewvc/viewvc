@@ -1,0 +1,47 @@
+<form class="inline" method="get" action="[pathrev_action]">
+<div class="inline">
+[for pathrev_hidden_values]<input type="hidden" name="[pathrev_hidden_values.name]" value="[pathrev_hidden_values.value]"/>[end]
+[is roottype "cvs"]
+  [define pathrev_selected][pathrev][end]
+  <select name="pathrev" onchange="submit()">
+  <option value=""></option>
+  [if-any branch_tags]
+    <optgroup label="Branches">
+    [for branch_tags]
+      <option [is branch_tags.name pathrev]selected[define pathrev_selected][end][end]
+        value="[branch_tags.name]">[branch_tags.name][if-any branch_tags.revision] ([branch_tags.revision])[end]
+      </option>
+    [end]
+    </optgroup>
+  [end]
+  <optgroup label="Non-branch tags">
+  [for plain_tags]
+    <option [is plain_tags.name pathrev]selected[define pathrev_selected][end][end]
+      value="[plain_tags.name]">[plain_tags.name][if-any plain_tags.revision] ([plain_tags.revision])[end]
+    </option>
+  [end]
+  </optgroup>
+  [if-any pathrev_selected]
+    <option selected>[pathrev_selected]</option>
+  [end]
+  </select>
+[else]
+  <input type="text" name="pathrev" value="[pathrev]" size="6"/>
+[end]
+<input type="submit" value="Set Sticky [is roottype "cvs"]Tag[else]Revision[end]" />
+</div>
+</form>
+
+[if-any pathrev]
+<form class="inline"  method="get" action="[pathrev_clear_action]">
+<div class="inline">
+[for pathrev_clear_hidden_values]<input type="hidden" name="[pathrev_clear_hidden_values.name]" value="[pathrev_clear_hidden_values.value]"/>[end]
+[if-any lastrev]
+  [is pathrev lastrev][else]<input type="submit" value="Set to [lastrev]" />[end]
+  (<i>Current path doesn't exist after revision <strong>[lastrev]</strong></i>)
+[else]
+  <input type="submit" value="Clear" />
+[end]
+</div>
+</form>
+[end]
