@@ -129,12 +129,9 @@ def _rootpath2url(rootpath, path):
   return core.svn_path_canonicalize(url)
 
 
-# Given raw bytestring Subversion property (versioned or unversioned)
-# NAME and VALUE, return a 2-tuple of the same but readied for Python
-# 3 usage.  If NAME can't be stringfied (that is, converted to a
-# Unicode string), both the returned NAME and VALUE will be None.
-# Otherwise, NAME will be a Unicode string and VALUE will be a Unicode
-# string of it could be stringified or a bytestring if it couldn't.
+# Return a stringfied copy of a bytestring Subversion property
+# (versioned or unversioned) VALUE if possible; otherwise return the
+# original bytestring.
 def _normalize_property_value(value, encoding_hint=None):
   try:
     value = value.decode('utf-8')
@@ -146,6 +143,13 @@ def _normalize_property_value(value, encoding_hint=None):
         pass
   return value
 
+
+# Given raw bytestring Subversion property (versioned or unversioned)
+# NAME and VALUE, return a 2-tuple of the same but readied for Python
+# 3 usage.  If NAME can't be stringfied (that is, converted to a
+# Unicode string), both the returned NAME and VALUE will be None.
+# Otherwise, NAME will be a Unicode string and VALUE will be a Unicode
+# string of it could be stringified or a bytestring if it couldn't.
 def _normalize_property(name, value, encoding_hint=None):
   try:
     name = name.decode('utf-8')
@@ -784,6 +788,12 @@ class LocalSubversionRepository(vclib.Repository):
       # editor.get_root_props(), but something is broken there...)
       revprops = fs.revision_proplist(self.fs_ptr, rev)
       msg, author, date, revprops = _split_revprops(revprops)
+
+      # The iterfaces that use this function expect string values.
+      if isinstance(msg, bytes):
+        msg = _to_str(msg)
+      if isinstance(author, bytes):
+        author = _to_str(author) or pval
 
       # Optimization: If our caller doesn't care about the changed
       # paths, and we don't need them to do authz determinations, let's

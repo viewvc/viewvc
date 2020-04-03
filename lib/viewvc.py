@@ -1734,11 +1734,11 @@ def detect_encoding(text_block):
   work for us.)"""
 
   # Does the TEXT_BLOCK start with a BOM?
-  for bom, encoding in [('\xef\xbb\xbf', 'utf-8'),
-                        ('\xff\xfe', 'utf-16'),
-                        ('\xfe\xff', 'utf-16be'),
-                        ('\xff\xfe\0\0', 'utf-32'),
-                        ('\0\0\xfe\xff', 'utf-32be'),
+  for bom, encoding in [(b'\xef\xbb\xbf', 'utf-8'),
+                        (b'\xff\xfe', 'utf-16'),
+                        (b'\xfe\xff', 'utf-16be'),
+                        (b'\xff\xfe\0\0', 'utf-32'),
+                        (b'\0\0\xfe\xff', 'utf-32be'),
                         ]:
     if text_block.startswith(bom):
       return encoding
@@ -1831,11 +1831,11 @@ def markup_file_contents(request, cfg, file_lines, filename,
     # file, try to guess the lexer based on the file's content.
     if not pygments_lexer and is_text(mime_type) and file_lines:
       try:
-        pygments_lexer = guess_lexer(file_lines[0],
+        pygments_lexer = guess_lexer(file_lines[0].decode('utf-8'),
                                      encoding=pygments_encoding,
                                      tabsize=cfg.options.tabsize,
                                      stripnl=False)
-      except ClassNotFound:
+      except (ClassNotFound, UnicodeDecodeError):
         pygments_lexer = None
 
   # If we aren't highlighting, just return FILE_LINES, corrected for
@@ -1847,7 +1847,7 @@ def markup_file_contents(request, cfg, file_lines, filename,
     # contents to do so... 1024 bytes should be enough.
     if not encoding and cfg.options.detect_encoding:
       block_size = 0
-      text_block = ''
+      text_block = b''
       for i in range(len(file_lines)):
         text_block = text_block + file_lines[i]
         if len(text_block) >= 1024:
