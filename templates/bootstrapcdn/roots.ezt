@@ -8,33 +8,31 @@
 <div id="vc_main_body">
 <!-- ************************************************************** -->
 
-<table cellspacing="1" class="fixed" id="dirlist">
-<thead>
-<tr>
-  <th style="width: 200px" class="vc_header_sort">Name</th>
+<table class="table table-striped table-sm" id="vc_roots">
+  <thead class="thead-dark">
+    <tr>
+      <th scope="col" class="root-name">Name</th>
 [is cfg.options.show_roots_lastmod "1"]
-  <th class="vc_header">Last Change</th>
+      <th scope="col" class="last-changed d-none d-sm-table-cell">Last Change</th>
 [end]
-</tr>
-</thead>
-
-<tbody>
-[if-any roots]
-[for roots]
-  <tr class="vc_row_[if-index roots even]even[else]odd[end]">
-    <td onclick="jumpTo('[roots.href]')">
-      <a href="[roots.href]"><i class="fa fa-fw fa-database"></i>
-        [roots.name]</a>
-    </td>
+    </tr>
+  </thead>
+  <tbody>
+[if-any roots][for roots]
+    <tr>
+      <td class="root-name" onclick="jumpTo('[roots.href]')">
+        <a href="[roots.href]"><i class="fa fa-fw fa-database"></i> [roots.name]</a>
+      </td>
 [is cfg.options.show_roots_lastmod "1"]
-    <td>[if-any roots.rev]<strong>[if-any roots.log_href]<a href="[roots.log_href]">[roots.rev]</a>[else][roots.rev][end]</strong> ([roots.ago] ago)
-        by <em>[roots.author]</em>: [roots.log][end]</td>
+      <td class="last-changed d-none d-sm-table-cell">
+        [if-any roots.rev]<strong>[if-any roots.log_href]<a href="[roots.log_href]">[roots.rev]</a>[else][roots.rev][end]</strong> ([roots.ago] ago)
+        by <em>[roots.author]</em>: [roots.log][end]
+      </td>
 [end]
-  </tr>
+    </tr>
 [end]
 [end]
-</tbody>
-
+  </tbody>
 </table>
 
 <div id="vc_view_summary">

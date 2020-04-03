@@ -2,74 +2,58 @@
  * ViewVC CSS Stylesheet
  */
 
+/* General */
 a {
-    color: #94bd5e;
+    color: #775898;
 }
-
 a:hover {
     text-decoration: none;
-}    
-
+}
 span.flex-spacer {
     flex: 1 1 auto;
 }
 
+/* Header */
 #vc_topmatter {
     display: flex;
 }
-
 .navbar-brand {
     margin-top: -6px;
     margin-bottom: -6px;
 }
-
 .navbar-brand img {
     max-height: 48px;
 }
 
-
-
-
-
-
-table.auto {
-  width: auto;
+/* Footer */
+#vc_footer {
+    display: flex;
 }
-table.fixed {
-  width: 100%;
-  table-layout: fixed;
+
+/* Root Listing */
+#vc_roots {
+    table-layout: fixed;
+    width: 100%;
 }
-table.fixed td {
-  overflow: hidden; 
-  text-overflow: ellipsis;
-  white-space: nowrap;
+#vc_roots td {
+    overflow: hidden; 
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
+#vc_roots .root-name {
+    min-width
+}
+#vc_roots .last-changed {
+    width: 70%;
+}
+
+
+
 form { margin: 0; }
 address { font-style: normal; display: inline; }
 .inline { display: inline; }
 .lpad { margin-left: 2em; }
 
-/*** Icons ***/
-.vc_icon {
-  width: 16px;
-  height: 16px;
-  border: none;
-  padding: 0 1px;
-}
-.vc_overlay {
-  width: 12px;
-  height: 12px;
-  border: none;
-  padding: 0 1px;
-  vertical-align: top;
-}
-
-#vc_footer {
-  text-align: right;
-  font-size: 85%;
-  padding: 10px 0 0 0;
-  border-top: 10px solid #94bd5e;
-}
 
 #vc_login {
   text-align: right;
