@@ -2,7 +2,7 @@
   [define page_title]Log of:[end]
   [define help_href][docroot]/help_log.html[end]
 [# end]
-[include "include/header.ezt" "log"]
+[include "_header.ezt" "log"]
 
 <div id="vc_main_body">
 <!-- ************************************************************** -->
@@ -176,7 +176,7 @@
 </div>
 </form>
 <div class="inline lpad">
-[include "include/pathrev_form.ezt"]
+[include "_pathrev_form.ezt"]
 </div>
 </div>
 
@@ -223,7 +223,7 @@
 
 [is pathtype "file"]
   <h2>Compare Revisions</h2>
-  [include "include/diff_form.ezt"]
+  [include "_diff_form.ezt"]
 [end]
 
-[include "include/footer.ezt"]
+[include "_footer.ezt"]

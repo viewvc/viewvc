@@ -2,7 +2,7 @@
   [define page_title]Query on:[end]
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
-[include "include/header.ezt" "query"]
+[include "_header.ezt" "query"]
 
 <form action="[query_action]" method="get">
 
@@ -198,4 +198,4 @@
 
 </form>
 
-[include "include/footer.ezt"]
+[include "_footer.ezt"]

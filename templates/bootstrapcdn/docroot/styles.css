@@ -6,6 +6,10 @@ a {
     color: #94bd5e;
 }
 
+a:hover {
+    text-decoration: none;
+}    
+
 span.flex-spacer {
     flex: 1 1 auto;
 }

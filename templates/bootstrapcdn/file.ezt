@@ -16,7 +16,7 @@
   [end]
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
-[include "include/header.ezt" "annotate"]
+[include "_header.ezt" "annotate"]
 
 <table class="auto">
 <tr>
@@ -160,9 +160,9 @@
 [end]
 [end]
 
-[include "include/props.ezt"]
+[include "_props.ezt"]
 
 <!-- ************************************************************** -->
 </div>
 
-[include "include/footer.ezt"]
+[include "_footer.ezt"]

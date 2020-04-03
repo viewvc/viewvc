@@ -2,7 +2,7 @@
   [define page_title]Revision [rev] of:[end]
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
-[include "include/header.ezt" "revision"]
+[include "_header.ezt" "revision"]
 
 
 <form method="get" action="[jump_rev_action]">
@@ -14,8 +14,11 @@
       <input type="text" name="revision" value="[rev]" />
       <input type="submit" value="Go" />
       [if-any prev_href]
-        <a href="[prev_href]" title="Previous Revision"><img src="[docroot]/images/back.png" alt="Previous" width="20" height="22" /></a>[end]
-      [if-any next_href] <a href="[next_href]" title="Next Revision"><img src="[docroot]/images/forward.png" width="20" height="22" alt="Next" /></a>[end]
+        <a href="[prev_href]" title="Previous Revision"><i class="fa fa-fw fa-step-backward"></i></a>
+      [end]
+      [if-any next_href] 
+        <a href="[next_href]" title="Next Revision"><i class="fa fa-fw fa-step-forward"></i></a>
+      [end]
     </td>
   </tr>
   <tr align="left">
@@ -59,7 +62,7 @@
   <tbody>
    [for changes]
     <tr class="vc_row_[if-index changes even]even[else]odd[end]">
-      <td>[if-any changes.view_href]<a href="[changes.view_href]" title="View [is changes.pathtype "dir"]Directory[else]File[end] Contents">[end]<img src="[docroot]/images/[is changes.pathtype "dir"]dir[else]text[end].png" class="vc_icon" alt="Directory" />[changes.path][is changes.pathtype "dir"]/[end][if-any changes.view_href]</a>[end]
+      <td>[if-any changes.view_href]<a href="[changes.view_href]" title="View [is changes.pathtype "dir"]Directory[else]File[end] Contents">[end]<i class="fa fa-fw fa-[is changes.pathtype "dir"]folder[else]file[end]"></i> [changes.path][is changes.pathtype "dir"]/[end][if-any changes.view_href]</a>[end]
       [if-any changes.is_copy]<br /><em>(Copied from [changes.copy_path], r[changes.copy_rev])</em>[end]
       </td>
       <td>[if-any changes.log_href]<a href="[changes.log_href]" title="View Log">[end][changes.action][if-any changes.log_href]</a>[end]
@@ -73,9 +76,9 @@
 </div>
 [end]
 
-[include "include/props.ezt"]
+[include "_props.ezt"]
 
 <!-- ************************************************************** -->
 </div>
 
-[include "include/footer.ezt"]
+[include "_footer.ezt"]
