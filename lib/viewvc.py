@@ -1076,6 +1076,10 @@ def is_binary_file_mime_type(mime_type, cfg):
   """Return True iff MIME_TYPE is set and matches one of the binary
   file mime type patterns in CFG."""
   if mime_type:
+    # We require explicit handling of the web-friendly images.
+    # For all other types, pattern-matching is used.
+    if mime_type in ('image/gif', 'image/jpeg', 'image/png'):
+      return mime_type in cfg.options.binary_mime_types
     for pattern in cfg.options.binary_mime_types:
       if fnmatch.fnmatch(mime_type, pattern):
         return True
@@ -1763,7 +1767,13 @@ def transcode_text(text, encoding=None):
   return text
 
 def markup_file_contents(request, cfg, file_lines, filename,
-                         mime_type, encoding, colorize): # -> List[str]
+                         mime_type, encoding, colorize):
+  """Perform syntax coloration via Pygments (where allowed and
+  possible; a lesser bit of HTML-ification otherwise) on FILE_LINES,
+  which is a list of bytestrings believed to be using character
+  ENCODING.  Return those same lines, converted to Unicode strings and
+  colorized."""
+  
   # Nothing to mark up?  So be it.
   if not file_lines:
     return []
@@ -1781,21 +1791,10 @@ def markup_file_contents(request, cfg, file_lines, filename,
                                 get_lexer_for_mimetype, \
                                 get_lexer_for_filename, \
                                 guess_lexer
-    pygments_encoding = encoding
-    if not pygments_encoding:
-      pygments_encoding = 'guess'
-      if cfg.options.detect_encoding:
-        try:
-          import chardet
-          pygments_encoding = 'chardet'
-        except (SyntaxError, ImportError):
-          pass
-
     # First, see if there's a Pygments lexer associated with MIME_TYPE.
     if mime_type:
       try:
         pygments_lexer = get_lexer_for_mimetype(mime_type,
-                                                encoding=pygments_encoding,
                                                 tabsize=cfg.options.tabsize,
                                                 stripnl=False)
       except ClassNotFound:
@@ -1805,7 +1804,6 @@ def markup_file_contents(request, cfg, file_lines, filename,
     if not pygments_lexer:
       try:
         pygments_lexer = get_lexer_for_filename(filename,
-                                                encoding=pygments_encoding,
                                                 tabsize=cfg.options.tabsize,
                                                 stripnl=False)
       except ClassNotFound:
@@ -1815,56 +1813,35 @@ def markup_file_contents(request, cfg, file_lines, filename,
     # file, try to guess the lexer based on the file's content.
     if not pygments_lexer and is_text(mime_type) and file_lines:
       try:
-        pygments_lexer = guess_lexer(file_lines[0].decode('utf-8'),
-                                     encoding=pygments_encoding,
+        pygments_lexer = guess_lexer(file_lines[0],
                                      tabsize=cfg.options.tabsize,
                                      stripnl=False)
       except (ClassNotFound, UnicodeDecodeError):
         pygments_lexer = None
 
-  # If we aren't highlighting, just return FILE_LINES, corrected for
-  # encoding (if possible).
+  # If we aren't highlighting, just return FILE_LINES with URLs
+  # manually marked up and tabs manually expanded.
   if not pygments_lexer:
+    def _poor_mans_markup(l):
+      l = l.expandtabs(cfg.options.tabsize)
+      return markup_escaped_urls(sapi.escape(l))
+    return [_poor_mans_markup(l) for l in file_lines]
 
-    # If allowed by configuration, try to detect the source encoding
-    # for this file.  We'll assemble a block of data from the file
-    # contents to do so... 1024 bytes should be enough.
-    if not encoding and cfg.options.detect_encoding:
-      block_size = 0
-      text_block = b''
-      for i in range(len(file_lines)):
-        text_block = text_block + file_lines[i]
-        if len(text_block) >= 1024:
-          break
-      encoding = detect_encoding(text_block)
-
-    # Built output data comprised of marked-up and possibly-transcoded
-    # source text lines wrapped in (possibly dummy) vclib.Annotation
-    # objects.
-    if not encoding:
-      encoding='ascii'
-    file_lines = [l.decode(encoding, 'surrogateescape') for l in file_lines]
-    for i in range(len(file_lines)):
-      line = file_lines[i]
-      if cfg.options.tabsize > 0:
-        line = line.expandtabs(cfg.options.tabsize)
-      file_lines[i] = markup_escaped_urls(sapi.escape(line))
-    return file_lines
-
-  # If we get here, we're highlighting something.
+  # If we get here, we're letting Pygments highlight syntax.
+  #
+  ### FIXME: This implementation expects (without ample API promises
+  ### to guarantee it) that PygmentsSink.write() will be called
+  ### exactly once per line.  So far, it's worked out okay...
   class PygmentsSink:
     def __init__(self):
       self.colorized_file_lines = []
-
     def write(self, buf):
-      ### FIXME:  Don't bank on write() being called once per line
       self.colorized_file_lines.append(markup_escaped_urls(buf.rstrip('\n\r')))
 
   ps = PygmentsSink()
-  highlight(b''.join(file_lines), pygments_lexer,
-            HtmlFormatter(nowrap=True,
-                          classprefix="pygments-",
-                          encoding=None), ps)
+  highlight(''.join(file_lines), pygments_lexer,
+            HtmlFormatter(nowrap=True, classprefix="pygments-", encoding=None),
+            ps)
   return ps.colorized_file_lines
 
 def empty_blame_item(line, line_no):
@@ -1995,6 +1972,7 @@ def assert_viewable_filesize(cfg, filesize):
 def markup_or_annotate(request, is_annotate):
   cfg = request.cfg
   path, rev = _orig_path(request, is_annotate and 'annotate' or 'revision')
+  is_binary = False
   lines = fp = image_src_href = None
   annotation = 'none'
   revision = None
@@ -2005,9 +1983,10 @@ def markup_or_annotate(request, is_annotate):
     raise debug.ViewVCException('Display of binary file content disabled '
                                 'by configuration', '403 Forbidden')
 
-  # Is this a viewable image type?
-  if is_viewable_image(mime_type) \
-     and 'co' in cfg.options.allowed_views:
+  # If this is viewable image that we're allowed to show embedded, we
+  # need only resolve its revision and generate an image src=
+  # attribute URL for it.
+  if is_viewable_image(mime_type) and 'co' in cfg.options.allowed_views:
     fp, revision = request.repos.openfile(path, rev, {})
     fp.close()
     if check_freshness(request, None, revision, weak=1):
@@ -2017,12 +1996,12 @@ def markup_or_annotate(request, is_annotate):
     image_src_href = request.get_url(view_func=view_checkout,
                                      params={'revision': rev}, escape=1)
 
-  # Not a viewable image.
+  # If we get here, the request is not for an image that we can
+  # display embedded.
   else:
-    filesize = request.repos.filesize(path, rev)
-
     # If configuration disallows display of large files, try to honor
     # that request.
+    filesize = request.repos.filesize(path, rev)
     assert_viewable_filesize(cfg, filesize)
 
     # If this was an annotation request, try to annotate this file.
@@ -2073,27 +2052,56 @@ def markup_or_annotate(request, is_annotate):
     else:
       file_lines = fp.readlines()
     fp.close()
-    # Python 3: type of elements of file_lines is bytes, not str here
 
-    # Try to colorize the file contents.
-    colorize = cfg.options.enable_syntax_coloration
+    # If allowed by configuration, try to detect the source encoding
+    # for this file.  We'll assemble a block of data from the file
+    # contents to do so... 1024 bytes should be enough.
+    if not encoding and cfg.options.detect_encoding:
+      block_size = 0
+      text_block = b''
+      for i in range(len(file_lines)):
+        text_block = text_block + file_lines[i]
+        if len(text_block) >= 2048:
+          break
+      encoding = detect_encoding(text_block)
+    if not encoding:
+      encoding = 'ascii'
+
+    # Decode the file's lines from the detected encoding to Unicode.
     try:
-      lines = markup_file_contents(request, cfg, file_lines, path[-1],
-                                   mime_type, encoding, colorize)
+      for i in range(len(file_lines)):
+        line = file_lines[i]
+        try:
+          line = line.decode(encoding)
+        except UnicodeDecodeError:
+          if cfg.options.hide_binary_content:
+            raise
+          line = line.decode(encoding, 'surrogateescape')
+        file_lines[i] = line
     except:
-      if colorize:
-        lines = markup_file_contents(request, cfg, file_lines, path[-1],
-                                     mime_type, encoding, False)
-      else:
-        raise debug.ViewVCException('Error displaying file contents',
-                                    '500 Internal Server Error')
-    # Python 3: now type of elements of lines is str
+      is_binary = True
 
-    # Now, try to match up the annotation data (if any) with the file
-    # lines.
-    lines, errorful = merge_blame_data(lines, blame_data)
-    if errorful:
-      annotation = 'error'
+    # Unless we've determined that the file is binary, try to colorize
+    # the file contents.  If that fails, we'll give it another shot
+    # with colorization disabled.
+    if not is_binary:
+      colorize = cfg.options.enable_syntax_coloration
+      try:
+        lines = markup_file_contents(request, cfg, file_lines, path[-1],
+                                     mime_type, encoding, colorize)
+      except:
+        if colorize:
+          lines = markup_file_contents(request, cfg, file_lines, path[-1],
+                                       mime_type, encoding, False)
+        else:
+          raise debug.ViewVCException('Error displaying file contents',
+                                      '500 Internal Server Error')
+
+      # Now, try to match up the annotation data (if any) with the file
+      # lines.
+      lines, errorful = merge_blame_data(lines, blame_data)
+      if errorful:
+        annotation = 'error'
 
   data = common_template_data(request, revision, mime_type)
   data.merge(TemplateData({
@@ -2115,6 +2123,7 @@ def markup_or_annotate(request, is_annotate):
     'image_src_href' : image_src_href,
     'lines' : lines,
     'properties' : get_itemprops(request, path, rev),
+    'is_binary' : ezt.boolean(is_binary),
     'annotation' : annotation,
     }))
 

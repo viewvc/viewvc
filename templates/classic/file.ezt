@@ -1,12 +1,4 @@
 [# ------------------------------------------------------------------------- ]
-[# CUSTOMIZE ME: To avoid displaying "binary garbage" -- the contents of     ]
-[# files with non-human-readable file formats -- change the value of the     ]
-[# hide_binary_garbage variable below to 1.                                  ]
-[# ------------------------------------------------------------------------- ]
-
-[define hide_binary_garbage]0[end]
-
-[# ------------------------------------------------------------------------- ]
 
 [# setup page definitions]
   [is annotation "annotated"]
@@ -71,10 +63,7 @@ Revision [if-any revision_href]<a href="[revision_href]"><strong>[rev]</strong><
 [end]
 </div>
 
-[if-any prefer_markup][define hide_binary_garbage]0[end][end]
-[if-any image_src_href][define hide_binary_garbage]0[end][end]
-
-[is hide_binary_garbage "1"]
+[if-any is_binary]
 <p><strong>This file's contents are not viewable.
    [if-any download_href]Please <a href="[download_href]">download</a>
    this version of the file in order to view it.[end]</strong></p>
