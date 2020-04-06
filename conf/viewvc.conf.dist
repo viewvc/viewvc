@@ -359,14 +359,6 @@
 ##
 #root_as_url_component = 1
 
-## checkout_magic: Use checkout links with magic /*checkout*/ prefixes so
-## checked out HTML pages can have working links to other repository files
-##
-## NOTE: This option is DEPRECATED and should not be used in new ViewVC
-## installations. Setting "default_file_view = co" achieves the same effect
-##
-#checkout_magic = 0
-
 ## allowed_views: List the ViewVC views which are enabled.  Views not
 ## in this comma-delited list will not be served (or, will return an
 ## error on attempted access).

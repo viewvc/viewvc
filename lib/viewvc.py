@@ -67,10 +67,6 @@ sys.tracebacklimit = 0
 
 #########################################################################
 
-checkout_magic_path = '*checkout*'
-# According to RFC 1738 the '~' character is unsafe in URLs.
-# But for compatibility with URLs bookmarked with old releases of ViewCVS:
-oldstyle_checkout_magic_path = '~checkout~'
 docroot_magic_path = '*docroot*'
 viewcvs_mime_type = 'text/vnd.viewcvs-markup'
 alt_mime_type = 'text/x-cvsweb-markup'
@@ -192,18 +188,11 @@ class Request:
     path_parts = _path_parts(path_info)
 
     if path_parts:
-      # handle magic path prefixes
+      # handle docroot magic path prefixes
       if path_parts[0] == docroot_magic_path:
         # if this is just a simple hunk of doc, then serve it up
         self.where = _path_join(path_parts[1:])
         return view_doc(self)
-      elif path_parts[0] in (checkout_magic_path,
-                             oldstyle_checkout_magic_path):
-        path_parts.pop(0)
-        self.view_func = view_checkout
-        if not cfg.options.checkout_magic:
-          needs_redirect = 1
-
       # handle tarball magic suffixes
       if self.view_func is download_tarball:
         if (self.query_dict.get('parent')):
@@ -512,10 +501,6 @@ class Request:
 
     url = self.script_name
 
-    # add checkout magic if neccessary
-    if view_func is view_checkout and cfg.options.checkout_magic:
-      url = url + '/' + checkout_magic_path
-
     # add root to url
     rootname = None
     if view_func is not view_roots:
@@ -583,11 +568,10 @@ class Request:
         and params.get('r2') is not None):
       view_func = None
 
-    # no need to explicitly specify checkout view when it's the default
-    # view or when checkout_magic is enabled
+    # no need to explicitly specify checkout view when it's the default view
     if view_func is view_checkout:
-      if ((cfg.options.default_file_view == "co" and pathtype == vclib.FILE)
-          or cfg.options.checkout_magic):
+      if (cfg.options.default_file_view == "co" \
+          and pathtype == vclib.FILE):
         view_func = None
 
     # no need to explicitly specify markup view when it's the default view
@@ -824,18 +808,18 @@ def _orig_path(request, rev_param='revision', path_param=None):
   # which is renamed and modified as "square.jpg" in revision 4, the original
   # circle image is visible at the following URLs:
   #
-  #     *checkout*/circle.jpg?pathrev=3
-  #     *checkout*/square.jpg?revision=3
-  #     *checkout*/square.jpg?revision=3&pathrev=4
+  #     .../circle.jpg?pathrev=3
+  #     .../square.jpg?revision=3
+  #     .../square.jpg?revision=3&pathrev=4
   #
   # Note that the following:
   #
-  #     *checkout*/circle.jpg?rev=3
+  #     .../circle.jpg?rev=3
   #
   # now gets redirected to one of the following URLs:
   #
-  #     *checkout*/circle.jpg?pathrev=3  (for Subversion)
-  #     *checkout*/circle.jpg?revision=3  (for CVS)
+  #     .../circle.jpg?pathrev=3  (for Subversion)
+  #     .../circle.jpg?revision=3  (for CVS)
   #
   rev = request.query_dict.get(rev_param, request.pathrev)
   path = request.query_dict.get(path_param, request.where)

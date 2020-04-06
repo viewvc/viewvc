@@ -402,7 +402,6 @@ class Config:
     self.utilities.cvsgraph = ''
 
     self.options.root_as_url_component = 1
-    self.options.checkout_magic = 0
     self.options.allowed_views = ['annotate', 'diff', 'markup', 'roots']
     self.options.authorizer = None
     self.options.mangle_email_addresses = 0
