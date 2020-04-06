@@ -35,7 +35,7 @@
         <i class="fa fa-sort-[is sortdir "up"]up[else]down[end]"></i>
 [end]
       </th>
-      <th scope="col" class="entry-log"
+      <th scope="col" class="entry-description"
           onclick="jumpTo('[sortby_rev_href]#vc_directory')">
         Last Change
 [is sortby "rev"]
@@ -52,7 +52,7 @@
         <a href="[up_href]"><i class="fa fa-fw fa-folder-open"></i>&nbsp;../</a>
       </td>
       <td class="entry-ago"></td>
-      <td class="entry-log"></td>
+      <td class="entry-description"></td>
     </tr>
 [end]
 [for entries]

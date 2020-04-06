@@ -13,7 +13,7 @@
         Name
       </th>
 [is cfg.options.show_roots_lastmod "1"]
-      <th scope="col" class="last-change d-none d-sm-table-cell">
+      <th scope="col" class="root-description"
         Last Change
       </th>
 [end]
@@ -26,7 +26,7 @@
         <a href="[roots.href]"><i class="fa fa-fw fa-database"></i> [roots.name]</a>
       </td>
 [is cfg.options.show_roots_lastmod "1"]
-      <td class="last-change d-none d-sm-table-cell">
+      <td class="root-description">
   [if-any roots.rev]
         <strong>[if-any roots.log_href]<a href="[roots.log_href]">[roots.rev]</a>[else][roots.rev][end]</strong>
         ([roots.ago] ago) by <em>[roots.author]</em>: [roots.log]
