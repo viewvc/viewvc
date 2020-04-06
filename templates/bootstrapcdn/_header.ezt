@@ -152,7 +152,16 @@
     </nav>
 
     <div id="vc_current_path">
-[if-any roots_href]<a href="[roots_href]">root</a>[end][if-any nav_path]<span class="pathdiv">/</span>[for nav_path][if-any nav_path.href]<a href="[nav_path.href]">[end][if-index nav_path last]<span class="thisitem">[end][nav_path.name][if-index nav_path last]</span>[end][if-any nav_path.href]</a>[end][if-index nav_path last][else]<span class="pathdiv">/</span>[end][end][end]
+      <a [if-any roots_href]href="[roots_href]"[end]><i class="fa fa-database"></i></a>
+[if-any nav_path]
+      <i class="pathdiv fa fa-angle-right"></i>
+  [for nav_path]
+      <a [if-any nav_path.href]href="[nav_path.href]"[end]><span class="[if-index nav_path last]thisitem[end]">[nav_path.name]</a>
+    [if-index nav_path last][else]
+      <i class="pathdiv fa fa-angle-right"></i>
+    [end]
+  [end]
+[end]
     </div>
   </div> <!-- vc_header -->
 

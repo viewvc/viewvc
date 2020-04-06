@@ -3,87 +3,109 @@
   [define help_href][docroot]/help_[if-any where]dir[else]root[end]view.html[end]
 [# end]
 [include "_header.ezt" "directory"]
-
 [if-any where][else]
   <!-- you may insert repository access instructions here -->
 [end]
-
 <div id="vc_main_body">
-<!-- ************************************************************** -->
+<!-- *********************************************************************** -->
 
-<div id="vc_togglables">
-<div class="inline">
-[include "_pathrev_form.ezt"]
-</div>
+<div id="vc_togglables" class="d-flex justify-content-end">
+  <div>[include "_pathrev_form.ezt"]</div>
 [is roottype "svn"]
-<div class="inline lpad">
-[if-any rev]r<a href="[revision_href]">[rev]</a>[end]
-</div>
+  <div class="inline lpad">
+    [if-any rev]r<a href="[revision_href]">[rev]</a>[end]
+  </div>
 [end]
 </div>
 
-<table cellspacing="2" class="fixed" id="dirlist">
-<thead>
-<tr>
-  <th style="width: 200px" class="vc_header[is sortby "file"]_sort[end]">
-    <a href="[sortby_file_href]#dirlist">File
-    [is sortby "file"]
-    <i class="fa fa-sort-[is sortdir "up"]up[else]down[end]"></i>
-    [end]
-    </a>
-  </th>
-  <th class="vc_header[is sortby "rev"]_sort[end]">
-    <a href="[sortby_rev_href]#dirlist">Last Change
-    [is sortby "rev"]
-    <i class="fa fa-sort-[is sortdir "up"]up[else]down[end]"></i>
-    [end]
-    </a>
-  </th>
-</tr>
-</thead>
+<table class="table table-striped table-sm" id="vc_directory">
+  <thead class="thead-dark">
+    <tr>
+      <th scope="col" class="entry-name"
+          onclick="jumpTo('[sortby_file_href]#vc_directory')">
+        File
+[is sortby "file"]
+        <i class="fa fa-sort-[is sortdir "up"]up[else]down[end]"></i>
+[end]
+      </th>
+      <th scope="col" class="entry-ago"
+          onclick="jumpTo('[sortby_date_href]#vc_directory')">
+        Date
+[is sortby "date"]
+        <i class="fa fa-sort-[is sortdir "up"]up[else]down[end]"></i>
+[end]
+      </th>
+      <th scope="col" class="entry-log"
+          onclick="jumpTo('[sortby_rev_href]#vc_directory')">
+        Last Change
+[is sortby "rev"]
+        <i class="fa fa-sort-[is sortdir "up"]up[else]down[end]"></i>
+[end]
+      </th>
+    </tr>
+  </thead>
 
-<tbody>
+  <tbody>
 [if-any up_href]
-  <tr class="vc_row_odd">
-    <td colspan="2">
-      <a href="[up_href]">
-      <i class="fa fa-fw fa-folder-open"></i>
-      &nbsp;../</a>
-    </td>
-  </tr>
- [end]
+    <tr>
+      <td class="entry-name">
+        <a href="[up_href]"><i class="fa fa-fw fa-folder-open"></i>&nbsp;../</a>
+      </td>
+      <td class="entry-ago"></td>
+      <td class="entry-log"></td>
+    </tr>
+[end]
 [for entries]
   [define click_href][is entries.pathtype "dir"][entries.view_href][else][if-any entries.prefer_markup][entries.view_href][else][entries.download_href][end][end][end]
-  [define icon_file][is entries.pathtype "dir"]dir[else][is entries.state "dead"]broken[else][if-any entries.is_viewable_image]image[else][if-any entries.is_binary]binary[else]text[end][end][end][end].png[end]
-  
-  <tr class="vc_row_[if-index entries even]even[else]odd[end]">
-    <td style="width: 200px" [if-any click_href]onclick="jumpTo('[click_href]')"[end]>
-    [if-any click_href]<a name="[entries.anchor]" href="[click_href]" title="[is entries.pathtype "dir"]View Directory Contents[else][if-any entries.prefer_markup]View[else]Download[end] File Contents[end]">[end]
-       <i class="fa fa-fw fa-[is entries.pathtype "dir"]folder[else][if-any entries.is_viewable_image]file-image-o[else][if-any entries.is_binary]file-o[else]file-text-o[end][end][end]"></i>
-       [entries.name][is entries.pathtype "dir"]/[end][if-any click_href]</a>[end]
-       [if-any entries.lockinfo]<i class="fa fa-lock" title="Locked by [entries.lockinfo]" />[end]
-       [is entries.state "dead"](dead)[end]
-    </td>
+  [define entry_icon]fa-[is entries.pathtype "dir"]folder[else][if-any entries.is_viewable_image]file-image-o[else][if-any entries.is_binary]file-o[else]file-text-o[end][end][end][end]
+    <tr class="[is entries.state "dead"]dead-entry[end]">
+      <td class="entry-name"
+          [if-any click_href]onclick="jumpTo('[click_href]')"[end]>
+        <a name="[entries.anchor]" [if-any click_href]href="[click_href]"[end]>
+          <i class="fa fa-fw [entry_icon]"></i>
+          [entries.name]
+          [is entries.pathtype "dir"]/[end]
+        </a>
+  [if-any entries.lockinfo]
+        <i class="fa fa-lock small-fa" title="Locked by [entries.lockinfo]" />
+  [end]
+  [is entries.state "dead"]
+        <i class="fa fa-trash small-fa" title="This file lives in the Attic" />
+  [end]
+      </td>
+      <td class="entry-ago">
+  [if-any entries.ago]
+        [entries.ago] ago
+  [end]
+      </td>
+      <td class="entry-description"
+          [if-any entries.log_href]onclick="jumpTo('[entries.log_href]')"[end]>
 
-    <td [if-any entries.log_href]onclick="jumpTo('[entries.log_href]')"[end]>
-      [if-any entries.rev]
-        <strong>[if-any entries.log_href]<a href="[entries.log_href]" title="Revision [entries.rev]">[entries.rev]</a>[else][entries.rev][end]</strong>
-        ([entries.ago] ago)
-        by <em>[entries.author]</em>:
-      [end]
-      [if-any entries.log]
-        [if-any entries.log_rev]
-          <span class="vc_dir_lastmod">(from [entries.log_file]/[entries.log_rev])</span>
+  [if-any entries.rev]
+        <span class="entry-revision">
+          <a [if-any entries.log_href]href="[entries.log_href]"[end]
+             title="Revision [entries.rev]">[entries.rev]</a>
+        </span>
+    [if-any entries.author]
+        <span class="entry-author">
+          by [entries.author]</em>
+        </span>:
+    [end]
+  [end]
+  [if-any entries.log]
+    [if-any entries.log_rev]
+        <span class="entry-lastmod">
+          (from [entries.log_file]/[entries.log_rev])
+        </span>
+    [end]
+        <span class="entry-log">
           [entries.log]
-        [else][if-any entries.rev]
-          [entries.log]
-        [end][end]
-      [end]
-    </td>
-  </tr>
+        </span>
+  [end]
+      </td>
+    </tr>
 [end]
-</tbody>
-
+  </tbody>
 </table>
 
 <div id="vc_view_summary">
