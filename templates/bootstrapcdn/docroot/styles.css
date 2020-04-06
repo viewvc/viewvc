@@ -73,9 +73,14 @@ i.fa-sort-down {
     white-space: nowrap;
 }
 #vc_roots .root-name {
+    width: 300px;
 }
-#vc_roots .last-change {
-    width: 70%;
+#vc_roots .root-description {
+}
+@media only screen and (max-width: 800px) {
+    #vc_roots .root-description {
+        display: none;
+    }
 }
 
 /* Directory Listing */
@@ -88,19 +93,29 @@ i.fa-sort-down {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-#vc_directory td.entry-name {
-    width: 20%;
+#vc_directory .entry-name {
+    width: 400px;
 }
-#vc_directory td.entry-description {
-}
-#vc_directory td.entry-ago {
+#vc_directory .entry-ago {
     width: 120px;
+}
+#vc_directory .entry-description {
 }
 #vc_directory .entry-revision {
     font-weight: bold;
 }
 #vc_directory tr.dead-entry {
     opacity: 0.6;
+}
+@media only screen and (max-width: 1200px) {
+    #vc_directory .entry-ago {
+        display: none;
+    }
+}
+@media only screen and (max-width: 800px) {
+    #vc_directory .entry-description {
+        display: none;
+    }
 }
 
 
