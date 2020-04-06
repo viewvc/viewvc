@@ -1,6 +1,6 @@
   </div> <!-- vc_view_main -->
   <div id="vc_footer">
-    <span>
+    <span class="site-info">
       Powered by <a href="http://viewvc.org/">ViewVC [vsn]</a>
 [if-any cfg.general.address]
       <br/>This site administered by:

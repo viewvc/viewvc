@@ -12,6 +12,16 @@ a:hover {
 span.flex-spacer {
     flex: 1 1 auto;
 }
+i.small-fa {
+    font-size: 50%;
+}
+.inline {
+    display: inline;
+}
+i.fa-sort-up,
+i.fa-sort-down {
+    margin-left: 1em;
+}
 
 /* Header */
 #vc_topmatter {
@@ -24,10 +34,32 @@ span.flex-spacer {
 .navbar-brand img {
     max-height: 48px;
 }
+#vc_current_path {
+  color: rgb(50%,50%,50%);
+  padding: 10px 0;
+  font-size: 140%;
+  font-weight: bold;
+}
+#vc_current_path a {
+    color: rgb(60%,60%,60%);
+}
+#vc_current_path a:link:hover {
+    background-color: rgb(90%,90%,90%);
+}
+#vc_current_path .thisitem {
+    color: #94bd5e;
+}
 
 /* Footer */
 #vc_footer {
     display: flex;
+}
+#vc_footer .site-info {
+    font-size: 80%;
+}
+#vc_footer address {
+    font-style: normal;
+    display: inline;
 }
 
 /* Root Listing */
@@ -41,45 +73,40 @@ span.flex-spacer {
     white-space: nowrap;
 }
 #vc_roots .root-name {
-    min-width
 }
-#vc_roots .last-changed {
+#vc_roots .last-change {
     width: 70%;
 }
 
+/* Directory Listing */
+#vc_directory {
+    table-layout: fixed;
+    width: 100%;
+}
+#vc_directory td {
+    overflow: hidden; 
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#vc_directory td.entry-name {
+    width: 20%;
+}
+#vc_directory td.entry-description {
+}
+#vc_directory td.entry-ago {
+    width: 120px;
+}
+#vc_directory .entry-revision {
+    font-weight: bold;
+}
+#vc_directory tr.dead-entry {
+    opacity: 0.6;
+}
 
-
-form { margin: 0; }
-address { font-style: normal; display: inline; }
-.inline { display: inline; }
-.lpad { margin-left: 2em; }
 
 
 #vc_login {
   text-align: right;
-}
-
-#vc_current_path {
-  color: rgb(50%,50%,50%);
-  padding: 10px 0;
-  font-size: 140%;
-  font-weight: bold;
-}
-
-#vc_current_path a {
-  color: rgb(60%,60%,60%);
-}
-
-#vc_current_path a:hover {
-  background-color: rgb(90%,90%,90%);
-}
-
-#vc_current_path .thisitem {
-  color: #94bd5e;
-}
-
-#vc_current_path .pathdiv {
-  padding: 0 0.1em;
 }
 
 #vc_view_selection_group {

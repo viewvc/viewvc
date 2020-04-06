@@ -2,18 +2,20 @@
   [define page_title]Repository Listing[end]
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
-
 [include "_header.ezt" "directory"]
-
 <div id="vc_main_body">
-<!-- ************************************************************** -->
+<!-- *********************************************************************** -->
 
 <table class="table table-striped table-sm" id="vc_roots">
   <thead class="thead-dark">
     <tr>
-      <th scope="col" class="root-name">Name</th>
+      <th scope="col" class="root-name">
+        Name
+      </th>
 [is cfg.options.show_roots_lastmod "1"]
-      <th scope="col" class="last-changed d-none d-sm-table-cell">Last Change</th>
+      <th scope="col" class="last-change d-none d-sm-table-cell">
+        Last Change
+      </th>
 [end]
     </tr>
   </thead>
@@ -24,14 +26,15 @@
         <a href="[roots.href]"><i class="fa fa-fw fa-database"></i> [roots.name]</a>
       </td>
 [is cfg.options.show_roots_lastmod "1"]
-      <td class="last-changed d-none d-sm-table-cell">
-        [if-any roots.rev]<strong>[if-any roots.log_href]<a href="[roots.log_href]">[roots.rev]</a>[else][roots.rev][end]</strong> ([roots.ago] ago)
-        by <em>[roots.author]</em>: [roots.log][end]
+      <td class="last-change d-none d-sm-table-cell">
+  [if-any roots.rev]
+        <strong>[if-any roots.log_href]<a href="[roots.log_href]">[roots.rev]</a>[else][roots.rev][end]</strong>
+        ([roots.ago] ago) by <em>[roots.author]</em>: [roots.log]
+  [end]
       </td>
 [end]
     </tr>
-[end]
-[end]
+[end][end]
   </tbody>
 </table>
 
@@ -40,7 +43,7 @@
   [roots_shown] root[is roots_shown "1"][else]s[end] shown
 </div>
 </div>
-<!-- ************************************************************** -->
-</div>
 
+<!-- *********************************************************************** -->
+</div>
 [include "_footer.ezt"]
