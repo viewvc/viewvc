@@ -16,6 +16,7 @@
 #
 
 import sys
+from common import ViewVCException
 
 # Set to non-zero to track and print processing times
 SHOW_TIMES = 0
@@ -55,17 +56,6 @@ if SHOW_TIMES:
 else:
 
   t_start = t_end = t_dump = lambda *args: None
-
-
-class ViewVCException(Exception):
-  def __init__(self, msg, status=None):
-    self.msg = msg
-    self.status = status
-
-  def __str__(self):
-    if self.status:
-      return '%s: %s' % (self.status, self.msg)
-    return "ViewVC Unrecoverable Error: %s" % self.msg
 
 
 def PrintException(server, exc_data):

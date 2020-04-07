@@ -13,7 +13,7 @@
 
 import vcauth
 import os.path
-import debug
+from common import ViewVCException
 
 from ConfigParser import ConfigParser
 
@@ -29,9 +29,9 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     self.authz_file = params.get('authzfile')
     self.rel_authz_file = params.get('root_relative_authzfile')
     if not (self.authz_file or self.rel_authz_file):
-      raise debug.ViewVCException("No authzfile configured")
+      raise ViewVCException("No authzfile configured")
     if self.authz_file and self.rel_authz_file:
-      raise debug.ViewVCException("Multiple authzfile locations defined")
+      raise ViewVCException("Multiple authzfile locations defined")
 
     # See if the admin wants us to do case normalization of usernames.
     self.force_username_case = params.get('force_username_case')
@@ -42,8 +42,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     elif not self.force_username_case:
       self.username = username
     else:
-      raise debug.ViewVCException("Invalid value for force_username_case "
-                                  "option")
+      raise ViewVCException("Invalid value for force_username_case option")
 
   def _get_authz_file(self, rootname):
     if self.rel_authz_file:
@@ -66,7 +65,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     try:
       cp.read(self._get_authz_file(rootname))
     except:
-      raise debug.ViewVCException("Unable to parse configured authzfile file")
+      raise ViewVCException("Unable to parse configured authzfile file")
 
     # Ignore context; assume the authz file only has the repository URL's
     # basename, just like mod_dav_svn requires it.

@@ -61,3 +61,14 @@ class TemplateData:
 
     assert isinstance(template_data, TemplateData)
     self._items.update(template_data._items)
+
+
+class ViewVCException(Exception):
+  def __init__(self, msg, status=None):
+    self.msg = msg
+    self.status = status
+
+  def __str__(self):
+    if self.status:
+      return '%s: %s' % (self.status, self.msg)
+    return "ViewVC Unrecoverable Error: %s" % self.msg
