@@ -23,10 +23,20 @@
     <tr>
       <th scope="col" class="entry-name"
           onclick="jumpTo('[sortby_file_href]#vc_directory')">
-        File
+        <div class="flex">
+          File
 [is sortby "file"]
-        <i class="fa fa-sort-[is sortdir "up"]up[else]down[end]"></i>
+          <i class="fa fa-sort-[is sortdir "up"]up[else]down[end]"></i>
 [end]
+[if-any search_re_action]
+          <span class="flex-spacer"></span>
+          <span
+            class="filter-button"
+            onclick="$('#filterModal').modal('show');
+                     event.stopPropagation()"
+            ><i class="fa fa-filter"></i></span>
+[end]
+        </div>
       </th>
       <th scope="col" class="entry-ago"
           onclick="jumpTo('[sortby_date_href]#vc_directory')">
@@ -46,6 +56,16 @@
   </thead>
 
   <tbody>
+[if-any search_re]
+    <tr class="filter-row">
+      <td class="entry-name">
+        <i class="fa fa-filter"></i>
+        [search_re]
+      </td>
+      <td class="entry-ago"></td>
+      <td class="entry-description"></td>
+    </tr>
+[end]
 [if-any up_href]
     <tr>
       <td class="entry-name">
@@ -79,7 +99,6 @@
       </td>
       <td class="entry-description"
           [if-any entries.log_href]onclick="jumpTo('[entries.log_href]')"[end]>
-
   [if-any entries.rev]
         <span class="entry-revision">
           <a [if-any entries.log_href]href="[entries.log_href]"[end]
@@ -121,26 +140,7 @@
 </div>
 </form>
 [end][end]
-[if-any search_re_action]
-<form class="inline" method="get" action="[search_re_action]">
-<div class="inline lpad">
-  [for search_re_hidden_values]<input type="hidden" name="[search_re_hidden_values.name]" value="[search_re_hidden_values.value]"/>[end]
-  <input type="text" name="search" value="[search_re]" />
-  <input type="submit" value="Search Files" />
-</div>
-</form>
-[if-any search_re]
-<form class="inline" method="get" action="[search_re_action]">
-<div class="inline">
-  [for search_re_hidden_values]<input type="hidden" name="[search_re_hidden_values.name]" value="[search_re_hidden_values.value]"/>[end]
-  <input type="submit" value="Show all files" />
-</div>
-</form>
-</div>
-[end]
-[end]
-[is num_dead "0"]
-[else]
+[is num_dead "0"][else]
 <div class="inline lpad">
   [if-any attic_showing]
     <a href="[hide_attic_href]">Hide
@@ -160,5 +160,45 @@
 
 <!-- ************************************************************** -->
 </div>
+
+<div class="modal" tabindex="-1" role="dialog" id="filterModal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Filter files in this directory</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="inline" method="get" action="[search_re_action]">
+          <div class="inline lpad">
+[for search_re_hidden_values]
+            <input
+              type="hidden" name="[search_re_hidden_values.name]"
+              value="[search_re_hidden_values.value]"/>
+[end]
+            <input type="text" name="search" value="[search_re]" />
+            <input type="submit" value="Search Files" />
+          </div>
+        </form>
+[if-any search_re]
+        <form class="inline" method="get" action="[search_re_action]">
+          <div class="inline">
+[for search_re_hidden_values]
+            <input
+              type="hidden" name="[search_re_hidden_values.name]"
+              value="[search_re_hidden_values.value]"/>
+[end]
+            <input type="submit" value="Show all files" />
+          </div>
+        </form>
+[end]
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
 [include "_footer.ezt"]
