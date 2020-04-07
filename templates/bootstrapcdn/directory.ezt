@@ -56,12 +56,11 @@
     </tr>
 [end]
 [for entries]
-  [define click_href][is entries.pathtype "dir"][entries.view_href][else][if-any entries.prefer_markup][entries.view_href][else][entries.download_href][end][end][end]
   [define entry_icon]fa-[is entries.pathtype "dir"]folder[else][if-any entries.is_viewable_image]file-image-o[else][if-any entries.is_binary]file-o[else]file-text-o[end][end][end][end]
     <tr class="[is entries.state "dead"]dead-entry[end]">
       <td class="entry-name"
-          [if-any click_href]onclick="jumpTo('[click_href]')"[end]>
-        <a name="[entries.anchor]" [if-any click_href]href="[click_href]"[end]>
+          [if-any entries.view_href]onclick="jumpTo('[entries.view_href]')"[end]>
+        <a name="[entries.anchor]" [if-any entries.view_href]href="[entries.view_href]"[end]>
           <i class="fa fa-fw [entry_icon]"></i>
           [entries.name]
           [is entries.pathtype "dir"]/[end]
