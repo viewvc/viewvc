@@ -1157,11 +1157,7 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
                                     escape=1)
 
   is_binary_file = is_binary_file_mime_type(mime_type, request.cfg)
-  if is_binary_file:
-    download_text_href = annotate_href = view_href = None
-    prefer_markup = False
-  else:
-    prefer_markup = default_view(mime_type, request.cfg) == view_markup
+  prefer_markup = default_view(mime_type, request.cfg) == view_markup
 
   return _item(view_href=view_href,
                download_href=download_href,
