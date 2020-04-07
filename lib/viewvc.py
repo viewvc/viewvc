@@ -291,15 +291,15 @@ class Request:
       debug.t_start('select-repos')
       self.repos.open()
       debug.t_end('select-repos')
-      type = self.repos.roottype()
-      if type == vclib.SVN:
+      vctype = self.repos.roottype()
+      if vctype == vclib.SVN:
         self.roottype = 'svn'
-      elif type == vclib.CVS:
+      elif vctype == vclib.CVS:
         self.roottype = 'cvs'
       else:
         raise ViewVCException(
           'The root "%s" has an unknown type ("%s").  Expected "cvs" or "svn".'
-          % (self.rootname, type),
+          % (self.rootname, vctype),
           "500 Internal Server Error")
 
     # If this is using an old-style 'rev' parameter, redirect to new hotness.
