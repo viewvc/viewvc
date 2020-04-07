@@ -407,7 +407,7 @@ class Config:
     self.options.mangle_email_addresses = 0
     self.options.custom_log_formatting = []
     self.options.default_file_view = "log"
-    self.options.hide_binary_content = 1
+    self.options.allow_mojibake = 0
     self.options.binary_mime_types = []
     self.options.dir_ignored_files = []
     self.options.http_expiration_time = 600

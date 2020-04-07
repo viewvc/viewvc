@@ -1980,13 +1980,18 @@ def markup_or_annotate(request, is_annotate):
 
   # Is this display blocked by 'binary_mime_types' configuration?
   if is_binary_file_mime_type(mime_type, cfg):
-    raise debug.ViewVCException('Display of binary file content disabled '
-                                'by configuration', '403 Forbidden')
+    fp, revision = request.repos.openfile(path, rev, {})
+    fp.close()
+    if check_freshness(request, None, revision, weak=1):
+      return
+    is_binary = True
+    if is_annotate:
+      annotation = 'binary'
 
   # If this is viewable image that we're allowed to show embedded, we
   # need only resolve its revision and generate an image src=
   # attribute URL for it.
-  if is_viewable_image(mime_type) and 'co' in cfg.options.allowed_views:
+  elif is_viewable_image(mime_type) and 'co' in cfg.options.allowed_views:
     fp, revision = request.repos.openfile(path, rev, {})
     fp.close()
     if check_freshness(request, None, revision, weak=1):
@@ -2074,7 +2079,7 @@ def markup_or_annotate(request, is_annotate):
         try:
           line = line.decode(encoding)
         except UnicodeDecodeError:
-          if cfg.options.hide_binary_content:
+          if not cfg.options.allow_mojibake:
             raise
           line = line.decode(encoding, 'surrogateescape')
         file_lines[i] = line

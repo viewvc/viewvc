@@ -95,6 +95,41 @@ td {
 
 <!-- ------------------------------------------------------------------------ -->
 <div class="h3">
+<h3>Binary File Handling</h3>
+
+<p>The <var>options/binary_mime_types</var> option has changed
+   slightly in that glob patterns (such as "image/*") no longer apply
+   to the three "web-friendly" image formats.  Administrators who
+   wish to forbid viewing of these images types ("image/gif",
+   "image/jpeg", and "image/png") should add them explicitly to this
+   option's value (in addition, if you wish, to a blanket "image/*"
+   that covers all other image types).  Of course, if your
+   installation does not allow the use of the "co" (checkout or
+   download) view, embedded web-friendly images will not be displayed
+   even if not explicitly forbidden by this option.</p>
+
+<p>Additionally, what ViewVC <em>does</em> with binary files has
+   changed.  Rather than raising a page-level exception on a request
+   to view a binary file's content or diff, ViewVC will avoid showing
+   the deemed-to-be-unreadable file content but still preserve its own
+   page layout and navigation.</p>
+
+<p>Finally, recognizing the challenges of handling even human-readable
+   file content (which as of this release implies an ability to
+   perfectly represent that content as Unicode), we've added a new
+   <var>options/allow_mojibake</var> option that administrators can
+   enable in order to force ViewVC to fall back to a lossy Unicode
+   transformation and present those results to the user.  This is
+   rougly analogous to the old <var>hide_binary_garbage</var>
+   template-defined flag that was present in some previous ViewVC
+   template sets. Note that this option does not override other
+   determinations of "binariness" (such as the application
+   of <var>options/binary_mime_types</var>.</p>
+
+</div>
+
+<!-- ------------------------------------------------------------------------ -->
+<div class="h3">
 <h3>Configuration Options</h3>
 
 <p>This section covers changes to configuration options not already
@@ -103,7 +138,7 @@ td {
 <p>The following configuration options were removed:</p>
 
 <ul>
-  <li>options/checkout_magic</li>
+  <li><var>options/checkout_magic</var></li>
 </ul>
 
 </div>

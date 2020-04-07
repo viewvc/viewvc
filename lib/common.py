@@ -48,6 +48,9 @@ class TemplateData:
   def __delitem__(self, key):
     return self._items.__delitem__(key)
 
+  def __str__(self):
+    return str(self._items)
+
   def keys(self):
     return self._items.keys()
 

@@ -402,22 +402,24 @@
 ##
 #allowed_views = annotate, diff, markup, roots
 
-## hide_binary_content: Hide the contents of binary files:
-##   1      Hide binary file contents
-##   0      Show binary file contents (as mojibake).
+## allow_mojibake: Force the (lossy) display of ostensibly
+## human-readable file content when Unicode conversion fails.
 ##
-## ViewVC attempts to transcode file content to Unicode for display,
-## and does so using all the hints at its disposal for the file's
-## source encoding (see the "detect_encoding", "default_encoding", and
-## "svn_ignore_mimetype" options).  But sometimes this process fails,
-## typically because the file's contents aren't actually intended to
-## be human-readable (a so-called "binary file").
+## ViewVC attempts to transcode the content of versioned files to
+## Unicode for display, and does so using all the hints at its
+## disposal for the file's source encoding (see the "detect_encoding",
+## "default_encoding", and "svn_ignore_mimetype" options).  But
+## sometimes this process fails, either because the file's contents
+## aren't actually intended to be human-readable (a so-called "binary
+## file") or because the source encoding guesswork just gets it wrong.
+## Enable this feature to force ViewVC to perform a lossy conversion
+## to Unicode and display those results to the user.
 ##
-## If you wish to force ViewVC to consider certain file MIME content
-## types as binary regardless of the actual content, see the
-## "binary_mime_types" option.
+## Note that this feature applies only to files that ViewVC hasn't
+## otherwise already determined as "binary" (per the
+## 'hide_binary_content', for example).
 ##
-#hide_binary_content = 1
+#allow_mojibake = 0
 
 ## binary_mime_types: Comma-delimited list of MIME content types (with
 ## support for fnmatch-style glob characters) which are always

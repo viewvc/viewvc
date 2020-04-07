@@ -5,6 +5,8 @@ Version 1.3.0 (released ??-???-????)
     - minimum Pygments version now 1.1
   * make-database now requires --force to destroy existing DB (#212)
   * removed deprecated checkout_magic option/behavior (#215)
+  * new 'allow_mojibake' option (#216)
+  * require explicit match for web-friendly images in 'binary_mime_types' (#216)
 
 Version 1.2.1 (released 26-Mar-2020)
 
