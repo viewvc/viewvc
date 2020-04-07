@@ -132,13 +132,13 @@ def _rootpath2url(rootpath, path):
 # Return a stringfied copy of a bytestring Subversion property
 # (versioned or unversioned) VALUE if possible; otherwise return the
 # original bytestring.
-def _normalize_property_value(value, encoding_hint=None):
+def _normalize_property_value(value, encoding_hint=None, errors='strict'):
   try:
-    value = value.decode('utf-8')
+    value = value.decode('utf-8', 'strict')
   except UnicodeDecodeError:
     if encoding_hint:
       try:
-        value = value.decode(encoding_hint)
+        value = value.decode(encoding_hint, errors)
       except UnicodeDecodeError:
         pass
   return value
@@ -150,12 +150,12 @@ def _normalize_property_value(value, encoding_hint=None):
 # Unicode string), both the returned NAME and VALUE will be None.
 # Otherwise, NAME will be a Unicode string and VALUE will be a Unicode
 # string of it could be stringified or a bytestring if it couldn't.
-def _normalize_property(name, value, encoding_hint=None):
+def _normalize_property(name, value, encoding_hint=None, errors='strict'):
   try:
     name = name.decode('utf-8')
   except UnicodeDecodeError:
     return None, None
-  value = _normalize_property_value(value, encoding_hint)
+  value = _normalize_property_value(value, encoding_hint, errors)
   return name, value
 
 
@@ -169,14 +169,17 @@ def _split_revprops(revprops, encoding_hint=None):
   msg = author = date = None
   other_props = {}
   for prop in revprops:
-    pname, pval = _normalize_property(prop, revprops[prop], encoding_hint)
-    if pname == core.SVN_PROP_REVISION_LOG.decode('utf-8'):
-      msg = pval
-    elif pname == core.SVN_PROP_REVISION_AUTHOR.decode('utf-8'):
-      author = pval
-    elif pname == core.SVN_PROP_REVISION_DATE.decode('utf-8'):
-      date = _datestr_to_date(pval)
-    elif pname is not None:
+    # msg and author should be always visible text for users.
+    if prop == core.SVN_PROP_REVISION_LOG:
+      _, msg = _normalize_property(prop, revprops[prop],
+                                        encoding_hint, 'backslashreplace')
+    elif prop == core.SVN_PROP_REVISION_AUTHOR:
+      _, author = _normalize_property(prop, revprops[prop],
+                                        encoding_hint, 'backslashreplace')
+    elif prop == core.SVN_PROP_REVISION_DATE:
+      date = _datestr_to_date(revprops[prop])
+    else:
+      pname, pval = _normalize_property(prop, revprops[prop], encoding_hint)
       other_props[pname] = pval
   return msg, author, date, other_props
 
@@ -490,7 +493,12 @@ class LocalSubversionRepository(vclib.Repository):
       if entry.kind == vclib.FILE:
         entry.size = fs.file_length(fsroot, path)
       lock = fs.get_lock(self.fs_ptr, path)
-      entry.lockinfo = lock and _to_str(lock.owner) or None
+      if lock:
+        entry.lockinfo = _normalize_property_value(lock.owner, self.encoding,
+                                                   'backslashreplace')
+      else:
+        entry.lockinfo = None
+
 
   def itemlog(self, path_parts, rev, sortby, first, limit, options):
     """see vclib.Repository.itemlog docstring
@@ -521,7 +529,8 @@ class LocalSubversionRepository(vclib.Repository):
     try:
       lock = fs.get_lock(self.fs_ptr, path)
       if lock:
-        lockinfo = _to_str(lock.owner)
+        lockinfo = _normalize_property_value(lock.owner, self.encoding,
+                                             'backslashescape')
     except NameError:
       pass
 
@@ -787,13 +796,7 @@ class LocalSubversionRepository(vclib.Repository):
       # Get the revision property info.  (Would use
       # editor.get_root_props(), but something is broken there...)
       revprops = fs.revision_proplist(self.fs_ptr, rev)
-      msg, author, date, revprops = _split_revprops(revprops)
-
-      # The iterfaces that use this function expect string values.
-      if isinstance(msg, bytes):
-        msg = _to_str(msg)
-      if isinstance(author, bytes):
-        author = _to_str(author) or pval
+      msg, author, date, revprops = _split_revprops(revprops, self.encoding)
 
       # Optimization: If our caller doesn't care about the changed
       # paths, and we don't need them to do authz determinations, let's
