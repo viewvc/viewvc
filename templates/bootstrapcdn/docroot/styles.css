@@ -9,14 +9,17 @@ a {
 a:hover {
     text-decoration: none;
 }
+.inline {
+    display: inline;
+}
+.flex {
+    display: flex;
+}
 span.flex-spacer {
     flex: 1 1 auto;
 }
 i.small-fa {
     font-size: 50%;
-}
-.inline {
-    display: inline;
 }
 i.fa-sort-up,
 i.fa-sort-down {
@@ -106,6 +109,17 @@ i.fa-sort-down {
 }
 #vc_directory tr.dead-entry {
     opacity: 0.6;
+}
+#vc_directory tr.filter-row {
+    background-color: #b0b0df;
+    font-style: italic;
+    font-size: 80%;
+}
+#vc_directory .filter-button {
+    display: none;
+}
+#vc_directory th:hover .filter-button {
+    display: initial;
 }
 @media only screen and (max-width: 1200px) {
     #vc_directory .entry-ago {
