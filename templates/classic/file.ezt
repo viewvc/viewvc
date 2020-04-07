@@ -9,8 +9,8 @@
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
-[include "include/header.ezt" "markup"]
-[include "include/file_header.ezt"]
+[include "_header.ezt" "markup"]
+[include "_file_header.ezt"]
 <hr />
 <div class="vc_summary">
 Revision [if-any revision_href]<a href="[revision_href]"><strong>[rev]</strong></a>[else]<strong>[rev]</strong>[end] -
@@ -108,5 +108,5 @@ Revision [if-any revision_href]<a href="[revision_href]"><strong>[rev]</strong><
 [end]
 [end]
 
-[include "include/props.ezt"]
-[include "include/footer.ezt"]
+[include "_props.ezt"]
+[include "_footer.ezt"]

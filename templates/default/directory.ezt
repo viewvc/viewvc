@@ -2,7 +2,7 @@
   [define page_title]Index of:[end]
   [define help_href][docroot]/help_[if-any where]dir[else]root[end]view.html[end]
 [# end]
-[include "include/header.ezt" "directory"]
+[include "_header.ezt" "directory"]
 
 [if-any where][else]
   <!-- you may insert repository access instructions here -->
@@ -13,7 +13,7 @@
 
 <div id="vc_togglables">
 <div class="inline">
-[include "include/pathrev_form.ezt"]
+[include "_pathrev_form.ezt"]
 </div>
 [is roottype "svn"]
 <div class="inline lpad">
@@ -138,9 +138,9 @@
 </div>
 </div>
 
-[include "include/props.ezt"]
+[include "_props.ezt"]
 
 <!-- ************************************************************** -->
 </div>
 
-[include "include/footer.ezt"]
+[include "_footer.ezt"]

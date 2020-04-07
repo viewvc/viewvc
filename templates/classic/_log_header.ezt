@@ -3,8 +3,8 @@
   [define help_href][docroot]/help_log.html[end]
 [# end]
 
-[include "header.ezt" "log"]
-[include "file_header.ezt"]
+[include "_header.ezt" "log"]
+[include "_file_header.ezt"]
 
 <hr />
 
@@ -46,9 +46,9 @@
 
 <tr>
   <td>Sticky [is roottype "cvs"]Tag[else]Revision[end]:</td>
-  <td>[include "pathrev_form.ezt"]</td>
+  <td>[include "_pathrev_form.ezt"]</td>
 </tr>
 
 </table>
 
-[include "paging.ezt"]
+[include "_paging.ezt"]

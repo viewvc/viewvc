@@ -2,7 +2,7 @@
   [define page_title]Revision [rev] of:[end]
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
-[include "include/header.ezt" "revision"]
+[include "_header.ezt" "revision"]
 
 
 <form method="get" action="[jump_rev_action]">
@@ -73,9 +73,9 @@
 </div>
 [end]
 
-[include "include/props.ezt"]
+[include "_props.ezt"]
 
 <!-- ************************************************************** -->
 </div>
 
-[include "include/footer.ezt"]
+[include "_footer.ezt"]

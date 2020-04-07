@@ -1,4 +1,4 @@
-[include "include/dir_header.ezt"]
+[include "_dir_header.ezt"]
 
 <table cellspacing="1" cellpadding="2" class="fixed">
 <thead>
@@ -137,4 +137,4 @@
 
 </table>
 
-[include "include/dir_footer.ezt"]
+[include "_dir_footer.ezt"]

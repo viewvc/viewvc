@@ -4,6 +4,6 @@
 <p style="margin:0;"><a href="[tarball_href]">Download GNU tarball</a></p>
 [end]
 
-[include "props.ezt"]
-[include "footer.ezt"]
+[include "_props.ezt"]
+[include "_footer.ezt"]
 

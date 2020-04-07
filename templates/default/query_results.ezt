@@ -3,7 +3,7 @@
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
-[include "include/header.ezt"]
+[include "_header.ezt"]
 
 <p><strong>[english_query]</strong></p>
 [# <!-- {sql} --> ]
@@ -92,4 +92,4 @@
 </table>
 [end]
 
-[include "include/footer.ezt"]
+[include "_footer.ezt"]

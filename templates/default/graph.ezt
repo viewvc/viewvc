@@ -3,7 +3,7 @@
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
-[include "include/header.ezt" "graph"]
+[include "_header.ezt" "graph"]
 
 <div style="text-align:center;">
 [imagemap]
@@ -86,4 +86,4 @@
 </form>
 [end]
 
-[include "include/footer.ezt"]
+[include "_footer.ezt"]

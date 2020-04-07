@@ -3,7 +3,7 @@
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
-[include "include/header.ezt" "revision"]
+[include "_header.ezt" "revision"]
 
 <hr />
 
@@ -78,5 +78,5 @@
   </tbody>
 </table>
 
-[include "include/props.ezt"]
-[include "include/footer.ezt"]
+[include "_props.ezt"]
+[include "_footer.ezt"]

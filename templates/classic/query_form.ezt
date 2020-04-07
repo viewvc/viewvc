@@ -3,7 +3,7 @@
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
-[include "include/header.ezt" "query"]
+[include "_header.ezt" "query"]
 
 <p><a href="[dir_href]">
 <img src="[docroot]/images/dir.png" class="vc_icon" alt="Directory" />
@@ -204,4 +204,4 @@ Browse Directory</a></p>
 
 </form>
 
-[include "include/footer.ezt"]
+[include "_footer.ezt"]

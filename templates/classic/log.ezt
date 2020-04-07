@@ -1,4 +1,4 @@
-[include "include/log_header.ezt"]
+[include "_log_header.ezt"]
 
 [define first_revision][end]
 [define last_revision][end]
@@ -143,4 +143,4 @@
 </div>
 [end]
 
-[include "include/log_footer.ezt"]
+[include "_log_footer.ezt"]

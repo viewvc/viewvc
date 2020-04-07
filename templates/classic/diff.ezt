@@ -3,12 +3,12 @@
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
-[include "include/header.ezt" "diff"]
-[include "include/file_header.ezt"]
+[include "_header.ezt" "diff"]
+[include "_file_header.ezt"]
 
 [if-any diffs]
   [for diffs]
-    [include "include/diff_display.ezt"]
+    [include "_diff_display.ezt"]
   [end]
 [end]
 
@@ -60,4 +60,4 @@
   </tr>
 </table>
 
-[include "include/footer.ezt"]
+[include "_footer.ezt"]

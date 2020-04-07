@@ -3,7 +3,7 @@
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
-[include "include/header.ezt" "directory"]
+[include "_header.ezt" "directory"]
 
 <div id="vc_main_body">
 <!-- ************************************************************** -->
@@ -42,4 +42,4 @@
 <!-- ************************************************************** -->
 </div>
 
-[include "include/footer.ezt"]
+[include "_footer.ezt"]

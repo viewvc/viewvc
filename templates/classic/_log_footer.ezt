@@ -1,0 +1,10 @@
+[include "_paging.ezt"]
+
+[is pathtype "file"]
+  [include "_diff_form.ezt"]
+[end]
+
+[include "_sort.ezt"]
+
+[include "_footer.ezt"]
+

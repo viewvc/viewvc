@@ -1,4 +1,4 @@
-[include "include/log_header.ezt"]
+[include "_log_header.ezt"]
 
 <hr />
 <table cellspacing="1" cellpadding="2">
@@ -173,4 +173,4 @@
 [end]
 </table>
 
-[include "include/log_footer.ezt"]
+[include "_log_footer.ezt"]

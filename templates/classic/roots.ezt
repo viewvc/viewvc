@@ -3,7 +3,7 @@
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
-[include "include/header.ezt" "directory"]
+[include "_header.ezt" "directory"]
 
 <table cellspacing="1" cellpadding="2">
 <thead>
@@ -38,4 +38,4 @@
 
 </table>
 
-[include "include/footer.ezt"]
+[include "_footer.ezt"]

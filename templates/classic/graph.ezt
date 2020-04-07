@@ -3,8 +3,8 @@
   [define help_href][docroot]/help_rootview.html[end]
 [# end]
 
-[include "include/header.ezt" "graph"]
-[include "include/file_header.ezt"]
+[include "_header.ezt" "graph"]
+[include "_file_header.ezt"]
 
 <hr />
 
@@ -89,4 +89,4 @@
 </form>
 [end]
 
-[include "include/footer.ezt"]
+[include "_footer.ezt"]
