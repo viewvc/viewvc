@@ -1079,7 +1079,7 @@ def is_binary_file_mime_type(mime_type, cfg):
   if mime_type:
     # We require explicit handling of the web-friendly images.
     # For all other types, pattern-matching is used.
-    if mime_type in ('image/gif', 'image/jpeg', 'image/png'):
+    if is_viewable_image(mime_type):
       return mime_type in cfg.options.binary_mime_types
     for pattern in cfg.options.binary_mime_types:
       if fnmatch.fnmatch(mime_type, pattern):
