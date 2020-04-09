@@ -163,7 +163,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/html")
         self.send_header("Location", new_url)
         self.end_headers()
-        self.wfile.write("""<html>
+        self.wfile.write(("""<html>
 <head>
 <meta http-equiv="refresh" content="10; url=%s" />
 <title>Moved Temporarily</title>
@@ -174,7 +174,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
    If this doesn't work, please click on the link above.</p>
 </body>
 </html>
-""" % (new_url, new_url))
+""" % (new_url, new_url)).encode('utf-8'))
       else:
         self.send_error(404)
     except IOError: # ignore IOError: [Errno 32] Broken pipe
@@ -184,7 +184,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
       self.send_header("WWW-Authenticate", 'Basic realm="ViewVC"')
       self.send_header("Content-type", "text/html")
       self.end_headers()
-      self.wfile.write("""<html>
+      self.wfile.write(b"""<html>
 <head>
 <title>Authentication failed</title>
 </head>
