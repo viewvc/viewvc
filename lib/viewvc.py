@@ -19,8 +19,6 @@ __version__ = '1.3.0-dev'
 
 # this comes from our library; measure the startup time
 import debug
-debug.t_start('startup')
-debug.t_start('imports')
 
 # standard modules that we know are in the path or builtin
 import sys
@@ -58,8 +56,6 @@ try:
   import idiff
 except (SyntaxError, ImportError):
   idiff = None
-
-debug.t_end('imports')
 
 # Initialize the system tracebacklimit value to 0, meaning stack
 # traces will carry only the top-level exception string.  This can be
@@ -250,12 +246,9 @@ class Request:
         cfg.overlay_root_options(self.rootname)
 
         # Setup an Authorizer for this rootname and username
-        debug.t_start('setup-authorizer')
         self.auth = setup_authorizer(cfg, self.username)
-        debug.t_end('setup-authorizer')
 
         # Create the repository object
-        debug.t_start('select-repos')
         try:
           if roottype == 'cvs':
             self.rootpath = vclib.ccvs.canonicalize_rootpath(rootpath)
@@ -280,7 +273,6 @@ class Request:
             raise vclib.ReposNotFound()
         except vclib.ReposNotFound:
           pass
-        debug.t_end('select-repos')
       if self.repos is None:
         raise ViewVCException(
           'The root "%s" is unknown. If you believe the value is '
@@ -288,9 +280,7 @@ class Request:
           % self.rootname, "404 Not Found")
 
     if self.repos:
-      debug.t_start('select-repos')
       self.repos.open()
-      debug.t_end('select-repos')
       vctype = self.repos.roottype()
       if vctype == vclib.SVN:
         self.roottype = 'svn'
@@ -416,15 +406,12 @@ class Request:
       needs_redirect = 1
 
     # startup is done now.
-    debug.t_end('startup')
 
     # If we need to redirect, do so.  Otherwise, handle our requested view.
     if needs_redirect:
       self.server.redirect(self.get_url())
     else:
-      debug.t_start('view-func')
       self.view_func(self)
-      debug.t_end('view-func')
 
   def get_url(self, escape=0, partial=0, prefix=0, **args):
     """Constructs a link to another ViewVC page just like the get_link
@@ -933,14 +920,8 @@ def get_view_template(cfg, view_name, language="en"):
   # Allow per-language template selection.
   tname = tname.replace('%lang%', language)
 
-  # Finally, construct the whole template path.
-  tname = cfg.path(tname)
-
-  debug.t_start('ezt-parse')
-  template = ezt.Template(tname)
-  debug.t_end('ezt-parse')
-
-  return template
+  # Finally, construct the whole template path and return the Template.
+  return ezt.Template(cfg.path(tname))
 
 def get_writeready_server_file(request, content_type=None, encoding=None,
                                content_length=None, allow_compress=True):
@@ -2312,10 +2293,8 @@ def view_directory(request):
                                            cfg.options.hide_attic))
     options["cvs_subdirs"] = (cfg.options.show_subdir_lastmod and
                               cfg.options.show_logs)
-  debug.t_start("listdir")
   file_data = request.repos.listdir(request.path_parts, request.pathrev,
                                     options)
-  debug.t_end("listdir")
 
   # sort with directories first, and using the "sortby" criteria
   sortby = request.query_dict.get('sortby', cfg.options.sort_by) or 'file'
@@ -2326,7 +2305,6 @@ def view_directory(request):
   # names), then we just fetch dirlogs for the needed entries.
   # however, when sorting by other properties or not paging, we've no
   # choice but to fetch dirlogs for everything.
-  debug.t_start("dirlogs")
   if cfg.options.dir_pagesize and sortby == 'file':
     dirlogs_first = int(request.query_dict.get('dir_pagestart', 0))
     if dirlogs_first > len(file_data):
@@ -2350,7 +2328,6 @@ def view_directory(request):
                           file_data, options)
     sort_file_data(file_data, request.roottype, sortdir, sortby,
                    cfg.options.sort_group_dirs)
-  debug.t_end("dirlogs")
 
   # If a regex is specified, build a compiled form thereof for filtering
   searchstr = None
@@ -2367,7 +2344,6 @@ def view_directory(request):
   where = request.where
   where_prefix = where and where + '/'
 
-  debug.t_start("row-building")
   for file in file_data:
     if is_dir_ignored_file(file.name, cfg):
       continue
@@ -2388,11 +2364,9 @@ def view_directory(request):
       row.date = make_time_string(file.date, cfg)
       row.ago = html_time(request, file.date)
     if cfg.options.show_logs:
-      debug.t_start("dirview_logformat")
       lf = LogFormatter(request, file.log)
       row.log = lf.get(maxlen=0, htmlize=1)
       row.short_log = lf.get(maxlen=cfg.options.short_log_len, htmlize=1)
-      debug.t_end("dirview_logformat")
     row.lockinfo = file.lockinfo
     row.anchor = request.server.escape(file.name)
     row.name = request.server.escape(file.name)
@@ -2475,7 +2449,6 @@ def view_directory(request):
                                           escape=1)
 
     rows.append(row)
-  debug.t_end("row-building")
 
   # Prepare the data that will be passed to the template, based on the
   # common template data.
@@ -5167,8 +5140,6 @@ def load_config(pathname=None, server=None):
   configuration file; otherwise, use PATHNAME (if provided).  Failing
   all else, use a hardcoded default configuration path."""
 
-  debug.t_start('load-config')
-
   # See if the environment contains overrides to the configuration
   # path.  If we have a SERVER object, consult its environment; use
   # the OS environment otherwise.
@@ -5201,7 +5172,6 @@ def load_config(pathname=None, server=None):
     files = list(map(lambda x, y=pathname: os.path.join(os.path.dirname(y), x), files))
     mimetypes.init(files)
 
-  debug.t_end('load-config')
   return cfg
 
 
@@ -5229,15 +5199,10 @@ def view_error(server, cfg):
 
 def main(server, cfg):
   try:
-    debug.t_start('main')
-    try:
-      # build a Request object, which contains info about the HTTP request
-      request = Request(server, cfg)
-      request.run_viewvc()
-    except SystemExit as e:
-      return
-    except:
-      view_error(server, cfg)
-  finally:
-    debug.t_end('main')
-    debug.t_dump(server.file())
+    # build a Request object, which contains info about the HTTP request
+    request = Request(server, cfg)
+    request.run_viewvc()
+  except SystemExit as e:
+    return
+  except:
+    view_error(server, cfg)

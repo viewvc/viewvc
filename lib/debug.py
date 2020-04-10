@@ -10,16 +10,8 @@
 #
 # -----------------------------------------------------------------------
 
-#
-# Note: a t_start/t_end pair consumes about 0.00005 seconds on a P3/700.
-#       the lambda form (when debugging is disabled) should be even faster.
-#
-
 import sys
 from common import ViewVCException
-
-# Set to non-zero to track and print processing times
-SHOW_TIMES = 0
 
 # Set to a server-side path to force the tarball view to generate the
 # tarball as a file on the server, instead of transmitting the data
@@ -27,35 +19,6 @@ SHOW_TIMES = 0
 # considitions in the browser, as well as tarball inspection on the
 # server.  NOTE:  The file will be a TAR archive, *not* gzip-compressed.
 TARFILE_PATH = ''
-
-
-if SHOW_TIMES:
-
-  import time
-
-  _timers = { }
-  _times = { }
-
-  def t_start(which):
-    _timers[which] = time.time()
-
-  def t_end(which):
-    t = time.time() - _timers[which]
-    if which in _times:
-      _times[which] = _times[which] + t
-    else:
-      _times[which] = t
-
-  def t_dump(out):
-    out.write('<div>')
-    names = sorted(_times.keys())
-    for name in names:
-      out.write('%s: %.6fs<br/>\n' % (name, _times[name]))
-    out.write('</div>')
-
-else:
-
-  t_start = t_end = t_dump = lambda *args: None
 
 
 def PrintException(server, exc_data):
