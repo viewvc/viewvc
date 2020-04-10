@@ -80,8 +80,15 @@ class StandaloneServer(sapi.CgiServer):
   to generate output."""
 
   def __init__(self, handler):
-    sapi.CgiServer.__init__(self, inheritableOut = sys.platform != "win32")
+    sapi.Server.__init__(self)
+    self.headerSent = 0
+    self.headers = []
     self.handler = handler
+    self.iis = False
+    self.out_fp = handler.wfile
+
+    global server
+    server = self
 
   def header(self, content_type='text/html; charset=UTF-8', status=None):
     if not self.headerSent:
@@ -102,6 +109,23 @@ class StandaloneServer(sapi.CgiServer):
       for (name, value) in self.headers:
         self.handler.send_header(name, value)
       self.handler.end_headers()
+
+  def write_text(self, s):
+    self.write(self, s.encode('utf-8', 'surrogateesape'))
+
+  def redirect(self, url):
+    self.addheader('Location', url)
+    self.header(status='301 Moved')
+    self.write_text('This document is located <a href="%s">here</a>.\n' % url)
+
+  def write(self, s):
+    self.out_fp.write(s)
+
+  def flush(self):
+    self.out_fp.flush()
+
+  def file(self):
+    return self.out_fp
 
 
 class NotViewVCLocationException(Exception):
@@ -139,7 +163,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/html")
         self.send_header("Location", new_url)
         self.end_headers()
-        self.wfile.write("""<html>
+        self.wfile.write(("""<html>
 <head>
 <meta http-equiv="refresh" content="10; url=%s" />
 <title>Moved Temporarily</title>
@@ -150,7 +174,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
    If this doesn't work, please click on the link above.</p>
 </body>
 </html>
-""" % (new_url, new_url))
+""" % (new_url, new_url)).encode('utf-8'))
       else:
         self.send_error(404)
     except IOError: # ignore IOError: [Errno 32] Broken pipe
@@ -160,7 +184,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
       self.send_header("WWW-Authenticate", 'Basic realm="ViewVC"')
       self.send_header("Content-type", "text/html")
       self.end_headers()
-      self.wfile.write("""<html>
+      self.wfile.write(b"""<html>
 <head>
 <title>Authentication failed</title>
 </head>
@@ -289,41 +313,12 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
     # REMOTE_IDENT
     # XXX Other HTTP_* headers
 
-    # Preserve state, because we execute script in current process:
-    save_argv = sys.argv
-    save_stdin = sys.stdin
-    save_stdout = sys.stdout
-    save_stderr = sys.stderr
-    # For external tools like enscript we also need to redirect
-    # the real stdout file descriptor.
-    #
-    # FIXME:  This code used to carry the following comment:
-    #
-    #   (On windows, reassigning the sys.stdout variable is sufficient
-    #   because pipe_cmds makes it the standard output for child
-    #   processes.)
-    #
-    # But we no longer use pipe_cmds.  So at the very least, the
-    # comment is stale.  Is the code okay, though?
-    if sys.platform != "win32":
-      save_realstdout = os.dup(1)
     try:
       try:
-        sys.argv = []
-        sys.stdout = self.wfile
-        if sys.platform != "win32":
-          os.dup2(self.wfile.fileno(), 1)
-        sys.stdin = self.rfile
         viewvc.main(StandaloneServer(self), cfg)
       finally:
-        sys.argv = save_argv
-        sys.stdin = save_stdin
-        sys.stdout.closed or sys.stdout.flush()
-        if sys.platform != "win32":
-          os.dup2(save_realstdout, 1)
-          os.close(save_realstdout)
-        sys.stdout = save_stdout
-        sys.stderr = save_stderr
+        if not self.wfile.closed:
+          self.wfile.flush()
     except SystemExit as status:
       self.log_error("ViewVC exit status %s", str(status))
     else:

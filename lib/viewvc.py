@@ -943,7 +943,8 @@ def get_view_template(cfg, view_name, language="en"):
   return template
 
 def get_writeready_server_file(request, content_type=None, encoding=None,
-                               content_length=None, allow_compress=True):
+                               content_length=None, allow_compress=True,
+                               is_text=False):
   """Return a file handle to a response body stream, after outputting
   any queued special headers (on REQUEST.server) and (optionally) a
   'Content-Type' header whose value is CONTENT_TYPE and character set
@@ -977,12 +978,14 @@ def get_writeready_server_file(request, content_type=None, encoding=None,
   else:
     fp = request.server.file()
 
+  if is_text:
+    fp = io.TextIOWrapper(fp, 'utf-8', 'surrogateescape', write_through=True)
+
   return fp
 
 def generate_page(request, view_name, data, content_type=None):
-  server_fp = get_writeready_server_file(request, content_type, 'utf-8')
-  if not hasattr(server_fp, 'encoding'):
-    server_fp = io.TextIOWrapper(server_fp, 'utf-8', 'surrogateescape')
+  server_fp = get_writeready_server_file(request, content_type, 'utf-8',
+                                         is_text=True)
   template = get_view_template(request.cfg, view_name, request.language)
   template.generate(server_fp, data)
 
@@ -3614,9 +3617,7 @@ def view_patch(request):
                                                    path_left, path_right,
                                                    rev1, rev2, sym1, sym2)
 
-  server_fp = get_writeready_server_file(request, 'text/plain')
-  if not hasattr(server_fp, 'encoding'):
-    server_fp = io.TextIOWrapper(server_fp, 'utf-8', 'surrogateescape')
+  server_fp = get_writeready_server_file(request, 'text/plain', is_text=True)
   server_fp.write(headers)
   copy_stream(fp, server_fp)
   fp.close()
@@ -4717,7 +4718,7 @@ def build_commit(request, files, max_files, dir_strip, format):
   return commit
 
 def query_backout(request, commits):
-  server_fp = get_writeready_server_file(request, 'text/plain')
+  server_fp = get_writeready_server_file(request, 'text/plain', is_text=True)
   if not commits:
     server_fp.write("""\
 # No changes were selected by the query.
