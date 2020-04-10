@@ -117,6 +117,23 @@ td {
       of the configuration file.</td>
 </tr>
 <tr>
+  <td class="varname">debuglines</td>
+  <td class="vartype">list</td>
+  <td class="varnote">List of debugline (timestamped strings with debugging information
+      from the application) sorted by their timestamps.</td>
+</tr>
+<tr>
+  <td class="varname">debuglines.line</td>
+  <td class="vartype">string</td>
+  <td class="varnote">The text associated with the debugline.</td>
+</tr>
+<tr>
+  <td class="varname">debuglines.timestamp</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Timestamp of when the debugline was added (as a floating point
+      number of seconds since the Epoch).</td>
+</tr>
+<tr>
   <td class="varname">docroot</td>
   <td class="vartype">string</td>
   <td class="varnote">URL of the static documents directory, generally used for
@@ -124,7 +141,7 @@ td {
       directory (which is typically relative to the template
       location).</td>
 </tr>
-<tr>
+<tr class="varlevel1">
   <td class="varname">download_href</td>
   <td class="vartype">string</td>
   <td class="varnote">ViewVC file contents download URL for the current resource.

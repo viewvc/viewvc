@@ -289,7 +289,6 @@
 ##
 #languages = en-us
 
-
 ##---------------------------------------------------------------------------
 [utilities]
 
@@ -359,7 +358,6 @@
 ## cvsgraph = /usr/local/bin/cvsgraph
 ##
 #cvsgraph =
-
 
 ##---------------------------------------------------------------------------
 [options]
@@ -924,6 +922,15 @@
 ## would prefer not to share.
 ##
 #stacktraces = 0
+
+## enable_debuglines: If set, ViewVC will add to the template data
+## dictionary information that could be useful for debugging.  The
+## standard ViewVC templates will use JavaScript to echo this debug
+## information to the console.
+##
+## WARNING: This should not be enabled in production.
+##
+#enable_debuglines = 0
 
 ##---------------------------------------------------------------------------
 [templates]
