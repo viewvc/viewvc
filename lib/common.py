@@ -14,6 +14,8 @@
 #
 # -----------------------------------------------------------------------
 
+import sys
+
 # Special type indicators for diff header processing and idiff return codes
 _RCSDIFF_IS_BINARY = 'binary-diff'
 _RCSDIFF_ERROR = 'error'
@@ -72,3 +74,57 @@ class ViewVCException(Exception):
     if self.status:
       return '%s: %s' % (self.status, self.msg)
     return "ViewVC Unrecoverable Error: %s" % self.msg
+
+
+def print_exception_data(server, exc_data):
+  status = exc_data['status']
+  msg = exc_data['msg']
+  tb = exc_data['stacktrace']
+
+  server.header(status=status)
+  server.write(b"<h3>An Exception Has Occurred</h3>\n")
+
+  s = ''
+  if msg:
+    s = '<p><pre>%s</pre></p>' % server.escape(msg)
+  if status:
+    s = s + ('<h4>HTTP Response Status</h4>\n<p><pre>\n%s</pre></p><hr />\n'
+             % status)
+  s = s.encode('utf-8', 'xmlcharrefreplace')
+  server.write(s)
+
+  server.write(b"<h4>Python Traceback</h4>\n<p><pre>")
+  server.write(server.escape(tb).encode('utf-8', 'xmlcharrefreplace'))
+  server.write(b"</pre></p>\n")
+
+
+def get_exception_data():
+  # Capture the exception before doing anything else.
+  exc_type, exc, exc_tb = sys.exc_info()
+
+  exc_dict = {
+    'status' : None,
+    'msg' : None,
+    'stacktrace' : None,
+    }
+
+  try:
+    # Build a string from the formatted exception, but skipping the
+    # first line.
+    import traceback
+    if isinstance(exc, ViewVCException):
+      exc_dict['msg'] = exc.msg
+      exc_dict['status'] = exc.status
+    formatted = traceback.format_exception(exc_type, exc, exc_tb)
+    if exc_tb is not None:
+      formatted = formatted[1:]
+    exc_dict['stacktrace'] = ''.join(formatted)
+  finally:
+    # Prevent circular reference.  The documentation for sys.exc_info
+    # warns "Assigning the traceback return value to a local variable
+    # in a function that is handling an exception will cause a
+    # circular reference..."  This is all based on 'exc_tb', and we're
+    # now done with it, so toss it.
+    del exc_tb
+
+  return exc_dict

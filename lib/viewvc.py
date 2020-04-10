@@ -17,10 +17,7 @@ from __future__ import print_function
 
 __version__ = '1.3.0-dev'
 
-# this comes from our library; measure the startup time
-import debug
-
-# standard modules that we know are in the path or builtin
+# Standard modules that we know are in the path or builtin.
 import sys
 import os
 import calendar
@@ -41,8 +38,9 @@ from urllib.parse import urlencode as _urlencode, quote as _quote
 import subprocess
 
 # These modules come from our library (the stub has set up the path)
-from common import (ViewVCException, TemplateData, _item, _RCSDIFF_NO_CHANGES,
-                    _RCSDIFF_IS_BINARY, _RCSDIFF_ERROR)
+from common import (ViewVCException, get_exception_data, print_exception_data,
+                    _RCSDIFF_NO_CHANGES, _RCSDIFF_IS_BINARY, _RCSDIFF_ERROR,
+                    TemplateData, _item)
 import accept
 import config
 import ezt
@@ -4121,12 +4119,18 @@ def download_tarball(request):
     raise ViewVCException('Tarball generation is disabled',
                           '403 Forbidden')
 
-  # If debugging, we just need to open up the specified tar path for
-  # writing.  Otherwise, we get a writeable server output stream --
-  # disabling any default compression thereupon -- and wrap that in
-  # our own gzip stream wrapper.
-  if debug.TARFILE_PATH:
-    fp = open(debug.TARFILE_PATH, 'wb')
+  # Set DEBUG_TARFILE_PATH to a server-local path to enable tarball
+  # generation debugging and cause ViewVC to write the generated
+  # tarball (minus the compression layer) to that server filesystem
+  # location.  This is *NOT* suitable for production environments!
+  #
+  # Otherwise, we do tarball generation as usual by getting a
+  # writeable server output stream -- disabling any default
+  # compression thereupon -- and wrapping that in our own gzip stream
+  # wrapper.
+  DEBUG_TARFILE_PATH = None
+  if DEBUG_TARFILE_PATH is not None:
+    fp = open(DEBUG_TARFILE_PATH, 'wb')
   else:
     tarfile = request.rootname
     if request.path_parts:
@@ -4145,14 +4149,14 @@ def download_tarball(request):
   fp.write(b'\0' * 1024)
   fp.close()
 
-  if debug.TARFILE_PATH:
+  if DEBUG_TARFILE_PATH:
     request.server.header('')
     print("""
 <html>
 <body>
 <p>Tarball '%s' successfully generated!</p>
 </body>
-</html>""" % (debug.TARFILE_PATH))
+</html>""" % (DEBUG_TARFILE_PATH))
 
 
 def view_revision(request):
@@ -5176,7 +5180,7 @@ def load_config(pathname=None, server=None):
 
 
 def view_error(server, cfg):
-  exc_dict = debug.GetExceptionData()
+  exc_dict = get_exception_data()
   status = exc_dict['status']
   if exc_dict['msg']:
     exc_dict['msg'] = server.escape(exc_dict['msg'])
@@ -5195,7 +5199,7 @@ def view_error(server, cfg):
 
   # Fallback to the old exception printer if no configuration is
   # available, or if something went wrong.
-  debug.PrintException(server, exc_dict)
+  print_exception_data(server, exc_dict)
 
 def main(server, cfg):
   try:

@@ -71,9 +71,6 @@ new features require modifications to the [ViewVC URL
 schema](./docs/url-reference.html), make sure those modifications
 preserve the existing functionality of all ViewVC URLs.
 
-The `lib` subdirectory contains a module `debug.py` which you may find
-useful for performance testing.
-
 If a new file or module is added, a new line in the installer program
 `viewvc-install` is required.
 
