@@ -28,7 +28,7 @@
 [is cfg.options.show_roots_lastmod "1"]
       <td class="root-description">
   [if-any roots.rev]
-        <strong>[if-any roots.log_href]<a href="[roots.log_href]">[roots.rev]</a>[else][roots.rev][end]</strong>
+        <strong><a [if-any roots.log_href]href="[roots.log_href]"[end]>[roots.rev]</a></strong>
         ([roots.ago] ago) by <em>[roots.author]</em>: [roots.log]
   [end]
       </td>

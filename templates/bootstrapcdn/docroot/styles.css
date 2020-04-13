@@ -65,6 +65,12 @@ i.fa-sort-down {
     display: inline;
 }
 
+/* Main Content Area */
+#vc_view_main {
+    border-top: 1px solid #777;
+    border-bottom: 1px solid #777;
+}
+
 /* Root Listing */
 #vc_roots {
     table-layout: fixed;
@@ -161,10 +167,6 @@ i.fa-sort-down {
   background-color: black;
 }
 
-#vc_view_main {
-  border-top: 1px solid black;
-  border-bottom: 1px solid black;
-}
 
 #vc_togglables {
   text-align: right;
