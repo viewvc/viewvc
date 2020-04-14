@@ -400,6 +400,21 @@
 ##           | directory and its contents (recursively).
 ## ----------+---------------------------------------------------------
 ##
+## IMPORTANT: The "co" (checkout or download) view allows version
+## controlled content to be served to web browsers just like static
+## web server content.  When combined with 'default_file_view = co',
+## this allows versioned HTML files to be served up as HTML -- with
+## working references to stylesheets and images and links to other
+## pages -- directly from your repository.  It is important to
+## realize, however, that that feature carries some risk.  If a
+## discontented or ignorant user commits malicious HTML to a
+## version-controlled file (perhaps just by way of documenting
+## examples of such), that malicious HTML is effectively published and
+## live on your ViewVC instance.  Visitors viewing those versioned
+## controlled documents get the malicious code, too, which might not
+## be what the original author intended.  For this reason, ViewVC's
+## "co" view is disabled by default.
+##
 #allowed_views = annotate, diff, markup, roots
 
 ## allow_mojibake: Force the (lossy) display of ostensibly

@@ -1,7 +1,6 @@
 CONTENTS
 --------
   TO THE IMPATIENT
-  SECURITY INFORMATION
   INSTALLING VIEWVC
   APACHE CONFIGURATION
   UPGRADING VIEWVC
@@ -73,38 +72,8 @@ Congratulations on getting this far. :-)
     `INSTALLING VIEWVC' below is still recommended reading.
 
 
-SECURITY INFORMATION
---------------------
-
-ViewVC provides a feature which allows version controlled content to
-be served to web browsers just like static web server content.  So, if
-you have a directory full of interrelated HTML files that is housed in
-your version control repository, ViewVC can serve those files as HTML.
-You'll see in your web browser what you'd see if the files were part
-of your website, with working references to stylesheets and images and
-links to other pages.
-
-It is important to realize, however, that as useful as that feature
-is, there is some risk security-wise in its use.  Essentially, anyone
-with commit access to the CVS or Subversion repositories served by
-ViewVC has the ability to affect site content.  If a discontented or
-ignorant user commits malicious HTML to a version controlled file
-(perhaps just by way of documenting examples of such), that malicious
-HTML is effectively published and live on your ViewVC instance.
-Visitors viewing those versioned controlled documents get the
-malicious code, too, which might not be what the original author
-intended.
-
-For this reason, ViewVC's "checkout" view is disabled by default.  If
-you wish to enable it, simply add "co" to the list of views enabled in
-the allowed_views configuration option.
-
-
 INSTALLING VIEWVC
 ------------------
-
-NOTE: Windows users can refer to windows/README for Windows-specific
-installation instructions.
 
 1) To get viewvc.cgi to work, make sure that you have Python installed
    and a webserver which is capable of executing CGI scripts (either
