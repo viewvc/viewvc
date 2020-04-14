@@ -2,9 +2,8 @@ Contents
 ========
 
 - [To the Impatient](#to-the-impatient)
-  - [Required packages](#required-packages)
-  - []()
-- [Security Information](#security-information)
+  * [Required packages](#required-packages)
+  * [Basic installation](#basic-installation)
 - [Installing ViewVC](#installing-viewvc)
 - [Apache Configuration](#apache-configuration)
 - [Upgrading ViewVC](#upgrading-viewvc)
@@ -54,158 +53,77 @@ Strongly recommended for common functionality:
 There are a number of additional packages that you might need in order to enable additional features of ViewVC.
 Please see the relevant sections of this document for details.
 
-
-
-
-
-For production-quality hosting of ViewVC as a service:
-
-  * a web server capable of running CGI or WSGI programs
-      (for example, Apache HTTP Server 2.2+)
-
-
-For commits database support:
-
-  * MySQL (or MariaDB) 3.22+ and MySQLdb (or mysqlclient-python) 0.9.0 or
-        later to create a commit database
-          (https://www.mysql.com/)
-          (https://mariadb.org/)
-          (http://sourceforge.net/projects/mysql-python)
-          (https://github.com/PyMySQL/mysqlclient-python)
-
-Additional recommended packages:
-
-
-  
-
-
-    Optional:
-
-      * a web server capable of running CGI programs
-          (for example, Apache at http://httpd.apache.org/)
-
-
-  Quick sanity check:
-
-    If you just want to see what your repository looks like when seen
-    through ViewVC, type:
-
-       $ bin/standalone.py -r /PATH/TO/REPOSITORY
-
-    This will start a tiny ViewVC server at http://localhost:49152/viewvc/,
-    to which you can connect with your browser.
-
-  Standard operation:
-
-    To start installing right away (on UNIX): type "./viewvc-install"
-    in the current directory and answer the prompts.  When it
-    finishes, edit the file viewvc.conf in the installation directory
-    to tell ViewVC the paths to your CVS and Subversion repositories.
-    Next, configure your web server (in the way appropriate to that browser)
-    to run <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/viewvc.cgi.  The section
-    `INSTALLING VIEWVC' below is still recommended reading.
-
-
-SECURITY INFORMATION
---------------------
-
-ViewVC provides a feature which allows version controlled content to
-be served to web browsers just like static web server content.  So, if
-you have a directory full of interrelated HTML files that is housed in
-your version control repository, ViewVC can serve those files as HTML.
-You'll see in your web browser what you'd see if the files were part
-of your website, with working references to stylesheets and images and
-links to other pages.
-
-It is important to realize, however, that as useful as that feature
-is, there is some risk security-wise in its use.  Essentially, anyone
-with commit access to the CVS or Subversion repositories served by
-ViewVC has the ability to affect site content.  If a discontented or
-ignorant user commits malicious HTML to a version controlled file
-(perhaps just by way of documenting examples of such), that malicious
-HTML is effectively published and live on your ViewVC instance.
-Visitors viewing those versioned controlled documents get the
-malicious code, too, which might not be what the original author
-intended.
-
-For this reason, ViewVC's "checkout" view is disabled by default.  If
-you wish to enable it, simply add "co" to the list of views enabled in
-the allowed_views configuration option.
-
-
-INSTALLING VIEWVC
+Basic installation
 ------------------
 
-NOTE: Windows users can refer to windows/README for Windows-specific
-installation instructions.
+To start installing right away (on UNIX), run `./viewvc-install` from the top directory of the ViewVC
+software package (or source code checkout), answering the prompts as appropriate.
 
-1) To get viewvc.cgi to work, make sure that you have Python installed
-   and a webserver which is capable of executing CGI scripts (either
-   based on the .cgi extension, or by placing the script within a specific
-   directory).
+    $ ./viewvc-install
+    
+When it finishes, edit the file `viewvc.conf` that gets created in the installation directory.
+At a minimum, you'll want to tell ViewVC where to find your repositories.  (We'll assume hereafter
+for the purpose of our examples that you've installed ViewVC into `<VIEWVC_DIR>`.)
 
-   Note that to browse CVS repositories, the viewvc.cgi script needs to
-   have READ-ONLY, physical access to the repository (or a copy of it).
-   Therefore, rsh/ssh or pserver access to the repository will not work.
-   And you need to have the RCS utilities installed, specifically "rlog",
-   "rcsdiff", and "co".
+Once installed, you need to expose your ViewVC installation as a web-accessible service.
+ViewVC ships with a simple standalone server program.  While we don't recommend using it for a 
+production deployment, it can be useful for quickly testing that ViewVC is operational and 
+properly configured.  You can run that server from the command-line, pointing it to your
+configuration file:
 
-2) Installation is handled by the ./viewvc-install script.  Run this
-   script and you will be prompted for a installation root path.
-   The default is /usr/local/viewvc-VERSION, where VERSION is
-   the version of this ViewVC release.  The installer sets the install
-   path in some of the files, and ViewVC cannot be moved to a
-   different path after the install.
+    $ <VIEWVC_DIR>/bin/standalone.py
 
-   NOTE: while 'root' is usually required to create /usr/local/viewvc,
-   ViewVC does not have to be installed as root, nor does it run as root.
-   It is just as valid to place ViewVC in a home directory, too.
+For production-quality hosting of ViewVC as a service, you'll want to integrate ViewVC with a web
+server capable of running CGI or WSGI programs (such as Apache HTTP Server).  We'll discuss the various
+options for doing so in subsequent sections of this document.
 
-   NOTE: if your system uses a restrictive umask, you might need to
-   adjust the permissions of the directory structure that
-   viewvc-install creates so that, for example, the modules in the
-   lib/ subdirectory are actually readable by the main programs in the
-   bin/ subdirectory.
+Installing ViewVC
+=================
 
-   NOTE: viewvc-install will create directories if needed. It will
-   prompt before overwriting files that may have been modified (such
-   as viewvc.conf), thus making it safe to install over the top of
-   a previous installation. It will always overwrite program files,
-   however.
+Installation of ViewVC is handled by the `viewvc-install` script.  When you run this
+script, you will be prompted for a installation root path.  The default is `/usr/local/viewvc-VERSION` (where VERSION is
+the version of this ViewVC release).  Be advised that the installer actually writes the installation path into some of
+the installed files, so ViewVC cannot be trivially moved to a different path after the install.
 
-3) Edit <VIEWVC_INSTALLATION_DIRECTORY>/viewvc.conf for your specific
-   configuration.  In particular, examine the following configuration options:
+`viewvc-install` will create any intermediate directories required. It will
+prompt before overwriting user-managed configuration files that may have been modified (such
+as `viewvc.conf` or the view templates), thus making it safe to install over the top of
+a previous installation. It will always overwrite program files,
+however.
 
-      cvs_roots (for CVS)
-      svn_roots (for Subversion)
-      root_parents (for CVS or Subversion)
-      default_root
-      root_as_url_component
-      rcs_dir
-      mime_types_files
+While installation into `/usr/local` typically requires superuser priveleges ('root'), ViewVC
+does not have to be installed as root, nor does it run as root.  It is just as valid to place
+ViewVC in a specific user's home directory, too.
 
-   There are some other options that are usually nice to change. See
-   viewvc.conf for more information.  ViewVC provides a working,
-   default look. However, if you want to customize the look of ViewVC
-   then edit the files in <VIEWVC_INSTALLATION_DIRECTORY>/templates.
-   You need knowledge about HTML to edit the templates.
+NOTE: if your system uses a restrictive umask, you might need to
+adjust the permissions of the directory structure that
+`viewvc-install` creates so that, for example, the modules in the
+`lib/` subdirectory are actually readable by the main programs in the
+`bin/` subdirectory.
 
-4) The CGI programs are in <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/.  You can
-   symlink to this directory from somewhere in your published HTTP server
-   path if your webserver is configured to follow symbolic links.  You can
-   also copy the installed <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/*.cgi
-   scripts after the install (unlike the other files in ViewVC, the scripts
-   under bin/ can be moved).
+Configuring ViewVC
+==================
 
-   If you are using Apache, then see below at the section titled
-   APACHE CONFIGURATION.
+ViewVC configuration lives in the file `viewvc.conf`, generally located in the root
+of your installation directory.  Edit this file with the text editor of your choice
+in order to modify ViewVC's behavior.
 
-   NOTE: for security reasons, it is not advisable to install ViewVC
-   directly into your published HTTP directory tree (due to the MySQL
-   passwords in viewvc.conf).
+In particular, you'll want to  examine the following configuration options:
 
-That's it for repository browsing.  Instructions for getting the SQL
-checkin database working are below.
+  * cvs_roots (for individual CVS repositories)
+  * svn_roots (for individual Subversion repositories)
+  * root_parents (for collections of CVS or Subversion repositories)
+  * rcs_dir (for CVS)
+
+There are some other options that are usually nice to change. See
+`viewvc.conf` for more information.  ViewVC provides a working,
+default look. However, if you want to customize the look of ViewVC,
+edit the files in `<VIEWVC_DIR>/templates`.  You need knowledge about HTML to edit the templates.
+
+NOTE: for security reasons, it is not advisable to install ViewVC
+in such a way that its configuration file becomes directory web-accessible, as that file may contain
+system path information as well as database authentication credentials that should not be public
+knowledge!
 
 
 APACHE CONFIGURATION
@@ -438,6 +356,16 @@ Please read the file upgrading-howto.html in the docs/ subdirectory.
 
 SQL CHECKIN DATABASE
 --------------------
+
+
+For commits database support:
+
+  * MySQL (or MariaDB) 3.22+ and MySQLdb (or mysqlclient-python) 0.9.0 or
+        later to create a commit database
+          (https://www.mysql.com/)
+          (https://mariadb.org/)
+          (http://sourceforge.net/projects/mysql-python)
+          (https://github.com/PyMySQL/mysqlclient-python)
 
 This feature is a clone of the Mozilla Project's Bonsai database.  It
 catalogs every commit in the CVS or Subversion repository into a SQL
