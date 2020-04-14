@@ -471,21 +471,7 @@ Just hit [Enter] if a default is okay.
 
 ViewVC file installation complete.
 
-Consult the INSTALL document for detailed information on completing the
-installation and configuration of ViewVC on your system.  Here's a brief
-overview of the remaining steps:
+Consult the INSTALL document for detailed information on completing
+the installation and configuration of ViewVC on your system.
+""")
 
-  1) Edit the %s file.
-
-  2) Either configure an existing web server to run
-     %s.
-
-     Or, copy %s to an
-     already-configured cgi-bin directory.
-
-     Or, use the standalone server provided by this distribution at
-     %s.
-""" % (os.path.join(ROOT_DIR, 'viewvc.conf'),
-       os.path.join(ROOT_DIR, 'bin', 'cgi', 'viewvc.cgi'),
-       os.path.join(ROOT_DIR, 'bin', 'cgi', 'viewvc.cgi'),
-       os.path.join(ROOT_DIR, 'bin', 'standalone.py')))
