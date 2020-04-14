@@ -34,8 +34,21 @@ else:
 import sapi
 import viewvc
 
+def recode_latin1_path(path):
+  return path.encode('latin-1').decode('utf-8')
+
 def application(environ, start_response):
   server = sapi.WsgiServer(environ, start_response)
+
+  # PEP 3333 demands that PATH_INFO et al carry only latin-1 strings,
+  # so multibyte versioned path names arrive munged, with each byte
+  # being a character.  But ViewVC generates it's own URLs from
+  # Unicode strings, where UTF-8 is used during URI-encoding.  So we
+  # need to reinterpret path-carrying CGI environment variables as
+  # UTF-8 instead of as latin-1.
+  environ['PATH_INFO'] = recode_latin1_path(environ['PATH_INFO'])
+  environ['SCRIPT_NAME'] = recode_latin1_path(environ['SCRIPT_NAME'])
+
   cfg = viewvc.load_config(CONF_PATHNAME, server)
   viewvc.main(server, cfg)
   return []
