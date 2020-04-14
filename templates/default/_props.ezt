@@ -11,11 +11,11 @@
 <tbody>
 [for properties]
   <tr class="vc_row_[if-index properties even]even[else]odd[end]">
-    <td><strong>[properties.name]</strong></td>
+    <td class="vc_prop_name"><strong>[properties.name]</strong></td>
     [if-any properties.undisplayable]
-    <td><em>Property value is undisplayable.</em></td>
+    <td class="vc_prop_novalue"><em>Property value is undisplayable.</em></td>
     [else]
-    <td style="white-space: pre;">[properties.value]</td>
+    <td class="vc_prop_value">[properties.value]</td>
     [end]
   </tr>
 [end]
