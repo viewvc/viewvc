@@ -22,8 +22,10 @@ import re
 import cgi
 
 
-# global server object. It will be either a CgiServer, a WsgiServer,
-# or a proxy to an AspServer or ModPythonServer object.
+# Global server object. It will be one of the following:
+#   1. a CgiServer object
+#   2. an WsgiServer object
+#   3. a proxy to either an AspServer or a ModPythonServer object
 server = None
 
 
@@ -40,38 +42,111 @@ def escape(s):
   return s
 
 
-class Server:
-  def __init__(self):
-    self.pageGlobals = {}
+class ServerUsageError(Exception):
+  """The caller attempted to start transmitting an HTTP response after
+  that ship had already sailed."""
+  pass
 
-  def self(self):
-    return self
 
-  def escape(self, s):
-    return escape(s)
+class ServerImplementationError(Exception):
+  """There's a problem with the implementation of the Server."""
+  pass
+
+
+class ServerFile:
+  """A file-like object which wraps a ViewVC server."""
+  def __init__(self, server):
+    self.closed = 0
+    self.mode = 'w'
+    self.name = "<ServerFile file>"
+    self._server = server
+
+  def readable(self):
+    return False
+
+  def writable(self):
+    return True
+
+  def seekable(self):
+    return False
+
+  def write(self, s):
+    self._server.write(s)
+
+  def writelines(self, list):
+    for s in list:
+      self._server.write(s)
+
+  def flush(self):
+    self._server.flush()
+
+  def truncate(self, size):
+    pass
 
   def close(self):
     pass
 
 
-class ThreadedServer(Server):
+class Server:
   def __init__(self):
-    Server.__init__(self)
+    """Initialized the server.  Child classes should extend this."""
+    self._response_started = False
 
-    self.inheritableOut = 0
+  def self(self):
+    """Return a self-reference."""
+    return self
 
-    global server
-    if not isinstance(server, ThreadedServerProxy):
-      server = ThreadedServerProxy()
-    if not isinstance(sys.stdout, File):
-      sys.stdout = File(server)
-    server.registerThread(self)
+  def response_started(self):
+    """Return True iff a response has been started."""
+    return self._response_started
+
+  def start_response(self, content_type, status):
+    """Start a response.  Child classes should extend this method."""
+    if self._response_started:
+      raise ServerUsageException()
+    self._response_started = True
+
+  def escape(self, s):
+    """HTML-escape the Unicode string S and return the result."""
+    return escape(s)
+
+  def add_header(self, name, value):
+    """Add an HTTP header to the set of those that will be included in
+    the response.  Child classes should override this method."""
+    raise ServerImplementationError()
+    
+  def redirect(self, url):
+    """Respond to the request with a 301 redirect, asking the user
+    agent to aim its requests instead at URL.  Child classes should
+    override this method."""
+    raise ServerImplementationError()
+
+  def getenv(self, name, default_value=None):
+    """Return the value of environment variable NAME, or DEFAULT_VALUE
+    if NAME isn't found in the server environment.  Child classes should
+    override this method."""
+    raise ServerImplementationError()
+
+  def params(self):
+    """Return a dictionary of query parameters parsed from the
+    server's request URL.  Class class should override this method."""
+    raise ServerImplementationError()
+
+  def write(self, s):
+    """Write the Unicode string S to the server output stream.  Child
+    classes should override this method."""
+    raise ServerImplementationError()
+
+  def flush(self):
+    """Flush the server output stream.  Child classes should override
+    this method."""
+    raise ServerImplementationError()
 
   def file(self):
-    return File(self)
-
-  def close(self):
-    server.unregisterThread()
+    """Return the server output stream as a File-like object that
+    expects bytestring intput.  Child classes should override
+    this method."""
+    raise ServerImplementationError()
 
 
 class ThreadedServerProxy:
@@ -91,8 +166,6 @@ class ThreadedServerProxy:
     del self.__dict__['servers'][_thread.get_ident()]
 
   def self(self):
-    """This function bypasses the getattr and setattr trickery and returns
-    the actual server object."""
     return self.__dict__['servers'][_thread.get_ident()]
 
   def __getattr__(self, key):
@@ -105,150 +178,116 @@ class ThreadedServerProxy:
     delattr(self.self(), key)
 
 
-class File:
-  def __init__(self, server):
-    self.closed = 0
-    self.mode = 'w'
-    self.name = "<AspFile file>"
-    self.softspace = 0
-    self.server = server
+class ThreadedServer(Server):
+  """Threader server implementation."""
 
-  def readable(self):
-    return False
+  def __init__(self):
+    Server.__init__(self)
+    global server
+    if not isinstance(server, ThreadedServerProxy):
+      server = ThreadedServerProxy()
+    if not isinstance(sys.stdout, ServerFile):
+      sys.stdout = ServerFile(server)
+    server.registerThread(self)
 
-  def writable(self):
-    return True
-
-  def seekable(self):
-    return False
-
-  def write(self, s):
-    self.server.write(s)
-
-  def writelines(self, list):
-    for s in list:
-      self.server.write(s)
-
-  def flush(self):
-    self.server.flush()
-
-  def truncate(self, size):
-    pass
+  def file(self):
+    return ServerFile(self)
 
   def close(self):
-    pass
+    server.unregisterThread()
 
 
 class CgiServer(Server):
-  def __init__(self, inheritableOut = 1):
+  """CGI server implementation."""
+
+  def __init__(self):
     Server.__init__(self)
-    self.headerSent = 0
-    self.headers = []
-    self.inheritableOut = inheritableOut
-    self.iis = os.environ.get('SERVER_SOFTWARE', '')[:13] == 'Microsoft-IIS'
-
-    if sys.platform == "win32" and inheritableOut:
-      import msvcrt
-      msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
-
+    self._headers = []
+    self._iis = os.environ.get('SERVER_SOFTWARE', '')[:13] == 'Microsoft-IIS'
     global server
     server = self
 
-  def addheader(self, name, value):
-    self.headers.append((name, value))
+  def add_header(self, name, value):
+    self._headers.append((name, value))
 
-  def header(self, content_type='text/html; charset=UTF-8', status=None):
-    if not self.headerSent:
-      self.headerSent = 1
+  def start_response(self, content_type='text/html; charset=UTF-8', status=None):
+    Server.start_response(self, content_type, status)
 
-      extraheaders = ''
-      for (name, value) in self.headers:
-        extraheaders = extraheaders + '%s: %s\r\n' % (name, value)
+    extraheaders = ''
+    for (name, value) in self._headers:
+      extraheaders = extraheaders + '%s: %s\r\n' % (name, value)
 
-      # The only way ViewVC pages and error messages are visible under
-      # IIS is if a 200 error code is returned. Otherwise IIS instead
-      # sends the static error page corresponding to the code number.
-      if status is None or (status[:3] != '304' and self.iis):
-        status = ''
-      else:
-        status = 'Status: %s\r\n' % status
+    # The only way ViewVC pages and error messages are visible under
+    # IIS is if a 200 error code is returned. Otherwise IIS instead
+    # sends the static error page corresponding to the code number.
+    if status is None or (status[:3] != '304' and self._iis):
+      status = ''
+    else:
+      status = 'Status: %s\r\n' % status
 
-      sys.stdout.write('%sContent-Type: %s\r\n%s\r\n'
-                       % (status, content_type, extraheaders))
+    self.write_text('%sContent-Type: %s\r\n%s\r\n'
+                    % (status, content_type, extraheaders))
 
   def redirect(self, url):
-    if self.iis: url = fix_iis_url(self, url)
-    self.addheader('Location', url)
-    self.header(status='301 Moved')
-    sys.stdout.write('This document is located <a href="%s">here</a>.\n' % url)
+    if self._iis:
+      url = fix_iis_url(self, url)
+    self.add_header('Location', url)
+    self.start_response(status='301 Moved')
+    self.write_text(redirect_notice(url))
 
   def getenv(self, name, value=None):
     ret = os.environ.get(name, value)
-    if self.iis and name == 'PATH_INFO' and ret:
+    if self._iis and name == 'PATH_INFO' and ret:
       ret = fix_iis_path_info(self, ret)
     return ret
 
   def params(self):
     return cgi.parse()
 
-  def FieldStorage(fp=None, headers=None, outerboundary="",
-                 environ=os.environ, keep_blank_values=0, strict_parsing=0):
-    return cgi.FieldStorage(fp, headers, outerboundary, environ,
-                            keep_blank_values, strict_parsing)
-
-  def write(self, s):
+  def write_text(self, s):
     sys.stdout.write(s)
-
-  def flush(self):
     sys.stdout.flush()
 
+  def write(self, s):
+    sys.stdout.buffer.write(s)
+
+  def flush(self):
+    sys.stdout.buffer.flush()
+
   def file(self):
-    return sys.stdout
+    return sys.stdout.buffer
 
 
 class WsgiServer(Server):
-  def __init__(self, environ, start_response):
+  def __init__(self, environ, write_response):
     Server.__init__(self)
-
     self._environ = environ
-    self._start_response = start_response;
+    self._write_response = write_response;
     self._headers = []
     self._wsgi_write = None
-    self.headerSent = False
-
     global server
     server = self
 
-  def addheader(self, name, value):
+  def add_header(self, name, value):
     self._headers.append((name, value))
 
-  def header(self, content_type='text/html; charset=UTF-8', status=None):
+  def start_response(self, content_type='text/html; charset=UTF-8', status=None):
+    Server.start_response(self, content_type, status)
     if not status:
       status = "200 OK"
-    if not self.headerSent:
-      self.headerSent = True
-      self._headers.insert(0, ("Content-Type", content_type),)
-      self._wsgi_write = self._start_response("%s" % status, self._headers)
+    self._headers.insert(0, ("Content-Type", content_type),)
+    self._wsgi_write = self._write_response(status, self._headers)
 
   def redirect(self, url):
-    """Redirect client to url. This discards any data that has been queued
-    to be sent to the user. But there should never by any anyway.
-    """
-    self.addheader('Location', url)
-    self.header(status='301 Moved')
-    self._wsgi_write('This document is located <a href="%s">here</a>.' % url)
+    self.add_header('Location', url)
+    self.start_response(status='301 Moved')
+    self._wsgi_write(redirect_notice(url))
 
   def getenv(self, name, value=None):
     return self._environ.get(name, value)
 
   def params(self):
     return cgi.parse(environ=self._environ, fp=self._environ["wsgi.input"])
-
-  def FieldStorage(self, fp=None, headers=None, outerboundary="",
-                   environ=os.environ, keep_blank_values=0, strict_parsing=0):
-    return cgi.FieldStorage(self._environ["wsgi.input"], headers,
-                            outerboundary, self._environ, keep_blank_values,
-                            strict_parsing)
 
   def write(self, s):
     self._wsgi_write(s)
@@ -257,43 +296,33 @@ class WsgiServer(Server):
     pass
 
   def file(self):
-    return File(self)
+    return ServerFile(self)
 
-# Is ASP supports Python >= 3.x ?
+# Does ASP support Python >= 3.x ?
 class AspServer(ThreadedServer):
+  """ASP-based server."""
+
   def __init__(self, Server, Request, Response, Application):
     ThreadedServer.__init__(self)
-    self.headerSent = 0
-    self.server = Server
-    self.request = Request
-    self.response = Response
-    self.application = Application
+    self._server = Server
+    self._request = Request
+    self._response = Response
+    self._application = Application
 
-  def addheader(self, name, value):
-    self.response.AddHeader(name, value)
+  def add_header(self, name, value):
+    self._response.AddHeader(name, value)
 
-  def header(self, content_type=None, status=None):
-    # Normally, setting self.response.ContentType after headers have already
-    # been sent simply results in an AttributeError exception, but sometimes
-    # it leads to a fatal ASP error. For this reason I'm keeping the
-    # self.headerSent member and only checking for the exception as a
-    # secondary measure
-    if not self.headerSent:
-      try:
-        self.headerSent = 1
-        if content_type is None:
-          self.response.ContentType = 'text/html; charset=UTF-8'
-        else:
-          self.response.ContentType = content_type
-        if status is not None: self.response.Status = status
-      except AttributeError:
-        pass
+  def start_response(self, content_type='text/html; charset=UTF-8', status=None):
+    ThreadedServer.start_response(self, content_type, status)
+    self._response.ContentType = content_type
+    if status is not None:
+      self._response.Status = status
 
   def redirect(self, url):
-    self.response.Redirect(url)
+    self._response.Redirect(url)
 
   def getenv(self, name, value = None):
-    ret = self.request.ServerVariables(name)()
+    ret = self._request.ServerVariables(name)()
     if not type(ret) is types.UnicodeType:
       return value
     ret = str(ret)
@@ -302,34 +331,12 @@ class AspServer(ThreadedServer):
     return ret
 
   def params(self):
-    p = {}
-    for i in self.request.Form:
-      p[str(i)] = list(map(str, self.request.Form[i]))
-    for i in self.request.QueryString:
-      p[str(i)] = list(map(str, self.request.QueryString[i]))
-    return p
-
-  def FieldStorage(self, fp=None, headers=None, outerboundary="",
-                 environ=os.environ, keep_blank_values=0, strict_parsing=0):
-
-    # Code based on a very helpful usenet post by "Max M" (maxm@mxm.dk)
-    # Subject "Re: Help! IIS and Python"
-    # http://groups.google.com/groups?selm=3C7C0AB6.2090307%40mxm.dk
-
-    from io import StringIO
-    from cgi import FieldStorage
-
-    environ = {}
-    for i in self.request.ServerVariables:
-      environ[str(i)] = str(self.request.ServerVariables(i)())
-
-    # this would be bad for uploaded files, could use a lot of memory
-    binaryContent, size = self.request.BinaryRead(int(environ['CONTENT_LENGTH']))
-
-    fp = StringIO(str(binaryContent))
-    fs = FieldStorage(fp, None, "", environ, keep_blank_values, strict_parsing)
-    fp.close()
-    return fs
+    d = {}
+    for i in self._request.Form:
+      d[str(i)] = list(map(str, self._request.Form[i]))
+    for i in self._request.QueryString:
+      d[str(i)] = list(map(str, self._request.QueryString[i]))
+    return d
 
   def write(self, s):
     t = type(s)
@@ -337,69 +344,53 @@ class AspServer(ThreadedServer):
       s = buffer(s)
     elif not t is types.BufferType:
       s = buffer(str(s))
-
-    self.response.BinaryWrite(s)
+    self._response.BinaryWrite(s)
 
   def flush(self):
-    self.response.Flush()
-
-
-_re_status = re.compile("\\d+")
+    self._response.Flush()
 
 
 class ModPythonServer(ThreadedServer):
+  """Server for use with mod_python under Apache HTTP Server."""
+
   def __init__(self, request):
     ThreadedServer.__init__(self)
-    self.request = request
-    self.headerSent = 0
-    # mod_python 3.3.1 and earlier add in the CGI variables by default.
-    try:
-      self.request.add_cgi_vars()
-    except AttributeError:
-      pass
+    self._re_status = re.compile('\\d+')
+    self._request = request
+    self._request.add_cgi_vars()
 
-  def addheader(self, name, value):
-    self.request.headers_out.add(name, value)
+  def add_header(self, name, value):
+    self._request.headers_out.add(name, value)
 
-  def header(self, content_type=None, status=None):
-    if content_type is None:
-      self.request.content_type = 'text/html; charset=UTF-8'
-    else:
-      self.request.content_type = content_type
-    self.headerSent = 1
-
+  def start_response(self, content_type='text/html; charset=UTF-8', status=None):
+    ThreadedServer.start_response(self, content_type, status)
+    self._request.content_type = content_type
     if status is not None:
-      m = _re_status.match(status)
+      m = self._re_status.match(status)
       if not m is None:
-        self.request.status = int(m.group())
+        self._request.status = int(m.group())
 
   def redirect(self, url):
     import mod_python.apache
-    self.request.headers_out['Location'] = url
-    self.request.status = mod_python.apache.HTTP_MOVED_TEMPORARILY
-    self.request.write("You are being redirected to <a href=\"%s\">%s</a>"
-                       % (url, url))
+    self._request.headers_out['Location'] = url
+    self._request.status = mod_python.apache.HTTP_MOVED_TEMPORARILY
+    self._request.write(redirect_notice(url))
 
   def getenv(self, name, value = None):
     try:
-      return self.request.subprocess_env[name]
+      return self._request.subprocess_env[name]
     except KeyError:
       return value
 
   def params(self):
     import mod_python.util
-    if self.request.args is None:
+    if self._request.args is None:
       return {}
     else:
-      return mod_python.util.parse_qs(self.request.args)
-
-  def FieldStorage(self, fp=None, headers=None, outerboundary="",
-                 environ=os.environ, keep_blank_values=0, strict_parsing=0):
-    import mod_python.util
-    return mod_python.util.FieldStorage(self.request, keep_blank_values, strict_parsing)
+      return mod_python.util.parse_qs(self._request.args)
 
   def write(self, s):
-    self.request.write(s)
+    self._request.write(s)
 
   def flush(self):
     pass
@@ -455,3 +446,7 @@ def fix_iis_path_info(server, path_info):
   # This function converts the IIS PATH_INFO into the nonredundant form
   # expected by ViewVC
   return path_info[len(server.getenv('SCRIPT_NAME', '')):]
+
+
+def redirect_notice(url):
+  return 'This document is located <a href="%s">here</a>.' % (url)

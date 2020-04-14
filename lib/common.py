@@ -15,6 +15,7 @@
 # -----------------------------------------------------------------------
 
 import sys
+import io
 
 # Special type indicators for diff header processing and idiff return codes
 _RCSDIFF_IS_BINARY = 'binary-diff'
@@ -81,21 +82,20 @@ def print_exception_data(server, exc_data):
   msg = exc_data['msg']
   tb = exc_data['stacktrace']
 
-  server.header(status=status)
-  server.write(b"<h3>An Exception Has Occurred</h3>\n")
+  if not server.response_started():
+    server.start_response(status=status)
 
-  s = ''
-  if msg:
-    s = '<p><pre>%s</pre></p>' % server.escape(msg)
+  fp = io.TextIOWrapper(server.file(), 'utf-8', 'xmlcharrefreplace',
+                        write_through=True)
+  fp.write('<h3>An Exception Has Occurred</h3>\n')
+  s = msg and '<p><pre>%s</pre></p>' % (server.escape(msg)) or ''
   if status:
     s = s + ('<h4>HTTP Response Status</h4>\n<p><pre>\n%s</pre></p><hr />\n'
              % status)
-  s = s.encode('utf-8', 'xmlcharrefreplace')
-  server.write(s)
-
-  server.write(b"<h4>Python Traceback</h4>\n<p><pre>")
-  server.write(server.escape(tb).encode('utf-8', 'xmlcharrefreplace'))
-  server.write(b"</pre></p>\n")
+  fp.write(s)
+  fp.write('<h4>Python Traceback</h4>\n<p><pre>')
+  fp.write(server.escape(tb))
+  fp.write('</pre></p>\n')
 
 
 def get_exception_data():

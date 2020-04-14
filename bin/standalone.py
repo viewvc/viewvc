@@ -81,51 +81,48 @@ class StandaloneServer(sapi.CgiServer):
 
   def __init__(self, handler):
     sapi.Server.__init__(self)
-    self.headerSent = 0
-    self.headers = []
-    self.handler = handler
-    self.iis = False
-    self.out_fp = handler.wfile
-
+    self._headers = []
+    self._handler = handler
+    self._out_fp = handler.wfile
+    self._iis = False
     global server
     server = self
 
-  def header(self, content_type='text/html; charset=UTF-8', status=None):
-    if not self.headerSent:
-      self.headerSent = 1
-      if status is None:
-        statusCode = 200
-        statusText = 'OK'
+  def start_response(self, content_type='text/html; charset=UTF-8', status=None):
+    sapi.Server.start_response(self, content_type, status)
+    if status is None:
+      statusCode = 200
+      statusText = 'OK'
+    else:
+      p = status.find(' ')
+      if p < 0:
+        statusCode = int(status)
+        statusText = ''
       else:
-        p = status.find(' ')
-        if p < 0:
-          statusCode = int(status)
-          statusText = ''
-        else:
-          statusCode = int(status[:p])
-          statusText = status[p+1:]
-      self.handler.send_response(statusCode, statusText)
-      self.handler.send_header("Content-type", content_type)
-      for (name, value) in self.headers:
-        self.handler.send_header(name, value)
-      self.handler.end_headers()
+        statusCode = int(status[:p])
+        statusText = status[p+1:]
+    self._handler.send_response(statusCode, statusText)
+    self._handler.send_header("Content-type", content_type)
+    for (name, value) in self._headers:
+      self._handler.send_header(name, value)
+    self._handler.end_headers()
 
   def write_text(self, s):
     self.write(self, s.encode('utf-8', 'surrogateesape'))
 
   def redirect(self, url):
-    self.addheader('Location', url)
-    self.header(status='301 Moved')
-    self.write_text('This document is located <a href="%s">here</a>.\n' % url)
+    self.add_header('Location', url)
+    self.start_response(status='301 Moved')
+    self.write_text(sapi.redirect_notice(url))
 
   def write(self, s):
-    self.out_fp.write(s)
+    self._out_fp.write(s)
 
   def flush(self):
-    self.out_fp.flush()
+    self._out_fp.flush()
 
   def file(self):
-    return self.out_fp
+    return self._out_fp
 
 
 class NotViewVCLocationException(Exception):

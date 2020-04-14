@@ -258,6 +258,10 @@ APACHE CONFIGURATION
    ------------------------------------------
    METHOD D:  Using mod_python (if installed)
    ------------------------------------------
+
+   NOTE: To use a mod_python-based installation, you'll need
+   mod_python 3.5.0 or better.
+   
    Copy the Python scripts and .htaccess file from
    <VIEWVC_INSTALLATION_DIRECTORY>/bin/mod_python/
    to a directory being served by Apache.
@@ -269,10 +273,6 @@ APACHE CONFIGURATION
    You can override configuration file location using:
 
        SetEnv VIEWVC_CONF_PATHNAME /etc/viewvc.conf
-
-   NOTE: If you are using Mod_Python under Apache 1.3 the tarball generation
-   feature may not work because it uses multithreading.  This works fine
-   under Apache 2.
 
    ----------------------------------------
    METHOD E:  Using mod_wsgi (if installed)

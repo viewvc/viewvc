@@ -893,17 +893,17 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
   if cfg and cfg.options.http_expiration_time >= 0:
     expiration = email.utils.formatdate(time.time() +
                                    cfg.options.http_expiration_time)
-    request.server.addheader('Expires', expiration)
-    request.server.addheader('Cache-Control',
-                             'max-age=%d' % cfg.options.http_expiration_time)
+    request.server.add_header('Expires', expiration)
+    request.server.add_header('Cache-Control',
+                              'max-age=%d' % cfg.options.http_expiration_time)
 
   if isfresh:
-    request.server.header(status='304 Not Modified')
+    request.server.start_response(status='304 Not Modified')
   else:
     if etag is not None:
-      request.server.addheader('ETag', etag)
+      request.server.add_header('ETag', etag)
     if mtime is not None:
-      request.server.addheader('Last-Modified', email.utils.formatdate(mtime))
+      request.server.add_header('Last-Modified', email.utils.formatdate(mtime))
   return isfresh
 
 def get_view_template(cfg, view_name, language="en"):
@@ -940,16 +940,16 @@ def get_writeready_server_file(request, content_type=None, encoding=None,
   the response."""
 
   if allow_compress and request.gzip_compress_level:
-    request.server.addheader('Content-Encoding', 'gzip')
+    request.server.add_header('Content-Encoding', 'gzip')
   elif content_length is not None:
-    request.server.addheader('Content-Length', content_length)
+    request.server.add_header('Content-Length', content_length)
 
   if content_type and encoding:
-    request.server.header("%s; charset=%s" % (content_type, encoding))
+    request.server.start_response("%s; charset=%s" % (content_type, encoding))
   elif content_type:
-    request.server.header(content_type)
+    request.server.start_response(content_type)
   else:
-    request.server.header()
+    request.server.start_response()
 
   if allow_compress and request.gzip_compress_level:
     fp = gzip.GzipFile('', 'wb', request.gzip_compress_level,
@@ -4136,11 +4136,10 @@ def download_tarball(request):
     tarfile = request.rootname
     if request.path_parts:
       tarfile = "%s-%s" % (tarfile, request.path_parts[-1])
-    request.server.addheader('Content-Disposition',
-                             'attachment; filename="%s.tar.gz"' % (tarfile))
+    request.server.add_header('Content-Disposition',
+                              'attachment; filename="%s.tar.gz"' % (tarfile))
     server_fp = get_writeready_server_file(request, 'application/x-gzip',
                                            allow_compress=False)
-    request.server.flush()
     fp = gzip.GzipFile('', 'wb', 9, server_fp)
 
   ### FIXME: For Subversion repositories, we can get the real mtime of the
@@ -4151,8 +4150,8 @@ def download_tarball(request):
   fp.close()
 
   if DEBUG_TARFILE_PATH:
-    request.server.header('')
-    print("""
+    server_fp = get_writeready_server_file(request, is_text=True)
+    server_fp.write("""
 <html>
 <body>
 <p>Tarball '%s' successfully generated!</p>
@@ -4338,7 +4337,7 @@ def view_revision(request):
                                       escape=1),
   }))
   if rev == youngest_rev:
-    request.server.addheader("Cache-control", "no-store")
+    request.server.add_header("Cache-control", "no-store")
   generate_page(request, "revision", data)
 
 def is_query_supported(request):
@@ -5190,8 +5189,8 @@ def view_error(server, cfg):
 
   # Use the configured error template if possible.
   try:
-    if cfg and not server.headerSent:
-      server.header(status=status)
+    if cfg and not server.response_started():
+      server.start_response(status=status)
       template = get_view_template(cfg, "error")
       template.generate(server.file(), exc_dict)
       return
