@@ -1,22 +1,28 @@
 Contents
 ========
 
-- [To the Impatient](#to-the-impatient)
-  * [Required packages](#required-packages)
-  * [Basic installation](#basic-installation)
-- [Installing ViewVC](#installing-viewvc)
-- [Apache Configuration](#apache-configuration)
-- [Upgrading ViewVC](#upgrading-viewvc)
-- [SQL Checkin Database](#sql-checkin-database)
-- [Enabling Syntax Coloration](#enabling-syntax-coloration)
-- [cvsgraph Configuration](#cvsgraph-configuration)
-- [Getting Help](#getting-help)
+  * [To the Impatient](#to-the-impatient)
+    - [Required packages](#required-packages)
+    - [Basic installation](#basic-installation)
+  * [Installing ViewVC](#installing-viewvc)
+  * [Configuring ViewVC](#configuring-viewvc)-
+  * [Serving CVS Repositories](#serving-cvs-repositories)
+  * [Serving Subversion Repositories](#serving-cvs-repositories)
+  * [Running ViewVC](#running-viewvc)
+    - [Standlone mode](#standalone-mode)
+    - [Apache CGI mode](#apache-cgi-mode)
+    - [Apache WSGI mode](#apache-cgi-mode)
+    - [Apache mod_python mode](#apache-mod_python-mode)
+  * [Commits Database](#commits-database)
+  * [Upgrading ViewVC](#upgrading-viewvc)
+  * [Getting Help](#getting-help)
 
 
 To The Impatient
 ================
 
 Congratulations on getting this far. :-)  
+
 
 Required packages
 -----------------
@@ -50,50 +56,62 @@ Strongly recommended for common functionality:
   * chardet character encoding detection library
       (https://chardet.github.io/)
 
-There are a number of additional packages that you might need in order to enable additional features of ViewVC.
-Please see the relevant sections of this document for details.
+There are a number of additional packages that you might need in order
+to enable additional features of ViewVC.  Please see the relevant
+sections of this document for details.
+
 
 Basic installation
 ------------------
 
-To start installing right away (on UNIX), run `./viewvc-install` from the top directory of the ViewVC
-software package (or source code checkout), answering the prompts as appropriate.
+To start installing right away (on UNIX), run `./viewvc-install` from
+the top directory of the ViewVC software package (or source code
+checkout), answering the prompts as appropriate.
 
     $ ./viewvc-install
     
-When it finishes, edit the file `viewvc.conf` that gets created in the installation directory.
-At a minimum, you'll want to tell ViewVC where to find your repositories.  (We'll assume hereafter
-for the purpose of our examples that you've installed ViewVC into `<VIEWVC_DIR>`.)
+When it finishes, edit the file `viewvc.conf` that gets created in the
+installation directory.  At a minimum, you'll want to tell ViewVC
+where to find your repositories.  (We'll assume hereafter for the
+purpose of our examples that you've installed ViewVC into
+`<VIEWVC_DIR>`.)
 
-Once installed, you need to expose your ViewVC installation as a web-accessible service.
-ViewVC ships with a simple standalone server program.  While we don't recommend using it for a 
-production deployment, it can be useful for quickly testing that ViewVC is operational and 
-properly configured.  You can run that server from the command-line, pointing it to your
-configuration file:
+Once installed, you need to expose your ViewVC installation as a
+web-accessible service.  ViewVC ships with a simple standalone server
+program.  While we don't recommend using it for a production
+deployment, it can be useful for quickly testing that ViewVC is
+operational and properly configured.  You can run that server from the
+command-line, pointing it to your configuration file:
 
     $ <VIEWVC_DIR>/bin/standalone.py
 
-For production-quality hosting of ViewVC as a service, you'll want to integrate ViewVC with a web
-server capable of running CGI or WSGI programs (such as Apache HTTP Server).  We'll discuss the various
+For production-quality hosting of ViewVC as a service, you'll want to
+integrate ViewVC with a web server capable of running CGI or WSGI
+programs (such as Apache HTTP Server).  We'll discuss the various
 options for doing so in subsequent sections of this document.
+
 
 Installing ViewVC
 =================
 
-Installation of ViewVC is handled by the `viewvc-install` script.  When you run this
-script, you will be prompted for a installation root path.  The default is `/usr/local/viewvc-VERSION` (where VERSION is
-the version of this ViewVC release).  Be advised that the installer actually writes the installation path into some of
-the installed files, so ViewVC cannot be trivially moved to a different path after the install.
+Installation of ViewVC is handled by the `viewvc-install` script.
+When you run this script, you will be prompted for a installation root
+path.  The default is `/usr/local/viewvc-VERSION` (where VERSION is
+the version of this ViewVC release).  Be advised that the installer
+actually writes the installation path into some of the installed
+files, so ViewVC cannot be trivially moved to a different path after
+the install.
 
-`viewvc-install` will create any intermediate directories required. It will
-prompt before overwriting user-managed configuration files that may have been modified (such
-as `viewvc.conf` or the view templates), thus making it safe to install over the top of
-a previous installation. It will always overwrite program files,
-however.
+`viewvc-install` will create any intermediate directories required. It
+will prompt before overwriting user-managed configuration files that
+may have been modified (such as `viewvc.conf` or the view templates),
+thus making it safe to install over the top of a previous
+installation. It will always overwrite program files, however.
 
-While installation into `/usr/local` typically requires superuser priveleges ('root'), ViewVC
-does not have to be installed as root, nor does it run as root.  It is just as valid to place
-ViewVC in a specific user's home directory, too.
+While installation into `/usr/local` typically requires superuser
+priveleges ('root'), ViewVC does not have to be installed as root, nor
+does it run as root.  It is just as valid to place ViewVC in a
+specific user's home directory, too.
 
 NOTE: if your system uses a restrictive umask, you might need to
 adjust the permissions of the directory structure that
@@ -101,14 +119,17 @@ adjust the permissions of the directory structure that
 `lib/` subdirectory are actually readable by the main programs in the
 `bin/` subdirectory.
 
+
 Configuring ViewVC
 ==================
 
-ViewVC configuration lives in the file `viewvc.conf`, generally located in the root
-of your installation directory.  Edit this file with the text editor of your choice
-in order to modify ViewVC's behavior.
+ViewVC configuration lives in the file `viewvc.conf`, generally
+located in the root of your installation directory.  Edit this file
+with the text editor of your choice in order to modify ViewVC's
+behavior.
 
-In particular, you'll want to  examine the following configuration options:
+In particular, you'll want to examine the following configuration
+options:
 
   * cvs_roots (for individual CVS repositories)
   * svn_roots (for individual Subversion repositories)
@@ -118,12 +139,87 @@ In particular, you'll want to  examine the following configuration options:
 There are some other options that are usually nice to change. See
 `viewvc.conf` for more information.  ViewVC provides a working,
 default look. However, if you want to customize the look of ViewVC,
-edit the files in `<VIEWVC_DIR>/templates`.  You need knowledge about HTML to edit the templates.
+edit the files in `<VIEWVC_DIR>/templates`.  You need knowledge about
+HTML to edit the templates.
 
-NOTE: for security reasons, it is not advisable to install ViewVC
-in such a way that its configuration file becomes directory web-accessible, as that file may contain
-system path information as well as database authentication credentials that should not be public
-knowledge!
+NOTE: For security reasons, don't install ViewVC in such a way that
+its configuration file becomes itself web-accessible, as that file may
+contain system path information as well as database authentication
+credentials that should not be public knowledge!
+
+
+Serving CVS Repositories
+========================
+
+In order to server CVS repositories, ViewVC needs to be able to run
+the RCS utility binaries (`co`, `rlog`, etc.).  If these programs
+aren't installed in typical system executable path locations, use the
+`rcs_bin` configuration option in `viewvc.conf` to tell ViewVC where
+to look for them.
+
+You'll also need to tell ViewVC where to find your CVS repositories.
+Use the `cvs_roots` configuration option to list individual CVS
+repositories that you wish to expose through ViewVC, or see the
+`root_parents` option for a quick way to tell ViewVC to consider all
+the subdirecties of a given "parent" directory as CVS repositories.
+
+NOTE: It is common to find on a given system a single monolithic CVS
+repository, with dozens of individual top-level modules for each
+distinct project.  If you point ViewVC to that repository directory
+using `cvs_roots, it will show a single repository to your users.
+However, you can choose instead to use the `root_parents`
+configuration option, pointing at the same repository directory, to
+cause ViewVC to treat those top-level modules as if they were instead
+each their own CVS repository.
+
+
+Serving Subversion Repositories
+===============================
+
+Unlike the CVS integration, which simply wraps the RCS and CVS utility
+programs, the Subversion integration requires additional Python
+libraries.  To use ViewVC with Subversion, make sure you have both
+Subversion itself and the Subversion Python bindings installed.  These
+can be obtained through typical package distribution mechanisms, or
+may be build from source.  (See the files `INSTALL` and
+`subversion/bindings/swig/INSTALL` in the Subversion source tree for
+more details on how to build and install Subversion and its Python
+bindings.)
+
+Generally speaking, you'll know that your installation of Subversion's
+bindings has been successful if you can import the `svn.core` module
+from within your Python interpreter.  Here's an example of doing so
+which doubles as a quick way to check what version of the Subversion
+Python binding you have:
+
+    % python
+    Python 3.6.9 (default, Nov  7 2019, 10:44:02) 
+    [GCC 8.3.0] on linux
+    Type "help", "copyright", "credits" or "license" for more information.
+    >>> from svn.core import *
+    >>> "%s.%s.%s" % (SVN_VER_MAJOR, SVN_VER_MINOR, SVN_VER_PATCH)
+    '1.14.0'
+    >>>
+
+Note that by default, Subversion installs its bindings in a location
+that is not in Python's default module search path (for example, on
+Linux systems the default is usually `/usr/local/lib/svn-python`).
+You need to remedy this, either by adding this path to Python's module
+search path, or by relocating the bindings to some place in that
+search path.
+
+For example, you might want to create a `.pth` file in your Python
+installation directory's site-packages area which tells Python where
+to find additional modules (in this case, you Subversion Python
+bindings).  You would do this as follows (and as root):
+
+    $ echo "/path/to/svn/bindings" > /path/to/python/site-packages/svn.pth
+
+(Though, obviously, with the correct paths specified.)
+
+Configuration of the Subversion repositories happens in much the same
+way as with CVS repositories, except with the `svn_roots`
+configuration variable instead of the `cvs_roots` one.
 
 
 APACHE CONFIGURATION
@@ -348,12 +444,6 @@ APACHE CONFIGURATION
    information.
 
 
-UPGRADING VIEWVC
------------------
-
-Please read the file upgrading-howto.html in the docs/ subdirectory.
-
-
 SQL CHECKIN DATABASE
 --------------------
 
@@ -483,116 +573,40 @@ there are some additional steps required to get the database working.
 You should be ready to go.  Click one of the "Query revision history"
 links in ViewVC directory listings and give it a try.
 
+Upgrading ViewVC
+================
 
-ENABLING SYNTAX COLORATION
---------------------------
-
-ViewVC uses Pygments (http://pygments.org) for syntax coloration.  You
-need only install a suitable version of that module, and if ViewVC
-finds it in your Python module path, it will use it (unless you
-specifically disable the feature by setting use_pygments = 0 in your
-viewvc.conf file).
+See the file `upgrading-howto.html` in the `docs/` subdirectory for
+information on changes you might need to make as you upgrade from one
+major version of ViewVC to another.
 
 
-CVSGRAPH CONFIGURATION
-----------------------
 
-CvsGraph is a program that can display a clickable, graphical tree
-of files in a CVS repository.
-
-WARNING: Under certain circumstances (many revisions of a file
-or many branches or both) CvsGraph can generate very huge images.
-Especially on thin clients these images may crash the Web-Browser.
-Currently there is no known way to avoid this behavior of CvsGraph.
-So you have been warned!
-
-Nevertheless, CvsGraph can be quite helpful on repositories with
-a reasonable number of revisions and branches.
-
-1) Install CvsGraph using your system's package manager or downloading
-   from the project home page.
-
-2) Set the 'use_cvsgraph' options in viewvc.conf to 1.
-
-3) You may also need to set the 'cvsgraph_path' option if the
-   CvsGraph executable is not located on the system PATH.
-
-4) There is a file <VIEWVC_INSTALLATION_DIRECTORY>/cvsgraph.conf that
-   you may want to edit if desired to set color and font characteristics.
-   See the cvsgraph.conf documentation.  No edits are required in
-   cvsgraph.conf for operation with ViewVC.
-
-
-SUBVERSION INTEGRATION
-----------------------
-
-Unlike the CVS integration, which simply wraps the RCS and CVS utility
-programs, the Subversion integration requires additional Python
-libraries.  To use ViewVC with Subversion, make sure you have both
-Subversion itself and the Subversion Python bindings installed.  These
-can be obtained through typical package distribution mechanisms, or
-may be build from source.  (See the files 'INSTALL' and
-'subversion/bindings/swig/INSTALL' in the Subversion source tree for
-more details on how to build and install Subversion and its Python
-bindings.)
-
-Generally speaking, you'll know when your installation of Subversion's
-bindings has been successful if you can import the 'svn.core' module
-from within your Python interpreter.  Here's an example of doing so
-which doubles as a quick way to check what version of the Subversion
-Python binding you have:
-
-   % python
-   Python 2.2.2 (#1, Oct 29 2002, 02:47:30)
-   [GCC 2.96 20000731 (Red Hat Linux 7.2 2.96-108.7.2)] on linux2
-   Type "help", "copyright", "credits" or "license" for more information.
-   >>> from svn.core import *
-   >>> "%s.%s.%s" % (SVN_VER_MAJOR, SVN_VER_MINOR, SVN_VER_PATCH)
-   '1.3.1'
-   >>>
-
-Note that by default, Subversion installs its bindings in a location
-that is not in Python's default module search path (for example, on
-Linux systems the default is usually /usr/local/lib/svn-python).  You
-need to remedy this, either by adding this path to Python's module
-search path, or by relocating the bindings to some place in that
-search path.
-
-For example, you might want to create .pth file in your Python
-installation directory's site-packages area which tells Python where
-to find additional modules (in this case, you Subversion Python
-bindings).  You would do this as follows (and as root):
-
-   $ echo "/path/to/svn/bindings" > /path/to/python/site-packages/svn.pth
-
-(Though, obviously, with the correct paths specified.)
-
-Configuration of the Subversion repositories happens in much the same
-way as with CVS repositories, only with the 'svn_roots' configuration
-variable instead of the 'cvs_roots' one.
-
-
-IF YOU HAVE PROBLEMS ...
-------------------------
+Getting Help
+============
 
 If nothing seems to work:
 
-  * Check if you can execute CGI-scripts (Apache needs to have an
-    ScriptAlias /cgi-bin or cgi-script Handler defined). Try to
-    execute a simple CGI-script that often comes with the distribution
-    of the webserver; locate the logfiles and try to find hints which
-    explain the malfunction
+  * Verify that you can execute CGI scripts at all.  Apache needs to
+    have an ScriptAlias /cgi-bin or cgi-script Handler defined, for
+    example, which are often overlooked.  Try to execute a simple
+    CGI-script that often comes with the distribution of the
+    webserver.
 
-  * View the entries in the webserver's error.log
+  * Review any entries in the webserver's error log.
 
-If ViewVC seems to work but doesn't show the expected result (Typical
-error: you can't see any files)
+If ViewVC seems to work, but doesn't show the expected result (for
+example, your repositories appear empty):
 
-  * Check whether the CGI-script has read-permissions to your
-    CVS-Repository. The CGI-script generally runs as the same user
-    that the web server does, often user 'nobody' or 'httpd'.
+  * Check whether the user as whom ViewVC is running has the required
+    read permission to your repositories.  ViewVC generally runs as
+    the same user that the web server does, often user 'nobody' or
+    'httpd'.
 
-  * Does ViewVC find your RCS utilities? (edit rcs_dir)
+  * Make sure that ViewVC can located your RCS utilities? (edit rcs_dir)
 
-If all else fails, contact the ViewVC development community at
-https://github.com/viewvc/viewvc/.
+See if your problem has been addressed by the [ViewVC
+FAQ](http://viewvc.org/faq.html).
+
+Finally, if all else fails, contact the ViewVC development community
+at https://github.com/viewvc/viewvc/issues.
