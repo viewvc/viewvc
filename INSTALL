@@ -75,9 +75,6 @@ Congratulations on getting this far. :-)
 INSTALLING VIEWVC
 ------------------
 
-NOTE: Windows users can refer to windows/README for Windows-specific
-installation instructions.
-
 1) To get viewvc.cgi to work, make sure that you have Python installed
    and a webserver which is capable of executing CGI scripts (either
    based on the .cgi extension, or by placing the script within a specific
