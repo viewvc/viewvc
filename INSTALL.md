@@ -8,11 +8,12 @@ Contents
   * [Configuring ViewVC](#configuring-viewvc)-
   * [Serving CVS Repositories](#serving-cvs-repositories)
   * [Serving Subversion Repositories](#serving-cvs-repositories)
-  * [Running ViewVC](#running-viewvc)
-    - [Standlone mode](#standalone-mode)
-    - [Apache CGI mode](#apache-cgi-mode)
-    - [Apache WSGI mode](#apache-cgi-mode)
-    - [Apache mod_python mode](#apache-mod_python-mode)
+  * [Running ViewVC Under Apache](#running-viewvc-under-apache)
+    - [CGI Mode](#cgi-mode)
+    - [WSGI Mode](#wsgi-mode)
+    - [FastCGI Mode](#fastcgi-mode)
+    - [mod_python Mode](#mod_python-mode)
+  * [ViewVC Standalone Server](#viewvc-standalone-server)
   * [Commits Database](#commits-database)
   * [Upgrading ViewVC](#upgrading-viewvc)
   * [Getting Help](#getting-help)
@@ -49,10 +50,10 @@ For Subversion support:
   * Subversion 1.14.0+ (binaries and Python bindings)
       (http://subversion.apache.org/)
 
-Strongly recommended for common functionality:
+Strongly recommended:
 
   * Pygments 1.1+ syntax highlighting engine
-      (http://pygments.org)
+      (https://pygments.org/)
   * chardet character encoding detection library
       (https://chardet.github.io/)
 
@@ -131,10 +132,10 @@ behavior.
 In particular, you'll want to examine the following configuration
 options:
 
-  * cvs_roots (for individual CVS repositories)
-  * svn_roots (for individual Subversion repositories)
-  * root_parents (for collections of CVS or Subversion repositories)
-  * rcs_dir (for CVS)
+  * `cvs_roots` (for individual CVS repositories)
+  * `svn_roots` (for individual Subversion repositories)
+  * `root_parents` (for collections of CVS or Subversion repositories)
+  * `rcs_dir` (for CVS)
 
 There are some other options that are usually nice to change. See
 `viewvc.conf` for more information.  ViewVC provides a working,
@@ -166,7 +167,7 @@ the subdirecties of a given "parent" directory as CVS repositories.
 NOTE: It is common to find on a given system a single monolithic CVS
 repository, with dozens of individual top-level modules for each
 distinct project.  If you point ViewVC to that repository directory
-using `cvs_roots, it will show a single repository to your users.
+using `cvs_roots`, it will show a single repository to your users.
 However, you can choose instead to use the `root_parents`
 configuration option, pointing at the same repository directory, to
 cause ViewVC to treat those top-level modules as if they were instead
@@ -222,226 +223,300 @@ way as with CVS repositories, except with the `svn_roots`
 configuration variable instead of the `cvs_roots` one.
 
 
-APACHE CONFIGURATION
---------------------
+Running ViewVC Under Apache
+===========================
 
-1) Locate your Apache configuration file(s).
+Requires:
 
-   Typical locations are /etc/httpd/httpd.conf,
-   /etc/httpd/conf/httpd.conf, and /etc/apache/httpd.conf. Depending
-   on how Apache was installed, you may also look under /usr/local/etc
-   or /etc/local. Use the vendor documentation or the find utility if
-   in doubt.
+  * Apache HTTP Server 2.2+ (https://httpd.apache.org/)
 
-2) Depending on how your Apache configuration is setup by default, you
-   might need to explicitly allow high-level access to the ViewVC
-   install location.
+By far, the most common way to deploy ViewVC is as a script running
+behind a gateway interface of a web server such as Apache HTTP Server.
+In this section, we'll discuss the various ways in which you can do
+so.  Before we continue, though, there are a few requirements common
+to all of these approaches.
 
-      <Directory <VIEWVC_INSTALLATION_DIRECTORY>>
-        # For Apache 2.4.x, use this:
-        Require all granted
+First, you'll need to be familiar with how to configure Apache HTTP
+Server in general on your platform.  This web server product is highly
+modularized.  Its configuration is often segmented across many files.
+Additionally, each of the binary modules that breathe life into
+Apache's vast feature set is typically installed as a separate
+package, with its own configuration stub(s) making up some of that
+segmented configuration.  But the _details_ of that segmentation
+differ across various operating system flavors.
 
-        # For Apache 2.2.x, use these instead:
+For example, a common modern installation of Apache on a CentOS system
+will have its basic configuration in `/etc/httpd/conf/httpd.conf`.
+But that file will "include" additional module-specific configuration
+files from `/etc/httpd/conf.modules.d/`, plus higher-level
+configuration from `/etc/httpd/conf.d/`.
+
+On a Debian-based system, you'll often find the primary configuration
+in `/etc/apache2/apache2.conf`, with a symlink-driven system for
+managing the optional pieces in `/etc/apache2/conf-available` and
+`/etc/apache2/conf-enabled`; `/etc/apache2/mods-available` and
+`/etc/apache2/mods-enabled`; and `/etc/apache2/sites-available` and
+`/etc/apache2/sites-enabled`.
+
+As you can imagine, it's hard to write specific configuration
+instructions with that much variation.  For the purposes of our
+instructions here, we'll simply refer to `httpd.conf` as a generic
+name for "the set of all files that make up your Apache HTTP Server
+configuration".
+
+One thing common to all of the various ViewVC deployment options under
+Apache, though, is that you need to grant permission for site visitors
+to access anything at all associated with your ViewVC installation
+directory.  So, in your `httpd.conf`, add configuration such as this:
+
+    <Directory <VIEWVC_DIR>>
+        ### For Apache 2.4.x, uncomment this:
+        # Require all granted
+    
+        ### For Apache 2.2.x, uncomment these instead:
         # Order allow,deny
         # Allow from all
-      </Directory>
+    </Directory>
 
-   For example, if ViewVC is installed in /usr/local/viewvc-1.3 on
-   your system:
+...where, again, `<VIEWVC_DIR>` is the directory into which you've
+install ViewVC.
 
-      <Directory /usr/local/viewvc-1.3>
-        # For Apache 2.4.x, use this:
-        Require all granted
+In the subsections below, we'll discuss the various options you have
+for running ViewVC in specific ways under Apache.  After you've
+configured Apache using the approach you desire, be sure to restart
+the Apache service.
 
-        # For Apache 2.2.x, use these instead:
-        # Order allow,deny
-        # Allow from all
-      </Directory>
+You should also consider protecting your ViewVC instance from
+server-whacking webcrawlers.  As ViewVC is a web-based application
+which each page containing various links to other pages and views, you
+can expect your server's performance to suffer if a webcrawler finds
+your ViewVC instance and begins traversing those links.  We highly
+recommend that you add your ViewVC location to a site-wide robots.txt
+file.  See [Robots.txt](http://en.wikipedia.org/wiki/Robots.txt) for
+more information.
 
-3) Configure Apache to expose ViewVC to users at the URL of your choice.
 
-   ViewVC provides several different ways to do this.  Choose one of
-   the following methods:
+CGI Mode
+--------
 
-   -----------------------------------
-   METHOD A:  CGI mode via ScriptAlias
-   -----------------------------------
-   The ScriptAlias directive is very useful for pointing
-   directly to the viewvc.cgi script.  Simply insert a line containing
+Requires:
 
-      ScriptAlias /viewvc <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/viewvc.cgi
+  * mod_cgi (generally included with Apache itself)
 
-   into your httpd.conf file.  Choose the location in httpd.conf where
-   also the other ScriptAlias lines reside.  Some examples:
+To run ViewVC under Apache HTTP Server in CGI mode, you need to first
+ensure that Apache can execute CGI scripts at all.  In your
+`httpd.conf` (or one of its included files), load the CGI module if it
+isn't already loaded.
 
-      ScriptAlias /viewvc /usr/local/viewvc-1.3/bin/cgi/viewvc.cgi
+    LoadModule cgi_module libexec/mod_cgi.so
 
-   ----------------------------------------
-   METHOD B:  CGI mode in cgi-bin directory
-   ----------------------------------------
-   Copy the CGI scripts from
-   <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/*.cgi
-   to the /cgi-bin/ directory configured in your httpd.conf file.
+There are a handful of different ways now to tell Apache where and how
+to expose your ViewVC service.  The easiest is to use the
+`ScriptAlias` directive:
 
-   You can override configuration file location using:
+    ScriptAlias /viewvc <VIEWVC_DIR>/bin/cgi/viewvc.cgi
 
-       SetEnv VIEWVC_CONF_PATHNAME /etc/viewvc.conf
+This tells Apache that incoming requests aimed at the URL /viewvc (or
+any children thereof) should be passed off to ViewVC's CGI wrapper
+script for handling.
 
-   ------------------------------------------
-   METHOD C:  CGI mode in ExecCGI'd directory
-   ------------------------------------------
-   Copy the CGI scripts from
-   <VIEWVC_INSTALLATION_DIRECTORY>/bin/cgi/*.cgi
-   to the directory of your choosing in the Document Root adding the following
-   Apache directives for the directory in httpd.conf or an .htaccess file:
+Some other ways to expose ViewVC as a CGI script include copying the
+`bin/cgi/viewvc.cgi` script into a server-wide common `cgi-bin`
+location, or exposing using the Apache `Options +ExecCGI` and
+`AddHandler cgi-script .cgi` directives to cause it to allow the
+ViewVC wrapper script to be treated as an executable program (instead
+of a plain, downloadable file) when installed in a more generally
+web-accessible server location.  Consult the wealth of knowledge
+around these approaches available online for details.
 
-      Options +ExecCGI
-      AddHandler cgi-script .cgi
 
-   NOTE: For this to work mod_cgi has to be loaded.  And for the .htaccess file
-   to be effective, "AllowOverride All" or "AllowOverride Options FileInfo"
-   needs to have been specified for the directory.
+WSGI mode
+---------
 
-   ------------------------------------------
-   METHOD D:  Using mod_python (if installed)
-   ------------------------------------------
+Requires:
 
-   NOTE: To use a mod_python-based installation, you'll need
-   mod_python 3.5.0 or better.
-   
-   Copy the Python scripts and .htaccess file from
-   <VIEWVC_INSTALLATION_DIRECTORY>/bin/mod_python/
-   to a directory being served by Apache.
+  * mod_wsgi, compiled for Python 3 (https://github.com/GrahamDumpleton/mod_wsgi)
 
-   In httpd.conf, make sure that "AllowOverride All" or at least
-   "AllowOverride FileInfo Options" are enabled for the directory
-   you copied the files to.
+To run ViewVC under Apache HTTP Server in WSGI mode, you need to first
+ensure that Apache can execute WSGI programs.  It does this using
+`mod_wsgi`, which is typically not included in the main Apache
+installation package.  So first, ensure that `mod_wsgi` is installed
+on your system.
 
-   You can override configuration file location using:
+Then, in your `httpd.conf` (or one of its included files), load the
+WSGI module if it isn't already loaded.
 
-       SetEnv VIEWVC_CONF_PATHNAME /etc/viewvc.conf
+    LoadModule wsgi_module libexec/mod_wsgi.so
 
-   ----------------------------------------
-   METHOD E:  Using mod_wsgi (if installed)
-   ----------------------------------------
-   Copy the Python scripts file from
-   <VIEWVC_INSTALLATION_DIRECTORY>/bin/wsgi/
-   to the directory of your choosing.  Modify httpd.conf with the
-   following directives:
+Now, again in `httpd.conf`, expose ViewVC's WSGI wrapper program at
+the URL of your choice:
 
-      WSGIScriptAlias /viewvc <VIEWVC_INSTALLATION_DIRECTORY>/bin/wsgi/viewvc.wsgi
+    WSGIScriptAlias /viewvc <VIEWVC_DIR>/bin/wsgi/viewvc.wsgi
 
-   You'll probably also need the following directive because of the
-   not-quite-sanctioned way that ViewVC manipulates Python objects.
+You'll probably also need the following directive because of the
+not-quite-sanctioned way that ViewVC manipulates Python objects.
 
-      WSGIApplicationGroup %{GLOBAL}
+    WSGIApplicationGroup %{GLOBAL}
 
-   NOTE: WSGI support in ViewVC is at this time quite rudimentary,
-   bordering on downright experimental.  Your mileage may vary.
 
-   -----------------------------------------
-   METHOD F:  Using mod_fcgid (if installed)
-   -----------------------------------------
+FastCGI mode
+------------
 
-   This uses ViewVC's WSGI support (from above), but supports using FastCGI,
-   and is a somewhat hybrid approach of several of the above methods.
+Requires:
 
-   Especially if fcgi is already being used for other purposes, e.g. PHP,
-   also using fcgi can prevent the need for including additional modules
-   (e.g. mod_python or mod_wsgi) within Apache, which may help lessen Apache's
-   memory usage and/or help improve performance.
+  * mod_fcgid (http://httpd.apache.org/mod_fcgid/)
+  * Flup (https://www.saddi.com/software/flup/)
 
-   This depends on mod_fcgid:
+FastCGI mode uses ViewVC's WSGI support (from above), but supports
+using FastCGI, and is a somewhat hybrid approach of several of the
+above methods.  Using this mode is convenient if you are already using
+FastCGI to serve up other types of services (such as PHP-based ones)
+from your web server and don't wish to load additional modules.
 
-      http://httpd.apache.org/mod_fcgid/
+In your `httpd.conf` (or one of its included files), load the FastCGI
+daemon module if it isn't already loaded.
 
-   as well as the fcgi server from Python's flup package:
+    LoadModule fcgid_module libexec/mod_fcgid.so
 
-      http://pypi.python.org/pypi/flup
-      http://trac.saddi.com/flup
+Now, again in `httpd.conf`, expose ViewVC's FastCGI wrapper program at
+the URL of your choice:
 
-   The following are some example httpd.conf fragments you can use to
-   support this configuration:
+    ScriptAlias /viewvc <VIEWVC_DIR>/bin/wsgi/viewvc.fcgi
 
-      ScriptAlias /viewvc /usr/local/viewvc/bin/wsgi/viewvc.fcgi
 
-4) [Optional] Provide direct access to icons, stylesheets, etc.
+mod_python mode
+---------------
 
-   ViewVC's HTML templates reference various stylesheets and icons
-   provided by ViewVC itself.  By default, ViewVC generates URLs to
-   those artifacts which point back into ViewVC (using a magic
-   syntax); ViewVC in turn handles such magic URL requests by
-   streaming back the contents of the requested icon or stylesheet
-   file.  While this simplifies the configuration and initial
-   deployment of ViewVC, it's not the most efficient approach to
-   deliver what is essentially static content.
+Requires:
 
-   To improve performance, consider carving out a URL space in your
-   webserver's configuration solely for this static content and
-   instruct ViewVC to use that space when generating URLs for that
-   content.  For example, you might add an Alias such as the following
-   to your httpd.conf:
+  * mod_python module 3.5.0+, compiled for Python 3 (http://modpython.org/)
 
-      Alias /viewvc-docroot /usr/local/viewvc/templates/default/docroot
+Running ViewVC under mod_python is similar to the other approaches
+mentioned.  In your `httpd.conf` (or one of its included files), load
+the mod_python module if it isn't already loaded.
 
-   And then, in viewvc.conf, set the 'docroot' option to the same
-   location:
+    LoadModule python_module libexec/mod_python.so
 
-      docroot = /viewvc-docroot
+Again in `httpd.conf`, expose ViewVC at the URL alias of your choice.
 
-   WARNING: As always when using Alias directives, be careful that you
-   have them in the correct order.  For example, if you use an
-   ordering such as the following, Apache will hand requests for your
-   static documents off to ViewVC as if they were versioned resources:
+    Alias /viewvc <VIEWVC_DIR>/bin/mod_python/viewvc.py
 
-      ScriptAlias /viewvc        /usr/local/viewvc/bin/wsgi/viewvc.fcgi
-      Alias       /viewvc/static /usr/local/viewvc/templates/default/docroot
+Now, we need to tell Apache that mod_python should handle requests for
+this location.  You can do this explicitly:
 
-   The correct order would be:
+    <Location /viewvc>
+        SetHandler mod_python
+        PythonHandler handler
+    <Location>
 
-      Alias       /viewvc/static /usr/local/viewvc/templates/default/docroot
-      ScriptAlias /viewvc        /usr/local/viewvc/bin/wsgi/viewvc.fcgi
+...or you can simply tell Apache to consult the `.htaccess` file that
+lives inside ViewVC's `bin/mod_python` directory will for the required
+additional configuration:
 
-   (That said, it's best to avoid such namespace nesting altogether if
-   you can.)
+    <Directory <VIEWVC_DIR>>
+        AllowOverride FileInfo Options
+    </Directory>
 
-5) [Optional] Add access control.
 
-   In your httpd.conf you can control access to certain modules by
-   adding directives like this:
+Additional Apache Considerations
+================================
 
-      <Location "<url to viewvc.cgi>/<modname_you_wish_to_access_ctl>">
+There are a number of other things you can do to improve your
+Apache-based ViewVC deployment.  We'll cover some of them here.
+
+
+Direct static document access
+------------------------------
+
+ViewVC's HTML templates reference various stylesheets and icons
+provided by ViewVC itself.  By default, ViewVC generates URLs to those
+artifacts which point back into ViewVC (using a magic syntax); ViewVC
+in turn handles such magic URL requests by streaming back the contents
+of the requested icon or stylesheet file.  While this simplifies the
+configuration and initial deployment of ViewVC, it's not the most
+efficient approach to deliver what is essentially static content.
+
+To improve performance, consider carving out a URL space in your
+webserver's configuration solely for this static content and instruct
+ViewVC to use that space when generating URLs for that content.  For
+example, you might add an Alias such as the following to your
+`httpd.conf`:
+
+    Alias /viewvc-docroot /usr/local/viewvc/templates/default/docroot
+
+And then, in `viewvc.conf`, set the `docroot` option to the same
+location:
+
+    docroot = /viewvc-docroot
+
+WARNING: As always when using Alias directives, be careful that you
+have them in the correct order.  For example, if you use an ordering
+such as the following, Apache will hand requests for your static
+documents off to ViewVC as if they were versioned resources:
+
+    ScriptAlias  /viewvc         /usr/local/viewvc/bin/wsgi/viewvc.wsgi
+    Alias        /viewvc/static  /usr/local/viewvc/templates/default/docroot
+
+The correct order would be:
+
+    Alias        /viewvc/static  /usr/local/viewvc/templates/default/docroot
+    ScriptAlias  /viewvc         /usr/local/viewvc/bin/wsgi/viewvc.wsgi
+
+(Of course, it's best to avoid such namespace nesting altogether if
+you can.)
+
+
+Access control
+--------------
+
+ViewVC support a number of path-based authorization approaches for
+your repositories, some of which require knowledge of username of the
+person who is accessing your ViewVC instance.  You can configuration
+Apache to require a username and password for ViewVC site visitors
+using it's password-file-based (or another) authentication feature:
+
+    <Location /viewvc>
         AllowOverride None
         AuthUserFile /path/to/passwd/file
-        AuthName "Client Access"
+        AuthName "ViewVC Access"
         AuthType Basic
         require valid-user
-      </Location>
+    </Location>
 
-   WARNING: If you enable the "checkout_magic" or "allow_tar" options, you
-   will need to add additional location directives to prevent people
-   from sneaking in with URLs like:
+With such configuration in place, your ViewVC users will be required
+to successfully complete a password challenge before getting access to
+your ViewVC-exposed version control repository information.  Also,
+you're well-positioned to enable ViewVC's path-based authorization
+features (see the `authorizer` configuration option in `viewvc.conf`),
+by which you can customized which bits of information are exposed to
+which of your ViewVC users.
 
-      http://<server_name>/viewvc/*checkout*/<module_name>
-      http://<server_name>/viewvc/~checkout~/<module_name>
-      http://<server_name>/viewvc/<module_name>.tar.gz?view=tar
 
-6) Restart Apache.
+ViewVC Standalone Server
+========================
 
-   The commands to do this vary.  "httpd -k restart" and "apache -k
-   restart" are two common variants.  On RedHat Linux it is done using
-   the command "/sbin/service httpd restart" and on SuSE Linux it is
-   done with "rcapache restart".  Other systems use "apachectl restart".
+ViewVC can be run as a standalone script which uses a simplistic,
+built-in Python HTTP server.  We don't recommend that you use this
+mode for a production deployment, but it is a handy way to test our
+your ViewVC configuration without all the additional overhead of
+installing, configuring, and maintaining a full-fledge web server
+package.
 
-7) [Optional] Protect your ViewVC instance from server-whacking webcrawlers.
+To run ViewVC's standalone server, simply execute the script from the
+ViewVC installation directory.
 
-   As ViewVC is a web-based application which each page containing various
-   links to other pages and views, you can expect your server's performance
-   to suffer if a webcrawler finds your ViewVC instance and begins
-   traversing those links.  We highly recommend that you add your ViewVC
-   location to a site-wide robots.txt file.  Visit the Wikipedia page
-   for Robots.txt (http://en.wikipedia.org/wiki/Robots.txt) for more
-   information.
+    $ <VIEWVC_DIR>/bin/standalone.py
+    server ready at http://localhost:49152/viewvc
+
+By default, the script will expose ViewVC at the above URL.  But you
+can modify the hostname and port to which it binds using the `--host`
+and `--port` command-line options.  You can also change the virtual
+path location from `/viewvc` to something else with the
+`--script-alias` command-line option.
+
+For a full listing of supported command-line options, run the
+standalone server with `--help`.
+
 
 
 SQL CHECKIN DATABASE
