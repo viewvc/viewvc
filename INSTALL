@@ -100,9 +100,9 @@ Installing ViewVC
 =================
 
 Installation of ViewVC is handled by the `viewvc-install` script.
-When you run this script, you will be prompted for a installation root
-path.  The default is `/usr/local/viewvc-VERSION` (where VERSION is
-the version of this ViewVC release).  Be advised that the installer
+When you run this script, you will be prompted for an installation
+root path.  The default is `/usr/local/viewvc-VERSION` (where VERSION
+is the version of this ViewVC release).  Be advised that the installer
 actually writes the installation path into some of the installed
 files, so ViewVC cannot be trivially moved to a different path after
 the install.
@@ -118,7 +118,7 @@ priveleges ('root'), ViewVC does not have to be installed as root, nor
 does it run as root.  It is just as valid to place ViewVC in a
 specific user's home directory, too.
 
-NOTE: if your system uses a restrictive umask, you might need to
+NOTE: If your system uses a restrictive umask, you might need to
 adjust the permissions of the directory structure that
 `viewvc-install` creates so that, for example, the modules in the
 `lib/` subdirectory are actually readable by the main programs in the
@@ -139,11 +139,11 @@ options:
   * `cvs_roots` (for individual CVS repositories)
   * `svn_roots` (for individual Subversion repositories)
   * `root_parents` (for collections of CVS or Subversion repositories)
-  * `rcs_dir` (for CVS)
+  * `rcs_dir` (for CVS support)
 
-There are some other options that are usually nice to change. See
+There are some other options that are usually nice to change.  See
 `viewvc.conf` for more information.  ViewVC provides a working,
-default look. However, if you want to customize the look of ViewVC,
+default look.  However, if you want to customize the look of ViewVC,
 edit the files in `<VIEWVC_DIR>/templates`.  You need knowledge about
 HTML to edit the templates.
 
@@ -158,9 +158,9 @@ Serving CVS Repositories
 
 In order to server CVS repositories, ViewVC needs to be able to run
 the RCS utility binaries (`co`, `rlog`, etc.).  If these programs
-aren't installed in typical system executable path locations, use the
-`rcs_bin` configuration option in `viewvc.conf` to tell ViewVC where
-to look for them.
+aren't installed in the typical system executable path locations, use
+the `rcs_bin` configuration option in `viewvc.conf` to tell ViewVC
+where to look for them.
 
 You'll also need to tell ViewVC where to find your CVS repositories.
 Use the `cvs_roots` configuration option to list individual CVS
@@ -174,8 +174,8 @@ distinct project.  If you point ViewVC to that repository directory
 using `cvs_roots`, it will show a single repository to your users.
 However, you can choose instead to use the `root_parents`
 configuration option, pointing at the same repository directory, to
-cause ViewVC to treat those top-level modules as if they were instead
-each their own CVS repository.
+cause ViewVC to present those top-level modules as if they were
+instead each their own CVS repository.
 
 
 Serving Subversion Repositories
@@ -215,7 +215,7 @@ search path.
 
 For example, you might want to create a `.pth` file in your Python
 installation directory's site-packages area which tells Python where
-to find additional modules (in this case, you Subversion Python
+to find additional modules (in this case, your Subversion Python
 bindings).  You would do this as follows (and as root):
 
     $ echo "/path/to/svn/bindings" > /path/to/python/site-packages/svn.pth
@@ -237,8 +237,8 @@ Requires:
 By far, the most common way to deploy ViewVC is as a script running
 behind a gateway interface of a web server such as Apache HTTP Server.
 In this section, we'll discuss the various ways in which you can do
-so.  Before we continue, though, there are a few requirements common
-to all of these approaches.
+precisely that.  Before we continue, though, there are a few
+requirements common to all of these approaches.
 
 First, you'll need to be familiar with how to configure Apache HTTP
 Server in general on your platform.  This web server product is highly
@@ -263,9 +263,9 @@ managing the optional pieces in `/etc/apache2/conf-available` and
 `/etc/apache2/sites-enabled`.
 
 As you can imagine, it's hard to write specific configuration
-instructions with that much variation.  For the purposes of our
-instructions here, we'll simply refer to `httpd.conf` as a generic
-name for "the set of all files that make up your Apache HTTP Server
+instructions here with that much variation.  For the purposes of our
+instructions, we'll simply refer to `httpd.conf` as a generic name for
+"the set of all files that make up your Apache HTTP Server
 configuration".
 
 One thing common to all of the various ViewVC deployment options under
@@ -324,14 +324,14 @@ This tells Apache that incoming requests aimed at the URL /viewvc (or
 any children thereof) should be passed off to ViewVC's CGI wrapper
 script for handling.
 
-Some other ways to expose ViewVC as a CGI script include copying the
+Another way to expose ViewVC as a CGI script is to copy the
 `bin/cgi/viewvc.cgi` script into a server-wide common `cgi-bin`
-location, or exposing using the Apache `Options +ExecCGI` and
-`AddHandler cgi-script .cgi` directives to cause it to allow the
-ViewVC wrapper script to be treated as an executable program (instead
-of a plain, downloadable file) when installed in a more generally
-web-accessible server location.  Consult the wealth of knowledge
-around these approaches available online for details.
+location was has been configured to treat the executable files found
+therein as programs.  Another is to expose it using the Apache
+`Options +ExecCGI` and `AddHandler cgi-script .cgi` directives when
+it's been installed in a more generally web-accessible server
+location.  Consult the wealth of knowledge around these approaches
+available online for details.
 
 
 WSGI mode
@@ -371,11 +371,11 @@ Requires:
   * mod_fcgid (http://httpd.apache.org/mod_fcgid/)
   * Flup (https://www.saddi.com/software/flup/)
 
-FastCGI mode uses ViewVC's WSGI support (from above), but supports
-using FastCGI, and is a somewhat hybrid approach of several of the
-above methods.  Using this mode is convenient if you are already using
-FastCGI to serve up other types of services (such as PHP-based ones)
-from your web server and don't wish to load additional modules.
+FastCGI mode uses ViewVC's WSGI support, but supports using FastCGI,
+and is a somewhat hybrid approach of several of the above methods.
+Using this mode is convenient if you are already using FastCGI to
+serve up other types of services (such as PHP-based ones) from your
+web server and don't wish to load additional modules.
 
 In your `httpd.conf` (or one of its included files), load the FastCGI
 daemon module if it isn't already loaded.
@@ -405,17 +405,17 @@ Again in `httpd.conf`, expose ViewVC at the URL alias of your choice.
 
     Alias /viewvc <VIEWVC_DIR>/bin/mod_python/viewvc.py
 
-Now, we need to tell Apache that mod_python should handle requests for
-this location.  You can do this explicitly:
+Now, tell Apache that mod_python should handle requests for this
+location.  You can do this explicitly:
 
     <Location /viewvc>
         SetHandler mod_python
         PythonHandler handler
     <Location>
 
-...or you can simply tell Apache to consult the `.htaccess` file that
-lives inside ViewVC's `bin/mod_python` directory will for the required
-additional configuration:
+_Or_, you can tell Apache to consult the `.htaccess` file that lives
+inside ViewVC's `bin/mod_python` directory for the required additional
+configuration:
 
     <Directory <VIEWVC_DIR>>
         AllowOverride FileInfo Options
@@ -446,7 +446,7 @@ ViewVC to use that space when generating URLs for that content.  For
 example, you might add an Alias such as the following to your
 `httpd.conf`:
 
-    Alias /viewvc-docroot /usr/local/viewvc/templates/default/docroot
+    Alias /viewvc-docroot <VIEWVC_DIR>/templates/default/docroot
 
 And then, in `viewvc.conf`, set the `docroot` option to the same
 location:
@@ -458,13 +458,13 @@ have them in the correct order.  For example, if you use an ordering
 such as the following, Apache will hand requests for your static
 documents off to ViewVC as if they were versioned resources:
 
-    ScriptAlias  /viewvc         /usr/local/viewvc/bin/wsgi/viewvc.wsgi
-    Alias        /viewvc/static  /usr/local/viewvc/templates/default/docroot
+    ScriptAlias  /viewvc         <VIEWVC_DIR>/bin/wsgi/viewvc.wsgi
+    Alias        /viewvc/static  <VIEWVC_DIR>/templates/default/docroot
 
 The correct order would be:
 
-    Alias        /viewvc/static  /usr/local/viewvc/templates/default/docroot
-    ScriptAlias  /viewvc         /usr/local/viewvc/bin/wsgi/viewvc.wsgi
+    Alias        /viewvc/static  <VIEWVC_DIR>/templates/default/docroot
+    ScriptAlias  /viewvc         <VIEWVC_DIR>/bin/wsgi/viewvc.wsgi
 
 (Of course, it's best to avoid such namespace nesting altogether if
 you can.)
@@ -475,7 +475,7 @@ Access control
 
 ViewVC support a number of path-based authorization approaches for
 your repositories, some of which require knowledge of username of the
-person who is accessing your ViewVC instance.  You can configuration
+person who is accessing your ViewVC instance.  You can configure
 Apache to require a username and password for ViewVC site visitors
 using it's password-file-based (or another) authentication feature:
 
@@ -492,8 +492,8 @@ to successfully complete a password challenge before getting access to
 your ViewVC-exposed version control repository information.  Also,
 you're well-positioned to enable ViewVC's path-based authorization
 features (see the `authorizer` configuration option in `viewvc.conf`),
-by which you can customized which bits of information are exposed to
-which of your ViewVC users.
+by which you can customize which bits of your version control
+repositories are exposed to which of your ViewVC users.
 
 
 ViewVC Standalone Server
@@ -503,7 +503,7 @@ ViewVC can be run as a standalone script which uses a simplistic,
 built-in Python HTTP server.  We don't recommend that you use this
 mode for a production deployment, but it is a handy way to test our
 your ViewVC configuration without all the additional overhead of
-installing, configuring, and maintaining a full-fledge web server
+installing, configuring, and maintaining a full-fledged web server
 package.
 
 To run ViewVC's standalone server, simply execute the script from the
@@ -546,12 +546,10 @@ database.
 script.  It will prompt you for your MySQL user, password, and the
 name of database you want to create.  The database name defaults to
 "ViewVC".  This script creates the database and sets up the empty
-tables.  If you run this on a existing ViewVC database, you will lose
-all your data!
+tables.
 
-*Tell ViewVC about your database* by editing your
-`<VIEWVC_DIR>/viewvc.conf` file.  In the `[cvsdb]` section.  You will
-need to set the following option values:
+*Tell ViewVC about your database* in your `<VIEWVC_DIR>/viewvc.conf`
+file.  In the `[cvsdb]` section, set the following option values:
 
     enabled = 1        # Whether to enable query support in viewvc.cgi
     host =             # MySQL database server host
@@ -567,29 +565,30 @@ and your read-write user to be the same.
 
 *Configure your version control system(s)* to publish their commit
 information to the database.  This is done using utilities that ViewVC
-provides.
+provides.  See the following sections for details.
+
 
 Publishing CVS commits
 ----------------------
 
-Two programs are provided for updating the checkin database from a CVS
+Two programs are provided for updating the commits database from a CVS
 repository, `cvsdbadmin` and `loginfo-handler`.  They serve two
 different purposes.  The `cvsdbadmin` program walks through your CVS
 repository and adds every commit found in every versioned file.  This
 is commonly used for initializing the database from a repository which
 has been in use.  The `loginfo-handler` script is executed by the CVS
 server's `CVSROOT/loginfo` system upon each commit.  It makes real-time
-updates to the checkin database as commits are made to the repository.
+updates to the commits database as commits are made to the repository.
 
 To build a database of all the commits in the CVS repository located
-at, say, `/home/cvs`, invoke:
+at, say, `/opt/cvs/repo`, invoke:
 
-    $ ./cvsdbadmin rebuild /home/cvs
+    $ ./cvsdbadmin rebuild /opt/cvs/repo
 
-If you want to update the checkin database with new commits made since
+If you want to update the commits database with new commits made since
 your last update thereof, invoke
 
-    $ ./cvsdbadmin update /home/cvs
+    $ ./cvsdbadmin update /opt/cvs/repo
 
 The update mode checks to see if a commit is already in the database,
 and only adds it if it is absent.
@@ -598,41 +597,41 @@ To get real-time updates, you'll want to checkout the `CVSROOT` module
 from your CVS repository and edit `CVSROOT/loginfo`.  For folks running
 CVS 1.12 or better, add this line:
 
-    ALL <VIEWVC_INSTALLATION_DIRECTORY>/bin/loginfo-handler %p %{sVv}
+    ALL <VIEWVC_DIR>/bin/loginfo-handler %p %{sVv}
 
 If you are running CVS 1.11 or earlier, you'll want a slightly
 different command line in CVSROOT/loginfo:
 
-    ALL <VIEWVC_INSTALLATION_DIRECTORY>/bin/loginfo-handler %{sVv}
+    ALL <VIEWVC_DIR>/bin/loginfo-handler %{sVv}
 
 If you have other scripts invoked by `CVSROOT/loginfo`, you will want
 to make sure to change any running under the "DEFAULT" keyword to
-"ALL" like the loginfo handler, and probably carefully read the
-execution rules for `CVSROOT/loginfo` from the CVS manual.
+"ALL" like the loginfo handler, and carefully read the execution rules
+for `CVSROOT/loginfo` from the CVS manual.
 
 If you are running the Unix port of CVS-NT, the handler script need to
 know about it.  CVS-NT delivers commit information to loginfo scripts
 differently than the way mainstream CVS does.  Your command line
 should look like this:
 
-    ALL <VIEWVC_INSTALLATION_DIRECTORY>/bin/loginfo-handler %{sVv} cvsnt
+    ALL <VIEWVC_DIR>/bin/loginfo-handler %{sVv} cvsnt
 
 
 Publishing Subversion commits
 -----------------------------
 
 To build a database of all the commits in the Subversion repository
-located at, say, `/home/svn`, invoke:
+located at, say, `/opt/svn/repo`, invoke:
 
-    ./svndbadmin rebuild /home/svn
+    ./svndbadmin rebuild /opt/svn/repo
 
 If you want to update the database with commits made since the last
 update thereof, invoke:
 
-    ./svndbadmin update /home/svn
+    ./svndbadmin update /opt/svn/repo
 
 To get real time updates, you will need to add more modify the
-repository's post-commit hook (`/home/svn/hooks/post-commit`) to
+repository's post-commit hook (`/opt/svn/repo/hooks/post-commit`) to
 invoke the `svndbadmin` command.
 
     #!/bin/sh
@@ -650,7 +649,7 @@ the `--force` option:
     REV="$2"
     <VIEWVC_DIR>/bin/svndbadmin update --force "$REPOS" "$REV"
 
-This will make sure that the checkin database stays consistent when
+This will make sure that the commits database stays consistent when
 you change the "svn:log", "svn:author" or "svn:date" revision
 properties.
 
@@ -661,7 +660,6 @@ Upgrading ViewVC
 See the file `upgrading-howto.html` in the `docs/` subdirectory for
 information on changes you might need to make as you upgrade from one
 major version of ViewVC to another.
-
 
 
 Getting Help
