@@ -283,8 +283,17 @@ class WsgiServer(Server):
     self.start_response(status='301 Moved')
     self._wsgi_write(redirect_notice(url))
 
-  def getenv(self, name, value=None):
-    return self._environ.get(name, value)
+  def getenv(self, name, default_value=None):
+    value = self._environ.get(name, default_value)
+    # PEP 3333 demands that PATH_INFO et al carry only latin-1
+    # strings, so multibyte versioned path names arrive munged, with
+    # each byte being a character.  But ViewVC generates it's own URLs
+    # from Unicode strings, where UTF-8 is used during URI-encoding.
+    # So we need to reinterpret path-carrying CGI environment
+    # variables as UTF-8 instead of as latin-1.
+    if name in ['PATH_INFO', 'SCRIPT_NAME']:
+      value = value.encode('latin-1').decode('utf-8', errors='replace')
+    return value
 
   def params(self):
     return cgi.parse(environ=self._environ, fp=self._environ["wsgi.input"])
