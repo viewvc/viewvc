@@ -308,16 +308,6 @@ class Config:
     if did_overlay:
       self.root_options_overlayed = 1
 
-  def _get_parser_items(self, parser, section):
-    """Basically implement ConfigParser.items() for pre-Python-2.3 versions."""
-    try:
-      return self.parser.items(section)
-    except AttributeError:
-      d = {}
-      for option in parser.options(section):
-        d[option] = parser.get(section, option)
-      return list(d.items())
-
   def get_authorizer_and_params_hack(self, rootname):
     """Return a 2-tuple containing the name and parameters of the
     authorizer configured for use with ROOTNAME.
@@ -362,7 +352,7 @@ class Config:
     root_authz_section = 'root-%s|authz-%s' % (rootname, authorizer)
     for section in self.parser.sections():
       if section == root_authz_section:
-        for key, value in self._get_parser_items(self.parser, section):
+        for key, value in self.parser.items():
           params[key] = value
     return authorizer, params
 
