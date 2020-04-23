@@ -1732,19 +1732,6 @@ def detect_encoding(text_block):
   # By default ... we have no idea.
   return None
 
-def transcode_text(text, encoding=None):
-  """If ENCODING is provided and not 'utf-8', transcode TEXT from
-  ENCODING to UTF-8."""
-
-  # for Python 2.x only
-  if not encoding or encoding == 'utf-8':
-    return text
-  try:
-    return text.decode(encoding, 'replace').encode('utf-8', 'replace')
-  except:
-    pass
-  return text
-
 def markup_file_contents(request, cfg, file_lines, filename,
                          mime_type, encoding, colorize):
   """Perform syntax coloration via Pygments (where allowed and
