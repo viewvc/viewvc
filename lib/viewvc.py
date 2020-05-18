@@ -1723,8 +1723,8 @@ def detect_encoding(text_block):
     resp = chardet.detect(text_block)
     if resp.get('confidence') == 1.0:
       encoding = resp.get('encoding')
-      if encoding is "ascii":
-        encoding = "utf-8"
+      if encoding == 'ascii':
+        encoding = 'utf-8'
       return encoding
   except:
     pass
