@@ -310,7 +310,7 @@ class WsgiServer(Server):
     # So we need to reinterpret path-carrying CGI environment
     # variables as UTF-8 instead of as latin-1.
     if name in ['PATH_INFO', 'SCRIPT_NAME']:
-      value = value.encode('latin-1').decode('utf-8', errors='replace')
+      value = value.encode('latin-1').decode('utf-8', errors='surrogateescape')
     return value
 
   def params(self):
