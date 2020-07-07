@@ -20,6 +20,7 @@ import os
 import sys
 import re
 import cgi
+from urllib.parse import unquote as _unquote
 
 
 # Global server object. It will be one of the following:
@@ -236,8 +237,25 @@ class CgiServer(Server):
     self.write_text(redirect_notice(url))
 
   def getenv(self, name, value=None):
-    ret = os.environ.get(name, value)
-    if self._iis and name == 'PATH_INFO' and ret:
+    # we should always use UTF-8 for environment variable.
+    if sys.getfilesystemencoding() == 'UTF-8':
+      ret = os.environ.get(name, value)
+    else:
+      if os.supports_bytes_environ:
+        if isinstance(value, str):
+          value = value.encode('utf-8', 'surrogateescape')
+        ret = os.environb.get(name.encode('utf-8'), value)
+      else:
+        ret = os.environ.get(name, value)
+        if isinstance(ret, str):
+          ret = ret.encode(sys.getfilesystemencoding(), 'surrogateescape')
+      if isinstance(ret, bytes):
+        ret = ret.decode('utf-8','surrogateescape')
+    if name in ('PATH_INFO', 'SCRIPT_NAME') and ret:
+      # Also, we should interpret URL encoding as UTF-8 stream, however,
+      # we should hold whole sequence even if it causes error.
+      ret = _unquote(ret, 'utf-8', 'surrogateescape')
+    if self._iis and name == 'PATH_INFO':
       ret = fix_iis_path_info(self, ret)
     return ret
 
