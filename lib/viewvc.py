@@ -2036,7 +2036,7 @@ def markup_or_annotate(request, is_annotate):
           break
       encoding = detect_encoding(text_block)
     if not encoding:
-      encoding = 'ascii'
+      encoding = request.repos.encoding
 
     # Decode the file's lines from the detected encoding to Unicode.
     try:
