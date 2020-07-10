@@ -124,8 +124,10 @@ class Server:
 
   def getenv(self, name, default_value=None):
     """Return the value of environment variable NAME, or DEFAULT_VALUE
-    if NAME isn't found in the server environment.  Child classes should
-    override this method."""
+    if NAME isn't found in the server environment.  Unlike os.getenv(),
+    the raw value of enviroment variable should be always decoded as
+    UTF-8 and the type of return value should be str or None.  Child
+    classes should override this method."""
     raise ServerImplementationError()
 
   def params(self):
@@ -237,14 +239,14 @@ class CgiServer(Server):
     self.write_text(redirect_notice(url))
 
   def getenv(self, name, value=None):
-    # we should always use UTF-8 for environment variable.
+    # we should always use UTF-8 to decode OS's environment variable.
     if sys.getfilesystemencoding() == 'UTF-8':
       ret = os.environ.get(name, value)
     else:
       if os.supports_bytes_environ:
         if isinstance(value, str):
           value = value.encode('utf-8', 'surrogateescape')
-        ret = os.environb.get(name.encode('utf-8'), value)
+        ret = os.environb.get(name.encode(sys.getfilesystemencoding()), value)
       else:
         ret = os.environ.get(name, value)
         if isinstance(ret, str):
