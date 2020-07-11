@@ -20,7 +20,6 @@ import os
 import sys
 import re
 import cgi
-from urllib.parse import unquote as _unquote
 
 
 # Global server object. It will be one of the following:
@@ -253,10 +252,6 @@ class CgiServer(Server):
           ret = ret.encode(sys.getfilesystemencoding(), 'surrogateescape')
       if isinstance(ret, bytes):
         ret = ret.decode('utf-8','surrogateescape')
-    if name in ('PATH_INFO', 'SCRIPT_NAME') and ret:
-      # Also, we should interpret URL encoding as UTF-8 stream, however,
-      # we should hold whole sequence even if it causes error.
-      ret = _unquote(ret, 'utf-8', 'surrogateescape')
     if self._iis and name == 'PATH_INFO':
       ret = fix_iis_path_info(self, ret)
     return ret

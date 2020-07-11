@@ -34,6 +34,7 @@ import string
 import socket
 import select
 import base64
+from urllib.parse import unquote as _unquote
 import http.server as _http_server
 
 if LIBRARY_DIR:
@@ -273,7 +274,8 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
     env['SERVER_PROTOCOL'] = self.protocol_version
     env['SERVER_PORT'] = str(self.server.server_port)
     env['REQUEST_METHOD'] = self.command
-    env['PATH_INFO'] = rest
+    uqrest = _unquote(rest)
+    env['PATH_INFO'] = uqrest
     env['SCRIPT_NAME'] = scriptname
     if query:
       env['QUERY_STRING'] = query
