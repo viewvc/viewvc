@@ -92,7 +92,7 @@ def cmp(a, b):
   return (a > b) - (a < b)
 
 class TextIOWrapper_noclose(io.TextIOWrapper):
-  """Custom TextIOWrapper class which don't close underlaid IO object when
+  """Custom TextIOWrapper class which doesn't close underlaying IO object when
   close() is called or this object is destroyed."""
   def close(self):
     if not self.closed:
