@@ -91,6 +91,14 @@ _URL_SAFE_CHARS = "/*~"
 def cmp(a, b):
   return (a > b) - (a < b)
 
+class TextIOWrapper_noclose(io.TextIOWrapper):
+  """Custom TextIOWrapper class which doesn't close underlaying IO object when
+  close() is called or this object is destroyed."""
+  def close(self):
+    if not self.closed:
+      self.closed = True
+      self.flush()
+      self.detach()
 
 class Request:
   def __init__(self, server, cfg):
@@ -958,7 +966,8 @@ def get_writeready_server_file(request, content_type=None, encoding=None,
     fp = request.server.file()
 
   if is_text:
-    fp = io.TextIOWrapper(fp, 'utf-8', 'surrogateescape', write_through=True)
+    fp = TextIOWrapper_noclose(fp, 'utf-8', 'surrogateescape',
+                               write_through=True)
 
   return fp
 
