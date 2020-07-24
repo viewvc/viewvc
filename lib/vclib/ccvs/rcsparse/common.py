@@ -18,11 +18,6 @@ import sys
 
 DIGITS = string.digits.encode('ascii')
 
-def ascii_decode(s):
-  if s is None:
-    return None
-  return s.decode('ascii', 'surrogateescape')
-
 class Sink:
   """Interface to be implemented by clients.  The RCS parser calls this as
   it parses the RCS file.
@@ -36,8 +31,8 @@ class Sink:
     This is the value of the 'head' header in the admin section of the RCS
     file.  This function can only be called before admin_completed().
 
-    Parameter: REVISION is a string containing a revision number.  This is
-    an actual revision number, not a branch number.
+    Parameter: REVISION is a bytes string containing a revision number.
+    This is an actual revision number, not a branch number.
     """
     pass
 
@@ -48,9 +43,9 @@ class Sink:
     This is the value of the 'branch' header in the admin section of the RCS
     file.  This function can only be called before admin_completed().
 
-    Parameter: BRANCH_NAME is a string containing a branch number.  If this
-    function is called, the parameter is typically "1.1.1", indicating the
-    vendor branch.
+    Parameter: BRANCH_NAME is a bytes string containing a branch number.  If
+    this function is called, the parameter is typically b"1.1.1", indicating
+    the vendor branch.
     """
     pass
 
@@ -62,9 +57,9 @@ class Sink:
     This is the value of the 'access' header in the admin section of the RCS
     file.  This function can only be called before admin_completed().
 
-    Parameter: ACCESSORS is a list of strings.  Each string is a username.
-    The user is allowed access if and only if their username is in the list,
-    OR the user owns the RCS file on disk, OR the user is root.
+    Parameter: ACCESSORS is a list of bytes strings.  Each string is a
+    username.  The user is allowed access if and only if their username is
+    in the list, OR the user owns the RCS file on disk, OR the user is root.
 
     Note that CVS typically doesn't use this field.
     """
@@ -77,8 +72,8 @@ class Sink:
     This is taken from the 'symbols' header in the admin section of the RCS
     file.  This function can only be called before admin_completed().
 
-    Parameters: NAME is a string containing the tag or branch name.
-    REVISION is a string containing a revision number.  This may be
+    Parameters: NAME is a bytes strings containing the tag or branch name.
+    REVISION is a bytes string containing a revision number.  This may be
     an actual revision number (for a tag) or a branch number.
 
     The revision number consists of a number of decimal components separated
@@ -100,9 +95,9 @@ class Sink:
     This is taken from the 'locks' header in the admin section of the RCS
     file.  This function can only be called before admin_completed().
 
-    Parameters: REVISION is a string containing a revision number.  This is
-    an actual revision number, not a branch number.
-    LOCKER is a string containing a username.
+    Parameters: REVISION is a bytes string containing a revision number.
+    This is an actual revision number, not a branch number.
+    LOCKER is a bytes string containing a username.
     """
     pass
 
@@ -113,7 +108,7 @@ class Sink:
     This is taken from the 'strict' header in the admin section of the RCS
     file.  This function can only be called before admin_completed().
 
-    Parameters: MODE is always the string 'strict'.
+    Parameters: MODE is always the bytes string b'strict'.
     """
     pass
 
@@ -123,7 +118,7 @@ class Sink:
     This is the value of the 'comment' header in the admin section of the
     RCS file.  This function can only be called before admin_completed().
 
-    Parameter: COMMENT is a string containing the comment.  This may be
+    Parameter: COMMENT is a bytes string containing the comment.  This may be
     multi-line.
 
     This field does not seem to be used by CVS.
@@ -136,8 +131,8 @@ class Sink:
     This is the value of the 'expand' header in the admin section of the
     RCS file.  This function can only be called before admin_completed().
 
-    Parameter: MODE is a string containing the keyword expansion mode.
-    Possible values include 'o' and 'b', amongst others.
+    Parameter: MODE is a bytes string containing the keyword expansion mode.
+    Possible values include b'o' and b'b', amongst others.
     """
     pass
 
@@ -154,19 +149,19 @@ class Sink:
     This function is called for each revision.  It is called later than
     admin_completed() and earlier than tree_completed().
 
-    Parameter: REVISION is a revision number, as a string.  This is an
+    Parameter: REVISION is a revision number, as a bytes string.  This is an
     actual revision number, not a branch number.
     TIMESTAMP is the date and time that the revision was created, as an
     integer number of seconds since the epoch.  (I.e. "UNIX time" format).
-    AUTHOR is the author name, as a string.
-    STATE is the state of the revision, as a string.  Common values are
-    "Exp" and "dead".
-    BRANCHES is a list of strings, with each string being an actual
+    AUTHOR is the author name, as a bytes string.
+    STATE is the state of the revision, as a bytes string.  Common values are
+    b"Exp" and b"dead".
+    BRANCHES is a list of bytes strings, with each string being an actual
     revision number (not a branch number).  For each branch which is based
     on this revision and has commits, the revision number of the first
     branch commit is listed here.
-    NEXT is either None or a string representing an actual revision number
-    (not a branch number).
+    NEXT is either None or a bytes string representing an actual revision
+    number (not a branch number).
 
     When on trunk, NEXT points to what humans might consider to be the
     'previous' revision number.  For example, 1.3's NEXT is 1.2.
@@ -192,8 +187,8 @@ class Sink:
 
     This function is called once, after tree_completed().
 
-    Parameter: DESCRIPTION is a string containing the description.  This may
-    be multi-line.
+    Parameter: DESCRIPTION is a bytes string containing the description.
+    This may be multi-line.
     """
     pass
 
@@ -203,11 +198,12 @@ class Sink:
     This function is called for each revision.  It is called later than
     set_description().
 
-    Parameters: REVISION is a string containing the actual revision number.
-    LOG is a string containing the log message.  This may be multi-line.
+    Parameters: REVISION is a bytes string containing the actual revision
+    number.
+    LOG is a bytes string containing the log message.  This may be multi-line.
     TEXT is the contents of the file in this revision, either as full-text or
-    as a diff.  This is usually multi-line, and often quite large and/or
-    binary.
+    as a diff, represented by a bytes object.  This is usually multi-line,
+    and often quite large and/or binary.
     """
     pass
 
@@ -277,14 +273,12 @@ class _Parser:
       # on the floor.
       pass
     else:
-      rev = ascii_decode(rev)
       self.sink.set_head_revision(rev)
       self.ts.match(b';')
 
   def _parse_admin_branch(self, token):
     branch = self.ts.get()
     if branch != b';':
-      branch = ascii_decode(branch)
       self.sink.set_principal_branch(branch)
       self.ts.match(b';')
 
@@ -300,8 +294,6 @@ class _Parser:
         break
       self.ts.match(b':')
       tag_rev = self.ts.get()
-      tag_name = ascii_decode(tag_name)
-      tag_rev = ascii_decode(tag_rev)
       self.sink.define_tag(tag_name, tag_rev)
 
   def _parse_admin_locks(self, token):
@@ -311,21 +303,18 @@ class _Parser:
         break
       self.ts.match(b':')
       rev = self.ts.get()
-      rev = ascii_decode(rev)
-      locker = ascii_decode(locker)
       self.sink.set_locker(rev, locker)
 
   def _parse_admin_strict(self, token):
-    self.sink.set_locking("strict")
+    self.sink.set_locking(b"strict")
     self.ts.match(b';')
 
   def _parse_admin_comment(self, token):
-    self.sink.set_comment(ascii_decode(self.ts.get()))
+    self.sink.set_comment(self.ts.get())
     self.ts.match(b';')
 
   def _parse_admin_expand(self, token):
     expand_mode = self.ts.get()
-    expand_mode = ascii_decode(expand_mode)
     self.sink.set_expansion(expand_mode)
     self.ts.match(b';')
 
@@ -372,7 +361,7 @@ class _Parser:
     self.ts.match(b';')
 
     # Convert date into standard UNIX time format (seconds since epoch)
-    date_fields = ascii_decode(date).split('.')
+    date_fields = date.decode('ascii', 'surrogateescape').split('.')
     # According to rcsfile(5): the year "contains just the last two
     # digits of the year for years from 1900 through 1999, and all the
     # digits of years thereafter".
@@ -431,11 +420,6 @@ class _Parser:
       # consume everything up to the semicolon
       self._read_until_semicolon()
 
-    revision = ascii_decode(revision)
-    author = ascii_decode(author)
-    state = ascii_decode(state)
-    branches = [ascii_decode(b) for b in branches]
-    next = ascii_decode(next)
     self.sink.define_revision(revision, timestamp, author, state, branches,
                               next)
 
@@ -452,7 +436,7 @@ class _Parser:
 
   def parse_rcs_description(self):
     self.ts.match(b'desc')
-    self.sink.set_description(ascii_decode(self.ts.get()))
+    self.sink.set_description(self.ts.get())
 
   def parse_rcs_deltatext(self):
     while 1:
@@ -467,9 +451,6 @@ class _Parser:
       if sym2 != b'text':
         raise RCSExpected(sym2, b'text')
       ### need to add code to chew up "newphrase"
-      revision = ascii_decode(revision)
-      log = ascii_decode(log)
-      text = ascii_decode(text)
       self.sink.set_revision_info(revision, log, text)
 
   def parse(self, file, sink):
