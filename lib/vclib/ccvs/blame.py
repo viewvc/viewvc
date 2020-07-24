@@ -34,29 +34,26 @@ import vclib
 
 class CVSParser(rcsparse.Sink):
   # Precompiled regular expressions
-  trunk_rev   = re.compile('^[0-9]+\\.[0-9]+$')
-  last_branch = re.compile('(.*)\\.[0-9]+')
-  is_branch   = re.compile('^(.*)\\.0\\.([0-9]+)$')
-  d_command   = re.compile('^d(\d+)\\s(\\d+)')
-  a_command   = re.compile('^a(\d+)\\s(\\d+)')
+  trunk_rev   = re.compile(b'^[0-9]+\\.[0-9]+$')
+  last_branch = re.compile(b'(.*)\\.[0-9]+')
+  is_branch   = re.compile(b'^(.*)\\.0\\.([0-9]+)$')
+  d_command   = re.compile(b'^d(\d+)\\s(\\d+)')
+  a_command   = re.compile(b'^a(\d+)\\s(\\d+)')
 
   SECONDS_PER_DAY = 86400
 
-  def __init__(self):
+  def __init__(self, encoding):
     self.Reset()
+    self.encoding = encoding
 
   def Reset(self):
     self.last_revision = {}
     self.prev_revision = {}
-    self.revision_date = {}
     self.revision_author = {}
-    self.revision_branches = {}
     self.next_delta = {}
     self.prev_delta = {}
     self.tag_revision = {}
     self.timestamp = {}
-    self.revision_ctime = {}
-    self.revision_age = {}
     self.revision_log = {}
     self.revision_deltatext = {}
     self.revision_map = []    # map line numbers to revisions
@@ -71,7 +68,7 @@ class CVSParser(rcsparse.Sink):
       revision = self.tag_revision[tag_or_revision]
       match = self.is_branch.match(revision)
       if match:
-        branch = match.group(1) + '.' + match.group(2)
+        branch = match.group(1) + b'.' + match.group(2)
         if self.last_revision.get(branch):
           return self.last_revision[branch]
         else:
@@ -79,7 +76,7 @@ class CVSParser(rcsparse.Sink):
       else:
         return revision
     except:
-      return ''
+      return b''
 
   # Construct an ordered list of ancestor revisions to the given
   # revision, starting with the immediate ancestor and going back
@@ -99,8 +96,8 @@ class CVSParser(rcsparse.Sink):
 
   # Split deltatext specified by rev to each line.
   def deltatext_split(self, rev):
-    lines = self.revision_deltatext[rev].split('\n')
-    if lines[-1] == '':
+    lines = self.revision_deltatext[rev].split(b'\n')
+    if lines[-1] == b'':
       del lines[-1]
     return lines
 
@@ -178,11 +175,8 @@ class CVSParser(rcsparse.Sink):
   # and other arrays that contain info about individual revisions.
   #
   # The following dicts are created, keyed by revision number:
-  #   self.revision_date     -- e.g. "96.02.23.00.21.52"
   #   self.timestamp         -- seconds since 12:00 AM, Jan 1, 1970 GMT
-  #   self.revision_author   -- e.g. "tom"
-  #   self.revision_branches -- descendant branch revisions, separated by spaces,
-  #                             e.g. "1.21.4.1 1.21.2.6.1"
+  #   self.revision_author   -- e.g. b"tom"
   #   self.prev_revision     -- revision number of previous *ancestor* in RCS tree.
   #                             Traversal of this array occurs in the direction
   #                             of the primordial (1.1) revision.
@@ -195,24 +189,14 @@ class CVSParser(rcsparse.Sink):
   #
   # Also creates self.last_revision, keyed by a branch revision number, which
   # indicates the latest revision on a given branch,
-  #   e.g. self.last_revision{"1.2.8"} == 1.2.8.5
+  #   e.g. self.last_revision{b"1.2.8"} == 1.2.8.5
   def define_revision(self, revision, timestamp, author, state,
                       branches, next):
     self.tag_revision[revision] = revision
     branch = self.last_branch.match(revision).group(1)
     self.last_revision[branch] = revision
 
-    #self.revision_date[revision] = date
     self.timestamp[revision] = timestamp
-
-    # Pretty print the date string
-    ltime = time.localtime(self.timestamp[revision])
-    formatted_date = time.strftime("%d %b %Y %H:%M", ltime)
-    self.revision_ctime[revision] = formatted_date
-
-    # Save age
-    self.revision_age[revision] = ((time.time() - self.timestamp[revision])
-                                   / self.SECONDS_PER_DAY)
 
     # save author
     self.revision_author[revision] = author
@@ -220,13 +204,10 @@ class CVSParser(rcsparse.Sink):
     # ignore the state
 
     # process the branch information
-    branch_text = ''
     for branch in branches:
       self.prev_revision[branch] = revision
       self.next_delta[revision] = branch
       self.prev_delta[branch] = revision
-      branch_text = branch_text + branch + ''
-    self.revision_branches[revision] = branch_text
 
     # process the "next revision" information
     if next:
@@ -253,8 +234,9 @@ class CVSParser(rcsparse.Sink):
     self.revision_log[revision] = log
     self.revision_deltatext[revision] = text
 
-  def parse_cvs_file(self, rcs_pathname, opt_rev = None, opt_m_timestamp = None):
-    # Args in:  opt_rev - requested revision
+  def parse_cvs_file(self, rcs_pathname, opt_rev = None,
+                     opt_m_timestamp = None):
+    # Args in:  opt_rev - requested revision in bytes type
     #           opt_m - time since modified
     # Args out: revision_map
     #           timestamp
@@ -270,14 +252,15 @@ class CVSParser(rcsparse.Sink):
     rcsparse.parse(rcsfile, self)
     rcsfile.close()
 
-    if opt_rev in [None, '', 'HEAD']:
+    if opt_rev in [None, b'', b'HEAD']:
       # Explicitly specified topmost revision in tree
       revision = self.head_revision
     else:
       # Symbolic tag or specific revision number specified.
       revision = self.map_tag_to_revision(opt_rev)
-      if revision == '':
-        raise RuntimeError('error: -r: No such revision: ' + opt_rev)
+      if revision == b'':
+        raise RuntimeError('error: -r: No such revision: '
+                           + opt_rev.decode(self.encoding))
 
     # The primordial revision is not always 1.1!  Go find it.
     primordial = revision
@@ -287,7 +270,7 @@ class CVSParser(rcsparse.Sink):
     # Don't display file at all, if -m option is specified and no
     # changes have been made in the specified file.
     if opt_m_timestamp and self.timestamp[revision] < opt_m_timestamp:
-      return ''
+      return b''
 
     # Figure out how many lines were in the primordial, i.e. version 1.1,
     # check-in by moving backward in time from the head revision to the
@@ -339,7 +322,7 @@ class CVSParser(rcsparse.Sink):
     self.revision_map = [primordial] * line_count
 
     ancestors = [revision, ] + self.ancestor_revisions(revision)
-    ancestors = ancestors[:-1]  # Remove "1.1"
+    ancestors = ancestors[:-1]  # Remove b"1.1"
     last_revision = primordial
     ancestors.reverse()
     for revision in ancestors:
@@ -413,10 +396,11 @@ class CVSParser(rcsparse.Sink):
 
 
 class BlameSource:
-  def __init__(self, rcs_file, opt_rev=None, include_text=False):
+  def __init__(self, rcs_file, opt_rev=None, include_text=False,
+               encoding='utf-8'):
     # Parse the CVS file
-    parser = CVSParser()
-    revision = parser.parse_cvs_file(rcs_file, opt_rev)
+    parser = CVSParser(encoding)
+    revision = parser.parse_cvs_file(rcs_file, opt_rev.encode(encoding))
     count = len(parser.revision_map)
     lines = parser.extract_revision(revision)
     if len(lines) != count:
@@ -428,6 +412,7 @@ class BlameSource:
     self.num_lines = count
     self.parser = parser
     self.include_text = include_text
+    self.encoding = encoding
 
     # keep track of where we are during an iteration
     self.idx = -1
@@ -450,11 +435,16 @@ class BlameSource:
     if not self.include_text:
       thisline = None
     ### TODO:  Put a real date in here.
-    item = vclib.Annotation(thisline, line_number, rev, prev_rev, author, None)
+    item = vclib.Annotation(thisline, line_number, self._to_str(rev),
+                            self._to_str(prev_rev), self._to_str(author), None)
     self.last = item
     self.idx = idx
     return item
 
+  def _to_str(self, b):
+    if isinstance(b, bytes):
+      return b.decode(self.encoding, 'backslashreplace')
+    return b
 
 class BlameSequencingError(Exception):
   pass

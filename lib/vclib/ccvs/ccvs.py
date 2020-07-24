@@ -144,7 +144,8 @@ class CCVSRepository(BaseCVSRepository):
   def annotate(self, path_parts, rev=None, include_text=False):
     if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
-    source = blame.BlameSource(self.rcsfile(path_parts, 1), rev, include_text)
+    source = blame.BlameSource(self.rcsfile(path_parts, 1), rev,
+                               include_text, self.encoding)
     return source, source.revision
 
   def revinfo(self, rev):
