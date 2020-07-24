@@ -193,6 +193,7 @@ class MatchingSink(rcsparse.Sink):
   def _to_str(self, b):
     if isinstance(b, bytes):
       return b.decode(self.encoding, 'backslashreplace')
+    return b
 
 class InfoSink(MatchingSink):
   def __init__(self, entry, tag, alltags, encoding):
@@ -331,6 +332,7 @@ class TreeSink(rcsparse.Sink):
   def _to_str(self, b):
     if isinstance(b, bytes):
       return b.decode(self.encoding, 'backslashreplace')
+    return b
 
 
 class StreamText:
