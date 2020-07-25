@@ -22,23 +22,17 @@ parse() to parse the file.
 # scope.  That way, applications never need to import any of the
 # sub-packages.
 from .common import *
+from .default import Parser
 
-try:
-  from tparse import parse
-except ImportError:
-  try:
-    from .texttools import Parser
-  except ImportError:
-    from .default import Parser
+def parse(file, sink):
+  """Parse an RCS file.
 
-  def parse(file, sink):
-    """Parse an RCS file.
-
-    Parameters: FILE is the file object to parse.  (I.e. an object of the
-    built-in Python type "file", usually created using Python's built-in
-    "open()" function).  It should be opened in binary mode.
-    SINK is an instance of (some subclass of) Sink.  It's methods will be
-    called as the file is parsed; see the definition of Sink for the
-    details.
-    """
-    return Parser().parse(file, sink)
+  Parameters: FILE is the binary input stream object to parse.  (I.e.
+  an instance of the subclass of the io.IOBase class which has read()
+  function returns bytes object, usually created using Python's built-in
+  "open()" function).  It should be opened in binary mode.
+  SINK is an instance of (some subclass of) Sink.  It's methods will be
+  called as the file is parsed; see the definition of Sink for the
+  details.
+  """
+  return Parser().parse(file, sink)
