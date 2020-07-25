@@ -411,7 +411,7 @@ location.  You can do this explicitly:
     <Location /viewvc>
         SetHandler mod_python
         PythonHandler handler
-    <Location>
+    </Location>
 
 _Or_, you can tell Apache to consult the `.htaccess` file that lives
 inside ViewVC's `bin/mod_python` directory for the required additional
