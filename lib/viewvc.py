@@ -428,9 +428,11 @@ class Request:
     url, params = self.get_link(*(), **args)
     qs = _urlencode(params)
     if qs:
-      result = _quote(url, _URL_SAFE_CHARS) + '?' + qs
+      result = _quote(url, _URL_SAFE_CHARS,
+                      'utf-8', 'surrogateescape') + '?' + qs
     else:
-      result = _quote(url, _URL_SAFE_CHARS)
+      result = _quote(url, _URL_SAFE_CHARS,
+                      'utf-8', 'surrogateescape')
 
     if partial:
       result = result + (qs and '&' or '?')
@@ -451,7 +453,8 @@ class Request:
     type=hidden> tags with the link parameters."""
 
     url, params = self.get_link(*(), **args)
-    action = self.server.escape(_quote(url, _URL_SAFE_CHARS))
+    action = self.server.escape(_quote(url, _URL_SAFE_CHARS,
+                                       'utf-8', 'surrogateescape'))
     hidden_values = []
     for name, value in params.items():
       hidden_values.append(_item(name=self.server.escape(name),
@@ -1024,9 +1027,11 @@ def prep_tags(request, tags):
   url, params = request.get_link(params={'pathrev': None})
   params = _urlencode(params)
   if params:
-    url = _quote(url, _URL_SAFE_CHARS) + '?' + params + '&pathrev='
+    url = _quote(url, _URL_SAFE_CHARS,
+                 'utf-8', 'surrogateescape') + '?' + params + '&pathrev='
   else:
-    url = _quote(url, _URL_SAFE_CHARS) + '?pathrev='
+    url = _quote(url, _URL_SAFE_CHARS,
+                 'utf-8', 'surrogateescape') + '?pathrev='
   url = request.server.escape(url)
 
   links = [ ]
