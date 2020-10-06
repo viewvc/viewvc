@@ -274,7 +274,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
     env['SERVER_PROTOCOL'] = self.protocol_version
     env['SERVER_PORT'] = str(self.server.server_port)
     env['REQUEST_METHOD'] = self.command
-    uqrest = _unquote(rest)
+    uqrest = _unquote(rest, 'utf-8', 'surrogateescape')
     env['PATH_INFO'] = uqrest
     env['SCRIPT_NAME'] = scriptname
     if query:

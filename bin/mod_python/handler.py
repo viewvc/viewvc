@@ -23,7 +23,7 @@ def handler(req):
   try:
     module = apache.import_module(module_name, path=[path])
   except ImportError:
-    raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
+    raise apache.SERVER_RETURN(apache.HTTP_NOT_FOUND)
 
   req.add_common_vars()
   module.index(req)

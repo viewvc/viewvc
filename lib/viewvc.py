@@ -428,9 +428,11 @@ class Request:
     url, params = self.get_link(*(), **args)
     qs = _urlencode(params)
     if qs:
-      result = _quote(url, _URL_SAFE_CHARS) + '?' + qs
+      result = _quote(url, _URL_SAFE_CHARS,
+                      'utf-8', 'surrogateescape') + '?' + qs
     else:
-      result = _quote(url, _URL_SAFE_CHARS)
+      result = _quote(url, _URL_SAFE_CHARS,
+                      'utf-8', 'surrogateescape')
 
     if partial:
       result = result + (qs and '&' or '?')
@@ -451,7 +453,8 @@ class Request:
     type=hidden> tags with the link parameters."""
 
     url, params = self.get_link(*(), **args)
-    action = self.server.escape(_quote(url, _URL_SAFE_CHARS))
+    action = self.server.escape(_quote(url, _URL_SAFE_CHARS,
+                                       'utf-8', 'surrogateescape'))
     hidden_values = []
     for name, value in params.items():
       hidden_values.append(_item(name=self.server.escape(name),
@@ -977,6 +980,9 @@ def generate_page(request, view_name, data, content_type=None):
   template = get_view_template(request.cfg, view_name, request.language)
   template.generate(server_fp, data)
 
+def transcode_path_for_display(path, encoding, errors='replace'):
+  return path.encode('utf-8', 'surrogateescape').decode(encoding, errors)
+
 def nav_path(request):
   """Return current path as list of items with "name" and "href" members
 
@@ -1004,6 +1010,8 @@ def nav_path(request):
     path_parts.append(part)
     is_last = len(path_parts) == len(request.path_parts)
 
+    if request.roottype == 'cvs':
+      part = transcode_path_for_display(part, request.repos.encoding)
     item = _item(name=request.server.escape(part), href=None)
 
     if not is_last or (is_dir and request.view_func is not view_directory):
@@ -1024,9 +1032,11 @@ def prep_tags(request, tags):
   url, params = request.get_link(params={'pathrev': None})
   params = _urlencode(params)
   if params:
-    url = _quote(url, _URL_SAFE_CHARS) + '?' + params + '&pathrev='
+    url = _quote(url, _URL_SAFE_CHARS,
+                 'utf-8', 'surrogateescape') + '?' + params + '&pathrev='
   else:
-    url = _quote(url, _URL_SAFE_CHARS) + '?pathrev='
+    url = _quote(url, _URL_SAFE_CHARS,
+                 'utf-8', 'surrogateescape') + '?pathrev='
   url = request.server.escape(url)
 
   links = [ ]
@@ -1526,6 +1536,12 @@ def common_template_data(request, revision=None, mime_type=None):
 
   cfg = request.cfg
 
+  if request.roottype == 'cvs':
+    disp_where = transcode_path_for_display(request.where,
+                                            request.repos.encoding)
+  else:
+    disp_where = request.where
+
   # Initialize data dictionary members (sorted alphanumerically)
   data = TemplateData({
     'annotate_href' : None,
@@ -1558,7 +1574,7 @@ def common_template_data(request, revision=None, mime_type=None):
     'view'     : _view_codes[request.view_func],
     'view_href' : None,
     'vsn' : __version__,
-    'where' : request.server.escape(request.where),
+    'where' : request.server.escape(disp_where),
   })
 
   rev = revision
@@ -2350,8 +2366,12 @@ def view_directory(request):
                 revision_href=None, annotate_href=None, download_href=None,
                 download_text_href=None, prefer_markup=ezt.boolean(0),
                 is_viewable_image=ezt.boolean(0), is_binary=ezt.boolean(0))
-    if request.roottype == 'cvs' and file.absent:
-      continue
+    if request.roottype == 'cvs':
+      if file.absent:
+        continue
+      disp_name = transcode_path_for_display(file.name, request.repos.encoding)
+    else:
+      disp_name = file.name
     if cfg.options.hide_errorful_entries and file.errors:
       continue
     row.rev = file.rev
@@ -2366,7 +2386,7 @@ def view_directory(request):
       row.short_log = lf.get(maxlen=cfg.options.short_log_len, htmlize=1)
     row.lockinfo = file.lockinfo
     row.anchor = request.server.escape(file.name)
-    row.name = request.server.escape(file.name)
+    row.name = request.server.escape(disp_name)
     row.pathtype = (file.kind == vclib.FILE and 'file') or \
                    (file.kind == vclib.DIR and 'dir')
     row.errors = file.errors
