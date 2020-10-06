@@ -25,7 +25,7 @@ import cgi
 # Global server object. It will be one of the following:
 #   1. a CgiServer object
 #   2. an WsgiServer object
-#   3. a proxy to either an AspServer or a ModPythonServer object
+#   3. a proxy to an AspServer object
 server = None
 
 
@@ -372,52 +372,6 @@ class AspServer(ThreadedServer):
 
   def flush(self):
     self._response.Flush()
-
-
-class ModPythonServer(ThreadedServer):
-  """Server for use with mod_python under Apache HTTP Server."""
-
-  def __init__(self, request):
-    ThreadedServer.__init__(self)
-    self._re_status = re.compile('\\d+')
-    self._request = request
-    self._request.add_cgi_vars()
-
-  def add_header(self, name, value):
-    self._request.headers_out.add(name, value)
-
-  def start_response(self, content_type='text/html; charset=UTF-8', status=None):
-    ThreadedServer.start_response(self, content_type, status)
-    self._request.content_type = content_type
-    if status is not None:
-      m = self._re_status.match(status)
-      if not m is None:
-        self._request.status = int(m.group())
-
-  def redirect(self, url):
-    import mod_python.apache
-    self._request.headers_out['Location'] = url
-    self._request.status = mod_python.apache.HTTP_MOVED_TEMPORARILY
-    self._request.write(redirect_notice(url))
-
-  def getenv(self, name, value = None):
-    try:
-      return self._request.subprocess_env[name]
-    except KeyError:
-      return value
-
-  def params(self):
-    import mod_python.util
-    if self._request.args is None:
-      return {}
-    else:
-      return mod_python.util.parse_qs(self._request.args)
-
-  def write(self, s):
-    self._request.write(s)
-
-  def flush(self):
-    pass
 
 
 def fix_iis_url(server, url):

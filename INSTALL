@@ -14,7 +14,7 @@ Contents
     - [CGI Mode](#cgi-mode)
     - [WSGI Mode](#wsgi-mode)
     - [FastCGI Mode](#fastcgi-mode)
-    - [mod_python Mode](#mod_python-mode)
+  * [Additional Apache Considerations](#additional-apache-considerations)
   * [ViewVC Standalone Server](#viewvc-standalone-server)
   * [Commits Database](#commits-database)
     - [Publishing CVS commits](#publishing-cvs-commits)
@@ -386,40 +386,6 @@ Now, again in `httpd.conf`, expose ViewVC's FastCGI wrapper program at
 the URL of your choice:
 
     ScriptAlias /viewvc <VIEWVC_DIR>/bin/wsgi/viewvc.fcgi
-
-
-mod_python mode
----------------
-
-Requires:
-
-  * mod_python module 3.5.0+, compiled for Python 3 (http://modpython.org/)
-
-Running ViewVC under mod_python is similar to the other approaches
-mentioned.  In your `httpd.conf` (or one of its included files), load
-the mod_python module if it isn't already loaded.
-
-    LoadModule python_module libexec/mod_python.so
-
-Again in `httpd.conf`, expose ViewVC at the URL alias of your choice.
-
-    Alias /viewvc <VIEWVC_DIR>/bin/mod_python/viewvc.py
-
-Now, tell Apache that mod_python should handle requests for this
-location.  You can do this explicitly:
-
-    <Location /viewvc>
-        SetHandler mod_python
-        PythonHandler handler
-    </Location>
-
-_Or_, you can tell Apache to consult the `.htaccess` file that lives
-inside ViewVC's `bin/mod_python` directory for the required additional
-configuration:
-
-    <Directory <VIEWVC_DIR>>
-        AllowOverride FileInfo Options
-    </Directory>
 
 
 Additional Apache Considerations
