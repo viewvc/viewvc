@@ -25,7 +25,6 @@ import cgi
 # Global server object. It will be one of the following:
 #   1. a CgiServer object
 #   2. an WsgiServer object
-#   3. a proxy to an AspServer object
 server = None
 
 
@@ -151,54 +150,6 @@ class Server:
     raise ServerImplementationError()
 
 
-class ThreadedServerProxy:
-  """In a multithreaded server environment, ThreadedServerProxy stores the
-  different server objects being used to display pages and transparently
-  forwards access to them based on the current thread id."""
-
-  def __init__(self):
-    self.__dict__['servers'] = { }
-    global _thread
-    import _thread
-
-  def registerThread(self, server):
-    self.__dict__['servers'][_thread.get_ident()] = server
-
-  def unregisterThread(self):
-    del self.__dict__['servers'][_thread.get_ident()]
-
-  def self(self):
-    return self.__dict__['servers'][_thread.get_ident()]
-
-  def __getattr__(self, key):
-    return getattr(self.self(), key)
-
-  def __setattr__(self, key, value):
-    setattr(self.self(), key, value)
-
-  def __delattr__(self, key):
-    delattr(self.self(), key)
-
-
-class ThreadedServer(Server):
-  """Threader server implementation."""
-
-  def __init__(self):
-    Server.__init__(self)
-    global server
-    if not isinstance(server, ThreadedServerProxy):
-      server = ThreadedServerProxy()
-    if not isinstance(sys.stdout, ServerFile):
-      sys.stdout = ServerFile(server)
-    server.registerThread(self)
-
-  def file(self):
-    return ServerFile(self)
-
-  def close(self):
-    server.unregisterThread()
-
-
 class CgiServer(Server):
   """CGI server implementation."""
 
@@ -321,57 +272,6 @@ class WsgiServer(Server):
 
   def file(self):
     return ServerFile(self)
-
-# Does ASP support Python >= 3.x ?
-class AspServer(ThreadedServer):
-  """ASP-based server."""
-
-  def __init__(self, Server, Request, Response, Application):
-    ThreadedServer.__init__(self)
-    self._server = Server
-    self._request = Request
-    self._response = Response
-    self._application = Application
-
-  def add_header(self, name, value):
-    self._response.AddHeader(name, value)
-
-  def start_response(self, content_type='text/html; charset=UTF-8', status=None):
-    ThreadedServer.start_response(self, content_type, status)
-    self._response.ContentType = content_type
-    if status is not None:
-      self._response.Status = status
-
-  def redirect(self, url):
-    self._response.Redirect(url)
-
-  def getenv(self, name, value = None):
-    ret = self._request.ServerVariables(name)()
-    if not type(ret) is types.UnicodeType:
-      return value
-    ret = str(ret)
-    if name == 'PATH_INFO':
-      ret = fix_iis_path_info(self, ret)
-    return ret
-
-  def params(self):
-    d = {}
-    for i in self._request.Form:
-      d[str(i)] = list(map(str, self._request.Form[i]))
-    for i in self._request.QueryString:
-      d[str(i)] = list(map(str, self._request.QueryString[i]))
-    return d
-
-  def write(self, s):
-    t = type(s)
-    if t is types.StringType:
-      s = buffer(s)
-    elif not t is types.BufferType:
-      s = buffer(str(s))
-    self._response.BinaryWrite(s)
-
-  def flush(self):
-    self._response.Flush()
 
 
 def fix_iis_url(server, url):

@@ -67,10 +67,6 @@ FILE_INFO_LIST = [
     ("conf/mimetypes.conf.dist",  "mimetypes.conf.dist",       0o0644, 0, 0, 0),
     ("conf/mimetypes.conf.dist",  "mimetypes.conf",            0o0644, 0, 1, 0),
     ]
-if sys.platform == "win32":
-    FILE_INFO_LIST.extend([
-        ("bin/asp/viewvc.asp",      "bin/asp/viewvc.asp",        0o0755, 1, 0, 0),
-    ])
 
 
 ## List of directories for installation.
