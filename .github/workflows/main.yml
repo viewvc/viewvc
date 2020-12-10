@@ -1,0 +1,21 @@
+name: CI
+on:
+  push:
+    branches: [ issue-228-consistent-code-formatting ]
+  pull_request:
+    branches: [ issue-228-consistent-code-formatting ]
+  workflow_dispatch:
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Python environment
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.8"
+      - name: Install flake8
+        run: pip install flake8
+      - name: Flake8 action
+        run: ./tools/check-code-formatting
