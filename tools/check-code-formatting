@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# NOTE: Run this script from the root of the ViewVC checkout.
+#
+# $ ./tools/check-code-formatting
+
+# Flake8 will find all the .py files, but we want to also add into the
+# set of checked paths any scripts that reference Python in the shebang
+# line and whose names do NOT end in .py.
+grep -r '^#!.*python' . | cut -d : -f 1 | grep -v '.py$' | xargs flake8 ./lib ./bin ./tools
