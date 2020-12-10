@@ -13,6 +13,7 @@
 import sys
 from subprocess import Popen, PIPE, STDOUT
 
+
 class CommandReadPipe:
   def __init__(self, cmd, args, is_text=False, capture_err=True):
     self._eof = False

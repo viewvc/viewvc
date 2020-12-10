@@ -29,14 +29,12 @@
 import sys
 import os
 import re
-import time
-import math
-
 from common import _item
 import vclib
 import sapi
 
 re_includes = re.compile('\\#(\\s*)include(\\s*)"(.*?)"')
+
 
 def link_includes(text, repos, path_parts, include_url):
   match = re_includes.match(text)
@@ -106,13 +104,13 @@ def make_html(root, rcs_path):
 
   align = ' style="text-align: %s;"'
 
-  sys.stdout.write('<table cellpadding="2" cellspacing="2" style="font-family: monospace; whitespace: pre;">\n')
+  sys.stdout.write('<table cellpadding="2" cellspacing="2" '
+                   'style="font-family: monospace; whitespace: pre;">\n')
   for line_data in bs:
     revision = line_data.rev
     thisline = line_data.text
     line = line_data.line_number
     author = line_data.author
-    prev_rev = line_data.prev_rev
 
     if old_revision != revision and line != 1:
       if row_color == 'ffffff':
@@ -120,7 +118,8 @@ def make_html(root, rcs_path):
       else:
         row_color = 'ffffff'
 
-    sys.stdout.write('<tr id="l%d" style="background-color: #%s; vertical-align: center;">' % (line, row_color))
+    sys.stdout.write('<tr id="l%d" style="background-color: #%s; '
+                     'vertical-align: center;">' % (line, row_color))
     sys.stdout.write('<td%s>%d</td>' % (align % 'right', line))
 
     if old_revision != revision or rev_count > 20:
@@ -132,7 +131,8 @@ def make_html(root, rcs_path):
       sys.stdout.write('<td>&nbsp;</td><td>&nbsp;</td>')
     rev_count = rev_count + 1
 
-    sys.stdout.write('<td%s>%s</td></tr>\n' % (align % 'left', thisline.rstrip() or '&nbsp;'))
+    sys.stdout.write('<td%s>%s</td></tr>\n'
+                     % (align % 'left', thisline.rstrip() or '&nbsp;'))
   sys.stdout.write('</table>\n')
 
 
@@ -142,6 +142,7 @@ def main():
     print('USAGE: %s cvsroot rcs-file' % sys.argv[0])
     sys.exit(1)
   make_html(sys.argv[1], sys.argv[2])
+
 
 if __name__ == '__main__':
   main()

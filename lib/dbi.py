@@ -10,7 +10,6 @@
 #
 # -----------------------------------------------------------------------
 
-import sys
 import time
 import re
 import calendar
@@ -27,6 +26,7 @@ import MySQLdb
 # versions.
 utc_time = 1
 
+
 def DateTimeFromTicks(ticks):
   """Return a MySQL DATETIME value from a unix timestamp"""
 
@@ -36,8 +36,10 @@ def DateTimeFromTicks(ticks):
     t = time.localtime(ticks)
   return "%04d-%02d-%02d %02d:%02d:%02d" % t[:6]
 
+
 _re_datetime = re.compile('([0-9]{4})-([0-9][0-9])-([0-9][0-9]) '
                           '([0-9][0-9]):([0-9][0-9]):([0-9][0-9])')
+
 
 def TicksFromDateTime(datetime):
   """Return a unix timestamp from a MySQL DATETIME value"""
@@ -57,6 +59,7 @@ def TicksFromDateTime(datetime):
     return calendar.timegm(t)
   else:
     return time.mktime(t[:8] + (-1,))
+
 
 def connect(host, port, user, passwd, db):
   # on Python 3, mysqlclient supports only utf-8 connection.
