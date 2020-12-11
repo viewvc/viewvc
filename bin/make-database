@@ -16,24 +16,9 @@
 #
 # -----------------------------------------------------------------------
 #
-# INSTALL-TIME CONFIGURATION
-#
-# These values will be set during the installation process. During
-# development, they will remain None.
-#
 
-LIBRARY_DIR = None
-CONF_PATHNAME = None
-
-# Adjust sys.path to include our library directory
 import sys
 import os
-
-if LIBRARY_DIR:
-  sys.path.insert(0, LIBRARY_DIR)
-else:
-  sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../lib")))
-
 import getopt
 
 if sys.hexversion >= 0x3030000:
@@ -47,33 +32,33 @@ else:
     import subprocess
     subprocess.has_timeout = False
 
-## ------------------------------------------------------------------------
-## Initial database drop (when --force) is used.
-##
-DATABASE_DROP="""\
+# ------------------------------------------------------------------------
+# Initial database drop (when --force) is used.
+#
+DATABASE_DROP = """\
 DROP DATABASE IF EXISTS <dbname>;
 """
 
-## ------------------------------------------------------------------------
-## Initial database drop (when --force) is used.
-##
-DATABASE_DROP="""\
+# ------------------------------------------------------------------------
+# Initial database drop (when --force) is used.
+#
+DATABASE_DROP = """\
 DROP DATABASE IF EXISTS <dbname>;
 """
 
-## ------------------------------------------------------------------------
-## Stuff common to all schemas
-##
-DATABASE_SCRIPT_COMMON="""\
+# ------------------------------------------------------------------------
+# Stuff common to all schemas
+#
+DATABASE_SCRIPT_COMMON = """\
 CREATE DATABASE <dbname>;
 
 USE <dbname>;
 """
 
-## ------------------------------------------------------------------------
-## Version 0:  The original, Bonsai-compatible schema.
-##
-DATABASE_SCRIPT_VERSION_0="""\
+# ------------------------------------------------------------------------
+# Version 0:  The original, Bonsai-compatible schema.
+#
+DATABASE_SCRIPT_VERSION_0 = """\
 DROP TABLE IF EXISTS branches;
 CREATE TABLE branches (
   id mediumint(9) NOT NULL auto_increment,
@@ -161,11 +146,11 @@ CREATE TABLE tags (
 ) ENGINE=MyISAM;
 """
 
-## ------------------------------------------------------------------------
-## Version 1:  Adds the 'metadata' table.  Adds 'descid' index to
-##             'checkins' table, and renames that table to 'commits'.
-##
-DATABASE_SCRIPT_VERSION_1="""\
+# ------------------------------------------------------------------------
+# Version 1:  Adds the 'metadata' table.  Adds 'descid' index to
+#             'checkins' table, and renames that table to 'commits'.
+#
+DATABASE_SCRIPT_VERSION_1 = """\
 DROP TABLE IF EXISTS branches;
 CREATE TABLE branches (
   id mediumint(9) NOT NULL auto_increment,
@@ -263,13 +248,14 @@ CREATE TABLE metadata (
 INSERT INTO metadata (name, value) VALUES ('version', '1');
 """
 
-BONSAI_COMPAT="""
+BONSAI_COMPAT = """
 WARNING:  Creating Bonsai-compatible legacy database version.  Some ViewVC
 features may not be available, or may not perform especially well.
 
 """
 
-## ------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------
 
 def usage_and_exit(errmsg=None):
   stream = errmsg is None and sys.stdout or sys.stderr
@@ -328,16 +314,11 @@ if __name__ == "__main__":
     dbname = version = hostname = port = username = password = None
     force = False
     timeout = 300
-    opts, args = getopt.getopt(sys.argv[1:], '', [ 'dbname=',
-                                                   'force',
-                                                   'help',
-                                                   'hostname=',
-                                                   'port=',
-                                                   'password=',
-                                                   'username=',
-                                                   'version=',
-                                                   'timeout=',
-                                                   ])
+    opts, args = getopt.getopt(sys.argv[1:], '',
+                               ['dbname=', 'force', 'help', 'hostname=',
+                                'port=', 'password=', 'username=',
+                                'version=', 'timeout=',
+                                ])
     if len(args) > 0:
       usage_and_exit("Unexpected command-line parameters")
     for name, value in opts:
@@ -392,7 +373,7 @@ if __name__ == "__main__":
       dscript = dscript + DATABASE_SCRIPT_VERSION_0
     else:
       dscript = dscript + DATABASE_SCRIPT_VERSION_1
-    dscript = dscript.replace("<dbname>", dbname)  
+    dscript = dscript.replace("<dbname>", dbname)
 
     cmdline = ["mysql"] + cmd_args
     mysql = subprocess.Popen(cmdline, bufsize=-1, stdin=subprocess.PIPE,
@@ -421,4 +402,3 @@ if __name__ == "__main__":
   except KeyboardInterrupt:
     pass
   sys.exit(0)
-

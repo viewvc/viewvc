@@ -21,6 +21,10 @@
 # -----------------------------------------------------------------------
 #
 
+import sys
+import os
+
+
 #########################################################################
 #
 # INSTALL-TIME CONFIGURATION
@@ -32,38 +36,24 @@
 LIBRARY_DIR = None
 CONF_PATHNAME = None
 
+
 #########################################################################
-#
+
 # Adjust sys.path to include our library directory.
-#
-
-import sys
-import os
-
 if LIBRARY_DIR:
   sys.path.insert(0, LIBRARY_DIR)
 else:
   sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0],
                                                   "../../../lib")))
-
-#########################################################################
-#
-# If admins want nicer processes, here's the place to get them.
-#
-
-#try:
-#  os.nice(20) # bump the nice level of this process
-#except:
-#  pass
-
-
-#########################################################################
-#
-# Go do the work.
-#
-
 import sapi
 import viewvc
+
+# If admins want nicer processes, here's the place to get them.
+#
+# try:
+#   os.nice(20) # bump the nice level of this process
+# except:
+#   pass
 
 server = sapi.CgiServer()
 cfg = viewvc.load_config(CONF_PATHNAME, server)
