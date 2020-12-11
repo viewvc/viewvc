@@ -15,10 +15,8 @@
 #
 # -----------------------------------------------------------------------
 
-import types
 import os
 import sys
-import re
 import cgi
 
 
@@ -102,7 +100,7 @@ class Server:
   def start_response(self, content_type, status):
     """Start a response.  Child classes should extend this method."""
     if self._response_started:
-      raise ServerUsageException()
+      raise ServerUsageError()
     self._response_started = True
 
   def escape(self, s):
@@ -113,7 +111,7 @@ class Server:
     """Add an HTTP header to the set of those that will be included in
     the response.  Child classes should override this method."""
     raise ServerImplementationError()
-    
+
   def redirect(self, url):
     """Respond to the request with a 301 redirect, asking the user
     agent to aim its requests instead at URL.  Child classes should
@@ -163,7 +161,8 @@ class CgiServer(Server):
   def add_header(self, name, value):
     self._headers.append((name, value))
 
-  def start_response(self, content_type='text/html; charset=UTF-8', status=None):
+  def start_response(self, content_type='text/html; charset=UTF-8',
+                     status=None):
     Server.start_response(self, content_type, status)
 
     extraheaders = ''
@@ -202,7 +201,7 @@ class CgiServer(Server):
         if isinstance(ret, str):
           ret = ret.encode(sys.getfilesystemencoding(), 'surrogateescape')
       if isinstance(ret, bytes):
-        ret = ret.decode('utf-8','surrogateescape')
+        ret = ret.decode('utf-8', 'surrogateescape')
     if self._iis and name == 'PATH_INFO':
       ret = fix_iis_path_info(self, ret)
     return ret
@@ -228,7 +227,7 @@ class WsgiServer(Server):
   def __init__(self, environ, write_response):
     Server.__init__(self)
     self._environ = environ
-    self._write_response = write_response;
+    self._write_response = write_response
     self._headers = []
     self._wsgi_write = None
     global server
@@ -237,7 +236,8 @@ class WsgiServer(Server):
   def add_header(self, name, value):
     self._headers.append((name, value))
 
-  def start_response(self, content_type='text/html; charset=UTF-8', status=None):
+  def start_response(self, content_type='text/html; charset=UTF-8',
+                     status=None):
     Server.start_response(self, content_type, status)
     if not status:
       status = "200 OK"
