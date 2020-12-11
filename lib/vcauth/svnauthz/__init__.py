@@ -14,14 +14,14 @@
 import vcauth
 import os.path
 from common import ViewVCException
-
 from ConfigParser import ConfigParser
+
 
 class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   """Subversion authz authorizer module"""
 
   def __init__(self, root_lookup_func, username, params={}):
-    self.rootpaths = { }  # {root -> { paths -> access boolean for USERNAME }}
+    self.rootpaths = {}  # {root -> { paths -> access boolean for USERNAME }}
     self.root_lookup_func = root_lookup_func
 
     # Get the authz file location from exactly one of our related
@@ -52,10 +52,10 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
       return self.authz_file
 
   def _get_paths_for_root(self, rootname):
-    if self.rootpaths.has_key(rootname):
+    if rootname in self.rootpaths:
       return self.rootpaths[rootname]
 
-    paths_for_root = { }
+    paths_for_root = {}
 
     # Parse the authz file, replacing ConfigParser's optionxform()
     # method with something that won't futz with the case of the
@@ -64,7 +64,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     cp.optionxform = lambda x: x
     try:
       cp.read(self._get_authz_file(rootname))
-    except:
+    except Exception:
       raise ViewVCException("Unable to parse configured authzfile file")
 
     # Ignore context; assume the authz file only has the repository URL's
@@ -138,12 +138,12 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
         return not _userspec_matches_user(userspec[1:])
 
       # See if the userspec applies to our current user.
-      return userspec == '*' \
-             or userspec == self.username \
-             or (self.username is not None and userspec == "$authenticated") \
-             or (self.username is None and userspec == "$anonymous") \
-             or (userspec[0:1] == "@" and userspec[1:] in groups) \
-             or (userspec[0:1] == "&" and userspec[1:] in aliases)
+      return (userspec == '*'
+              or userspec == self.username
+              or (self.username is not None and userspec == "$authenticated")
+              or (self.username is None and userspec == "$anonymous")
+              or (userspec[0:1] == "@" and userspec[1:] in groups)
+              or (userspec[0:1] == "&" and userspec[1:] in aliases))
 
     def _process_access_section(section):
       """Inline function for determining user access in a single
@@ -240,7 +240,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
 
   def check_universal_access(self, rootname):
     paths = self._get_paths_for_root(rootname)
-    if not paths: # None or empty.
+    if not paths:  # None or empty.
       return 0
 
     # Search the access determinations.  If there's a mix, we can't
@@ -262,7 +262,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
 
     # ... but allowances only is only a universal allowance if read
     # access is granted to the root directory.
-    if found_allow and paths.has_key('/'):
+    if found_allow and '/' in paths:
       return 1
 
     # Anything else is indeterminable.
@@ -278,7 +278,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     parts = path_parts[:]
     while parts:
       path = '/' + '/'.join(parts)
-      if paths.has_key(path):
+      if path in paths:
         return paths[path]
       del parts[-1]
     return paths.get('/', 0)

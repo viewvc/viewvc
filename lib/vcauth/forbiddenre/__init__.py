@@ -11,7 +11,6 @@
 # -----------------------------------------------------------------------
 import vcauth
 import vclib
-import fnmatch
 import re
 
 
@@ -61,4 +60,3 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
     else:
       root_path = root_path + '/'
     return self._check_root_path_access(root_path)
-
