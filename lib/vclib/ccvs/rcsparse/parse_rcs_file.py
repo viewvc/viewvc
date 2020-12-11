@@ -73,5 +73,3 @@ if __name__ == '__main__':
         sys.stderr.write('%r is being ignored.\n' % path)
   else:
     parse(sys.stdin, LoggingSink(sys.stdout))
-
-

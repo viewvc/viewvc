@@ -15,11 +15,12 @@
 #
 # -----------------------------------------------------------------------
 
-import sys
 import string
 from . import common
 
+
 WHITESPACE = string.whitespace.encode('ascii')
+
 
 class _TokenStream:
   token_term = WHITESPACE + b";:"
@@ -31,7 +32,7 @@ class _TokenStream:
   # the algorithm is about the same speed for any CHUNK_SIZE chosen.
   # grab a good-sized chunk, but not too large to overwhelm memory.
   # note: we use a multiple of a standard block size
-  CHUNK_SIZE  = 192 * 512  # about 100k
+  CHUNK_SIZE = 192 * 512  # about 100k
 
 # CHUNK_SIZE  = 5   # for debugging, make the function grind...
 
@@ -72,9 +73,9 @@ class _TokenStream:
     if buf[idx] in b';:':
       self.buf = buf
       self.idx = idx + 1
-      return buf[idx:idx+1]
+      return buf[idx:idx + 1]
 
-    if buf[idx:idx+1] != b'@':
+    if buf[idx:idx + 1] != b'@':
       end = idx + 1
       token = b''
       while 1:
@@ -105,7 +106,7 @@ class _TokenStream:
     # search for content.
     idx = idx + 1
 
-    chunks = [ ]
+    chunks = []
 
     while 1:
       if idx == lbuf:
@@ -128,7 +129,7 @@ class _TokenStream:
         lbuf = len(buf)
         continue
       if buf[i + 1:i + 2] == b'@':
-        chunks.append(buf[idx:i+1])
+        chunks.append(buf[idx:i + 1])
         idx = i + 2
         continue
 
@@ -142,7 +143,7 @@ class _TokenStream:
 #  _get = get
 #  def get(self):
     token = self._get()
-    print('T:', repr(token.decode('ascii','surrogateescape')))
+    print('T:', repr(token.decode('ascii', 'surrogateescape')))
     return token
 
   def match(self, match):
@@ -172,7 +173,7 @@ class _TokenStream:
 
   def mget(self, count):
     "Return multiple tokens. 'next' is at the end."
-    result = [ ]
+    result = []
     for i in range(count):
       result.append(self.get())
     result.reverse()

@@ -37,7 +37,6 @@ p_dir, p_name = os.path.split(os.path.dirname(os.path.abspath(sys.argv[0])))
 sys.path.insert(0, p_dir)
 script_dir = os.path.dirname(sys.argv[0])
 
-#from __init__ import parse
 rcsparse = __import__(p_name)
 parse = rcsparse.parse
 
@@ -71,9 +70,8 @@ for filename in filelist:
         else:
             sys.stderr.write('Output does not match expected output!\n')
             differ = Differ()
-            for diffline in differ.compare(
-                expected_output.splitlines(1), output.splitlines(1)
-                ):
+            for diffline in differ.compare(expected_output.splitlines(1),
+                                           output.splitlines(1)):
                 sys.stderr.write(diffline)
             all_tests_ok = 0
 
@@ -81,4 +79,3 @@ if all_tests_ok:
     sys.exit(0)
 else:
     sys.exit(1)
-

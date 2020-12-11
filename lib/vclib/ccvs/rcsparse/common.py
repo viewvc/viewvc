@@ -14,9 +14,10 @@
 
 import calendar
 import string
-import sys
+
 
 DIGITS = string.digits.encode('ascii')
+
 
 class Sink:
   """Interface to be implemented by clients.  The RCS parser calls this as
@@ -319,15 +320,15 @@ class _Parser:
     self.ts.match(b';')
 
   admin_token_map = {
-      b'head' : _parse_admin_head,
-      b'branch' : _parse_admin_branch,
-      b'access' : _parse_admin_access,
-      b'symbols' : _parse_admin_symbols,
-      b'locks' : _parse_admin_locks,
-      b'strict' : _parse_admin_strict,
-      b'comment' : _parse_admin_comment,
-      b'expand' : _parse_admin_expand,
-      b'desc' : None,
+      b'head': _parse_admin_head,
+      b'branch': _parse_admin_branch,
+      b'access': _parse_admin_access,
+      b'symbols': _parse_admin_symbols,
+      b'locks': _parse_admin_locks,
+      b'strict': _parse_admin_strict,
+      b'comment': _parse_admin_comment,
+      b'expand': _parse_admin_expand,
+      b'desc': None,
       }
 
   def parse_rcs_admin(self):
@@ -377,9 +378,10 @@ class _Parser:
       raise ValueError('invalid date for revision %s: %s' % (revision, e,))
 
     # Parse author
-    ### NOTE: authors containing whitespace are violations of the
-    ### RCS specification.  We are making an allowance here because
-    ### CVSNT is known to produce these sorts of authors.
+    #
+    # NOTE: authors containing whitespace are violations of the RCS
+    # specification.  We are making an allowance here because CVSNT is
+    # known to produce these sorts of authors.
     self.ts.match(b'author')
     author = b' '.join(self._read_until_semicolon())
 
@@ -450,7 +452,7 @@ class _Parser:
         raise RCSExpected(sym1, b'log')
       if sym2 != b'text':
         raise RCSExpected(sym2, b'text')
-      ### need to add code to chew up "newphrase"
+      # TODO: need to add code to chew up "newphrase"
       self.sink.set_revision_info(revision, log, text)
 
   def parse(self, file, sink):
