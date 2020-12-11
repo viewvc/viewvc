@@ -27,18 +27,17 @@
 # -----------------------------------------------------------------------
 
 import re
-import time
-import math
 from . import rcsparse
 import vclib
 
+
 class CVSParser(rcsparse.Sink):
   # Precompiled regular expressions
-  trunk_rev   = re.compile(b'^[0-9]+\\.[0-9]+$')
+  trunk_rev = re.compile(b'^[0-9]+\\.[0-9]+$')
   last_branch = re.compile(b'(.*)\\.[0-9]+')
-  is_branch   = re.compile(b'^(.*)\\.0\\.([0-9]+)$')
-  d_command   = re.compile(br'^d(\d+)\s(\d+)')
-  a_command   = re.compile(br'^a(\d+)\s(\d+)')
+  is_branch = re.compile(b'^(.*)\\.0\\.([0-9]+)$')
+  d_command = re.compile(br'^d(\d+)\s(\d+)')
+  a_command = re.compile(br'^a(\d+)\s(\d+)')
 
   SECONDS_PER_DAY = 86400
 
@@ -57,7 +56,7 @@ class CVSParser(rcsparse.Sink):
     self.revision_log = {}
     self.revision_deltatext = {}
     self.revision_map = []    # map line numbers to revisions
-    self.lines_added  = {}
+    self.lines_added = {}
     self.lines_removed = {}
 
   # Map a tag to a numerical revision number.  The tag can be a symbolic
@@ -75,7 +74,7 @@ class CVSParser(rcsparse.Sink):
           return match.group(1)
       else:
         return revision
-    except:
+    except Exception:
       return b''
 
   # Construct an ordered list of ancestor revisions to the given
@@ -120,7 +119,7 @@ class CVSParser(rcsparse.Sink):
     for revision in path:
       adjust = 0
       diffs = self.deltatext_split(revision)
-      self.lines_added[revision]   = 0
+      self.lines_added[revision] = 0
       self.lines_removed[revision] = 0
       lines_added_now = 0
       lines_removed_now = 0
@@ -136,7 +135,7 @@ class CVSParser(rcsparse.Sink):
         elif dmatch:
           # "d" - Delete command
           start_line = int(dmatch.group(1))
-          count      = int(dmatch.group(2))
+          count = int(dmatch.group(2))
           begin = start_line + adjust - 1
           del text[begin:begin + count]
           adjust = adjust - count
@@ -144,14 +143,16 @@ class CVSParser(rcsparse.Sink):
         elif amatch:
           # "a" - Add command
           start_line = int(amatch.group(1))
-          count      = int(amatch.group(2))
+          count = int(amatch.group(2))
           add_lines_remaining = count
           lines_added_now = lines_added_now + count
         else:
           raise RuntimeError('Error parsing diff commands')
 
-      self.lines_added[revision]   = self.lines_added[revision]   + lines_added_now
-      self.lines_removed[revision] = self.lines_removed[revision] + lines_removed_now
+      self.lines_added[revision] = (
+        self.lines_added[revision] + lines_added_now)
+      self.lines_removed[revision] = (
+        self.lines_removed[revision] + lines_removed_now)
     return text
 
   def set_head_revision(self, revision):
@@ -177,19 +178,23 @@ class CVSParser(rcsparse.Sink):
   # The following dicts are created, keyed by revision number:
   #   self.timestamp         -- seconds since 12:00 AM, Jan 1, 1970 GMT
   #   self.revision_author   -- e.g. b"tom"
-  #   self.prev_revision     -- revision number of previous *ancestor* in RCS tree.
-  #                             Traversal of this array occurs in the direction
-  #                             of the primordial (1.1) revision.
-  #   self.prev_delta        -- revision number of previous revision which forms
-  #                             the basis for the edit commands in this revision.
-  #                             This causes the tree to be traversed towards the
-  #                             trunk when on a branch, and towards the latest trunk
-  #                             revision when on the trunk.
-  #   self.next_delta        -- revision number of next "delta".  Inverts prev_delta.
+  #   self.prev_revision     -- revision number of previous *ancestor*
+  #                             in RCS tree. Traversal of this array
+  #                             occurs in the direction of the
+  #                             primordial (1.1) revision.
+  #   self.prev_delta        -- revision number of previous revision
+  #                             which forms the basis for the edit
+  #                             commands in this revision.  This
+  #                             causes the tree to be traversed
+  #                             towards the trunk when on a branch,
+  #                             and towards the latest trunk revision
+  #                             when on the trunk.
+  #   self.next_delta        -- revision number of next "delta".  Inverts
+  #                             prev_delta.
   #
-  # Also creates self.last_revision, keyed by a branch revision number, which
-  # indicates the latest revision on a given branch,
-  #   e.g. self.last_revision{b"1.2.8"} == 1.2.8.5
+  # Also creates self.last_revision, keyed by a branch revision
+  # number, which indicates the latest revision on a given branch,
+  # e.g. self.last_revision{b"1.2.8"} == 1.2.8.5
   def define_revision(self, revision, timestamp, author, state,
                       branches, next):
     self.tag_revision[revision] = revision
@@ -234,8 +239,7 @@ class CVSParser(rcsparse.Sink):
     self.revision_log[revision] = log
     self.revision_deltatext[revision] = text
 
-  def parse_cvs_file(self, rcs_pathname, opt_rev = None,
-                     opt_m_timestamp = None):
+  def parse_cvs_file(self, rcs_pathname, opt_rev=None, opt_m_timestamp=None):
     # Args in:  opt_rev - requested revision in bytes type
     #           opt_m - time since modified
     # Args out: revision_map
@@ -245,9 +249,10 @@ class CVSParser(rcsparse.Sink):
     # CheckHidden(rcs_pathname)
     try:
       rcsfile = open(rcs_pathname, 'rb')
-    except:
-      raise RuntimeError(('error: %s appeared to be under CVS control, ' +
-              'but the RCS file is inaccessible.') % rcs_pathname)
+    except Exception:
+      raise RuntimeError('error: %s appeared to be under CVS control, '
+                         'but the RCS file is inaccessible.'
+                         % rcs_pathname)
 
     rcsparse.parse(rcsfile, self)
     rcsfile.close()
@@ -294,13 +299,13 @@ class CVSParser(rcsparse.Sink):
         elif dmatch:
           # "d" - Delete command
           start_line = int(dmatch.group(1))
-          count      = int(dmatch.group(2))
+          count = int(dmatch.group(2))
           line_count = line_count - count
         elif amatch:
           # "a" - Add command
           start_line = int(amatch.group(1))
-          count      = int(amatch.group(2))
-          skip       = count
+          count = int(amatch.group(2))
+          skip = count
           line_count = line_count + count
         else:
           raise RuntimeError('error: illegal RCS file')
@@ -342,16 +347,17 @@ class CVSParser(rcsparse.Sink):
             amatch = self.a_command.match(command)
             if dmatch:
               start_line = int(dmatch.group(1))
-              count      = int(dmatch.group(2))
+              count = int(dmatch.group(2))
               temp = []
               while count > 0:
                 temp.append(revision)
                 count = count - 1
-              self.revision_map = (self.revision_map[:start_line - 1] +
-                      temp + self.revision_map[start_line - 1:])
+              self.revision_map = (self.revision_map[:start_line - 1]
+                                   + temp
+                                   + self.revision_map[start_line - 1:])
             elif amatch:
               start_line = int(amatch.group(1))
-              count      = int(amatch.group(2))
+              count = int(amatch.group(2))
               del self.revision_map[start_line:start_line + count]
               skip = count
             else:
@@ -371,21 +377,22 @@ class CVSParser(rcsparse.Sink):
             amatch = self.a_command.match(command)
             if dmatch:
               start_line = int(dmatch.group(1))
-              count      = int(dmatch.group(2))
-              adj_begin  = start_line + adjust - 1
-              adj_end    = start_line + adjust - 1 + count
+              count = int(dmatch.group(2))
+              adj_begin = start_line + adjust - 1
+              adj_end = start_line + adjust - 1 + count
               del self.revision_map[adj_begin:adj_end]
               adjust = adjust - count
             elif amatch:
               start_line = int(amatch.group(1))
-              count      = int(amatch.group(2))
+              count = int(amatch.group(2))
               skip = count
               temp = []
               while count > 0:
                 temp.append(revision)
                 count = count - 1
-              self.revision_map = (self.revision_map[:start_line + adjust] +
-                      temp + self.revision_map[start_line + adjust:])
+              self.revision_map = (self.revision_map[:start_line + adjust]
+                                   + temp
+                                   + self.revision_map[start_line + adjust:])
               adjust = adjust + skip
             else:
               raise RuntimeError('Error parsing diff commands')
@@ -434,7 +441,7 @@ class BlameSource:
     thisline = self.lines[idx]
     if not self.include_text:
       thisline = None
-    ### TODO:  Put a real date in here.
+    # TODO:  Put a real date in here.
     item = vclib.Annotation(thisline, line_number, self._to_str(rev),
                             self._to_str(prev_rev), self._to_str(author), None)
     self.last = item
@@ -445,6 +452,7 @@ class BlameSource:
     if isinstance(b, bytes):
       return b.decode(self.encoding, 'backslashreplace')
     return b
+
 
 class BlameSequencingError(Exception):
   pass

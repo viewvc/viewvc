@@ -16,6 +16,9 @@ such as CVS.
 
 import sys
 import io
+import subprocess
+import os
+import time
 
 
 # item types returned by Repository.itemtype().
@@ -32,15 +35,15 @@ CVS = 'cvs'
 SVN = 'svn'
 
 # action kinds found in ChangedPath.action
-ADDED      = 'added'
-DELETED    = 'deleted'
-REPLACED   = 'replaced'
-MODIFIED   = 'modified'
+ADDED = 'added'
+DELETED = 'deleted'
+REPLACED = 'replaced'
+MODIFIED = 'modified'
 
 # log sort keys
 SORTBY_DEFAULT = 0  # default/no sorting
-SORTBY_DATE    = 1  # sorted by date, youngest first
-SORTBY_REV     = 2  # sorted by revision, youngest first
+SORTBY_DATE = 1     # sorted by date, youngest first
+SORTBY_REV = 2      # sorted by revision, youngest first
 
 
 # ======================================================================
@@ -243,10 +246,12 @@ class DirEntry:
     self.kind = kind
     self.errors = errors
 
+
 class Revision:
   """Instances holds information about revisions of versioned resources"""
 
-  def __init__(self, number, string, date, author, changed, log, size, lockinfo):
+  def __init__(self, number, string, date, author,
+               changed, log, size, lockinfo):
     """Create a new Revision() item:
           NUMBER:  Revision in an integer-based, sortable format
           STRING:  Revision as a string
@@ -269,6 +274,7 @@ class Revision:
   def __lt__(self, other):
     return (self.number < other.number)
 
+
 class Annotation:
   """Instances represent per-line file annotation information"""
 
@@ -288,6 +294,7 @@ class Annotation:
     self.prev_rev = prev_rev
     self.author = author
     self.date = date
+
 
 class ChangedPath:
   """Instances represent changes to paths"""
@@ -321,11 +328,14 @@ class ChangedPath:
 class Error(Exception):
   pass
 
+
 class ReposNotFound(Error):
   pass
 
+
 class UnsupportedFeature(Error):
   pass
+
 
 class ItemNotFound(Error):
   def __init__(self, path):
@@ -335,6 +345,7 @@ class ItemNotFound(Error):
       path = '/'.join(path)
     Error.__init__(self, path)
 
+
 class InvalidRevision(Error):
   def __init__(self, revision=None):
     if revision is None:
@@ -342,16 +353,13 @@ class InvalidRevision(Error):
     else:
       Error.__init__(self, "Invalid revision " + str(revision))
 
+
 class NonTextualFileContents(Error):
   pass
 
+
 # ======================================================================
 # Implementation code used by multiple vclib modules
-
-import subprocess
-import sys
-import os
-import time
 
 def _diff_args(type, options):
   """generate argument list to pass to diff or rcsdiff"""
@@ -386,11 +394,13 @@ def _diff_args(type, options):
 
   return args
 
+
 class _diff_fp:
   """File object reading a diff between temporary files, cleaning up
   on close"""
 
-  def __init__(self, temp1, temp2, info1=None, info2=None, diff_cmd='diff', diff_opts=[]):
+  def __init__(self, temp1, temp2, info1=None, info2=None,
+               diff_cmd='diff', diff_opts=[]):
     self.readable = True
     self.temp1 = temp1
     self.temp2 = temp2
@@ -451,6 +461,7 @@ def check_root_access(repos):
     return 1
   return auth.check_root_access(repos.rootname())
 
+
 def check_path_access(repos, path_parts, pathtype=None, rev=None):
   """Return 1 iff the associated username is permitted to read
   revision REV of the path PATH_PARTS (of type PATHTYPE) in repository
@@ -462,4 +473,3 @@ def check_path_access(repos, path_parts, pathtype=None, rev=None):
   if not pathtype:
     pathtype = repos.itemtype(path_parts, rev)
   return auth.check_path_access(repos.rootname(), path_parts, pathtype, rev)
-
