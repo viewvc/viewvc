@@ -37,7 +37,7 @@ depending on what you want to do with it.
 
 Minimum requirements:
 
-  * Python 3.3+
+  * Python 3.6+
       (http://www.python.org/)
 
 For CVS support:
