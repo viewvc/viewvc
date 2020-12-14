@@ -97,8 +97,8 @@ class SvnRepo:
     return rev
 
 
-_re_diff_change_command = re.compile(b'(\d+)(?:,(\d+))?([acd])'
-                                     b'(\d+)(?:,(\d+))?')
+_re_diff_change_command = re.compile(br'(\d+)(?:,(\d+))?([acd])'
+                                     br'(\d+)(?:,(\d+))?')
 
 
 def _get_diff_counts(diff_fp):

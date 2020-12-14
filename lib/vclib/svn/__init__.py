@@ -17,7 +17,7 @@ import os.path
 import re
 import urllib.parse
 
-_re_url = re.compile('^(http|https|file|svn|svn\+[^:]+)://')
+_re_url = re.compile(r'^(http|https|file|svn|svn\+[^:]+)://')
 
 
 def _canonicalize_path(path):

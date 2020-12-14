@@ -370,7 +370,7 @@ class CheckinDatabase:
         data = fnmatch.translate(data)
         if data[0] != '^':
           data = '^' + data
-        if data[-7:] == '\Z(?ms)':
+        if data[-7:] == '\\Z(?ms)':
           data = data[:-7] + '$'
       elif query_entry.match == "regex":
         match = " REGEXP "

@@ -693,7 +693,7 @@ _re_validate_revnum = re.compile('^[-_.a-zA-Z0-9:~\\[\\]/]*$')
 
 # date time values
 _re_validate_datetime = re.compile(r'^(\d\d\d\d-\d\d-\d\d(\s+\d\d:\d\d'
-                                   '(:\d\d)?)?)?$')
+                                   r'(:\d\d)?)?)?$')
 
 # the legal query parameters and their validation functions
 _legal_params = {
@@ -1211,13 +1211,13 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
 
 
 # Matches URLs
-_re_rewrite_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)'
-                             '(://[-a-zA-Z0-9%.~:_/]+)((\?|\&)'
-                             '([-a-zA-Z0-9%.~:_]+)=([-a-zA-Z0-9%.~:_])+)*'
-                             '(#([-a-zA-Z0-9%.~:_]+)?)?)')
+_re_rewrite_url = re.compile(r'((http|https|ftp|file|svn|svn\+ssh)'
+                             r'(://[-a-zA-Z0-9%.~:_/]+)((\?|\&)'
+                             r'([-a-zA-Z0-9%.~:_]+)=([-a-zA-Z0-9%.~:_])+)*'
+                             r'(#([-a-zA-Z0-9%.~:_]+)?)?)')
 # Matches email addresses
-_re_rewrite_email = re.compile('([-a-zA-Z0-9_.\+]+)@'
-                               '(([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
+_re_rewrite_email = re.compile(r'([-a-zA-Z0-9_.\+]+)@'
+                               r'(([-a-zA-Z0-9]+\.)+[A-Za-z]{2,4})')
 
 # Matches revision references
 _re_rewrite_svnrevref = re.compile(r'\b(r|rev #?|revision #?)([0-9]+)\b')
@@ -1349,7 +1349,7 @@ class ViewVCHtmlFormatter:
         repl = mobj.group(i)
       except Exception:
         repl = ''
-      url = url.replace('\%d' % (i), repl)
+      url = url.replace(r'\%d' % (i), repl)
     trunc_s = maxlen and text[:maxlen] or text
     return '<a href="%s">%s</a>' % (sapi.escape(url),
                                     sapi.escape(trunc_s)), \
@@ -1752,12 +1752,12 @@ class MarkupPipeWrapper:
       fp.write(self.posttext)
 
 
-_re_rewrite_escaped_url = re.compile('((http|https|ftp|file|svn|svn\+ssh)'
-                                     '(://[-a-zA-Z0-9%.~:_/]+)'
-                                     '((\?|\&amp;amp;|\&amp;|\&)'
-                                     '([-a-zA-Z0-9%.~:_]+)='
-                                     '([-a-zA-Z0-9%.~:_])+)*'
-                                     '(#([-a-zA-Z0-9%.~:_]+)?)?)')
+_re_rewrite_escaped_url = re.compile(r'((http|https|ftp|file|svn|svn\+ssh)'
+                                     r'(://[-a-zA-Z0-9%.~:_/]+)'
+                                     r'((\?|\&amp;amp;|\&amp;|\&)'
+                                     r'([-a-zA-Z0-9%.~:_]+)='
+                                     r'([-a-zA-Z0-9%.~:_])+)*'
+                                     r'(#([-a-zA-Z0-9%.~:_]+)?)?)')
 
 
 def markup_escaped_urls(s):
@@ -3391,7 +3391,7 @@ class DiffSource:
       text = text.replace(' ', '\x01nbsp;')
     text = sapi.escape(text)
     text = text.replace('\x01', '&')
-    text = text.replace('\x02', '<span style="color:red">\</span><br />')
+    text = text.replace('\x02', '<span style="color:red">\\</span><br />')
     return text
 
   def _get_row(self):
@@ -4544,7 +4544,7 @@ def parse_date(datestr):
   """Parse a date string from the query form."""
 
   match = re.match(r'^(\d\d\d\d)-(\d\d)-(\d\d)(?:\ +'
-                   '(\d\d):(\d\d)(?::(\d\d))?)?$', datestr)
+                   r'(\d\d):(\d\d)(?::(\d\d))?)?$', datestr)
   if match:
     year = int(match.group(1))
     month = int(match.group(2))
