@@ -38,7 +38,8 @@ The application should build a dictionary 'data' and pass it together
 with the output fileobject to the templates generate method:
 
     >>> data = {'title_string' : "A Dummy Page",
-    ...         'a_sequence' : ['list item 1', 'list item 2', 'another element'],
+    ...         'a_sequence' : ['list item 1', 'list item 2',
+                                'another element'],
     ...         'person': "doctor",
     ...         'state' : None }
     >>> import sys
@@ -239,11 +240,11 @@ __license__ = 'BSD'
 import re
 import os
 import sys
-import io
-long = int
-unicode = str
 from io import StringIO
 from urllib.parse import quote_plus as urllib_parse_quote_plus
+
+long = int
+unicode = str
 
 #
 # Formatting types
@@ -284,7 +285,13 @@ _re_parse = re.compile(r'(\r?\n)|\[(%s(?: +%s)*)\]|(\[\[\])|\[#[^\]]*\]' %
 _re_args = re.compile(r'"(?:[^\\"]|\\.)*"|[-\w.]+')
 
 # block commands and their argument counts
-_block_cmd_specs = { 'if-index':2, 'for':1, 'is':2, 'define':1, 'format':1 }
+_block_cmd_specs = {
+  'if-index': 2,
+  'for': 1,
+  'is': 2,
+  'define': 1,
+  'format': 1,
+  }
 _block_cmds = _block_cmd_specs.keys()
 
 # two regular expressions for compressing whitespace. the first is used to
@@ -298,6 +305,7 @@ _re_whitespace = re.compile(r'\s\s+')
 # will produce a list of: TEXT ( splitter TEXT )*. splitter will be '%' or
 # an integer.
 _re_subst = re.compile('%(%|[0-9]+)')
+
 
 class Template:
 
@@ -327,7 +335,8 @@ class Template:
                                base_printer=_parse_format(base_format))
 
   def generate(self, fp, data):
-    if hasattr(data, '__getitem__') or hasattr(getattr(data, 'keys', None), '__call__'):
+    if (hasattr(data, '__getitem__')
+        or hasattr(getattr(data, 'keys', None), '__call__')):
       # a dictionary-like object was passed. convert it to an
       # attribute-based object.
       class _data_ob:
@@ -337,8 +346,8 @@ class Template:
 
     ctx = _context()
     ctx.data = data
-    ctx.for_index = { }
-    ctx.defines = { }
+    ctx.for_index = {}
+    ctx.defines = {}
     self._execute(self.program, fp, ctx)
 
   def _parse(self, reader, for_names=None, file_args=(), base_printer=None):
@@ -355,14 +364,14 @@ class Template:
     # parse the template program into: (TEXT NEWLINE DIRECTIVE BRACKET)* TEXT
     parts = _re_parse.split(reader.text)
 
-    program = [ ]
-    stack = [ ]
+    program = []
+    stack = []
     if not for_names:
-      for_names = [ ]
+      for_names = []
 
     if base_printer is None:
       base_printer = ()
-    printers = [ base_printer ]
+    printers = [base_printer]
 
     one_newline_copied = False
     line_number = 1
@@ -399,7 +408,7 @@ class Template:
         if cmd == 'else':
           if len(args) > 1:
             raise ArgCountSyntaxError(str(args[1:]), filename, line_number)
-          ### check: don't allow for 'for' cmd
+          # check: don't allow for 'for' cmd
           idx = stack[-1][1]
           true_section = program[idx:]
           del program[idx:]
@@ -417,14 +426,14 @@ class Template:
             printers.pop()
           else:
             func = getattr(self, '_cmd_' + re.sub('-', '_', cmd))
-            program[idx:] = [ (func, (args, true_section, else_section),
-                               filename, line_number) ]
+            program[idx:] = [(func, (args, true_section, else_section),
+                              filename, line_number)]
             if cmd == 'for':
               for_names.pop()
         elif cmd in _block_cmds:
           if len(args) > _block_cmd_specs[cmd] + 1:
             raise ArgCountSyntaxError(str(args[1:]), filename, line_number)
-          ### this assumes arg1 is always a ref unless cmd is 'define'
+          # this assumes arg1 is always a ref unless cmd is 'define'
           if cmd != 'define':
             args[1] = _prepare_ref(args[1], for_names, file_args)
 
@@ -435,7 +444,8 @@ class Template:
             for_names.append(args[1][0])  # append the refname
           elif cmd == 'format':
             if args[1][0]:
-              raise BadFormatConstantError(str(args[1:]), filename, line_number)
+              raise BadFormatConstantError(str(args[1:]),
+                                           filename, line_number)
             printers.append(_parse_format(args[1][1]))
 
           # remember the cmd, current pos, args, and a section placeholder
@@ -450,7 +460,7 @@ class Template:
             if is_insertfile:
               program.append(reader.read_other(include_filename).text)
             else:
-              f_args = [ ]
+              f_args = []
               for arg in args[2:]:
                 f_args.append(_prepare_ref(arg, for_names, file_args))
               program.extend(self._parse(reader.read_other(include_filename),
@@ -466,14 +476,14 @@ class Template:
                             (_prepare_ref(args[1], for_names, file_args),
                              reader, printers[-1]), filename, line_number))
         elif cmd == 'if-any':
-          f_args = [ ]
+          f_args = []
           for arg in args[1:]:
             f_args.append(_prepare_ref(arg, for_names, file_args))
           stack.append(['if-any', len(program), f_args, None, line_number])
         else:
           # implied PRINT command
           if len(args) > 1:
-            f_args = [ ]
+            f_args = []
             for arg in args:
               f_args.append(_prepare_ref(arg, for_names, file_args))
             program.append((self._cmd_subst,
@@ -528,7 +538,7 @@ class Template:
     parts = _re_subst.split(fmt)
     for i in range(len(parts)):
       piece = parts[i]
-      if i%2 == 1 and piece != '%':
+      if i % 2 == 1 and piece != '%':
         idx = int(piece)
         if idx < len(args):
           piece = _get_value(args[idx], ctx, filename, line_number)
@@ -542,8 +552,8 @@ class Template:
                    line_number):
     (valref, reader, printer) = valref_reader_printer
     fname = _get_value(valref, ctx, filename, line_number)
-    ### note: we don't have the set of for_names to pass into this parse.
-    ### I don't think there is anything to do but document it
+    # NOTE: we don't have the set of for_names to pass into this parse.
+    # I don't think there is anything to do but document it
     self._execute(self._parse(reader.read_other(fname), base_printer=printer),
                   fp, ctx)
 
@@ -573,7 +583,7 @@ class Template:
     elif value == 'first':
       value = idx == 0
     elif value == 'last':
-      value = idx == len(list)-1
+      value = idx == len(list) - 1
     else:
       value = idx == int(value)
     self._do_if(value, t_section, f_section, fp, ctx)
@@ -602,7 +612,7 @@ class Template:
     refname = valref[0]
     if isinstance(list, str):
       raise NeedSequenceError(refname, filename, line_number)
-    ctx.for_index[refname] = idx = [ list, 0 ]
+    ctx.for_index[refname] = idx = [list, 0]
     for item in list:
       self._execute(section, fp, ctx)
       idx[1] = idx[1] + 1
@@ -614,6 +624,7 @@ class Template:
     if section is not None:
       self._execute(section, valfp, ctx)
     ctx.defines[name] = valfp.getvalue()
+
 
 def boolean(value):
   "Return a value suitable for [if-any bool_var] usage in a template."
@@ -653,12 +664,13 @@ def _prepare_ref(refname, for_names, file_args):
         # prepend the argument's "rest" for our further processing
         rest[:0] = more_rest
 
-        # rewrite the refname to ensure that any potential 'for' processing
-        # has the correct name
-        ### this can make it hard for debugging include files since we lose
-        ### the 'argNNN' names
+        # rewrite the refname to ensure that any potential 'for'
+        # processing has the correct name
+        #
+        # NOTE: this can make it hard for debugging include files
+        # since we lose the 'argNNN' names
         if not rest:
-          return start, start, [ ]
+          return start, start, []
         refname = start + '.' + '.'.join(rest)
 
   if for_names:
@@ -669,6 +681,7 @@ def _prepare_ref(refname, for_names, file_args):
         return refname, name, parts[i:]
 
   return refname, start, rest
+
 
 def _get_value(refname_start_rest, ctx, filename, line_number):
   """refname_start_rest -> a prepared `value reference' (see above).
@@ -710,10 +723,12 @@ def _get_value(refname_start_rest, ctx, filename, line_number):
   # string or a sequence
   return ob
 
+
 def _replace(s, replace_map):
   for orig, repl in replace_map:
     s = s.replace(orig, repl)
   return s
+
 
 REPLACE_JS_MAP = (
   ('\\', r'\\'), ('\t', r'\t'), ('\n', r'\n'), ('\r', r'\r'),
@@ -733,31 +748,36 @@ REPLACE_HTML_MAP = (
   ('"', '&quot;'), ('\'', '&#39;'),
 )
 
+
 def _js_escape(s):
   s = _replace(s, REPLACE_JS_MAP)
-  ### perhaps attempt to coerce the string to unicode and then replace?
+  # perhaps attempt to coerce the string to unicode and then replace?
   if isinstance(s, unicode):
     s = _replace(s, REPLACE_JS_UNICODE_MAP)
   return s
 
+
 def _html_escape(s):
   return _replace(s, REPLACE_HTML_MAP)
 
+
 def _url_escape(s):
-  ### quote_plus barfs on non-ASCII characters. According to
-  ### http://www.w3.org/International/O-URL-code.html URIs should be
-  ### UTF-8 encoded first.
+  # quote_plus barfs on non-ASCII characters. According to
+  # http://www.w3.org/International/O-URL-code.html URIs should be
+  # UTF-8 encoded first.
   if isinstance(s, unicode):
     s = s.encode('utf8')
   return urllib_parse_quote_plus(s)
 
+
 FORMATTERS = {
   FORMAT_RAW: None,
   FORMAT_HTML: _html_escape,
-  FORMAT_XML: _html_escape,   ### use the same quoting as HTML for now
+  FORMAT_XML: _html_escape,  # use the same quoting as HTML for now
   FORMAT_JS: _js_escape,
   FORMAT_URL: _url_escape,
 }
+
 
 def _parse_format(format_string=FORMAT_RAW):
   format_funcs = []
@@ -770,6 +790,7 @@ def _parse_format(format_string=FORMAT_RAW):
     raise UnknownFormatConstantError(format_string)
   return format_funcs
 
+
 class _context:
   """A container for the execution context"""
 
@@ -779,23 +800,29 @@ class Reader:
   def filename(self):
     return '(%s does not provide filename() method)' % repr(self)
 
+
 class _FileReader(Reader):
   """Reads templates from the filesystem."""
   def __init__(self, fname):
     self.text = open(fname, 'r').read()
     self._dir = os.path.dirname(fname)
     self.fname = fname
+
   def read_other(self, relative):
     return _FileReader(os.path.join(self._dir, relative))
+
   def filename(self):
     return self.fname
+
 
 class _TextReader(Reader):
   """'Reads' a template from provided text."""
   def __init__(self, text):
     self.text = text
+
   def read_other(self, relative):
     raise BaseUnavailableError()
+
   def filename(self):
     return '(text)'
 
@@ -806,6 +833,7 @@ class EZTException(Exception):
     self.message = message
     self.filename = filename
     self.line_number = line_number
+
   def __str__(self):
     ret = []
     if self.message is not None:
@@ -816,26 +844,34 @@ class EZTException(Exception):
       ret.append('at line ' + str(self.line_number))
     return ' '.join(ret)
 
+
 class ArgCountSyntaxError(EZTException):
   """A bracket directive got the wrong number of arguments."""
+
 
 class UnknownReference(EZTException):
   """The template references an object not contained in the data dictionary."""
 
+
 class NeedSequenceError(EZTException):
   """The object dereferenced by the template is no sequence (tuple or list)."""
+
 
 class UnclosedBlocksError(EZTException):
   """This error may be simply a missing [end]."""
 
+
 class UnmatchedEndError(EZTException):
   """This error may be caused by a misspelled if directive."""
+
 
 class BaseUnavailableError(EZTException):
   """Base location is unavailable, which disables includes."""
 
+
 class BadFormatConstantError(EZTException):
   """Format specifiers must be string constants."""
+
 
 class UnknownFormatConstantError(EZTException):
   """The format specifier is an unknown value."""
@@ -843,24 +879,27 @@ class UnknownFormatConstantError(EZTException):
 
 # --- standard test environment ---
 def test_parse():
-  assert _re_parse.split('[a]') == ['', '[a]', None, '']
-  assert _re_parse.split('[a] [b]') == \
-         ['', '[a]', None, ' ', '[b]', None, '']
-  assert _re_parse.split('[a c] [b]') == \
-         ['', '[a c]', None, ' ', '[b]', None, '']
-  assert _re_parse.split('x [a] y [b] z') == \
-         ['x ', '[a]', None, ' y ', '[b]', None, ' z']
-  assert _re_parse.split('[a "b" c "d"]') == \
-         ['', '[a "b" c "d"]', None, '']
-  assert _re_parse.split(r'["a \"b[foo]" c.d f]') == \
-         ['', '["a \\"b[foo]" c.d f]', None, '']
+  assert _re_parse.split('[a]') == (
+    ['', '[a]', None, ''])
+  assert _re_parse.split('[a] [b]') == (
+    ['', '[a]', None, ' ', '[b]', None, ''])
+  assert _re_parse.split('[a c] [b]') == (
+    ['', '[a c]', None, ' ', '[b]', None, ''])
+  assert _re_parse.split('x [a] y [b] z') == (
+    ['x ', '[a]', None, ' y ', '[b]', None, ' z'])
+  assert _re_parse.split('[a "b" c "d"]') == (
+    ['', '[a "b" c "d"]', None, ''])
+  assert _re_parse.split(r'["a \"b[foo]" c.d f]') == (
+    ['', '["a \\"b[foo]" c.d f]', None, ''])
+
 
 def _test(argv):
-  import doctest, ezt
+  import doctest
+  import ezt
   verbose = "-v" in argv
   return doctest.testmod(ezt, verbose=verbose)
 
+
 if __name__ == "__main__":
   # invoke unit test for this module:
-  import sys
   sys.exit(_test(sys.argv)[0])

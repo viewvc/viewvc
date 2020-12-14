@@ -1,0 +1,9 @@
+[flake8]
+# E111 indentation is not a multiple of four
+# E114 indentation is not a multiple of four (comment)
+# E121 continuation line under-indented for hanging indent
+# E123 closing bracket does not match indentation of opening bracket's line
+# E129 visually indented line with same indent as next logical line
+# E402 module level import not at top of file
+# W503 line break before binary operator
+ignore = E111,E114,E121,E123,E129,E402,W503

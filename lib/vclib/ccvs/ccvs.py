@@ -10,19 +10,20 @@
 #
 # -----------------------------------------------------------------------
 
-import sys
 import os
 import re
 import tempfile
-from io import StringIO, BytesIO
+from io import BytesIO
 import functools
 import vclib
 from . import rcsparse
 from . import blame
 
-### The functionality shared with bincvs should probably be moved to a
-### separate module
-from .bincvs import BaseCVSRepository, Revision, Tag, _file_log, _log_path, _logsort_date_cmp, _logsort_rev_cmp, _path_join
+# TODO: The functionality shared with bincvs should probably be moved
+# to a separate module
+from .bincvs import (BaseCVSRepository, Revision, Tag, _file_log,
+                     _log_path, _logsort_date_cmp, _logsort_rev_cmp,
+                     _path_join)
 
 
 class CCVSRepository(BaseCVSRepository):
@@ -45,7 +46,7 @@ class CCVSRepository(BaseCVSRepository):
     """
     if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
       raise vclib.Error("Path '%s' is not a directory."
-                        % (part2path(path_parts)))
+                        % (_path_join(path_parts)))
     entries_to_fetch = []
     for entry in entries:
       if vclib.check_path_access(self, path_parts + [entry.name], None, rev):
@@ -55,8 +56,8 @@ class CCVSRepository(BaseCVSRepository):
 
     dirpath = self._getpath(path_parts)
     alltags = {           # all the tags seen in the files of this dir
-      'MAIN' : '',
-      'HEAD' : '1.1'
+      'MAIN': '',
+      'HEAD': '1.1'
     }
 
     for entry in entries_to_fetch:
@@ -116,7 +117,7 @@ class CCVSRepository(BaseCVSRepository):
     if len(filtered_revs) < first:
       return []
     if limit:
-      return filtered_revs[first:first+limit]
+      return filtered_revs[first:first + limit]
     return filtered_revs
 
   def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
@@ -126,9 +127,11 @@ class CCVSRepository(BaseCVSRepository):
       raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts2)))
 
     fd1, temp1 = tempfile.mkstemp()
-    os.fdopen(fd1, 'wb').write(self.openfile(path_parts1, rev1, {})[0].getvalue())
+    os.fdopen(fd1, 'wb').write(
+      self.openfile(path_parts1, rev1, {})[0].getvalue())
     fd2, temp2 = tempfile.mkstemp()
-    os.fdopen(fd2, 'wb').write(self.openfile(path_parts2, rev2, {})[0].getvalue())
+    os.fdopen(fd2, 'wb').write(
+      self.openfile(path_parts2, rev2, {})[0].getvalue())
 
     r1 = self.itemlog(path_parts1, rev1, vclib.SORTBY_DEFAULT, 0, 0, {})[-1]
     r2 = self.itemlog(path_parts2, rev2, vclib.SORTBY_DEFAULT, 0, 0, {})[-1]
@@ -159,6 +162,7 @@ class CCVSRepository(BaseCVSRepository):
     rcsparse.parse(open(path, 'rb'), sink)
     revision = sink.last and sink.last.string
     return BytesIO(b'\n'.join(sink.sstext.text)), revision
+
 
 class MatchingSink(rcsparse.Sink):
   """Superclass for sinks that search for revisions based on tag or number"""
@@ -196,6 +200,7 @@ class MatchingSink(rcsparse.Sink):
       return b.decode(self.encoding, 'backslashreplace')
     return b
 
+
 class InfoSink(MatchingSink):
   def __init__(self, entry, tag, alltags, encoding):
     MatchingSink.__init__(self, tag, encoding)
@@ -203,7 +208,7 @@ class InfoSink(MatchingSink):
     self.alltags = alltags
     self.matching_rev = None
     self.perfect_match = 0
-    self.lockinfo = { }
+    self.lockinfo = {}
     self.saw_revision = False
 
   def define_tag(self, name, revision):
@@ -220,7 +225,6 @@ class InfoSink(MatchingSink):
 
   def parse_completed(self):
     if not self.saw_revision:
-      #self.entry.errors.append("No revisions exist on %s" % (view_tag or "MAIN"))
       self.entry.absent = 1
 
   def set_locker(self, rev, locker):
@@ -242,13 +246,14 @@ class InfoSink(MatchingSink):
     # if tag refers to a branch and either a) this revision is the
     # highest revision so far found on that branch, or b) this
     # revision is the branchpoint.
-    perfect = ((rev.number == tag.number) or
-               (not tag.number and len(rev.number) == 2))
-    if perfect or (tag.is_branch and \
-                   ((tag.number == rev.number[:-1] and
-                     (not self.matching_rev or
-                      rev.number > self.matching_rev.number)) or
-                    (rev.number == tag.number[:-1]))):
+    perfect = ((rev.number == tag.number)
+               or (not tag.number and len(rev.number) == 2))
+    if (perfect
+        or (tag.is_branch
+            and ((tag.number == rev.number[:-1]
+                  and (not self.matching_rev
+                       or rev.number > self.matching_rev.number))
+                 or (rev.number == tag.number[:-1])))):
       self.matching_rev = rev
       self.perfect_match = perfect
 
@@ -266,16 +271,17 @@ class InfoSink(MatchingSink):
     else:
       raise rcsparse.RCSStopParser
 
+
 class TreeSink(rcsparse.Sink):
   d_command = re.compile(br'^d(\d+)\s(\d+)')
   a_command = re.compile(br'^a(\d+)\s(\d+)')
 
   def __init__(self, encoding):
-    self.revs = { }
-    self.tags = { }
+    self.revs = {}
+    self.tags = {}
     self.head = None
     self.default_branch = None
-    self.lockinfo = { }
+    self.lockinfo = {}
     self.encoding = encoding
 
   def set_head_revision(self, revision):
@@ -344,6 +350,7 @@ class StreamText:
     self.text = text.split(b'\n')
 
   def command(self, cmd):
+    start_line = None
     adjust = 0
     add_lines_remaining = 0
     diffs = cmd.split(b'\n')
@@ -365,17 +372,18 @@ class StreamText:
       if dmatch:
         # "d" - Delete command
         start_line = int(dmatch.group(1))
-        count      = int(dmatch.group(2))
+        count = int(dmatch.group(2))
         begin = start_line + adjust - 1
         del self.text[begin:begin + count]
         adjust = adjust - count
       elif amatch:
         # "a" - Add command
         start_line = int(amatch.group(1))
-        count      = int(amatch.group(2))
+        count = int(amatch.group(2))
         add_lines_remaining = count
       else:
         raise RuntimeError('Error parsing diff commands')
+
 
 def secondnextdot(s, start):
   # find the position the second dot after the start index.
@@ -412,8 +420,9 @@ class COSink(MatchingSink):
       assert len(self.last.number) == 2
       assert rev.number < self.last.number
       self.sstext.command(text)
-    elif (depth > 2 and rev.number[:depth-1] == tag.number[:depth-1] and
-          (rev.number <= tag.number or len(tag.number) == depth-1)):
+    elif (depth > 2
+          and rev.number[:depth - 1] == tag.number[:depth - 1]
+          and (rev.number <= tag.number or len(tag.number) == depth - 1)):
       assert len(rev.number) - len(self.last.number) in (0, 2)
       assert rev.number > self.last.number
       self.sstext.command(text)
@@ -421,5 +430,4 @@ class COSink(MatchingSink):
       rev = None
 
     if rev:
-      #print "tag =", tag.number, "rev =", rev.number, "<br>"
       self.last = rev

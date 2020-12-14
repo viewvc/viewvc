@@ -23,11 +23,11 @@ def language(hdr):
   # parse the header, storing results in a _LanguageSelector object
   return _parse(hdr, _LanguageSelector())
 
-# -----------------------------------------------------------------------
 
 _re_token = re.compile(r'\s*([^\s;,"]+|"[^"]*")+\s*')
 _re_param = re.compile(r';\s*([^;,"]+|"[^"]*")+\s*')
 _re_split_param = re.compile(r'([^\s=])\s*=\s*(.*)')
+
 
 def _parse(hdr, result):
   # quick exit for empty or not-supplied header
@@ -72,10 +72,11 @@ def _parse(hdr, result):
         a.charset = match.group(2).lower()
 
     result.append(a)
-    if hdr[pos:pos+1] == ',':
+    if hdr[pos:pos + 1] == ',':
       pos = pos + 1
 
   return result
+
 
 class _AcceptItem:
   def __init__(self, name):
@@ -94,6 +95,7 @@ class _AcceptItem:
       s = '%s;charset=%s' % (s, self.charset)
     return s
 
+
 class _LanguageRange(_AcceptItem):
   def matches(self, tag):
     "Match the tag against self. Returns the qvalue, or None if non-matching."
@@ -105,6 +107,7 @@ class _LanguageRange(_AcceptItem):
     if tag[:len(name)] == name:
       return self.quality
     return None
+
 
 class _LanguageSelector:
   """Instances select an available language based on the user's request.
@@ -127,7 +130,7 @@ class _LanguageSelector:
   item_class = _LanguageRange
 
   def __init__(self):
-    self.requested = [ ]
+    self.requested = []
 
   def select_from(self, avail):
     """Select one of the available choices based on the request.
@@ -140,7 +143,7 @@ class _LanguageSelector:
     """
 
     # tuples of (qvalue, language-tag)
-    matches = [ ]
+    matches = []
 
     # try matching all pairs of desired vs available, recording the
     # resulting qvalues. we also need to record the longest language-range
@@ -152,7 +155,6 @@ class _LanguageSelector:
       # check this tag against the requests from the user
       for want in self.requested:
         qvalue = want.matches(tag)
-        #print 'have %s. want %s. qvalue=%s' % (tag, want.name, qvalue)
         if qvalue is not None and len(want.name) > longest:
           # we have a match and it is longer than any we may have had.
           # the final qvalue should be from this tag.
@@ -183,7 +185,6 @@ class _LanguageSelector:
       # remove non-best matches
       while matches[0][0] != qvalue:
         del matches[0]
-      #print "non-deterministic choice", matches
 
       # sequence through self.requested, in order
       for want in self.requested:
@@ -191,14 +192,15 @@ class _LanguageSelector:
         for qvalue, tag in matches:
           if want.matches(tag):
             # this requested item is one of the "best" options
-            ### note: this request item could match *other* "best" options,
-            ### so returning *this* one is rather non-deterministic.
-            ### theoretically, we could go further here, and do another
-            ### search based on the ordering in 'avail'. however, note
-            ### that this generally means that we are picking from multiple
-            ### *SUB* languages, so I'm all right with the non-determinism
-            ### at this point. stupid client should send a qvalue if they
-            ### want to refine.
+            #
+            # NOTE: this request item could match *other* "best" options,
+            # so returning *this* one is rather non-deterministic.
+            # theoretically, we could go further here, and do another
+            # search based on the ordering in 'avail'. however, note
+            # that this generally means that we are picking from multiple
+            # *SUB* languages, so I'm all right with the non-determinism
+            # at this point. stupid client should send a qvalue if they
+            # want to refine.
             return tag
 
       # NOTREACHED
@@ -209,8 +211,10 @@ class _LanguageSelector:
   def append(self, item):
     self.requested.append(item)
 
+
 class AcceptLanguageParseError(Exception):
   pass
+
 
 def _test():
   s = language('en')
@@ -230,6 +234,3 @@ def _test():
   assert s.select_from(['en-gb', 'en-gb-foo']) == 'en-gb-foo'
   assert s.select_from(['en-bar']) == 'en-bar'
   assert s.select_from(['en-gb-bar', 'en-gb-foo']) == 'en-gb-foo'
-
-  # non-deterministic. en-gb;q=0.7 matches both avail tags.
-  #assert s.select_from(['en-gb-bar', 'en-gb']) == 'en-gb'

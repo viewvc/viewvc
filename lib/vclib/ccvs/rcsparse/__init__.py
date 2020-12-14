@@ -21,8 +21,9 @@ parse() to parse the file.
 # Make the "Sink" class and the various exception classes visible in this
 # scope.  That way, applications never need to import any of the
 # sub-packages.
-from .common import *
+from .common import *  # noqa: F401,F403
 from .default import Parser
+
 
 def parse(file, sink):
   """Parse an RCS file.

@@ -1,9 +1,15 @@
 name: CI
 on:
   push:
-    branches: [ issue-228-consistent-code-formatting ]
+    branches-ignore:
+      - refs/heads/1.0.x
+      - refs/heads/1.1.x
+      - refs/heads/1.2.x
   pull_request:
-    branches: [ issue-228-consistent-code-formatting ]
+    branches-ignore:
+      - refs/heads/1.0.x
+      - refs/heads/1.1.x
+      - refs/heads/1.2.x
   workflow_dispatch:
 jobs:
   lint:

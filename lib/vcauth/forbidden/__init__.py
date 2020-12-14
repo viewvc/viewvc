@@ -13,6 +13,7 @@ import vcauth
 import vclib
 import fnmatch
 
+
 class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
   """A simple top-level module authorizer."""
   def __init__(self, root_lookup_func, username, params={}):

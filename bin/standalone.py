@@ -16,6 +16,18 @@
 #
 # -----------------------------------------------------------------------
 
+import sys
+import os
+import os.path
+import string
+import socket
+import select
+import base64
+from urllib.parse import unquote as _unquote
+import http.server as _http_server
+
+
+#########################################################################
 #
 # INSTALL-TIME CONFIGURATION
 #
@@ -26,16 +38,8 @@
 LIBRARY_DIR = None
 CONF_PATHNAME = None
 
-import sys
-import os
-import os.path
-import stat
-import string
-import socket
-import select
-import base64
-from urllib.parse import unquote as _unquote
-import http.server as _http_server
+
+#########################################################################
 
 if LIBRARY_DIR:
   sys.path.insert(0, LIBRARY_DIR)
@@ -46,29 +50,30 @@ import sapi
 import viewvc
 
 
-# The 'crypt' module is only available on Unix platforms.  We'll try
-# to use 'fcrypt' if it's available (for more information, see
+# Default password checker denies everything.
+def _check_passwd(user_passwd, real_passwd):
+  return False
+
+
+# The 'crypt' module is only available on Unix platforms.  If it's not
+# found, we'll try to use 'fcrypt' (for more information, see
 # http://carey.geek.nz/code/python-fcrypt/).
-has_crypt = False
+has_crypt = True
 try:
   import crypt
-  has_crypt = True
-  def _check_passwd(user_passwd, real_passwd):
-    return real_passwd == crypt.crypt(user_passwd, real_passwd[:2])
 except ImportError:
   try:
-    import fcrypt
-    has_crypt = True
-    def _check_passwd(user_passwd, real_passwd):
-      return real_passwd == fcrypt.crypt(user_passwd, real_passwd[:2])
+    import fcrypt as crypt
   except ImportError:
-    def _check_passwd(user_passwd, real_passwd):
-      return False
+    has_crypt = False
+if has_crypt:
+  def _check_passwd(user_passwd, real_passwd):  # noqa: F811
+    return real_passwd == crypt.crypt(user_passwd, real_passwd[:2])
 
 
 class Options:
-  port = 49152      # default TCP/IP port used for the server
-  repositories = {} # use default repositories specified in config
+  port = 49152       # default TCP/IP port used for the server
+  repositories = {}  # use default repositories specified in config
   host = sys.platform == 'mac' and '127.0.0.1' or 'localhost'
   script_alias = 'viewvc'
   config_file = None
@@ -88,7 +93,8 @@ class StandaloneServer(sapi.CgiServer):
     global server
     server = self
 
-  def start_response(self, content_type='text/html; charset=UTF-8', status=None):
+  def start_response(self, content_type='text/html; charset=UTF-8',
+                     status=None):
     sapi.Server.start_response(self, content_type, status)
     if status is None:
       statusCode = 200
@@ -100,7 +106,7 @@ class StandaloneServer(sapi.CgiServer):
         statusText = ''
       else:
         statusCode = int(status[:p])
-        statusText = status[p+1:]
+        statusText = status[p + 1:]
     self._handler.send_response(statusCode, statusText)
     self._handler.send_header("Content-type", content_type)
     for (name, value) in self._headers:
@@ -174,7 +180,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
 """ % (new_url, new_url)).encode('utf-8'))
       else:
         self.send_error(404)
-    except IOError: # ignore IOError: [Errno 32] Broken pipe
+    except IOError:  # ignore IOError: [Errno 32] Broken pipe
       pass
     except AuthenticationException:
       self.send_response(401, "Unauthorized")
@@ -199,9 +205,9 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
     if self.path == '/' + options.script_alias:
       return 1
     alias_len = len(options.script_alias)
-    if self.path[:alias_len+2] == '/' + options.script_alias + '/':
+    if self.path[:alias_len + 2] == '/' + options.script_alias + '/':
       return 1
-    if self.path[:alias_len+2] == '/' + options.script_alias + '?':
+    if self.path[:alias_len + 2] == '/' + options.script_alias + '?':
       return 1
     return 0
 
@@ -213,15 +219,15 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
         file_user, file_pass = line.rstrip().split(':', 1)
         if username == file_user:
           return _check_passwd(password, file_pass)
-    except:
+    except Exception:
       pass
     return False
 
   def run_viewvc(self):
     """Run ViewVC to field a single request."""
 
-    ### Much of this is adapter from Python's standard library
-    ### module CGIHTTPServer.
+    # NOTE: Much of this is adapter from Python's standard library
+    # module CGIHTTPServer.
 
     # Is this request even aimed at ViewVC?  If not, complain.
     if not self.is_viewvc():
@@ -238,7 +244,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
         if kind == 'Basic':
           data = base64.b64decode(data)
           username, password = data.split(':', 1)
-      except:
+      except Exception:
         raise AuthenticationException()
       if not self.validate_password(options.htpasswd_file, username, password):
         raise AuthenticationException()
@@ -249,11 +255,10 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
 
     scriptname = options.script_alias and '/' + options.script_alias or ''
 
-    viewvc_url = self.server.url[:-1] + scriptname
     rest = self.path[len(scriptname):]
     i = rest.rfind('?')
     if i >= 0:
-      rest, query = rest[:i], rest[i+1:]
+      rest, query = rest[:i], rest[i + 1:]
     else:
       query = ''
 
@@ -353,12 +358,12 @@ class ViewVCHTTPServer(_http_server.HTTPServer):
     """Handle an error gracefully. use stderr instead of stdout
     to avoid double fault.
     """
-    sys.stderr.write('-'*40 + '\n')
+    sys.stderr.write('-' * 40 + '\n')
     sys.stderr.write('Exception happened during processing of request from '
                      '%s\n' % str(client_address))
     import traceback
     traceback.print_exc()
-    sys.stderr.write('-'*40 + '\n')
+    sys.stderr.write('-' * 40 + '\n')
 
 
 def serve(host, port, callback=None):
@@ -384,8 +389,8 @@ def serve(host, port, callback=None):
          not os.path.isdir(cfg.general.cvs_roots["Development"]):
       sys.stderr.write("*** No repository found. Please use the -r option.\n")
       sys.stderr.write("   Use --help for more info.\n")
-      raise KeyboardInterrupt # Hack!
-    os.close(0) # To avoid problems with shell job control
+      raise KeyboardInterrupt  # Hack!
+    os.close(0)  # To avoid problems with shell job control
 
     # always use default docroot location
     cfg.options.docroot = None
@@ -486,7 +491,7 @@ def main(argv):
     for opt, val in opts:
       if opt in ['--help']:
         usage()
-      elif opt in ['-r', '--repository']: # may be used more than once
+      elif opt in ['-r', '--repository']:  # may be used more than once
         opt_repositories.append(val)
       elif opt in ['-d', '--daemon']:
         opt_daemon = 1
@@ -504,7 +509,8 @@ def main(argv):
     badusage(str(err))
 
   # Validate options that need validating.
-  class BadUsage(Exception): pass
+  class BadUsage(Exception):
+    pass
   try:
     if opt_port is not None:
       try:
@@ -533,7 +539,8 @@ def main(argv):
     if opt_host is not None:
       options.host = opt_host
     if opt_script_alias is not None:
-      options.script_alias = '/'.join(filter(None, opt_script_alias.split('/')))
+      options.script_alias = '/'.join(filter(None,
+                                             opt_script_alias.split('/')))
     for repository in opt_repositories:
       if 'Development' not in options.repositories:
         rootname = 'Development'

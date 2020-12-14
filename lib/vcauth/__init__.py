@@ -12,6 +12,7 @@
 
 """Generic API for implementing authorization checks employed by ViewVC."""
 
+
 class GenericViewVCAuthorizer:
   """Abstract class encapsulating version control authorization routines."""
 
@@ -45,8 +46,8 @@ class GenericViewVCAuthorizer:
     pass
 
 
-
 ##############################################################################
+
 
 class ViewVCAuthorizer(GenericViewVCAuthorizer):
   """The uber-permissive authorizer."""

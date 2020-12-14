@@ -17,11 +17,13 @@ import os.path
 import re
 import urllib.parse
 
-_re_url = re.compile('^(http|https|file|svn|svn\+[^:]+)://')
+_re_url = re.compile(r'^(http|https|file|svn|svn\+[^:]+)://')
+
 
 def _canonicalize_path(path):
   import svn.core
   return svn.core.svn_path_canonicalize(path).decode('utf-8', 'surrogateescpe')
+
 
 def canonicalize_rootpath(rootpath):
   # Try to canonicalize the rootpath using Subversion semantics.

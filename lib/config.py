@@ -127,18 +127,20 @@ class Config:
     )
   _allowed_overrides = {
     # Mapping of override types to allowed overridable sections.
-    'vhost' : ('authz-*',
-               'cvsdb',
-               'general',
-               'options',
-               'templates',
-               'utilities',
-               ),
-    'root'  : ('authz-*',
-               'options',
-               'templates',
-               'utilities',
-               )
+    'vhost': (
+      'authz-*',
+      'cvsdb',
+      'general',
+      'options',
+      'templates',
+      'utilities',
+      ),
+    'root': (
+      'authz-*',
+      'options',
+      'templates',
+      'utilities',
+      )
     }
 
   def __init__(self):
@@ -157,7 +159,7 @@ class Config:
     self.conf_path = os.path.isfile(pathname) and pathname or None
     self.base = os.path.dirname(pathname)
     self.parser = configparser.ConfigParser()
-    self.parser.optionxform = lambda x: x # don't case-normalize option names.
+    self.parser.optionxform = lambda x: x  # don't case-normalize option names.
     self.parser.read(self.conf_path or [])
 
     for section in self.parser.sections():
@@ -178,13 +180,13 @@ class Config:
       if fname[0] == '[':
         idx = fname.index(']')
         parts = fname[1:idx].split('.')
-        fname = fname[idx+1:].strip()
+        fname = fname[idx + 1:].strip()
       else:
-        parts = [ ]
+        parts = []
       fname = fname.replace('%lang%', language)
 
       parser = configparser.ConfigParser()
-      parser.optionxform = lambda x: x # don't case-normalize option names.
+      parser.optionxform = lambda x: x  # don't case-normalize option names.
       parser.read(os.path.join(self.base, fname))
       for section in parser.sections():
         for option in parser.options(section):
@@ -220,8 +222,8 @@ class Config:
         except ValueError:
           pass
 
-      ### FIXME: This feels like unnecessary depth of knowledge for a
-      ### semi-generic configuration object.
+      # FIXME: This feels like unnecessary depth of knowledge for a
+      # semi-generic configuration object.
       if opt == 'cvs_roots' or opt == 'svn_roots' or opt == 'renamed_roots':
         value = _parse_roots(opt, value)
 
@@ -277,7 +279,7 @@ class Config:
       patterns = map(lambda x: x.lower().strip(),
                      filter(None, value.split(',')))
       patterns = [x.lower().strip()
-                  for x in [_f for _f in  value.split(',') if _f]]
+                  for x in [_f for _f in value.split(',') if _f]]
       for pat in patterns:
         if fnmatch.fnmatchcase(vhost, pat):
           return canon_vhost
@@ -373,14 +375,14 @@ class Config:
   def set_defaults(self):
     "Set some default values in the configuration."
 
-    self.general.cvs_roots = { }
-    self.general.svn_roots = { }
-    self.general.renamed_roots = { }
+    self.general.cvs_roots = {}
+    self.general.svn_roots = {}
+    self.general.renamed_roots = {}
     self.general.root_parents = []
     self.general.default_root = ''
     self.general.mime_types_files = ["mimetypes.conf"]
     self.general.address = ''
-    self.general.kv_files = [ ]
+    self.general.kv_files = []
     self.general.languages = ['en-us']
 
     self.utilities.rcs_dir = ''
@@ -465,35 +467,42 @@ class Config:
     self.cvsdb.rss_row_limit = 100
     self.cvsdb.check_database_for_root = 0
 
+
 def _startswith(somestr, substr):
   return somestr[:len(substr)] == substr
 
+
 def _parse_roots(config_name, config_value):
-  roots = { }
+  roots = {}
   for root in config_value:
     try:
       name, path = root.split(':', 1)
-    except:
+    except Exception:
       raise MalformedRoot(config_name, root)
     roots[name.strip()] = path.strip()
   return roots
 
+
 class ViewVCConfigurationError(Exception):
   pass
+
 
 class IllegalOverrideSection(ViewVCConfigurationError):
   def __init__(self, override_type, section_name):
     self.section_name = section_name
     self.override_type = override_type
+
   def __str__(self):
     return "malformed configuration: illegal %s override section: %s" \
            % (self.override_type, self.section_name)
+
 
 class MalformedRoot(ViewVCConfigurationError):
   def __init__(self, config_name, value_given):
     Exception.__init__(self, config_name, value_given)
     self.config_name = config_name
     self.value_given = value_given
+
   def __str__(self):
     return "malformed configuration: '%s' uses invalid syntax: %s" \
            % (self.config_name, self.value_given)

@@ -93,6 +93,7 @@ class DumpSink(common.Sink):
 def dump_file(fname):
   parse(open(fname, 'rb'), DumpSink())
 
+
 def time_file(fname):
   f = open(fname, 'rb')
   s = common.Sink()
@@ -100,6 +101,7 @@ def time_file(fname):
   parse(f, s)
   t = time.time() - t
   print(t)
+
 
 def _usage():
   print('This is normally a module for importing, but it has a couple')
@@ -109,6 +111,7 @@ def _usage():
   print('    dump: filename is "dumped" to stdout')
   print('    time: filename is parsed with the time written to stdout')
   sys.exit(1)
+
 
 if __name__ == '__main__':
   import sys

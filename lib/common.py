@@ -103,9 +103,9 @@ def get_exception_data():
   exc_type, exc, exc_tb = sys.exc_info()
 
   exc_dict = {
-    'status' : None,
-    'msg' : None,
-    'stacktrace' : None,
+    'status': None,
+    'msg': None,
+    'stacktrace': None,
     }
 
   try:

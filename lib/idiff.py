@@ -15,20 +15,21 @@
 # -----------------------------------------------------------------------
 
 import difflib
-import sys
 import re
 
 from common import _item, _RCSDIFF_NO_CHANGES
 import ezt
 import sapi
 
+
 def sidebyside(fromlines, tolines, context):
   """Generate side by side diff"""
 
-  ### for some reason mdiff chokes on \n's in input lines
-  line_strip = lambda line: line.rstrip("\n")
-  fromlines = list(map(line_strip, fromlines))
-  tolines = list(map(line_strip, tolines))
+  # for some reason mdiff chokes on \n's in input lines
+  def _stripnl(line):
+    return line.rstrip("\n")
+  fromlines = list(map(_stripnl, fromlines))
+  tolines = list(map(_stripnl, tolines))
   had_changes = 0
 
   gap = False
@@ -39,12 +40,16 @@ def sidebyside(fromlines, tolines, context):
       from_item = _mdiff_split(flag, fromdata)
       to_item = _mdiff_split(flag, todata)
       had_changes = 1
-      yield _item(gap=ezt.boolean(gap), columns=(from_item, to_item), type="intraline")
+      yield _item(gap=ezt.boolean(gap),
+                  columns=(from_item, to_item),
+                  type="intraline")
       gap = False
   if not had_changes:
     yield _item(type=_RCSDIFF_NO_CHANGES)
 
+
 _re_mdiff = re.compile("\0([+-^])(.*?)\1")
+
 
 def _mdiff_split(flag, line_number_text):
   """Break up row from mdiff output into segments"""
@@ -71,6 +76,7 @@ def _mdiff_split(flag, line_number_text):
 
   return _item(segments=segments, line_number=line_number)
 
+
 def unified(fromlines, tolines, context):
   """Generate unified diff"""
 
@@ -95,6 +101,7 @@ def unified(fromlines, tolines, context):
 
   if not had_changes:
     yield _item(type=_RCSDIFF_NO_CHANGES)
+
 
 def _trim_context(lines, context_size):
   """Trim context lines that don't surround changes from Differ results
@@ -157,7 +164,9 @@ def _trim_context(lines, context_size):
       yield row + (gap,)
       gap = False
 
+
 _re_differ = re.compile(r"[+-^]+")
+
 
 def _differ_split(row, guide):
   """Break row into segments using guide line"""
@@ -178,7 +187,8 @@ def _differ_split(row, guide):
 
     for m in _re_differ.finditer(guide, pos):
       if m.start() > pos:
-        segments.append(_item(text=sapi.escape(line[pos:m.start()]), type=None))
+        segments.append(_item(text=sapi.escape(line[pos:m.start()]),
+                              type=None))
       segments.append(_item(text=sapi.escape(line[m.start():m.end()]),
                             type="change"))
       pos = m.end()
@@ -188,11 +198,12 @@ def _differ_split(row, guide):
   return _item(gap=ezt.boolean(gap), type=type, segments=segments,
                left_number=left_number, right_number=right_number)
 
+
 try:
-  ### Using difflib._mdiff function here was the easiest way of obtaining
-  ### intraline diffs for use in ViewVC, but it doesn't exist prior to
-  ### Python 2.4 and is not part of the public difflib API, so for now
-  ### fall back if it doesn't exist.
+  # Using difflib._mdiff function here was the easiest way of obtaining
+  # intraline diffs for use in ViewVC, but it doesn't exist prior to
+  # Python 2.4 and is not part of the public difflib API, so for now
+  # fall back if it doesn't exist.
   difflib._mdiff
 except AttributeError:
-  sidebyside = None
+  sidebyside = None  # noqa: F811

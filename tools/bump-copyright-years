@@ -20,17 +20,17 @@ import os
 import time
 import re
 
-_copyright_re = re.compile(r'Copyright (\(C\)|&copy;) ([0-9]{4}-)?([0-9]{4}) The ViewCVS Group')
+_copyright_re = re.compile(r'Copyright (\(C\)|&copy;) ([0-9]{4}-)?([0-9]{4}) '
+                           r'The ViewCVS Group')
+
 
 def replace_end_year(path, year):
-  updated = False
   lines = open(path, 'r').readlines()
   for i in range(len(lines)):
     line = lines[i]
-    new_line = None
     m = _copyright_re.search(line)
     if not m:
-      continue 
+      continue
     if m.group(2):
       lines[i] = line[:m.start(3)] + year + line[m.end(3):]
       open(path, 'w').write(''.join(lines))
@@ -39,6 +39,7 @@ def replace_end_year(path, year):
       lines[i] = line[:m.end(3)] + '-' + year + line[m.end(3):]
       open(path, 'w').write(''.join(lines))
       break
+
 
 def bump_years_recursive(target_dir, year):
   children = os.listdir(target_dir)
@@ -49,16 +50,17 @@ def bump_years_recursive(target_dir, year):
     elif os.path.isdir(child_path):
       bump_years_recursive(child_path, year)
 
+
 def bump_years(target_dir):
   year = time.strftime('%Y')
-  long_date = time.strftime('%B %d, %Y')
   bump_years_recursive(target_dir, year)
   sys.stdout.write("Copyright years bumped.\n\n")
-    
+
+
 if __name__ == "__main__":
   try:
     target_dir = sys.argv[1]
-  except:
+  except Exception:
     sys.stderr.write("""\
 Usage: bump-copyright-years VIEWVC_DIRECTORY
 
