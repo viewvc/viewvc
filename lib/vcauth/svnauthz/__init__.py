@@ -14,10 +14,7 @@
 import vcauth
 import os.path
 from common import ViewVCException
-try:
-    from configparser import ConfigParser
-except ImportError:
-    from ConfigParser import ConfigParser
+from configparser import ConfigParser
 
 
 class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
