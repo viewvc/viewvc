@@ -25,7 +25,11 @@ _copyright_re = re.compile(r'Copyright (\(C\)|&copy;) ([0-9]{4}-)?([0-9]{4}) '
 
 
 def replace_end_year(path, year):
-  lines = open(path, 'r').readlines()
+  try:
+    lines = open(path, 'r').readlines()
+  except Exception as e:
+    sys.stderr.write("WARNING: Unable to parse file as text: %s\n" % (path))
+    return
   for i in range(len(lines)):
     line = lines[i]
     m = _copyright_re.search(line)
@@ -46,7 +50,11 @@ def bump_years_recursive(target_dir, year):
   for child in children:
     child_path = os.path.join(target_dir, child)
     if os.path.isfile(child_path):
-      replace_end_year(child_path, year)
+      try:
+        replace_end_year(child_path, year)
+      except Exception as e:
+        sys.stderr.write("ERROR bumping copyright in file: %s\n" % (child_path))
+        raise
     elif os.path.isdir(child_path):
       bump_years_recursive(child_path, year)
 
