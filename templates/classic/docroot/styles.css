@@ -74,6 +74,10 @@ form { margin: 0; }
 .vc_row_odd {
   background-color: #f0f0f0;
 }
+.vc_row_even:target td,
+.vc_row_odd:target td {
+  background-color: pink;
+}
 
 
 /*** Directory View ***/
