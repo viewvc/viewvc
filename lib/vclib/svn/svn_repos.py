@@ -678,6 +678,8 @@ class LocalSubversionRepository(vclib.Repository):
                     found_readable = 1
                 else:
                     found_unreadable = 1
+            # Workaround for ref-count leak due to delta make_editor()
+            editor.__dict__.clear()
             return found_readable, found_unreadable, list(changedpaths.values())
 
         def _get_change_copyinfo(fsroot, path, change):
