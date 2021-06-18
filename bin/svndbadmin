@@ -382,7 +382,7 @@ if __name__ == '__main__':
     elif command != 'update':
       usage()
     try:
-      revs = map(lambda x: _rev2int(x), sys.argv[3].split(':'))
+      revs = [_rev2int(x) for x in sys.argv[3].split(':')]
       if len(revs) > 2:
         raise ValueError("too many revisions in range")
       if len(revs) == 1:
