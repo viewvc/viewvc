@@ -1,6 +1,6 @@
 #! /usr/bin/python
 
-# (Be in -*- python -*- mode.)
+# (Be in -*-python-*- mode.)
 #
 # ====================================================================
 # Copyright (c) 2006-2007 CollabNet.  All rights reserved.
@@ -33,43 +33,45 @@ import os
 
 
 class Logger:
-  def __init__(self, f, name):
-    self.f = f
-    self.name = name
+    def __init__(self, f, name):
+        self.f = f
+        self.name = name
 
-  def __call__(self, *args):
-    self.f.write(
-        '%s(%s)\n' % (self.name, ', '.join(['%r' % arg for arg in args]),)
+    def __call__(self, *args):
+        self.f.write(
+            "%s(%s)\n"
+            % (
+                self.name,
+                ", ".join(["%r" % arg for arg in args]),
+            )
         )
 
 
 class LoggingSink:
-  def __init__(self, f):
-    self.f = f
+    def __init__(self, f):
+        self.f = f
 
-  def __getattr__(self, name):
-    return Logger(self.f, name)
+    def __getattr__(self, name):
+        return Logger(self.f, name)
 
 
-if __name__ == '__main__':
-  # Since there is nontrivial logic in __init__.py, we have to import
-  # parse() via that file.  However, __init__.py uses relative import
-  # for the package now, so we must import it as a package:
-  # containing this script is in the path:
+if __name__ == "__main__":
+    # Since there is nontrivial logic in __init__.py, we have to import
+    # parse() via that file.  However, __init__.py uses relative import
+    # for the package now, so we must import it as a package:
+    # containing this script is in the path:
 
-  p_dir, p_name = os.path.split(os.path.dirname(os.path.abspath(sys.argv[0])))
-  sys.path.insert(0, p_dir)
-  rcsparse = __import__(p_name)
+    p_dir, p_name = os.path.split(os.path.dirname(os.path.abspath(sys.argv[0])))
+    sys.path.insert(0, p_dir)
+    rcsparse = __import__(p_name)
 
-  parse = rcsparse.parse
+    parse = rcsparse.parse
 
-  if sys.argv[1:]:
-    for path in sys.argv[1:]:
-      if os.path.isfile(path) and path.endswith(',v'):
-        parse(
-            open(path, 'rb'), LoggingSink(sys.stdout)
-            )
-      else:
-        sys.stderr.write('%r is being ignored.\n' % path)
-  else:
-    parse(sys.stdin, LoggingSink(sys.stdout))
+    if sys.argv[1:]:
+        for path in sys.argv[1:]:
+            if os.path.isfile(path) and path.endswith(",v"):
+                parse(open(path, "rb"), LoggingSink(sys.stdout))
+            else:
+                sys.stderr.write("%r is being ignored.\n" % path)
+    else:
+        parse(sys.stdin, LoggingSink(sys.stdout))

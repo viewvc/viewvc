@@ -17,79 +17,79 @@ import os.path
 import re
 import urllib.parse
 
-_re_url = re.compile(r'^(http|https|file|svn|svn\+[^:]+)://')
+_re_url = re.compile(r"^(http|https|file|svn|svn\+[^:]+)://")
 
 
 def _canonicalize_path(path):
-  import svn.core
-  return svn.core.svn_path_canonicalize(path).decode('utf-8', 'surrogateescpe')
+    import svn.core
+
+    return svn.core.svn_path_canonicalize(path).decode("utf-8", "surrogateescpe")
 
 
 def canonicalize_rootpath(rootpath):
-  # Try to canonicalize the rootpath using Subversion semantics.
-  rootpath = _canonicalize_path(rootpath)
+    # Try to canonicalize the rootpath using Subversion semantics.
+    rootpath = _canonicalize_path(rootpath)
 
-  # ViewVC's support for local repositories is more complete and more
-  # performant than its support for remote ones, so if we're on a
-  # Unix-y system and we have a file:/// URL, convert it to a local
-  # path instead.
-  if os.name == 'posix':
-    rootpath_lower = rootpath.lower()
-    if rootpath_lower in ['file://localhost',
-                          'file://localhost/',
-                          'file://',
-                          'file:///'
-                          ]:
-      return '/'
-    if rootpath_lower.startswith('file://localhost/'):
-      rootpath = os.path.normpath(urllib.parse.unquote(rootpath[16:]))
-    elif rootpath_lower.startswith('file:///'):
-      rootpath = os.path.normpath(urllib.parse.unquote(rootpath[7:]))
+    # ViewVC's support for local repositories is more complete and more
+    # performant than its support for remote ones, so if we're on a
+    # Unix-y system and we have a file:/// URL, convert it to a local
+    # path instead.
+    if os.name == "posix":
+        rootpath_lower = rootpath.lower()
+        if rootpath_lower in ["file://localhost", "file://localhost/", "file://", "file:///"]:
+            return "/"
+        if rootpath_lower.startswith("file://localhost/"):
+            rootpath = os.path.normpath(urllib.parse.unquote(rootpath[16:]))
+        elif rootpath_lower.startswith("file:///"):
+            rootpath = os.path.normpath(urllib.parse.unquote(rootpath[7:]))
 
-  # Ensure that we have an absolute path (or URL), and return.
-  if not re.search(_re_url, rootpath):
-    assert os.path.isabs(rootpath)
-  return rootpath
+    # Ensure that we have an absolute path (or URL), and return.
+    if not re.search(_re_url, rootpath):
+        assert os.path.isabs(rootpath)
+    return rootpath
 
 
 def expand_root_parent(parent_path):
-  roots = {}
-  if re.search(_re_url, parent_path):
-    pass
-  else:
-    # Any subdirectories of PARENT_PATH which themselves have a child
-    # "format" are returned as roots.
-    assert os.path.isabs(parent_path)
-    subpaths = os.listdir(parent_path)
-    for rootname in subpaths:
-      rootpath = os.path.join(parent_path, rootname)
-      if os.path.exists(os.path.join(rootpath, "format")):
-        roots[rootname] = canonicalize_rootpath(rootpath)
-  return roots
+    roots = {}
+    if re.search(_re_url, parent_path):
+        pass
+    else:
+        # Any subdirectories of PARENT_PATH which themselves have a child
+        # "format" are returned as roots.
+        assert os.path.isabs(parent_path)
+        subpaths = os.listdir(parent_path)
+        for rootname in subpaths:
+            rootpath = os.path.join(parent_path, rootname)
+            if os.path.exists(os.path.join(rootpath, "format")):
+                roots[rootname] = canonicalize_rootpath(rootpath)
+    return roots
 
 
 def find_root_in_parent(parent_path, rootname):
-  """Search PARENT_PATH for a root named ROOTNAME, returning the
-  canonicalized ROOTPATH of the root if found; return None if no such
-  root is found."""
+    """Search PARENT_PATH for a root named ROOTNAME, returning the
+    canonicalized ROOTPATH of the root if found; return None if no such
+    root is found."""
 
-  if not re.search(_re_url, parent_path):
-    assert os.path.isabs(parent_path)
-    rootpath = os.path.join(parent_path, rootname)
-    format_path = os.path.join(rootpath, "format")
-    if os.path.exists(format_path):
-      return canonicalize_rootpath(rootpath)
-  return None
+    if not re.search(_re_url, parent_path):
+        assert os.path.isabs(parent_path)
+        rootpath = os.path.join(parent_path, rootname)
+        format_path = os.path.join(rootpath, "format")
+        if os.path.exists(format_path):
+            return canonicalize_rootpath(rootpath)
+    return None
 
 
-def SubversionRepository(name, rootpath, authorizer, utilities, config_dir,
-                         encoding='utf-8'):
-  rootpath = canonicalize_rootpath(rootpath)
-  if re.search(_re_url, rootpath):
-    from . import svn_ra
-    return svn_ra.RemoteSubversionRepository(name, rootpath, authorizer,
-                                             utilities, config_dir, encoding)
-  else:
-    from . import svn_repos
-    return svn_repos.LocalSubversionRepository(name, rootpath, authorizer,
-                                               utilities, config_dir, encoding)
+def SubversionRepository(name, rootpath, authorizer, utilities, config_dir, encoding="utf-8"):
+    rootpath = canonicalize_rootpath(rootpath)
+    if re.search(_re_url, rootpath):
+        from . import svn_ra
+
+        return svn_ra.RemoteSubversionRepository(
+            name, rootpath, authorizer, utilities, config_dir, encoding
+        )
+    else:
+        from . import svn_repos
+
+        return svn_repos.LocalSubversionRepository(
+            name, rootpath, authorizer, utilities, config_dir, encoding
+        )

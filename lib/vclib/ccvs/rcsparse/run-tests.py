@@ -1,6 +1,6 @@
 #! /usr/bin/python
 
-# (Be in -*- python -*- mode.)
+# (Be in -*-python-*- mode.)
 #
 # ====================================================================
 # Copyright (c) 2007 CollabNet.  All rights reserved.
@@ -43,35 +43,34 @@ parse = rcsparse.parse
 sys.path.insert(0, script_dir)
 from parse_rcs_file import LoggingSink
 
-test_dir = os.path.join(script_dir, 'test-data')
+test_dir = os.path.join(script_dir, "test-data")
 
-filelist = glob.glob(os.path.join(test_dir, '*,v'))
+filelist = glob.glob(os.path.join(test_dir, "*,v"))
 filelist.sort()
 
 all_tests_ok = 1
 
 for filename in filelist:
-    sys.stderr.write('%s: ' % (filename,))
+    sys.stderr.write("%s: " % (filename,))
     f = StringIO()
     try:
-        parse(open(filename, 'rb'), LoggingSink(f))
+        parse(open(filename, "rb"), LoggingSink(f))
     except Exception as e:
-        sys.stderr.write('Error parsing file: %s!\n' % (e,))
+        sys.stderr.write("Error parsing file: %s!\n" % (e,))
         raise
         all_tests_ok = 0
     else:
         output = f.getvalue()
 
-        expected_output_filename = filename[:-2] + '.out'
-        expected_output = open(expected_output_filename, 'r').read()
+        expected_output_filename = filename[:-2] + ".out"
+        expected_output = open(expected_output_filename, "r").read()
 
         if output == expected_output:
-            sys.stderr.write('OK\n')
+            sys.stderr.write("OK\n")
         else:
-            sys.stderr.write('Output does not match expected output!\n')
+            sys.stderr.write("Output does not match expected output!\n")
             differ = Differ()
-            for diffline in differ.compare(expected_output.splitlines(1),
-                                           output.splitlines(1)):
+            for diffline in differ.compare(expected_output.splitlines(1), output.splitlines(1)):
                 sys.stderr.write(diffline)
             all_tests_ok = 0
 

@@ -22,15 +22,18 @@ import os
 import getopt
 
 if sys.hexversion >= 0x3030000:
-  import subprocess
-  subprocess.has_timeout = True
-else:
-  try:
-    import subprocess32 as subprocess
-    subprocess.has_timeout = True
-  except ImportError:
     import subprocess
-    subprocess.has_timeout = False
+
+    subprocess.has_timeout = True
+else:
+    try:
+        import subprocess32 as subprocess
+
+        subprocess.has_timeout = True
+    except ImportError:
+        import subprocess
+
+        subprocess.has_timeout = False
 
 # ------------------------------------------------------------------------
 # Initial database drop (when --force) is used.
@@ -257,9 +260,11 @@ features may not be available, or may not perform especially well.
 
 # ------------------------------------------------------------------------
 
+
 def usage_and_exit(errmsg=None):
-  stream = errmsg is None and sys.stdout or sys.stderr
-  stream.write("""\
+    stream = errmsg is None and sys.stdout or sys.stderr
+    stream.write(
+        """\
 Usage: %s [OPTIONS]
 
 This script creates the database and tables in MySQL used by the
@@ -301,104 +306,121 @@ Options:
                       version ARG of ViewVC.  Valid values are:
                       [ "1.0" ]
 
-""" % (os.path.basename(sys.argv[0])))
-  if errmsg is not None:
-    stream.write("[ERROR] %s.\n" % (errmsg))
-    sys.exit(1)
-  sys.exit(0)
+"""
+        % (os.path.basename(sys.argv[0]))
+    )
+    if errmsg is not None:
+        stream.write("[ERROR] %s.\n" % (errmsg))
+        sys.exit(1)
+    sys.exit(0)
 
 
 if __name__ == "__main__":
-  try:
-    # Parse the command-line options, if any.
-    dbname = version = hostname = port = username = password = None
-    force = False
-    timeout = 300
-    opts, args = getopt.getopt(sys.argv[1:], '',
-                               ['dbname=', 'force', 'help', 'hostname=',
-                                'port=', 'password=', 'username=',
-                                'version=', 'timeout=',
-                                ])
-    if len(args) > 0:
-      usage_and_exit("Unexpected command-line parameters")
-    for name, value in opts:
-      if name == '--help':
-        usage_and_exit(0)
-      elif name == '--dbname':
-        dbname = value
-      elif name == '--force':
-        force = True
-      elif name == '--hostname':
-        hostname = value
-      elif name == '--port':
-        port = value
-      elif name == '--username':
-        username = value
-      elif name == '--password':
-        password = value
-      elif name == '--version':
-        if value in ["1.0"]:
-          version = value
+    try:
+        # Parse the command-line options, if any.
+        dbname = version = hostname = port = username = password = None
+        force = False
+        timeout = 300
+        opts, args = getopt.getopt(
+            sys.argv[1:],
+            "",
+            [
+                "dbname=",
+                "force",
+                "help",
+                "hostname=",
+                "port=",
+                "password=",
+                "username=",
+                "version=",
+                "timeout=",
+            ],
+        )
+        if len(args) > 0:
+            usage_and_exit("Unexpected command-line parameters")
+        for name, value in opts:
+            if name == "--help":
+                usage_and_exit(0)
+            elif name == "--dbname":
+                dbname = value
+            elif name == "--force":
+                force = True
+            elif name == "--hostname":
+                hostname = value
+            elif name == "--port":
+                port = value
+            elif name == "--username":
+                username = value
+            elif name == "--password":
+                password = value
+            elif name == "--version":
+                if value in ["1.0"]:
+                    version = value
+                else:
+                    usage_and_exit("Invalid version specified")
+            elif subprocess.has_timeout and name == "--timeout":
+                timeout = int(value)
+
+        # Prompt for information not provided via command-line options.
+        if hostname is None:
+            hostname = input("MySQL Hostname (leave blank for default): ")
+        if port is None:
+            port = input("MySQL Port (leave blank for default): ")
+        if username is None:
+            username = input("MySQL User: ")
+        if password is None:
+            password = input("MySQL Password: ")
+        if dbname is None:
+            dbname = input("ViewVC Database Name [default: ViewVC]: ") or "ViewVC"
+
+        # Calculate command arguments.
+        cmd_args = [("--user=%s" % username), ("--password=%s" % password)]
+        if hostname or port:
+            cmd_args.append("--protocol=TCP")
+        if hostname:
+            cmd_args.append("--host=%s" % hostname)
+        if port:
+            cmd_args.append("--port=%s" % port)
+
+        # Create the database.
+        dscript = force and DATABASE_DROP or ""
+        dscript = dscript + DATABASE_SCRIPT_COMMON
+        if version == "1.0":
+            print(BONSAI_COMPAT)
+            dscript = dscript + DATABASE_SCRIPT_VERSION_0
         else:
-          usage_and_exit("Invalid version specified")
-      elif subprocess.has_timeout and name == '--timeout':
-        timeout = int(value)
+            dscript = dscript + DATABASE_SCRIPT_VERSION_1
+        dscript = dscript.replace("<dbname>", dbname)
 
-    # Prompt for information not provided via command-line options.
-    if hostname is None:
-      hostname = input("MySQL Hostname (leave blank for default): ")
-    if port is None:
-      port = input("MySQL Port (leave blank for default): ")
-    if username is None:
-      username = input("MySQL User: ")
-    if password is None:
-      password = input("MySQL Password: ")
-    if dbname is None:
-      dbname = input("ViewVC Database Name [default: ViewVC]: ") or "ViewVC"
+        cmdline = ["mysql"] + cmd_args
+        mysql = subprocess.Popen(
+            cmdline,
+            bufsize=-1,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            close_fds=(sys.platform != "win32"),
+        )
+        if subprocess.has_timeout:
+            try:
+                stdout_data = mysql.communicate(input=dscript, timeout=timeout)[0]
+                status = mysql.returncode
+            except subprocess.TimeoutExpired:
+                mysql.kill()
+                stdout_data = mysql.communicate()[0]
+                stdout_data += "\n[ERROR] Timeout expired while calling mysql process"
+                status = -1
+        else:
+            stdout_data = mysql.communicate(input=dscript)[0]
+            status = mysql.returncode
+        print(stdout_data)
+        if status:
+            print("[ERROR] The database did not create sucessfully.")
+            sys.exit(1)
 
-    # Calculate command arguments.
-    cmd_args = [("--user=%s" % username), ("--password=%s" % password)]
-    if hostname or port:
-      cmd_args.append("--protocol=TCP")
-    if hostname:
-      cmd_args.append("--host=%s" % hostname)
-    if port:
-      cmd_args.append("--port=%s" % port)
-
-    # Create the database.
-    dscript = force and DATABASE_DROP or ''
-    dscript = dscript + DATABASE_SCRIPT_COMMON
-    if version == "1.0":
-      print(BONSAI_COMPAT)
-      dscript = dscript + DATABASE_SCRIPT_VERSION_0
-    else:
-      dscript = dscript + DATABASE_SCRIPT_VERSION_1
-    dscript = dscript.replace("<dbname>", dbname)
-
-    cmdline = ["mysql"] + cmd_args
-    mysql = subprocess.Popen(cmdline, bufsize=-1, stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                             universal_newlines=True,
-                             close_fds=(sys.platform != "win32"))
-    if (subprocess.has_timeout):
-      try:
-        stdout_data = mysql.communicate(input=dscript, timeout=timeout)[0]
-        status = mysql.returncode
-      except subprocess.TimeoutExpired:
-        mysql.kill()
-        stdout_data = mysql.communicate()[0]
-        stdout_data += '\n[ERROR] Timeout expired while calling mysql process'
-        status = -1
-    else:
-      stdout_data = mysql.communicate(input=dscript)[0]
-      status = mysql.returncode
-    print(stdout_data)
-    if status:
-      print("[ERROR] The database did not create sucessfully.")
-      sys.exit(1)
-
-    print("Database created successfully.  Don't forget to configure the ")
-    print("[cvsdb] section of your viewvc.conf file.")
-  except KeyboardInterrupt:
-    pass
-  sys.exit(0)
+        print("Database created successfully.  Don't forget to configure the ")
+        print("[cvsdb] section of your viewvc.conf file.")
+    except KeyboardInterrupt:
+        pass
+    sys.exit(0)
