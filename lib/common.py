@@ -78,6 +78,8 @@ class ViewVCException(Exception):
 
 
 def print_exception_data(server, exc_data):
+    """Print the exception data to the server output stream.  Details are expected
+    to be already HTML-escaped."""
     status = exc_data["status"]
     msg = exc_data["msg"]
     tb = exc_data["stacktrace"]
@@ -87,12 +89,12 @@ def print_exception_data(server, exc_data):
 
     fp = io.TextIOWrapper(server.file(), "utf-8", "xmlcharrefreplace", write_through=True)
     fp.write("<h3>An Exception Has Occurred</h3>\n")
-    s = msg and "<p><pre>%s</pre></p>" % (server.escape(msg)) or ""
+    s = msg and f"<p><pre>{msg}</pre></p>" or ""
     if status:
-        s = s + ("<h4>HTTP Response Status</h4>\n<p><pre>\n%s</pre></p><hr />\n" % status)
+        s = s + (f"<h4>HTTP Response Status</h4>\n<p><pre>\n{status}</pre></p><hr />\n")
     fp.write(s)
     fp.write("<h4>Python Traceback</h4>\n<p><pre>")
-    fp.write(server.escape(tb))
+    fp.write(tb)
     fp.write("</pre></p>\n")
 
 
