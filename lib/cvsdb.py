@@ -34,7 +34,12 @@ def reencode(s, encoding="utf-8", errors="backslashreplace"):
 #
 # Version 1 added the 'metadata' table (which holds the 'version' key)
 # and renamed all the 'repository'-related stuff to be 'root'-
-CURRENT_SCHEMA_VERSION = 1
+#
+# Version 2 ...
+CURRENT_SCHEMA_VERSION = 2
+
+# The oldest schema version supported by this codebase.
+OLDEST_SUPPORTED_SCHEMA_VERSION = 2
 
 # error
 error = "cvsdb error"
@@ -74,9 +79,13 @@ class CheckinDatabase:
             self._version = 0
         if self._version > CURRENT_SCHEMA_VERSION:
             raise DatabaseVersionError(
-                "Database version %d is newer than the "
-                "last version supported by this "
-                "software." % (self._version)
+                f"Database version {self._version} is newer than the "
+                f"last version supported by this software."
+            )
+        if self._version < OLDEST_SUPPORTED_SCHEMA_VERSION:
+            raise DatabaseVersionError(
+                f"Database version {self._version} is no longer supported"
+                f"by this software."
             )
 
     def sql_get_id(self, table, column, value, auto_set):
@@ -393,7 +402,7 @@ class CheckinDatabase:
             elif query_entry.match == "notregex":
                 match = " NOT REGEXP "
 
-            sqlList.append("%s%s%s" % (field, match, self.db.literal(data).decode("utf-8")))
+            sqlList.append("%s%s%s" % (field, match, self.db.literal(data)))
 
         return "(%s)" % (" OR ".join(sqlList))
 

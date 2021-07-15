@@ -13,7 +13,7 @@
 import time
 import re
 import calendar
-import MySQLdb
+import pymysql as MySQLdb
 
 # set to 1 to store commit times in UTC, or 0 to use the ViewVC machine's
 # local timezone. Using UTC is recommended because it ensures that the
@@ -68,7 +68,8 @@ def connect(host, port, user, passwd, db):
     # however, it seems to use charset 'latin-1' by default (only me?)
     if not host and isinstance(port, str):
         # it seems that port specifies UNIX socket path
-        return MySQLdb.connect(unix_socket=port, user=user, passwd=passwd, db=db, charset="utf8")
+        return MySQLdb.connect(
+            unix_socket=port, user=user, passwd=passwd, db=db, charset="utf8")
     else:
         return MySQLdb.connect(
             host=host, port=port, user=user, passwd=passwd, db=db, charset="utf8"
