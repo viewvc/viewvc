@@ -1,6 +1,7 @@
 Version 1.2.2 (released ??-???-????)
 
   * standalone.py defaults to UTF-8 output now, too
+  * fix viewvc-install error handling bug
 
 Version 1.2.1 (released 26-Mar-2020)
 

@@ -252,7 +252,7 @@ LEGEND
                 error("You do not have permission to create directory %s" \
                       % (dst_parent))
             error("Unknown error creating directory %s" \
-                  % (dst_parent, OSError, e))
+                  % (dst_parent), OSError, e)
 
     # Now, write the file contents to their destination.
     try:
@@ -264,7 +264,7 @@ LEGEND
         if e.errno == 13:
             # EACCES: permission denied
             error("You do not have permission to write file %s" % (dst_path))
-        error("Unknown error writing file %s" % (dst_path, IOError, e))
+        error("Unknown error writing file %s" % (dst_path), IOError, e)
 
     # Set the files's mode.
     os.chmod(destdir_path, mode)
