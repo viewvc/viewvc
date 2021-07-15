@@ -25,25 +25,27 @@
 #
 # -----------------------------------------------------------------------
 
-import sys, os
+import sys
+import os
 
 LIBRARY_DIR = None
 CONF_PATHNAME = None
 
 if LIBRARY_DIR:
-  sys.path.insert(0, LIBRARY_DIR)
+    sys.path.insert(0, LIBRARY_DIR)
 else:
-  sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0],
-                                                  "../../../lib")))
+    sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../../lib")))
 
 import sapi
 import viewvc
 from flup.server import fcgi
 
+
 def application(environ, start_response):
-  server = sapi.WsgiServer(environ, start_response)
-  cfg = viewvc.load_config(CONF_PATHNAME, server)
-  viewvc.main(server, cfg)
-  return []
+    server = sapi.WsgiServer(environ, start_response)
+    cfg = viewvc.load_config(CONF_PATHNAME, server)
+    viewvc.main(server, cfg)
+    return []
+
 
 fcgi.WSGIServer(application).run()

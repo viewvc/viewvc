@@ -26,14 +26,14 @@ from .default import Parser
 
 
 def parse(file, sink):
-  """Parse an RCS file.
+    """Parse an RCS file.
 
-  Parameters: FILE is the binary input stream object to parse.  (I.e.
-  an instance of the subclass of the io.IOBase class which has read()
-  function returns bytes object, usually created using Python's built-in
-  "open()" function).  It should be opened in binary mode.
-  SINK is an instance of (some subclass of) Sink.  It's methods will be
-  called as the file is parsed; see the definition of Sink for the
-  details.
-  """
-  return Parser().parse(file, sink)
+    Parameters: FILE is the binary input stream object to parse.  (I.e.
+    an instance of the subclass of the io.IOBase class which has read()
+    function returns bytes object, usually created using Python's built-in
+    "open()" function).  It should be opened in binary mode.
+    SINK is an instance of (some subclass of) Sink.  It's methods will be
+    called as the file is parsed; see the definition of Sink for the
+    details.
+    """
+    return Parser().parse(file, sink)

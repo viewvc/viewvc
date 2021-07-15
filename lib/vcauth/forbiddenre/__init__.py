@@ -15,48 +15,48 @@ import re
 
 
 def _split_regexp(restr):
-  """Return a 2-tuple consisting of a compiled regular expression
-  object and a boolean flag indicating if that object should be
-  interpreted inversely."""
-  if restr[0] == '!':
-    return re.compile(restr[1:]), 1
-  return re.compile(restr), 0
+    """Return a 2-tuple consisting of a compiled regular expression
+    object and a boolean flag indicating if that object should be
+    interpreted inversely."""
+    if restr[0] == "!":
+        return re.compile(restr[1:]), 1
+    return re.compile(restr), 0
 
 
 class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
-  """A simple regular-expression-based authorizer."""
-  def __init__(self, root_lookup_func, username, params={}):
-    forbidden = params.get('forbiddenre', '')
-    self.forbidden = map(lambda x: _split_regexp(x.strip()),
-                         filter(None, forbidden.split(',')))
+    """A simple regular-expression-based authorizer."""
 
-  def _check_root_path_access(self, root_path):
-    default = 1
-    for forbidden, negated in self.forbidden:
-      if negated:
-        default = 0
-        if forbidden.search(root_path):
-          return 1
-      elif forbidden.search(root_path):
-        return 0
-    return default
+    def __init__(self, root_lookup_func, username, params={}):
+        forbidden = params.get("forbiddenre", "")
+        self.forbidden = map(lambda x: _split_regexp(x.strip()), filter(None, forbidden.split(",")))
 
-  def check_root_access(self, rootname):
-    return self._check_root_path_access(rootname)
+    def _check_root_path_access(self, root_path):
+        default = 1
+        for forbidden, negated in self.forbidden:
+            if negated:
+                default = 0
+                if forbidden.search(root_path):
+                    return 1
+            elif forbidden.search(root_path):
+                return 0
+        return default
 
-  def check_universal_access(self, rootname):
-    # If there aren't any forbidden regexps, we can grant universal
-    # read access.  Otherwise, we make no claim.
-    if not self.forbidden:
-      return 1
-    return None
+    def check_root_access(self, rootname):
+        return self._check_root_path_access(rootname)
 
-  def check_path_access(self, rootname, path_parts, pathtype, rev=None):
-    root_path = rootname
-    if path_parts:
-      root_path = root_path + '/' + '/'.join(path_parts)
-      if pathtype == vclib.DIR:
-        root_path = root_path + '/'
-    else:
-      root_path = root_path + '/'
-    return self._check_root_path_access(root_path)
+    def check_universal_access(self, rootname):
+        # If there aren't any forbidden regexps, we can grant universal
+        # read access.  Otherwise, we make no claim.
+        if not self.forbidden:
+            return 1
+        return None
+
+    def check_path_access(self, rootname, path_parts, pathtype, rev=None):
+        root_path = rootname
+        if path_parts:
+            root_path = root_path + "/" + "/".join(path_parts)
+            if pathtype == vclib.DIR:
+                root_path = root_path + "/"
+        else:
+            root_path = root_path + "/"
+        return self._check_root_path_access(root_path)

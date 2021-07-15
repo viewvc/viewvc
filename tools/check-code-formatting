@@ -4,8 +4,18 @@
 #
 # $ ./tools/check-code-formatting
 
-# Flake8 will find all the .py files, but we want to also add into the
-# set of checked paths any scripts that reference Python in the shebang
-# line and whose names do NOT end in .py.
-SEARCH_DIRS="lib bin tools"
-grep -rl '^#!.*python' --exclude=*.py ${SEARCH_DIRS} | xargs flake8 ${SEARCH_DIRS}
+# The linting tools will generally find all the .py files, but we want
+# to also add into the set of checked paths other Python files
+# (scripts that reference Python in the shebang line, WSGI stubs,
+# etc.)
+
+echo "Checking code formatting..."
+PYFILES=`grep -rl '^#\(!.*/\|.*-\)python' --exclude=*.py .`
+black --line-length=100 --quiet --check . ${PYFILES} && flake8 . ${PYFILES}
+echo ""
+if [ $? -eq 0 ]; then
+    echo "Linting succeeded!"
+else
+    echo "Linting failed."
+    echo "Try running 'black --line-length=100' on your problematic files."
+fi

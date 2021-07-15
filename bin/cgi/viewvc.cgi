@@ -41,10 +41,9 @@ CONF_PATHNAME = None
 
 # Adjust sys.path to include our library directory.
 if LIBRARY_DIR:
-  sys.path.insert(0, LIBRARY_DIR)
+    sys.path.insert(0, LIBRARY_DIR)
 else:
-  sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0],
-                                                  "../../../lib")))
+    sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../../lib")))
 import sapi
 import viewvc
 

@@ -27,65 +27,68 @@ import io
 try:
     PathLike = os.PathLike
 except AttributeError:
+
     class PathLike(object):
         pass
 
+
 # Get access to our library modules.
-sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), 'lib'))
+sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), "lib"))
 
 import viewvc
 import difflib
+
 version = viewvc.__version__
 
 
-## Installer defaults.
+# Installer defaults.
 DESTDIR = None
 ROOT_DIR = None
 CLEAN_MODE = None
 
 
-## List of files for installation.
-##    tuple (source path,
-##           destination path,
-##           mode,
-##           boolean -- search-and-replace?
-##           boolean -- prompt before replacing?
-##           boolean -- compile?)
+# List of files for installation.
+#    tuple (source path,
+#           destination path,
+#           mode,
+#           boolean -- search-and-replace?
+#           boolean -- prompt before replacing?
+#           boolean -- compile?)
 FILE_INFO_LIST = [
-    ("bin/cgi/viewvc.cgi",        "bin/cgi/viewvc.cgi",        0o0755, 1, 0, 0),
-    ("bin/wsgi/viewvc.wsgi",      "bin/wsgi/viewvc.wsgi",      0o0755, 1, 0, 0),
-    ("bin/wsgi/viewvc.fcgi",      "bin/wsgi/viewvc.fcgi",      0o0755, 1, 0, 0),
-    ("bin/standalone.py",         "bin/standalone.py",         0o0755, 1, 0, 0),
-    ("bin/loginfo-handler",       "bin/loginfo-handler",       0o0755, 1, 0, 0),
-    ("bin/cvsdbadmin",            "bin/cvsdbadmin",            0o0755, 1, 0, 0),
-    ("bin/svndbadmin",            "bin/svndbadmin",            0o0755, 1, 0, 0),
-    ("bin/make-database",         "bin/make-database",         0o0755, 1, 0, 0),
-    ("conf/viewvc.conf.dist",     "viewvc.conf.dist",          0o0644, 0, 0, 0),
-    ("conf/viewvc.conf.dist",     "viewvc.conf",               0o0644, 0, 1, 0),
-    ("conf/cvsgraph.conf.dist",   "cvsgraph.conf.dist",        0o0644, 0, 0, 0),
-    ("conf/cvsgraph.conf.dist",   "cvsgraph.conf",             0o0644, 0, 1, 0),
-    ("conf/mimetypes.conf.dist",  "mimetypes.conf.dist",       0o0644, 0, 0, 0),
-    ("conf/mimetypes.conf.dist",  "mimetypes.conf",            0o0644, 0, 1, 0),
-    ]
+    ("bin/cgi/viewvc.cgi", "bin/cgi/viewvc.cgi", 0o0755, 1, 0, 0),
+    ("bin/wsgi/viewvc.wsgi", "bin/wsgi/viewvc.wsgi", 0o0755, 1, 0, 0),
+    ("bin/wsgi/viewvc.fcgi", "bin/wsgi/viewvc.fcgi", 0o0755, 1, 0, 0),
+    ("bin/standalone.py", "bin/standalone.py", 0o0755, 1, 0, 0),
+    ("bin/loginfo-handler", "bin/loginfo-handler", 0o0755, 1, 0, 0),
+    ("bin/cvsdbadmin", "bin/cvsdbadmin", 0o0755, 1, 0, 0),
+    ("bin/svndbadmin", "bin/svndbadmin", 0o0755, 1, 0, 0),
+    ("bin/make-database", "bin/make-database", 0o0755, 1, 0, 0),
+    ("conf/viewvc.conf.dist", "viewvc.conf.dist", 0o0644, 0, 0, 0),
+    ("conf/viewvc.conf.dist", "viewvc.conf", 0o0644, 0, 1, 0),
+    ("conf/cvsgraph.conf.dist", "cvsgraph.conf.dist", 0o0644, 0, 0, 0),
+    ("conf/cvsgraph.conf.dist", "cvsgraph.conf", 0o0644, 0, 1, 0),
+    ("conf/mimetypes.conf.dist", "mimetypes.conf.dist", 0o0644, 0, 0, 0),
+    ("conf/mimetypes.conf.dist", "mimetypes.conf", 0o0644, 0, 1, 0),
+]
 
 
-## List of directories for installation.
-##    type (source path,
-##          destination path,
-##          boolean -- optional item?,
-##          boolean -- prompt before replacing?)
+# List of directories for installation.
+#    type (source path,
+#          destination path,
+#          boolean -- optional item?,
+#          boolean -- prompt before replacing?)
 TREE_LIST = [
-    ("lib",                       "lib",                       0, 0),
-    ("templates",                 "templates",                 0, 1),
-    ]
+    ("lib", "lib", 0, 0),
+    ("templates", "templates", 0, 1),
+]
 
 
-## List of file extensions we can't show diffs for.
+# List of file extensions we can't show diffs for.
 BINARY_FILE_EXTS = [
-    '.png',
-    '.gif',
-    '.jpg',
-    ]
+    ".png",
+    ".gif",
+    ".jpg",
+]
 
 
 def _escape(str):
@@ -101,8 +104,7 @@ def _escape(str):
 def _actual_src_path(path):
     """Return the real on-disk location of PATH, which is relative to
     the ViewVC source directory."""
-    return os.path.join(os.path.dirname(sys.argv[0]),
-                        path.replace('/', os.sep))
+    return os.path.join(os.path.dirname(sys.argv[0]), path.replace("/", os.sep))
 
 
 def error(text, etype=None, evalue=None):
@@ -118,9 +120,9 @@ def error(text, etype=None, evalue=None):
 def replace_var(contents, var, value):
     """Replace instances of the variable VAR as found in file CONTENTS
     with VALUE."""
-    pattern = re.compile(b'^' + var + br'\s*=\s*.*$', re.MULTILINE)
+    pattern = re.compile(b"^" + var + br"\s*=\s*.*$", re.MULTILINE)
     if isinstance(ROOT_DIR, str):
-        root_dir = ROOT_DIR.encode('utf-8', 'surrogateescape')
+        root_dir = ROOT_DIR.encode("utf-8", "surrogateescape")
     else:
         root_dir = ROOT_DIR
     repl = b'%s = r"%s"' % (var, os.path.join(root_dir, value))
@@ -130,16 +132,15 @@ def replace_var(contents, var, value):
 def replace_paths(contents):
     """Replace all ViewVC path placeholders found in file CONTENTS."""
     # Python 3: contents is bytes here
-    if contents[:2] == b'#!':
-        shbang = b'#!' + sys.executable.encode('utf-8', 'surrogateescape')
-        contents = re.sub(b'^#![^\n]*', _escape(shbang), contents)
-    contents = replace_var(contents, b'LIBRARY_DIR', b'lib')
-    contents = replace_var(contents, b'CONF_PATHNAME', b'viewvc.conf')
+    if contents[:2] == b"#!":
+        shbang = b"#!" + sys.executable.encode("utf-8", "surrogateescape")
+        contents = re.sub(b"^#![^\n]*", _escape(shbang), contents)
+    contents = replace_var(contents, b"LIBRARY_DIR", b"lib")
+    contents = replace_var(contents, b"CONF_PATHNAME", b"viewvc.conf")
     return contents
 
 
-def install_file(src_path, dst_path, mode, subst_path_vars,
-                 prompt_replace, compile_it):
+def install_file(src_path, dst_path, mode, subst_path_vars, prompt_replace, compile_it):
     """Install a single file whose source is at SRC_PATH (which is
     relative to the ViewVC source directory) into the location
     DST_PATH (which is relative both to the global ROOT_DIR and
@@ -151,7 +152,7 @@ def install_file(src_path, dst_path, mode, subst_path_vars,
     is set, compile the file as a Python module."""
 
     src_path = _actual_src_path(src_path)
-    dst_path = os.path.join(ROOT_DIR, dst_path.replace('/', os.sep))
+    dst_path = os.path.join(ROOT_DIR, dst_path.replace("/", os.sep))
     destdir_path = DESTDIR + dst_path
 
     overwrite = None
@@ -166,7 +167,7 @@ def install_file(src_path, dst_path, mode, subst_path_vars,
 
         # Collect ndiff output from ndiff
         sys.stdout = io.StringIO()
-        ndiff_output = ''.join(difflib.ndiff(destdir_path, src_path))
+        ndiff_output = "".join(difflib.ndiff(destdir_path, src_path))
 
         # Return everything to normal
         sys.stdout = sys.__stdout__
@@ -174,7 +175,7 @@ def install_file(src_path, dst_path, mode, subst_path_vars,
         # Collect the '+ ' and '- ' lines.
         diff_lines = []
         looking_at_diff_lines = 0
-        for line in ndiff_output.split('\n'):
+        for line in ndiff_output.split("\n"):
             # Print line if it is a difference line
             if line[:2] == "+ " or line[:2] == "- " or line[:2] == "? ":
                 diff_lines.append(line)
@@ -190,35 +191,39 @@ def install_file(src_path, dst_path, mode, subst_path_vars,
             overwrite = 1
         else:
             # If we get here, there are differences.
-            if CLEAN_MODE == 'true':
+            if CLEAN_MODE == "true":
                 overwrite = 1
-            elif CLEAN_MODE == 'false':
+            elif CLEAN_MODE == "false":
                 overwrite = 0
             else:
-                print("File %s exists and is different from source file."
-                      % (destdir_path))
+                print("File %s exists and is different from source file." % (destdir_path))
                 while 1:
                     name, ext = os.path.splitext(src_path)
                     if ext in BINARY_FILE_EXTS:
-                        temp = input("Do you want to [O]verwrite or "
-                                     "[D]o not overwrite? ")
+                        temp = input("Do you want to [O]verwrite or " "[D]o not overwrite? ")
                     else:
-                        temp = input("Do you want to [O]verwrite, [D]o "
-                                     "not overwrite, or [V]iew "
-                                     "differences? ")
+                        temp = input(
+                            "Do you want to [O]verwrite, [D]o "
+                            "not overwrite, or [V]iew "
+                            "differences? "
+                        )
                     if len(temp) == 0:
                         continue
                     temp = temp[0].lower()
                     if temp == "v" and ext not in BINARY_FILE_EXTS:
-                        print("""
----------------------------------------------------------------------------""")
-                        print('\n'.join(diff_lines) + '\n')
-                        print("""
+                        print(
+                            """
+---------------------------------------------------------------------------"""
+                        )
+                        print("\n".join(diff_lines) + "\n")
+                        print(
+                            """
 LEGEND
    A leading '- ' indicates line to remove from installed file
    A leading '+ ' indicates line to add to installed file
    A leading '? ' shows intraline differences.
----------------------------------------------------------------------------""")
+---------------------------------------------------------------------------"""
+                        )
                     elif temp == "d":
                         overwrite = 0
                     elif temp == "o":
@@ -232,7 +237,7 @@ LEGEND
         print("   preserved %s" % (dst_path))
         return
 
-    ### If we get here, we're creating or overwriting the existing file.
+    # If we get here, we're creating or overwriting the existing file.
 
     # Read the source file's contents.
     try:
@@ -251,32 +256,29 @@ LEGEND
             os.makedirs(dst_parent)
             print("   created   %s%s" % (dst_parent, os.sep))
         except os.error as e:
-            if e.errno == 17: # EEXIST: file exists
+            if e.errno == 17:  # EEXIST: file exists
                 return
-            if e.errno == 13: # EACCES: permission denied
-                error("You do not have permission to create directory %s" \
-                      % (dst_parent))
-            error("Unknown error creating directory %s" \
-                  % (dst_parent, OSError, e))
+            if e.errno == 13:  # EACCES: permission denied
+                error("You do not have permission to create directory %s" % (dst_parent))
+            error("Unknown error creating directory %s" % (dst_parent), OSError, e)
 
     # Now, write the file contents to their destination.
     try:
         exists = os.path.exists(destdir_path)
         open(destdir_path, "wb").write(contents)
-        print("   %s %s" \
-              % (exists and 'replaced ' or 'installed', dst_path))
+        print("   %s %s" % (exists and "replaced " or "installed", dst_path))
     except IOError as e:
         if e.errno == 13:
             # EACCES: permission denied
             error("You do not have permission to write file %s" % (dst_path))
-        error("Unknown error writing file %s" % (dst_path, IOError, e))
+        error("Unknown error writing file %s" % (dst_path), IOError, e)
 
     # Set the files's mode.
     os.chmod(destdir_path, mode)
 
     # (Optionally) compile the file.
     if compile_it:
-        py_compile.compile(destdir_path, destdir_path + "c" , dst_path)
+        py_compile.compile(destdir_path, destdir_path + "c", dst_path)
 
 
 def install_tree(src_path, dst_path, is_optional, prompt_replace):
@@ -291,7 +293,7 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
     orig_src_path = src_path
     orig_dst_path = dst_path
     src_path = _actual_src_path(src_path)
-    dst_path = os.path.join(ROOT_DIR, dst_path.replace('/', os.sep))
+    dst_path = os.path.join(ROOT_DIR, dst_path.replace("/", os.sep))
     if not os.path.isdir(src_path):
         print("   skipping  %s" % (dst_path))
         return
@@ -303,23 +305,31 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
     for fname in files:
         # Ignore some stuff found in development directories, but not
         # intended for installation.
-        if fname == 'CVS' or fname == '.svn' or fname == '_svn' \
-             or fname[-4:] == '.pyc' or fname[-5:] == '.orig' \
-             or fname[-4:] == '.rej' or fname[0] == '.' \
-             or fname[-1] ==    '~' or fname == '__pycache__':
+        if (
+            fname == "CVS"
+            or fname == ".svn"
+            or fname == "_svn"
+            or fname[-4:] == ".pyc"
+            or fname[-5:] == ".orig"
+            or fname[-4:] == ".rej"
+            or fname[0] == "."
+            or fname[-1] == "~"
+            or fname == "__pycache__"
+        ):
             continue
 
-        orig_src_child = orig_src_path + '/' + fname
-        orig_dst_child = orig_dst_path + '/' + fname
+        orig_src_child = orig_src_path + "/" + fname
+        orig_dst_child = orig_dst_path + "/" + fname
 
         # If the item is a subdirectory, recurse.  Otherwise, install the file.
         if os.path.isdir(os.path.join(src_path, fname)):
             install_tree(orig_src_child, orig_dst_child, 0, prompt_replace)
         else:
             set_paths = 0
-            compile_it = fname[-3:] == '.py'
-            install_file(orig_src_child, orig_dst_child, 0o0644,
-                         set_paths, prompt_replace, compile_it)
+            compile_it = fname[-3:] == ".py"
+            install_file(
+                orig_src_child, orig_dst_child, 0o0644, set_paths, prompt_replace, compile_it
+            )
 
     # Check for .py and .pyc files that don't belong in installation.
     # (Of course, if we didn't end up actually creating/populating
@@ -327,23 +337,22 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
     if not os.path.exists(destdir_path):
         return
     for fname in os.listdir(destdir_path):
-        if not os.path.isfile(os.path.join(destdir_path, fname)) or \
-             not ((fname[-3:] == '.py' and fname not in files) or
-                        (fname[-4:] == '.pyc' and fname[:-1] not in files)):
+        if not os.path.isfile(os.path.join(destdir_path, fname)) or not (
+            (fname[-3:] == ".py" and fname not in files)
+            or (fname[-4:] == ".pyc" and fname[:-1] not in files)
+        ):
             continue
 
         # If we get here, there's cruft.
         delete = None
-        if CLEAN_MODE == 'true':
+        if CLEAN_MODE == "true":
             delete = 1
-        elif CLEAN_MODE == 'false':
+        elif CLEAN_MODE == "false":
             delete = 0
         else:
-            print("File %s does not belong in ViewVC %s." \
-                  % (dst_path, version))
+            print("File %s does not belong in ViewVC %s." % (dst_path, version))
             while 1:
-                temp = input("Do you want to [D]elete it, or [L]eave "
-                             "it as is? ")
+                temp = input("Do you want to [D]elete it, or [L]eave " "it as is? ")
                 temp = temp[0].lower()
                 if temp == "l":
                     delete = 0
@@ -361,10 +370,10 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
             print("   preserved %s" % (os.path.join(dst_path, fname)))
 
 
-
 def usage_and_exit(errstr=None):
     stream = errstr and sys.stderr or sys.stdout
-    stream.write("""Usage: %s [OPTIONS]
+    stream.write(
+        """Usage: %s [OPTIONS]
 
 Installs the ViewVC web-based version control repository browser.
 
@@ -387,7 +396,9 @@ Options:
                       directory.  If not specified, the script will prompt
                       for the appropriate action on a per-file basis.
 
-""" % (os.path.basename(sys.argv[0])))
+"""
+        % (os.path.basename(sys.argv[0]))
+    )
     if errstr:
         stream.write("ERROR: %s\n\n" % (errstr))
         sys.exit(1)
@@ -398,33 +409,34 @@ Options:
 if __name__ == "__main__":
     # Option parsing.
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], "h?",
-                                      ['prefix=',
-                                       'destdir=',
-                                       'clean-mode=',
-                                       'help'])
+        optlist, args = getopt.getopt(
+            sys.argv[1:], "h?", ["prefix=", "destdir=", "clean-mode=", "help"]
+        )
     except getopt.GetoptError as e:
         usage_and_exit(str(e))
     for opt, arg in optlist:
-        if opt == '--help' or opt == '-h' or opt == '-?':
+        if opt == "--help" or opt == "-h" or opt == "-?":
             usage_and_exit()
-        if opt == '--prefix':
+        if opt == "--prefix":
             ROOT_DIR = arg
-        if opt == '--destdir':
+        if opt == "--destdir":
             DESTDIR = arg
-        if opt == '--clean-mode':
+        if opt == "--clean-mode":
             arg = arg.lower()
-            if arg not in ('true', 'false'):
+            if arg not in ("true", "false"):
                 usage_and_exit("Invalid value for --clean-mode parameter.")
             CLEAN_MODE = arg
 
     # Print the header greeting.
-    print("""This is the ViewVC %s installer.
+    print(
+        """This is the ViewVC %s installer.
 
 It will allow you to choose the install path for ViewVC.  You will now
 be asked some installation questions.  Defaults are given in square brackets.
 Just hit [Enter] if a default is okay.
-""" % version)
+"""
+        % version
+    )
 
     # Prompt for ROOT_DIR if none provided.
     if ROOT_DIR is None:
@@ -442,9 +454,10 @@ Just hit [Enter] if a default is okay.
 
     # Prompt for DESTDIR if none provided.
     if DESTDIR is None:
-        default = ''
-        temp = input("DESTDIR path (generally only used by package "
-                     "maintainers) [%s]: " % (default)).strip()
+        default = ""
+        temp = input(
+            "DESTDIR path (generally only used by package " "maintainers) [%s]: " % (default)
+        ).strip()
         print()
         if len(temp):
             DESTDIR = temp
@@ -452,19 +465,21 @@ Just hit [Enter] if a default is okay.
             DESTDIR = default
 
     # Install the files.
-    print("Installing ViewVC to %s%s:"
-          % (ROOT_DIR, DESTDIR and " (DESTDIR = %s)" % (DESTDIR) or ""))
+    print(
+        "Installing ViewVC to %s%s:" % (ROOT_DIR, DESTDIR and " (DESTDIR = %s)" % (DESTDIR) or "")
+    )
     for args in FILE_INFO_LIST:
         install_file(*args)
     for args in TREE_LIST:
         install_tree(*args)
 
     # Print some final thoughts.
-    print("""
+    print(
+        """
 
 ViewVC file installation complete.
 
 Consult the INSTALL document for detailed information on completing
 the installation and configuration of ViewVC on your system.
-""")
-
+"""
+    )
