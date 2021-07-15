@@ -103,7 +103,7 @@ class Server:
     def start_response(self, content_type, status):
         """Start a response.  Child classes should extend this method."""
         if self._response_started:
-            raise ServerUsageError()
+            raise ServerUsageError("Server response has already been started")
         self._response_started = True
 
     def escape(self, s):

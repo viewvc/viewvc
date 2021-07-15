@@ -5490,24 +5490,27 @@ def load_config(pathname=None, server=None):
 
 def view_error(server, cfg):
     exc_dict = get_exception_data()
-    status = exc_dict["status"]
-    if exc_dict["msg"]:
-        exc_dict["msg"] = server.escape(exc_dict["msg"])
-    if exc_dict["stacktrace"]:
-        exc_dict["stacktrace"] = server.escape(exc_dict["stacktrace"])
 
     # Use the configured error template if possible.
     try:
         if cfg and not server.response_started():
+            status = exc_dict.get("status", '500 Internal Server Error')
             server.start_response(status=status)
             template = get_view_template(cfg, "error")
-            template.generate(server.file(), exc_dict)
+            server_fp = TextIOWrapper_noclose(
+                server.file(), "utf-8", "xmlcharrefreplace", write_through=True
+            )
+            template.generate(server_fp, exc_dict)
             return
     except Exception:
         pass
 
     # Fallback to the old exception printer if no configuration is
-    # available, or if something went wrong.
+    # available, or if something went wrong.  (In this case, we need
+    # to manually escape strings.)
+    for key in exc_dict:
+        if isinstance(exc_dict[key], str):
+            exc_dict[key] = server.escape(exc_dict[key])
     print_exception_data(server, exc_dict)
 
 
