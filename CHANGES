@@ -29,7 +29,7 @@ Version 1.2.0 (released 17-Mar-2020)
   * GUI support (--gui) removed from standalone.py
 
 Version 1.1.28 (released 26-Mar-2020)
-
+ 
   * security fix: escape subdir lastmod file name (#211) [CVE-2020-5283]
   * fix standalone.py first request failure (#195)
 
