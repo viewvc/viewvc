@@ -1,0 +1,204 @@
+[# setup page definitions]
+  [define page_title]Index of:[end]
+  [define help_href][docroot]/help_[if-any where]dir[else]root[end]view.html[end]
+[# end]
+[include "_header.ezt" "directory"]
+[if-any where][else]
+  <!-- you may insert repository access instructions here -->
+[end]
+<div id="vc_main_body">
+<!-- *********************************************************************** -->
+
+<div id="vc_togglables" class="d-flex justify-content-end">
+  <div>[include "_pathrev_form.ezt"]</div>
+[is roottype "svn"]
+  <div class="inline lpad">
+    [if-any rev]r<a href="[revision_href]">[rev]</a>[end]
+  </div>
+[end]
+</div>
+
+<table class="table table-striped table-sm" id="vc_directory">
+  <thead class="thead-dark">
+    <tr>
+      <th scope="col" class="entry-name"
+          onclick="jumpTo('[sortby_file_href]#vc_directory')">
+        <div class="flex">
+          File
+[is sortby "file"]
+          <i class="fa fa-sort-[is sortdir "up"]up[else]down[end]"></i>
+[end]
+[if-any search_re_action]
+          <span class="flex-spacer"></span>
+          <span
+            class="filter-button"
+            onclick="$('#filterModal').modal('show');
+                     event.stopPropagation()"
+            ><i class="fa fa-filter"></i></span>
+[end]
+        </div>
+      </th>
+      <th scope="col" class="entry-ago"
+          onclick="jumpTo('[sortby_date_href]#vc_directory')">
+        Date
+[is sortby "date"]
+        <i class="fa fa-sort-[is sortdir "up"]up[else]down[end]"></i>
+[end]
+      </th>
+      <th scope="col" class="entry-description"
+          onclick="jumpTo('[sortby_rev_href]#vc_directory')">
+        Last Change
+[is sortby "rev"]
+        <i class="fa fa-sort-[is sortdir "up"]up[else]down[end]"></i>
+[end]
+      </th>
+    </tr>
+  </thead>
+
+  <tbody>
+[if-any search_re]
+    <tr class="filter-row">
+      <td class="entry-name">
+        <i class="fa fa-filter"></i>
+        [search_re]
+      </td>
+      <td class="entry-ago"></td>
+      <td class="entry-description"></td>
+    </tr>
+[end]
+[if-any up_href]
+    <tr>
+      <td class="entry-name">
+        <a href="[up_href]"><i class="fa fa-fw fa-folder-open"></i>&nbsp;../</a>
+      </td>
+      <td class="entry-ago"></td>
+      <td class="entry-description"></td>
+    </tr>
+[end]
+[for entries]
+  [define entry_icon]fa-[is entries.pathtype "dir"]folder[else][if-any entries.is_viewable_image]file-image-o[else][if-any entries.is_binary]file-o[else]file-text-o[end][end][end][end]
+    <tr class="[is entries.state "dead"]dead-entry[end]">
+      <td class="entry-name"
+          [if-any entries.view_href]onclick="jumpTo('[entries.view_href]')"[end]>
+        <a name="[entries.anchor]" [if-any entries.view_href]href="[entries.view_href]"[end]>
+          <i class="fa fa-fw [entry_icon]"></i>
+          [entries.name]
+          [is entries.pathtype "dir"]/[end]
+        </a>
+  [if-any entries.lockinfo]
+        <i class="fa fa-lock small-fa" title="Locked by [entries.lockinfo]" />
+  [end]
+  [is entries.state "dead"]
+        <i class="fa fa-trash small-fa" title="This file lives in the Attic" />
+  [end]
+      </td>
+      <td class="entry-ago">
+  [if-any entries.ago]
+        [entries.ago] ago
+  [end]
+      </td>
+      <td class="entry-description"
+          [if-any entries.log_href]onclick="jumpTo('[entries.log_href]')"[end]>
+  [if-any entries.rev]
+        <span class="entry-revision">
+          <a [if-any entries.log_href]href="[entries.log_href]"[end]
+             title="Revision [entries.rev]">[entries.rev]</a>
+        </span>
+    [if-any entries.author]
+        <span class="entry-author">
+          by [entries.author]</em>
+        </span>:
+    [end]
+  [end]
+  [if-any entries.log]
+    [if-any entries.log_rev]
+        <span class="entry-lastmod">
+          (from [entries.log_file]/[entries.log_rev])
+        </span>
+    [end]
+        <span class="entry-log">
+          [entries.log]
+        </span>
+  [end]
+      </td>
+    </tr>
+[end]
+  </tbody>
+</table>
+
+<div id="vc_view_summary">
+[is picklist_len "0"][else][is picklist_len "1"][else]    
+<form class="inline" method="get" action="[dir_paging_action]">
+<div class="inline lpad">
+[for dir_paging_hidden_values]<input type="hidden" name="[dir_paging_hidden_values.name]" value="[dir_paging_hidden_values.value]"/>[end]
+  <select name="dir_pagestart" onchange="submit()">
+  [for picklist]
+    <option [is picklist.count dir_pagestart]selected[end] value="[picklist.count]">Page [picklist.page]: [picklist.start] to [picklist.end]</option>
+  [end]
+  </select>
+  <input type="submit" value="Go" />
+</div>
+</form>
+[end][end]
+[is num_dead "0"][else]
+<div class="inline lpad">
+  [if-any attic_showing]
+    <a href="[hide_attic_href]">Hide
+  [else]
+    <a href="[show_attic_href]">Show
+  [end]
+  dead files</a>
+</div>
+[end]
+<div class="inline lpad">
+  [dirs_shown] director[is dirs_shown "1"]y[else]ies[end] and
+  [files_shown] file[is files_shown "1"][else]s[end] shown
+</div>
+</div>
+
+[include "_props.ezt"]
+
+<!-- ************************************************************** -->
+</div>
+
+<div class="modal" tabindex="-1" role="dialog" id="filterModal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Filter files in this directory</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="inline" method="get" action="[search_re_action]">
+          <div class="inline lpad">
+[for search_re_hidden_values]
+            <input
+              type="hidden" name="[search_re_hidden_values.name]"
+              value="[search_re_hidden_values.value]"/>
+[end]
+            <input type="text" name="search" value="[search_re]" />
+            <input type="submit" value="Search Files" />
+          </div>
+        </form>
+[if-any search_re]
+        <form class="inline" method="get" action="[search_re_action]">
+          <div class="inline">
+[for search_re_hidden_values]
+            <input
+              type="hidden" name="[search_re_hidden_values.name]"
+              value="[search_re_hidden_values.value]"/>
+[end]
+            <input type="submit" value="Show all files" />
+          </div>
+        </form>
+[end]
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+[include "_footer.ezt"]

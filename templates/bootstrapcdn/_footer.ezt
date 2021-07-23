@@ -1,0 +1,18 @@
+  </div> <!-- vc_view_main -->
+  <div id="vc_footer">
+    <span class="site-info">
+      Powered by <a href="http://viewvc.org/">ViewVC [vsn]</a>
+[if-any cfg.general.address]
+      <br/>This site administered by:
+      <address><a href="mailto:[cfg.general.address]">[cfg.general.address]</a></address>
+[end]
+    </span>
+    <span class="flex-spacer"></span>
+    <span>
+[if-any rss_href]
+      <a href="[rss_href]" title="RSS 2.0 feed"><i class="fa fa-lg fa-rss"></i></a>
+[end]
+    </span>
+  </div> <!-- vc_footer -->
+</body>
+</html>
