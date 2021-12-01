@@ -155,7 +155,7 @@ class CCVSRepository(BaseCVSRepository):
     sink = COSink(rev)
     rcsparse.parse(open(path, 'rb'), sink)
     revision = sink.last and sink.last.string
-    return cStringIO.StringIO('\n'.join(sink.sstext.text)), revision
+    return cStringIO.StringIO(''.join(sink.sstext.text)), revision
 
 class MatchingSink(rcsparse.Sink):
   """Superclass for sinks that search for revisions based on tag or number"""
@@ -316,19 +316,31 @@ class TreeSink(rcsparse.Sink):
     else:
       rev.changed = changed and "+%i -%i" % (added, deled)
 
+
+def _msplit(s):
+  r"""Split (str) S into an array of lines.
+
+  Only \n is a line separator. The line endings are part of the lines."""
+
+  lines = [line + '\n' for line in s.split('\n')]
+  if lines[-1] == '\n':
+    del line[-1]
+  else:
+    lines[-1] = lines[-1][:-1]
+  return lines
+
+
 class StreamText:
-  d_command = re.compile('^d(\d+)\\s(\\d+)')
-  a_command = re.compile('^a(\d+)\\s(\\d+)')
+  d_command = re.compile('^d(\d+)\\s(\\d+)\n')
+  a_command = re.compile('^a(\d+)\\s(\\d+)\n')
 
   def __init__(self, text):
-    self.text = text.split('\n')
+    self.text = _msplit(text)
 
   def command(self, cmd):
     adjust = 0
     add_lines_remaining = 0
-    diffs = cmd.split('\n')
-    if diffs[-1] == "":
-      del diffs[-1]
+    diffs = _msplit(cmd)
     if len(diffs) == 0:
       return
     if diffs[0] == "":
@@ -336,6 +348,9 @@ class StreamText:
     for command in diffs:
       if add_lines_remaining > 0:
         # Insertion lines from a prior "a" command
+        # Note: Don't check if we insert a string which does not end
+        # with b'\n' before an existing line. Some CVS implementation
+        # can produce such edit commands.
         self.text.insert(start_line + adjust, command)
         add_lines_remaining = add_lines_remaining - 1
         adjust = adjust + 1
