@@ -9,6 +9,7 @@ Version 1.3.0 (released ??-???-????)
   * removed deprecated checkout_magic option/behavior (#215)
   * new 'allow_mojibake' option (#216)
   * require explicit match for web-friendly images in 'binary_mime_types' (#216)
+  * fix a problem on CVS checkout files with rcsparse (#272)
 
 Version 1.2.1 (released 26-Mar-2020)
 
