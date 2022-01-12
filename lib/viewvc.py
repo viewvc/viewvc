@@ -3251,9 +3251,10 @@ def view_cvsgraph_image(request):
             request.repos.rootpath,
             cvsgraph_extraopts(request),
             rcsfile,
+            "| base64",
         ),
     )
-    copy_stream(fp, get_writeready_server_file(request, "image/png"))
+    copy_stream(fp, get_writeready_server_file(request, "image/png", "base64"))
     fp.close()
 
 
@@ -3307,6 +3308,7 @@ def view_cvsgraph(request):
             cvsgraph_extraopts(request),
             rcsfile,
         ),
+        is_text=True,
     )
 
     graph_action, graph_hidden_values = request.get_form(view_func=view_cvsgraph, params={})
