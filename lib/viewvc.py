@@ -3251,10 +3251,9 @@ def view_cvsgraph_image(request):
             request.repos.rootpath,
             cvsgraph_extraopts(request),
             rcsfile,
-            "| base64",
         ),
     )
-    copy_stream(fp, get_writeready_server_file(request, "image/png", "base64"))
+    copy_stream(fp, get_writeready_server_file(request, "image/png"))
     fp.close()
 
 
