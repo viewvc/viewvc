@@ -3307,6 +3307,7 @@ def view_cvsgraph(request):
             cvsgraph_extraopts(request),
             rcsfile,
         ),
+        is_text=True,
     )
 
     graph_action, graph_hidden_values = request.get_form(view_func=view_cvsgraph, params={})
