@@ -128,6 +128,15 @@ def _rootpath2url(rootpath, path):
     return core.svn_path_canonicalize(url)
 
 
+# Given a Subversion node kind, return the vclib type (or
+# None, if no mapping can be made).
+def _kind2type(node_kind):
+    return {
+        core.svn_node_dir: vclib.DIR,
+        core.svn_node_file: vclib.FILE,
+    }.get(node_kind)
+        
+
 # Return a stringfied copy of a bytestring Subversion property
 # (versioned or unversioned) VALUE if possible; otherwise return the
 # original bytestring.
@@ -222,8 +231,7 @@ class NodeHistory:
 
         if not self.show_all_logs:
             rev_root = fs.revision_root(self.fs_ptr, revision)
-            changed_paths = fs.paths_changed(rev_root)
-            paths = list(changed_paths.keys())
+            paths = list(fs.paths_changed2(rev_root).keys())
             if path not in paths:
                 # Look for a copied parent
                 test_path = path
@@ -472,10 +480,7 @@ class LocalSubversionRepository(vclib.Repository):
         dirents = fs.dir_entries(fsroot, path)
         entries = []
         for entry in dirents.values():
-            if entry.kind == core.svn_node_dir:
-                kind = vclib.DIR
-            elif entry.kind == core.svn_node_file:
-                kind = vclib.FILE
+            kind = _kind2type(entry.kind)
             ent_path = _to_str(entry.name)
             if vclib.check_path_access(self, path_parts + [ent_path], kind, rev):
                 entries.append(vclib.DirEntry(ent_path, kind))
@@ -668,42 +673,18 @@ class LocalSubversionRepository(vclib.Repository):
                 if change.base_path:
                     change.base_path = _cleanup_path(change.base_path)
                 is_copy = 0
-                if not hasattr(change, "action"):  # new to subversion 1.4.0
-                    action = vclib.MODIFIED
-                    if not change.path:
-                        action = vclib.DELETED
-                    elif change.added:
-                        action = vclib.ADDED
-                        replace_check_path = path
-                        if change.base_path and change.base_rev:
-                            replace_check_path = change.base_path
-                        if (
-                            replace_check_path in changedpaths
-                            and changedpaths[replace_check_path].action == vclib.DELETED
-                        ):
-                            action = vclib.REPLACED
-                else:
-                    if change.action == repos.CHANGE_ACTION_ADD:
-                        action = vclib.ADDED
-                    elif change.action == repos.CHANGE_ACTION_DELETE:
-                        action = vclib.DELETED
-                    elif change.action == repos.CHANGE_ACTION_REPLACE:
-                        action = vclib.REPLACED
-                    else:
-                        action = vclib.MODIFIED
+                action = {
+                    repos.CHANGE_ACTION_ADD: vclib.ADDED,
+                    repos.CHANGE_ACTION_DELETE: vclib.DELETED,
+                    repos.CHANGE_ACTION_REPLACE: vclib.REPLACED,
+                }.get(change.action, vclib.MODIFIED)
                 if (
                     (action == vclib.ADDED or action == vclib.REPLACED)
                     and change.base_path
                     and change.base_rev
                 ):
                     is_copy = 1
-                if change.item_kind == core.svn_node_dir:
-                    pathtype = vclib.DIR
-                elif change.item_kind == core.svn_node_file:
-                    pathtype = vclib.FILE
-                else:
-                    pathtype = None
-
+                pathtype = _kind2type(change.item_kind)
                 parts = _path_parts(spath)
                 if vclib.check_path_access(self, parts, pathtype, rev):
                     if is_copy and change.base_path and (change.base_path != path):
@@ -735,7 +716,7 @@ class LocalSubversionRepository(vclib.Repository):
 
         def _get_change_copyinfo(fsroot, path, change):
             # If we know the copyfrom info, return it...
-            if hasattr(change, "copyfrom_known") and change.copyfrom_known:
+            if change.copyfrom_known:
                 copyfrom_path = change.copyfrom_path
                 copyfrom_rev = change.copyfrom_rev
             # ...otherwise, if this change could be a copy (that is, it
@@ -754,19 +735,11 @@ class LocalSubversionRepository(vclib.Repository):
         def _simple_auth_check(fsroot):
             """Return a 2-tuple: found_readable, found_unreadable."""
             found_unreadable = found_readable = 0
-            if hasattr(fs, "paths_changed2"):
-                changes = fs.paths_changed2(fsroot)
-            else:
-                changes = fs.paths_changed(fsroot)
+            changes = fs.paths_changed2(fsroot)
             paths = list(changes.keys())
             for path in paths:
                 change = changes[path]
-                pathtype = None
-                if hasattr(change, "node_kind"):
-                    if change.node_kind == core.svn_node_file:
-                        pathtype = vclib.FILE
-                    elif change.node_kind == core.svn_node_dir:
-                        pathtype = vclib.DIR
+                pathtype = _kind2type(change.node_kind)
                 parts = _path_parts(_to_str(path))
                 if pathtype is None:
                     # Figure out the pathtype so we can query the authz subsystem.

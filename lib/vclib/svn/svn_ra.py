@@ -21,14 +21,15 @@ from urllib.parse import quote as _quote
 from .svn_repos import (
     Revision,
     SVNChangedPath,
-    _to_str,
-    _compare_paths,
-    _path_parts,
     _cleanup_path,
-    _rev2optrev,
-    _normalize_property_value,
+    _compare_paths,
+    _kind2type,
     _normalize_property,
+    _normalize_property_value,
+    _path_parts,
+    _rev2optrev,
     _split_revprops,
+    _to_str,
 )
 from svn import core, client, ra
 
@@ -229,10 +230,7 @@ class RemoteSubversionRepository(vclib.Repository):
             rev = self._getrev(rev)
             try:
                 kind = ra.svn_ra_check_path(self.ra_session, path, rev)
-                if kind == core.svn_node_file:
-                    pathtype = vclib.FILE
-                elif kind == core.svn_node_dir:
-                    pathtype = vclib.DIR
+                pathtype = _kind2type(kind)
             except Exception:
                 pass
         if pathtype is None:
@@ -258,15 +256,9 @@ class RemoteSubversionRepository(vclib.Repository):
         rev = self._getrev(rev)
         entries = []
         dirents, locks = self._get_dirents(path, rev)
-        for name in dirents.keys():
-            entry = dirents[name]
-            if entry.kind == core.svn_node_dir:
-                kind = vclib.DIR
-            elif entry.kind == core.svn_node_file:
-                kind = vclib.FILE
-            else:
-                kind = None
-            entries.append(vclib.DirEntry(name, kind))
+        for name, entry in dirents.items():
+            pathtype = _kind2type(entry.kind)
+            entries.append(vclib.DirEntry(name, pathtype))
         return entries
 
     def dirlogs(self, path_parts, rev, entries, options):
@@ -592,27 +584,9 @@ class RemoteSubversionRepository(vclib.Repository):
             found_readable = found_unreadable = 0
             for path in paths:
                 change = changed_paths[path]
-
-                # svn_log_changed_path_t (which we might get instead of the
-                # svn_log_changed_path2_t we'd prefer) doesn't have the
-                # 'node_kind' member.
-                pathtype = None
-                if hasattr(change, "node_kind"):
-                    if change.node_kind == core.svn_node_dir:
-                        pathtype = vclib.DIR
-                    elif change.node_kind == core.svn_node_file:
-                        pathtype = vclib.FILE
-
-                # svn_log_changed_path2_t only has the 'text_modified' and
-                # 'props_modified' bits in Subversion 1.7 and beyond.  And
-                # svn_log_changed_path_t is without.
-                text_modified = props_modified = 0
-                if hasattr(change, "text_modified"):
-                    if change.text_modified == core.svn_tristate_true:
-                        text_modified = 1
-                if hasattr(change, "props_modified"):
-                    if change.props_modified == core.svn_tristate_true:
-                        props_modified = 1
+                pathtype = _kind2type(change.node_kind)
+                text_modified = (change.text_modified == core.svn_tristate_true and 1 or 0)
+                props_modified = (change.props_modified == core.svn_tristate_true and 1 or 0)
 
                 # Wrong, diddily wrong wrong wrong.  Can you say,
                 # "Manufacturing data left and right because it hurts to
