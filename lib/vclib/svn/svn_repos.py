@@ -767,7 +767,7 @@ class LocalSubversionRepository(vclib.Repository):
                         pathtype = vclib.FILE
                     elif change.node_kind == core.svn_node_dir:
                         pathtype = vclib.DIR
-                parts = _path_parts(path)
+                parts = _path_parts(_to_str(path))
                 if pathtype is None:
                     # Figure out the pathtype so we can query the authz subsystem.
                     if change.change_kind == fs.path_change_delete:
@@ -793,7 +793,7 @@ class LocalSubversionRepository(vclib.Repository):
                             )
                             if copyfrom_path:
                                 prev_rev = copyfrom_rev
-                                prev_parts = _path_parts(copyfrom_path) + parts[len(parent_parts) :]
+                                prev_parts = _path_parts(_to_str(copyfrom_path)) + parts[len(parent_parts) :]
                                 break
                             del parent_parts[-1]
                         pathtype = self._gettype(self._getpath(prev_parts), prev_rev)
@@ -803,7 +803,7 @@ class LocalSubversionRepository(vclib.Repository):
                     found_readable = 1
                     copyfrom_path, copyfrom_rev = _get_change_copyinfo(fsroot, path, change)
                     if copyfrom_path and copyfrom_path != path:
-                        parts = _path_parts(copyfrom_path)
+                        parts = _path_parts(_to_str(copyfrom_path))
                         if not vclib.check_path_access(self, parts, pathtype, copyfrom_rev):
                             found_unreadable = 1
                 else:
