@@ -16,7 +16,7 @@ import vclib
 import os
 import os.path
 import tempfile
-from io import StringIO
+from io import BytesIO
 from urllib.parse import quote as _quote
 from svn import fs, repos, core, client, delta
 
@@ -251,7 +251,7 @@ class FileContentsPipe:
         chunk = None
         if not self._eof:
             if len is None:
-                buffer = StringIO()
+                buffer = BytesIO()
                 try:
                     while 1:
                         hunk = core.svn_stream_read(self._stream, 8192)
