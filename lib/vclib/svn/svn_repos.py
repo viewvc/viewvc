@@ -19,6 +19,7 @@ import tempfile
 from io import StringIO
 from urllib.parse import quote as _quote
 from svn import fs, repos, core, client, delta
+from common import cmp
 
 long = int
 
@@ -62,11 +63,6 @@ def _cleanup_path(path):
 
 def _fs_path_join(base, relative):
     return _cleanup_path(base + "/" + relative)
-
-
-# Python 3 workaround for cmp()
-def cmp(a, b):
-    return (a > b) - (a < b)
 
 
 def _compare_paths(path1, path2):

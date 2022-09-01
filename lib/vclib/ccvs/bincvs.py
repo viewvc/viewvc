@@ -22,11 +22,7 @@ import calendar
 import subprocess
 import vclib.ccvs
 import functools
-
-
-# Python 3: workaround for cmp()
-def cmp(a, b):
-    return (a > b) - (a < b)
+from common import cmp
 
 
 def enc_decode(s, encoding="utf-8"):

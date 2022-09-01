@@ -28,6 +28,18 @@ class _item:
         vars(self).update(kw)
 
 
+# Python 3: workaround for cmp()
+def cmp(a, b):
+    if a is None and b is None:
+        return 0
+    if a is None:
+        return 1
+    if b is None:
+        return -1
+    assert type(a) == type(b)
+    return (a > b) - (a < b)
+
+
 class TemplateData:
     """A custom dictionary-like object that allows one-time definition
     of keys, and only value fetches and changes, and key deletions,
