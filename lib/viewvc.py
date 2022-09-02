@@ -55,6 +55,7 @@ import vcauth
 import vclib
 import vclib.ccvs
 import vclib.svn
+from common import cmp
 
 try:
     import idiff
@@ -91,11 +92,6 @@ CHUNK_SIZE = 8192
 
 # special characters that don't need to be URL encoded
 _URL_SAFE_CHARS = "/*~"
-
-
-# Python 3: workaround for cmp()
-def cmp(a, b):
-    return (a > b) - (a < b)
 
 
 class TextIOWrapper_noclose(io.TextIOWrapper):
