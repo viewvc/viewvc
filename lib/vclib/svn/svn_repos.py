@@ -65,43 +65,6 @@ def _fs_path_join(base, relative):
     return _cleanup_path(base + "/" + relative)
 
 
-def _compare_paths(path1, path2):
-    path1_len = len(path1)
-    path2_len = len(path2)
-    min_len = min(path1_len, path2_len)
-    i = 0
-
-    # Are the paths exactly the same?
-    if path1 == path2:
-        return 0
-
-    # Skip past common prefix
-    while (i < min_len) and (path1[i] == path2[i]):
-        i = i + 1
-
-    # Children of paths are greater than their parents, but less than
-    # greater siblings of their parents
-    char1 = "\0"
-    char2 = "\0"
-    if i < path1_len:
-        char1 = path1[i]
-    if i < path2_len:
-        char2 = path2[i]
-
-    if (char1 == "/") and (i == path2_len):
-        return 1
-    if (char2 == "/") and (i == path1_len):
-        return -1
-    if (i < path1_len) and (char1 == "/"):
-        return -1
-    if (i < path2_len) and (char2 == "/"):
-        return 1
-
-    # Common prefix was skipped above, next character is compared to
-    # determine order
-    return cmp(char1, char2)
-
-
 def _rev2optrev(rev):
     assert isinstance(rev, int)
     rt = core.svn_opt_revision_t()
