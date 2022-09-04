@@ -32,6 +32,7 @@ import struct
 import tempfile
 import time
 import functools
+from operator import attrgetter
 import io
 import popen
 from urllib.parse import urlencode as _urlencode, quote as _quote
@@ -1089,7 +1090,7 @@ def prep_tags(request, tags):
     for tag in tags:
         href = url + tag.name
         links.append(_item(name=tag.name, href=href))
-    links.sort(key=functools.cmp_to_key(lambda a, b: cmp(a.name, b.name)))
+    links.sort(key=attrgetter('name'))
     return links
 
 
@@ -4205,7 +4206,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     rep_path = request.path_parts + reldir
     entries = request.repos.listdir(rep_path, request.pathrev, {})
     request.repos.dirlogs(rep_path, request.pathrev, entries, {})
-    entries.sort(key=functools.cmp_to_key(lambda a, b: cmp(a.name, b.name)))
+    entries.sort(key=attrgetter('name'))
 
     # figure out corresponding path in tar file. everything gets put underneath
     # a single top level directory named after the repository directory being
@@ -4425,10 +4426,7 @@ def view_revision(request):
         props.append(_item(name=name, value=value, undisplayable=ezt.boolean(undisplayable)))
 
     # Sort the changes list by path.
-    def changes_sort_by_path(a, b):
-        return cmp(a.path_parts, b.path_parts)
-
-    changes.sort(key=functools.cmp_to_key(changes_sort_by_path))
+    changes.sort(key=attrgetter('path_parts'))
 
     # Handle limit_changes parameter
     cfg_limit_changes = cfg.options.limit_changes
