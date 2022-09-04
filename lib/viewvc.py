@@ -2331,11 +2331,6 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
     file_data.sort(key=functools.cmp_to_key(file_sort_cmp))
 
 
-def icmp(x, y):
-    """case insensitive comparison"""
-    return cmp(x.lower(), y.lower())
-
-
 def view_roots(request):
     if "roots" not in request.cfg.options.allowed_views:
         raise ViewVCException("Root listing view is disabled", "403 Forbidden")
@@ -2345,7 +2340,7 @@ def view_roots(request):
     expand_root_parents(request.cfg)
     allroots = list_roots(request)
     if len(allroots):
-        rootnames = sorted(allroots.keys(), key=functools.cmp_to_key(icmp))
+        rootnames = sorted(allroots.keys(), key=str.lower)
         for rootname in rootnames:
             root_path, root_type, lastmod = allroots[rootname]
             href = request.get_url(
@@ -2654,13 +2649,13 @@ def view_directory(request):
     # set cvs-specific fields
     if request.roottype == "cvs":
         plain_tags = options["cvs_tags"]
-        plain_tags.sort(key=functools.cmp_to_key(icmp), reverse=True)
+        plain_tags.sort(key=str.lower, reverse=True)
         data["plain_tags"] = []
         for plain_tag in plain_tags:
             data["plain_tags"].append(_item(name=plain_tag, revision=None))
 
         branch_tags = options["cvs_branches"]
-        branch_tags.sort(key=functools.cmp_to_key(icmp), reverse=True)
+        branch_tags.sort(key=str.lower, reverse=True)
         data["branch_tags"] = []
         for branch_tag in branch_tags:
             data["branch_tags"].append(_item(name=branch_tag, revision=None))
