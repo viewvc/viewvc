@@ -2281,8 +2281,8 @@ def revcmp(rev1, rev2):
 
 
 def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
-    # convert sortdir into a sign bit
-    s = sortdir == "down" and -1 or 1
+    # convert sortdir into reverse parameter in sort() method
+    reverse = (sortdir == "down")
 
     # in cvs, revision numbers can't be compared meaningfully between
     # files, so try to do the right thing and compare dates instead
@@ -2292,16 +2292,16 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
     def file_sort_sortby(file1, file2, sortby):
         # sort according to sortby
         if sortby == "rev":
-            return s * revcmp(file1.rev, file2.rev)
+            return revcmp(file1.rev, file2.rev)
         elif sortby == "date":
-            return s * cmp(file2.date, file1.date)  # latest date is first
+            return cmp(file2.date, file1.date)  # latest date is first
         elif sortby == "log":
-            return s * cmp(file1.log, file2.log)
+            return cmp(file1.log, file2.log)
         elif sortby == "author":
-            return s * cmp(file1.author, file2.author)
-        return s * cmp(file1.name, file2.name)
+            return cmp(file1.author, file2.author)
+        return cmp(file1.name, file2.name)
 
-    def file_sort_cmp(file1, file2, sortby=sortby, group_dirs=group_dirs, s=s):
+    def file_sort_cmp(file1, file2, sortby=sortby, group_dirs=group_dirs):
         # if we're grouping directories together, sorting is pretty
         # simple.  a directory sorts "higher" than a non-directory, and
         # two directories are sorted as normal.
@@ -2312,24 +2312,24 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
                     return file_sort_sortby(file1, file2, sortby)
                 else:
                     # file1 is a directory, it sorts first.
-                    return -1
+                    return -1 if not reverse else 1
             elif file2.kind == vclib.DIR:
                 # file2 is a directory, it sorts first.
-                return 1
+                return 1 if not reverse else -1
 
         # we should have data on these. if not, then it is because we requested
         # a specific tag and that tag is not present on the file.
         if file1.rev is not None and file2.rev is not None:
             return file_sort_sortby(file1, file2, sortby)
         elif file1.rev is not None:
-            return -1
+            return -1 if not reverse else 1
         elif file2.rev is not None:
-            return 1
+            return 1 if not reverse else -1
 
         # sort by file name
-        return s * cmp(file1.name, file2.name)
+        return cmp(file1.name, file2.name)
 
-    file_data.sort(key=functools.cmp_to_key(file_sort_cmp))
+    file_data.sort(key=functools.cmp_to_key(file_sort_cmp), reverse=reverse)
 
 
 def view_roots(request):
