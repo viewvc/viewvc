@@ -246,6 +246,14 @@ class DirEntry:
         self.kind = kind
         self.errors = errors
 
+    def sortkey(self, attrname, default=''):
+        """Get attribute value specified for sort key
+
+        If the attribute value is None, return default value instead.
+        """
+        v = getattr(self, attrname)
+        return v if v is not None else default
+
 
 class Revision:
     """Instances holds information about revisions of versioned resources"""

@@ -2294,11 +2294,12 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
         if sortby == "rev":
             return revcmp(file1.rev, file2.rev)
         elif sortby == "date":
-            return cmp(file2.date, file1.date)  # latest date is first
+            # latest date is first
+            return cmp(file2.sortkey('date', -1), file1.sortkey('date', -1))
         elif sortby == "log":
-            return cmp(file1.log, file2.log)
+            return cmp(file1.sortkey('log'), file2.sortkey('log'))
         elif sortby == "author":
-            return cmp(file1.author, file2.author)
+            return cmp(file1.sortkey('author'), file2.sortkey('author'))
         return cmp(file1.name, file2.name)
 
     def file_sort_cmp(file1, file2, sortby=sortby, group_dirs=group_dirs):
