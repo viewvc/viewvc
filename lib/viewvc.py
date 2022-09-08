@@ -31,7 +31,6 @@ import stat
 import struct
 import tempfile
 import time
-import functools
 from operator import attrgetter
 import io
 import popen
@@ -56,7 +55,6 @@ import vcauth
 import vclib
 import vclib.ccvs
 import vclib.svn
-from common import cmp
 
 try:
     import idiff
@@ -2274,10 +2272,9 @@ def view_annotate(request):
     markup_or_annotate(request, 1)
 
 
-def revcmp(rev1, rev2):
-    rev1 = list(map(int, rev1.split(".")))
-    rev2 = list(map(int, rev2.split(".")))
-    return cmp(rev1, rev2)
+def revcmpkey(rev):
+    """Normalize rev into list of integer, for compare"""
+    return list(map(int, rev.split(".")))
 
 
 def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
@@ -2289,50 +2286,75 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
     if roottype == "cvs" and sortby == "rev":
         sortby = "date"
 
-    def file_sort_sortby(file1, file2, sortby):
-        # sort according to sortby
-        if sortby == "rev":
-            return revcmp(file1.rev, file2.rev)
-        elif sortby == "date":
-            # latest date is first
-            return cmp(file2.sortkey('date', -1), file1.sortkey('date', -1))
-        elif sortby == "log":
-            return cmp(file1.sortkey('log'), file2.sortkey('log'))
-        elif sortby == "author":
-            return cmp(file1.sortkey('author'), file2.sortkey('author'))
-        return cmp(file1.name, file2.name)
-
-    def file_sort_cmp(file1, file2, sortby=sortby, group_dirs=group_dirs):
+    if group_dirs:
         # if we're grouping directories together, sorting is pretty
         # simple.  a directory sorts "higher" than a non-directory, and
         # two directories are sorted as normal.
-        if group_dirs:
-            if file1.kind == vclib.DIR:
-                if file2.kind == vclib.DIR:
-                    # two directories, no special handling.
-                    return file_sort_sortby(file1, file2, sortby)
-                else:
-                    # file1 is a directory, it sorts first.
-                    return -1 if not reverse else 1
-            elif file2.kind == vclib.DIR:
-                # file2 is a directory, it sorts first.
-                return 1 if not reverse else -1
+        # Note: True > False
+        latter = vclib.DIR if reverse else vclib.FILE
+        if sortby == 'rev':
+            # roottype is "svn" only, and the file has always rev value.
+            def key(x):
+                return (x.kind == latter, x.rev)
 
+        elif sortby == 'date':
+            def key(x):
+                # latest date is first
+                return (x.kind == latter, - x.sortkey('date', -1))
+
+        elif sortby == 'file':
+            # the key attibute name != sortby
+            def key(x):
+                return (x.kind == latter, x.name)
+
+        else:
+            # the key attibute name == sortby
+            def key(x):
+                return (x.kind == latter, x.sortkey(sortby))
+
+    else:
         # If the file does not have revision data, which can be only in
         # "cvs" roottype, the file should been placed after those files
-        # which have revision data, ...
-        if file1.rev is not None and file2.rev is not None:
-            return file_sort_sortby(file1, file2, sortby)
-        elif file1.rev is not None:
-            return -1 if not reverse else 1
-        elif file2.rev is not None:
-            return 1 if not reverse else -1
+        # which have revision data, and it is sorted by its name.
+        if roottype == 'cvs':
+            if sortby == 'rev':
+                def key(x):
+                    return ((x.rev is None) ^ reverse,
+                            x.name if x.rev is None else x.rev)
 
-        # ... and then those should be sorted by its name after the files
-        # which have revison data.
-        return cmp(file1.name, file2.name)
+            elif sortby == 'date':
+                def key(x):
+                    # latest date is first
+                    return ((x.rev is None) ^ reverse,
+                            x.name if x.rev is None
+                            else - x.sortkey('date', -1))
 
-    file_data.sort(key=functools.cmp_to_key(file_sort_cmp), reverse=reverse)
+            elif sortby == 'file':
+                # the key attibute name != sortby
+                def key(x):
+                    return ((x.rev is None) ^ reverse, x.name)
+
+            else:
+                # the key attibute name == sortby
+                def key(x):
+                    return ((x.rev is None) ^ reverse,
+                            x.name if x.rev is None else x.sortkey(sortby))
+        else:
+            # In case roottype is 'svn', we simply use sotrby key.
+            if sortby == 'date':
+                def key(x):
+                    # latest date is first
+                    return - x.sortkey('date', -1)
+
+            elif sortby == 'file':
+                # the key attibute name != sortby
+                key = attrgetter('name')
+            else:
+                # the key attibute name == sortby and can be None
+                def key(x):
+                    return x.sortkey(sortby)
+
+    file_data.sort(key=key, reverse=reverse)
 
 
 def view_roots(request):
@@ -3714,7 +3736,7 @@ def setup_diff(request):
     p2 = _get_diff_path_parts(request, "p2", rev2, request.pathrev)
 
     try:
-        if revcmp(rev1, rev2) > 0:
+        if revcmpkey(rev1) > revcmpkey(rev2):
             rev1, rev2 = rev2, rev1
             sym1, sym2 = sym2, sym1
             p1, p2 = p2, p1
