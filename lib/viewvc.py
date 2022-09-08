@@ -2318,8 +2318,9 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
                 # file2 is a directory, it sorts first.
                 return 1 if not reverse else -1
 
-        # we should have data on these. if not, then it is because we requested
-        # a specific tag and that tag is not present on the file.
+        # If the file does not have revision data, which can be only in
+        # "cvs" roottype, the file should been placed after those files
+        # which have revision data, ...
         if file1.rev is not None and file2.rev is not None:
             return file_sort_sortby(file1, file2, sortby)
         elif file1.rev is not None:
@@ -2327,7 +2328,8 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
         elif file2.rev is not None:
             return 1 if not reverse else -1
 
-        # sort by file name
+        # ... and then those should be sorted by its name after the files
+        # which have revison data.
         return cmp(file1.name, file2.name)
 
     file_data.sort(key=functools.cmp_to_key(file_sort_cmp), reverse=reverse)
