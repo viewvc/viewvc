@@ -31,7 +31,7 @@ import stat
 import struct
 import tempfile
 import time
-import functools
+from operator import attrgetter
 import io
 import popen
 from urllib.parse import urlencode as _urlencode, quote as _quote
@@ -55,7 +55,6 @@ import vcauth
 import vclib
 import vclib.ccvs
 import vclib.svn
-from common import cmp
 
 try:
     import idiff
@@ -1089,7 +1088,7 @@ def prep_tags(request, tags):
     for tag in tags:
         href = url + tag.name
         links.append(_item(name=tag.name, href=href))
-    links.sort(key=functools.cmp_to_key(lambda a, b: cmp(a.name, b.name)))
+    links.sort(key=attrgetter('name'))
     return links
 
 
@@ -2273,67 +2272,89 @@ def view_annotate(request):
     markup_or_annotate(request, 1)
 
 
-def revcmp(rev1, rev2):
-    rev1 = list(map(int, rev1.split(".")))
-    rev2 = list(map(int, rev2.split(".")))
-    return cmp(rev1, rev2)
+def revcmpkey(rev):
+    """Normalize rev into list of integer, for compare"""
+    return list(map(int, rev.split(".")))
 
 
 def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
-    # convert sortdir into a sign bit
-    s = sortdir == "down" and -1 or 1
+    # convert sortdir into reverse parameter in sort() method
+    reverse = (sortdir == "down")
 
     # in cvs, revision numbers can't be compared meaningfully between
     # files, so try to do the right thing and compare dates instead
     if roottype == "cvs" and sortby == "rev":
         sortby = "date"
 
-    def file_sort_sortby(file1, file2, sortby):
-        # sort according to sortby
-        if sortby == "rev":
-            return s * revcmp(file1.rev, file2.rev)
-        elif sortby == "date":
-            return s * cmp(file2.date, file1.date)  # latest date is first
-        elif sortby == "log":
-            return s * cmp(file1.log, file2.log)
-        elif sortby == "author":
-            return s * cmp(file1.author, file2.author)
-        return s * cmp(file1.name, file2.name)
-
-    def file_sort_cmp(file1, file2, sortby=sortby, group_dirs=group_dirs, s=s):
+    if group_dirs:
         # if we're grouping directories together, sorting is pretty
         # simple.  a directory sorts "higher" than a non-directory, and
         # two directories are sorted as normal.
-        if group_dirs:
-            if file1.kind == vclib.DIR:
-                if file2.kind == vclib.DIR:
-                    # two directories, no special handling.
-                    return file_sort_sortby(file1, file2, sortby)
-                else:
-                    # file1 is a directory, it sorts first.
-                    return -1
-            elif file2.kind == vclib.DIR:
-                # file2 is a directory, it sorts first.
-                return 1
+        # Note: True > False
+        latter = vclib.DIR if reverse else vclib.FILE
+        if sortby == 'rev':
+            # roottype is "svn" only, and the file has always rev value.
+            def key(x):
+                return (x.kind == latter, x.rev)
 
-        # we should have data on these. if not, then it is because we requested
-        # a specific tag and that tag is not present on the file.
-        if file1.rev is not None and file2.rev is not None:
-            return file_sort_sortby(file1, file2, sortby)
-        elif file1.rev is not None:
-            return -1
-        elif file2.rev is not None:
-            return 1
+        elif sortby == 'date':
+            def key(x):
+                # latest date is first
+                return (x.kind == latter, - x.sortkey('date', -1))
 
-        # sort by file name
-        return s * cmp(file1.name, file2.name)
+        elif sortby == 'file':
+            # the key attibute name != sortby
+            def key(x):
+                return (x.kind == latter, x.name)
 
-    file_data.sort(key=functools.cmp_to_key(file_sort_cmp))
+        else:
+            # the key attibute name == sortby
+            def key(x):
+                return (x.kind == latter, x.sortkey(sortby))
 
+    else:
+        # If the file does not have revision data, which can be only in
+        # "cvs" roottype, the file should been placed after those files
+        # which have revision data, and it is sorted by its name.
+        if roottype == 'cvs':
+            if sortby == 'rev':
+                def key(x):
+                    return ((x.rev is None) ^ reverse,
+                            x.name if x.rev is None else x.rev)
 
-def icmp(x, y):
-    """case insensitive comparison"""
-    return cmp(x.lower(), y.lower())
+            elif sortby == 'date':
+                def key(x):
+                    # latest date is first
+                    return ((x.rev is None) ^ reverse,
+                            x.name if x.rev is None
+                            else - x.sortkey('date', -1))
+
+            elif sortby == 'file':
+                # the key attibute name != sortby
+                def key(x):
+                    return ((x.rev is None) ^ reverse, x.name)
+
+            else:
+                # the key attibute name == sortby
+                def key(x):
+                    return ((x.rev is None) ^ reverse,
+                            x.name if x.rev is None else x.sortkey(sortby))
+        else:
+            # In case roottype is 'svn', we simply use sotrby key.
+            if sortby == 'date':
+                def key(x):
+                    # latest date is first
+                    return - x.sortkey('date', -1)
+
+            elif sortby == 'file':
+                # the key attibute name != sortby
+                key = attrgetter('name')
+            else:
+                # the key attibute name == sortby and can be None
+                def key(x):
+                    return x.sortkey(sortby)
+
+    file_data.sort(key=key, reverse=reverse)
 
 
 def view_roots(request):
@@ -2345,7 +2366,7 @@ def view_roots(request):
     expand_root_parents(request.cfg)
     allroots = list_roots(request)
     if len(allroots):
-        rootnames = sorted(allroots.keys(), key=functools.cmp_to_key(icmp))
+        rootnames = sorted(allroots.keys(), key=str.lower)
         for rootname in rootnames:
             root_path, root_type, lastmod = allroots[rootname]
             href = request.get_url(
@@ -2654,13 +2675,13 @@ def view_directory(request):
     # set cvs-specific fields
     if request.roottype == "cvs":
         plain_tags = options["cvs_tags"]
-        plain_tags.sort(key=functools.cmp_to_key(icmp), reverse=True)
+        plain_tags.sort(key=str.lower, reverse=True)
         data["plain_tags"] = []
         for plain_tag in plain_tags:
             data["plain_tags"].append(_item(name=plain_tag, revision=None))
 
         branch_tags = options["cvs_branches"]
-        branch_tags.sort(key=functools.cmp_to_key(icmp), reverse=True)
+        branch_tags.sort(key=str.lower, reverse=True)
         data["branch_tags"] = []
         for branch_tag in branch_tags:
             data["branch_tags"].append(_item(name=branch_tag, revision=None))
@@ -3715,7 +3736,7 @@ def setup_diff(request):
     p2 = _get_diff_path_parts(request, "p2", rev2, request.pathrev)
 
     try:
-        if revcmp(rev1, rev2) > 0:
+        if revcmpkey(rev1) > revcmpkey(rev2):
             rev1, rev2 = rev2, rev1
             sym1, sym2 = sym2, sym1
             p1, p2 = p2, p1
@@ -4210,7 +4231,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     rep_path = request.path_parts + reldir
     entries = request.repos.listdir(rep_path, request.pathrev, {})
     request.repos.dirlogs(rep_path, request.pathrev, entries, {})
-    entries.sort(key=functools.cmp_to_key(lambda a, b: cmp(a.name, b.name)))
+    entries.sort(key=attrgetter('name'))
 
     # figure out corresponding path in tar file. everything gets put underneath
     # a single top level directory named after the repository directory being
@@ -4430,10 +4451,7 @@ def view_revision(request):
         props.append(_item(name=name, value=value, undisplayable=ezt.boolean(undisplayable)))
 
     # Sort the changes list by path.
-    def changes_sort_by_path(a, b):
-        return cmp(a.path_parts, b.path_parts)
-
-    changes.sort(key=functools.cmp_to_key(changes_sort_by_path))
+    changes.sort(key=attrgetter('path_parts'))
 
     # Handle limit_changes parameter
     cfg_limit_changes = cfg.options.limit_changes
