@@ -21,8 +21,7 @@ import re
 import calendar
 import subprocess
 import vclib.ccvs
-import functools
-from common import cmp
+from operator import attrgetter
 
 
 def enc_decode(s, encoding="utf-8"):
@@ -320,10 +319,11 @@ class BinCVSRepository(BaseCVSRepository):
         filtered_revs = _file_log(revs, tags, lockinfo, default_branch, rev)
 
         options["cvs_tags"] = tags
+        # Both of Revision.date and Revision.number are sortable, not None
         if sortby == vclib.SORTBY_DATE:
-            filtered_revs.sort(key=functools.cmp_to_key(_logsort_date_cmp))
+            filtered_revs.sort(key=attrgetter('date', 'number'), reverse=True)
         elif sortby == vclib.SORTBY_REV:
-            filtered_revs.sort(key=functools.cmp_to_key(_logsort_rev_cmp))
+            filtered_revs.sort(key=attrgetter('number'), reverse=True)
 
         if len(filtered_revs) < first:
             return []
@@ -429,16 +429,6 @@ class Tag:
 
 # ======================================================================
 # Functions for dealing with Revision and Tag objects
-
-
-def _logsort_date_cmp(rev1, rev2):
-    # sort on date; secondary on revision number
-    return -cmp(rev1.date, rev2.date) or -cmp(rev1.number, rev2.number)
-
-
-def _logsort_rev_cmp(rev1, rev2):
-    # sort highest revision first
-    return -cmp(rev1.number, rev2.number)
 
 
 def _match_revs_tags(revlist, taglist):

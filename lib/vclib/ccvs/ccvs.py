@@ -14,7 +14,7 @@ import os
 import re
 import tempfile
 from io import BytesIO
-import functools
+from operator import attrgetter
 import vclib
 from . import rcsparse
 from . import blame
@@ -27,8 +27,6 @@ from .bincvs import (
     Tag,
     _file_log,
     _log_path,
-    _logsort_date_cmp,
-    _logsort_rev_cmp,
     _path_join,
 )
 
@@ -112,10 +110,11 @@ class CCVSRepository(BaseCVSRepository):
                 rev.changed = rev.prev.next_changed
         options["cvs_tags"] = sink.tags
 
+        # Both of Revision.date and Revision.number are sortable, not None
         if sortby == vclib.SORTBY_DATE:
-            filtered_revs.sort(key=functools.cmp_to_key(_logsort_date_cmp))
+            filtered_revs.sort(key=attrgetter('date', 'number'), reverse=True)
         elif sortby == vclib.SORTBY_REV:
-            filtered_revs.sort(key=functools.cmp_to_key(_logsort_rev_cmp))
+            filtered_revs.sort(key=attrgetter('number'), reverse=True)
 
         if len(filtered_revs) < first:
             return []
