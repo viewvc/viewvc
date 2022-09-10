@@ -15,14 +15,12 @@
 import vclib
 import os
 import tempfile
-import functools
 from urllib.parse import quote as _quote
 
 from .svn_repos import (
     Revision,
     SVNChangedPath,
     _cleanup_path,
-    _compare_paths,
     _kind2type,
     _normalize_property,
     _normalize_property_value,
@@ -41,6 +39,23 @@ if HAS_SUBVERSION_VERSION < MIN_SUBVERSION_VERSION:
     found_ver = ".".join([str(x) for x in HAS_SUBVERSION_VERSION])
     needs_ver = ".".join([str(x) for x in MIN_SUBVERSION_VERSION])
     raise Exception("Subversion version %s is required (%s found)" % (needs_ver, found_ver))
+
+
+def _sort_key_path(path):
+    """Transform paths into sort key.
+
+    Children of paths are greater than their parents, but less than
+    greater siblings of their parents.
+    """
+    return path.split('/')
+
+
+def _sort_key_pathb(pathb):
+    """Transform bytes paths into sort key.
+
+    Same as _sort_key_path but accept pathb as a path represented in bytes.
+    """
+    return pathb.split(b'/')
 
 
 def client_log(url, start_rev, end_rev, log_limit, include_changes, cross_copies, cb_func, ctx):
@@ -101,7 +116,7 @@ class LogCollector:
 
         # Changed paths have leading slashes
         changed_paths = [_to_str(p) for p in paths.keys()]
-        changed_paths.sort(key=functools.cmp_to_key(lambda a, b: _compare_paths(a, b)))
+        changed_paths.sort(key=_sort_key_path)
         this_path = None
         if self.path in changed_paths:
             this_path = self.path
@@ -574,9 +589,7 @@ class RemoteSubversionRepository(vclib.Repository):
             except Exception:
                 changed_paths = log_entry.changed_paths
                 paths = list((changed_paths or {}).keys())
-            paths.sort(
-                key=functools.cmp_to_key(lambda a, b: _compare_paths(_to_str(a), _to_str(b)))
-            )
+            paths.sort(key=_sort_key_pathb)
 
             # If we get this far, our caller needs changed-paths, or we need
             # them for authz-related sanitization.
