@@ -15,7 +15,6 @@ such as CVS.
 """
 
 import sys
-import io
 import subprocess
 import os
 import time
@@ -376,6 +375,12 @@ class NonTextualFileContents(Error):
     pass
 
 
+class ExternalDiffError(Error):
+    def __init__(self, returncode, mess):
+        self.returncode = returncode
+        Error.__init__(self, "Diff terminated with exit code {0:d}: {1}".format(returncode, mess))
+
+
 # ======================================================================
 # Implementation code used by multiple vclib modules
 
@@ -427,26 +432,31 @@ class _diff_fp:
         if info1 and info2:
             args.extend(["-L", self._label(info1), "-L", self._label(info2)])
         args.extend([temp1, temp2])
+        # We assume pipe buffer for stderr is enough for diff utility,
+        # otherwise, it may cause deadlock.
         self.proc = subprocess.Popen(
-            args, stdout=subprocess.PIPE, bufsize=-1, close_fds=(sys.platform != "win32")
+            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            encoding="utf-8", errors="surrogateescape",
+            bufsize=-1, close_fds=(sys.platform != "win32")
         )
-        if not isinstance(self.proc.stdout, io.TextIOBase) and isinstance(
-            self.proc.stdout, io.BufferedIOBase
-        ):
-            self.fp = io.TextIOWrapper(self.proc.stdout, encoding="utf-8", errors="surrogateescape")
-        else:
-            self.fp = self.proc.stdout
 
-    def read(self, bytes):
-        return self.fp.read(bytes)
+    def read(self, buf_size):
+        buf = self.proc.stdout.read(buf_size)
+        if buf == "":
+            self._check_process_errors()
+        return buf
 
     def readline(self):
-        return self.fp.readline()
+        buf = self.proc.stdout.readline()
+        if buf == "":
+            self._check_process_errors()
+        return buf
 
     def close(self):
         try:
             if self.proc:
-                self.fp.close()
+                self.proc.stdout.close()
+                self.proc.stderr.close()
                 ret = self.proc.poll()
                 if ret is None:
                     # child process seems to be still running...
@@ -469,6 +479,27 @@ class _diff_fp:
         path, date, rev = info
         date = date and time.strftime("%Y/%m/%d %H:%M:%S", time.gmtime(date))
         return "%s\t%s\t%s" % (path, date, rev)
+
+    def _check_process_errors(self):
+        """Check errors returned by subprocss. On error, raise an
+        ExternalDifferror exception"""
+
+        errs = self.proc.stderr.read()
+        ret = self.proc.poll()
+
+        # Exit code of diff utility is specified in POSIX:
+        #     0  ... No differences were found
+        #     1  ... Diferences were found
+        #     >1 ... An error occurred.
+        # Also, it is said "The standard error shall be used only for
+        # diagnostic messages." So, if errs is not empty, it would be
+        # occured some errors.
+
+        if ret not in (None, 0, 1) or errs:
+            if ret is None:
+                # The process is still running...
+                ret = -1
+            raise ExternalDiffError(ret, errs)
 
 
 def check_root_access(repos):

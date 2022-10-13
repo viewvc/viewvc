@@ -3612,9 +3612,12 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2, sym1=None, sym2=
         parsing = 1
         flag = _RCSDIFF_NO_CHANGES
         while parsing:
-            line = fp.readline()
-            if not line:
-                break
+            try:
+                line = fp.readline()
+                if not line:
+                    break
+            except vclib.ExternalDiffError as e:
+                raise ViewVCException(str(e), "500 Internal Server Error")
 
             # Saw at least one line in the stream
             flag = None
