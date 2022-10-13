@@ -443,23 +443,13 @@ class _diff_fp:
     def read(self, buf_size):
         buf = self.proc.stdout.read(buf_size)
         if buf == "":
-            errs = self.proc.stderr.read()
-            ret = self.proc.poll()
-            if ret not in (None, 0, 1) or errs:
-                if ret is None:
-                    ret = -1
-                raise ExternalDiffError(ret, errs)
+            self._check_process_errors()
         return buf
 
     def readline(self):
         buf = self.proc.stdout.readline()
         if buf == "":
-            errs = self.proc.stderr.read()
-            ret = self.proc.poll()
-            if ret not in (None, 0, 1) or errs:
-                if ret is None:
-                    ret = -1
-                raise ExternalDiffError(ret, errs)
+            self._check_process_errors()
         return buf
 
     def close(self):
@@ -489,6 +479,27 @@ class _diff_fp:
         path, date, rev = info
         date = date and time.strftime("%Y/%m/%d %H:%M:%S", time.gmtime(date))
         return "%s\t%s\t%s" % (path, date, rev)
+
+    def _check_process_errors(self):
+        """Check errors returned by subprocss. On error, raise an
+        ExternalDifferror exception"""
+
+        errs = self.proc.stderr.read()
+        ret = self.proc.poll()
+
+        # Exit code of diff utility is specified in POSIX:
+        #     0  ... No differences were found
+        #     1  ... Diferences were found
+        #     >1 ... An error occurred.
+        # Also, it is said "The standard error shall be used only for
+        # diagnostic messages." So, if errs is not empty, it would be
+        # occured some errors.
+
+        if ret not in (None, 0, 1) or errs:
+            if ret is None:
+                # The process is still running...
+                ret = -1
+            raise ExternalDiffError(ret, errs)
 
 
 def check_root_access(repos):
