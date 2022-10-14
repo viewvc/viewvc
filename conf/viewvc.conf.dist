@@ -336,6 +336,19 @@
 ##
 #diff = 
 
+## max_context: Number of context lines to pass to diff program with
+## "--unified" option, for "Full human readable" format.
+##
+## The GNU diff utility does not have option to get whole context
+## or unified diffs without omission.  Alternatively, we indicate
+## large number of context lines practically enough.
+##
+## The default value is 10000, which is large enough for diff text
+## on web browser, we think. You can increase or decrease this value
+## as long as the diff utility can accept it.
+##
+#max_context = 10000
+
 ## cvsgraph: Location of the CvsGraph program, a graphical CVS version
 ## graph generator (see options.use_cvsgraph).
 ##
@@ -625,7 +638,7 @@
 ##   c      Context diff
 ##   s      Side by side
 ##   l      Long human readable (more context)
-##   f      Full human readable (entire file)
+##   f      Full human readable (very large context, entire file in most case)
 ##
 #diff_format = h
 

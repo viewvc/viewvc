@@ -387,6 +387,7 @@ class Config:
         else:
             self.utilities.cvsnt = None
         self.utilities.diff = ""
+        self.utilities.max_context = 10000
         self.utilities.cvsgraph = ""
 
         self.options.root_as_url_component = 1
