@@ -19,7 +19,6 @@ import tempfile
 from io import StringIO
 from urllib.parse import quote as _quote
 from svn import fs, repos, core, client, delta
-from common import cmp
 
 long = int
 
@@ -94,7 +93,7 @@ def _kind2type(node_kind):
         core.svn_node_dir: vclib.DIR,
         core.svn_node_file: vclib.FILE,
     }.get(node_kind)
-        
+
 
 # Return a stringfied copy of a bytestring Subversion property
 # (versioned or unversioned) VALUE if possible; otherwise return the
@@ -725,7 +724,8 @@ class LocalSubversionRepository(vclib.Repository):
                             )
                             if copyfrom_path:
                                 prev_rev = copyfrom_rev
-                                prev_parts = _path_parts(_to_str(copyfrom_path)) + parts[len(parent_parts) :]
+                                prev_parts = (_path_parts(_to_str(copyfrom_path))
+                                              + parts[len(parent_parts) :])
                                 break
                             del parent_parts[-1]
                         pathtype = self._gettype(self._getpath(prev_parts), prev_rev)
