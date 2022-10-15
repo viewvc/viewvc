@@ -729,6 +729,8 @@ def _get_value(refname_start_rest, ctx, filename, line_number):
         return ""
 
     # string or a sequence
+    if hasattr(ob, '__next__'):
+        return list(ob)
     return ob
 
 
