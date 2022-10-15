@@ -583,7 +583,7 @@ class Template:
 
     def _cmd_if_index(self, args, fp, ctx, filename, line_number):
         ((valref, value), t_section, f_section) = args
-        list, idx = ctx.for_index[valref[0]]
+        vlist, idx = ctx.for_index[valref[0]]
         if value == "even":
             value = idx % 2 == 0
         elif value == "odd":
@@ -591,7 +591,7 @@ class Template:
         elif value == "first":
             value = idx == 0
         elif value == "last":
-            value = idx == len(list) - 1
+            value = idx == len(vlist) - 1
         else:
             value = idx == int(value)
         self._do_if(value, t_section, f_section, fp, ctx)
@@ -616,12 +616,12 @@ class Template:
 
     def _cmd_for(self, args, fp, ctx, filename, line_number):
         ((valref,), unused, section) = args
-        list = _get_value(valref, ctx, filename, line_number)
+        vlist = _get_value(valref, ctx, filename, line_number)
         refname = valref[0]
-        if isinstance(list, str):
+        if isinstance(vlist, str):
             raise NeedSequenceError(refname, filename, line_number)
-        ctx.for_index[refname] = idx = [list, 0]
-        for item in list:
+        ctx.for_index[refname] = idx = [vlist, 0]
+        for item in vlist:
             self._execute(section, fp, ctx)
             idx[1] = idx[1] + 1
         del ctx.for_index[refname]
@@ -706,8 +706,8 @@ def _get_value(refname_start_rest, ctx, filename, line_number):
 
     # get the starting object
     if start in ctx.for_index:
-        list, idx = ctx.for_index[start]
-        ob = list[idx]
+        vlist, idx = ctx.for_index[start]
+        ob = vlist[idx]
     elif start in ctx.defines:
         ob = ctx.defines[start]
     elif hasattr(ctx.data, start):
