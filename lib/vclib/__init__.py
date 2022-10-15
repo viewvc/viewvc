@@ -174,7 +174,7 @@ class Repository:
           funout - boolean, include C function names
           ignore_white - boolean, ignore whitespace
 
-        Return value is a python file object
+        Return value is a file like object with str I/O.
         """
 
     def annotate(self, path_parts, rev, include_text=False):
@@ -420,8 +420,8 @@ def _diff_args(type, options):
 
 
 class _diff_fp:
-    """File object reading a diff between temporary files, cleaning up
-    on close"""
+    """File like object with str I/O reading a diff between temporary files,
+    cleaning up on close"""
 
     def __init__(self, temp1, temp2, info1=None, info2=None, diff_cmd="diff", diff_opts=[]):
         self.readable = True
