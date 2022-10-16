@@ -730,6 +730,8 @@ def _get_value(refname_start_rest, ctx, filename, line_number):
 
     # string or a sequence
     if hasattr(ob, '__next__'):
+        # The return value ob should not be an iterator or a generator,
+        # because it would be accessed via index later.
         return list(ob)
     return ob
 
