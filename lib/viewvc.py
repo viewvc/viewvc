@@ -3856,7 +3856,7 @@ class DiffDescription:
         self.line_differ = None
         self.fp_differ = None
         self.request = request
-        self.context = -1
+        self.context = None
         self.changes = []
 
         if self.diff_format == "c":
@@ -3871,7 +3871,7 @@ class DiffDescription:
             self.human_readable = 1
         elif self.diff_format == "f":
             self.diff_type = vclib.UNIFIED
-            self.context = None
+            self.context = cfg.utilities.max_context
             self.human_readable = 1
         elif self.diff_format == "h":
             self.diff_type = vclib.UNIFIED
@@ -3922,7 +3922,7 @@ class DiffDescription:
     def get_content_diff(self, left, right):
         options = self.request.cfg.options
         diff_options = {}
-        if self.context != -1:
+        if self.context is not None:
             diff_options["context"] = self.context
         if self.human_readable or self.diff_format == "u":
             diff_options["funout"] = options.hr_funout
@@ -3933,7 +3933,7 @@ class DiffDescription:
 
     def get_prop_diff(self, left, right):
         diff_options = {}
-        if self.context != -1:
+        if self.context is not None:
             diff_options["context"] = self.context
         if self.human_readable:
             cfg = self.request.cfg
