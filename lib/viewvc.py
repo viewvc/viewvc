@@ -4021,8 +4021,8 @@ class DiffDescription:
     def _content_lines(self, side, propname):
         f = self.request.repos.openfile(side.path_comp, side.rev, {})[0]
         try:
-            lines = [lin.decode(self.request.repos.encoding, 'surrogateescape')
-                     for lin in f.readlines()]
+            lines = [line.decode(self.request.repos.encoding, 'surrogateescape')
+                     for line in f.readlines()]
         finally:
             f.close()
         return lines
