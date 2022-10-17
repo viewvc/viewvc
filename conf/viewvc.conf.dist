@@ -339,13 +339,12 @@
 ## max_context: Number of context lines to pass to diff program with
 ## "--unified" option, for "Full human readable" format.
 ##
-## The GNU diff utility does not have option to get whole context
-## or unified diffs without omission.  Alternatively, we indicate
-## large number of context lines practically enough.
-##
-## The default value is 10000, which is large enough for diff text
-## on web browser, we think. You can increase or decrease this value
-## as long as the diff utility can accept it.
+## The GNU diff utility does not have the option to request all the context
+## of unified diffs, so the best we can do is to ask for a very large
+## number of context lines.  The default value is 10000, which should be
+## large enough to result in the display of all context lines for any files
+## whose diffs you'd care to even see in a web browser.  Of course, you can
+## increase or decrease this value as best suits your server.
 ##
 #max_context = 10000
 
@@ -638,7 +637,7 @@
 ##   c      Context diff
 ##   s      Side by side
 ##   l      Long human readable (more context)
-##   f      Full human readable (very large context, entire file in most case)
+##   f      Full human readable (very large context, entire file in most cases)
 ##
 #diff_format = h
 
