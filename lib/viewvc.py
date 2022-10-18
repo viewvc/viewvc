@@ -4021,7 +4021,8 @@ class DiffDescription:
     def _content_lines(self, side, propname):
         f = self.request.repos.openfile(side.path_comp, side.rev, {})[0]
         try:
-            lines = f.readlines()
+            lines = [line.decode(self.request.repos.encoding, 'surrogateescape')
+                     for line in f.readlines()]
         finally:
             f.close()
         return lines
@@ -4033,8 +4034,7 @@ class DiffDescription:
 
     def _prop_lines(self, side, propname):
         val = side.properties.get(propname, "")
-        # FIXME: dirty hack for Python 3: we need bytes as return value
-        return val.encode("utf-8", "surrogateescape").splitlines()
+        return val.splitlines()
 
     def _prop_fp(self, left, right, propname, diff_options):
         fn_left = self._temp_file(left.properties.get(propname))
