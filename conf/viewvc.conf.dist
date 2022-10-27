@@ -360,6 +360,28 @@
 ##---------------------------------------------------------------------------
 [options]
 
+## repos_locale: (Unix/Linux only) (this comment is tentative)
+## Specifies LC_CTYPE locale for repository paths on your server.
+## Repository paths specified incvs_roots and/or svn_roots can be
+## non-ascii paths represented in Unicode.  We assume the viewvc.conf
+## file content is encoded by the locale that specified by locale
+## environment variables when ViewVC starts.  However, repository paths
+## can be placed in the path encoded by some encoding other than
+## ViewVC's start up locale.  So it can be override this value per
+## repos root. This value should be valid locale that supported by
+## your system environment.  If this is not set, ViewVC uses the locale
+## on strarting.
+##
+## (Warning) If setlocale is not thread safe on your system and if
+## you use mod_wsgi in daemon mode, do not set this value.
+## Otherwise, you might experience unexpected crashes or errors.
+##
+## Examples:
+## repos_locale = en_US.UTF-8
+## repos_locale = Russian_Russia.1251
+##
+#repos_locale =
+
 ## root_as_url_component: Interpret the first path component in the URL
 ## after the script location as the root to use.  This is an
 ## alternative to using the "root=" query key. If ViewVC is configured
@@ -787,8 +809,10 @@
 ## paths, property names, and its own reserved property values using
 ## the UTF-8 encoding.  CVS makes no such promises.  Of course, file
 ## content versioned in these systems can use any arbitrary encoding.
+## If this is not specified, it is set to the encoding of the locale
+## specified by repos_locale
 ##
-#default_encoding = utf-8
+#default_encoding =
 
 ## detect_encoding: Should we attempt to automatically detect
 ## versioned file character encodings?  [Requires 'chardet' module,
