@@ -35,15 +35,17 @@ def _path_join(path_parts):
 
 
 class BaseCVSRepository(vclib.Repository):
-    def __init__(self, name, rootpath, authorizer, utilities, encoding):
-        if not os.path.isdir(rootpath):
+    def __init__(self, name, rootpath, authorizer, utilities,
+                 content_encoding, path_encoding):
+        if not os.path.isdir(_getfspath(rootpath, path_encoding)):
             raise vclib.ReposNotFound(name)
 
         self.name = name
         self.rootpath = rootpath
         self.auth = authorizer
         self.utilities = utilities
-        self.encoding = encoding
+        self.content_encoding = content_encoding
+        self.path_encoding = path_encoding
 
         # See if this repository is even viewable, authz-wise.
         if not vclib.check_root_access(self):
@@ -69,13 +71,13 @@ class BaseCVSRepository(vclib.Repository):
     def itemtype(self, path_parts, rev):
         basepath = self._getpath(path_parts)
         kind = None
-        if os.path.isdir(basepath):
+        if os.path.isdir(self._getfspath(basepath)):
             kind = vclib.DIR
-        elif os.path.isfile(basepath + ",v"):
+        elif os.path.isfile(self._getfspath(basepath + ",v")):
             kind = vclib.FILE
         else:
             atticpath = self._getpath(self._atticpath(path_parts))
-            if os.path.isfile(atticpath + ",v"):
+            if os.path.isfile(self._getfspath(atticpath + ",v")):
                 kind = vclib.FILE
         if not kind:
             raise vclib.ItemNotFound(path_parts)
@@ -94,9 +96,10 @@ class BaseCVSRepository(vclib.Repository):
         # Only RCS files (*,v) and subdirs are returned.
         data = []
         full_name = self._getpath(path_parts)
-        for file in os.listdir(full_name):
+        for file in os_listdir(full_name, self.path_encoding):
             name = None
-            kind, errors = _check_path(os.path.join(full_name, file))
+            kind, errors = _check_path(os.path.join(full_name, file),
+                                       self.path_encoding)
             if kind == vclib.FILE:
                 if file[-2:] == ",v":
                     name = file[:-2]
@@ -111,10 +114,11 @@ class BaseCVSRepository(vclib.Repository):
                 data.append(CVSDirEntry(name, kind, errors, 0))
 
         full_name = os.path.join(full_name, "Attic")
-        if os.path.isdir(full_name):
-            for file in os.listdir(full_name):
+        if os.path.isdir(self._getfspath(full_name)):
+            for file in os_listdir(full_name, self.path_encoding):
                 name = None
-                kind, errors = _check_path(os.path.join(full_name, file))
+                kind, errors = _check_path(os.path.join(full_name, file),
+                                           self.path_encoding)
                 if kind == vclib.FILE:
                     if file[-2:] == ",v":
                         name = file[:-2]
@@ -130,6 +134,15 @@ class BaseCVSRepository(vclib.Repository):
     def _getpath(self, path_parts):
         return os.path.join(*((self.rootpath,) + tuple(path_parts)))
 
+    def _getfspath(self, path):
+        """Get path on local file system.
+
+        PATH should be a path represented in str. On system using posix path,
+        it returns a path represented in bytes. On Windows, returns PATH
+        itself."""
+
+        return _getfspath(path, self.path_encoding)
+
     def _atticpath(self, path_parts):
         return path_parts[:-1] + ["Attic"] + path_parts[-1:]
 
@@ -138,10 +151,10 @@ class BaseCVSRepository(vclib.Repository):
 
         ret_parts = path_parts
         ret_file = self._getpath(ret_parts)
-        if not os.path.isfile(ret_file + ",v"):
+        if not os.path.isfile(self._getfspath(ret_file + ",v")):
             ret_parts = self._atticpath(path_parts)
             ret_file = self._getpath(ret_parts)
-            if not os.path.isfile(ret_file + ",v"):
+            if not os.path.isfile(self._getfspath(ret_file + ",v")):
                 raise vclib.ItemNotFound(path_parts)
         if root:
             ret = ret_file
@@ -155,7 +168,7 @@ class BaseCVSRepository(vclib.Repository):
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
             raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
         rcsfile = self.rcsfile(path_parts, 1)
-        return os.access(rcsfile, os.X_OK)
+        return os.access(self._getfspath(rcsfile), os.X_OK)
 
     def filesize(self, path_parts, rev):
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
@@ -202,7 +215,7 @@ class BinCVSRepository(BaseCVSRepository):
         tip_rev = None  # used only if we have to fallback to using rlog
         fp = self.rcs_popen("co", (kv_flag, rev_flag, full_name))
         try:
-            filename, revision = _parse_co_header(fp, self.encoding)
+            filename, revision = _parse_co_header(fp, self.content_encoding)
         except COMissingRevision:
             # We got a "revision X.Y.Z absent" error from co.  This could be
             # because we were asked to find a tip of a branch, which co
@@ -230,7 +243,7 @@ class BinCVSRepository(BaseCVSRepository):
             if not (tip_rev and tip_rev.undead):
                 raise vclib.Error('Could not find non-dead revision preceding "%s"' % rev)
             fp = self.rcs_popen("co", ("-p" + tip_rev.undead.string, full_name))
-            filename, revision = _parse_co_header(fp, self.encoding)
+            filename, revision = _parse_co_header(fp, self.content_encoding)
 
         if filename is None:
             raise vclib.Error('Missing output from co (filename = "%s")' % full_name)
@@ -341,6 +354,9 @@ class BinCVSRepository(BaseCVSRepository):
         else:
             cmd = os.path.join(self.utilities.rcs_dir, rcs_cmd)
             args = rcs_args
+        if sys.platform != "win32":
+            cmd = os.fsencode(cmd)
+            args = [self._getfspath(arg) for arg in args]
         stderr = subprocess.STDOUT if capture_err else subprocess.DEVNULL
         if is_text:
             proc = subprocess.Popen(
@@ -348,7 +364,7 @@ class BinCVSRepository(BaseCVSRepository):
                 bufsize=-1,
                 stdout=subprocess.PIPE,
                 stderr=stderr,
-                encoding=self.encoding,
+                encoding=self.content_encoding,
                 errors="surrogateescape",
                 close_fds=(sys.platform != "win32"),
             )
@@ -368,7 +384,8 @@ class BinCVSRepository(BaseCVSRepository):
 
         from vclib.ccvs import blame
 
-        source = blame.BlameSource(self.rcsfile(path_parts, 1), rev, include_text, self.encoding)
+        source = blame.BlameSource(self._getfspath(self.rcsfile(path_parts, 1)),
+                                   rev, include_text, self.content_encoding)
         return source, source.revision
 
     def revinfo(self, rev):
@@ -1028,7 +1045,8 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
 
         while len(chunk) < max_args and entries_idx < entries_len:
             entry = entries[entries_idx]
-            path = _log_path(entry, repos._getpath(dir_path_parts), get_dirs)
+            path = _log_path(entry, repos._getpath(dir_path_parts), get_dirs,
+                             repos.path_encoding)
             if path:
                 entry.path = path
                 entry.idx = entries_idx
@@ -1167,14 +1185,15 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
         rlog.close()
 
 
-def _log_path(entry, dirpath, getdirs):
+def _log_path(entry, dirpath, getdirs, encoding):
     path = name = None
     if not entry.errors:
         if entry.kind == vclib.FILE:
             path = entry.in_attic and "Attic" or ""
             name = entry.name
         elif entry.kind == vclib.DIR and getdirs:
-            entry.newest_file = _newest_file(os.path.join(dirpath, entry.name))
+            entry.newest_file = _newest_file(os.path.join(dirpath, entry.name),
+                                             encoding)
             if entry.newest_file:
                 path = entry.name
                 name = entry.newest_file
@@ -1189,7 +1208,20 @@ def _log_path(entry, dirpath, getdirs):
 
 if sys.platform == "win32":
 
-    def _check_path(path):
+    def _getfspath(path, encoding):
+        """Get path on local file system.
+
+        PATH should be a path represented in str. On system using posix path,
+        it returns a path represented in bytes. On Windows, returns PATH
+        itself."""
+
+        return path
+
+    def os_listdir(path, encoding):
+        "Wrapper for os.listdir, with different encoding from file system encoding"
+        return os.listdir(path)
+
+    def _check_path(path, encoding):
         kind = None
         errors = []
 
@@ -1207,12 +1239,30 @@ if sys.platform == "win32":
 
 
 else:
+
+    def _getfspath(path, encoding):
+        """Get path on local file system.
+
+        PATH should be a path represented in str. On system using posix path,
+        it returns a path represented in bytes. On Windows, returns PATH
+        itself."""
+
+        return path.encode(encoding, "surrogateescape")
+
+    def os_listdir(path, encoding):
+        "Wrapper for os.listdir, with different encoding from file system encoding"
+
+        if isinstance(path, bytes):
+            return os.listdir(path)
+        path = _getfspath(path, encoding) if path else b"."
+        return [enc_decode(ent, encoding) for ent in os.listdir(path)]
+
     _uid = os.getuid()
     _gid = os.getgid()
 
-    def _check_path(pathname):
+    def _check_path(pathname, encoding):
         try:
-            info = os.stat(pathname)
+            info = os.stat(_getfspath(pathname, encoding))
         except os.error as e:
             return None, ["stat error: %s" % e]
 
@@ -1253,7 +1303,8 @@ else:
             # the group stat.ST_GID access may be granted.
             # so the fall back to os.access is needed to figure this out.
             elif (mode & mask) != mask:
-                if not os.access(pathname, isdir and (os.R_OK | os.X_OK) or os.R_OK):
+                if not os.access(_getfspath(pathname, encoding),
+                                 isdir and (os.R_OK | os.X_OK) or os.R_OK):
                     errors.append("error: path is not accessible")
 
             if isdir:
@@ -1267,23 +1318,23 @@ else:
         return kind, errors
 
 
-def _newest_file(dirpath):
+def _newest_file(dirpath, encoding):
     """Find the last modified RCS file in a directory"""
     newest_file = None
     newest_time = 0
 
     # FIXME:  This sucker is leaking unauthorized paths!
 
-    for subfile in os.listdir(dirpath):
+    for subfile in os_listdir(dirpath, encoding):
         # TODO: filter CVS locks? stale NFS handles?
         if subfile[-2:] != ",v":
             continue
         path = os.path.join(dirpath, subfile)
-        info = os.stat(path)
+        info = os.stat(_getfspath(path, encoding))
         if not stat.S_ISREG(info[stat.ST_MODE]):
             continue
         if info[stat.ST_MTIME] > newest_time:
-            kind, verboten = _check_path(path)
+            kind, verboten = _check_path(path, encoding)
             if kind == vclib.FILE and not verboten:
                 newest_file = subfile[:-2]
                 newest_time = info[stat.ST_MTIME]

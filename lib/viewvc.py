@@ -46,6 +46,7 @@ from common import (
     _RCSDIFF_ERROR,
     TemplateData,
     _item,
+    get_repos_encodings,
 )
 import accept
 import config
@@ -259,6 +260,8 @@ class Request:
                 # Setup an Authorizer for this rootname and username
                 self.auth = setup_authorizer(cfg, self.username)
 
+                # get the encoding for the path and contents
+                path_encoding, content_encoding = get_repos_encodings(cfg, self.rootname)
                 # Create the repository object
                 try:
                     if roottype == "cvs":
@@ -269,11 +272,15 @@ class Request:
                             self.auth,
                             cfg.utilities,
                             cfg.options.use_rcsparse,
-                            cfg.options.default_encoding,
+                            content_encoding,
+                            path_encoding,
                         )
                         # required so that spawned rcs programs correctly expand
                         # $CVSHeader$
-                        os.environ["CVSROOT"] = self.rootpath
+                        if sys.platform == 'win32':
+                            os.environ["CVSROOT"] = self.rootpath
+                        else:
+                            os.environb[b"CVSROOT"] = self.rootpath.encode(path_encoding)
                     elif roottype == "svn":
                         self.rootpath = vclib.svn.canonicalize_rootpath(rootpath)
                         self.repos = vclib.svn.SubversionRepository(
@@ -282,7 +289,7 @@ class Request:
                             self.auth,
                             cfg.utilities,
                             cfg.options.svn_config_dir,
-                            cfg.options.default_encoding,
+                            content_encoding,
                         )
                     else:
                         raise vclib.ReposNotFound()
@@ -1019,10 +1026,6 @@ def generate_page(request, view_name, data, content_type=None):
     template.generate(server_fp, data)
 
 
-def transcode_path_for_display(path, encoding, errors="replace"):
-    return path.encode("utf-8", "surrogateescape").decode(encoding, errors)
-
-
 def nav_path(request):
     """Return current path as list of items with "name" and "href" members
 
@@ -1050,8 +1053,6 @@ def nav_path(request):
         path_parts.append(part)
         is_last = len(path_parts) == len(request.path_parts)
 
-        if request.roottype == "cvs":
-            part = transcode_path_for_display(part, request.repos.encoding)
         item = _item(name=request.server.escape(part), href=None)
 
         if not is_last or (is_dir and request.view_func is not view_directory):
@@ -1598,11 +1599,6 @@ def common_template_data(request, revision=None, mime_type=None):
 
     cfg = request.cfg
 
-    if request.roottype == "cvs":
-        disp_where = transcode_path_for_display(request.where, request.repos.encoding)
-    else:
-        disp_where = request.where
-
     # Initialize data dictionary members (sorted alphanumerically)
     data = TemplateData(
         {
@@ -1637,7 +1633,7 @@ def common_template_data(request, revision=None, mime_type=None):
             "view": _view_codes[request.view_func],
             "view_href": None,
             "vsn": __version__,
-            "where": request.server.escape(disp_where),
+            "where": request.server.escape(request.where),
         }
     )
 
@@ -2143,7 +2139,7 @@ def markup_or_annotate(request, is_annotate):
                     break
             encoding = detect_encoding(text_block)
         if not encoding:
-            encoding = request.repos.encoding
+            encoding = request.repos.content_encoding
 
         # Decode the file's lines from the detected encoding to Unicode.
         try:
@@ -2511,9 +2507,6 @@ def view_directory(request):
         if request.roottype == "cvs":
             if file.absent:
                 continue
-            disp_name = transcode_path_for_display(file.name, request.repos.encoding)
-        else:
-            disp_name = file.name
         if cfg.options.hide_errorful_entries and file.errors:
             continue
         row.rev = file.rev
@@ -2528,7 +2521,7 @@ def view_directory(request):
             row.short_log = lf.get(maxlen=cfg.options.short_log_len, htmlize=1)
         row.lockinfo = file.lockinfo
         row.anchor = request.server.escape(file.name)
-        row.name = request.server.escape(disp_name)
+        row.name = request.server.escape(file.name)
         row.pathtype = (file.kind == vclib.FILE and "file") or (file.kind == vclib.DIR and "dir")
         row.errors = file.errors
 
@@ -4021,7 +4014,7 @@ class DiffDescription:
     def _content_lines(self, side, propname):
         f = self.request.repos.openfile(side.path_comp, side.rev, {})[0]
         try:
-            lines = [line.decode(self.request.repos.encoding, 'surrogateescape')
+            lines = [line.decode(self.request.repos.content_encoding, 'surrogateescape')
                      for line in f.readlines()]
         finally:
             f.close()
@@ -4445,7 +4438,7 @@ def view_revision(request):
         undisplayable = is_undisplayable(revprops[name])
         if not undisplayable:
             lf = LogFormatter(
-                request, revprops[name].decode(request.repos.encoding, "backslashreplace")
+                request, revprops[name].decode(request.repos.content_encoding, "backslashreplace")
             )
             value = lf.get(maxlen=0, htmlize=1)
         else:
@@ -5267,6 +5260,9 @@ def list_roots(request):
 
     # Add the viewable Subversion roots
     for root in cfg.general.svn_roots.keys():
+        path_encoding, content_encoding = get_repos_encodings(cfg, root,
+                                                              do_overlay=True,
+                                                              preserve_cfg=True)
         auth = setup_authorizer(cfg, request.username, root)
         try:
             repos = vclib.svn.SubversionRepository(
@@ -5275,7 +5271,7 @@ def list_roots(request):
                 auth,
                 cfg.utilities,
                 cfg.options.svn_config_dir,
-                cfg.options.default_encoding,
+                content_encoding,
             )
             lastmod = None
             if cfg.options.show_roots_lastmod:
@@ -5304,6 +5300,9 @@ def list_roots(request):
 
     # Add the viewable CVS roots
     for root in cfg.general.cvs_roots.keys():
+        path_encoding, content_encoding = get_repos_encodings(cfg, root,
+                                                              do_overlay=True,
+                                                              preserve_cfg=True)
         auth = setup_authorizer(cfg, request.username, root)
         try:
             vclib.ccvs.CVSRepository(
@@ -5312,7 +5311,8 @@ def list_roots(request):
                 auth,
                 cfg.utilities,
                 cfg.options.use_rcsparse,
-                cfg.options.default_encoding,
+                content_encoding,
+                path_encoding,
             )
         except vclib.ReposNotFound:
             continue

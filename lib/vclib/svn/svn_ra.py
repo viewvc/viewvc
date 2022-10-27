@@ -203,7 +203,7 @@ class RemoteSubversionRepository(vclib.Repository):
         self.auth = authorizer
         self.diff_cmd = utilities.diff or "diff"
         self.config_dir = config_dir or None
-        self.encoding = encoding
+        self.content_encoding = encoding
 
         # See if this repository is even viewable, authz-wise.
         if not vclib.check_root_access(self):
@@ -308,7 +308,7 @@ class RemoteSubversionRepository(vclib.Repository):
         # for this item.
         lockinfo = size_in_rev = None
         if path_type == vclib.FILE:
-            basename = path_parts[-1].encode(self.encoding, "surrogateescape")
+            basename = path_parts[-1].encode("utf-8", "surrogateescape")
             list_url = self._geturl(self._getpath(path_parts[:-1]))
             dirents, locks = client.svn_client_ls3(
                 list_url, _rev2optrev(rev), _rev2optrev(rev), 0, self.ctx
@@ -372,7 +372,7 @@ class RemoteSubversionRepository(vclib.Repository):
         if pairs:
             for pname in pairs[0][1].keys():
                 pvalue = pairs[0][1][pname]
-                pname, pvalue = _normalize_property(pname, pvalue, self.encoding)
+                pname, pvalue = _normalize_property(pname, pvalue, self.content_encoding)
                 if pname:
                     propdict[pname] = pvalue
         return propdict
@@ -411,7 +411,7 @@ class RemoteSubversionRepository(vclib.Repository):
             elif self.auth:
                 date, author, msg, revprops, changes = self._revinfo(revision)
             else:
-                author = _normalize_property_value(author, self.encoding)
+                author = _normalize_property_value(author, self.content_encoding)
 
             # Strip text if the caller doesn't want it.
             if not include_text:

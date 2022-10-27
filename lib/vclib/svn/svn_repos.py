@@ -379,7 +379,7 @@ class LocalSubversionRepository(vclib.Repository):
         self.auth = authorizer
         self.diff_cmd = utilities.diff or "diff"
         self.config_dir = config_dir or None
-        self.encoding = encoding
+        self.content_encoding = encoding
 
         # See if this repository is even viewable, authz-wise.
         if not vclib.check_root_access(self):
@@ -542,7 +542,7 @@ class LocalSubversionRepository(vclib.Repository):
         propdict = {}
         for pname in proptable.keys():
             pvalue = proptable[pname]
-            pname, pvalue = _normalize_property(pname, pvalue, self.encoding)
+            pname, pvalue = _normalize_property(pname, pvalue, self.content_encoding)
             if pname:
                 propdict[pname] = pvalue
         return propdict
@@ -562,7 +562,7 @@ class LocalSubversionRepository(vclib.Repository):
             oldest_rev,
             include_text,
             self.config_dir,
-            self.encoding,
+            self.content_encoding,
         )
         return source, youngest_rev
 

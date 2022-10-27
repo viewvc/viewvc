@@ -56,13 +56,16 @@ def find_root_in_parent(parent_path, rootname):
     return None
 
 
-def CVSRepository(name, rootpath, authorizer, utilities, use_rcsparse, encoding="utf-8"):
+def CVSRepository(name, rootpath, authorizer, utilities, use_rcsparse,
+                  content_encoding, path_encoding):
     rootpath = canonicalize_rootpath(rootpath)
     if use_rcsparse:
         from . import ccvs
 
-        return ccvs.CCVSRepository(name, rootpath, authorizer, utilities, encoding)
+        return ccvs.CCVSRepository(name, rootpath, authorizer, utilities,
+                                   content_encoding, path_encoding)
     else:
         from . import bincvs
 
-        return bincvs.BinCVSRepository(name, rootpath, authorizer, utilities, encoding)
+        return bincvs.BinCVSRepository(name, rootpath, authorizer, utilities,
+                                       content_encoding, path_encoding)
