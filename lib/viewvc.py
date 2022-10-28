@@ -33,7 +33,6 @@ import tempfile
 import time
 from operator import attrgetter
 import io
-import popen
 from urllib.parse import urlencode as _urlencode, quote as _quote
 
 # These modules come from our library (the stub has set up the path)
@@ -3252,8 +3251,7 @@ def view_cvsgraph_image(request):
     # os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib:/path/to/cvsgraph'
 
     rcsfile = request.repos.rcsfile(request.path_parts)
-    fp = popen.popen(
-        cfg.utilities.cvsgraph or "cvsgraph",
+    fp = request.repos.cvsgraph_popen(
         (
             "-c",
             cfg.path(cfg.options.cvsgraph_conf),
@@ -3287,8 +3285,7 @@ def view_cvsgraph(request):
 
     # Create an image map
     rcsfile = request.repos.rcsfile(request.path_parts)
-    fp = popen.popen(
-        cfg.utilities.cvsgraph or "cvsgraph",
+    fp = request.repos.cvsgraph_popen(
         (
             "-i",
             "-c",

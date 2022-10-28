@@ -175,6 +175,35 @@ class BaseCVSRepository(vclib.Repository):
             raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
         return -1
 
+    def cvsgraph_popen(self, cvsgraph_args, is_text=False, capture_err=True):
+        """Run cvsgraph, with appropriate transcode of args. Unlike
+        rcs_popen, this uses always UTF-8 in text mode encoding"""
+
+        cmd = self.utilities.cvsgraph or "cvsgraph"
+        if sys.platform != "win32":
+            cmd = os.fsencode(cmd)
+            cvsgraph_args = [self._getfspath(arg) for arg in cvsgraph_args]
+        stderr = subprocess.STDOUT if capture_err else subprocess.DEVNULL
+        if is_text:
+            proc = subprocess.Popen(
+                [cmd] + list(cvsgraph_args),
+                bufsize=-1,
+                stdout=subprocess.PIPE,
+                stderr=stderr,
+                encoding="utf-8",
+                errors="surrogateescape",
+                close_fds=(sys.platform != "win32"),
+            )
+        else:
+            proc = subprocess.Popen(
+                [cmd] + list(cvsgraph_args),
+                bufsize=-1,
+                stdout=subprocess.PIPE,
+                stderr=stderr,
+                close_fds=(sys.platform != "win32"),
+            )
+        return proc.stdout
+
 
 class BinCVSRepository(BaseCVSRepository):
     def _get_tip_revision(self, rcs_file, rev=None):
