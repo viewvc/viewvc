@@ -289,6 +289,7 @@ class Request:
                             cfg.utilities,
                             cfg.options.svn_config_dir,
                             content_encoding,
+                            path_encoding,
                         )
                     else:
                         raise vclib.ReposNotFound()
@@ -5269,6 +5270,7 @@ def list_roots(request):
                 cfg.utilities,
                 cfg.options.svn_config_dir,
                 content_encoding,
+                path_encoding,
             )
             lastmod = None
             if cfg.options.show_roots_lastmod:

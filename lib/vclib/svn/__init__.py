@@ -79,17 +79,19 @@ def find_root_in_parent(parent_path, rootname):
     return None
 
 
-def SubversionRepository(name, rootpath, authorizer, utilities, config_dir, encoding="utf-8"):
+def SubversionRepository(name, rootpath, authorizer, utilities, config_dir,
+                         content_encoding, path_encoding):
     rootpath = canonicalize_rootpath(rootpath)
     if re.search(_re_url, rootpath):
         from . import svn_ra
 
         return svn_ra.RemoteSubversionRepository(
-            name, rootpath, authorizer, utilities, config_dir, encoding
+            name, rootpath, authorizer, utilities, config_dir, content_encoding
         )
     else:
         from . import svn_repos
 
         return svn_repos.LocalSubversionRepository(
-            name, rootpath, authorizer, utilities, config_dir, encoding
+            name, rootpath, authorizer, utilities, config_dir,
+            content_encoding, path_encoding
         )
