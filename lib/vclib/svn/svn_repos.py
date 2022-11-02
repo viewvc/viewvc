@@ -577,7 +577,8 @@ class LocalSubversionRepository(vclib.Repository):
     def revinfo(self, rev):
         return self._revinfo(rev, 1)
 
-    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
+    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type,
+                options={}, is_text=True):
         p1 = self._getpath(path_parts1)
         p2 = self._getpath(path_parts2)
         r1 = self._getrev(rev1)
@@ -587,7 +588,8 @@ class LocalSubversionRepository(vclib.Repository):
         if not vclib.check_path_access(self, path_parts2, vclib.FILE, rev2):
             raise vclib.ItemNotFound(path_parts2)
 
-        args = vclib._diff_args(type, options)
+        args = vclib._diff_args(diff_type, options)
+        encoding = self.content_encoding if is_text else None
 
         def _date_from_rev(rev):
             date, author, msg, revprops, changes = self._revinfo(rev)
@@ -598,7 +600,8 @@ class LocalSubversionRepository(vclib.Repository):
             temp2 = temp_checkout(self, p2, r2)
             info1 = p1, _date_from_rev(r1), r1
             info2 = p2, _date_from_rev(r2), r2
-            return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args)
+            return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd,
+                                  args, encoding=encoding)
         except core.SubversionException as e:
             if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
                 raise vclib.InvalidRevision
