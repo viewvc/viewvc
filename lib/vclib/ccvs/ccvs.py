@@ -124,7 +124,8 @@ class CCVSRepository(BaseCVSRepository):
             return filtered_revs[first : (first + limit)]
         return filtered_revs
 
-    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
+    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type,
+                options={}, is_text=True):
         if self.itemtype(path_parts1, rev1) != vclib.FILE:  # does auth-check
             raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts1)))
         if self.itemtype(path_parts2, rev2) != vclib.FILE:  # does auth-check
@@ -141,9 +142,12 @@ class CCVSRepository(BaseCVSRepository):
         info1 = (self.rcsfile(path_parts1, root=1, v=0), r1.date, r1.string)
         info2 = (self.rcsfile(path_parts2, root=1, v=0), r2.date, r2.string)
 
-        diff_args = vclib._diff_args(type, options)
+        diff_args = vclib._diff_args(diff_type, options)
+        encoding = self.content_encoding if is_text else None
 
-        return vclib._diff_fp(temp1, temp2, info1, info2, self.utilities.diff or "diff", diff_args)
+        return vclib._diff_fp(temp1, temp2, info1, info2,
+                              self.utilities.diff or "diff", diff_args,
+                              encoding=encoding)
 
     def annotate(self, path_parts, rev=None, include_text=False):
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
