@@ -420,7 +420,8 @@ class BinCVSRepository(BaseCVSRepository):
     def revinfo(self, rev):
         raise vclib.UnsupportedFeature
 
-    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
+    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type,
+                options={}, is_text=True):
         """see vclib.Repository.rawdiff docstring
 
         Option values recognized by this implementation:
@@ -432,7 +433,7 @@ class BinCVSRepository(BaseCVSRepository):
         if self.itemtype(path_parts2, rev2) != vclib.FILE:  # does auth-check
             raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts2)))
 
-        args = vclib._diff_args(type, options)
+        args = vclib._diff_args(diff_type, options)
         if options.get("ignore_keyword_subst", 0):
             args.append("-kk")
 
@@ -441,12 +442,12 @@ class BinCVSRepository(BaseCVSRepository):
             raise NotImplementedError("cannot diff across paths in cvs")
         args.extend(["-r" + rev1, "-r" + rev2, rcsfile])
 
-        fp = self.rcs_popen("rcsdiff", args, True)
+        fp = self.rcs_popen("rcsdiff", args, is_text)
 
         # Eat up the non-GNU-diff-y headers.
         while 1:
             line = fp.readline()
-            if not line or line[0:5] == "diff ":
+            if not line or line[0:5] in ("diff ", b"diff "):
                 break
         return fp
 

@@ -162,10 +162,11 @@ class Repository:
         or bytestrings, as appropriate (preferring strings).
         """
 
-    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
+    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type,
+                options={}, is_text=True):
         """Return a diff (in GNU diff format) of two file revisions
 
-        type is the requested diff type (UNIFIED, CONTEXT, etc)
+        diff_type is the requested diff type (UNIFIED, CONTEXT, etc)
 
         options is a dictionary that can contain the following options plus
         implementation-specific options
@@ -174,7 +175,8 @@ class Repository:
           funout - boolean, include C function names
           ignore_white - boolean, ignore whitespace
 
-        Return value is a file like object with str I/O.
+        If is_text is True, return value is a file like object with str I/O.
+        If is_text is False, return value is a file like object with bytes I/O.
         """
 
     def annotate(self, path_parts, rev, include_text=False):
@@ -414,13 +416,18 @@ def _diff_args(type, options):
 
 
 class _diff_fp:
-    """File like object with str I/O reading a diff between temporary files,
-    cleaning up on close"""
+    """File like object reading a diff between temporary files,
+    cleaning up on close.
 
-    def __init__(self, temp1, temp2, info1=None, info2=None, diff_cmd="diff", diff_opts=[]):
+    If ENCODING is not none, it returns file like object with str I/O,
+    otherwise, it returns file like object with bytes I/O"""
+
+    def __init__(self, temp1, temp2, info1=None, info2=None, diff_cmd="diff",
+                 diff_opts=[], encoding="utf-8"):
         self.readable = True
         self.temp1 = temp1
         self.temp2 = temp2
+        self.encoding = encoding
         args = diff_opts[:]
         args.insert(0, diff_cmd)
         if info1 and info2:
@@ -428,21 +435,27 @@ class _diff_fp:
         args.extend([temp1, temp2])
         # We assume pipe buffer for stderr is enough for diff utility,
         # otherwise, it may cause deadlock.
-        self.proc = subprocess.Popen(
-            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            encoding="utf-8", errors="surrogateescape",
-            bufsize=-1, close_fds=(sys.platform != "win32")
-        )
+        if encoding:
+            self.proc = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                encoding=encoding, errors="surrogateescape",
+                bufsize=-1, close_fds=(sys.platform != "win32")
+            )
+        else:
+            self.proc = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                bufsize=-1, close_fds=(sys.platform != "win32")
+            )
 
     def read(self, buf_size):
         buf = self.proc.stdout.read(buf_size)
-        if buf == "":
+        if not buf:
             self._check_process_errors()
         return buf
 
     def readline(self):
         buf = self.proc.stdout.readline()
-        if buf == "":
+        if not buf:
             self._check_process_errors()
         return buf
 
@@ -490,6 +503,8 @@ class _diff_fp:
         # occured some errors.
 
         if ret not in (None, 0, 1) or errs:
+            if not self.encoding:
+                errs = errs.encode("utf-8", "surrogateescape")
             if ret is None:
                 # The process is still running...
                 ret = -1

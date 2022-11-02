@@ -3584,7 +3584,8 @@ class DiffSequencingError(Exception):
     pass
 
 
-def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2, sym1=None, sym2=None):
+def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2,
+                       sym1=None, sym2=None, is_text=True):
     date1 = date2 = log_rev1 = log_rev2 = flag = None
     header_lines = []
 
@@ -3597,6 +3598,12 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2, sym1=None, sym2=
     else:
         f1 = f2 = None
 
+    if is_text:
+        getline=fp.readline
+    else:
+        def getline():
+            return fp.readline().decode("utf-8", "surrogateescape")
+
     # If we're parsing headers, then parse and tweak the diff headers,
     # collecting them in an array until we've read and handled them all.
     if f1 and f2:
@@ -3604,7 +3611,7 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2, sym1=None, sym2=
         flag = _RCSDIFF_NO_CHANGES
         while parsing:
             try:
-                line = fp.readline()
+                line = getline()
                 if not line:
                     break
             except vclib.ExternalDiffError as e:
@@ -3656,8 +3663,14 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2, sym1=None, sym2=
             "rcsdiff found revision %s, but expected " "revision %s" % (log_rev2, rev2),
             "500 Internal Server Error",
         )
+    headers = "".join(header_lines)
+    if not is_text:
+        # Although no caller uses date1 and date2...
+        date1 = date1.encode("utf-8", "surrogateescape")
+        date2 = date2.encode("utf-8", "surrogateescape")
+        headers = headers.encode("utf-8", "surrogateescape")
 
-    return date1, date2, flag, "".join(header_lines)
+    return date1, date2, flag, headers
 
 
 def _get_diff_path_parts(request, query_key, rev, base_rev):
@@ -3771,17 +3784,19 @@ def view_patch(request):
     diff_options["funout"] = cfg.options.hr_funout
 
     try:
-        fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options)
+        fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options,
+                                   is_text=False)
     except vclib.InvalidRevision:
         raise ViewVCException("Invalid path(s) or revision(s) passed to diff", "400 Bad Request")
 
     path_left = _path_join(p1)
     path_right = _path_join(p2)
     date1, date2, flag, headers = diff_parse_headers(
-        fp, diff_type, path_left, path_right, rev1, rev2, sym1, sym2
+        fp, diff_type, path_left, path_right, rev1, rev2, sym1, sym2,
+        is_text=False
     )
 
-    server_fp = get_writeready_server_file(request, "text/plain", is_text=True)
+    server_fp = get_writeready_server_file(request, "text/plain", is_text=False)
     server_fp.write(headers)
     copy_stream(fp, server_fp)
     fp.close()
@@ -4020,7 +4035,8 @@ class DiffDescription:
 
     def _content_fp(self, left, right, propname, diff_options):
         return self.request.repos.rawdiff(
-            left.path_comp, left.rev, right.path_comp, right.rev, self.diff_type, diff_options
+            left.path_comp, left.rev, right.path_comp, right.rev,
+            self.diff_type, diff_options, is_text=True
         )
 
     def _prop_lines(self, side, propname):
@@ -4040,6 +4056,7 @@ class DiffDescription:
             info_right,
             self.request.cfg.utilities.diff or "diff",
             diff_args,
+            encoding=self.request.repos.content_encoding
         )
 
     def _temp_file(self, val):
