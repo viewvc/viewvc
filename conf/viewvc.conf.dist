@@ -362,7 +362,7 @@
 
 ## repos_locale: (Unix/Linux only) (this comment is tentative)
 ## Specifies LC_CTYPE locale for repository paths on your server.
-## Repository paths specified incvs_roots and/or svn_roots can be
+## Repository paths specified in cvs_roots and/or svn_roots can be
 ## non-ascii paths represented in Unicode.  We assume the viewvc.conf
 ## file content is encoded by the locale that specified by locale
 ## environment variables when ViewVC starts.  However, repository paths
