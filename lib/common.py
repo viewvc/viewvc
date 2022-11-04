@@ -161,6 +161,11 @@ def get_current_lc_ctype():
     return locale_tuple_to_name(locale.getlocale(locale.LC_CTYPE))
 
 
+# Ensure setlocale() is called and get its value as default.
+locale.setlocale(locale.LC_CTYPE, "")
+DEFALT_LC_CTYPE = get_current_lc_ctype()
+
+
 def get_repos_encodings(cfg, root, do_overlay=False, preserve_cfg=False):
     """Set locale for the repository specified by ROOT, and get encodings.
 
@@ -186,8 +191,8 @@ def get_repos_encodings(cfg, root, do_overlay=False, preserve_cfg=False):
         return 'utf-8', tmp_cfg.options.default_encoding or 'utf-8'
 
     else:
-        repos_locale = tmp_cfg.options.repos_locale
-        if repos_locale and (repos_locale != get_current_lc_ctype()):
+        repos_locale = tmp_cfg.options.repos_locale or DEFALT_LC_CTYPE
+        if repos_locale != get_current_lc_ctype():
             locale.setlocale(locale.LC_CTYPE, repos_locale)
 
         path_encoding = codecs.lookup(locale.nl_langinfo(locale.CODESET)).name
