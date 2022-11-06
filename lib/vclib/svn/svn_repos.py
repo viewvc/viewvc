@@ -20,6 +20,7 @@ import tempfile
 from io import BytesIO
 from urllib.parse import quote as _quote
 from svn import fs, repos, core, client, delta
+from . import _strpath
 
 long = int
 
@@ -36,13 +37,6 @@ if HAS_SUBVERSION_VERSION < MIN_SUBVERSION_VERSION:
 def _allow_all(root, path, pool):
     """Generic authz_read_func that permits access to all paths"""
     return 1
-
-
-def _to_str(bs):
-    """Convert Subversion internal path objects represented in bytes into str"""
-    if bs is None:
-        return bs
-    return bs.decode("utf-8", "surrogateescape")
 
 
 def _path_parts(path):
@@ -98,7 +92,7 @@ def _kind2type(node_kind):
 
 # Return a stringfied copy of a bytestring Subversion property
 # (versioned or unversioned) VALUE if possible; otherwise return the
-# original bytestring.
+# original byte string.
 def _normalize_property_value(value, encoding_hint=None):
     try:
         value = value.decode("utf-8")
@@ -448,7 +442,7 @@ class LocalSubversionRepository(vclib.Repository):
         entries = []
         for entry in dirents.values():
             kind = _kind2type(entry.kind)
-            ent_path = _to_str(entry.name)
+            ent_path = _strpath(entry.name)
             if vclib.check_path_access(self, path_parts + [ent_path], kind, rev):
                 entries.append(vclib.DirEntry(ent_path, kind))
         return entries
@@ -474,7 +468,11 @@ class LocalSubversionRepository(vclib.Repository):
             if entry.kind == vclib.FILE:
                 entry.size = fs.file_length(fsroot, path)
             lock = fs.get_lock(self.fs_ptr, path)
-            entry.lockinfo = lock and _to_str(lock.owner) or None
+            entry.lockinfo = (
+                lock and _normalize_property_value(lock.owner,
+                                                   self.content_encoding)
+                or None
+            )
 
     def itemlog(self, path_parts, rev, sortby, first, limit, options):
         """see vclib.Repository.itemlog docstring
@@ -505,7 +503,8 @@ class LocalSubversionRepository(vclib.Repository):
         try:
             lock = fs.get_lock(self.fs_ptr, path)
             if lock:
-                lockinfo = _to_str(lock.owner)
+                lockinfo = _normalize_property_value(lock.owner,
+                                                     self.content_encoding)
         except NameError:
             pass
 
@@ -633,7 +632,7 @@ class LocalSubversionRepository(vclib.Repository):
             # authorization and converting them into ChangedPath objects.
             found_readable = found_unreadable = 0
             for path in changes.keys():
-                spath = _to_str(path)
+                spath = _strpath(path)
                 change = changes[path]
                 if change.path:
                     change.path = _cleanup_path(change.path)
@@ -655,14 +654,14 @@ class LocalSubversionRepository(vclib.Repository):
                 parts = _path_parts(spath)
                 if vclib.check_path_access(self, parts, pathtype, rev):
                     if is_copy and change.base_path and (change.base_path != path):
-                        parts = _path_parts(_to_str(change.base_path))
+                        parts = _path_parts(_strpath(change.base_path))
                         if not vclib.check_path_access(self, parts, pathtype, change.base_rev):
                             is_copy = 0
                             change.base_path = None
                             change.base_rev = None
                             found_unreadable = 1
                     if change.base_path:
-                        base_path = _to_str(change.base_path)
+                        base_path = _strpath(change.base_path)
                     else:
                         base_path = None
                     changedpaths[spath] = SVNChangedPath(
@@ -707,7 +706,7 @@ class LocalSubversionRepository(vclib.Repository):
             for path in paths:
                 change = changes[path]
                 pathtype = _kind2type(change.node_kind)
-                parts = _path_parts(_to_str(path))
+                parts = _path_parts(_strpath(path))
                 if pathtype is None:
                     # Figure out the pathtype so we can query the authz subsystem.
                     if change.change_kind == fs.path_change_delete:
@@ -733,7 +732,7 @@ class LocalSubversionRepository(vclib.Repository):
                             )
                             if copyfrom_path:
                                 prev_rev = copyfrom_rev
-                                prev_parts = (_path_parts(_to_str(copyfrom_path))
+                                prev_parts = (_path_parts(_strpath(copyfrom_path))
                                               + parts[len(parent_parts) :])
                                 break
                             del parent_parts[-1]
@@ -744,7 +743,7 @@ class LocalSubversionRepository(vclib.Repository):
                     found_readable = 1
                     copyfrom_path, copyfrom_rev = _get_change_copyinfo(fsroot, path, change)
                     if copyfrom_path and copyfrom_path != path:
-                        parts = _path_parts(_to_str(copyfrom_path))
+                        parts = _path_parts(_strpath(copyfrom_path))
                         if not vclib.check_path_access(self, parts, pathtype, copyfrom_rev):
                             found_unreadable = 1
                 else:
@@ -761,9 +760,9 @@ class LocalSubversionRepository(vclib.Repository):
 
             # The iterfaces that use this function expect string values.
             if isinstance(msg, bytes):
-                msg = _to_str(msg)
+                msg = _normalize_property_value(msg, self.content_encoding)
             if isinstance(author, bytes):
-                author = _to_str(author)
+                author = _normalize_property_value(author, self.content_encoding)
 
             # Optimization: If our caller doesn't care about the changed
             # paths, and we don't need them to do authz determinations, let's
@@ -811,7 +810,7 @@ class LocalSubversionRepository(vclib.Repository):
         else:
             size = None
         if copyfrom_path:
-            copyfrom_path = _cleanup_path(_to_str(copyfrom_path))
+            copyfrom_path = _cleanup_path(_strpath(copyfrom_path))
         else:
             copyfrom_path = None
         return Revision(rev, date, author, msg, size, lockinfo, path, copyfrom_path, copyfrom_rev)
@@ -843,7 +842,7 @@ class LocalSubversionRepository(vclib.Repository):
         # Now, iterate over those history items, checking for changes of
         # location, pruning as necessitated by authz rules.
         for hist_rev, hist_path in history:
-            hist_path = _to_str(hist_path)
+            hist_path = _strpath(hist_path)
             path_parts = _path_parts(hist_path)
             if not vclib.check_path_access(self, path_parts, path_type, hist_rev):
                 break
@@ -906,7 +905,7 @@ class LocalSubversionRepository(vclib.Repository):
         except KeyError:
             raise vclib.ItemNotFound(path)
 
-        return _cleanup_path(_to_str(old_path))
+        return _cleanup_path(_strpath(old_path))
 
     def created_rev(self, full_name, rev):
         return fs.node_created_rev(self._getroot(rev), full_name)

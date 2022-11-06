@@ -12,6 +12,7 @@
 import os
 import os.path
 import time
+from vclib import _getfspath, os_listdir
 
 
 def cvs_strptime(timestr):
@@ -23,26 +24,33 @@ def canonicalize_rootpath(rootpath):
     return os.path.normpath(rootpath)
 
 
-def _is_cvsroot(path):
-    return os.path.exists(os.path.join(path, "CVSROOT", "config"))
+def _is_cvsroot(path, path_encoding):
+    return os.path.exists(_getfspath(os.path.join(path, "CVSROOT", "config"),
+                                     path_encoding))
 
 
-def expand_root_parent(parent_path):
+def expand_root_parent(parent_path, path_encoding):
     # Each subdirectory of PARENT_PATH that contains a child
     # "CVSROOT/config" is added the set of returned roots.  Or, if the
     # PARENT_PATH itself contains a child "CVSROOT/config", then all its
     # subdirectories are returned as roots.
     assert os.path.isabs(parent_path)
     roots = {}
-    subpaths = os.listdir(parent_path)
-    for rootname in subpaths:
-        rootpath = os.path.join(parent_path, rootname)
-        if _is_cvsroot(parent_path) or _is_cvsroot(rootpath):
+    subpaths = os_listdir(parent_path, path_encoding)
+    if _is_cvsroot(parent_path, path_encoding):
+        # The children are all roots
+        for rootname in subpaths:
+            rootpath = os.path.join(parent_path, rootname)
             roots[rootname] = canonicalize_rootpath(rootpath)
+    else:
+        for rootname in subpaths:
+            rootpath = os.path.join(parent_path, rootname)
+            if _is_cvsroot(rootpath, path_encoding):
+                roots[rootname] = canonicalize_rootpath(rootpath)
     return roots
 
 
-def find_root_in_parent(parent_path, rootname):
+def find_root_in_parent(parent_path, rootname, path_encoding):
     """Search PARENT_PATH for a root named ROOTNAME, returning the
     canonicalized ROOTPATH of the root if found; return None if no such
     root is found."""
@@ -51,7 +59,9 @@ def find_root_in_parent(parent_path, rootname):
     # PARENT_PATH/ROOTNAME to be a CVS repository.
     assert os.path.isabs(parent_path)
     rootpath = os.path.join(parent_path, rootname)
-    if (_is_cvsroot(parent_path) and os.path.exists(rootpath)) or _is_cvsroot(rootpath):
+    if ((_is_cvsroot(parent_path, path_encoding)
+         and os.path.exists(_getfspath(rootpath, path_encoding)))
+        or _is_cvsroot(rootpath, path_encoding)):
         return canonicalize_rootpath(rootpath)
     return None
 

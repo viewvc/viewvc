@@ -37,7 +37,7 @@ def _path_join(path_parts):
 class BaseCVSRepository(vclib.Repository):
     def __init__(self, name, rootpath, authorizer, utilities,
                  content_encoding, path_encoding):
-        if not os.path.isdir(_getfspath(rootpath, path_encoding)):
+        if not vclib.ccvs._is_cvsroot(rootpath, path_encoding):
             raise vclib.ReposNotFound(name)
 
         self.name = name
@@ -96,7 +96,7 @@ class BaseCVSRepository(vclib.Repository):
         # Only RCS files (*,v) and subdirs are returned.
         data = []
         full_name = self._getpath(path_parts)
-        for file in os_listdir(full_name, self.path_encoding):
+        for file in vclib.os_listdir(full_name, self.path_encoding):
             name = None
             kind, errors = _check_path(os.path.join(full_name, file),
                                        self.path_encoding)
@@ -115,7 +115,7 @@ class BaseCVSRepository(vclib.Repository):
 
         full_name = os.path.join(full_name, "Attic")
         if os.path.isdir(self._getfspath(full_name)):
-            for file in os_listdir(full_name, self.path_encoding):
+            for file in vclib.os_listdir(full_name, self.path_encoding):
                 name = None
                 kind, errors = _check_path(os.path.join(full_name, file),
                                            self.path_encoding)
@@ -141,7 +141,7 @@ class BaseCVSRepository(vclib.Repository):
         it returns a path represented in bytes. On Windows, returns PATH
         itself."""
 
-        return _getfspath(path, self.path_encoding)
+        return vclib._getfspath(path, self.path_encoding)
 
     def _atticpath(self, path_parts):
         return path_parts[:-1] + ["Attic"] + path_parts[-1:]
@@ -1236,20 +1236,6 @@ def _log_path(entry, dirpath, getdirs, encoding):
 # Functions for dealing with the filesystem
 
 if sys.platform == "win32":
-
-    def _getfspath(path, encoding):
-        """Get path on local file system.
-
-        PATH should be a path represented in str. On system using posix path,
-        it returns a path represented in bytes. On Windows, returns PATH
-        itself."""
-
-        return path
-
-    def os_listdir(path, encoding):
-        "Wrapper for os.listdir, with different encoding from file system encoding"
-        return os.listdir(path)
-
     def _check_path(path, encoding):
         kind = None
         errors = []
@@ -1268,30 +1254,12 @@ if sys.platform == "win32":
 
 
 else:
-
-    def _getfspath(path, encoding):
-        """Get path on local file system.
-
-        PATH should be a path represented in str. On system using posix path,
-        it returns a path represented in bytes. On Windows, returns PATH
-        itself."""
-
-        return path.encode(encoding, "surrogateescape")
-
-    def os_listdir(path, encoding):
-        "Wrapper for os.listdir, with different encoding from file system encoding"
-
-        if isinstance(path, bytes):
-            return os.listdir(path)
-        path = _getfspath(path, encoding) if path else b"."
-        return [enc_decode(ent, encoding) for ent in os.listdir(path)]
-
     _uid = os.getuid()
     _gid = os.getgid()
 
     def _check_path(pathname, encoding):
         try:
-            info = os.stat(_getfspath(pathname, encoding))
+            info = os.stat(vclib._getfspath(pathname, encoding))
         except os.error as e:
             return None, ["stat error: %s" % e]
 
@@ -1310,8 +1278,8 @@ else:
             # "can I read this file/dir?" by checking the various perm bits.
             #
             # NOTE: if the UID matches, then we must match the user bits -- we
-            # cannot defer to group or other bits. Similarly, if the GID matches,
-            # then we must have read access in the group bits.
+            # cannot defer to group or other bits. Similarly, if the GID
+            # matches, then we must have read access in the group bits.
             #
             # If the UID or GID don't match, we need to check the
             # results of an os.access() call, in case the web server process
@@ -1332,7 +1300,7 @@ else:
             # the group stat.ST_GID access may be granted.
             # so the fall back to os.access is needed to figure this out.
             elif (mode & mask) != mask:
-                if not os.access(_getfspath(pathname, encoding),
+                if not os.access(vclib._getfspath(pathname, encoding),
                                  isdir and (os.R_OK | os.X_OK) or os.R_OK):
                     errors.append("error: path is not accessible")
 
@@ -1354,12 +1322,12 @@ def _newest_file(dirpath, encoding):
 
     # FIXME:  This sucker is leaking unauthorized paths!
 
-    for subfile in os_listdir(dirpath, encoding):
+    for subfile in vclib.os_listdir(dirpath, encoding):
         # TODO: filter CVS locks? stale NFS handles?
         if subfile[-2:] != ",v":
             continue
         path = os.path.join(dirpath, subfile)
-        info = os.stat(_getfspath(path, encoding))
+        info = os.stat(vclib._getfspath(path, encoding))
         if not stat.S_ISREG(info[stat.ST_MODE]):
             continue
         if info[stat.ST_MTIME] > newest_time:

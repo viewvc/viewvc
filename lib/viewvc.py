@@ -5345,12 +5345,14 @@ def _parse_root_parent(pp):
 def expand_root_parents(cfg):
     """Expand the configured root parents into individual roots."""
 
+    path_encoding, _ = get_repos_encodings(cfg, None)
+
     # Each item in root_parents is a "directory [= context ]: repo_type" string.
     for pp in cfg.general.root_parents:
         path, context, repo_type = _parse_root_parent(pp)
 
         if repo_type == "cvs":
-            roots = vclib.ccvs.expand_root_parent(path)
+            roots = vclib.ccvs.expand_root_parent(path, path_encoding)
             if cfg.options.hide_cvsroot and "CVSROOT" in roots:
                 del roots["CVSROOT"]
             if context:
@@ -5361,7 +5363,7 @@ def expand_root_parents(cfg):
             else:
                 cfg.general.cvs_roots.update(roots)
         elif repo_type == "svn":
-            roots = vclib.svn.expand_root_parent(path)
+            roots = vclib.svn.expand_root_parent(path, path_encoding)
             if context:
                 fullroots = {}
                 for root, rootpath in roots.items():
@@ -5388,6 +5390,8 @@ def find_root_in_parents(cfg, path_parts, roottype):
     if path_parts[-1] == "CVSROOT" and cfg.options.hide_cvsroot:
         return None
 
+    path_encoding, _ = get_repos_encodings(cfg, None)
+
     for pp in cfg.general.root_parents:
         path, context, repo_type = _parse_root_parent(pp)
 
@@ -5409,9 +5413,11 @@ def find_root_in_parents(cfg, path_parts, roottype):
 
         rootpath = None
         if roottype == "cvs":
-            rootpath = vclib.ccvs.find_root_in_parent(path, rootname)
+            rootpath = vclib.ccvs.find_root_in_parent(path, rootname,
+                                                      path_encoding)
         elif roottype == "svn":
-            rootpath = vclib.svn.find_root_in_parent(path, rootname)
+            rootpath = vclib.svn.find_root_in_parent(path, rootname,
+                                                     path_encoding)
 
         if rootpath is not None:
             return fullroot, rootpath, remain

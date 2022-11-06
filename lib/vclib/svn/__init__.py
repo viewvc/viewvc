@@ -16,14 +16,25 @@ import os
 import os.path
 import re
 import urllib.parse
+from vclib import _getfspath, os_listdir
 
 _re_url = re.compile(r"^(http|https|file|svn|svn\+[^:]+)://")
+
+
+def _strpath(pathb):
+    """Convert a path represented in UTF-8 encoded bytes string into str path.
+
+    PATHB should be a path returned by Subversion SWIG Python bindings API,
+    which represented in a UTF-8 encoded Unicode string in bytes object.
+    The return value is a Unicode path in str."""
+
+    return None if pathb is None else pathb.decode("utf-8", "surrogateescape")
 
 
 def _canonicalize_path(path):
     import svn.core
 
-    return svn.core.svn_path_canonicalize(path).decode("utf-8", "surrogateescpe")
+    return _strpath(svn.core.svn_path_canonicalize(path))
 
 
 def canonicalize_rootpath(rootpath):
@@ -49,7 +60,7 @@ def canonicalize_rootpath(rootpath):
     return rootpath
 
 
-def expand_root_parent(parent_path):
+def expand_root_parent(parent_path, path_encoding):
     roots = {}
     if re.search(_re_url, parent_path):
         pass
@@ -57,15 +68,16 @@ def expand_root_parent(parent_path):
         # Any subdirectories of PARENT_PATH which themselves have a child
         # "format" are returned as roots.
         assert os.path.isabs(parent_path)
-        subpaths = os.listdir(parent_path)
+        subpaths = os_listdir(parent_path, path_encoding)
         for rootname in subpaths:
             rootpath = os.path.join(parent_path, rootname)
-            if os.path.exists(os.path.join(rootpath, "format")):
+            if os.path.exists(_getfspath(os.path.join(rootpath, "format"),
+                                         path_encoding)):
                 roots[rootname] = canonicalize_rootpath(rootpath)
     return roots
 
 
-def find_root_in_parent(parent_path, rootname):
+def find_root_in_parent(parent_path, rootname, path_encoding):
     """Search PARENT_PATH for a root named ROOTNAME, returning the
     canonicalized ROOTPATH of the root if found; return None if no such
     root is found."""
@@ -74,7 +86,7 @@ def find_root_in_parent(parent_path, rootname):
         assert os.path.isabs(parent_path)
         rootpath = os.path.join(parent_path, rootname)
         format_path = os.path.join(rootpath, "format")
-        if os.path.exists(format_path):
+        if os.path.exists(_getfspath(format_path, path_encoding)):
             return canonicalize_rootpath(rootpath)
     return None
 

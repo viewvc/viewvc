@@ -517,3 +517,38 @@ def check_path_access(repos, path_parts, pathtype=None, rev=None):
     if not pathtype:
         pathtype = repos.itemtype(path_parts, rev)
     return auth.check_path_access(repos.rootname(), path_parts, pathtype, rev)
+
+
+if sys.platform == "win32":
+    def _getfspath(path, encoding):
+        """Get path on local file system.
+
+        PATH should be a path represented in str. On system using posix path,
+        it returns a path represented in bytes. On Windows, returns PATH
+        itself."""
+
+        return path
+
+    def os_listdir(path, encoding):
+        "Wrapper for os.listdir, with different encoding from file system encoding"
+        return os.listdir(path)
+
+else:
+    def _getfspath(path, encoding):
+        """Get path on local file system.
+
+        PATH should be a path represented in str. On system using posix path,
+        it returns a path represented in bytes. On Windows, returns PATH
+        itself."""
+
+        return path.encode(encoding, "surrogateescape")
+
+    def os_listdir(path, encoding):
+        """Wrapper for os.listdir, with different encoding from
+        file system encoding."""
+
+        if isinstance(path, bytes):
+            return os.listdir(path)
+        path = _getfspath(path, encoding) if path else b"."
+        return [ent.decode(encoding, "surrogateescape")
+                for ent in os.listdir(path)]
