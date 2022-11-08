@@ -169,13 +169,13 @@ DEFALT_LC_CTYPE = get_current_lc_ctype()
 def get_repos_encodings(cfg, root, do_overlay=False, preserve_cfg=False):
     """Set locale for the repository specified by ROOT, and get encodings.
 
-    Check 'repos_locale' and 'default_encoding' for repository ROOT in
+    Check 'root_path_locale' and 'default_encoding' for repository ROOT in
     the config CFG, then set locale for Subversion's API, and return
     2-tuple of the encoding for the repository path on local file system
     and the default encordings for the content of the files in the
     repository.
 
-    If 'repos_locale' option value for the ROOT is not valid locale name,
+    If 'root_path_locale' option value for the ROOT is not valid locale name,
     locale.Error can be raised."""
 
     if do_overlay:
@@ -191,9 +191,9 @@ def get_repos_encodings(cfg, root, do_overlay=False, preserve_cfg=False):
         return 'utf-8', tmp_cfg.options.default_encoding or 'utf-8'
 
     else:
-        repos_locale = tmp_cfg.options.repos_locale or DEFALT_LC_CTYPE
-        if repos_locale != get_current_lc_ctype():
-            locale.setlocale(locale.LC_CTYPE, repos_locale)
+        root_path_locale = tmp_cfg.options.root_path_locale or DEFALT_LC_CTYPE
+        if root_path_locale != get_current_lc_ctype():
+            locale.setlocale(locale.LC_CTYPE, root_path_locale)
 
         path_encoding = codecs.lookup(locale.nl_langinfo(locale.CODESET)).name
         repos_encoding = cfg.options.default_encoding or path_encoding

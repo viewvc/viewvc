@@ -390,7 +390,7 @@ class Config:
         self.utilities.max_context = 10000
         self.utilities.cvsgraph = ""
 
-        self.options.repos_locale = None
+        self.options.root_path_locale = None
         self.options.root_as_url_component = 1
         self.options.allowed_views = ["annotate", "diff", "markup", "roots"]
         self.options.authorizer = None

@@ -360,7 +360,7 @@
 ##---------------------------------------------------------------------------
 [options]
 
-## repos_locale: (Unix/Linux only) (this comment is tentative)
+## root_path_locale: (Unix/Linux only) (this comment is tentative)
 ## Specifies LC_CTYPE locale for repository paths on your server.
 ## Repository paths specified in cvs_roots and/or svn_roots can be
 ## non-ascii paths represented in Unicode.  We assume the viewvc.conf
@@ -377,10 +377,10 @@
 ## Otherwise, you might experience unexpected crashes or errors.
 ##
 ## Examples:
-## repos_locale = en_US.UTF-8
-## repos_locale = Russian_Russia.1251
+## root_path_locale = en_US.UTF-8
+## root_path_locale = Russian_Russia.1251
 ##
-#repos_locale =
+#root_path_locale =
 
 ## root_as_url_component: Interpret the first path component in the URL
 ## after the script location as the root to use.  This is an
@@ -810,7 +810,7 @@
 ## the UTF-8 encoding.  CVS makes no such promises.  Of course, file
 ## content versioned in these systems can use any arbitrary encoding.
 ## If this is not specified, it is set to the encoding of the locale
-## specified by repos_locale
+## specified by root_path_locale
 ##
 #default_encoding =
 
