@@ -19,6 +19,8 @@
 
 import sys
 import os
+import locale
+import codecs
 
 
 #########################################################################
@@ -171,6 +173,10 @@ if __name__ == "__main__":
         sys.stderr.write("ERROR: unknown command %s\n" % command)
         usage()
 
+    # setlocale and get its character encoding
+    locale.setlocale(locale.LC_CTYPE, "")
+    locale_encoding = codecs.lookup(locale.nl_langinfo(locale.CODESET)).name
+
     # get repository and path, and do the work
     root, path_parts = RootPath(args[2], quiet_level)
     rootpath = vclib.ccvs.canonicalize_rootpath(root)
@@ -190,7 +196,7 @@ if __name__ == "__main__":
 
         if command in ("rebuild", "update"):
             repository = vclib.ccvs.CVSRepository(
-                None, rootpath, None, cfg.utilities, 0, cfg.options.default_encoding
+                None, rootpath, None, cfg.utilities, 0, locale_encoding, locale_encoding
             )
             RecurseUpdate(db, repository, path_parts, command == "update", quiet_level)
     except KeyboardInterrupt:

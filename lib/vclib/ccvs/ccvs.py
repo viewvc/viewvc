@@ -64,11 +64,13 @@ class CCVSRepository(BaseCVSRepository):
         for entry in entries_to_fetch:
             entry.rev = entry.date = entry.author = None
             entry.dead = entry.absent = entry.log = entry.lockinfo = None
-            path = _log_path(entry, dirpath, subdirs)
+            path = _log_path(entry, dirpath, subdirs, self.path_encoding)
             if path:
                 entry.path = path
                 try:
-                    rcsparse.parse(open(path, "rb"), InfoSink(entry, rev, alltags, self.encoding))
+                    rcsparse.parse(open(self._getfspath(path), "rb"),
+                                   InfoSink(entry, rev, alltags,
+                                            self.content_encoding))
                 except IOError as e:
                     entry.errors.append("rcsparse error: %s" % e)
                 except RuntimeError as e:
@@ -100,8 +102,8 @@ class CCVSRepository(BaseCVSRepository):
             raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
 
         path = self.rcsfile(path_parts, 1)
-        sink = TreeSink(self.encoding)
-        rcsparse.parse(open(path, "rb"), sink)
+        sink = TreeSink(self.content_encoding)
+        rcsparse.parse(open(self._getfspath(path), "rb"), sink)
         filtered_revs = _file_log(
             list(sink.revs.values()), sink.tags, sink.lockinfo, sink.default_branch, rev
         )
@@ -146,7 +148,8 @@ class CCVSRepository(BaseCVSRepository):
     def annotate(self, path_parts, rev=None, include_text=False):
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
             raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
-        source = blame.BlameSource(self.rcsfile(path_parts, 1), rev, include_text, self.encoding)
+        source = blame.BlameSource(self._getfspath(self.rcsfile(path_parts, 1)),
+                                   rev, include_text, self.content_encoding)
         return source, source.revision
 
     def revinfo(self, rev):
@@ -156,8 +159,8 @@ class CCVSRepository(BaseCVSRepository):
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
             raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
         path = self.rcsfile(path_parts, 1)
-        sink = COSink(rev, self.encoding)
-        rcsparse.parse(open(path, "rb"), sink)
+        sink = COSink(rev, self.content_encoding)
+        rcsparse.parse(open(self._getfspath(path), "rb"), sink)
         revision = sink.last and sink.last.string
         return BytesIO(b"".join(sink.sstext.text)), revision
 

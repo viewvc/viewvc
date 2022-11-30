@@ -9,6 +9,10 @@
 
 ## THE FORMAT OF THIS CONFIGURATION FILE
 ##
+##    Important Note: ViewVC assumes that the encoding of its configuration
+##    files (such as this one) matches the locale of the environment in
+##    which it is running.
+##
 ##    This file is delineated by sections, specified in [brackets].  Within 
 ##    each section, are a number of configuration settings.  These settings
 ##    take the form of: name = value.  Values may be continued on the
@@ -359,6 +363,26 @@
 
 ##---------------------------------------------------------------------------
 [options]
+
+## root_path_locale: (Unix/Linux only) Specifies the LC_CTYPE locale
+## for root paths on your server.  ViewVC will assume that root paths
+## specified in cvs_roots/svn_roots are encoded using the locale in
+## which ViewVC is running, but this may not be true for certain
+## systems.  Use this setting to help ViewVC convert root paths as
+## represented in its own configuration files to the encoding used by
+## the filesystem of the host server.  This is also used for showing
+## CVS's internal paths as string of the locale.  If set, this value
+## must be valid locale supported by your system environment.
+##
+## WARNING: If setlocale is not thread-safe on your system, setting
+## this option might cause problems when ViewVC runs under mod_wsgi in
+## daemon mode.
+##
+## Examples:
+## root_path_locale = en_US.UTF-8
+## root_path_locale = Russian_Russia.1251
+##
+#root_path_locale =
 
 ## root_as_url_component: Interpret the first path component in the URL
 ## after the script location as the root to use.  This is an
@@ -787,8 +811,10 @@
 ## paths, property names, and its own reserved property values using
 ## the UTF-8 encoding.  CVS makes no such promises.  Of course, file
 ## content versioned in these systems can use any arbitrary encoding.
+## If this is not specified, it is set to the encoding of the locale
+## specified by root_path_locale.
 ##
-#default_encoding = utf-8
+#default_encoding =
 
 ## detect_encoding: Should we attempt to automatically detect
 ## versioned file character encodings?  [Requires 'chardet' module,
