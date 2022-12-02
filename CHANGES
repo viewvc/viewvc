@@ -11,6 +11,10 @@ Version 1.3.0 (released ??-???-????)
   * require explicit match for web-friendly images in 'binary_mime_types' (#216)
   * fix a problem on CVS checkout files with rcsparse (#272)
   * new 'max_context' option, for GNU diffutils 3.8 and newer (#293)
+  * fix problems on diff view when hr_intraline is set (#275)
+  * new 'root_path_locale' option (Tigris #500)
+  * support Unicode root path both in CVS and Subversion (Tigris #500)
+  * fix encoding problems on diff view and generating patch (#301)
 
 Version 1.2.1 (released 26-Mar-2020)
 
