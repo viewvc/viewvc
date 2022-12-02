@@ -48,16 +48,19 @@ SORTBY_REV = 2  # sorted by revision, youngest first
 # ======================================================================
 #
 class Repository:
-    """Abstract class representing a repository."""
+    """Abstract class representing a repository.
+
+    In addtion to those methods defined here, instances of subclasses
+    should have attribute(s) below.
+
+    rootpath        (str) Hold the absolute path to the repository in
+                    the local file system."""
 
     def rootname(self):
         """Return the name of this repository."""
 
     def roottype(self):
         """Return the type of this repository (vclib.CVS, vclib.SVN, ...)."""
-
-    def rootpath(self):
-        """Return the location of this repository."""
 
     def authorizer(self):
         """Return the vcauth.Authorizer object associated with this
