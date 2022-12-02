@@ -227,9 +227,6 @@ class RemoteSubversionRepository(vclib.Repository):
     def rootname(self):
         return self.name
 
-    def rootpath(self):
-        return self.rootpath
-
     def roottype(self):
         return vclib.SVN
 
