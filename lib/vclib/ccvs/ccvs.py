@@ -14,7 +14,7 @@ import os
 import re
 import tempfile
 from io import BytesIO
-import functools
+from operator import attrgetter
 import vclib
 from . import rcsparse
 from . import blame
@@ -27,8 +27,6 @@ from .bincvs import (
     Tag,
     _file_log,
     _log_path,
-    _logsort_date_cmp,
-    _logsort_rev_cmp,
     _path_join,
 )
 
@@ -66,11 +64,13 @@ class CCVSRepository(BaseCVSRepository):
         for entry in entries_to_fetch:
             entry.rev = entry.date = entry.author = None
             entry.dead = entry.absent = entry.log = entry.lockinfo = None
-            path = _log_path(entry, dirpath, subdirs)
+            path = _log_path(entry, dirpath, subdirs, self.path_encoding)
             if path:
                 entry.path = path
                 try:
-                    rcsparse.parse(open(path, "rb"), InfoSink(entry, rev, alltags, self.encoding))
+                    rcsparse.parse(open(self._getfspath(path), "rb"),
+                                   InfoSink(entry, rev, alltags,
+                                            self.content_encoding))
                 except IOError as e:
                     entry.errors.append("rcsparse error: %s" % e)
                 except RuntimeError as e:
@@ -102,8 +102,8 @@ class CCVSRepository(BaseCVSRepository):
             raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
 
         path = self.rcsfile(path_parts, 1)
-        sink = TreeSink(self.encoding)
-        rcsparse.parse(open(path, "rb"), sink)
+        sink = TreeSink(self.content_encoding)
+        rcsparse.parse(open(self._getfspath(path), "rb"), sink)
         filtered_revs = _file_log(
             list(sink.revs.values()), sink.tags, sink.lockinfo, sink.default_branch, rev
         )
@@ -112,10 +112,11 @@ class CCVSRepository(BaseCVSRepository):
                 rev.changed = rev.prev.next_changed
         options["cvs_tags"] = sink.tags
 
+        # Both of Revision.date and Revision.number are sortable, not None
         if sortby == vclib.SORTBY_DATE:
-            filtered_revs.sort(key=functools.cmp_to_key(_logsort_date_cmp))
+            filtered_revs.sort(key=attrgetter('date', 'number'), reverse=True)
         elif sortby == vclib.SORTBY_REV:
-            filtered_revs.sort(key=functools.cmp_to_key(_logsort_rev_cmp))
+            filtered_revs.sort(key=attrgetter('number'), reverse=True)
 
         if len(filtered_revs) < first:
             return []
@@ -123,7 +124,8 @@ class CCVSRepository(BaseCVSRepository):
             return filtered_revs[first : (first + limit)]
         return filtered_revs
 
-    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
+    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type,
+                options={}, is_text=True):
         if self.itemtype(path_parts1, rev1) != vclib.FILE:  # does auth-check
             raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts1)))
         if self.itemtype(path_parts2, rev2) != vclib.FILE:  # does auth-check
@@ -140,14 +142,18 @@ class CCVSRepository(BaseCVSRepository):
         info1 = (self.rcsfile(path_parts1, root=1, v=0), r1.date, r1.string)
         info2 = (self.rcsfile(path_parts2, root=1, v=0), r2.date, r2.string)
 
-        diff_args = vclib._diff_args(type, options)
+        diff_args = vclib._diff_args(diff_type, options)
+        encoding = self.content_encoding if is_text else None
 
-        return vclib._diff_fp(temp1, temp2, info1, info2, self.utilities.diff or "diff", diff_args)
+        return vclib._diff_fp(temp1, temp2, info1, info2,
+                              self.utilities.diff or "diff", diff_args,
+                              encoding=encoding)
 
     def annotate(self, path_parts, rev=None, include_text=False):
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
             raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
-        source = blame.BlameSource(self.rcsfile(path_parts, 1), rev, include_text, self.encoding)
+        source = blame.BlameSource(self._getfspath(self.rcsfile(path_parts, 1)),
+                                   rev, include_text, self.content_encoding)
         return source, source.revision
 
     def revinfo(self, rev):
@@ -157,10 +163,10 @@ class CCVSRepository(BaseCVSRepository):
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
             raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
         path = self.rcsfile(path_parts, 1)
-        sink = COSink(rev, self.encoding)
-        rcsparse.parse(open(path, "rb"), sink)
+        sink = COSink(rev, self.content_encoding)
+        rcsparse.parse(open(self._getfspath(path), "rb"), sink)
         revision = sink.last and sink.last.string
-        return BytesIO(b"\n".join(sink.sstext.text)), revision
+        return BytesIO(b"".join(sink.sstext.text)), revision
 
 
 class MatchingSink(rcsparse.Sink):
@@ -344,20 +350,31 @@ class TreeSink(rcsparse.Sink):
         return b
 
 
+def _msplit(s):
+    r"""Split (bytes) S into an array of lines.
+
+    Only \n is a line separator. The line endings are part of the lines."""
+
+    lines = [line + b'\n' for line in s.split(b'\n')]
+    if lines[-1] == b'\n':
+        del lines[-1]
+    else:
+        lines[-1] = lines[-1][:-1]
+    return lines
+
+
 class StreamText:
-    d_command = re.compile(br"^d(\d+)\s(\d+)")
-    a_command = re.compile(br"^a(\d+)\s(\d+)")
+    d_command = re.compile(br"^d(\d+)\s(\d+)\n")
+    a_command = re.compile(br"^a(\d+)\s(\d+)\n")
 
     def __init__(self, text):
-        self.text = text.split(b"\n")
+        self.text = _msplit(text)
 
     def command(self, cmd):
         start_line = None
         adjust = 0
         add_lines_remaining = 0
-        diffs = cmd.split(b"\n")
-        if diffs[-1] == b"":
-            del diffs[-1]
+        diffs = _msplit(cmd)
         if len(diffs) == 0:
             return
         if diffs[0] == b"":
@@ -365,6 +382,9 @@ class StreamText:
         for command in diffs:
             if add_lines_remaining > 0:
                 # Insertion lines from a prior "a" command
+                # Note: Don't check if we insert a string which does not end
+                # with b'\n' before an existing line. Some CVS implementation
+                # can produce such edit commands.
                 self.text.insert(start_line + adjust, command)
                 add_lines_remaining = add_lines_remaining - 1
                 adjust = adjust + 1

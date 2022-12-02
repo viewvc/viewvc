@@ -16,6 +16,9 @@
 
 import sys
 import io
+import locale
+import codecs
+import copy
 
 # Special type indicators for diff header processing and idiff return codes
 _RCSDIFF_IS_BINARY = "binary-diff"
@@ -26,6 +29,18 @@ _RCSDIFF_NO_CHANGES = "no-changes"
 class _item:
     def __init__(self, **kw):
         vars(self).update(kw)
+
+
+# Python 3: workaround for cmp()
+def cmp(a, b):
+    if a is None and b is None:
+        return 0
+    if a is None:
+        return 1
+    if b is None:
+        return -1
+    assert type(a) == type(b)
+    return (a > b) - (a < b)
 
 
 class TemplateData:
@@ -129,3 +144,57 @@ def get_exception_data():
         del exc_tb
 
     return exc_dict
+
+
+def locale_tuple_to_name(l_tuple):
+    "Convert 2-tuple of locale representation into locale str"
+
+    lang, enc = l_tuple
+    if lang is None:
+        lang = 'C'
+    return lang + '.' + enc if enc else lang
+
+
+def get_current_lc_ctype():
+    "Get current LC_CTYPE locale in name"
+
+    return locale_tuple_to_name(locale.getlocale(locale.LC_CTYPE))
+
+
+# Ensure setlocale() is called and get its value as default.
+locale.setlocale(locale.LC_CTYPE, "")
+DEFALT_LC_CTYPE = get_current_lc_ctype()
+
+
+def get_repos_encodings(cfg, root, do_overlay=False, preserve_cfg=False):
+    """Set locale for the repository specified by ROOT, and get encodings.
+
+    Check 'root_path_locale' and 'default_encoding' for repository ROOT in
+    the config CFG, then set locale for Subversion's API, and return
+    2-tuple of the encoding for the repository path on local file system
+    and the default encordings for the content of the files in the
+    repository.
+
+    If 'root_path_locale' option value for the ROOT is not valid locale name,
+    locale.Error can be raised."""
+
+    if do_overlay:
+        tmp_cfg = copy.deepcopy(cfg) if preserve_cfg else cfg
+        tmp_cfg.overlay_root_options(root)
+    else:
+        tmp_cfg = cfg
+
+    if sys.platform == "win32":
+        # On Windows, paths are always Unicode, and we should use
+        # bytes path encoded in 'UTF-8' in Subversions API.
+
+        return 'utf-8', tmp_cfg.options.default_encoding or 'utf-8'
+
+    else:
+        root_path_locale = tmp_cfg.options.root_path_locale or DEFALT_LC_CTYPE
+        if root_path_locale != get_current_lc_ctype():
+            locale.setlocale(locale.LC_CTYPE, root_path_locale)
+
+        path_encoding = codecs.lookup(locale.nl_langinfo(locale.CODESET)).name
+        repos_encoding = cfg.options.default_encoding or path_encoding
+        return path_encoding, repos_encoding

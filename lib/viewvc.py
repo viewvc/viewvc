@@ -31,9 +31,8 @@ import stat
 import struct
 import tempfile
 import time
-import functools
+from operator import attrgetter
 import io
-import popen
 from urllib.parse import urlencode as _urlencode, quote as _quote
 
 # These modules come from our library (the stub has set up the path)
@@ -46,6 +45,7 @@ from common import (
     _RCSDIFF_ERROR,
     TemplateData,
     _item,
+    get_repos_encodings,
 )
 import accept
 import config
@@ -91,11 +91,6 @@ CHUNK_SIZE = 8192
 
 # special characters that don't need to be URL encoded
 _URL_SAFE_CHARS = "/*~"
-
-
-# Python 3: workaround for cmp()
-def cmp(a, b):
-    return (a > b) - (a < b)
 
 
 class TextIOWrapper_noclose(io.TextIOWrapper):
@@ -264,6 +259,8 @@ class Request:
                 # Setup an Authorizer for this rootname and username
                 self.auth = setup_authorizer(cfg, self.username)
 
+                # get the encoding for the path and contents
+                path_encoding, content_encoding = get_repos_encodings(cfg, self.rootname)
                 # Create the repository object
                 try:
                     if roottype == "cvs":
@@ -274,11 +271,15 @@ class Request:
                             self.auth,
                             cfg.utilities,
                             cfg.options.use_rcsparse,
-                            cfg.options.default_encoding,
+                            content_encoding,
+                            path_encoding,
                         )
                         # required so that spawned rcs programs correctly expand
                         # $CVSHeader$
-                        os.environ["CVSROOT"] = self.rootpath
+                        if sys.platform == 'win32':
+                            os.environ["CVSROOT"] = self.rootpath
+                        else:
+                            os.environb[b"CVSROOT"] = self.rootpath.encode(path_encoding)
                     elif roottype == "svn":
                         self.rootpath = vclib.svn.canonicalize_rootpath(rootpath)
                         self.repos = vclib.svn.SubversionRepository(
@@ -287,7 +288,8 @@ class Request:
                             self.auth,
                             cfg.utilities,
                             cfg.options.svn_config_dir,
-                            cfg.options.default_encoding,
+                            content_encoding,
+                            path_encoding,
                         )
                     else:
                         raise vclib.ReposNotFound()
@@ -1024,10 +1026,6 @@ def generate_page(request, view_name, data, content_type=None):
     template.generate(server_fp, data)
 
 
-def transcode_path_for_display(path, encoding, errors="replace"):
-    return path.encode("utf-8", "surrogateescape").decode(encoding, errors)
-
-
 def nav_path(request):
     """Return current path as list of items with "name" and "href" members
 
@@ -1055,8 +1053,6 @@ def nav_path(request):
         path_parts.append(part)
         is_last = len(path_parts) == len(request.path_parts)
 
-        if request.roottype == "cvs":
-            part = transcode_path_for_display(part, request.repos.encoding)
         item = _item(name=request.server.escape(part), href=None)
 
         if not is_last or (is_dir and request.view_func is not view_directory):
@@ -1093,7 +1089,7 @@ def prep_tags(request, tags):
     for tag in tags:
         href = url + tag.name
         links.append(_item(name=tag.name, href=href))
-    links.sort(key=functools.cmp_to_key(lambda a, b: cmp(a.name, b.name)))
+    links.sort(key=attrgetter('name'))
     return links
 
 
@@ -1603,11 +1599,6 @@ def common_template_data(request, revision=None, mime_type=None):
 
     cfg = request.cfg
 
-    if request.roottype == "cvs":
-        disp_where = transcode_path_for_display(request.where, request.repos.encoding)
-    else:
-        disp_where = request.where
-
     # Initialize data dictionary members (sorted alphanumerically)
     data = TemplateData(
         {
@@ -1642,7 +1633,7 @@ def common_template_data(request, revision=None, mime_type=None):
             "view": _view_codes[request.view_func],
             "view_href": None,
             "vsn": __version__,
-            "where": request.server.escape(disp_where),
+            "where": request.server.escape(request.where),
         }
     )
 
@@ -2148,7 +2139,7 @@ def markup_or_annotate(request, is_annotate):
                     break
             encoding = detect_encoding(text_block)
         if not encoding:
-            encoding = request.repos.encoding
+            encoding = request.repos.content_encoding
 
         # Decode the file's lines from the detected encoding to Unicode.
         try:
@@ -2277,67 +2268,89 @@ def view_annotate(request):
     markup_or_annotate(request, 1)
 
 
-def revcmp(rev1, rev2):
-    rev1 = list(map(int, rev1.split(".")))
-    rev2 = list(map(int, rev2.split(".")))
-    return cmp(rev1, rev2)
+def revcmpkey(rev):
+    """Normalize rev into list of integer, for compare"""
+    return list(map(int, rev.split(".")))
 
 
 def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
-    # convert sortdir into a sign bit
-    s = sortdir == "down" and -1 or 1
+    # convert sortdir into reverse parameter in sort() method
+    reverse = (sortdir == "down")
 
     # in cvs, revision numbers can't be compared meaningfully between
     # files, so try to do the right thing and compare dates instead
     if roottype == "cvs" and sortby == "rev":
         sortby = "date"
 
-    def file_sort_sortby(file1, file2, sortby):
-        # sort according to sortby
-        if sortby == "rev":
-            return s * revcmp(file1.rev, file2.rev)
-        elif sortby == "date":
-            return s * cmp(file2.date, file1.date)  # latest date is first
-        elif sortby == "log":
-            return s * cmp(file1.log, file2.log)
-        elif sortby == "author":
-            return s * cmp(file1.author, file2.author)
-        return s * cmp(file1.name, file2.name)
-
-    def file_sort_cmp(file1, file2, sortby=sortby, group_dirs=group_dirs, s=s):
+    if group_dirs:
         # if we're grouping directories together, sorting is pretty
         # simple.  a directory sorts "higher" than a non-directory, and
         # two directories are sorted as normal.
-        if group_dirs:
-            if file1.kind == vclib.DIR:
-                if file2.kind == vclib.DIR:
-                    # two directories, no special handling.
-                    return file_sort_sortby(file1, file2, sortby)
-                else:
-                    # file1 is a directory, it sorts first.
-                    return -1
-            elif file2.kind == vclib.DIR:
-                # file2 is a directory, it sorts first.
-                return 1
+        # Note: True > False
+        latter = vclib.DIR if reverse else vclib.FILE
+        if sortby == 'rev':
+            # roottype is "svn" only, and the file has always rev value.
+            def key(x):
+                return (x.kind == latter, x.rev)
 
-        # we should have data on these. if not, then it is because we requested
-        # a specific tag and that tag is not present on the file.
-        if file1.rev is not None and file2.rev is not None:
-            return file_sort_sortby(file1, file2, sortby)
-        elif file1.rev is not None:
-            return -1
-        elif file2.rev is not None:
-            return 1
+        elif sortby == 'date':
+            def key(x):
+                # latest date is first
+                return (x.kind == latter, - x.sortkey('date', -1))
 
-        # sort by file name
-        return s * cmp(file1.name, file2.name)
+        elif sortby == 'file':
+            # the key attibute name != sortby
+            def key(x):
+                return (x.kind == latter, x.name)
 
-    file_data.sort(key=functools.cmp_to_key(file_sort_cmp))
+        else:
+            # the key attibute name == sortby
+            def key(x):
+                return (x.kind == latter, x.sortkey(sortby))
 
+    else:
+        # If the file does not have revision data, which can be only in
+        # "cvs" roottype, the file should been placed after those files
+        # which have revision data, and it is sorted by its name.
+        if roottype == 'cvs':
+            if sortby == 'rev':
+                def key(x):
+                    return ((x.rev is None) ^ reverse,
+                            x.name if x.rev is None else x.rev)
 
-def icmp(x, y):
-    """case insensitive comparison"""
-    return cmp(x.lower(), y.lower())
+            elif sortby == 'date':
+                def key(x):
+                    # latest date is first
+                    return ((x.rev is None) ^ reverse,
+                            x.name if x.rev is None
+                            else - x.sortkey('date', -1))
+
+            elif sortby == 'file':
+                # the key attibute name != sortby
+                def key(x):
+                    return ((x.rev is None) ^ reverse, x.name)
+
+            else:
+                # the key attibute name == sortby
+                def key(x):
+                    return ((x.rev is None) ^ reverse,
+                            x.name if x.rev is None else x.sortkey(sortby))
+        else:
+            # In case roottype is 'svn', we simply use sotrby key.
+            if sortby == 'date':
+                def key(x):
+                    # latest date is first
+                    return - x.sortkey('date', -1)
+
+            elif sortby == 'file':
+                # the key attibute name != sortby
+                key = attrgetter('name')
+            else:
+                # the key attibute name == sortby and can be None
+                def key(x):
+                    return x.sortkey(sortby)
+
+    file_data.sort(key=key, reverse=reverse)
 
 
 def view_roots(request):
@@ -2349,7 +2362,7 @@ def view_roots(request):
     expand_root_parents(request.cfg)
     allroots = list_roots(request)
     if len(allroots):
-        rootnames = sorted(allroots.keys(), key=functools.cmp_to_key(icmp))
+        rootnames = sorted(allroots.keys(), key=str.lower)
         for rootname in rootnames:
             root_path, root_type, lastmod = allroots[rootname]
             href = request.get_url(
@@ -2494,9 +2507,6 @@ def view_directory(request):
         if request.roottype == "cvs":
             if file.absent:
                 continue
-            disp_name = transcode_path_for_display(file.name, request.repos.encoding)
-        else:
-            disp_name = file.name
         if cfg.options.hide_errorful_entries and file.errors:
             continue
         row.rev = file.rev
@@ -2511,7 +2521,7 @@ def view_directory(request):
             row.short_log = lf.get(maxlen=cfg.options.short_log_len, htmlize=1)
         row.lockinfo = file.lockinfo
         row.anchor = request.server.escape(file.name)
-        row.name = request.server.escape(disp_name)
+        row.name = request.server.escape(file.name)
         row.pathtype = (file.kind == vclib.FILE and "file") or (file.kind == vclib.DIR and "dir")
         row.errors = file.errors
 
@@ -2658,13 +2668,13 @@ def view_directory(request):
     # set cvs-specific fields
     if request.roottype == "cvs":
         plain_tags = options["cvs_tags"]
-        plain_tags.sort(key=functools.cmp_to_key(icmp), reverse=True)
+        plain_tags.sort(key=str.lower, reverse=True)
         data["plain_tags"] = []
         for plain_tag in plain_tags:
             data["plain_tags"].append(_item(name=plain_tag, revision=None))
 
         branch_tags = options["cvs_branches"]
-        branch_tags.sort(key=functools.cmp_to_key(icmp), reverse=True)
+        branch_tags.sort(key=str.lower, reverse=True)
         data["branch_tags"] = []
         for branch_tag in branch_tags:
             data["branch_tags"].append(_item(name=branch_tag, revision=None))
@@ -3242,8 +3252,7 @@ def view_cvsgraph_image(request):
     # os.environ['LD_LIBRARY_PATH'] = '/usr/lib:/usr/local/lib:/path/to/cvsgraph'
 
     rcsfile = request.repos.rcsfile(request.path_parts)
-    fp = popen.popen(
-        cfg.utilities.cvsgraph or "cvsgraph",
+    fp = request.repos.cvsgraph_popen(
         (
             "-c",
             cfg.path(cfg.options.cvsgraph_conf),
@@ -3277,8 +3286,7 @@ def view_cvsgraph(request):
 
     # Create an image map
     rcsfile = request.repos.rcsfile(request.path_parts)
-    fp = popen.popen(
-        cfg.utilities.cvsgraph or "cvsgraph",
+    fp = request.repos.cvsgraph_popen(
         (
             "-i",
             "-c",
@@ -3307,6 +3315,7 @@ def view_cvsgraph(request):
             cvsgraph_extraopts(request),
             rcsfile,
         ),
+        is_text=True,
     )
 
     graph_action, graph_hidden_values = request.get_form(view_func=view_cvsgraph, params={})
@@ -3575,7 +3584,8 @@ class DiffSequencingError(Exception):
     pass
 
 
-def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2, sym1=None, sym2=None):
+def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2,
+                       sym1=None, sym2=None, is_text=True):
     date1 = date2 = log_rev1 = log_rev2 = flag = None
     header_lines = []
 
@@ -3588,15 +3598,24 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2, sym1=None, sym2=
     else:
         f1 = f2 = None
 
+    if is_text:
+        getline=fp.readline
+    else:
+        def getline():
+            return fp.readline().decode("utf-8", "surrogateescape")
+
     # If we're parsing headers, then parse and tweak the diff headers,
     # collecting them in an array until we've read and handled them all.
     if f1 and f2:
         parsing = 1
         flag = _RCSDIFF_NO_CHANGES
         while parsing:
-            line = fp.readline()
-            if not line:
-                break
+            try:
+                line = getline()
+                if not line:
+                    break
+            except vclib.ExternalDiffError as e:
+                raise ViewVCException(str(e), "500 Internal Server Error")
 
             # Saw at least one line in the stream
             flag = None
@@ -3644,8 +3663,14 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2, sym1=None, sym2=
             "rcsdiff found revision %s, but expected " "revision %s" % (log_rev2, rev2),
             "500 Internal Server Error",
         )
+    headers = "".join(header_lines)
+    if not is_text:
+        # Although no caller uses date1 and date2...
+        date1 = date1.encode("utf-8", "surrogateescape")
+        date2 = date2.encode("utf-8", "surrogateescape")
+        headers = headers.encode("utf-8", "surrogateescape")
 
-    return date1, date2, flag, "".join(header_lines)
+    return date1, date2, flag, headers
 
 
 def _get_diff_path_parts(request, query_key, rev, base_rev):
@@ -3718,7 +3743,7 @@ def setup_diff(request):
     p2 = _get_diff_path_parts(request, "p2", rev2, request.pathrev)
 
     try:
-        if revcmp(rev1, rev2) > 0:
+        if revcmpkey(rev1) > revcmpkey(rev2):
             rev1, rev2 = rev2, rev1
             sym1, sym2 = sym2, sym1
             p1, p2 = p2, p1
@@ -3759,17 +3784,19 @@ def view_patch(request):
     diff_options["funout"] = cfg.options.hr_funout
 
     try:
-        fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options)
+        fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options,
+                                   is_text=False)
     except vclib.InvalidRevision:
         raise ViewVCException("Invalid path(s) or revision(s) passed to diff", "400 Bad Request")
 
     path_left = _path_join(p1)
     path_right = _path_join(p2)
     date1, date2, flag, headers = diff_parse_headers(
-        fp, diff_type, path_left, path_right, rev1, rev2, sym1, sym2
+        fp, diff_type, path_left, path_right, rev1, rev2, sym1, sym2,
+        is_text=False
     )
 
-    server_fp = get_writeready_server_file(request, "text/plain", is_text=True)
+    server_fp = get_writeready_server_file(request, "text/plain", is_text=False)
     server_fp.write(headers)
     copy_stream(fp, server_fp)
     fp.close()
@@ -3835,7 +3862,7 @@ class DiffDescription:
         self.line_differ = None
         self.fp_differ = None
         self.request = request
-        self.context = -1
+        self.context = None
         self.changes = []
 
         if self.diff_format == "c":
@@ -3850,7 +3877,7 @@ class DiffDescription:
             self.human_readable = 1
         elif self.diff_format == "f":
             self.diff_type = vclib.UNIFIED
-            self.context = None
+            self.context = cfg.utilities.max_context
             self.human_readable = 1
         elif self.diff_format == "h":
             self.diff_type = vclib.UNIFIED
@@ -3901,7 +3928,7 @@ class DiffDescription:
     def get_content_diff(self, left, right):
         options = self.request.cfg.options
         diff_options = {}
-        if self.context != -1:
+        if self.context is not None:
             diff_options["context"] = self.context
         if self.human_readable or self.diff_format == "u":
             diff_options["funout"] = options.hr_funout
@@ -3912,7 +3939,7 @@ class DiffDescription:
 
     def get_prop_diff(self, left, right):
         diff_options = {}
-        if self.context != -1:
+        if self.context is not None:
             diff_options["context"] = self.context
         if self.human_readable:
             cfg = self.request.cfg
@@ -4000,20 +4027,21 @@ class DiffDescription:
     def _content_lines(self, side, propname):
         f = self.request.repos.openfile(side.path_comp, side.rev, {})[0]
         try:
-            lines = f.readlines()
+            lines = [line.decode(self.request.repos.content_encoding, 'surrogateescape')
+                     for line in f.readlines()]
         finally:
             f.close()
         return lines
 
     def _content_fp(self, left, right, propname, diff_options):
         return self.request.repos.rawdiff(
-            left.path_comp, left.rev, right.path_comp, right.rev, self.diff_type, diff_options
+            left.path_comp, left.rev, right.path_comp, right.rev,
+            self.diff_type, diff_options, is_text=True
         )
 
     def _prop_lines(self, side, propname):
         val = side.properties.get(propname, "")
-        # FIXME: dirty hack for Python 3: we need bytes as return value
-        return val.encode("utf-8", "surrogateescape").splitlines()
+        return val.splitlines()
 
     def _prop_fp(self, left, right, propname, diff_options):
         fn_left = self._temp_file(left.properties.get(propname))
@@ -4028,6 +4056,7 @@ class DiffDescription:
             info_right,
             self.request.cfg.utilities.diff or "diff",
             diff_args,
+            encoding=self.request.repos.content_encoding
         )
 
     def _temp_file(self, val):
@@ -4213,7 +4242,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     rep_path = request.path_parts + reldir
     entries = request.repos.listdir(rep_path, request.pathrev, {})
     request.repos.dirlogs(rep_path, request.pathrev, entries, {})
-    entries.sort(key=functools.cmp_to_key(lambda a, b: cmp(a.name, b.name)))
+    entries.sort(key=attrgetter('name'))
 
     # figure out corresponding path in tar file. everything gets put underneath
     # a single top level directory named after the repository directory being
@@ -4424,7 +4453,7 @@ def view_revision(request):
         undisplayable = is_undisplayable(revprops[name])
         if not undisplayable:
             lf = LogFormatter(
-                request, revprops[name].decode(request.repos.encoding, "backslashreplace")
+                request, revprops[name].decode(request.repos.content_encoding, "backslashreplace")
             )
             value = lf.get(maxlen=0, htmlize=1)
         else:
@@ -4433,10 +4462,7 @@ def view_revision(request):
         props.append(_item(name=name, value=value, undisplayable=ezt.boolean(undisplayable)))
 
     # Sort the changes list by path.
-    def changes_sort_by_path(a, b):
-        return cmp(a.path_parts, b.path_parts)
-
-    changes.sort(key=functools.cmp_to_key(changes_sort_by_path))
+    changes.sort(key=attrgetter('path_parts'))
 
     # Handle limit_changes parameter
     cfg_limit_changes = cfg.options.limit_changes
@@ -5249,6 +5275,9 @@ def list_roots(request):
 
     # Add the viewable Subversion roots
     for root in cfg.general.svn_roots.keys():
+        path_encoding, content_encoding = get_repos_encodings(cfg, root,
+                                                              do_overlay=True,
+                                                              preserve_cfg=True)
         auth = setup_authorizer(cfg, request.username, root)
         try:
             repos = vclib.svn.SubversionRepository(
@@ -5257,7 +5286,8 @@ def list_roots(request):
                 auth,
                 cfg.utilities,
                 cfg.options.svn_config_dir,
-                cfg.options.default_encoding,
+                content_encoding,
+                path_encoding,
             )
             lastmod = None
             if cfg.options.show_roots_lastmod:
@@ -5286,6 +5316,9 @@ def list_roots(request):
 
     # Add the viewable CVS roots
     for root in cfg.general.cvs_roots.keys():
+        path_encoding, content_encoding = get_repos_encodings(cfg, root,
+                                                              do_overlay=True,
+                                                              preserve_cfg=True)
         auth = setup_authorizer(cfg, request.username, root)
         try:
             vclib.ccvs.CVSRepository(
@@ -5294,7 +5327,8 @@ def list_roots(request):
                 auth,
                 cfg.utilities,
                 cfg.options.use_rcsparse,
-                cfg.options.default_encoding,
+                content_encoding,
+                path_encoding,
             )
         except vclib.ReposNotFound:
             continue
@@ -5328,12 +5362,14 @@ def _parse_root_parent(pp):
 def expand_root_parents(cfg):
     """Expand the configured root parents into individual roots."""
 
+    path_encoding, _ = get_repos_encodings(cfg, None)
+
     # Each item in root_parents is a "directory [= context ]: repo_type" string.
     for pp in cfg.general.root_parents:
         path, context, repo_type = _parse_root_parent(pp)
 
         if repo_type == "cvs":
-            roots = vclib.ccvs.expand_root_parent(path)
+            roots = vclib.ccvs.expand_root_parent(path, path_encoding)
             if cfg.options.hide_cvsroot and "CVSROOT" in roots:
                 del roots["CVSROOT"]
             if context:
@@ -5344,7 +5380,7 @@ def expand_root_parents(cfg):
             else:
                 cfg.general.cvs_roots.update(roots)
         elif repo_type == "svn":
-            roots = vclib.svn.expand_root_parent(path)
+            roots = vclib.svn.expand_root_parent(path, path_encoding)
             if context:
                 fullroots = {}
                 for root, rootpath in roots.items():
@@ -5371,6 +5407,8 @@ def find_root_in_parents(cfg, path_parts, roottype):
     if path_parts[-1] == "CVSROOT" and cfg.options.hide_cvsroot:
         return None
 
+    path_encoding, _ = get_repos_encodings(cfg, None)
+
     for pp in cfg.general.root_parents:
         path, context, repo_type = _parse_root_parent(pp)
 
@@ -5392,9 +5430,11 @@ def find_root_in_parents(cfg, path_parts, roottype):
 
         rootpath = None
         if roottype == "cvs":
-            rootpath = vclib.ccvs.find_root_in_parent(path, rootname)
+            rootpath = vclib.ccvs.find_root_in_parent(path, rootname,
+                                                      path_encoding)
         elif roottype == "svn":
-            rootpath = vclib.svn.find_root_in_parent(path, rootname)
+            rootpath = vclib.svn.find_root_in_parent(path, rootname,
+                                                     path_encoding)
 
         if rootpath is not None:
             return fullroot, rootpath, remain

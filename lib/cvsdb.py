@@ -392,11 +392,18 @@ class CheckinDatabase:
                 # sticking '\Z(?ms)' at the end of the regular
                 # expression instead of just '$', and doesn't prepend
                 # the '^'.
+                # Later versions of Python (at least 3.6) enclose the whole
+                # regular expression in (?s:.....)\Z which is also not
+                # understood by MySQL. Remove ?s: and replace \Z with '$'.
                 data = fnmatch.translate(data)
+                if data[0:4] == "(?s:":
+                    data = "(" + data[4:]
                 if data[0] != "^":
                     data = "^" + data
                 if data[-7:] == "\\Z(?ms)":
                     data = data[:-7] + "$"
+                if data[-2:] == "\\Z":
+                    data = data[:-2] + "$"
             elif query_entry.match == "regex":
                 match = " REGEXP "
             elif query_entry.match == "notregex":

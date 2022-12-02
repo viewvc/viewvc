@@ -15,7 +15,6 @@ such as CVS.
 """
 
 import sys
-import io
 import subprocess
 import os
 import time
@@ -49,16 +48,19 @@ SORTBY_REV = 2  # sorted by revision, youngest first
 # ======================================================================
 #
 class Repository:
-    """Abstract class representing a repository."""
+    """Abstract class representing a repository.
+
+    In addtion to those methods defined here, instances of subclasses
+    should have attribute(s) below.
+
+    rootpath        (str) Hold the absolute path to the repository in
+                    the local file system."""
 
     def rootname(self):
         """Return the name of this repository."""
 
     def roottype(self):
         """Return the type of this repository (vclib.CVS, vclib.SVN, ...)."""
-
-    def rootpath(self):
-        """Return the location of this repository."""
 
     def authorizer(self):
         """Return the vcauth.Authorizer object associated with this
@@ -82,8 +84,8 @@ class Repository:
     def openfile(self, path_parts, rev, options):
         """Open a file object to read file contents at a given path and revision.
 
-        The return value is a 2-tuple of containg the file object and revision
-        number in canonical form.
+        The return value is a 2-tuple of containg the binary file like object
+        and revision number in canonical form.
 
         The path is specified as a list of components, relative to the root
         of the repository. e.g. ["subdir1", "subdir2", "filename"]
@@ -163,10 +165,11 @@ class Repository:
         or bytestrings, as appropriate (preferring strings).
         """
 
-    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, type, options={}):
+    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type,
+                options={}, is_text=True):
         """Return a diff (in GNU diff format) of two file revisions
 
-        type is the requested diff type (UNIFIED, CONTEXT, etc)
+        diff_type is the requested diff type (UNIFIED, CONTEXT, etc)
 
         options is a dictionary that can contain the following options plus
         implementation-specific options
@@ -175,7 +178,8 @@ class Repository:
           funout - boolean, include C function names
           ignore_white - boolean, ignore whitespace
 
-        Return value is a python file object
+        If is_text is True, return value is a file like object with str I/O.
+        If is_text is False, return value is a file like object with bytes I/O.
         """
 
     def annotate(self, path_parts, rev, include_text=False):
@@ -245,6 +249,14 @@ class DirEntry:
         self.name = name
         self.kind = kind
         self.errors = errors
+
+    def sortkey(self, attrname, default=''):
+        """Get attribute value specified for sort key
+
+        If the attribute value is None, return default value instead.
+        """
+        v = getattr(self, attrname)
+        return v if v is not None else default
 
 
 class Revision:
@@ -368,6 +380,12 @@ class NonTextualFileContents(Error):
     pass
 
 
+class ExternalDiffError(Error):
+    def __init__(self, returncode, mess):
+        self.returncode = returncode
+        Error.__init__(self, "Diff terminated with exit code {0:d}: {1}".format(returncode, mess))
+
+
 # ======================================================================
 # Implementation code used by multiple vclib modules
 
@@ -377,18 +395,12 @@ def _diff_args(type, options):
     args = []
     if type == CONTEXT:
         if "context" in options:
-            if options["context"] is None:
-                args.append("--context=-1")
-            else:
-                args.append("--context=%i" % options["context"])
+            args.append("--context=%i" % options["context"])
         else:
             args.append("-c")
     elif type == UNIFIED:
         if "context" in options:
-            if options["context"] is None:
-                args.append("--unified=-1")
-            else:
-                args.append("--unified=%i" % options["context"])
+            args.append("--unified=%i" % options["context"])
         else:
             args.append("-u")
     elif type == SIDE_BY_SIDE:
@@ -407,38 +419,54 @@ def _diff_args(type, options):
 
 
 class _diff_fp:
-    """File object reading a diff between temporary files, cleaning up
-    on close"""
+    """File like object reading a diff between temporary files,
+    cleaning up on close.
 
-    def __init__(self, temp1, temp2, info1=None, info2=None, diff_cmd="diff", diff_opts=[]):
+    If ENCODING is not none, it returns file like object with str I/O,
+    otherwise, it returns file like object with bytes I/O"""
+
+    def __init__(self, temp1, temp2, info1=None, info2=None, diff_cmd="diff",
+                 diff_opts=[], encoding="utf-8"):
         self.readable = True
         self.temp1 = temp1
         self.temp2 = temp2
+        self.encoding = encoding
         args = diff_opts[:]
         args.insert(0, diff_cmd)
         if info1 and info2:
             args.extend(["-L", self._label(info1), "-L", self._label(info2)])
         args.extend([temp1, temp2])
-        self.proc = subprocess.Popen(
-            args, stdout=subprocess.PIPE, bufsize=-1, close_fds=(sys.platform != "win32")
-        )
-        if not isinstance(self.proc.stdout, io.TextIOBase) and isinstance(
-            self.proc.stdout, io.BufferedIOBase
-        ):
-            self.fp = io.TextIOWrapper(self.proc.stdout, encoding="utf-8", errors="surrogateescape")
+        # We assume pipe buffer for stderr is enough for diff utility,
+        # otherwise, it may cause deadlock.
+        if encoding:
+            self.proc = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                encoding=encoding, errors="surrogateescape",
+                bufsize=-1, close_fds=(sys.platform != "win32")
+            )
         else:
-            self.fp = self.proc.stdout
+            self.proc = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                bufsize=-1, close_fds=(sys.platform != "win32")
+            )
 
-    def read(self, bytes):
-        return self.fp.read(bytes)
+    def read(self, buf_size):
+        buf = self.proc.stdout.read(buf_size)
+        if not buf:
+            self._check_process_errors()
+        return buf
 
     def readline(self):
-        return self.fp.readline()
+        buf = self.proc.stdout.readline()
+        if not buf:
+            self._check_process_errors()
+        return buf
 
     def close(self):
         try:
             if self.proc:
-                self.fp.close()
+                self.proc.stdout.close()
+                self.proc.stderr.close()
                 ret = self.proc.poll()
                 if ret is None:
                     # child process seems to be still running...
@@ -462,6 +490,29 @@ class _diff_fp:
         date = date and time.strftime("%Y/%m/%d %H:%M:%S", time.gmtime(date))
         return "%s\t%s\t%s" % (path, date, rev)
 
+    def _check_process_errors(self):
+        """Check errors returned by subprocss. On error, raise an
+        ExternalDifferror exception"""
+
+        errs = self.proc.stderr.read()
+        ret = self.proc.poll()
+
+        # Exit code of diff utility is specified in POSIX:
+        #     0  ... No differences were found
+        #     1  ... Diferences were found
+        #     >1 ... An error occurred.
+        # Also, it is said "The standard error shall be used only for
+        # diagnostic messages." So, if errs is not empty, it would be
+        # occured some errors.
+
+        if ret not in (None, 0, 1) or errs:
+            if not self.encoding:
+                errs = errs.encode("utf-8", "surrogateescape")
+            if ret is None:
+                # The process is still running...
+                ret = -1
+            raise ExternalDiffError(ret, errs)
+
 
 def check_root_access(repos):
     """Return 1 iff the associated username is permitted to read REPOS,
@@ -484,3 +535,38 @@ def check_path_access(repos, path_parts, pathtype=None, rev=None):
     if not pathtype:
         pathtype = repos.itemtype(path_parts, rev)
     return auth.check_path_access(repos.rootname(), path_parts, pathtype, rev)
+
+
+if sys.platform == "win32":
+    def _getfspath(path, encoding):
+        """Get path on local file system.
+
+        PATH should be a path represented in str. On system using posix path,
+        it returns a path represented in bytes. On Windows, returns PATH
+        itself."""
+
+        return path
+
+    def os_listdir(path, encoding):
+        "Wrapper for os.listdir, with different encoding from file system encoding"
+        return os.listdir(path)
+
+else:
+    def _getfspath(path, encoding):
+        """Get path on local file system.
+
+        PATH should be a path represented in str. On system using posix path,
+        it returns a path represented in bytes. On Windows, returns PATH
+        itself."""
+
+        return path.encode(encoding, "surrogateescape")
+
+    def os_listdir(path, encoding):
+        """Wrapper for os.listdir, with different encoding from
+        file system encoding."""
+
+        if isinstance(path, bytes):
+            return os.listdir(path)
+        path = _getfspath(path, encoding) if path else b"."
+        return [ent.decode(encoding, "surrogateescape")
+                for ent in os.listdir(path)]
