@@ -1,10 +1,12 @@
 Version 1.3.0 (released ??-???-????)
 
-  * require Python 3.6 (#138)
+  * updated dependency requirements
+    - minimum Python version is now 3.6 (#138)
     - minimum Subversion version now 1.14.0 with py3 bindings
     - minimum Pygments version now 1.1
-  * removed support mod_python-based deployments (#234)
-  * removed support ASP-based deployments (#235)
+    - minimum MySQL version now ????? (#213)
+  * removed support for mod_python-based deployments (#234)
+  * removed support for ASP-based deployments (#235)
   * make-database now requires --force to destroy existing DB (#212)
   * removed deprecated checkout_magic option/behavior (#215)
   * new 'allow_mojibake' option (#216)
