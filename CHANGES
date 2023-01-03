@@ -1,4 +1,4 @@
-Version 1.2.2 (released ??-???-????)
+Version 1.2.2 (released 03-Jan-2023)
 
   * security fix: escape revision view changed paths (#311) [CVE-2023-22456]
   * standalone.py defaults to UTF-8 output now, too
