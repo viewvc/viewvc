@@ -1,5 +1,6 @@
 Version 1.2.2 (released ??-???-????)
 
+  * security fix: escape changed paths in revision view (#311) [CVE-????-????]
   * standalone.py defaults to UTF-8 output now, too
   * fix viewvc-install error handling bug
   * fix a problem on CVS checkout files with rcsparse (#272)
