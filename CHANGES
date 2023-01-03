@@ -27,6 +27,10 @@ Version 1.2.0 (released 17-Mar-2020)
   * standalone query interface removed (#206)
   * GUI support (--gui) removed from standalone.py
 
+Version 1.1.29 (released 03-Jan-2023)
+
+  * security fix: escape revision view changed paths (#311) [CVE-2023-22456]
+
 Version 1.1.28 (released 26-Mar-2020)
 
   * security fix: escape subdir lastmod file name (#211) [CVE-2020-5283]
