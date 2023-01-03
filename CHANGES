@@ -1,6 +1,6 @@
 Version 1.1.29 (released ??-???-????)
 
-  * security fix: escape changed paths in revision view (#311) [CVE-????-????]
+  * security fix: escape revision view changed paths (#311) [CVE-2023-22456]
 
 Version 1.1.28 (released 26-Mar-2020)
 
