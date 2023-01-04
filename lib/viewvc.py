@@ -4281,7 +4281,7 @@ def view_revision(request):
 
     # use same variable names as the log template
     change.path = request.server.escape(path)
-    change.copy_path = _path_join(change.base_path_parts)
+    change.copy_path = request.server.escape(_path_join(change.base_path_parts))
     change.copy_rev = change.base_rev
     change.text_mods = ezt.boolean(change.text_changed)
     change.prop_mods = ezt.boolean(change.props_changed)
