@@ -27,6 +27,10 @@ Version 1.2.0 (released 17-Mar-2020)
   * standalone query interface removed (#206)
   * GUI support (--gui) removed from standalone.py
 
+Version 1.1.30 (released 04-Jan-2023)
+
+  * security fix: escape revision view copy paths (#311) [CVE-2023-22464]
+
 Version 1.1.29 (released 03-Jan-2023)
 
   * security fix: escape revision view changed paths (#311) [CVE-2023-22456]
