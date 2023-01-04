@@ -1,6 +1,6 @@
 Version 1.1.30 (released ??-???-????)
 
-  * 
+  * security fix: escape revision view copy paths (#311) [CVE-2023-22464]
 
 Version 1.1.29 (released 03-Jan-2023)
 
