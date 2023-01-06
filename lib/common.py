@@ -108,9 +108,10 @@ def print_exception_data(server, exc_data):
     if status:
         s = s + (f"<h4>HTTP Response Status</h4>\n<p><pre>\n{status}</pre></p><hr />\n")
     fp.write(s)
-    fp.write("<h4>Python Traceback</h4>\n<p><pre>")
-    fp.write(tb)
-    fp.write("</pre></p>\n")
+    if tb:
+        fp.write("<h4>Python Traceback</h4>\n<p><pre>")
+        fp.write(tb)
+        fp.write("</pre></p>\n")
 
 
 def get_exception_data():
@@ -131,6 +132,8 @@ def get_exception_data():
         if isinstance(exc, ViewVCException):
             exc_dict["msg"] = exc.msg
             exc_dict["status"] = exc.status
+        elif isinstance(exc, OSError):
+            exc_dict["msg"] = str(exc)
         formatted = traceback.format_exception(exc_type, exc, exc_tb)
         if exc_tb is not None:
             formatted = formatted[1:]
