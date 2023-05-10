@@ -18,7 +18,6 @@ import sys
 import io
 import locale
 import codecs
-import copy
 
 # Special type indicators for diff header processing and idiff return codes
 _RCSDIFF_IS_BINARY = "binary-diff"
@@ -179,7 +178,7 @@ def get_repos_encodings(cfg, root, do_overlay=False, preserve_cfg=False):
     locale.Error can be raised."""
 
     if do_overlay:
-        tmp_cfg = copy.deepcopy(cfg) if preserve_cfg else cfg
+        tmp_cfg = cfg.copy() if preserve_cfg else cfg
         tmp_cfg.overlay_root_options(root)
     else:
         tmp_cfg = cfg
