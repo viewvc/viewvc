@@ -18,6 +18,7 @@ import sys
 import os
 import configparser
 import fnmatch
+import copy
 
 
 #########################################################################
@@ -148,15 +149,26 @@ class Config:
                 continue
             setattr(self, section, _sub_config())
 
+    def copy(self):
+        return copy.deepcopy(self)
+
     def load_config(self, pathname, vhost=None):
         """Load the configuration file at PATHNAME, applying configuration
         settings there as overrides to the built-in default values.  If
         VHOST is provided, also process the configuration overrides
         specific to that virtual host."""
 
+        class CustomParser(configparser.ConfigParser):
+            """A ConfigParser class which prevents deepcopying self.
+            We can treat an instances of this class as an immutable
+            where we'll see it out of Config.load_config()."""
+
+            def __deepcopy__(self, memo):
+                return self
+
         self.conf_path = os.path.isfile(pathname) and pathname or None
         self.base = os.path.dirname(pathname)
-        self.parser = configparser.ConfigParser()
+        self.parser = CustomParser()
         self.parser.optionxform = lambda x: x  # don't case-normalize option names.
         self.parser.read(self.conf_path or [])
 

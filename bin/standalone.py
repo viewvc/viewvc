@@ -23,7 +23,6 @@ import string
 import socket
 import select
 import base64
-import copy
 from urllib.parse import unquote as _unquote
 import http.server as _http_server
 
@@ -331,7 +330,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
         # XXX Other HTTP_* headers
 
         # make a one time cfg for a single request
-        ot_cfg = copy.deepcopy(cfg)
+        ot_cfg = cfg.copy()
         try:
             try:
                 viewvc.main(StandaloneServer(self), ot_cfg)
