@@ -19,7 +19,7 @@ class ViewVCAuthorizer(vcauth.GenericViewVCAuthorizer):
 
     def __init__(self, root_lookup_func, username, params={}):
         forbidden = params.get("forbidden", "")
-        self.forbidden = map(lambda x: x.strip(), filter(None, forbidden.split(",")))
+        self.forbidden = [x.strip() for x in forbidden.split(",") if x.strip()]
 
     def check_root_access(self, rootname):
         return 1
