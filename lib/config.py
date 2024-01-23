@@ -392,6 +392,7 @@ class Config:
         self.general.address = ""
         self.general.kv_files = []
         self.general.languages = ["en-us"]
+        self.general.enable_debuglines = 0
 
         self.utilities.rcs_dir = ""
         if sys.platform == "win32":

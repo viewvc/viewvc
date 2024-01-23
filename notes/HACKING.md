@@ -1,5 +1,5 @@
-# Testing and Reporting
-
+# Testing and Reporting jariza00
+lopezjariza00@gmail.com
 Testing usability and the installation process on different platforms
 is also a valuable contribution.  Please report your results back to
 us developers.  Bandwidth is getting cheaper daily, so don't be afraid
