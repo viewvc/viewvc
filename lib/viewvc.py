@@ -4452,9 +4452,7 @@ def view_revision(request):
             continue
         undisplayable = is_undisplayable(revprops[name])
         if not undisplayable:
-            lf = LogFormatter(
-                request, revprops[name].decode(request.repos.content_encoding, "backslashreplace")
-            )
+            lf = LogFormatter(request, revprops[name])
             value = lf.get(maxlen=0, htmlize=1)
         else:
             # note non-utf8 property values
