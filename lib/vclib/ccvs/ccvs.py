@@ -324,7 +324,7 @@ def _msplit(s):
 
   lines = [line + '\n' for line in s.split('\n')]
   if lines[-1] == '\n':
-    del line[-1]
+    del lines[-1]
   else:
     lines[-1] = lines[-1][:-1]
   return lines
