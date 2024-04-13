@@ -3599,7 +3599,7 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2,
         f1 = f2 = None
 
     if is_text:
-        getline=fp.readline
+        getline = fp.readline
     else:
         def getline():
             return fp.readline().decode("utf-8", "surrogateescape")

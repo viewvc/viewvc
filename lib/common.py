@@ -38,7 +38,7 @@ def cmp(a, b):
         return 1
     if b is None:
         return -1
-    assert type(a) == type(b)
+    assert type(a) is type(b)
     return (a > b) - (a < b)
 
 
