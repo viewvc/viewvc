@@ -4323,7 +4323,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
                 mode,
                 file.date is not None and file.date or 0,
                 typeflag=b"2",
-                linkname=symlink_target,
+                linkname=symlink_target.encode('utf-8'),
             )
         else:
             filesize = request.repos.filesize(rep_path + [file.name], request.pathrev)

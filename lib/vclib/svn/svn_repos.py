@@ -975,7 +975,8 @@ class LocalSubversionRepository(vclib.Repository):
         fsroot = self._getroot(rev)
 
         # Symlinks must be files with the svn:special property set on them
-        # and with file contents which read "link SOME_PATH".
+        # and with file contents which read "link SOME_PATH" in UTF-8,
+        # even if file system encoding is not 'utf-8'.
         if path_type != vclib.FILE:
             return None
         props = fs.node_proplist(fsroot, path)
@@ -989,6 +990,6 @@ class LocalSubversionRepository(vclib.Repository):
             pathspec, eof = core.svn_stream_readline(stream, b"\n")
         finally:
             core.svn_stream_close(stream)
-        if pathspec[:5] != "link ":
+        if pathspec[:5] != b"link ":
             return None
-        return pathspec[5:]
+        return pathspec[5:].decode('utf-8')
