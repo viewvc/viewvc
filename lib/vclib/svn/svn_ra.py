@@ -751,7 +751,8 @@ class RemoteSubversionRepository(vclib.Repository):
         url = self._geturl(path)
 
         # Symlinks must be files with the svn:special property set on them
-        # and with file contents which read "link SOME_PATH".
+        # and with file contents which read "link SOME_PATH" in UTF-8,
+        # even if file system encoding is not 'utf-8'.
         if path_type != vclib.FILE:
             return None
         pairs = client.svn_client_proplist2(url, _rev2optrev(rev), _rev2optrev(rev), 0, self.ctx)
@@ -764,6 +765,6 @@ class RemoteSubversionRepository(vclib.Repository):
         fp = SelfCleanFP(cat_to_tempfile(self, path, rev))
         pathspec = fp.readline()
         fp.close()
-        if pathspec[:5] != "link ":
+        if pathspec[:5] != b"link ":
             return None
-        return pathspec[5:]
+        return pathspec[5:].decode('utf-8')
