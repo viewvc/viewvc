@@ -3666,8 +3666,8 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2,
     headers = "".join(header_lines)
     if not is_text:
         # Although no caller uses date1 and date2...
-        date1 = date1.encode("utf-8", "surrogateescape")
-        date2 = date2.encode("utf-8", "surrogateescape")
+        date1 = date1.encode("utf-8", "surrogateescape") if date1 else None
+        date2 = date2.encode("utf-8", "surrogateescape") if date2 else None
         headers = headers.encode("utf-8", "surrogateescape")
 
     return date1, date2, flag, headers
