@@ -37,7 +37,7 @@ def _path_join(path_parts):
 class BaseCVSRepository(vclib.Repository):
     def __init__(self, name, rootpath, authorizer, utilities,
                  content_encoding, path_encoding):
-        if not vclib.ccvs._is_cvsroot(rootpath, path_encoding):
+        if not os.path.isdir(vclib._getfspath(rootpath, path_encoding)):
             raise vclib.ReposNotFound(name)
 
         self.name = name
