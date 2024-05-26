@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS branches;
 CREATE TABLE branches (
   id mediumint(9) NOT NULL auto_increment,
-  branch varchar(64) binary DEFAULT '' NOT NULL,
+  branch varchar(64) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE branch (branch)
 ) ENGINE=InnoDB;
@@ -33,7 +33,7 @@ CREATE TABLE commits (
 DROP TABLE IF EXISTS descs;
 CREATE TABLE descs (
   id mediumint(9) NOT NULL auto_increment,
-  description text,
+  description text CHARACTER SET utf8 COLLATE utf8_bin,
   hash bigint(20) DEFAULT '0' NOT NULL,
   PRIMARY KEY (id),
   KEY hash (hash)
@@ -42,7 +42,7 @@ CREATE TABLE descs (
 DROP TABLE IF EXISTS dirs;
 CREATE TABLE dirs (
   id mediumint(9) NOT NULL auto_increment,
-  dir varchar(255) binary DEFAULT '' NOT NULL,
+  dir varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE dir (dir)
 ) ENGINE=InnoDB;
@@ -88,7 +88,7 @@ CREATE TABLE tags (
 DROP TABLE IF EXISTS metadata;
 CREATE TABLE metadata (
   name varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT '' NOT NULL,
-  value text,
+  value text CHARACTER SET utf8 COLLATE utf8_bin,
   PRIMARY KEY (name),
   UNIQUE name (name)
 ) ENGINE=InnoDB;
