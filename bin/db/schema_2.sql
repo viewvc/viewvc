@@ -42,7 +42,7 @@ CREATE TABLE descs (
 DROP TABLE IF EXISTS dirs;
 CREATE TABLE dirs (
   id mediumint(9) NOT NULL auto_increment,
-  dir varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT '' NOT NULL,
+  dir varchar(255) binary DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE dir (dir)
 ) ENGINE=InnoDB;

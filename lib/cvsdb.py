@@ -90,7 +90,8 @@ class CheckinDatabase:
 
     def sql_get_id(self, table, column, value, auto_set):
         value = reencode(value)
-        sql = "SELECT id FROM %s WHERE %s=%%s" % (table, column)
+        binary_op = "BINARY " if column in ('dir',) else ""
+        sql = "SELECT id FROM %s WHERE %s=%s%%s" % (table, column, binary_op)
         sql_args = (value,)
 
         cursor = self.db.cursor()
@@ -104,7 +105,7 @@ class CheckinDatabase:
             return str(int(id))
 
         # insert the new identifier
-        sql = "INSERT INTO %s(%s) VALUES(%%s)" % (table, column)
+        sql = "INSERT INTO %s(%s) VALUES(%s%%s)" % (table, column, binary_op)
         sql_args = (value,)
         cursor.execute(sql, sql_args)
 
