@@ -58,7 +58,7 @@ def UpdateFile(db, repository, path, update, quiet_level):
         print("[ERROR] %s" % (e))
         return
 
-    file = "/".join(path)
+    file = cvsdb.reencode("/".join(path))
     printing = 0
     if update:
         if quiet_level < 1 or (quiet_level < 2 and len(commit_list)):
