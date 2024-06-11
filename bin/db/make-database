@@ -171,7 +171,7 @@ if __name__ == "__main__":
             usage_and_exit("Unexpected command-line parameters")
         for name, value in opts:
             if name == "--help":
-                usage_and_exit(0)
+                usage_and_exit()
             elif name == "--dbname":
                 dbname = value
             elif name == "--force":
