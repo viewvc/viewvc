@@ -255,7 +255,7 @@ class BinCVSRepository(BaseCVSRepository):
             if not tip_rev:
                 raise vclib.Error("Unable to find valid revision")
             fp = self.rcs_popen("co", ("-p" + tip_rev.string, full_name))
-            filename, revision = _parse_co_header(fp, self.encodig)
+            filename, revision = _parse_co_header(fp, self.content_encoding)
 
         if filename is None:
             # CVSNT's co exits without any output if a dead revision is requested.
