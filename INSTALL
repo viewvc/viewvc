@@ -61,6 +61,11 @@ Strongly recommended:
   * chardet character encoding detection library
       (https://chardet.github.io/)
 
+For htpasswd support on standalone server:
+
+  * passlib package
+      (https://pypi.org/project/passlib/) 
+
 There are a number of additional packages that you might need in order
 to enable additional features of ViewVC.  Please see the relevant
 sections of this document for details.
