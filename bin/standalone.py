@@ -251,7 +251,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
             try:
                 kind, data = authn.split(" ", 1)
                 if kind == "Basic":
-                    data = base64.b64decode(data)
+                    data = base64.b64decode(data).decode('ascii')
                     username, password = data.split(":", 1)
             except Exception:
                 raise AuthenticationException()
