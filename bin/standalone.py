@@ -49,28 +49,12 @@ else:
 import sapi
 import viewvc
 
-
-# Default password checker denies everything.
-def _check_passwd(user_passwd, real_passwd):
-    return False
-
-
-# The 'crypt' module is only available on Unix platforms.  If it's not
-# found, we'll try to use 'fcrypt' (for more information, see
-# http://carey.geek.nz/code/python-fcrypt/).
-has_crypt = True
+# We use passlib (https://pypi.org/project/passlib/) for htpasswd support.
+has_passlib = True
 try:
-    import crypt
+    from passlib.apache import HtpasswdFile
 except ImportError:
-    try:
-        import fcrypt as crypt
-    except ImportError:
-        has_crypt = False
-if has_crypt:
-
-    def _check_passwd(user_passwd, real_passwd):  # noqa: F811
-        return real_passwd == crypt.crypt(user_passwd, real_passwd[:2])
-
+    has_passlib = False
 
 class Options:
     port = 49152  # default TCP/IP port used for the server
@@ -223,11 +207,8 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
     def validate_password(self, htpasswd_file, username, password):
         """Compare USERNAME and PASSWORD against HTPASSWD_FILE."""
         try:
-            lines = open(htpasswd_file, "r").readlines()
-            for line in lines:
-                file_user, file_pass = line.rstrip().split(":", 1)
-                if username == file_user:
-                    return _check_passwd(password, file_pass)
+            ht = HtpasswdFile(htpasswd_file)
+            return ht.check_password(username, password)
         except Exception:
             pass
         return False
@@ -551,14 +532,12 @@ def main(argv):
                 raise BadUsage(
                     "'%s' does not appear to be a valid htpasswd file." % (opt_htpasswd_file)
                 )
-            if not has_crypt:
+            if not has_passlib:
                 raise BadUsage(
-                    "Unable to locate suitable `crypt' module for use "
-                    "with --htpasswd-file option.  If your Python "
-                    "distribution does not include this module (as is "
-                    "the case on many non-Unix platforms), consider "
-                    "installing the `fcrypt' module instead (see "
-                    "http://carey.geek.nz/code/python-fcrypt/)."
+                    "Unable to locate suitable `passlib' module for use "
+                    "with --htpasswd-file option.  This module is not a "
+                    "standard library module, but it can be found in "
+                    "PyPI (https://pypi.org/project/passlib/)."
                 )
             options.htpasswd_file = opt_htpasswd_file
         if opt_config_file is not None:
