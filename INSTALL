@@ -61,11 +61,6 @@ Strongly recommended:
   * chardet character encoding detection library
       (https://chardet.github.io/)
 
-For htpasswd support on standalone server:
-
-  * passlib package
-      (https://pypi.org/project/passlib/) 
-
 There are a number of additional packages that you might need in order
 to enable additional features of ViewVC.  Please see the relevant
 sections of this document for details.
@@ -488,6 +483,13 @@ can modify the hostname and port to which it binds using the `--host`
 and `--port` command-line options.  You can also change the virtual
 path location from `/viewvc` to something else with the
 `--script-alias` command-line option.
+
+ViewVC standalone server supports basic authentication by specifying
+apache httpd compatible htpasswd file with `--htpasswd-file`
+command-line option. This feature needs external `passlib` package.
+
+  * passlib package
+      (https://pypi.org/project/passlib/)
 
 For a full listing of supported command-line options, run the
 standalone server with `--help`.
