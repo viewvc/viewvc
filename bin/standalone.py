@@ -433,7 +433,7 @@ Options:
 
   --htpasswd-file=FILE       Authenticate incoming requests, validating against
                              against FILE, which is an Apache HTTP Server
-                             htpasswd file.  (CRYPT only; no DIGEST support.)
+                             htpasswd file.
 
   --port=PORT (-p)           Listen on PORT.  [default: %(port)d]
 
