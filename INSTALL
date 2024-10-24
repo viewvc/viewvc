@@ -484,6 +484,13 @@ and `--port` command-line options.  You can also change the virtual
 path location from `/viewvc` to something else with the
 `--script-alias` command-line option.
 
+ViewVC standalone server supports basic authentication by specifying
+apache httpd compatible htpasswd file with `--htpasswd-file`
+command-line option. This feature needs external `passlib` package.
+
+  * passlib package
+      (https://pypi.org/project/passlib/)
+
 For a full listing of supported command-line options, run the
 standalone server with `--help`.
 
