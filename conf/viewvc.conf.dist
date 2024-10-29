@@ -421,6 +421,12 @@
 ##           | two revisions of a versioned file in a variety of
 ##           | different user-selectable formats.
 ## ----------+---------------------------------------------------------
+##  image    | The 'image' view delivers the raw image content of a
+##           | versioned web-friendly image file, allowing it to be
+##           | displayed directly in the browser.  This view exists
+##           | primarily for the sake of the 'markup' view, which can
+##           | embed images in its output.
+## ----------+---------------------------------------------------------
 ##  markup   | The 'markup' view shows the contents of a single
 ##           | revision of a versioned file, with syntax highlighting
 ##           | where possible and enabled.  It can also optionally

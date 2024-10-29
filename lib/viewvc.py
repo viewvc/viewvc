@@ -520,14 +520,14 @@ class Request:
 
         # if we are asking for the revision info view, we don't need any
         # path information
-        if view_func is view_revision or view_func is view_roots or view_func is redirect_pathrev:
+        if view_func in [view_revision, view_roots, redirect_pathrev]:
             where = pathtype = None
         elif where is None:
             where = self.where
             pathtype = self.pathtype
 
         # no need to add sticky variables for views with no links
-        sticky_vars = not (view_func is view_checkout or view_func is download_tarball)
+        sticky_vars = view_func not in [view_checkout, view_image, download_tarball]
 
         # The logic used to construct the URL is an inverse of the
         # logic used to interpret URLs in Request.run_viewvc
@@ -2058,15 +2058,19 @@ def markup_or_annotate(request, is_annotate):
     # If this is viewable image that we're allowed to show embedded, we
     # need only resolve its revision and generate an image src=
     # attribute URL for it.
-    elif is_viewable_image(mime_type) and "co" in cfg.options.allowed_views:
+    elif (
+        is_viewable_image(mime_type)
+        and ("image" in cfg.options.allowed_views or "co" in cfg.options.allowed_views)
+    ):
         fp, revision = request.repos.openfile(path, rev, {})
         fp.close()
         if check_freshness(request, None, revision, weak=1):
             return
         if is_annotate:
             annotation = "binary"
+        view_func = view_image if "image" in cfg.options.allowed_views else view_checkout
         image_src_href = request.get_url(
-            view_func=view_checkout, params={"revision": rev}, escape=1
+            view_func=view_func, params={"revision": rev}, escape=1
         )
 
     # If we get here, the request is not for an image that we can
@@ -3164,6 +3168,33 @@ def view_log(request):
     generate_page(request, "log", data)
 
 
+def checkout_or_image(request, is_image_view=False):
+    path, rev = _orig_path(request)
+    fp = None
+    try:
+        fp, revision = request.repos.openfile(path, rev, {})
+
+        # The revision number acts as a strong validator.
+        if not check_freshness(request, None, revision):
+            mime_type, encoding = calculate_mime_type(request, path, rev)
+
+            # The image view does not permit the query_dict to dictate the
+            # mime type.  If we can't detect that our file is a web-friendly
+            # image, we refuse to display it.
+            if is_image_view:
+                if not is_viewable_image(mime_type):
+                    raise ViewVCException("Unsupported feature: image view on non-image file", "400 Bad Request")
+            else:
+                mime_type = request.query_dict.get("content-type") or mime_type or "text/plain"
+
+            # Copy the file content to the server output stream.
+            server_fp = get_writeready_server_file(request, mime_type, encoding)
+            copy_stream(fp, server_fp)
+    finally:
+        if fp:
+            fp.close()
+
+
 def view_checkout(request):
     cfg = request.cfg
 
@@ -3171,17 +3202,17 @@ def view_checkout(request):
         raise ViewVCException("Checkout view is disabled", "403 Forbidden")
     if request.pathtype != vclib.FILE:
         raise ViewVCException("Unsupported feature: checkout view on directory", "400 Bad Request")
+    return checkout_or_image(request)
 
-    path, rev = _orig_path(request)
-    fp, revision = request.repos.openfile(path, rev, {})
 
-    # The revision number acts as a strong validator.
-    if not check_freshness(request, None, revision):
-        mime_type, encoding = calculate_mime_type(request, path, rev)
-        mime_type = request.query_dict.get("content-type") or mime_type or "text/plain"
-        server_fp = get_writeready_server_file(request, mime_type, encoding)
-        copy_stream(fp, server_fp)
-    fp.close()
+def view_image(request):
+    cfg = request.cfg
+
+    if "image" not in cfg.options.allowed_views:
+        raise ViewVCException("Image view is disabled", "403 Forbidden")
+    if request.pathtype != vclib.FILE:
+        raise ViewVCException("Unsupported feature: image view on directory", "400 Bad Request")
+    return checkout_or_image(request)
 
 
 def cvsgraph_make_reqopt(request, cfgname, queryparam, optvalue):
@@ -5252,6 +5283,7 @@ _views = {
     "dir": view_directory,
     "graph": view_cvsgraph,
     "graphimg": view_cvsgraph_image,
+    "image": view_image,
     "log": view_log,
     "markup": view_markup,
     "patch": view_patch,
