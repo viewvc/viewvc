@@ -3202,7 +3202,7 @@ def view_checkout(request):
         raise ViewVCException("Checkout view is disabled", "403 Forbidden")
     if request.pathtype != vclib.FILE:
         raise ViewVCException("Unsupported feature: checkout view on directory", "400 Bad Request")
-    return checkout_or_image(request)
+    return checkout_or_image(request, is_image_view=False)
 
 
 def view_image(request):
@@ -3212,7 +3212,7 @@ def view_image(request):
         raise ViewVCException("Image view is disabled", "403 Forbidden")
     if request.pathtype != vclib.FILE:
         raise ViewVCException("Unsupported feature: image view on directory", "400 Bad Request")
-    return checkout_or_image(request)
+    return checkout_or_image(request, is_image_view=True)
 
 
 def cvsgraph_make_reqopt(request, cfgname, queryparam, optvalue):

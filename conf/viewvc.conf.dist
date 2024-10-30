@@ -399,8 +399,7 @@
 ## in this comma-delited list will not be served (or, will return an
 ## error on attempted access).
 ##
-## Valid items for this list include: "annotate", "co", "diff", "markup",
-## "roots", "tar".
+## Valid items for this list (and descriptions thereof) are as follows:
 ##
 ## ----------+---------------------------------------------------------
 ##    VIEW   |                       DESCRIPTION
