@@ -399,8 +399,7 @@
 ## in this comma-delited list will not be served (or, will return an
 ## error on attempted access).
 ##
-## Valid items for this list include: "annotate", "co", "diff", "markup",
-## "roots", "tar".
+## Valid items for this list (and descriptions thereof) are as follows:
 ##
 ## ----------+---------------------------------------------------------
 ##    VIEW   |                       DESCRIPTION
@@ -420,6 +419,12 @@
 ##  diff     | The 'diff' view displays line-based differences between
 ##           | two revisions of a versioned file in a variety of
 ##           | different user-selectable formats.
+## ----------+---------------------------------------------------------
+##  image    | The 'image' view delivers the raw image content of a
+##           | versioned web-friendly image file, allowing it to be
+##           | displayed directly in the browser.  This view exists
+##           | primarily for the sake of the 'markup' view, which can
+##           | embed images in its output.
 ## ----------+---------------------------------------------------------
 ##  markup   | The 'markup' view shows the contents of a single
 ##           | revision of a versioned file, with syntax highlighting
