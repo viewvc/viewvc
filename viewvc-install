@@ -281,7 +281,7 @@ LEGEND
 
     # (Optionally) compile the file.
     if compile_it:
-        py_compile.compile(destdir_path, destdir_path + "c", dst_path)
+        py_compile.compile(destdir_path, None, dst_path)
 
 
 def install_tree(src_path, dst_path, is_optional, prompt_replace):
