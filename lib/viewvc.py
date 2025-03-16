@@ -51,7 +51,6 @@ import accept
 import config
 import ezt
 import sapi
-import vcauth
 import vclib
 import vclib.ccvs
 import vclib.svn
@@ -887,21 +886,15 @@ def setup_authorizer(cfg, username, rootname=None):
         return None
 
     # First, try to load a module with the configured name.
-    import imp
+    import importlib
 
-    fp = None
     try:
-        try:
-            fp, path, desc = imp.find_module("%s" % (authorizer), vcauth.__path__)
-            my_auth = imp.load_module("viewvc", fp, path, desc)
-        except ImportError:
-            raise ViewVCException(
-                'Invalid authorizer (%s) specified for root "%s"' % (authorizer, rootname),
-                "500 Internal Server Error",
-            )
-    finally:
-        if fp:
-            fp.close()
+        my_auth = importlib.import_module(f"vcauth.{authorizer}")
+    except ModuleNotFoundError:
+        raise ViewVCException(
+            f'Invalid authorizer ({authorizer}) specified for root "{rootname}"',
+            "500 Internal Server Error",
+        )
 
     # Add a rootname mapping callback function to the parameters.
     def _root_lookup_func(cb_rootname):
