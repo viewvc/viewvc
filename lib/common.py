@@ -133,7 +133,7 @@ def get_exception_data():
         formatted = traceback.format_exception(exc_type, exc, exc_tb)
         if exc_tb is not None:
             formatted = formatted[1:]
-        exc_dict["stacktrace"] = "".join(formatted)
+        exc_dict["stacktrace"] = "".join(formatted) if formatted else None
     finally:
         # Prevent circular reference.  The documentation for sys.exc_info
         # warns "Assigning the traceback return value to a local variable

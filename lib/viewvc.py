@@ -5537,7 +5537,7 @@ def load_config(pathname=None, server=None):
     cfg.load_config(pathname, env_get("HTTP_HOST"))
 
     # Apply the stacktrace configuration immediately.
-    sys.tracebacklimit = cfg.options.stacktraces and 1000 or 0
+    sys.tracebacklimit = 1000 if cfg.options.stacktraces else 0
 
     # Load mime types file(s), but reverse the order -- our
     # configuration uses a most-to-least preferred approach, but the
@@ -5553,6 +5553,9 @@ def load_config(pathname=None, server=None):
 
 def view_error(server, cfg):
     exc_dict = get_exception_data()
+    for key in exc_dict:
+        if isinstance(exc_dict[key], str):
+            exc_dict[key] = server.escape(exc_dict[key])
 
     # Use the configured error template if possible.
     try:
@@ -5569,11 +5572,7 @@ def view_error(server, cfg):
         pass
 
     # Fallback to the old exception printer if no configuration is
-    # available, or if something went wrong.  (In this case, we need
-    # to manually escape strings.)
-    for key in exc_dict:
-        if isinstance(exc_dict[key], str):
-            exc_dict[key] = server.escape(exc_dict[key])
+    # available, or if something went wrong.
     print_exception_data(server, exc_dict)
 
 

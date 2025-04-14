@@ -18,12 +18,12 @@
   <hr />
 [end]
 
-[if-any msg][else]
+[if-any msg][else][if-any stacktrace]
 <h4>Python Traceback</h4>
 <p><pre>
 [stacktrace]
 </pre></p>
-[end]
+[else]An unknown error occurred[end][end]
 
 [# Here follows a bunch of space characters, present to ensure that
    our error message is larger than 512 bytes so that IE's "Friendly
