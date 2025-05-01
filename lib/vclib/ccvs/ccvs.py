@@ -242,7 +242,7 @@ class InfoSink(MatchingSink):
             return
 
         tag = self.find_tag
-        rev = Revision(self._to_str(revision), date, self._to_str(author), state == "dead")
+        rev = Revision(self._to_str(revision), date, self._to_str(author), self._to_str(state) == "dead")
         rev.lockinfo = self.lockinfo.get(self._to_str(revision))
 
         # perfect match if revision number matches tag number or if
@@ -307,7 +307,7 @@ class TreeSink(rcsparse.Sink):
     def define_revision(self, revision, date, author, state, branches, next):
         # check !revs.has_key(revision)
         self.revs[self._to_str(revision)] = Revision(
-            self._to_str(revision), date, self._to_str(author), state == "dead"
+            self._to_str(revision), date, self._to_str(author), self._to_str(state) == "dead"
         )
 
     def set_revision_info(self, revision, log, text):
