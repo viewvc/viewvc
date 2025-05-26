@@ -3566,6 +3566,8 @@ def view_patch(request):
   if 'diff' not in request.cfg.options.allowed_views:
     raise debug.ViewVCException('Diff generation is disabled',
                                  '403 Forbidden')
+  if request.pathtype != vclib.FILE:
+    raise debug.ViewVCException('Unsupported feature: patch view on directory', '400 Bad Request')
 
   cfg = request.cfg
   query_dict = request.query_dict
@@ -3914,14 +3916,17 @@ def view_diff(request):
   diff_format_action, diff_format_hidden_values = \
     request.get_form(params=no_format_params)
 
+  patch_href = (
+    request.get_url(view_func=view_patch, params=no_format_params, escape=1)
+    if request.pathtype == vclib.FILE
+    else None
+  )
   data = common_template_data(request)
   data.merge(TemplateData({
     'diffs' : desc.changes,
     'diff_format' : desc.diff_format,
     'hide_legend' : ezt.boolean(desc.hide_legend),
-    'patch_href' : request.get_url(view_func=view_patch,
-                                   params=no_format_params,
-                                   escape=1),
+    'patch_href' : patch_href,
     'diff_format_action' : diff_format_action,
     'diff_format_hidden_values' : diff_format_hidden_values,
     }))
