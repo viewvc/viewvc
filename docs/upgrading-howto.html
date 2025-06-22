@@ -97,11 +97,25 @@ td {
 <div class="h3">
 <h3>Commits Database</h3>
 
-<p>### TODO: New locations of scripts (bin/db).<br/>
-   ### TODO: Minimum version requirements for MySQL/MariaDB, python libs.<br/>
-   ### TODO: Dropped support for old schemas.<br/>
-</p>
-  
+<p>The commits database feature has been removed in ViewVC 1.3.0.  While we
+   regret the inconvenience, the complications of porting the feature were
+   so significant that ViewVC's development essentially stalled (for years).
+   Rather than continue to delay the release of a Python-3-compatible ViewVC
+   version on account of a single feature, we decided to move forward without
+   that feature.</p>
+
+<p>For those who used the commits database feature, your existing commits
+   database will <em>not</em> be automatically removed, but it will no longer
+   be used by ViewVC.  If you wish to remove it, you can do so using the
+   typical procedures for dropping databases in MySQL/MariaDB.  Don't forget
+   to remove the ViewVC database `user` and `readonly_user` as formerly
+   defined in the `[cvsdb]` section of your `viewvc.conf` (if those users
+   aren't used for other purposes in your database).  Also, if you were
+   taking advantage of the ViewVC database integration hook-scripts
+   (`cvsdbadmin`, `svnadadmin`, and `loginfo-handler`), you may wish to
+   update your repository configurations to no longer invoke those
+   scripts.</p>
+
 </div>
 
 <!-- ------------------------------------------------------------------------ -->
