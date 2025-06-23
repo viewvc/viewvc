@@ -4596,17 +4596,6 @@ def view_revision(request):
     generate_page(request, "revision", data)
 
 
-def prev_rev(rev):
-    """Returns a string representing the previous revision of the argument."""
-    r = rev.split(".")
-    # decrement final revision component
-    r[-1] = str(int(r[-1]) - 1)
-    # prune if we pass the beginning of the branch
-    if len(r) > 2 and r[-1] == "0":
-        r = r[:-2]
-    return ".".join(r)
-
-
 _views = {
     "annotate": view_annotate,
     "co": view_checkout,
