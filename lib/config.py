@@ -73,11 +73,6 @@ import copy
 #       | utilities | --> | utilities | --> | utilities |
 #       |           |     |           |     |           |
 #       `-----------'     `-----------'     `-----------'
-#                         ,-----------.     ,-----------.
-#                         | vhost-*|  |     |           |
-#                         |   cvsdb   | --> |   cvsdb   |
-#                         |           |     |           |
-#                         `-----------'     `-----------'
 #       ,-----------.     ,-----------.     ,-----------.
 #       |  root-*|  |     | vhost-*|  |     |           |
 #       |  authz-*  | --> |  authz-*  | --> |  authz-*  |
@@ -86,11 +81,6 @@ import copy
 #                                           ,-----------.
 #                                           |           |
 #                                           |  vhosts   |
-#                                           |           |
-#                                           `-----------'
-#                                           ,-----------.
-#                                           |           |
-#                                           |   query   |
 #                                           |           |
 #                                           `-----------'
 #
@@ -103,10 +93,8 @@ class Config:
     _base_sections = (
         # Base configuration sections.
         "authz-*",
-        "cvsdb",
         "general",
         "options",
-        "query",
         "templates",
         "utilities",
     )
@@ -128,7 +116,6 @@ class Config:
         # Mapping of override types to allowed overridable sections.
         "vhost": (
             "authz-*",
-            "cvsdb",
             "general",
             "options",
             "templates",
@@ -461,21 +448,7 @@ class Config:
         self.templates.file = None
         self.templates.graph = None
         self.templates.log = None
-        self.templates.query_form = None
-        self.templates.query_results = None
         self.templates.roots = None
-
-        self.cvsdb.enabled = 0
-        self.cvsdb.host = ""
-        self.cvsdb.port = 3306
-        self.cvsdb.database_name = ""
-        self.cvsdb.user = ""
-        self.cvsdb.passwd = ""
-        self.cvsdb.readonly_user = ""
-        self.cvsdb.readonly_passwd = ""
-        self.cvsdb.row_limit = 1000
-        self.cvsdb.rss_row_limit = 100
-        self.cvsdb.check_database_for_root = 0
 
 
 def _startswith(somestr, substr):
