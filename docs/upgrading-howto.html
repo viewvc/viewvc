@@ -9,13 +9,19 @@ body {
   font-family: sans-serif;
 }
 table { margin-left: 1em; }
-td, th { padding: 0 0.5em; }
+td, th { padding: 0.25em 0.5em; }
 th { 
   vertical-align: bottom; 
   background: rgb(60%,70%,90%);
 }
 td { 
   vertical-align: top; 
+}
+var, code {
+  font-family: monospace;
+  font-style: normal;
+  border: 1px solid rgb(200,200,200);
+  background-color: rgb(240, 240, 240);
 }
 .h2, .h3 {
   padding: 0.5em 1em;
@@ -40,6 +46,19 @@ td {
 <body>
 
 <h1>Upgrading ViewVC</h1>
+
+<!-- ************************************************************************ -->
+<div class="h2">
+<h2 id="toc">Table of Contents</h2>
+<ul class="toc-list">
+  <li><a href="#introduction">Introduction</a></li>
+  <li><a href="#sec-from-1-2">Upgrading From ViewVC 1.2</a></li>
+  <li><a href="#sec-from-1-1">Upgrading From ViewVC 1.1</a></li>
+  <li><a href="#sec-from-1-0">Upgrading From ViewVC 1.0</a></li>
+  <li><a href="#sec-from-0-9">Upgrading From ViewCVS 0.9</a></li>
+  <li><a href="#sec-from-0-8">Upgrading From ViewCVS 0.8</a></li>
+</ul>
+</div>
 
 <!-- ************************************************************************ -->
 <div class="h2">
@@ -72,19 +91,6 @@ td {
    For patch release upgrades, your best bet is to carefully examine
    the distributed configuration file templates
    (<code>viewvc.conf.dist</code>, etc.).
-</div>
-
-<!-- ************************************************************************ -->
-<div class="h2">
-<h2 id="toc">Table of Contents</h2>
-<ul class="toc-list">
-  <li><a href="#introduction">Introduction</a></li>
-  <li><a href="#sec-from-1-2">Upgrading From ViewVC 1.2</a></li>
-  <li><a href="#sec-from-1-1">Upgrading From ViewVC 1.1</a></li>
-  <li><a href="#sec-from-1-0">Upgrading From ViewVC 1.0</a></li>
-  <li><a href="#sec-from-0-9">Upgrading From ViewCVS 0.9</a></li>
-  <li><a href="#sec-from-0-8">Upgrading From ViewCVS 0.8</a></li>
-</ul>
 </div>
 
 <!-- ************************************************************************ -->
@@ -135,17 +141,17 @@ td {
    in the <var>[cvsdb]</var> section has been removed:</p>
 
 <ul>
-  <li><var>cvsdb/check_database_for_root</var></li>
-  <li><var>cvsdb/database_name</var></li>
-  <li><var>cvsdb/enabled</var></li>
-  <li><var>cvsdb/host</var></li>
-  <li><var>cvsdb/passwd</var></li>
-  <li><var>cvsdb/port</var></li>
-  <li><var>cvsdb/readonly_passwd</var></li>
-  <li><var>cvsdb/readonly_user</var></li>
-  <li><var>cvsdb/row_limit</var></li>
-  <li><var>cvsdb/rss_row_limit</var></li>
-  <li><var>cvsdb/user</var></li>
+  <li>cvsdb/check_database_for_root</li>
+  <li>cvsdb/database_name</li>
+  <li>cvsdb/enabled</li>
+  <li>cvsdb/host</li>
+  <li>cvsdb/passwd</li>
+  <li>cvsdb/port</li>
+  <li>cvsdb/readonly_passwd</li>
+  <li>cvsdb/readonly_user</li>
+  <li>cvsdb/row_limit</li>
+  <li>cvsdb/rss_row_limit</li>
+  <li>cvsdb/user</li>
 </ul>
 
 <p>Additionally, the EZT templates formerly required for the commits database
@@ -153,8 +159,8 @@ td {
    for overriding those template locations have been similarly removed:</p>
 
 <ul>
-  <li><var>templates/query_form</var></li>
-  <li><var>templates/query_results</var></li>
+  <li>templates/query_form</li>
+  <li>templates/query_results</li>
 </ul>
 
 </div>
@@ -164,13 +170,12 @@ td {
 <h3>Binary File Handling</h3>
 
 <p>The <var>options/binary_mime_types</var> option has changed slightly in
-   that glob patterns (such as <code>image/*</code>) no longer apply
-   to the three "web-friendly" image formats.  Administrators who
-   wish to forbid viewing of these images types (<code>image/gif</code>,
-   <code>image/jpeg</code>, and <code>image/png</code>) should add them
-   explicitly to this option's value (in addition, if you wish, to a blanket
-   <code>image/*</code> that covers all other image types).  Of course, if
-   your installation does not allow the use of the "checkout" (or
+   that glob patterns (such as "image/*") no longer apply to the three
+   "web-friendly" image formats.  Administrators who wish to forbid viewing
+   these images types ("image/gif", "image/jpeg", and "image/png") should add
+   them explicitly to this option's value (in addition, if you wish, to a
+   blanket "image/*" pattern that covers all other image types).  Of course,
+   if your installation does not allow the use of the "co" ("checkout" or
    "download") view, embedded web-friendly images will <em>not</em> be
    displayed even if not explicitly forbidden by this option.</p>
 
@@ -206,15 +211,15 @@ td {
    <var>viewvc.conf.dist</var> file):</p>
 
 <ul>
-  <li><var>options/default_encoding</var></li>
-  <li><var>options/root_path_locale</var></li>
-  <li><var>utilities/max_context</var></li>
+  <li>options/default_encoding</li>
+  <li>options/root_path_locale</li>
+  <li>utilities/max_context</li>
 </ul>
 
 <p>The following configuration options were removed:</p>
 
 <ul>
-  <li><var>options/checkout_magic</var></li>
+  <li>options/checkout_magic</li>
 </ul>
 
 </div>
