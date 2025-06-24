@@ -95,26 +95,67 @@ td {
 
 <!-- ------------------------------------------------------------------------ -->
 <div class="h3">
-<h3>Commits Database</h3>
+<h3>Minimum Python Version Changed</h3>
+
+<p>ViewVC 1.3 requires Python 3, with a minimum version of Python 3.6.</p>
+
+<p>Bringing Python 3 support to ViewVC was, in fact, the single motivating
+   feature of the release.  The migration of the codebase to Python 3
+   necessitated a relatively major overhaul to the way that strings were
+   handled within the codebase, especially those strings which carry non-ASCII
+   characters (versioned file names, commit metadata, system paths, etc.).
+   As such, see below for a number of new configuration options that ViewVC
+   administrators may wish to consider as they migrate to ViewVC 1.3.</p>
+
+</div>
+
+<!-- ------------------------------------------------------------------------ -->
+<div class="h3">
+<h3>Commits Database Feature Removed</h3>
 
 <p>The commits database feature has been removed in ViewVC 1.3.0.  While we
    regret the inconvenience, the complications of porting the feature were
-   so significant that ViewVC's development essentially stalled (for years).
+   had effectively stalled ViewVC's ongoing development for several years.
    Rather than continue to delay the release of a Python-3-compatible ViewVC
-   version on account of a single feature, we decided to move forward without
-   that feature.</p>
+   version on account of a single feature (which itself was always somewhat
+   loosely integrated), we decided to move forward without that feature.</p>
 
-<p>For those who used the commits database feature, your existing commits
+<p>For those using the commits database feature in prior versions, your
    database will <em>not</em> be automatically removed, but it will no longer
    be used by ViewVC.  If you wish to remove it, you can do so using the
-   typical procedures for dropping databases in MySQL/MariaDB.  Don't forget
-   to remove the ViewVC database `user` and `readonly_user` as formerly
-   defined in the `[cvsdb]` section of your `viewvc.conf` (if those users
-   aren't used for other purposes in your database).  Also, if you were
-   taking advantage of the ViewVC database integration hook-scripts
-   (`cvsdbadmin`, `svnadadmin`, and `loginfo-handler`), you may wish to
-   update your repository configurations to no longer invoke those
-   scripts.</p>
+   typical procedures for dropping databases in MySQL/MariaDB.  Also, if you
+   were taking advantage of the ViewVC database integration hook-scripts
+   (<code>loginfo-handler</code>, <code>cvsdbadmin</code>, and
+   <code>svndbadmin</code>), you may wish to update your repository
+   configurations to no longer invoke those scripts as they are no longer
+   included in the ViewVC release.</p>
+
+<p>With this change, there were a number of configuration options around that
+   feature which are no longer needed and have been removed.  Everything
+   in the <var>[cvsdb]</var> section has been removed:</p>
+
+<ul>
+  <li><var>cvsdb/check_database_for_root</var></li>
+  <li><var>cvsdb/database_name</var></li>
+  <li><var>cvsdb/enabled</var></li>
+  <li><var>cvsdb/host</var></li>
+  <li><var>cvsdb/passwd</var></li>
+  <li><var>cvsdb/port</var></li>
+  <li><var>cvsdb/readonly_passwd</var></li>
+  <li><var>cvsdb/readonly_user</var></li>
+  <li><var>cvsdb/row_limit</var></li>
+  <li><var>cvsdb/rss_row_limit</var></li>
+  <li><var>cvsdb/user</var></li>
+</ul>
+
+<p>Additionally, the EZT templates formerly required for the commits database
+   query and results views have been removed, so the configuration options
+   for overriding those template locations have been similarly removed:</p>
+
+<ul>
+  <li><var>templates/query_form</var></li>
+  <li><var>templates/query_results</var></li>
+</ul>
 
 </div>
 
@@ -122,16 +163,16 @@ td {
 <div class="h3">
 <h3>Binary File Handling</h3>
 
-<p>The <var>options/binary_mime_types</var> option has changed
-   slightly in that glob patterns (such as "image/*") no longer apply
+<p>The <var>options/binary_mime_types</var> option has changed slightly in
+   that glob patterns (such as <code>image/*</code>) no longer apply
    to the three "web-friendly" image formats.  Administrators who
-   wish to forbid viewing of these images types ("image/gif",
-   "image/jpeg", and "image/png") should add them explicitly to this
-   option's value (in addition, if you wish, to a blanket "image/*"
-   that covers all other image types).  Of course, if your
-   installation does not allow the use of the "co" (checkout or
-   download) view, embedded web-friendly images will not be displayed
-   even if not explicitly forbidden by this option.</p>
+   wish to forbid viewing of these images types (<code>image/gif</code>,
+   <code>image/jpeg</code>, and <code>image/png</code>) should add them
+   explicitly to this option's value (in addition, if you wish, to a blanket
+   <code>image/*</code> that covers all other image types).  Of course, if
+   your installation does not allow the use of the "checkout" (or
+   "download") view, embedded web-friendly images will <em>not</em> be
+   displayed even if not explicitly forbidden by this option.</p>
 
 <p>Additionally, what ViewVC <em>does</em> with binary files has
    changed.  Rather than raising a page-level exception on a request
@@ -149,7 +190,7 @@ td {
    template-defined flag that was present in some previous ViewVC
    template sets. Note that this option does not override other
    determinations of "binariness" (such as the application
-   of <var>options/binary_mime_types</var>.</p>
+   of <var>options/binary_mime_types</var>).</p>
 
 </div>
 
@@ -159,6 +200,16 @@ td {
 
 <p>This section covers changes to configuration options not already
    discussed in other sections pertaining to this upgrade.</p>
+
+<p>The following new configuration options were introduced (the documentation
+   for which can be found alongside the option's default value in the
+   <var>viewvc.conf.dist</var> file):</p>
+
+<ul>
+  <li><var>options/default_encoding</var></li>
+  <li><var>options/root_path_locale</var></li>
+  <li><var>utilities/max_context</var></li>
+</ul>
 
 <p>The following configuration options were removed:</p>
 
