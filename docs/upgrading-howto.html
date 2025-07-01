@@ -136,6 +136,14 @@ var, code {
    configurations to no longer invoke those scripts as they are no longer
    included in the ViewVC release.</p>
 
+<p>Old (perhaps bookmarked) URLs which refer to ViewVC's "query" or "queryform"
+   views will redirect to the "roots" view.  For most ViewVC installations,
+   this may cause the user a little bit of confusion, but they will at least
+   land on a navigable page.  However, if your installation has the "roots"
+   view removed from the <code>allowed_views</code> configuration option (thus
+   disabling that view), users navigating to old query-related URLs will land
+   instead on a ViewVC error page that tells them the "roots" is disabled.</p>
+
 <p>With this change, there were a number of configuration options around that
    feature which are no longer needed and have been removed.  Everything
    in the <var>[cvsdb]</var> section has been removed:</p>

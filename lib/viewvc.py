@@ -149,13 +149,13 @@ class Request:
         self.pathrev = None  # current path revision or tag
         self.auth = None  # authorizer module in use
 
-        # redirect if we're loading from a valid but irregular URL
+        # Redirect if we're loading from a valid but irregular URL.
         # These redirects aren't neccessary to make ViewVC work, it functions
         # just fine without them, but they make it easier for server admins to
-        # implement access restrictions based on URL
+        # implement access restrictions based on URL.
         needs_redirect = 0
 
-        # Process the query params
+        # Process the query params.
         for name, values in self.server.params().items():
             # we only care about the first value
             value = values[0]
@@ -170,16 +170,21 @@ class Request:
                 name = "pathrev"
                 needs_redirect = 1
 
-            # redirect view=rev to view=revision, too
+            # redirect view=rev to view=revision
             if name == "view" and value == "rev":
                 value = "revision"
                 needs_redirect = 1
 
-            # validate the parameter
-            _validate_param(name, value)
+            # redirect view=query and view=queryform to view=roots
+            if name == "view" and value in ("query", "queryform"):
+                value = "roots"
+                needs_redirect = 1
 
-            # if we're here, then the parameter is okay
-            self.query_dict[name] = value
+            # Validate the parameter.  A successful return means the parameter
+            # is valid, but if the return value is None we'll ignore it.
+            value = _validate_param(name, value)
+            if value is not None:
+                self.query_dict[name] = value
 
         # Resolve the view parameter into a handler function.
         self.view_func = _views.get(self.query_dict.get("view", None), self.view_func)
@@ -661,10 +666,17 @@ def _normalize_path(path):
 
 
 def _validate_param(name, value):
-    """Validate whether the given value is acceptable for the param name.
+    """Validate whether the given value is acceptable for the param name using
+    the registered validator function or regular expression.
 
-    If the value is not allowed, then an error response is generated, and
-    this function throws an exception. Otherwise, it simply returns None.
+    If a parameter has no such registration, raise an exception.
+
+    If a parameter's registered validator is None, then the parameter is allowed
+    only for the sake of backwards compatibility, and it will not be validated.
+    Return None in this case so the caller can ignore it.
+
+    Otherwise, use the parameter's registered validator to validate the value,
+    returning the value if it is valid and raising an exception otherwise.
     """
 
     # First things first -- check that we have a legal parameter name.
@@ -676,13 +688,14 @@ def _validate_param(name, value):
     # Is there a validator?  Is it a regex or a function?  Validate if
     # we can, returning without incident on valid input.
     if validator is None:
-        return
-    elif hasattr(validator, "match"):
+        return None
+
+    if hasattr(validator, "match"):
         if validator.match(value):
-            return
+            return value
     else:
         if validator(value):
-            return
+            return value
 
     # If we get here, the input value isn't valid.
     raise ViewVCException(
@@ -712,6 +725,11 @@ def _validate_mimetype(value):
     return value in (viewcvs_mime_type, alt_mime_type, "text/plain")
 
 
+# pass-through (no validation) functions for legal query parameters
+def _validate_any(value):
+    pass
+
+
 # obvious things here. note that we don't need uppercase for alpha.
 _re_validate_alpha = re.compile("^[a-z]+$")
 _re_validate_number = re.compile("^[0-9]+$")
@@ -720,13 +738,18 @@ _re_validate_boolint = re.compile("^[01]$")
 # when comparing two revs, we sometimes construct REV:SYMBOL, so ':' is needed
 _re_validate_revnum = re.compile("^[-_.a-zA-Z0-9:~\\[\\]/]*$")
 
-# the legal query parameters and their validation functions
+
+# The legal query parameters and their validator functions/regexes.
+# 
+# Parameters with a 'None' validator are not used anymore, but are kept
+# around so that bookmarked URLs still "work" (for some definition thereof).
+# They will be completely ignored by ViewVC.
 _legal_params = {
-    "root": None,
+    "root": _validate_any,
     "view": _validate_view,
     "search": _validate_regex,
-    "p1": None,
-    "p2": None,
+    "p1": _validate_any,
+    "p2": _validate_any,
     "hideattic": _re_validate_boolint,
     "limit_changes": _re_validate_number,
     "sortby": _re_validate_alpha,
@@ -752,18 +775,41 @@ _legal_params = {
     "gleft": _re_validate_boolint,
     "gmaxtag": _re_validate_number,
     # for redirect_pathrev
-    "orig_path": None,
-    "orig_pathtype": None,
-    "orig_pathrev": None,
-    "orig_view": None,
-    # DEPRECATED - these are no longer used, but kept around so that
+    "orig_path": _validate_any,
+    "orig_pathtype": _validate_any,
+    "orig_pathrev": _validate_any,
+    "orig_view": _validate_any,
+
+    # ---------------------------------------------------------------------
+    # DEPRECATED: The following are no longer used, but kept around so that
     # bookmarked URLs still "work" (for some definition thereof) after a
     # ViewVC upgrade.
-    "parent": _re_validate_boolint,
-    "rev": _re_validate_revnum,
-    "tarball": _re_validate_boolint,
-    "hidecvsroot": _re_validate_boolint,
-    "limit": _re_validate_number,
+    # ---------------------------------------------------------------------
+
+    # query/queryform views - removed in ViewVC 1.3
+    "file_match": None,
+    "branch_match": None,
+    "who_match": None,
+    "comment_match": None,
+    "dir": None,
+    "file": None,
+    "branch": None,
+    "who": None,
+    "comment": None,
+    "querysort": None,
+    "date": None,
+    "hours": None,
+    "mindate": None,
+    "maxdate": None,
+    "format": None,
+    # old limit parameter - removed in ViewVC 1.2
+    "limit": None,
+    # miscellaneous - removed in ViewVC 1.1
+    "parent": None,
+    "rev": None,
+    "tarball": None,
+    "hidecvsroot": None,
+
 }
 
 
