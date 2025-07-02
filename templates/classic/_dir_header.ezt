@@ -54,13 +54,6 @@
 </tr>
 [end]
 
-[if-any queryform_href]
-<tr>
-  <td>Query:</td>
-  <td><a href="[queryform_href]">Query revision history</a></td>
-</tr>
-[end]
-
 </table>
 
 [is picklist_len "0"]

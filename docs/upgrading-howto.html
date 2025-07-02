@@ -9,13 +9,19 @@ body {
   font-family: sans-serif;
 }
 table { margin-left: 1em; }
-td, th { padding: 0 0.5em; }
+td, th { padding: 0.25em 0.5em; }
 th { 
   vertical-align: bottom; 
   background: rgb(60%,70%,90%);
 }
 td { 
   vertical-align: top; 
+}
+var, code {
+  font-family: monospace;
+  font-style: normal;
+  border: 1px solid rgb(200,200,200);
+  background-color: rgb(240, 240, 240);
 }
 .h2, .h3 {
   padding: 0.5em 1em;
@@ -40,6 +46,19 @@ td {
 <body>
 
 <h1>Upgrading ViewVC</h1>
+
+<!-- ************************************************************************ -->
+<div class="h2">
+<h2 id="toc">Table of Contents</h2>
+<ul class="toc-list">
+  <li><a href="#introduction">Introduction</a></li>
+  <li><a href="#sec-from-1-2">Upgrading From ViewVC 1.2</a></li>
+  <li><a href="#sec-from-1-1">Upgrading From ViewVC 1.1</a></li>
+  <li><a href="#sec-from-1-0">Upgrading From ViewVC 1.0</a></li>
+  <li><a href="#sec-from-0-9">Upgrading From ViewCVS 0.9</a></li>
+  <li><a href="#sec-from-0-8">Upgrading From ViewCVS 0.8</a></li>
+</ul>
+</div>
 
 <!-- ************************************************************************ -->
 <div class="h2">
@@ -76,48 +95,97 @@ td {
 
 <!-- ************************************************************************ -->
 <div class="h2">
-<h2 id="toc">Table of Contents</h2>
-<ul class="toc-list">
-  <li><a href="#introduction">Introduction</a></li>
-  <li><a href="#sec-from-1-2">Upgrading From ViewVC 1.2</a></li>
-  <li><a href="#sec-from-1-1">Upgrading From ViewVC 1.1</a></li>
-  <li><a href="#sec-from-1-0">Upgrading From ViewVC 1.0</a></li>
-  <li><a href="#sec-from-0-9">Upgrading From ViewCVS 0.9</a></li>
-  <li><a href="#sec-from-0-8">Upgrading From ViewCVS 0.8</a></li>
-</ul>
-</div>
-
-<!-- ************************************************************************ -->
-<div class="h2">
 <h2 id="sec-from-1-2">Upgrading From ViewVC 1.2</h2>
 
 <p>This section discusses how to upgrade ViewVC 1.2.x to ViewVC 1.3.x.</p>
 
 <!-- ------------------------------------------------------------------------ -->
 <div class="h3">
-<h3>Commits Database</h3>
+<h3>Minimum Python Version Changed</h3>
 
-<p>### TODO: New locations of scripts (bin/db).<br/>
-   ### TODO: Minimum version requirements for MySQL/MariaDB, python libs.<br/>
-   ### TODO: Dropped support for old schemas.<br/>
-</p>
-  
+<p>ViewVC 1.3 requires Python 3, with a minimum version of Python 3.6.</p>
+
+<p>Bringing Python 3 support to ViewVC was, in fact, the single motivating
+   feature of the release.  The migration of the codebase to Python 3
+   necessitated a relatively major overhaul to the way that strings were
+   handled within the codebase, especially those strings which carry non-ASCII
+   characters (versioned file names, commit metadata, system paths, etc.).
+   As such, see below for a number of new configuration options that ViewVC
+   administrators may wish to consider as they migrate to ViewVC 1.3.</p>
+
+</div>
+
+<!-- ------------------------------------------------------------------------ -->
+<div class="h3">
+<h3>Commits Database Feature Removed</h3>
+
+<p>The commits database feature has been removed in ViewVC 1.3.0.  While we
+   regret the inconvenience, the complications of porting the feature were
+   had effectively stalled ViewVC's ongoing development for several years.
+   Rather than continue to delay the release of a Python-3-compatible ViewVC
+   version on account of a single feature (which itself was always somewhat
+   loosely integrated), we decided to move forward without that feature.</p>
+
+<p>For those using the commits database feature in prior versions, your
+   database will <em>not</em> be automatically removed, but it will no longer
+   be used by ViewVC.  If you wish to remove it, you can do so using the
+   typical procedures for dropping databases in MySQL/MariaDB.  Also, if you
+   were taking advantage of the ViewVC database integration hook-scripts
+   (<code>loginfo-handler</code>, <code>cvsdbadmin</code>, and
+   <code>svndbadmin</code>), you may wish to update your repository
+   configurations to no longer invoke those scripts as they are no longer
+   included in the ViewVC release.</p>
+
+<p>Old (perhaps bookmarked) URLs which refer to ViewVC's "query" or "queryform"
+   views will redirect to the "roots" view.  For most ViewVC installations,
+   this may cause the user a little bit of confusion, but they will at least
+   land on a navigable page.  However, if your installation has the "roots"
+   view removed from the <code>allowed_views</code> configuration option (thus
+   disabling that view), users navigating to old query-related URLs will land
+   instead on a ViewVC error page that tells them the "roots" is disabled.</p>
+
+<p>With this change, there were a number of configuration options around that
+   feature which are no longer needed and have been removed.  Everything
+   in the <var>[cvsdb]</var> section has been removed:</p>
+
+<ul>
+  <li>cvsdb/check_database_for_root</li>
+  <li>cvsdb/database_name</li>
+  <li>cvsdb/enabled</li>
+  <li>cvsdb/host</li>
+  <li>cvsdb/passwd</li>
+  <li>cvsdb/port</li>
+  <li>cvsdb/readonly_passwd</li>
+  <li>cvsdb/readonly_user</li>
+  <li>cvsdb/row_limit</li>
+  <li>cvsdb/rss_row_limit</li>
+  <li>cvsdb/user</li>
+</ul>
+
+<p>Additionally, the EZT templates formerly required for the commits database
+   query and results views have been removed, so the configuration options
+   for overriding those template locations have been similarly removed:</p>
+
+<ul>
+  <li>templates/query_form</li>
+  <li>templates/query_results</li>
+</ul>
+
 </div>
 
 <!-- ------------------------------------------------------------------------ -->
 <div class="h3">
 <h3>Binary File Handling</h3>
 
-<p>The <var>options/binary_mime_types</var> option has changed
-   slightly in that glob patterns (such as "image/*") no longer apply
-   to the three "web-friendly" image formats.  Administrators who
-   wish to forbid viewing of these images types ("image/gif",
-   "image/jpeg", and "image/png") should add them explicitly to this
-   option's value (in addition, if you wish, to a blanket "image/*"
-   that covers all other image types).  Of course, if your
-   installation does not allow the use of the "co" (checkout or
-   download) view, embedded web-friendly images will not be displayed
-   even if not explicitly forbidden by this option.</p>
+<p>The <var>options/binary_mime_types</var> option has changed slightly in
+   that glob patterns (such as "image/*") no longer apply to the three
+   "web-friendly" image formats.  Administrators who wish to forbid viewing
+   these images types ("image/gif", "image/jpeg", and "image/png") should add
+   them explicitly to this option's value (in addition, if you wish, to a
+   blanket "image/*" pattern that covers all other image types).  Of course,
+   if your installation does not allow the use of the "co" ("checkout" or
+   "download") view, embedded web-friendly images will <em>not</em> be
+   displayed even if not explicitly forbidden by this option.</p>
 
 <p>Additionally, what ViewVC <em>does</em> with binary files has
    changed.  Rather than raising a page-level exception on a request
@@ -135,7 +203,7 @@ td {
    template-defined flag that was present in some previous ViewVC
    template sets. Note that this option does not override other
    determinations of "binariness" (such as the application
-   of <var>options/binary_mime_types</var>.</p>
+   of <var>options/binary_mime_types</var>).</p>
 
 </div>
 
@@ -146,10 +214,20 @@ td {
 <p>This section covers changes to configuration options not already
    discussed in other sections pertaining to this upgrade.</p>
 
+<p>The following new configuration options were introduced (the documentation
+   for which can be found alongside the option's default value in the
+   <var>viewvc.conf.dist</var> file):</p>
+
+<ul>
+  <li>options/default_encoding</li>
+  <li>options/root_path_locale</li>
+  <li>utilities/max_context</li>
+</ul>
+
 <p>The following configuration options were removed:</p>
 
 <ul>
-  <li><var>options/checkout_magic</var></li>
+  <li>options/checkout_magic</li>
 </ul>
 
 </div>

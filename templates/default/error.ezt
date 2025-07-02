@@ -3,10 +3,10 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <!-- ViewVC :: http://www.viewvc.org/ -->
 <head>
-<title>ViewVC Exception</title>
+<title>ViewVC Error</title>
 </head>
 <body>
-<h3>An Exception Has Occurred</h3>
+<h3>An Error Has Occurred</h3>
 
 [if-any msg]
   <p>[msg]</p>
