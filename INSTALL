@@ -16,6 +16,9 @@ Contents
     - [FastCGI Mode](#fastcgi-mode)
   * [Additional Apache Considerations](#additional-apache-considerations)
   * [ViewVC Standalone Server](#viewvc-standalone-server)
+  * [Commits Database](#commits-database)
+    - [Publishing CVS commits](#publishing-cvs-commits)
+    - [Publishing Subversion commits](#publishing-subversion-commits)
   * [Upgrading ViewVC](#upgrading-viewvc)
   * [Getting Help](#getting-help)
 
@@ -146,7 +149,8 @@ HTML to edit the templates.
 
 NOTE: For security reasons, don't install ViewVC in such a way that
 its configuration file becomes itself web-accessible, as that file may
-contain system path information that should not be public knowledge!
+contain system path information as well as database authentication
+credentials that should not be public knowledge!
 
 
 Serving CVS Repositories
@@ -489,6 +493,138 @@ command-line option. This feature needs external `passlib` package.
 
 For a full listing of supported command-line options, run the
 standalone server with `--help`.
+
+
+Commits Database
+================
+
+Requires:
+
+  * MySQL (or MariaDB) 3.22+ (https://www.mysql.com/, https://mariadb.org/)
+  * mysqlclient-python 0.9+ (https://github.com/PyMySQL/mysqlclient-python)
+
+This feature is a clone of the Mozilla Project's Bonsai database.  It
+catalogs every commit in the CVS or Subversion repository into a SQL
+database.  In fact, the databases are 100% compatible.
+
+Various queries can be performed on the database.  After installing
+ViewVC, there are some additional steps required to get the database
+working.
+
+First, *create a MySQL user* who has permission to create databases.
+Optionally, you can create a second user with read-only access to the
+database.
+
+*Create your database* using the `<VIEWVC_DIR>/bin/make-database`
+script.  It will prompt you for your MySQL user, password, and the
+name of database you want to create.  The database name defaults to
+"ViewVC".  This script creates the database and sets up the empty
+tables.
+
+*Tell ViewVC about your database* in your `<VIEWVC_DIR>/viewvc.conf`
+file.  In the `[cvsdb]` section, set the following option values:
+
+    enabled = 1        # Whether to enable query support in viewvc.cgi
+    host =             # MySQL database server host
+    port =             # MySQL database server port (default is 3306)
+    database_name =    # name of database you created with make-database
+    user =             # read/write database user
+    passwd =           # password for read/write database user
+    readonly_user =    # read-only database user
+    readonly_passwd =  # password for the read-only user
+
+Note that it's pretty safe in this instance for your read-only user
+and your read-write user to be the same.
+
+*Configure your version control system(s)* to publish their commit
+information to the database.  This is done using utilities that ViewVC
+provides.  See the following sections for details.
+
+
+Publishing CVS commits
+----------------------
+
+Two programs are provided for updating the commits database from a CVS
+repository, `cvsdbadmin` and `loginfo-handler`.  They serve two
+different purposes.  The `cvsdbadmin` program walks through your CVS
+repository and adds every commit found in every versioned file.  This
+is commonly used for initializing the database from a repository which
+has been in use.  The `loginfo-handler` script is executed by the CVS
+server's `CVSROOT/loginfo` system upon each commit.  It makes real-time
+updates to the commits database as commits are made to the repository.
+
+To build a database of all the commits in the CVS repository located
+at, say, `/opt/cvs/repo`, invoke:
+
+    $ ./cvsdbadmin rebuild /opt/cvs/repo
+
+If you want to update the commits database with new commits made since
+your last update thereof, invoke
+
+    $ ./cvsdbadmin update /opt/cvs/repo
+
+The update mode checks to see if a commit is already in the database,
+and only adds it if it is absent.
+
+To get real-time updates, you'll want to checkout the `CVSROOT` module
+from your CVS repository and edit `CVSROOT/loginfo`.  For folks running
+CVS 1.12 or better, add this line:
+
+    ALL <VIEWVC_DIR>/bin/loginfo-handler %p %{sVv}
+
+If you are running CVS 1.11 or earlier, you'll want a slightly
+different command line in CVSROOT/loginfo:
+
+    ALL <VIEWVC_DIR>/bin/loginfo-handler %{sVv}
+
+If you have other scripts invoked by `CVSROOT/loginfo`, you will want
+to make sure to change any running under the "DEFAULT" keyword to
+"ALL" like the loginfo handler, and carefully read the execution rules
+for `CVSROOT/loginfo` from the CVS manual.
+
+If you are running the Unix port of CVS-NT, the handler script need to
+know about it.  CVS-NT delivers commit information to loginfo scripts
+differently than the way mainstream CVS does.  Your command line
+should look like this:
+
+    ALL <VIEWVC_DIR>/bin/loginfo-handler %{sVv} cvsnt
+
+
+Publishing Subversion commits
+-----------------------------
+
+To build a database of all the commits in the Subversion repository
+located at, say, `/opt/svn/repo`, invoke:
+
+    ./svndbadmin rebuild /opt/svn/repo
+
+If you want to update the database with commits made since the last
+update thereof, invoke:
+
+    ./svndbadmin update /opt/svn/repo
+
+To get real time updates, you will need to add more modify the
+repository's post-commit hook (`/opt/svn/repo/hooks/post-commit`) to
+invoke the `svndbadmin` command.
+
+    #!/bin/sh
+    REPOS="$1"
+    REV="$2"
+    <VIEWVC_DIR>/bin/svndbadmin update "$REPOS" "$REV"
+
+If you allow revision property changes in your repository, create a
+post-revprop-change hook script which uses the same `svndbadmin
+update` command as the post-commit script, except with the addition of
+the `--force` option:
+
+    #!/bin/sh
+    REPOS="$1"
+    REV="$2"
+    <VIEWVC_DIR>/bin/svndbadmin update --force "$REPOS" "$REV"
+
+This will make sure that the commits database stays consistent when
+you change the "svn:log", "svn:author" or "svn:date" revision
+properties.
 
 
 Upgrading ViewVC

@@ -32,6 +32,9 @@
   [if-any log_href]
   | <a class="vc_view_link[is view "log"]_this[end]" href="[log_href]">Revision Log</a>
   [end]
+  [if-any queryform_href]
+  | <a class="vc_view_link[is view "queryform"]_this[end]" href="[queryform_href]">Commit Query</a>
+  [end]
   [if-any tarball_href]
   | <a class="vc_view_link" href="[tarball_href]">Download Tarball</a>
   [end]
