@@ -908,11 +908,12 @@
 #log_pagesextra = 3
 
 ## limit_changes: Maximum number of changed paths shown per commit in
-## the Subversion revision view. This is not a hard limit (the UI
-## provides options to show all changed paths), but it prevents
-## ViewVC from generating enormous and hard to read pages by default
-## when they happen to contain import or merge commits affecting
-## hundreds or thousands of files.  Set to 0 to disable the limit.
+## the Subversion revision view and in query results. This is not a
+## hard limit (the UI provides options to show all changed paths), but
+## it prevents ViewVC from generating enormous and hard to read pages
+## by default when they happen to contain import or merge commits
+## affecting hundreds or thousands of files.  Set to 0 to disable the
+## limit.
 ##
 #limit_changes = 100
 
@@ -971,6 +972,14 @@
 ##
 #log = 
 
+## query_form: Template used for the query form view.
+##
+#query_form = 
+
+## query_results: Template used for the query results view.
+##
+#query_results = 
+
 ## revision: Template used for the revision/changeset view.
 ##
 #revision = 
@@ -978,6 +987,81 @@
 ## roots: Template used for the root listing view.
 ##
 #roots = 
+
+##---------------------------------------------------------------------------
+[cvsdb]
+
+## enabled: Enable database integration feature.
+##
+#enabled = 0
+
+## host: Database hostname.  Leave unset to use a local Unix socket
+## connection.
+##
+#host = 
+
+## post: Database listening port.
+##
+#port = 3306
+
+## database_name: ViewVC database name.
+##
+#database_name = ViewVC
+
+## user: Username of user with read/write privileges to the database
+## specified by the 'database_name' configuration option.
+##
+#user = 
+
+## passwd: Password of user with read/write privileges to the database
+## specified by the 'database_name' configuration option.
+##
+#passwd = 
+
+## readonly_user: Username of user with read privileges to the database
+## specified by the 'database_name' configuration option.
+##
+#readonly_user = 
+
+## readonly_passwd: Password of user with read privileges to the database
+## specified by the 'database_name' configuration option.
+##
+#readonly_passwd = 
+
+## row_limit: Maximum number of rows returned by a given normal query
+## to the database.
+##
+## NOTE: This limits the amount of data provided to ViewVC by the
+## database.  It is from this already-reduced data set that ViewVC
+## builds the query response it presents to the user, which may or may
+## not include still more limiting via the query form's 'limit'
+## parameter.  In other words, there is no value which the user can use
+## in the query form's 'limit' parameter which will cause more data to
+## be returned by the database for ViewVC to process.
+##
+#row_limit = 1000
+
+## rss_row_limit: Maximum number of rows returned by a given query to
+## the database made as part of an RSS feed request.  (Keeping in mind
+## that RSS readers tend to poll regularly for new data, you might want
+## to keep this set to a conservative number.)
+##
+## See also the `NOTE' for the 'row_limit' option, which applies here
+## as well.
+##
+#rss_row_limit = 100
+
+## check_database_for_root: Check if the repository is found in the
+## database before showing the query link and RSS feeds.
+## 
+## WARNING: Enabling this check adds the cost of a database connection
+## and query to most ViewVC requests.  If all your roots are represented
+## in the commits database, or if you don't care about the creation of
+## RSS and query links that might lead ultimately to error pages for
+## certain of your roots, or if you simply don't want to add this extra
+## cost to your ViewVC requests, leave this disabled.
+##
+#check_database_for_root = 0
 
 ##---------------------------------------------------------------------------
 [vhosts]
@@ -1025,6 +1109,7 @@
 ##    options
 ##    utilities
 ##    templates
+##    cvsdb
 ##    authz-*
 ##
 ## Here is an example:
