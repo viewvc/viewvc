@@ -720,9 +720,6 @@ _re_validate_boolint = re.compile("^[01]$")
 # when comparing two revs, we sometimes construct REV:SYMBOL, so ':' is needed
 _re_validate_revnum = re.compile("^[-_.a-zA-Z0-9:~\\[\\]/]*$")
 
-# date time values
-_re_validate_datetime = re.compile(r"^(\d\d\d\d-\d\d-\d\d(\s+\d\d:\d\d" r"(:\d\d)?)?)?$")
-
 # the legal query parameters and their validation functions
 _legal_params = {
     "root": None,
@@ -754,22 +751,6 @@ _legal_params = {
     "gshow": _re_validate_alpha,
     "gleft": _re_validate_boolint,
     "gmaxtag": _re_validate_number,
-    # for query
-    "file_match": _re_validate_alpha,
-    "branch_match": _re_validate_alpha,
-    "who_match": _re_validate_alpha,
-    "comment_match": _re_validate_alpha,
-    "dir": None,
-    "file": None,
-    "branch": None,
-    "who": None,
-    "comment": None,
-    "querysort": _re_validate_alpha,
-    "date": _re_validate_alpha,
-    "hours": _re_validate_number,
-    "mindate": _re_validate_datetime,
-    "maxdate": _re_validate_datetime,
-    "format": _re_validate_alpha,
     # for redirect_pathrev
     "orig_path": None,
     "orig_pathtype": None,
