@@ -19,6 +19,7 @@ import sys
 import os
 import time
 import re
+import subprocess
 
 _copyright_re = re.compile(r"Copyright (\(C\)|&copy;) ([0-9]{4}-)?([0-9]{4}) " r"The ViewCVS Group")
 
@@ -27,7 +28,7 @@ def replace_end_year(path, year):
     try:
         lines = open(path, "r").readlines()
     except Exception:
-        sys.stderr.write("WARNING: Unable to parse file as text: %s\n" % (path))
+        sys.stderr.write(f"WARNING: Unable to parse file as text: {path}\n")
         return
     for i in range(len(lines)):
         line = lines[i]
@@ -37,32 +38,37 @@ def replace_end_year(path, year):
         if m.group(2):
             lines[i] = line[: m.start(3)] + year + line[m.end(3) :]
             open(path, "w").write("".join(lines))
+            sys.stdout.write(f"Updated copyright range in: {path}\n")
             break
         elif m.group(3) != year:
             lines[i] = line[: m.end(3)] + "-" + year + line[m.end(3) :]
             open(path, "w").write("".join(lines))
+            sys.stdout.write(f"Updated copyright year in: {path}\n")
             break
-
-
-def bump_years_recursive(target_dir, year):
-    children = os.listdir(target_dir)
-    for child in children:
-        if child in [".git", ".svn"]:
-            continue
-        child_path = os.path.join(target_dir, child)
-        if os.path.isfile(child_path):
-            try:
-                replace_end_year(child_path, year)
-            except Exception:
-                sys.stderr.write("ERROR bumping copyright in file: %s\n" % (child_path))
-                raise
-        elif os.path.isdir(child_path):
-            bump_years_recursive(child_path, year)
 
 
 def bump_years(target_dir):
     year = time.strftime("%Y")
-    bump_years_recursive(target_dir, year)
+
+    # Examine the output of `git ls-tree -r master --name-only`, iterating
+    # over the listed files (as children of the target_dir) and calling
+    # replace_end_year() on each one.
+    try:
+        git_ls_tree_cmd = ["git", "ls-tree", "-r", "master", "--name-only"]
+        result = subprocess.run(git_ls_tree_cmd, cwd=target_dir, capture_output=True, text=True, check=True)
+        files = result.stdout.splitlines()
+    except subprocess.CalledProcessError:
+        sys.stderr.write(f"ERROR: Unable to list version-controlled files in {target_dir}\n")
+        raise
+    for file in files:
+        child_path = os.path.join(target_dir, file)
+        if os.path.isfile(child_path):
+            try:
+                replace_end_year(child_path, year)
+            except Exception:
+                sys.stderr.write(f"ERROR bumping copyright in file: {child_path}\n")
+                raise
+
     sys.stdout.write("Copyright years bumped.\n\n")
 
 
@@ -74,9 +80,9 @@ if __name__ == "__main__":
             """\
 Usage: bump-copyright-years VIEWVC_DIRECTORY
 
-Recursively update the copyright years associated with files carrying
-'The ViewCVS Group' copyright in and under VIEWVC_DIRECTORY to include
-the current year.
+Recursively update the copyright years associated with version-controlled
+files carrying 'The ViewCVS Group' copyright in and under VIEWVC_DIRECTORY
+to include the current year.
 """
         )
         sys.exit(1)
