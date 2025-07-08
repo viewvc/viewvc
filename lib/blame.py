@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*-python-*-
 #
-# Copyright (C) 1999-2023 The ViewCVS Group. All Rights Reserved.
+# Copyright (C) 1999-2025 The ViewCVS Group. All Rights Reserved.
 # Copyright (C) 2000 Curt Hagenlocher <curt@hagenlocher.org>
 #
 # By using this file, you agree to the terms and conditions set forth in
