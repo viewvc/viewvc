@@ -1,6 +1,10 @@
+.env.example
+.flake8
 .git
 .gitignore
 .github
+docker
+docker-compose.yml
 misc
 notes
 tools
