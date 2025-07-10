@@ -506,14 +506,9 @@ standalone server with `--help`.
 Commits Database
 ================
 
-Requires:
-
-  * MySQL (or MariaDB) 3.22+ (https://www.mysql.com/, https://mariadb.org/)
-  * mysqlclient-python 0.9+ (https://github.com/PyMySQL/mysqlclient-python)
-
-This feature is a clone of the Mozilla Project's Bonsai database.  It
-catalogs every commit in the CVS or Subversion repository into a SQL
-database.  In fact, the databases are 100% compatible.
+The commits database feature began as a clone of the Mozilla Project's
+Bonsai database, cataloging every commit in a CVS repository.  It has
+since expanded to support Subversion repository commits, too.
 
 Various queries can be performed on the database.  After installing
 ViewVC, there are some additional steps required to get the database
@@ -523,11 +518,32 @@ First, *create a MySQL user* who has permission to create databases.
 Optionally, you can create a second user with read-only access to the
 database.
 
-*Create your database* using the `<VIEWVC_DIR>/bin/db/make-database`
+*Create your database* using the `<VIEWVC_DIR>/bin/db/manage-database`
 script.  It will prompt you for your MySQL user, password, and the
 name of database you want to create.  The database name defaults to
 "ViewVC".  This script creates the database and sets up the empty
 tables.
+
+    # Create new database with latest schema
+    $ <VIEWVC_DIR>/bin/db/manage-database --create \
+        --username=myuser --database=ViewVC
+
+*Migrate existing databases* using the same `manage-database` script
+if you have an existing ViewVC database from an older version.
+This tool can automatically upgrade your database schema to the latest
+version with proper backup and validation.
+
+    # Check current schema version
+    $ <VIEWVC_DIR>/bin/db/manage-database --check-version \
+        --username=myuser --database=ViewVC
+    
+    # Migrate to latest schema (creates backup automatically)
+    $ <VIEWVC_DIR>/bin/db/manage-database --migrate \
+        --username=myuser --database=ViewVC
+    
+    # Validate database schema and get recommendations
+    $ <VIEWVC_DIR>/bin/db/manage-database --validate \
+        --username=myuser --database=ViewVC
 
 *Tell ViewVC about your database* in your `<VIEWVC_DIR>/viewvc.conf`
 file.  In the `[cvsdb]` section, set the following option values:

@@ -117,51 +117,20 @@ var, code {
 
 <!-- ------------------------------------------------------------------------ -->
 <div class="h3">
-<h3>Commits Database Feature Removed</h3>
+<h3>Commits Database Feature Changes</h3>
 
-<p>The commits database feature has been removed in ViewVC 1.3.0.  While we
-   regret the inconvenience, the complications of porting the feature were
-   had effectively stalled ViewVC's ongoing development for several years.
-   Rather than continue to delay the release of a Python-3-compatible ViewVC
-   version on account of a single feature (which itself was always somewhat
-   loosely integrated), we decided to move forward without that feature.</p>
+<p>The commits database feature now requires MySQL 5.7+ or MariaDB 10.2+.
+   Support for older versions have been discontinued.  Additionally, a new
+   schema has been introduced for the feature that specifically declares
+   text fields to use UTF-8 character encoding.</p>
 
-<p>For those using the commits database feature in prior versions, your
-   database will <em>not</em> be automatically removed, but it will no longer
-   be used by ViewVC.  If you wish to remove it, you can do so using the
-   typical procedures for dropping databases in MySQL/MariaDB.  Also, if you
-   were taking advantage of the ViewVC database integration hook-scripts
-   (<code>loginfo-handler</code>, <code>cvsdbadmin</code>, and
-   <code>svndbadmin</code>), you may wish to update your repository
-   configurations to no longer invoke those scripts as they are no longer
-   included in the ViewVC release.</p>
+<p>The <code>make-database</code> tool has been replaced with a more
+   fully-featured script <code>manage-database</code>.  In addition to creating
+   and initializing your ViewVC commits database, this tool can also perform
+   schema checks and migrations.</p>
 
-<p>With this change, there were a number of configuration options around that
-   feature which are no longer needed and have been removed.  Everything
-   in the <var>[cvsdb]</var> section has been removed:</p>
-
-<ul>
-  <li>cvsdb/check_database_for_root</li>
-  <li>cvsdb/database_name</li>
-  <li>cvsdb/enabled</li>
-  <li>cvsdb/host</li>
-  <li>cvsdb/passwd</li>
-  <li>cvsdb/port</li>
-  <li>cvsdb/readonly_passwd</li>
-  <li>cvsdb/readonly_user</li>
-  <li>cvsdb/row_limit</li>
-  <li>cvsdb/rss_row_limit</li>
-  <li>cvsdb/user</li>
-</ul>
-
-<p>Additionally, the EZT templates formerly required for the commits database
-   query and results views have been removed, so the configuration options
-   for overriding those template locations have been similarly removed:</p>
-
-<ul>
-  <li>templates/query_form</li>
-  <li>templates/query_results</li>
-</ul>
+<p>### TODO: Document how to use manage-database to upgrade an existing
+   ViewVC commits database.</p>
 
 </div>
 

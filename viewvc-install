@@ -62,10 +62,7 @@ FILE_INFO_LIST = [
     ("bin/db/loginfo-handler", "bin/db/loginfo-handler", 0o0755, 1, 0, 0),
     ("bin/db/cvsdbadmin", "bin/db/cvsdbadmin", 0o0755, 1, 0, 0),
     ("bin/db/svndbadmin", "bin/db/svndbadmin", 0o0755, 1, 0, 0),
-    ("bin/db/make-database", "bin/db/make-database", 0o0755, 1, 0, 0),
-    ("bin/db/schema_0.sql", "bin/db/schema_0.sql", 0o0644, 1, 0, 0),
-    ("bin/db/schema_1.sql", "bin/db/schema_1.sql", 0o0644, 1, 0, 0),
-    ("bin/db/schema_2.sql", "bin/db/schema_2.sql", 0o0644, 1, 0, 0),
+    ("bin/db/manage-database", "bin/db/manage-database", 0o0755, 1, 0, 0),
     ("conf/viewvc.conf.dist", "viewvc.conf.dist", 0o0644, 0, 0, 0),
     ("conf/viewvc.conf.dist", "viewvc.conf", 0o0644, 0, 1, 0),
     ("conf/cvsgraph.conf.dist", "cvsgraph.conf.dist", 0o0644, 0, 0, 0),
@@ -83,6 +80,8 @@ FILE_INFO_LIST = [
 TREE_LIST = [
     ("lib", "lib", 0, 0),
     ("templates", "templates", 0, 1),
+    ("bin/db/schemas", "bin/db/schemas", 0, 0),
+    ("bin/db/migrations", "bin/db/migrations", 0, 0),
 ]
 
 

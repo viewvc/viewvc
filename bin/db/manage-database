@@ -1,0 +1,613 @@
+#!/usr/bin/env python3
+# -*-python-*-
+#
+# Copyright (C) 1999-2025 The ViewCVS Group. All Rights Reserved.
+#
+# By using this file, you agree to the terms and conditions set forth in
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
+#
+# For more information, visit http://viewvc.org/
+#
+# -----------------------------------------------------------------------
+#
+# Database management tool for ViewVC
+#
+# This tool provides comprehensive database operations including:
+# - Database creation and initialization
+# - Schema migration and validation
+# - Database health checks and repair
+#
+# -----------------------------------------------------------------------
+
+import sys
+import os
+import argparse
+import subprocess
+from datetime import datetime
+
+#########################################################################
+#
+# INSTALL-TIME CONFIGURATION
+#
+# These values will be set during the installation process. During
+# development, they will remain None.
+#
+
+LIBRARY_DIR = None
+CONF_PATHNAME = None
+
+#########################################################################
+
+# Adjust sys.path to include our library directory
+if LIBRARY_DIR:
+    sys.path.insert(0, LIBRARY_DIR)
+else:
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../lib")))
+
+import cvsdb
+import dbi
+
+# Schema migration definitions
+SCHEMA_MIGRATIONS = {
+    # Migration from schema 0 to schema 1
+    (0, 1): {
+        "description": "Add metadata table and rename checkins to commits",
+        "migration_dir": "migrations/0_to_1",
+    },
+    
+    # Migration from schema 1 to schema 2
+    (1, 2): {
+        "description": "Convert to UTF-8 encoding and InnoDB engine",
+        "migration_dir": "migrations/1_to_2",
+    },
+}
+
+
+class DatabaseManager:
+    def __init__(self, hostname, port, username, password, database, dry_run=False, verbose=False):
+        self.hostname = hostname
+        self.port = port
+        self.username = username
+        self.password = password
+        self.database = database
+        self.dry_run = dry_run
+        self.verbose = verbose
+        self.db = None
+        
+    def connect(self):
+        """Connect to the database"""
+        try:
+            self.db = dbi.connect(self.hostname, self.port, self.username, self.password, self.database)
+            if self.verbose:
+                print(f"Connected to database '{self.database}' on {self.hostname}:{self.port}")
+        except Exception as e:
+            raise Exception(f"Failed to connect to database: {e}")
+    
+    def check_database_exists(self):
+        """Check if the database exists"""
+        try:
+            # Connect to MySQL without specifying database
+            conn = dbi.connect(self.hostname, self.port, self.username, self.password, self.database)
+            cursor = conn.cursor()
+            cursor.execute("SHOW DATABASES LIKE %s", (self.database,))
+            exists = cursor.fetchone() is not None
+            cursor.close()
+            conn.close()
+            return exists
+        except Exception as e:
+            raise Exception(f"Failed to check database existence: {e}")
+    
+    def create_database(self):
+        """Create the database"""
+        if self.dry_run:
+            print(f"DRY RUN: Would create database '{self.database}'")
+            return
+            
+        try:
+            # Connect to MySQL without specifying database
+            conn = dbi.connect(self.hostname, self.port, self.username, self.password, self.database)
+            cursor = conn.cursor()
+            cursor.execute(f"CREATE DATABASE `{self.database}` CHARACTER SET utf8 COLLATE utf8_unicode_ci")
+            cursor.close()
+            conn.close()
+            print(f"✓ Created database '{self.database}'")
+        except Exception as e:
+            raise Exception(f"Failed to create database: {e}")
+    
+    def create_schema(self):
+        """Create the latest database schema"""
+        if self.dry_run:
+            print("DRY RUN: Would create database schema")
+            return
+            
+        # Read the latest schema file
+        schema_file = os.path.join(os.path.dirname(__file__), "schemas", f"schema_{cvsdb.CURRENT_SCHEMA_VERSION}.sql")
+        
+        if not os.path.exists(schema_file):
+            raise Exception(f"Schema file not found: {schema_file}")
+        
+        with open(schema_file, 'r') as f:
+            schema_sql = f.read()
+        
+        # Execute schema statements
+        self.connect()
+        cursor = self.db.cursor()
+        
+        try:
+            # Split and execute statements using our standard SQL parser
+            statements = self.parse_sql_statements(schema_sql)
+            for i, stmt in enumerate(statements, 1):
+                if self.verbose:
+                    print(f"  Executing schema statement {i}/{len(statements)}")
+                cursor.execute(stmt)
+            
+            self.db.commit()
+            print(f"✓ Created schema version {cvsdb.CURRENT_SCHEMA_VERSION}")
+        except Exception as e:
+            self.db.rollback()
+            raise Exception(f"Failed to create schema: {e}")
+        finally:
+            cursor.close()
+    
+    def parse_sql_statements(self, sql_content):
+        """Parse SQL content into individual statements"""
+        statements = []
+        current_statement = []
+        
+        for line in sql_content.split('\n'):
+            line = line.strip()
+            
+            # Skip empty lines and comment-only lines
+            if not line or line.startswith('--'):
+                continue
+            
+            # Add line to current statement
+            current_statement.append(line)
+            
+            # If line ends with semicolon, we have a complete statement
+            if line.endswith(';'):
+                stmt = ' '.join(current_statement).rstrip(';')
+                if stmt:  # Don't add empty statements
+                    statements.append(stmt)
+                current_statement = []
+        
+        # Handle last statement if it doesn't end with semicolon
+        if current_statement:
+            stmt = ' '.join(current_statement)
+            if stmt:
+                statements.append(stmt)
+        
+        return statements
+    
+    def get_current_schema_version(self):
+        """Determine the current schema version of the database"""
+        cursor = self.db.cursor()
+        
+        try:
+            # Check if metadata table exists (schema 1+)
+            cursor.execute("SHOW TABLES LIKE 'metadata'")
+            if cursor.fetchone():
+                # Metadata table exists, get version from it
+                cursor.execute("SELECT value FROM metadata WHERE name = 'version'")
+                result = cursor.fetchone()
+                if result:
+                    return int(result[0])
+                else:
+                    # Metadata table exists but no version entry
+                    return 1
+            
+            # Check if commits table exists (schema 1+)
+            cursor.execute("SHOW TABLES LIKE 'commits'")
+            if cursor.fetchone():
+                return 1
+            
+            # Check if checkins table exists (schema 0)
+            cursor.execute("SHOW TABLES LIKE 'checkins'")
+            if cursor.fetchone():
+                return 0
+            
+            # No recognized tables found - might be empty database
+            cursor.execute("SHOW TABLES")
+            tables = cursor.fetchall()
+            if not tables:
+                return None  # Empty database
+            
+            raise Exception("Database contains tables but no recognized ViewVC schema")
+            
+        except Exception as e:
+            if "no recognized ViewVC schema" in str(e):
+                raise e
+            raise Exception(f"Failed to determine schema version: {e}")
+        finally:
+            cursor.close()
+    
+    def load_migration_sql(self, migration_file):
+        """Load migration SQL statements from a file"""
+        # Handle both absolute and relative paths
+        if os.path.isabs(migration_file):
+            migration_path = migration_file
+        else:
+            migration_path = os.path.join(os.path.dirname(__file__), migration_file)
+        
+        if not os.path.exists(migration_path):
+            raise FileNotFoundError(f"Migration file not found: {migration_path}")
+        
+        with open(migration_path, 'r') as f:
+            sql_content = f.read()
+        
+        return self.parse_sql_statements(sql_content)
+    
+    def load_sql_checks(self, check_file):
+        """Load SQL check statements from a file"""
+        return self.load_migration_sql(check_file)
+    
+    def run_sql_checks(self, check_statements, check_type="check"):
+        """Run a list of SQL check statements"""
+        if not check_statements:
+            return
+            
+        print(f"Running {check_type}...")
+        for i, check_sql in enumerate(check_statements, 1):
+            try:
+                cursor = self.db.cursor()
+                cursor.execute(check_sql)
+                result = cursor.fetchone()
+                if self.verbose:
+                    print(f"  ✓ Check {i} passed: {check_sql[:50]}... → {result}")
+                cursor.close()
+            except Exception as e:
+                raise Exception(f"{check_type.capitalize()} {i} failed: {check_sql} → {e}")
+    
+    def run_migration_step(self, sql, description=""):
+        """Execute a single migration SQL statement"""
+        if self.verbose and description:
+            print(f"  Running: {description}")
+        
+        if self.dry_run:
+            print(f"  DRY RUN: Would execute: {sql[:100]}...")
+            return
+        
+        cursor = self.db.cursor()
+        try:
+            cursor.execute(sql)
+            self.db.commit()
+            if self.verbose:
+                print(f"  ✓ Executed successfully")
+        except Exception as e:
+            self.db.rollback()
+            raise Exception(f"Migration step failed: {e}")
+        finally:
+            cursor.close()
+    
+    def run_migration(self, from_version, to_version):
+        """Run migration from one schema version to another"""
+        migration_key = (from_version, to_version)
+        
+        if migration_key not in SCHEMA_MIGRATIONS:
+            raise Exception(f"No migration path from schema {from_version} to {to_version}")
+        
+        migration = SCHEMA_MIGRATIONS[migration_key]
+        migration_dir = migration['migration_dir']
+        print(f"\nRunning migration {from_version} → {to_version}: {migration['description']}")
+        
+        # Load pre-migration checks
+        pre_checks_file = os.path.join(migration_dir, "pre_migration_checks.sql")
+        try:
+            pre_check_statements = self.load_sql_checks(pre_checks_file)
+            if pre_check_statements:
+                self.run_sql_checks(pre_check_statements, "pre-migration checks")
+        except FileNotFoundError:
+            if self.verbose:
+                print("  No pre-migration checks found")
+        
+        # Load and run migration
+        migration_file = os.path.join(migration_dir, "migration.sql")
+        try:
+            migration_statements = self.load_migration_sql(migration_file)
+            print("Executing migration steps...")
+            for i, sql in enumerate(migration_statements, 1):
+                self.run_migration_step(sql, f"Step {i}/{len(migration_statements)}")
+        except FileNotFoundError:
+            raise Exception(f"Migration file not found: {migration_file}")
+        
+        # Load post-migration checks
+        post_checks_file = os.path.join(migration_dir, "post_migration_checks.sql")
+        try:
+            post_check_statements = self.load_sql_checks(post_checks_file)
+            if post_check_statements:
+                self.run_sql_checks(post_check_statements, "post-migration checks")
+        except FileNotFoundError:
+            if self.verbose:
+                print("  No post-migration checks found")
+        
+        print(f"✓ Migration {from_version} → {to_version} completed successfully")
+    
+    def migrate_to_latest(self):
+        """Migrate database to the latest schema version"""
+        current_version = self.get_current_schema_version()
+        target_version = cvsdb.CURRENT_SCHEMA_VERSION
+        
+        if current_version is None:
+            raise Exception("Database appears to be empty. Use --create to initialize it.")
+        
+        print(f"Current schema version: {current_version}")
+        print(f"Target schema version: {target_version}")
+        
+        if current_version == target_version:
+            print("Database is already at the latest schema version")
+            return
+        
+        if current_version > target_version:
+            raise Exception(f"Database schema version ({current_version}) is newer than supported version ({target_version})")
+        
+        # Run migrations step by step
+        while current_version < target_version:
+            next_version = current_version + 1
+            self.run_migration(current_version, next_version)
+            current_version = next_version
+        
+        print(f"\n✓ Database successfully migrated to schema version {target_version}")
+    
+    def check_table_exists(self, table_name):
+        """Check if a table exists in the database"""
+        cursor = self.db.cursor()
+        try:
+            cursor.execute("SHOW TABLES LIKE %s", (table_name,))
+            return cursor.fetchone() is not None
+        finally:
+            cursor.close()
+    
+    def get_table_engine(self, table_name):
+        """Get the storage engine for a table"""
+        cursor = self.db.cursor()
+        try:
+            cursor.execute("SHOW TABLE STATUS LIKE %s", (table_name,))
+            result = cursor.fetchone()
+            return result[1] if result else None  # Engine is the second column
+        finally:
+            cursor.close()
+    
+    def get_column_charset(self, table_name, column_name):
+        """Get the character set for a column"""
+        cursor = self.db.cursor()
+        try:
+            cursor.execute("""
+                SELECT CHARACTER_SET_NAME, COLLATION_NAME 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = %s 
+                AND COLUMN_NAME = %s
+            """, (table_name, column_name))
+            return cursor.fetchone()
+        finally:
+            cursor.close()
+    
+    def validate_schema(self):
+        """Validate the schema and provide recommendations"""
+        print(f"Validating ViewVC database schema for: {self.database}")
+        print("=" * 60)
+        
+        self.connect()
+        
+        # Determine schema version
+        current_version = self.get_current_schema_version()
+        recommendations = []
+        
+        if current_version is None:
+            print("❌ Database appears to be empty")
+            print("   Run with --create to initialize the database")
+            return False
+        
+        print(f"Schema Version: {current_version}")
+        
+        # Check table engines
+        tables_to_check = ['commits', 'branches', 'descs', 'dirs', 'files', 'people', 'repositories']
+        if current_version == 0:
+            tables_to_check = ['checkins'] + tables_to_check[1:]
+        
+        print("\nTable Storage Engines:")
+        print("-" * 30)
+        
+        myisam_tables = []
+        for table in tables_to_check:
+            if self.check_table_exists(table):
+                engine = self.get_table_engine(table)
+                print(f"  {table:12} → {engine}")
+                if engine == 'MyISAM':
+                    myisam_tables.append(table)
+        
+        # Check character encoding
+        print("\nCharacter Encoding (key columns):")
+        print("-" * 40)
+        
+        non_utf8_columns = []
+        encoding_checks = [
+            ('people', 'who'),
+            ('repositories', 'repository'),
+            ('dirs', 'dir'),
+            ('files', 'file'),
+            ('branches', 'branch'),
+        ]
+        
+        if current_version >= 1:
+            encoding_checks.append(('commits', 'revision'))
+        else:
+            encoding_checks.append(('checkins', 'revision'))
+        
+        for table, column in encoding_checks:
+            if self.check_table_exists(table):
+                charset_info = self.get_column_charset(table, column)
+                if charset_info:
+                    charset, collation = charset_info
+                    print(f"  {table}.{column:12} → {charset} ({collation})")
+                    if not charset.startswith('utf8'):
+                        non_utf8_columns.append(f"{table}.{column}")
+        
+        # Provide recommendations
+        print("\nRecommendations:")
+        print("-" * 20)
+        
+        if current_version < cvsdb.CURRENT_SCHEMA_VERSION:
+            print(f"🔄 Schema upgrade recommended: {current_version} → {cvsdb.CURRENT_SCHEMA_VERSION}")
+            print("   Run: manage-database --migrate")
+            recommendations.append("schema_upgrade")
+        
+        if myisam_tables:
+            print(f"⚡ Convert MyISAM tables to InnoDB for better performance:")
+            for table in myisam_tables:
+                print(f"   {table}")
+            recommendations.append("engine_upgrade")
+        
+        if non_utf8_columns:
+            print(f"🌐 Convert to UTF-8 encoding for international support:")
+            for column in non_utf8_columns:
+                print(f"   {column}")
+            recommendations.append("utf8_upgrade")
+        
+        if not recommendations:
+            print("✅ Database schema is up to date!")
+        
+        # Summary
+        print(f"\nSummary:")
+        print(f"  Current Version: {current_version}")
+        print(f"  Latest Version:  {cvsdb.CURRENT_SCHEMA_VERSION}")
+        print(f"  Needs Upgrade:   {'Yes' if current_version < cvsdb.CURRENT_SCHEMA_VERSION else 'No'}")
+        
+        return len(recommendations) == 0
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="ViewVC Database Management Tool",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Commands:
+  --create              Create database and initialize with latest schema
+  --migrate             Migrate existing database to latest schema version
+  --validate            Validate database schema and show recommendations
+  --check-version       Check current schema version and exit
+
+Examples:
+  # Create new database
+  %(prog)s --create --username=root --database=ViewVC
+
+  # Check current schema version
+  %(prog)s --check-version --username=viewvc --database=ViewVC
+
+  # Migrate to latest schema (with backup)
+  %(prog)s --migrate --username=viewvc --database=ViewVC
+
+  # Validate database schema
+  %(prog)s --validate --username=viewvc --database=ViewVC
+
+  # Dry run migration (show what would be done)
+  %(prog)s --migrate --dry-run --username=viewvc --database=ViewVC
+        """
+    )
+    
+    # Connection parameters
+    parser.add_argument('--hostname', default='localhost',
+                        help='MySQL hostname (default: localhost)')
+    parser.add_argument('--port', type=int, default=3306,
+                        help='MySQL port (default: 3306)')
+    parser.add_argument('--username', required=True,
+                        help='MySQL username')
+    parser.add_argument('--password',
+                        help='MySQL password (will prompt if not provided)')
+    parser.add_argument('--database', required=True,
+                        help='MySQL database name')
+    
+    # Operations
+    parser.add_argument('--create', action='store_true',
+                        help='Create database and initialize with latest schema')
+    parser.add_argument('--migrate', action='store_true',
+                        help='Migrate database to latest schema version')
+    parser.add_argument('--validate', action='store_true',
+                        help='Validate database schema and show recommendations')
+    parser.add_argument('--check-version', action='store_true',
+                        help='Check current schema version and exit')
+    
+    # Options
+    parser.add_argument('--dry-run', action='store_true',
+                        help='Show what would be done without making changes')
+    parser.add_argument('--verbose', '-v', action='store_true',
+                        help='Verbose output')
+    
+    args = parser.parse_args()
+    
+    # Check that exactly one operation is specified
+    operations = [args.create, args.migrate, args.validate, args.check_version]
+    if sum(operations) != 1:
+        parser.error("Must specify exactly one operation: --create, --migrate, --validate, or --check-version")
+    
+    # Prompt for password if not provided
+    if not args.dry_run and not args.password:
+        import getpass
+        args.password = getpass.getpass("MySQL password: ")
+    
+    try:
+        # Create database manager instance
+        manager = DatabaseManager(
+            args.hostname, args.port, args.username, args.password, args.database,
+            dry_run=args.dry_run, verbose=args.verbose
+        )
+        
+        if args.create:
+            # Create database and schema
+            if not manager.check_database_exists():
+                manager.create_database()
+            else:
+                print(f"Database '{args.database}' already exists")
+            
+            manager.connect()
+            current_version = manager.get_current_schema_version()
+            
+            if current_version is None:
+                manager.create_schema()
+                print(f"✓ Database '{args.database}' created and initialized")
+            else:
+                print(f"Database already contains schema version {current_version}")
+                print("Use --migrate to upgrade or --validate to check status")
+        
+        elif args.check_version:
+            # Check version only
+            manager.connect()
+            version = manager.get_current_schema_version()
+            
+            if version is None:
+                print("Database appears to be empty (no ViewVC schema found)")
+                sys.exit(1)
+            
+            print(f"Current schema version: {version}")
+            target_version = cvsdb.CURRENT_SCHEMA_VERSION
+            
+            if version == target_version:
+                print("✓ Database is at the latest schema version")
+            elif version < target_version:
+                print(f"⚠ Database needs migration to version {target_version}")
+                sys.exit(1)
+            else:
+                print(f"⚠ Database schema ({version}) is newer than supported ({target_version})")
+                sys.exit(1)
+        
+        elif args.migrate:
+            # Migrate to latest
+            manager.connect()
+            manager.migrate_to_latest()
+        
+        elif args.validate:
+            # Validate schema
+            is_valid = manager.validate_schema()
+            sys.exit(0 if is_valid else 1)
+    
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("\nOperation cancelled by user", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
