@@ -13,7 +13,21 @@
 import time
 import re
 import calendar
-import pymysql as MySQLdb
+
+# Try to import a MySQL database connector.  PyMySQL is the recommended
+# connector for Python 3, but mysqlclient is also supported.
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+    import pymysql as MySQLdb
+except ImportError:
+    try:
+        import MySQLdb
+    except ImportError:
+        raise ImportError(
+            "No MySQL database connector available.  Please install either"
+            "the 'PyMySQL' or 'mysqlclient' package."
+        )
 
 # set to 1 to store commit times in UTC, or 0 to use the ViewVC machine's
 # local timezone. Using UTC is recommended because it ensures that the

@@ -54,6 +54,14 @@ For Subversion support:
   * Subversion 1.14.0+ (binaries and Python bindings)
       (http://subversion.apache.org/)
 
+For commits database (query) feature:
+
+  * MySQL 5.7+ or MariaDB 10.2+
+  * PyMySQL Python connector (recommended)
+      (https://pypi.org/project/PyMySQL/)
+    OR mysqlclient Python connector (alternative)
+      (https://pypi.org/project/mysqlclient/)
+
 Strongly recommended:
 
   * Pygments 1.1+ syntax highlighting engine
@@ -515,7 +523,7 @@ First, *create a MySQL user* who has permission to create databases.
 Optionally, you can create a second user with read-only access to the
 database.
 
-*Create your database* using the `<VIEWVC_DIR>/bin/make-database`
+*Create your database* using the `<VIEWVC_DIR>/bin/db/make-database`
 script.  It will prompt you for your MySQL user, password, and the
 name of database you want to create.  The database name defaults to
 "ViewVC".  This script creates the database and sets up the empty
