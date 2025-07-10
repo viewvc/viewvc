@@ -50,11 +50,11 @@ def replace_end_year(path, year):
 def bump_years(target_dir):
     year = time.strftime("%Y")
 
-    # Examine the output of `git ls-tree -r master --name-only`, iterating
+    # Examine the output of `git ls-tree -r HEAD --name-only`, iterating
     # over the listed files (as children of the target_dir) and calling
     # replace_end_year() on each one.
     try:
-        git_ls_tree_cmd = ["git", "ls-tree", "-r", "master", "--name-only"]
+        git_ls_tree_cmd = ["git", "ls-tree", "-r", "HEAD", "--name-only"]
         result = subprocess.run(git_ls_tree_cmd, cwd=target_dir, capture_output=True, text=True, check=True)
         files = result.stdout.splitlines()
     except subprocess.CalledProcessError:
