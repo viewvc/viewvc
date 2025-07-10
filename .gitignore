@@ -4,3 +4,4 @@ install.sh
 **/*.conf
 .venv
 .vscode
+.env
