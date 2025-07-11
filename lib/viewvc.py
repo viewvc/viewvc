@@ -280,7 +280,7 @@ class Request:
                         )
                         # required so that spawned rcs programs correctly expand
                         # $CVSHeader$
-                        if sys.platform == 'win32':
+                        if sys.platform == "win32":
                             os.environ["CVSROOT"] = self.rootpath
                         else:
                             os.environb[b"CVSROOT"] = self.rootpath.encode(path_encoding)
@@ -740,7 +740,7 @@ _re_validate_revnum = re.compile("^[-_.a-zA-Z0-9:~\\[\\]/]*$")
 
 
 # The legal query parameters and their validator functions/regexes.
-# 
+#
 # Parameters with a 'None' validator are not used anymore, but are kept
 # around so that bookmarked URLs still "work" (for some definition thereof).
 # They will be completely ignored by ViewVC.
@@ -779,13 +779,11 @@ _legal_params = {
     "orig_pathtype": _validate_any,
     "orig_pathrev": _validate_any,
     "orig_view": _validate_any,
-
     # ---------------------------------------------------------------------
     # DEPRECATED: The following are no longer used, but kept around so that
     # bookmarked URLs still "work" (for some definition thereof) after a
     # ViewVC upgrade.
     # ---------------------------------------------------------------------
-
     # query/queryform views - removed in ViewVC 1.3
     "file_match": None,
     "branch_match": None,
@@ -809,7 +807,6 @@ _legal_params = {
     "rev": None,
     "tarball": None,
     "hidecvsroot": None,
-
 }
 
 
@@ -1109,7 +1106,7 @@ def prep_tags(request, tags):
     for tag in tags:
         href = url + tag.name
         links.append(_item(name=tag.name, href=href))
-    links.sort(key=attrgetter('name'))
+    links.sort(key=attrgetter("name"))
     return links
 
 
@@ -2056,9 +2053,8 @@ def markup_or_annotate(request, is_annotate):
     # If this is viewable image that we're allowed to show embedded, we
     # need only resolve its revision and generate an image src=
     # attribute URL for it.
-    elif (
-        is_viewable_image(mime_type)
-        and ("image" in cfg.options.allowed_views or "co" in cfg.options.allowed_views)
+    elif is_viewable_image(mime_type) and (
+        "image" in cfg.options.allowed_views or "co" in cfg.options.allowed_views
     ):
         fp, revision = request.repos.openfile(path, rev, {})
         fp.close()
@@ -2067,9 +2063,7 @@ def markup_or_annotate(request, is_annotate):
         if is_annotate:
             annotation = "binary"
         view_func = view_image if "image" in cfg.options.allowed_views else view_checkout
-        image_src_href = request.get_url(
-            view_func=view_func, params={"revision": rev}, escape=1
-        )
+        image_src_href = request.get_url(view_func=view_func, params={"revision": rev}, escape=1)
 
     # If we get here, the request is not for an image that we can
     # display embedded.
@@ -2277,7 +2271,7 @@ def revcmpkey(rev):
 
 def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
     # convert sortdir into reverse parameter in sort() method
-    reverse = (sortdir == "down")
+    reverse = sortdir == "down"
 
     # in cvs, revision numbers can't be compared meaningfully between
     # files, so try to do the right thing and compare dates instead
@@ -2290,17 +2284,18 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
         # two directories are sorted as normal.
         # Note: True > False
         latter = vclib.DIR if reverse else vclib.FILE
-        if sortby == 'rev':
+        if sortby == "rev":
             # roottype is "svn" only, and the file has always rev value.
             def key(x):
                 return (x.kind == latter, x.rev)
 
-        elif sortby == 'date':
+        elif sortby == "date":
+
             def key(x):
                 # latest date is first
-                return (x.kind == latter, - x.sortkey('date', -1))
+                return (x.kind == latter, -x.sortkey("date", -1))
 
-        elif sortby == 'file':
+        elif sortby == "file":
             # the key attibute name != sortby
             def key(x):
                 return (x.kind == latter, x.name)
@@ -2314,20 +2309,22 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
         # If the file does not have revision data, which can be only in
         # "cvs" roottype, the file should been placed after those files
         # which have revision data, and it is sorted by its name.
-        if roottype == 'cvs':
-            if sortby == 'rev':
-                def key(x):
-                    return ((x.rev is None) ^ reverse,
-                            x.name if x.rev is None else x.rev)
+        if roottype == "cvs":
+            if sortby == "rev":
 
-            elif sortby == 'date':
+                def key(x):
+                    return ((x.rev is None) ^ reverse, x.name if x.rev is None else x.rev)
+
+            elif sortby == "date":
+
                 def key(x):
                     # latest date is first
-                    return ((x.rev is None) ^ reverse,
-                            x.name if x.rev is None
-                            else - x.sortkey('date', -1))
+                    return (
+                        (x.rev is None) ^ reverse,
+                        x.name if x.rev is None else -x.sortkey("date", -1),
+                    )
 
-            elif sortby == 'file':
+            elif sortby == "file":
                 # the key attibute name != sortby
                 def key(x):
                     return ((x.rev is None) ^ reverse, x.name)
@@ -2335,18 +2332,22 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
             else:
                 # the key attibute name == sortby
                 def key(x):
-                    return ((x.rev is None) ^ reverse,
-                            x.name if x.rev is None else x.sortkey(sortby))
+                    return (
+                        (x.rev is None) ^ reverse,
+                        x.name if x.rev is None else x.sortkey(sortby),
+                    )
+
         else:
             # In case roottype is 'svn', we simply use sotrby key.
-            if sortby == 'date':
+            if sortby == "date":
+
                 def key(x):
                     # latest date is first
-                    return - x.sortkey('date', -1)
+                    return -x.sortkey("date", -1)
 
-            elif sortby == 'file':
+            elif sortby == "file":
                 # the key attibute name != sortby
-                key = attrgetter('name')
+                key = attrgetter("name")
             else:
                 # the key attibute name == sortby and can be None
                 def key(x):
@@ -3181,7 +3182,9 @@ def checkout_or_image(request, is_image_view=False):
             # image, we refuse to display it.
             if is_image_view:
                 if not is_viewable_image(mime_type):
-                    raise ViewVCException("Unsupported feature: image view on non-image file", "400 Bad Request")
+                    raise ViewVCException(
+                        "Unsupported feature: image view on non-image file", "400 Bad Request"
+                    )
             else:
                 mime_type = request.query_dict.get("content-type") or mime_type or "text/plain"
 
@@ -3613,8 +3616,7 @@ class DiffSequencingError(Exception):
     pass
 
 
-def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2,
-                       sym1=None, sym2=None, is_text=True):
+def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2, sym1=None, sym2=None, is_text=True):
     date1 = date2 = log_rev1 = log_rev2 = flag = None
     header_lines = []
 
@@ -3630,6 +3632,7 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2,
     if is_text:
         getline = fp.readline
     else:
+
         def getline():
             return fp.readline().decode("utf-8", "surrogateescape")
 
@@ -3815,16 +3818,14 @@ def view_patch(request):
     diff_options["funout"] = cfg.options.hr_funout
 
     try:
-        fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options,
-                                   is_text=False)
+        fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options, is_text=False)
     except vclib.InvalidRevision:
         raise ViewVCException("Invalid path(s) or revision(s) passed to diff", "400 Bad Request")
 
     path_left = _path_join(p1)
     path_right = _path_join(p2)
     date1, date2, flag, headers = diff_parse_headers(
-        fp, diff_type, path_left, path_right, rev1, rev2, sym1, sym2,
-        is_text=False
+        fp, diff_type, path_left, path_right, rev1, rev2, sym1, sym2, is_text=False
     )
 
     server_fp = get_writeready_server_file(request, "text/plain", is_text=False)
@@ -4058,16 +4059,23 @@ class DiffDescription:
     def _content_lines(self, side, propname):
         f = self.request.repos.openfile(side.path_comp, side.rev, {})[0]
         try:
-            lines = [line.decode(self.request.repos.content_encoding, 'surrogateescape')
-                     for line in f.readlines()]
+            lines = [
+                line.decode(self.request.repos.content_encoding, "surrogateescape")
+                for line in f.readlines()
+            ]
         finally:
             f.close()
         return lines
 
     def _content_fp(self, left, right, propname, diff_options):
         return self.request.repos.rawdiff(
-            left.path_comp, left.rev, right.path_comp, right.rev,
-            self.diff_type, diff_options, is_text=True
+            left.path_comp,
+            left.rev,
+            right.path_comp,
+            right.rev,
+            self.diff_type,
+            diff_options,
+            is_text=True,
         )
 
     def _prop_lines(self, side, propname):
@@ -4087,7 +4095,7 @@ class DiffDescription:
             info_right,
             self.request.cfg.utilities.diff or "diff",
             diff_args,
-            encoding=self.request.repos.content_encoding
+            encoding=self.request.repos.content_encoding,
         )
 
     def _temp_file(self, val):
@@ -4276,7 +4284,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
     rep_path = request.path_parts + reldir
     entries = request.repos.listdir(rep_path, request.pathrev, {})
     request.repos.dirlogs(rep_path, request.pathrev, entries, {})
-    entries.sort(key=attrgetter('name'))
+    entries.sort(key=attrgetter("name"))
 
     # figure out corresponding path in tar file. everything gets put underneath
     # a single top level directory named after the repository directory being
@@ -4357,7 +4365,7 @@ def generate_tarball(out, request, reldir, stack, dir_mtime=None):
                 mode,
                 file.date is not None and file.date or 0,
                 typeflag=b"2",
-                linkname=symlink_target.encode('utf-8'),
+                linkname=symlink_target.encode("utf-8"),
             )
         else:
             filesize = request.repos.filesize(rep_path + [file.name], request.pathrev)
@@ -4494,7 +4502,7 @@ def view_revision(request):
         props.append(_item(name=name, value=value, undisplayable=ezt.boolean(undisplayable)))
 
     # Sort the changes list by path.
-    changes.sort(key=attrgetter('path_parts'))
+    changes.sort(key=attrgetter("path_parts"))
 
     # Handle limit_changes parameter
     cfg_limit_changes = cfg.options.limit_changes
@@ -4669,9 +4677,9 @@ def list_roots(request):
 
     # Add the viewable Subversion roots
     for root in cfg.general.svn_roots.keys():
-        path_encoding, content_encoding = get_repos_encodings(cfg, root,
-                                                              do_overlay=True,
-                                                              preserve_cfg=True)
+        path_encoding, content_encoding = get_repos_encodings(
+            cfg, root, do_overlay=True, preserve_cfg=True
+        )
         auth = setup_authorizer(cfg, request.username, root)
         try:
             repos = vclib.svn.SubversionRepository(
@@ -4710,9 +4718,9 @@ def list_roots(request):
 
     # Add the viewable CVS roots
     for root in cfg.general.cvs_roots.keys():
-        path_encoding, content_encoding = get_repos_encodings(cfg, root,
-                                                              do_overlay=True,
-                                                              preserve_cfg=True)
+        path_encoding, content_encoding = get_repos_encodings(
+            cfg, root, do_overlay=True, preserve_cfg=True
+        )
         auth = setup_authorizer(cfg, request.username, root)
         try:
             vclib.ccvs.CVSRepository(
@@ -4824,11 +4832,9 @@ def find_root_in_parents(cfg, path_parts, roottype):
 
         rootpath = None
         if roottype == "cvs":
-            rootpath = vclib.ccvs.find_root_in_parent(path, rootname,
-                                                      path_encoding)
+            rootpath = vclib.ccvs.find_root_in_parent(path, rootname, path_encoding)
         elif roottype == "svn":
-            rootpath = vclib.svn.find_root_in_parent(path, rootname,
-                                                     path_encoding)
+            rootpath = vclib.svn.find_root_in_parent(path, rootname, path_encoding)
 
         if rootpath is not None:
             return fullroot, rootpath, remain
@@ -4931,7 +4937,7 @@ def view_error(server, cfg):
     # Use the configured error template if possible.
     try:
         if cfg and not server.response_started():
-            status = exc_dict.get("status", '500 Internal Server Error')
+            status = exc_dict.get("status", "500 Internal Server Error")
             server.start_response(status=status)
             template = get_view_template(cfg, "error")
             server_fp = TextIOWrapper_noclose(

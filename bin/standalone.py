@@ -56,6 +56,7 @@ try:
 except ImportError:
     has_passlib = False
 
+
 class Options:
     port = 49152  # default TCP/IP port used for the server
     repositories = {}  # use default repositories specified in config
@@ -93,7 +94,7 @@ class StandaloneServer(sapi.CgiServer):
                 statusText = status[(p + 1) :]
         self._handler.send_response(statusCode, statusText)
         self._handler.send_header("Content-type", content_type)
-        for (name, value) in self._headers:
+        for name, value in self._headers:
             self._handler.send_header(name, value)
         self._handler.end_headers()
 
@@ -232,7 +233,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
             try:
                 kind, data = authn.split(" ", 1)
                 if kind == "Basic":
-                    data = base64.b64decode(data).decode('ascii')
+                    data = base64.b64decode(data).decode("ascii")
                     username, password = data.split(":", 1)
             except Exception:
                 raise AuthenticationException()

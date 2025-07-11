@@ -116,7 +116,7 @@ def error(text, etype=None, evalue=None):
 def replace_var(contents, var, value):
     """Replace instances of the variable VAR as found in file CONTENTS
     with VALUE."""
-    pattern = re.compile(b"^" + var + br"\s*=\s*.*$", re.MULTILINE)
+    pattern = re.compile(b"^" + var + rb"\s*=\s*.*$", re.MULTILINE)
     if isinstance(ROOT_DIR, str):
         root_dir = ROOT_DIR.encode("utf-8", "surrogateescape")
     else:

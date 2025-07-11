@@ -47,7 +47,7 @@ def _sort_key_path(path):
     Children of paths are greater than their parents, but less than
     greater siblings of their parents.
     """
-    return path.split('/')
+    return path.split("/")
 
 
 def _sort_key_pathb(pathb):
@@ -55,7 +55,7 @@ def _sort_key_pathb(pathb):
 
     Same as _sort_key_path but accept pathb as a path represented in bytes.
     """
-    return pathb.split(b'/')
+    return pathb.split(b"/")
 
 
 def client_log(url, start_rev, end_rev, log_limit, include_changes, cross_copies, cb_func, ctx):
@@ -423,8 +423,7 @@ class RemoteSubversionRepository(vclib.Repository):
     def revinfo(self, rev):
         return self._revinfo(rev, 1)
 
-    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type,
-                options={}, is_text=True):
+    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type, options={}, is_text=True):
         p1 = self._getpath(path_parts1)
         p2 = self._getpath(path_parts2)
         r1 = self._getrev(rev1)
@@ -446,8 +445,9 @@ class RemoteSubversionRepository(vclib.Repository):
             temp2 = cat_to_tempfile(self, p2, r2)
             info1 = p1, _date_from_rev(r1), r1
             info2 = p2, _date_from_rev(r2), r2
-            return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd,
-                                  args, encoding=encoding)
+            return vclib._diff_fp(
+                temp1, temp2, info1, info2, self.diff_cmd, args, encoding=encoding
+            )
         except core.SubversionException as e:
             if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
                 raise vclib.InvalidRevision
@@ -598,8 +598,8 @@ class RemoteSubversionRepository(vclib.Repository):
             for path in paths:
                 change = changed_paths[path]
                 pathtype = _kind2type(change.node_kind)
-                text_modified = (change.text_modified == core.svn_tristate_true and 1 or 0)
-                props_modified = (change.props_modified == core.svn_tristate_true and 1 or 0)
+                text_modified = change.text_modified == core.svn_tristate_true and 1 or 0
+                props_modified = change.props_modified == core.svn_tristate_true and 1 or 0
 
                 # Wrong, diddily wrong wrong wrong.  Can you say,
                 # "Manufacturing data left and right because it hurts to
@@ -767,4 +767,4 @@ class RemoteSubversionRepository(vclib.Repository):
         fp.close()
         if pathspec[:5] != b"link ":
             return None
-        return pathspec[5:].decode('utf-8')
+        return pathspec[5:].decode("utf-8")

@@ -25,8 +25,7 @@ def canonicalize_rootpath(rootpath):
 
 
 def _is_cvsroot(path, path_encoding):
-    return os.path.exists(_getfspath(os.path.join(path, "CVSROOT", "config"),
-                                     path_encoding))
+    return os.path.exists(_getfspath(os.path.join(path, "CVSROOT", "config"), path_encoding))
 
 
 def expand_root_parent(parent_path, path_encoding):
@@ -59,23 +58,27 @@ def find_root_in_parent(parent_path, rootname, path_encoding):
     # PARENT_PATH/ROOTNAME to be a CVS repository.
     assert os.path.isabs(parent_path)
     rootpath = os.path.join(parent_path, rootname)
-    if ((_is_cvsroot(parent_path, path_encoding)
-         and os.path.exists(_getfspath(rootpath, path_encoding)))
-        or _is_cvsroot(rootpath, path_encoding)):
+    if (
+        _is_cvsroot(parent_path, path_encoding)
+        and os.path.exists(_getfspath(rootpath, path_encoding))
+    ) or _is_cvsroot(rootpath, path_encoding):
         return canonicalize_rootpath(rootpath)
     return None
 
 
-def CVSRepository(name, rootpath, authorizer, utilities, use_rcsparse,
-                  content_encoding, path_encoding):
+def CVSRepository(
+    name, rootpath, authorizer, utilities, use_rcsparse, content_encoding, path_encoding
+):
     rootpath = canonicalize_rootpath(rootpath)
     if use_rcsparse:
         from . import ccvs
 
-        return ccvs.CCVSRepository(name, rootpath, authorizer, utilities,
-                                   content_encoding, path_encoding)
+        return ccvs.CCVSRepository(
+            name, rootpath, authorizer, utilities, content_encoding, path_encoding
+        )
     else:
         from . import bincvs
 
-        return bincvs.BinCVSRepository(name, rootpath, authorizer, utilities,
-                                       content_encoding, path_encoding)
+        return bincvs.BinCVSRepository(
+            name, rootpath, authorizer, utilities, content_encoding, path_encoding
+        )

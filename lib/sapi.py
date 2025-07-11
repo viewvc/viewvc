@@ -168,7 +168,7 @@ class CgiServer(Server):
         Server.start_response(self, content_type, status)
 
         extraheaders = ""
-        for (name, value) in self._headers:
+        for name, value in self._headers:
             extraheaders = extraheaders + "%s: %s\r\n" % (name, value)
 
         # The only way ViewVC pages and error messages are visible under

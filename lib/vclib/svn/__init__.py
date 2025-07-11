@@ -71,8 +71,7 @@ def expand_root_parent(parent_path, path_encoding):
         subpaths = os_listdir(parent_path, path_encoding)
         for rootname in subpaths:
             rootpath = os.path.join(parent_path, rootname)
-            if os.path.exists(_getfspath(os.path.join(rootpath, "format"),
-                                         path_encoding)):
+            if os.path.exists(_getfspath(os.path.join(rootpath, "format"), path_encoding)):
                 roots[rootname] = canonicalize_rootpath(rootpath)
     return roots
 
@@ -91,8 +90,9 @@ def find_root_in_parent(parent_path, rootname, path_encoding):
     return None
 
 
-def SubversionRepository(name, rootpath, authorizer, utilities, config_dir,
-                         content_encoding, path_encoding):
+def SubversionRepository(
+    name, rootpath, authorizer, utilities, config_dir, content_encoding, path_encoding
+):
     rootpath = canonicalize_rootpath(rootpath)
     if re.search(_re_url, rootpath):
         from . import svn_ra
@@ -104,6 +104,5 @@ def SubversionRepository(name, rootpath, authorizer, utilities, config_dir,
         from . import svn_repos
 
         return svn_repos.LocalSubversionRepository(
-            name, rootpath, authorizer, utilities, config_dir,
-            content_encoding, path_encoding
+            name, rootpath, authorizer, utilities, config_dir, content_encoding, path_encoding
         )

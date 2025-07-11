@@ -12,10 +12,11 @@
 echo "Checking code formatting..."
 PYFILES=`grep -rl '^#\(!.*/\|.*-\)python' --exclude=*.py .`
 black --line-length=100 --quiet --check . ${PYFILES} && flake8 . ${PYFILES}
-echo ""
 if [ $? -eq 0 ]; then
+    echo ""
     echo "Linting succeeded!"
 else
+    echo ""
     echo "Linting failed."
     echo "Try running 'black --line-length=100' on your problematic files."
 fi

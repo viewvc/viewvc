@@ -68,9 +68,10 @@ class CCVSRepository(BaseCVSRepository):
             if path:
                 entry.path = path
                 try:
-                    rcsparse.parse(open(self._getfspath(path), "rb"),
-                                   InfoSink(entry, rev, alltags,
-                                            self.content_encoding))
+                    rcsparse.parse(
+                        open(self._getfspath(path), "rb"),
+                        InfoSink(entry, rev, alltags, self.content_encoding),
+                    )
                 except IOError as e:
                     entry.errors.append("rcsparse error: %s" % e)
                 except RuntimeError as e:
@@ -114,9 +115,9 @@ class CCVSRepository(BaseCVSRepository):
 
         # Both of Revision.date and Revision.number are sortable, not None
         if sortby == vclib.SORTBY_DATE:
-            filtered_revs.sort(key=attrgetter('date', 'number'), reverse=True)
+            filtered_revs.sort(key=attrgetter("date", "number"), reverse=True)
         elif sortby == vclib.SORTBY_REV:
-            filtered_revs.sort(key=attrgetter('number'), reverse=True)
+            filtered_revs.sort(key=attrgetter("number"), reverse=True)
 
         if len(filtered_revs) < first:
             return []
@@ -124,8 +125,7 @@ class CCVSRepository(BaseCVSRepository):
             return filtered_revs[first : (first + limit)]
         return filtered_revs
 
-    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type,
-                options={}, is_text=True):
+    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type, options={}, is_text=True):
         if self.itemtype(path_parts1, rev1) != vclib.FILE:  # does auth-check
             raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts1)))
         if self.itemtype(path_parts2, rev2) != vclib.FILE:  # does auth-check
@@ -145,15 +145,16 @@ class CCVSRepository(BaseCVSRepository):
         diff_args = vclib._diff_args(diff_type, options)
         encoding = self.content_encoding if is_text else None
 
-        return vclib._diff_fp(temp1, temp2, info1, info2,
-                              self.utilities.diff or "diff", diff_args,
-                              encoding=encoding)
+        return vclib._diff_fp(
+            temp1, temp2, info1, info2, self.utilities.diff or "diff", diff_args, encoding=encoding
+        )
 
     def annotate(self, path_parts, rev=None, include_text=False):
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
             raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
-        source = blame.BlameSource(self._getfspath(self.rcsfile(path_parts, 1)),
-                                   rev, include_text, self.content_encoding)
+        source = blame.BlameSource(
+            self._getfspath(self.rcsfile(path_parts, 1)), rev, include_text, self.content_encoding
+        )
         return source, source.revision
 
     def revinfo(self, rev):
@@ -242,7 +243,9 @@ class InfoSink(MatchingSink):
             return
 
         tag = self.find_tag
-        rev = Revision(self._to_str(revision), date, self._to_str(author), self._to_str(state) == "dead")
+        rev = Revision(
+            self._to_str(revision), date, self._to_str(author), self._to_str(state) == "dead"
+        )
         rev.lockinfo = self.lockinfo.get(self._to_str(revision))
 
         # perfect match if revision number matches tag number or if
@@ -280,8 +283,8 @@ class InfoSink(MatchingSink):
 
 
 class TreeSink(rcsparse.Sink):
-    d_command = re.compile(br"^d(\d+)\s(\d+)")
-    a_command = re.compile(br"^a(\d+)\s(\d+)")
+    d_command = re.compile(rb"^d(\d+)\s(\d+)")
+    a_command = re.compile(rb"^a(\d+)\s(\d+)")
 
     def __init__(self, encoding):
         self.revs = {}
@@ -355,8 +358,8 @@ def _msplit(s):
 
     Only \n is a line separator. The line endings are part of the lines."""
 
-    lines = [line + b'\n' for line in s.split(b'\n')]
-    if lines[-1] == b'\n':
+    lines = [line + b"\n" for line in s.split(b"\n")]
+    if lines[-1] == b"\n":
         del lines[-1]
     else:
         lines[-1] = lines[-1][:-1]
@@ -364,8 +367,8 @@ def _msplit(s):
 
 
 class StreamText:
-    d_command = re.compile(br"^d(\d+)\s(\d+)\n")
-    a_command = re.compile(br"^a(\d+)\s(\d+)\n")
+    d_command = re.compile(rb"^d(\d+)\s(\d+)\n")
+    a_command = re.compile(rb"^a(\d+)\s(\d+)\n")
 
     def __init__(self, text):
         self.text = _msplit(text)

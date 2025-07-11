@@ -150,8 +150,8 @@ def locale_tuple_to_name(l_tuple):
 
     lang, enc = l_tuple
     if lang is None:
-        lang = 'C'
-    return lang + '.' + enc if enc else lang
+        lang = "C"
+    return lang + "." + enc if enc else lang
 
 
 def get_current_lc_ctype():
@@ -187,7 +187,7 @@ def get_repos_encodings(cfg, root, do_overlay=False, preserve_cfg=False):
         # On Windows, paths are always Unicode, and we should use
         # bytes path encoded in 'UTF-8' in Subversions API.
 
-        return 'utf-8', tmp_cfg.options.default_encoding or 'utf-8'
+        return "utf-8", tmp_cfg.options.default_encoding or "utf-8"
 
     else:
         root_path_locale = tmp_cfg.options.root_path_locale or DEFALT_LC_CTYPE

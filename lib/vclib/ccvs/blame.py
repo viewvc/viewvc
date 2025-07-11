@@ -36,8 +36,8 @@ class CVSParser(rcsparse.Sink):
     trunk_rev = re.compile(b"^[0-9]+\\.[0-9]+$")
     last_branch = re.compile(b"(.*)\\.[0-9]+")
     is_branch = re.compile(b"^(.*)\\.0\\.([0-9]+)$")
-    d_command = re.compile(br"^d(\d+)\s(\d+)")
-    a_command = re.compile(br"^a(\d+)\s(\d+)")
+    d_command = re.compile(rb"^d(\d+)\s(\d+)")
+    a_command = re.compile(rb"^a(\d+)\s(\d+)")
 
     SECONDS_PER_DAY = 86400
 

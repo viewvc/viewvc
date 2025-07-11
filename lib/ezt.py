@@ -729,10 +729,10 @@ def _get_value(refname_start_rest, ctx, filename, line_number):
         return ""
 
     # string or a sequence
-    if hasattr(ob, 'write'):
+    if hasattr(ob, "write"):
         # file like object.
         return ob
-    if not hasattr(ob, '__getitem__') and not hasattr(ob, 'keys') and hasattr(ob, '__next__'):
+    if not hasattr(ob, "__getitem__") and not hasattr(ob, "keys") and hasattr(ob, "__next__"):
         # The return value ob should not be an iterator or a generator,
         # because it would be accessed via index later.
         return list(ob)

@@ -364,16 +364,17 @@ class SVNChangedPath(vclib.ChangedPath):
 
 
 class LocalSubversionRepository(vclib.Repository):
-    def __init__(self, name, rootpath, authorizer, utilities, config_dir,
-                 content_encoding, path_encoding):
-        if sys.platform == 'win32':
-            if (not (os.path.isdir(rootpath)
-                and os.path.isfile(os.path.join(rootpath, "format")))):
+    def __init__(
+        self, name, rootpath, authorizer, utilities, config_dir, content_encoding, path_encoding
+    ):
+        if sys.platform == "win32":
+            if not (os.path.isdir(rootpath) and os.path.isfile(os.path.join(rootpath, "format"))):
                 raise vclib.ReposNotFound(name)
         else:
-            rootpathb = rootpath.encode(path_encoding, 'surrogateescape')
-            if (not (os.path.isdir(rootpathb)
-                and os.path.isfile(os.path.join(rootpathb, b"format")))):
+            rootpathb = rootpath.encode(path_encoding, "surrogateescape")
+            if not (
+                os.path.isdir(rootpathb) and os.path.isfile(os.path.join(rootpathb, b"format"))
+            ):
                 raise vclib.ReposNotFound(name)
 
         # Initialize some stuff.
@@ -466,9 +467,7 @@ class LocalSubversionRepository(vclib.Repository):
                 entry.size = fs.file_length(fsroot, path)
             lock = fs.get_lock(self.fs_ptr, path)
             entry.lockinfo = (
-                lock and _normalize_property_value(lock.owner,
-                                                   self.content_encoding)
-                or None
+                lock and _normalize_property_value(lock.owner, self.content_encoding) or None
             )
 
     def itemlog(self, path_parts, rev, sortby, first, limit, options):
@@ -500,8 +499,7 @@ class LocalSubversionRepository(vclib.Repository):
         try:
             lock = fs.get_lock(self.fs_ptr, path)
             if lock:
-                lockinfo = _normalize_property_value(lock.owner,
-                                                     self.content_encoding)
+                lockinfo = _normalize_property_value(lock.owner, self.content_encoding)
         except NameError:
             pass
 
@@ -574,8 +572,7 @@ class LocalSubversionRepository(vclib.Repository):
     def revinfo(self, rev):
         return self._revinfo(rev, 1)
 
-    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type,
-                options={}, is_text=True):
+    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type, options={}, is_text=True):
         p1 = self._getpath(path_parts1)
         p2 = self._getpath(path_parts2)
         r1 = self._getrev(rev1)
@@ -597,8 +594,9 @@ class LocalSubversionRepository(vclib.Repository):
             temp2 = temp_checkout(self, p2, r2)
             info1 = p1, _date_from_rev(r1), r1
             info2 = p2, _date_from_rev(r2), r2
-            return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd,
-                                  args, encoding=encoding)
+            return vclib._diff_fp(
+                temp1, temp2, info1, info2, self.diff_cmd, args, encoding=encoding
+            )
         except core.SubversionException as e:
             if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
                 raise vclib.InvalidRevision
@@ -732,8 +730,10 @@ class LocalSubversionRepository(vclib.Repository):
                             )
                             if copyfrom_path:
                                 prev_rev = copyfrom_rev
-                                prev_parts = (_path_parts(_strpath(copyfrom_path))
-                                              + parts[len(parent_parts) :])
+                                prev_parts = (
+                                    _path_parts(_strpath(copyfrom_path))
+                                    + parts[len(parent_parts) :]
+                                )
                                 break
                             del parent_parts[-1]
                         pathtype = self._gettype(self._getpath(prev_parts), prev_rev)
@@ -992,4 +992,4 @@ class LocalSubversionRepository(vclib.Repository):
             core.svn_stream_close(stream)
         if pathspec[:5] != b"link ":
             return None
-        return pathspec[5:].decode('utf-8')
+        return pathspec[5:].decode("utf-8")

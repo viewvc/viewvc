@@ -35,8 +35,7 @@ def _path_join(path_parts):
 
 
 class BaseCVSRepository(vclib.Repository):
-    def __init__(self, name, rootpath, authorizer, utilities,
-                 content_encoding, path_encoding):
+    def __init__(self, name, rootpath, authorizer, utilities, content_encoding, path_encoding):
         if not os.path.isdir(vclib._getfspath(rootpath, path_encoding)):
             raise vclib.ReposNotFound(name)
 
@@ -95,8 +94,7 @@ class BaseCVSRepository(vclib.Repository):
         full_name = self._getpath(path_parts)
         for file in vclib.os_listdir(full_name, self.path_encoding):
             name = None
-            kind, errors = _check_path(os.path.join(full_name, file),
-                                       self.path_encoding)
+            kind, errors = _check_path(os.path.join(full_name, file), self.path_encoding)
             if kind == vclib.FILE:
                 if file[-2:] == ",v":
                     name = file[:-2]
@@ -114,8 +112,7 @@ class BaseCVSRepository(vclib.Repository):
         if os.path.isdir(self._getfspath(full_name)):
             for file in vclib.os_listdir(full_name, self.path_encoding):
                 name = None
-                kind, errors = _check_path(os.path.join(full_name, file),
-                                           self.path_encoding)
+                kind, errors = _check_path(os.path.join(full_name, file), self.path_encoding)
                 if kind == vclib.FILE:
                     if file[-2:] == ",v":
                         name = file[:-2]
@@ -360,9 +357,9 @@ class BinCVSRepository(BaseCVSRepository):
         options["cvs_tags"] = tags
         # Both of Revision.date and Revision.number are sortable, not None
         if sortby == vclib.SORTBY_DATE:
-            filtered_revs.sort(key=attrgetter('date', 'number'), reverse=True)
+            filtered_revs.sort(key=attrgetter("date", "number"), reverse=True)
         elif sortby == vclib.SORTBY_REV:
-            filtered_revs.sort(key=attrgetter('number'), reverse=True)
+            filtered_revs.sort(key=attrgetter("number"), reverse=True)
 
         if len(filtered_revs) < first:
             return []
@@ -410,15 +407,15 @@ class BinCVSRepository(BaseCVSRepository):
 
         from vclib.ccvs import blame
 
-        source = blame.BlameSource(self._getfspath(self.rcsfile(path_parts, 1)),
-                                   rev, include_text, self.content_encoding)
+        source = blame.BlameSource(
+            self._getfspath(self.rcsfile(path_parts, 1)), rev, include_text, self.content_encoding
+        )
         return source, source.revision
 
     def revinfo(self, rev):
         raise vclib.UnsupportedFeature
 
-    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type,
-                options={}, is_text=True):
+    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type, options={}, is_text=True):
         """see vclib.Repository.rawdiff docstring
 
         Option values recognized by this implementation:
@@ -676,11 +673,11 @@ class COMissingRevision(vclib.Error):
 
 
 # TODO: suck up other warnings in _re_co_warning?
-_re_co_filename = re.compile(br"^(.*),v\s+-->\s+" br"(?:(?:standard output)|(?:stdout))\s*\n?$")
-_re_co_warning = re.compile(br"^.*co: .*,v: " br"warning: Unknown phrases like .*\n$")
-_re_co_missing_rev = re.compile(br"^.*co: .*,v: revision.*absent\n$")
-_re_co_side_branches = re.compile(br"^.*co: .*,v: " br"no side branches present for [\d\.]+\n$")
-_re_co_revision = re.compile(br"^revision\s+([\d\.]+)\s*\n$")
+_re_co_filename = re.compile(rb"^(.*),v\s+-->\s+" rb"(?:(?:standard output)|(?:stdout))\s*\n?$")
+_re_co_warning = re.compile(rb"^.*co: .*,v: " rb"warning: Unknown phrases like .*\n$")
+_re_co_missing_rev = re.compile(rb"^.*co: .*,v: revision.*absent\n$")
+_re_co_side_branches = re.compile(rb"^.*co: .*,v: " rb"no side branches present for [\d\.]+\n$")
+_re_co_revision = re.compile(rb"^revision\s+([\d\.]+)\s*\n$")
 
 
 def _parse_co_header(fp, encoding="utf-8"):
@@ -1072,8 +1069,7 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
 
         while len(chunk) < max_args and entries_idx < entries_len:
             entry = entries[entries_idx]
-            path = _log_path(entry, repos._getpath(dir_path_parts), get_dirs,
-                             repos.path_encoding)
+            path = _log_path(entry, repos._getpath(dir_path_parts), get_dirs, repos.path_encoding)
             if path:
                 entry.path = path
                 entry.idx = entries_idx
@@ -1219,8 +1215,7 @@ def _log_path(entry, dirpath, getdirs, encoding):
             path = entry.in_attic and "Attic" or ""
             name = entry.name
         elif entry.kind == vclib.DIR and getdirs:
-            entry.newest_file = _newest_file(os.path.join(dirpath, entry.name),
-                                             encoding)
+            entry.newest_file = _newest_file(os.path.join(dirpath, entry.name), encoding)
             if entry.newest_file:
                 path = entry.name
                 name = entry.newest_file
@@ -1234,6 +1229,7 @@ def _log_path(entry, dirpath, getdirs, encoding):
 # Functions for dealing with the filesystem
 
 if sys.platform == "win32":
+
     def _check_path(path, encoding):
         kind = None
         errors = []
@@ -1249,7 +1245,6 @@ if sys.platform == "win32":
             errors.append("error: path is not accessible")
 
         return kind, errors
-
 
 else:
     _uid = os.getuid()
@@ -1298,8 +1293,9 @@ else:
             # the group stat.ST_GID access may be granted.
             # so the fall back to os.access is needed to figure this out.
             elif (mode & mask) != mask:
-                if not os.access(vclib._getfspath(pathname, encoding),
-                                 isdir and (os.R_OK | os.X_OK) or os.R_OK):
+                if not os.access(
+                    vclib._getfspath(pathname, encoding), isdir and (os.R_OK | os.X_OK) or os.R_OK
+                ):
                     errors.append("error: path is not accessible")
 
             if isdir:

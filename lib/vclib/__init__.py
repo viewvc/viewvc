@@ -165,8 +165,7 @@ class Repository:
         or bytestrings, as appropriate (preferring strings).
         """
 
-    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type,
-                options={}, is_text=True):
+    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type, options={}, is_text=True):
         """Return a diff (in GNU diff format) of two file revisions
 
         diff_type is the requested diff type (UNIFIED, CONTEXT, etc)
@@ -250,7 +249,7 @@ class DirEntry:
         self.kind = kind
         self.errors = errors
 
-    def sortkey(self, attrname, default=''):
+    def sortkey(self, attrname, default=""):
         """Get attribute value specified for sort key
 
         If the attribute value is None, return default value instead.
@@ -425,8 +424,9 @@ class _diff_fp:
     If ENCODING is not none, it returns file like object with str I/O,
     otherwise, it returns file like object with bytes I/O"""
 
-    def __init__(self, temp1, temp2, info1=None, info2=None, diff_cmd="diff",
-                 diff_opts=[], encoding="utf-8"):
+    def __init__(
+        self, temp1, temp2, info1=None, info2=None, diff_cmd="diff", diff_opts=[], encoding="utf-8"
+    ):
         self.readable = True
         self.temp1 = temp1
         self.temp2 = temp2
@@ -440,14 +440,21 @@ class _diff_fp:
         # otherwise, it may cause deadlock.
         if encoding:
             self.proc = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                encoding=encoding, errors="surrogateescape",
-                bufsize=-1, close_fds=(sys.platform != "win32")
+                args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                encoding=encoding,
+                errors="surrogateescape",
+                bufsize=-1,
+                close_fds=(sys.platform != "win32"),
             )
         else:
             self.proc = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                bufsize=-1, close_fds=(sys.platform != "win32")
+                args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                bufsize=-1,
+                close_fds=(sys.platform != "win32"),
             )
 
     def read(self, buf_size):
@@ -538,6 +545,7 @@ def check_path_access(repos, path_parts, pathtype=None, rev=None):
 
 
 if sys.platform == "win32":
+
     def _getfspath(path, encoding):
         """Get path on local file system.
 
@@ -552,6 +560,7 @@ if sys.platform == "win32":
         return os.listdir(path)
 
 else:
+
     def _getfspath(path, encoding):
         """Get path on local file system.
 
@@ -568,5 +577,4 @@ else:
         if isinstance(path, bytes):
             return os.listdir(path)
         path = _getfspath(path, encoding) if path else b"."
-        return [ent.decode(encoding, "surrogateescape")
-                for ent in os.listdir(path)]
+        return [ent.decode(encoding, "surrogateescape") for ent in os.listdir(path)]
