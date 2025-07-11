@@ -98,7 +98,7 @@ class SvnRepo:
         return rev
 
 
-_re_diff_change_command = re.compile(br"(\d+)(?:,(\d+))?([acd])" br"(\d+)(?:,(\d+))?")
+_re_diff_change_command = re.compile(rb"(\d+)(?:,(\d+))?([acd])" rb"(\d+)(?:,(\d+))?")
 
 
 def _get_diff_counts(diff_fp):
@@ -230,7 +230,7 @@ def handle_revision(db, command, repo, rev, verbose, force=0):
             _print("skipped (no changes).")
         return
 
-    for (path, action, plus, minus) in revision.changes:
+    for path, action, plus, minus in revision.changes:
         directory, file = os.path.split(path)
         commit = cvsdb.CreateCommit()
         commit.SetRepository(repo.path)

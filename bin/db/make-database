@@ -84,7 +84,7 @@ def select_schema(viewvc_version=None):
 
 def enumerated_script(script):
     # Return a copy of script with line numbers prepended to each line.
-    return '\n'.join([f"{i + 1:>6}  {line}" for i, line in enumerate(script.split("\n"))])
+    return "\n".join([f"{i + 1:>6}  {line}" for i, line in enumerate(script.split("\n"))])
 
 
 DATABASE_DROP = "DROP DATABASE IF EXISTS <dbname>;\n"
@@ -186,8 +186,8 @@ if __name__ == "__main__":
                 password = value
             elif name == "--version":
                 try:
-                    version = '.'.join([str(x) for x in version_triplet(value)])
-                except:
+                    version = ".".join([str(x) for x in version_triplet(value)])
+                except Exception:
                     usage_and_exit("Invalid version specified")
             elif subprocess.has_timeout and name == "--timeout":
                 timeout = int(value)
@@ -221,9 +221,10 @@ if __name__ == "__main__":
                 "WARNING: You've selected a database schema that is not supported "
                 "by this version of ViewVC."
             )
-        
-        schema_script = open(os.path.join(os.path.dirname(__file__),
-                                          f"schema_{schema['schema_version']}.sql")).read()
+
+        schema_script = open(
+            os.path.join(os.path.dirname(__file__), f"schema_{schema['schema_version']}.sql")
+        ).read()
         dscript = force and DATABASE_DROP or ""
         dscript = dscript + DATABASE_CREATE + schema_script
         dscript = dscript.replace("<dbname>", dbname)

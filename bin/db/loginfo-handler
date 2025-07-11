@@ -50,7 +50,7 @@ DEBUG_FLAG = 0
 
 def debug(text):
     if DEBUG_FLAG:
-        if type(text) != (type([])):
+        if not isinstance(text, list):
             text = [text]
         for line in text:
             line = line.rstrip("\n\r")

@@ -18,6 +18,7 @@ import calendar
 # connector for Python 3, but mysqlclient is also supported.
 try:
     import pymysql
+
     pymysql.install_as_MySQLdb()
     import pymysql as MySQLdb
 except ImportError:
@@ -82,8 +83,7 @@ def connect(host, port, user, passwd, db):
     # however, it seems to use charset 'latin-1' by default (only me?)
     if not host and isinstance(port, str):
         # it seems that port specifies UNIX socket path
-        return MySQLdb.connect(
-            unix_socket=port, user=user, passwd=passwd, db=db, charset="utf8")
+        return MySQLdb.connect(unix_socket=port, user=user, passwd=passwd, db=db, charset="utf8")
     else:
         return MySQLdb.connect(
             host=host, port=port, user=user, passwd=passwd, db=db, charset="utf8"

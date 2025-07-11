@@ -84,8 +84,7 @@ class CheckinDatabase:
             )
         if self._version < OLDEST_SUPPORTED_SCHEMA_VERSION:
             raise DatabaseVersionError(
-                f"Database version {self._version} is no longer supported"
-                f"by this software."
+                f"Database version {self._version} is no longer supported" f"by this software."
             )
 
     def sql_get_id(self, table, column, value, auto_set):
@@ -473,7 +472,7 @@ class CheckinDatabase:
         # clauses, but MySQL 3.22 apparently doesn't support them well.
         tables = []
         joinConds = []
-        for (table, cond) in tableList:
+        for table, cond in tableList:
             if table not in tables:
                 tables.append(table)
                 if cond is not None:
