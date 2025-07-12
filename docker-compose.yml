@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  viewvc-db:
+    build:
+      context: .
+      dockerfile: docker/mariadb.Dockerfile
+    image: viewvc-mariadb:10.11
+    container_name: viewvc-mariadb
+    restart: unless-stopped   
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      VIEWVC_MYSQL_USER: ${VIEWVC_MYSQL_USER}
+      VIEWVC_MYSQL_PASSWORD: ${VIEWVC_MYSQL_PASSWORD}
+      VIEWVC_MYSQL_READONLY_USER: ${VIEWVC_MYSQL_READONLY_USER}
+      VIEWVC_MYSQL_READONLY_PASSWORD: ${VIEWVC_MYSQL_READONLY_PASSWORD}
+    ports:
+      - "3306:3306"   
+    volumes:
+      - viewvc_db_data:/var/lib/mysql
+      - viewvc_db_logs:/var/log/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${VIEWVC_MYSQL_USER}", "-p${VIEWVC_MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  viewvc_db_data:
+    driver: local
+  viewvc_db_logs:
+    driver: local
