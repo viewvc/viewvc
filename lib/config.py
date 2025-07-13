@@ -88,11 +88,6 @@ import copy
 #                                           |  vhosts   |
 #                                           |           |
 #                                           `-----------'
-#                                           ,-----------.
-#                                           |           |
-#                                           |   query   |
-#                                           |           |
-#                                           `-----------'
 #
 # ### TODO:  Figure out what this all means for the 'kv' stuff.
 #
@@ -106,7 +101,6 @@ class Config:
         "cvsdb",
         "general",
         "options",
-        "query",
         "templates",
         "utilities",
     )
