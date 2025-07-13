@@ -730,53 +730,57 @@ _re_validate_revnum = re.compile("^[-_.a-zA-Z0-9:~\\[\\]/]*$")
 # date time values
 _re_validate_datetime = re.compile(r"^(\d\d\d\d-\d\d-\d\d(\s+\d\d:\d\d" r"(:\d\d)?)?)?$")
 
-# the legal query parameters and their validation functions
+# The legal query parameters and their validator functions/regexes.
+#
+# Parameters with a 'None' validator will be dropped from the query_dict,
+# but are nominally "accepted" for compatibility with old bookmarked URLs.
 _legal_params = {
-    "root": _validate_any,
-    "view": _validate_view,
-    "search": _validate_regex,
-    "p1": _validate_any,
-    "p2": _validate_any,
+    # common parameters
+    "annotate": _re_validate_revnum,
+    "content-type": _validate_mimetype,
+    "diff_format": _re_validate_alpha,
+    "dir_pagestart": _re_validate_number,
+    "graph": _re_validate_revnum,
     "hideattic": _re_validate_boolint,
     "limit_changes": _re_validate_number,
+    "log_pagestart": _re_validate_number,
+    "logsort": _re_validate_alpha,
+    "makeimage": _re_validate_boolint,
+    "p1": _validate_any,
+    "p2": _validate_any,
+    "pathrev": _re_validate_revnum,
+    "r1": _re_validate_revnum,
+    "r2": _re_validate_revnum,
+    "revision": _re_validate_revnum,
+    "root": _validate_any,
+    "search": _validate_regex,
     "sortby": _re_validate_alpha,
     "sortdir": _re_validate_alpha,
-    "logsort": _re_validate_alpha,
-    "diff_format": _re_validate_alpha,
-    "pathrev": _re_validate_revnum,
-    "dir_pagestart": _re_validate_number,
-    "log_pagestart": _re_validate_number,
-    "annotate": _re_validate_revnum,
-    "graph": _re_validate_revnum,
-    "makeimage": _re_validate_boolint,
-    "r1": _re_validate_revnum,
     "tr1": _re_validate_revnum,
-    "r2": _re_validate_revnum,
     "tr2": _re_validate_revnum,
-    "revision": _re_validate_revnum,
-    "content-type": _validate_mimetype,
+    "view": _validate_view,
     # for cvsgraph
-    "gflip": _re_validate_boolint,
     "gbbox": _re_validate_boolint,
-    "gshow": _re_validate_alpha,
+    "gflip": _re_validate_boolint,
     "gleft": _re_validate_boolint,
     "gmaxtag": _re_validate_number,
-    # for query
-    "file_match": _re_validate_alpha,
+    "gshow": _re_validate_alpha,
+    # for the query view
     "branch_match": _re_validate_alpha,
-    "who_match": _re_validate_alpha,
-    "comment_match": _re_validate_alpha,
-    "dir": _validate_any,
-    "file": _validate_any,
     "branch": _validate_any,
-    "who": _validate_any,
+    "comment_match": _re_validate_alpha,
     "comment": _validate_any,
-    "querysort": _re_validate_alpha,
     "date": _re_validate_alpha,
-    "hours": _re_validate_number,
-    "mindate": _re_validate_datetime,
-    "maxdate": _re_validate_datetime,
+    "dir": _validate_any,
+    "file_match": _re_validate_alpha,
+    "file": _validate_any,
     "format": _re_validate_alpha,
+    "hours": _re_validate_number,
+    "maxdate": _re_validate_datetime,
+    "mindate": _re_validate_datetime,
+    "querysort": _re_validate_alpha,
+    "who_match": _re_validate_alpha,
+    "who": _validate_any,
     # for redirect_pathrev
     "orig_path": _validate_any,
     "orig_pathtype": _validate_any,
@@ -785,11 +789,11 @@ _legal_params = {
     # DEPRECATED - these are no longer used, but kept around so that
     # bookmarked URLs still "work" (for some definition thereof) after a
     # ViewVC upgrade.
+    "hidecvsroot": None,
+    "limit": None,
     "parent": _re_validate_boolint,
-    "rev": _re_validate_revnum,
+    "rev": None,
     "tarball": _re_validate_boolint,
-    "hidecvsroot": _re_validate_boolint,
-    "limit": _re_validate_number,
 }
 
 
