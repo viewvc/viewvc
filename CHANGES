@@ -1,5 +1,6 @@
 Version 1.2.4 (released ??-???-????)
 
+  * security fix: prevent standalone.py directory traversal [CVE-2025-54141]
   * fix an incomplete fix of issue #272 (#339)
   * disallow patch view on non-file paths (#370)
 

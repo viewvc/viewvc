@@ -172,16 +172,15 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 </body>
 </html>""")
       
-  def is_viewvc(self):
+  def is_viewvc(self, path):
     """Check whether self.path is, or is a child of, the ScriptAlias"""
+    if not path.startswith("/"):
+      return 0
     if not options.script_alias:
       return 1
-    if self.path == '/' + options.script_alias:
+    if path == "/" + options.script_alias:
       return 1
-    alias_len = len(options.script_alias)
-    if self.path[:alias_len+2] == '/' + options.script_alias + '/':
-      return 1
-    if self.path[:alias_len+2] == '/' + options.script_alias + '?':
+    if path.startswith("/" + options.script_alias + "/"):
       return 1
     return 0
 
@@ -203,8 +202,18 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     ### Much of this is adapter from Python's standard library
     ### module CGIHTTPServer.
 
+    i = self.path.rfind("?")
+    if i >= 0:
+      path = urllib.unquote(self.path[:i])
+      query = self.path[(i + 1) :]
+    else:
+      path = urllib.unquote(self.path)
+      query = ""
+    # normalize path
+    path = os.path.normpath(path) + ("/" if path[-1] == "/" else "")
+
     # Is this request even aimed at ViewVC?  If not, complain.
-    if not self.is_viewvc():
+    if not self.is_viewvc(path):
       raise NotViewVCLocationException()
 
     # If htpasswd authentication is enabled, try to authenticate the user.
@@ -230,12 +239,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     scriptname = options.script_alias and '/' + options.script_alias or ''
 
     viewvc_url = self.server.url[:-1] + scriptname
-    rest = self.path[len(scriptname):]
-    i = rest.rfind('?')
-    if i >= 0:
-      rest, query = rest[:i], rest[i+1:]
-    else:
-      query = ''
+    rest = path[len(scriptname):]
 
     # Since we're going to modify the env in the parent, provide empty
     # values to override previously set values
@@ -254,8 +258,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     env['SERVER_PROTOCOL'] = self.protocol_version
     env['SERVER_PORT'] = str(self.server.server_port)
     env['REQUEST_METHOD'] = self.command
-    uqrest = urllib.unquote(rest)
-    env['PATH_INFO'] = uqrest
+    env['PATH_INFO'] = rest
     env['SCRIPT_NAME'] = scriptname
     if query:
       env['QUERY_STRING'] = query
