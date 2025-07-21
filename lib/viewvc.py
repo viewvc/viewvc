@@ -188,6 +188,11 @@ class Request:
     ### we might want to redirect to the cleaned up URL
     path_parts = _path_parts(path_info)
 
+    # Protect against directory traversal attacks.
+    if ".." in path_parts:
+      raise debug.ViewVCException("An illegal path was provided.",
+                                  "400 Bad Request")
+
     if path_parts:
       # handle magic path prefixes
       if path_parts[0] == docroot_magic_path:
@@ -3105,9 +3110,9 @@ def view_doc(request):
   # Stat the file to get content length and last-modified date.
   try:
     info = os.stat(filename)
-  except OSError, v:
-    raise debug.ViewVCException('Static file "%s" not available (%s)'
-                                 % (document, str(v)), '404 Not Found')
+  except OSError:
+    raise debug.ViewVCException('Static file "%s" not available' % (document),
+                                '404 Not Found')
   content_length = str(info[stat.ST_SIZE])
   last_modified = info[stat.ST_MTIME]
 
@@ -3118,9 +3123,9 @@ def view_doc(request):
 
   try:
     fp = open(filename, "rb")
-  except IOError, v:
-    raise debug.ViewVCException('Static file "%s" not available (%s)'
-                                 % (document, str(v)), '404 Not Found')
+  except IOError:
+    raise debug.ViewVCException('Static file "%s" not available' % (document),
+                                '404 Not Found')
 
   if document[-3:] == 'png':
     mime_type = 'image/png'
