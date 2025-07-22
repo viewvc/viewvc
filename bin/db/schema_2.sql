@@ -1,10 +1,10 @@
 DROP TABLE IF EXISTS branches;
 CREATE TABLE branches (
   id mediumint(9) NOT NULL auto_increment,
-  branch varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT '' NOT NULL,
+  branch varchar(64) DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE branch (branch)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 DROP TABLE IF EXISTS commits;
 CREATE TABLE commits (
@@ -14,8 +14,8 @@ CREATE TABLE commits (
   repositoryid mediumint(9) NOT NULL DEFAULT 0,
   dirid mediumint(9) NOT NULL DEFAULT 0,
   fileid mediumint(9) NOT NULL DEFAULT 0,
-  revision varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT '',
-  stickytag varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT '',
+  revision varchar(32) NOT NULL DEFAULT '',
+  stickytag varchar(255) NOT NULL DEFAULT '',
   branchid mediumint(9) NOT NULL DEFAULT 0,
   addedlines int(11) NOT NULL DEFAULT 0,
   removedlines int(11) NOT NULL DEFAULT 0,
@@ -28,48 +28,48 @@ CREATE TABLE commits (
   KEY fileid (fileid),
   KEY branchid (branchid),
   KEY descid (descid)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 DROP TABLE IF EXISTS descs;
 CREATE TABLE descs (
   id mediumint(9) NOT NULL auto_increment,
-  description text CHARACTER SET utf8mb4 COLLATE utf8_bin,
+  description text,
   hash bigint(20) DEFAULT '0' NOT NULL,
   PRIMARY KEY (id),
   KEY hash (hash)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 DROP TABLE IF EXISTS dirs;
 CREATE TABLE dirs (
   id mediumint(9) NOT NULL auto_increment,
-  dir varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT '' NOT NULL,
+  dir varchar(255) DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE dir (dir)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 DROP TABLE IF EXISTS files;
 CREATE TABLE files (
   id mediumint(9) NOT NULL auto_increment,
-  file varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT '' NOT NULL,
+  file varchar(255) DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE file (file)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 DROP TABLE IF EXISTS people;
 CREATE TABLE people (
   id mediumint(9) NOT NULL auto_increment,
-  who varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT '' NOT NULL,
+  who varchar(128) DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE who (who)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 DROP TABLE IF EXISTS repositories;
 CREATE TABLE repositories (
   id mediumint(9) NOT NULL auto_increment,
-  repository varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT '' NOT NULL,
+  repository varchar(64) DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE repository (repository)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 DROP TABLE IF EXISTS tags;
 CREATE TABLE tags (
@@ -77,19 +77,19 @@ CREATE TABLE tags (
   branchid mediumint(9) DEFAULT '0' NOT NULL,
   dirid mediumint(9) DEFAULT '0' NOT NULL,
   fileid mediumint(9) DEFAULT '0' NOT NULL,
-  revision varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT '' NOT NULL,
+  revision varchar(32) DEFAULT '' NOT NULL,
   UNIQUE repositoryid (repositoryid,dirid,fileid,branchid,revision),
   KEY repositoryid_2 (repositoryid),
   KEY dirid (dirid),
   KEY fileid (fileid),
   KEY branchid (branchid)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 DROP TABLE IF EXISTS metadata;
 CREATE TABLE metadata (
-  name varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT '' NOT NULL,
-  value text CHARACTER SET utf8mb4 COLLATE utf8_bin,
+  name varchar(255) DEFAULT '' NOT NULL,
+  value text,
   PRIMARY KEY (name),
   UNIQUE name (name)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 INSERT INTO metadata (name, value) VALUES ('version', '2');
