@@ -791,9 +791,11 @@ _legal_params = {
     "orig_pathtype": _validate_any,
     "orig_pathrev": _validate_any,
     "orig_view": _validate_any,
+    # ---------------------------------------------------------------------
     # DEPRECATED - these are no longer used, but kept around so that
     # bookmarked URLs still "work" (for some definition thereof) after a
     # ViewVC upgrade.
+    # ---------------------------------------------------------------------
     "hidecvsroot": None,
     "limit": None,
     "parent": _re_validate_boolint,

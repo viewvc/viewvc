@@ -128,8 +128,10 @@ var, code {
    strongly encouraged to make a backup of their existing ViewVC database,
    then drop and completely rebuild the database from scratch.  ViewVC's
    database-related tooling remains largely unchanged from prior versions,
-   so your repository hook script integrations should not require additional
-   maintenance.</p>
+   except that <var>make-database</var> now requires the <var>--force</var>
+   option to be provided when trying to initialize a database where one
+   already exists.  Repository hook script integrations should not require
+   additional configuration, though.</p>
 
 </div>
 
