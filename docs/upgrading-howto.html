@@ -119,19 +119,26 @@ var, code {
 <div class="h3">
 <h3>Commits Database</h3>
 
-<p>The commits database feature now requires MySQL 5.7+ or MariaDB 10.2+.
+<p>The commits database feature now requires MySQL 5.7+ or MariaDB 10.2+;
    Support for older versions have been discontinued.  Additionally, a new
    schema has been introduced for the feature that specifically declares
-   that text fields use UTF-8 character encoding.</p>
-
-<p>Administrators who are using the commits database feature today are
-   strongly encouraged to make a backup of their existing ViewVC database,
-   then drop and completely rebuild the database from scratch.  ViewVC's
-   database-related tooling remains largely unchanged from prior versions,
-   except that <var>make-database</var> now requires the <var>--force</var>
-   option to be provided when trying to initialize a database where one
-   already exists.  Repository hook script integrations should not require
-   additional configuration, though.</p>
+   that text fields use UTF-8 character encoding.  ViewVC 1.3.x will yield
+   an error when asked to interact with existing databases that use older
+   schemas.  Administrators who are using the commits database feature today
+   should drop and completely rebuild their database from scratch (after
+   making a backup, of course).  No schema migration has been developed
+   to shortcut this process.</p>
+   
+<p><strong>NOTE:</strong> We recommend this even for those who were "early
+   adopters" of the unreleased 1.3.x-dev codebase.  While ViewVC 1.3.0
+   <em>may</em> continue to work with those databases, we cannot guarantee
+   as much.</p>
+   
+<p>Fortunately, ViewVC's database-related tooling remains largely unchanged
+   from prior versions, with one notable exception:  <var>make-database</var>
+   now requires the <var>--force</var> option to be provided when asked to
+   create a new database atop one that already exists.  But repository hook
+   script integrations should not require additional configuration.</p>
 
 </div>
 
