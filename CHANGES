@@ -22,6 +22,12 @@ Version 1.3.0 (released ??-???-????)
   * new 'image' view for limited as-is image display (#360)
   * disallow patch view on non-file paths (#370)
 
+Version 1.2.4 (released 21-Jul-2025)
+
+  * security fix: prevent standalone.py directory traversal [CVE-2025-54141]
+  * fix an incomplete fix of issue #272 (#339)
+  * disallow patch view on non-file paths (#370)
+
 Version 1.2.3 (released 04-Jan-2023)
 
   * security fix: escape revision view copy paths (#311) [CVE-2023-22464]
@@ -50,6 +56,11 @@ Version 1.2.0 (released 17-Mar-2020)
   * fix bogus default ci_when value in cvsdb (#200)
   * standalone query interface removed (#206)
   * GUI support (--gui) removed from standalone.py
+
+Version 1.1.31 (released 21-Jul-2025)
+
+  * security fix: prevent standalone.py directory traversal [CVE-2025-54141]
+  * remove broken SIGTERM handler in vclib/svn/svn_repos.py (PR #319)
 
 Version 1.1.30 (released 04-Jan-2023)
 
