@@ -3699,12 +3699,12 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2, sym1=None, sym2=
 
     if log_rev1 and log_rev1 != rev1:
         raise ViewVCException(
-            "rcsdiff found revision %s, but expected " "revision %s" % (log_rev1, rev1),
+            "rcsdiff found revision %s, but expected revision %s" % (log_rev1, rev1),
             "500 Internal Server Error",
         )
     if log_rev2 and log_rev2 != rev2:
         raise ViewVCException(
-            "rcsdiff found revision %s, but expected " "revision %s" % (log_rev2, rev2),
+            "rcsdiff found revision %s, but expected revision %s" % (log_rev2, rev2),
             "500 Internal Server Error",
         )
     headers = "".join(header_lines)
@@ -3810,7 +3810,7 @@ def view_patch(request):
     mime_type2, encoding2 = calculate_mime_type(request, p2, rev2)
     if is_binary_file_mime_type(mime_type1, cfg) or is_binary_file_mime_type(mime_type2, cfg):
         raise ViewVCException(
-            "Display of binary file content disabled " "by configuration", "403 Forbidden"
+            "Display of binary file content disabled by configuration", "403 Forbidden"
         )
 
     # In the absence of a format dictation in the CGI params, we'll let
@@ -4149,7 +4149,7 @@ def view_diff(request):
     mime_type2, encoding2 = calculate_mime_type(request, p2, rev2)
     if is_binary_file_mime_type(mime_type1, cfg) or is_binary_file_mime_type(mime_type2, cfg):
         raise ViewVCException(
-            "Display of binary file content disabled " "by configuration", "403 Forbidden"
+            "Display of binary file content disabled by configuration", "403 Forbidden"
         )
 
     # since templates are in use and subversion allows changes to the dates,
@@ -4477,7 +4477,7 @@ def download_tarball(request):
 def view_revision(request):
     if request.roottype != "svn":
         raise ViewVCException(
-            "Revision view not supported for CVS repositories " "at this time.", "400 Bad Request"
+            "Revision view not supported for CVS repositories at this time.", "400 Bad Request"
         )
 
     cfg = request.cfg

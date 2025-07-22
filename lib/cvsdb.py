@@ -84,7 +84,7 @@ class CheckinDatabase:
             )
         if self._version < OLDEST_SUPPORTED_SCHEMA_VERSION:
             raise DatabaseVersionError(
-                f"Database version {self._version} is no longer supported" f"by this software."
+                f"Database version {self._version} is no longer supported by this software."
             )
 
     def sql_get_id(self, table, column, value, auto_set):

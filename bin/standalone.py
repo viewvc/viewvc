@@ -361,7 +361,7 @@ class ViewVCHTTPServer(_http_server.HTTPServer):
         """
         sys.stderr.write("-" * 40 + "\n")
         sys.stderr.write(
-            "Exception happened during processing of request from " "%s\n" % str(client_address)
+            "Exception happened during processing of request from %s\n" % str(client_address)
         )
         import traceback
 
@@ -458,7 +458,7 @@ Options:
 def badusage(errstr):
     cmd = os.path.basename(sys.argv[0])
     sys.stderr.write(
-        "ERROR: %s\n\n" "Try '%s --help' for detailed usage information.\n" % (errstr, cmd)
+        "ERROR: %s\n\nTry '%s --help' for detailed usage information.\n" % (errstr, cmd)
     )
     sys.exit(1)
 

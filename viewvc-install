@@ -203,7 +203,7 @@ def install_file(src_path, dst_path, mode, subst_path_vars, prompt_replace, comp
                 while 1:
                     name, ext = os.path.splitext(src_path)
                     if ext in BINARY_FILE_EXTS:
-                        temp = input("Do you want to [O]verwrite or " "[D]o not overwrite? ")
+                        temp = input("Do you want to [O]verwrite or [D]o not overwrite? ")
                     else:
                         temp = input(
                             "Do you want to [O]verwrite, [D]o "
@@ -355,7 +355,7 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
         else:
             print("File %s does not belong in ViewVC %s." % (dst_path, version))
             while 1:
-                temp = input("Do you want to [D]elete it, or [L]eave " "it as is? ")
+                temp = input("Do you want to [D]elete it, or [L]eave it as is? ")
                 temp = temp[0].lower()
                 if temp == "l":
                     delete = 0
@@ -459,7 +459,7 @@ Just hit [Enter] if a default is okay.
     if DESTDIR is None:
         default = ""
         temp = input(
-            "DESTDIR path (generally only used by package " "maintainers) [%s]: " % (default)
+            "DESTDIR path (generally only used by package maintainers) [%s]: " % (default)
         ).strip()
         print()
         if len(temp):
