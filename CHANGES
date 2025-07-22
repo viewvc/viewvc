@@ -1,3 +1,7 @@
+Version 1.1.32 (released ??-???-????)
+
+  * 
+
 Version 1.1.31 (released 21-Jul-2025)
 
   * security fix: prevent standalone.py directory traversal [CVE-2025-54141]
