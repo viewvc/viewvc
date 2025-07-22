@@ -56,11 +56,12 @@ For Subversion support:
 
 For commits database (query) feature:
 
-  * MySQL 5.7+ or MariaDB 10.2+
-  * PyMySQL Python connector (recommended)
-      (https://pypi.org/project/PyMySQL/)
-    OR mysqlclient Python connector (alternative)
-      (https://pypi.org/project/mysqlclient/)
+  * One of the following database systems:
+      - MySQL 5.7+ (https://www.mysql.com/)
+      - MariaDB 10.2+ (https://mariadb.org/)
+  * One of the following Python MySQL connectors:
+      - PyMySQL (https://pypi.org/project/PyMySQL/) [RECOMMENDED]
+      - mysqlclient (https://pypi.org/project/mysqlclient/)
 
 Strongly recommended:
 
@@ -508,12 +509,16 @@ Commits Database
 
 Requires:
 
-  * MySQL (or MariaDB) 3.22+ (https://www.mysql.com/, https://mariadb.org/)
-  * mysqlclient-python 0.9+ (https://github.com/PyMySQL/mysqlclient-python)
+  * One of the following database systems:
+      - MySQL 5.7+ (https://www.mysql.com/)
+      - MariaDB 10.2+ (https://mariadb.org/)
+  * One of the following Python MySQL connectors:
+      - PyMySQL (https://pypi.org/project/PyMySQL/) [RECOMMENDED]
+      - mysqlclient (https://pypi.org/project/mysqlclient/)
 
-This feature is a clone of the Mozilla Project's Bonsai database.  It
-catalogs every commit in the CVS or Subversion repository into a SQL
-database.  In fact, the databases are 100% compatible.
+The commits database feature began as a clone of the Mozilla Project's
+Bonsai database, cataloging every commit in a CVS repository.  It has
+since expanded to support Subversion repository commits, too.
 
 Various queries can be performed on the database.  After installing
 ViewVC, there are some additional steps required to get the database
