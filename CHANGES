@@ -1,4 +1,4 @@
-Version 1.2.4 (released ??-???-????)
+Version 1.2.4 (released 21-Jul-2025)
 
   * security fix: prevent standalone.py directory traversal [CVE-2025-54141]
   * fix an incomplete fix of issue #272 (#339)
