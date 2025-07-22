@@ -11,6 +11,7 @@ ViewVC is a browser interface for CVS and Subversion version control repositorie
     - Filesystem-accessible and remote Subversion repositories.
 *   Path-based authorization, including Subversion access file support.
 *   Template-driven output generation.
+*   Support for both CGI and WSGI deployment.
 *   Line-based annotation/blame display.
 *   Syntax highlighting support.
 *   Colorized, side-by-side differences.
@@ -21,16 +22,15 @@ ViewVC is a browser interface for CVS and Subversion version control repositorie
     - By revision and (sub)directory for Subversion.
 *   Localization support based on the Accept-Language request header.
 *   Regexp-based file filtering.
-*   Ability to run either as CGI script or as a standalone server.
 *   File-based configuration (no code tweaks required)!
+*   Standalone server (for easily testing configuration).
 
 ## Requirements
 
 The only hard software requirement for running ViewVC is a suitable version of Python. The specifics of that, as well as all other requirements, depend on what you want to do with the tool. As those have changed somewhat over the years, it's best to consult the INSTALL file of the specific ViewVC release you wish to evaluate for its exact requirements. Here are pointers to the INSTALL files for the current major release lines:
 
 *   [Unreleased bleeding edge (1.3-dev)](https://github.com/viewvc/viewvc/blob/master/INSTALL)
-*   [ViewVC 1.2.x](https://raw.githubusercontent.com/viewvc/viewvc/1.2.x/INSTALL)
-*   [ViewVC 1.1.x (security fixes only)](https://raw.githubusercontent.com/viewvc/viewvc/1.1.x/INSTALL)
+*   [ViewVC 1.2.x (Python2; security fixes only)](https://raw.githubusercontent.com/viewvc/viewvc/1.2.x/INSTALL)
 
 ## Getting ViewVC
 
