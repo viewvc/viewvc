@@ -9,13 +9,13 @@ body {
 }
 table { width: 100%; }
 td, th { padding: 0.25em 0.5em; }
-th { 
-  vertical-align: bottom; 
+th {
+  vertical-align: bottom;
   background: rgb(60%,70%,90%);
   text-align: left;
 }
-td { 
-  vertical-align: top; 
+td {
+  vertical-align: top;
   background-color: rgb(75%,95%,75%);
 }
 .h2, .h3 {
@@ -54,6 +54,8 @@ td {
     <li><a href="#variables-directory">Directory Listing View (directory.ezt)</a></li>
     <li><a href="#variables-error">Error View (error.ezt)</a></li>
     <li><a href="#variables-log">Revision Log View (log.ezt)</a></li>
+    <li><a href="#variables-query_results">Revision History Query Results View (query_results.ezt, rss.ezt)</a></li>
+    <li><a href="#variables-query_form">Revision History Query Form View (query_form.ezt)</a></li>
     <li><a href="#variables-revision">Revision/ChangeSet View (revision.ezt)</a></li>
     <li><a href="#variables-roots">Root Listing View (roots.ezt)</a></li>
   </ul>
@@ -73,7 +75,7 @@ td {
 <h2 id="ezt">Using EZT</h2>
 
 <p>EaZy Templating (EZT) is a fast and simple templating system for Python-based
-   software.  While today EZT is a standalone Python module, it saw its most 
+   software.  While today EZT is a standalone Python module, it saw its most
    aggressive development and maturation as part of the ViewVC project.  Today
    there is a small degree of skew between the version of EZT included in the
    ViewVC distribution and its upstream counterpart, but for the purposes of
@@ -119,7 +121,7 @@ td {
   <td class="vartype">string</td>
   <td class="varnote">URL of the static documents directory, generally used for
       referencing stylesheets and images stored in and under that
-      directory (which is typically relative to the template 
+      directory (which is typically relative to the template
       location).</td>
 </tr>
 <tr>
@@ -199,6 +201,12 @@ td {
       page instead of the checkout page.  Valid only when
       <var>pathtype</var> is <tt>file</tt>.</td>
 </tr>
+<tr class="varlevel1">
+  <td class="varname">queryform_href</td>
+  <td class="vartype">string</td>
+  <td class="varnote">URL for a query form returning results from this directory.
+      Valid only when <var>pathtype</var> is <tt>dir</tt>.</td>
+</tr>
 <tr>
   <td class="varname">rev</td>
   <td class="vartype">string</td>
@@ -270,7 +278,7 @@ td {
   <td class="varname">view_href</td>
   <td class="vartype">string</td>
   <td class="varnote">URL of the ViewVC file contents view for the current resource.
-      Valid only when <var>pathtype</var> is <tt>file</tt> or 
+      Valid only when <var>pathtype</var> is <tt>file</tt> or
       <tt>dir</tt>.</td>
 </tr>
 <tr>
@@ -435,7 +443,7 @@ td {
 </thead>
 <tbody>
 <tr class="include">
-  <td colspan="3">Includes all variables from the 
+  <td colspan="3">Includes all variables from the
      <a href="#variables-common">COMMON</a> and
      <a href="#variables-properties">PROPERTIES</a> variable sets</td>
 </tr>
@@ -604,7 +612,7 @@ td {
 </thead>
 <tbody>
 <tr class="include">
-  <td colspan="3">Includes all variables from the 
+  <td colspan="3">Includes all variables from the
      <a href="#variables-common">COMMON</a> variable set</td>
 </tr>
 <tr>
@@ -705,7 +713,7 @@ td {
 </thead>
 <tbody>
 <tr class="include">
-  <td colspan="3">Includes all variables from the 
+  <td colspan="3">Includes all variables from the
      <a href="#variables-common">COMMON</a> variable set</td>
 </tr>
 <tr>
@@ -778,7 +786,7 @@ td {
   <td class="varname">diffs.changes.right</td>
   <td class="vartype">string</td>
   <td class="varnote">[sidebyside-1] Textual contents of the relevant line in the right file.  Valid
-      only when <var>changes.type</var> is <tt>add</tt>, <tt>change</tt>, 
+      only when <var>changes.type</var> is <tt>add</tt>, <tt>change</tt>,
       or <tt>context</tt>.  When
       <var>changes.type</var> is <tt>change</tt>, valid only when
       <var>changes.have_left</var> is set (in order to delineate
@@ -1084,7 +1092,7 @@ td {
 </thead>
 <tbody>
 <tr class="include">
-  <td colspan="3">Includes all variables from the 
+  <td colspan="3">Includes all variables from the
      <a href="#variables-common">COMMON</a>,
      <a href="#variables-pathrev">PATHREV</a>,
      <a href="#variables-paging">PAGING</a>, and
@@ -1169,7 +1177,7 @@ td {
   <td class="varnote">List of strings containing error messages encountered by the
       version control backend as it attempted to harvest information about
       this directory entry.  At this time the strings are somewhat
-      freeform; in the future it would be nice to expose these as 
+      freeform; in the future it would be nice to expose these as
       testable error code or somesuch.</td>
 </tr>
 <tr>
@@ -1381,7 +1389,7 @@ td {
 <tr>
   <td class="varname">tree_rev_href</td>
   <td class="vartype">string</td>
-  <td class="varnote">URL for revision view showing information about the 
+  <td class="varnote">URL for revision view showing information about the
       <var>tree_rev</var> revision. Subversion only.</td>
 </tr>
 <tr>
@@ -1442,7 +1450,7 @@ td {
 </thead>
 <tbody>
 <tr class="include">
-  <td colspan="3">Includes all variables from the 
+  <td colspan="3">Includes all variables from the
      <a href="#variables-common">COMMON</a>,
      <a href="#variables-pathrev">PATHREV</a>, and
      <a href="#variables-paging">PAGING</a> variable sets</td>
@@ -1838,6 +1846,334 @@ td {
 </div>
 
 <div class="h3">
+<h3 id="variables-query_results">Revision History Query Results View
+(query_results.ezt, rss.ezt)</h3>
+<table>
+<thead>
+<tr>
+  <th>Variable</th>
+  <th>Type</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="include">
+  <td colspan="3">Includes all variables from the
+     <a href="#variables-common">COMMON</a> variable set</td>
+</tr>
+<tr>
+  <td class="varname">backout_href</td>
+  <td class="vartype">string</td>
+  <td class="varnote">URL for a page that shows a list of commands that can be applied
+      to a working copy to revert all the changes returned by the
+      query.</td>
+</tr>
+<tr>
+  <td class="varname">commits</td>
+  <td class="vartype">list</td>
+  <td class="varnote">List of commits to files under the current directory that meet
+      the query criteria.</td>
+</tr>
+<tr>
+  <td class="varname">commits.author</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Author of the commit.</td>
+</tr>
+<tr>
+  <td class="varname">commits.files</td>
+  <td class="vartype">list</td>
+  <td class="varnote">List of files under the current directory affected by the
+      commit.</td>
+</tr>
+<tr>
+  <td class="varname">commits.files.author</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Author of the commit.</td>
+</tr>
+<tr>
+  <td class="varname">commits.files.date</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Date (in UTC if not otherwise configured) the change to the file
+     was committed.</td>
+</tr>
+<tr>
+  <td class="varname">commits.files.dir</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Path of the directory containing the file.</td>
+</tr>
+<tr>
+  <td class="varname">commits.files.dir_href</td>
+  <td class="vartype">string</td>
+  <td class="varnote">URL for directory listing of <var>commits.files.dir</var>.</td>
+</tr>
+<tr>
+  <td class="varname">commits.files.file</td>
+  <td class="vartype">string</td>
+  <td class="varnote">File name.</td>
+</tr>
+<tr>
+  <td class="varname">commits.files.rev</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Revision number of the file.</td>
+</tr>
+<tr>
+  <td class="varname">commits.files.branch</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Branch the commit occurred on.</td>
+</tr>
+<tr>
+  <td class="varname">commits.files.diff_href</td>
+  <td class="vartype">string</td>
+  <td class="varnote">URL to diff page showing changes since previous file revision.</td>
+</tr>
+<tr>
+  <td class="varname">commits.files.log_href</td>
+  <td class="vartype">string</td>
+  <td class="varnote">URL for file's log page.</td>
+</tr>
+<tr>
+  <td class="varname">commits.files.minus</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Number of lines removed from the file by the commit.</td>
+</tr>
+<tr>
+  <td class="varname">commits.files.plus</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Number of lines added to the file by the commit.</td>
+</tr>
+<tr>
+  <td class="varname">commits.files.type</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Type of change made to the file by the commit. Possible values:
+      <tt>Change</tt>, <tt>Add</tt>, <tt>Remove</tt></td>
+</tr>
+<tr>
+  <td class="varname">commits.log</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Commit log message.</td>
+</tr>
+<tr>
+  <td class="varname">commits.limited_files</td>
+  <td class="vartype">boolean</td>
+  <td class="varnote">True if files list was cut short due to <tt>limit_changes</tt>.</td>
+</tr>
+<tr>
+  <td class="varname">commits.minus</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Total number of lines removed from files in this commit.</td>
+</tr>
+<tr>
+  <td class="varname">commits.num_files</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Total number of files in the <var>commits.files</var> list.</td>
+</tr>
+<tr>
+  <td class="varname">commits.plus</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Number of lines added to files in this commit.</td>
+</tr>
+<tr>
+  <td class="varname">commits.rev</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Commit revision number. Subversion only.</td>
+</tr>
+<tr>
+  <td class="varname">commits.rss_date</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Date of the commit formatted for RSS.</td>
+</tr>
+<tr>
+  <td class="varname">commits.rss_url</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Absolute URL of the revision page for the commit. Subversion only.</td>
+</tr>
+<tr>
+  <td class="varname">commits.short_log</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Truncated commit log message.</td>
+</tr>
+<tr>
+  <td class="varname">english_query</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Text description of the current query criteria.</td>
+</tr>
+<tr>
+  <td class="varname">limit_changes</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Current <tt>limit_changes</tt> value, maximum number of changed files
+      to show per commit.</td>
+</tr>
+<tr>
+  <td class="varname">limit_changes_href</td>
+  <td class="vartype">string</td>
+  <td class="varnote">URL for the current view but with <tt>limit_changes</tt> disabled.</td>
+</tr>
+<tr>
+  <td class="varname">minus_count</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Total number of lines removed from all files across all returned
+      commits.</td>
+</tr>
+<tr>
+  <td class="varname">plus_count</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Total number of lines added to all files across all returned
+      commits.</td>
+</tr>
+<tr>
+  <td class="varname">querysort</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Indicates how query results are being sorted. Possible values:
+      <tt>date</tt>, <tt>author</tt>, and <tt>file</tt>.</td>
+</tr>
+<tr>
+  <td class="varname">row_limit_reached</td>
+  <td class="vartype">boolean</td>
+  <td class="varnote">Indicates whether the internal database row limit threshold (set
+      via the <code>cvsdb.row_limit</code>
+      and <code>cvsdb.rss_row_limit</code> configuration options) was
+      reached by the query.</td>
+</tr>
+<tr>
+  <td class="varname">show_branch</td>
+  <td class="vartype">boolean</td>
+  <td class="varnote">Indicates whether or not to list branch names in the results. True
+      when query results can include more than a single branch.</td>
+</tr>
+<tr>
+  <td class="varname">sql</td>
+  <td class="vartype">string</td>
+  <td class="varnote">SQL string used to query database. Included for debugging
+      purposes.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="h3">
+<h3 id="variables-query_form">Revision History Query Form View (query_form.ezt)</h3>
+<table>
+<thead>
+<tr>
+  <th>Variable</th>
+  <th>Type</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="include">
+  <td colspan="3">Includes all variables from the
+     <a href="#variables-common">COMMON</a> variable set</td>
+</tr>
+<tr>
+  <td class="varname">branch</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Query string for filtering results by branch.</td>
+</tr>
+<tr>
+  <td class="varname">branch_match</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Type of match to perform with <var>branch</var> query string.
+      Valid values: <tt>exact</tt>, <tt>like</tt>, <tt>glob</tt>,
+      <tt>regex</tt>, <tt>notregex</tt>.</td>
+</tr>
+<tr>
+  <td class="varname">comment</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Query string for filtering results by log message.</td>
+</tr>
+<tr>
+  <td class="varname">comment_match</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Type of match to perform with <var>comment</var> query string. Possible
+      values: <tt>exact</tt>, <tt>like</tt>, <tt>glob</tt>,
+      <tt>regex</tt>, <tt>notregex</tt>.</td>
+</tr>
+<tr>
+  <td class="varname">date</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Option for filtering results by date. Possible values:
+      <tt>hours</tt>, <tt>day</tt>, <tt>week</tt>, <tt>month</tt>,
+      <tt>all</tt>, <tt>explicit</tt>.</td>
+</tr>
+<tr>
+  <td class="varname">dir</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Query string for filtering results by subdirectory.</td>
+</tr>
+<tr>
+  <td class="varname">dir_href</td>
+  <td class="vartype">string</td>
+  <td class="varnote">URL for directory list of current directory.</td>
+</tr>
+<tr>
+  <td class="varname">file</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Query string for filtering results by file name.</td>
+</tr>
+<tr>
+  <td class="varname">file_match</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Type of match to perform with <var>file</var> query string.
+      Valid values: <tt>exact</tt>, <tt>like</tt>, <tt>glob</tt>,
+      <tt>regex</tt>, <tt>notregex</tt>.</td>
+</tr>
+<tr>
+  <td class="varname">hours</td>
+  <td class="vartype">string</td>
+  <td class="varnote">If <var>date</var> is <tt>hours</tt>, number of hours back to
+      include results from.</td>
+</tr>
+<tr>
+  <td class="varname">limit_changes</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Current <tt>limit_changes</tt> value, maximum number of changed files
+      to show per commit.</td>
+</tr>
+<tr>
+  <td class="varname">maxdate</td>
+  <td class="vartype">string</td>
+  <td class="varnote">If <var>date</var> is <tt>explicit</tt>, latest date to
+      include results from.</td>
+</tr>
+<tr>
+  <td class="varname">mindate</td>
+  <td class="vartype">string</td>
+  <td class="varnote">If <var>date</var> is <tt>explicit</tt>, earliest date to
+      include results from.</td>
+</tr>
+<tr>
+  <td class="varname">query_action</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Form action URL for query form.</td>
+</tr>
+<tr>
+  <td class="varname">query_hidden_values</td>
+  <td class="vartype">list</td>
+  <td class="varnote">Hidden field name/value pairs for query form.</td>
+</tr>
+<tr>
+  <td class="varname">querysort</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Option for sorting query results. Possible values: <tt>date</tt>,
+      <tt>author</tt>, and <tt>file</tt>.</td>
+</tr>
+<tr>
+  <td class="varname">who</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Query string for filtering results by author.</td>
+</tr>
+<tr>
+  <td class="varname">who_match</td>
+  <td class="vartype">string</td>
+  <td class="varnote">Type of match to perform with <var>who</var> query string. Possible
+      values: <tt>exact</tt>, <tt>like</tt>, <tt>glob</tt>,
+      <tt>regex</tt>, <tt>notregex</tt>.</td>
+</tr>
+</tbody>
+</table>
+
+<div class="h3">
 <h3 id="variables-revision">Revision/ChangeSet View (revision.ezt)</h3>
 <table>
 <thead>
@@ -1849,7 +2185,7 @@ td {
 </thead>
 <tbody>
 <tr class="include">
-  <td colspan="3">Includes all variables from the 
+  <td colspan="3">Includes all variables from the
      <a href="#variables-common">COMMON</a> variable set</td>
 </tr>
 <tr>
@@ -2012,7 +2348,7 @@ td {
 </thead>
 <tbody>
 <tr class="include">
-  <td colspan="3">Includes all variables from the 
+  <td colspan="3">Includes all variables from the
      <a href="#variables-common">COMMON</a> variable set</td>
 </tr>
 <tr>

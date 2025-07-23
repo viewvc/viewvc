@@ -20,6 +20,9 @@ ViewVC is a browser interface for CVS and Subversion version control repositorie
 *   Tarball generation.
     - By tag/branch for CVS.
     - By revision and (sub)directory for Subversion.
+*   Optional commits database and query interface.
+    - Supports file-based commits for both CVS and Subversion.
+    - RSS feed generation for committed changes.
 *   Localization support based on the Accept-Language request header.
 *   Regexp-based file filtering.
 *   File-based configuration (no code tweaks required)!

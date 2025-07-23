@@ -1,0 +1,265 @@
+#!/usr/bin/env python3
+# -*-python-*-
+#
+# Copyright (C) 1999-2025 The ViewCVS Group. All Rights Reserved.
+#
+# By using this file, you agree to the terms and conditions set forth in
+# the LICENSE.html file which can be found at the top level of the ViewVC
+# distribution or at http://viewvc.org/license-1.html.
+#
+# For more information, visit http://viewvc.org/
+#
+# -----------------------------------------------------------------------
+#
+# administrative program for CVSdb; creates a clean database in
+# MySQL 3.22 or later
+#
+# -----------------------------------------------------------------------
+#
+
+import sys
+import os
+import getopt
+
+if sys.hexversion >= 0x3030000:
+    import subprocess
+
+    subprocess.has_timeout = True
+else:
+    try:
+        import subprocess32 as subprocess
+
+        subprocess.has_timeout = True
+    except ImportError:
+        import subprocess
+
+        subprocess.has_timeout = False
+
+
+# Maps database schema versions to the first release of ViewVC which
+# supports them.
+SCHEMA_VERSIONS = [
+    # Version 0:  [UNSUPPORTED]
+    #     Original, Bonsai-compatible.
+    {
+        "schema_version": 0,
+        "viewvc_version": "0.0.0",
+        "supported": False,
+    },
+    # Version 1:  [UNSUPPORTED]
+    #     Adds 'metadata' table.  Adds 'descid' index to 'checkins' table,
+    #     and renames that table to 'commits'.
+    {
+        "schema_version": 1,
+        "viewvc_version": "1.1.0",
+        "supported": False,
+    },
+    # Version 2:
+    #     Explicitly declares UTF8 strings.
+    {
+        "schema_version": 2,
+        "viewvc_version": "1.3.0",
+        "supported": True,
+    },
+]
+
+
+def version_triplet(v):
+    return [int(x) for x in (v + ".0.0").split(".")[:3]]
+
+
+def select_schema(viewvc_version=None):
+    # If trying to match a version of ViewVC, find the newest schema version
+    # that works with the specified ViewVC version.  Otherwise, use the
+    # latest schema.
+    if not viewvc_version:
+        return SCHEMA_VERSIONS[-1]
+    selected = None
+    req_version_tuple = version_triplet(viewvc_version)
+    for sv in SCHEMA_VERSIONS:
+        if version_triplet(sv["viewvc_version"]) <= req_version_tuple:
+            selected = sv
+    return selected
+
+
+def enumerated_script(script):
+    # Return a copy of script with line numbers prepended to each line.
+    return "\n".join([f"{i + 1:>6}  {line}" for i, line in enumerate(script.split("\n"))])
+
+
+DATABASE_DROP = "DROP DATABASE IF EXISTS <dbname>;\n"
+DATABASE_CREATE = "CREATE DATABASE <dbname>; USE <dbname>;\n"
+
+
+# ------------------------------------------------------------------------
+
+
+def usage_and_exit(errmsg=None):
+    stream = errmsg is None and sys.stdout or sys.stderr
+    stream.write(
+        f"""\
+Usage: {sys.argv[0]} [OPTIONS]
+
+This script creates the database and tables in MySQL used by the
+ViewVC checkin database.  In order to operate correctly, it needs to
+know the following:  your database server hostname, database user,
+database user password, and database name.  (You will be prompted for
+any of this information that you do not provide via command-line
+options.)  This script will use the 'mysql' program to create the
+database for you.  You will then need to set the appropriate
+parameters in the [cvsdb] section of your viewvc.conf file.
+
+NOTE: If a hostname or port is supplied at the command line or during
+interactive prompting, this script will pass '--protocol=TCP' to
+'mysql'.
+
+Options:
+
+  --dbname=ARG        Use ARG as the ViewVC database name to create.
+                      [Default: "ViewVC"]
+
+  --force             Force the recreation of the database, dropping
+                      any existing database of the specified name.
+
+  --help              Show this usage message.
+
+  --hostname=ARG      Use ARG as the hostname for the MySQL connection.
+
+  --port=ARG          Use ARG as the port for the MySQL connection.
+
+  --password=ARG      Use ARG as the password for the MySQL connection.
+
+  --timeout=ARG       Use ARG as the timeout in sec for waiting MySQL
+                      to create database if timeout feature is available.
+                      [Default: "300"]
+
+  --username=ARG      Use ARG as the username for the MySQL connection.
+
+  --version=ARG       Create the database using the schema employed by
+                      version ARG of ViewVC.  [Default: newest version]
+
+"""
+    )
+    if errmsg is not None:
+        stream.write(f"[ERROR] {errmsg}.\n")
+        sys.exit(1)
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    try:
+        # Parse the command-line options, if any.
+        dbname = version = hostname = port = username = password = None
+        force = False
+        timeout = 300
+        opts, args = getopt.getopt(
+            sys.argv[1:],
+            "",
+            [
+                "dbname=",
+                "force",
+                "help",
+                "hostname=",
+                "port=",
+                "password=",
+                "username=",
+                "version=",
+                "timeout=",
+            ],
+        )
+        if len(args) > 0:
+            usage_and_exit("Unexpected command-line parameters")
+        for name, value in opts:
+            if name == "--help":
+                usage_and_exit()
+            elif name == "--dbname":
+                dbname = value
+            elif name == "--force":
+                force = True
+            elif name == "--hostname":
+                hostname = value
+            elif name == "--port":
+                port = value
+            elif name == "--username":
+                username = value
+            elif name == "--password":
+                password = value
+            elif name == "--version":
+                try:
+                    version = ".".join([str(x) for x in version_triplet(value)])
+                except Exception:
+                    usage_and_exit("Invalid version specified")
+            elif subprocess.has_timeout and name == "--timeout":
+                timeout = int(value)
+
+        # Prompt for information not provided via command-line options.
+        if hostname is None:
+            hostname = input("MySQL Hostname (leave blank for default): ")
+        if port is None:
+            port = input("MySQL Port (leave blank for default): ")
+        if username is None:
+            username = input("MySQL User: ")
+        if password is None:
+            password = input("MySQL Password: ")
+        if dbname is None:
+            dbname = input("ViewVC Database Name [default: ViewVC]: ") or "ViewVC"
+
+        # Calculate command arguments.
+        cmd_args = [(f"--user={username}"), (f"--password={password}")]
+        if hostname or port:
+            cmd_args.append("--protocol=TCP")
+        if hostname:
+            cmd_args.append(f"--host={hostname}")
+        if port:
+            cmd_args.append(f"--port={port}")
+
+        # Create the database.
+        schema = select_schema(version)
+        print(f"Selected database schema version {schema['schema_version']}")
+        if not schema["supported"]:
+            print(
+                "WARNING: You've selected a database schema that is not supported "
+                "by this version of ViewVC."
+            )
+
+        schema_script = open(
+            os.path.join(os.path.dirname(__file__), f"schema_{schema['schema_version']}.sql")
+        ).read()
+        dscript = force and DATABASE_DROP or ""
+        dscript = dscript + DATABASE_CREATE + schema_script
+        dscript = dscript.replace("<dbname>", dbname)
+
+        cmdline = ["mysql"] + cmd_args
+        mysql = subprocess.Popen(
+            cmdline,
+            bufsize=-1,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            close_fds=(sys.platform != "win32"),
+        )
+        if subprocess.has_timeout:
+            try:
+                stdout_data = mysql.communicate(input=dscript, timeout=timeout)[0]
+                status = mysql.returncode
+            except subprocess.TimeoutExpired:
+                mysql.kill()
+                stdout_data = mysql.communicate()[0]
+                stdout_data += "\n[ERROR] Timeout expired while calling mysql process"
+                status = -1
+        else:
+            stdout_data = mysql.communicate(input=dscript)[0]
+            status = mysql.returncode
+        print(stdout_data)
+        if status:
+            print("[ERROR] The database did not create successfully.")
+            print("Script was:")
+            print(enumerated_script(dscript))
+            sys.exit(1)
+
+        print("Database created successfully.  Don't forget to configure the ")
+        print("[cvsdb] section of your viewvc.conf file.")
+    except KeyboardInterrupt:
+        pass
+    sys.exit(0)

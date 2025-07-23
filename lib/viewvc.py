@@ -157,27 +157,21 @@ class Request:
 
         # Process the query params.
         for name, values in self.server.params().items():
-            # we only care about the first value
+            # We only care about the first value.
             value = values[0]
 
-            # patch up old queries that use 'cvsroot' to look like they used 'root'
+            # Redirect up old queries that use 'cvsroot' to look like they used 'root',
+            # and so the same with 'only_with_tag' and 'pathrev'.
             if name == "cvsroot":
                 name = "root"
                 needs_redirect = 1
-
-            # same for 'only_with_tag' and 'pathrev'
             if name == "only_with_tag":
                 name = "pathrev"
                 needs_redirect = 1
 
-            # redirect view=rev to view=revision
+            # The 'revision' view used to be called 'rev', so redirect for that.
             if name == "view" and value == "rev":
                 value = "revision"
-                needs_redirect = 1
-
-            # redirect view=query and view=queryform to view=roots
-            if name == "view" and value in ("query", "queryform"):
-                value = "roots"
                 needs_redirect = 1
 
             # Validate the parameter.  A successful return means the parameter
@@ -189,13 +183,9 @@ class Request:
         # Resolve the view parameter into a handler function.
         self.view_func = _views.get(self.query_dict.get("view", None), self.view_func)
 
-        # Process PATH_INFO component of query string
-        path_info = self.server.getenv("PATH_INFO", "")
-
-        # clean it up. this removes duplicate '/' characters and any that may
+        # Process the PATH_INFO, cleaning up duplicate '/' characters and any that may
         # exist at the front or end of the path.
-        #
-        # TODO: we might want to redirect to the cleaned up URL
+        path_info = self.server.getenv("PATH_INFO", "")
         path_parts = _path_parts(path_info)
 
         # Protect against directory traversal attacks.
@@ -742,75 +732,75 @@ _re_validate_boolint = re.compile("^[01]$")
 # when comparing two revs, we sometimes construct REV:SYMBOL, so ':' is needed
 _re_validate_revnum = re.compile("^[-_.a-zA-Z0-9:~\\[\\]/]*$")
 
+# date time values
+_re_validate_datetime = re.compile(r"^(\d\d\d\d-\d\d-\d\d(\s+\d\d:\d\d" r"(:\d\d)?)?)?$")
 
 # The legal query parameters and their validator functions/regexes.
 #
-# Parameters with a 'None' validator are not used anymore, but are kept
-# around so that bookmarked URLs still "work" (for some definition thereof).
-# They will be completely ignored by ViewVC.
+# Parameters with a 'None' validator will be dropped from the query_dict,
+# but are nominally "accepted" for compatibility with old bookmarked URLs.
 _legal_params = {
-    "root": _validate_any,
-    "view": _validate_view,
-    "search": _validate_regex,
-    "p1": _validate_any,
-    "p2": _validate_any,
+    # common parameters
+    "annotate": _re_validate_revnum,
+    "content-type": _validate_mimetype,
+    "diff_format": _re_validate_alpha,
+    "dir_pagestart": _re_validate_number,
+    "graph": _re_validate_revnum,
     "hideattic": _re_validate_boolint,
     "limit_changes": _re_validate_number,
+    "log_pagestart": _re_validate_number,
+    "logsort": _re_validate_alpha,
+    "makeimage": _re_validate_boolint,
+    "p1": _validate_any,
+    "p2": _validate_any,
+    "pathrev": _re_validate_revnum,
+    "r1": _re_validate_revnum,
+    "r2": _re_validate_revnum,
+    "revision": _re_validate_revnum,
+    "root": _validate_any,
+    "search": _validate_regex,
     "sortby": _re_validate_alpha,
     "sortdir": _re_validate_alpha,
-    "logsort": _re_validate_alpha,
-    "diff_format": _re_validate_alpha,
-    "pathrev": _re_validate_revnum,
-    "dir_pagestart": _re_validate_number,
-    "log_pagestart": _re_validate_number,
-    "annotate": _re_validate_revnum,
-    "graph": _re_validate_revnum,
-    "makeimage": _re_validate_boolint,
-    "r1": _re_validate_revnum,
     "tr1": _re_validate_revnum,
-    "r2": _re_validate_revnum,
     "tr2": _re_validate_revnum,
-    "revision": _re_validate_revnum,
-    "content-type": _validate_mimetype,
+    "view": _validate_view,
     # for cvsgraph
-    "gflip": _re_validate_boolint,
     "gbbox": _re_validate_boolint,
-    "gshow": _re_validate_alpha,
+    "gflip": _re_validate_boolint,
     "gleft": _re_validate_boolint,
     "gmaxtag": _re_validate_number,
+    "gshow": _re_validate_alpha,
+    # for the query view
+    "branch_match": _re_validate_alpha,
+    "branch": _validate_any,
+    "comment_match": _re_validate_alpha,
+    "comment": _validate_any,
+    "date": _re_validate_alpha,
+    "dir": _validate_any,
+    "file_match": _re_validate_alpha,
+    "file": _validate_any,
+    "format": _re_validate_alpha,
+    "hours": _re_validate_number,
+    "maxdate": _re_validate_datetime,
+    "mindate": _re_validate_datetime,
+    "querysort": _re_validate_alpha,
+    "who_match": _re_validate_alpha,
+    "who": _validate_any,
     # for redirect_pathrev
     "orig_path": _validate_any,
     "orig_pathtype": _validate_any,
     "orig_pathrev": _validate_any,
     "orig_view": _validate_any,
     # ---------------------------------------------------------------------
-    # DEPRECATED: The following are no longer used, but kept around so that
+    # DEPRECATED - these are no longer used, but kept around so that
     # bookmarked URLs still "work" (for some definition thereof) after a
     # ViewVC upgrade.
     # ---------------------------------------------------------------------
-    # query/queryform views - removed in ViewVC 1.3
-    "file_match": None,
-    "branch_match": None,
-    "who_match": None,
-    "comment_match": None,
-    "dir": None,
-    "file": None,
-    "branch": None,
-    "who": None,
-    "comment": None,
-    "querysort": None,
-    "date": None,
-    "hours": None,
-    "mindate": None,
-    "maxdate": None,
-    "format": None,
-    # old limit parameter - removed in ViewVC 1.2
-    "limit": None,
-    # miscellaneous - removed in ViewVC 1.1
-    "parent": None,
-    "rev": None,
-    "tarball": None,
     "hidecvsroot": None,
+    "limit": None,
+    "parent": _re_validate_boolint,
+    "rev": None,
+    "tarball": _re_validate_boolint,
 }
 
 
@@ -1640,6 +1630,7 @@ def common_template_data(request, revision=None, mime_type=None):
             "nav_path": nav_path(request),
             "pathtype": None,
             "prefer_markup": ezt.boolean(0),
+            "queryform_href": None,
             "rev": None,
             "revision_href": None,
             "rootname": (request.rootname and request.server.escape(request.rootname) or None),
@@ -1710,6 +1701,27 @@ def common_template_data(request, revision=None, mime_type=None):
 
             data["log_href"] = request.get_url(view_func=view_log, params={}, escape=1)
 
+    if is_querydb_nonempty_for_root(request):
+        if request.pathtype == vclib.DIR:
+            params = {}
+            if request.roottype == "cvs" and request.pathrev:
+                params["branch"] = request.pathrev
+            data["queryform_href"] = request.get_url(
+                view_func=view_queryform, params=params, escape=1
+            )
+            data["rss_href"] = request.get_url(
+                view_func=view_query, params={"date": "month", "format": "rss"}, escape=1
+            )
+        elif request.pathtype == vclib.FILE:
+            parts = _path_parts(request.where)
+            where = _path_join(parts[:-1])
+            data["rss_href"] = request.get_url(
+                view_func=view_query,
+                where=where,
+                pathtype=request.pathtype,
+                params={"date": "month", "format": "rss", "file": parts[-1], "file_match": "exact"},
+                escape=1,
+            )
     return data
 
 
@@ -3687,12 +3699,12 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2, sym1=None, sym2=
 
     if log_rev1 and log_rev1 != rev1:
         raise ViewVCException(
-            "rcsdiff found revision %s, but expected " "revision %s" % (log_rev1, rev1),
+            "rcsdiff found revision %s, but expected revision %s" % (log_rev1, rev1),
             "500 Internal Server Error",
         )
     if log_rev2 and log_rev2 != rev2:
         raise ViewVCException(
-            "rcsdiff found revision %s, but expected " "revision %s" % (log_rev2, rev2),
+            "rcsdiff found revision %s, but expected revision %s" % (log_rev2, rev2),
             "500 Internal Server Error",
         )
     headers = "".join(header_lines)
@@ -3798,7 +3810,7 @@ def view_patch(request):
     mime_type2, encoding2 = calculate_mime_type(request, p2, rev2)
     if is_binary_file_mime_type(mime_type1, cfg) or is_binary_file_mime_type(mime_type2, cfg):
         raise ViewVCException(
-            "Display of binary file content disabled " "by configuration", "403 Forbidden"
+            "Display of binary file content disabled by configuration", "403 Forbidden"
         )
 
     # In the absence of a format dictation in the CGI params, we'll let
@@ -4137,7 +4149,7 @@ def view_diff(request):
     mime_type2, encoding2 = calculate_mime_type(request, p2, rev2)
     if is_binary_file_mime_type(mime_type1, cfg) or is_binary_file_mime_type(mime_type2, cfg):
         raise ViewVCException(
-            "Display of binary file content disabled " "by configuration", "403 Forbidden"
+            "Display of binary file content disabled by configuration", "403 Forbidden"
         )
 
     # since templates are in use and subversion allows changes to the dates,
@@ -4465,7 +4477,7 @@ def download_tarball(request):
 def view_revision(request):
     if request.roottype != "svn":
         raise ViewVCException(
-            "Revision view not supported for CVS repositories " "at this time.", "400 Bad Request"
+            "Revision view not supported for CVS repositories at this time.", "400 Bad Request"
         )
 
     cfg = request.cfg
@@ -4650,6 +4662,643 @@ def view_revision(request):
     generate_page(request, "revision", data)
 
 
+def is_query_supported(request):
+    """Returns true if querying is supported for the given path."""
+    return (
+        request.cfg.cvsdb.enabled
+        and request.pathtype == vclib.DIR
+        and request.roottype in ["cvs", "svn"]
+    )
+
+
+def is_querydb_nonempty_for_root(request):
+    """Return 1 iff commits database integration is supported *and* the
+    current root is found in that database.  Only does this check if
+    check_database is set to 1."""
+    if request.cfg.cvsdb.enabled and request.roottype in ["cvs", "svn"]:
+        if request.cfg.cvsdb.check_database_for_root:
+            global cvsdb
+            import cvsdb
+
+            db = cvsdb.ConnectDatabaseReadOnly(request.cfg)
+            repos_root, repos_dir = cvsdb.FindRepository(db, request.rootpath)
+            if repos_root:
+                return 1
+        else:
+            return 1
+    return 0
+
+
+def validate_query_args(request):
+    # Do some additional input validation of query form arguments beyond
+    # what is offered by the CGI param validation loop in Request.run_viewvc().
+
+    for arg_base in ["branch", "file", "comment", "who"]:
+        # First, make sure the the XXX_match args have valid values:
+        arg_match = arg_base + "_match"
+        arg_match_value = request.query_dict.get(arg_match, "exact")
+        if arg_match_value not in ("exact", "like", "glob", "regex", "notregex"):
+            raise ViewVCException(
+                'An illegal value was provided for the "%s" parameter.' % (arg_match),
+                "400 Bad Request",
+            )
+
+        # Now, for those args which are supposed to be regular expressions (per
+        # their corresponding XXX_match values), make sure they are.
+        if arg_match_value == "regex" or arg_match_value == "notregex":
+            arg_base_value = request.query_dict.get(arg_base)
+            if arg_base_value:
+                try:
+                    re.compile(arg_base_value)
+                except Exception:
+                    raise ViewVCException(
+                        'An illegal value was provided for the "%s" parameter.' % (arg_base),
+                        "400 Bad Request",
+                    )
+
+
+def view_queryform(request):
+    cfg = request.cfg
+
+    if not is_query_supported(request):
+        raise ViewVCException(
+            'Can not query project root "%s" at "%s".' % (request.rootname, request.where),
+            "403 Forbidden",
+        )
+
+    # Do some more precise input validation.
+    validate_query_args(request)
+
+    query_action, query_hidden_values = request.get_form(
+        view_func=view_query, params={"limit_changes": None}
+    )
+    limit_changes = int(request.query_dict.get("limit_changes", cfg.options.limit_changes))
+
+    def escaped_query_dict_get(itemname, itemdefault=""):
+        return request.server.escape(request.query_dict.get(itemname, itemdefault))
+
+    data = common_template_data(request)
+    data.merge(
+        TemplateData(
+            {
+                "branch": escaped_query_dict_get("branch", ""),
+                "branch_match": escaped_query_dict_get("branch_match", "exact"),
+                "dir": escaped_query_dict_get("dir", ""),
+                "file": escaped_query_dict_get("file", ""),
+                "file_match": escaped_query_dict_get("file_match", "exact"),
+                "who": escaped_query_dict_get("who", ""),
+                "who_match": escaped_query_dict_get("who_match", "exact"),
+                "comment": escaped_query_dict_get("comment", ""),
+                "comment_match": escaped_query_dict_get("comment_match", "exact"),
+                "querysort": escaped_query_dict_get("querysort", "date"),
+                "date": escaped_query_dict_get("date", "hours"),
+                "hours": escaped_query_dict_get("hours", "2"),
+                "mindate": escaped_query_dict_get("mindate", ""),
+                "maxdate": escaped_query_dict_get("maxdate", ""),
+                "query_action": query_action,
+                "query_hidden_values": query_hidden_values,
+                "limit_changes": limit_changes,
+                "dir_href": request.get_url(view_func=view_directory, params={}, escape=1),
+            }
+        )
+    )
+    generate_page(request, "query_form", data)
+
+
+def parse_date(datestr):
+    """Parse a date string from the query form."""
+
+    match = re.match(r"^(\d\d\d\d)-(\d\d)-(\d\d)(?:\ +" r"(\d\d):(\d\d)(?::(\d\d))?)?$", datestr)
+    if match:
+        year = int(match.group(1))
+        month = int(match.group(2))
+        day = int(match.group(3))
+        hour = match.group(4)
+        if hour is not None:
+            hour = int(hour)
+        else:
+            hour = 0
+        minute = match.group(5)
+        if minute is not None:
+            minute = int(minute)
+        else:
+            minute = 0
+        second = match.group(6)
+        if second is not None:
+            second = int(second)
+        else:
+            second = 0
+        # return a "seconds since epoch" value assuming date given in UTC
+        tm = (year, month, day, hour, minute, second, 0, 0, 0)
+        return calendar.timegm(tm)
+    else:
+        return None
+
+
+def english_query(request):
+    """Generate a sentance describing the query."""
+    cfg = request.cfg
+    ret = ["Checkins "]
+    dir = request.query_dict.get("dir", "")
+    if dir:
+        ret.append("to ")
+        if "," in dir:
+            ret.append("subdirectories")
+        else:
+            ret.append("subdirectory")
+        ret.append(" <em>%s</em> " % request.server.escape(dir))
+    file = request.query_dict.get("file", "")
+    if file:
+        if len(ret) != 1:
+            ret.append("and ")
+        ret.append("to file <em>%s</em> " % request.server.escape(file))
+    who = request.query_dict.get("who", "")
+    branch = request.query_dict.get("branch", "")
+    if branch:
+        ret.append("on branch <em>%s</em> " % request.server.escape(branch))
+    else:
+        ret.append("on all branches ")
+    comment = request.query_dict.get("comment", "")
+    if comment:
+        ret.append("with comment <i>%s</i> " % request.server.escape(comment))
+    if who:
+        ret.append("by <em>%s</em> " % request.server.escape(who))
+    date = request.query_dict.get("date", "hours")
+    if date == "hours":
+        ret.append(
+            "in the last %s hours" % request.server.escape(request.query_dict.get("hours", "2"))
+        )
+    elif date == "day":
+        ret.append("in the last day")
+    elif date == "week":
+        ret.append("in the last week")
+    elif date == "month":
+        ret.append("in the last month")
+    elif date == "all":
+        ret.append("since the beginning of time")
+    elif date == "explicit":
+        mindate = request.query_dict.get("mindate", "")
+        maxdate = request.query_dict.get("maxdate", "")
+        if mindate and maxdate:
+            w1, w2 = "between", "and"
+        else:
+            w1, w2 = "since", "before"
+        if mindate:
+            mindate = make_time_string(parse_date(mindate), cfg)
+            ret.append("%s <em>%s</em> " % (w1, mindate))
+        if maxdate:
+            maxdate = make_time_string(parse_date(maxdate), cfg)
+            ret.append("%s <em>%s</em> " % (w2, maxdate))
+    return "".join(ret)
+
+
+def prev_rev(rev):
+    """Returns a string representing the previous revision of the argument."""
+    r = rev.split(".")
+    # decrement final revision component
+    r[-1] = str(int(r[-1]) - 1)
+    # prune if we pass the beginning of the branch
+    if len(r) > 2 and r[-1] == "0":
+        r = r[:-2]
+    return ".".join(r)
+
+
+def build_commit(request, files, max_files, dir_strip, format):
+    """Return a commit object build from the information in FILES, or
+    None if no allowed files are present in the set.  DIR_STRIP is the
+    path prefix to remove from the commit object's set of files.  If
+    MAX_FILES is non-zero, it is used to limit the number of files
+    returned in the commit object.  FORMAT is the requested output
+    format of the query request."""
+
+    cfg = request.cfg
+    author = files[0].GetAuthor()
+    date = files[0].GetTime()
+    desc = files[0].GetDescription()
+    commit_rev = files[0].GetRevision()
+    len_strip = len(dir_strip)
+    commit_files = []
+    num_allowed = 0
+    plus_count = 0
+    minus_count = 0
+    found_unreadable = 0
+
+    for f in files:
+        dirname = f.GetDirectory()
+        filename = f.GetFile()
+        if dir_strip:
+            assert dirname[:len_strip] == dir_strip
+            assert len(dirname) == len_strip or dirname[len(dir_strip)] == "/"
+            dirname = dirname[(len_strip + 1) :]
+        where = dirname and ("%s/%s" % (dirname, filename)) or filename
+        rev = f.GetRevision()
+        rev_prev = prev_rev(rev)
+        commit_time = f.GetTime()
+        if commit_time:
+            commit_time = make_time_string(commit_time, cfg)
+        change_type = f.GetTypeString()
+
+        # In CVS, we can actually look at deleted revisions; in Subversion
+        # we can't -- we'll look at the previous revision instead.
+        exam_rev = rev
+        if request.roottype == "svn" and change_type == "Remove":
+            exam_rev = rev_prev
+
+        # Check path access (since the commits database logic bypasses the
+        # vclib layer and, thus, the vcauth stuff that layer uses).
+        path_parts = _path_parts(where)
+        if path_parts:
+            # Skip files in CVSROOT if asked to hide such.
+            if cfg.options.hide_cvsroot and is_cvsroot_path(request.roottype, path_parts):
+                found_unreadable = 1
+                continue
+
+            # We have to do a rare authz check here because this data comes
+            # from the CVSdb, not from the vclib providers.
+            #
+            # WARNING: The Subversion CVSdb integration logic is weak, weak,
+            # weak.  It has no ability to track copies, so complex
+            # situations like a copied directory with a deleted subfile (all
+            # in the same revision) are very ... difficult.  We've no choice
+            # but to omit as unauthorized paths the authorization logic
+            # can't find.
+            try:
+                readable = vclib.check_path_access(request.repos, path_parts, None, exam_rev)
+            except vclib.ItemNotFound:
+                readable = 0
+            if not readable:
+                found_unreadable = 1
+                continue
+
+        if request.roottype == "svn":
+            params = {"pathrev": exam_rev}
+        else:
+            params = {"revision": exam_rev, "pathrev": f.GetBranch() or None}
+
+        dir_href = request.get_url(
+            view_func=view_directory, where=dirname, pathtype=vclib.DIR, params=params, escape=1
+        )
+        log_href = request.get_url(
+            view_func=view_log, where=where, pathtype=vclib.FILE, params=params, escape=1
+        )
+        diff_href = view_href = download_href = None
+        if "markup" in cfg.options.allowed_views:
+            view_href = request.get_url(
+                view_func=view_markup, where=where, pathtype=vclib.FILE, params=params, escape=1
+            )
+        if "co" in cfg.options.allowed_views:
+            download_href = request.get_url(
+                view_func=view_checkout, where=where, pathtype=vclib.FILE, params=params, escape=1
+            )
+        if change_type == "Change":
+            diff_href_params = params.copy()
+            diff_href_params.update({"r1": rev_prev, "r2": rev, "diff_format": None})
+            diff_href = request.get_url(
+                view_func=view_diff,
+                where=where,
+                pathtype=vclib.FILE,
+                params=diff_href_params,
+                escape=1,
+            )
+        mime_type, encoding = calculate_mime_type(request, path_parts, exam_rev)
+        prefer_markup = ezt.boolean(default_view(mime_type, cfg) == view_markup)
+
+        # Update plus/minus line change count.
+        plus = int(f.GetPlusCount())
+        minus = int(f.GetMinusCount())
+        plus_count = plus_count + plus
+        minus_count = minus_count + minus
+
+        num_allowed = num_allowed + 1
+        if max_files and num_allowed > max_files:
+            continue
+
+        commit_files.append(
+            _item(
+                date=commit_time,
+                dir=request.server.escape(dirname),
+                file=request.server.escape(filename),
+                author=request.server.escape(f.GetAuthor()),
+                rev=rev,
+                branch=f.GetBranch(),
+                plus=plus,
+                minus=minus,
+                type=change_type,
+                dir_href=dir_href,
+                log_href=log_href,
+                view_href=view_href,
+                download_href=download_href,
+                prefer_markup=prefer_markup,
+                diff_href=diff_href,
+            )
+        )
+
+    # No files survived authz checks?  Let's just pretend this
+    # little commit didn't happen, shall we?
+    if not len(commit_files):
+        return None
+
+    commit = _item(
+        num_files=len(commit_files), files=commit_files, plus=plus_count, minus=minus_count
+    )
+    commit.limited_files = ezt.boolean(num_allowed > len(commit_files))
+
+    # We'll mask log messages in commits which contain unreadable paths,
+    # but even that is kinda iffy.  If a person searches for
+    # '/some/hidden/path' across log messages, then gets a response set
+    # that shows commits lacking log message, said person can reasonably
+    # assume that the log messages contained the hidden path, and that
+    # this is likely because they are referencing a real path in the
+    # repository -- a path the user isn't supposed to even know about.
+    if found_unreadable:
+        commit.log = None
+        commit.short_log = None
+    else:
+        lf = LogFormatter(request, desc)
+        htmlize = format != "rss"
+        commit.log = lf.get(maxlen=0, htmlize=htmlize)
+        commit.short_log = lf.get(maxlen=cfg.options.short_log_len, htmlize=htmlize)
+    commit.author = request.server.escape(author)
+    commit.rss_date = make_rss_time_string(date, request.cfg)
+    if request.roottype == "svn":
+        commit.rev = commit_rev
+        is_https = request.server.getenv("HTTPS") == "on"
+        commit.rss_url = "%s://%s%s" % (
+            is_https and "https" or "http",
+            request.server.getenv("HTTP_HOST"),
+            request.get_url(view_func=view_revision, params={"revision": commit.rev}, escape=1),
+        )
+    else:
+        commit.rev = None
+        commit.rss_url = None
+    return commit
+
+
+def query_backout(request, commits):
+    server_fp = get_writeready_server_file(request, "text/plain", is_text=True)
+    if not commits:
+        server_fp.write(
+            """\
+# No changes were selected by the query.
+# There is nothing to back out.
+"""
+        )
+        return
+    server_fp.write(
+        """\
+# This page can be saved as a shell script and executed.
+# It should be run at the top of your work area.  It will update
+# your working copy to back out the changes selected by the
+# query.
+"""
+    )
+    for commit in commits:
+        for fileinfo in commit.files:
+            if request.roottype == "cvs":
+                server_fp.write(
+                    "cvs update -j %s -j %s %s/%s\n"
+                    % (fileinfo.rev, prev_rev(fileinfo.rev), fileinfo.dir, fileinfo.file)
+                )
+            elif request.roottype == "svn":
+                server_fp.write(
+                    "svn merge -r %s:%s %s/%s\n"
+                    % (fileinfo.rev, prev_rev(fileinfo.rev), fileinfo.dir, fileinfo.file)
+                )
+
+
+def view_query(request):
+    if not is_query_supported(request):
+        raise ViewVCException(
+            'Can not query project root "%s" at "%s".' % (request.rootname, request.where),
+            "403 Forbidden",
+        )
+
+    cfg = request.cfg
+
+    # Do some more precise input validation.
+    validate_query_args(request)
+
+    # get form data
+    branch = request.query_dict.get("branch", "")
+    branch_match = request.query_dict.get("branch_match", "exact")
+    dir = request.query_dict.get("dir", "")
+    file = request.query_dict.get("file", "")
+    file_match = request.query_dict.get("file_match", "exact")
+    who = request.query_dict.get("who", "")
+    who_match = request.query_dict.get("who_match", "exact")
+    comment = request.query_dict.get("comment", "")
+    comment_match = request.query_dict.get("comment_match", "exact")
+    querysort = request.query_dict.get("querysort", "date")
+    date = request.query_dict.get("date", "hours")
+    hours = request.query_dict.get("hours", "2")
+    mindate = request.query_dict.get("mindate", "")
+    maxdate = request.query_dict.get("maxdate", "")
+    format = request.query_dict.get("format")
+    limit_changes = int(request.query_dict.get("limit_changes", cfg.options.limit_changes))
+
+    match_types = {
+        "exact": 1,
+        "like": 1,
+        "glob": 1,
+        "regex": 1,
+        "notregex": 1,
+    }
+    sort_types = {
+        "date": 1,
+        "author": 1,
+        "file": 1,
+    }
+    date_types = {
+        "hours": 1,
+        "day": 1,
+        "week": 1,
+        "month": 1,
+        "all": 1,
+        "explicit": 1,
+    }
+
+    # parse various fields, validating or converting them
+    if branch_match not in match_types:
+        branch_match = "exact"
+    if file_match not in match_types:
+        file_match = "exact"
+    if who_match not in match_types:
+        who_match = "exact"
+    if comment_match not in match_types:
+        comment_match = "exact"
+    if querysort not in sort_types:
+        querysort = "date"
+    if date not in date_types:
+        date = "hours"
+    mindate = parse_date(mindate)
+    maxdate = parse_date(maxdate)
+
+    global cvsdb
+    import cvsdb
+
+    db = cvsdb.ConnectDatabaseReadOnly(cfg)
+    repos_root, repos_dir = cvsdb.FindRepository(db, request.rootpath)
+    if not repos_root:
+        raise ViewVCException(
+            "The root '%s' was not found in the commit database " % request.rootname
+        )
+
+    # create the database query from the form data
+    query = cvsdb.CreateCheckinQuery()
+    query.SetRepository(repos_root)
+    # treat "HEAD" specially ...
+    if branch_match == "exact" and branch == "HEAD":
+        query.SetBranch("")
+    elif branch:
+        query.SetBranch(branch, branch_match)
+    if dir:
+        for subdir in dir.split(","):
+            path = _path_join(repos_dir + request.path_parts + _path_parts(subdir.strip()))
+            query.SetDirectory(path, "exact")
+            query.SetDirectory("%s/%%" % cvsdb.EscapeLike(path), "like")
+    else:
+        where = _path_join(repos_dir + request.path_parts)
+        if where:  # if we are in a subdirectory ...
+            query.SetDirectory(where, "exact")
+            query.SetDirectory("%s/%%" % cvsdb.EscapeLike(where), "like")
+    if file:
+        query.SetFile(file, file_match)
+    if who:
+        query.SetAuthor(who, who_match)
+    if comment:
+        query.SetComment(comment, comment_match)
+    query.SetSortMethod(querysort)
+    if date == "hours":
+        query.SetFromDateHoursAgo(int(hours))
+    elif date == "day":
+        query.SetFromDateDaysAgo(1)
+    elif date == "week":
+        query.SetFromDateDaysAgo(7)
+    elif date == "month":
+        query.SetFromDateDaysAgo(31)
+    elif date == "all":
+        pass
+    elif date == "explicit":
+        if mindate is not None:
+            query.SetFromDateObject(mindate)
+        if maxdate is not None:
+            query.SetToDateObject(maxdate)
+
+    # Set the admin-defined (via configuration) row limits.  This is to avoid
+    # slamming the database server with a monster query.
+    if format == "rss":
+        query.SetLimit(cfg.cvsdb.rss_row_limit)
+    else:
+        query.SetLimit(cfg.cvsdb.row_limit)
+
+    # run the query
+    db.RunQuery(query)
+    commit_list = query.GetCommitList()
+    row_limit_reached = query.GetLimitReached()
+
+    # gather commits
+    commits = []
+    plus_count = 0
+    minus_count = 0
+    mod_time = -1
+    if commit_list:
+        files = []
+        current_desc = commit_list[0].GetDescriptionID()
+        current_rev = commit_list[0].GetRevision()
+        dir_strip = _path_join(repos_dir)
+
+        for commit in commit_list:
+            commit_desc = commit.GetDescriptionID()
+            commit_rev = commit.GetRevision()
+
+            # base modification time on the newest commit
+            if commit.GetTime() > mod_time:
+                mod_time = commit.GetTime()
+
+            # For CVS, group commits with the same commit message.
+            # For Subversion, group them only if they have the same revision number
+            if request.roottype == "cvs":
+                if current_desc == commit_desc:
+                    files.append(commit)
+                    continue
+            else:
+                if current_rev == commit_rev:
+                    files.append(commit)
+                    continue
+
+            # append this grouping
+            commit_item = build_commit(request, files, limit_changes, dir_strip, format)
+            if commit_item:
+                # update running plus/minus totals
+                plus_count = plus_count + commit_item.plus
+                minus_count = minus_count + commit_item.minus
+                commits.append(commit_item)
+
+            files = [commit]
+            current_desc = commit_desc
+            current_rev = commit_rev
+
+        # we need to tack on our last commit grouping, if any
+        commit_item = build_commit(request, files, limit_changes, dir_strip, format)
+        if commit_item:
+            # update running plus/minus totals
+            plus_count = plus_count + commit_item.plus
+            minus_count = minus_count + commit_item.minus
+            commits.append(commit_item)
+
+    # only show the branch column if we are querying all branches
+    # or doing a non-exact branch match on a CVS repository.
+    show_branch = ezt.boolean(
+        request.roottype == "cvs" and (branch == "" or branch_match != "exact")
+    )
+
+    # backout link
+    params = request.query_dict.copy()
+    params["format"] = "backout"
+    backout_href = request.get_url(params=params, escape=1)
+
+    # link to zero limit_changes value
+    params = request.query_dict.copy()
+    params["limit_changes"] = 0
+    limit_changes_href = request.get_url(params=params, escape=1)
+
+    # if we got any results, use the newest commit as the modification time
+    if mod_time >= 0:
+        if check_freshness(request, mod_time):
+            return
+
+    if format == "backout":
+        query_backout(request, commits)
+        return
+
+    data = common_template_data(request)
+    data.merge(
+        TemplateData(
+            {
+                "sql": request.server.escape(db.CreateSQLQueryString(query)),
+                "english_query": english_query(request),
+                "queryform_href": request.get_url(view_func=view_queryform, escape=1),
+                "backout_href": backout_href,
+                "plus_count": plus_count,
+                "minus_count": minus_count,
+                "show_branch": show_branch,
+                "querysort": querysort,
+                "commits": commits,
+                "row_limit_reached": ezt.boolean(row_limit_reached),
+                "limit_changes": limit_changes,
+                "limit_changes_href": limit_changes_href,
+                "rss_link_href": request.get_url(
+                    view_func=view_query, params={"date": "month"}, escape=1, prefix=1
+                ),
+            }
+        )
+    )
+    if format == "rss":
+        generate_page(request, "rss", data, "application/rss+xml")
+    else:
+        generate_page(request, "query_results", data)
+
+
 _views = {
     "annotate": view_annotate,
     "co": view_checkout,
@@ -4661,6 +5310,8 @@ _views = {
     "log": view_log,
     "markup": view_markup,
     "patch": view_patch,
+    "query": view_query,
+    "queryform": view_queryform,
     "revision": view_revision,
     "roots": view_roots,
     "tar": download_tarball,

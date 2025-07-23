@@ -59,6 +59,13 @@ FILE_INFO_LIST = [
     ("bin/wsgi/viewvc.wsgi", "bin/wsgi/viewvc.wsgi", 0o0755, 1, 0, 0),
     ("bin/wsgi/viewvc.fcgi", "bin/wsgi/viewvc.fcgi", 0o0755, 1, 0, 0),
     ("bin/standalone.py", "bin/standalone.py", 0o0755, 1, 0, 0),
+    ("bin/db/loginfo-handler", "bin/db/loginfo-handler", 0o0755, 1, 0, 0),
+    ("bin/db/cvsdbadmin", "bin/db/cvsdbadmin", 0o0755, 1, 0, 0),
+    ("bin/db/svndbadmin", "bin/db/svndbadmin", 0o0755, 1, 0, 0),
+    ("bin/db/make-database", "bin/db/make-database", 0o0755, 1, 0, 0),
+    ("bin/db/schema_0.sql", "bin/db/schema_0.sql", 0o0644, 1, 0, 0),
+    ("bin/db/schema_1.sql", "bin/db/schema_1.sql", 0o0644, 1, 0, 0),
+    ("bin/db/schema_2.sql", "bin/db/schema_2.sql", 0o0644, 1, 0, 0),
     ("conf/viewvc.conf.dist", "viewvc.conf.dist", 0o0644, 0, 0, 0),
     ("conf/viewvc.conf.dist", "viewvc.conf", 0o0644, 0, 1, 0),
     ("conf/cvsgraph.conf.dist", "cvsgraph.conf.dist", 0o0644, 0, 0, 0),
@@ -196,7 +203,7 @@ def install_file(src_path, dst_path, mode, subst_path_vars, prompt_replace, comp
                 while 1:
                     name, ext = os.path.splitext(src_path)
                     if ext in BINARY_FILE_EXTS:
-                        temp = input("Do you want to [O]verwrite or " "[D]o not overwrite? ")
+                        temp = input("Do you want to [O]verwrite or [D]o not overwrite? ")
                     else:
                         temp = input(
                             "Do you want to [O]verwrite, [D]o "
@@ -348,7 +355,7 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
         else:
             print("File %s does not belong in ViewVC %s." % (dst_path, version))
             while 1:
-                temp = input("Do you want to [D]elete it, or [L]eave " "it as is? ")
+                temp = input("Do you want to [D]elete it, or [L]eave it as is? ")
                 temp = temp[0].lower()
                 if temp == "l":
                     delete = 0
@@ -452,7 +459,7 @@ Just hit [Enter] if a default is okay.
     if DESTDIR is None:
         default = ""
         temp = input(
-            "DESTDIR path (generally only used by package " "maintainers) [%s]: " % (default)
+            "DESTDIR path (generally only used by package maintainers) [%s]: " % (default)
         ).strip()
         print()
         if len(temp):
