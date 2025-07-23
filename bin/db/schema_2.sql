@@ -4,7 +4,7 @@ CREATE TABLE branches (
   branch varchar(64) DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE branch (branch)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB ROW_FORMAT DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 DROP TABLE IF EXISTS commits;
 CREATE TABLE commits (
@@ -28,7 +28,7 @@ CREATE TABLE commits (
   KEY fileid (fileid),
   KEY branchid (branchid),
   KEY descid (descid)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB ROW_FORMAT DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 DROP TABLE IF EXISTS descs;
 CREATE TABLE descs (
@@ -37,7 +37,7 @@ CREATE TABLE descs (
   hash bigint(20) DEFAULT '0' NOT NULL,
   PRIMARY KEY (id),
   KEY hash (hash)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB ROW_FORMAT DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 DROP TABLE IF EXISTS dirs;
 CREATE TABLE dirs (
@@ -45,7 +45,7 @@ CREATE TABLE dirs (
   dir varchar(255) DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE dir (dir)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB ROW_FORMAT DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 DROP TABLE IF EXISTS files;
 CREATE TABLE files (
@@ -53,7 +53,7 @@ CREATE TABLE files (
   file varchar(255) DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE file (file)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB ROW_FORMAT DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 DROP TABLE IF EXISTS people;
 CREATE TABLE people (
@@ -61,7 +61,7 @@ CREATE TABLE people (
   who varchar(128) DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE who (who)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB ROW_FORMAT DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 DROP TABLE IF EXISTS repositories;
 CREATE TABLE repositories (
@@ -69,7 +69,7 @@ CREATE TABLE repositories (
   repository varchar(64) DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
   UNIQUE repository (repository)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB ROW_FORMAT DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 DROP TABLE IF EXISTS tags;
 CREATE TABLE tags (
@@ -83,7 +83,7 @@ CREATE TABLE tags (
   KEY dirid (dirid),
   KEY fileid (fileid),
   KEY branchid (branchid)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB ROW_FORMAT DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 DROP TABLE IF EXISTS metadata;
 CREATE TABLE metadata (
@@ -91,5 +91,5 @@ CREATE TABLE metadata (
   value text,
   PRIMARY KEY (name),
   UNIQUE name (name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB ROW_FORMAT DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 INSERT INTO metadata (name, value) VALUES ('version', '2');
