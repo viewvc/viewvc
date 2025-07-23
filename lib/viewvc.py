@@ -1170,14 +1170,14 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
     MIME_TYPE.
 
     The object's members include:
-       view_href
+       annotate_href
        download_href
        download_text_href
-       annotate_href
-       revision_href
-       prefer_markup
-       is_viewable_image
        is_binary
+       is_viewable_image
+       prefer_markup
+       revision_href
+       view_href
 
     """
 
