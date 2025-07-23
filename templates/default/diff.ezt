@@ -34,20 +34,20 @@
 <h3>Diff Legend</h3>
 <table class="auto" cellspacing="0">
 <tr>
- <td class="vc_diff_plusminus"><strong style="color: red;">&ndash;</strong></td>
+ <td class="vc_diff_plusminus vc_diff_minus">&ndash;</td>
  <td class="vc_diff_remove">Removed lines</td>
 </tr>
 <tr>
- <td class="vc_diff_plusminus"><strong style="color: green;">+</strong></td>
+ <td class="vc_diff_plusminus vc_diff_plus">+</td>
  <td class="vc_diff_add">Added lines</td>
 </tr>
 <tr>
- <td class="vc_diff_plusminus"><strong style="color: yellow;">&lt;</strong></td>
- <td class="vc_diff_changes1">Changed lines</td>
+ <td class="vc_diff_plusminus vc_diff_change_old">&lt;</td>
+ <td class="vc_diff_changes1">Changed lines (old)</td>
 </tr>
 <tr>
- <td class="vc_diff_plusminus"><strong style="color: yellow;">&gt;</strong></td>
- <td class="vc_diff_changes2">Changed lines</td>
+ <td class="vc_diff_plusminus vc_diff_change_new">&gt;</td>
+ <td class="vc_diff_changes2">Changed lines (new)</td>
 </tr>
 </table>
 [end]

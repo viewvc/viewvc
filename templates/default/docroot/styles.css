@@ -153,10 +153,7 @@ address { font-style: normal; display: inline; }
   text-align: left;
   vertical-align: top;
   border-bottom: 1px solid black;
-  background-color: rgb(80%,80%,80%);
-}
-.vc_header_sort {
-  background-color: rgb(85%,85%,85%);
+  background-color: #d0d775;
 }
 
 
@@ -350,6 +347,13 @@ address { font-style: normal; display: inline; }
 
 
 /*** Diff Styles ***/
+.vc_diff td { padding: 1px 5px; }
+.vc_diff_line_number {
+  border-right: 1px solid #505050;
+  background-color: #eeeeee;
+  color: #505050;
+  text-align: right;
+}
 .vc_diff_plusminus { width: 1em; }
 .vc_diff_remove, .vc_diff_add, .vc_diff_changes1, .vc_diff_changes2 { 
   font-family: monospace; 
@@ -359,14 +363,18 @@ address { font-style: normal; display: inline; }
   white-space: pre-wrap;      /* CSS3 */
   word-break: break-all;      /* IE 5.5+ */
 }
-.vc_diff_remove { background: rgb(100%,60%,60%); }
-.vc_diff_add { background: rgb(60%,100%,60%); }
-.vc_diff_changes1 { background: rgb(100%,100%,70%); color: rgb(50%,50%,50%); text-decoration: line-through; }
-.vc_diff_changes2 { background: rgb(100%,100%,0%); }
+.vc_diff_remove { background: #bd5e5e60; opacity: 0.5; }
+.vc_diff_add { background: #94bd5e60; }
+.vc_diff_changes1 { background: #bcbd5e80; opacity: 0.5; }
+.vc_diff_changes2 { background: #bcbd5e80; }
 .vc_diff_nochange, .vc_diff_binary, .vc_diff_error {
   font-family: sans-serif;
   font-size: smaller;
 }
+.vc_diff_plus { color: #94bd5e; font-weight: bold; }
+.vc_diff_minus { color: #bd5e5e; font-weight: bold; }
+.vc_diff_change_old { color: #bcbd5e; font-weight: bold; }
+.vc_diff_change_new { color: #bcbd5e; font-weight: bold; }
 
 /*** Intraline Diff Styles ***/
 .vc_idiff_add {

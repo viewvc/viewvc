@@ -50,12 +50,12 @@
   [define change_right][end]
   [define last_change_type][end]
 
-  <table cellspacing="0" cellpadding="0" style="margin-top: 1em; margin-left: 2em;">
+  <table class="vc_diff" cellspacing="0" cellpadding="0" style="margin-top: 1em; margin-left: 2em;">
   [for diffs.changes]
    [is diffs.changes.type "change"][else][if-any change_right][change_right][define change_right][end][end][end]
    [is diffs.changes.type "header"]
     <tr>
-      <th class="vc_header" style="width:6%;"><strong>#</strong></th>
+      <th class="vc_header" style="width: 3em;"><strong>#</strong></th>
       <th colspan="2" class="vc_header">
         <strong>Line [diffs.changes.line_info_left]</strong> |
         <strong>Line [diffs.changes.line_info_right]</strong> 
@@ -65,31 +65,31 @@
    [else]
    [is diffs.changes.type "add"]
     <tr>
-      <td id="l[diffs.changes.line_number]">[if-any diffs.right.annotate_href]<a href="[diffs.right.annotate_href]#l[diffs.changes.line_number]">[diffs.changes.line_number]</a>[else][diffs.changes.line_number][end]</td>
-      <td class="vc_diff_plusminus"><strong style="color: green;">+</strong></td>
+      <td class="vc_diff_line_number" id="l[diffs.changes.line_number]">[if-any diffs.right.annotate_href]<a href="[diffs.right.annotate_href]#l[diffs.changes.line_number]">[diffs.changes.line_number]</a>[else][diffs.changes.line_number][end]</td>
+      <td class="vc_diff_plusminus vc_diff_plus">+</td>
       <td class="vc_diff_add">[diffs.changes.right]</td>
     </tr>
    [else]
    [is diffs.changes.type "remove"]
     <tr>
-      <td style="text-decoration: line-through">[diffs.changes.line_number]</td>
-      <td class="vc_diff_plusminus"><strong style="color: red;">&ndash;</strong></td>
+      <td class="vc_diff_line_number"><span style="opacity: 0.2">[diffs.changes.line_number]</span></td>
+      <td class="vc_diff_plusminus vc_diff_minus">&ndash;</td>
       <td class="vc_diff_remove">[diffs.changes.left]</td>
     </tr>
    [else]
    [is diffs.changes.type "change"]
     [if-any diffs.changes.have_left]
     <tr>
-      <td style="text-decoration: line-through">[diffs.changes.line_number]</td>
-      <td class="vc_diff_plusminus"><strong style="color: yellow;">&lt;</strong></td>
+      <td class="vc_diff_line_number"><span style="opacity: 0.2">[diffs.changes.line_number]</span></td>
+      <td class="vc_diff_plusminus vc_diff_change_old">&lt;</td>
       <td class="vc_diff_changes1">[diffs.changes.left]</td>
     </tr>
     [end]
     [define change_right][change_right]
     [if-any diffs.changes.have_right]
     <tr>
-      <td id="l[diffs.changes.line_number]">[if-any diffs.right.annotate_href]<a href="[diffs.right.annotate_href]#l[diffs.changes.line_number]">[diffs.changes.line_number]</a>[else][diffs.changes.line_number][end]</td>
-      <td class="vc_diff_plusminus"><strong style="color: yellow;">&gt;</strong></td>
+      <td class="vc_diff_line_number" id="l[diffs.changes.line_number]">[if-any diffs.right.annotate_href]<a href="[diffs.right.annotate_href]#l[diffs.changes.line_number]">[diffs.changes.line_number]</a>[else][diffs.changes.line_number][end]</td>
+      <td class="vc_diff_plusminus vc_diff_change_new">&gt;</td>
       <td class="vc_diff_changes2">[diffs.changes.right]</td>
     </tr>
     [end]
@@ -105,7 +105,7 @@
     <tr><td colspan="3" class="vc_diff_error">[msg_error]</td></tr>
    [else][# a line of context]
     <tr>
-      <td id="l[diffs.changes.line_number]">[if-any diffs.right.annotate_href]<a href="[diffs.right.annotate_href]#l[diffs.changes.line_number]">[diffs.changes.line_number]</a>[else][diffs.changes.line_number][end]</td>
+      <td class="vc_diff_line_number" id="l[diffs.changes.line_number]">[if-any diffs.right.annotate_href]<a href="[diffs.right.annotate_href]#l[diffs.changes.line_number]">[diffs.changes.line_number]</a>[else][diffs.changes.line_number][end]</td>
       <td class="vc_diff_plusminus">&nbsp;</td>
       <td style="font-family: monospace; white-space: pre;">[diffs.changes.right]</td>
     </tr>
