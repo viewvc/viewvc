@@ -190,7 +190,7 @@ class CgiServer(Server):
 
     def getenv(self, name, value=None):
         # we should always use UTF-8 to decode OS's environment variable.
-        if sys.getfilesystemencoding() == "UTF-8":
+        if sys.getfilesystemencoding().lower() == "utf-8":
             ret = os.environ.get(name, value)
         else:
             if os.supports_bytes_environ:
