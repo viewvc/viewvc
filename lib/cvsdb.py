@@ -450,11 +450,11 @@ class CheckinDatabase:
             condList.append(temp)
 
         if query.from_date:
-            temp = '(%s.ci_when>="%s")' % (commits_table, str(query.from_date))
+            temp = "(%s.ci_when>='%s')" % (commits_table, str(query.from_date))
             condList.append(temp)
 
         if query.to_date:
-            temp = '(%s.ci_when<="%s")' % (commits_table, str(query.to_date))
+            temp = "(%s.ci_when<='%s')" % (commits_table, str(query.to_date))
             condList.append(temp)
 
         if query.sort == "date":
