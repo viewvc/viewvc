@@ -408,7 +408,17 @@ class CheckinDatabase:
             elif query_entry.match == "notregex":
                 match = " NOT REGEXP "
 
-            sqlList.append("%s%s%s" % (field, match, self.db.literal(data)))
+            # Some interfaces (such as mysqlclient) return bytestrings
+            # from the literal() call; others (like PyMySQL) do not.
+            # So we'll just detect and decode where necessary.
+            #
+            # Strictly speaking, we shouldn't even be using literal(),
+            # which not a part of the public interface.  But, yeah, we do.
+            data_literal = self.db.literal(data)
+            if isinstance(data_literal, bytes):
+                data_literal = data_literal.decode("utf-8")
+
+            sqlList.append("%s%s%s" % (field, match, data_literal))
 
         return "(%s)" % (" OR ".join(sqlList))
 
