@@ -721,7 +721,7 @@ def _validate_mimetype(value):
 
 # pass-through (no validation) functions for legal query parameters
 def _validate_any(value):
-    pass
+    return value
 
 
 # obvious things here. note that we don't need uppercase for alpha.
