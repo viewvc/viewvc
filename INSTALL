@@ -512,7 +512,7 @@ Requires:
   * One of the following database systems:
       - MySQL 5.7+ (https://www.mysql.com/)
       - MariaDB 10.2+ (https://mariadb.org/)
-  * Allow to create 1020 bytes length index key:
+  * Support for large index keys:
       - (MySQL < 8.0, MariaDB < 10.3.1 only) innodb_large_prefix
         parameter is "on" ("on" by default)
       - innodb_page_size parameter >= 8k (default is 16k)
