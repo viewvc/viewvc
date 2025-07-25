@@ -35,6 +35,7 @@ CONF_PATHNAME = None
 import sys
 import os
 import os.path
+import posixpath
 import stat
 import string
 import urllib
@@ -217,7 +218,7 @@ class ViewVCHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       path = urllib.unquote(self.path)
       query = ""
     # normalize path
-    path = os.path.normpath(path) + ("/" if path[-1] == "/" else "")
+    path = posixpath.normpath(path) + ("/" if path[-1] == "/" else "")
 
     # Is this request even aimed at ViewVC?  If not, complain.
     if not self.is_viewvc(path):
