@@ -19,6 +19,7 @@
 import sys
 import os
 import os.path
+import posixpath
 import string
 import socket
 import select
@@ -227,7 +228,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
             path = _unquote(self.path)
             query = ""
         # normalize path
-        path = os.path.normpath(path) + ("/" if path[-1] == "/" else "")
+        path = posixpath.normpath(path) + ("/" if path[-1] == "/" else "")
 
         # Is this request even aimed at ViewVC?  If not, complain.
         if not self.is_viewvc(path):
