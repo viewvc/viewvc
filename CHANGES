@@ -1,6 +1,6 @@
 Version 1.1.32 (released ??-???-????)
 
-  * 
+  * fix standalone.py Windows path handling regression (#378)
 
 Version 1.1.31 (released 21-Jul-2025)
 
