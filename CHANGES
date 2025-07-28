@@ -21,6 +21,10 @@ Version 1.3.0 (released ??-???-????)
   * new 'image' view for limited as-is image display (#360)
   * disallow patch view on non-file paths (#370)
 
+Version 1.2.5 (released 28-Jul-2025)
+
+  * fix standalone.py Windows path handling regression (#378)
+
 Version 1.2.4 (released 21-Jul-2025)
 
   * security fix: prevent standalone.py directory traversal [CVE-2025-54141]
@@ -55,6 +59,10 @@ Version 1.2.0 (released 17-Mar-2020)
   * fix bogus default ci_when value in cvsdb (#200)
   * standalone query interface removed (#206)
   * GUI support (--gui) removed from standalone.py
+
+Version 1.1.32 (released 28-Jul-2025)
+
+  * fix standalone.py Windows path handling regression (#378)
 
 Version 1.1.31 (released 21-Jul-2025)
 
