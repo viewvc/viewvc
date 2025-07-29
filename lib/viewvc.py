@@ -580,6 +580,10 @@ class Request:
         elif not url:
             url = "/"
 
+        # for the unspecified view, we can return early once the base URL is constructed.
+        if view_func is view_unspecified:
+            return url, {}
+
         # no need to explicitly specify directory view for a directory
         if view_func is view_directory and pathtype == vclib.DIR:
             view_func = None
@@ -1614,6 +1618,7 @@ def common_template_data(request, revision=None, mime_type=None):
     data = TemplateData(
         {
             "annotate_href": None,
+            "base_href": None,
             "cfg": cfg,
             "docroot": (
                 cfg.options.docroot is None
@@ -1676,6 +1681,13 @@ def common_template_data(request, revision=None, mime_type=None):
 
     if request.pathtype == vclib.FILE:
         fvi = get_file_view_info(request, request.where, data["rev"], mime_type)
+        data["base_href"] = request.get_url(
+            view_func=view_unspecified,
+            where=request.where,
+            pathtype=vclib.FILE,
+            params={},
+            escape=1,
+        )
         data["view_href"] = fvi.view_href
         data["download_href"] = fvi.download_href
         data["download_text_href"] = fvi.download_text_href
@@ -1691,6 +1703,9 @@ def common_template_data(request, revision=None, mime_type=None):
             request.repos.dirlogs(request.path_parts[:-1], request.pathrev, entries, {})
             data["lockinfo"] = entries[0].lockinfo
     elif request.pathtype == vclib.DIR:
+        data["base_href"] = request.get_url(
+            view_func=view_unspecified, where=request.where, pathtype=vclib.DIR, params={}, escape=1
+        )
         data["view_href"] = request.get_url(view_func=view_directory, params={}, escape=1)
         if "tar" in cfg.options.allowed_views:
             data["tarball_href"] = request.get_url(view_func=download_tarball, params={}, escape=1)
@@ -2502,26 +2517,27 @@ def view_directory(request):
         if is_dir_ignored_file(file.name, cfg):
             continue
         row = _item(
-            author=None,
-            log=None,
-            short_log=None,
-            state=None,
-            size=None,
-            log_file=None,
-            log_rev=None,
-            graph_href=None,
-            mime_type=None,
-            date=None,
             ago=None,
-            view_href=None,
-            log_href=None,
-            revision_href=None,
             annotate_href=None,
+            author=None,
+            base_href=None,
+            date=None,
             download_href=None,
             download_text_href=None,
-            prefer_markup=ezt.boolean(0),
-            is_viewable_image=ezt.boolean(0),
+            graph_href=None,
             is_binary=ezt.boolean(0),
+            is_viewable_image=ezt.boolean(0),
+            log_file=None,
+            log_href=None,
+            log_rev=None,
+            log=None,
+            mime_type=None,
+            prefer_markup=ezt.boolean(0),
+            revision_href=None,
+            short_log=None,
+            size=None,
+            state=None,
+            view_href=None,
         )
         if request.roottype == "cvs":
             if file.absent:
@@ -2551,6 +2567,13 @@ def view_directory(request):
                 continue
 
             dirs_displayed += 1
+            row.base_href = request.get_url(
+                view_func=view_unspecified,
+                where=file_where,
+                pathtype=vclib.DIR,
+                params={},
+                escape=1,
+            )
             row.view_href = request.get_url(
                 view_func=view_directory, where=file_where, pathtype=vclib.DIR, params={}, escape=1
             )
@@ -2601,6 +2624,13 @@ def view_directory(request):
             row.prefer_markup = fvi.prefer_markup
             row.is_viewable_image = fvi.is_viewable_image
             row.is_binary = fvi.is_binary
+            row.base_href = request.get_url(
+                view_func=view_unspecified,
+                where=file_where,
+                pathtype=vclib.FILE,
+                params={},
+                escape=1,
+            )
             row.log_href = request.get_url(
                 view_func=view_log, where=file_where, pathtype=vclib.FILE, params={}, escape=1
             )
@@ -5299,11 +5329,18 @@ def view_query(request):
         generate_page(request, "query_results", data)
 
 
+def view_unspecified():
+    # This is just a placeholder for the default view of a file or directory.  It's
+    # never called directly, but is used as a special value for the "view_func".
+    pass
+
+
 _views = {
     "annotate": view_annotate,
     "co": view_checkout,
     "diff": view_diff,
     "dir": view_directory,
+    "file": view_unspecified,
     "graph": view_cvsgraph,
     "graphimg": view_cvsgraph_image,
     "image": view_image,
