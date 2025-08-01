@@ -5329,18 +5329,18 @@ def view_query(request):
         generate_page(request, "query_results", data)
 
 
-def view_unspecified():
+def view_unspecified(request):
     # This is just a placeholder for the default view of a file or directory.  It's
     # never called directly, but is used as a special value for the "view_func".
-    pass
+    raise ViewVCException("Unsupported view type", "400 Bad Request")
 
 
 _views = {
+    "__unspecified__": view_unspecified,
     "annotate": view_annotate,
     "co": view_checkout,
     "diff": view_diff,
     "dir": view_directory,
-    "file": view_unspecified,
     "graph": view_cvsgraph,
     "graphimg": view_cvsgraph_image,
     "image": view_image,
