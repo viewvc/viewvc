@@ -25,14 +25,11 @@ from io import StringIO
 from difflib import Differ
 
 # Since there is nontrivial logic in __init__.py, we have to import
-# parse() via that file.  First make sure that the directory
-# containing this script is in the path:
-script_dir = os.path.dirname(sys.argv[0])
-sys.path.insert(0, script_dir)
-# Since there is nontrivial logic in __init__.py, we have to import
 # parse() via that file.  However, __init__.py uses relative import
 # for the package now, so we must import it as a package:
 # containing this script is in the path:
+script_dir = os.path.dirname(sys.argv[0])
+sys.path.insert(0, script_dir)
 p_dir, p_name = os.path.split(os.path.dirname(os.path.abspath(sys.argv[0])))
 sys.path.insert(0, p_dir)
 script_dir = os.path.dirname(sys.argv[0])
