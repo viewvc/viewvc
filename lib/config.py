@@ -448,6 +448,7 @@ class Config:
         self.options.log_pagesextra = 3
         self.options.limit_changes = 100
         self.options.stacktraces = 0
+        self.options.enable_debuglines = 0
 
         self.templates.diff = None
         self.templates.directory = None
