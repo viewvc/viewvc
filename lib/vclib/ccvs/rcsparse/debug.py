@@ -105,7 +105,7 @@ def time_file(fname):
 def _usage():
     print("This is normally a module for importing, but it has a couple")
     print("features for testing as an executable script.")
-    print("USAGE: %s COMMAND filename,v" % sys.argv[0])
+    print(f"USAGE: {sys.argv[0]} COMMAND filename,v")
     print("  where COMMAND is one of:")
     print('    dump: filename is "dumped" to stdout')
     print("    time: filename is parsed with the time written to stdout")

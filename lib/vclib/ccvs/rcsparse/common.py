@@ -235,8 +235,7 @@ class RCSExpected(RCSParseError):
     def __init__(self, got, wanted):
         RCSParseError.__init__(
             self,
-            "Unexpected parsing error in RCS file.\n"
-            "Expected token: %s, but saw: %s" % (wanted, got),
+            f"Unexpected parsing error in RCS file.\nExpected token: {wanted}, but saw: {got}",
         )
 
 
@@ -372,7 +371,7 @@ class _Parser:
         date_fields = [int(x) for x in date_fields]
         EPOCH = 1970
         if date_fields[0] < EPOCH:
-            raise ValueError("invalid year for revision %s" % (revision,))
+            raise ValueError(f"invalid year for revision {revision}")
         try:
             timestamp = calendar.timegm(
                 tuple(date_fields)
@@ -383,13 +382,7 @@ class _Parser:
                 )
             )
         except ValueError as e:
-            raise ValueError(
-                "invalid date for revision %s: %s"
-                % (
-                    revision,
-                    e,
-                )
-            )
+            raise ValueError(f"invalid date for revision {revision}: {e}")
 
         # Parse author
         #

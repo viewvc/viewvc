@@ -279,7 +279,7 @@ FORMAT_URL = "url"
 #
 _item = r'(?:"(?:[^\\"]|\\.)*"|[A-Za-z_][-\w.]*)'
 _arg = r'(?:"(?:[^\\"]|\\.)*"|[-\w.]+)'
-_re_parse = re.compile(r"(\r?\n)|\[(%s(?: +%s)*)\]|(\[\[\])|\[#[^\]]*\]" % (_item, _arg))
+_re_parse = re.compile(rf"(\r?\n)|\[({_item}(?: +{_arg})*)\]|(\[\[\])|\[#[^\]]*\]")
 
 _re_args = re.compile(r'"(?:[^\\"]|\\.)*"|[-\w.]+')
 
@@ -508,7 +508,7 @@ class Template:
                         )
 
         if stack:
-            raise UnclosedBlocksError("Block opened at line %s" % stack[-1][4], filename=filename)
+            raise UnclosedBlocksError(f"Block opened at line {stack[-1][4]}", filename=filename)
         return program
 
     def _execute(self, program, fp, ctx):
@@ -822,7 +822,7 @@ class Reader:
     """Abstract class which allows EZT to detect Reader objects."""
 
     def filename(self):
-        return "(%s does not provide filename() method)" % repr(self)
+        return f"({self!r} does not provide filename() method)"
 
 
 class _FileReader(Reader):

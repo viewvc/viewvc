@@ -31,7 +31,7 @@ HAS_SUBVERSION_VERSION = (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_P
 if HAS_SUBVERSION_VERSION < MIN_SUBVERSION_VERSION:
     found_ver = ".".join([str(x) for x in HAS_SUBVERSION_VERSION])
     needs_ver = ".".join([str(x) for x in MIN_SUBVERSION_VERSION])
-    raise Exception("Subversion version %s is required (%s found)" % (needs_ver, found_ver))
+    raise Exception(f"Subversion version {needs_ver} is required ({found_ver} found)")
 
 
 def _allow_all(root, path, pool):
@@ -423,7 +423,7 @@ class LocalSubversionRepository(vclib.Repository):
     def openfile(self, path_parts, rev, options):
         path = self._getpath(path_parts)
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % path)
+            raise vclib.Error(f"Path '{path}' is not a file.")
         rev = self._getrev(rev)
         fsroot = self._getroot(rev)
         revision = str(_get_last_history_rev(fsroot, path))
@@ -433,7 +433,7 @@ class LocalSubversionRepository(vclib.Repository):
     def listdir(self, path_parts, rev, options):
         path = self._getpath(path_parts)
         if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
-            raise vclib.Error("Path '%s' is not a directory." % path)
+            raise vclib.Error(f"Path '{path}' is not a directory.")
         rev = self._getrev(rev)
         fsroot = self._getroot(rev)
         dirents = fs.dir_entries(fsroot, path)
@@ -448,7 +448,7 @@ class LocalSubversionRepository(vclib.Repository):
     def dirlogs(self, path_parts, rev, entries, options):
         path = self._getpath(path_parts)
         if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
-            raise vclib.Error("Path '%s' is not a directory." % path)
+            raise vclib.Error(f"Path '{path}' is not a directory.")
         fsroot = self._getroot(self._getrev(rev))
         rev = self._getrev(rev)
         for entry in entries:
@@ -554,7 +554,7 @@ class LocalSubversionRepository(vclib.Repository):
         path = self._getpath(path_parts)
         path_type = self.itemtype(path_parts, rev)  # does auth-check
         if path_type != vclib.FILE:
-            raise vclib.Error("Path '%s' is not a file." % path)
+            raise vclib.Error(f"Path '{path}' is not a file.")
         rev = self._getrev(rev)
         history = self._get_history(path, rev, path_type, 0, {"svn_cross_copies": 1})
         youngest_rev, youngest_path = history[0]
@@ -609,7 +609,7 @@ class LocalSubversionRepository(vclib.Repository):
     def filesize(self, path_parts, rev):
         path = self._getpath(path_parts)
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % path)
+            raise vclib.Error(f"Path '{path}' is not a file.")
         fsroot = self._getroot(self._getrev(rev))
         return fs.file_length(fsroot, path)
 

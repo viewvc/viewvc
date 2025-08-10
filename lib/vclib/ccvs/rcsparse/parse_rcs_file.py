@@ -38,13 +38,8 @@ class Logger:
         self.name = name
 
     def __call__(self, *args):
-        self.f.write(
-            "%s(%s)\n"
-            % (
-                self.name,
-                ", ".join(["%r" % arg for arg in args]),
-            )
-        )
+        arg_str = ", ".join([repr(arg) for arg in args])
+        self.f.write(f"{self.name}({arg_str})\n")
 
 
 class LoggingSink:
@@ -72,6 +67,6 @@ if __name__ == "__main__":
             if os.path.isfile(path) and path.endswith(",v"):
                 parse(open(path, "rb"), LoggingSink(sys.stdout))
             else:
-                sys.stderr.write("%r is being ignored.\n" % path)
+                sys.stderr.write(f"{path!r} is being ignored.\n")
     else:
         parse(sys.stdin, LoggingSink(sys.stdout))

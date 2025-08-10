@@ -169,7 +169,7 @@ class CgiServer(Server):
 
         extraheaders = ""
         for name, value in self._headers:
-            extraheaders = extraheaders + "%s: %s\r\n" % (name, value)
+            extraheaders = extraheaders + f"{name}: {value}\r\n"
 
         # The only way ViewVC pages and error messages are visible under
         # IIS is if a 200 error code is returned. Otherwise IIS instead
@@ -177,9 +177,9 @@ class CgiServer(Server):
         if status is None or (status[:3] != "304" and self._iis):
             status = ""
         else:
-            status = "Status: %s\r\n" % status
+            status = f"Status: {status}\r\n"
 
-        self.write_text("%sContent-Type: %s\r\n%s\r\n" % (status, content_type, extraheaders))
+        self.write_text(f"{status}Content-Type: {content_type}\r\n{extraheaders}\r\n")
 
     def redirect(self, url):
         if self._iis:
@@ -330,4 +330,4 @@ def fix_iis_path_info(server, path_info):
 
 
 def redirect_notice(url):
-    return 'This document is located <a href="%s">here</a>.' % (url)
+    return f'This document is located <a href="{url}">here</a>.'

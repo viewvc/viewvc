@@ -254,7 +254,7 @@ class Config:
         at all, return None.  And if it's an override section but not an
         allowed one, raise IllegalOverrideSection."""
 
-        cv = "%s-%s|" % (sectype, secspec)
+        cv = f"{sectype}-{secspec}|"
         lcv = len(cv)
         if section[:lcv] != cv:
             return None
@@ -333,7 +333,7 @@ class Config:
         # Figure out the authorizer by searching first for a per-root
         # override, then falling back to the base/vhost configuration.
         authorizer = None
-        root_options_section = "root-%s|options" % (rootname)
+        root_options_section = f"root-{rootname}|options"
         if self.parser.has_section(root_options_section) and self.parser.has_option(
             root_options_section, "authorizer"
         ):
@@ -348,12 +348,12 @@ class Config:
         # Dig up the parameters for the authorizer, starting with the
         # base/vhost items, then overlaying any root-specific ones we find.
         params = {}
-        authz_section = "authz-%s" % (authorizer)
+        authz_section = f"authz-{authorizer}"
         if hasattr(self, authz_section):
             sub_config = getattr(self, authz_section)
             for attr in dir(sub_config):
                 params[attr] = getattr(sub_config, attr)
-        root_authz_section = "root-%s|authz-%s" % (rootname, authorizer)
+        root_authz_section = f"root-{rootname}|authz-{authorizer}"
         for section in self.parser.sections():
             if section == root_authz_section:
                 for key, value in self.parser.items():
@@ -367,7 +367,7 @@ class Config:
         if authorizer is None:
             authorizer = self.options.authorizer
         if authorizer:
-            authz_section = "authz-%s" % (self.options.authorizer)
+            authz_section = f"authz-{self.options.authorizer}"
             if hasattr(self, authz_section):
                 sub_config = getattr(self, authz_section)
                 for attr in dir(sub_config):
@@ -497,9 +497,9 @@ class IllegalOverrideSection(ViewVCConfigurationError):
         self.override_type = override_type
 
     def __str__(self):
-        return "malformed configuration: illegal %s override section: %s" % (
-            self.override_type,
-            self.section_name,
+        return (
+            f"malformed configuration: illegal {self.override_type} "
+            f"override section: {self.section_name}"
         )
 
 
@@ -510,9 +510,8 @@ class MalformedRoot(ViewVCConfigurationError):
         self.value_given = value_given
 
     def __str__(self):
-        return "malformed configuration: '%s' uses invalid syntax: %s" % (
-            self.config_name,
-            self.value_given,
+        return (
+            f"malformed configuration: '{self.config_name}' uses invalid syntax: {self.value_given}"
         )
 
 

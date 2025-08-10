@@ -48,12 +48,12 @@ filelist.sort()
 all_tests_ok = 1
 
 for filename in filelist:
-    sys.stderr.write("%s: " % (filename,))
+    sys.stderr.write(f"{filename}: ")
     f = StringIO()
     try:
         parse(open(filename, "rb"), LoggingSink(f))
     except Exception as e:
-        sys.stderr.write("Error parsing file: %s!\n" % (e,))
+        sys.stderr.write(f"Error parsing file: {e}!\n")
         raise
         all_tests_ok = 0
     else:

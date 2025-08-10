@@ -87,7 +87,7 @@ class BaseCVSRepository(vclib.Repository):
 
     def listdir(self, path_parts, rev, options):
         if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
-            raise vclib.Error("Path '%s' is not a directory." % (_path_join(path_parts)))
+            raise vclib.Error(f"Path '{_path_join(path_parts)}' is not a directory.")
 
         # Only RCS files (*,v) and subdirs are returned.
         data = []
@@ -160,13 +160,13 @@ class BaseCVSRepository(vclib.Repository):
 
     def isexecutable(self, path_parts, rev):
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
+            raise vclib.Error(f"Path '{_path_join(path_parts)}' is not a file.")
         rcsfile = self.rcsfile(path_parts, 1)
         return os.access(self._getfspath(rcsfile), os.X_OK)
 
     def filesize(self, path_parts, rev):
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
+            raise vclib.Error(f"Path '{_path_join(path_parts)}' is not a file.")
         return -1
 
     def cvsgraph_popen(self, cvsgraph_args, is_text=False, capture_err=True):
@@ -224,7 +224,7 @@ class BinCVSRepository(BaseCVSRepository):
             boolean. true to use the original keyword substitution values.
         """
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
+            raise vclib.Error(f"Path '{_path_join(path_parts)}' is not a file.")
         if not rev or rev == "HEAD" or rev == "MAIN":
             rev_flag = "-p"
         else:
@@ -264,16 +264,16 @@ class BinCVSRepository(BaseCVSRepository):
                 tip_rev = self._get_tip_revision(full_name + ",v", rev)
                 used_rlog = 1
             if not (tip_rev and tip_rev.undead):
-                raise vclib.Error('Could not find non-dead revision preceding "%s"' % rev)
+                raise vclib.Error(f'Could not find non-dead revision preceding "{rev}"')
             fp = self.rcs_popen("co", ("-p" + tip_rev.undead.string, full_name))
             filename, revision = _parse_co_header(fp, self.content_encoding)
 
         if filename is None:
-            raise vclib.Error('Missing output from co (filename = "%s")' % full_name)
+            raise vclib.Error(f'Missing output from co (filename = "{full_name}")')
 
         if not _paths_eq(filename, full_name):
             raise vclib.Error(
-                'The filename from co ("%s") did not match (expected "%s")' % (filename, full_name)
+                f'The filename from co ("{filename}") did not match (expected "{full_name}")'
             )
 
         return fp, revision
@@ -296,7 +296,7 @@ class BinCVSRepository(BaseCVSRepository):
             lists of tag and branch names encountered in the directory
         """
         if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
-            raise vclib.Error("Path '%s' is not a directory." % (_path_join(path_parts)))
+            raise vclib.Error(f"Path '{_path_join(path_parts)}' is not a directory.")
 
         subdirs = options.get("cvs_subdirs", 0)
         entries_to_fetch = []
@@ -333,7 +333,7 @@ class BinCVSRepository(BaseCVSRepository):
         """
 
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
+            raise vclib.Error(f"Path '{_path_join(path_parts)}' is not a file.")
 
         # Invoke rlog
         rcsfile = self.rcsfile(path_parts, 1)
@@ -403,7 +403,7 @@ class BinCVSRepository(BaseCVSRepository):
 
     def annotate(self, path_parts, rev=None, include_text=False):
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
+            raise vclib.Error(f"Path '{_path_join(path_parts)}' is not a file.")
 
         from vclib.ccvs import blame
 
@@ -423,9 +423,9 @@ class BinCVSRepository(BaseCVSRepository):
           ignore_keyword_subst - boolean, ignore keyword substitution
         """
         if self.itemtype(path_parts1, rev1) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts1)))
+            raise vclib.Error(f"Path '{_path_join(path_parts1)}' is not a file.")
         if self.itemtype(path_parts2, rev2) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts2)))
+            raise vclib.Error(f"Path '{_path_join(path_parts2)}' is not a file.")
 
         args = vclib._diff_args(diff_type, options)
         if options.get("ignore_keyword_subst", 0):
@@ -840,7 +840,7 @@ def _parse_log_header(fp):
                     p1, p2, p3, msg = error.groups()
                     filename = p1 or p2 or p3
                     if not filename:
-                        raise vclib.Error("Could not get filename from CVSNT error:\n%s" % line)
+                        raise vclib.Error(f"Could not get filename from CVSNT error:\n{line}")
                     eof = _EOF_ERROR
                     break
 
@@ -1023,7 +1023,7 @@ def _file_log(revs, taginfo, lockinfo, cur_branch, filter):
             try:
                 view_tag = taginfo[filter]
             except KeyError:
-                raise vclib.Error('Invalid tag or revision number "%s"' % filter)
+                raise vclib.Error(f'Invalid tag or revision number "{filter}"')
         filtered_revs = []
 
         # only include revisions on the tag branch or it's parent branches
@@ -1116,7 +1116,7 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
                     break
 
                 # otherwise just error out
-                raise vclib.Error('Rlog output ended early. Expected RCS file "%s"' % file.path)
+                raise vclib.Error(f'Rlog output ended early. Expected RCS file "{file.path}"')
 
             # if rlog filename doesn't match current file and we already have an
             # error message about this file, move on to the next file
@@ -1127,14 +1127,14 @@ def _get_logs(repos, dir_path_parts, entries, view_tag, get_dirs):
                     continue
 
                 raise vclib.Error(
-                    "Error parsing rlog output. Expected RCS file %s"
-                    ", found %s" % (file and file.path, filename)
+                    f"Error parsing rlog output. Expected RCS file {file and file.path}, "
+                    f"found {filename}"
                 )
 
             # if we get an rlog error message, restart loop without advancing
             # chunk_idx cause there might be more output about the same file
             if eof == _EOF_ERROR:
-                file.errors.append("rlog error: %s" % msg)
+                file.errors.append(f"rlog error: {msg}")
                 continue
 
             tag = None
@@ -1254,7 +1254,7 @@ else:
         try:
             info = os.stat(vclib._getfspath(pathname, encoding))
         except os.error as e:
-            return None, ["stat error: %s" % e]
+            return None, [f"stat error: {e}"]
 
         kind = None
         errors = []
@@ -1285,10 +1285,10 @@ else:
 
             if info[stat.ST_UID] == _uid:
                 if ((mode >> 6) & mask) != mask:
-                    errors.append("error: path is not accessible to user %i" % _uid)
+                    errors.append(f"error: path is not accessible to user {_uid}")
             elif info[stat.ST_GID] == _gid:
                 if ((mode >> 3) & mask) != mask:
-                    errors.append("error: path is not accessible to group %i" % _gid)
+                    errors.append(f"error: path is not accessible to group {_gid}")
             # If the process running the web server is a member of
             # the group stat.ST_GID access may be granted.
             # so the fall back to os.access is needed to figure this out.

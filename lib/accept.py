@@ -88,11 +88,11 @@ class _AcceptItem:
     def __str__(self):
         s = self.name
         if self.quality != 1.0:
-            s = "%s;q=%.3f" % (s, self.quality)
+            s = f"{s};q={self.quality:.3f}"
         if self.level != 0.0:
-            s = "%s;level=%.3f" % (s, self.level)
+            s = f"{s};level={self.level:.3f}"
         if self.charset:
-            s = "%s;charset=%s" % (s, self.charset)
+            s = f"{s};charset={self.charset}"
         return s
 
 

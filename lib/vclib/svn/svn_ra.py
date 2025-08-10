@@ -38,7 +38,7 @@ HAS_SUBVERSION_VERSION = (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_P
 if HAS_SUBVERSION_VERSION < MIN_SUBVERSION_VERSION:
     found_ver = ".".join([str(x) for x in HAS_SUBVERSION_VERSION])
     needs_ver = ".".join([str(x) for x in MIN_SUBVERSION_VERSION])
-    raise Exception("Subversion version %s is required (%s found)" % (needs_ver, found_ver))
+    raise Exception(f"Subversion version {needs_ver} is required ({found_ver} found)")
 
 
 def _sort_key_path(path):
@@ -254,7 +254,7 @@ class RemoteSubversionRepository(vclib.Repository):
     def openfile(self, path_parts, rev, options):
         path = self._getpath(path_parts)
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % path)
+            raise vclib.Error(f"Path '{path}' is not a file.")
         rev = self._getrev(rev)
         # rev here should be the last history revision of the URL
         fp = SelfCleanFP(cat_to_tempfile(self, path, rev))
@@ -264,7 +264,7 @@ class RemoteSubversionRepository(vclib.Repository):
     def listdir(self, path_parts, rev, options):
         path = self._getpath(path_parts)
         if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
-            raise vclib.Error("Path '%s' is not a directory." % path)
+            raise vclib.Error(f"Path '{path}' is not a directory.")
         rev = self._getrev(rev)
         entries = []
         dirents, locks = self._get_dirents(path, rev)
@@ -276,7 +276,7 @@ class RemoteSubversionRepository(vclib.Repository):
     def dirlogs(self, path_parts, rev, entries, options):
         path = self._getpath(path_parts)
         if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
-            raise vclib.Error("Path '%s' is not a directory." % path)
+            raise vclib.Error(f"Path '{path}' is not a directory.")
         rev = self._getrev(rev)
         dirents, locks = self._get_dirents(path, rev)
         for entry in entries:
@@ -377,7 +377,7 @@ class RemoteSubversionRepository(vclib.Repository):
     def annotate(self, path_parts, rev, include_text=False):
         path = self._getpath(path_parts)
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % path)
+            raise vclib.Error(f"Path '{path}' is not a file.")
         rev = self._getrev(rev)
         url = self._geturl(path)
 
@@ -460,7 +460,7 @@ class RemoteSubversionRepository(vclib.Repository):
     def filesize(self, path_parts, rev):
         path = self._getpath(path_parts)
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % path)
+            raise vclib.Error(f"Path '{path}' is not a file.")
         rev = self._getrev(rev)
         dirents, locks = self._get_dirents(self._getpath(path_parts[:-1]), rev)
         dirent = dirents.get(path_parts[-1], None)

@@ -114,7 +114,7 @@ def error(text, etype=None, evalue=None):
     """Print error TEXT to stderr, pretty printing the optional
     exception type and value (ETYPE and EVALUE, respective), and then
     exit the program with an errorful code."""
-    sys.stderr.write("\n[ERROR] %s\n" % (text))
+    sys.stderr.write(f"\n[ERROR] {text}\n")
     if etype:
         traceback.print_exception(etype, evalue, None, file=sys.stderr)
     sys.exit(1)
@@ -199,7 +199,7 @@ def install_file(src_path, dst_path, mode, subst_path_vars, prompt_replace, comp
             elif CLEAN_MODE == "false":
                 overwrite = 0
             else:
-                print("File %s exists and is different from source file." % (destdir_path))
+                print(f"File {destdir_path} exists and is different from source file.")
                 while 1:
                     name, ext = os.path.splitext(src_path)
                     if ext in BINARY_FILE_EXTS:
@@ -237,7 +237,7 @@ LEGEND
 
     assert overwrite is not None
     if not overwrite:
-        print("   preserved %s" % (dst_path))
+        print(f"   preserved {dst_path}")
         return
 
     # If we get here, we're creating or overwriting the existing file.
@@ -257,24 +257,24 @@ LEGEND
     if not os.path.exists(dst_parent):
         try:
             os.makedirs(dst_parent)
-            print("   created   %s%s" % (dst_parent, os.sep))
+            print(f"   created   {dst_parent}{os.sep}")
         except os.error as e:
             if e.errno == 17:  # EEXIST: file exists
                 return
             if e.errno == 13:  # EACCES: permission denied
-                error("You do not have permission to create directory %s" % (dst_parent))
-            error("Unknown error creating directory %s" % (dst_parent), OSError, e)
+                error(f"You do not have permission to create directory {dst_parent}")
+            error(f"Unknown error creating directory {dst_parent}", OSError, e)
 
     # Now, write the file contents to their destination.
     try:
-        exists = os.path.exists(destdir_path)
+        action_str = "replaced" if os.path.exists(destdir_path) else "installed"
         open(destdir_path, "wb").write(contents)
-        print("   %s %s" % (exists and "replaced " or "installed", dst_path))
+        print(f"   {action_str} {dst_path}")
     except IOError as e:
         if e.errno == 13:
             # EACCES: permission denied
-            error("You do not have permission to write file %s" % (dst_path))
-        error("Unknown error writing file %s" % (dst_path), IOError, e)
+            error(f"You do not have permission to write file {dst_path}")
+        error(f"Unknown error writing file {dst_path}", IOError, e)
 
     # Set the files's mode.
     os.chmod(destdir_path, mode)
@@ -298,7 +298,7 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
     src_path = _actual_src_path(src_path)
     dst_path = os.path.join(ROOT_DIR, dst_path.replace("/", os.sep))
     if not os.path.isdir(src_path):
-        print("   skipping  %s" % (dst_path))
+        print(f"   skipping  {dst_path}")
         return
     destdir_path = os.path.join(DESTDIR + dst_path)
 
@@ -353,7 +353,7 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
         elif CLEAN_MODE == "false":
             delete = 0
         else:
-            print("File %s does not belong in ViewVC %s." % (dst_path, version))
+            print(f"File {dst_path} does not belong in ViewVC {version}.")
             while 1:
                 temp = input("Do you want to [D]elete it, or [L]eave it as is? ")
                 temp = temp[0].lower()
@@ -367,16 +367,16 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
 
         assert delete is not None
         if delete:
-            print("   deleted   %s" % (os.path.join(dst_path, fname)))
+            print(f"   deleted   {os.path.join(dst_path, fname)}")
             os.unlink(os.path.join(destdir_path, fname))
         else:
-            print("   preserved %s" % (os.path.join(dst_path, fname)))
+            print(f"   preserved {os.path.join(dst_path, fname)}")
 
 
 def usage_and_exit(errstr=None):
     stream = errstr and sys.stderr or sys.stdout
     stream.write(
-        """Usage: %s [OPTIONS]
+        f"""Usage: {os.path.basename(sys.argv[0])} [OPTIONS]
 
 Installs the ViewVC web-based version control repository browser.
 
@@ -400,10 +400,9 @@ Options:
                       for the appropriate action on a per-file basis.
 
 """
-        % (os.path.basename(sys.argv[0]))
     )
     if errstr:
-        stream.write("ERROR: %s\n\n" % (errstr))
+        stream.write(f"ERROR: {errstr}\n\n")
         sys.exit(1)
     else:
         sys.exit(0)
@@ -432,13 +431,12 @@ if __name__ == "__main__":
 
     # Print the header greeting.
     print(
-        """This is the ViewVC %s installer.
+        f"""This is the ViewVC {version} installer.
 
 It will allow you to choose the install path for ViewVC.  You will now
 be asked some installation questions.  Defaults are given in square brackets.
 Just hit [Enter] if a default is okay.
 """
-        % version
     )
 
     # Prompt for ROOT_DIR if none provided.
@@ -448,7 +446,7 @@ Just hit [Enter] if a default is okay.
             default = os.path.join(pf, "viewvc-" + version)
         else:
             default = "/usr/local/viewvc-" + version
-        temp = input("Installation path [%s]: " % (default)).strip()
+        temp = input(f"Installation path [{default}]: ").strip()
         print()
         if len(temp):
             ROOT_DIR = temp
@@ -459,7 +457,7 @@ Just hit [Enter] if a default is okay.
     if DESTDIR is None:
         default = ""
         temp = input(
-            "DESTDIR path (generally only used by package maintainers) [%s]: " % (default)
+            f"DESTDIR path (generally only used by package maintainers) [{default}]: "
         ).strip()
         print()
         if len(temp):
@@ -468,9 +466,10 @@ Just hit [Enter] if a default is okay.
             DESTDIR = default
 
     # Install the files.
-    print(
-        "Installing ViewVC to %s%s:" % (ROOT_DIR, DESTDIR and " (DESTDIR = %s)" % (DESTDIR) or "")
-    )
+    if DESTDIR:
+        print(f"Installing ViewVC to {ROOT_DIR} (DESTDIR = {DESTDIR}):")
+    else:
+        print(f"Installing ViewVC to {ROOT_DIR}:")
     for args in FILE_INFO_LIST:
         install_file(*args)
     for args in TREE_LIST:
