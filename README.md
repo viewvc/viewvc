@@ -61,7 +61,7 @@ GitHub user @cmanley has graciously assembled Docker images for running ViewVC. 
 
 ## License
 
-**Copyright © 1999-2020 The ViewCVS Group. All rights reserved.**
+**Copyright © 1999-2025 The ViewCVS Group. All rights reserved.**
 
 By using ViewVC, you agree to the terms and conditions set forth below:
 
