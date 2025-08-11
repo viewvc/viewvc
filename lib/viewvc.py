@@ -295,8 +295,8 @@ class Request:
                     pass
             if self.repos is None:
                 raise ViewVCException(
-                    'The root "%s" is unknown. If you believe the value is '
-                    "correct, then please double-check your configuration." % self.rootname,
+                    f'The root "{self.rootname}" is unknown. If you believe the value is '
+                    "correct, then please double-check your configuration.",
                     "404 Not Found",
                 )
 
@@ -309,8 +309,10 @@ class Request:
                 self.roottype = "cvs"
             else:
                 raise ViewVCException(
-                    'The root "%s" has an unknown type ("%s").  Expected "cvs" or "svn".'
-                    % (self.rootname, vctype),
+                    (
+                        f'The root "{self.rootname}" has an unknown type ("{vctype}").  '
+                        'Expected "cvs" or "svn".'
+                    ),
                     "500 Internal Server Error",
                 )
 
@@ -332,7 +334,7 @@ class Request:
         if self.repos and self.view_func is not redirect_pathrev:
             # If this is an intended-to-be-hidden CVSROOT path, complain.
             if cfg.options.hide_cvsroot and is_cvsroot_path(self.roottype, path_parts):
-                raise ViewVCException("Unknown location: /%s" % self.where, "404 Not Found")
+                raise ViewVCException(f"Unknown location: /{self.where}", "404 Not Found")
 
             # Make sure path exists
             self.pathrev = pathrev = self.query_dict.get("pathrev")
@@ -374,7 +376,7 @@ class Request:
                     self.where = _path_join(self.path_parts)
                     needs_redirect = 1
                 else:
-                    raise ViewVCException("Unknown location: /%s" % self.where, "404 Not Found")
+                    raise ViewVCException(f"Unknown location: /{self.where}", "404 Not Found")
 
             # If we have an old ViewCVS Attic URL which is still valid, redirect
             if self.roottype == "cvs":
@@ -474,11 +476,8 @@ class Request:
         if escape:
             result = self.server.escape(result)
         if prefix:
-            result = "%s://%s%s" % (
-                self.server.getenv("HTTPS") == "on" and "https" or "http",
-                self.server.getenv("HTTP_HOST"),
-                result,
-            )
+            scheme = "https" if self.server.getenv("HTTPS") == "on" else "http"
+            result = f"{scheme}://{self.server.getenv('HTTP_HOST')}{result}"
         return result
 
     def get_form(self, **args):
@@ -697,7 +696,7 @@ def _validate_param(name, value):
 
     # If we get here, the input value isn't valid.
     raise ViewVCException(
-        'An illegal value was provided for the "%s" parameter.' % (name), "400 Bad Request"
+        f'An illegal value was provided for the "{name}" parameter.', "400 Bad Request"
     )
 
 
@@ -936,9 +935,9 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
     request_etag = request_mtime = None
     if etag is not None:
         if weak:
-            etag = 'W/"%s"' % etag
+            etag = f'W/"{etag}"'
         else:
-            etag = '"%s"' % etag
+            etag = f'"{etag}"'
         request_etag = request.server.getenv("HTTP_IF_NONE_MATCH")
     if mtime is not None:
         try:
@@ -961,7 +960,7 @@ def check_freshness(request, mtime=None, etag=None, weak=0):
     if cfg and cfg.options.http_expiration_time >= 0:
         expiration = email.utils.formatdate(time.time() + cfg.options.http_expiration_time)
         request.server.add_header("Expires", expiration)
-        request.server.add_header("Cache-Control", "max-age=%d" % cfg.options.http_expiration_time)
+        request.server.add_header("Cache-Control", f"max-age={cfg.options.http_expiration_time}")
 
     if isfresh:
         request.server.start_response(status="304 Not Modified")
@@ -1018,7 +1017,7 @@ def get_writeready_server_file(
         request.server.add_header("Content-Length", content_length)
 
     if content_type and encoding:
-        request.server.start_response("%s; charset=%s" % (content_type, encoding))
+        request.server.start_response(f"{content_type}; charset={encoding}")
     elif content_type:
         request.server.start_response(content_type)
     else:
@@ -1304,7 +1303,7 @@ class ViewVCHtmlFormatter:
         """
         s = mobj.group(0)
         trunc_s = maxlen and s[:maxlen] or s
-        return '<a href="%s">%s</a>' % (sapi.escape(s), sapi.escape(trunc_s)), len(trunc_s)
+        return f'<a href="{sapi.escape(s)}">{sapi.escape(trunc_s)}</a>', len(trunc_s)
 
     def format_email(self, mobj, userdata, maxlen=0):
         """Return a 2-tuple containing:
@@ -1315,9 +1314,7 @@ class ViewVCHtmlFormatter:
         """
         s = mobj.group(0)
         trunc_s = maxlen and s[:maxlen] or s
-        return '<a href="mailto:%s">%s</a>' % (_quote(s), self._entity_encode(trunc_s)), len(
-            trunc_s
-        )
+        return f'<a href="mailto:{_quote(s)}">{self._entity_encode(trunc_s)}</a>', len(trunc_s)
 
     def format_email_obfuscated(self, mobj, userdata, maxlen=0):
         """Return a 2-tuple containing:
@@ -1362,7 +1359,7 @@ class ViewVCHtmlFormatter:
         revref = mobj.group(2)
         trunc_s = maxlen and s[:maxlen] or s
         revref_url = userdata(revref)
-        return '<a href="%s">%s</a>' % (sapi.escape(revref_url), sapi.escape(trunc_s)), len(trunc_s)
+        return f'<a href="{sapi.escape(revref_url)}">{sapi.escape(trunc_s)}</a>', len(trunc_s)
 
     def format_custom_url(self, mobj, userdata, maxlen=0):
         """Return a 2-tuple containing:
@@ -1382,9 +1379,9 @@ class ViewVCHtmlFormatter:
                 repl = mobj.group(i)
             except Exception:
                 repl = ""
-            url = url.replace(r"\%d" % (i), repl)
+            url = url.replace(rf"\{i}", repl)
         trunc_s = maxlen and text[:maxlen] or text
-        return '<a href="%s">%s</a>' % (sapi.escape(url), sapi.escape(trunc_s)), len(trunc_s)
+        return f'<a href="{sapi.escape(url)}">{sapi.escape(trunc_s)}</a>', len(trunc_s)
 
     def format_text(self, s, unused, maxlen=0):
         """Return a 2-tuple containing:
@@ -1473,7 +1470,7 @@ class ViewVCHtmlFormatter:
         return ViewVCHtmlFormatterTokens(tokens)
 
     def _entity_encode(self, s):
-        return "".join(["&#%d;" % (ord(x)) for x in s])
+        return "".join([f"&#{ord(x)};" for x in s])
 
 
 class LogFormatter:
@@ -1567,15 +1564,15 @@ def get_time_text(request, interval, num):
     text = _time_desc[interval]
     if num == 1:
         attr = text + "_singular"
-        fmt = "%d " + text
+        fmt = f"{{}} {text}"
     else:
         attr = text + "_plural"
-        fmt = "%d " + text + "s"
+        fmt = f"{{}} {text}s"
     try:
         fmt = getattr(request.kv.i18n.time, attr)
     except AttributeError:
         pass
-    return fmt % num
+    return fmt.format(num)
 
 
 def little_time(request):
@@ -1797,7 +1794,7 @@ def markup_escaped_urls(s):
     def _url_repl(match_obj):
         url = match_obj.group(0)
         unescaped_url = url.replace("&amp;amp;", "&amp;")
-        return '<a href="%s">%s</a>' % (unescaped_url, url)
+        return f'<a href="{unescaped_url}">{url}</a>'
 
     return re.sub(_re_rewrite_escaped_url, _url_repl, s)
 
@@ -1969,15 +1966,17 @@ def make_time_string(date, cfg):
             else:
                 tz = -time.timezone
             if tz < 0:
-                tz = "-%02d:%02d" % (-tz // 3600, (-tz % 3600) // 60)
+                tz_tag = f"-{-tz // 3600:02d}:{(-tz % 3600) // 60:02d}"
             else:
-                tz = "+%02d:%02d" % (tz // 3600, (tz % 3600) // 60)
+                tz_tag = f"+{tz // 3600:02d}:{(tz % 3600) // 60:02d}"
         else:
-            tz = "Z"
-        return time.strftime("%Y-%m-%dT%H:%M:%S", tm) + tz
+            tz_tag = "Z"
+        base_time_str = time.strftime("%Y-%m-%dT%H:%M:%S", tm)
+        return f"{base_time_str}{tz_tag}"
     else:
-        tz_string = cfg.options.use_localtime and time.tzname[tm[8]] or "UTC"
-        return time.asctime(tm) + " " + tz_string
+        tz_tag = time.tzname[tm[8]] if cfg.options.use_localtime else "UTC"
+        base_time_str = time.asctime(tm)
+        return f"{base_time_str} {tz_tag}"
 
 
 def make_rss_time_string(date, cfg):
@@ -2050,14 +2049,10 @@ def calculate_mime_type(request, path_parts, rev):
 
 
 def assert_viewable_filesize(cfg, filesize):
-    if (
-        cfg.options.max_filesize_kbytes
-        and filesize != -1
-        and filesize > (1024 * cfg.options.max_filesize_kbytes)
-    ):
+    max_kb = cfg.options.max_filesize_kbytes
+    if max_kb and filesize != -1 and filesize > (1024 * max_kb):
         raise ViewVCException(
-            "Display of files larger than %d KB "
-            "disallowed by configuration" % (cfg.options.max_filesize_kbytes),
+            f"Display of files larger than {max_kb} KB disallowed by configuration",
             "403 Forbidden",
         )
 
@@ -2709,7 +2704,7 @@ def view_directory(request):
     else:
         revsortdir = "down"
     if sortby in ["file", "rev", "date", "log", "author"]:
-        data["sortby_%s_href" % sortby] = request.get_url(params={"sortdir": revsortdir}, escape=1)
+        data[f"sortby_{sortby}_href"] = request.get_url(params={"sortdir": revsortdir}, escape=1)
     # CVS doesn't support sorting by rev
     if request.roottype == "cvs":
         data["sortby_rev_href"] = None
@@ -3456,18 +3451,18 @@ def view_doc(request):
     try:
         info = os.stat(filename)
     except OSError:
-        raise ViewVCException('Static file "%s" not available' % (document), "404 Not Found")
+        raise ViewVCException(f'Static file "{document}" not available', "404 Not Found")
     content_length = str(info[stat.ST_SIZE])
     last_modified = info[stat.ST_MTIME]
 
     # content_length + mtime makes a pretty good etag.
-    if check_freshness(request, last_modified, "%s-%s" % (content_length, last_modified)):
+    if check_freshness(request, last_modified, f"{content_length}-{last_modified}"):
         return
 
     try:
         fp = open(filename, "rb")
     except IOError:
-        raise ViewVCException('Static file "%s" not available' % (document), "404 Not Found")
+        raise ViewVCException(f'Static file "{document}" not available', "404 Not Found")
 
     if document[-3:] == "png":
         mime_type = "image/png"
@@ -3699,25 +3694,13 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2, sym1=None, sym2=
                 if match:
                     date1 = match.group(1)
                     log_rev1 = match.group(2)
-                    line = "%s%s\t%s\t%s%s\n" % (
-                        f1,
-                        path1,
-                        date1,
-                        log_rev1,
-                        sym1 and " " + sym1 or "",
-                    )
+                    line = f"{f1}{path1}\t{date1}\t{log_rev1}{(' ' + sym1) if sym1 else ''}\n"
             elif line[: len(f2)] == f2:
                 match = _re_extract_rev.match(line)
                 if match:
                     date2 = match.group(1)
                     log_rev2 = match.group(2)
-                    line = "%s%s\t%s\t%s%s\n" % (
-                        f2,
-                        path2,
-                        date2,
-                        log_rev2,
-                        sym2 and " " + sym2 or "",
-                    )
+                    line = f"{f2}{path2}\t{date2}\t{log_rev2}{(' ' + sym2) if sym2 else ''}\n"
                 parsing = 0
             elif line[:3] == "Bin":
                 flag = _RCSDIFF_IS_BINARY
@@ -3729,12 +3712,12 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2, sym1=None, sym2=
 
     if log_rev1 and log_rev1 != rev1:
         raise ViewVCException(
-            "rcsdiff found revision %s, but expected revision %s" % (log_rev1, rev1),
+            f"rcsdiff found revision {log_rev1}, but expected revision {rev1}",
             "500 Internal Server Error",
         )
     if log_rev2 and log_rev2 != rev2:
         raise ViewVCException(
-            "rcsdiff found revision %s, but expected revision %s" % (log_rev2, rev2),
+            f"rcsdiff found revision {log_rev2}, but expected revision {rev2}",
             "500 Internal Server Error",
         )
     headers = "".join(header_lines)
@@ -3852,7 +3835,7 @@ def view_patch(request):
     elif format == "u":
         diff_type = vclib.UNIFIED
     else:
-        raise ViewVCException("Diff format %s not understood" % (format), "400 Bad Request")
+        raise ViewVCException(f"Diff format {format} not understood", "400 Bad Request")
 
     # Set some diff options.  (Are there other options folks might want?
     # Maybe not.  For a patch, perhaps the precise change is ideal.)
@@ -3961,7 +3944,7 @@ class DiffDescription:
             self.hide_legend = 1
         else:
             raise ViewVCException(
-                "Diff format %s not understood" % self.diff_format, "400 Bad Request"
+                f"Diff format {self.diff_format} not understood", "400 Bad Request"
             )
 
         # Determine whether idiff is avaialble and whether it could be used.
@@ -4165,7 +4148,7 @@ class DiffDescription:
         if propname is None:
             return side.path
         else:
-            return "%s:property(%s)" % (side.path, propname)
+            return f"{side.path}:property({propname})"
 
 
 def view_diff(request):
@@ -4184,7 +4167,7 @@ def view_diff(request):
 
     # since templates are in use and subversion allows changes to the dates,
     # we can't provide a strong etag
-    if check_freshness(request, None, "%s-%s" % (rev1, rev2), weak=1):
+    if check_freshness(request, None, f"{rev1}-{rev2}", weak=1):
         return
 
     left_side_content, left_side_prop = diff_side_item(request, p1, rev1, sym1)
@@ -4477,10 +4460,8 @@ def download_tarball(request):
     else:
         tarfile = request.rootname
         if request.path_parts:
-            tarfile = "%s-%s" % (tarfile, request.path_parts[-1])
-        request.server.add_header(
-            "Content-Disposition", 'attachment; filename="%s.tar.gz"' % (tarfile)
-        )
+            tarfile = f"{tarfile}-{request.path_parts[-1]}"
+        request.server.add_header("Content-Disposition", f'attachment; filename="{tarfile}.tar.gz"')
         server_fp = get_writeready_server_file(request, "application/x-gzip", allow_compress=False)
         fp = gzip.GzipFile("", "wb", 9, server_fp)
 
@@ -4494,13 +4475,12 @@ def download_tarball(request):
     if DEBUG_TARFILE_PATH:
         server_fp = get_writeready_server_file(request, is_text=True)
         server_fp.write(
-            """
+            f"""
 <html>
 <body>
-<p>Tarball '%s' successfully generated!</p>
+<p>Tarball '{DEBUG_TARFILE_PATH}' successfully generated!</p>
 </body>
 </html>"""
-            % (DEBUG_TARFILE_PATH)
         )
 
 
@@ -4729,7 +4709,7 @@ def validate_query_args(request):
         arg_match_value = request.query_dict.get(arg_match, "exact")
         if arg_match_value not in ("exact", "like", "glob", "regex", "notregex"):
             raise ViewVCException(
-                'An illegal value was provided for the "%s" parameter.' % (arg_match),
+                f'An illegal value was provided for the "{arg_match}" parameter.',
                 "400 Bad Request",
             )
 
@@ -4742,7 +4722,7 @@ def validate_query_args(request):
                     re.compile(arg_base_value)
                 except Exception:
                     raise ViewVCException(
-                        'An illegal value was provided for the "%s" parameter.' % (arg_base),
+                        f'An illegal value was provided for the "{arg_base}" parameter.',
                         "400 Bad Request",
                     )
 
@@ -4752,7 +4732,7 @@ def view_queryform(request):
 
     if not is_query_supported(request):
         raise ViewVCException(
-            'Can not query project root "%s" at "%s".' % (request.rootname, request.where),
+            f'Can not query project root "{request.rootname}" at "{request.where}".',
             "403 Forbidden",
         )
 
@@ -4836,27 +4816,27 @@ def english_query(request):
             ret.append("subdirectories")
         else:
             ret.append("subdirectory")
-        ret.append(" <em>%s</em> " % request.server.escape(dir))
+        ret.append(f" <em>{request.server.escape(dir)}</em> ")
     file = request.query_dict.get("file", "")
     if file:
         if len(ret) != 1:
             ret.append("and ")
-        ret.append("to file <em>%s</em> " % request.server.escape(file))
+        ret.append(f"to file <em>{request.server.escape(file)}</em> ")
     who = request.query_dict.get("who", "")
     branch = request.query_dict.get("branch", "")
     if branch:
-        ret.append("on branch <em>%s</em> " % request.server.escape(branch))
+        ret.append(f"on branch <em>{request.server.escape(branch)}</em> ")
     else:
         ret.append("on all branches ")
     comment = request.query_dict.get("comment", "")
     if comment:
-        ret.append("with comment <i>%s</i> " % request.server.escape(comment))
+        ret.append(f"with comment <i>{request.server.escape(comment)}</i> ")
     if who:
-        ret.append("by <em>%s</em> " % request.server.escape(who))
+        ret.append(f"by <em>{request.server.escape(who)}</em> ")
     date = request.query_dict.get("date", "hours")
     if date == "hours":
         ret.append(
-            "in the last %s hours" % request.server.escape(request.query_dict.get("hours", "2"))
+            f"in the last {request.server.escape(request.query_dict.get('hours', '2'))} hours"
         )
     elif date == "day":
         ret.append("in the last day")
@@ -4875,10 +4855,10 @@ def english_query(request):
             w1, w2 = "since", "before"
         if mindate:
             mindate = make_time_string(parse_date(mindate), cfg)
-            ret.append("%s <em>%s</em> " % (w1, mindate))
+            ret.append(f"{w1} <em>{mindate}</em> ")
         if maxdate:
             maxdate = make_time_string(parse_date(maxdate), cfg)
-            ret.append("%s <em>%s</em> " % (w2, maxdate))
+            ret.append(f"{w2} <em>{maxdate}</em> ")
     return "".join(ret)
 
 
@@ -4920,7 +4900,7 @@ def build_commit(request, files, max_files, dir_strip, format):
             assert dirname[:len_strip] == dir_strip
             assert len(dirname) == len_strip or dirname[len(dir_strip)] == "/"
             dirname = dirname[(len_strip + 1) :]
-        where = dirname and ("%s/%s" % (dirname, filename)) or filename
+        where = f"{dirname}/{filename}" if dirname else filename
         rev = f.GetRevision()
         rev_prev = prev_rev(rev)
         commit_time = f.GetTime()
@@ -5053,10 +5033,11 @@ def build_commit(request, files, max_files, dir_strip, format):
     if request.roottype == "svn":
         commit.rev = commit_rev
         is_https = request.server.getenv("HTTPS") == "on"
-        commit.rss_url = "%s://%s%s" % (
-            is_https and "https" or "http",
-            request.server.getenv("HTTP_HOST"),
-            request.get_url(view_func=view_revision, params={"revision": commit.rev}, escape=1),
+        rev_href = request.get_url(
+            view_func=view_revision, params={"revision": commit.rev}, escape=1
+        )
+        commit.rss_url = (
+            f"{('https' if is_https else 'http')}://{request.server.getenv('HTTP_HOST')}{rev_href}"
         )
     else:
         commit.rev = None
@@ -5084,22 +5065,21 @@ def query_backout(request, commits):
     )
     for commit in commits:
         for fileinfo in commit.files:
+            file_path = f"{fileinfo.dir}/{fileinfo.file}"
             if request.roottype == "cvs":
                 server_fp.write(
-                    "cvs update -j %s -j %s %s/%s\n"
-                    % (fileinfo.rev, prev_rev(fileinfo.rev), fileinfo.dir, fileinfo.file)
+                    f"cvs update -j {fileinfo.rev} -j {prev_rev(fileinfo.rev)} {file_path}\n"
                 )
             elif request.roottype == "svn":
                 server_fp.write(
-                    "svn merge -r %s:%s %s/%s\n"
-                    % (fileinfo.rev, prev_rev(fileinfo.rev), fileinfo.dir, fileinfo.file)
+                    f"svn merge -r {fileinfo.rev}:{prev_rev(fileinfo.rev)} {file_path}\n"
                 )
 
 
 def view_query(request):
     if not is_query_supported(request):
         raise ViewVCException(
-            'Can not query project root "%s" at "%s".' % (request.rootname, request.where),
+            f'Can not query project root "{request.rootname}" at "{request.where}".',
             "403 Forbidden",
         )
 
@@ -5170,7 +5150,7 @@ def view_query(request):
     repos_root, repos_dir = cvsdb.FindRepository(db, request.rootpath)
     if not repos_root:
         raise ViewVCException(
-            "The root '%s' was not found in the commit database " % request.rootname
+            f"The root '{request.rootname}' was not found in the commit database "
         )
 
     # create the database query from the form data
@@ -5185,12 +5165,12 @@ def view_query(request):
         for subdir in dir.split(","):
             path = _path_join(repos_dir + request.path_parts + _path_parts(subdir.strip()))
             query.SetDirectory(path, "exact")
-            query.SetDirectory("%s/%%" % cvsdb.EscapeLike(path), "like")
+            query.SetDirectory(f"{cvsdb.EscapeLike(path)}/%", "like")
     else:
         where = _path_join(repos_dir + request.path_parts)
         if where:  # if we are in a subdirectory ...
             query.SetDirectory(where, "exact")
-            query.SetDirectory("%s/%%" % cvsdb.EscapeLike(where), "like")
+        query.SetDirectory(f"{cvsdb.EscapeLike(where)}/%", "like")
     if file:
         query.SetFile(file, file_match)
     if who:
@@ -5480,13 +5460,13 @@ def expand_root_parents(cfg):
                 cfg.general.svn_roots.update(roots)
         elif repo_type is None:
             raise ViewVCException(
-                'The path "%s" in "root_parents" does not include a '
-                'repository type.  Expected "cvs" or "svn".' % (pp)
+                f'The path "{pp}" in "root_parents" does not include a repository type.  '
+                f'Expected "cvs" or "svn".'
             )
         else:
             raise ViewVCException(
-                'The path "%s" in "root_parents" has an unrecognized '
-                'repository type ("%s").  Expected "cvs" or "svn".' % (pp, repo_type)
+                f'The path "{pp}" in "root_parents" has an unrecognized repository type '
+                f'("{repo_type}").  Expected "cvs" or "svn".'
             )
 
 
@@ -5563,13 +5543,11 @@ def locate_root(cfg, rootname):
     if roottype is not None:
         if rootname_dupl != rootname:
             raise ViewVCException(
-                'Found root name "%s" doesn\'t match "%s"' % (rootname_dupl, rootname),
+                f'Found root name "{rootname_dupl}" doesn\'t match "{rootname}"',
                 "500 Internal Server Error",
             )
         if len(remain) > 0:
-            raise ViewVCException(
-                'Have remaining path "%s"' % (remain), "500 Internal Server Error"
-            )
+            raise ViewVCException(f'Have remaining path "{remain}"', "500 Internal Server Error")
     return roottype, rootpath
 
 

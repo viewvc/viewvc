@@ -9,14 +9,23 @@
 # (scripts that reference Python in the shebang line, WSGI stubs,
 # etc.)
 
-echo "Checking code formatting..."
+# If the user passes a --fix flag, we should fix the files
+if [ "$1" = "--fix" ]; then
+    echo "Checking code formatting..."
+    CHECK_ARGS=""
+else
+    echo "Checking code formatting (read-only)..."
+    CHECK_ARGS="--check"
+fi
 PYFILES=`grep -rl '^#\(!.*/\|.*-\)python' --exclude=*.py .`
-black --line-length=100 --quiet --check . ${PYFILES} && flake8 . ${PYFILES}
+black --line-length=100 --quiet ${CHECK_ARGS} . ${PYFILES} && flake8 . ${PYFILES}
 if [ $? -eq 0 ]; then
     echo ""
     echo "Linting succeeded!"
 else
     echo ""
     echo "Linting failed."
-    echo "Try running 'black --line-length=100' on your problematic files."
+    if [ "$1" != "--fix" ]; then
+        echo "Trying running this script again with the --fix option."
+    fi
 fi

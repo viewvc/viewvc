@@ -307,20 +307,20 @@ def _rev2int(r):
     else:
         r = int(r)
         if r < 0:
-            raise ValueError("invalid revision '%d'" % (r))
+            raise ValueError(f"invalid revision '{r}'")
     return r
 
 
 def usage():
     cmd = os.path.basename(sys.argv[0])
     sys.stderr.write(
-        """\
+        f"""\
 Administer the ViewVC checkins database data for the Subversion repository
 located at REPOS-PATH.
 
-Usage: 1. %s [-v] rebuild REPOS-PATH
-       2. %s [-v] update REPOS-PATH [REV[:REV2]] [--force]
-       3. %s [-v] purge REPOS-PATH
+Usage: 1. {cmd} [-v] rebuild REPOS-PATH
+       2. {cmd} [-v] update REPOS-PATH [REV[:REV2]] [--force]
+       3. {cmd} [-v] purge REPOS-PATH
 
 1.  Rebuild the commit database information for the repository located
     at REPOS-PATH across all revisions, after first purging
@@ -341,7 +341,6 @@ Usage: 1. %s [-v] rebuild REPOS-PATH
 Use the -v flag to cause this script to give progress information as it works.
 
 """
-        % (cmd, cmd, cmd)
     )
     sys.exit(1)
 
@@ -368,7 +367,7 @@ if __name__ == "__main__":
 
     command = args[1].lower()
     if command not in ("rebuild", "update", "purge"):
-        sys.stderr.write("ERROR: unknown command %s\n" % command)
+        sys.stderr.write(f"ERROR: unknown command {command}\n")
         usage()
 
     revs = []
@@ -388,7 +387,7 @@ if __name__ == "__main__":
             if len(revs) == 1:
                 revs.append(revs[0])
         except ValueError:
-            sys.stderr.write(f"ERROR: invalid revision specification " f'"{sys.argv[3]}"\n')
+            sys.stderr.write(f'ERROR: invalid revision specification "{sys.argv[3]}"\n')
             usage()
     else:
         rev = None

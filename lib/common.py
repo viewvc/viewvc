@@ -30,18 +30,6 @@ class _item:
         vars(self).update(kw)
 
 
-# Python 3: workaround for cmp()
-def cmp(a, b):
-    if a is None and b is None:
-        return 0
-    if a is None:
-        return 1
-    if b is None:
-        return -1
-    assert type(a) is type(b)
-    return (a > b) - (a < b)
-
-
 class TemplateData:
     """A custom dictionary-like object that allows one-time definition
     of keys, and only value fetches and changes, and key deletions,
@@ -87,8 +75,8 @@ class ViewVCException(Exception):
 
     def __str__(self):
         if self.status:
-            return "%s: %s" % (self.status, self.msg)
-        return "ViewVC Unrecoverable Error: %s" % self.msg
+            return f"{self.status}: {self.msg}"
+        return f"ViewVC Unrecoverable Error: {self.msg}"
 
 
 def print_exception_data(server, exc_data):

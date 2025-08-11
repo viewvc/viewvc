@@ -49,7 +49,7 @@ def DateTimeFromTicks(ticks):
         t = time.gmtime(ticks)
     else:
         t = time.localtime(ticks)
-    return "%04d-%02d-%02d %02d:%02d:%02d" % t[:6]
+    return "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(*t[:6])
 
 
 _re_datetime = re.compile(

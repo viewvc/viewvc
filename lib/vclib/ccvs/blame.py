@@ -248,8 +248,8 @@ class CVSParser(rcsparse.Sink):
             rcsfile = open(rcs_pathname, "rb")
         except Exception:
             raise RuntimeError(
-                "error: %s appeared to be under CVS control, "
-                "but the RCS file is inaccessible." % rcs_pathname
+                f"error: {rcs_pathname} appeared to be under CVS control, "
+                "but the RCS file is inaccessible."
             )
 
         rcsparse.parse(rcsfile, self)
@@ -409,7 +409,11 @@ class BlameSource:
     def __init__(self, rcs_file, opt_rev=None, include_text=False, encoding="utf-8"):
         # Parse the CVS file
         parser = CVSParser(encoding)
-        revision = parser.parse_cvs_file(rcs_file, opt_rev.encode(encoding))
+        if opt_rev is None:
+            opt_rev_encoded = None
+        else:
+            opt_rev_encoded = opt_rev.encode(encoding)
+        revision = parser.parse_cvs_file(rcs_file, opt_rev_encoded)
         count = len(parser.revision_map)
         lines = parser.extract_revision(revision)
         if len(lines) != count:

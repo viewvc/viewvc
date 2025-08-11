@@ -50,7 +50,7 @@ class CCVSRepository(BaseCVSRepository):
             lists of tag and branch names encountered in the directory
         """
         if self.itemtype(path_parts, rev) != vclib.DIR:  # does auth-check
-            raise vclib.Error("Path '%s' is not a directory." % (_path_join(path_parts)))
+            raise vclib.Error(f"Path '{_path_join(path_parts)}' is not a directory.")
         entries_to_fetch = []
         for entry in entries:
             if vclib.check_path_access(self, path_parts + [entry.name], None, rev):
@@ -73,9 +73,9 @@ class CCVSRepository(BaseCVSRepository):
                         InfoSink(entry, rev, alltags, self.content_encoding),
                     )
                 except IOError as e:
-                    entry.errors.append("rcsparse error: %s" % e)
+                    entry.errors.append(f"rcsparse error: {e}")
                 except RuntimeError as e:
-                    entry.errors.append("rcsparse error: %s" % e)
+                    entry.errors.append(f"rcsparse error: {e}")
                 except rcsparse.RCSStopParser:
                     pass
 
@@ -100,7 +100,7 @@ class CCVSRepository(BaseCVSRepository):
             dictionary of Tag objects for all tags encountered
         """
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
+            raise vclib.Error(f"Path '{_path_join(path_parts)}' is not a file.")
 
         path = self.rcsfile(path_parts, 1)
         sink = TreeSink(self.content_encoding)
@@ -127,9 +127,9 @@ class CCVSRepository(BaseCVSRepository):
 
     def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type, options={}, is_text=True):
         if self.itemtype(path_parts1, rev1) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts1)))
+            raise vclib.Error(f"Path '{_path_join(path_parts1)}' is not a file.")
         if self.itemtype(path_parts2, rev2) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts2)))
+            raise vclib.Error(f"Path '{_path_join(path_parts2)}' is not a file.")
 
         fd1, temp1 = tempfile.mkstemp()
         os.fdopen(fd1, "wb").write(self.openfile(path_parts1, rev1, {})[0].getvalue())
@@ -151,7 +151,7 @@ class CCVSRepository(BaseCVSRepository):
 
     def annotate(self, path_parts, rev=None, include_text=False):
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
+            raise vclib.Error(f"Path '{_path_join(path_parts)}' is not a file.")
         source = blame.BlameSource(
             self._getfspath(self.rcsfile(path_parts, 1)), rev, include_text, self.content_encoding
         )
@@ -162,7 +162,7 @@ class CCVSRepository(BaseCVSRepository):
 
     def openfile(self, path_parts, rev, options):
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
-            raise vclib.Error("Path '%s' is not a file." % (_path_join(path_parts)))
+            raise vclib.Error(f"Path '{_path_join(path_parts)}' is not a file.")
         path = self.rcsfile(path_parts, 1)
         sink = COSink(rev, self.content_encoding)
         rcsparse.parse(open(self._getfspath(path), "rb"), sink)
@@ -338,14 +338,12 @@ class TreeSink(rcsparse.Sink):
                         added = added + count
                         idx = idx + count
                     elif command:
-                        raise vclib.Error(
-                            "error while parsing deltatext: %s" % self._to_str(command)
-                        )
+                        raise vclib.Error(f"error while parsing deltatext: {self._to_str(command)}")
 
         if len(rev.number) == 2:
-            rev.next_changed = changed and "+%i -%i" % (deled, added)
+            rev.next_changed = changed and f"+{deled} -{added}"
         else:
-            rev.changed = changed and "+%i -%i" % (added, deled)
+            rev.changed = changed and f"+{added} -{deled}"
 
     def _to_str(self, b):
         if isinstance(b, bytes):

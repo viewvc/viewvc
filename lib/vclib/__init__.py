@@ -372,7 +372,7 @@ class InvalidRevision(Error):
         if revision is None:
             Error.__init__(self, "Invalid revision")
         else:
-            Error.__init__(self, "Invalid revision " + str(revision))
+            Error.__init__(self, f"Invalid revision {revision}")
 
 
 class NonTextualFileContents(Error):
@@ -382,7 +382,7 @@ class NonTextualFileContents(Error):
 class ExternalDiffError(Error):
     def __init__(self, returncode, mess):
         self.returncode = returncode
-        Error.__init__(self, "Diff terminated with exit code {0:d}: {1}".format(returncode, mess))
+        Error.__init__(self, f"Diff terminated with exit code {returncode:d}: {mess}")
 
 
 # ======================================================================
@@ -394,12 +394,12 @@ def _diff_args(type, options):
     args = []
     if type == CONTEXT:
         if "context" in options:
-            args.append("--context=%i" % options["context"])
+            args.append(f"--context={options['context']}")
         else:
             args.append("-c")
     elif type == UNIFIED:
         if "context" in options:
-            args.append("--unified=%i" % options["context"])
+            args.append(f"--unified={options['context']}")
         else:
             args.append("-u")
     elif type == SIDE_BY_SIDE:
@@ -495,7 +495,7 @@ class _diff_fp:
     def _label(self, info):
         path, date, rev = info
         date = date and time.strftime("%Y/%m/%d %H:%M:%S", time.gmtime(date))
-        return "%s\t%s\t%s" % (path, date, rev)
+        return f"{path}\t{date}\t{rev}"
 
     def _check_process_errors(self):
         """Check errors returned by subprocss. On error, raise an

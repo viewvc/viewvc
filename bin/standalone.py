@@ -154,23 +154,19 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
                 self.send_header("Content-type", "text/html")
                 self.send_header("Location", new_url)
                 self.end_headers()
-                self.wfile.write(
-                    (
-                        """<html>
+                body = f"""<html>
 <head>
-<meta http-equiv="refresh" content="10; url=%s" />
+<meta http-equiv="refresh" content="10; url="{new_url}" />
 <title>Moved Temporarily</title>
 </head>
 <body>
 <h1>Redirecting to ViewVC</h1>
-<p>You will be automatically redirected to <a href="%s">ViewVC</a>.
+<p>You will be automatically redirected to <a href="{new_url}">ViewVC</a>.
    If this doesn't work, please click on the link above.</p>
 </body>
 </html>
 """
-                        % (new_url, new_url)
-                    ).encode("utf-8")
-                )
+                self.wfile.write(body.encode("utf-8"))
             else:
                 self.send_error(404)
         except IOError:  # ignore IOError: [Errno 32] Broken pipe
@@ -324,7 +320,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
                 if not self.wfile.closed:
                     self.wfile.flush()
         except SystemExit as status:
-            self.log_error("ViewVC exit status %s", str(status))
+            self.log_error(f"ViewVC exit status {status}")
         else:
             self.log_error("ViewVC exited ok")
 
@@ -334,7 +330,7 @@ class ViewVCHTTPServer(_http_server.HTTPServer):
 
     def __init__(self, host, port, callback):
         self.address = (host, port)
-        self.url = "http://%s:%d/" % (host, port)
+        self.url = f"http://{host}:{port}/"
         self.callback = callback
         _http_server.HTTPServer.__init__(self, self.address, self.handler)
 
@@ -361,9 +357,7 @@ class ViewVCHTTPServer(_http_server.HTTPServer):
         to avoid double fault.
         """
         sys.stderr.write("-" * 40 + "\n")
-        sys.stderr.write(
-            "Exception happened during processing of request from %s\n" % str(client_address)
-        )
+        sys.stderr.write(f"Exception happened during processing of request from {client_address}\n")
         import traceback
 
         traceback.print_exc()
@@ -418,7 +412,7 @@ def usage():
     host = clean_options.host
     script_alias = clean_options.script_alias
     sys.stderr.write(
-        """Usage: %(cmd)s [OPTIONS]
+        f"""Usage: {cmd} [OPTIONS]
 
 Run a simple, standalone HTTP server configured to serve up ViewVC requests.
 
@@ -434,13 +428,13 @@ Options:
   --help                     Show this usage message and exit.
 
   --host=HOSTNAME (-h)       Listen on HOSTNAME.  Required for access from a
-                             remote machine.  [default: %(host)s]
+                             remote machine.  [default: {host}]
 
   --htpasswd-file=FILE       Authenticate incoming requests, validating against
                              against FILE, which is an Apache HTTP Server
                              htpasswd file.
 
-  --port=PORT (-p)           Listen on PORT.  [default: %(port)d]
+  --port=PORT (-p)           Listen on PORT.  [default: {port}]
 
   --repository=PATH (-r)     Serve the Subversion or CVS repository located
                              at PATH.  This option may be used more than once.
@@ -449,18 +443,15 @@ Options:
                              to Apache HTTP Server's ScriptAlias directive).
                              For example, "--script-alias=repo/view" will serve
                              ViewVC at "http://HOSTNAME:PORT/repo/view".
-                             [default: %(script_alias)s]
+                             [default: {script_alias}]
 """
-        % locals()
     )
     sys.exit(0)
 
 
 def badusage(errstr):
     cmd = os.path.basename(sys.argv[0])
-    sys.stderr.write(
-        "ERROR: %s\n\nTry '%s --help' for detailed usage information.\n" % (errstr, cmd)
-    )
+    sys.stderr.write(f"ERROR: {errstr}\n\nTry '{cmd} --help' for detailed usage information.\n")
     sys.exit(1)
 
 
@@ -529,13 +520,13 @@ def main(argv):
             try:
                 options.port = int(opt_port)
             except ValueError:
-                raise BadUsage("Port '%s' is not a valid port number" % (opt_port))
+                raise BadUsage(f"Port '{opt_port}' is not a valid port number")
             if not options.port:
                 raise BadUsage("You must supply a valid port.")
         if opt_htpasswd_file is not None:
             if not os.path.isfile(opt_htpasswd_file):
                 raise BadUsage(
-                    "'%s' does not appear to be a valid htpasswd file." % (opt_htpasswd_file)
+                    f"'{opt_htpasswd_file}' does not appear to be a valid htpasswd file."
                 )
             if not has_passlib:
                 raise BadUsage(
@@ -548,7 +539,7 @@ def main(argv):
         if opt_config_file is not None:
             if not os.path.isfile(opt_config_file):
                 raise BadUsage(
-                    "'%s' does not appear to be a valid configuration file." % (opt_config_file)
+                    f"'{opt_config_file}' does not appear to be a valid configuration file."
                 )
             options.config_file = opt_config_file
         if opt_host is not None:
@@ -559,7 +550,7 @@ def main(argv):
             if "Development" not in options.repositories:
                 rootname = "Development"
             else:
-                rootname = "Repository%d" % (len(options.repositories.keys()) + 1)
+                rootname = f"Repository{len(options.repositories.keys()) + 1}"
             options.repositories[rootname] = repository
     except BadUsage as err:
         badusage(str(err))
