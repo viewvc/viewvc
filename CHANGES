@@ -4,7 +4,7 @@ Version 1.3.0 (released ??-???-????)
     - minimum Python version is now 3.6 (#138)
     - minimum Subversion version now 1.14.0 with py3 bindings
     - minimum Pygments version now 1.1
-    - minimum MySQL version now ????? (#213)
+    - minimum MySQL version now MySQL 5.7/MariaDB 10.2 (#213)
     - now using passlib (instead of fcrypt) for standalone authn support (#361)
   * removed support for mod_python-based deployments (#234)
   * removed support for ASP-based deployments (#235)
