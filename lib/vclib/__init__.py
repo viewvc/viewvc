@@ -32,6 +32,7 @@ SIDE_BY_SIDE = 3
 # root types returned by Repository.roottype().
 CVS = "cvs"
 SVN = "svn"
+GIT = "git"
 
 # action kinds found in ChangedPath.action
 ADDED = "added"
