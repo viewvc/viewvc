@@ -89,7 +89,7 @@ class GitRepository(vclib.Repository):
         rp = pygit2.discover_repository(rootpath)
         if rp is None:
             raise vclib.ReposNotFound(name)
-        self._rootpath = rp
+        self.rootpath: str = rp
 
         # Initialize some stuff.
         self.name = name
@@ -105,7 +105,7 @@ class GitRepository(vclib.Repository):
 
     def open(self):
         "Open the repository and init some other variables."
-        self.repos = pygit2.Repository(self._rootpath)
+        self.repos = pygit2.Repository(self.rootpath)
         self.local_branches = list(self.repos.branches.local)
         self.remote_branches = list(self.repos.branches.remote)
         self.tags = [r for r in self.repos.references if TAG_RE.match(r)]
@@ -134,9 +134,6 @@ class GitRepository(vclib.Repository):
 
     def rootname(self) -> str:
         return self.name
-
-    def rootpath(self) -> str:
-        return self._rootpath
 
     def roottype(self) -> str:
         return vclib.GIT
