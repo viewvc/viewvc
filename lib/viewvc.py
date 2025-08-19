@@ -338,7 +338,10 @@ class Request:
 
             # Make sure path exists
             self.pathrev = pathrev = self.query_dict.get("pathrev")
-            self.pathtype = _repos_pathtype(self.repos, path_parts, pathrev)
+            try:
+                self.pathtype = _repos_pathtype(self.repos, path_parts, pathrev)
+            except vclib.InvalidRevision as e:
+                raise ViewVCException(f"{e}", "404 Not Found")
 
             if self.pathtype is None:
                 # Path doesn't exist, see if it could be an old-style ViewVC URL
