@@ -711,7 +711,7 @@ class GitRepository(vclib.Repository):
         if rev is None or rev == "HEAD":
             return self.repos.resolve_refish("HEAD")[0]
         try:
-            commit = self.repos.get(rev)
+            commit = self.repos.resolve_refish(rev)[0]
         except Exception:
             raise vclib.InvalidRevision(rev)
         if commit is None:
