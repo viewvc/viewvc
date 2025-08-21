@@ -15,14 +15,12 @@
 #
 # -----------------------------------------------------------------------
 
-import os
-import sys
 import cgi
 
 
 # Global server object. It will be one of the following:
-#   1. a CgiServer object
-#   2. an WsgiServer object
+#   1. an WsgiServer object
+#   (Historically, there was one more server object here, CgiServer)
 server = None
 
 
@@ -149,79 +147,6 @@ class Server:
         expects bytestring intput.  Child classes should override
         this method."""
         raise ServerImplementationError()
-
-
-class CgiServer(Server):
-    """CGI server implementation."""
-
-    def __init__(self):
-        Server.__init__(self)
-        self._headers = []
-        self._iis = os.environ.get("SERVER_SOFTWARE", "")[:13] == "Microsoft-IIS"
-        global server
-        server = self
-
-    def add_header(self, name, value):
-        self._headers.append((name, value))
-
-    def start_response(self, content_type="text/html; charset=UTF-8", status=None):
-        Server.start_response(self, content_type, status)
-
-        extraheaders = ""
-        for name, value in self._headers:
-            extraheaders = extraheaders + f"{name}: {value}\r\n"
-
-        # The only way ViewVC pages and error messages are visible under
-        # IIS is if a 200 error code is returned. Otherwise IIS instead
-        # sends the static error page corresponding to the code number.
-        if status is None or (status[:3] != "304" and self._iis):
-            status = ""
-        else:
-            status = f"Status: {status}\r\n"
-
-        self.write_text(f"{status}Content-Type: {content_type}\r\n{extraheaders}\r\n")
-
-    def redirect(self, url):
-        if self._iis:
-            url = fix_iis_url(self, url)
-        self.add_header("Location", url)
-        self.start_response(status="301 Moved")
-        self.write_text(redirect_notice(url))
-
-    def getenv(self, name, value=None):
-        # we should always use UTF-8 to decode OS's environment variable.
-        if sys.getfilesystemencoding().lower() == "utf-8":
-            ret = os.environ.get(name, value)
-        else:
-            if os.supports_bytes_environ:
-                if isinstance(value, str):
-                    value = value.encode("utf-8", "surrogateescape")
-                ret = os.environb.get(name.encode(sys.getfilesystemencoding()), value)
-            else:
-                ret = os.environ.get(name, value)
-                if isinstance(ret, str):
-                    ret = ret.encode(sys.getfilesystemencoding(), "surrogateescape")
-            if isinstance(ret, bytes):
-                ret = ret.decode("utf-8", "surrogateescape")
-        if self._iis and name == "PATH_INFO":
-            ret = fix_iis_path_info(self, ret)
-        return ret
-
-    def params(self):
-        return cgi.parse()
-
-    def write_text(self, s):
-        sys.stdout.write(s)
-        sys.stdout.flush()
-
-    def write(self, s):
-        sys.stdout.buffer.write(s)
-
-    def flush(self):
-        sys.stdout.buffer.flush()
-
-    def file(self):
-        return sys.stdout.buffer
 
 
 class WsgiServer(Server):

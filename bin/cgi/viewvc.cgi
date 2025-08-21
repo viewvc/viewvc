@@ -23,6 +23,7 @@
 
 import sys
 import os
+from wsgiref.handlers import CGIHandler
 
 
 #########################################################################
@@ -54,6 +55,13 @@ import viewvc
 # except:
 #   pass
 
-server = sapi.CgiServer()
-cfg = viewvc.load_config(CONF_PATHNAME, server)
-viewvc.main(server, cfg)
+
+def application(environ, start_response):
+    server = sapi.WsgiServer(environ, start_response)
+    cfg = viewvc.load_config(CONF_PATHNAME, server)
+    viewvc.main(server, cfg)
+    return []
+
+
+if __name__ == "__main__":
+    CGIHandler().run(application)
