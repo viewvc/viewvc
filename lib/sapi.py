@@ -202,57 +202,5 @@ class WsgiServer(Server):
         return ServerFile(self)
 
 
-def fix_iis_url(server, url):
-    """When a CGI application under IIS outputs a "Location" header with a url
-    beginning with a forward slash, IIS tries to optimise the redirect by not
-    returning any output from the original CGI script at all and instead just
-    returning the new page in its place. Because of this, the browser does
-    not know it is getting a different page than it requested. As a result,
-    The address bar that appears in the browser window shows the wrong location
-    and if the new page is in a different folder than the old one, any relative
-    links on it will be broken.
-
-    This function can be used to circumvent the IIS "optimization" of local
-    redirects. If it is passed a location that begins with a forward slash it
-    will return a URL constructed with the information in CGI environment.
-    If it is passed a URL or any location that doens't begin with a forward slash
-    it will return just argument unaltered.
-    """
-    if url[0] == "/":
-        if server.getenv("HTTPS") == "on":
-            dport = "443"
-            prefix = "https://"
-        else:
-            dport = "80"
-            prefix = "http://"
-        prefix = prefix + server.getenv("HTTP_HOST")
-        if server.getenv("SERVER_PORT") != dport:
-            prefix = prefix + ":" + server.getenv("SERVER_PORT")
-        return prefix + url
-    return url
-
-
-def fix_iis_path_info(server, path_info):
-    """Fix the PATH_INFO value in IIS"""
-    # If the viewvc cgi's are in the /viewvc/ folder on the web server and a
-    # request looks like
-    #
-    #      /viewvc/viewvc.cgi/myproject/?someoption
-    #
-    # The CGI environment variables on IIS will look like this:
-    #
-    #      SCRIPT_NAME  =  /viewvc/viewvc.cgi
-    #      PATH_INFO    =  /viewvc/viewvc.cgi/myproject/
-    #
-    # Whereas on Apache they look like:
-    #
-    #      SCRIPT_NAME  =  /viewvc/viewvc.cgi
-    #      PATH_INFO    =  /myproject/
-    #
-    # This function converts the IIS PATH_INFO into the nonredundant form
-    # expected by ViewVC
-    return path_info[len(server.getenv("SCRIPT_NAME", "")) :]
-
-
 def redirect_notice(url):
     return f'This document is located <a href="{url}">here</a>.'

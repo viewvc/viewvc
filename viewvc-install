@@ -56,6 +56,7 @@ CLEAN_MODE = None
 #           boolean -- compile?)
 FILE_INFO_LIST = [
     ("bin/cgi/viewvc.cgi", "bin/cgi/viewvc.cgi", 0o0755, 1, 0, 0),
+    ("bin/cgi/iis/viewvc.cgi", "bin/cgi/iis/viewvc.cgi", 0o0755, 1, 0, 0),
     ("bin/wsgi/viewvc.wsgi", "bin/wsgi/viewvc.wsgi", 0o0755, 1, 0, 0),
     ("bin/wsgi/viewvc.fcgi", "bin/wsgi/viewvc.fcgi", 0o0755, 1, 0, 0),
     ("bin/standalone.py", "bin/standalone.py", 0o0755, 1, 0, 0),
