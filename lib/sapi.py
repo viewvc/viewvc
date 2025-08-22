@@ -18,9 +18,7 @@
 import cgi
 
 
-# Global server object. It will be one of the following:
-#   1. an WsgiServer object
-#   (Historically, there was one more server object here, CgiServer)
+# Global server object.
 server = None
 
 

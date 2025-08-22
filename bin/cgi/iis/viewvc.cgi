@@ -48,13 +48,6 @@ else:
 import sapi
 import viewvc
 
-# If admins want nicer processes, here's the place to get them.
-#
-# try:
-#   os.nice(20) # bump the nice level of this process
-# except:
-#   pass
-
 
 def application(environ, start_response):
     server = sapi.WsgiServer(environ, start_response)
