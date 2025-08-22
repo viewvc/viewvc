@@ -23,7 +23,7 @@
 
 import sys
 import os
-from wsgiref.handlers import CGIHandler
+from wsgiref.handlers import IISCGIHandler
 
 
 #########################################################################
@@ -44,16 +44,9 @@ CONF_PATHNAME = None
 if LIBRARY_DIR:
     sys.path.insert(0, LIBRARY_DIR)
 else:
-    sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../../lib")))
+    sys.path.insert(0, os.path.abspath(os.path.join(sys.argv[0], "../../../../lib")))
 import sapi
 import viewvc
-
-# If admins want nicer processes, here's the place to get them.
-#
-# try:
-#   os.nice(20) # bump the nice level of this process
-# except:
-#   pass
 
 
 def application(environ, start_response):
@@ -64,4 +57,4 @@ def application(environ, start_response):
 
 
 if __name__ == "__main__":
-    CGIHandler().run(application)
+    IISCGIHandler().run(application)

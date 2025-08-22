@@ -15,14 +15,10 @@
 #
 # -----------------------------------------------------------------------
 
-import os
-import sys
 import cgi
 
 
-# Global server object. It will be one of the following:
-#   1. a CgiServer object
-#   2. an WsgiServer object
+# Global server object.
 server = None
 
 
@@ -151,79 +147,6 @@ class Server:
         raise ServerImplementationError()
 
 
-class CgiServer(Server):
-    """CGI server implementation."""
-
-    def __init__(self):
-        Server.__init__(self)
-        self._headers = []
-        self._iis = os.environ.get("SERVER_SOFTWARE", "")[:13] == "Microsoft-IIS"
-        global server
-        server = self
-
-    def add_header(self, name, value):
-        self._headers.append((name, value))
-
-    def start_response(self, content_type="text/html; charset=UTF-8", status=None):
-        Server.start_response(self, content_type, status)
-
-        extraheaders = ""
-        for name, value in self._headers:
-            extraheaders = extraheaders + f"{name}: {value}\r\n"
-
-        # The only way ViewVC pages and error messages are visible under
-        # IIS is if a 200 error code is returned. Otherwise IIS instead
-        # sends the static error page corresponding to the code number.
-        if status is None or (status[:3] != "304" and self._iis):
-            status = ""
-        else:
-            status = f"Status: {status}\r\n"
-
-        self.write_text(f"{status}Content-Type: {content_type}\r\n{extraheaders}\r\n")
-
-    def redirect(self, url):
-        if self._iis:
-            url = fix_iis_url(self, url)
-        self.add_header("Location", url)
-        self.start_response(status="301 Moved")
-        self.write_text(redirect_notice(url))
-
-    def getenv(self, name, value=None):
-        # we should always use UTF-8 to decode OS's environment variable.
-        if sys.getfilesystemencoding().lower() == "utf-8":
-            ret = os.environ.get(name, value)
-        else:
-            if os.supports_bytes_environ:
-                if isinstance(value, str):
-                    value = value.encode("utf-8", "surrogateescape")
-                ret = os.environb.get(name.encode(sys.getfilesystemencoding()), value)
-            else:
-                ret = os.environ.get(name, value)
-                if isinstance(ret, str):
-                    ret = ret.encode(sys.getfilesystemencoding(), "surrogateescape")
-            if isinstance(ret, bytes):
-                ret = ret.decode("utf-8", "surrogateescape")
-        if self._iis and name == "PATH_INFO":
-            ret = fix_iis_path_info(self, ret)
-        return ret
-
-    def params(self):
-        return cgi.parse()
-
-    def write_text(self, s):
-        sys.stdout.write(s)
-        sys.stdout.flush()
-
-    def write(self, s):
-        sys.stdout.buffer.write(s)
-
-    def flush(self):
-        sys.stdout.buffer.flush()
-
-    def file(self):
-        return sys.stdout.buffer
-
-
 class WsgiServer(Server):
     def __init__(self, environ, write_response):
         Server.__init__(self)
@@ -275,58 +198,6 @@ class WsgiServer(Server):
 
     def file(self):
         return ServerFile(self)
-
-
-def fix_iis_url(server, url):
-    """When a CGI application under IIS outputs a "Location" header with a url
-    beginning with a forward slash, IIS tries to optimise the redirect by not
-    returning any output from the original CGI script at all and instead just
-    returning the new page in its place. Because of this, the browser does
-    not know it is getting a different page than it requested. As a result,
-    The address bar that appears in the browser window shows the wrong location
-    and if the new page is in a different folder than the old one, any relative
-    links on it will be broken.
-
-    This function can be used to circumvent the IIS "optimization" of local
-    redirects. If it is passed a location that begins with a forward slash it
-    will return a URL constructed with the information in CGI environment.
-    If it is passed a URL or any location that doens't begin with a forward slash
-    it will return just argument unaltered.
-    """
-    if url[0] == "/":
-        if server.getenv("HTTPS") == "on":
-            dport = "443"
-            prefix = "https://"
-        else:
-            dport = "80"
-            prefix = "http://"
-        prefix = prefix + server.getenv("HTTP_HOST")
-        if server.getenv("SERVER_PORT") != dport:
-            prefix = prefix + ":" + server.getenv("SERVER_PORT")
-        return prefix + url
-    return url
-
-
-def fix_iis_path_info(server, path_info):
-    """Fix the PATH_INFO value in IIS"""
-    # If the viewvc cgi's are in the /viewvc/ folder on the web server and a
-    # request looks like
-    #
-    #      /viewvc/viewvc.cgi/myproject/?someoption
-    #
-    # The CGI environment variables on IIS will look like this:
-    #
-    #      SCRIPT_NAME  =  /viewvc/viewvc.cgi
-    #      PATH_INFO    =  /viewvc/viewvc.cgi/myproject/
-    #
-    # Whereas on Apache they look like:
-    #
-    #      SCRIPT_NAME  =  /viewvc/viewvc.cgi
-    #      PATH_INFO    =  /myproject/
-    #
-    # This function converts the IIS PATH_INFO into the nonredundant form
-    # expected by ViewVC
-    return path_info[len(server.getenv("SCRIPT_NAME", "")) :]
 
 
 def redirect_notice(url):
