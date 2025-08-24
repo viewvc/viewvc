@@ -439,13 +439,22 @@ class GitRepository(vclib.Repository):
             parent_pp: list[str],
             rev: str,
             t1: pygit2.Tree,
-            t2: pygit2.Tree,
+            t2: pygit2.Tree | None,
         ) -> tuple[bool, bool]:
             """Return a 2-tuple: found_readable, found_unreadable,
             with collwcting changed paths"""
 
             t1_ent = set([entobj.name for entobj in t1 if entobj.name is not None])
-            t2_ent = set([entobj.name for entobj in t2 if entobj.name is not None])
+            t2_ent = (
+                set([entobj.name for entobj in t2 if entobj.name is not None])
+                if t2 is not None
+                else set()
+            )
+            try:
+                prev_rev = self.repos.get(rev).parents[0].id
+            except Exception:
+                # To do: prev_rev should not be None, but what is apropriate?
+                prev_rev = "Not a revision"
             for ent in t1_ent - t2_ent:
                 # Added entries
                 pp = parent_pp + [ent]
@@ -454,7 +463,7 @@ class GitRepository(vclib.Repository):
                     kind = self.itemtype(pp, rev)
                     found_readable = True
                     changes[path] = vclib.ChangedPath(
-                        pp, rev, kind, None, None, vclib.ADDED, False, False, False
+                        pp, rev, kind, [], prev_rev, vclib.ADDED, False, False, False
                     )
                 except vclib.ItemNotFound:
                     found_unreadable = True
@@ -468,11 +477,14 @@ class GitRepository(vclib.Repository):
                     # To do: base_rev should be a commit that base_path was
                     # last modified.
                     changes[path] = vclib.ChangedPath(
-                        pp, rev, kind, pp, rev, vclib.DELETED, False, False, False
+                        pp, rev, kind, pp, prev_rev, vclib.DELETED, False, False, False
                     )
                 except vclib.ItemNotFound:
                     found_unreadable = True
             for ent in t1_ent & t2_ent:
+                # If t2 is None then t2_ent is empty set. So the assertion
+                # below never fails. Only for type checking....
+                assert t2 is not None
                 e1 = t1[ent]
                 e2 = t2[ent]
                 if e1.id == e2.id and e1.filemode == e2.filemode:
@@ -493,7 +505,7 @@ class GitRepository(vclib.Repository):
                                 rev,
                                 kind,
                                 pp,
-                                rev,
+                                prev_rev,
                                 vclib.MODIFIED,
                                 False,
                                 text_modified,
@@ -509,7 +521,7 @@ class GitRepository(vclib.Repository):
                             # To do: base_rev should be a commit that
                             # base_path was last modified.
                             changes[path] = vclib.ChangedPath(
-                                pp, rev, kind, pp, rev, vclib.REPLACED, False, False, False
+                                pp, rev, kind, pp, prev_rev, vclib.REPLACED, False, False, False
                             )
                         except vclib.ItemNotFound:
                             found_unreadable = True
@@ -525,7 +537,7 @@ class GitRepository(vclib.Repository):
                                 rev,
                                 kind,
                                 pp,
-                                rev,
+                                prev_rev,
                                 vclib.MODIFIED,
                                 False,
                                 text_modified,
@@ -541,7 +553,7 @@ class GitRepository(vclib.Repository):
                         # To do: base_rev should be a commit that
                         # base_path was last modified.
                         changes[path] = vclib.ChangedPath(
-                            pp, rev, kind, pp, rev, vclib.REPLACED, False, False, False
+                            pp, rev, kind, pp, prev_rev, vclib.REPLACED, False, False, False
                         )
                     except vclib.ItemNotFound:
                         found_unreadable = True
@@ -562,7 +574,7 @@ class GitRepository(vclib.Repository):
             parent_pp: list[str],
             rev: str,
             t1: pygit2.Tree,
-            t2: pygit2.Tree,
+            t2: pygit2.Tree | None,
         ) -> tuple[bool, bool]:
             """Return a 2-tuple: found_readable, found_unreadable,
             without collwcting changed paths"""
@@ -571,7 +583,11 @@ class GitRepository(vclib.Repository):
                 return found_readable, found_unreadable
 
             t1_ent = set([entobj.name for entobj in t1 if entobj.name is not None])
-            t2_ent = set([entobj.name for entobj in t2 if entobj.name is not None])
+            t2_ent = (
+                set([entobj.name for entobj in t2 if entobj.name is not None])
+                if t2 is not None
+                else set()
+            )
             for ent in t1_ent - t2_ent:
                 # Added entries
                 pp = parent_pp + [ent]
@@ -597,6 +613,9 @@ class GitRepository(vclib.Repository):
                     if found_readable:
                         return found_readable, found_unreadable
             for ent in t1_ent & t2_ent:
+                # If t2 is None then t2_ent is empty set. So the assertion
+                # below never fails. Only for type checking....
+                assert t2 is not None
                 e1 = t1[ent]
                 e2 = t2[ent]
                 if e1.id == e2.id and e1.filemode == e2.filemode:
@@ -650,7 +669,7 @@ class GitRepository(vclib.Repository):
             # cost is too great).
 
             t1 = commit.tree
-            t2 = commit.parents[0].tree
+            t2 = commit.parents[0].tree if commit.parents else None
             if include_changed_paths:
                 changes: dict[str, vclib.ChangedPath] = {}
                 changedinfo = _collect_changedpaths(False, False, changes, [], rev, t1, t2)
