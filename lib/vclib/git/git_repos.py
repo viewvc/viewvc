@@ -845,7 +845,11 @@ class GitRepository(vclib.Repository):
         cur_commit = next(walker)
         for prev_commit in walker:
             prev_node = _get_tree_entry(prev_commit.tree, pfull_name)
-            if prev_node is None or prev_node.id != nodeobj.id:
+            if (
+                prev_node is None
+                or prev_node.id != nodeobj.id
+                or prev_node.filemode != nodeobj.filemode
+            ):
                 return str(cur_commit.id)
             cur_commit = prev_commit
         return str(cur_commit.id)
