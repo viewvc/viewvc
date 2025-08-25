@@ -338,14 +338,20 @@ class GitRepository(vclib.Repository):
     ) -> tuple[Iterable[vclib.Annotation], str]:
 
         def gen_annotation(
-            blame: pygit2.Blame, file: pygit2.BlobIO | None
+            blame: pygit2.Blame, path_parts: list[str], file: pygit2.BlobIO | None
         ) -> Iterable[vclib.Annotation]:
             ln = 0
-            cur_rev = rev
             for bh in blame:
                 assert ln + 1 == bh.final_start_line_number
-                prev_rev = cur_rev
                 cur_rev = self._getrev(str(bh.final_commit_id))
+                parents = self._getcommit(cur_rev).parent_ids
+                prev_rev = str(parents[0]) if parents else None
+                if prev_rev is not None:
+                    try:
+                        if self.itemtype(path_parts, prev_rev) != vclib.FILE:
+                            prev_rev = None
+                    except Exception:
+                        prev_rev = None
                 cdate, author, _, _, _ = self._revinfo(cur_rev, False)
                 cnt = bh.lines_in_hunk
                 while cnt > 0:
@@ -360,9 +366,20 @@ class GitRepository(vclib.Repository):
             raise vclib.Error(f"Path '{path}' is not a file.")
         rev = self._getrev(rev)
         ppath = self._to_pygit2_path(path)
-        git_blame = self.repos.blame(ppath, BlameFlag.NORMAL, None, rev)
+        try:
+            git_blame = self.repos.blame(ppath, BlameFlag.NORMAL, None, rev)
+        except UnicodeEncodeError:
+            raise vclib.Error(
+                f"Cannot annotate file '{path}' because of the limitation in pygit2 module"
+            )
+        except Exception as e:
+            raise vclib.Error(
+                f"Cannot annotate file '{path} because of "
+                "unknown error from pygit2.Repository.blame(): "
+                f"{e}"
+            )
         file = self.openfile(path_parts, rev, None)[0] if include_text else None
-        return gen_annotation(git_blame, file), rev
+        return gen_annotation(git_blame, path_parts, file), rev
 
     def revinfo(
         self, rev: str
