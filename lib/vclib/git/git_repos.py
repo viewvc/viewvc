@@ -869,3 +869,47 @@ class GitRepository(vclib.Repository):
         if not isinstance(nodeobj, pygit2.Blob) or nodeobj.filemode.name != "LINK":
             return None
         return nodeobj.data.decode(self.path_encoding, "surrogateescape")
+
+    def get_branches(self, path_parts: list[str]) -> list[str]:
+        """Return list of local branch names which contains path specified by
+        path_parts"""
+
+        if not path_parts:
+            return self.local_branches
+        path = self._getpath(path_parts)
+        ppath = self._to_pygit2_path(path)
+        branches: list[str] = []
+        for branch in self.local_branches:
+            try:
+                brev = self.repos.branches.local[branch].target
+            except KeyError:
+                brev = None
+            if brev is not None and ppath in self.repos.get(brev).tree:
+                try:
+                    self.itemtype(path_parts, str(brev))  # does auth-check
+                    branches.append(branch)
+                except vclib.ItemNotFound:
+                    pass
+        return branches
+
+    def get_tags(self, path_parts: list[str]) -> list[str]:
+        """Return list of tag names which contains path specified by
+        path_parts"""
+
+        if not path_parts:
+            return self.tags
+        path = self._getpath(path_parts)
+        ppath = self._to_pygit2_path(path)
+        tags: list[str] = []
+        for tag in self.tags:
+            try:
+                trev = self.repos.resolve_refish(tag)[0]
+            except KeyError:
+                trev = None
+            if trev is not None and ppath in trev.tree:
+                try:
+                    self.itemtype(path_parts, str(trev.id))  # does auth-check
+                    tags.append(tag)
+                except vclib.ItemNotFound:
+                    pass
+        return tags
