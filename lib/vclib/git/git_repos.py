@@ -785,6 +785,7 @@ class GitRepository(vclib.Repository):
     def _getnode(
         self, path_parts: list[str], rev: str | pygit2.Oid
     ) -> tuple[pygit2.Commit, str, pygit2.Blob | pygit2.Tree]:
+        rev = self._getrev(rev)
         commit = self._getcommit(rev)
         nodeobj: pygit2.Object | None
         if not path_parts:
