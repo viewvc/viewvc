@@ -26,7 +26,7 @@ from pygit2.enums import SortMode, BlameFlag
 
 
 BUFSIZE = 8192
-TAG_RE = re.compile(r"^/refs/tags/")
+TAG_RE = re.compile(r"^refs/tags/")
 
 _node_typemap = {"tree": vclib.DIR, "blob": vclib.FILE}
 
@@ -121,7 +121,7 @@ class GitRepository(vclib.Repository):
         self.repos = pygit2.Repository(self._pygit2_rootpath)
         self.local_branches = list(self.repos.branches.local)
         self.remote_branches = list(self.repos.branches.remote)
-        self.tags = [r for r in self.repos.references if TAG_RE.match(r)]
+        self.tags = [r[10:] for r in self.repos.references if TAG_RE.match(r)]
         if self.default_branch:
             # branch ref is always point to 'head' commit.
             self.youngest, self.youngest_ref = self.repos.resolve_refish(self.default_branch)
