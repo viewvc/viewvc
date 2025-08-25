@@ -2749,13 +2749,27 @@ def view_directory(request):
         data["hide_attic_href"] = request.get_url(params={"hideattic": 1}, escape=1)
 
     # set svn-specific fields
-    elif request.roottype in ("svn", "git"):
+    elif request.roottype == "svn":
         data["tree_rev"] = tree_rev
         data["tree_rev_href"] = request.get_url(
             view_func=view_revision, params={"revision": tree_rev}, escape=1
         )
         data["youngest_rev"] = request.repos.get_youngest_revision()
         data["youngest_rev_href"] = request.get_url(view_func=view_revision, params={}, escape=1)
+    elif request.roottype == "git":
+        data["tree_rev"] = tree_rev
+        data["tree_rev_href"] = request.get_url(
+            view_func=view_revision, params={"revision": tree_rev}, escape=1
+        )
+        data["youngest_rev"] = request.repos.get_youngest_revision()
+        data["youngest_rev_href"] = request.get_url(view_func=view_revision, params={}, escape=1)
+        data["plain_tags"] = [
+            _item(name=tag, revision=tag) for tag in request.repos.get_tags(request.path_parts)
+        ]
+        data["branch_tags"] = [
+            _item(name=branch, revision=branch)
+            for branch in request.repos.get_branches(request.path_parts)
+        ]
 
     if cfg.options.dir_pagesize:
         data["dir_paging_action"], data["dir_paging_hidden_values"] = request.get_form(
