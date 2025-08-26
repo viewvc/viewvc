@@ -47,7 +47,7 @@ For CVS support:
   * GNU diff
       (http://www.gnu.org/software/diffutils/diffutils.html)
   * CvsGraph 1.5.0+ (for optional CVS graphical tree generation)
-      (formerly at http://www.akhphd.au.dk/~bertho/cvsgraph/)
+      (https://www.vagrearg.org/content/cvsgraph)
 
 For Subversion support:
 
