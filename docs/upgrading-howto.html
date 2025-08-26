@@ -144,27 +144,29 @@ var, code {
 
 <!-- ------------------------------------------------------------------------ -->
 <div class="h3">
-<h3>CGI script viewvc.cgi for IIS server</h3>
-<p>The CGI script <code>bin/cgi/viewvc.cgi</code> no longer support IIS
-   server environment unless server setting about PATH_INFO processing
-   setting is on, that is, <a href=
-   "https://learn.microsoft.com/iis/configuration/system.webserver/handlers/add#attributes"
-   >AllowPathInfo config option</a> is <code>true</code> for IIS >= 7.0,
-   or <a href=
-   "https://learn.microsoft.com/previous-versions/iis/6.0-sdk/ms525840(v=vs.90)"
-   >metabase property AllowPathInfoForScriptMappings</a> is <code>TRUE</code>
-   for IIS < 7.0.  Instead, for such an environment, we provide new CGI script
-   <code>bin/cgi/iis/viewvc.cgi</code>.</p>
+<h3>New CGI Script for IIS</h3>
 
-<p>If you were running prior version of ViewVC's <code>viewvc.cgi</code>
-   script on IIS server, please check the config option and/or metabase
-   property described above.  If it is applicable, you have following
-   options:</p>
+<p>The <code>bin/cgi/viewvc.cgi</code> script no longer supports IIS
+   deployments <em>unless</em> those have been specifically configured to
+   populate the <var>PATH_INFO</var> CGI variable in a manner more compliant
+   with the CGI specification.  Such configuration is done different depending
+   on the version of IIS &mdash; via the
+   <a href="https://learn.microsoft.com/iis/configuration/system.webserver/handlers/add#attributes"
+   >AllowPathInfo option</a> for IIS 7.0 or newer; via the
+   <a href="https://learn.microsoft.com/previous-versions/iis/6.0-sdk/ms525840(v=vs.90)"
+   >AllowPathInfoForScriptMappings metabase property</a> for older versions.
+   For IIS servers which continue to use the default handling of
+   <var>PATH_INFO</var>, though, ViewVC 1.3 provides a new
+   <code>bin/cgi/iis/viewvc.cgi</code> script.</p>
+
+<p>To summarize, administrators deploying ViewVC as a CGI script under IIS
+   have two options:</p>
 
 <ul>
-<li>Use <code>bin/cgi/iis/viewvc.cgi</code> without changing IIS settings</li>
-<li>Turn on IIS setting about PATH_INFO fix, and then use
-    <code>bin/cgi/viewvc.cgi</code></li>
+<li>If the appropriate <var>PATH_INFO</var> population setting (mentioned above)
+    has <em>not</em> been modified from its default value, use the new
+    <code>bin/cgi/iis/viewvc.cgi</code> script.</li>
+<li>Otherwise, continue to use <code>bin/cgi/viewvc.cgi</code>.</li>
 </ul>
 
 </div>
