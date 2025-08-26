@@ -37,9 +37,9 @@ The only hard software requirement for running ViewVC is a suitable version of P
 
 ## Getting ViewVC
 
-Official ViewVC release archives are available for download at http://viewvc.org/downloads/.  To see what changes have been included in the release, see the [CHANGES](https://raw.githubusercontent.com/viewvc/viewvc/master/CHANGES) file.
+Official ViewVC release archives are available for download at https://viewvc.org/downloads/.  To see what changes have been included in the release, see the [CHANGES](https://raw.githubusercontent.com/viewvc/viewvc/master/CHANGES) file.
 
-Un-official nightly builds are available at http://viewvc.org/nightly/
+Un-official nightly builds are available at https://viewvc.org/nightly/
 
 ## Upgrading
 
