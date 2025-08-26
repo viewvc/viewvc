@@ -144,6 +144,35 @@ var, code {
 
 <!-- ------------------------------------------------------------------------ -->
 <div class="h3">
+<h3>New CGI Script for IIS</h3>
+
+<p>The <code>bin/cgi/viewvc.cgi</code> script no longer supports IIS
+   deployments <em>unless</em> those have been specifically configured to
+   populate the <var>PATH_INFO</var> CGI variable in a manner more compliant
+   with the CGI specification.  Such configuration is done different depending
+   on the version of IIS &mdash; via the
+   <a href="https://learn.microsoft.com/iis/configuration/system.webserver/handlers/add#attributes"
+   >AllowPathInfo option</a> for IIS 7.0 or newer; via the
+   <a href="https://learn.microsoft.com/previous-versions/iis/6.0-sdk/ms525840(v=vs.90)"
+   >AllowPathInfoForScriptMappings metabase property</a> for older versions.
+   For IIS servers which continue to use the default handling of
+   <var>PATH_INFO</var>, though, ViewVC 1.3 provides a new
+   <code>bin/cgi/iis/viewvc.cgi</code> script.</p>
+
+<p>To summarize, administrators deploying ViewVC as a CGI script under IIS
+   have two options:</p>
+
+<ul>
+<li>If the appropriate <var>PATH_INFO</var> population setting (mentioned above)
+    has <em>not</em> been modified from its default value, use the new
+    <code>bin/cgi/iis/viewvc.cgi</code> script.</li>
+<li>Otherwise, continue to use <code>bin/cgi/viewvc.cgi</code>.</li>
+</ul>
+
+</div>
+
+<!-- ------------------------------------------------------------------------ -->
+<div class="h3">
 <h3>Binary File Handling</h3>
 
 <p>The <var>options/binary_mime_types</var> option has changed slightly in
