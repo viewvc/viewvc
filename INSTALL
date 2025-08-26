@@ -38,21 +38,23 @@ depending on what you want to do with it.
 Minimum requirements:
 
   * Python 3.6+
-      (http://www.python.org/)
+      (https://www.python.org/)
+  * (Only needs on Python 3.13+)legacy-cgi module
+      (https://pypi.org/project/legacy-cgi/)
 
 For CVS support:
 
   * RCS, Revision Control System
-      (http://www.cs.purdue.edu/homes/trinkle/RCS/)
+      (https://www.gnu.org/software/rcs/)
   * GNU diff
-      (http://www.gnu.org/software/diffutils/diffutils.html)
+      (https://www.gnu.org/software/diffutils/diffutils.html)
   * CvsGraph 1.5.0+ (for optional CVS graphical tree generation)
       (https://www.vagrearg.org/content/cvsgraph)
 
 For Subversion support:
 
   * Subversion 1.14.0+ (binaries and Python bindings)
-      (http://subversion.apache.org/)
+      (https://subversion.apache.org/)
 
 For commits database (query) feature:
 
@@ -305,7 +307,7 @@ which each page containing various links to other pages and views, you
 can expect your server's performance to suffer if a webcrawler finds
 your ViewVC instance and begins traversing those links.  We highly
 recommend that you add your ViewVC location to a site-wide robots.txt
-file.  See [Robots.txt](http://en.wikipedia.org/wiki/Robots.txt) for
+file.  See [Robots.txt](https://en.wikipedia.org/wiki/Robots.txt) for
 more information.
 
 
@@ -377,7 +379,7 @@ FastCGI mode
 
 Requires:
 
-  * mod_fcgid (http://httpd.apache.org/mod_fcgid/)
+  * mod_fcgid (https://httpd.apache.org/mod_fcgid/)
   * Flup (https://www.saddi.com/software/flup/)
 
 FastCGI mode uses ViewVC's WSGI support, but supports using FastCGI,
@@ -676,7 +678,7 @@ example, your repositories appear empty):
   * Make sure that ViewVC can located your RCS utilities? (edit rcs_dir)
 
 See if your problem has been addressed by the [ViewVC
-FAQ](http://viewvc.org/faq.html).
+FAQ](https://viewvc.org/faq.html).
 
 Finally, if all else fails, contact the ViewVC development community
 at https://github.com/viewvc/viewvc/issues.
