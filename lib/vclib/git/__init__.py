@@ -12,6 +12,7 @@
 
 import os.path
 import vcauth
+from typing import Union, Dict
 from vclib import os_listdir, ReposNotFound, UnsupportedFeature, Repository
 
 _git_available: bool = False
@@ -30,11 +31,11 @@ except ImportError:
             self,
             name: str,
             rootpath: str,
-            authorizer: vcauth.GenericViewVCAuthorizer | None,
+            authorizer: Union[vcauth.GenericViewVCAuthorizer, None],
             utilities,
             content_encoding: str,
             path_encoding: str,
-            default_branch: str | None = None,
+            default_branch: Union[str, None] = None,
         ):
             raise UnsupportedFeature("Git driver is not available")
 
@@ -52,10 +53,10 @@ def canonicalize_rootpath(rootpath: str) -> str:
     return rp[:-1]
 
 
-def expand_root_parent(parent_path: str, path_encoding: str) -> dict[str, str]:
+def expand_root_parent(parent_path: str, path_encoding: str) -> Dict[str, str]:
     if not _git_available:
         raise UnsupportedFeature("Git driver is not available")
-    roots: dict[str, str] = {}
+    roots: Dict[str, str] = {}
     subpaths = os_listdir(parent_path, path_encoding)
     for rootname in subpaths:
         rootpath = os.path.join(parent_path, rootname)
