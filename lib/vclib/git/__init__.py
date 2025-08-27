@@ -11,14 +11,41 @@
 # -----------------------------------------------------------------------
 
 import os.path
-import pygit2
-from vclib import os_listdir, ReposNotFound
-from .git_repos import GitRepository
+import vcauth
+from vclib import os_listdir, ReposNotFound, UnsupportedFeature, Repository
+
+_git_available: bool = False
+GitRepository: type
+
+try:
+    import pygit2
+    from .git_repos import GitRepository as _pygit2GitRepository
+
+    _git_available = True
+    GitRepository = _pygit2GitRepository
+except ImportError:
+
+    class _GitRepository(Repository):
+        def __init__(
+            self,
+            name: str,
+            rootpath: str,
+            authorizer: vcauth.GenericViewVCAuthorizer | None,
+            utilities,
+            content_encoding: str,
+            path_encoding: str,
+            default_branch: str | None = None,
+        ):
+            raise UnsupportedFeature("Git driver is not available")
+
+    GitRepository = _GitRepository
 
 __all__ = ["canonicalize_rootpath", "expand_root_parent", "find_root_in_parent", "GitRepository"]
 
 
 def canonicalize_rootpath(rootpath: str) -> str:
+    if not _git_available:
+        raise UnsupportedFeature("Git driver is not available")
     rp = pygit2.discover_repository(rootpath)
     if rp is None:
         raise ReposNotFound(f"Cannot find Git Repository: {rootpath}")
@@ -26,6 +53,8 @@ def canonicalize_rootpath(rootpath: str) -> str:
 
 
 def expand_root_parent(parent_path: str, path_encoding: str) -> dict[str, str]:
+    if not _git_available:
+        raise UnsupportedFeature("Git driver is not available")
     roots: dict[str, str] = {}
     subpaths = os_listdir(parent_path, path_encoding)
     for rootname in subpaths:
@@ -41,6 +70,8 @@ def find_root_in_parent(parent_path, rootname, path_encoding):
     canonicalized ROOTPATH of the root if found; return None if no such
     root is found."""
 
+    if not _git_available:
+        raise UnsupportedFeature("Git driver is not available")
     assert os.path.isabs(parent_path)
     rootpath = os.path.join(parent_path, rootname)
     rp = pygit2.discover_repository(rootpath)
