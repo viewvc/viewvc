@@ -76,10 +76,19 @@ def _path_parts(path: str) -> list[str]:
     return [pp for pp in path.split("/") if pp]
 
 
-def _get_tree_entry(tree: pygit2.Tree, key: str):
+def _get_tree_entry(tree: pygit2.Tree, key: str) -> pygit2.Tree | pygit2.Blob | None:
     if not key:
         return tree
-    return tree[key] if key in tree else None
+    obj = tree[key] if key in tree else None
+    if obj is not None and not isinstance(
+        obj,
+        (
+            pygit2.Tree,
+            pygit2.Blob,
+        ),
+    ):
+        raise vclib.Error(f"Internal error: unexpected object type {type(obj)} in Tree")
+    return obj
 
 
 class DirEntry(vclib.DirEntry):
@@ -244,6 +253,7 @@ class GitRepository(vclib.Repository):
             walker.simplify_first_parent()
         cur_commit = next(walker)
         latest_tree = _get_tree_entry(cur_commit.tree, ppath)
+        assert isinstance(latest_tree, pygit2.Tree)
         cur_node = latest_tree
         for prev_commit in walker:
             prev_node = _get_tree_entry(prev_commit.tree, ppath)
@@ -256,8 +266,9 @@ class GitRepository(vclib.Repository):
                     latests[ent].date = int(auth_ts.timestamp())
                     latests[ent].author = author
                     latests[ent].log = msg
-                    if isinstance(latest_tree[p_ent], pygit2.Blob):
-                        latests[ent].size = latest_tree[p_ent].size
+                    entobj = latest_tree[p_ent]
+                    if isinstance(entobj, pygit2.Blob):
+                        latests[ent].size = entobj.size
                 return
             elif cur_node.id != prev_node.id:
                 auth_ts, author = self._signature_props(cur_commit.author)
@@ -275,8 +286,9 @@ class GitRepository(vclib.Repository):
                         latests[ent].date = int(auth_ts.timestamp())
                         latests[ent].author = author
                         latests[ent].log = msg
-                        if latest_tree[p_ent].type_str == "blob":
-                            latests[ent].size = latest_tree[p_ent].size
+                        entobj = latest_tree[p_ent]
+                        if isinstance(entobj, pygit2.Blob):
+                            latests[ent].size = entobj.size
                         del latests[ent]
                     if not latests:
                         return
@@ -289,8 +301,9 @@ class GitRepository(vclib.Repository):
             latests[ent].date = int(auth_ts.timestamp())
             latests[ent].author = author
             latests[ent].log = msg
-            if isinstance(latest_tree[p_ent], pygit2.Blob):
-                latests[ent].size = latest_tree[p_ent].size
+            entobj = latest_tree[p_ent]
+            if isinstance(entobj, pygit2.Blob):
+                latests[ent].size = entobj.size
         return
 
     def itemlog(
@@ -892,6 +905,8 @@ class GitRepository(vclib.Repository):
         commit = self._getcommit(rev)
         pfull_name = self._to_pygit2_path(full_name)
         nodeobj = _get_tree_entry(commit.tree, pfull_name)
+        if nodeobj is None:
+            raise vclib.ItemNotFound(_path_parts(full_name))
         path_parts = _path_parts(full_name)
         self.itemtype(path_parts, rev)  # does auth-check
         # while this method does not have parameter 'sortby' and
