@@ -14,14 +14,17 @@
 
 import sys
 import os
+import os.path
 import re
 import tempfile
-import pygit2
 import vclib
 import vcauth
 import datetime
+import pygit2
+
 from collections.abc import Iterable
 from typing import Any
+
 from pygit2.enums import SortMode, BlameFlag
 
 
@@ -29,6 +32,41 @@ BUFSIZE = 8192
 TAG_RE = re.compile(r"^refs/tags/")
 
 _node_typemap = {"tree": vclib.DIR, "blob": vclib.FILE}
+
+
+# -- functions export to __init__.py -- #
+
+
+def canonicalize_rootpath(rootpath: str) -> str:
+    rp = pygit2.discover_repository(rootpath)
+    if rp is None:
+        raise vclib.ReposNotFound(f"Cannot find Git Repository: {rootpath}")
+    return rp[:-1]
+
+
+def expand_root_parent(parent_path: str, path_encoding: str) -> dict[str, str]:
+    roots: dict[str, str] = {}
+    subpaths = vclib.os_listdir(parent_path, path_encoding)
+    for rootname in subpaths:
+        rootpath = os.path.join(parent_path, rootname)
+        rp = pygit2.discover_repository(rootpath)
+        if rp is not None:
+            roots[rootname] = rp[:-1]
+    return roots
+
+
+def find_root_in_parent(parent_path: str, rootname: str, path_encoding: str) -> str | None:
+    """Search PARENT_PATH for a root named ROOTNAME, returning the
+    canonicalized ROOTPATH of the root if found; return None if no such
+    root is found."""
+
+    assert os.path.isabs(parent_path)
+    rootpath = os.path.join(parent_path, rootname)
+    rp = pygit2.discover_repository(rootpath)
+    return None if rp is None else rp[:-1]
+
+
+# -- for internal use -- #
 
 
 def _path_parts(path: str) -> list[str]:
