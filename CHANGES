@@ -22,6 +22,7 @@ Version 1.3.0 (released ??-???-????)
   * new 'image' view for limited as-is image display (#360)
   * disallow patch view on non-file paths (#370)
   * separate CGI script for IIS server without PATH_INFO fix settings (#386)
+  * diff link in revision view uses r1 as old and r2 as new revision (#389)
 
 Version 1.2.5 (released 28-Jul-2025)
 
