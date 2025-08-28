@@ -135,21 +135,21 @@ class GitRepository(vclib.Repository):
         self.filesystem_encoding = sys.getfilesystemencoding()
         self.path_encoding = path_encoding
         if self.path_encoding == self.filesystem_encoding:
-            self._to_pygit2_path = self._pygit2_path_conversion_noop
-            self._from_pygit2_path = self._pygit2_path_conversion_noop
+            self._to_pygit2_str = self._pygit2_str_conversion_noop
+            self._from_pygit2_str = self._pygit2_str_conversion_noop
         else:
-            self._to_pygit2_path = self._to_pygit2_path_reencode
-            self._from_pygit2_path = self._from_pygit2_path_reencode
+            self._to_pygit2_str = self._to_pygit2_str_reencode
+            self._from_pygit2_str = self._from_pygit2_str_reencode
         # As pygit2.discover_repository() always returns path with
         # trailing '/' if it finds a repository, we normarize the
         # root path with trailing '/'.
         try:
-            rp = pygit2.discover_repository(self._to_pygit2_path(rootpath))
+            rp = pygit2.discover_repository(self._to_pygit2_str(rootpath))
         except vclib.Error:
             rp = None
         if rp is None:
             raise vclib.ReposNotFound(name)
-        self.rootpath: str = self._from_pygit2_path(rp)
+        self.rootpath: str = self._from_pygit2_str(rp)
         self._pygit2_rootpath = rp
 
         # Initialize some stuff.
@@ -225,7 +225,7 @@ class GitRepository(vclib.Repository):
         for entry in nodeobj:
             kind = _node_typemap[entry.type_str]
             assert entry.name is not None
-            node_name = self._from_pygit2_path(entry.name)
+            node_name = self._from_pygit2_str(entry.name)
             if vclib.check_path_access(self, path_parts + [node_name], kind, str(commit.id)):
                 entries.append(DirEntry(node_name, kind))
         return entries
@@ -261,7 +261,7 @@ class GitRepository(vclib.Repository):
                 auth_ts, author = self._signature_props(cur_commit.author)
                 msg = cur_commit.message
                 for ent in latests:
-                    p_ent = self._to_pygit2_path(ent)
+                    p_ent = self._to_pygit2_str(ent)
                     latests[ent].rev = str(cur_commit.id)
                     latests[ent].date = int(auth_ts.timestamp())
                     latests[ent].author = author
@@ -274,7 +274,7 @@ class GitRepository(vclib.Repository):
                 auth_ts, author = self._signature_props(cur_commit.author)
                 msg = cur_commit.message
                 for ent in list(latests.keys()):
-                    p_ent = self._to_pygit2_path(ent)
+                    p_ent = self._to_pygit2_str(ent)
                     latest_entobj = latest_tree[p_ent]
                     prev_entobj = prev_node[p_ent] if ent in prev_node else None
                     if (
@@ -296,7 +296,7 @@ class GitRepository(vclib.Repository):
         auth_ts, author = self._signature_props(cur_commit.author)
         msg = cur_commit.message
         for ent in latests:
-            p_ent = self._to_pygit2_path(ent)
+            p_ent = self._to_pygit2_str(ent)
             latests[ent].rev = str(cur_commit.id)
             latests[ent].date = int(auth_ts.timestamp())
             latests[ent].author = author
@@ -416,7 +416,7 @@ class GitRepository(vclib.Repository):
         if path_type != vclib.FILE:
             raise vclib.Error(f"Path '{path}' is not a file.")
         rev = self._getrev(rev)
-        ppath = self._to_pygit2_path(path)
+        ppath = self._to_pygit2_str(path)
         try:
             git_blame = self.repos.blame(ppath, BlameFlag.NORMAL, None, rev)
         except UnicodeEncodeError:
@@ -547,7 +547,7 @@ class GitRepository(vclib.Repository):
                 prev_rev = "Not a revision"
             for ent in t1_ent - t2_ent:
                 # Added entries
-                pp = parent_pp + [self._from_pygit2_path(ent)]
+                pp = parent_pp + [self._from_pygit2_str(ent)]
                 path = self._getpath(pp)
                 try:
                     kind = self.itemtype(pp, rev)
@@ -559,7 +559,7 @@ class GitRepository(vclib.Repository):
                     found_unreadable = True
             for ent in t2_ent - t1_ent:
                 # Removed entries
-                pp = parent_pp + [self._from_pygit2_path(ent)]
+                pp = parent_pp + [self._from_pygit2_str(ent)]
                 path = self._getpath(pp)
                 try:
                     kind = self.itemtype(pp, rev)
@@ -579,7 +579,7 @@ class GitRepository(vclib.Repository):
                 e2 = t2[ent]
                 if e1.id == e2.id and e1.filemode == e2.filemode:
                     continue
-                pp = parent_pp + [self._from_pygit2_path(ent)]
+                pp = parent_pp + [self._from_pygit2_str(ent)]
                 path = self._getpath(pp)
 
                 if e1.type_str == "blob" and e2.type_str == "blob":
@@ -680,7 +680,7 @@ class GitRepository(vclib.Repository):
             )
             for ent in t1_ent - t2_ent:
                 # Added entries
-                pp = parent_pp + [self._from_pygit2_path(ent)]
+                pp = parent_pp + [self._from_pygit2_str(ent)]
                 try:
                     self.itemtype(pp, rev)
                     found_readable = True
@@ -692,7 +692,7 @@ class GitRepository(vclib.Repository):
                         return found_readable, found_unreadable
             for ent in t2_ent - t1_ent:
                 # Removed entries
-                pp = parent_pp + [self._from_pygit2_path(ent)]
+                pp = parent_pp + [self._from_pygit2_str(ent)]
                 try:
                     self.itemtype(pp, rev)
                     found_readable = True
@@ -710,7 +710,7 @@ class GitRepository(vclib.Repository):
                 e2 = t2[ent]
                 if e1.id == e2.id and e1.filemode == e2.filemode:
                     continue
-                pp = parent_pp + [self._from_pygit2_path(ent)]
+                pp = parent_pp + [self._from_pygit2_str(ent)]
 
                 if e1.type_str == "blob" or e2.type_str == "blob":
                     try:
@@ -806,27 +806,27 @@ class GitRepository(vclib.Repository):
         """get repository internal"""
         return "/".join(path_parts)
 
-    def _to_pygit2_path_reencode(self, path: str) -> str:
-        """transcode vclib interface path to pygit2 interface path"""
+    def _to_pygit2_str_reencode(self, nstr: str) -> str:
+        """transcode vclib interface str to pygit2 interface str"""
         try:
-            return path.encode(self.path_encoding, "surrogateescape").decode(
+            return nstr.encode(self.path_encoding, "surrogateescape").decode(
                 self.filesystem_encoding, "surrogateescape"
             )
         except UnicodeError:
-            raise vclib.Error(f"Cannot encode to path encoding {self.path_encoding}: {path}")
+            raise vclib.Error(f"Cannot encode to path encoding {self.path_encoding}: {nstr}")
 
-    def _from_pygit2_path_reencode(self, path: str) -> str:
-        """transcode pygit2 interface path to vclib interface path"""
+    def _from_pygit2_str_reencode(self, pstr: str) -> str:
+        """transcode pygit2 interface str to vclib interface str"""
         try:
-            return path.encode(self.filesystem_encoding, "surrogateescape").decode(
+            return pstr.encode(self.filesystem_encoding, "surrogateescape").decode(
                 self.path_encoding, "surrogateescape"
             )
         except UnicodeError:
-            raise vclib.Error(f"Cannot encode to system encoding {self.path_encoding}: {path}")
+            raise vclib.Error(f"Cannot encode to system encoding {self.path_encoding}: {pstr}")
 
-    def _pygit2_path_conversion_noop(self, path: str) -> str:
-        """do nothing because vclib interface path == pygit2 interface path"""
-        return path
+    def _pygit2_str_conversion_noop(self, nstr: str) -> str:
+        """do nothing because vclib interface str == pygit2 interface str"""
+        return nstr
 
     def _getrev(self, rev: str | pygit2.Oid) -> str:
         """get cannonical commit ID string for specified rev"""
@@ -860,7 +860,7 @@ class GitRepository(vclib.Repository):
             nodeobj = commit.tree
             ppath = ""
         else:
-            ppath = self._to_pygit2_path(self._getpath(path_parts))
+            ppath = self._to_pygit2_str(self._getpath(path_parts))
             nodeobj = commit.tree[ppath]
             if nodeobj is None:
                 raise vclib.ItemNotFound(ppath)
@@ -903,7 +903,7 @@ class GitRepository(vclib.Repository):
 
     def created_rev(self, full_name: str, rev: str) -> str:
         commit = self._getcommit(rev)
-        pfull_name = self._to_pygit2_path(full_name)
+        pfull_name = self._to_pygit2_str(full_name)
         nodeobj = _get_tree_entry(commit.tree, pfull_name)
         if nodeobj is None:
             raise vclib.ItemNotFound(_path_parts(full_name))
@@ -947,7 +947,7 @@ class GitRepository(vclib.Repository):
         if not path_parts:
             return self.local_branches
         path = self._getpath(path_parts)
-        ppath = self._to_pygit2_path(path)
+        ppath = self._to_pygit2_str(path)
         branches: list[str] = []
         for branch in self.local_branches:
             try:
@@ -969,7 +969,7 @@ class GitRepository(vclib.Repository):
         if not path_parts:
             return self.tags
         path = self._getpath(path_parts)
-        ppath = self._to_pygit2_path(path)
+        ppath = self._to_pygit2_str(path)
         tags: list[str] = []
         for tag in self.tags:
             try:
