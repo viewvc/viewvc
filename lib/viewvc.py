@@ -4596,7 +4596,7 @@ def view_revision(request):
                     view_func=view_diff,
                     where=path,
                     pathtype=change.pathtype,
-                    params={"pathrev": str(rev), "r1": str(rev), "r2": str(change.base_rev)},
+                    params={"pathrev": str(rev), "r1": str(change.base_rev), "r2": str(rev)},
                     escape=1,
                 )
 
