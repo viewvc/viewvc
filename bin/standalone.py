@@ -24,6 +24,7 @@ import string
 import socket
 import select
 import base64
+import cgi
 from urllib.parse import unquote as _unquote
 import http.server as _http_server
 
@@ -67,7 +68,7 @@ class Options:
     htpasswd_file = None
 
 
-class StandaloneServer(sapi.CgiServer):
+class StandaloneServer(sapi.Server):
     """Custom sapi interface that uses a BaseHTTPRequestHandler HANDLER
     to generate output."""
 
@@ -79,6 +80,9 @@ class StandaloneServer(sapi.CgiServer):
         self._iis = False
         global server
         server = self
+
+    def add_header(self, name, value):
+        self._headers.append((name, value))
 
     def start_response(self, content_type="text/html; charset=UTF-8", status=None):
         sapi.Server.start_response(self, content_type, status)
@@ -106,6 +110,26 @@ class StandaloneServer(sapi.CgiServer):
         self.add_header("Location", url)
         self.start_response(status="301 Moved")
         self.write_text(sapi.redirect_notice(url))
+
+    def getenv(self, name, value=None):
+        # we should always use UTF-8 to decode OS's environment variable.
+        if sys.getfilesystemencoding().lower() == "utf-8":
+            ret = os.environ.get(name, value)
+        else:
+            if os.supports_bytes_environ:
+                if isinstance(value, str):
+                    value = value.encode("utf-8", "surrogateescape")
+                ret = os.environb.get(name.encode(sys.getfilesystemencoding()), value)
+            else:
+                ret = os.environ.get(name, value)
+                if isinstance(ret, str):
+                    ret = ret.encode(sys.getfilesystemencoding(), "surrogateescape")
+                if isinstance(ret, bytes):
+                    ret = ret.decode("utf-8", "surrogateescape")
+        return ret
+
+    def params(self):
+        return cgi.parse()
 
     def write(self, s):
         self._out_fp.write(s)
