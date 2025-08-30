@@ -903,7 +903,11 @@ class GitRepository(vclib.Repository):
 
     def get_location(self, path: str, rev: str, old_rev: str) -> str:
         # As we does not implement move or copy calculation between
-        # commits, old location is always same path.
+        # commits, old location is same path, or exception ItemNotFound
+        try:
+            self.itemtype(_path_parts(path), old_rev)
+        except (vclib.InvalidRevision, vclib.ItemNotFound):
+            raise
         return path
 
     def created_rev(self, full_name: str, rev: str) -> str:
