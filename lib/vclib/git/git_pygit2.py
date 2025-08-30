@@ -30,6 +30,7 @@ from pygit2.enums import SortMode, BlameFlag
 
 BUFSIZE = 8192
 TAG_RE = re.compile(r"^refs/tags/")
+HASH_RE = re.compile(r"^[0-9a-fA-F]{4,40}$")
 
 _node_typemap = {"tree": vclib.DIR, "blob": vclib.FILE}
 
@@ -832,23 +833,19 @@ class GitRepository(vclib.Repository):
 
     def _getrev(self, rev: str | pygit2.Oid) -> str:
         """get cannonical commit ID string for specified rev"""
-        if rev is None or rev == "HEAD":
-            return str(self.youngest.id)
-        str_rev = str(rev) if isinstance(rev, pygit2.Oid) else rev
-        try:
-            commit, commit_ref = self.repos.resolve_refish(str_rev)
-        except Exception:
-            raise vclib.InvalidRevision(rev)
-        return str(commit.id)
+        return str(self._getcommit(rev).id)
 
     def _getcommit(self, rev: str | pygit2.Oid) -> pygit2.Commit:
         if rev is None or rev == "HEAD":
-            return self.repos.resolve_refish("HEAD")[0]
+            return self.youngest
+        str_rev = (
+            str(rev)
+            if isinstance(rev, pygit2.Oid)
+            else rev if HASH_RE.match(rev) else self._to_pygit2_str(rev)
+        )
         try:
-            commit = self.repos.resolve_refish(rev)[0]
+            commit, commit_ref = self.repos.resolve_refish(str_rev)
         except Exception:
-            raise vclib.InvalidRevision(rev)
-        if commit is None:
             raise vclib.InvalidRevision(rev)
         return commit
 
