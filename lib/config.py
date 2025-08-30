@@ -111,6 +111,7 @@ class Config:
         "dir_ignored_files",
         "custom_log_formatting",
         "cvs_roots",
+        "git_roots",
         "kv_files",
         "languages",
         "mime_types_files",
@@ -228,7 +229,7 @@ class Config:
 
             # FIXME: This feels like unnecessary depth of knowledge for a
             # semi-generic configuration object.
-            if opt == "cvs_roots" or opt == "svn_roots" or opt == "renamed_roots":
+            if opt in ("cvs_roots", "git_roots", "svn_roots", "renamed_roots"):
                 value = _parse_roots(opt, value)
 
             setattr(sc, opt, value)
@@ -378,6 +379,7 @@ class Config:
         "Set some default values in the configuration."
 
         self.general.cvs_roots = {}
+        self.general.git_roots = {}
         self.general.svn_roots = {}
         self.general.renamed_roots = {}
         self.general.root_parents = []
