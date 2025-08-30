@@ -22,7 +22,7 @@ import vcauth
 import datetime
 import pygit2
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Callable
 from typing import Any
 
 from pygit2.enums import SortMode, BlameFlag
@@ -131,6 +131,8 @@ class GitRepository(vclib.Repository):
         path_encoding: str,
         default_branch: str | None = None,
     ):
+        self._to_pygit2_str: Callable[[str], str]
+        self._from_pygit2_str: Callable[[str], str]
 
         self.filesystem_encoding = sys.getfilesystemencoding()
         self.path_encoding = path_encoding
