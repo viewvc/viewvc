@@ -169,9 +169,11 @@ class GitRepository(vclib.Repository):
     def open(self):
         "Open the repository and init some other variables."
         self.repos = pygit2.Repository(self._pygit2_rootpath)
-        self.local_branches = list(self.repos.branches.local)
-        self.remote_branches = list(self.repos.branches.remote)
-        self.tags = [r[10:] for r in self.repos.references if TAG_RE.match(r)]
+        self.local_branches = [self._from_pygit2_str(b) for b in self.repos.branches.local]
+        self.remote_branches = [self._from_pygit2_str(b) for b in self.repos.branches.remote]
+        self.tags = [
+            self._from_pygit2_str(r[10:]) for r in self.repos.references if TAG_RE.match(r)
+        ]
         if self.default_branch:
             # branch ref is always point to 'head' commit.
             self.youngest, self.youngest_ref = self.repos.resolve_refish(self.default_branch)
@@ -945,20 +947,14 @@ class GitRepository(vclib.Repository):
 
         if not path_parts:
             return self.local_branches
-        path = self._getpath(path_parts)
-        ppath = self._to_pygit2_str(path)
         branches: list[str] = []
         for branch in self.local_branches:
             try:
-                brev = self.repos.branches.local[branch].target
-            except KeyError:
-                brev = None
-            if brev is not None and ppath in self.repos.get(brev).tree:
-                try:
-                    self.itemtype(path_parts, str(brev))  # does auth-check
-                    branches.append(branch)
-                except vclib.ItemNotFound:
-                    pass
+                commit, _, _ = self._getnode(path_parts, branch)
+                self.itemtype(path_parts, str(commit.id))  # does auth-check
+                branches.append(branch)
+            except (vclib.InvalidRevision, vclib.ItemNotFound):
+                pass
         return branches
 
     def get_tags(self, path_parts: list[str]) -> list[str]:
@@ -967,18 +963,12 @@ class GitRepository(vclib.Repository):
 
         if not path_parts:
             return self.tags
-        path = self._getpath(path_parts)
-        ppath = self._to_pygit2_str(path)
         tags: list[str] = []
         for tag in self.tags:
             try:
-                trev = self.repos.resolve_refish(tag)[0]
-            except KeyError:
-                trev = None
-            if trev is not None and ppath in trev.tree:
-                try:
-                    self.itemtype(path_parts, str(trev.id))  # does auth-check
-                    tags.append(tag)
-                except vclib.ItemNotFound:
-                    pass
+                commit, _, _ = self._getnode(path_parts, tag)
+                self.itemtype(path_parts, str(commit.id))  # does auth-check
+                tags.append(tag)
+            except (vclib.InvalidRevision, vclib.ItemNotFound):
+                pass
         return tags
