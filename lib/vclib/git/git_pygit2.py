@@ -207,12 +207,12 @@ class GitRepository(vclib.Repository):
         return self.auth
 
     def itemtype(self, path_parts: list[str], rev: str) -> str:
-        commits, ppath, nodeobj = self._getnode(path_parts, rev)
+        commit, ppath, nodeobj = self._getnode(path_parts, rev)
         try:
             kind = _node_typemap[nodeobj.type_str]
         except KeyError:
             raise vclib.Error(f'Internal Error: unexpected object type "{nodeobj.type_str}"')
-        if not vclib.check_path_access(self, path_parts, kind, rev):
+        if not vclib.check_path_access(self, path_parts, kind, str(commit.id)):
             raise vclib.ItemNotFound(path_parts)
         return kind
 
@@ -387,7 +387,9 @@ class GitRepository(vclib.Repository):
 
     def itemprops(self, path_parts: list[str], rev: str) -> dict[str, Any]:
         self.itemtype(path_parts, rev)  # does auth-check
-        return {}  # git doesn't support properties
+        # git doesn't support properties, but should we return
+        # something from filemode in blobs?
+        return {}
 
     def annotate(
         self, path_parts: list[str], rev: str, include_text: bool = False
@@ -416,14 +418,13 @@ class GitRepository(vclib.Repository):
                     text = file.readline() if file is not None else None
                     yield (vclib.Annotation(text, ln, cur_rev, prev_rev, author, cdate))
 
+        commit, ppath, nodeobj = self._getnode(path_parts, rev)
         path = self._getpath(path_parts)
-        path_type = self.itemtype(path_parts, rev)  # does auth-check
+        path_type = self.itemtype(path_parts, str(commit.id))  # does auth-check
         if path_type != vclib.FILE:
             raise vclib.Error(f"Path '{path}' is not a file.")
-        rev = self._getrev(rev)
-        ppath = self._to_pygit2_str(path)
         try:
-            git_blame = self.repos.blame(ppath, BlameFlag.NORMAL, None, rev)
+            git_blame = self.repos.blame(ppath, BlameFlag.NORMAL, None, commit.id)
         except UnicodeEncodeError:
             raise vclib.Error(
                 f"Cannot annotate file '{path}' because of the limitation in pygit2 module"
@@ -461,9 +462,9 @@ class GitRepository(vclib.Repository):
         p2 = self._getpath(path_parts2)
         r1 = self._getrev(rev1)
         r2 = self._getrev(rev2)
-        if not vclib.check_path_access(self, path_parts1, vclib.FILE, rev1):
+        if not vclib.check_path_access(self, path_parts1, vclib.FILE, r1):
             raise vclib.ItemNotFound(path_parts1)
-        if not vclib.check_path_access(self, path_parts2, vclib.FILE, rev2):
+        if not vclib.check_path_access(self, path_parts2, vclib.FILE, r2):
             raise vclib.ItemNotFound(path_parts2)
         encoding = self.content_encoding if is_text else None
 
@@ -471,19 +472,19 @@ class GitRepository(vclib.Repository):
 
         temp1 = self._temp_checkout(path_parts1, r1)
         temp2 = self._temp_checkout(path_parts2, r2)
-        info1 = p1, _date_from_rev(r1), r1
-        info2 = p2, _date_from_rev(r2), r2
+        info1 = p1, _date_from_rev(r1), rev1
+        info2 = p2, _date_from_rev(r2), rev2
         return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args, encoding=encoding)
 
     def isexecutable(self, path_parts: list[str], rev: str) -> bool:
         commit, ppath, nodeobj = self._getnode(path_parts, rev)
-        if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+        if self.itemtype(path_parts, str(commit.id)) != vclib.FILE:  # does auth-check
             raise vclib.Error(f"Path '{self._getpath(path_parts)}' is not a file.")
         return nodeobj.filemode.name == "BLOB_EXECUTABLE"
 
     def filesize(self, path_parts: list[str], rev: str) -> int:
         commit, ppath, nodeobj = self._getnode(path_parts, rev)
-        if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
+        if self.itemtype(path_parts, str(commit.id)) != vclib.FILE:  # does auth-check
             raise vclib.Error(f"Path '{self._getpath(path_parts)}' is not a file.")
         assert isinstance(nodeobj, pygit2.Blob)
         return nodeobj.size
@@ -546,7 +547,7 @@ class GitRepository(vclib.Repository):
                 else set()
             )
             try:
-                prev_rev = self.repos.get(rev).parents[0].id
+                prev_rev = str(self.repos.get(rev).parents[0].id)
             except Exception:
                 # To do: prev_rev should not be None, but what is apropriate?
                 prev_rev = "Not a revision"
@@ -746,7 +747,8 @@ class GitRepository(vclib.Repository):
             author: str | None
             auth_ts: int | None
             revprops: dict[str, Any]
-            # Get the revision property info.
+            # Get the revision property info. 'rev' here is always already
+            # commit ID string, it can be safely used repos.get() directry.
             commit = self.repos.get(rev)
             msg, author, auth_ts, revprops = self._getcommitprops(commit)
 
@@ -854,7 +856,6 @@ class GitRepository(vclib.Repository):
     def _getnode(
         self, path_parts: list[str], rev: str | pygit2.Oid
     ) -> tuple[pygit2.Commit, str, pygit2.Blob | pygit2.Tree]:
-        rev = self._getrev(rev)
         commit = self._getcommit(rev)
         nodeobj: pygit2.Object | None
         if not path_parts:
@@ -862,7 +863,10 @@ class GitRepository(vclib.Repository):
             ppath = ""
         else:
             ppath = self._to_pygit2_str(self._getpath(path_parts))
-            nodeobj = commit.tree[ppath]
+            try:
+                nodeobj = commit.tree[ppath]
+            except KeyError:
+                raise vclib.ItemNotFound(ppath)
             if nodeobj is None:
                 raise vclib.ItemNotFound(ppath)
         assert isinstance(nodeobj, pygit2.Blob | pygit2.Tree)
@@ -904,12 +908,13 @@ class GitRepository(vclib.Repository):
 
     def created_rev(self, full_name: str, rev: str) -> str:
         commit = self._getcommit(rev)
+        str_rev = str(commit.id)
         pfull_name = self._to_pygit2_str(full_name)
         nodeobj = _get_tree_entry(commit.tree, pfull_name)
         if nodeobj is None:
             raise vclib.ItemNotFound(_path_parts(full_name))
         path_parts = _path_parts(full_name)
-        self.itemtype(path_parts, rev)  # does auth-check
+        self.itemtype(path_parts, str_rev)  # does auth-check
         # while this method does not have parameter 'sortby' and
         # 'options', use default sort order and simplify first parent.
         walker = self.repos.walk(commit.id, SortMode.NONE)
@@ -934,7 +939,7 @@ class GitRepository(vclib.Repository):
         in REV, or None if that object is not a symlink."""
 
         commit, ppath, nodeobj = self._getnode(path_parts, rev)
-        self.itemtype(path_parts, rev)  # does auth-check
+        self.itemtype(path_parts, str(commit.id))  # does auth-check
         # Symlinks must be files (blob objects) with the filemode set
         # on "LINK" and with file contents is a target path.
         if not isinstance(nodeobj, pygit2.Blob) or nodeobj.filemode.name != "LINK":
