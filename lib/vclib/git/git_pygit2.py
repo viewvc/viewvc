@@ -349,15 +349,14 @@ class GitRepository(vclib.Repository):
             end = 0
         cur_commit = next(walker)
         cur_node = nodeobj
-        revs = []
+        revs: list[Revision] = []
         cur_rev: Revision | None = None
         cnt = 0
         for prev_commit in walker:
             prev_node = _get_tree_entry(prev_commit.tree, ppath)
             if prev_node is None:
-                if cur_rev is not None:
-                    cur_rev.prev = str(prev_commit.id)
-                    revs.append(cur_rev)
+                if len(revs):
+                    revs[-1].prev = str(cur_commit.id)
                 if cnt >= first and (not limit or cnt < end):
                     cur_rev = self._log_helper(cur_commit, cur_node, path)
                     cur_rev.prev = None
@@ -365,20 +364,22 @@ class GitRepository(vclib.Repository):
                 # no more history
                 return revs
             if cur_node.id != prev_node.id or cur_node.filemode != prev_node.filemode:
-                if cur_rev is not None:
-                    cur_rev.prev = str(prev_commit.id)
-                    revs.append(cur_rev)
-                if limit and cnt >= end:
-                    return revs
-                if cnt >= first:
+                if len(revs):
+                    revs[-1].prev = str(cur_commit.id)
+                if cnt >= first and (not limit or cnt < end):
                     cur_rev = self._log_helper(cur_commit, cur_node, path)
+                    cur_rev.prev = None
+                    revs.append(cur_rev)
                 cnt += 1
+                if limit and cnt > end:
+                    # in the case cnt == end, one more history is need
+                    # to fill revs[-1].prev
+                    return revs
                 cur_node = prev_node
             cur_commit = prev_commit
         # At end of loop, cur_commit is the commit the path was added
-        if cur_rev is not None:
-            cur_rev.prev = str(prev_commit.id)
-            revs.append(cur_rev)
+        if len(revs):
+            revs[-1].prev = str(cur_commit.id)
         if cnt >= first and (not limit or cnt < end):
             cur_rev = self._log_helper(cur_commit, cur_node, path)
             cur_rev.prev = None
