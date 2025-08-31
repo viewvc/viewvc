@@ -326,18 +326,18 @@ class GitRepository(vclib.Repository):
            boolean, default false. if set will return only newest single log
            entry
         """
-        # To do: it need to re-consider about sort method mapping.
-        if sortby in (vclib.SORTBY_DEFAULT, vclib.SORTBY_REV):
-            sort_opts = SortMode.NONE
-        elif sortby == vclib.SORTBY_DATE:
-            sort_opts = SortMode.TOPOLOGICAL | SortMode.TIME
+        # The algorithm below assumes that the history is
+        # chronicle order and it chases only first parent.
+        # To do: it need to re-consider about sort method mapping,
+        # and to re-consider an algorithm to get previous revision
+
+        sort_opts = SortMode.NONE
 
         commit, ppath, nodeobj = self._getnode(path_parts, rev)
         path = self._getpath(path_parts)
 
         walker = self.repos.walk(commit.id, sort_opts)
-        if options.get("git_simplify_first_parent", 1):
-            walker.simplify_first_parent()
+        walker.simplify_first_parent()
         if options.get("git_latest_log", 0):
             # ignore specified start and limit parameter
             first = 0
