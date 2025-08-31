@@ -2560,7 +2560,10 @@ def view_directory(request):
                 continue
         if cfg.options.hide_errorful_entries and file.errors:
             continue
-        row.rev = file.rev
+        if request.roottype == "git":
+            row.rev = file.rev[:7]
+        else:
+            row.rev = file.rev
         row.author = file.author
         row.state = (request.roottype == "cvs" and file.dead) and "dead" or ""
         if file.date is not None:
