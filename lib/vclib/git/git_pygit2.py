@@ -16,10 +16,11 @@ import sys
 import os
 import os.path
 import re
+import datetime
 import tempfile
+import codecs
 import vclib
 import vcauth
-import datetime
 import pygit2
 
 from collections.abc import Iterable, Callable
@@ -90,6 +91,17 @@ def _get_tree_entry(tree: pygit2.Tree, key: str) -> pygit2.Tree | pygit2.Blob | 
     ):
         raise vclib.Error(f"Internal error: unexpected object type {type(obj)} in Tree")
     return obj
+
+
+def _get_commit_msg(commit: pygit2.Commit) -> str:
+    if commit.message_encoding is not None:
+        try:
+            enc = codecs.lookup(commit.message_encoding).name
+        except LookupError:
+            enc = "ascii"
+    else:
+        enc = "utf-8"
+    return commit.raw_message.decode(enc, "backslashreplace")
 
 
 class DirEntry(vclib.DirEntry):
@@ -264,7 +276,7 @@ class GitRepository(vclib.Repository):
             prev_node = _get_tree_entry(prev_commit.tree, ppath)
             if not isinstance(prev_node, pygit2.Tree):
                 auth_ts, author = self._signature_props(cur_commit.author)
-                msg = cur_commit.message
+                msg = _get_commit_msg(cur_commit)
                 for ent in latests:
                     p_ent = self._to_pygit2_str(ent)
                     latests[ent].rev = str(cur_commit.id)
@@ -277,7 +289,7 @@ class GitRepository(vclib.Repository):
                 return
             elif cur_node.id != prev_node.id:
                 auth_ts, author = self._signature_props(cur_commit.author)
-                msg = cur_commit.message
+                msg = _get_commit_msg(cur_commit)
                 for ent in list(latests.keys()):
                     p_ent = self._to_pygit2_str(ent)
                     latest_entobj = latest_tree[p_ent]
@@ -299,7 +311,7 @@ class GitRepository(vclib.Repository):
                         return
             cur_commit = prev_commit
         auth_ts, author = self._signature_props(cur_commit.author)
-        msg = cur_commit.message
+        msg = _get_commit_msg(cur_commit)
         for ent in latests:
             p_ent = self._to_pygit2_str(ent)
             latests[ent].rev = str(cur_commit.id)
@@ -504,9 +516,7 @@ class GitRepository(vclib.Repository):
         else:
             assert isinstance(rev, pygit2.Commit)
             commit = rev
-        # On pygit2, commit.message is already properly decoded even if
-        # commit.message_encoding is not None.
-        msg = commit.message
+        msg = _get_commit_msg(commit)
         auth_ts, author = self._signature_props(commit.author)
         tz = datetime.timezone(datetime.timedelta(minutes=commit.commit_time_offset))
         commit_ts = datetime.datetime.fromtimestamp(commit.commit_time, tz=tz)
@@ -804,7 +814,7 @@ class GitRepository(vclib.Repository):
 
         cid = str(commit.id)
         auth_ts, author = self._signature_props(commit.author)
-        msg = commit.message
+        msg = _get_commit_msg(commit)
         size = node.size if isinstance(node, pygit2.Blob) else None
         parents = [str(oid) for oid in commit.parent_ids]
         return Revision(cid, int(auth_ts.timestamp()), author, msg, size, path, parents)
