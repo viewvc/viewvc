@@ -54,6 +54,7 @@ import sapi
 import vclib
 import vclib.ccvs
 import vclib.svn
+import vclib.git
 
 try:
     import idiff
@@ -289,6 +290,17 @@ class Request:
                             content_encoding,
                             path_encoding,
                         )
+
+                    elif roottype == "git":
+                        self.rootpath = vclib.git.canonicalize_rootpath(rootpath)
+                        self.repos = vclib.git.GitRepository(
+                            self.rootname,
+                            self.rootpath,
+                            self.auth,
+                            cfg.utilities,
+                            content_encoding,
+                            path_encoding,
+                        )
                     else:
                         raise vclib.ReposNotFound()
                 except vclib.ReposNotFound:
@@ -307,11 +319,13 @@ class Request:
                 self.roottype = "svn"
             elif vctype == vclib.CVS:
                 self.roottype = "cvs"
+            elif vctype == vclib.GIT:
+                self.roottype = "git"
             else:
                 raise ViewVCException(
                     (
                         f'The root "{self.rootname}" has an unknown type ("{vctype}").  '
-                        'Expected "cvs" or "svn".'
+                        'Expected "cvs", "svn", or "git".'
                     ),
                     "500 Internal Server Error",
                 )
@@ -320,7 +334,7 @@ class Request:
         # Subversion URLs will now use 'pathrev'; CVS ones use 'revision'.
         if self.repos and "rev" in self.query_dict:
             if (
-                self.roottype == "svn"
+                self.roottype in ("svn", "git")
                 and "pathrev" not in self.query_dict
                 and not self.view_func == view_revision
             ):
@@ -884,7 +898,11 @@ def _orig_path(request, rev_param="revision", path_param=None):
     rev = request.query_dict.get(rev_param, request.pathrev)
     path = request.query_dict.get(path_param, request.where)
 
-    if rev is not None and hasattr(request.repos, "_getrev"):
+    if (
+        rev is not None
+        and hasattr(request.repos, "_getrev")
+        and hasattr(request.repos, "get_location")
+    ):
         try:
             pathrev = request.repos._getrev(request.pathrev)
             rev = request.repos._getrev(rev)
@@ -1230,7 +1248,7 @@ def get_file_view_info(request, where, rev=None, mime_type=None, pathrev=-1):
             params={"annotate": rev, "pathrev": pathrev},
             escape=1,
         )
-    if request.roottype == "svn":
+    if request.roottype in ("svn", "git"):
         revision_href = request.get_url(view_func=view_revision, params={"revision": rev}, escape=1)
 
     is_binary_file = is_binary_file_mime_type(mime_type, request.cfg)
@@ -1501,7 +1519,7 @@ class LogFormatter:
                 lf.add_formatter(_re_rewrite_url, lf.format_url)
 
                 # Rewrite Subversion revision references.
-                if self.request.roottype == "svn":
+                if self.request.roottype in ("svn", "git"):
 
                     def revision_to_url(rev):
                         return self.request.get_url(
@@ -1658,7 +1676,7 @@ def common_template_data(request, revision=None, mime_type=None):
         rev = request.query_dict.get("annotate")
     if not rev:
         rev = request.query_dict.get("revision")
-    if not rev and request.roottype == "svn":
+    if not rev and request.roottype in ("svn", "git"):
         rev = request.query_dict.get("pathrev")
     try:
         data["rev"] = hasattr(request.repos, "_getrev") and request.repos._getrev(rev) or rev
@@ -1709,7 +1727,7 @@ def common_template_data(request, revision=None, mime_type=None):
         data["view_href"] = request.get_url(view_func=view_directory, params={}, escape=1)
         if "tar" in cfg.options.allowed_views:
             data["tarball_href"] = request.get_url(view_func=download_tarball, params={}, escape=1)
-        if request.roottype == "svn":
+        if request.roottype in ("svn", "git"):
             data["revision_href"] = request.get_url(
                 view_func=view_revision, params={"revision": data["rev"]}, escape=1
             )
@@ -2367,7 +2385,7 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
                     )
 
         else:
-            # In case roottype is 'svn', we simply use sotrby key.
+            # In case roottype is 'svn' or 'git', we simply use sotrby key.
             if sortby == "date":
 
                 def key(x):
@@ -2404,7 +2422,7 @@ def view_roots(request):
                 params={"root": rootname},
                 escape=1,
             )
-            if root_type == vclib.SVN:
+            if root_type in (vclib.SVN, vclib.GIT):
                 log_href = request.get_url(
                     view_func=view_log,
                     where="",
@@ -2448,7 +2466,7 @@ def view_directory(request):
     # For Subversion repositories, the revision acts as a weak validator for
     # the directory listing (to take into account template changes or
     # revision property changes).
-    if request.roottype == "svn":
+    if request.roottype in ("svn", "git"):
         try:
             rev = request.repos._getrev(request.pathrev)
         except vclib.InvalidRevision:
@@ -2542,7 +2560,10 @@ def view_directory(request):
                 continue
         if cfg.options.hide_errorful_entries and file.errors:
             continue
-        row.rev = file.rev
+        if request.roottype == "git":
+            row.rev = file.rev[:7]
+        else:
+            row.rev = file.rev
         row.author = file.author
         row.state = (request.roottype == "cvs" and file.dead) and "dead" or ""
         if file.date is not None:
@@ -2576,7 +2597,7 @@ def view_directory(request):
                 view_func=view_directory, where=file_where, pathtype=vclib.DIR, params={}, escape=1
             )
 
-            if request.roottype == "svn":
+            if request.roottype in ("svn", "git"):
                 row.revision_href = request.get_url(
                     view_func=view_revision, params={"revision": file.rev}, escape=1
                 )
@@ -2587,7 +2608,7 @@ def view_directory(request):
                     row.log_file = request.server.escape(file.newest_file)
                     row.log_rev = file.rev
 
-            if request.roottype == "svn":
+            if request.roottype in ("svn", "git"):
                 row.log_href = request.get_url(
                     view_func=view_log, where=file_where, pathtype=vclib.DIR, params={}, escape=1
                 )
@@ -2607,7 +2628,7 @@ def view_directory(request):
 
             files_displayed += 1
 
-            if request.roottype == "svn":
+            if request.roottype in ("svn", "git"):
                 row.size = file.size
 
             row.mime_type, encoding = calculate_mime_type(
@@ -2738,6 +2759,20 @@ def view_directory(request):
         )
         data["youngest_rev"] = request.repos.get_youngest_revision()
         data["youngest_rev_href"] = request.get_url(view_func=view_revision, params={}, escape=1)
+    elif request.roottype == "git":
+        data["tree_rev"] = tree_rev
+        data["tree_rev_href"] = request.get_url(
+            view_func=view_revision, params={"revision": tree_rev}, escape=1
+        )
+        data["youngest_rev"] = request.repos.get_youngest_revision()
+        data["youngest_rev_href"] = request.get_url(view_func=view_revision, params={}, escape=1)
+        data["plain_tags"] = [
+            _item(name=tag, revision=tag) for tag in request.repos.get_tags(request.path_parts)
+        ]
+        data["branch_tags"] = [
+            _item(name=branch, revision=branch)
+            for branch in request.repos.get_branches(request.path_parts)
+        ]
 
     if cfg.options.dir_pagesize:
         data["dir_paging_action"], data["dir_paging_hidden_values"] = request.get_form(
@@ -2857,7 +2892,7 @@ def pathrev_form(request, data):
 
 
 def redirect_pathrev(request):
-    assert request.roottype == "svn"
+    assert request.roottype in ("svn", "git")
     new_pathrev = request.query_dict.get("pathrev") or None
     path = request.query_dict.get("orig_path", "")
     pathtype = request.query_dict.get("orig_pathtype")
@@ -2909,7 +2944,7 @@ def view_log(request):
     options["svn_cross_copies"] = cfg.options.cross_copies
 
     logsort = request.query_dict.get("logsort", cfg.options.log_sort)
-    if request.roottype == "svn":
+    if request.roottype in ("svn", "git"):
         sortby = vclib.SORTBY_DEFAULT
         logsort = None
     else:
@@ -3025,6 +3060,12 @@ def view_log(request):
                     params={"pathrev": rev.copy_rev},
                     escape=1,
                 )
+
+        elif request.roottype == "git":
+            entry.prev = rev.prev
+            entry.branches = entry.tags = entry.branch_points = []
+            entry.tag_names = entry.branch_names = []
+            entry.vendor_branch = None
 
         # view/download links
         if pathtype is vclib.FILE:
@@ -3737,7 +3778,7 @@ def _get_diff_path_parts(request, query_key, rev, base_rev):
     repos = request.repos
     if query_key in request.query_dict:
         parts = _path_parts(request.query_dict[query_key])
-    elif request.roottype == "svn":
+    elif request.roottype in ("svn", "git"):
         try:
             parts = _path_parts(
                 repos.get_location(request.where, repos._getrev(base_rev), repos._getrev(rev))
@@ -3798,17 +3839,24 @@ def setup_diff(request):
             rev2 = str(request.repos._getrev(rev2))
         except vclib.InvalidRevision:
             raise ViewVCException("Invalid revision(s) passed to diff", "400 Bad Request")
+    elif request.roottype == "git":
+        try:
+            rev1 = request.repos._getrev(rev1)
+            rev2 = request.repos._getrev(rev2)
+        except vclib.InvalidRevision:
+            raise ViewVCException("Invalid revision(s) passed to diff", "400 Bad Request")
 
     p1 = _get_diff_path_parts(request, "p1", rev1, request.pathrev)
     p2 = _get_diff_path_parts(request, "p2", rev2, request.pathrev)
 
-    try:
-        if revcmpkey(rev1) > revcmpkey(rev2):
-            rev1, rev2 = rev2, rev1
-            sym1, sym2 = sym2, sym1
-            p1, p2 = p2, p1
-    except ValueError:
-        raise ViewVCException("Invalid revision(s) passed to diff", "400 Bad Request")
+    if request.roottype != "git":
+        try:
+            if revcmpkey(rev1) > revcmpkey(rev2):
+                rev1, rev2 = rev2, rev1
+                sym1, sym2 = sym2, sym1
+                p1, p2 = p2, p1
+        except ValueError:
+            raise ViewVCException("Invalid revision(s) passed to diff", "400 Bad Request")
     return p1, p2, rev1, rev2, sym1, sym2
 
 
@@ -4488,7 +4536,8 @@ def download_tarball(request):
 
 
 def view_revision(request):
-    if request.roottype != "svn":
+    roottype = request.roottype
+    if roottype not in ("svn", "git"):
         raise ViewVCException(
             "Revision view not supported for CVS repositories at this time.", "400 Bad Request"
         )
@@ -4620,22 +4669,23 @@ def view_revision(request):
         del change.copied
 
     prev_rev_href = next_rev_href = None
-    if rev > 0:
-        prev_rev_href = request.get_url(
-            view_func=view_revision,
-            where=None,
-            pathtype=None,
-            params={"revision": str(rev - 1)},
-            escape=1,
-        )
-    if rev < request.repos.get_youngest_revision():
-        next_rev_href = request.get_url(
-            view_func=view_revision,
-            where=None,
-            pathtype=None,
-            params={"revision": str(rev + 1)},
-            escape=1,
-        )
+    if roottype == "svn":
+        if rev > 0:
+            prev_rev_href = request.get_url(
+                view_func=view_revision,
+                where=None,
+                pathtype=None,
+                params={"revision": str(rev - 1)},
+                escape=1,
+            )
+        if rev < request.repos.get_youngest_revision():
+            next_rev_href = request.get_url(
+                view_func=view_revision,
+                where=None,
+                pathtype=None,
+                params={"revision": str(rev + 1)},
+                escape=1,
+            )
     jump_rev_action, jump_rev_hidden_values = request.get_form(params={"revision": None})
 
     lf = LogFormatter(request, msg)
@@ -5407,6 +5457,47 @@ def list_roots(request):
             continue
         allroots[root] = [cfg.general.cvs_roots[root], "cvs", None]
 
+    # Add the viewable Git roots
+    for root in cfg.general.git_roots.keys():
+        path_encoding, content_encoding = get_repos_encodings(
+            cfg, root, do_overlay=True, preserve_cfg=True
+        )
+        auth = setup_authorizer(cfg, request.username, root)
+        try:
+            repos = vclib.git.GitRepository(
+                root,
+                cfg.general.git_roots[root],
+                auth,
+                cfg.utilities,
+                content_encoding,
+                path_encoding,
+                None,
+            )
+            lastmod = None
+            if cfg.options.show_roots_lastmod:
+                try:
+                    repos.open()
+                    youngest_rev = repos.youngest
+                    date, author, msg, revprops, changes = repos.revinfo(youngest_rev)
+                    date_str = make_time_string(date, cfg)
+                    ago = html_time(request, date)
+                    lf = LogFormatter(request, msg)
+                    log = lf.get(maxlen=0, htmlize=1)
+                    short_log = lf.get(maxlen=cfg.options.short_log_len, htmlize=1)
+                    lastmod = _item(
+                        ago=ago,
+                        author=author,
+                        date=date_str,
+                        log=log,
+                        short_log=short_log,
+                        rev=str(youngest_rev),
+                    )
+                except Exception:
+                    lastmod = None
+        except vclib.ReposNotFound:
+            continue
+        allroots[root] = [cfg.general.git_roots[root], "git", lastmod]
+
     return allroots
 
 
@@ -5461,6 +5552,15 @@ def expand_root_parents(cfg):
                 cfg.general.svn_roots.update(fullroots)
             else:
                 cfg.general.svn_roots.update(roots)
+        elif repo_type == "git":
+            roots = vclib.git.expand_root_parent(path, path_encoding)
+            if context:
+                fullroots = {}
+                for root, rootpath in roots.items():
+                    fullroots[_path_join(context + [root])] = rootpath
+                cfg.general.git_roots.update(fullroots)
+            else:
+                cfg.general.git_roots.update(roots)
         elif repo_type is None:
             raise ViewVCException(
                 f'The path "{pp}" in "root_parents" does not include a repository type.  '
@@ -5506,6 +5606,8 @@ def find_root_in_parents(cfg, path_parts, roottype):
             rootpath = vclib.ccvs.find_root_in_parent(path, rootname, path_encoding)
         elif roottype == "svn":
             rootpath = vclib.svn.find_root_in_parent(path, rootname, path_encoding)
+        elif roottype == "git":
+            rootpath = vclib.git.find_root_in_parent(path, rootname, path_encoding)
 
         if rootpath is not None:
             return fullroot, rootpath, remain
@@ -5522,6 +5624,10 @@ def locate_root_from_path(cfg, path_parts):
         pp = _path_parts(rootname)
         if _path_starts_with(path_parts, pp):
             return "svn", rootpath, rootname, path_parts[len(pp) :]
+    for rootname, rootpath in cfg.general.git_roots.items():
+        pp = _path_parts(rootname)
+        if _path_starts_with(path_parts, pp):
+            return "git", rootpath, rootname, path_parts[len(pp) :]
     rootname, path_in_parent, remain = find_root_in_parents(cfg, path_parts, "cvs")
     if path_in_parent:
         cfg.general.cvs_roots[rootname] = path_in_parent
@@ -5540,6 +5646,8 @@ def locate_root(cfg, rootname):
         return "cvs", cfg.general.cvs_roots[rootname]
     if rootname in cfg.general.svn_roots:
         return "svn", cfg.general.svn_roots[rootname]
+    if rootname in cfg.general.git_roots:
+        return "git", cfg.general.git_roots[rootname]
 
     path_parts = _path_parts(rootname)
     roottype, rootpath, rootname_dupl, remain = locate_root_from_path(cfg, path_parts)
