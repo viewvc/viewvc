@@ -6,9 +6,10 @@ ViewVC is a browser interface for CVS and Subversion version control repositorie
 
 ## Features
 
-*   Support CVS and Subversion repositories.
+*   Support CVS, Subversion and Git repositories.
     - Filesystem-accessible CVS repositories (with limited CVSNT support).
     - Filesystem-accessible and remote Subversion repositories.
+    - Filesystem-accessible Git repositories (experimental and not fully supported)
 *   Path-based authorization, including Subversion access file support.
 *   Template-driven output generation.
 *   Support for both CGI and WSGI deployment.
@@ -18,8 +19,9 @@ ViewVC is a browser interface for CVS and Subversion version control repositorie
 *   Revision graph capabilities (via integration with `cvsgraph`) (_CVS only_).
 *   Individually configurable virtual host support.
 *   Tarball generation.
-    - By tag/branch for CVS.
-    - By revision and (sub)directory for Subversion.
+    - By tag/branch for CVS
+    - By revision and (sub)directory for Subversion
+    - By tag/branch/commit and (sub)directory for Git.
 *   Optional commits database and query interface.
     - Supports file-based commits for both CVS and Subversion.
     - RSS feed generation for committed changes.
