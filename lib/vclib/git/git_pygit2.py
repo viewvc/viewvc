@@ -850,7 +850,7 @@ class GitRepository(vclib.Repository):
         """get cannonical commit ID string for specified rev"""
         return str(self._getcommit(rev).id)
 
-    def _getcommit(self, rev: str | pygit2.Oid) -> pygit2.Commit:
+    def _getcommit(self, rev: str | pygit2.Oid | None) -> pygit2.Commit:
         if rev is None or rev == "HEAD":
             return self.youngest
         str_rev = (
