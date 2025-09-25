@@ -294,7 +294,7 @@ directory.  So, in your `httpd.conf`, add configuration such as this:
     </Directory>
 
 ...where, again, `<VIEWVC_DIR>` is the directory into which you've
-install ViewVC.
+installed ViewVC.
 
 In the subsections below, we'll discuss the various options you have
 for running ViewVC in specific ways under Apache.  After you've
