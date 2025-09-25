@@ -69,7 +69,8 @@
 ##   
 ##       cvs_roots (for CVS)
 ##       svn_roots (for Subversion)
-##       root_parents (for CVS or Subversion)
+##       git_roots (for Git)
+##       root_parents (for CVS or Subversion or Git)
 ##       default_root
 ##       root_as_url_component
 ##       rcs_dir
@@ -123,16 +124,29 @@
 ##
 #svn_roots =
 
+## (experimental) git_roots: Specifies each of the Git roots on your
+## system and ## assigns names to them. Each root should be given by
+## a "name: path" ## value (where the path is an absolute filesystem
+## path). Multiple roots should be separated by commas and can be placed
+## on separate lines.
+##
+## Example:
+## git_roots = gitroot: /opt/git/repos1,
+##             anotherroot: /usr/local/git/repos2.git,
+##             somecontext/root: /usr/local/git/repos3
+##
+#git_roots =
+
 ## root_parents: Specifies a list of directories under which any
 ## number of repositories may reside.  You can specify multiple root
 ## parents separated by commas or new lines, each of which is of the
-## form "path [= context] : type" (where the type is either "cvs" or
-## "svn", the path is an absolute filesystem path, and the (optional)
-## context is prepended to each repository's name to determine the
-## final root name).
+## form "path [= context] : type" (where the type is either "cvs",
+## "svn", or "git"(experimental), the path is an absolute filesystem
+## path, and the (optional) context is prepended to each repository's
+## name to determine the final root name).
 ##
-## Rather than force you to add a new entry to 'cvs_roots' or
-## 'svn_roots' each time you create a new repository, ViewVC rewards
+## Rather than force you to add a new entry to 'cvs_roots', "svn_roots',
+## or 'git_roots' each time you create a new repository, ViewVC rewards
 ## you for organizing all your repositories under a few parent
 ## directories by allowing you to simply tell it about those parent
 ## directories.  ViewVC will then notice each repository of the
@@ -168,7 +182,8 @@
 ## root_parents = /opt/svn: svn,
 ##                /home/alice/svn = alice : svn,
 ##                /home/bob/svn = bob : svn,
-##                /opt/cvs: cvs
+##                /opt/cvs: cvs,
+##                /opt/git: git
 ##
 #root_parents =
 
