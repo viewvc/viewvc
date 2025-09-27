@@ -107,6 +107,7 @@ class Request:
     def __init__(self, server, cfg):
         self.server = server
         self.cfg = cfg
+        self.debuglines = []
 
         self.script_name = _normalize_path(server.getenv("SCRIPT_NAME", ""))
         self.browser = server.getenv("HTTP_USER_AGENT", "unknown")
@@ -133,6 +134,7 @@ class Request:
 
     def run_viewvc(self):
 
+        self.add_debugline("Here we go...")
         cfg = self.cfg
 
         # This function first parses the query string and sets the following
@@ -255,11 +257,14 @@ class Request:
                 cfg.overlay_root_options(self.rootname)
 
                 # Setup an Authorizer for this rootname and username
+                self.add_debugline("Setting up the authorizer")
                 self.auth = setup_authorizer(cfg, self.username)
 
                 # get the encoding for the path and contents
                 path_encoding, content_encoding = get_repos_encodings(cfg, self.rootname)
+
                 # Create the repository object
+                self.add_debugline("Selecting repository")
                 try:
                     if roottype == "cvs":
                         self.rootpath = vclib.ccvs.canonicalize_rootpath(rootpath)
@@ -301,6 +306,7 @@ class Request:
                 )
 
         if self.repos:
+            self.add_debugline("Opening repository")
             self.repos.open()
             vctype = self.repos.roottype()
             if vctype == vclib.SVN:
@@ -457,8 +463,11 @@ class Request:
 
         # If we need to redirect, do so.  Otherwise, handle our requested view.
         if needs_redirect:
-            self.server.redirect(self.get_url())
+            redirect_url = self.get_url()
+            self.add_debugline(f"Redirecting to {redirect_url}")
+            self.server.redirect(redirect_url)
         else:
+            self.add_debugline(f"Executing {self.view_func.__name__}()")
             self.view_func(self)
 
     def get_url(self, escape=0, partial=0, prefix=0, **args):
@@ -482,6 +491,19 @@ class Request:
             scheme = "https" if self.server.getenv("HTTPS") == "on" else "http"
             result = f"{scheme}://{self.server.getenv('HTTP_HOST')}{result}"
         return result
+
+    def add_debugline(self, debugline):
+        """Add to the set of debug line strings a new one.
+
+        NOTE: Be mindful about logging information provided by the user
+        that might exploit the script-ful nature of this feature.  For
+        example:
+
+           self.add_debugline('`); alert("hi"); //')
+        """
+
+        if self.cfg.options.enable_debuglines:
+            self.debuglines.append(_item(timestamp=time.time(), line=debugline))
 
     def get_form(self, **args):
         """Constructs a link to another ViewVC page just like the get_link
@@ -1038,8 +1060,15 @@ def get_writeready_server_file(
 
 
 def generate_page(request, view_name, data, content_type=None):
+    extra_debuglines = []
+    extra_debuglines.append(
+        _item(timestamp=time.time(), line="Fetching template for %s" % view_name)
+    )
     server_fp = get_writeready_server_file(request, content_type, "utf-8", is_text=True)
     template = get_view_template(request.cfg, view_name, request.language)
+    extra_debuglines.append(_item(timestamp=time.time(), line="Rendering page"))
+    if request.cfg.options.enable_debuglines:
+        data["debuglines"].extend(extra_debuglines)
     template.generate(server_fp, data)
 
 
@@ -1620,6 +1649,7 @@ def common_template_data(request, revision=None, mime_type=None):
             "annotate_href": None,
             "base_href": None,
             "cfg": cfg,
+            "debuglines": request.debuglines,
             "docroot": (
                 cfg.options.docroot is None
                 and request.script_name + "/" + docroot_magic_path
