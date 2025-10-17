@@ -15,7 +15,9 @@
 #
 # -----------------------------------------------------------------------
 
-import cgi
+import os
+import sys
+from urllib.parse import parse_qs
 
 
 # Global server object.
@@ -33,6 +35,19 @@ def escape(s):
     s = s.replace("<", "&lt;")
     s = s.replace('"', "&quot;")
     return s
+
+
+# Python 3.13 dropped the `cgi` module, so we have to implement our own
+# (narrowly focused) version of `cgi.parse()`.
+def cgi_parse(environ=os.environ) -> dict:
+    """Parse query parameters from the CGI environment."""
+
+    if "environ" in environ:
+        qs = environ["QUERY_STRING"]
+    else:
+        qs = sys.argv[1] if sys.argv[1:] else ""
+        environ["QUERY_STRING"] = qs
+    return parse_qs(qs, encoding="utf-8") if qs else {}
 
 
 class ServerUsageError(Exception):
@@ -188,7 +203,7 @@ class WsgiServer(Server):
         return value
 
     def params(self):
-        return cgi.parse(environ=self._environ, fp=self._environ["wsgi.input"])
+        return cgi_parse(self._environ)
 
     def write(self, s):
         self._wsgi_write(s)
