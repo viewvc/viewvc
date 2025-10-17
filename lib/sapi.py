@@ -15,7 +15,10 @@
 #
 # -----------------------------------------------------------------------
 
-import cgi
+from io import TextIOWrapper
+import os
+import sys
+from urllib.parse import parse_qs
 
 
 # Global server object.
@@ -33,6 +36,25 @@ def escape(s):
     s = s.replace("<", "&lt;")
     s = s.replace('"', "&quot;")
     return s
+
+
+# This is a simplified version of Python's `cgi.parse()`` that implements
+# only the bits required by ViewVC.  It is provided here as a compatibility
+# shim because the `cgi` module was dropped in Python 3.13.
+def cgi_parse(fp=None, environ=os.environ) -> dict:
+    """Parse query parameters from the CGI environment and input file."""
+
+    if fp is None:
+        fp = sys.stdin
+    encoding = fp.encoding if hasattr(fp, "encoding") else "latin-1"
+    if isinstance(fp, TextIOWrapper):
+        fp = fp.buffer
+    if "QUERY_STRING" in environ:
+        qs = environ["QUERY_STRING"]
+    else:
+        qs = sys.argv[1] if sys.argv[1:] else ""
+        environ["QUERY_STRING"] = qs
+    return parse_qs(qs, encoding=encoding)
 
 
 class ServerUsageError(Exception):
@@ -188,7 +210,7 @@ class WsgiServer(Server):
         return value
 
     def params(self):
-        return cgi.parse(environ=self._environ, fp=self._environ["wsgi.input"])
+        return cgi_parse(environ=self._environ, fp=self._environ["wsgi.input"])
 
     def write(self, s):
         self._wsgi_write(s)

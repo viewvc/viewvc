@@ -39,8 +39,6 @@ Minimum requirements:
 
   * Python 3.6+
       (https://www.python.org/)
-  * (Only needs on Python 3.13+)legacy-cgi module
-      (https://pypi.org/project/legacy-cgi/)
 
 For CVS support:
 
