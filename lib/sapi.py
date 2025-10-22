@@ -42,7 +42,7 @@ def escape(s):
 def cgi_parse(environ=os.environ) -> dict:
     """Parse query parameters from the CGI environment."""
 
-    if "environ" in environ:
+    if "QUERY_STRING" in environ:
         qs = environ["QUERY_STRING"]
     else:
         qs = sys.argv[1] if sys.argv[1:] else ""
