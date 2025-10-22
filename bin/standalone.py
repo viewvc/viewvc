@@ -24,7 +24,6 @@ import string
 import socket
 import select
 import base64
-import cgi
 from urllib.parse import unquote as _unquote
 import http.server as _http_server
 
@@ -129,7 +128,7 @@ class StandaloneServer(sapi.Server):
         return ret
 
     def params(self):
-        return cgi.parse()
+        return sapi.cgi_parse()
 
     def write(self, s):
         self._out_fp.write(s)
