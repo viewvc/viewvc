@@ -18,7 +18,6 @@
 import string
 from . import common
 
-
 WHITESPACE = string.whitespace.encode("ascii")
 
 

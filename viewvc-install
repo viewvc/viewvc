@@ -215,19 +215,15 @@ def install_file(src_path, dst_path, mode, subst_path_vars, prompt_replace, comp
                         continue
                     temp = temp[0].lower()
                     if temp == "v" and ext not in BINARY_FILE_EXTS:
-                        print(
-                            """
----------------------------------------------------------------------------"""
-                        )
+                        print("""
+---------------------------------------------------------------------------""")
                         print("\n".join(diff_lines) + "\n")
-                        print(
-                            """
+                        print("""
 LEGEND
    A leading '- ' indicates line to remove from installed file
    A leading '+ ' indicates line to add to installed file
    A leading '? ' shows intraline differences.
----------------------------------------------------------------------------"""
-                        )
+---------------------------------------------------------------------------""")
                     elif temp == "d":
                         overwrite = 0
                     elif temp == "o":
@@ -376,8 +372,7 @@ def install_tree(src_path, dst_path, is_optional, prompt_replace):
 
 def usage_and_exit(errstr=None):
     stream = errstr and sys.stderr or sys.stdout
-    stream.write(
-        f"""Usage: {os.path.basename(sys.argv[0])} [OPTIONS]
+    stream.write(f"""Usage: {os.path.basename(sys.argv[0])} [OPTIONS]
 
 Installs the ViewVC web-based version control repository browser.
 
@@ -400,8 +395,7 @@ Options:
                       directory.  If not specified, the script will prompt
                       for the appropriate action on a per-file basis.
 
-"""
-    )
+""")
     if errstr:
         stream.write(f"ERROR: {errstr}\n\n")
         sys.exit(1)
@@ -431,14 +425,12 @@ if __name__ == "__main__":
             CLEAN_MODE = arg
 
     # Print the header greeting.
-    print(
-        f"""This is the ViewVC {version} installer.
+    print(f"""This is the ViewVC {version} installer.
 
 It will allow you to choose the install path for ViewVC.  You will now
 be asked some installation questions.  Defaults are given in square brackets.
 Just hit [Enter] if a default is okay.
-"""
-    )
+""")
 
     # Prompt for ROOT_DIR if none provided.
     if ROOT_DIR is None:
@@ -477,12 +469,10 @@ Just hit [Enter] if a default is okay.
         install_tree(*args)
 
     # Print some final thoughts.
-    print(
-        """
+    print("""
 
 ViewVC file installation complete.
 
 Consult the INSTALL document for detailed information on completing
 the installation and configuration of ViewVC on your system.
-"""
-    )
+""")

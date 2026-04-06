@@ -27,7 +27,6 @@ The output of this program can also be considered to be a kind of
 returns all relevant information in the file and provided that the
 order of callbacks is always the same."""
 
-
 import sys
 import os
 

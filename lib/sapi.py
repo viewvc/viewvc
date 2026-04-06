@@ -29,7 +29,6 @@ except ImportError:
     def idna_decode(x: str) -> str:
         return x
 
-
 # Global server object.
 server = None
 

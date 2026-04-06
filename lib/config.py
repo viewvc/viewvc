@@ -20,7 +20,6 @@ import configparser
 import fnmatch
 import copy
 
-
 #########################################################################
 #
 # CONFIGURATION

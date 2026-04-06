@@ -17,7 +17,6 @@ import re
 import vclib
 import dbi
 
-
 _re_escaped = re.compile("[\udc00-\udcff]")
 
 

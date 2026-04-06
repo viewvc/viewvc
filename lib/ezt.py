@@ -202,6 +202,7 @@ Directives
    variables. "[format CALLBACK][QUAL_NAME][end]" is in most cases
    equivalent to "[CALLBACK QUAL_NAME]"
 """
+
 #
 # Copyright (C) 2001-2011 Greg Stein. All Rights Reserved.
 #
@@ -524,7 +525,7 @@ class Template:
                 method(method_args, fp, ctx, filename, line_number)
 
     def _cmd_print(self, transforms_valref, fp, ctx, filename, line_number):
-        (transforms, valref) = transforms_valref
+        transforms, valref = transforms_valref
         value = _get_value(valref, ctx, filename, line_number)
         # if value is callback function, generates its own output
         if callable(value):
@@ -544,7 +545,7 @@ class Template:
             fp.write(value)
 
     def _cmd_subst(self, transforms_valref_args, fp, ctx, filename, line_number):
-        (transforms, valref, args) = transforms_valref_args
+        transforms, valref, args = transforms_valref_args
         fmt = _get_value(valref, ctx, filename, line_number)
         parts = _re_subst.split(fmt)
         for i in range(len(parts)):
@@ -560,20 +561,20 @@ class Template:
             fp.write(piece)
 
     def _cmd_include(self, valref_reader_printer, fp, ctx, filename, line_number):
-        (valref, reader, printer) = valref_reader_printer
+        valref, reader, printer = valref_reader_printer
         fname = _get_value(valref, ctx, filename, line_number)
         # NOTE: we don't have the set of for_names to pass into this parse.
         # I don't think there is anything to do but document it
         self._execute(self._parse(reader.read_other(fname), base_printer=printer), fp, ctx)
 
     def _cmd_insertfile(self, valref_reader_printer, fp, ctx, filename, line_number):
-        (valref, reader, printer) = valref_reader_printer
+        valref, reader, printer = valref_reader_printer
         fname = _get_value(valref, ctx, filename, line_number)
         fp.write(reader.read_other(fname).text)
 
     def _cmd_if_any(self, args, fp, ctx, filename, line_number):
         "If any value is a non-empty string or non-empty list, then T else F."
-        (valrefs, t_section, f_section) = args
+        valrefs, t_section, f_section = args
         value = 0
         for valref in valrefs:
             if _get_value(valref, ctx, filename, line_number):
@@ -582,7 +583,7 @@ class Template:
         self._do_if(value, t_section, f_section, fp, ctx)
 
     def _cmd_if_index(self, args, fp, ctx, filename, line_number):
-        ((valref, value), t_section, f_section) = args
+        (valref, value), t_section, f_section = args
         vlist, idx = ctx.for_index[valref[0]]
         if value == "even":
             value = idx % 2 == 0
@@ -597,7 +598,7 @@ class Template:
         self._do_if(value, t_section, f_section, fp, ctx)
 
     def _cmd_is(self, args, fp, ctx, filename, line_number):
-        ((left_ref, right_ref), t_section, f_section) = args
+        (left_ref, right_ref), t_section, f_section = args
         right_value = _get_value(right_ref, ctx, filename, line_number)
         left_value = _get_value(left_ref, ctx, filename, line_number)
         value = left_value.lower() == right_value.lower()
@@ -615,7 +616,7 @@ class Template:
             self._execute(section, fp, ctx)
 
     def _cmd_for(self, args, fp, ctx, filename, line_number):
-        ((valref,), unused, section) = args
+        (valref,), unused, section = args
         vlist = _get_value(valref, ctx, filename, line_number)
         refname = valref[0]
         if isinstance(vlist, str):
@@ -627,7 +628,7 @@ class Template:
         del ctx.for_index[refname]
 
     def _cmd_define(self, args, fp, ctx, filename, line_number):
-        ((name,), unused, section) = args
+        (name,), unused, section = args
         valfp = StringIO()
         if section is not None:
             self._execute(section, valfp, ctx)
@@ -699,7 +700,7 @@ def _get_value(refname_start_rest, ctx, filename, line_number):
     for blocks take precedence over data dictionary members with the
     same name.
     """
-    (refname, start, rest) = refname_start_rest
+    refname, start, rest = refname_start_rest
     if rest is None:
         # it was a string constant
         return start

@@ -31,7 +31,6 @@ from .svn_repos import (
 )
 from svn import core, client, ra
 
-
 # Verify that we have an acceptable version of Subversion.
 MIN_SUBVERSION_VERSION = (1, 14, 0)
 HAS_SUBVERSION_VERSION = (core.SVN_VER_MAJOR, core.SVN_VER_MINOR, core.SVN_VER_PATCH)

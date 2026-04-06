@@ -4478,14 +4478,12 @@ def download_tarball(request):
 
     if DEBUG_TARFILE_PATH:
         server_fp = get_writeready_server_file(request, is_text=True)
-        server_fp.write(
-            f"""
+        server_fp.write(f"""
 <html>
 <body>
 <p>Tarball '{DEBUG_TARFILE_PATH}' successfully generated!</p>
 </body>
-</html>"""
-        )
+</html>""")
 
 
 def view_revision(request):
@@ -5049,21 +5047,17 @@ def build_commit(request, files, max_files, dir_strip, format):
 def query_backout(request, commits):
     server_fp = get_writeready_server_file(request, "text/plain", is_text=True)
     if not commits:
-        server_fp.write(
-            """\
+        server_fp.write("""\
 # No changes were selected by the query.
 # There is nothing to back out.
-"""
-        )
+""")
         return
-    server_fp.write(
-        """\
+    server_fp.write("""\
 # This page can be saved as a shell script and executed.
 # It should be run at the top of your work area.  It will update
 # your working copy to back out the changes selected by the
 # query.
-"""
-    )
+""")
     for commit in commits:
         for fileinfo in commit.files:
             file_path = f"{fileinfo.dir}/{fileinfo.file}"

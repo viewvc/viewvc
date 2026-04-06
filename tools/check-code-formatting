@@ -18,7 +18,7 @@ else
     CHECK_ARGS="--check"
 fi
 PYFILES=`grep -rl '^#\(!.*/\|.*-\)python' --exclude=*.py .`
-black --line-length=100 --quiet ${CHECK_ARGS} . ${PYFILES} && flake8 . ${PYFILES}
+black --target-version=py36 --line-length=100 --quiet ${CHECK_ARGS} . ${PYFILES} && flake8 . ${PYFILES}
 if [ $? -eq 0 ]; then
     echo ""
     echo "Linting succeeded!"
