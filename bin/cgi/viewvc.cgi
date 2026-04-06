@@ -25,7 +25,6 @@ import sys
 import os
 from wsgiref.handlers import CGIHandler
 
-
 #########################################################################
 #
 # INSTALL-TIME CONFIGURATION

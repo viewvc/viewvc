@@ -19,7 +19,6 @@ import subprocess
 import os
 import time
 
-
 # item types returned by Repository.itemtype().
 FILE = "FILE"
 DIR = "DIR"

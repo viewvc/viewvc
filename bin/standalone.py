@@ -27,7 +27,6 @@ import base64
 from urllib.parse import unquote as _unquote
 import http.server as _http_server
 
-
 #########################################################################
 #
 # INSTALL-TIME CONFIGURATION
@@ -199,8 +198,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
             self.send_header("WWW-Authenticate", 'Basic realm="ViewVC"')
             self.send_header("Content-type", "text/html")
             self.end_headers()
-            self.wfile.write(
-                b"""<html>
+            self.wfile.write(b"""<html>
 <head>
 <title>Authentication failed</title>
 </head>
@@ -209,8 +207,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
 <p>Authentication has failed.  Please retry with the correct username
    and password.</p>
 </body>
-</html>"""
-            )
+</html>""")
 
     def is_viewvc(self, path):
         """Check whether self.path is, or is a child of, the ScriptAlias"""
@@ -434,8 +431,7 @@ def usage():
     port = clean_options.port
     host = clean_options.host
     script_alias = clean_options.script_alias
-    sys.stderr.write(
-        f"""Usage: {cmd} [OPTIONS]
+    sys.stderr.write(f"""Usage: {cmd} [OPTIONS]
 
 Run a simple, standalone HTTP server configured to serve up ViewVC requests.
 
@@ -467,8 +463,7 @@ Options:
                              For example, "--script-alias=repo/view" will serve
                              ViewVC at "http://HOSTNAME:PORT/repo/view".
                              [default: {script_alias}]
-"""
-    )
+""")
     sys.exit(0)
 
 

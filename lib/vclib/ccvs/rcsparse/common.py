@@ -15,7 +15,6 @@
 import calendar
 import string
 
-
 DIGITS = string.digits.encode("ascii")
 
 

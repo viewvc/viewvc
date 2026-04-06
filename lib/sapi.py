@@ -19,7 +19,6 @@ import os
 import sys
 from urllib.parse import parse_qs
 
-
 # Global server object.
 server = None
 
