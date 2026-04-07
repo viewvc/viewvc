@@ -28,7 +28,6 @@ from typing import Any
 
 from pygit2.enums import SortMode, BlameFlag
 
-
 BUFSIZE = 8192
 TAG_RE = re.compile(r"^refs/tags/")
 HASH_RE = re.compile(r"^[0-9a-fA-F]{4,40}$")
