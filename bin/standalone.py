@@ -70,8 +70,8 @@ class StandaloneServer(sapi.Server):
     """Custom sapi interface that uses a BaseHTTPRequestHandler HANDLER
     to generate output."""
 
-    def __init__(self, handler):
-        sapi.Server.__init__(self)
+    def __init__(self, handler, uri_host):
+        sapi.Server.__init__(self, uri_host, "http")
         self._headers = []
         self._handler = handler
         self._out_fp = handler.wfile
@@ -208,6 +208,22 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
    and password.</p>
 </body>
 </html>""")
+        except sapi.UriValidateException:
+            # This should not happen, but can happen, if the host name
+            # supplied from command line does not honor RFC1123 and
+            # that hostname was resolved (by hosts file, etc.)
+            self.send_response(500, "Internal Server Error")
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(b"""<html>
+<head>
+<title>Internal Server Error</title>
+</head>
+<body>
+<h1>Internal Server Error</h1>
+<p>Invalid host name was supplied by the server configuration.</p>
+</body>
+</html>""")
 
     def is_viewvc(self, path):
         """Check whether self.path is, or is a child of, the ScriptAlias"""
@@ -300,7 +316,8 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
         env["SCRIPT_NAME"] = scriptname
         if query:
             env["QUERY_STRING"] = query
-        env["HTTP_HOST"] = self.server.address[0]
+        uri_host = sapi.normalize_urihost(f"{self.server.address[0]}:{self.server.address[1]}", 80)
+        env["HTTP_HOST"] = uri_host
         host = self.address_string()
         if host != self.client_address[0]:
             env["REMOTE_HOST"] = host
@@ -335,7 +352,7 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
         ot_cfg = cfg.copy()
         try:
             try:
-                viewvc.main(StandaloneServer(self), ot_cfg)
+                viewvc.main(StandaloneServer(self, uri_host), ot_cfg)
             finally:
                 if not self.wfile.closed:
                     self.wfile.flush()
