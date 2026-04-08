@@ -19,6 +19,7 @@ import os
 import sys
 import re
 from urllib.parse import parse_qs, unquote
+from typing import Union
 
 try:
     from idna import encode as idna_encode, IDNAError
@@ -105,7 +106,7 @@ class UriValidateException(Exception):
     pass
 
 
-def normalize_urihost(s: str, default_port: int | str | None = None) -> str:
+def normalize_urihost(s: str, default_port: Union[int, str, None] = None) -> str:
     "Validate and normalize a host string described in RFC 3986 section 3.2.2"
 
     if not s:
@@ -204,7 +205,7 @@ class ServerFile:
 
 
 class Server:
-    def __init__(self, uri_host: str | None = None, scheme: str | None = None):
+    def __init__(self, uri_host: Union[str, None] = None, scheme: Union[str, None] = None):
         """Initialized the server.  Child classes should extend this."""
         self._response_started = False
         self.scheme = "http" if scheme is None else scheme
