@@ -187,7 +187,7 @@ class WsgiServer(Server):
     def redirect(self, url):
         self.add_header("Location", url)
         self.start_response(status="301 Moved")
-        self._wsgi_write(redirect_notice(url))
+        self._wsgi_write(redirect_notice(url).encode('utf-8'))
 
     def getenv(self, name, default_value=None):
         value = self._environ.get(name, default_value)
