@@ -204,9 +204,21 @@ class ServerFile:
 
 
 class Server:
-    def __init__(self):
+    def __init__(self, uri_host: str | None = None, scheme: str | None = None):
         """Initialized the server.  Child classes should extend this."""
         self._response_started = False
+        self.scheme = "http" if scheme is None else scheme
+        default_port = {"http": 80, "https": 443}.get(self.scheme)
+        try:
+            self.uri_host = normalize_urihost(
+                uri_host if uri_host is not None else "", default_port
+            )
+            self.error = None
+        except UriValidateException as e:
+            # To send "400 Bad Request" status code to the client, it need
+            # the instance of this class. So we store the exception here.
+            self.uri_host = None
+            self.error = e
 
     def self(self):
         """Return a self-reference."""
@@ -269,7 +281,9 @@ class Server:
 
 class WsgiServer(Server):
     def __init__(self, environ, write_response):
-        Server.__init__(self)
+        uri_host = environ.get("HTTP_HOST", "")
+        scheme = "https" if environ.get("HTTPS") == "on" else "http"
+        Server.__init__(self, uri_host, scheme)
         self._environ = environ
         self._write_response = write_response
         self._headers = []

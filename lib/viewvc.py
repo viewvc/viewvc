@@ -133,6 +133,8 @@ class Request:
 
     def run_viewvc(self):
 
+        if self.server.error is not None:
+            raise ViewVCException(str(self.server.error), "400 Bad Request")
         cfg = self.cfg
 
         # This function first parses the query string and sets the following
@@ -479,8 +481,7 @@ class Request:
         if escape:
             result = self.server.escape(result)
         if prefix:
-            scheme = "https" if self.server.getenv("HTTPS") == "on" else "http"
-            result = f"{scheme}://{self.server.getenv('HTTP_HOST')}{result}"
+            result = f"{self.server.scheme}://{self.server.uri_host}{result}"
         return result
 
     def get_form(self, **args):
@@ -5035,13 +5036,10 @@ def build_commit(request, files, max_files, dir_strip, format):
     commit.rss_date = make_rss_time_string(date, request.cfg)
     if request.roottype == "svn":
         commit.rev = commit_rev
-        is_https = request.server.getenv("HTTPS") == "on"
         rev_href = request.get_url(
             view_func=view_revision, params={"revision": commit.rev}, escape=1
         )
-        commit.rss_url = (
-            f"{('https' if is_https else 'http')}://{request.server.getenv('HTTP_HOST')}{rev_href}"
-        )
+        commit.rss_url = f"{request.server.scheme}://{request.server.uri_host}{rev_href}"
     else:
         commit.rev = None
         commit.rss_url = None
@@ -5566,6 +5564,14 @@ def load_config(pathname=None, server=None):
     # path.  If we have a SERVER object, consult its environment; use
     # the OS environment otherwise.
     env_get = server and server.getenv or os.environ.get
+    if server and server.uri_host is not None:
+        uri_host = server.uri_host
+    else:
+        default_port = 443 if env_get("HTTPS") == "on" else 80
+        try:
+            uri_host = sapi.normalize_urihost(env_get("HTTP_HOST"), default_port)
+        except sapi.UriValidateException:
+            uri_host = None
     env_pathname = env_get("VIEWVC_CONF_PATHNAME") or env_get("VIEWCVS_CONF_PATHNAME")
 
     # Try to find the configuration pathname by searching these ordered
@@ -5580,7 +5586,7 @@ def load_config(pathname=None, server=None):
     # Load the configuration!
     cfg = config.Config()
     cfg.set_defaults()
-    cfg.load_config(pathname, env_get("HTTP_HOST"))
+    cfg.load_config(pathname, uri_host)
 
     # Apply the stacktrace configuration immediately.
     sys.tracebacklimit = 1000 if cfg.options.stacktraces else 0
