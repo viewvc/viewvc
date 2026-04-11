@@ -59,7 +59,7 @@ into future releases.
 # Adding Features
 
 If you need a new configuration option think carefully, into which
-section it belongs.  Try to keep the content of `cgi/viewvc.conf.dist`
+section it belongs.  Try to keep the content of `conf/viewvc.conf.dist`
 file and the library module `lib/config.py` in sync.
 
 Because ViewVC is a Web-based application, people will have ViewVC
