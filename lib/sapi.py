@@ -19,12 +19,15 @@ import os
 import sys
 import re
 from urllib.parse import parse_qs, unquote
-from typing import Union
+from typing import Union, List
 
 try:
-    from idna import encode as idna_encode, IDNAError
+    from idna import encode as idna_encode, decode as idna_decode, IDNAError
 except ImportError:
     idna_encode = None
+
+    def idna_decode(x: str) -> str:
+        return x
 
 
 # Global server object.
@@ -154,6 +157,30 @@ def normalize_urihost(s: str, default_port: Union[int, str, None] = None) -> str
     if (port is None) or (default_port is not None and int(port) == int(default_port)):
         return host
     return f"{host}:{port}"
+
+
+def is_allowed_hosts(urihost: str, allowed_hosts: List[str]) -> bool:
+    """Check if the URIHOST value matches in any of the element in
+    ALLOWED_HOSTS.  Value enclosed by // in ALLOWED_HOSTS are treated
+    as regular explession. The matching is done in case insensitive,
+    and supports IDN if idna module is avaliable."""
+
+    if not allowed_hosts:
+        return True
+    if ":" in urihost:
+        host, port = urihost.split(":")
+    else:
+        host = urihost
+        port = None
+    dec_urihost = idna_decode(host) if port is None else f"{idna_decode(host)}:{port}"
+    for allowed in allowed_hosts:
+        if not allowed.startswith("/"):
+            if allowed.lower() in (dec_urihost, urihost):
+                return True
+        elif allowed.endswith("/"):
+            if re.search(allowed[1:-1], dec_urihost, flags=re.IGNORECASE):
+                return True
+    return False
 
 
 class ServerUsageError(Exception):
