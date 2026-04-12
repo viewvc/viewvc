@@ -224,6 +224,16 @@
 ##
 #mime_types_files = mimetypes.conf
 
+## allowed_hosts: A list of allowed hostname or hostname:port values
+## specified in server URL. If there are no values specified, any hostname
+## is allowed.  Values enclosed by // are treated as Python's regular
+## expressions.  Internationalized domain names can be describe in
+## Unicode value if idna module is available.  Make sure including
+## virtual host names specfied in [vhosts] section unless keeping the
+## values empty. Those virtual host names are not automatically included.
+##
+# allowed_hosts =
+
 ## address: The address of the local repository maintainer.  (This
 ## option is provided only as a convenience for ViewVC installations
 ## which are using the default template set, where the value of this

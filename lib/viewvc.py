@@ -5624,6 +5624,10 @@ def view_error(server, cfg):
 
 def main(server, cfg):
     try:
+        if not sapi.is_allowed_hosts(server.uri_host, cfg.general.allowed_hosts):
+            raise ViewVCException(
+                f"Invalid host name supplied: {server.uri_host}", "400 Bad Request"
+            )
         # build a Request object, which contains info about the HTTP request
         request = Request(server, cfg)
         request.run_viewvc()
