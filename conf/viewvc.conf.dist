@@ -226,11 +226,18 @@
 
 ## allowed_hosts: A list of allowed hostname or hostname:port values
 ## specified in server URL. If there are no values specified, any hostname
-## is allowed.  Values enclosed by // are treated as Python's regular
-## expressions.  Internationalized domain names can be describe in
-## Unicode value if idna module is available.  Make sure including
-## virtual host names specfied in [vhosts] section unless keeping the
-## values empty. Those virtual host names are not automatically included.
+## is allowed.  Internationalized domain names can be describe in Unicode
+## value if idna module is available.
+##
+## Values enclosed by // (starts with '/' and ends with '/') are treated
+## as Python's regular expressions.  Regular expressions are used for
+## partial matching on hostname or hostname:port string. If you want
+## a pattern to match whole string, please use pattern like
+## "/^viewvc\.org(:(80|443))?$/".
+##
+## Make sure including virtual host names specfied in [vhosts] section
+## unless keeping the values empty. Those virtual host names are not
+## automatically included.
 ##
 # allowed_hosts =
 
