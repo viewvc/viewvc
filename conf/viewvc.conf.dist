@@ -235,7 +235,7 @@
 ## a pattern to match whole string, please use pattern like
 ## "/^viewvc\.org(:(80|443))?$/".
 ##
-## Make sure including virtual host names specfied in [vhosts] section
+## Make sure to include virtual host names specified in [vhosts] section
 ## unless keeping the values empty. Those virtual host names are not
 ## automatically included.
 ##
