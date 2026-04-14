@@ -29,6 +29,7 @@ except ImportError:
     def idna_decode(x: str) -> str:
         return x
 
+
 # Global server object.
 server = None
 
@@ -334,7 +335,7 @@ class WsgiServer(Server):
     def redirect(self, url):
         self.add_header("Location", url)
         self.start_response(status="301 Moved")
-        self._wsgi_write(redirect_notice(url).encode('utf-8'))
+        self._wsgi_write(redirect_notice(url).encode("utf-8"))
 
     def getenv(self, name, default_value=None):
         value = self._environ.get(name, default_value)
