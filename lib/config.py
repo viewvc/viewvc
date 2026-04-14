@@ -114,6 +114,7 @@ class Config:
         "kv_files",
         "languages",
         "mime_types_files",
+        "allowed_hosts",
         "root_parents",
         "svn_roots",
         "renamed_roots",
@@ -383,6 +384,7 @@ class Config:
         self.general.root_parents = []
         self.general.default_root = ""
         self.general.mime_types_files = ["mimetypes.conf"]
+        self.general.allowed_hosts = []
         self.general.address = ""
         self.general.kv_files = []
         self.general.languages = ["en-us"]
