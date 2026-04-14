@@ -17,7 +17,18 @@
 
 import os
 import sys
-from urllib.parse import parse_qs
+import re
+from urllib.parse import parse_qs, unquote
+from typing import Union, List
+
+try:
+    from idna import encode as idna_encode, decode as idna_decode, IDNAError
+except ImportError:
+    idna_encode = None
+
+    def idna_decode(x: str) -> str:
+        return x
+
 
 # Global server object.
 server = None
@@ -47,6 +58,129 @@ def cgi_parse(environ=os.environ) -> dict:
         qs = sys.argv[1] if sys.argv[1:] else ""
         environ["QUERY_STRING"] = qs
     return parse_qs(qs, encoding="utf-8") if qs else {}
+
+
+#
+# Regular expressions for RFC3986 uri-host syntax validation
+#
+_R_DIGIT = r"[0-9]"
+_R_HEXDIG = r"[0-9a-f]"
+# Although the syntax of pct-encode in RFC3986 allows arbitrary code
+# through 0x00 to 0xff, some of the code cannot be used in pct-encoded code
+# for the reg-name syntax
+# List of allowed codes:
+#     minus("-")             : 0x2d
+#     period(".")            : 0x2e
+#     digit                  : 0x30-0x39
+#     alphabet               : 0x41-0x5a, 0x61-0x7a
+#     UTF-8 continuation byte: 0x80-0xbf
+#     UTF-8 valid first byte : 0xc2-0xf4
+_R_PCT_ENCODED = r"%(2[de]|3[0-9]|[46][1-9a-f]|[57][0-9a]|[89abde][0-9a-f]|c[2-9a-f]|f[0-4])"
+_R_GEN_DELIMS = r"[]:/?#@[]"
+_R_SUB_DELIMS = r"[!$&\x27()*+,;=]"
+_R_RESERVED = rf"({_R_GEN_DELIMS}|{_R_SUB_DELIMS})"
+_R_UNRESERVED = r"[0-9a-z._~-]"
+_R_DEC_OCTET = rf"({_R_DIGIT}|[1-9]{_R_DIGIT}|1{_R_DIGIT}{{2}}|2[0-4]{_R_DIGIT}|25[0-5])"
+_R_H16 = rf"{_R_HEXDIG}{{1,4}}"
+_R_IPV4ADDRESS = rf"{_R_DEC_OCTET}\.{_R_DEC_OCTET}\.{_R_DEC_OCTET}\.{_R_DEC_OCTET}"
+_R_LS32 = rf"({_R_H16}:{_R_H16}|{_R_IPV4ADDRESS})"
+_R_IPV6ADDRESS = (
+    rf"(({_R_H16}:){{6}}{_R_LS32}|"
+    rf"::({_R_H16}:){{5}}{_R_LS32}|"
+    rf"({_R_H16})?::({_R_H16}:){{4}}{_R_LS32}|"
+    rf"(({_R_H16}:)?{_R_H16})?::({_R_H16}:){{3}}{_R_LS32}|"
+    rf"(({_R_H16}:){{,2}}{_R_H16})?::({_R_H16}:){{2}}{_R_LS32}|"
+    rf"(({_R_H16}:){{,3}}{_R_H16})?::{_R_H16}:{_R_LS32}|"
+    rf"(({_R_H16}:){{,4}}{_R_H16})?::{_R_LS32}|"
+    rf"(({_R_H16}:){{,5}}{_R_H16})?::{_R_H16}|"
+    rf"(({_R_H16}:){{,6}}{_R_H16})?::)"
+)
+_R_IPVFUTURE = rf"v{_R_HEXDIG}+\.({_R_UNRESERVED}|{_R_SUB_DELIMS}|:)+"
+_R_IP_LITERAL = rf"\[({_R_IPV6ADDRESS}|{_R_IPVFUTURE})\]"
+_R_REG_NAME = rf"({_R_UNRESERVED}|{_R_PCT_ENCODED}|{_R_SUB_DELIMS})*"
+_R_URI_HOST = rf"({_R_IP_LITERAL}|(?P<ipv4addr>{_R_IPV4ADDRESS})|(?P<reg_name>{_R_REG_NAME}))"
+_R_PORT = rf"{_R_DIGIT}*"
+_R_HOST = rf"(?P<host>{_R_URI_HOST})(:(?P<port>{_R_PORT}))?"
+_re_host = re.compile(_R_HOST)
+_re_dn = re.compile(r"([0-9a-z]([0-9a-z-]*[0-9a-z])*\.)*[0-9a-z]([0-9a-z-]*[0-9a-z])?\.?")
+
+
+class UriValidateException(Exception):
+    pass
+
+
+def normalize_urihost(s: str, default_port: Union[int, str, None] = None) -> str:
+    "Validate and normalize a host string described in RFC 3986 section 3.2.2"
+
+    if not s:
+        return s
+    m = _re_host.fullmatch(s.lower())
+    if not m:
+        raise UriValidateException(f'Bad Syntax: "{s}"')
+    host = m["host"]
+    port = m["port"]
+    if port:
+        if not host:
+            raise UriValidateException(f'Empty host part is not allowed with port spec: "{s}"')
+        if not (0 <= int(port) <= 65535):
+            raise UriValidateException(f"Invalid port number: {port}")
+    reg_name = m["reg_name"]
+    if reg_name is not None:
+        assert host == reg_name
+        if reg_name:
+            if not _re_dn.fullmatch(reg_name):
+                try:
+                    reg_name = unquote(reg_name, errors="strict")
+                except UnicodeDecodeError:
+                    raise UriValidateException("Illegal sequence of percent encoding")
+                if idna_encode is not None:
+                    try:
+                        host = idna_encode(reg_name)
+                    except IDNAError as e:
+                        raise UriValidateException(str(e))
+                else:
+                    if not _re_dn.fullmatch(reg_name):
+                        raise UriValidateException(
+                            "Illegal sequence of percent encoding "
+                            "(we don't support native representation of IDN)"
+                        )
+        else:
+            assert port is not None
+        if host.endswith("."):
+            host = host[:-1]
+        if len(host) > 253:
+            raise UriValidateException("Hostname too long")
+        for label in host.split("."):
+            if len(label) > 63:
+                raise UriValidateException("Host label too long")
+
+    if (port is None) or (default_port is not None and int(port) == int(default_port)):
+        return host
+    return f"{host}:{port}"
+
+
+def is_allowed_hosts(urihost: str, allowed_hosts: List[str]) -> bool:
+    """Check if the URIHOST value matches in any of the element in
+    ALLOWED_HOSTS.  Value enclosed by // in ALLOWED_HOSTS are treated
+    as regular explession. The matching is done in case insensitive,
+    and supports IDN if idna module is avaliable."""
+
+    if not allowed_hosts:
+        return True
+    if ":" in urihost:
+        host, port = urihost.split(":")
+    else:
+        host = urihost
+        port = None
+    dec_urihost = idna_decode(host) if port is None else f"{idna_decode(host)}:{port}"
+    for allowed in allowed_hosts:
+        if not allowed.startswith("/"):
+            if allowed.lower() in (dec_urihost, urihost):
+                return True
+        elif allowed.endswith("/"):
+            if re.search(allowed[1:-1], dec_urihost, flags=re.IGNORECASE):
+                return True
+    return False
 
 
 class ServerUsageError(Exception):
@@ -98,9 +232,21 @@ class ServerFile:
 
 
 class Server:
-    def __init__(self):
+    def __init__(self, uri_host: Union[str, None] = None, scheme: Union[str, None] = None):
         """Initialized the server.  Child classes should extend this."""
         self._response_started = False
+        self.scheme = "http" if scheme is None else scheme
+        default_port = {"http": 80, "https": 443}.get(self.scheme)
+        try:
+            self.uri_host = normalize_urihost(
+                uri_host if uri_host is not None else "", default_port
+            )
+            self.error = None
+        except UriValidateException as e:
+            # To send "400 Bad Request" status code to the client, it need
+            # the instance of this class. So we store the exception here.
+            self.uri_host = None
+            self.error = e
 
     def self(self):
         """Return a self-reference."""
@@ -163,7 +309,9 @@ class Server:
 
 class WsgiServer(Server):
     def __init__(self, environ, write_response):
-        Server.__init__(self)
+        uri_host = environ.get("HTTP_HOST", "")
+        scheme = "https" if environ.get("HTTPS") == "on" else "http"
+        Server.__init__(self, uri_host, scheme)
         self._environ = environ
         self._write_response = write_response
         self._headers = []

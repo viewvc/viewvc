@@ -224,6 +224,23 @@
 ##
 #mime_types_files = mimetypes.conf
 
+## allowed_hosts: A list of allowed hostname or hostname:port values
+## specified in server URL. If there are no values specified, any hostname
+## is allowed.  Internationalized domain names can be describe in Unicode
+## value if idna module is available.
+##
+## Values enclosed by // (starts with '/' and ends with '/') are treated
+## as Python's regular expressions.  Regular expressions are used for
+## partial matching on hostname or hostname:port string. If you want
+## a pattern to match whole string, please use pattern like
+## "/^viewvc\.org(:(80|443))?$/".
+##
+## Make sure to include virtual host names specified in [vhosts] section
+## unless keeping the values empty. Those virtual host names are not
+## automatically included.
+##
+# allowed_hosts =
+
 ## address: The address of the local repository maintainer.  (This
 ## option is provided only as a convenience for ViewVC installations
 ## which are using the default template set, where the value of this
