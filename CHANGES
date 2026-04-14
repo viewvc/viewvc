@@ -23,6 +23,7 @@ Version 1.3.0 (released ??-???-????)
   * disallow patch view on non-file paths (#370)
   * separate CGI script for IIS server without PATH_INFO fix settings (#386)
   * diff link in revision view uses r1 as old and r2 as new revision (#389)
+  * new 'allowed host' option, for validate Host: header value (#398)
 
 Version 1.2.5 (released 28-Jul-2025)
 
