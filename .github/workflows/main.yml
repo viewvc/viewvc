@@ -21,9 +21,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.8"
-      - name: Install flake8
-        run: pip install flake8
-      - name: Install black
-        run: pip install black
-      - name: Check code formatting (with black and flake8)
+      - name: Install linting requirements
+        run: pip install -r dev-requirements.txt
+      - name: Check code formatting
         run: ./tools/check-code-formatting
