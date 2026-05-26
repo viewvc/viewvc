@@ -15,7 +15,7 @@
 # -----------------------------------------------------------------------
 from __future__ import print_function
 
-__version__ = "1.3.0"
+__version__ = "1.3.1-dev"
 
 # Standard modules that we know are in the path or builtin.
 import sys
