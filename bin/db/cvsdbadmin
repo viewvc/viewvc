@@ -123,7 +123,8 @@ def RootPath(path, quiet_level):
 
 def usage():
     cmd = os.path.basename(sys.argv[0])
-    sys.stderr.write(f"""\
+    sys.stderr.write(
+        f"""\
 Administer the ViewVC checkins database data for the CVS repository
 located at REPOS-PATH.
 
@@ -144,7 +145,8 @@ Usage: 1. {cmd} [[-q] -q] rebuild REPOS-PATH
 Use the -q flag to cause this script to be less verbose; use it twice to
 invoke a peaceful state of noiselessness.
 
-""")
+"""
+    )
     sys.exit(1)
 
 

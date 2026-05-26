@@ -312,7 +312,8 @@ def _rev2int(r):
 
 def usage():
     cmd = os.path.basename(sys.argv[0])
-    sys.stderr.write(f"""\
+    sys.stderr.write(
+        f"""\
 Administer the ViewVC checkins database data for the Subversion repository
 located at REPOS-PATH.
 
@@ -338,7 +339,8 @@ Usage: 1. {cmd} [-v] rebuild REPOS-PATH
 
 Use the -v flag to cause this script to give progress information as it works.
 
-""")
+"""
+    )
     sys.exit(1)
 
 
