@@ -37,7 +37,7 @@ depending on what you want to do with it.
 
 Minimum requirements:
 
-  * Python 3.6+
+  * Python 3.10+
       (https://www.python.org/)
 
 For CVS support:
@@ -207,9 +207,9 @@ which doubles as a quick way to check what version of the Subversion
 Python binding you have:
 
     % python
-    Python 3.6.9 (default, Nov  7 2019, 10:44:02) 
-    [GCC 8.3.0] on linux
+    Python 3.12.3 (main, Sep 11 2024, 14:17:37) [GCC 13.2.0] on linux
     Type "help", "copyright", "credits" or "license" for more information.
+    Ctrl click to launch VS Code Native REPL
     >>> from svn.core import *
     >>> "%s.%s.%s" % (SVN_VER_MAJOR, SVN_VER_MINOR, SVN_VER_PATCH)
     '1.14.0'
