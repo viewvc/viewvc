@@ -40,13 +40,13 @@ The only hard software requirement for running ViewVC is a suitable version of P
 
 Official ViewVC release archives are available for download at https://viewvc.org/downloads/.  To see what changes have been included in the release, see the [CHANGES](https://raw.githubusercontent.com/viewvc/viewvc/master/CHANGES) file.
 
-Un-official nightly builds are available at https://viewvc.org/nightly/
+Un-official nightly builds are available at https://viewvc.org/nightly/.
 
 ## Upgrading
 
 We've tried to ensure that ViewVC URLs are stable, and that even when we deprecate a particular URL syntax, we continue to support the handling of it (using HTTP redirects to point browsers to the new form of that URL). We know that ViewVC URLs get bookmarked, and nobody likes when their bookmarked URLs suddenly stop working.
 
-Across patch releases of ViewVC (when only the Z component of version X.Y.Z changes), we do our best to avoid configuration file changes that would modify the behavior of existing ViewVC installations.  For example, we may add new configuration options, but their default values will cause no change in behavior.  Likewise, we may add new template data dictionary variables, but will not require their use in existing templates or modify the behavior of previously existing data dictionary items.  This makes it much easier for folks who need to upgrade quickly to get security or other bug fixes. That said, across major and minor releases, all bets are off, and chances are good that we've done some major plumbing. When upgrading your ViewVC instance across major or minor version numbers, you'll almost certainly want to consult the "Upgrading HOWTO" document in the `docs/` directory of the release archive for tips on how to migrate your configuration files and any template customizations you've made into their new formats.
+Across patch releases of ViewVC (when only the _Z_ component of version _X.Y.Z_ changes), we do our best to avoid configuration file changes that would modify the behavior of existing ViewVC installations.  For example, we may add new configuration options, but their default values will cause no change in behavior.  Likewise, we may add new template data dictionary variables, but will not require their use in existing templates or modify the behavior of previously existing data dictionary items.  This makes it much easier for folks who need to upgrade quickly to get security or other bug fixes. That said, across major and minor releases, all bets are off, and chances are good that we've done some major plumbing. When upgrading your ViewVC instance across major or minor version numbers, you'll almost certainly want to consult the "Upgrading HOWTO" document in the `docs/` directory of the release archive for tips on how to migrate your configuration files and any template customizations you've made into their new formats.
 
 ## Contributing
 
@@ -55,10 +55,6 @@ Some notes for contributing to ViewVC's source code are include in our [HACKING.
 ## Questions or Concerns?
 
 Feel free to use our [Issue Tracker](https://github.com/viewvc/viewvc/issues) to ask questions, make feature requests, report bugs, etc.  In yesteryear, we had mailing lists for this kind of thing, but those have been discontinued.
-
-## ViewVC Docker Images
-
-GitHub user @cmanley has graciously assembled Docker images for running ViewVC.  See his work at https://github.com/cmanley/viewvc-docker.
 
 ## License
 
