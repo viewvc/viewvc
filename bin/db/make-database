@@ -96,8 +96,7 @@ DATABASE_CREATE = "CREATE DATABASE <dbname>; USE <dbname>;\n"
 
 def usage_and_exit(errmsg=None):
     stream = errmsg is None and sys.stdout or sys.stderr
-    stream.write(
-        f"""\
+    stream.write(f"""\
 Usage: {sys.argv[0]} [OPTIONS]
 
 This script creates the database and tables in MySQL used by the
@@ -138,8 +137,7 @@ Options:
   --version=ARG       Create the database using the schema employed by
                       version ARG of ViewVC.  [Default: newest version]
 
-"""
-    )
+""")
     if errmsg is not None:
         stream.write(f"[ERROR] {errmsg}.\n")
         sys.exit(1)

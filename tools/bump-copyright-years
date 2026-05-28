@@ -78,14 +78,12 @@ if __name__ == "__main__":
     try:
         target_dir = sys.argv[1]
     except Exception:
-        sys.stderr.write(
-            """\
+        sys.stderr.write("""\
 Usage: bump-copyright-years VIEWVC_DIRECTORY
 
 Recursively update the copyright years associated with version-controlled
 files carrying 'The ViewCVS Group' copyright in and under VIEWVC_DIRECTORY
 to include the current year.
-"""
-        )
+""")
         sys.exit(1)
     bump_years(target_dir)
