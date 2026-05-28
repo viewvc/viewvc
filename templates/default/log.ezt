@@ -24,7 +24,7 @@
   [for entries.tag_names]<a name="[entries.tag_names]"></a>[end]
   [for entries.branch_names]<a name="[entries.branch_names]"></a>[end]
 
-  Revision [is roottype "svn"]<a href="[entries.revision_href]"><strong>[entries.rev]</strong></a>[else]<strong>[entries.rev]</strong>[end] -
+  Revision [if-any entries.revision_href]<a href="[entries.revision_href]"><strong>[entries.rev]</strong></a>[else]<strong>[entries.rev]</strong>[end] -
   [if-any entries.view_href]
       [is pathtype "file"]
         (<a href="[entries.view_href]">view</a>)
