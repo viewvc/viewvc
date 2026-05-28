@@ -5,6 +5,14 @@
 Powered by <a href="http://viewvc.org/">ViewVC [vsn]</a>
 [if-any rss_href]<br/><a href="[rss_href]" title="RSS 2.0 feed"><img src="[docroot]/images/feed-icon-16x16.jpg" class="vc_icon" alt="RSS 2.0 feed" /></a>[else]&nbsp;[end]
 </div>
-
+[if-any debuglines]
+<script>
+  var d;
+  [for debuglines]
+  d = new Date([debuglines.timestamp] * 1000.0);
+  console.log(`${d.toISOString()} [[]ViewVC] [debuglines.line]`);
+  [end]
+</script>
+[end]
 </body>
 </html>
