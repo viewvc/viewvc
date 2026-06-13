@@ -15,6 +15,7 @@
 import vclib
 import os
 import tempfile
+import codecs
 from urllib.parse import quote as _quote
 
 from . import _strpath
@@ -440,13 +441,21 @@ class RemoteSubversionRepository(vclib.Repository):
             return date
 
         try:
-            temp1 = cat_to_tempfile(self, p1, r1)
-            temp2 = cat_to_tempfile(self, p2, r2)
+            trncode1: tuple[str, str] | None = None
+            if encoding is not None:
+                f_code = self._get_content_encoding(path_parts1, r1)
+                if f_code != "utf-8":
+                    trncode1 = (f_code, "utf-8")
+            temp1 = self.temp_checkout(path_parts1, r1, trncode1)
+            trncode2: tuple[str, str] | None = None
+            if encoding is not None:
+                f_code = self._get_content_encoding(path_parts2, r2)
+                if f_code != "utf-8":
+                    trncode2 = (f_code, "utf-8")
+            temp2 = self.temp_checkout(path_parts2, r2, trncode2)
             info1 = p1, _date_from_rev(r1), r1
             info2 = p2, _date_from_rev(r2), r2
-            return vclib._diff_fp(
-                temp1, temp2, info1, info2, self.diff_cmd, args, encoding=encoding
-            )
+            return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args, encoding="utf-8" if is_text else None)
         except core.SubversionException as e:
             if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
                 raise vclib.InvalidRevision
@@ -482,11 +491,11 @@ class RemoteSubversionRepository(vclib.Repository):
             raise vclib.InvalidRevision(rev)
         return rev
 
-    def _geturl(self, path=None):
+    def _geturl(self, path: str | None = None) -> str:
         if not path:
             return self.rootpath
         path = self.rootpath + "/" + _quote(path)
-        return core.svn_path_canonicalize(path)
+        return core.svn_path_canonicalize(path).decode("utf-8")
 
     def _get_dirents(self, path, rev):
         """Return a 2-type of dirents and locks, possibly reading/writing
@@ -679,6 +688,98 @@ class RemoteSubversionRepository(vclib.Repository):
             cached_info = self._revinfo_fetch(rev, include_changed_paths)
             self._revinfo_cache[rev] = cached_info
         return cached_info
+
+    def _get_content_encoding(self, path_parts: list[str], rev: int | str) -> str | None:
+        """Return the content encoding of the file at PATH_PARTS in REV,
+        or None if that object is not a text file."""
+
+        path: str = self._getpath(path_parts)
+        rev = self._getrev(rev)
+        path_type = self.itemtype(path_parts, rev)  # does auth-check
+        if path_type != vclib.FILE:
+            return None
+        b_url: bytes = self._geturl(path).encode("utf-8")
+        o_rev = _rev2optrev(rev)
+        pdic, _, arev = client.svn_client_propget5(
+            core.SVN_PROP_MIME_TYPE, b_url, o_rev, o_rev, core.svn_depth_empty, None, self.ctx
+        )
+        if b_url not in pdic:
+            return self.content_encoding
+        mime_type: str = pdic[b_url].decode("utf-8")
+        if not vclib.is_mime_text(mime_type):
+            return None
+        mime_subtype, parameters = vclib.parse_mime_type(mime_type)
+        return parameters.get("charset", self.content_encoding)
+
+    def temp_checkout(
+        self, path_parts: list[str], rev: int | str, transcode: tuple[str, str] | None = None
+    ) -> str:
+        """Checkout file atPATH_PARTS in REV  into temporary file,
+        return its temporary file name"""
+
+        path = self._getpath(path_parts)
+        rev = self._getrev(rev)
+        path_type = self.itemtype(path_parts, rev)  # does auth-check
+        if path_type != vclib.FILE:
+            raise vclib.UnsupportedFeature(f"Won't checkout directory {path}@{rev}")
+        o_rev = _rev2optrev(rev)
+
+        fd, temp = tempfile.mkstemp()
+        try:
+            fp = os.fdopen(fd, "wb")
+            url = self._geturl(path)
+            client.svn_client_cat3(fp, url, o_rev, o_rev, False, self.ctx)
+        except Exception:
+            try:
+                fp.close()
+                os.remove(temp)
+            except Exception:
+                pass
+            raise
+        fp.close()
+        if transcode is not None:
+            fdecoderclass = codecs.lookup(transcode[0]).incrementaldecoder
+            tencoderclass = codecs.lookup(transcode[1]).incrementalencoder
+        else:
+            fdecoderclass = None
+            tencoderclass = None
+        if fdecoderclass is None or tencoderclass is None:
+            return temp
+
+        # transcode the file
+        fp = open(temp, "rb")
+        fd2, temp2 = tempfile.mkstemp()
+        fp2 = os.fdopen(fd2, "wb")
+        fdecoder = fdecoderclass(errors="backslashreplace")
+        tencoder = tencoderclass(errors="xmlcharrefreplace")
+        try:
+            while 1:
+                chunk = fp.read(8192)
+                if not chunk:
+                    rest = tencoder.encode(fdecoder.decode(b"", final=True), final=True)
+                    if rest:
+                        fp2.write(rest)
+                    break
+                fp2.write(tencoder.encode(fdecoder.decode(chunk)))
+        except Exception:
+            try:
+                fp.close()
+                os.remove(temp)
+            except Exception:
+                pass
+            try:
+                fp2.close()
+                os.remove(temp2)
+            except Exception:
+                pass
+            raise
+        fp.close()
+        fp2.close()
+        try:
+            os.remove(temp)
+        except Exception:
+            pass
+        return temp2
 
     # --- custom --- #
 
