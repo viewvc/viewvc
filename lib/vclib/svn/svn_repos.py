@@ -17,6 +17,7 @@ import sys
 import os
 import os.path
 import tempfile
+import codecs
 from io import BytesIO
 from urllib.parse import quote as _quote
 from svn import fs, repos, core, client, delta
@@ -214,26 +215,6 @@ def _get_last_history_rev(fsroot, path):
     history = fs.history_prev(history, 0)
     history_path, history_rev = fs.history_location(history)
     return history_rev
-
-
-def temp_checkout(svnrepos, path, rev):
-    """Check out file revision to temporary file"""
-    fd, temp = tempfile.mkstemp()
-    fp = os.fdopen(fd, "wb")
-    try:
-        root = svnrepos._getroot(rev)
-        stream = fs.file_contents(root, path)
-        try:
-            while 1:
-                chunk = core.svn_stream_read(stream, core.SVN_STREAM_CHUNK_SIZE)
-                if not chunk:
-                    break
-                fp.write(chunk)
-        finally:
-            core.svn_stream_close(stream)
-    finally:
-        fp.close()
-    return temp
 
 
 class FileContentsPipe:
@@ -590,13 +571,21 @@ class LocalSubversionRepository(vclib.Repository):
             return date
 
         try:
-            temp1 = temp_checkout(self, p1, r1)
-            temp2 = temp_checkout(self, p2, r2)
+            trncode1: tuple[str, str] | None = None
+            if encoding is not None:
+                f_code = self._get_content_encoding(path_parts1, r1)
+                if f_code != "utf-8":
+                    trncode1 = (f_code, "utf-8")
+            temp1 = self.temp_checkout(path_parts1, r1, trncode1)
+            trncode2: tuple[str, str] | None = None
+            if encoding is not None:
+                f_code = self._get_content_encoding(path_parts2, r2)
+                if f_code != "utf-8":
+                    trncode2 = (f_code, "utf-8")
+            temp2 = self.temp_checkout(path_parts2, r2, trncode2)
             info1 = p1, _date_from_rev(r1), r1
             info2 = p2, _date_from_rev(r2), r2
-            return vclib._diff_fp(
-                temp1, temp2, info1, info2, self.diff_cmd, args, encoding=encoding
-            )
+            return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args, encoding="utf-8" if is_text else None)
         except core.SubversionException as e:
             if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
                 raise vclib.InvalidRevision
@@ -885,6 +874,82 @@ class LocalSubversionRepository(vclib.Repository):
         if kind == core.svn_node_file:
             return vclib.FILE
         return None
+
+    def _get_content_encoding(self, path_parts: list[str], rev: int | str) -> str | None:
+        """Return the content encoding of the file at PATH_PARTS in REV,
+        or None if that object is not a text file."""
+
+        path = self._getpath(path_parts)
+        rev = self._getrev(rev)
+        path_type = self.itemtype(path_parts, rev)  # does auth-check
+        if path_type != vclib.FILE:
+            return None
+
+        fsroot = self._getroot(rev)
+        props = fs.node_proplist(fsroot, path)
+        if core.SVN_PROP_MIME_TYPE not in props:
+            return self.content_encoding
+        mime_type = props[core.SVN_PROP_MIME_TYPE].decode("utf-8")
+        if not vclib.is_mime_text(mime_type):
+            return None
+        mime_subtype, parameters = vclib.parse_mime_type(mime_type)
+        return parameters.get("charset", self.content_encoding)
+
+    def temp_checkout(
+        self, path_parts: list[str], rev: int | str, transcode: tuple[str, str] | None = None
+    ) -> str:
+        """Checkout file atPATH_PARTS in REV  into temporary file,
+        return its temporary file name"""
+
+        path = self._getpath(path_parts)
+        rev = self._getrev(rev)
+        path_type = self.itemtype(path_parts, rev)  # does auth-check
+        if path_type != vclib.FILE:
+            raise vclib.UnsupportedFeature(f"Won't checkout directory {path}@{rev}")
+
+        fd, temp = tempfile.mkstemp()
+        fp = os.fdopen(fd, "wb")
+        try:
+            root = self._getroot(rev)
+            stream = fs.file_contents(root, path)
+            if transcode is not None:
+                fdecoderclass = codecs.lookup(transcode[0]).incrementaldecoder
+                tencoderclass = codecs.lookup(transcode[1]).incrementalencoder
+            else:
+                fdecoderclass = None
+                tencoderclass = None
+            if fdecoderclass is None or tencoderclass is None:
+                try:
+                    while 1:
+                        chunk = core.svn_stream_read(stream, core.SVN_STREAM_CHUNK_SIZE)
+                        if not chunk:
+                            break
+                        fp.write(chunk)
+                finally:
+                    core.svn_stream_close(stream)
+            else:
+                fdecoder = fdecoderclass(errors="backslashreplace")
+                tencoder = tencoderclass(errors="xmlcharrefreplace")
+                try:
+                    while 1:
+                        chunk = core.svn_stream_read(stream, core.SVN_STREAM_CHUNK_SIZE)
+                        if not chunk:
+                            rest = tencoder.encode(fdecoder.decode(b"", final=True), final=True)
+                            if rest:
+                                fp.write(rest)
+                            break
+                        fp.write(tencoder.encode(fdecoder.decode(chunk)))
+                finally:
+                    core.svn_stream_close(stream)
+        except Exception:
+            try:
+                fp.close()
+                os.remove(temp)
+            except Exception:
+                pass
+            raise
+        fp.close()
+        return temp
 
     # --- custom --- #
 
