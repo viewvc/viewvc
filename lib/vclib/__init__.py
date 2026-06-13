@@ -577,3 +577,17 @@ else:
             return os.listdir(path)
         path = _getfspath(path, encoding) if path else b"."
         return [ent.decode(encoding, "surrogateescape") for ent in os.listdir(path)]
+
+
+def is_mime_text(mime_type: None | str):
+    return not mime_type or mime_type.startswith("text/")
+
+
+def parse_mime_type(mime_type: str) -> tuple[str, dict[str, str]]:
+    mime_parts = [x.strip() for x in mime_type.split(";")]
+    type_subtype = mime_parts[0].lower()
+    parameters = {}
+    for part in mime_parts[1:]:
+        name, value = part.split("=", 1)
+        parameters[name] = value
+    return type_subtype, parameters
