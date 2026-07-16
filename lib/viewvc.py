@@ -97,10 +97,15 @@ class TextIOWrapper_noclose(io.TextIOWrapper):
     close() is called or this object is destroyed."""
 
     def close(self):
-        if not self.closed:
-            self.closed = True
+        try:
             self.flush()
-            self.detach()
+        finally:
+            # Detach so finalization of this wrapper won't close the underlying
+            # server stream.
+            try:
+                self.detach()
+            except Exception:
+                pass
 
 
 class Request:
