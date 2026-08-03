@@ -99,13 +99,9 @@ class TextIOWrapper_noclose(io.TextIOWrapper):
     def close(self):
         try:
             self.flush()
-        finally:
-            # Detach so finalization of this wrapper won't close the underlying
-            # server stream.
-            try:
-                self.detach()
-            except Exception:
-                pass
+        except Exception:
+            pass
+        self.detach()
 
 
 class Request:
