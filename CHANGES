@@ -1,6 +1,7 @@
 Version 1.3.1 (released ??-???-????)
 
   * avoid raising an exception when closing a stream (#408)
+  * add favicon.ico to the default templates (#188)
 
 Version 1.3.0 (released 26-May-2026)
 
