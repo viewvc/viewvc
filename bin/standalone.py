@@ -171,7 +171,14 @@ class ViewVCHTTPRequestHandler(_http_server.BaseHTTPRequestHandler):
             # non-empty script_alias, automatically redirect to the
             # script_alias.  Otherwise, just return a 404 and shrug.
             if (not self.path or self.path == "/") and options.script_alias:
-                new_url = self.server.url + options.script_alias + "/"
+                # RFC 7231 allows a relative Location, which works behind a proxy or container
+                # port mapping; only send it to clients that speak HTTP/1.1+, since RFC 1945
+                # (HTTP/1.0) requires Location to be absolute.
+                if self.request_version >= "HTTP/1.1":
+                    new_url = options.script_alias + "/"
+                else:
+                    new_url = self.server.url + options.script_alias + "/"
+
                 self.send_response(301, "Moved Permanently")
                 self.send_header("Content-type", "text/html")
                 self.send_header("Location", new_url)
