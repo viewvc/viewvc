@@ -45,6 +45,263 @@ SORTBY_REV = 2  # sorted by revision, youngest first
 
 
 # ======================================================================
+class DirEntry:
+    """Instances represent items in a directory listing"""
+
+    def __init__(self, name, kind, errors=[]):
+        """Create a new DirEntry() item:
+        NAME:  The name of the directory entry
+        KIND:  The path kind of the entry (vclib.DIR, vclib.FILE)
+        ERRORS:  A list of error strings representing problems encountered
+                 while determining the other info about this entry
+        """
+        self.name = name
+        self.kind = kind
+        self.errors = errors
+
+    def sortkey(self, attrname, default=""):
+        """Get attribute value specified for sort key
+
+        If the attribute value is None, return default value instead.
+        """
+        v = getattr(self, attrname)
+        return v if v is not None else default
+
+
+class Revision:
+    """Instances holds information about revisions of versioned resources"""
+
+    def __init__(self, number, string, date, author, changed, log, size, lockinfo):
+        """Create a new Revision() item:
+        NUMBER:  Revision in an integer-based, sortable format
+        STRING:  Revision as a string
+        DATE:  Seconds since Epoch (GMT) that this revision was created
+        AUTHOR:  Author of the revision
+        CHANGED:  Lines-changed (contextual diff) information
+        LOG:  Log message associated with the creation of this revision
+        SIZE:  Size (in bytes) of this revision's fulltext (files only)
+        LOCKINFO:  Information about locks held on this revision
+        """
+        self.number = number
+        self.string = string
+        self.date = date
+        self.author = author
+        self.changed = changed
+        self.log = log
+        self.size = size
+        self.lockinfo = lockinfo
+
+    def __lt__(self, other):
+        return self.number < other.number
+
+
+class Annotation:
+    """Instances represent per-line file annotation information"""
+
+    def __init__(self, text, line_number, rev, prev_rev, author, date):
+        """Create a new Annotation() item:
+        TEXT:  Raw text of a line of file contents
+        LINE_NUMBER:  Line number on which the line is found
+        REV:  Revision in which the line was last modified
+        PREV_REV:  Revision prior to 'rev'
+        AUTHOR:  Author who last modified the line
+        DATE:  Date on which the line was last modified, in seconds since
+               the epoch, GMT
+        """
+        self.text = text
+        self.line_number = line_number
+        self.rev = rev
+        self.prev_rev = prev_rev
+        self.author = author
+        self.date = date
+
+
+class ChangedPath:
+    """Instances represent changes to paths"""
+
+    def __init__(
+        self,
+        path_parts,
+        rev,
+        pathtype,
+        base_path_parts,
+        base_rev,
+        action,
+        copied,
+        text_changed,
+        props_changed,
+    ):
+        """Create a new ChangedPath() item:
+        PATH_PARTS:       Path that was changed
+        REV:              Revision represented by this change
+        PATHTYPE:         Type of this path (vclib.DIR, vclib.FILE, ...)
+        BASE_PATH_PARTS:  Previous path for this changed item
+        BASE_REV:         Previous revision for this changed item
+        ACTION:           Kind of change (vclib.ADDED, vclib.DELETED, ...)
+        COPIED:           Boolean -- was this path copied from elsewhere?
+        TEXT_CHANGED:     Boolean -- did the file's text change?
+        PROPS_CHANGED:    Boolean -- did the item's metadata change?
+        """
+        self.path_parts = path_parts
+        self.rev = rev
+        self.pathtype = pathtype
+        self.base_path_parts = base_path_parts
+        self.base_rev = base_rev
+        self.action = action
+        self.copied = copied
+        self.text_changed = text_changed
+        self.props_changed = props_changed
+
+
+# ======================================================================
+
+
+class Error(Exception):
+    pass
+
+
+class ReposNotFound(Error):
+    pass
+
+
+class UnsupportedFeature(Error):
+    pass
+
+
+class ItemNotFound(Error):
+    def __init__(self, path):
+        # use '/' rather than os.sep because this is for user consumption, and
+        # it was defined using URL separators
+        if isinstance(path, tuple) or isinstance(path, list):
+            path = "/".join(path)
+        Error.__init__(self, path)
+
+
+class InvalidRevision(Error):
+    def __init__(self, revision=None):
+        if revision is None:
+            Error.__init__(self, "Invalid revision")
+        else:
+            Error.__init__(self, f"Invalid revision {revision}")
+
+
+class NonTextualFileContents(Error):
+    pass
+
+
+class ExternalDiffError(Error):
+    def __init__(self, returncode, mess):
+        self.returncode = returncode
+        Error.__init__(self, f"Diff terminated with exit code {returncode:d}: {mess}")
+
+
+# ======================================================================
+
+class _diff_fp:
+    """File like object reading a diff between temporary files,
+    cleaning up on close.
+
+    If ENCODING is not none, it returns file like object with str I/O,
+    otherwise, it returns file like object with bytes I/O"""
+
+    def __init__(
+        self, temp1, temp2, info1=None, info2=None, diff_cmd="diff", diff_opts=[], encoding="utf-8"
+    ):
+        self.readable = True
+        self.temp1 = temp1
+        self.temp2 = temp2
+        self.encoding = encoding
+        args = diff_opts[:]
+        args.insert(0, diff_cmd)
+        if info1 and info2:
+            args.extend(["-L", self._label(info1), "-L", self._label(info2)])
+        args.extend([temp1, temp2])
+        # We assume pipe buffer for stderr is enough for diff utility,
+        # otherwise, it may cause deadlock.
+        if encoding:
+            self.proc = subprocess.Popen(
+                args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                encoding=encoding,
+                errors="surrogateescape",
+                bufsize=-1,
+                close_fds=(sys.platform != "win32"),
+            )
+        else:
+            self.proc = subprocess.Popen(
+                args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                bufsize=-1,
+                close_fds=(sys.platform != "win32"),
+            )
+
+    def read(self, buf_size):
+        buf = self.proc.stdout.read(buf_size)
+        if not buf:
+            self._check_process_errors()
+        return buf
+
+    def readline(self):
+        buf = self.proc.stdout.readline()
+        if not buf:
+            self._check_process_errors()
+        return buf
+
+    def close(self):
+        try:
+            if self.proc:
+                self.proc.stdout.close()
+                self.proc.stderr.close()
+                ret = self.proc.poll()
+                if ret is None:
+                    # child process seems to be still running...
+                    self.proc.terminate()
+                self.proc = None
+        finally:
+            try:
+                if self.temp1:
+                    os.remove(self.temp1)
+                    self.temp1 = None
+            finally:
+                if self.temp2:
+                    os.remove(self.temp2)
+                    self.temp2 = None
+
+    def __del__(self):
+        self.close()
+
+    def _label(self, info):
+        path, date, rev = info
+        date = date and time.strftime("%Y/%m/%d %H:%M:%S", time.gmtime(date))
+        return f"{path}\t{date}\t{rev}"
+
+    def _check_process_errors(self):
+        """Check errors returned by subprocss. On error, raise an
+        ExternalDifferror exception"""
+
+        errs = self.proc.stderr.read()
+        ret = self.proc.poll()
+
+        # Exit code of diff utility is specified in POSIX:
+        #     0  ... No differences were found
+        #     1  ... Diferences were found
+        #     >1 ... An error occurred.
+        # Also, it is said "The standard error shall be used only for
+        # diagnostic messages." So, if errs is not empty, it would be
+        # occured some errors.
+
+        if ret not in (None, 0, 1) or errs:
+            if isinstance(errs, bytes):
+                errs = errs.decode("utf-8", "surrogateescape")
+            if ret is None:
+                # The process is still running...
+                ret = -1
+            raise ExternalDiffError(ret, errs)
+
+
+# ======================================================================
 #
 class Repository:
     """Abstract class representing a repository.
@@ -234,157 +491,6 @@ class Repository:
 
 
 # ======================================================================
-class DirEntry:
-    """Instances represent items in a directory listing"""
-
-    def __init__(self, name, kind, errors=[]):
-        """Create a new DirEntry() item:
-        NAME:  The name of the directory entry
-        KIND:  The path kind of the entry (vclib.DIR, vclib.FILE)
-        ERRORS:  A list of error strings representing problems encountered
-                 while determining the other info about this entry
-        """
-        self.name = name
-        self.kind = kind
-        self.errors = errors
-
-    def sortkey(self, attrname, default=""):
-        """Get attribute value specified for sort key
-
-        If the attribute value is None, return default value instead.
-        """
-        v = getattr(self, attrname)
-        return v if v is not None else default
-
-
-class Revision:
-    """Instances holds information about revisions of versioned resources"""
-
-    def __init__(self, number, string, date, author, changed, log, size, lockinfo):
-        """Create a new Revision() item:
-        NUMBER:  Revision in an integer-based, sortable format
-        STRING:  Revision as a string
-        DATE:  Seconds since Epoch (GMT) that this revision was created
-        AUTHOR:  Author of the revision
-        CHANGED:  Lines-changed (contextual diff) information
-        LOG:  Log message associated with the creation of this revision
-        SIZE:  Size (in bytes) of this revision's fulltext (files only)
-        LOCKINFO:  Information about locks held on this revision
-        """
-        self.number = number
-        self.string = string
-        self.date = date
-        self.author = author
-        self.changed = changed
-        self.log = log
-        self.size = size
-        self.lockinfo = lockinfo
-
-    def __lt__(self, other):
-        return self.number < other.number
-
-
-class Annotation:
-    """Instances represent per-line file annotation information"""
-
-    def __init__(self, text, line_number, rev, prev_rev, author, date):
-        """Create a new Annotation() item:
-        TEXT:  Raw text of a line of file contents
-        LINE_NUMBER:  Line number on which the line is found
-        REV:  Revision in which the line was last modified
-        PREV_REV:  Revision prior to 'rev'
-        AUTHOR:  Author who last modified the line
-        DATE:  Date on which the line was last modified, in seconds since
-               the epoch, GMT
-        """
-        self.text = text
-        self.line_number = line_number
-        self.rev = rev
-        self.prev_rev = prev_rev
-        self.author = author
-        self.date = date
-
-
-class ChangedPath:
-    """Instances represent changes to paths"""
-
-    def __init__(
-        self,
-        path_parts,
-        rev,
-        pathtype,
-        base_path_parts,
-        base_rev,
-        action,
-        copied,
-        text_changed,
-        props_changed,
-    ):
-        """Create a new ChangedPath() item:
-        PATH_PARTS:       Path that was changed
-        REV:              Revision represented by this change
-        PATHTYPE:         Type of this path (vclib.DIR, vclib.FILE, ...)
-        BASE_PATH_PARTS:  Previous path for this changed item
-        BASE_REV:         Previous revision for this changed item
-        ACTION:           Kind of change (vclib.ADDED, vclib.DELETED, ...)
-        COPIED:           Boolean -- was this path copied from elsewhere?
-        TEXT_CHANGED:     Boolean -- did the file's text change?
-        PROPS_CHANGED:    Boolean -- did the item's metadata change?
-        """
-        self.path_parts = path_parts
-        self.rev = rev
-        self.pathtype = pathtype
-        self.base_path_parts = base_path_parts
-        self.base_rev = base_rev
-        self.action = action
-        self.copied = copied
-        self.text_changed = text_changed
-        self.props_changed = props_changed
-
-
-# ======================================================================
-
-
-class Error(Exception):
-    pass
-
-
-class ReposNotFound(Error):
-    pass
-
-
-class UnsupportedFeature(Error):
-    pass
-
-
-class ItemNotFound(Error):
-    def __init__(self, path):
-        # use '/' rather than os.sep because this is for user consumption, and
-        # it was defined using URL separators
-        if isinstance(path, tuple) or isinstance(path, list):
-            path = "/".join(path)
-        Error.__init__(self, path)
-
-
-class InvalidRevision(Error):
-    def __init__(self, revision=None):
-        if revision is None:
-            Error.__init__(self, "Invalid revision")
-        else:
-            Error.__init__(self, f"Invalid revision {revision}")
-
-
-class NonTextualFileContents(Error):
-    pass
-
-
-class ExternalDiffError(Error):
-    def __init__(self, returncode, mess):
-        self.returncode = returncode
-        Error.__init__(self, f"Diff terminated with exit code {returncode:d}: {mess}")
-
-
-# ======================================================================
 # Implementation code used by multiple vclib modules
 
 
@@ -414,110 +520,6 @@ def _diff_args(type, options):
         args.append("-w")
 
     return args
-
-
-class _diff_fp:
-    """File like object reading a diff between temporary files,
-    cleaning up on close.
-
-    If ENCODING is not none, it returns file like object with str I/O,
-    otherwise, it returns file like object with bytes I/O"""
-
-    def __init__(
-        self, temp1, temp2, info1=None, info2=None, diff_cmd="diff", diff_opts=[], encoding="utf-8"
-    ):
-        self.readable = True
-        self.temp1 = temp1
-        self.temp2 = temp2
-        self.encoding = encoding
-        args = diff_opts[:]
-        args.insert(0, diff_cmd)
-        if info1 and info2:
-            args.extend(["-L", self._label(info1), "-L", self._label(info2)])
-        args.extend([temp1, temp2])
-        # We assume pipe buffer for stderr is enough for diff utility,
-        # otherwise, it may cause deadlock.
-        if encoding:
-            self.proc = subprocess.Popen(
-                args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                encoding=encoding,
-                errors="surrogateescape",
-                bufsize=-1,
-                close_fds=(sys.platform != "win32"),
-            )
-        else:
-            self.proc = subprocess.Popen(
-                args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                bufsize=-1,
-                close_fds=(sys.platform != "win32"),
-            )
-
-    def read(self, buf_size):
-        buf = self.proc.stdout.read(buf_size)
-        if not buf:
-            self._check_process_errors()
-        return buf
-
-    def readline(self):
-        buf = self.proc.stdout.readline()
-        if not buf:
-            self._check_process_errors()
-        return buf
-
-    def close(self):
-        try:
-            if self.proc:
-                self.proc.stdout.close()
-                self.proc.stderr.close()
-                ret = self.proc.poll()
-                if ret is None:
-                    # child process seems to be still running...
-                    self.proc.terminate()
-                self.proc = None
-        finally:
-            try:
-                if self.temp1:
-                    os.remove(self.temp1)
-                    self.temp1 = None
-            finally:
-                if self.temp2:
-                    os.remove(self.temp2)
-                    self.temp2 = None
-
-    def __del__(self):
-        self.close()
-
-    def _label(self, info):
-        path, date, rev = info
-        date = date and time.strftime("%Y/%m/%d %H:%M:%S", time.gmtime(date))
-        return f"{path}\t{date}\t{rev}"
-
-    def _check_process_errors(self):
-        """Check errors returned by subprocss. On error, raise an
-        ExternalDifferror exception"""
-
-        errs = self.proc.stderr.read()
-        ret = self.proc.poll()
-
-        # Exit code of diff utility is specified in POSIX:
-        #     0  ... No differences were found
-        #     1  ... Diferences were found
-        #     >1 ... An error occurred.
-        # Also, it is said "The standard error shall be used only for
-        # diagnostic messages." So, if errs is not empty, it would be
-        # occured some errors.
-
-        if ret not in (None, 0, 1) or errs:
-            if isinstance(errs, bytes):
-                errs = errs.decode("utf-8", "surrogateescape")
-            if ret is None:
-                # The process is still running...
-                ret = -1
-            raise ExternalDiffError(ret, errs)
 
 
 def check_root_access(repos):
