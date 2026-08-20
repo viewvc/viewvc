@@ -135,7 +135,7 @@ def normalize_urihost(s: str, default_port: Union[int, str, None] = None) -> str
                     raise UriValidateException("Illegal sequence of percent encoding")
                 if idna_encode is not None:
                     try:
-                        host = idna_encode(reg_name)
+                        host = idna_encode(reg_name).decode("ascii")
                     except IDNAError as e:
                         raise UriValidateException(str(e))
                 else:
