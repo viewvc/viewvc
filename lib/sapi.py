@@ -363,4 +363,4 @@ class WsgiServer(Server):
 
 
 def redirect_notice(url):
-    return f'This document is located <a href="{url}">here</a>.'
+    return f'This document is located <a href="{url}">here</a>.\n'
