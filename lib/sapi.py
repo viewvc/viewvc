@@ -183,6 +183,12 @@ def is_allowed_hosts(urihost: str, allowed_hosts: List[str]) -> bool:
     return False
 
 
+class ClientProtocolError(Exception):
+    """The client used unsupported protocol."""
+
+    pass
+
+
 class ServerUsageError(Exception):
     """The caller attempted to start transmitting an HTTP response after
     that ship had already sailed."""
@@ -309,9 +315,23 @@ class Server:
 
 class WsgiServer(Server):
     def __init__(self, environ, write_response):
-        uri_host = environ.get("HTTP_HOST", "")
+        error: Exception | None = None
+        uri_host = environ.get("HTTP_HOST")
+        protocol = environ.get("SERVER_PROTOCOL", "")
+        if protocol == "INCLUDED":
+            protocol = "HTTP/1.1"
+        if not protocol.startswith("HTTP/"):
+            error = ClientProtocolError(f"Unknown protocol: {protocol}")
+        elif uri_host is None:
+            if protocol[5:] in ("0.9", "1.0"):
+                uri_host = f"{environ.get('SERVER_NAME', '')}:{environ.get('SERVER_PORT', '80')}"
+            else:
+                uri_host = ""
+                error = ClientProtocolError("Bad Request: Host is not specified on HTTP >= 1.1")
         scheme = "https" if environ.get("HTTPS") == "on" else "http"
         Server.__init__(self, uri_host, scheme)
+        if error is not None:
+            self.error = error
         self._environ = environ
         self._write_response = write_response
         self._headers = []
