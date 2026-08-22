@@ -31,9 +31,15 @@ import stat
 import struct
 import tempfile
 import time
+from http import HTTPStatus
 from operator import attrgetter
 import io
 from urllib.parse import urlencode as _urlencode, quote as _quote
+
+BAD_REQUEST = HTTPStatus.BAD_REQUEST
+FORBIDDEN = HTTPStatus.FORBIDDEN
+NOT_FOUND = HTTPStatus.NOT_FOUND
+INTERNAL_SERVER_ERROR = HTTPStatus.INTERNAL_SERVER_ERROR
 
 # These modules come from our library (the stub has set up the path)
 from common import (
@@ -135,7 +141,7 @@ class Request:
     def run_viewvc(self):
 
         if self.server.error is not None:
-            raise ViewVCException(str(self.server.error), "400 Bad Request")
+            raise ViewVCException(str(self.server.error), BAD_REQUEST)
         cfg = self.cfg
 
         # This function first parses the query string and sets the following
@@ -193,7 +199,7 @@ class Request:
 
         # Protect against directory traversal attacks.
         if ".." in path_parts:
-            raise ViewVCException("An illegal path was provided.", "400 Bad Request")
+            raise ViewVCException("An illegal path was provided.", BAD_REQUEST)
 
         if path_parts:
             # handle docroot magic path prefixes
@@ -300,7 +306,7 @@ class Request:
                 raise ViewVCException(
                     f'The root "{self.rootname}" is unknown. If you believe the value is '
                     "correct, then please double-check your configuration.",
-                    "404 Not Found",
+                    NOT_FOUND,
                 )
 
         if self.repos:
@@ -316,7 +322,7 @@ class Request:
                         f'The root "{self.rootname}" has an unknown type ("{vctype}").  '
                         'Expected "cvs" or "svn".'
                     ),
-                    "500 Internal Server Error",
+                    INTERNAL_SERVER_ERROR,
                 )
 
         # If this is using an old-style 'rev' parameter, redirect to new hotness.
@@ -337,14 +343,14 @@ class Request:
         if self.repos and self.view_func is not redirect_pathrev:
             # If this is an intended-to-be-hidden CVSROOT path, complain.
             if cfg.options.hide_cvsroot and is_cvsroot_path(self.roottype, path_parts):
-                raise ViewVCException(f"Unknown location: /{self.where}", "404 Not Found")
+                raise ViewVCException(f"Unknown location: /{self.where}", NOT_FOUND)
 
             # Make sure path exists
             self.pathrev = pathrev = self.query_dict.get("pathrev")
             try:
                 self.pathtype = _repos_pathtype(self.repos, path_parts, pathrev)
             except vclib.InvalidRevision as e:
-                raise ViewVCException(f"{e}", "404 Not Found")
+                raise ViewVCException(f"{e}", NOT_FOUND)
 
             if self.pathtype is None:
                 # Path doesn't exist, see if it could be an old-style ViewVC URL
@@ -382,7 +388,7 @@ class Request:
                     self.where = _path_join(self.path_parts)
                     needs_redirect = 1
                 else:
-                    raise ViewVCException(f"Unknown location: /{self.where}", "404 Not Found")
+                    raise ViewVCException(f"Unknown location: /{self.where}", NOT_FOUND)
 
             # If we have an old ViewCVS Attic URL which is still valid, redirect
             if self.roottype == "cvs":
@@ -685,7 +691,7 @@ def _validate_param(name, value):
     try:
         validator = _legal_params[name]
     except KeyError:
-        raise ViewVCException("An illegal parameter name was provided.", "400 Bad Request")
+        raise ViewVCException("An illegal parameter name was provided.", BAD_REQUEST)
 
     # Is there a validator?  Is it a regex or a function?  Validate if
     # we can, returning without incident on valid input.
@@ -700,9 +706,7 @@ def _validate_param(name, value):
             return value
 
     # If we get here, the input value isn't valid.
-    raise ViewVCException(
-        f'An illegal value was provided for the "{name}" parameter.', "400 Bad Request"
-    )
+    raise ViewVCException(f'An illegal value was provided for the "{name}" parameter.', BAD_REQUEST)
 
 
 def _validate_regex(value):
@@ -891,7 +895,7 @@ def _orig_path(request, rev_param="revision", path_param=None):
             pathrev = request.repos._getrev(request.pathrev)
             rev = request.repos._getrev(rev)
         except vclib.InvalidRevision:
-            raise ViewVCException("Invalid revision", "404 Not Found")
+            raise ViewVCException("Invalid revision", NOT_FOUND)
         return _path_parts(request.repos.get_location(path, pathrev, rev)), rev
     return _path_parts(path), rev
 
@@ -919,7 +923,7 @@ def setup_authorizer(cfg, username, rootname=None):
     except ModuleNotFoundError:
         raise ViewVCException(
             f'Invalid authorizer ({authorizer}) specified for root "{rootname}"',
-            "500 Internal Server Error",
+            INTERNAL_SERVER_ERROR,
         )
 
     # Add a rootname mapping callback function to the parameters.
@@ -1665,7 +1669,7 @@ def common_template_data(request, revision=None, mime_type=None):
     try:
         data["rev"] = hasattr(request.repos, "_getrev") and request.repos._getrev(rev) or rev
     except vclib.InvalidRevision:
-        raise ViewVCException("Invalid revision", "404 Not Found")
+        raise ViewVCException("Invalid revision", NOT_FOUND)
 
     if request.pathtype == vclib.DIR:
         data["pathtype"] = "dir"
@@ -2058,7 +2062,7 @@ def assert_viewable_filesize(cfg, filesize):
     if max_kb and filesize != -1 and filesize > (1024 * max_kb):
         raise ViewVCException(
             f"Display of files larger than {max_kb} KB disallowed by configuration",
-            "403 Forbidden",
+            FORBIDDEN,
         )
 
 
@@ -2197,9 +2201,7 @@ def markup_or_annotate(request, is_annotate):
                         request, cfg, file_lines, path[-1], mime_type, encoding, False
                     )
                 else:
-                    raise ViewVCException(
-                        "Error displaying file contents", "500 Internal Server Error"
-                    )
+                    raise ViewVCException("Error displaying file contents", INTERNAL_SERVER_ERROR)
 
             # Now, try to match up the annotation data (if any) with the file
             # lines.
@@ -2281,17 +2283,17 @@ def markup_or_annotate(request, is_annotate):
 
 def view_markup(request):
     if "markup" not in request.cfg.options.allowed_views:
-        raise ViewVCException("Markup view is disabled", "403 Forbidden")
+        raise ViewVCException("Markup view is disabled", FORBIDDEN)
     if request.pathtype != vclib.FILE:
-        raise ViewVCException("Unsupported feature: markup view on directory", "400 Bad Request")
+        raise ViewVCException("Unsupported feature: markup view on directory", BAD_REQUEST)
     markup_or_annotate(request, 0)
 
 
 def view_annotate(request):
     if "annotate" not in request.cfg.options.allowed_views:
-        raise ViewVCException("Annotation view is disabled", "403 Forbidden")
+        raise ViewVCException("Annotation view is disabled", FORBIDDEN)
     if request.pathtype != vclib.FILE:
-        raise ViewVCException("Unsupported feature: annotate view on directory", "400 Bad Request")
+        raise ViewVCException("Unsupported feature: annotate view on directory", BAD_REQUEST)
     markup_or_annotate(request, 1)
 
 
@@ -2389,7 +2391,7 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
 
 def view_roots(request):
     if "roots" not in request.cfg.options.allowed_views:
-        raise ViewVCException("Root listing view is disabled", "403 Forbidden")
+        raise ViewVCException("Root listing view is disabled", FORBIDDEN)
 
     # add in the roots for the selection
     roots = []
@@ -2454,7 +2456,7 @@ def view_directory(request):
         try:
             rev = request.repos._getrev(request.pathrev)
         except vclib.InvalidRevision:
-            raise ViewVCException("Invalid revision", "404 Not Found")
+            raise ViewVCException("Invalid revision", NOT_FOUND)
         tree_rev = request.repos.created_rev(request.where, rev)
         if check_freshness(request, None, str(tree_rev), weak=1):
             return
@@ -2899,9 +2901,7 @@ def view_log(request):
 
     if pathtype is vclib.DIR:
         if request.roottype == "cvs":
-            raise ViewVCException(
-                "Unsupported feature: log view on CVS directory", "400 Bad Request"
-            )
+            raise ViewVCException("Unsupported feature: log view on CVS directory", BAD_REQUEST)
         mime_type = encoding = None
     else:
         mime_type, encoding = calculate_mime_type(request, request.path_parts, request.pathrev)
@@ -3229,7 +3229,7 @@ def checkout_or_image(request, is_image_view=False):
             if is_image_view:
                 if not is_viewable_image(mime_type):
                     raise ViewVCException(
-                        "Unsupported feature: image view on non-image file", "400 Bad Request"
+                        "Unsupported feature: image view on non-image file", BAD_REQUEST
                     )
             else:
                 mime_type = request.query_dict.get("content-type") or mime_type or "text/plain"
@@ -3246,9 +3246,9 @@ def view_checkout(request):
     cfg = request.cfg
 
     if "co" not in cfg.options.allowed_views:
-        raise ViewVCException("Checkout view is disabled", "403 Forbidden")
+        raise ViewVCException("Checkout view is disabled", FORBIDDEN)
     if request.pathtype != vclib.FILE:
-        raise ViewVCException("Unsupported feature: checkout view on directory", "400 Bad Request")
+        raise ViewVCException("Unsupported feature: checkout view on directory", BAD_REQUEST)
     return checkout_or_image(request, is_image_view=False)
 
 
@@ -3256,9 +3256,9 @@ def view_image(request):
     cfg = request.cfg
 
     if "image" not in cfg.options.allowed_views:
-        raise ViewVCException("Image view is disabled", "403 Forbidden")
+        raise ViewVCException("Image view is disabled", FORBIDDEN)
     if request.pathtype != vclib.FILE:
-        raise ViewVCException("Unsupported feature: image view on directory", "400 Bad Request")
+        raise ViewVCException("Unsupported feature: image view on directory", BAD_REQUEST)
     return checkout_or_image(request, is_image_view=True)
 
 
@@ -3322,7 +3322,7 @@ def view_cvsgraph_image(request):
     cfg = request.cfg
 
     if not cfg.options.use_cvsgraph:
-        raise ViewVCException("Graph view is disabled", "403 Forbidden")
+        raise ViewVCException("Graph view is disabled", FORBIDDEN)
 
     # If cvsgraph can't find its supporting libraries, uncomment and set
     # accordingly.  Do the same in view_cvsgraph().
@@ -3350,7 +3350,7 @@ def view_cvsgraph(request):
     cfg = request.cfg
 
     if not cfg.options.use_cvsgraph:
-        raise ViewVCException("Graph view is disabled", "403 Forbidden")
+        raise ViewVCException("Graph view is disabled", FORBIDDEN)
 
     # If cvsgraph can't find its supporting libraries, uncomment and set
     # accordingly.  Do the same in view_cvsgraph_image().
@@ -3456,7 +3456,7 @@ def view_doc(request):
     try:
         info = os.stat(filename)
     except OSError:
-        raise ViewVCException(f'Static file "{document}" not available', "404 Not Found")
+        raise ViewVCException(f'Static file "{document}" not available', NOT_FOUND)
     content_length = str(info[stat.ST_SIZE])
     last_modified = info[stat.ST_MTIME]
 
@@ -3467,7 +3467,7 @@ def view_doc(request):
     try:
         fp = open(filename, "rb")
     except IOError:
-        raise ViewVCException(f'Static file "{document}" not available', "404 Not Found")
+        raise ViewVCException(f'Static file "{document}" not available', NOT_FOUND)
 
     if document[-3:] == "png":
         mime_type = "image/png"
@@ -3689,7 +3689,7 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2, sym1=None, sym2=
                 if not line:
                     break
             except vclib.ExternalDiffError as e:
-                raise ViewVCException(str(e), "500 Internal Server Error")
+                raise ViewVCException(str(e), INTERNAL_SERVER_ERROR)
 
             # Saw at least one line in the stream
             flag = None
@@ -3718,12 +3718,12 @@ def diff_parse_headers(fp, diff_type, path1, path2, rev1, rev2, sym1=None, sym2=
     if log_rev1 and log_rev1 != rev1:
         raise ViewVCException(
             f"rcsdiff found revision {log_rev1}, but expected revision {rev1}",
-            "500 Internal Server Error",
+            INTERNAL_SERVER_ERROR,
         )
     if log_rev2 and log_rev2 != rev2:
         raise ViewVCException(
             f"rcsdiff found revision {log_rev2}, but expected revision {rev2}",
-            "500 Internal Server Error",
+            INTERNAL_SERVER_ERROR,
         )
     headers = "".join(header_lines)
     if not is_text:
@@ -3745,13 +3745,9 @@ def _get_diff_path_parts(request, query_key, rev, base_rev):
                 repos.get_location(request.where, repos._getrev(base_rev), repos._getrev(rev))
             )
         except vclib.InvalidRevision:
-            raise ViewVCException(
-                "Invalid path(s) or revision(s) passed to diff", "400 Bad Request"
-            )
+            raise ViewVCException("Invalid path(s) or revision(s) passed to diff", BAD_REQUEST)
         except vclib.ItemNotFound:
-            raise ViewVCException(
-                "Invalid path(s) or revision(s) passed to diff", "400 Bad Request"
-            )
+            raise ViewVCException("Invalid path(s) or revision(s) passed to diff", BAD_REQUEST)
     else:
         parts = request.path_parts
     return parts
@@ -3768,9 +3764,7 @@ def setup_diff(request):
     if r1 == "text":
         rev1 = query_dict.get("tr1", None)
         if not rev1:
-            raise ViewVCException(
-                "Missing revision from the diff form text field", "400 Bad Request"
-            )
+            raise ViewVCException("Missing revision from the diff form text field", BAD_REQUEST)
     else:
         idx = r1.find(":")
         if idx == -1:
@@ -3782,9 +3776,7 @@ def setup_diff(request):
     if r2 == "text":
         rev2 = query_dict.get("tr2", None)
         if not rev2:
-            raise ViewVCException(
-                "Missing revision from the diff form text field", "400 Bad Request"
-            )
+            raise ViewVCException("Missing revision from the diff form text field", BAD_REQUEST)
         sym2 = ""
     else:
         idx = r2.find(":")
@@ -3799,7 +3791,7 @@ def setup_diff(request):
             rev1 = str(request.repos._getrev(rev1))
             rev2 = str(request.repos._getrev(rev2))
         except vclib.InvalidRevision:
-            raise ViewVCException("Invalid revision(s) passed to diff", "400 Bad Request")
+            raise ViewVCException("Invalid revision(s) passed to diff", BAD_REQUEST)
 
     p1 = _get_diff_path_parts(request, "p1", rev1, request.pathrev)
     p2 = _get_diff_path_parts(request, "p2", rev2, request.pathrev)
@@ -3810,15 +3802,15 @@ def setup_diff(request):
             sym1, sym2 = sym2, sym1
             p1, p2 = p2, p1
     except ValueError:
-        raise ViewVCException("Invalid revision(s) passed to diff", "400 Bad Request")
+        raise ViewVCException("Invalid revision(s) passed to diff", BAD_REQUEST)
     return p1, p2, rev1, rev2, sym1, sym2
 
 
 def view_patch(request):
     if "diff" not in request.cfg.options.allowed_views:
-        raise ViewVCException("Diff generation is disabled", "403 Forbidden")
+        raise ViewVCException("Diff generation is disabled", FORBIDDEN)
     if request.pathtype != vclib.FILE:
-        raise ViewVCException("Unsupported feature: patch view on directory", "400 Bad Request")
+        raise ViewVCException("Unsupported feature: patch view on directory", BAD_REQUEST)
 
     cfg = request.cfg
     query_dict = request.query_dict
@@ -3827,9 +3819,7 @@ def view_patch(request):
     mime_type1, encoding1 = calculate_mime_type(request, p1, rev1)
     mime_type2, encoding2 = calculate_mime_type(request, p2, rev2)
     if is_binary_file_mime_type(mime_type1, cfg) or is_binary_file_mime_type(mime_type2, cfg):
-        raise ViewVCException(
-            "Display of binary file content disabled by configuration", "403 Forbidden"
-        )
+        raise ViewVCException("Display of binary file content disabled by configuration", FORBIDDEN)
 
     # In the absence of a format dictation in the CGI params, we'll let
     # use the configured diff format, allowing 'c' to mean 'c' and
@@ -3840,7 +3830,7 @@ def view_patch(request):
     elif format == "u":
         diff_type = vclib.UNIFIED
     else:
-        raise ViewVCException(f"Diff format {format} not understood", "400 Bad Request")
+        raise ViewVCException(f"Diff format {format} not understood", BAD_REQUEST)
 
     # Set some diff options.  (Are there other options folks might want?
     # Maybe not.  For a patch, perhaps the precise change is ideal.)
@@ -3850,7 +3840,7 @@ def view_patch(request):
     try:
         fp = request.repos.rawdiff(p1, rev1, p2, rev2, diff_type, diff_options, is_text=False)
     except vclib.InvalidRevision:
-        raise ViewVCException("Invalid path(s) or revision(s) passed to diff", "400 Bad Request")
+        raise ViewVCException("Invalid path(s) or revision(s) passed to diff", BAD_REQUEST)
 
     path_left = _path_join(p1)
     path_right = _path_join(p2)
@@ -3948,9 +3938,7 @@ class DiffDescription:
             self.diff_type = vclib.UNIFIED
             self.hide_legend = 1
         else:
-            raise ViewVCException(
-                f"Diff format {self.diff_format} not understood", "400 Bad Request"
-            )
+            raise ViewVCException(f"Diff format {self.diff_format} not understood", BAD_REQUEST)
 
         # Determine whether idiff is avaialble and whether it could be used.
         # idiff only supports side-by-side (conditionally) and unified formats,
@@ -4158,7 +4146,7 @@ class DiffDescription:
 
 def view_diff(request):
     if "diff" not in request.cfg.options.allowed_views:
-        raise ViewVCException("Diff generation is disabled", "403 Forbidden")
+        raise ViewVCException("Diff generation is disabled", FORBIDDEN)
 
     cfg = request.cfg
     p1, p2, rev1, rev2, sym1, sym2 = setup_diff(request)
@@ -4166,9 +4154,7 @@ def view_diff(request):
     mime_type1, encoding1 = calculate_mime_type(request, p1, rev1)
     mime_type2, encoding2 = calculate_mime_type(request, p2, rev2)
     if is_binary_file_mime_type(mime_type1, cfg) or is_binary_file_mime_type(mime_type2, cfg):
-        raise ViewVCException(
-            "Display of binary file content disabled by configuration", "403 Forbidden"
-        )
+        raise ViewVCException("Display of binary file content disabled by configuration", FORBIDDEN)
 
     # since templates are in use and subversion allows changes to the dates,
     # we can't provide a strong etag
@@ -4191,7 +4177,7 @@ def view_diff(request):
         desc.get_prop_diff(left_side_prop, right_side_prop)
 
     except vclib.InvalidRevision:
-        raise ViewVCException("Invalid path(s) or revision(s) passed to diff", "400 Bad Request")
+        raise ViewVCException("Invalid path(s) or revision(s) passed to diff", BAD_REQUEST)
 
     no_format_params = request.query_dict.copy()
     no_format_params["diff_format"] = None
@@ -4448,7 +4434,7 @@ def download_tarball(request):
     cfg = request.cfg
 
     if "tar" not in cfg.options.allowed_views:
-        raise ViewVCException("Tarball generation is disabled", "403 Forbidden")
+        raise ViewVCException("Tarball generation is disabled", FORBIDDEN)
 
     # Set DEBUG_TARFILE_PATH to a server-local path to enable tarball
     # generation debugging and cause ViewVC to write the generated
@@ -4490,7 +4476,7 @@ def download_tarball(request):
 def view_revision(request):
     if request.roottype != "svn":
         raise ViewVCException(
-            "Revision view not supported for CVS repositories at this time.", "400 Bad Request"
+            "Revision view not supported for CVS repositories at this time.", BAD_REQUEST
         )
 
     cfg = request.cfg
@@ -4498,7 +4484,7 @@ def view_revision(request):
     try:
         rev = request.repos._getrev(query_dict.get("revision"))
     except vclib.InvalidRevision:
-        raise ViewVCException("Invalid revision", "404 Not Found")
+        raise ViewVCException("Invalid revision", NOT_FOUND)
     youngest_rev = request.repos.get_youngest_revision()
 
     # The revision number acts as a weak validator (but we tell browsers
@@ -4713,7 +4699,7 @@ def validate_query_args(request):
         if arg_match_value not in ("exact", "like", "glob", "regex", "notregex"):
             raise ViewVCException(
                 f'An illegal value was provided for the "{arg_match}" parameter.',
-                "400 Bad Request",
+                BAD_REQUEST,
             )
 
         # Now, for those args which are supposed to be regular expressions (per
@@ -4726,7 +4712,7 @@ def validate_query_args(request):
                 except Exception:
                     raise ViewVCException(
                         f'An illegal value was provided for the "{arg_base}" parameter.',
-                        "400 Bad Request",
+                        BAD_REQUEST,
                     )
 
 
@@ -4736,7 +4722,7 @@ def view_queryform(request):
     if not is_query_supported(request):
         raise ViewVCException(
             f'Can not query project root "{request.rootname}" at "{request.where}".',
-            "403 Forbidden",
+            FORBIDDEN,
         )
 
     # Do some more precise input validation.
@@ -5076,7 +5062,7 @@ def view_query(request):
     if not is_query_supported(request):
         raise ViewVCException(
             f'Can not query project root "{request.rootname}" at "{request.where}".',
-            "403 Forbidden",
+            FORBIDDEN,
         )
 
     cfg = request.cfg
@@ -5146,7 +5132,7 @@ def view_query(request):
     repos_root, repos_dir = cvsdb.FindRepository(db, request.rootpath)
     if not repos_root:
         raise ViewVCException(
-            f"The root '{request.rootname}' was not found in the commit database "
+            f"The root '{request.rootname}' was not found in the commit database.", NOT_FOUND
         )
 
     # create the database query from the form data
@@ -5308,7 +5294,7 @@ def view_query(request):
 def view_unspecified(request):
     # This is just a placeholder for the default view of a file or directory.  It's
     # never called directly, but is used as a special value for the "view_func".
-    raise ViewVCException("Unsupported view type", "400 Bad Request")
+    raise ViewVCException("Unsupported view type", BAD_REQUEST)
 
 
 _views = {
@@ -5540,10 +5526,10 @@ def locate_root(cfg, rootname):
         if rootname_dupl != rootname:
             raise ViewVCException(
                 f'Found root name "{rootname_dupl}" doesn\'t match "{rootname}"',
-                "500 Internal Server Error",
+                INTERNAL_SERVER_ERROR,
             )
         if len(remain) > 0:
-            raise ViewVCException(f'Have remaining path "{remain}"', "500 Internal Server Error")
+            raise ViewVCException(f'Have remaining path "{remain}"', INTERNAL_SERVER_ERROR)
     return roottype, rootpath
 
 
@@ -5627,17 +5613,13 @@ def main(server, cfg):
     try:
         if server.error is not None:
             if isinstance(server.error, sapi.UriValidateException):
-                raise ViewVCException(
-                    f"Host name normalization error: {server.error}", "400 Bad Request"
-                )
+                raise ViewVCException(f"Host name normalization error: {server.error}", BAD_REQUEST)
             elif isinstance(server.error, sapi.ClientProtocolError):
-                raise ViewVCException(f"Client protocol error: {server.error}", "400 Bad Request")
+                raise ViewVCException(f"Client protocol error: {server.error}", BAD_REQUEST)
             else:
-                raise ViewVCException(f"{repr(server.error)}", "500 Internal Server Error")
+                raise ViewVCException(f"{repr(server.error)}", INTERNAL_SERVER_ERROR)
         if not sapi.is_allowed_hosts(server.uri_host, cfg.general.allowed_hosts):
-            raise ViewVCException(
-                f"Invalid host name supplied: {server.uri_host}", "400 Bad Request"
-            )
+            raise ViewVCException(f"Invalid host name supplied: {server.uri_host}", BAD_REQUEST)
         # build a Request object, which contains info about the HTTP request
         request = Request(server, cfg)
         request.run_viewvc()
