@@ -5628,7 +5628,7 @@ def main(server, cfg):
         if server.error is not None:
             if isinstance(server.error, sapi.UriValidateException):
                 raise ViewVCException(
-                    f"Host name nomarization error: {server.error}", "400 Bad Request"
+                    f"Host name normalization error: {server.error}", "400 Bad Request"
                 )
             elif isinstance(server.error, sapi.ClientProtocolError):
                 raise ViewVCException(f"Client protocol error: {server.error}", "400 Bad Request")
