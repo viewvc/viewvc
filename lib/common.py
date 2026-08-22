@@ -70,17 +70,14 @@ class TemplateData:
 
 
 class ViewVCException(Exception):
-    _STATUS_BY_CODE = {status.value: f"{status.value} {status.phrase}" for status in HTTPStatus}
-
     def __init__(self, msg, status_code=None):
         self.msg = msg
-        if isinstance(status_code, HTTPStatus):
-            status_code = status_code.value
-        self.status_code = status_code
-        if status_code is None:
+        if isinstance(status_code, int) and status_code in set(HTTPStatus):
+            self.status = f"{status_code} {HTTPStatus(status_code).phrase}"
+        elif status_code is None:
             self.status = None
         else:
-            self.status = self._STATUS_BY_CODE.get(status_code, f"{status_code} Unknown Status")
+            self.status = f"{status_code} Unknown Status"
 
     def __str__(self):
         if self.status:
