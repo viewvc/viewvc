@@ -35,6 +35,13 @@ follows:
     > $ git commit -a -m "Begin new release stream for X.Y."  
     > $ git push
 
+
+## Pre-Release Checklist
+
+- Are there any changes in need of backport?
+  https://github.com/viewvc/viewvc/issues?q=label%3Aneeds-backport
+
+
 ## Release Process
 
 ViewVC rolls releases from maintenance branches associate with each
