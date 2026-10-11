@@ -905,7 +905,7 @@ class LocalSubversionRepository(vclib.Repository):
         rev = self._getrev(rev)
         path_type = self.itemtype(path_parts, rev)  # does auth-check
         if path_type != vclib.FILE:
-            raise vclib.UnsupportedFeature(f"Won't checkout directory {path}@{rev}")
+            raise vclib.Error(f"Path '{path}' is not a file.")
 
         fd, temp = tempfile.mkstemp()
         fp = os.fdopen(fd, "wb")
