@@ -714,7 +714,7 @@ class RemoteSubversionRepository(vclib.Repository):
     def temp_checkout(
         self, path_parts: list[str], rev: int | str, transcode: tuple[str, str] | None = None
     ) -> str:
-        """Checkout file atPATH_PARTS in REV  into temporary file,
+        """Checkout file at PATH_PARTS in REV into temporary file,
         return its temporary file name"""
 
         path = self._getpath(path_parts)
