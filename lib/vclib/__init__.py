@@ -19,39 +19,85 @@ import subprocess
 import os
 import time
 
-# item types returned by Repository.itemtype().
-FILE = "FILE"
-DIR = "DIR"
+import vcauth
 
-# diff types recognized by Repository.rawdiff().
-UNIFIED = 1
-CONTEXT = 2
-SIDE_BY_SIDE = 3
+from enum import Enum, StrEnum
+from typing import Any, Self
+from collections.abc import Iterable
 
-# root types returned by Repository.roottype().
-CVS = "cvs"
-SVN = "svn"
 
-# action kinds found in ChangedPath.action
-ADDED = "added"
-DELETED = "deleted"
-REPLACED = "replaced"
-MODIFIED = "modified"
+class ItemType(StrEnum):
+    """item types returned by Repository.itemtype()."""
 
-# log sort keys
-SORTBY_DEFAULT = 0  # default/no sorting
-SORTBY_DATE = 1  # sorted by date, youngest first
-SORTBY_REV = 2  # sorted by revision, youngest first
+    FILE = "FILE"
+    DIR = "DIR"
+
+
+FILE = ItemType.FILE
+DIR = ItemType.DIR
+
+
+class DiffType(Enum):
+    """diff types recognized by Repository.rawdiff()."""
+
+    UNIFIED = 1
+    CONTEXT = 2
+    SIDE_BY_SIDE = 3
+
+
+UNIFIED = DiffType.UNIFIED
+CONTEXT = DiffType.CONTEXT
+SIDE_BY_SIDE = DiffType.SIDE_BY_SIDE
+
+
+class RootType(StrEnum):
+    """root types returned by Repository.roottype()."""
+
+    CVS = "cvs"
+    SVN = "svn"
+
+
+CVS = RootType.CVS
+SVN = RootType.SVN
+
+
+class ChangedAction(StrEnum):
+    """action kinds found in ChangedPath.action."""
+
+    ADDED = "added"
+    DELETED = "deleted"
+    REPLACED = "replaced"
+    MODIFIED = "modified"
+
+
+ADDED = ChangedAction.ADDED
+DELETED = ChangedAction.DELETED
+REPLACED = ChangedAction.REPLACED
+MODIFIED = ChangedAction.MODIFIED
+
+
+class LogSortKey(Enum):
+    """log sort keys"""
+
+    SORTBY_DEFAULT = 0  # default/no sorting
+    SORTBY_DATE = 1  # sorted by date, youngest first
+    SORTBY_REV = 2  # sorted by revision, youngest first
+
+
+SORTBY_DEFAULT = LogSortKey.SORTBY_DEFAULT
+SORTBY_DATE = LogSortKey.SORTBY_DATE
+SORTBY_REV = LogSortKey.SORTBY_REV
 
 
 # ======================================================================
 class DirEntry:
     """Instances represent items in a directory listing"""
 
-    def __init__(self, name, kind, errors=[]):
+    def __init__(self, name: str, kind: ItemType, errors: list[str] = []) -> None:
         """Create a new DirEntry() item:
         NAME:  The name of the directory entry
-        KIND:  The path kind of the entry (vclib.DIR, vclib.FILE)
+        KIND:  The path kind of the entry
+               (vclib.ItemType.DIR, vclib.ItemType.FILE)
         ERRORS:  A list of error strings representing problems encountered
                  while determining the other info about this entry
         """
@@ -59,7 +105,7 @@ class DirEntry:
         self.kind = kind
         self.errors = errors
 
-    def sortkey(self, attrname, default=""):
+    def sortkey(self, attrname: str, default: Any = "") -> Any:
         """Get attribute value specified for sort key
 
         If the attribute value is None, return default value instead.
@@ -71,7 +117,17 @@ class DirEntry:
 class Revision:
     """Instances holds information about revisions of versioned resources"""
 
-    def __init__(self, number, string, date, author, changed, log, size, lockinfo):
+    def __init__(
+        self,
+        number: Any,
+        string: str,
+        date: int,
+        author: str,
+        changed: str | None,
+        log: str,
+        size: int | None,
+        lockinfo: str | None,
+    ) -> None:
         """Create a new Revision() item:
         NUMBER:  Revision in an integer-based, sortable format
         STRING:  Revision as a string
@@ -91,14 +147,22 @@ class Revision:
         self.size = size
         self.lockinfo = lockinfo
 
-    def __lt__(self, other):
+    def __lt__(self, other: Self) -> bool:
         return self.number < other.number
 
 
 class Annotation:
     """Instances represent per-line file annotation information"""
 
-    def __init__(self, text, line_number, rev, prev_rev, author, date):
+    def __init__(
+        self,
+        text: str,
+        line_number: int,
+        rev: str | int,
+        prev_rev: str | int,
+        author: str,
+        date: int,
+    ) -> None:
         """Create a new Annotation() item:
         TEXT:  Raw text of a line of file contents
         LINE_NUMBER:  Line number on which the line is found
@@ -121,16 +185,16 @@ class ChangedPath:
 
     def __init__(
         self,
-        path_parts,
-        rev,
-        pathtype,
-        base_path_parts,
-        base_rev,
-        action,
-        copied,
-        text_changed,
-        props_changed,
-    ):
+        path_parts: list[str],
+        rev: str | int,
+        pathtype: ItemType,
+        base_path_parts: list[str],
+        base_rev: str | int,
+        action: ChangedAction,
+        copied: bool,
+        text_changed: bool,
+        props_changed: bool,
+    ) -> None:
         """Create a new ChangedPath() item:
         PATH_PARTS:       Path that was changed
         REV:              Revision represented by this change
@@ -169,7 +233,7 @@ class UnsupportedFeature(Error):
 
 
 class ItemNotFound(Error):
-    def __init__(self, path):
+    def __init__(self, path: str | tuple[str] | list[str]) -> None:
         # use '/' rather than os.sep because this is for user consumption, and
         # it was defined using URL separators
         if isinstance(path, tuple) or isinstance(path, list):
@@ -178,7 +242,7 @@ class ItemNotFound(Error):
 
 
 class InvalidRevision(Error):
-    def __init__(self, revision=None):
+    def __init__(self, revision: str | int | None = None) -> None:
         if revision is None:
             Error.__init__(self, "Invalid revision")
         else:
@@ -190,12 +254,13 @@ class NonTextualFileContents(Error):
 
 
 class ExternalDiffError(Error):
-    def __init__(self, returncode, mess):
+    def __init__(self, returncode: int, mess: str) -> None:
         self.returncode = returncode
         Error.__init__(self, f"Diff terminated with exit code {returncode:d}: {mess}")
 
 
 # ======================================================================
+
 
 class _diff_fp:
     """File like object reading a diff between temporary files,
@@ -205,11 +270,19 @@ class _diff_fp:
     otherwise, it returns file like object with bytes I/O"""
 
     def __init__(
-        self, temp1, temp2, info1=None, info2=None, diff_cmd="diff", diff_opts=[], encoding="utf-8"
-    ):
+        self,
+        temp1: str,
+        temp2: str,
+        info1: tuple[str, int, str] | None = None,
+        info2: tuple[str, int, str] | None = None,
+        diff_cmd: str = "diff",
+        diff_opts: list[str] = [],
+        encoding: str | None = "utf-8",
+    ) -> None:
+        self.proc: subprocess.Popen[str] | subprocess.Popen[bytes] | None
         self.readable = True
-        self.temp1 = temp1
-        self.temp2 = temp2
+        self.temp1: str | None = temp1
+        self.temp2: str | None = temp2
         self.encoding = encoding
         args = diff_opts[:]
         args.insert(0, diff_cmd)
@@ -237,21 +310,28 @@ class _diff_fp:
                 close_fds=(sys.platform != "win32"),
             )
 
-    def read(self, buf_size):
+    def read(self, buf_size: int) -> bytes | str:
+        assert self.proc is not None and self.proc.stdout is not None
         buf = self.proc.stdout.read(buf_size)
         if not buf:
             self._check_process_errors()
         return buf
 
-    def readline(self):
+    def readline(self) -> bytes | str:
+        assert self.proc is not None and self.proc.stdout is not None
         buf = self.proc.stdout.readline()
         if not buf:
             self._check_process_errors()
         return buf
 
-    def close(self):
+    def close(self) -> None:
         try:
             if self.proc:
+                assert (
+                    self.proc is not None
+                    and self.proc.stdout is not None
+                    and self.proc.stderr is not None
+                )
                 self.proc.stdout.close()
                 self.proc.stderr.close()
                 ret = self.proc.poll()
@@ -269,18 +349,19 @@ class _diff_fp:
                     os.remove(self.temp2)
                     self.temp2 = None
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.close()
 
-    def _label(self, info):
+    def _label(self, info) -> str:
         path, date, rev = info
         date = date and time.strftime("%Y/%m/%d %H:%M:%S", time.gmtime(date))
         return f"{path}\t{date}\t{rev}"
 
-    def _check_process_errors(self):
+    def _check_process_errors(self) -> None:
         """Check errors returned by subprocss. On error, raise an
         ExternalDifferror exception"""
 
+        assert self.proc is not None and self.proc.stderr is not None
         errs = self.proc.stderr.read()
         ret = self.proc.poll()
 
@@ -312,32 +393,36 @@ class Repository:
     rootpath        (str) Hold the absolute path to the repository in
                     the local file system."""
 
-    def rootname(self):
+    def rootname(self) -> str:
         """Return the name of this repository."""
+        raise NotImplementedError()
 
-    def roottype(self):
+    def roottype(self) -> str:
         """Return the type of this repository (vclib.CVS, vclib.SVN, ...)."""
+        raise NotImplementedError()
 
-    def authorizer(self):
+    def authorizer(self) -> vcauth.GenericViewVCAuthorizer | None:
         """Return the vcauth.Authorizer object associated with this
         repository, or None if no such association has been made."""
+        raise NotImplementedError()
 
-    def open(self):
+    def open(self) -> None:
         """Open a connection to the repository."""
+        raise NotImplementedError()
 
-    def itemtype(self, path_parts, rev):
+    def itemtype(self, path_parts: list[str], rev: str) -> ItemType:
         """Return the type of the item (file or dir) at the given path and revision
 
-        The result will be vclib.DIR or vclib.FILE
+        The result will be vclib.ItemType.DIR or vclib.ItemType.FILE
 
         The path is specified as a list of components, relative to the root
         of the repository. e.g. ["subdir1", "subdir2", "filename"]
 
         rev is the revision of the item to check
         """
-        pass
+        raise NotImplementedError()
 
-    def openfile(self, path_parts, rev, options):
+    def openfile(self, path_parts: list[str], rev: str, options: dict[str, Any]) -> tuple[Any, str]:
         """Open a file object to read file contents at a given path and revision.
 
         The return value is a 2-tuple of containg the binary file like object
@@ -350,8 +435,9 @@ class Repository:
 
         options is a dictionary of implementation specific options
         """
+        raise NotImplementedError()
 
-    def listdir(self, path_parts, rev, options):
+    def listdir(self, path_parts: list[str], rev: str, options: dict[str, Any]) -> list[DirEntry]:
         """Return list of files in a directory
 
         The result is a list of DirEntry objects
@@ -363,8 +449,11 @@ class Repository:
 
         options is a dictionary of implementation specific options
         """
+        raise NotImplementedError()
 
-    def dirlogs(self, path_parts, rev, entries, options):
+    def dirlogs(
+        self, path_parts: list[str], rev: str, entries: list[DirEntry], options: dict[str, Any]
+    ) -> None:
         """Augment directory entries with log information
 
         New properties will be set on all of the DirEntry objects in the entries
@@ -383,8 +472,17 @@ class Repository:
 
         options is a dictionary of implementation specific options
         """
+        raise NotImplementedError()
 
-    def itemlog(self, path_parts, rev, sortby, first, limit, options):
+    def itemlog(
+        self,
+        path_parts: list[str],
+        rev: str,
+        sortby: LogSortKey,
+        first: int,
+        limit: int,
+        options: dict[str, Any],
+    ) -> list[Revision]:
         """Retrieve an item's log information
 
         The result is a list of Revision objects
@@ -405,8 +503,9 @@ class Repository:
 
         options is a dictionary of implementation specific options
         """
+        raise NotImplementedError()
 
-    def itemprops(self, path_parts, rev):
+    def itemprops(self, path_parts: list[str], rev: str) -> dict[str, Any]:
         """Return a dictionary mapping property names to property values
         for properties stored on an item.
 
@@ -420,8 +519,18 @@ class Repository:
         omitted from the return value.  Property values are either strings
         or bytestrings, as appropriate (preferring strings).
         """
+        raise NotImplementedError()
 
-    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type, options={}, is_text=True):
+    def rawdiff(
+        self,
+        path_parts1: list[str],
+        rev1: str,
+        path_parts2: list[str],
+        rev2: str,
+        diff_type: DiffType,
+        options: dict[str, Any] = {},
+        is_text: bool = True,
+    ) -> _diff_fp:
         """Return a diff (in GNU diff format) of two file revisions
 
         diff_type is the requested diff type (UNIFIED, CONTEXT, etc)
@@ -436,8 +545,11 @@ class Repository:
         If is_text is True, return value is a file like object with str I/O.
         If is_text is False, return value is a file like object with bytes I/O.
         """
+        raise NotImplementedError()
 
-    def annotate(self, path_parts, rev, include_text=False):
+    def annotate(
+        self, path_parts: list[str], rev: str, include_text: bool = False
+    ) -> tuple[Iterable[Annotation], str]:
         """Return a list of Annotation object, sorted by their
         "line_number" components, which describe the lines of given
         version of a file.
@@ -450,8 +562,11 @@ class Repository:
         If include_text is true, populate the Annotation objects' "text"
         members with the corresponding line of file content; otherwise,
         leave that member set to None."""
+        raise NotImplementedError()
 
-    def revinfo(self, rev):
+    def revinfo(
+        self, rev: str
+    ) -> tuple[int | None, str | None, str | None, dict[str, Any], list[ChangedPath] | None]:
         """Return information about a global revision
 
         rev is the revision of the item to return information about
@@ -464,8 +579,9 @@ class Repository:
         Raise vclib.UnsupportedFeature if the version control system
         doesn't support a global revision concept.
         """
+        raise NotImplementedError()
 
-    def isexecutable(self, path_parts, rev):
+    def isexecutable(self, path_parts: list[str], rev: str) -> bool:
         """Return true iff a given revision of a versioned file is to be
         considered an executable program or script.
 
@@ -474,8 +590,9 @@ class Repository:
 
         rev is the revision of the item to return information about
         """
+        raise NotImplementedError()
 
-    def filesize(self, path_parts, rev):
+    def filesize(self, path_parts: list[str], rev: str) -> int:
         """Return the size of a versioned file's contents if it can be
         obtained without a brute force measurement; -1 otherwise.
 
@@ -488,30 +605,31 @@ class Repository:
 
         rev is the revision of the item to return information about
         """
+        raise NotImplementedError()
 
 
 # ======================================================================
 # Implementation code used by multiple vclib modules
 
 
-def _diff_args(type, options):
+def _diff_args(dtype: DiffType, options: dict[str, Any]) -> list[str]:
     """generate argument list to pass to diff or rcsdiff"""
     args = []
-    if type == CONTEXT:
+    if dtype == DiffType.CONTEXT:
         if "context" in options:
             args.append(f"--context={options['context']}")
         else:
             args.append("-c")
-    elif type == UNIFIED:
+    elif dtype == DiffType.UNIFIED:
         if "context" in options:
             args.append(f"--unified={options['context']}")
         else:
             args.append("-u")
-    elif type == SIDE_BY_SIDE:
+    elif dtype == DiffType.SIDE_BY_SIDE:
         args.append("--side-by-side")
         args.append("--width=164")
     else:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     if options.get("funout", 0):
         args.append("-p")
@@ -522,7 +640,7 @@ def _diff_args(type, options):
     return args
 
 
-def check_root_access(repos):
+def check_root_access(repos: Repository) -> bool | int:
     """Return 1 iff the associated username is permitted to read REPOS,
     as determined by consulting REPOS's Authorizer object (if any)."""
 
@@ -532,7 +650,9 @@ def check_root_access(repos):
     return auth.check_root_access(repos.rootname())
 
 
-def check_path_access(repos, path_parts, pathtype=None, rev=None):
+def check_path_access(
+    repos: Repository, path_parts: list[str], pathtype: ItemType | None = None, rev: str = ""
+) -> bool | int:
     """Return 1 iff the associated username is permitted to read
     revision REV of the path PATH_PARTS (of type PATHTYPE) in repository
     REPOS, as determined by consulting REPOS's Authorizer object (if any)."""
@@ -547,7 +667,7 @@ def check_path_access(repos, path_parts, pathtype=None, rev=None):
 
 if sys.platform == "win32":
 
-    def _getfspath(path, encoding):
+    def _getfspath(path: str, encoding: str) -> str:
         """Get path on local file system.
 
         PATH should be a path represented in str. On system using posix path,
@@ -556,13 +676,13 @@ if sys.platform == "win32":
 
         return path
 
-    def os_listdir(path, encoding):
+    def os_listdir(path: str, encoding: str) -> list[str]:
         "Wrapper for os.listdir, with different encoding from file system encoding"
         return os.listdir(path)
 
 else:
 
-    def _getfspath(path, encoding):
+    def _getfspath(path: str, encoding: str) -> bytes:
         """Get path on local file system.
 
         PATH should be a path represented in str. On system using posix path,
@@ -571,7 +691,7 @@ else:
 
         return path.encode(encoding, "surrogateescape")
 
-    def os_listdir(path, encoding):
+    def os_listdir(path: bytes | str, encoding: str) -> list[bytes] | list[str]:
         """Wrapper for os.listdir, with different encoding from
         file system encoding."""
 
@@ -581,7 +701,7 @@ else:
         return [ent.decode(encoding, "surrogateescape") for ent in os.listdir(path)]
 
 
-def is_mime_text(mime_type: None | str):
+def is_mime_text(mime_type: None | str) -> bool:
     return not mime_type or mime_type.startswith("text/")
 
 
