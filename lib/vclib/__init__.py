@@ -648,29 +648,31 @@ def _diff_args(dtype: DiffType, options: dict[str, Any]) -> list[str]:
     return args
 
 
-def check_root_access(repos: Repository) -> bool | int:
-    """Return 1 iff the associated username is permitted to read REPOS,
+def check_root_access(repos: Repository) -> bool:
+    """Return True iff the associated username is permitted to read REPOS,
     as determined by consulting REPOS's Authorizer object (if any)."""
 
     auth = repos.authorizer()
     if not auth:
-        return 1
-    return auth.check_root_access(repos.rootname())
+        return True
+    # auth.check_root_access() may return int, for backword compatibility
+    return bool(auth.check_root_access(repos.rootname()))
 
 
 def check_path_access(
     repos: Repository, path_parts: list[str], pathtype: ItemType | None = None, rev: str = ""
-) -> bool | int:
-    """Return 1 iff the associated username is permitted to read
+) -> bool:
+    """Return True iff the associated username is permitted to read
     revision REV of the path PATH_PARTS (of type PATHTYPE) in repository
     REPOS, as determined by consulting REPOS's Authorizer object (if any)."""
 
     auth = repos.authorizer()
     if not auth:
-        return 1
+        return True
     if not pathtype:
         pathtype = repos.itemtype(path_parts, rev)
-    return auth.check_path_access(repos.rootname(), path_parts, pathtype, rev)
+    # auth.check_path_access() may return int, for backword compatibility
+    return bool(auth.check_path_access(repos.rootname(), path_parts, pathtype, rev))
 
 
 if sys.platform == "win32":
