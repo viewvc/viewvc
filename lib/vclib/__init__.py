@@ -512,8 +512,8 @@ class _diff_fp:
         # occured some errors.
 
         if ret not in (None, 0, 1) or errs:
-            if not self.encoding:
-                errs = errs.encode("utf-8", "surrogateescape")
+            if isinstance(errs, bytes):
+                errs = errs.decode("utf-8", "surrogateescape")
             if ret is None:
                 # The process is still running...
                 ret = -1
