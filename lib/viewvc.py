@@ -1124,10 +1124,6 @@ def is_viewable_image(mime_type):
     return mime_type and mime_type in ("image/gif", "image/jpeg", "image/png")
 
 
-def is_text(mime_type):
-    return not mime_type or mime_type[:5] == "text/"
-
-
 def is_cvsroot_path(roottype, path_parts):
     return roottype == "cvs" and path_parts and path_parts[0] == "CVSROOT"
 
@@ -1146,7 +1142,7 @@ def default_view(mime_type, cfg):
     # we encounter an unrecognized file extension) we also view it through
     # the markup page since that's better than sending it text/plain.
     if ("markup" in cfg.options.allowed_views) and (
-        is_viewable_image(mime_type) or is_text(mime_type)
+        is_viewable_image(mime_type) or vclib.is_mime_text(mime_type)
     ):
         return view_markup
     return view_checkout
@@ -1905,7 +1901,7 @@ def markup_file_contents(request, cfg, file_lines, filename, mime_type, encoding
 
         # Still no lexer?  If we've reason to believe this is a text
         # file, try to guess the lexer based on the file's content.
-        if not pygments_lexer and is_text(mime_type) and file_lines:
+        if not pygments_lexer and vclib.is_mime_text(mime_type) and file_lines:
             try:
                 pygments_lexer = guess_lexer(
                     file_lines[0], tabsize=cfg.options.tabsize, stripnl=False
@@ -2028,16 +2024,6 @@ def get_itemprops(request, path_parts, rev):
     return props
 
 
-def parse_mime_type(mime_type):
-    mime_parts = [x.strip() for x in mime_type.split(";")]
-    type_subtype = mime_parts[0].lower()
-    parameters = {}
-    for part in mime_parts[1:]:
-        name, value = part.split("=", 1)
-        parameters[name] = value
-    return type_subtype, parameters
-
-
 def calculate_mime_type(request, path_parts, rev):
     """Return a 2-tuple carrying the MIME content type and character
     encoding for the file represented by PATH_PARTS in REV.  Use REQUEST
@@ -2050,7 +2036,7 @@ def calculate_mime_type(request, path_parts, rev):
             itemprops = request.repos.itemprops(path_parts, rev)
             mime_type = itemprops.get("svn:mime-type")
             if mime_type:
-                mime_type, parameters = parse_mime_type(mime_type)
+                mime_type, parameters = vclib.parse_mime_type(mime_type)
                 return mime_type, parameters.get("charset")
         except Exception:
             pass
