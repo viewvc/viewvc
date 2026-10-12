@@ -6,6 +6,7 @@ Version 1.3.1 (released ??-???-????)
   * fix incomplete line on redirect notice response body
   * fix bugs in IDNA encoding and with missing Host: header (#412)
   * use status codes instead of status strings with ViewVCException (#413)
+  * make human-readable-diff aware charset of svn:mime-types (#406) 
 
 Version 1.3.0 (released 26-May-2026)
 
