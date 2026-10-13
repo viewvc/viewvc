@@ -21,9 +21,14 @@ import time
 
 import vcauth
 
-from enum import Enum, StrEnum
-from typing import Any, Self
+from enum import Enum
+from typing import Any, TypeVar
 from collections.abc import Iterable
+
+
+class StrEnum(str, Enum):
+    def __str__(self) -> str:
+        return str(self.value)
 
 
 class ItemType(StrEnum):
@@ -114,6 +119,9 @@ class DirEntry:
         return v if v is not None else default
 
 
+SelfRevision = TypeVar("SelfRevision", bound="Revision")
+
+
 class Revision:
     """Instances holds information about revisions of versioned resources"""
 
@@ -147,7 +155,7 @@ class Revision:
         self.size = size
         self.lockinfo = lockinfo
 
-    def __lt__(self, other: Self) -> bool:
+    def __lt__(self, other: SelfRevision) -> bool:
         return self.number < other.number
 
 
