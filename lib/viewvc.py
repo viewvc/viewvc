@@ -2306,7 +2306,7 @@ def sort_file_data(file_data, roottype, sortdir, sortby, group_dirs):
         if sortby == "rev":
             # roottype is "svn" only, and the file has always rev value.
             def key(x):
-                return (x.kind == latter, x.rev)
+                return (x.kind == latter, int(x.rev))
 
         elif sortby == "date":
 
