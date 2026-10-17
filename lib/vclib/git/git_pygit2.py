@@ -201,7 +201,9 @@ class GitRepository(vclib.Repository):
                 # if default branch is not determined,
                 # we use head reference.
                 self.youngest_ref = self.repos.head
-                self.youngest = self.repos.get(self.repos.head.target)
+                commit = self.repos.get(self.repos.head.target)
+                assert isinstance(commit, pygit2.Commit)
+                self.youngest = commit
 
         # See if a universal read access determination can be made.
         if self.auth and self.auth.check_universal_access(self.name) == 1:
@@ -513,8 +515,9 @@ class GitRepository(vclib.Repository):
         if isinstance(rev, str):
             commit = self.repos.get(rev)
         else:
-            assert isinstance(rev, pygit2.Commit)
             commit = rev
+        if not isinstance(commit, pygit2.Commit):
+            raise vclib.InvalidRevision(rev)
         msg = _get_commit_msg(commit)
         auth_ts, author = self._signature_props(commit.author)
         tz = datetime.timezone(datetime.timedelta(minutes=commit.commit_time_offset))
@@ -556,8 +559,10 @@ class GitRepository(vclib.Repository):
                 if t2 is not None
                 else set()
             )
+            commit = self.repos.get(rev)
+            assert isinstance(commit, pygit2.Commit)
             try:
-                prev_rev = str(self.repos.get(rev).parents[0].id)
+                prev_rev = str(commit.parents[0].id)
             except Exception:
                 # To do: prev_rev should not be None, but what is apropriate?
                 prev_rev = "Not a revision"
@@ -760,6 +765,7 @@ class GitRepository(vclib.Repository):
             # Get the revision property info. 'rev' here is always already
             # commit ID string, it can be safely used repos.get() directry.
             commit = self.repos.get(rev)
+            assert isinstance(commit, pygit2.Commit)
             msg, author, auth_ts, revprops = self._getcommitprops(commit)
 
             # Optimization: If our caller doesn't care about the changed
