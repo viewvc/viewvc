@@ -14,7 +14,7 @@
 
 import time
 
-from .__init__ import parse
+from . import parse
 from . import common
 
 
