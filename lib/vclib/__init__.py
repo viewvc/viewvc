@@ -19,228 +19,90 @@ import subprocess
 import os
 import time
 
-# item types returned by Repository.itemtype().
-FILE = "FILE"
-DIR = "DIR"
+import vcauth
 
-# diff types recognized by Repository.rawdiff().
-UNIFIED = 1
-CONTEXT = 2
-SIDE_BY_SIDE = 3
+from enum import Enum
+from typing import Any, TypeVar
+from collections.abc import Iterable
 
-# root types returned by Repository.roottype().
-CVS = "cvs"
-SVN = "svn"
 
-# action kinds found in ChangedPath.action
-ADDED = "added"
-DELETED = "deleted"
-REPLACED = "replaced"
-MODIFIED = "modified"
+class StrEnum(str, Enum):
+    def __str__(self) -> str:
+        return str(self.value)
 
-# log sort keys
-SORTBY_DEFAULT = 0  # default/no sorting
-SORTBY_DATE = 1  # sorted by date, youngest first
-SORTBY_REV = 2  # sorted by revision, youngest first
 
+class ItemType(StrEnum):
+    """item types returned by Repository.itemtype()."""
 
-# ======================================================================
-#
-class Repository:
-    """Abstract class representing a repository.
+    FILE = "FILE"
+    DIR = "DIR"
 
-    In addtion to those methods defined here, instances of subclasses
-    should have attribute(s) below.
 
-    rootpath        (str) Hold the absolute path to the repository in
-                    the local file system."""
+FILE = ItemType.FILE
+DIR = ItemType.DIR
 
-    def rootname(self):
-        """Return the name of this repository."""
 
-    def roottype(self):
-        """Return the type of this repository (vclib.CVS, vclib.SVN, ...)."""
+class DiffType(Enum):
+    """diff types recognized by Repository.rawdiff()."""
 
-    def authorizer(self):
-        """Return the vcauth.Authorizer object associated with this
-        repository, or None if no such association has been made."""
+    UNIFIED = 1
+    CONTEXT = 2
+    SIDE_BY_SIDE = 3
 
-    def open(self):
-        """Open a connection to the repository."""
 
-    def itemtype(self, path_parts, rev):
-        """Return the type of the item (file or dir) at the given path and revision
+UNIFIED = DiffType.UNIFIED
+CONTEXT = DiffType.CONTEXT
+SIDE_BY_SIDE = DiffType.SIDE_BY_SIDE
 
-        The result will be vclib.DIR or vclib.FILE
 
-        The path is specified as a list of components, relative to the root
-        of the repository. e.g. ["subdir1", "subdir2", "filename"]
+class RootType(StrEnum):
+    """root types returned by Repository.roottype()."""
 
-        rev is the revision of the item to check
-        """
-        pass
+    CVS = "cvs"
+    SVN = "svn"
 
-    def openfile(self, path_parts, rev, options):
-        """Open a file object to read file contents at a given path and revision.
 
-        The return value is a 2-tuple of containg the binary file like object
-        and revision number in canonical form.
+CVS = RootType.CVS
+SVN = RootType.SVN
 
-        The path is specified as a list of components, relative to the root
-        of the repository. e.g. ["subdir1", "subdir2", "filename"]
 
-        rev is the revision of the file to check out
+class ChangedAction(StrEnum):
+    """action kinds found in ChangedPath.action."""
 
-        options is a dictionary of implementation specific options
-        """
+    ADDED = "added"
+    DELETED = "deleted"
+    REPLACED = "replaced"
+    MODIFIED = "modified"
 
-    def listdir(self, path_parts, rev, options):
-        """Return list of files in a directory
 
-        The result is a list of DirEntry objects
+ADDED = ChangedAction.ADDED
+DELETED = ChangedAction.DELETED
+REPLACED = ChangedAction.REPLACED
+MODIFIED = ChangedAction.MODIFIED
 
-        The path is specified as a list of components, relative to the root
-        of the repository. e.g. ["subdir1", "subdir2", "filename"]
 
-        rev is the revision of the directory to list
+class LogSortKey(Enum):
+    """log sort keys"""
 
-        options is a dictionary of implementation specific options
-        """
+    SORTBY_DEFAULT = 0  # default/no sorting
+    SORTBY_DATE = 1  # sorted by date, youngest first
+    SORTBY_REV = 2  # sorted by revision, youngest first
 
-    def dirlogs(self, path_parts, rev, entries, options):
-        """Augment directory entries with log information
 
-        New properties will be set on all of the DirEntry objects in the entries
-        list. At the very least, a "rev" property will be set to a revision
-        number or None if the entry doesn't have a number. Other properties that
-        may be set include "date", "author", "log", "size", and "lockinfo".
-
-        The path is specified as a list of components, relative to the root
-        of the repository. e.g. ["subdir1", "subdir2", "filename"]
-
-        rev is the revision of the directory listing and will effect which log
-        messages are returned
-
-        entries is a list of DirEntry objects returned from a previous call to
-        the listdir() method
-
-        options is a dictionary of implementation specific options
-        """
-
-    def itemlog(self, path_parts, rev, sortby, first, limit, options):
-        """Retrieve an item's log information
-
-        The result is a list of Revision objects
-
-        The path is specified as a list of components, relative to the root
-        of the repository. e.g. ["subdir1", "subdir2", "filename"]
-
-        rev is the revision of the item to return information about
-
-        sortby indicates the way in which the returned list should be
-        sorted (SORTBY_DEFAULT, SORTBY_DATE, SORTBY_REV)
-
-        first is the 0-based index of the first Revision returned (after
-        sorting, if any, has occured)
-
-        limit is the maximum number of returned Revisions, or 0 to return
-        all available data
-
-        options is a dictionary of implementation specific options
-        """
-
-    def itemprops(self, path_parts, rev):
-        """Return a dictionary mapping property names to property values
-        for properties stored on an item.
-
-        The path is specified as a list of components, relative to the root
-        of the repository. e.g. ["subdir1", "subdir2", "filename"]
-
-        rev is the revision of the item to return information about.
-
-        Returned property names are Python strings, and if the
-        implementation can't provide that for a given property name, it is
-        omitted from the return value.  Property values are either strings
-        or bytestrings, as appropriate (preferring strings).
-        """
-
-    def rawdiff(self, path_parts1, rev1, path_parts2, rev2, diff_type, options={}, is_text=True):
-        """Return a diff (in GNU diff format) of two file revisions
-
-        diff_type is the requested diff type (UNIFIED, CONTEXT, etc)
-
-        options is a dictionary that can contain the following options plus
-        implementation-specific options
-
-          context - integer, number of context lines to include
-          funout - boolean, include C function names
-          ignore_white - boolean, ignore whitespace
-
-        If is_text is True, return value is a file like object with str I/O.
-        If is_text is False, return value is a file like object with bytes I/O.
-        """
-
-    def annotate(self, path_parts, rev, include_text=False):
-        """Return a list of Annotation object, sorted by their
-        "line_number" components, which describe the lines of given
-        version of a file.
-
-        The file path is specified as a list of components, relative to
-        the root of the repository. e.g. ["subdir1", "subdir2", "filename"]
-
-        rev is the revision of the item to return information about.
-
-        If include_text is true, populate the Annotation objects' "text"
-        members with the corresponding line of file content; otherwise,
-        leave that member set to None."""
-
-    def revinfo(self, rev):
-        """Return information about a global revision
-
-        rev is the revision of the item to return information about
-
-        Return value is a 5-tuple containing: the date, author, log
-        message, a list of ChangedPath items representing paths changed,
-        and a dictionary mapping property names to property values for
-        properties stored on an item.
-
-        Raise vclib.UnsupportedFeature if the version control system
-        doesn't support a global revision concept.
-        """
-
-    def isexecutable(self, path_parts, rev):
-        """Return true iff a given revision of a versioned file is to be
-        considered an executable program or script.
-
-        The path is specified as a list of components, relative to the root
-        of the repository. e.g. ["subdir1", "subdir2", "filename"]
-
-        rev is the revision of the item to return information about
-        """
-
-    def filesize(self, path_parts, rev):
-        """Return the size of a versioned file's contents if it can be
-        obtained without a brute force measurement; -1 otherwise.
-
-        NOTE: Callers that require a filesize answer when this function
-        returns -1 may obtain it by measuring the data returned via
-        openfile().
-
-        The path is specified as a list of components, relative to the root
-        of the repository. e.g. ["subdir1", "subdir2", "filename"]
-
-        rev is the revision of the item to return information about
-        """
+SORTBY_DEFAULT = LogSortKey.SORTBY_DEFAULT
+SORTBY_DATE = LogSortKey.SORTBY_DATE
+SORTBY_REV = LogSortKey.SORTBY_REV
 
 
 # ======================================================================
 class DirEntry:
     """Instances represent items in a directory listing"""
 
-    def __init__(self, name, kind, errors=[]):
+    def __init__(self, name: str, kind: ItemType, errors: list[str] = []) -> None:
         """Create a new DirEntry() item:
         NAME:  The name of the directory entry
-        KIND:  The path kind of the entry (vclib.DIR, vclib.FILE)
+        KIND:  The path kind of the entry
+               (vclib.ItemType.DIR, vclib.ItemType.FILE)
         ERRORS:  A list of error strings representing problems encountered
                  while determining the other info about this entry
         """
@@ -248,7 +110,7 @@ class DirEntry:
         self.kind = kind
         self.errors = errors
 
-    def sortkey(self, attrname, default=""):
+    def sortkey(self, attrname: str, default: Any = "") -> Any:
         """Get attribute value specified for sort key
 
         If the attribute value is None, return default value instead.
@@ -257,10 +119,23 @@ class DirEntry:
         return v if v is not None else default
 
 
+SelfRevision = TypeVar("SelfRevision", bound="Revision")
+
+
 class Revision:
     """Instances holds information about revisions of versioned resources"""
 
-    def __init__(self, number, string, date, author, changed, log, size, lockinfo):
+    def __init__(
+        self,
+        number: Any,
+        string: str,
+        date: int,
+        author: str,
+        changed: str | None,
+        log: str,
+        size: int | None,
+        lockinfo: str | None,
+    ) -> None:
         """Create a new Revision() item:
         NUMBER:  Revision in an integer-based, sortable format
         STRING:  Revision as a string
@@ -280,14 +155,22 @@ class Revision:
         self.size = size
         self.lockinfo = lockinfo
 
-    def __lt__(self, other):
+    def __lt__(self, other: SelfRevision) -> bool:
         return self.number < other.number
 
 
 class Annotation:
     """Instances represent per-line file annotation information"""
 
-    def __init__(self, text, line_number, rev, prev_rev, author, date):
+    def __init__(
+        self,
+        text: str,
+        line_number: int,
+        rev: str | int,
+        prev_rev: str | int,
+        author: str,
+        date: int,
+    ) -> None:
         """Create a new Annotation() item:
         TEXT:  Raw text of a line of file contents
         LINE_NUMBER:  Line number on which the line is found
@@ -310,16 +193,16 @@ class ChangedPath:
 
     def __init__(
         self,
-        path_parts,
-        rev,
-        pathtype,
-        base_path_parts,
-        base_rev,
-        action,
-        copied,
-        text_changed,
-        props_changed,
-    ):
+        path_parts: list[str],
+        rev: str | int,
+        pathtype: ItemType,
+        base_path_parts: list[str],
+        base_rev: str | int,
+        action: ChangedAction,
+        copied: bool,
+        text_changed: bool,
+        props_changed: bool,
+    ) -> None:
         """Create a new ChangedPath() item:
         PATH_PARTS:       Path that was changed
         REV:              Revision represented by this change
@@ -358,7 +241,7 @@ class UnsupportedFeature(Error):
 
 
 class ItemNotFound(Error):
-    def __init__(self, path):
+    def __init__(self, path: str | tuple[str] | list[str]) -> None:
         # use '/' rather than os.sep because this is for user consumption, and
         # it was defined using URL separators
         if isinstance(path, tuple) or isinstance(path, list):
@@ -367,7 +250,7 @@ class ItemNotFound(Error):
 
 
 class InvalidRevision(Error):
-    def __init__(self, revision=None):
+    def __init__(self, revision: str | int | None = None) -> None:
         if revision is None:
             Error.__init__(self, "Invalid revision")
         else:
@@ -379,41 +262,12 @@ class NonTextualFileContents(Error):
 
 
 class ExternalDiffError(Error):
-    def __init__(self, returncode, mess):
+    def __init__(self, returncode: int, mess: str) -> None:
         self.returncode = returncode
         Error.__init__(self, f"Diff terminated with exit code {returncode:d}: {mess}")
 
 
 # ======================================================================
-# Implementation code used by multiple vclib modules
-
-
-def _diff_args(type, options):
-    """generate argument list to pass to diff or rcsdiff"""
-    args = []
-    if type == CONTEXT:
-        if "context" in options:
-            args.append(f"--context={options['context']}")
-        else:
-            args.append("-c")
-    elif type == UNIFIED:
-        if "context" in options:
-            args.append(f"--unified={options['context']}")
-        else:
-            args.append("-u")
-    elif type == SIDE_BY_SIDE:
-        args.append("--side-by-side")
-        args.append("--width=164")
-    else:
-        raise NotImplementedError
-
-    if options.get("funout", 0):
-        args.append("-p")
-
-    if options.get("ignore_white", 0):
-        args.append("-w")
-
-    return args
 
 
 class _diff_fp:
@@ -424,11 +278,19 @@ class _diff_fp:
     otherwise, it returns file like object with bytes I/O"""
 
     def __init__(
-        self, temp1, temp2, info1=None, info2=None, diff_cmd="diff", diff_opts=[], encoding="utf-8"
-    ):
+        self,
+        temp1: str,
+        temp2: str,
+        info1: tuple[str, int, str] | None = None,
+        info2: tuple[str, int, str] | None = None,
+        diff_cmd: str = "diff",
+        diff_opts: list[str] = [],
+        encoding: str | None = "utf-8",
+    ) -> None:
+        self.proc: subprocess.Popen[str] | subprocess.Popen[bytes] | None
         self.readable = True
-        self.temp1 = temp1
-        self.temp2 = temp2
+        self.temp1: str | None = temp1
+        self.temp2: str | None = temp2
         self.encoding = encoding
         args = diff_opts[:]
         args.insert(0, diff_cmd)
@@ -456,21 +318,28 @@ class _diff_fp:
                 close_fds=(sys.platform != "win32"),
             )
 
-    def read(self, buf_size):
+    def read(self, buf_size: int) -> bytes | str:
+        assert self.proc is not None and self.proc.stdout is not None
         buf = self.proc.stdout.read(buf_size)
         if not buf:
             self._check_process_errors()
         return buf
 
-    def readline(self):
+    def readline(self) -> bytes | str:
+        assert self.proc is not None and self.proc.stdout is not None
         buf = self.proc.stdout.readline()
         if not buf:
             self._check_process_errors()
         return buf
 
-    def close(self):
+    def close(self) -> None:
         try:
             if self.proc:
+                assert (
+                    self.proc is not None
+                    and self.proc.stdout is not None
+                    and self.proc.stderr is not None
+                )
                 self.proc.stdout.close()
                 self.proc.stderr.close()
                 ret = self.proc.poll()
@@ -488,18 +357,19 @@ class _diff_fp:
                     os.remove(self.temp2)
                     self.temp2 = None
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.close()
 
-    def _label(self, info):
+    def _label(self, info) -> str:
         path, date, rev = info
         date = date and time.strftime("%Y/%m/%d %H:%M:%S", time.gmtime(date))
         return f"{path}\t{date}\t{rev}"
 
-    def _check_process_errors(self):
+    def _check_process_errors(self) -> None:
         """Check errors returned by subprocss. On error, raise an
         ExternalDifferror exception"""
 
+        assert self.proc is not None and self.proc.stderr is not None
         errs = self.proc.stderr.read()
         ret = self.proc.poll()
 
@@ -520,32 +390,294 @@ class _diff_fp:
             raise ExternalDiffError(ret, errs)
 
 
-def check_root_access(repos):
-    """Return 1 iff the associated username is permitted to read REPOS,
+# ======================================================================
+#
+class Repository:
+    """Abstract class representing a repository.
+
+    In addtion to those methods defined here, instances of subclasses
+    should have attribute(s) below.
+
+    rootpath        (str) Hold the absolute path to the repository in
+                    the local file system."""
+
+    def rootname(self) -> str:
+        """Return the name of this repository."""
+        raise NotImplementedError()
+
+    def roottype(self) -> str:
+        """Return the type of this repository (vclib.CVS, vclib.SVN, ...)."""
+        raise NotImplementedError()
+
+    def authorizer(self) -> vcauth.GenericViewVCAuthorizer | None:
+        """Return the vcauth.Authorizer object associated with this
+        repository, or None if no such association has been made."""
+        raise NotImplementedError()
+
+    def open(self) -> None:
+        """Open a connection to the repository."""
+        raise NotImplementedError()
+
+    def itemtype(self, path_parts: list[str], rev: str) -> ItemType:
+        """Return the type of the item (file or dir) at the given path and revision
+
+        The result will be vclib.ItemType.DIR or vclib.ItemType.FILE
+
+        The path is specified as a list of components, relative to the root
+        of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+        rev is the revision of the item to check
+        """
+        raise NotImplementedError()
+
+    def openfile(self, path_parts: list[str], rev: str, options: dict[str, Any]) -> tuple[Any, str]:
+        """Open a file object to read file contents at a given path and revision.
+
+        The return value is a 2-tuple of containg the binary file like object
+        and revision number in canonical form.
+
+        The path is specified as a list of components, relative to the root
+        of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+        rev is the revision of the file to check out
+
+        options is a dictionary of implementation specific options
+        """
+        raise NotImplementedError()
+
+    def listdir(self, path_parts: list[str], rev: str, options: dict[str, Any]) -> list[DirEntry]:
+        """Return list of files in a directory
+
+        The result is a list of DirEntry objects
+
+        The path is specified as a list of components, relative to the root
+        of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+        rev is the revision of the directory to list
+
+        options is a dictionary of implementation specific options
+        """
+        raise NotImplementedError()
+
+    def dirlogs(
+        self, path_parts: list[str], rev: str, entries: list[DirEntry], options: dict[str, Any]
+    ) -> None:
+        """Augment directory entries with log information
+
+        New properties will be set on all of the DirEntry objects in the entries
+        list. At the very least, a "rev" property will be set to a revision
+        number or None if the entry doesn't have a number. Other properties that
+        may be set include "date", "author", "log", "size", and "lockinfo".
+
+        The path is specified as a list of components, relative to the root
+        of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+        rev is the revision of the directory listing and will effect which log
+        messages are returned
+
+        entries is a list of DirEntry objects returned from a previous call to
+        the listdir() method
+
+        options is a dictionary of implementation specific options
+        """
+        raise NotImplementedError()
+
+    def itemlog(
+        self,
+        path_parts: list[str],
+        rev: str,
+        sortby: LogSortKey,
+        first: int,
+        limit: int,
+        options: dict[str, Any],
+    ) -> list[Revision]:
+        """Retrieve an item's log information
+
+        The result is a list of Revision objects
+
+        The path is specified as a list of components, relative to the root
+        of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+        rev is the revision of the item to return information about
+
+        sortby indicates the way in which the returned list should be
+        sorted (SORTBY_DEFAULT, SORTBY_DATE, SORTBY_REV)
+
+        first is the 0-based index of the first Revision returned (after
+        sorting, if any, has occured)
+
+        limit is the maximum number of returned Revisions, or 0 to return
+        all available data
+
+        options is a dictionary of implementation specific options
+        """
+        raise NotImplementedError()
+
+    def itemprops(self, path_parts: list[str], rev: str) -> dict[str, Any]:
+        """Return a dictionary mapping property names to property values
+        for properties stored on an item.
+
+        The path is specified as a list of components, relative to the root
+        of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+        rev is the revision of the item to return information about.
+
+        Returned property names are Python strings, and if the
+        implementation can't provide that for a given property name, it is
+        omitted from the return value.  Property values are either strings
+        or bytestrings, as appropriate (preferring strings).
+        """
+        raise NotImplementedError()
+
+    def rawdiff(
+        self,
+        path_parts1: list[str],
+        rev1: str,
+        path_parts2: list[str],
+        rev2: str,
+        diff_type: DiffType,
+        options: dict[str, Any] = {},
+        is_text: bool = True,
+    ) -> _diff_fp:
+        """Return a diff (in GNU diff format) of two file revisions
+
+        diff_type is the requested diff type (UNIFIED, CONTEXT, etc)
+
+        options is a dictionary that can contain the following options plus
+        implementation-specific options
+
+          context - integer, number of context lines to include
+          funout - boolean, include C function names
+          ignore_white - boolean, ignore whitespace
+
+        If is_text is True, return value is a file like object with str I/O.
+        If is_text is False, return value is a file like object with bytes I/O.
+        """
+        raise NotImplementedError()
+
+    def annotate(
+        self, path_parts: list[str], rev: str, include_text: bool = False
+    ) -> tuple[Iterable[Annotation], str]:
+        """Return a list of Annotation object, sorted by their
+        "line_number" components, which describe the lines of given
+        version of a file.
+
+        The file path is specified as a list of components, relative to
+        the root of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+        rev is the revision of the item to return information about.
+
+        If include_text is true, populate the Annotation objects' "text"
+        members with the corresponding line of file content; otherwise,
+        leave that member set to None."""
+        raise NotImplementedError()
+
+    def revinfo(
+        self, rev: str
+    ) -> tuple[int | None, str | None, str | None, dict[str, Any], list[ChangedPath] | None]:
+        """Return information about a global revision
+
+        rev is the revision of the item to return information about
+
+        Return value is a 5-tuple containing: the date, author, log
+        message, a list of ChangedPath items representing paths changed,
+        and a dictionary mapping property names to property values for
+        properties stored on an item.
+
+        Raise vclib.UnsupportedFeature if the version control system
+        doesn't support a global revision concept.
+        """
+        raise NotImplementedError()
+
+    def isexecutable(self, path_parts: list[str], rev: str) -> bool:
+        """Return true iff a given revision of a versioned file is to be
+        considered an executable program or script.
+
+        The path is specified as a list of components, relative to the root
+        of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+        rev is the revision of the item to return information about
+        """
+        raise NotImplementedError()
+
+    def filesize(self, path_parts: list[str], rev: str) -> int:
+        """Return the size of a versioned file's contents if it can be
+        obtained without a brute force measurement; -1 otherwise.
+
+        NOTE: Callers that require a filesize answer when this function
+        returns -1 may obtain it by measuring the data returned via
+        openfile().
+
+        The path is specified as a list of components, relative to the root
+        of the repository. e.g. ["subdir1", "subdir2", "filename"]
+
+        rev is the revision of the item to return information about
+        """
+        raise NotImplementedError()
+
+
+# ======================================================================
+# Implementation code used by multiple vclib modules
+
+
+def _diff_args(dtype: DiffType, options: dict[str, Any]) -> list[str]:
+    """generate argument list to pass to diff or rcsdiff"""
+    args = []
+    if dtype == DiffType.CONTEXT:
+        if "context" in options:
+            args.append(f"--context={options['context']}")
+        else:
+            args.append("-c")
+    elif dtype == DiffType.UNIFIED:
+        if "context" in options:
+            args.append(f"--unified={options['context']}")
+        else:
+            args.append("-u")
+    elif dtype == DiffType.SIDE_BY_SIDE:
+        args.append("--side-by-side")
+        args.append("--width=164")
+    else:
+        raise NotImplementedError()
+
+    if options.get("funout", 0):
+        args.append("-p")
+
+    if options.get("ignore_white", 0):
+        args.append("-w")
+
+    return args
+
+
+def check_root_access(repos: Repository) -> bool:
+    """Return True iff the associated username is permitted to read REPOS,
     as determined by consulting REPOS's Authorizer object (if any)."""
 
     auth = repos.authorizer()
     if not auth:
-        return 1
-    return auth.check_root_access(repos.rootname())
+        return True
+    # auth.check_root_access() may return int, for backword compatibility
+    return bool(auth.check_root_access(repos.rootname()))
 
 
-def check_path_access(repos, path_parts, pathtype=None, rev=None):
-    """Return 1 iff the associated username is permitted to read
+def check_path_access(
+    repos: Repository, path_parts: list[str], pathtype: ItemType | None = None, rev: str = ""
+) -> bool:
+    """Return True iff the associated username is permitted to read
     revision REV of the path PATH_PARTS (of type PATHTYPE) in repository
     REPOS, as determined by consulting REPOS's Authorizer object (if any)."""
 
     auth = repos.authorizer()
     if not auth:
-        return 1
+        return True
     if not pathtype:
         pathtype = repos.itemtype(path_parts, rev)
-    return auth.check_path_access(repos.rootname(), path_parts, pathtype, rev)
+    # auth.check_path_access() may return int, for backword compatibility
+    return bool(auth.check_path_access(repos.rootname(), path_parts, pathtype, rev))
 
 
 if sys.platform == "win32":
 
-    def _getfspath(path, encoding):
+    def _getfspath(path: str, encoding: str) -> str:
         """Get path on local file system.
 
         PATH should be a path represented in str. On system using posix path,
@@ -554,13 +686,13 @@ if sys.platform == "win32":
 
         return path
 
-    def os_listdir(path, encoding):
+    def os_listdir(path: str, encoding: str) -> list[str]:
         "Wrapper for os.listdir, with different encoding from file system encoding"
         return os.listdir(path)
 
 else:
 
-    def _getfspath(path, encoding):
+    def _getfspath(path: str, encoding: str) -> bytes:
         """Get path on local file system.
 
         PATH should be a path represented in str. On system using posix path,
@@ -569,7 +701,7 @@ else:
 
         return path.encode(encoding, "surrogateescape")
 
-    def os_listdir(path, encoding):
+    def os_listdir(path: bytes | str, encoding: str) -> list[bytes] | list[str]:
         """Wrapper for os.listdir, with different encoding from
         file system encoding."""
 
@@ -579,7 +711,7 @@ else:
         return [ent.decode(encoding, "surrogateescape") for ent in os.listdir(path)]
 
 
-def is_mime_text(mime_type: None | str):
+def is_mime_text(mime_type: None | str) -> bool:
     return not mime_type or mime_type.startswith("text/")
 
 
