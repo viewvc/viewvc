@@ -455,7 +455,15 @@ class RemoteSubversionRepository(vclib.Repository):
             temp2 = self.temp_checkout(path_parts2, r2, trncode2)
             info1 = p1, _date_from_rev(r1), r1
             info2 = p2, _date_from_rev(r2), r2
-            return vclib._diff_fp(temp1, temp2, info1, info2, self.diff_cmd, args, encoding="utf-8" if is_text else None)
+            return vclib._diff_fp(
+                temp1,
+                temp2,
+                info1,
+                info2,
+                self.diff_cmd,
+                args,
+                encoding="utf-8" if is_text else None,
+            )
         except core.SubversionException as e:
             if e.apr_err == vclib.svn.core.SVN_ERR_FS_NOT_FOUND:
                 raise vclib.InvalidRevision
