@@ -3902,6 +3902,9 @@ class DiffDescription:
         self.request = request
         self.context = None
         self.changes = []
+        # Diff file objects we've opened. They may own temporary files and
+        # child processes, so they must be closed explicitly (see close()).
+        self._fps = []
 
         if self.diff_format == "c":
             self.diff_type = vclib.CONTEXT
@@ -3961,6 +3964,20 @@ class DiffDescription:
     def anchor(self, anchor_name):
         self.changes.append(_item(diff_block_format="anchor", anchor=anchor_name))
 
+    def close(self):
+        """Close all diff file objects, removing their temporary files.
+
+        Don't rely on __del__ for this: this object sits in a reference
+        cycle (self.fp_differ is a bound method of self), so it's only
+        freed by the cyclic garbage collector, which may not run for a
+        long time in an idle long-lived process (e.g. under gunicorn)."""
+        fps, self._fps = self._fps, []
+        for fp in fps:
+            try:
+                fp.close()
+            except Exception:
+                pass
+
     def get_content_diff(self, left, right):
         options = self.request.cfg.options
         diff_options = {}
@@ -4006,6 +4023,7 @@ class DiffDescription:
     def _get_diff(self, left, right, get_lines, get_fp, diff_options, propname):
         if self.fp_differ is not None:
             fp = get_fp(left, right, propname, diff_options)
+            self._fps.append(fp)
             changes = self.fp_differ(left, right, fp, propname)
         else:
             lines_left = get_lines(left, propname)
@@ -4151,7 +4169,19 @@ def view_diff(request):
     right_side_content, right_side_prop = diff_side_item(request, p2, rev2, sym2)
 
     desc = DiffDescription(request)
+    try:
+        _view_diff_render(
+            request, desc, left_side_content, left_side_prop, right_side_content, right_side_prop
+        )
+    finally:
+        # Close diff streams now so their temporary files are removed at the
+        # end of this request, not whenever the garbage collector next runs.
+        desc.close()
 
+
+def _view_diff_render(
+    request, desc, left_side_content, left_side_prop, right_side_content, right_side_prop
+):
     try:
         if request.pathtype == vclib.FILE:
             # Get file content diff
