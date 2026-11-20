@@ -267,7 +267,11 @@ class _diff_fp:
     cleaning up on close.
 
     If ENCODING is not none, it returns file like object with str I/O,
-    otherwise, it returns file like object with bytes I/O"""
+    otherwise, it returns file like object with bytes I/O
+
+    This object takes ownership of TEMP1 and TEMP2 as soon as it is
+    constructed: they are removed on close(), or right away if
+    construction fails."""
 
     def __init__(
         self,
@@ -279,11 +283,27 @@ class _diff_fp:
         diff_opts: list[str] = [],
         encoding: str | None = "utf-8",
     ) -> None:
-        self.proc: subprocess.Popen[str] | subprocess.Popen[bytes] | None
+        self.proc: subprocess.Popen[str] | subprocess.Popen[bytes] | None = None
         self.readable = True
         self.temp1: str | None = temp1
         self.temp2: str | None = temp2
         self.encoding = encoding
+        try:
+            self._start(temp1, temp2, info1, info2, diff_cmd, diff_opts, encoding)
+        except BaseException:
+            self.close()
+            raise
+
+    def _start(
+        self,
+        temp1: str,
+        temp2: str,
+        info1: tuple[str, int, str] | None,
+        info2: tuple[str, int, str] | None,
+        diff_cmd: str,
+        diff_opts: list[str],
+        encoding: str | None,
+    ) -> None:
         args = diff_opts[:]
         args.insert(0, diff_cmd)
         if info1 and info2:
@@ -340,14 +360,9 @@ class _diff_fp:
                     self.proc.terminate()
                 self.proc = None
         finally:
-            try:
-                if self.temp1:
-                    os.remove(self.temp1)
-                    self.temp1 = None
-            finally:
-                if self.temp2:
-                    os.remove(self.temp2)
-                    self.temp2 = None
+            temp1, temp2 = self.temp1, self.temp2
+            self.temp1 = self.temp2 = None
+            _remove_tempfiles(temp1, temp2)
 
     def __del__(self) -> None:
         self.close()
@@ -638,6 +653,16 @@ def _diff_args(dtype: DiffType, options: dict[str, Any]) -> list[str]:
         args.append("-w")
 
     return args
+
+
+def _remove_tempfiles(*paths: str | None) -> None:
+    """Remove the temporary files PATHS (skipping None), ignoring errors."""
+    for path in paths:
+        if path:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
 
 
 def check_root_access(repos: Repository) -> bool:

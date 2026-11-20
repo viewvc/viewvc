@@ -3828,16 +3828,20 @@ def view_patch(request):
     except vclib.InvalidRevision:
         raise ViewVCException("Invalid path(s) or revision(s) passed to diff", BAD_REQUEST)
 
-    path_left = _path_join(p1)
-    path_right = _path_join(p2)
-    date1, date2, flag, headers = diff_parse_headers(
-        fp, diff_type, path_left, path_right, rev1, rev2, sym1, sym2, is_text=False
-    )
+    # Close the diff stream (removing its temporary files) even if the
+    # client goes away mid-response.
+    try:
+        path_left = _path_join(p1)
+        path_right = _path_join(p2)
+        date1, date2, flag, headers = diff_parse_headers(
+            fp, diff_type, path_left, path_right, rev1, rev2, sym1, sym2, is_text=False
+        )
 
-    server_fp = get_writeready_server_file(request, "text/plain", is_text=False)
-    server_fp.write(headers)
-    copy_stream(fp, server_fp)
-    fp.close()
+        server_fp = get_writeready_server_file(request, "text/plain", is_text=False)
+        server_fp.write(headers)
+        copy_stream(fp, server_fp)
+    finally:
+        fp.close()
 
 
 def diff_side_item(request, path_comp, rev, sym):
@@ -4105,31 +4109,43 @@ class DiffDescription:
         return val.splitlines()
 
     def _prop_fp(self, left, right, propname, diff_options):
-        fn_left = self._temp_file(left.properties.get(propname))
-        fn_right = self._temp_file(right.properties.get(propname))
-        diff_args = vclib._diff_args(self.diff_type, diff_options)
-        info_left = (self._property_path(left, propname), left.log_entry.date, left.rev)
-        info_right = (self._property_path(right, propname), right.log_entry.date, right.rev)
-        return vclib._diff_fp(
-            fn_left,
-            fn_right,
-            info_left,
-            info_right,
-            self.request.cfg.utilities.diff or "diff",
-            diff_args,
-            encoding=self.request.repos.content_encoding,
-        )
+        # Temporary files we're responsible for removing until _diff_fp
+        # takes ownership of them.
+        temps = []
+        try:
+            fn_left = self._temp_file(left.properties.get(propname))
+            temps.append(fn_left)
+            fn_right = self._temp_file(right.properties.get(propname))
+            temps.append(fn_right)
+            diff_args = vclib._diff_args(self.diff_type, diff_options)
+            info_left = (self._property_path(left, propname), left.log_entry.date, left.rev)
+            info_right = (self._property_path(right, propname), right.log_entry.date, right.rev)
+            temps = []  # _diff_fp owns them from here, even if it fails
+            return vclib._diff_fp(
+                fn_left,
+                fn_right,
+                info_left,
+                info_right,
+                self.request.cfg.utilities.diff or "diff",
+                diff_args,
+                encoding=self.request.repos.content_encoding,
+            )
+        finally:
+            vclib._remove_tempfiles(*temps)
 
     def _temp_file(self, val):
         """Create a temporary file with content from val"""
         fd, fn = tempfile.mkstemp()
-        fp = os.fdopen(fd, "wb")
-        if val:
-            if not isinstance(val, bytes):
-                fp.write(val.encode("utf-8", "surrogateescape"))
-            else:
-                fp.write(val)
-        fp.close()
+        try:
+            with os.fdopen(fd, "wb") as fp:
+                if val:
+                    if not isinstance(val, bytes):
+                        fp.write(val.encode("utf-8", "surrogateescape"))
+                    else:
+                        fp.write(val)
+        except BaseException:
+            vclib._remove_tempfiles(fn)
+            raise
         return fn
 
     def _uniq(self, lst):

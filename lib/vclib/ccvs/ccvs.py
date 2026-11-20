@@ -131,23 +131,40 @@ class CCVSRepository(BaseCVSRepository):
         if self.itemtype(path_parts2, rev2) != vclib.FILE:  # does auth-check
             raise vclib.Error(f"Path '{_path_join(path_parts2)}' is not a file.")
 
-        fd1, temp1 = tempfile.mkstemp()
-        os.fdopen(fd1, "wb").write(self.openfile(path_parts1, rev1, {})[0].getvalue())
-        fd2, temp2 = tempfile.mkstemp()
-        os.fdopen(fd2, "wb").write(self.openfile(path_parts2, rev2, {})[0].getvalue())
+        # Temporary files we're responsible for removing until _diff_fp
+        # takes ownership of them.
+        temps = []
+        try:
+            fd1, temp1 = tempfile.mkstemp()
+            temps.append(temp1)
+            with os.fdopen(fd1, "wb") as f:
+                f.write(self.openfile(path_parts1, rev1, {})[0].getvalue())
+            fd2, temp2 = tempfile.mkstemp()
+            temps.append(temp2)
+            with os.fdopen(fd2, "wb") as f:
+                f.write(self.openfile(path_parts2, rev2, {})[0].getvalue())
 
-        r1 = self.itemlog(path_parts1, rev1, vclib.SORTBY_DEFAULT, 0, 0, {})[-1]
-        r2 = self.itemlog(path_parts2, rev2, vclib.SORTBY_DEFAULT, 0, 0, {})[-1]
+            r1 = self.itemlog(path_parts1, rev1, vclib.SORTBY_DEFAULT, 0, 0, {})[-1]
+            r2 = self.itemlog(path_parts2, rev2, vclib.SORTBY_DEFAULT, 0, 0, {})[-1]
 
-        info1 = (self.rcsfile(path_parts1, root=1, v=0), r1.date, r1.string)
-        info2 = (self.rcsfile(path_parts2, root=1, v=0), r2.date, r2.string)
+            info1 = (self.rcsfile(path_parts1, root=1, v=0), r1.date, r1.string)
+            info2 = (self.rcsfile(path_parts2, root=1, v=0), r2.date, r2.string)
 
-        diff_args = vclib._diff_args(diff_type, options)
-        encoding = self.content_encoding if is_text else None
+            diff_args = vclib._diff_args(diff_type, options)
+            encoding = self.content_encoding if is_text else None
 
-        return vclib._diff_fp(
-            temp1, temp2, info1, info2, self.utilities.diff or "diff", diff_args, encoding=encoding
-        )
+            temps = []  # _diff_fp owns them from here, even if it fails
+            return vclib._diff_fp(
+                temp1,
+                temp2,
+                info1,
+                info2,
+                self.utilities.diff or "diff",
+                diff_args,
+                encoding=encoding,
+            )
+        finally:
+            vclib._remove_tempfiles(*temps)
 
     def annotate(self, path_parts, rev=None, include_text=False):
         if self.itemtype(path_parts, rev) != vclib.FILE:  # does auth-check
