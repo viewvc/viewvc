@@ -570,6 +570,9 @@ class LocalSubversionRepository(vclib.Repository):
             date, author, msg, revprops, changes = self._revinfo(rev)
             return date
 
+        # Temporary files we're responsible for removing until _diff_fp
+        # takes ownership of them.
+        temps: list[str] = []
         try:
             trncode1: tuple[str, str] | None = None
             if encoding is not None:
@@ -577,14 +580,17 @@ class LocalSubversionRepository(vclib.Repository):
                 if f_code != "utf-8":
                     trncode1 = (f_code, "utf-8")
             temp1 = self.temp_checkout(path_parts1, r1, trncode1)
+            temps.append(temp1)
             trncode2: tuple[str, str] | None = None
             if encoding is not None:
                 f_code = self._get_content_encoding(path_parts2, r2)
                 if f_code != "utf-8":
                     trncode2 = (f_code, "utf-8")
             temp2 = self.temp_checkout(path_parts2, r2, trncode2)
+            temps.append(temp2)
             info1 = p1, _date_from_rev(r1), r1
             info2 = p2, _date_from_rev(r2), r2
+            temps = []  # _diff_fp owns them from here, even if it fails
             return vclib._diff_fp(
                 temp1,
                 temp2,
@@ -598,6 +604,8 @@ class LocalSubversionRepository(vclib.Repository):
             if e.apr_err == core.SVN_ERR_FS_NOT_FOUND:
                 raise vclib.InvalidRevision
             raise
+        finally:
+            vclib._remove_tempfiles(*temps)
 
     def isexecutable(self, path_parts, rev):
         props = self.itemprops(path_parts, rev)  # does authz-check
